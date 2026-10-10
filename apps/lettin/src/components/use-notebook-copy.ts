@@ -9,7 +9,12 @@ import {
 } from '@tuturuuu/internal-api/lettin';
 import type { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { useEffect, useRef, useState } from 'react';
-import { clearExpiredCopyReceipt, copyReceiptKey, readCopyReceipt, writeCopyReceipt } from './notebook-copy-receipt';
+import {
+  clearExpiredCopyReceipt,
+  copyReceiptKey,
+  readCopyReceipt,
+  writeCopyReceipt,
+} from './notebook-copy-receipt';
 
 export function useNotebookCopy({
   wsId,
@@ -25,7 +30,9 @@ export function useNotebookCopy({
   disabled: boolean;
 }) {
   const client = useQueryClient();
-  const receiptKey = actor ? copyReceiptKey(actor.actorId, wsId, worldId) : undefined;
+  const receiptKey = actor
+    ? copyReceiptKey(actor.actorId, wsId, worldId)
+    : undefined;
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(initialTitle.slice(0, 160));
   const [consent, setConsent] = useState(false);
@@ -100,7 +107,10 @@ export function useNotebookCopy({
         assertCurrent();
         setPreview(reviewed);
       } else {
-        writeCopyReceipt(receiptKey, { previewId: preview.id, status: 'unknown' });
+        writeCopyReceipt(receiptKey, {
+          previewId: preview.id,
+          status: 'unknown',
+        });
         setUncertain(true);
         applying = true;
         const result = await applyLettinNotebookImport(wsId, {
@@ -108,7 +118,11 @@ export function useNotebookCopy({
           consent: true,
           expectedActor: actor.actorId,
         });
-        writeCopyReceipt(receiptKey, { previewId: preview.id, status: 'confirmed', worldId: result.id });
+        writeCopyReceipt(receiptKey, {
+          previewId: preview.id,
+          status: 'confirmed',
+          worldId: result.id,
+        });
         assertCurrent();
         setCreated(result.id);
         setUncertain(false);
@@ -123,8 +137,11 @@ export function useNotebookCopy({
     } catch (failure) {
       // Applied previews return their identity before the server checks expiry.
       // Expiry only permits another intent when its matching receipt was removed.
-      const expiredReceiptCleared = applying && preview &&
-        failure instanceof InternalApiError && failure.status === 410 &&
+      const expiredReceiptCleared =
+        applying &&
+        preview &&
+        failure instanceof InternalApiError &&
+        failure.status === 410 &&
         clearExpiredCopyReceipt(receiptKey, preview.id);
       if (epoch.current === intent) {
         if (expiredReceiptCleared) {

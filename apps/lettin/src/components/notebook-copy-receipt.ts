@@ -12,14 +12,31 @@ export function readCopyReceipt(key: string): CopyReceipt | undefined {
     const raw = sessionStorage.getItem(key);
     if (!raw) return undefined;
     const value: unknown = JSON.parse(raw);
-    if (value && typeof value === 'object' && 'previewId' in value &&
-        typeof value.previewId === 'string' && 'status' in value &&
-        value.status === 'confirmed' && 'worldId' in value &&
-        typeof value.worldId === 'string' && /^[a-zA-Z0-9-]{1,128}$/.test(value.worldId)) {
-      return { previewId: value.previewId, status: 'confirmed', worldId: value.worldId };
+    if (
+      value &&
+      typeof value === 'object' &&
+      'previewId' in value &&
+      typeof value.previewId === 'string' &&
+      'status' in value &&
+      value.status === 'confirmed' &&
+      'worldId' in value &&
+      typeof value.worldId === 'string' &&
+      /^[a-zA-Z0-9-]{1,128}$/.test(value.worldId)
+    ) {
+      return {
+        previewId: value.previewId,
+        status: 'confirmed',
+        worldId: value.worldId,
+      };
     }
-    if (value && typeof value === 'object' && 'previewId' in value &&
-        typeof value.previewId === 'string' && 'status' in value && value.status === 'unknown') {
+    if (
+      value &&
+      typeof value === 'object' &&
+      'previewId' in value &&
+      typeof value.previewId === 'string' &&
+      'status' in value &&
+      value.status === 'unknown'
+    ) {
       return { previewId: value.previewId, status: 'unknown' };
     }
   } catch {
@@ -30,10 +47,14 @@ export function readCopyReceipt(key: string): CopyReceipt | undefined {
 export function writeCopyReceipt(key: string, value: CopyReceipt) {
   sessionStorage.setItem(key, JSON.stringify(value));
 }
-export function clearExpiredCopyReceipt(key: string, previewId: string): boolean {
+export function clearExpiredCopyReceipt(
+  key: string,
+  previewId: string
+): boolean {
   try {
     const receipt = readCopyReceipt(key);
-    if (receipt?.previewId !== previewId || receipt.status !== 'unknown') return false;
+    if (receipt?.previewId !== previewId || receipt.status !== 'unknown')
+      return false;
     sessionStorage.removeItem(key);
     return sessionStorage.getItem(key) === null;
   } catch {

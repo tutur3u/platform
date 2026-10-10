@@ -361,6 +361,7 @@ or production scheduling proof. API/schema/authenticated editor, atomic revision
 storage, staff-default/teacher-role permissions, outside-hours exceptions and
 planner consumption remain separate reviewed packets.
 
+
 ### Private teacher-hours storage foundation
 
 The additive storage foundation keeps confirmed staff defaults and teacher
@@ -398,6 +399,50 @@ teacher-hour consumer integration and atomic tutoring reservations remain separa
 reviewed work. Existing tutoring policy, workspace timezone and staff Create
 permissions are unchanged.
 
+### Selected-absence identity foundation (unwired)
+
+The additive foundation is service-only and has no Contacts/API activation. Existing
+historical sessions remain unlinked and use the chronological fallback above; no
+migration guesses which absence an old make-up covered. The selected date in the
+current form is still suggestion context, not proof of saved attribution.
+
+The new contract identifies an absence by its attendance UUID, including separate
+class occurrences on the same date. Each linked make-up slot requires a distinct
+eligible source UUID. PENDING reserves one source; DONE permanently credits it.
+Cancel, no-show, or a pending reason change releases the reservation while retaining
+its original identity and history. Reactivation uses revision CAS and must reclaim
+the same eligible source; another reservation causes a conflict. Allowed deletion
+retains attribution; DONE credit cannot be released by deletion or a reason/status
+edit. Ordinary content and parent-message metadata edits preserve credit identity. Linked
+date/time/duration/teacher and creation actor/timestamp rewrites require an exact
+canonical permit. Direct schedule edits are rejected until a future validated PATCH
+operation exists, including moving a make-up before its source absence. No client is wired to these
+operations in this foundation packet.
+
+Correcting active source attendance to PRESENT requires an explicit staff-managed
+resolution. Silent correction or standalone deletion is rejected. A credited source
+keeps its history after explicit resolution. Existing workspace/group/student or
+membership teardown uses narrowly scoped FK cleanup; immutable original IDs/date
+remain available for retained records. Deleting an actual class occurrence releases
+pending reservations while preserving DONE credit and immutable occurrence snapshots.
+Declared teacher/creator SET NULL and parent rekey cascades may change only their
+live FK fields after the old parent disappears; arbitrary direct rewrites stay denied.
+Tenant-authorized release is possible after learner archive or enrollment departure;
+new reservations still require an active enrolled learner. Input-bound replay returns
+its original receipt before mutable learner/source checks, but only after rechecking
+the current actor's permission. Revoked actors cannot replay. No generic trigger-depth or caller-writable
+session flag authorizes a protected write.
+
+Only a verified backend actor may call the canonical service-only operations, which
+also check current MEMBER membership and the existing tutoring permission. Private,
+ungranted permits exist only during an exact transaction/session/revision/mutation;
+success removes them and failure rolls them back. Linked status/reason/delete writes
+outside that boundary are rejected. Full historical schema replay, strict pgTAP,
+two-connection claim-versus-correction/replay races, and generated types must pass
+on the exact head before foundation merge. Fixtures and source checks are not live
+customer proof. Queue/API/UI integration and selected-card-to-transport regression
+are separate dependent packets; historical customer data is not repaired here.
+
 ### Create completion ownership
 
 Contacts captures the exact actor/workspace lifetime and draft revision before a
@@ -409,3 +454,11 @@ cancel or undo a server write: current-scope success and failure remain visible,
 and synchronous duplicate submission is suppressed. The mounted Client/CreateCard
 regressions in `tutoring-create-scope.test.tsx` cover these boundaries with held
 synthetic transports; they are not customer or production-write evidence.
+
+The inert absence identity contract checks rejected linked-session mutations
+against the canonical-operation error and preserved schedule and attribution.
+Trigger permit lookups use distinct local variable names and qualified columns
+to avoid ambiguous SQL references before admission. Regression evidence lives in
+`apps/database/supabase/tests/tutoring-absence-credit-contract.sql` and
+`apps/database/supabase/tests/tutoring-absence-credit-lifecycle.sql`; the exact-head
+database contract must pass before this foundation is considered verified.

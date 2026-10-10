@@ -969,6 +969,8 @@
     "publicProfile": "View public profile",
     "publish": "Publish",
     "published": "Published",
+    "publishedReadingStatistics": "Published body length",
+    "publishedReadingStatisticsHint": "Counts cover this published body, including expandable sections. Metadata and artwork are excluded. Words use language segmentation; characters exclude spaces.",
     "publisher": "Publisher",
     "quickNote": "Quick note",
     "quickNoteBody": "Note text",

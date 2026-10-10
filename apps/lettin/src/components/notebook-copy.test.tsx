@@ -395,7 +395,6 @@ it('requires a new preview after the server expires the reviewed import', async 
   expect(mocks.apply).toHaveBeenCalledTimes(1);
 });
 
-
 it('retains an unknown submitted copy across close, reopen and transient context remounts', async () => {
   mocks.apply.mockRejectedValueOnce(new Error('Response lost'));
   await review();
@@ -403,7 +402,9 @@ it('retains an unknown submitted copy across close, reopen and transient context
   await click('close-copy');
   await click('open-copy');
   expect(button(text('reviewNotebookCopy')).disabled).toBe(true);
-  expect(container.querySelector('[role=alert]')?.textContent).toBe(text('notebookCopyUncertain'));
+  expect(container.querySelector('[role=alert]')?.textContent).toBe(
+    text('notebookCopyUncertain')
+  );
   await render({ sourceVersion: 2, disabled: true });
   await render({ sourceVersion: 2 });
   await click('open-copy');
@@ -420,19 +421,27 @@ it('records an accepted copy after closure and restores its link on reopen', asy
   await act(async () => flight.resolve({ id: 'accepted-after-close' }));
   expect(mocks.invalidate).not.toHaveBeenCalled();
   await click('open-copy');
-  expect(container.querySelector('a')?.getAttribute('href')).toBe('/workspace/wiki/accepted-after-close/overview');
+  expect(container.querySelector('a')?.getAttribute('href')).toBe(
+    '/workspace/wiki/accepted-after-close/overview'
+  );
   expect(mocks.apply).toHaveBeenCalledTimes(1);
 });
 it('keeps a rejected response after closure blocked when the same scope is reopened', async () => {
   await review();
   let reject!: (reason: Error) => void;
-  mocks.apply.mockReturnValueOnce(new Promise((_, fail) => { reject = fail; }));
+  mocks.apply.mockReturnValueOnce(
+    new Promise((_, fail) => {
+      reject = fail;
+    })
+  );
   await click(text('createImport'));
   await click('close-copy');
   await act(async () => reject(new Error('Unconfirmed response')));
   await click('open-copy');
   expect(button(text('reviewNotebookCopy')).disabled).toBe(true);
-  expect(container.querySelector('[role=alert]')?.textContent).toBe(text('notebookCopyUncertain'));
+  expect(container.querySelector('[role=alert]')?.textContent).toBe(
+    text('notebookCopyUncertain')
+  );
   expect(mocks.apply).toHaveBeenCalledTimes(1);
 });
 it('does not leak a scoped unknown receipt into another actor or workspace and restores it on return', async () => {
@@ -453,7 +462,9 @@ it('does not leak a scoped unknown receipt into another actor or workspace and r
 });
 it('blocks apply before transport when its receipt cannot be retained', async () => {
   await review();
-  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Quota'); });
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('Quota');
+  });
   await click(text('createImport'));
   expect(mocks.apply).not.toHaveBeenCalled();
 });
@@ -465,25 +476,33 @@ it('retains a scoped unknown receipt through a full control unmount', async () =
   await act(async () => root.render(null));
   await render();
   expect(button(text('reviewNotebookCopy')).disabled).toBe(true);
-  expect(container.querySelector('[role=alert]')?.textContent).toBe(text('notebookCopyUncertain'));
+  expect(container.querySelector('[role=alert]')?.textContent).toBe(
+    text('notebookCopyUncertain')
+  );
   expect(mocks.apply).toHaveBeenCalledTimes(1);
 });
 
 it('retains truthful uncertainty when an expired receipt cannot be removed', async () => {
   mocks.apply.mockRejectedValueOnce(new InternalApiError('Expired', 410));
   await review();
-  const remove = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
-    throw new Error('Storage removal denied');
-  });
+  const remove = vi
+    .spyOn(Storage.prototype, 'removeItem')
+    .mockImplementation(() => {
+      throw new Error('Storage removal denied');
+    });
   await click(text('createImport'));
   expect(remove).toHaveBeenCalledTimes(1);
-  expect(container.querySelector('[role=alert]')?.textContent).toBe(text('notebookCopyUncertain'));
+  expect(container.querySelector('[role=alert]')?.textContent).toBe(
+    text('notebookCopyUncertain')
+  );
   expect(button(text('createImport')).disabled).toBe(true);
   await click(text('createImport'));
   await click('close-copy');
   await click('open-copy');
   expect(button(text('reviewNotebookCopy')).disabled).toBe(true);
-  expect(container.querySelector('[role=alert]')?.textContent).toBe(text('notebookCopyUncertain'));
+  expect(container.querySelector('[role=alert]')?.textContent).toBe(
+    text('notebookCopyUncertain')
+  );
   expect(mocks.apply).toHaveBeenCalledTimes(1);
   expect(mocks.preview).toHaveBeenCalledTimes(1);
 });

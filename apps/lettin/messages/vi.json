@@ -969,6 +969,8 @@
     "publicProfile": "Xem hồ sơ công khai",
     "publish": "Xuất bản",
     "published": "Đã xuất bản",
+    "publishedReadingStatistics": "Độ dài nội dung đã xuất bản",
+    "publishedReadingStatisticsHint": "Số đếm chỉ gồm nội dung đã xuất bản này, kể cả các phần có thể mở rộng. Không tính siêu dữ liệu và hình ảnh. Từ được phân đoạn theo ngôn ngữ; ký tự không tính khoảng trắng.",
     "publisher": "Người xuất bản",
     "quickNote": "Ghi chú nhanh",
     "quickNoteBody": "Nội dung ghi chú",
