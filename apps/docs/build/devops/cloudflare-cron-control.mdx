@@ -90,7 +90,9 @@ and starts no database/provider work. The byte ceiling fits 100 maximum-length
 IDs even when JSON-escaped. Malformed JSON retains HTTP 400. These request bounds do not
 cap automatic delivery work or account spending. A ten-second total body-read
 deadline returns HTTP 408 before database/provider work for stalled or slow
-streams; receiving a chunk does not renew it. Cancellation is best effort and
+streams; receiving a chunk does not renew it. Monotonic elapsed checks before
+and after each read, including end-of-stream, reject late reads even before the
+timer callback runs. Cancellation is best effort and
 cannot extend the deadline or replace an overflow/transport error.
 
 Authenticated explicit batch selection accepts at most 100 `batch_ids`, with the
@@ -125,8 +127,8 @@ hard daily cap; duplicate execution and downstream delivery fanout add work.
 A failed requeue stops before lookup. A failed delivery occurs after both database
 requests, so 24 independently retried calls perform 72 requests. The Worker has no
 persistent retry reservation or recurring lease expiry. Its 180-second AbortSignal
-currently covers web delivery only; database recovery and lookup have no explicit
-request deadlines. The lookup asks for one row but consumes the complete JSON
+covers web delivery; database recovery and lookup each use a 30-second
+request deadline, as described below. The lookup asks for one row but consumes the complete JSON
 response, so that query parameter does not prove a response-byte or storage-work cap.
 
 Before bounding this path, verify actual database recovery rows and downstream
@@ -136,3 +138,25 @@ clock and stop/reschedule races rather than treating sequential helper calls as
 hosted alarm evidence. Controlled fetch probes establish request ordering/counts;
 real scheduled Worker, database, provider, authenticated independent-stop and alert
 acceptance remain separate gates.
+
+## Database request deadlines and redirects
+
+Cron Control gives stale-batch recovery and pending-batch lookup separate
+30-second AbortSignals. Lookup JSON consumption uses the same request signal;
+headers arriving before the deadline do not restart it. A timeout propagates and
+prevents subsequent lookup or delivery phases from starting. Recovery remains
+before lookup, and the existing web-delivery deadline remains 180 seconds.
+
+Database requests use manual redirects and reject non-success statuses, so the
+Worker does not follow a redirect with its database credentials. A failed request
+can have an unknown server-side outcome; preserve pending batches and the existing
+idempotent database recovery contract. Do not add an immediate re-enqueue loop to
+compensate for a timeout. The recurring schedule may retry later.
+
+These per-request limits bound waiting when fetch honors cancellation, not the
+number of recurring invocations, database rows, response bytes or provider messages.
+They do not establish finite background jobs, authenticated independent Stop or a
+spending cap. Worker unit tests cover stalled first/second phases, a stalled lookup
+body and redirect short-circuiting with controlled fetch/abort behavior. Require
+exact-head CI lint, types, tests and real emitted Worker checks; hosted scheduled
+recovery and database/provider acceptance remain separate gates.

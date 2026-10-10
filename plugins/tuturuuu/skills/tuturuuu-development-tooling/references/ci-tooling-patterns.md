@@ -536,12 +536,21 @@ secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` fo
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
 
 For Cron recovery cost review, count the requeue RPC and pending lookup even when
-there is no delivery. Database phases currently lack explicit request deadlines;
-only web delivery uses the 180-second signal. A one-row lookup parameter does not
+there is no delivery. Each database phase uses a 30-second signal; web delivery
+uses a separate 180-second signal. A one-row lookup parameter does not
 bound full response consumption or requeue database work. Count repeated failed
 invocations separately and require durable recurring authority/progress and stop
 fences before certifying the schedule. See the recovery request envelope in the
 Cron Control runbook; mocked HTTP counts are not billed-row or hosted-stop proof.
+
+Cron Control database recovery and lookup each carry a 30-second AbortSignal and
+reject redirects with `redirect: 'manual'`. Keep body consumption attached to the
+lookup signal and preserve failure short-circuiting before later phases. Timeouts
+can leave ambiguous remote outcomes; retain pending recovery state and idempotent
+RPC behavior, without adding immediate re-enqueue feedback. These deadlines do
+not cap recurring invocation counts, billed rows, response bytes or total spend.
+See the database request deadline section in the Cron Control runbook for controlled
+unit evidence versus hosted scheduling and independent-stop release gates.
 
 ## Vite+ native service Worker boundary
 
@@ -570,3 +579,14 @@ and coverage-v8 provider to that exact version with Bun commands. Updating only
 the provider while a root override forces an older runner still mixes versions.
 Validate the forwarded coverage command too: `bun run test --maxWorkers=2 --coverage`
 under Node 24. Do not disable Vite+'s provider-version guard to unblock CI.
+
+## Owning Next app build evidence
+
+A green shared-dependency workflow does not prove a changed satellite compiled
+unless its app is included in that workflow's build matrix. Route changes require
+an actual build of the owning app at the immutable PR head. The nondeployment
+`programming-app-builds.yaml` matrix includes Tasks and its source path trigger
+alongside Web, Learn, Infrastructure, Mail and Contacts. Keep placeholder build
+environment values, bounded Turbo concurrency, exact-source checkout and
+read-only permissions; preview or production dispatch is not a substitute for
+this PR gate.

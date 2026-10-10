@@ -1,17 +1,28 @@
 'use client';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import {
   type DocumentOutlineItem,
   outlineLimit,
 } from './document-outline-model';
-export function DocumentOutline({
-  items,
-  truncated,
-}: {
-  items: DocumentOutlineItem[];
-  truncated: boolean;
-}) {
+import {
+  filterOutlineItems,
+  outlineSearchLimit,
+} from './document-outline-search';
+
+type OutlineProps = { items: DocumentOutlineItem[]; truncated: boolean };
+export function DocumentOutline(props: OutlineProps) {
+  return (
+    <SearchableOutline
+      key={JSON.stringify([props.items, props.truncated])}
+      {...props}
+    />
+  );
+}
+function SearchableOutline({ items, truncated }: OutlineProps) {
   const t = useTranslations('lettin');
+  const [search, setSearch] = useState('');
+  const visible = filterOutlineItems(items, search);
   if (items.length < 2) return null;
   return (
     <nav
@@ -19,8 +30,36 @@ export function DocumentOutline({
       className="my-6 rounded border border-border bg-muted/40 p-4"
     >
       <h2 className="mb-3 font-semibold text-base">{t('documentOutline')}</h2>
+      <div className="mb-3 flex flex-wrap items-end gap-2">
+        <label className="min-w-0 flex-1 space-y-1 text-sm">
+          <span className="block">{t('outlineSearch')}</span>
+          <input
+            type="search"
+            value={search}
+            maxLength={outlineSearchLimit}
+            onChange={(event) =>
+              setSearch(event.target.value.slice(0, outlineSearchLimit))
+            }
+            className="w-full rounded border border-input bg-background p-2"
+          />
+        </label>
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="rounded border border-input bg-background px-3 py-2 text-sm"
+          >
+            {t('outlineSearchClear')}
+          </button>
+        )}
+      </div>
+      {visible.length === 0 && (
+        <p role="status" className="mb-3 text-sm">
+          {t('outlineSearchEmpty')}
+        </p>
+      )}
       <ol className="max-h-72 space-y-2 overflow-y-auto text-sm">
-        {items.map((item) => (
+        {visible.map((item) => (
           <li key={item.id} className={item.level > 2 ? 'ms-4' : ''}>
             <a
               className="underline underline-offset-4"

@@ -18,6 +18,13 @@ shared-package changes.
   API. Expanding a summary projection must still exclude unpublished drafts and
   entry documents. Cover exact matching and snapshot isolation with the local
   store fixture; see [Lettin discovery](../../../../../apps/docs/platform/features/lettin.mdx).
+- For cross-app creative handoffs, prefer canonical source IDs over embedding
+  private draft text in navigation URLs. Authenticate with the destination app's
+  own session and retain its API permission checks. Persisting even a private
+  source link into a shared destination needs explicit, initially unchecked
+  consent and a clear statement that the link grants no source access. Keep
+  source-reading and publication operations separate. See the
+  [Lettin product decision](../../../../../apps/docs/platform/features/lettin.mdx).
 
 - For a customer-facing behavior fix that spans apps, trace the setting from its
   writer through server-prefetched and client-only views, summary counts, and
@@ -630,3 +637,13 @@ do not introduce optimizer caches, download endpoints or permission changes.
 In jsdom, assert the rendered referrer-policy attribute and allow the shared
 Radix focus scope's deferred unmount callback to settle before asserting focus
 return; keep the actual dialog interaction rather than replacing it with a mock.
+
+### Published outline search
+
+Filter only the current bounded displayed heading labels, with Unicode/case
+normalization and a bounded ephemeral query. Keep full content and truncation
+feedback intact. Reset local search when labels or scoped targets change; isolate
+articles and retain disabled private-preview defaults. Clear/empty recovery must
+keep heading navigation and enclosing-fold focus behavior. Do not search source
+IDs, omitted content, drafts or unavailable projections, or persist reader queries.
+Coverage: `document-outline-search.test.tsx`.
