@@ -12,6 +12,13 @@ shared-package changes.
   changes, while preserving actor-scoped query and mutation keys. See
   [Lettin saved libraries](../../../../../apps/docs/platform/features/lettin.mdx).
 
+- Private creative previews must distinguish local edits from saved publication
+  snapshots. Render only the selected authorized snapshot, reset to the draft on
+  reopening, and disable the published choice after unpublishing. A stored
+  snapshot does not establish live reader access; retain parent publication and
+  media permission checks. Preview controls must not implicitly save or publish.
+  See [Lettin previews](../../../../../apps/docs/platform/features/lettin.mdx).
+
 - For public catalogue facets, filter the published snapshot in the authoritative
   query before applying pagination and its next-page sentinel. Keep URL filters
   through search and paging, and share bounded validation between the page and
@@ -624,7 +631,10 @@ seed count before testing concurrent production mutations. Hundreds of separate
 prepared statements in a fixture batch can exhaust the per-test timeout under CI
 load without exercising more application behavior. Preserve the real mutation,
 quota race and cross-actor assertions; do not raise global timeouts or replace D1
-with mocks. Lettin's creator-bookmark quota regression uses 499 seeded references
+with mocks. Catalogue pagination fixtures should seed published snapshots in one
+set-based write; preserve separate real publish/save mutation tests and assert the
+row count before queries. A timed-out sequential seed can keep running and contaminate
+the next test even when its cleanup hook ran. Lettin's creator-bookmark quota regression uses 499 seeded references
 and two concurrent saves to verify the 500-reference boundary.
 
 ## Scoped artwork reading dialogs
@@ -680,12 +690,95 @@ on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
 
+## Staging a published snapshot as a draft
+
+Keep snapshot restoration separate from persistence and publication. Confirm the
+local replacement, clone the available published value, replace the whole draft
+rather than merging authored optional fields, and reset tag/rich-text buffers together.
+Retain current private workflow labels separately from the public authored snapshot;
+never restore historical public labels over current private metadata.
+Preserve the last saved draft for local discard. Pending mutations and every cover, inline or gallery upload, together with
+source editing, must block restoration, including confirmation after availability
+changes. Use existing save commands and actor/workspace/revision/target fences;
+staging a snapshot does not revive unavailable references or grant publication.
+See the Lettin decision and restore/editor/local D1 regression coverage.
+## Published notebook collections
+
+Use only the public snapshot payload when composing reader collections and search.
+Keep overview documents, selected-entry URLs, chronological ordering and
+relationship-label/endpoint search distinct. Count entries only where that count
+matches the displayed collection; do not present entry counts as connection
+counts. Empty-filter recovery should reset the visible controls together. Reuse
+cards so content notices and published context remain visible before entry
+selection. See the Lettin decision and public-entry collection regression.
+Context-reset keys must include the control's identity when stateful components
+share a parent. Workspace/notebook IDs alone collide between sibling quick-note
+and Calendar controls. Lettin's Studio browsing regression checks key warnings,
+state retention across section changes and reset on notebook changes.
+
+## Scoped document export
+
+Use explicit publication scope and affirmative owner consent for bulk private
+exports, rather than assuming ordinary collaborator reading permission implies
+private portability consent. Project through the active document schema, omit
+identity/grant metadata, and filter structured references against included IDs.
+Bound entry counts and encoded bytes before large reads, then recheck notebook
+permissions before response. On the client, reuse the server-verified workspace
+actor lifetime and an intent lease to suppress stale downloads after account
+change, dialog closure or unmount. State clearly when URLs rather than asset bytes
+are exported and when saved reads do not form an atomic database snapshot.
+
+
+For portable file imports, treat source IDs and export provenance as untrusted
+context. Use a schema-projected, actor/workspace-bound expiring preview followed
+by explicit apply; allocate fresh IDs and remap only included references. Source
+consent never grants access to referenced media. If asset bytes and transfer
+permission are absent, remove image and hyperlink targets and explain the loss
+before apply. Reuse the private D1 import transaction and fence preview source so
+one importer cannot apply another importer's privileged plan. Keep consent,
+publication and creator revocation regression evidence separate from hosted CI.
+
+## Explicit public routing links
+
+Public copy/share controls must derive destinations from an already-public server
+projection, not `window.location`, arbitrary search values or private workspace
+routes. A canonical route helper validates shape but does not grant source access.
+Copy only the public routing URL and whitelist supported query keys; avoid actor,
+tracking, draft and profile metadata. Do not freeze publication by copying a link.
+Use explicit visitor intent, clipboard failure/manual selection recovery, duplicate
+submission fences and keyed destination lifetimes to suppress stale completion.
+Shared components can receive localized labels from owning apps instead of adding
+implicit shared translation keys to unrelated app bundles.
+
+## Private creator workflow metadata
+
+Treat internal drafting labels as distinct from publication status and access
+roles. Exclude private metadata in the atomic publication write and again in all
+public projection reads, including historical snapshots and nested entries.
+Retain the saved draft and existing permission/revision checks. Test real D1
+publication plus historical JSON, revocation and workspace fences. Compose studio
+filters over saved authorized records, preserve search, and explicitly document
+whether relationship filters require both endpoints. Never infer publication from
+a readiness label or add it to public profiles.
+
+### Explicit source references on copies
+
+Keep source references optional when copying saved creative records. Derive the
+source ID from the already-authorized, revision-fenced record instead of accepting
+an arbitrary target. Default the choice off, clear it on reopening, and explain
+that later publishing the copy retains the reference ID without publishing
+source content or granting source access. Preserve public projection filtering
+so unavailable source references remain omitted. Clear inherited graph references and
+retain the existing same-notebook, artwork and atomic write fences. Test the
+private copy and later published projection independently with real local D1.
+
 ## Private document statistics
 
 Derive writing metrics from the current authorized editor buffer without storing
 new fields or enriching public projections. Join adjacent inline text but preserve
 block boundaries; exclude attributes and ignored leaf children. Use Unicode word
 and grapheme segmentation and state the whitespace rule. Label bounded partial
-results and unapplied source-mode exclusions explicitly. Memoize against the
+results and unapplied source-mode exclusions explicitly. Count depth-clipped nodes
+against the same traversal budget so a wide rejected frontier remains bounded. Memoize against the
 content object so metadata edits do not traverse the document again. Lettin's
 writing-statistics model and bilingual DOM regressions cover these boundaries.

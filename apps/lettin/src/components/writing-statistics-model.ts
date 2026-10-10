@@ -20,11 +20,15 @@ export function documentWritingStatistics(root: LettinNode) {
   let visited = 0;
   let truncated = false;
   const visit = (node: LettinNode, depth: number) => {
-    if (depth > 25 || visited >= 20_000) {
+    if (visited >= 20_000) {
       truncated = true;
       return;
     }
     visited++;
+    if (depth > 25) {
+      truncated = true;
+      return;
+    }
     if (node.type === 'text') {
       parts.push(node.text ?? '');
       return;
