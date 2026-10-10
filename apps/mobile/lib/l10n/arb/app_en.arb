@@ -1,4 +1,10 @@
 {
+  "assistantDownloadPhasePending": "Pending",
+  "assistantDownloadPhaseQueued": "Queued",
+  "assistantDownloadPhaseTransferring": "Downloading",
+  "assistantDownloadPhaseRetryWait": "Waiting to retry",
+  "assistantDownloadPhasePaused": "Paused",
+  "assistantDownloadPhaseVerifying": "Verifying download",
   "@@locale": "en",
   "@assistantCreditsSummary": {
     "placeholders": {
