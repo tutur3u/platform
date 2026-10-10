@@ -791,3 +791,13 @@ controls; disable boundary moves and keep keyboard focus with the moved item.
 Saving and publishing remain distinct existing revision/permission operations.
 Lettin's fact editor DOM and real D1 snapshot tests cover order persistence and
 private revisions without introducing storage fields or access grants.
+
+### Creator reference availability previews
+
+Review reference availability from authorized notebook records only. Deduplicate
+links and relationship targets; render no raw ID or guessed title for an unavailable
+target. Treat a current published target snapshot as availability information,
+not reader authorization or an immutable historical version. Keep notebook
+publication and server-side reference filtering authoritative. A private preview
+must not publish targets, copy private text to readers or grant access. Lettin's
+reference review and version-switch regressions cover this boundary.

@@ -1,6 +1,6 @@
 'use client';
 
-import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
+import type { LettinDraft, LettinRecord } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -13,13 +13,16 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { DocumentView } from './document-view';
+import { ReferencePublicationReview } from './reference-publication-review';
 
 export function PublicationPreview({
   draft,
   published,
+  entries = [],
 }: {
   draft: LettinDraft;
   published: LettinDraft | null;
+  entries?: LettinRecord[];
 }) {
   const t = useTranslations('lettin');
   const [mode, setMode] = useState<'draft' | 'published'>('draft');
@@ -61,6 +64,10 @@ export function PublicationPreview({
                 : 'previewUnpublishedHint'
           )}
         </p>
+        <ReferencePublicationReview
+          draft={showPublished ? published : draft}
+          entries={entries}
+        />
         <DocumentView draft={showPublished ? published : draft} />
       </DialogContent>
     </Dialog>

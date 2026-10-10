@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
+import type { LettinDraft, LettinRecord } from '@tuturuuu/internal-api/lettin';
 import { act, type ComponentProps } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -162,4 +162,42 @@ it('refreshes the displayed snapshot and safely falls back after unpublishing', 
   expect(documentText()).toContain('Private revised title');
   expect(snapshotButton().getAttribute('aria-pressed')).toBe('false');
   expect(snapshotButton().disabled).toBe(true);
+});
+
+it('reviews references from the selected version and refreshes current target publication state', async () => {
+  state.messages = en.lettin;
+  const referenced = { ...draft, links: ['private-target'] };
+  const target: LettinRecord = {
+    id: 'private-target',
+    draft: { ...draft, title: 'Private target' },
+    published: null,
+    published_at: null,
+    version: 1,
+  };
+  await act(() =>
+    root.render(
+      <PublicationPreview
+        draft={referenced}
+        published={published}
+        entries={[target]}
+      />
+    )
+  );
+  expect(container.textContent).toContain('Private target');
+  expect(container.textContent).toContain(en.lettin.referenceReviewPrivate);
+  await act(() => snapshotButton().click());
+  expect(container.textContent).not.toContain('Private target');
+  await act(() => state.onOpenChange(false));
+  await act(() =>
+    root.render(
+      <PublicationPreview
+        draft={referenced}
+        published={published}
+        entries={[
+          { ...target, published: target.draft, published_at: '2026-10-10' },
+        ]}
+      />
+    )
+  );
+  expect(container.textContent).toContain(en.lettin.referenceReviewPublished);
 });
