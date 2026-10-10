@@ -1459,3 +1459,18 @@ and unchanged input; `world-studio-progress.test.tsx` verifies that filtering th
 visible list does not narrow summary counts. Existing `server/work-progress.test.ts`
 checks save/publication isolation and public stage omission. Exact-head CI and
 hosted studio acceptance remain independent delivery gates.
+
+## Explicit task planning priority
+
+The Tasks `/{wsId}/tasks/new` composer, including the Lettin handoff, offers an
+optional priority choice: critical, high, normal, or low. It starts with no
+priority and omits the API field until the creator chooses one. Clearing a
+choice omits it again. No notebook content or metadata determines priority.
+Failed or unconfirmed creation retains the choice in the locked form; mutation
+retries stay disabled. Inspect the destination board before opening another form. Source-reference sharing remains unchecked and independently consented,
+and the destination API retains workspace and task authorization.
+
+Regression coverage in `apps/tasks/src/components/task-plan-composer.test.tsx`
+checks each API priority, clearing, denied creation, and unchanged source consent.
+The composer fixtures render choices from both English and Vietnamese message bundles.
+Exact-head Tasks build and repository CI remain separate delivery gates.

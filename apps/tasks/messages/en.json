@@ -8436,6 +8436,15 @@
     "noBoards": "No boards are available in this workspace.",
     "openBoards": "Open task boards",
     "openTask": "Open task",
+    "priority": "Priority",
+    "priorityHint": "Optional. Choose a priority for this task; notebook content is never used to choose it.",
+    "priorityOptions": {
+      "critical": "Critical",
+      "high": "High",
+      "low": "Low",
+      "normal": "Normal"
+    },
+    "priorityUnspecified": "No priority",
     "retry": "Retry",
     "reviewSource": "Review the notebook reference",
     "sourceConsent": "This copies only the notebook link into the task description for people who can access this task. It does not grant notebook access or copy its content. Leave unchecked to create a task without a source link.",
