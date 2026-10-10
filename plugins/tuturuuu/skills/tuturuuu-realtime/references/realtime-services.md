@@ -161,6 +161,17 @@ failed write. Keep independent registry/room cleanup and incomplete billing/cont
 retries. See the counted regressions and operation envelope in
 `apps/docs/build/devops/programming-realtime-runbook.mdx#completed-live-finalization-receipts`.
 
+## Active Live alarm audit
+
+Read the active-session alarm scope in the Meet Live feature page before changing
+its recurring schedule. Pause does not skip tick-level registry, room and billing
+work. Successful registry renewal extends discoverability; the 23-hour outage
+boundary is not a fixed session lifetime. Count public settlement, review expiry,
+room commands, primary settlement/usage, renewal reservations and reconnects
+separately. Source-path inventory is not counted runtime evidence. Require explicit
+recurring lease expiry and durable authenticated Stop/reschedule tests without
+losing quota coverage, privacy discoverability or unresolved obligations.
+
 ## Meet Live compensation after termination
 
 Read the ended-session compensation section in

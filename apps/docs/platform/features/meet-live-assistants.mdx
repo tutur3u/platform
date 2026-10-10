@@ -129,6 +129,26 @@ Project-wide free allowances and Cloudflare Live Worker duration, storage, and
 requests are not fully allocated to individual meetings. Missing usage stays
 marked incomplete; these estimates do not replace provider invoices.
 
+## Active-session alarm scope
+
+A successful active Live tick schedules the next alarm for twenty seconds later.
+The tick first settles pending public billing and expires reviews, then maintains
+registry discoverability, sends the room heartbeat or personal context command,
+and performs primary quota settlement and usage reporting when billing exists.
+Renewal can add settlement, usage and reservation work; reconnect and queued tool
+responses add separate provider operations. Count those calls and persisted keys
+separately from the alarm itself.
+
+Pause suppresses provider input; it does not skip this alarm's registry, room or
+billing work. The registry lease renews after successful registration. Its
+23-hour failure boundary limits tolerated registry outages, not the lifetime of
+an otherwise healthy session. A future recurring-work bound must preserve active
+consent, quota coverage and privacy discoverability, with explicit expiry and
+an authenticated durable stop checked before dispatch and rescheduling.
+These are source-path findings, not measured billed-operation or hosted shutdown
+evidence; duplicate/restart, slow downstream, no-progress and Stop-race probes
+remain required before certifying a cost envelope.
+
 ## Ended-session compensation and retry safety
 
 Ending Live stops capture and provider output, but unresolved server obligations
