@@ -5,12 +5,20 @@ import {
   createWorkspaceTask,
   listWorkspaceBoardsWithLists,
 } from '@tuturuuu/internal-api';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { Link } from '@/i18n/routing';
+import {
+  getTaskPlanDescription,
+  MAX_TASK_PLAN_NOTES_LENGTH,
+} from './task-plan-description';
+import { TaskPlanPriority } from './task-plan-priority';
+import { TaskPlanProject, useTaskPlanProject } from './task-plan-project';
 import { TaskPlanSource } from './task-plan-source';
 
 export function TaskPlanComposer({
@@ -25,9 +33,13 @@ export function TaskPlanComposer({
   const t = useTranslations('task-plan');
   const client = useQueryClient();
   const [name, setName] = useState('');
+  const [notes, setNotes] = useState('');
+  const notesValid = notes.length <= MAX_TASK_PLAN_NOTES_LENGTH;
   const [boardId, setBoardId] = useState('');
   const [listId, setListId] = useState('');
+  const [priority, setPriority] = useState<TaskPriority | null>(null);
   const [attachSource, setAttachSource] = useState(false);
+  const project = useTaskPlanProject(wsId);
   const submitting = useRef(false);
   const [creationUnconfirmed, setCreationUnconfirmed] = useState(false);
   const query = useQuery({
@@ -41,45 +53,32 @@ export function TaskPlanComposer({
   const mutation = useMutation({
     retry: false,
     mutationFn: () => {
-      if (!name.trim() || !board || !list)
+      if (!name.trim() || !board || !list || !project.canSubmit || !notesValid)
         throw new Error('Invalid task destination');
+      const description = getTaskPlanDescription(
+        notes,
+        attachSource ? sourceUrl : undefined
+      );
       return createWorkspaceTask(wsId, {
         name: name.trim(),
         listId: list.id,
-        ...(attachSource && sourceUrl
-          ? {
-              description: JSON.stringify({
-                type: 'doc',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [
-                      {
-                        type: 'text',
-                        text: sourceUrl,
-                        marks: [
-                          {
-                            type: 'link',
-                            attrs: {
-                              href: sourceUrl,
-                              target: '_blank',
-                              rel: 'noopener noreferrer',
-                            },
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              }),
-            }
-          : {}),
+        ...(priority ? { priority } : {}),
+        ...(project.selected ? { project_ids: [project.selected.id] } : {}),
+        ...(description ? { description } : {}),
       });
     },
     onError: () => {
       setCreationUnconfirmed(true);
     },
     onSuccess: () => {
+      if (project.selected) {
+        for (const key of [
+          ['task-project-tasks', wsId, project.selected.id],
+          ['tasks', wsId, `project:${project.selected.id}`],
+          ['workspace', wsId, 'tasks-for-projects'],
+        ])
+          void client.invalidateQueries({ queryKey: key });
+      }
       for (const family of ['tasks', 'tasks-full', 'task_lists']) {
         void client.invalidateQueries({ queryKey: [family, boardId] });
       }
@@ -122,7 +121,14 @@ export function TaskPlanComposer({
         className="space-y-5"
         onSubmit={(event) => {
           event.preventDefault();
-          if (submitting.current || !name.trim() || !list) return;
+          if (
+            submitting.current ||
+            !name.trim() ||
+            !list ||
+            !project.canSubmit ||
+            !notesValid
+          )
+            return;
           submitting.current = true;
           mutation.mutate();
         }}
@@ -139,6 +145,18 @@ export function TaskPlanComposer({
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
+          </label>
+          <label className="block space-y-2">
+            {t('notes')}
+            <Textarea
+              value={notes}
+              maxLength={MAX_TASK_PLAN_NOTES_LENGTH}
+              rows={4}
+              onChange={(event) => setNotes(event.target.value)}
+            />
+            <span className="block text-muted-foreground text-sm">
+              {t('notesHint')}
+            </span>
           </label>
           <label className="block space-y-2">
             {t('board')}
@@ -176,6 +194,7 @@ export function TaskPlanComposer({
               ))}
             </select>
           </label>
+          <TaskPlanPriority value={priority} onChange={setPriority} />
           {sourceUrl && (
             <TaskPlanSource
               sourceUrl={sourceUrl}
@@ -183,13 +202,19 @@ export function TaskPlanComposer({
               onChange={setAttachSource}
             />
           )}
+          <TaskPlanProject plan={project} />
           <p className="text-muted-foreground text-sm">
             {t('destinationConsent')}
           </p>
           <Button
             type="submit"
             disabled={
-              query.isError || !name.trim() || !list || mutation.isPending
+              query.isError ||
+              !name.trim() ||
+              !list ||
+              !project.canSubmit ||
+              !notesValid ||
+              mutation.isPending
             }
           >
             {t(mutation.isPending ? 'creating' : 'create')}
