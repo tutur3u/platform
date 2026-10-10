@@ -80,14 +80,21 @@ class ProfileMediaRecovery extends StatelessWidget {
                                   );
                                 } else {
                                   cubit.clearMediaFailure();
-                                  await cubit.removeBanner();
+                                  if (target ==
+                                      ProfileMediaTarget.removeAvatar) {
+                                    await cubit.removeAvatar();
+                                  } else {
+                                    await cubit.removeBanner();
+                                  }
                                 }
                               },
-                        child: Text(
-                          target == ProfileMediaTarget.removeBanner
-                              ? context.l10n.profileRemoveBanner
-                              : context.l10n.profileMediaSelectAgain,
-                        ),
+                        child: Text(switch (target) {
+                          ProfileMediaTarget.removeAvatar =>
+                            context.l10n.profileRemoveAvatar,
+                          ProfileMediaTarget.removeBanner =>
+                            context.l10n.profileRemoveBanner,
+                          _ => context.l10n.profileMediaSelectAgain,
+                        }),
                       ),
                     InternalDiagnosticsCopy(
                       diagnostics: failure.diagnostics,

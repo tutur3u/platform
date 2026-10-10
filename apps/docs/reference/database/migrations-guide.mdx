@@ -1,10 +1,59 @@
 ---
 title: 'Database Migrations Guide'
 description: 'Best practices for creating, testing, and deploying Supabase migrations'
-updatedAt: '2026-05-31'
+updatedAt: '2026-10-09'
 ---
 
 The Tuturuuu platform uses Supabase migrations to manage database schema changes with version control and reproducibility.
+
+## Declarative adoption preparation
+
+Declarative schemas are opt-in preparation. Existing migrations remain the
+source of truth; this foundation does not enable an engine, export a baseline,
+change deployment gates, or regenerate database types.
+
+```sh
+node apps/database/scripts/declarative-schema-readiness.js --json
+```
+
+Run after workspace dependency setup. The checker prints migration/schema
+filename and byte-hash inventories, config/lock identities, the PostgreSQL major,
+and bounded help probes of the installed bundled Supabase CLI. It installs
+nothing and makes no database connections. It rejects linked targets, database
+URLs, apply/overwrite/experimental flags, and unknown arguments before inspection.
+Exit 2 means adoption is held; exit 1 means inspection failed; `--help` exits 0.
+A schema tree plus supported commands cannot produce a ready result. Keep the
+report in ignored task evidence.
+
+The [current Supabase guide](https://supabase.com/docs/guides/local-development/declarative-database-schemas)
+distinguishes pg-delta `db schema declarative generate`/`sync` from legacy migra
+`db diff` and ordered `schema_paths`. Check exact installed help first. Root owns
+any CLI upgrade choice. Do not use a pg-delta export with legacy diffing, add a
+partial tree, or silently change the engine/config or existing `sb:diff` command.
+
+Baseline approval requires a fresh source/config/lock/version binding, explicit
+reconciliation of pending migration owners, complete disposable Linux replay,
+and full ledger comparison. Export DDL only from that task-owned database,
+review for embedded secrets, then prove a no-op declarative diff against the
+complete history and catalog/security parity from a second disposable replay.
+A production dump can omit pending migrations and is not an approved baseline.
+Never reset foreign databases or rewrite deployed history.
+
+Keep DML/backfills, environment operations, and diff-engine unsupported objects
+in reviewed imperative migrations with an explicit exception inventory. Verify
+RLS, public/private grants and default privileges, service-role functions,
+security-definer search paths, extension versions, Storage policies, and
+application customizations of managed auth/storage/realtime schemas separately.
+A no-op diff cannot prove objects the engine excludes. Keep declarations below
+the authored 700-LOC ceiling, use the shared resource queue, and prove closure of
+all task-owned containers, volumes, ports, and scopes.
+
+The detailed repository procedure is
+`plugins/tuturuuu/skills/tuturuuu-database/references/declarative-schema-adoption.md`.
+Until those independently reviewed receipts exist, adoption remains preparation.
+After approval, use the qualified engine to propose forward migrations, review
+all generated SQL, replay and test security, then run typegen on the applied
+schema. Production application remains separately authorized.
 
 ## Migration Workflow
 

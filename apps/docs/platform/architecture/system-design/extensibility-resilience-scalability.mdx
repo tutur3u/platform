@@ -1,7 +1,7 @@
 ---
 title: "Extensibility, Resilience & Scalability"
 description: "15 reasons why event-driven architecture prioritizes extensibility, resilience, and scalability"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 Event-driven architecture is fundamentally designed for evolution, stability, and growth. This document explores **15 key reasons** (5 for each property) why these qualities matter, and shows how Tuturuuu applies the practical subset of these patterns today.
@@ -14,9 +14,11 @@ To understand how different architectural patterns compare in terms of these qua
 **How to read this page.** The patterns below are general event-driven concepts. Tuturuuu is not a Kafka-style microservice mesh: the apps under `apps/` are conventional applications that share a single Supabase Postgres project, and asynchronous/background work runs on **[Trigger.dev v4](/reference/packages/trigger)** (`@trigger.dev/sdk` v4) using the `task()` API, not a self-managed broker with consumer groups or topic partitions. Code samples that use Trigger.dev show the real v4 `task()` shape; samples that describe broker primitives (partitions, DLQ topics, replay windows) are **conceptual pseudo-code** that illustrate the pattern rather than implemented Tuturuuu behavior. Each section calls out which is which.
 </Warning>
 
-<Note>
-**Active migration.** The legacy Next.js app (`apps/web`, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). See [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration). The quality attributes below survive the migration; only the runtimes hosting them change.
-</Note>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Extensibility (5 Reasons)
 

@@ -5050,6 +5050,7 @@ export type Database = {
           rejected_by: string | null;
           rejection_reason: string | null;
           report_approval_status: Database['public']['Enums']['approval_status'];
+          review_revision: number;
           score: number | null;
           scores: number[] | null;
           source_context: Json;
@@ -5081,6 +5082,7 @@ export type Database = {
           rejected_by?: string | null;
           rejection_reason?: string | null;
           report_approval_status?: Database['public']['Enums']['approval_status'];
+          review_revision?: number;
           score?: number | null;
           scores?: number[] | null;
           source_context?: Json;
@@ -5112,6 +5114,7 @@ export type Database = {
           rejected_by?: string | null;
           rejection_reason?: string | null;
           report_approval_status?: Database['public']['Enums']['approval_status'];
+          review_revision?: number;
           score?: number | null;
           scores?: number[] | null;
           source_context?: Json;
@@ -14352,6 +14355,138 @@ export type Database = {
         };
         Relationships: [];
       };
+      report_email_reply_identities: {
+        Row: {
+          application_sent_at: string | null;
+          content_sha256: string;
+          created_at: string;
+          delivery_kind: string;
+          generation: string;
+          id: string;
+          key_version: number;
+          outcome: string;
+          provider_accepted_at: string | null;
+          provider_message_id: string | null;
+          queue_id: string;
+          recipient_email: string;
+          reply_domain: string;
+          report_id: string;
+          review_revision: number;
+          subject_user_id: string;
+          submitting_locked_at: string | null;
+          submitting_worker_id: string | null;
+          token_ciphertext: string;
+          token_digest: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          application_sent_at?: string | null;
+          content_sha256: string;
+          created_at?: string;
+          delivery_kind: string;
+          generation: string;
+          id: string;
+          key_version: number;
+          outcome?: string;
+          provider_accepted_at?: string | null;
+          provider_message_id?: string | null;
+          queue_id: string;
+          recipient_email: string;
+          reply_domain: string;
+          report_id: string;
+          review_revision: number;
+          subject_user_id: string;
+          submitting_locked_at?: string | null;
+          submitting_worker_id?: string | null;
+          token_ciphertext: string;
+          token_digest: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          application_sent_at?: string | null;
+          content_sha256?: string;
+          created_at?: string;
+          delivery_kind?: string;
+          generation?: string;
+          id?: string;
+          key_version?: number;
+          outcome?: string;
+          provider_accepted_at?: string | null;
+          provider_message_id?: string | null;
+          queue_id?: string;
+          recipient_email?: string;
+          reply_domain?: string;
+          report_id?: string;
+          review_revision?: number;
+          subject_user_id?: string;
+          submitting_locked_at?: string | null;
+          submitting_worker_id?: string | null;
+          token_ciphertext?: string;
+          token_digest?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      report_review_receipts: {
+        Row: {
+          action_id: string;
+          actor_auth_uid: string;
+          actor_workspace_user_id: string;
+          group_id: string;
+          id: string;
+          kind: string;
+          parent_review_revision: number | null;
+          post_id: string | null;
+          recipient_sha256: string;
+          report_id: string | null;
+          required_permission: string;
+          review_revision: number;
+          reviewed_at: string;
+          reviewed_payload_sha256: string;
+          subject_user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          action_id: string;
+          actor_auth_uid: string;
+          actor_workspace_user_id: string;
+          group_id: string;
+          id?: string;
+          kind: string;
+          parent_review_revision?: number | null;
+          post_id?: string | null;
+          recipient_sha256: string;
+          report_id?: string | null;
+          required_permission: string;
+          review_revision: number;
+          reviewed_at?: string;
+          reviewed_payload_sha256: string;
+          subject_user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          action_id?: string;
+          actor_auth_uid?: string;
+          actor_workspace_user_id?: string;
+          group_id?: string;
+          id?: string;
+          kind?: string;
+          parent_review_revision?: number | null;
+          post_id?: string | null;
+          recipient_sha256?: string;
+          report_id?: string | null;
+          required_permission?: string;
+          review_revision?: number;
+          reviewed_at?: string;
+          reviewed_payload_sha256?: string;
+          subject_user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       reserved_usernames: {
         Row: {
           category: string;
@@ -14510,6 +14645,66 @@ export type Database = {
           {
             foreignKeyName: 'project_members_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      time_tracker_controls: {
+        Row: {
+          actor_id: string;
+          config: Json;
+          created_at: string;
+          deadline_at: string | null;
+          last_command_id: string;
+          last_command_payload: Json;
+          mode: string;
+          phase: string;
+          prepared_session_id: string | null;
+          revision: number;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          config: Json;
+          created_at?: string;
+          deadline_at?: string | null;
+          last_command_id: string;
+          last_command_payload: Json;
+          mode?: string;
+          phase?: string;
+          prepared_session_id?: string | null;
+          revision?: number;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          config?: Json;
+          created_at?: string;
+          deadline_at?: string | null;
+          last_command_id?: string;
+          last_command_payload?: Json;
+          mode?: string;
+          phase?: string;
+          prepared_session_id?: string | null;
+          revision?: number;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracker_controls_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracker_controls_actor_id_fkey';
+            columns: ['actor_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -15448,6 +15643,7 @@ export type Database = {
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
+          review_revision: number;
           user_id: string;
         };
         Insert: {
@@ -15462,6 +15658,7 @@ export type Database = {
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
+          review_revision?: number;
           user_id: string;
         };
         Update: {
@@ -15476,6 +15673,7 @@ export type Database = {
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
+          review_revision?: number;
           user_id?: string;
         };
         Relationships: [
@@ -15582,6 +15780,7 @@ export type Database = {
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
+          review_revision: number;
           title: string | null;
           updated_by: string | null;
         };
@@ -15598,6 +15797,7 @@ export type Database = {
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
+          review_revision?: number;
           title?: string | null;
           updated_by?: string | null;
         };
@@ -15614,6 +15814,7 @@ export type Database = {
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
+          review_revision?: number;
           title?: string | null;
           updated_by?: string | null;
         };
@@ -18159,6 +18360,15 @@ export type Database = {
         Returns: boolean;
       };
       can_manage_form: { Args: { p_form_id: string }; Returns: boolean };
+      can_review_report_entry: {
+        Args: {
+          p_actor_auth_uid: string;
+          p_actor_workspace_user_id: string;
+          p_kind: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
       can_view_form_analytics: {
         Args: { p_form_id: string };
         Returns: boolean;
@@ -18682,6 +18892,17 @@ export type Database = {
           p_search_count?: number;
         };
         Returns: number;
+      };
+      configure_time_tracker_control: {
+        Args: {
+          p_actor_id: string;
+          p_command_id: string;
+          p_config: Json;
+          p_expected_revision: number;
+          p_prepared_session_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       consolidate_user_group_manager_link: {
         Args: { p_workspace_user_id: string; p_ws_id: string };
@@ -20982,6 +21203,10 @@ export type Database = {
         Returns: number;
       };
       parley_runtime_ready: { Args: never; Returns: boolean };
+      periodic_report_delivery_contract_ready: {
+        Args: never;
+        Returns: boolean;
+      };
       periodic_report_stage: {
         Args: { approval: string; delivery: string; generation: string };
         Returns: string;
@@ -21061,6 +21286,10 @@ export type Database = {
         Returns: Json;
       };
       read_meeting_document: { Args: { p_meeting_id: string }; Returns: Json };
+      read_time_tracker_control: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       reconcile_creator_handle_owners: { Args: never; Returns: undefined };
       reconcile_orphaned_approved_post_email_queue: {
         Args: {
@@ -21195,6 +21424,11 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      report_email_reply_receiving_ready: { Args: never; Returns: boolean };
+      report_review_delivery_ready: {
+        Args: { p_report_id: string };
+        Returns: boolean;
+      };
       request_periodic_report_delivery: {
         Args: {
           p_action: string;
@@ -21205,6 +21439,26 @@ export type Database = {
         Returns: Json;
       };
       requeue_mail_push_batches: { Args: never; Returns: number };
+      reserve_report_email_reply_identity: {
+        Args: {
+          p_content_sha256: string;
+          p_delivery_kind: string;
+          p_generation: string;
+          p_key_version: number;
+          p_locked_at: string;
+          p_queue_id: string;
+          p_recipient_email: string;
+          p_reply_domain: string;
+          p_report_id: string;
+          p_review_revision: number;
+          p_subject_user_id: string;
+          p_token_ciphertext: string;
+          p_token_digest: string;
+          p_worker_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
         Returns: string;
@@ -21453,6 +21707,17 @@ export type Database = {
       topic_announcement_contact_has_linked_verified_email: {
         Args: { p_contact_id: string };
         Returns: boolean;
+      };
+      transition_report_email_reply_identity: {
+        Args: {
+          p_identity_id: string;
+          p_locked_at: string;
+          p_outcome: string;
+          p_provider_message_id?: string;
+          p_worker_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       try_consume_rate_limit_bucket: {
         Args: { p_bucket: string; p_limit: number; p_rate_window: string };
@@ -21764,6 +22029,10 @@ export type Database = {
       };
       valid_subscription_months: {
         Args: { months: string[] };
+        Returns: boolean;
+      };
+      valid_time_tracker_control_config: {
+        Args: { p_config: Json };
         Returns: boolean;
       };
       wallet_interest_calculation_result: {
