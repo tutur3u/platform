@@ -48,3 +48,20 @@ it('validates source identifiers and round-trips the canonical allowlist', () =>
     expect(safePublicContentLink(url)).toBe(url);
   expect(safePublicContentLink(null)).toBeNull();
 });
+
+it('rejects malformed URLs and unsupported profile paths without throwing', () => {
+  for (const value of [
+    'not a URL',
+    '',
+    'https://tuturuuu.com/u/',
+    'https://tuturuuu.com/u/creator/private',
+  ]) {
+    expect(safePublicContentLink(value)).toBeNull();
+  }
+});
+it('canonicalizes notebook identifiers without adding an entry selection', () => {
+  const uppercase = 'ABCDEFAB-1234-4ABC-8DEF-123456789ABC';
+  expect(
+    safePublicContentLink(`https://lettin.tuturuuu.com/worlds/${uppercase}`)
+  ).toBe(`https://lettin.tuturuuu.com/worlds/${uppercase.toLowerCase()}`);
+});
