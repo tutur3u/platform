@@ -108,7 +108,7 @@ class AssistantLiveTranscriptSection extends StatelessWidget {
               orderedParts: message.role == 'user' ? const [] : message.parts,
               attachments:
                   chatState.attachmentsByMessageId[message.id] ?? const [],
-              timestamp: message.createdAt,
+              timestamp: message.role == 'user' ? message.createdAt : null,
               toolNames: const [],
             ),
           ),

@@ -46,10 +46,12 @@ jobs:
             scripts/ci/check-workflow-config.ts
             scripts/ci/github-deployment-markers.ts
             scripts/ci/overflow-notes-ci.js
+            scripts/ci/production-test-only-paths.ts
             scripts/ci/release-only-changes.js
             scripts/ci/resolve-changed-files-core.ts
             scripts/ci/resolve-changed-files.ts
             scripts/ci/workflow-config-core.ts
+            scripts/ci/workspace-dependency-closure.ts
             turbo.json
             tuturuuu.ci.ts
             tuturuuu.ts

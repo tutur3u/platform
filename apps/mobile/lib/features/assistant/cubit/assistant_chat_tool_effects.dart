@@ -40,6 +40,17 @@ extension _AssistantChatToolEffects on AssistantChatCubit {
       return;
     }
 
+    if (retainedName == 'set_theme') {
+      final theme = output['theme'];
+      if (theme is! String ||
+          !const ['light', 'dark', 'system'].contains(theme) ||
+          !handled.add(callId)) {
+        return;
+      }
+      await _onThemeRequested?.call(theme, isCurrent);
+      return;
+    }
+
     if (retainedName == 'update_my_settings') {
       if (!handled.add(callId)) return;
       try {

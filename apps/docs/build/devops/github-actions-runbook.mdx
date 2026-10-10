@@ -38,7 +38,7 @@ so workspace-owned test runs read the same files as root runs.
 - Record immutable head and tree, commands, results, and workflow/run/job IDs.
   A manual preview workflow may report the workflow branch SHA rather than its
   input: verify the decoded checkout matches the requested head. Predecessor green
-  builds do not prove a corrected head. New findings or commits require new gates. `programming-app-builds.yaml` runs nondeployment Next/Turbo builds for Web, Learn, Infrastructure, Mail and Contacts on relevant pull requests, including shared dependencies; each Mail/Contacts result must name the immutable checked-out head and does not authorize deployment or certify a different parent SHA.
+  builds do not prove a corrected head. New findings or commits require new gates. `programming-app-builds.yaml` runs nondeployment Next/Turbo builds for Web, Learn, Infrastructure, Mail, Contacts and Tasks on relevant pull requests, including shared dependencies; each app result must name the immutable checked-out head and does not authorize deployment or certify a different parent SHA.
 - Develop independent scopes in parallel, each with its own worktree and owner.
   Admit heavy local validation through the shared `ttr resources` FIFO after a
   resource preflight; serialize permitted local installs and tests. Require
@@ -152,29 +152,55 @@ commits and manual recovery dispatches must not cancel the active deployment.
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
 
-## Pull Request Close Cancellation
+## Coordination native Worker toolchain
 
-`cancel-pr-runs-on-close.yaml` runs on the `pull_request_target` `closed` event
-and cancels active GitHub Actions runs that still belong to the closed pull
-request. It exists to stop queued or long-running checks after a PR is closed
-without adding `closed` triggers to every CI workflow.
+Coordination is a Vite+ workspace using the Cloudflare Vite plugin. The input
+`apps/coordination/wrangler.jsonc` remains the identity and binding authority;
+Vite writes the deployable configuration to `apps/coordination/dist/worker/wrangler.json`.
+The production workflow builds that artifact and deploys its generated config.
+Do not change the Worker name, `CoordinationObject` export, `COORDINATION` binding,
+or retained Durable Object migrations during a toolchain migration.
 
-Because `pull_request_target` runs with base-repository privileges, keep this
-workflow narrow:
+Validation first runs the existing `node:test`/Wrangler lease regression suite
+against source. It then runs Vite+ lint and a real Worker build in CI, repeats
+that same suite with `COORDINATION_TEST_CONFIG` pointing to the generated config,
+and validates the artifact with Wrangler's deployment dry run. The fixture injects
+a disposable server token and uses local Durable Object storage. It verifies
+credentials, concurrent acquisition, fencing, replay and expiry behavior without
+production requests. The source and artifact runs must both pass on the exact head.
 
-- Do not checkout or execute pull request head code.
-- Checkout only the trusted default branch, with persisted credentials disabled.
-- Pin GitHub-owned actions to full commit SHAs.
-- Grant only `actions: write` and `contents: read` to the cancellation job.
-- Do not pass repository secrets other than the short-lived `GITHUB_TOKEN`.
+For focused local runtime verification, run `node --test
+apps/coordination/src/worker.test.mjs` from the root through `ttr resources run`.
+It also works as `bun run test` inside the app. Run builds in CI or on an
+authorized verified devbox through the shared resource queue with aggregate
+memory, CPU and process caps. Vite+ development uses loopback port 8798 and disables
+remote bindings and the inspector by default. Only start it for requested
+runtime verification. Node 24 satisfies the pinned Vite+ runtime requirement.
+The root Vitest project discovers future TypeScript unit tests separately from
+this real Worker fixture; the Node suite stays a mandatory workflow gate.
 
-The cancellation script lists active runs by the closed PR head SHA. It cancels
-matching PR workflow runs and same-repository branch push runs for the PR branch,
-but never cancels `main` or `production` push runs. Runs in contributor forks are
-outside the base repository token's authority and are not cancelled by this
-workflow. The same trusted job paginates through Actions cache entries and
-deletes only entries whose ref equals the closed pull request's merge ref
-(`refs/pull/<number>/merge`). It never deletes default-branch cache entries.
+If temporary transformed modules fail collection or Miniflare reports
+`SQLITE_IOERR_WRITE`, check for actual temporary-file write failures before
+changing product tests. `df` can show free space while an individual `/tmp`
+write fails with `Disk quota exceeded`. A private writable `TMPDIR` under the
+owning program directory can isolate direct validation from that failure. Set
+`TMPDIR` only in the child payload after resource-broker admission. Do not set it
+before `bun check`: its `os.tmpdir()`-based check queue would move shared state.
+Verify the destination quota and retain the original failure before one bounded
+validation attempt. Preserve unknown files and active jobs. Thread-pool retries passed focused Vitest suites,
+but a private `TMPDIR` was also needed for the observed D1 fixture failure;
+neither result establishes a universal runtime cause.
+
+## Pull Request Run Lifecycle
+
+Closing or merging a pull request does not trigger a workflow that cancels its
+checks or deletes its caches. Existing workflow concurrency remains responsible
+for replacing superseded runs on the same branch. It does not cancel a run merely
+because the pull request closed.
+
+Inspect the actual conclusion of each run when reporting validation. A cancelled
+run is not a successful check and does not by itself establish a repository
+failure. Cache retention continues to follow GitHub Actions retention settings.
 
 ## Authorized CI Queue Cleanup
 
@@ -1546,3 +1572,71 @@ This scope is scheduling summaries, not the whole Calendar startup waterfall.
 Regression coverage lives in `task-schedule-batch.test.ts` and
 `tasks-scheduling-batch.test.ts`. Measure authenticated navigation and meaningful
 content after the exact source is deployed; local checks alone are not latency proof.
+
+### Devbox Control Vite-native artifact
+
+Devbox Control owns a private workspace with Vite+ and scoped Oxlint/Oxfmt
+configuration. The workspace pins Wrangler 4.149.0 so local runtime checks
+support the retained compatibility date; root Wrangler is not the runtime oracle
+for this scope. The Cloudflare Vite plugin emits `apps/devbox-control/dist/worker`
+from the existing Wrangler configuration; Worker name, account, compatibility,
+RunnerWake class/binding/migration and required secret names remain the source
+configuration's authority. No Supabase auth, runner membership, lease, heartbeat,
+notification or WebSocket policy changes accompany tooling adoption.
+
+CI generates Worker types, checks TypeScript and scoped Oxc rules, and runs the
+existing 13 authorization/protocol tests through Vite+. Before and after the
+real Vite build, `node --test apps/devbox-control/scripts/verify-worker-runtime.mjs`
+checks complete health JSON and rejects unauthenticated runner/internal requests
+in a loopback Worker with disposable secrets. Set `DEVBOX_TEST_CONFIG` to an
+absolute emitted `dist/worker/wrangler.json` path for artifact verification.
+Dry-run bundling and the authorized production job consume that emitted config;
+secret provisioning still uses the unchanged source target identity.
+
+The fixture closes its temporary runtime and does not contact Supabase or hosted
+runners. It proves Worker startup and denial-before-remote-access, not successful
+real-account authentication, RunnerWake WebSocket delivery or hosted lease
+transitions. Those remain separate acceptance evidence before canonical migration.
+Release builds run only in exact-commit CI. Locally, queue lint/types/unit/runtime
+checks with `ttr resources run`; use a private writable TMPDIR when shared temporary
+storage rejects writes. The format command checks only owned source and remains
+read-only; existing Biome gates remain authoritative until formatter/rule parity.
+
+This tooling unit adds no alarm, queue, retry chain, storage operation or scheduler.
+Review background-work and operation-cost bounds separately when those paths change;
+health and build success do not establish a spending cap or production promotion.
+
+#### RunnerWake notification operation envelope
+
+The current RunnerWake class performs no alarm, queue or cron rescheduling. A
+successful internal POST enumerates all retained WebSockets and sends one wake to
+each. For `S` retained sockets and `N` duplicate notifications, count `N × S` send
+attempts; failed sends also attempt a close. No durable progress receipt suppresses
+later duplicate fanout. A throwing close aborts remaining delivery and propagates
+failure rather than returning a complete acknowledgement.
+
+The public notify route authenticates the internal token before one run lookup,
+an optional lease lookup and one Durable Object POST. Connect authenticates the
+runner before forwarding the WebSocket upgrade. The object trusts these forwarding
+boundaries; it does not establish an independent durable stop fence or socket lease.
+These per-request counts do not bound retained sockets, repeated ingress, billed
+messages, downstream query rows or total account spend.
+
+`apps/devbox-control/src/wake.test.ts` counts 98,304 sends for 4,096 synthetic sockets
+and 24 duplicate/reconstructed notifications, then checks failed-send closure and
+incomplete fanout on a throwing close. These tests use the actual class with a
+mocked Durable Object base and sockets. They do not verify hosted WebSocket delivery,
+provider billing, authenticated Stop or real persisted leases. Before amplifying
+this path, require bounded per-wake work, an expiring recurring authority and a
+durable authenticated stop fence, preserving recovery and notification semantics.
+
+
+### Native Vite+ test and coverage version alignment
+
+Vite+ 1.1.0 requires Vitest and coverage-v8 5.0.3 together. Pin the root dependency,
+root `vitest` override and provider with Bun; an older root override replaces
+Vite+'s declared runner even when ordinary tests pass. The coverage guard rejects
+that mismatch rather than producing unreliable coverage. Shared CI forwards
+`--maxWorkers=2` and optionally `--coverage`: keep worker/pool defaults in the
+unit config, not a duplicate CLI flag in package scripts. Validate both forwarded
+commands under Node 24 in the owning workspace through `ttr resources`.

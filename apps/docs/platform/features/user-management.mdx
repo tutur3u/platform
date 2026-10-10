@@ -273,3 +273,37 @@ finalization/replay rules remain in force. Transport unit regressions live in
 `apps/web/src/lib/profile-media-upload-cors.test.ts` and
 `apps/web/src/lib/profile-media-upload-put.test.ts`. These source checks do not
 prove deployed browser preflight, persistence or finalization behavior.
+
+## Public platform profiles
+
+`tuturuuu.com/u/[username]` resolves the current canonical username and renders
+only the user's avatar, banner, display name, and biography. The route supports
+English and Vietnamese and anonymous access. Unknown or invalid usernames have no profile.
+Public profiles are request-time reads and are not advertised for search indexing.
+The storage projection and returned object independently allowlist the four
+fields; email, account IDs, timestamps, workspace membership, and
+activity are never selected or returned. HTTPS images reject embedded credentials.
+
+Other profile information remains private unless the owner explicitly shares it
+on an owning app surface. Workspace access and saving private identity fields do
+not imply public-sharing consent. This initial platform page has no additional
+field-sharing controls. Lettin provides an explicit saved opt-in for its About
+section; canonical biography is public by default, while workspace data stays
+private.
+Public creator names link to the canonical platform profile when a username exists.
+Regression evidence: `apps/web/src/lib/public-user-profile.test.ts` checks the
+query and response allowlists, invalid/unknown usernames, failures, and artwork;
+`public-paths.test.ts` checks anonymous localized access.
+
+### Profile discovery across apps
+
+The platform account menu and the shared Next satellite account menu offer Public
+profile for signed-in accounts with a canonical username. The destination is the
+central `/u/[username]` page, using the satellite's configured central origin.
+Links open in a new tab so the current task and unsaved work remain available.
+Accounts without a username have no public-profile link; private profile settings
+remain available. No profile content or workspace data is copied across apps.
+Framework adapters without a canonical username omit the optional menu item.
+Regression coverage: `public-profile-url.test.ts` checks legacy usernames,
+configured origins, and rejected paths; `satellite-user-menu-items.test.tsx`
+checks signed-in, signed-out, and missing-profile menu behavior.

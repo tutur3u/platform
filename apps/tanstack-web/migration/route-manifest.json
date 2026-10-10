@@ -5814,13 +5814,14 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/templates/:templateId/background-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/templates/:templateId/background-url:apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
       "kind": "api",
       "methods": [
-        "GET"
+        "GET",
+        "HEAD"
       ],
       "routePath": "/api/v1/workspaces/:wsId/templates/:templateId/background-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9955,7 +9956,7 @@
     "routeHandlers": 648,
     "methodCounts": {
       "GET": 327,
-      "HEAD": 18,
+      "HEAD": 19,
       "POST": 320,
       "PUT": 60,
       "PATCH": 65,

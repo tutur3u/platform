@@ -6,6 +6,26 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Private saved-reference filters should operate only on the current authorized
+  projection. Do not recover withdrawn titles from identifiers or historical
+  caches. Keep filters ephemeral and reset their component boundary on actor
+  changes, while preserving actor-scoped query and mutation keys. See
+  [Lettin saved libraries](../../../../../apps/docs/platform/features/lettin.mdx).
+
+- For public catalogue facets, filter the published snapshot in the authoritative
+  query before applying pagination and its next-page sentinel. Keep URL filters
+  through search and paging, and share bounded validation between the page and
+  API. Expanding a summary projection must still exclude unpublished drafts and
+  entry documents. Cover exact matching and snapshot isolation with the local
+  store fixture; see [Lettin discovery](../../../../../apps/docs/platform/features/lettin.mdx).
+- For cross-app creative handoffs, prefer canonical source IDs over embedding
+  private draft text in navigation URLs. Authenticate with the destination app's
+  own session and retain its API permission checks. Persisting even a private
+  source link into a shared destination needs explicit, initially unchecked
+  consent and a clear statement that the link grants no source access. Keep
+  source-reading and publication operations separate. See the
+  [Lettin product decision](../../../../../apps/docs/platform/features/lettin.mdx).
+
 - For a customer-facing behavior fix that spans apps, trace the setting from its
   writer through server-prefetched and client-only views, summary counts, and
   exports. Share the decision logic when possible, and record the scope, default,
@@ -428,6 +448,28 @@ checked with `--check`; inactive Rust/TanStack sources are excluded. Product
 guides explain actual behavior and access, while generated routes locate source.
 Use `node scripts/docs-audit.js` for navigation, internal links, and assets.
 
+## Managed artwork collections
+
+Adding artwork outside rich text requires updating the atomic draft artwork guard
+and auditing media publication and retention together. Lettin gallery items use
+the existing `image` JSON key, so published media lookup and recursive cleanup
+retain the same permissions without a new storage policy. Exclude collection
+payloads from discovery projections and test draft edits against older published
+snapshots with real local D1/R2. Keep upload operations tied to the editor lease,
+block save/discard/publish while pending, and reject stale results after unmount.
+When integrating saved-draft duplication, exercise collection artwork ownership
+inside its insert fence, including retirement between the source read and insert.
+## Duplicating creator drafts
+
+Duplicate from a server-owned saved revision, with explicit destination scope and
+a user-supplied title. Recheck source revision, creator/collaborator permission
+and artwork ownership in the insert, rather than trusting an earlier read. Keep
+copies unpublished and clear structured references whose semantics should not
+transfer. A completion callback must not navigate away from edits made while the
+request was pending: offer a separate guarded open action. Fence double submits
+synchronously and avoid automatic retries for non-idempotent creation.
+Lettin's duplicate-entry D1 and component tests exercise these boundaries.
+
 ## Notification email admission
 
 Immediate and batched notification email share `notifications/cron-helpers.ts`
@@ -444,3 +486,196 @@ marketing opt-out accidentally. The source matrix and sender fixtures live in
 `email-eligibility.test.ts` and the notification route tests. See the recipient
 policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
 success is separate from exact-head CI and actual provider/inbox delivery.
+
+
+## Saved versus published browsing
+
+Creator search/filter controls operate on authorized saved drafts; public search
+must operate on the published-only projection. Never pass private search indexes
+or draft-change indicators to reader surfaces. “Published” and “saved changes”
+are overlapping states, not mutually exclusive. Compare structured document
+values rather than serialization key order. Apply relationship facets to both
+endpoints before edge text search, and preserve semantic timeline ordering when
+adding card sorts. Keep dirty-editor navigation guards and clear-filter recovery
+in real component regression coverage.
+
+### Local reference pickers
+
+When a creator edits references among already-authorized notebook records, derive
+search results from the supplied collection rather than adding broader source
+reads. Keep search/kind filters transient, batch large lists, and require an
+explicit target action. Fence self references, duplicate target/type pairs and
+collection limits both in options and the update helper. Do not silently drop
+unavailable references: retain their labels until explicit removal. Preserve
+other draft fields and use the existing Save permission/revision boundary.
+Lettin's `relationship-authoring-model.test.ts` and
+`wiki-relationships-editor.test.tsx` exercise this contract; local DOM acceptance
+remains distinct from hosted browser and publication verification.
+
+## Private reader references
+
+Social saves must not silently become public profile data or popularity signals.
+Store actor-owned source IDs instead of private document copies; project live
+published card fields when reading and return unavailable references after
+unpublishing. Bound insertion quotas atomically, make explicit save/remove
+idempotent, and bind both reads and writes to the expected app-session actor.
+Include the actor in client cache keys. Standalone library routes must be excluded
+from workspace-alias probes and use request-time suspended auth boundaries.
+Lettin's bookmark D1 and route regressions cover these contracts.
+
+## Derived reader document navigation
+
+Derive reader outlines from the selected published projection, not workspace
+queries or editor buffers. Match the renderer's tree paths, depth cutoff and
+ignored leaf children when assigning bounded navigation targets. Plain labels
+must escape markup and exclude author IDs/link/image metadata. Scope targets per
+document and keep duplicate heading titles distinct. Open enclosing folds before
+focusing/scrolling, respect native modified clicks, and avoid forced motion or
+history churn. Record that tree-position targets can change after republishing;
+DOM fixtures verify actions and boundaries, while real layout/focus remains a
+hosted browser gate.
+
+## Creator-authored guidance
+
+Keep advisory creation metadata separate from access grants and profile sharing.
+Bound plain-text fields in the server draft schema and validate enumerated
+preferences; no choice should mutate collaboration roles. Save and publish through
+existing revision/permission fences, exclude long guidance from catalogue
+projections, and test later edits/clearing against older published snapshots with
+real local D1. Source copies can retain authored metadata only within their
+explicit private-copy scope. Review portability allowlists independently.
+
+## Reports dashboard totals
+
+Contacts shares Daily semantic report status cards with Periodic. Daily totals count
+recipient rows; Periodic totals count report records. All periodic excludes Daily
+because these units differ. Preserve legacy view/report filter URLs and independent
+Daily/Periodic date/status scopes. Server totals and categories must use the same
+complete active predicate as rows, before pagination. Never display loaded-row
+category counts or stale/unknown totals as zero. Ordered scans must reject incomplete
+count receipts and duplicate IDs; scopes above their explicit read bound require
+narrowing instead of truncated totals. Preserve 100-report delivery selection and
+actor/scope epochs. See `apps/docs/platform/applications/reports.mdx` and the focused
+report-list/query and panel-counts regressions.
+
+
+## Parley practice and Meet handoff
+
+Parley shares the Meet runtime but owns discovery, scenario selection and private
+facilitator review. A review link must resolve the `meet` app origin explicitly:
+the shared runtime’s `BASE_URL` points at Parley when running there. Participant
+invitations must instead remain on the current Parley origin at `/r/<code>`,
+never `/sessions/<id>`. Codes do not confer authorization.
+
+Reset participation acknowledgement when switching the selected scenario. Keep
+the selection visible when search filters hide its option. Load saved private
+rubrics only after both session-owner and meeting-host checks; render the session
+snapshot rather than the current scenario revision. See the Parley product guide
+and studio setup, invitation, review-route and Meet-link regression tests.
+
+
+## Immediate notification selection
+
+Read immediate request bodies after authentication with the256KiB/4096chunk
+stream bound before JSON parsing, cancel overflow and return413 before database
+work. Preserve400 malformedJSON and original transport errors. Count empty-chunk
+no-progress reads as operations; byte limits alone do not bound chunk loops.
+Apply a10second total incoming-body deadline and return408 before deliverywork.
+Do not renew it on chunks or await an uncooperative cancellation; clear timers
+on every exit and retain original overflow/transport errors. Cover stalled/drip
+streams, exact deadlines, cancellation hangs and zero provider/database calls.
+Explicit immediate batch_ids requests accept at most100 IDs with existing
+single-ID length bounds; select deduplicated IDs using one capped private-schema
+query. Unrequested batches remain pending. Preserve complete logs and atomic
+provider-in-flight reconciliation. Empty-body automatic draining retains complete
+pagination: capping its oldest window before rollout filtering can starve later
+eligible deliveries. Add durable rollout-aware progress before bounding that path.
+A request bound does not cap logs, devices, automatic prefetch or total spend.
+See the Cron Control runbook and immediate-selection/request-budget regressions.
+## Colab expiry runtime regression
+
+Colab stores its completed expiry deadline in private state row3, atomically with
+room/audit writes. Keep schedule extensions independent and preserve existing room
+modes/end events. Use `apps/colab/src/server/room-alarm.test.ts` for bounded-operation,
+duplicate/restart/deadline regressions and
+`node --test apps/colab/scripts/verify-expiry-runtime.mjs` for the real local Worker
+and SQLite transaction behavior. Queue local execution with `ttr resources run`;
+use a private writable TMPDIR when shared temporary storage rejects writes. The
+fixture uses isolated configuration, loopback requests and no production bindings;
+its harness closes after tests. RPC handler invocation does not prove hosted alarm
+delivery or automatic retry semantics. See the Colab feature page for cost units
+and remaining acceptance evidence; release builds stay in CI.
+
+## Typed quick capture
+
+Reuse the existing notebook entry-kind list and authorized create command for
+plain text capture. Default to a page, retain the selected kind on failure, and
+reset it only after successful capture or context replacement. Keep pending and
+dirty-editor fences on every input, including kind selection. Do not inject
+structured starter metadata or publish captured entries implicitly. Cover the
+supported kinds against the draft schema, translated rendered labels and actual
+D1 publication/workspace/revocation boundaries; local fixtures do not establish
+hosted dialog acceptance. See the Lettin feature decision and quick-note tests.
+
+### Local D1 quota fixtures
+
+Seed large boundary datasets with a set-based SQL statement and assert the exact
+seed count before testing concurrent production mutations. Hundreds of separate
+prepared statements in a fixture batch can exhaust the per-test timeout under CI
+load without exercising more application behavior. Preserve the real mutation,
+quota race and cross-actor assertions; do not raise global timeouts or replace D1
+with mocks. Lettin's creator-bookmark quota regression uses 499 seeded references
+and two concurrent saves to verify the 500-reference boundary.
+
+## Scoped artwork reading dialogs
+
+Use the already projected gallery item and its validated media URL for a larger
+reading view. Preserve alt text, caption and credit; use accessible dialog titles,
+localized close controls, focus return and Escape behavior. Keep the dialog closed
+until the reader asks to open it. Direct media URLs preserve revocation checks;
+do not introduce optimizer caches, download endpoints or permission changes.
+In jsdom, assert the rendered referrer-policy attribute and allow the shared
+Radix focus scope's deferred unmount callback to settle before asserting focus
+return; keep the actual dialog interaction rather than replacing it with a mock.
+
+### Published outline search
+
+Filter only the current bounded displayed heading labels, with Unicode/case
+normalization and a bounded ephemeral query. Keep full content and truncation
+feedback intact. Reset local search when labels or scoped targets change; isolate
+articles and retain disabled private-preview defaults. Clear/empty recovery must
+keep heading navigation and enclosing-fold focus behavior. Do not search source
+IDs, omitted content, drafts or unavailable projections, or persist reader queries.
+Coverage: `document-outline-search.test.tsx`.
+
+### Public profile projections
+
+Public profile reads must use explicit query and response allowlists, independent
+of authenticated current-user DTOs. The default visible identity is avatar,
+banner, display name, and biography. Saving or publishing a notebook does not
+consent to sharing other profile details. Owning app surfaces must persist an
+explicit sharing choice, default legacy records to private, and enforce it on
+server reads and metadata. Lettin About sharing is separate from canonical
+account identity; see the profile decisions in the Lettin and user-management
+feature docs and their projection/privacy regression tests.
+
+## Date-only creator planning handoffs
+
+For navigation-only ecosystem integrations, use registered app origins and carry
+only the minimal explicitly chosen navigation value. Validate Gregorian day
+strings without rollover or server timezone conversion; keep notebook IDs and
+private text out of a date-only Calendar handoff. Destination session/workspace
+permissions remain authoritative. Block navigation during unresolved editor
+changes and reset context-local selections together with their owning context.
+See the Lettin Calendar decision and URL/rendered regressions.
+
+## Reviewing collaborator capabilities
+
+Stage owner access changes with immutable member IDs and workspace/notebook
+context. Describe edit/publication capabilities explicitly before confirmation;
+recheck current eligibility and ownership without treating UI checks as authority.
+Cancel sends no command, failure preserves review, and a synchronous submission
+fence prevents duplicate clicks before mutation state rerenders. Reset controls
+on context changes. Recipient acceptance is a distinct workflow; do not claim
+an owner confirmation establishes recipient consent. Lettin's collaborator DOM
+and D1 role/revocation regressions cover these boundaries.
