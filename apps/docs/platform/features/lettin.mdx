@@ -1098,3 +1098,25 @@ stable ties, input immutability, combined facets, workspace and empty recovery,
 revoked records and both language bundles. Existing membership and tag tests
 retain their coverage. Rendered tests use UI and transport doubles; exact-head CI
 and hosted browser acceptance remain separate delivery gates.
+
+## Private Studio cover-artwork filters
+
+General Studio and creative-space shelves show all accessible notebooks by default.
+Creators can find notebooks with or without saved cover artwork using a local
+facet. The facet follows the existing private cover renderer and the current
+authorized draft overview; it does not inspect published artwork, gallery images,
+remote image availability or historical metadata. A notebook with gallery images
+and no saved cover still appears under **Without cover artwork**.
+
+The facet combines with membership, tags, publication status, search and title
+ordering. Changing workspaces resets it; empty-result clear recovery resets every
+facet and restores default Studio order. Updated overviews immediately remove
+revoked notebooks and move records when their saved cover changes. Filtering
+performs no image probes, source reads, writes, persisted preferences or sharing,
+and changes no source consent, access grants or publication rules.
+
+Rendered regressions in `studio-artwork-filter.test.tsx` cover both languages,
+combined facets, saved-cover changes, revocation, workspace and clear recovery,
+and absence of transport. Existing Studio facet tests retain their coverage.
+Tests use local UI/translation fixtures; exact-head CI and hosted browser
+acceptance remain separate gates.

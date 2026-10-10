@@ -8,6 +8,11 @@ import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { ContentNotice } from './content-notice';
 import {
+  matchesStudioArtwork,
+  type StudioArtwork,
+  StudioArtworkFilter,
+} from './studio-artwork-filter';
+import {
   matchesStudioMembership,
   type StudioMembership,
   StudioMembershipFilter,
@@ -32,6 +37,7 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
   const t = useTranslations('lettin');
   const locale = useLocale();
   const [order, setOrder] = useState<StudioOrder>('source');
+  const [artwork, setArtwork] = useState<StudioArtwork>('all');
   const [search, setSearch] = useState('');
   const [membership, setMembership] = useState<StudioMembership>('all');
   const [tag, setTag] = useState<string | null>(null);
@@ -51,6 +57,7 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
         (filter === 'published' ? !!world.published_at : !world.published_at);
       return (
         matchesStudioMembership(world.role, membership) &&
+        matchesStudioArtwork(world.draft.image, artwork) &&
         matchesStatus &&
         (activeTag === null || world.draft.tags?.includes(activeTag)) &&
         `${world.draft.title} ${world.draft.description} ${(world.draft.tags ?? []).join(' ')}`
@@ -112,6 +119,7 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
       <StudioMembershipFilter value={membership} onChange={setMembership} />
       <StudioTagFilter tags={tags} value={activeTag} onChange={setTag} />
       <StudioOrderControl value={order} onChange={setOrder} />
+      <StudioArtworkFilter value={artwork} onChange={setArtwork} />
       <p role="status" className="sr-only">
         {t('worldCount', { count: announcedCount })}
       </p>
@@ -127,6 +135,7 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
               setMembership('all');
               setTag(null);
               setOrder('source');
+              setArtwork('all');
             }}
           >
             {t('clearFilters')}
