@@ -1077,3 +1077,24 @@ Regression evidence: `studio-tag-filter.test.tsx` covers combined facets, exact
 tag matching, duplicates, empty recovery, workspace reset, revoked records,
 removed tag options and both language bundles. These rendered fixtures are
 separate from exact-head CI/build and hosted browser acceptance.
+
+## Private Studio notebook ordering
+
+General Studio and creative-space shelves preserve their existing server order by
+default. Creators can choose ascending or descending title order over notebooks
+in the current authorized overview. Ordering uses the current interface locale,
+compares numbers naturally (2 before 10), and ignores case and accent differences
+when comparing titles. Equal titles retain their current server order. The view
+combines ordering with membership, publication, tag and search filters.
+
+The choice stays in component state and resets when changing workspaces. Clearing
+an empty filtered result restores all facets and the default Studio order. Updated
+overviews immediately remove revoked notebooks; sorting never fetches historical
+metadata, mutates the response, writes preferences, shares content, or changes
+source access or publication. This applies to private creator shelves only.
+
+Regression evidence: `studio-order.test.tsx` covers natural locale comparisons,
+stable ties, input immutability, combined facets, workspace and empty recovery,
+revoked records and both language bundles. Existing membership and tag tests
+retain their coverage. Rendered tests use UI and transport doubles; exact-head CI
+and hosted browser acceptance remain separate delivery gates.
