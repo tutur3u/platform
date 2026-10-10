@@ -11,6 +11,8 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/meet/plans` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/meet/plans/route.ts) |
+| `/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/personal` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/meetings/%5BmeetingId%5D/assistant/personal/route.ts) |
 | `/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/review` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/meetings/%5BmeetingId%5D/assistant/review/route.ts) |
 | `/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/meetings/%5BmeetingId%5D/assistant/route.ts) |
 | `/api/v1/workspaces/[wsId]/meetings/[meetingId]/costs` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/meetings/%5BmeetingId%5D/costs/route.ts) |
@@ -189,7 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/users/fields` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/fields/route.ts) |
 | `/api/v1/workspaces/[wsId]/users/groups/featured-counts` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/groups/featured-counts/route.ts) |
 | `/api/v1/workspaces/[wsId]/users/groups/possible-excluded` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/groups/possible-excluded/route.ts) |
-| `/api/v1/workspaces/[wsId]/users/groups` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/groups/route.ts) |
-| `/api/v1/workspaces/[wsId]/users/links/repair` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/links/repair/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

@@ -576,8 +576,11 @@ export function getWorkflowDecision({
         : globalVercelAffectingPaths
       ).has(filePath) ||
       (isCloudflareTarget &&
-        filePath === 'patches/@opennextjs%2Fcloudflare@1.20.6.patch' &&
-        ['meet', 'lettin', 'parley'].includes(target.app))
+        ((filePath ===
+          'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch' &&
+          target.app === 'parley') ||
+          (filePath === 'patches/@opennextjs%2Fcloudflare@1.20.6.patch' &&
+            ['meet', 'lettin', 'parley'].includes(target.app))))
     ) {
       return true;
     }

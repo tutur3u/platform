@@ -7,6 +7,13 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@tuturuuu/types/primitives/Priority',
+        replacement: resolve(
+          __dirname,
+          '../../packages/types/src/primitives/Priority.ts'
+        ),
+      },
+      {
         find: /^@tuturuuu\/internal-api$/,
         replacement: resolve(
           __dirname,

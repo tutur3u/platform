@@ -1,45 +1,23 @@
 //! Handler for `GET /api/v1/workspaces/:wsId/settings/email-audit`.
 //!
-//! Ports the legacy Next.js route at
-//! `apps/web/src/app/api/v1/workspaces/[wsId]/settings/email-audit/route.ts`.
-//!
-//! Legacy behavior:
-//!   1. Resolves workspace permissions via `getPermissions({ wsId })` and requires
-//!      the `view_infrastructure` permission; otherwise returns
-//!      `403 { "message": "Forbidden" }`.
-//!   2. Reads aggregate email stats through the `get_email_stats` RPC
-//!      (`filter_ws_id = wsId`, `start_date`/`end_date` undefined). On RPC error
-//!      the legacy route logs and falls back to all-zero stats (it does NOT fail
-//!      the request), so this handler mirrors that fallback.
-//!   3. Reads the latest 25 `email_audit` rows ordered by `created_at` desc with
-//!      an exact total count, selecting
-//!      `id, subject, status, provider, template_type, source_email, created_at`.
-//!      NOTE: the legacy query does NOT scope `email_audit` by `ws_id` — it is a
-//!      global infrastructure read gated solely by the `view_infrastructure`
-//!      permission (a root-workspace permission). This handler preserves that
-//!      (unscoped) behavior verbatim.
-//!   4. On `email_audit` read failure returns
-//!      `500 { "message": "Failed to load email audit rows" }`.
-//!   5. On success returns `200 { count, data, stats }`.
-//!
-//! Both reads use the admin (service-role) client in the legacy route, so RLS is
-//! bypassed; this handler reads with the service-role key to match.
-//!
-//! BEHAVIOR GAP: the legacy permission gate returns `403 { "message": "Forbidden" }`
-//! only for the missing-permission case; an unauthenticated caller surfaces as a
-//! thrown error in `getPermissions`. To stay faithful to the single explicit
-//! status the route documents, every authorization failure here
-//! (`Unauthorized | Forbidden | NotFound`) maps to `403 { "message": "Forbidden" }`,
-//! and configuration/upstream failures map to `500`.
+//! Global audit access accepts only the ROOT workspace ID or the case-insensitive
+//! `internal` alias. Verify the current actor and require ROOT
+//! `view_infrastructure` before either service-role audit or stats read.
+//! Missing actors return 401; missing permissions return 403; internal errors
+//! return 500. App sessions must target Infrastructure.
+//! Audit projection/count/25-row ordering and zero-stats fallback match the
+//! live Infrastructure route. This Rust handler is a future migration target.
 
 use serde_json::{Value, json};
 
 use crate::{
-    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    no_store_response,
+    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
+    infrastructure_root_auth::ROOT_WORKSPACE_ID,
+    json_response, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
     workspace_permission_check::{
         WorkspacePermissionAuthorizationError, authorize_workspace_permission,
+        authorize_workspace_permission_allowing_app_sessions,
     },
 };
 
@@ -47,6 +25,7 @@ const EMAIL_AUDIT_PATH_PREFIX: &str = "/api/v1/workspaces/";
 const EMAIL_AUDIT_PATH_SUFFIX: &str = "/settings/email-audit";
 const VIEW_INFRASTRUCTURE_PERMISSION: &str = "view_infrastructure";
 const FORBIDDEN_MESSAGE: &str = "Forbidden";
+const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const AUDIT_LOAD_ERROR_MESSAGE: &str = "Failed to load email audit rows";
 const INTERNAL_ERROR_MESSAGE: &str = "Internal server error";
 const EMAIL_STATS_RPC: &str = "get_email_stats";
@@ -73,29 +52,48 @@ async fn email_audit_response(
     raw_ws_id: &str,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
+    if raw_ws_id != ROOT_WORKSPACE_ID && !raw_ws_id.eq_ignore_ascii_case("internal") {
+        return message_response(403, FORBIDDEN_MESSAGE);
+    }
+
     let contact_data = &config.contact_data;
 
     if !contact_data.configured() {
         return message_response(500, INTERNAL_ERROR_MESSAGE);
     }
 
-    let ws_id = match authorize_workspace_permission(
-        contact_data,
-        request,
-        raw_ws_id,
-        VIEW_INFRASTRUCTURE_PERMISSION,
-        outbound,
-    )
-    .await
-    {
-        Ok(authorization) => authorization.ws_id,
-        Err(
-            WorkspacePermissionAuthorizationError::Unauthorized
-            | WorkspacePermissionAuthorizationError::Forbidden
-            | WorkspacePermissionAuthorizationError::NotFound,
-        ) => {
-            return message_response(403, FORBIDDEN_MESSAGE);
+    let authorization = if contact::request_has_app_session_token(request) {
+        match contact::resolve_app_session_identity(config, request, &["infra"]) {
+            Ok(identity) if !identity.id.trim().is_empty() => {}
+            _ => return message_response(401, UNAUTHORIZED_MESSAGE),
         }
+        authorize_workspace_permission_allowing_app_sessions(
+            config,
+            request,
+            ROOT_WORKSPACE_ID,
+            VIEW_INFRASTRUCTURE_PERMISSION,
+            outbound,
+        )
+        .await
+    } else {
+        authorize_workspace_permission(
+            contact_data,
+            request,
+            ROOT_WORKSPACE_ID,
+            VIEW_INFRASTRUCTURE_PERMISSION,
+            outbound,
+        )
+        .await
+    };
+    let ws_id = match authorization {
+        Ok(authorization) => authorization.ws_id,
+        Err(WorkspacePermissionAuthorizationError::Unauthorized) => {
+            return message_response(401, UNAUTHORIZED_MESSAGE);
+        }
+        Err(
+            WorkspacePermissionAuthorizationError::Forbidden
+            | WorkspacePermissionAuthorizationError::NotFound,
+        ) => return message_response(403, FORBIDDEN_MESSAGE),
         Err(WorkspacePermissionAuthorizationError::Internal) => {
             return message_response(500, INTERNAL_ERROR_MESSAGE);
         }
