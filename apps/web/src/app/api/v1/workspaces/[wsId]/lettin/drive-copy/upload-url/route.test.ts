@@ -1,6 +1,6 @@
 import '../copy-auth.test-fixture';
+import { uploadLettinNotebookDriveCopy } from '@tuturuuu/internal-api/lettin';
 import { expect, it } from 'vitest';
-import { uploadLettinNotebookDriveCopy } from '../../../../../../../../../../../packages/internal-api/src/lettin-drive-copy';
 import {
   actorId,
   expiredToken,
