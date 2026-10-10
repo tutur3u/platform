@@ -943,6 +943,17 @@ Signed-session route fixtures use the production token verifier, with workspace
 and provider adapters isolated. Hosted authorization and upload acceptance remain
 separate gates.
 
+
+### Published reading counts
+
+Public reader indicators must derive from the selected `published.content` only.
+Reuse Lettin's bounded writing-statistics model for body length; opt in explicitly
+from PublicWorld so private DocumentView previews keep their existing behavior.
+Count expandable body text, exclude metadata/marks/media, and retain the partial
+warning at traversal limits. Do not imply reading time or draft publication from
+these counts. Regression: `published-reading-statistics.test.tsx` and
+`writing-statistics-model.test.ts`.
+
 ## Connected Mail provider boundaries
 
 Personal Gmail/Outlook accounts remain separate from managed Mail domains and

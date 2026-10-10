@@ -1658,3 +1658,27 @@ automatic retry, rollback, or runtime migration is inferred from this boundary.
 Signed-session route fixtures use the production token verifier, with workspace
 and provider adapters isolated. Hosted authorization and upload acceptance remain
 separate gates.
+
+
+## Published body length
+
+The public notebook and selected entry reader display word and non-whitespace
+grapheme counts from that item's published rich-text body. These are body counts:
+titles, descriptions, facts, tags, artwork, URLs, marks and other metadata are
+excluded. Expandable body sections are included even while collapsed. Private
+drafts and extra fields on incoming records are never used by this reader; the
+private document preview does not opt into the indicator. Changing entries
+recomputes counts for the selected publication, and a missing entry falls back to
+the published notebook. This adds no publication, sharing or storage operation.
+
+The reader reuses the writing-statistics model and its 25-level / 20,000-node
+bounds. Words use word-like language segments; characters use graphemes excluding
+whitespace. These counts do not estimate reading time or count semantic words in
+every language. A visible partial-count warning appears when traversal reaches a
+limit. English and Vietnamese labels explain the scope.
+
+Regression evidence: `published-reading-statistics.test.tsx` exercises both locales,
+published-only selection, notebook fallback, private-preview omission, metadata
+omission and partial-warning reset. `writing-statistics-model.test.ts` covers
+Unicode segmentation, leaf/attribute exclusion, block boundaries and traversal
+limits. Exact-commit CI and hosted reader acceptance remain separate gates.

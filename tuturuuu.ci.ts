@@ -17,6 +17,7 @@ export const ci = {
   'topic-delivery-foundation-contract.yaml': true,
   'tutoring-teacher-hours-contract.yaml': true,
   'external-project-storage-analytics-contract.yaml': true,
+  'tutoring-absence-credit-contract.yaml': true,
   'report-review-receipts-contract.yaml': true,
   'programming-app-builds.yaml': true,
   'mail-calendar-tasks-builds.yaml': true,
