@@ -188,3 +188,14 @@ the original lease; require validated clock state and bounded future deadlines.
 Count registration and compensating removal RPCs separately, and retain failed
 removal obligations. Controlled helper tests do not prove hosted discoverability,
 real durable timestamp persistence or authenticated stop/reschedule fencing.
+
+For Meeting media compensation, read the operation envelope in the programming
+realtime runbook. Count legacy inventory, close and failed-close confirmation per
+provider session, each track and each progress write. The helper traverses the
+complete pending session set; repeated reconstruction and failed persistence can
+repeat successful provider work. Counter saturation at 32 and hourly backoff do
+not terminate the job, and new obligations can reset the delay. Preserve pending
+tracks and confirmed-progress recovery while introducing a durable finite job
+budget, bounded calls/body reads and authenticated stop/reschedule fences.
+Controlled helper counts exclude surrounding room storage/alarm operations and
+do not prove hosted SFU shutdown or account-wide billing safety.
