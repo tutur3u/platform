@@ -180,6 +180,11 @@ Retain successful CI-built Parley artifacts even when subsequent fixture validat
 fails, with bounded error-body diagnostics. A failed identity probe blocks page
 acceptance; retained artifacts are diagnostic evidence, not qualified releases.
 See the programming realtime runbook for pinned replay and delivery boundaries.
+Inspect structured harness logs for a generic identity-route HTTP 500; cache
+initialization may fail before the handler runs. Distinguish CI-absolute WASM/data
+imports that prevent downloaded-artifact replay from the original runtime failure.
+Preserve original files and asset bytes when using private relocation mappings;
+that diagnostic replay does not qualify the canonical artifact.
 
 ## Completed Live finalization receipts
 
