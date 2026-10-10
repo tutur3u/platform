@@ -706,3 +706,11 @@ Unstarted default, and show zero stages. Explain that Ready is authored progress
 rather than publication or completion evidence. Do not persist computed metrics
 or extend public projections. Lettin's bilingual summary and studio filter
 regressions preserve these boundaries.
+
+### Composed creator browsing reset
+
+When private browsing adds facets outside shared controls, pass an explicit reset
+callback through the panel so Clear filters resets every facet together. Keep the
+standalone controls' default reset, current section/selection and dirty-state
+disabling. Do not clear editor drafts or persist browsing state. Regression:
+`world-studio-progress.test.tsx` covers work-stage and standard-facet recovery.

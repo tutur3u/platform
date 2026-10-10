@@ -242,6 +242,10 @@ export function WorldStudio({
                 disabled={dirty}
                 filters={filters}
                 onChange={setFilters}
+                onClear={() => {
+                  setFilters({ ...initialWikiFilters });
+                  setProgress('all');
+                }}
                 onSelect={select}
               />
             </>
