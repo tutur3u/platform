@@ -265,8 +265,10 @@ Public catalogues use 24-card pages with server-side search and creator filters;
 Tulletin uses Tuturuuu's canonical `users.display_name`, `avatar_url`, `bio`,
 `handle`, and additive `banner_url` fields. A username is globally reserved in
 `handles`; renaming retains earlier reservations. Existing legacy usernames
-remain readable. Public creator surfaces select only public fields and require
-published notebooks; they never expose email or private account details.
+remain readable. Public creator surfaces require published notebooks and display
+only avatar, banner, display name, and biography by default. Creator names link to
+the platform
+`/u/[username]` profile when a username exists.
 
 `update_public_user_profile` is a service-role-only transaction. The API must
 resolve the authenticated actor before calling it. A conflicting username or
@@ -390,6 +392,17 @@ unpublished entries. Dates order the timeline; undated entries remain accessible
 The satellite Structure shell shares workspace navigation, notifications, and
 account controls with other Tuturuuu apps.
 
+Wiki entry creation defaults to a blank document. Creators can opt into a guided
+outline for any of the nine entry kinds. The selected kind determines three
+localized headings and editable prompts; changing the kind before creation uses
+the newly selected outline. Prompts are saved as ordinary rich text in the current
+UI language, so later locale changes do not translate existing content. Starters
+add no tags, links, relationships, dates, or permissions and never publish content.
+They apply only to newly created wiki entries; existing entries, notebook starters,
+and imports keep their content. Regression coverage: `entry-starters.test.ts`
+validates every kind in English and Vietnamese against the live draft schema;
+`wiki-create-entry.test.tsx` covers opt-in creation, kind changes, and blocked submits.
+
 The in-house editor accepts rich text and Markdown source, including headings,
 lists, task lists, tables, links, images, and inline formatting. Applying Markdown
 is explicit; saving is disabled until source edits are applied or cancelled.
@@ -400,8 +413,15 @@ access to private task or workspace data.
 Canonical identity is available to workspace members. Approved creators with
 `manage_documents` can additionally edit their About profile: creative headline,
 pronouns, location, interests, portfolio links, and rich biography. About data is
-owned by the creator in Lettin D1; public creator pages require a published
-notebook and never select private account fields. Paper is the default palette;
+owned by the creator in Lettin D1 and defaults to private, including existing
+records without a sharing choice. Owners explicitly opt in with Share my About
+profile publicly and save. Turning it off and saving revokes future public reads.
+The opt-in shares the entire About section (headline, pronouns, location,
+interests, links, rich biography, and theme), only on a creator page backed by a
+published notebook. It does not share private workspace data. Private About content is retained for editing and preview.
+Regression coverage: `creator-about-privacy.test.ts` verifies legacy privacy,
+explicit boolean consent, and revocation; `creator-profile.test.ts` verifies the
+public identity allowlist. Paper is the default palette;
 forest, midnight, and rose are alternatives, with clean or editorial typography.
 World and About themes save with their content. Reduced motion respects user
 preference and the saved theme setting.
@@ -578,3 +598,1041 @@ technology users can locate the field without treating the help as its name.
 English and Vietnamese rendered regressions in
 `apps/lettin/src/components/creator-profile-labels.test.tsx` cover the exact labels,
 help association, and reserved-name validation.
+
+
+### Saved-entry browsing and publication facets
+
+The creator notebook browser searches saved entry titles, descriptions, aliases,
+facts, tags and rich-text body text. It can combine an exact case-sensitive entry
+tag with all entries, private drafts, published entries, or saved changes since
+publication. “Published” includes entries whose saved draft has changed since
+publication; “private” means there is no published snapshot. Saved-change status
+compares document values with the published snapshot, ignoring object key order
+and omitted optional fields while retaining meaningful ordered-array differences.
+It describes saved server data, not the current unsaved editor buffer, and never
+publishes anything automatically. Only the creator browser displays that badge.
+
+Card views default to the notebook's existing order and optionally sort by title
+ascending/descending or kind then title, using the current UI locale and stable
+ID tie-breaking. Timeline views preserve chronological order. Relationship views
+require both endpoints to pass publication/tag facets before matching endpoint
+names, relationship labels or localized relationship kinds; their result count
+reports matching connections. Empty results retain filters and an explicit clear
+action. Browsing controls and entry selection are disabled while unsaved editor
+changes require resolution. Filters persist while opening and returning from an
+entry in the same mounted notebook studio; they are not stored in a public URL or
+persisted across sessions.
+
+The authorized notebook query still owns access checks and supplies only entries
+available to the creator. These controls do not read another workspace or grant
+access. Public reader body search uses the existing published-only projection;
+private text, creator facets and saved-change badges are not passed to readers.
+No profile sharing rules change. Regression evidence: `wiki-browse-model.test.ts`,
+`wiki-browsing-panel.test.tsx`, `wiki-model.test.ts` and `public-world.test.tsx` cover
+composed facets, ordering, endpoint fences, saved/public text boundaries, empty
+result recovery and dirty-state interaction. Hosted browser acceptance and
+exact-head CI remain separate delivery gates.
+
+### Ordered artwork galleries
+
+Lettin notebooks and wiki entries may include an optional ordered gallery of up to
+12 images, separate from the cover and inline document images. Each gallery image
+requires alt text and may include a caption (up to 1,000 characters) and credit
+(up to 200 characters). Creators can add HTTPS URLs or upload artwork through the
+existing notebook media service, reorder images, edit metadata and remove images
+from the draft. Blank alt text or invalid image URLs block saving.
+
+Content notices remain before cover and gallery artwork. Published document
+heading outlines remain available alongside the gallery and target rich document
+headings, rather than artwork captions or credits. The combined reader regression
+in `document-outline.test.tsx` covers this ordering and scoped heading targets.
+
+Gallery changes use the existing explicit save and publish controls. Public
+readers receive only the published snapshot; catalogue summaries omit galleries.
+Uploading alone does not make artwork public. Every managed gallery image is
+checked against the notebook's live media ownership in the same atomic draft
+write as existing artwork. Draft and published gallery references participate in
+existing cleanup retention; a removed image remains retained while its published
+snapshot still references it. Unpublishing the notebook revokes anonymous access
+to its managed media. External HTTPS images remain controlled by their host.
+
+Uploads block save, discard and publish until settled; failed uploads preserve
+the existing gallery. Deferred results after leaving the editor cannot mutate
+the next document. Read-only galleries render escaped captions and credits,
+explicit alt text and revocable media URLs without optimizer caching. Legacy
+documents with no gallery continue to render normally. Regression evidence:
+`artwork-gallery.test.ts`, `artwork-gallery.test.tsx`, and
+`gallery-storage.test.ts`; hosted interaction and exact-head app CI remain
+independent acceptance gates.
+
+## Discover notebooks by published tags
+
+The public notebook catalogue displays creator-authored tags from the published
+notebook snapshot. Clicking a tag opens the global catalogue with an exact tag
+filter. Creator catalogue cards also link to this global tag view; their ordinary
+search and pagination keep the current creator scope. The catalogue search form
+and previous/next links preserve an active tag filter, and clearing only the tag
+retains the text search. An empty filtered result offers a clear-filter action.
+
+Tag matching is case-sensitive and exact, including Unicode and punctuation;
+it uses the stored published tag, rather than a partial text match. Server-side
+filtering runs before the 24-card page limit and its one-row next-page sentinel.
+Catalogue cards now retain published tags, while entry documents, wiki facts and
+private draft revisions and longer creation guidance remain excluded from catalogue summaries. Private draft
+changes only affect discovery after the creator republishes the notebook.
+
+The `tag` query accepts one nonempty trimmed value of at most 40 characters,
+matching the notebook editor limit. Malformed tag/text filters on the catalogue page return not found;
+malformed API filters return 400. API and page share the tag validation schema.
+No profile field or sharing setting is changed. Publishing a notebook already
+makes its tags public in the reading view; this decision extends those same tags
+to discovery cards. English and Vietnamese labels cover filtering controls.
+
+Regression coverage: `public-tag-discovery.test.tsx` checks independent tag links,
+filter preservation and empty results; `public-catalogue-filters.test.ts` checks
+bounds; the public worlds API tests cover rejected filters; `public-catalogue-storage.test.ts`
+checks actual local D1 filtering, pagination and published snapshot isolation.
+The pagination dataset uses one set-based D1 seed with an asserted 30-row count;
+separate real create/save/publish mutations retain snapshot-boundary coverage.
+Keep fixture setup bounded so timed-out sequential writes cannot contaminate the
+next regression.
+
+### Searchable relationship authoring
+
+The creator entry editor searches relationship targets by title and alias and
+filters them by entry kind. It uses only the notebook records already loaded
+through the creator's authorized workspace session; it does not discover records
+from another notebook or workspace. Search and filters are local UI state.
+Creators choose a relationship type before explicitly clicking a target. The
+current entry and an existing target/type pair are excluded, while another type
+for the same target remains available. Changing an existing relationship type
+also prevents a conflicting pair. The existing 100-relationship limit applies to
+addition; removal remains available at the limit. Results render in batches of
+50, with explicit expansion and reset on filter changes. Type changes retain
+the focused row control; legacy repeated target/type rows remain independently
+editable until explicitly removed. Target counts follow each locale’s plural rules.
+
+These actions update the editor draft only. Existing labels, facts, aliases and
+chronology are preserved. A missing target is shown as unavailable and retained
+until explicitly removed; search does not silently repair or delete references.
+The normal explicit Save action, permission checks and expected revision still
+control persistence. Publishing remains a separate action. No profile fields,
+source text, consent or access grants are transferred. This workflow applies to
+creator editing, not the public reader or relationship graph.
+
+Regression coverage: `relationship-authoring-model.test.ts` checks target/type
+fences, bounds and source preservation; `wiki-relationships-editor.test.tsx`
+checks explicit draft actions, search, kind filters, bounded rendering,
+unavailable references, focused control identity, legacy repeated rows and
+integration with the surrounding wiki details editor.
+`relationship-count.test.ts` formats the actual English and Vietnamese messages
+for zero, one and multiple targets.
+The existing `entry-editor.test.tsx` covers dirty drafts during pending saves.
+DOM fixtures do not prove hosted keyboard, layout or account-switch acceptance.
+
+### Private saved notebooks
+
+Any signed-in Lettin reader can explicitly save a published notebook from its
+public reading page and manage the private library at `/saved`. Creator approval
+and workspace document permissions are not required because saves grant no
+source access. Each actor may save up to 500 notebook references. Saves and
+removals are idempotent; the actor comes from the Lettin app session, and both
+reads and writes require the expected actor to prevent account-switch crossover.
+Client query keys also include the actor.
+
+Saves are private to the reader: they never appear on public profiles, in creator
+notifications, or in public popularity counts. No copy of the draft, document,
+gallery or profile is retained. Library cards read only title, description, cover
+and credit from the source's current published snapshot. Unpublishing hides
+those details and leaves a removable unavailable reference; deleting a notebook
+cascades its saved references. Saving a new unpublished notebook is rejected.
+A save never permits publishing, editing or accessing private artwork.
+
+The additive local D1 migration `0005_reader_bookmarks.sql` must be present
+before enabling the API. Local migration application and consent boundaries are
+covered by `reader-bookmarks.test.ts`, with session/input/cache fencing in the
+bookmark route tests and reader controls. Exact-head app build, hosted
+session/account-switch behavior and authorized migration delivery remain separate
+gates; no production application is claimed by local tests.
+
+### Published document heading outlines
+
+Public notebook and published-entry readers display an “On this page” outline
+when the selected document has at least two nonempty rendered headings. The
+outline uses only the currently rendered published document, never an editor
+buffer, private draft, unavailable entry or another workspace. Content notices
+remain before artwork and heading navigation in the combined reader. Creator editor
+previews keep outlines disabled by default. No document or publication state is
+written and no reader interactions or preferences are recorded.
+
+Heading labels are plain escaped text with whitespace collapsed; markup, author
+IDs, image metadata and link targets are not interpreted as navigation targets.
+Targets use document scope and tree positions so repeated titles remain distinct.
+The outline follows the renderer's depth and leaf-node rules, shows at most the
+first 100 headings, and reports truncation. Long labels are capped at 160
+characters; full heading text remains in the document. Sources are unchanged.
+
+An ordinary outline click opens enclosing collapsed sections, focuses the heading
+and scrolls within the same article. It uses automatic movement and heading focus
+styling, avoiding forced animation. The explicit jump does not add browser-history
+entries. Modified link clicks retain native anchor behavior. Selected-entry
+changes replace outline labels and targets. These are local reading targets, not
+stable section-permalink or immutable-snapshot guarantees: future publication can
+change heading positions. A copied public link still observes source publication
+and retirement boundaries.
+
+Readers can explicitly search the current outline's displayed heading labels.
+Search starts empty, normalizes Unicode and letter case, and accepts at most 100
+characters. It filters only the bounded outline; full document content and the
+truncation notice remain visible. Empty results include a clear-search action.
+Each article keeps its own ephemeral search, reset when heading labels or scoped
+targets change. Private previews retain their disabled-outline default. Queries
+are never stored, sent to an API or added to the URL; IDs, description text,
+private drafts and omitted headings are not searchable through this control.
+`document-outline-search.test.tsx` covers bilingual controls, normalization,
+bounds, clear/empty recovery, current-document resets, isolation and retained
+fold-opening focus behavior.
+
+Regression evidence: `document-outline-model.test.ts` and `document-outline.test.tsx`
+cover repeated/empty/nested headings, bounds and escaping,
+matching renderer IDs, fold opening/focus, article isolation, private preview and
+published selection boundaries. Exact-head CI and hosted scrolling/focus/browser
+acceptance remain separate gates; DOM fixtures do not prove browser layout.
+### Saved entry duplication
+
+In the Lettin notebook studio, a creator with notebook editing access can explicitly
+duplicate a saved entry and supply a new title. The copy belongs to the same
+notebook, starts at revision one, and is always unpublished. It retains saved
+rich text (including ordinary document hyperlinks), artwork, ordered galleries,
+content notices, credit, tags, kind,
+aliases, facts and chronology; structured links and wiki relationships are cleared.
+There is no cross-notebook copy or automatic publication. Unsaved editor changes
+block the action; saving or discarding them comes first. After success, an explicit
+Open copy action selects the new draft and remains blocked while edits are unsaved.
+Mutations are not automatically retried after an ambiguous response.
+
+The server reads the saved draft, validates it, and fences the insert against the
+source revision, current creator/collaborator access and notebook artwork ownership.
+Every managed gallery image is checked by the same atomic ownership fence.
+A stale revision, revoked permission or retired artwork cannot create a copy.
+Source drafts and published snapshots remain unchanged. Editors can duplicate
+without acquiring publishing permission. Regression evidence lives in
+`duplicate-entry.test.ts` and `duplicate-entry.test.tsx`; actual app build and
+hosted interaction require exact-head CI and browser acceptance.
+
+## Content notices
+
+Notebook and wiki entry editors support an optional creator-authored content
+notice of up to 500 characters. The default is empty, including historical
+content. Notices appear before artwork and reading content in document previews,
+public notebook reading, public discovery cards, private notebook shelves and
+wiki entry cards. Labels are available in English and Vietnamese.
+
+Notices are advisory and do not hide content, replace moderation, grant access or
+publish a draft. A saved notice belongs to the private draft until a publisher
+republishes that notebook or entry; readers receive the notice from its published
+snapshot. Clearing and republishing removes it publicly. Profile identity fields
+and consent to share creator details are unaffected. Titles and metadata remain
+visible under existing publication rules.
+
+Regression coverage: `content-notice.test.tsx` checks reading/card placement and
+legacy empty notices; `content-notice-schema.test.ts` checks limits and command
+validation; the entry editor test checks saving notice edits.
+`storage.test.ts` exercises the real local D1 mutation and catalogue queries to
+confirm later edits and clearing remain private until republished.
+
+### Creation attribution and collaboration guidance
+
+Notebook and entry creators can write creation credits and usage notes of up to
+1,000 characters each, and explicitly choose an unspecified, ask-first, open-to-
+proposals or closed collaboration preference. The default is unspecified with no
+notes; historical documents display no guidance. These fields are separate from
+cover-art credit and from profile sharing settings.
+
+Editing changes the local draft. Explicit Save uses the existing revision and
+permission checks; only publishing the notebook or entry exposes its guidance.
+Later edits and clearing stay private until republished. Public entries also
+require a published notebook. Catalogue summaries omit this longer guidance.
+Saved-entry copies retain authored guidance in a new unpublished draft.
+
+Reader guidance renders escaped plain text and explains its advisory scope. It
+creates no access grant, invitation, ownership verification or automatic usage
+permission. Collaboration preferences do not alter notebook roles. Public
+profiles retain their separate avatar/banner/name/biography default; no identity
+fields are copied into creation guidance. Portability integrations must explicitly
+review new fields rather than infer permission to transfer them.
+
+Regression evidence: `creation-guidance.test.ts` exercises real local D1 snapshot,
+copy and authorization boundaries; `creation-guidance.test.tsx` checks escaping,
+empty defaults, draft controls and content-notice placement. Exact-head app builds
+and hosted interaction remain independent delivery gates. Gallery integration
+coverage also publishes guidance and artwork together while omitting both from
+catalogue cards; the document regression retains notices, artwork credits and
+heading navigation alongside advisory guidance.
+
+### Private saved creators
+
+Signed-in readers can explicitly bookmark a creator with a published notebook
+from the Lettin creator page and manage up to 500 creator references in `/saved`.
+The choice is private to the initiating reader. It sends no notification,
+creates no public follower count or list, changes no profile fields, and grants
+no source access. Notification subscriptions remain a separate workflow.
+
+Only creator IDs and save timestamps are retained. The library reads a current
+published notebook title for navigation; it never copies a profile or draft.
+A creator without published notebooks is unavailable but remains removable.
+Reads and writes require the expected app-session actor; cache keys include that
+actor. Removal is idempotent, failed mutations preserve the confirmed state, and
+ambiguous writes are not automatically retried. Anonymous readers receive a
+sign-in link with a canonical creator return path. Public profile defaults remain
+avatar, banner, display name and biography; no bookmark choices are exposed there.
+
+Regression evidence: `creator-bookmarks.test.ts` applies the additive D1 migration
+and checks private actor scope, published-only projection, quota and withdrawal.
+The quota fixture seeds 499 references with one SQL operation, verifies the seed
+count, then races two real save operations against the remaining slot;
+creator bookmark route and rendered reader-library tests cover session/command
+fences and explicit UI actions. Exact-head CI and hosted keyboard/account-switch
+acceptance remain separate delivery evidence.
+
+### Private quick-note capture
+
+The authorized notebook studio offers explicit plain text quick-note capture.
+A title of up to 160 characters and text of up to 10,000 characters and 100 lines
+create an unpublished entry through the existing entry command, defaulting to a page. Empty input or
+values beyond these bounds cannot be submitted; text is never silently truncated.
+Internal blank lines are preserved. URLs and markup remain plain text without
+importing remote content or creating references, permissions or publication.
+
+Pending capture locks the form and blocks repeated submission. Failure preserves
+the input for an explicit retry. A successful save clears the capture fields and
+offers a separate Open action; opening remains disabled while the current editor
+has unsaved changes. Notebook/workspace context replacement resets local capture.
+Publishing still requires the existing separate role and revision checks.
+
+Regression evidence: `quick-note-model.test.ts` validates bounds and actual draft
+schema; `quick-note.test.tsx` covers commands, failure, repeated submits, pending
+and dirty-navigation fences and context resets. `storage.test.ts` uses local D1
+to verify saved private notes, public omission and workspace/revocation boundaries.
+These fixtures do not establish hosted dialog or keyboard acceptance.
+
+### Larger artwork reading view
+
+Every valid gallery image has an explicit, keyboard-accessible View artwork
+action. The dialog shows the same source image at a larger size with its authored
+alt text, caption and credit. It stays closed until requested, and supports
+Escape and a localized Close artwork control. It does not provide an export or
+download action. The gallery remains bounded to twelve images in authored order.
+
+Public readers receive only the published gallery projection. Authorized private
+previews retain their existing media access checks. Both views use direct media
+URLs without optimizer caching or referrer forwarding; opening the dialog does
+not publish, copy or grant access to a source. This feature does not change cover
+artwork or profile visibility. Regression evidence: `artwork-viewer.test.tsx`
+exercises real dialog interaction, focus return, bilingual controls, escaped
+attribution and invalid URLs; `artwork-gallery.test.tsx` covers gallery bounds
+and `gallery-storage.test.ts` covers publication and media retention boundaries.
+### Typed private quick capture
+
+Quick capture defaults to a page and lets creators explicitly choose any supported
+notebook entry kind before saving, including character, location, story and event.
+The selected kind persists on a failed save; successful capture and notebook context
+replacement restore the page default. Pending requests and unsaved editor changes
+block the selector together with the existing capture controls. Text limits and
+plain text treatment remain the same. Capture adds no structured starter facts,
+relationships, source links, profile details or publication metadata. The normal
+notebook editor can enrich the saved entry afterward.
+
+This rule applies only to the authenticated Lettin notebook studio. Every kind
+uses the existing authorized `createEntry` command and remains unpublished until
+an explicit publication action. Publishing the notebook alone does not publish
+captured entries. Regression evidence: `quick-note-model.test.ts` checks all kinds
+against the shared draft schema, `quick-note.test.tsx` checks English/Vietnamese
+selection, explicit commands, reset, failure and blocked controls, and the local D1
+`storage.test.ts` covers page, character and story privacy, cross-workspace denial
+and revoked collaborator access. Exact-head builds and hosted dialog acceptance
+remain independent delivery gates.
+
+### Copying published notebook and entry links
+
+Public notebook readers can explicitly copy the canonical Lettin notebook URL or
+the selected published-entry URL. Only an entry present in the current published
+projection is included as `?entry=...`; unavailable or arbitrary query-selected
+IDs fall back to the notebook URL. Source notebook and entry IDs are routing
+identifiers, not access grants. A later unpublish/retirement may make a copied link
+unavailable; copying does not freeze content or bypass publication checks.
+
+The shared control copies only a validated public URL. It does not include private
+workspace paths, actor identifiers, draft text, titles, profile details, tracking
+values or permissions. Clipboard denial exposes a manually selectable URL and a
+retry action. Copying never sends a message, notifies a creator, publishes content
+or records a reader interaction. Regression evidence: `public-world.test.tsx`,
+`public-content-link.test.ts` and `public-link-button.test.tsx` cover published-entry
+selection, route fences, explicit intent, failure recovery and stale completion.
+Exact-head CI and hosted browser clipboard acceptance remain separate gates.
+
+### Creator catalogue filter recovery
+
+A creator's public catalogue requires at least one currently published notebook
+in an unfiltered first-page read. Missing identities and creators without
+published notebooks still return not found. Once that publication requirement
+is met, a search, exact tag or later page with no results renders a recoverable
+empty catalogue instead of treating the creator as missing. The clear-filter
+action stays on that creator's canonical page. Paging and clearing a tag preserve
+the creator scope and active search. Notebook-card tag links remain global
+discovery links. The first unfiltered page reuses its
+publication check results rather than reading the same catalogue twice.
+
+Creator routes reuse the public catalogue's normalized bounded filter schema;
+malformed repeated query parameters are rejected. Public profile defaults remain
+avatar, banner, display name and biography; additional about details require
+explicit owner sharing. Filter recovery does not expose unpublished notebooks,
+private entry data or additional profile fields, and grants no source access.
+Existing English/Vietnamese empty-result controls are reused. Regression evidence:
+`creators/[creatorId]/page.test.tsx`, `public-tag-discovery.test.tsx` and the
+public publication filters in `server/public-catalogue-storage.test.ts`.
+
+## Private saved-library filters
+
+The authenticated saved-library page lets readers filter their saved notebook
+and creator references by availability and current published title. Each library
+starts with all references visible and an empty search. Search is case-insensitive,
+Unicode-normalized, bounded to 100 characters, and remains only in component
+state. Filters do not change the URL, persist preferences, trigger source reads,
+remove references, or share the private library. Changing actors resets filters
+and uses the existing actor-scoped API and query cache.
+
+Only the title already returned by the authorized library response is searchable.
+Unavailable references have no searchable title or source link; search never
+falls back to IDs or cached historical metadata. The unavailable facet with empty
+search makes those references manageable. A filtered empty result offers a clear
+control to recover all references; a truly empty library keeps its existing message.
+Removal still requires an explicit action and successful server confirmation,
+and denied removal preserves the reference and current filters. Notebook
+publication, profile sharing defaults and source-access rules are unchanged.
+
+Rendered regressions in `saved-library-filters.test.tsx` cover both libraries,
+local-only read/write counts, unavailable projections, clear recovery, actor
+changes, failed removal, Unicode matching and both shipped language bundles.
+Existing reader/creator library and bookmark API/D1 tests retain their boundary
+coverage. Fixture translations and APIs are doubled; exact-head Lettin builds
+and repository CI remain separate delivery evidence.
+
+## Plan work in Tasks
+
+Private notebook and wiki studios offer **Plan a task**, opening the Tasks
+composer in the same workspace. The handoff carries only notebook and optional
+entry IDs; it does not include draft text, artwork, profile details or task names.
+Tasks authenticates its own app session and checks workspace membership. The
+creator enters a task name and explicitly chooses a board and non-archived list.
+Existing task creation APIs enforce destination workspace/list access.
+
+Attaching the canonical private Lettin reference is optional and **off by default**.
+The composer explains that attaching it makes the link visible to people with
+access to the destination task. It neither grants source access nor fetches or
+copies notebook content. The creator can review the source before opting in.
+Creating the task requires explicit submission and does not publish the notebook.
+Opening the composer itself creates no task or board.
+
+The first handoff supports task planning and references only. Automatic content
+transfer, ongoing synchronization and integrations with other tools remain
+outside this workflow. Deleted or inaccessible sources continue to be governed
+by Lettin access rules. Malformed source IDs are rejected; IDs alone do not prove
+access or source ownership. English and Vietnamese controls cover both surfaces.
+Regression coverage: `lettin-task-reference.test.ts`, `task-plan-composer.test.tsx`
+and the Tasks composer page tests cover safe links, explicit sharing and session
+and workspace boundaries.
+
+### Plan creator work in Calendar
+
+The authorized notebook studio lets creators choose a calendar day and explicitly
+open Calendar for the same workspace. Only the day is included in the query;
+notebook and entry identifiers, titles, draft text and profile details are never
+copied. The link uses Calendar's canonical production origin or its registered
+Portless origin in development. No event is created by this action.
+
+Calendar independently authenticates the actor, resolves the workspace and checks
+`manage_calendar`; the link grants no access. Creators plan or create events in
+Calendar through its normal controls. Invalid dates/workspaces/locales produce no
+link. Unsaved studio edits block day selection and navigation until resolved;
+the selected day remains available afterward. Workspace/notebook context changes
+reset the local day selection. This workflow is day navigation, with no calendar
+sync or transfer of source content.
+
+Regression evidence: `calendar-day-url.test.ts` checks exact date-only URLs,
+production/Portless origins, leap days and rejected input; bilingual rendered
+`creator-calendar-plan.test.tsx` covers explicit selection, source-free queries,
+dirty blocking and context resets. Calendar's existing workspace route retains
+its session and permission checks. Exact-head Lettin builds and authenticated
+cross-app browser acceptance remain independent delivery gates.
+
+## Explicit collaborator access review
+
+Notebook owners review the selected member and capabilities before adding or
+changing an editor/publisher role or removing collaborator access. Editors can
+read and edit private drafts; publishers can additionally publish and unpublish
+content. Existing workspace membership, creator eligibility, document permission
+and owner-only server checks still apply. This step is an owner confirmation,
+not a new recipient invitation or acceptance system.
+
+Cancel sends no command. Failed requests retain the selected action for retry,
+and pending submissions suppress duplicates. Staged actions bind the workspace,
+notebook and member ID; changed context, lost owner status or unavailable members
+disable confirmation. Switching notebook/workspace resets the owner controls.
+Removing collaborator access does not remove workspace membership or unpublish
+existing content. The existing server remains authoritative for access.
+
+Regression coverage: `collaborators.test.tsx` covers English/Vietnamese capability
+review, cancel, failed retry, duplicate/pending suppression and context/eligibility
+changes. `server/storage.test.ts` exercises local D1 editor/publisher boundaries,
+workspace eligibility and access revocation. Hosted app-session/browser acceptance
+and exact-head CI remain separate delivery gates.
+
+### Published entry collection browsing
+
+In the public notebook reader, choosing an entry kind opens its published entry
+cards in the main reading area. Cards retain the existing title, kind, aliases and
+content notice; selecting a card opens its published document with the existing
+entry deep link. The overview still opens the notebook introduction. Returning to
+the notebook while a collection is selected retains that collection and search.
+
+The sidebar reports matching entry counts and offers an empty-search hint. Clear
+reading filters resets the search, collection and selected entry to the notebook
+overview. The relationship view keeps its existing label/endpoint search and does
+not show an entry count as a connection count. Timeline ordering remains unchanged.
+These controls operate only on the existing published payload. Private saved text,
+profile details and creator publication facets are excluded; no extra query or
+access grant is introduced. Draft edits become visible only after publication.
+
+Regression evidence: `public-entry-collections.test.tsx` covers English/Vietnamese
+cards and counts, notice/alias context, empty recovery, entry links, snapshot
+isolation, chronology and relationship endpoints. `storage.test.ts` retains actual
+D1 private/public and workspace/revocation coverage. Exact-head app builds and
+hosted browser acceptance remain separate delivery gates.
+## Compare draft and published previews
+
+The private notebook and entry editors open **Preview** on the current local
+draft, including unsaved edits. The creator can switch to **Published snapshot**
+to inspect the saved publication with the same document renderer, notices,
+credits and creation guidance. These controls never save, publish, copy content
+to another app or change access. Closing and reopening starts on the current draft.
+
+The published choice is disabled when the record is unpublished. A saved snapshot
+is not proof that an entry is currently available to readers: its notebook must
+also be published, and existing reader and media permissions still apply. Saving
+draft edits leaves the published snapshot unchanged until explicit publication.
+The preview reads only the snapshots already authorized for the private editor;
+it does not fetch a public URL or broaden profile visibility.
+
+English and Vietnamese controls name the selected version and explain these
+boundaries. Regression coverage: `publication-preview.test.tsx` exercises local
+edits versus saved content, credits/notices, unpublished records, refreshed and
+revoked snapshots, accessible selection and reset on reopening. Existing
+`entry-editor.test.tsx` and local D1 `storage.test.ts` preserve pending-save,
+revision-conflict and publication isolation coverage.
+
+Preview version guidance describes the selected version neutrally in both English
+and Vietnamese. It must not identify the published snapshot as the draft. The
+bilingual `publication-preview.test.tsx` regression checks the dialog description
+before and after switching versions as well as the version-specific status.
+
+### Stage a draft from the published version
+
+The creator notebook and entry editor offer a confirmation to start from the
+current published snapshot. Confirmation replaces only the local editor buffer,
+including tags and optional metadata; it does not merge newer private fields into
+the older version. The current private work-progress label is retained separately;
+a historical public label never overrides it. Rich text remounts so its buffer
+matches the staged snapshot.
+The editor becomes dirty. Saving and publication remain separate explicit actions;
+the previously saved private draft and public snapshot remain unchanged until
+those actions. Discarding the staged edit returns to the last saved private draft.
+Authored credits, usage guidance, links and relationships remain part of the
+snapshot. Existing validation may reject a save if referenced targets or media
+are no longer available; restoration does not grant access or revive them.
+
+Restoration is unavailable without a current published snapshot and is blocked
+while a mutation, cover, gallery or inline artwork upload, or source-mode edit is
+pending. All overlapping uploads must settle before staging. Editors can stage
+and save drafts but do not gain publication authority. Saves use the existing
+workspace, actor and revision fences, so stale revisions conflict rather than
+silently replacing newer saved work. Unpublishing removes the available source.
+No profile field or owner-sharing rule changes.
+
+Regression evidence: `published-draft-restore.test.tsx` covers bilingual explicit
+confirmation, cancellation, clone isolation and changing availability;
+`entry-editor.test.tsx` covers notebook/entry commands, optional-field replacement,
+local-only staging, gallery replacement, discard and overlapping upload fences. Local D1 `creation-guidance.test.ts` verifies
+workspace/stale-revision denial, metadata preservation and unchanged public reads
+after an explicit restored-draft save. Exact-head builds and hosted editor/dialog
+acceptance remain independent delivery gates.
+### Scoped notebook JSON export
+
+The notebook studio offers an explicit JSON document export, using published
+documents by default. The notebook owner may instead export saved private drafts
+after affirmative confirmation; collaborators cannot bulk-export private drafts.
+Unsaved editor changes block export. The server verifies the app-session actor,
+workspace/notebook permissions and chosen scope, then rechecks notebook access
+before returning the file. Published scope also rechecks that the notebook and
+all included entries remain published, rejecting a concurrent unpublish. Actor lifetime and dialog intent fences suppress
+deferred downloads after account departure, closing the dialog or leaving the
+studio. Nothing is exported automatically on opening the dialog.
+
+Format `lettin-notebook`, version one, includes scope, export time, source notebook
+and entry IDs, and validated document fields. Published exports omit unpublished
+entries and filter structured links/relationships to included entry IDs. Exports
+omit actor/workspace IDs, collaboration grants, profiles and saved-reader data.
+They contain artwork URLs rather than image bytes; managed URLs retain their
+existing access and retirement behavior. Offline artwork availability is not
+implied; the reviewed import below creates private copies without artwork. Downloaded files are controlled by the person who
+explicitly exports them; original records and publication permissions are unchanged.
+
+Exports are limited to 1,000 entries and 10 MiB. Each document comes from a saved
+server read; this is not an atomic multi-document database snapshot. The active
+draft schema projects known fields, so newly integrated document fields must retain
+export regression coverage. Regression evidence: `notebook-export.test.ts`, export
+route tests and `notebook-export.test.tsx`. Exact app CI and hosted download/account
+switch verification remain separate delivery gates.
+
+
+
+### Reviewed notebook JSON import
+
+Approved creators with workspace document-management permission can import a
+version-one `lettin-notebook` JSON file from the workspace Studio. The creator
+chooses a new title and explicitly confirms permission to copy all included
+content into the selected workspace, including private material. A stored,
+actor/workspace-bound preview expires after fifteen minutes; its entry list must
+be reviewed before a separate apply action. Account changes, mismatched preview
+owners, expired previews and revoked creator access stop the operation.
+
+Import always creates a new private notebook and new private entries, with fresh
+IDs and revision one. It never changes originals, restores publication, creates
+collaborators or imports reader/profile/moderation data. Structured links and wiki
+relationships are remapped only between included entries; missing targets are
+removed. Source notebook ID, export scope/time and entry IDs remain private preview
+provenance, not permission claims. File claims are untrusted and grant no access.
+
+Files contain artwork URLs rather than bytes. This importer removes cover, gallery
+and inline images and hyperlink targets, retaining inline-image alternative text,
+document text and document credits. It performs no remote fetch or media permission transfer. The review
+explains this intentional limitation; creators can add authorized artwork later.
+Unknown identity/grant fields are discarded through the active document schema.
+Source files are limited to 10 MiB and 1,000 entries; the sanitized preview plan
+is additionally limited to 1 MiB because it occupies one D1 row; malformed formats, duplicate IDs,
+executable nodes and excessive nesting are rejected. Applying the same preview is
+idempotent and commits the new drafts in one D1 transaction. Import is a copy
+workflow, not an in-place restore or full-fidelity offline backup.
+
+Regression evidence: `notebook-import.test.ts`, the import route tests and
+`notebook-import.test.tsx`, including D1 creation, ownership/expiry fences,
+relationship remapping, media stripping, source consent, duplicate submissions
+and stale actor/dialog completion. Exact-head CI and hosted file/account switching
+acceptance remain separate from focused fixture verification.
+
+## Private work progress
+
+Notebook owners and existing collaborators can label saved notebook and entry
+work as **Unstarted**, **Drafting**, **Revising**, or **Ready** in the studio.
+Historical drafts without a label behave as Unstarted. Labels are shared within
+the authorized notebook studio, rather than an actor's personal store. Existing
+revision checks, collaborator roles, workspace access and revocation still apply.
+Ready is advisory and does not publish content or grant publishing permission.
+
+The editor marks changes unsaved until the creator explicitly saves. The studio
+progress filter composes with the existing saved-entry search and section. It
+filters saved records rather than unsaved editor buffers; relationship views
+require both endpoints to remain in the filtered set. The explicit Clear filters
+action resets work stage, search, publication, tag and sort together, restoring
+all saved entries in the current section. It preserves the full saved-stage
+summary and does not save drafts, navigate, change selection or write preferences.
+Dirty editing keeps this action disabled. This is a scoped organizational workflow; dedicated quick-note
+capture remains separate.
+
+Progress labels are always private from readers. Publication strips the label
+from the snapshot while retaining it in the saved draft. Public notebook,
+entry, catalogue and published-only JSON exports also remove it from historical
+published JSON. Owner-consented saved-draft exports preserve the private label. Saving
+or clearing a label does not publish, unpublish, or change a reader's content.
+Private saved-entry copies retain the source's saved label. Public profile sharing
+is unaffected. No new migration or external transfer is required.
+
+Regression evidence: `work-progress.test.ts` uses local D1 for publication,
+historical projections, copies, revisions, workspace boundaries and revocation;
+`world-studio-progress.test.tsx` exercises real studio filtering and opening,
+targets search by its label alongside the Calendar date control, and verifies
+that changing the work stage retains search without changing the planning date;
+`entry-editor.test.tsx` verifies explicit save. These fixtures are separate from
+exact-head app builds and hosted browser acceptance.
+
+### Optional source references for private copies
+
+The saved-entry copy dialog offers **Link this copy to the source entry**, off by
+default. Selecting it adds only the source entry ID to the new copy's links.
+Other links and typed relationships are cleared as before. The operation remains
+within the same authorized notebook and workspace, checks the saved source
+revision and artwork atomically, and creates an unpublished record. It does not
+change source content, publication, collaborators, ownership or profile sharing.
+
+The optional link is a reference to the living source record, not an immutable
+history or ownership claim. If the creator later publishes the copy, that source
+ID is retained in its stored published snapshot; this is stated before opting in.
+The public projection omits the link until the source is separately published.
+Source content remains subject to its own publication and access rules. Public
+readers offer navigation only to entries in the current published notebook
+projection. The source is never automatically published with its copy.
+
+Reopening the dialog clears the choice. A failed request retains the title and
+consent for an explicit retry; pending or dirty editors disable the control.
+English and Vietnamese labels explain the private default and later publication
+boundary. `duplicate-entry.test.ts` uses real local D1 to check the optional link,
+clearing other references, unpublished copies, unchanged sources, revision and
+workspace fences, and separate editor/publisher permissions.
+`duplicate-entry.test.tsx` covers explicit consent, reopening, failure and both
+language labels. Cross-notebook variants and canonical-context management remain
+outside this same-notebook reference workflow.
+
+## Private writing statistics
+
+The notebook and entry editors show word and character counts for the current
+rich-text body, including unsaved edits. Counts are computed locally and are not
+stored or exposed on public readers, profiles or catalogue cards. Titles,
+descriptions, credits, image metadata and link destinations are excluded.
+Whitespace is excluded from character counts; composed Unicode characters count
+as one character. Words use Unicode word segmentation, so punctuation is not a
+word and Vietnamese space-separated units count separately. These are writing
+statistics, not a reading-time or language-proficiency measure.
+
+Unapplied Markdown source is excluded, with an explicit notice until it is
+applied. Save, discard and publication keep their existing permission and revision
+boundaries. Traversal is bounded to 20,000 attempted nodes, including depth-clipped nodes,
+and depth 25; incomplete counts
+are visibly labeled partial. Regression coverage: `writing-statistics-model.test.ts`
+checks rich-text boundaries, metadata exclusion, Unicode and traversal limits;
+`writing-statistics.test.tsx` checks both languages and changing document buffers;
+`entry-editor.test.tsx` preserves save/discard behavior.
+
+## Creator fact ordering
+
+Notebook and entry editors, including characters, allow creators to move existing
+facts up or down. The displayed order is the stored fact-array order; labels and
+values are preserved, including duplicate labels. The first and last rows disable
+impossible moves, and keyboard focus follows the moved row to an available move
+control. Fact insertion remains limited to 40 rows.
+
+Reordering changes only the private editor buffer. Saving uses the existing
+permission and optimistic-revision checks. Public readers continue seeing the
+previous published order until the creator explicitly publishes the saved draft.
+No profile fields, collaboration permissions or public discovery projections are
+added. Regression coverage: `wiki-facts-editor.test.tsx` covers bilingual controls,
+duplicate labels, focus, unchanged metadata and limits; `server/fact-ordering.test.ts`
+covers real local D1 save/read/publish and stale-write rejection.
+
+### Private reference publication review
+
+The creator preview lists each distinct linked entry or relationship target from
+its selected local draft or saved published version. It labels the current target
+as having a published snapshot, a private draft only, or being unavailable. Titles
+come only from the already-authorized notebook records; unavailable IDs are not
+rendered. Repeated targets appear once, and empty reference sets omit the review.
+
+This panel is private to the creator editor. Availability reflects the current
+records, not an access promise or an immutable historical target version. The
+notebook must also be published before readers can see its published entries.
+Publishing the source does not publish linked targets or grant access. Anonymous
+reads continue to filter links and relationships using `publishedReferences`;
+private or unavailable targets remain hidden. Profile sharing defaults are
+unaffected.
+
+Regression evidence: `reference-publication-review.test.tsx` covers bilingual
+labels, relationship-only targets, deduplication, revoked publication, missing-ID
+concealment, escaped titles and non-mutating review. `publication-preview.test.tsx`
+covers version switching and current target refresh. Existing local D1 storage
+coverage verifies the public projection; exact-head CI and hosted dialog acceptance
+remain separate delivery gates.
+
+
+### Optional character fact labels
+
+Character entries offer Appearance, Personality, Motivation and Abilities as
+optional fact labels in the private editor. The default selection is empty.
+Choosing a label alone makes no change; explicitly adding it appends one ordinary
+fact with an empty value. Existing labels, values, order, aliases and relationships
+remain unchanged, including an existing fact with the same label. The existing
+40-fact limit applies. Other entry kinds keep generic fact controls only.
+
+The chosen label is ordinary authored text in the interface language used when
+adding it. Changing the interface language does not rewrite saved labels. Creators
+may edit labels and values or remove the added fact using the existing controls.
+These are creative character details, not account profile fields. They stay in
+the private editor buffer until an explicit save and become visible to readers
+only through the existing publication flow; no access or profile-sharing rule
+changes. There is no template metadata or new schema.
+
+Regression evidence: `character-fact-starters.test.tsx` covers bilingual explicit
+addition, duplicate-label preservation, metadata isolation, locale switching,
+entry-kind scope and the fact limit. Existing `wiki-facts-editor.test.tsx` and
+local D1 `fact-ordering.test.ts` cover order and save/publication/revision fences.
+Exact-head CI and hosted editor acceptance remain separate delivery gates.
+
+### Explicit character context copies
+
+The private copy dialog offers an optional context for character entries. The
+field starts empty. An explicitly entered context appends one ordinary fact with
+the localized Context label to the new saved copy; existing facts, aliases,
+content, attribution, tags and gallery remain intact. Matching fact labels are
+not overwritten. Other entry kinds cannot accept a context, and the existing
+40-fact limit applies. Clear the context to make an ordinary copy at that limit.
+
+Copies use the saved source revision in the same notebook and workspace, including
+its existing actor, collaborator and artwork checks. The source remains unchanged;
+the copy has no published snapshot or transferred grants. Linking to the source is
+a separate unchecked option and never publishes either item. Context labels and
+values are ordinary authored creative content, not account profile data. This
+workflow does not establish cross-notebook canon, transfer ownership or create
+public context indexes; broader context management remains separate.
+
+Regression evidence: `character-context-copies.test.ts` exercises real local D1
+source/publication/artwork preservation, revision/workspace/actor denial,
+character scope and fact limits. `duplicate-entry.test.tsx` covers bilingual
+explicit context commands, source-link separation, retry and reset. Existing copy
+regressions retain quota, collaborator and media-retirement races. Exact-head CI
+and hosted dialog acceptance remain separate delivery gates.
+
+### Published reading order
+
+The public notebook reader offers explicit Previous entry and Next entry controls
+when the selected entry belongs to a filtered sidebar list with at least two
+entries. Navigation follows that list's order, respects the current search and
+kind filters, and stops at either end. A selected entry excluded by the filters
+remains readable but has no sequence controls; clearing filters restores the
+ordinary list. The notebook overview has no sequence controls.
+
+Only already projected published entries supply titles and destinations. These
+controls do not fetch private drafts, change publication, or grant access, and
+use the reader's existing entry URL update. English and Vietnamese controls
+share these rules. Regression evidence: `reading-sequence.test.tsx` exercises
+ends, excluded selections, bilingual labels and escaped titles;
+`public-world.test.tsx` covers selection URL and filtered reader integration.
+
+### Private session word targets
+
+The studio writing statistics include an optional word target from 1 to 100,000.
+It starts empty and applies only to the open entry editor. The target lives in
+local component state: it is not sent to an API, stored in a draft, published,
+or included in exports. Leaving the editor or selecting another entry clears
+it; Clear word target removes it explicitly. This is a session aid, not a saved
+project goal or a writing streak.
+
+Progress uses the existing current body word count, including unsaved edits.
+If Markdown is unapplied or bounded traversal yields partial counts, the target
+is retained but progress and completion are withheld until complete counts
+are available. Reaching a target does not save or publish the document. English
+and Vietnamese controls share the same bounds. Regression evidence:
+`writing-goal.test.tsx`, `writing-statistics.test.tsx` and the bounded Unicode
+counting cases in `writing-statistics-model.test.ts`.
+
+### Published entry tag filters
+
+The public notebook reader can filter entries by an exact published entry tag.
+The filter starts empty, combines with text search and entry kind, and trims
+outer input spaces without changing the authored tag's case. Suggestions come
+only from published entry metadata, are deduplicated and sorted, and show at
+most 100 distinct tags; readers can enter any exact tag manually. Notebook tags
+do not become entry tags. No private metadata is fetched.
+
+The sidebar, collection browser and previous/next sequence use the filtered
+entries. The relationships browser keeps only tagged endpoints before its own
+search. An already selected entry remains readable when excluded by a filter,
+but loses sequence controls. Clear reading filters removes tag, search and kind
+filters together and returns to the notebook overview. These local reading
+filters do not publish, grant access or persist preferences. EN/VI regressions:
+`reading-tag-filter.test.tsx` and `public-world.test.tsx`.
+
+### Private saved work-stage summary
+
+The authenticated notebook studio shows totals for all saved entries in the current
+notebook across Unstarted, Drafting, Revising and Ready, including zero-count
+stages. Historical entries without a stage count as Unstarted. The summary reads
+the saved private draft stage, even when a published snapshot has another stage.
+It excludes the notebook itself and remains independent of entry-kind, search,
+publication, tag and work-stage browsing filters.
+
+This is an authored organization aid, not completion or publication evidence.
+Ready does not publish content. Unsaved editor changes are excluded until saved
+and refreshed through the existing studio query. The summary appears in private
+browsing only, creates no new stored metrics, profile fields, source references,
+permissions or public projections, and offers no implicit bulk action. Saving and
+publishing retain their existing access and revision checks.
+
+Regression evidence: `work-progress-summary.test.tsx` verifies both languages,
+historical defaults, zero stages, saved versus published values, refreshed records
+and unchanged input; `world-studio-progress.test.tsx` verifies that filtering the
+visible list does not narrow summary counts. Existing `server/work-progress.test.ts`
+checks save/publication isolation and public stage omission. Exact-head CI and
+hosted studio acceptance remain independent delivery gates.
+
+Regression coverage for complete filter recovery: `world-studio-progress.test.tsx`
+checks empty-result recovery across stage/search/tag/publication/sort, unchanged
+summary and saved input, and disabled dirty-state controls. Existing standalone
+browsing controls retain their local reset when no composed reset is supplied.
+## Explicit task planning priority
+
+The Tasks `/{wsId}/tasks/new` composer, including the Lettin handoff, offers an
+optional priority choice: critical, high, normal, or low. It starts with no
+priority and omits the API field until the creator chooses one. Clearing a
+choice omits it again. No notebook content or metadata determines priority.
+Failed or unconfirmed creation retains the choice in the locked form; mutation
+retries stay disabled. Inspect the destination board before opening another form. Source-reference sharing remains unchecked and independently consented,
+and the destination API retains workspace and task authorization.
+
+Regression coverage in `apps/tasks/src/components/task-plan-composer.test.tsx`
+checks each API priority, clearing, denied creation, and unchanged source consent.
+The composer fixtures render choices from both English and Vietnamese message bundles.
+Exact-head Tasks build and repository CI remain separate delivery gates.
+
+## Explicit destination project association
+
+Tasks planning, including the Lettin handoff, can associate the new task with one
+existing destination workspace project. This control starts unchecked. Project
+choices are loaded through the canonical authenticated internal API only after
+opt-in, and the creator must select a currently available project. Opening the
+composer never creates a project, task, or source reference. No notebook content
+or metadata determines the project; source-link consent remains independent.
+
+Pending or failed project reads and a selection removed by refreshed choices
+block submission with association enabled. The creator can retry the read or
+uncheck association to continue without a project. Failed or unconfirmed task creation preserves
+the project choice in the locked single-use form. Inspect the selected board
+before opening another form; neither read failures nor creation failures trigger
+automatic retries. The canonical task API revalidates
+workspace project ownership and destination task authorization at submission.
+Existing project and board access rules apply; notebook grants and publication
+never change.
+
+`apps/tasks/src/components/task-plan-composer.test.tsx` covers opt-in-only reads,
+required current selection, ID-only creation payloads, opt-out, unavailable and
+removed projects, denial preservation, and both language bundles. These fixtures
+double the internal API and translation hook; exact-head app builds and API CI
+remain separate delivery evidence.
+
+## Authored task planning notes
+
+The Tasks `/{wsId}/tasks/new` composer, including the Lettin handoff, starts with
+empty optional planning notes. Creators may enter up to 2,000 characters for the
+chosen destination task. Notes are visible under the destination task's existing
+permissions. The composer saves only this authored text as literal rich-document
+paragraphs; line breaks are retained and markup is treated as text. It does not
+read or prefill notebook text, artwork or profile data.
+
+Notebook-link sharing remains independently off by default, and project association
+requires its own explicit selection. An opted-in source link is appended as a
+separate paragraph; unchecking it removes only the link. Empty or whitespace-only
+notes add no description unless a source link is selected. Changing the destination
+board preserves the authored plan while requiring a new list choice. Creation still
+requires explicit submission and current destination permissions. An unconfirmed
+response retains the form and notes in the existing locked recovery state, preventing
+an automatic retry or duplicate create. Closing the composer discards these local
+notes; they are not a durable draft.
+
+Regression coverage: `task-plan-description.test.ts` exercises literal text, line
+breaks, independent link composition and serialized size bounds;
+`task-plan-composer.test.tsx` covers empty defaults, both shipped languages, optional
+notes without source/project sharing, source removal, oversized input rejection and
+uncertain creation recovery. Hosted task creation and the exact-head Tasks build
+remain separate delivery gates.
+
+### Compact character facts on entry cards
+
+Character entry cards show the first three authored facts whose labels and values
+are nonempty, preserving their saved order. Labels are capped at 80 Unicode code
+points and values at 160, with an ellipsis for longer text; opening the full entry
+retains the complete authored facts. Non-character cards and characters without
+usable facts omit the preview. Text is escaped and creates no links or controls.
+
+The private studio uses its already-authorized saved drafts. Published collections
+use only the selected notebook's published entry projections, including for fact
+previews; private or unavailable entries and unsaved editor buffers are excluded.
+Facts are authored notebook content, not inferred public profile fields. No new
+profile defaults, source reads/writes, permissions, publication actions or stored
+preferences are introduced. Existing content notices remain ahead of artwork and
+previews. `character-card-facts.test.tsx` covers bounds, ordering, languages,
+escaping, card selection and published-versus-private snapshot isolation. Exact
+head builds and hosted card layout/accessibility acceptance remain separate gates.
+
+### Published heading links
+
+Public notebook outlines expose section links for the displayed published entry
+or notebook. Links retain the current route and locale, include only the known
+published entry identifier when applicable, and omit unrelated query parameters.
+Notebook links clear any entry selection. Private previews retain local outline
+navigation and do not opt into these public links. No content, actor details,
+access grants or publication changes are included.
+
+Opening a section link, or changing its fragment, opens enclosing folded sections
+and focuses only a rendered heading in the current article. Plain clicks preserve
+that focus and scroll behavior while updating the address; modified clicks retain
+ordinary browser link behavior. Missing, malformed, out-of-scope and removed
+headings do not focus another article. Links address the current published text;
+heading node positions can change after later edits or republication. The existing
+100-heading outline bound and two-heading display threshold remain in effect.
+
+Regression evidence: `document-outline-navigation.test.tsx` covers direct reload,
+fragment changes, folded content, query omission, locale/path preservation,
+modified clicks and publication/private boundaries; existing outline/search and
+public-world tests preserve local navigation and published-only selection.
+Exact-head builds and hosted browser acceptance remain separate gates.
+
+### Explicit scoped JSON copies in workspace Drive
+
+Notebook export defaults to the existing local JSON download. Creators can
+explicitly choose the same workspace's Drive and must separately agree to the
+destination's access and independent-copy boundary. Published exports retain
+their existing projection; saved drafts still require notebook ownership and
+the separate unchecked private-source consent. Choosing Drive does not imply
+source consent, and private-source consent does not imply Drive sharing. Closing
+or reopening the export, changing source scope/destination or replacing actor,
+workspace or notebook resets the relevant consent and result state.
+
+The explicit command exports through Lettin's actor-bound source API, then uploads
+one JSON file of at most 10 MiB through the canonical workspace storage client to
+the Lettin directory, with a unique generic filename and overwrite disabled. Drive
+independently enforces actor/workspace permissions, directory rules and quotas.
+Actor/context and dirty/owner eligibility are checked before export and each
+transport stage, including signed upload and finalization. No public URL, source
+grant, source write, publication or background synchronization is created. Copies
+are separately stored snapshots: source retirement, revocation or deletion does
+not delete a previously admitted copy; users manage it through Drive permissions.
+
+Only successful upload and finalization is reported as saved. Failed finalization
+is reported as an uploaded file awaiting indexing; other interrupted upload
+attempts are unconfirmed and may have left a file. There is no automatic retry,
+overwrite, rollback or deletion. Destination consent resets after an attempt,
+requiring another explicit confirmation before retry. Requests admitted before
+a context/permission change may finish; the guard stops subsequent stages and
+stale result display, and cannot retract an already completed storage write.
+
+Regression evidence: `notebook-drive-copy.test.ts` exercises the real canonical
+client with isolated transport responses, size/format limits, unique non-overwrite
+names, permission denial, stage guards and partial finalization.
+`notebook-export-drive.test.tsx` covers explicit separate consents, scope/context
+resets, duplicate/pending fences, dirty/owner changes and truthful copy states.
+Existing export tests preserve the default download. Fixtures perform no hosted
+Drive writes; exact-head builds and authenticated cross-app storage acceptance
+remain separate delivery gates.
+
+
+### Scoped Lettin-to-Drive authentication
+
+Notebook copies use dedicated first-class web upload and finalization endpoints
+under `workspaces/:wsId/lettin/drive-copy`. They accept a verified Lettin app
+session, recheck the expected actor and workspace membership, and require Drive
+management permission. Generic Drive routes retain their existing Drive/Finance
+session audiences. Copy endpoints restrict uploads to non-overwriting, uniquely
+named JSON objects in the Lettin directory, bounded to 10 MiB. Finalization
+rechecks the workspace provider and actual object metadata; a provider change or
+unconfirmed object does not report success. No source permission, publication,
+automatic retry, rollback, or runtime migration is inferred from this boundary.
+Signed-session route fixtures use the production token verifier, with workspace
+and provider adapters isolated. Hosted authorization and upload acceptance remain
+separate gates.

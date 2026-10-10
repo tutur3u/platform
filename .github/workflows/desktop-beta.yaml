@@ -72,6 +72,7 @@ jobs:
         with:
           node-version: 24
       - name: Require desktop signing configuration
+        if: matrix.platform != 'windows'
         shell: bash
         env:
           SIGNING_READY: ${{ matrix.platform == 'linux' || (vars.DESKTOP_SIGNING_SOURCE == 'vault' && ((matrix.platform == 'windows' && secrets.DESKTOP_WINDOWS_VAULT_CI_TOKEN != '') || (matrix.platform == 'macos' && secrets.DESKTOP_MACOS_VAULT_CI_TOKEN != ''))) || (vars.DESKTOP_SIGNING_SOURCE != 'vault' && ((matrix.platform == 'windows' && secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 != '' && secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD != '') || (matrix.platform == 'macos' && secrets.MACOS_CERTIFICATE_P12_B64 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' && vars.MACOS_SIGNING_IDENTITY != '' && vars.APPLE_TEAM_ID != '' && secrets.APP_STORE_CONNECT_API_KEY_ID != '' && secrets.APP_STORE_CONNECT_ISSUER_ID != '' && secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 != ''))) }}
@@ -108,6 +109,16 @@ jobs:
         if: matrix.platform == 'windows'
         working-directory: apps/mobile
         run: flutter build windows --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+      - name: Require Windows signing configuration
+        if: matrix.platform == 'windows'
+        shell: bash
+        env:
+          SIGNING_READY: ${{ matrix.platform == 'linux' || (vars.DESKTOP_SIGNING_SOURCE == 'vault' && ((matrix.platform == 'windows' && secrets.DESKTOP_WINDOWS_VAULT_CI_TOKEN != '') || (matrix.platform == 'macos' && secrets.DESKTOP_MACOS_VAULT_CI_TOKEN != ''))) || (vars.DESKTOP_SIGNING_SOURCE != 'vault' && ((matrix.platform == 'windows' && secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 != '' && secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD != '') || (matrix.platform == 'macos' && secrets.MACOS_CERTIFICATE_P12_B64 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' && vars.MACOS_SIGNING_IDENTITY != '' && vars.APPLE_TEAM_ID != '' && secrets.APP_STORE_CONNECT_API_KEY_ID != '' && secrets.APP_STORE_CONNECT_ISSUER_ID != '' && secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 != ''))) }}
+        run: |
+          if [ "$SIGNING_READY" != true ]; then
+            echo "::error::Desktop signing credentials are not configured. Public beta publication is blocked."
+            exit 1
+          fi
       - name: Build macOS beta
         if: matrix.platform == 'macos'
         working-directory: apps/mobile

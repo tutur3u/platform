@@ -4,6 +4,7 @@ import {
   type ProfileMediaKind,
   uploadCurrentUserProfileMedia,
 } from '@tuturuuu/internal-api/profile-media';
+import { uploadCurrentUserBanner } from '@tuturuuu/internal-api/users';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
@@ -58,7 +59,11 @@ export function ProfileMediaField({
           setUploading(true);
           onPending(true);
           try {
-            onChange(await uploadCurrentUserProfileMedia(kind, file));
+            const publicUrl =
+              kind === 'banner'
+                ? (await uploadCurrentUserBanner(file)).publicUrl
+                : await uploadCurrentUserProfileMedia(kind, file);
+            onChange(publicUrl);
           } catch (error) {
             setError(
               error instanceof InternalApiError && error.status === 429

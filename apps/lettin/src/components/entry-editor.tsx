@@ -19,12 +19,18 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
-import { DocumentView } from './document-view';
+import { ArtworkGalleryEditor } from './artwork-gallery-editor';
+import { CreationGuidanceEditor } from './creation-guidance-editor';
+import { validGallery } from './gallery-model';
+import { PublicationPreview } from './publication-preview';
+import { PublishedDraftRestore } from './published-draft-restore';
 import { RichEditor } from './rich-editor';
 import { useLettinMutation } from './use-lettin';
 import { WikiDetailsEditor } from './wiki-details-editor';
 import { entryKinds, validWiki } from './wiki-model';
 import { WikiThemeEditor } from './wiki-theme-editor';
+import { WorkProgressControl } from './work-progress-control';
+import { WritingStatistics } from './writing-statistics';
 export function EntryEditor({
   wsId,
   worldId,
@@ -45,6 +51,7 @@ export function EntryEditor({
   const t = useTranslations('lettin');
   const mutation = useLettinMutation(wsId);
   const [draft, setDraft] = useState(record.draft);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const [version, setVersion] = useState(record.version);
   const [dirty, setDirty] = useState(false);
   const [tagsText, setTagsText] = useState(
@@ -55,6 +62,7 @@ export function EntryEditor({
   const [discardOpen, setDiscardOpen] = useState(false);
   const [savedDraft, setSavedDraft] = useState(record.draft);
   const [saved, setSaved] = useState(false);
+  const [inlineUploads, setInlineUploads] = useState(0);
   const editGeneration = useRef(0);
   const update = (patch: Partial<LettinDraft>) => {
     editGeneration.current += 1;
@@ -120,18 +128,11 @@ export function EntryEditor({
           {t(isWorld ? 'worldDetails' : 'entry')} ·{' '}
           {t(record.published_at ? 'published' : 'draft')}
         </p>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">{t('preview')}</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{t('privatePreview')}</DialogTitle>
-              <DialogDescription>{t('previewHint')}</DialogDescription>
-            </DialogHeader>
-            <DocumentView draft={draft} />
-          </DialogContent>
-        </Dialog>
+        <PublicationPreview
+          entries={entries}
+          draft={draft}
+          published={record.published_at ? record.published : null}
+        />
       </div>
       <label className="block space-y-2 text-sm">
         {t('title')}
@@ -148,6 +149,17 @@ export function EntryEditor({
           maxLength={2000}
           onChange={(e) => update({ description: e.target.value })}
         />
+      </label>
+      <label className="block space-y-2 text-sm">
+        {t('contentNotice')}
+        <Textarea
+          value={draft.contentNotice ?? ''}
+          maxLength={500}
+          onChange={(e) => update({ contentNotice: e.target.value })}
+        />
+        <span className="text-muted-foreground text-xs">
+          {t('contentNoticeHint')}
+        </span>
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block space-y-2 text-sm">
@@ -168,6 +180,10 @@ export function EntryEditor({
           />
         </label>
       </div>
+      <CreationGuidanceEditor
+        value={draft.creationGuidance}
+        onChange={(creationGuidance) => update({ creationGuidance })}
+      />
       {!isWorld && (
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2 text-sm">
@@ -219,12 +235,26 @@ export function EntryEditor({
         <span className="text-muted-foreground text-xs">{t('uploadHint')}</span>
       </label>
       {upload.isError && <p role="alert">{t('requestFailed')}</p>}
+      <ArtworkGalleryEditor
+        wsId={wsId}
+        worldId={worldId}
+        items={draft.gallery ?? []}
+        onChange={(gallery) => update({ gallery })}
+        onPendingChange={(pending) => {
+          setGalleryUploading(pending);
+          if (pending) update({});
+        }}
+      />
       {isWorld && (
         <WikiThemeEditor
           theme={draft.theme}
           onChange={(theme) => update({ theme })}
         />
       )}
+      <WorkProgressControl
+        value={draft.workProgress ?? 'unstarted'}
+        onChange={(workProgress) => update({ workProgress })}
+      />
       <WikiDetailsEditor
         draft={draft}
         entries={entries}
@@ -237,11 +267,20 @@ export function EntryEditor({
           setMarkdownEditing(editing);
           if (editing) update({});
         }}
-        onImageUpload={async (file) =>
-          (await uploadLettinArtwork(wsId, worldId, file)).image
-        }
+        onImageUpload={async (file) => {
+          setInlineUploads((count) => count + 1);
+          try {
+            return (await uploadLettinArtwork(wsId, worldId, file)).image;
+          } finally {
+            setInlineUploads((count) => count - 1);
+          }
+        }}
         value={draft.content}
         onChange={(content) => update({ content })}
+      />
+      <WritingStatistics
+        content={draft.content}
+        sourcePending={markdownEditing}
       />
       {!isWorld && (
         <fieldset className="rounded-lg border border-border p-4">
@@ -278,21 +317,45 @@ export function EntryEditor({
             disabled={
               mutation.isPending ||
               upload.isPending ||
+              galleryUploading ||
               !dirty ||
               markdownEditing ||
               !draft.title.trim() ||
-              !validWiki(draft)
+              !validWiki(draft) ||
+              !validGallery(draft.gallery)
             }
             onClick={save}
           >
             {t('saveDraft')}
           </Button>
+          <PublishedDraftRestore
+            published={record.published_at ? record.published : null}
+            disabled={
+              mutation.isPending ||
+              upload.isPending ||
+              galleryUploading ||
+              inlineUploads > 0 ||
+              markdownEditing
+            }
+            onRestore={(published) => {
+              editGeneration.current += 1;
+              setDraft({ ...published, workProgress: draft.workProgress });
+              setTagsText((published.tags ?? []).join(', '));
+              setEditorKey((key) => key + 1);
+              setMarkdownEditing(false);
+              setDirty(true);
+              setSaved(false);
+              onDirty(true);
+            }}
+          />
           {dirty && (
             <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="ghost"
-                  disabled={mutation.isPending || upload.isPending}
+                  disabled={
+                    mutation.isPending || upload.isPending || galleryUploading
+                  }
                 >
                   {t('discardDraft')}
                 </Button>
@@ -334,6 +397,7 @@ export function EntryEditor({
                 disabled={
                   mutation.isPending ||
                   upload.isPending ||
+                  galleryUploading ||
                   dirty ||
                   markdownEditing
                 }
@@ -347,6 +411,7 @@ export function EntryEditor({
                   disabled={
                     mutation.isPending ||
                     upload.isPending ||
+                    galleryUploading ||
                     dirty ||
                     markdownEditing
                   }
@@ -365,6 +430,9 @@ export function EntryEditor({
           <p role="alert" className="text-sm">
             {t('invalidWiki')}
           </p>
+        )}
+        {!validGallery(draft.gallery) && (
+          <p role="alert">{t('invalidGallery')}</p>
         )}
         {mutation.errorMessage && (
           <p className="text-sm" role="alert">

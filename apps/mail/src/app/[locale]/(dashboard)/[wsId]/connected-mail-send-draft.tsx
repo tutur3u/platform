@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { connectedMailRequest } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 export function ConnectedMailSendDraft({
   workspaceId,
   accountId,
@@ -16,6 +16,13 @@ export function ConnectedMailSendDraft({
   onSent: () => void;
 }) {
   const t = useTranslations('mail');
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const [requestId] = useState(() => crypto.randomUUID());
   const mutation = useMutation({
     retry: false,
@@ -24,7 +31,9 @@ export function ConnectedMailSendDraft({
         method: 'POST',
         body: { requestId },
       }),
-    onSuccess: onSent,
+    onSuccess: () => {
+      if (mounted.current) onSent();
+    },
   });
   return (
     <div>

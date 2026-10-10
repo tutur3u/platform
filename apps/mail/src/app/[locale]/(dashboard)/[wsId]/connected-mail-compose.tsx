@@ -10,7 +10,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { connectedReplyDraft } from './connected-mail-reply';
 
 export function ConnectedMailCompose({
@@ -31,6 +31,13 @@ export function ConnectedMailCompose({
   onSent: () => void;
 }) {
   const t = useTranslations('mail');
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const [initial] = useState(() => connectedReplyDraft(source, address, mode));
   const [to, setTo] = useState(initial.to.join(', '));
   const [cc, setCc] = useState(initial.cc.join(', '));
@@ -39,9 +46,21 @@ export function ConnectedMailCompose({
   );
   const [subject, setSubject] = useState(initial.subject);
   const [text, setText] = useState(initial.text);
-  const [attachments, setAttachments] = useState<
-    NonNullable<ConnectedMailComposePayload['attachments']>
-  >([]);
+  type AttachmentSelection = {
+    status: 'preparing' | 'ready' | 'error';
+    attachments: NonNullable<ConnectedMailComposePayload['attachments']>;
+  };
+  const selectionGeneration = useRef(0);
+  const selection = useRef<AttachmentSelection>({
+    status: 'ready',
+    attachments: [],
+  });
+  const [attachmentStatus, setAttachmentStatus] =
+    useState<AttachmentSelection['status']>('ready');
+  const updateSelection = (next: AttachmentSelection) => {
+    selection.current = next;
+    setAttachmentStatus(next.status);
+  };
   const [requestId] = useState(() => crypto.randomUUID());
   const [fileError, setFileError] = useState('');
   const [draftSaved, setDraftSaved] = useState(false);
@@ -52,35 +71,44 @@ export function ConnectedMailCompose({
       .filter(Boolean);
   const mutation = useMutation({
     retry: false,
-    mutationFn: (save: boolean) =>
-      connectedMailRequest(workspaceId, [accountId, save ? 'drafts' : 'send'], {
-        method: 'POST',
-        body: {
-          requestId,
-          ...(mode === 'edit'
-            ? {
-                draftId: source?.id,
-                html: text === initial.text ? source?.html : undefined,
-              }
-            : {}),
-          to: split(to),
-          cc: split(cc),
-          bcc: split(bcc),
-          subject,
-          text,
-          attachments,
-          ...(source
-            ? {
-                ...(mode === 'edit' ? {} : { sourceId: source.id, mode }),
-                attachmentIds:
-                  mode === 'forward' || mode === 'edit'
-                    ? (source.attachments?.map((file) => file.id) ?? [])
-                    : [],
-              }
-            : {}),
-        },
-      }),
+    mutationFn: (save: boolean) => {
+      if (selection.current.status !== 'ready') {
+        throw new Error(fileError || t('connected_attachment_read_error'));
+      }
+      return connectedMailRequest(
+        workspaceId,
+        [accountId, save ? 'drafts' : 'send'],
+        {
+          method: 'POST',
+          body: {
+            requestId,
+            ...(mode === 'edit'
+              ? {
+                  draftId: source?.id,
+                  html: text === initial.text ? source?.html : undefined,
+                }
+              : {}),
+            to: split(to),
+            cc: split(cc),
+            bcc: split(bcc),
+            subject,
+            text,
+            attachments: selection.current.attachments,
+            ...(source
+              ? {
+                  ...(mode === 'edit' ? {} : { sourceId: source.id, mode }),
+                  attachmentIds:
+                    mode === 'forward' || mode === 'edit'
+                      ? (source.attachments?.map((file) => file.id) ?? [])
+                      : [],
+                }
+              : {}),
+          },
+        }
+      );
+    },
     onSuccess: (_, save) => {
+      if (!mounted.current) return;
       if (save) setDraftSaved(true);
       onSent();
     },
@@ -134,28 +162,38 @@ export function ConnectedMailCompose({
           multiple
           disabled={mutation.isPending}
           onChange={async (event) => {
+            const generation = ++selectionGeneration.current;
             const files = Array.from(event.target.files ?? []);
+            updateSelection({ status: 'preparing', attachments: [] });
             if (
               files.reduce((sum, file) => sum + file.size, 0) >
               10 * 1024 * 1024
             ) {
+              updateSelection({ status: 'error', attachments: [] });
               setFileError(t('connected_attachment_limit'));
               return;
             }
             setFileError('');
-            const uploaded = await Promise.all(
-              files.map(async (file) => {
-                const bytes = new Uint8Array(await file.arrayBuffer());
-                let binary = '';
-                for (const byte of bytes) binary += String.fromCharCode(byte);
-                return {
-                  filename: file.name,
-                  contentType: file.type || 'application/octet-stream',
-                  base64: btoa(binary),
-                };
-              })
-            );
-            setAttachments(uploaded);
+            try {
+              const uploaded = await Promise.all(
+                files.map(async (file) => {
+                  const bytes = new Uint8Array(await file.arrayBuffer());
+                  let binary = '';
+                  for (const byte of bytes) binary += String.fromCharCode(byte);
+                  return {
+                    filename: file.name,
+                    contentType: file.type || 'application/octet-stream',
+                    base64: btoa(binary),
+                  };
+                })
+              );
+              if (generation !== selectionGeneration.current) return;
+              updateSelection({ status: 'ready', attachments: uploaded });
+            } catch {
+              if (generation !== selectionGeneration.current) return;
+              updateSelection({ status: 'error', attachments: [] });
+              setFileError(t('connected_attachment_read_error'));
+            }
           }}
         />
       </label>
@@ -167,14 +205,24 @@ export function ConnectedMailCompose({
       {draftSaved ? <p role="status">{t('connected_draft_saved')}</p> : null}
       <div className="flex gap-2">
         <Button
-          disabled={mutation.isPending || mode === 'edit' || !to.trim()}
+          disabled={
+            mutation.isPending ||
+            attachmentStatus !== 'ready' ||
+            mode === 'edit' ||
+            !to.trim()
+          }
           onClick={() => mutation.mutate(false)}
         >
           {t('send')}
         </Button>
         <Button
           variant="outline"
-          disabled={mutation.isPending || draftSaved || !to.trim()}
+          disabled={
+            mutation.isPending ||
+            attachmentStatus !== 'ready' ||
+            draftSaved ||
+            !to.trim()
+          }
           onClick={() => mutation.mutate(true)}
         >
           {t('connected_save_draft')}

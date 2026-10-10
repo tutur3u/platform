@@ -50,6 +50,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
       final location = GoRouterState.of(context).matchedLocation;
       await pushScopedSettingsPage(
         context,
+        rootNavigator: true,
         builder: (_, isCurrent) => AssistantSettingsHub(
           workspaceId: workspaceId,
           locations: {location},

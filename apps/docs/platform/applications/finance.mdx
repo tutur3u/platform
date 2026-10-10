@@ -327,6 +327,12 @@ When a linked product is absent or has no matching inventory unit, the operator
 must configure or select a product before creating an invoice; the preview must
 never invent a tuition price.
 
+In the subscription invoice calendar, each group’s day color and tooltip show
+its worst attendance status: Absent takes priority over Late, then Present,
+regardless of the order of records. This display rule is shared by Finance and
+the platform Finance surface; it does not change billable attendance, quantities,
+or dates.
+
 For a reported `Days Attended > 0` with `Total Sessions = 0`, inspect the
 authenticated subscription context response's `scheduledSessionsByGroupId`,
 the selected group's recurring series and canceled exceptions, and the effective
@@ -490,3 +496,192 @@ Invoice browser preferences are optional: a blocked storage getter or read uses 
 
 
 Invoice schedule previews use the workspace billing timezone for both projected recurring classes and materialized sessions. A class keeps the same invoice civil day and month when materialized, including midnight and daylight-saving boundaries; multiple classes on one billing day remain one date. Recurrence identity and cancellation use the original series timezone, and previewing never writes schedules. `planned-session-dates.test.ts` covers projected/materialized parity and cancellation controls. This source regression does not establish the cause of a customer screenshot or deployed invoice behavior.
+
+
+### Invoice create completion belongs to the admitted draft
+
+Subscription invoice creation captures the current account lifetime, workspace,
+customer, draft revision, payload, and create/print/download options. Leaving and
+returning to an account, workspace, or customer permanently expires an earlier
+completion. Editing the same customer’s draft also prevents the previous response
+from resetting that newer draft, navigating, announcing a result, or invalidating
+its queries. An expired response does not undo an already admitted server write.
+
+A new scope can create while an old request is pending; the old request cannot
+clear the new pending indicator. Current-draft success and errors retain their
+existing behavior, and multiple-create mode resets only its own unchanged draft.
+The mounted `subscription-create-scope.test.tsx` regressions exercise real account
+lifetimes, held responses, newer drafts, resets, and duplicate submission. This
+source regression does not establish the cause of the original customer complaint
+or verify authenticated invoice creation in production.
+
+### Complete schedule reads for subscription preview
+
+Subscription previews retain the workspace/group and requested instant-period
+filters and never reconcile or write schedules. Materialized dates and recurring
+occurrence suppression use complete reads rather than treating a capped first page
+as authority: cancelled tail occurrences must not reappear as projected classes.
+
+These reads use UUID keyset order, 500-row pages, exact counts and a maximum of
+10,000 rows/20 pages per query. Missing or changing counts, early short pages,
+invalid/repeated/non-advancing IDs, database errors or an exceeded budget fail the
+preview with a fixed error. The existing invoice-context failure and checkout
+blocking paths handle that failure; they never receive a partial successful date
+map. A deployed row cap below 500 also fails closed. Larger datasets need a
+separately reviewed bounded query strategy rather than unlimited pagination.
+
+This is statement-level validation, not a transaction snapshot. Concurrent writes
+can make a read fail; count checks do not prove every same-count mutation was
+observed. The composed regressions in `planned-session-paging.test.ts` model
+PostgREST filters, ordering, inclusive ranges and caps, including cancelled tail
+instances, tied starts, tenant/date scope, late errors and budget failures. They
+are source evidence, not the original customer's deployed incident or a billing
+write. Invoice quantities, stock, historical coverage and schedule policy are
+unchanged.
+
+
+### Subscription context cache follows the verified account lifetime
+
+The shared subscription invoice context query uses its workspace, customer,
+selected groups and period together with the verified account and permanent
+account lifetime. Changing accounts or leaving and returning to the same account
+requires a new authorized context read. A pending response from an expired
+account lifetime cannot publish successful data for the new account lifetime.
+Without the verified account provider, the query does not admit requests.
+
+Fresh context is still reusable within the same account lifetime, and workspace
+invoice invalidation still refreshes it. Existing five-minute freshness and
+ten-minute garbage collection bounds remain. This rule covers this context
+query; other Finance caches are outside this change. The real hook, actor provider,
+API adapter/client and synthetic transport regressions in
+`subscription-context-actor.test.tsx` cover account switches, held success/error
+responses, account return, cache reuse, missing actor admission and invalidation.
+These tests do not prove the cause of the original customer incident or deployed
+customer invoice behavior.
+
+
+### Invoice customer group reads follow the verified account lifetime
+
+The shared `useUserGroups` query follows the same permanent account lifetime as
+subscription invoice context, using a shared lifetime-key helper. Group data for
+one account cannot become a fresh cache hit or an admitted pending result for a
+replacement account, including departure and return to the original account.
+Missing-account automatic and manual reads do not dispatch requests. Current
+account errors remain visible to the query consumer and permit explicit retry.
+
+Existing group mapping, workspace/customer key positions, five-minute freshness,
+ten-minute garbage collection, request timeout and retry policy remain unchanged.
+Workspace-prefixed group invalidation still works; invoice mutation invalidation
+continues to exclude groups. Other Finance caches are outside this change.
+`user-groups-actor.test.tsx` exercises real actor lifetimes, the actual hook and
+API adapter/client, held synthetic responses, current error recovery and both
+queries sharing a lifetime token. These source regressions do not verify the
+original customer incident or authenticated deployed invoice behavior.
+
+
+### Invoice customer search retains placeholders only within its scope
+
+Customer-list and selected-customer reads in the shared invoice form follow the
+verified account and permanent account lifetime. Replacement accounts, including
+departure and return to the same account, require new reads; expired list, detail
+or page callbacks cannot dispatch or publish for a new account lifetime. Without
+the verified account provider, automatic, manual and paged reads fail closed.
+
+Previous list rows remain useful while changing search text within the same
+account lifetime and workspace. They are not placeholders in another workspace
+or account, and cannot suppress the new scope's selected-customer lookup. Current
+errors and explicit recovery retain their existing behavior. Normalized search,
+25-row inclusive paging, count-based continuation, selected-detail fallback,
+30-second freshness and five-minute garbage collection remain unchanged.
+
+The real provider, query, API adapter/client and synthetic transport cases in
+`customer-search-scope.test.tsx` cover replacements, account return, held success
+and errors, workspace placeholders, old page callbacks, missing actor admission
+and recovery. Existing customer-search tests retain their behavior assertions.
+This is source regression evidence, not verification of the original customer
+incident or a production invoice mutation.
+
+
+### Invoice history follows the verified account lifetime
+
+The active paginated invoice-history query follows the verified account and
+permanent account lifetime as well as workspace and customer. Replacement
+accounts, including departure and return to the same account, require a new
+authorized read. Expired responses and retained page callbacks cannot publish
+history or dispatch requests after their account lifetime ends. Missing-account
+automatic, manual and paged reads fail closed.
+
+The default ten-row page size, count-based continuation, inherited query-provider
+freshness, garbage collection and retry policy remain unchanged. Workspace invoice
+mutation invalidation still refreshes active history. Current transport errors
+remain available on the query and explicit retry remains usable; this change does
+not add an error presentation to the history accordion or alter other queries.
+
+`invoice-history-actor.test.tsx` uses the real mounted accordion, actor provider,
+hook, API adapter/client and synthetic transport to cover replacement, account
+return, held success/error responses, missing account, old page callbacks, cache
+reuse, pagination, invalidation and current-error recovery. This is source
+regression evidence, not proof of the original customer incident or deployed
+invoice behavior.
+
+
+### Invoice history failures require explicit recovery
+
+The shared invoice-history accordion distinguishes failed reads from successful
+empty history. English and Vietnamese surfaces show a fixed accessible failure
+notice and Retry action without exposing transport diagnostics. Initial failure
+recovery rereads history; later-page recovery retries the failed page while
+retaining loaded rows. Pending recovery disables duplicate actions. Automatic
+scroll loading and queued disconnected observer callbacks do not retry failures.
+
+The query's account-lifetime admission, provider retry policy, pagination and
+workspace invalidation remain unchanged. This behavior covers the mounted history
+accordion, not other Finance queries or server authorization. Real mounted
+regressions in `invoice-history-error.test.tsx` cover initial 403/503 failures,
+genuine empty success, pending recovery, retained rows, page continuation and
+queued observer callbacks in both languages. These source tests do not establish
+the original customer incident or authenticated production behavior.
+
+
+### Invoice history keeps rows with an unrenderable timestamp
+
+The shared invoice-history accordion parses each nonempty creation timestamp once
+and checks for a finite JavaScript date before formatting it. A timestamp that
+cannot be displayed uses the existing localized No date label instead of causing
+a render exception. Valid dates retain their existing locale formatting; missing
+dates, customer links, query admission, filters and invoice accounting are
+unchanged. This display fallback does not repair or rewrite stored dates.
+
+The real mounted EN/VI cases in `invoice-history-date.test.tsx` reproduce render
+exceptions for synthetic malformed and infinite timestamps and cover valid, null,
+missing and empty controls. These are rendering-boundary regressions, not proof
+of a malformed production row or the cause of the original customer complaint.
+
+### Invoice PNG export lifetime
+
+PNG export belongs to the admitted signed-in actor lifetime, verified invoice
+workspace, and current printable card. Replacing the actor, workspace, invoice,
+or any rendered invoice input invalidates a pending capture permanently, including
+leaving and returning to the same actor. Render inputs include confidential amount
+visibility, language, currency, invoice content, products, promotions, configuration,
+and compact/dark preview choices. Unchanged semantic rerenders remain exportable.
+
+Stale renderer/import/blob completions cannot download, notify, clear a newer
+export's pending state, or consume a newer automatic-image URL intent. Missing
+actor or workspace admission fails closed. The existing print path is unchanged.
+`invoice-png-lifetime.test.tsx` exercises actual card/templates/provider lifetime
+with synthetic held renderer boundaries; this is bounded source evidence, not
+proof of the original customer incident or a live customer export.
+
+### Invoice template dates
+
+Full and compact invoice cards omit a date that cannot be rendered as a finite
+JavaScript date, following the existing missing-date omission. Valid dates retain
+the same English/Vietnamese locale formatting and preview, print, and PNG surfaces.
+This is a rendering boundary only: invoice timestamps, accounting, recurrence,
+and API date authority are unchanged. The original customer's crash cause and
+presence of malformed customer timestamps remain unproven.
+
+`invoice-card-date.test.tsx` covers actual card/template transitions in both
+locales and preview modes, malformed date boundaries, missing dates, and valid
+formatting. Source checks do not establish a live customer export or deployment.

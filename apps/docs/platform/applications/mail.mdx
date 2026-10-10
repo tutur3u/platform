@@ -785,8 +785,19 @@ thread. Repeat a provider event to verify no duplicate, and remove mailbox membe
 before a queued delivery to verify suppression. A successful Firebase response
 alone does not prove device receipt or navigation.
 
-The `process-immediate-notifications` cron runs every five minutes through both
-the platform cron configuration and Vercel. It drains pending immediate batches
+The five-minute recovery timer runs in Cloudflare Cron Control; the authenticated
+web cron endpoint remains available for manual recovery. Explicit immediate
+requests read at most 256 KiB in 4,096 chunks after authentication, with a
+ten-second total read deadline. Stalled/slow bodies return HTTP 408 before any
+database/provider work; chunks do not renew the deadline and cancellation cannot
+extend it. Exceeding byte/chunk bounds returns
+HTTP 413 before JSON parsing or database work. They accept at most
+100 batch IDs and reject oversized or overlong IDs rather
+than silently truncating them. Unrequested batches remain pending; the empty-body
+automatic processor retains complete queue selection to preserve rollout filtering.
+This shared email/push rule preserves complete delivery logs, recipient consent
+and ambiguous-send rules. See the [explicit selection budget](/build/devops/cloudflare-cron-control#explicit-immediate-selection-budget)
+and immediate-selection/request-budget regressions. The timer drains pending batches
 when a database webhook is missed, and recovers failed or abandoned Mail batches
 with at most three retries. A processing lease is considered abandoned after ten
 minutes. Every attempt repeats the same access and preference checks. A persisted
@@ -955,6 +966,14 @@ Retained sender image and gradient backgrounds in Original view keep their
 foreground colors, because a background-color alone does not establish the
 painted contrast. An opaque solid child resumes contrast correction.
 
+
+The immediate request reader checks monotonic elapsed time before and after each
+stream read, including end-of-stream. Immediately resolved chunks cannot bypass
+the ten-second deadline while timer callbacks await service; wall-clock changes
+do not extend it. The existing byte/chunk/selection limits and authenticated
+request ownership remain unchanged. Deadline regressions count actual stream reads
+at the exact boundary; this bounds request intake, not automatic draining or spend.
+
 ## Personal Gmail and Outlook accounts
 
 Mail also offers **Connected accounts** in a personal workspace. Any authenticated
@@ -1044,3 +1063,19 @@ Mail and affected workspace CI type-check, lint, tests and real app builds for t
 exact authored commit. Synthetic tests do not establish Google/Microsoft app
 consent, real mailbox delivery, or organizer-side RSVP processing; verify those
 with configured test accounts after deployment.
+
+### Complete-schema database gate
+
+The `Connected Mail database contract` workflow runs on normal pull-request
+updates that change migrations, its fixture or verifier. It checks out the exact
+PR head, applies every tracked Supabase migration in an isolated hosted database,
+and requires all 10 assertions in `connected-mail-accounts.sql` to pass without
+skips. Its enabled-gate check fails if the workflow is disabled.
+
+After TAP succeeds, it generates actual `public`, `private` and `storage` schema
+types and uploads `connected-mail-accounts-types-<head>` for three days. Inspect
+the exact run's reset, fixture-labelled TAP, type-generation and owned-project
+stop results, then compare the downloaded types with the authored private Mail
+tables before merging. A generated artifact or staging wrapper success alone
+does not prove the entire contract. This disposable gate does not apply production
+migrations or establish provider consent, mailbox delivery or RSVP outcomes.

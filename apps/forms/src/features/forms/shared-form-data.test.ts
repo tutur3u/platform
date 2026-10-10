@@ -196,7 +196,7 @@ describe('shared-form-data', () => {
 
     expect(metadata.title).toBe('Employee Pulse Survey | Tuturuuu Forms');
     expect(metadata.alternates?.canonical).toContain('/f/share-1');
-    expect(metadata.robots).toBeUndefined();
+    expect(metadata.robots).toMatchObject({ index: true, follow: true });
     expect(metadata.twitter?.images).toEqual([
       expect.stringContaining('/f/share-1/twitter-image'),
     ]);

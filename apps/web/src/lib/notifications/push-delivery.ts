@@ -12,6 +12,7 @@ export interface PushNotificationRecord {
   data: Record<string, unknown> | null;
   created_at: string;
   ws_id?: string | null;
+  user_id?: string | null;
   entity_type?: string | null;
   entity_id?: string | null;
 }
@@ -73,6 +74,32 @@ export function buildPushOpenTarget(
   return 'inbox';
 }
 
+const INBOX_IDENTITY_PREFIX = 'tuturuuu:inbox:v1:';
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Full persisted identity, not a hash or an action-authorizing token. */
+function inboxIdentity(notification: PushNotificationRecord): string | null {
+  if (
+    typeof notification.user_id !== 'string' ||
+    !UUID.test(notification.user_id) ||
+    !UUID.test(notification.id) ||
+    (notification.ws_id !== null &&
+      (typeof notification.ws_id !== 'string' ||
+        !UUID.test(notification.ws_id)))
+  )
+    return null;
+  // Explicit null is personal inbox; omitted scope is legacy/unknown, never guessed.
+  const tuple = [
+    notification.user_id.toLowerCase(),
+    notification.ws_id?.toLowerCase() ?? null,
+    notification.id.toLowerCase(),
+  ];
+  return (
+    INBOX_IDENTITY_PREFIX +
+    Buffer.from(JSON.stringify(tuple), 'utf8').toString('base64url')
+  );
+}
+
 export function buildPushData(
   notification: PushNotificationRecord
 ): Record<string, string> {
@@ -92,7 +119,10 @@ export function buildPushData(
     asOptionalString(notification.data?.workspace_id) ??
     asOptionalString(notification.data?.ws_id);
 
+  const identity = inboxIdentity(notification);
+  const recipient = asOptionalString(notification.user_id);
   return {
+    ...(identity ? { inboxIdentity: identity } : {}),
     notificationId: notification.id,
     type: notification.type,
     title: display.title,
@@ -111,18 +141,23 @@ export function buildPushData(
           userId: asOptionalString(notification.data?.userId) ?? '',
         }
       : {}),
+    // Preserve old Mail navigation only; it never creates trusted inbox identity.
+    ...(recipient ? { userId: recipient } : {}),
     openTarget: buildPushOpenTarget(notification),
     createdAt: notification.created_at,
   };
 }
 
-export async function sendCustomPushMessageBatch({
-  devices,
-  message,
-}: {
-  devices: PushDeviceRegistration[];
-  message: CustomPushMessageInput;
-}): Promise<PushSendResult> {
+async function sendMessageBatch(
+  {
+    devices,
+    message,
+  }: {
+    devices: PushDeviceRegistration[];
+    message: CustomPushMessageInput;
+  },
+  ownedInboxIdentity?: string
+): Promise<PushSendResult> {
   if (devices.length === 0) {
     return {
       deliveredCount: 0,
@@ -153,6 +188,7 @@ export async function sendCustomPushMessageBatch({
         ? undefined
         : {
             channelId: 'tuturuuu_notifications',
+            ...(ownedInboxIdentity ? { tag: ownedInboxIdentity } : {}),
           },
     },
     apns: {
@@ -203,6 +239,19 @@ export async function sendCustomPushMessageBatch({
   };
 }
 
+/** Custom/MFA pushes cannot supply persisted inbox identity via arbitrary data. */
+export async function sendCustomPushMessageBatch(args: {
+  devices: PushDeviceRegistration[];
+  message: CustomPushMessageInput;
+}): Promise<PushSendResult> {
+  const data = args.message.data ? { ...args.message.data } : undefined;
+  if (data) delete data.inboxIdentity;
+  return sendMessageBatch({
+    ...args,
+    message: { ...args.message, data },
+  });
+}
+
 export async function sendPushNotificationBatch({
   notification,
   devices,
@@ -211,12 +260,16 @@ export async function sendPushNotificationBatch({
   devices: PushDeviceRegistration[];
 }): Promise<PushSendResult> {
   const display = notificationDisplayCopy(notification);
-  return sendCustomPushMessageBatch({
-    devices,
-    message: {
-      title: display.title,
-      body: display.body,
-      data: buildPushData(notification),
+  const data = buildPushData(notification);
+  return sendMessageBatch(
+    {
+      devices,
+      message: {
+        title: display.title,
+        body: display.body,
+        data,
+      },
     },
-  });
+    data.inboxIdentity
+  );
 }

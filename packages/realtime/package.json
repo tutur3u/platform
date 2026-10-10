@@ -23,7 +23,8 @@
     "./channels": "./src/channels/index.ts",
     "./channels/server": "./src/channels/server.ts",
     "./documents": "./src/documents/index.ts",
-    "./documents/server": "./src/documents/server.ts"
+    "./documents/server": "./src/documents/server.ts",
+    "./core/retry-budget": "./src/core/retry-budget.ts"
   },
   "packageManager": "bun@1.4.1",
   "dependencies": {

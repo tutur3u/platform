@@ -10,6 +10,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
+import 'package:mobile/features/notifications/widgets/notification_read_feedback.dart';
 import 'package:mobile/features/notifications/widgets/notifications_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -84,25 +85,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return workspace.id;
   }
 
-  Future<void> _archiveAll(BuildContext context) async {
-    try {
-      await _cubit.markAllRead();
-    } on Exception {
-      if (!context.mounted) {
-        return;
-      }
-      final toastContext = Navigator.of(context, rootNavigator: true).context;
-      if (!toastContext.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert.destructive(
-          content: Text(context.l10n.notificationsArchiveAllError),
-        ),
-      );
-    }
-  }
+  Future<void> _archiveAll(BuildContext context) =>
+      performNotificationRead(context, _cubit, _cubit.markAllRead);
 
   @override
   Widget build(BuildContext context) {

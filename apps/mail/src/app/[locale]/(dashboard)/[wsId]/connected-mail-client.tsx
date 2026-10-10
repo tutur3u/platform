@@ -29,6 +29,7 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
   const [search, setSearch] = useState('');
   const [messageId, setMessageId] = useState('');
   const [compose, setCompose] = useState<{
+    intentId: string;
     mode?: 'reply' | 'reply_all' | 'forward' | 'edit';
     source?: ConnectedMailMessage;
   } | null>(null);
@@ -179,7 +180,11 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
                 {t(item)}
               </Button>
             ))}
-            <Button onClick={() => setCompose({})}>{t('compose')}</Button>
+            <Button
+              onClick={() => setCompose({ intentId: crypto.randomUUID() })}
+            >
+              {t('compose')}
+            </Button>
             <Button variant="outline" onClick={() => void refresh()}>
               {t('connected_refresh')}
             </Button>
@@ -224,14 +229,17 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
           </form>
           {compose ? (
             <ConnectedMailCompose
-              key={`${accountId}:${compose.source?.id ?? 'new'}:${compose.mode ?? ''}`}
+              key={`${workspaceId}:${actorId}:${accountId}:${compose.intentId}`}
               workspaceId={workspaceId}
               accountId={accountId}
               address={account.address}
-              {...compose}
-              onClose={() => setCompose(null)}
+              source={compose.source}
+              mode={compose.mode}
+              onClose={() =>
+                setCompose((current) => (current === compose ? null : current))
+              }
               onSent={() => {
-                setCompose(null);
+                setCompose((current) => (current === compose ? null : current));
                 void refresh();
               }}
             />
@@ -271,15 +279,24 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
             </div>
             {detail.data ? (
               <ConnectedMailReader
+                key={`${workspaceId}:${actorId}:${accountId}:${folder}:${detail.data.id}`}
                 workspaceId={workspaceId}
                 accountId={accountId}
                 message={detail.data}
                 folder={folder}
-                onCompose={(mode) => setCompose({ mode, source: detail.data })}
+                onCompose={(mode) =>
+                  setCompose({
+                    intentId: crypto.randomUUID(),
+                    mode,
+                    source: detail.data,
+                  })
+                }
                 onAction={action.mutate}
                 actionsPending={action.isPending}
                 onSent={() => {
-                  setMessageId('');
+                  setMessageId((current) =>
+                    current === messageId ? '' : current
+                  );
                   void refresh();
                 }}
               />

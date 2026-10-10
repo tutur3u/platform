@@ -8,7 +8,9 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
+import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -26,6 +28,8 @@ void main() {
               addTearDown(tester.view.resetPhysicalSize);
               addTearDown(tester.view.resetDevicePixelRatio);
               final controller = TextEditingController();
+              final height = ValueNotifier<double?>(null);
+              addTearDown(height.dispose);
               final focus = FocusNode();
               addTearDown(controller.dispose);
               addTearDown(focus.dispose);
@@ -36,7 +40,8 @@ void main() {
                   supportedLocales: AppLocalizations.supportedLocales,
                   builder: (context, child) => MediaQuery(
                     data: MediaQuery.of(context).copyWith(
-                      padding: EdgeInsets.only(bottom: safeArea),
+                      padding: EdgeInsets.only(bottom: keyboard ? 0 : safeArea),
+                      viewPadding: EdgeInsets.only(bottom: safeArea),
                       viewInsets: EdgeInsets.only(bottom: keyboard ? 300 : 0),
                       textScaler: TextScaler.linear(scale),
                       disableAnimations: true,
@@ -48,74 +53,102 @@ void main() {
                       colorScheme: shad.ColorSchemes.lightZinc,
                     ),
                     child: Scaffold(
-                      resizeToAvoidBottomInset: false,
+                      resizeToAvoidBottomInset: true,
                       body: Builder(
-                        builder: (context) => Stack(
-                          children: [
-                            Positioned(
-                              left: 16,
-                              right: 16,
-                              bottom: assistantComposerBottomOffset(context),
-                              child: AssistantComposerDock(
-                                chatState: const AssistantChatState(
-                                  fallbackChatId: 'draft',
+                        builder: (context) => ValueListenableBuilder<double?>(
+                          valueListenable: height,
+                          builder: (context, measuredHeight, _) => Stack(
+                            children: [
+                              Positioned(
+                                left: 16,
+                                right: 16,
+                                bottom: assistantComposerBottomOffset(context),
+                                child: PersistentShellDock(
+                                  composing: true,
+                                  primary: AssistantComposerPrimaryAction(
+                                    controller: controller,
+                                    focusNode: focus,
+                                    onToggleNavigation: () {},
+                                    onSend: () async {},
+                                  ),
+                                  content: AssistantComposerDock(
+                                    embedded: true,
+                                    onHeightChanged: (value) =>
+                                        height.value = value,
+                                    chatState: const AssistantChatState(
+                                      fallbackChatId: 'draft',
+                                    ),
+                                    liveState: const AssistantLiveState(),
+                                    liveUiState: const AssistantLiveUiState(
+                                      kind: AssistantLiveUiKind.unavailable,
+                                      tone: AssistantLiveUiTone.neutral,
+                                      workspaceTier: 'FREE',
+                                      activeTier: 'FREE',
+                                      creditSource:
+                                          AssistantCreditSource.personal,
+                                      isEligible: false,
+                                      isVisibleLiveSession: false,
+                                    ),
+                                    shellState: const AssistantShellState(),
+                                    navigationExpanded: navigationExpanded,
+                                    bottomInset: 0,
+                                    isPersonalWorkspace: true,
+                                    onModelSelected: (_) async {},
+                                    onOpenCreditSourceSheet: () async {},
+                                    onThinkingModeChanged: (_) async {},
+                                    controller: controller,
+                                    focusNode: focus,
+                                    onOpenAttachments: () async {},
+                                    onToggleNavigation: () {},
+                                    onCloseComposer: () {},
+                                    onMicrophoneTap: () async {},
+                                    onSend: () async {},
+                                    onRemoveAttachment: (_) async {},
+                                  ),
                                 ),
-                                liveState: const AssistantLiveState(),
-                                liveUiState: const AssistantLiveUiState(
-                                  kind: AssistantLiveUiKind.unavailable,
-                                  tone: AssistantLiveUiTone.neutral,
-                                  workspaceTier: 'FREE',
-                                  activeTier: 'FREE',
-                                  creditSource: AssistantCreditSource.personal,
-                                  isEligible: false,
-                                  isVisibleLiveSession: false,
-                                ),
-                                shellState: const AssistantShellState(),
-                                navigationExpanded: navigationExpanded,
-                                bottomInset: 0,
-                                isPersonalWorkspace: true,
-                                onModelSelected: (_) async {},
-                                onOpenCreditSourceSheet: () async {},
-                                onThinkingModeChanged: (_) async {},
-                                controller: controller,
-                                focusNode: focus,
-                                onOpenAttachments: () async {},
-                                onToggleNavigation: () {},
-                                onCloseComposer: () {},
-                                onMicrophoneTap: () async {},
-                                onSend: () async {},
-                                onRemoveAttachment: (_) async {},
                               ),
-                            ),
-                            AssistantScrollToBottomOverlay(
-                              composerVisible: true,
-                              isFullscreen: false,
-                              navigationExpanded: navigationExpanded,
-                              visible: true,
-                              onPressed: () {},
-                            ),
-                          ],
+                              AssistantScrollToBottomOverlay(
+                                composerVisible: true,
+                                composerHeight: measuredHeight,
+                                isFullscreen: false,
+                                navigationExpanded: navigationExpanded,
+                                visible: true,
+                                onPressed: () {},
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               );
-              await tester.pump();
-              final composer = tester.getRect(
-                find.byType(AssistantComposerDock),
-              );
-              final toggle = tester.getRect(
-                find.byKey(const ValueKey('assistant-navigation-toggle')),
-              );
-              expect(toggle.bottom, composer.bottom);
-              final fab = tester.getRect(
-                find.byType(AssistantScrollToBottomFab),
-              );
-              expect(fab.bottom, lessThanOrEqualTo(composer.top - 16));
-              expect(900 - composer.bottom, (keyboard ? 0 : safeArea) + 8);
-              final gap = composer.top - fab.bottom;
-              expect(gap, 18);
+              for (final prompt in [
+                '',
+                'One',
+                'One\nTwo\nThree\nFour\nFive',
+                'One\nTwo\nThree\nFour\nFive\nSix',
+                List.filled(40, 'A naturally wrapped draft').join(' '),
+              ]) {
+                controller.text = prompt;
+                await tester.pumpAndSettle();
+                final composer = tester.getRect(
+                  find.byKey(const ValueKey('persistent-shell-dock-material')),
+                );
+                final fab = tester.getRect(
+                  find.byType(AssistantScrollToBottomFab),
+                );
+                expect(fab.bottom, lessThanOrEqualTo(composer.top - 16));
+                expect(
+                  (keyboard ? 600 : 900) - composer.bottom,
+                  (keyboard ? 0 : safeArea) + 8,
+                );
+                expect(composer.top - fab.bottom, closeTo(16, 0.01));
+                expect(
+                  find.byType(AssistantScrollToBottomFab).hitTestable(),
+                  findsOneWidget,
+                );
+              }
               expect(tester.takeException(), isNull);
             },
           );

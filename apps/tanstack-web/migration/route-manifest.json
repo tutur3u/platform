@@ -6,24 +6,24 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 556,
-        "migrated": 63,
-        "percentComplete": 11.89,
-        "remaining": 556,
-        "terminal": 75,
-        "total": 631,
+        "legacyNext": 557,
+        "migrated": 66,
+        "percentComplete": 12.28,
+        "remaining": 557,
+        "terminal": 78,
+        "total": 635,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 55,
+        "legacyNext": 56,
         "migrated": 99,
-        "percentComplete": 64.74,
-        "remaining": 55,
+        "percentComplete": 64.33,
+        "remaining": 56,
         "terminal": 101,
-        "total": 156,
+        "total": 157,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 566,
-        "migrated": 68,
-        "percentComplete": 12.38,
-        "remaining": 566,
-        "terminal": 80,
-        "total": 646,
+        "legacyNext": 567,
+        "migrated": 71,
+        "percentComplete": 12.77,
+        "remaining": 567,
+        "terminal": 83,
+        "total": 650,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 78,
+        "legacyNext": 79,
         "migrated": 148,
-        "percentComplete": 65.79,
-        "remaining": 78,
+        "percentComplete": 65.5,
+        "remaining": 79,
         "terminal": 150,
-        "total": 228,
+        "total": 229,
         "unknownStatus": 0
       }
     ],
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 644,
-      "migrated": 216,
-      "percentComplete": 26.32,
-      "remaining": 644,
-      "terminal": 230,
-      "total": 874,
+      "legacyNext": 646,
+      "migrated": 219,
+      "percentComplete": 26.51,
+      "remaining": 646,
+      "terminal": 233,
+      "total": 879,
       "unknownStatus": 0
     }
   },
@@ -2834,7 +2834,8 @@
       "id": "api:/api/v1/users/me/avatar/upload:apps/web/src/app/api/v1/users/me/avatar/upload/route.ts",
       "kind": "api",
       "methods": [
-        "PUT"
+        "PUT",
+        "OPTIONS"
       ],
       "routePath": "/api/v1/users/me/avatar/upload",
       "sourceFile": "apps/web/src/app/api/v1/users/me/avatar/upload/route.ts",
@@ -2867,7 +2868,8 @@
       "id": "api:/api/v1/users/me/banner/upload:apps/web/src/app/api/v1/users/me/banner/upload/route.ts",
       "kind": "api",
       "methods": [
-        "PUT"
+        "PUT",
+        "OPTIONS"
       ],
       "routePath": "/api/v1/users/me/banner/upload",
       "sourceFile": "apps/web/src/app/api/v1/users/me/banner/upload/route.ts",
@@ -4906,6 +4908,28 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/lettin/drive-copy/finalize-upload:apps/web/src/app/api/v1/workspaces/[wsId]/lettin/drive-copy/finalize-upload/route.ts",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/lettin/drive-copy/finalize-upload",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/lettin/drive-copy/finalize-upload/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/lettin/drive-copy/upload-url:apps/web/src/app/api/v1/workspaces/[wsId]/lettin/drive-copy/upload-url/route.ts",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/lettin/drive-copy/upload-url",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/lettin/drive-copy/upload-url/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/logo:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/logo/route.ts",
       "kind": "api",
       "methods": [
@@ -5528,14 +5552,15 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/settings/approvals/pending-summary:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/settings/approvals/pending-summary:apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
       "kind": "api",
       "methods": [
-        "GET"
+        "GET",
+        "HEAD"
       ],
       "routePath": "/api/v1/workspaces/:wsId/settings/approvals/pending-summary",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
-      "status": "legacy-next",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -5811,13 +5836,14 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/templates/:templateId/background-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/templates/:templateId/background-url:apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
       "kind": "api",
       "methods": [
-        "GET"
+        "GET",
+        "HEAD"
       ],
       "routePath": "/api/v1/workspaces/:wsId/templates/:templateId/background-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -6902,26 +6928,54 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/approvals/route.ts",
-      "kind": "api",
-      "methods": [
-        "GET",
-        "PUT"
-      ],
-      "routePath": "/api/v1/workspaces/:wsId/users/approvals",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/approvals/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/users/approvals/logs:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "id": "api:GET:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
       "kind": "api",
       "methods": [
         "GET"
       ],
-      "routePath": "/api/v1/workspaces/:wsId/users/approvals/logs",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "routePath": "/api/v1/workspaces/:wsId/users/approvals",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts"
+    },
+    {
+      "id": "api:HEAD:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "kind": "api",
+      "methods": [
+        "HEAD"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/users/approvals",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
       "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "HEAD",
+      "parentId": "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts"
+    },
+    {
+      "id": "api:PUT:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "kind": "api",
+      "methods": [
+        "PUT"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/users/approvals",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "PUT",
+      "parentId": "api:/api/v1/workspaces/:wsId/users/approvals:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/users/approvals/logs:apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/users/approvals/logs",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -7168,13 +7222,13 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId/generate:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId/generate:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/workspaces/:wsId/users/reports/:reportId/generate",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9768,6 +9822,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/u/:username:apps/web/src/app/[locale]/(marketing)/u/[username]/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/u/:username",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/u/[username]/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/ui:apps/web/src/app/[locale]/ui/page.tsx",
       "kind": "page",
       "methods": [],
@@ -9917,20 +9980,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 631,
+    "apiRoutes": 635,
     "cronRoutes": 10,
     "layouts": 68,
-    "pages": 156,
-    "routeHandlers": 646,
+    "pages": 157,
+    "routeHandlers": 650,
     "methodCounts": {
       "GET": 327,
-      "HEAD": 15,
-      "POST": 320,
+      "HEAD": 19,
+      "POST": 322,
       "PUT": 60,
       "PATCH": 65,
       "DELETE": 102,
-      "OPTIONS": 24
+      "OPTIONS": 26
     },
-    "total": 874
+    "total": 879
   }
 }

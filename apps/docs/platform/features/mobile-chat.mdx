@@ -189,3 +189,61 @@ Regression coverage: `assistant_soul_name_writer_test.dart`,
 `offline_queue_disposal_regression_test.dart` cover held cache/queue/network
 admission, actor and workspace departure, same-actor logout restoration,
 superseding writes/refreshes, malformed receipts, and admitted ACK cleanup.
+
+
+## Assistant reply error and save receipts
+
+Native Chat and mobile Mira use the canonical messages POST adapter. By default,
+an upstream SSE error produces the fixed public message `AI response unavailable`
+when request-scoped server history contains no saved assistant reply. Upstream
+error text, provider bodies, credentials, URLs, and model diagnostics are never
+used as public error messages. Unknown error payloads use the same fixed fallback.
+This applies to streaming and ordinary JSON requests.
+
+A saved partial assistant reply remains authoritative even when the upstream
+stream fails. Failed history readback retains the separate send failure response.
+Without an upstream error, missing saved history retains `AI response was not saved`.
+Replaying a saved client request returns its existing messages without generating
+or charging again. This error mapping does not establish the cause of any
+customer save incident or repair database persistence.
+
+Regression coverage: `ai-stream-error-regression.test.ts` beside the canonical
+`apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts`.
+The migration backend owns GET only; POST remains tracked Next.js backlog until
+mutation parity is implemented. Live native build and save/reopen verification
+remain separate delivery requirements.
+
+## Handled Assistant operational failures
+
+Mobile Mira reports active handled failures through an injectable typed boundary.
+The phases distinguish server conversation creation (`assistantCreate`), local
+conversation-pointer persistence (`assistantPreferencePersist`), and reply
+transport or protocol failure (`assistantReply`). A protocol error contains no
+trusted persistence classification, so its text never determines a save-failure
+code or a customer root-cause claim. Successful durable completion is not an
+incident. Superseded operations, stopped streams, workspace ABA and session
+invalidation are excluded.
+
+By default, the production flavor sends a nonfatal Crashlytics event containing
+fixed phase/failure codes, valid HTTP status when available, a Retry-After bucket,
+and bounded numeric app version/build. It sends no original exception, captured
+stack, chat content, personality, memory, email, token, URL or request body.
+The SDK receives a fixed synthetic frame and event-local information, rather than
+persistent custom keys. No correlation ID is included because these call sites
+have no independently trusted opaque request ID. Global fatal hooks remain a
+separate path and retain their existing stack behavior.
+
+Repeated signatures are suppressed for five minutes with a 128-entry cache that
+prunes expired entries and evicts the oldest at capacity. This is best-effort
+bounded reporting, not a per-occurrence alert, event queue or autonomous repair
+bridge. Sink failures never delay chat state or retries. Development collection
+stays disabled. Provider retention/consent and authenticated device ingestion
+must be verified separately before release; this client path adds no private
+feedback storage or staff access.
+
+Regression coverage includes `assistant_chat_operational_reporting_test.dart`,
+`assistant_chat_transport_terminal_test.dart` and
+`operational_error_reporter_test.dart`. These exercise actual native NDJSON and
+legacy SSE adapters, separate creation/local persistence/transport failures,
+privacy, cancellation and sink isolation. They do not prove a customer incident's
+cause or native Crashlytics delivery.

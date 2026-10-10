@@ -1,7 +1,7 @@
 ---
 title: 'Reference'
 description: 'Authoritative references for APIs and contracts.'
-updatedAt: '2026-06-21'
+updatedAt: '2026-10-08'
 ---
 
 # Reference
@@ -26,8 +26,10 @@ This section collects stable contracts—APIs, schemas, database internals, and 
 
 - **[Generate API](/reference/api-reference/endpoint/generate)** – Request and response schemas for the AI generate endpoint.
 
-<Note>
-  The platform is mid-migration from `apps/web` (Next.js, port 7803) toward `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust). Some package and database reference pages—especially [`@tuturuuu/supabase`](/reference/packages/supabase) and [`@tuturuuu/trigger`](/reference/packages/trigger)—document `apps/web` patterns. The backend/TanStack equivalents are tracked in the [TanStack + Rust migration guide](/platform/architecture/tanstack-rust-migration).
-</Note>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 If you need implementation guides, jump to [Build](/build/overview); for product tours, explore [Platform](/platform/overview).

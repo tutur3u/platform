@@ -2,11 +2,25 @@ import { EmailService } from '@tuturuuu/email-service';
 import type { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types/supabase';
 import { loadReportEmailPreview } from '@tuturuuu/users-core/reports/email-preview';
+import {
+  reportReplyReceivingReady,
+  sendReportEmail,
+} from '@tuturuuu/users-core/reports/email-reply-identity';
+import type { ReportEmailReplyRpc } from '@tuturuuu/users-core/reports/email-reply-types';
 import { isEmailBlacklisted } from '@/lib/email-blacklist';
 import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
 import { resolvePeriodicReportEmailAccess } from './access';
-import { loadScopedReportContext } from './context';
-import { generatePeriodicReportNarrative } from './generation';
+import {
+  drainEmailQueue,
+  EMAIL_CLAIM_SIZE,
+  EmailQueueDrainError,
+  processWithConcurrency,
+} from './email-queue-drain';
+import {
+  type AutomationRun,
+  getRetryAt,
+  processAutomationRun,
+} from './processor-generation';
 import { reconcilePeriodicReportSchedules } from './schedule-reconciliation';
 
 type AdminClient = Awaited<ReturnType<typeof createAdminClient<Database>>>;
@@ -16,18 +30,6 @@ function getPrivateDb(client: AdminClient) {
 }
 
 type PrivateClient = ReturnType<typeof getPrivateDb>;
-
-interface AutomationRun {
-  attempt_count: number;
-  cadence: 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-  generation_mode: 'manual' | 'ai';
-  group_id: string | null;
-  id: string;
-  period_end: string;
-  period_start: string;
-  schedule_id: string;
-  ws_id: string;
-}
 
 interface EmailQueueRow {
   locked_at: string;
@@ -57,233 +59,6 @@ function callPrivateRpc<T>(
       values: Record<string, unknown>
     ) => RpcResult<T>
   )(name, args);
-}
-
-async function processWithConcurrency<T>(
-  items: T[],
-  concurrency: number,
-  process: (item: T) => Promise<void>
-) {
-  const queue = [...items];
-  const workers = Array.from(
-    { length: Math.min(concurrency, queue.length) },
-    async () => {
-      while (queue.length > 0) {
-        const item = queue.shift();
-        if (item) await process(item);
-      }
-    }
-  );
-  await Promise.all(workers);
-}
-
-function getRetryAt(attemptCount: number) {
-  const delayMinutes = Math.min(
-    12 * 60,
-    5 * 2 ** Math.max(0, attemptCount - 1)
-  );
-  return new Date(Date.now() + delayMinutes * 60_000).toISOString();
-}
-
-async function markRunFailure(
-  privateDb: PrivateClient,
-  run: AutomationRun,
-  error: unknown
-) {
-  const message = error instanceof Error ? error.message : 'Unknown run error';
-  const permanent = run.attempt_count >= 5;
-  console.error('periodic_report.generation_failed', {
-    runId: run.id,
-    workspaceId: run.ws_id,
-    attempt: run.attempt_count,
-    permanent,
-  });
-  await privateDb
-    .from('user_report_automation_runs')
-    .update({
-      last_error: message,
-      locked_at: null,
-      locked_by: null,
-      next_attempt_at: getRetryAt(run.attempt_count),
-      status: permanent ? 'cancelled' : 'failed',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', run.id);
-}
-
-async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
-  const privateDb = getPrivateDb(sbAdmin);
-  try {
-    if (!run.group_id) throw new Error('Automation run has no group scope');
-    const [scheduleResult, membershipsResult, groupResult] = await Promise.all([
-      privateDb
-        .from('user_report_schedules')
-        .select('created_by, manager_instruction')
-        .eq('id', run.schedule_id)
-        .single(),
-      sbAdmin
-        .from('workspace_user_groups_users')
-        .select('user_id')
-        .eq('group_id', run.group_id),
-      sbAdmin
-        .from('workspace_user_groups')
-        .select('name')
-        .eq('id', run.group_id)
-        .single(),
-    ]);
-    if (scheduleResult.error) throw scheduleResult.error;
-    if (membershipsResult.error) throw membershipsResult.error;
-    if (groupResult.error) throw groupResult.error;
-
-    const userIds = (membershipsResult.data ?? []).map(
-      (membership) => membership.user_id
-    );
-    const usersResult =
-      userIds.length > 0
-        ? await sbAdmin
-            .from('workspace_users')
-            .select('id, display_name, full_name, note')
-            .eq('ws_id', run.ws_id)
-            .in('id', userIds)
-            .eq('archived', false)
-        : { data: [], error: null };
-    if (usersResult.error) throw usersResult.error;
-
-    let createdReports = 0;
-    for (const user of usersResult.data ?? []) {
-      const existing = await privateDb
-        .from('external_user_monthly_reports')
-        .select('id, generation_status')
-        .eq('user_id', user.id)
-        .eq('group_id', run.group_id)
-        .eq('cadence', run.cadence)
-        .eq('period_start', run.period_start)
-        .eq('period_end', run.period_end)
-        .maybeSingle();
-      if (existing.error) throw existing.error;
-      if (
-        existing.data &&
-        (run.generation_mode !== 'ai' ||
-          !['failed', 'generating'].includes(existing.data.generation_status))
-      )
-        continue;
-
-      const userName = user.display_name ?? user.full_name ?? 'Member';
-      const title = `${run.cadence[0]?.toUpperCase()}${run.cadence.slice(1)} report · ${userName}`;
-      const created = existing.data
-        ? await privateDb
-            .from('external_user_monthly_reports')
-            .update({
-              generation_status: 'generating',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', existing.data.id)
-            .eq('generation_status', existing.data.generation_status)
-            .select('id')
-            .maybeSingle()
-        : await privateDb
-            .from('external_user_monthly_reports')
-            .insert({
-              cadence: run.cadence,
-              content: '',
-              creator_id: scheduleResult.data.created_by,
-              feedback: '',
-              generation_mode: run.generation_mode,
-              generation_status:
-                run.generation_mode === 'ai' ? 'generating' : 'draft',
-              group_id: run.group_id,
-              manager_instruction: scheduleResult.data.manager_instruction,
-              period_end: run.period_end,
-              period_start: run.period_start,
-              report_approval_status: 'PENDING',
-              source_context: { automation_run_id: run.id, metrics: {} },
-              title,
-              updated_at: new Date().toISOString(),
-              updated_by: scheduleResult.data.created_by,
-              user_id: user.id,
-            })
-            .select('id')
-            .single();
-      if (created.error) throw created.error;
-      if (!created.data) continue;
-      if (!existing.data) createdReports++;
-
-      if (run.generation_mode === 'ai') {
-        try {
-          const scopedContext = await loadScopedReportContext(sbAdmin, {
-            cadence: run.cadence,
-            groupId: run.group_id,
-            periodEnd: run.period_end,
-            periodStart: run.period_start,
-            reportId: created.data.id,
-            userId: user.id,
-            wsId: run.ws_id,
-          });
-          const narrative = await generatePeriodicReportNarrative({
-            cadence: run.cadence,
-            deterministicMetrics: scopedContext.deterministicMetrics,
-            group: { id: run.group_id, name: groupResult.data.name },
-            managerInstruction: scheduleResult.data.manager_instruction,
-            periodEnd: run.period_end,
-            periodStart: run.period_start,
-            previousReport: scopedContext.previousReport,
-            subject: {
-              displayName: user.display_name,
-              fullName: user.full_name,
-              note: user.note,
-            },
-          });
-          const generated = await privateDb
-            .from('external_user_monthly_reports')
-            .update({
-              content: narrative.content,
-              feedback: narrative.feedback,
-              generation_status: 'ready',
-              report_approval_status: 'PENDING',
-              source_context: {
-                automation_run_id: run.id,
-                metrics: scopedContext.deterministicMetrics,
-              },
-              title: narrative.title,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', created.data.id);
-          if (generated.error) throw generated.error;
-        } catch (error) {
-          const failed = await privateDb
-            .from('external_user_monthly_reports')
-            .update({
-              generation_status: 'failed',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', created.data.id);
-          if (failed.error)
-            console.error('periodic_report.generation_status_write_failed', {
-              reportId: created.data.id,
-              runId: run.id,
-              error: failed.error,
-            });
-          throw error;
-        }
-      }
-    }
-
-    const completed = await privateDb
-      .from('user_report_automation_runs')
-      .update({
-        completed_at: new Date().toISOString(),
-        last_error: null,
-        locked_at: null,
-        locked_by: null,
-        result: { created_reports: createdReports },
-        status: 'completed',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', run.id);
-    if (completed.error) throw completed.error;
-  } catch (error) {
-    await markRunFailure(privateDb, run, error);
-  }
 }
 
 async function recordEmailAttempt(
@@ -381,6 +156,21 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       await fail('blocked', `Delivery gate blocked: ${access.reason}`, true);
       return;
     }
+    const replyRpc: ReportEmailReplyRpc = (name, args) =>
+      (privateDb.rpc as unknown as ReportEmailReplyRpc)(name, args);
+    const replyReady =
+      process.env.REPORT_EMAIL_REPLY_IDENTITY_ENABLED === 'true' &&
+      (await reportReplyReceivingReady(replyRpc));
+    // Capture revision before all report reads/rendering. Disabled/unready sends
+    // retain their existing schema dependencies and never read identity columns.
+    const replyRevision = replyReady
+      ? await privateDb
+          .from('external_user_monthly_reports')
+          .select('review_revision')
+          .eq('id', row.report_id)
+          .single()
+      : null;
+    if (replyRevision?.error) throw replyRevision.error;
     const [reportResult, userResult, workspaceResult, sourceResult] =
       await Promise.all([
         privateDb
@@ -451,25 +241,49 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       row.delivery_kind === 'test'
         ? `[TEST] ${reportResult.data.title}`
         : reportResult.data.title;
-    const sendResult = await service.send({
-      content: {
-        headers: {
-          'List-Unsubscribe': `<${unsubscribeUrl}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    const delivery = await sendReportEmail(
+      service,
+      {
+        content: {
+          headers: {
+            'List-Unsubscribe': `<${unsubscribeUrl}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
+          html,
+          subject,
         },
-        html,
-        subject,
+        metadata: {
+          entityId: row.report_id,
+          entityType: 'periodic-report',
+          priority: 'normal',
+          templateType: 'periodic-user-report',
+          userId: workspaceResult.data.creator_id,
+          wsId: row.ws_id,
+        },
+        recipients: { to: [recipient] },
       },
-      metadata: {
-        entityId: row.report_id,
-        entityType: 'periodic-report',
-        priority: 'normal',
-        templateType: 'periodic-user-report',
-        userId: workspaceResult.data.creator_id,
+      replyRpc,
+      {
+        queueId: row.id,
         wsId: row.ws_id,
-      },
-      recipients: { to: [recipient] },
-    });
+        reportId: row.report_id,
+        subjectUserId: row.user_id,
+        workerId: row.locked_by,
+        lockedAt: row.locked_at,
+        recipient,
+        reviewRevision: replyRevision?.data?.review_revision ?? 0,
+        deliveryKind: row.delivery_kind,
+      }
+    );
+    const { sendResult } = delivery;
+    if (sendResult.deliveryOutcome === 'unknown') {
+      await fail(
+        'blocked',
+        'Email delivery outcome is unknown. Check provider logs before retrying.',
+        true
+      );
+      return;
+    }
     if (!sendResult.success) {
       const blocked = Boolean(sendResult.blockedRecipients?.length);
       await fail(
@@ -484,6 +298,8 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
     const sentAt = new Date().toISOString();
     acceptedAt = sentAt;
     acceptedMessageId = sendResult.messageId;
+    if (delivery.trackingError)
+      throw new Error('Report reply acceptance tracking failed');
     await recordEmailAttempt(privateDb, row, 'sent', {
       providerMessageId: sendResult.messageId,
     });
@@ -526,6 +342,7 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       });
       return;
     }
+    await delivery.applicationSent?.();
     console.info('periodic_report.delivery_sent', {
       queueId: row.id,
       reportId: row.report_id,
@@ -552,6 +369,17 @@ export async function processPeriodicReportAutomation(
 ) {
   const reconciliation = await reconcilePeriodicReportSchedules(sbAdmin);
   const privateDb = getPrivateDb(sbAdmin);
+  // New app deployments must not emit markers before the database guards exist.
+  const contract = await (
+    privateDb.rpc as unknown as (name: string) => Promise<{
+      data: boolean | null;
+      error: { code?: string } | null;
+    }>
+  )('periodic_report_delivery_contract_ready');
+  if (contract.error || contract.data !== true) {
+    console.warn('periodic_report.delivery_contract_unavailable');
+    return { ...reconciliation, processedEmails: 0, processedRuns: 0 };
+  }
   // Probe with a nonexistent queue before claiming anything: app deployment may
   // precede the migration that supplies atomic, lease-fenced completion.
   const readiness = await privateDb.rpc('finish_periodic_report_email', {
@@ -567,39 +395,60 @@ export async function processPeriodicReportAutomation(
     throw new Error(readiness.error.message);
   if (migrationPending)
     console.warn('periodic_report.delivery_migration_pending');
-  const [runsResult, emailsResult] = await Promise.all([
-    callPrivateRpc<AutomationRun>(privateDb, 'claim_periodic_report_runs', {
+  const emailDrain = migrationPending
+    ? {
+        processedEmails: 0,
+        emailBatches: 0,
+        emailDrainStopReason: 'migration_pending' as const,
+      }
+    : await drainEmailQueue<EmailQueueRow>({
+        claim: async () => {
+          const result = await callPrivateRpc<EmailQueueRow>(
+            privateDb,
+            'claim_periodic_report_emails',
+            {
+              p_limit: EMAIL_CLAIM_SIZE,
+              p_now: new Date().toISOString(),
+              p_worker_id: workerId,
+            }
+          );
+          if (result.error) throw new Error(result.error.message);
+          return result.data ?? [];
+        },
+        processBatch: (rows) =>
+          processWithConcurrency(rows, 4, (row) =>
+            processEmailQueueRow(sbAdmin, row)
+          ),
+      }).catch((error: unknown) => {
+        if (error instanceof EmailQueueDrainError) {
+          console.error('periodic_report.email_drain_failed', {
+            processedEmails: error.processedEmails,
+            emailBatches: error.emailBatches,
+            stage: error.stage,
+          });
+        }
+        throw error;
+      });
+  // Do not reserve email leases while generation (including AI) is running.
+  // Generation claims remain one batch per invocation and settle as before.
+  const runsResult = await callPrivateRpc<AutomationRun>(
+    privateDb,
+    'claim_periodic_report_runs',
+    {
       p_limit: 8,
       p_now: new Date().toISOString(),
       p_worker_id: workerId,
-    }),
-    migrationPending
-      ? Promise.resolve({ data: [] as EmailQueueRow[], error: null })
-      : callPrivateRpc<EmailQueueRow>(
-          privateDb,
-          'claim_periodic_report_emails',
-          {
-            p_limit: 12,
-            p_now: new Date().toISOString(),
-            p_worker_id: workerId,
-          }
-        ),
-  ]);
+    }
+  );
   if (runsResult.error) throw new Error(runsResult.error.message);
-  if (emailsResult.error) throw new Error(emailsResult.error.message);
   const runs = runsResult.data ?? [];
-  const emails = emailsResult.data ?? [];
-
   await processWithConcurrency(runs, 3, (run) =>
     processAutomationRun(sbAdmin, run)
-  );
-  await processWithConcurrency(emails, 4, (row) =>
-    processEmailQueueRow(sbAdmin, row)
   );
 
   return {
     ...reconciliation,
-    processedEmails: emails.length,
+    ...emailDrain,
     processedRuns: runs.length,
   };
 }

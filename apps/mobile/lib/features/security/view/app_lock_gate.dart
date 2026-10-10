@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide ButtonStyle;
 import 'package:flutter/services.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/app_splash_surface.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class AppLockGate extends StatelessWidget {
+class AppLockGate extends StatefulWidget {
   const AppLockGate({
     required this.authenticating,
     required this.onUnlock,
@@ -15,134 +17,87 @@ class AppLockGate extends StatelessWidget {
   final VoidCallback onUnlock;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+  State<AppLockGate> createState() => _AppLockGateState();
+}
 
+class _AppLockGateState extends State<AppLockGate> {
+  late final Timer _recoveryTimer;
+  bool _showRecovery = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // One deadline per mounted lock entry, never restarted by an auth result.
+    _recoveryTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) setState(() => _showRecovery = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _recoveryTimer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = shad.Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        systemNavigationBarColor: colorScheme.background,
-        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-        systemNavigationBarIconBrightness: isDark
+        systemNavigationBarColor: dark
+            ? AppSplashSurface.darkBackground
+            : AppSplashSurface.lightBackground,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness: dark
             ? Brightness.light
             : Brightness.dark,
       ),
-      child: ColoredBox(
-        color: colorScheme.background,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 360),
-                      child: _LockCard(
-                        authenticating: authenticating,
-                        onUnlock: onUnlock,
+      child: Semantics(
+        label: l10n.appLockLockedTitle,
+        scopesRoute: true,
+        explicitChildNodes: true,
+        child: AppSplashSurface(
+          child: !_showRecovery
+              ? null
+              : SafeArea(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 360),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.appLockLockedDescription,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              key: const ValueKey('app-lock-unlock-button'),
+                              width: double.infinity,
+                              height: 48,
+                              child: shad.PrimaryButton(
+                                enabled: !widget.authenticating,
+                                onPressed: widget.onUnlock,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  widget.authenticating
+                                      ? l10n.appLockUnlockingAction
+                                      : l10n.appLockUnlockAction,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              );
-            },
-          ),
         ),
-      ),
-    );
-  }
-}
-
-class _LockCard extends StatelessWidget {
-  const _LockCard({required this.authenticating, required this.onUnlock});
-
-  final bool authenticating;
-  final VoidCallback onUnlock;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final l10n = context.l10n;
-
-    return Padding(
-      key: const ValueKey('app-lock-card'),
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Center(child: _MinimalLockMark()),
-          const SizedBox(height: 16),
-          Text(
-            l10n.appLockLockedTitle,
-            textAlign: TextAlign.center,
-            style: theme.typography.textSmall.copyWith(
-              color: colorScheme.mutedForeground,
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            key: const ValueKey('app-lock-unlock-button'),
-            width: 200,
-            height: authenticating ? 72 : 52,
-            child: shad.PrimaryButton(
-              enabled: !authenticating,
-              onPressed: onUnlock,
-              alignment: Alignment.center,
-              child: Row(
-                key: const ValueKey('app-lock-unlock-content'),
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (authenticating)
-                    const SizedBox.square(
-                      dimension: 18,
-                      child: NovaLoadingIndicator(size: 20),
-                    )
-                  else
-                    const Icon(Icons.fingerprint_rounded, size: 21),
-                  const SizedBox(width: 9),
-                  Flexible(
-                    child: Text(
-                      authenticating
-                          ? l10n.appLockUnlockingAction
-                          : l10n.appLockUnlockAction,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MinimalLockMark extends StatelessWidget {
-  const _MinimalLockMark();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: colorScheme.muted.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.border),
-      ),
-      child: Icon(
-        Icons.lock_outline_rounded,
-        size: 28,
-        color: colorScheme.foreground,
       ),
     );
   }
