@@ -152,7 +152,11 @@ class _AssistantLocalModelsSectionState
                   (model) => model.id == state.selected,
                 ))
               Text(l10n.assistantLocalSelectionUnknown),
-            for (final model in assistantLocalModels) ...[
+            for (final model in assistantLocalModelsForSettings(
+              targetSupported: state.supported,
+              installed: state.installed,
+              activeModelId: state.busy ? state.modelId : null,
+            )) ...[
               const Divider(),
               AssistantLocalModelTile(
                 model: model,
