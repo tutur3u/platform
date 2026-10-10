@@ -32,6 +32,10 @@ export function DuplicateEntry({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [linkSource, setLinkSource] = useState(false);
+  const [context, setContext] = useState('');
+  const contextText = record.draft.kind === 'character' ? context.trim() : '';
+  const contextBlocked =
+    !!contextText && (record.draft.wiki?.facts.length ?? 0) >= 40;
   const [createdId, setCreatedId] = useState<string | null>(null);
   const submitting = useRef(false);
   return (
@@ -43,6 +47,7 @@ export function DuplicateEntry({
           if (value) {
             setTitle('');
             setLinkSource(false);
+            setContext('');
             mutation.reset();
           }
           setOpen(value);
@@ -62,7 +67,13 @@ export function DuplicateEntry({
             className="space-y-4"
             onSubmit={async (event) => {
               event.preventDefault();
-              if (disabled || submitting.current || !title.trim()) return;
+              if (
+                disabled ||
+                submitting.current ||
+                !title.trim() ||
+                contextBlocked
+              )
+                return;
               submitting.current = true;
               try {
                 const result = await mutation.mutateAsync({
@@ -72,6 +83,14 @@ export function DuplicateEntry({
                   version: record.version,
                   title: title.trim(),
                   ...(linkSource ? { linkSource: true } : {}),
+                  ...(contextText
+                    ? {
+                        contextFact: {
+                          label: t('copyCharacterContextFact'),
+                          value: contextText,
+                        },
+                      }
+                    : {}),
                 });
                 setOpen(false);
                 setCreatedId(result.id);
@@ -91,6 +110,23 @@ export function DuplicateEntry({
               maxLength={160}
               disabled={disabled || mutation.isPending}
             />
+            {record.draft.kind === 'character' && (
+              <label className="block space-y-2 text-sm">
+                {t('copyCharacterContext')}
+                <Input
+                  value={context}
+                  maxLength={1000}
+                  disabled={disabled || mutation.isPending}
+                  onChange={(event) => setContext(event.target.value)}
+                />
+                <span className="block text-muted-foreground text-xs">
+                  {t('copyCharacterContextHint')}
+                </span>
+              </label>
+            )}
+            {contextBlocked && (
+              <p role="alert">{t('copyCharacterContextLimit')}</p>
+            )}
             <label className="flex items-start gap-3 text-sm">
               <input
                 type="checkbox"
@@ -107,7 +143,12 @@ export function DuplicateEntry({
             </label>
             <Button
               type="submit"
-              disabled={disabled || mutation.isPending || !title.trim()}
+              disabled={
+                disabled ||
+                mutation.isPending ||
+                !title.trim() ||
+                contextBlocked
+              }
             >
               {t('createEntryCopy')}
             </Button>

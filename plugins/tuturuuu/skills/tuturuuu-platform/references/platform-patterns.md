@@ -812,6 +812,15 @@ interface locale must not rewrite it. Preserve existing collection limits and
 save/publication fences. Lettin's character fact starter, ordering and local D1
 regressions cover this behavior.
 
+### Explicit context facts in private copies
+
+Append context metadata only when explicitly requested, validate its bounded
+label/value and entry-kind scope, and preserve existing facts rather than matching
+or replacing labels. Respect the original collection limit. Keep source-link
+consent separate, read the saved source revision, and repeat actor/workspace/media
+fences in the atomic copy. Context copies never transfer grants or publication.
+Lettin's context-copy D1/UI regressions cover these boundaries.
+
 ## Published reader sequences
 
 Derive previous/next destinations from the same filtered public projection used
