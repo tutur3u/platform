@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { TaskPlanPriority } from './task-plan-priority';
+import { TaskPlanProject, useTaskPlanProject } from './task-plan-project';
 import { TaskPlanSource } from './task-plan-source';
 
 export function TaskPlanComposer({
@@ -31,6 +32,7 @@ export function TaskPlanComposer({
   const [listId, setListId] = useState('');
   const [priority, setPriority] = useState<TaskPriority | null>(null);
   const [attachSource, setAttachSource] = useState(false);
+  const project = useTaskPlanProject(wsId);
   const submitting = useRef(false);
   const [creationUnconfirmed, setCreationUnconfirmed] = useState(false);
   const query = useQuery({
@@ -44,12 +46,13 @@ export function TaskPlanComposer({
   const mutation = useMutation({
     retry: false,
     mutationFn: () => {
-      if (!name.trim() || !board || !list)
+      if (!name.trim() || !board || !list || !project.canSubmit)
         throw new Error('Invalid task destination');
       return createWorkspaceTask(wsId, {
         name: name.trim(),
         listId: list.id,
         ...(priority ? { priority } : {}),
+        ...(project.selected ? { project_ids: [project.selected.id] } : {}),
         ...(attachSource && sourceUrl
           ? {
               description: JSON.stringify({
@@ -84,6 +87,14 @@ export function TaskPlanComposer({
       setCreationUnconfirmed(true);
     },
     onSuccess: () => {
+      if (project.selected) {
+        for (const key of [
+          ['task-project-tasks', wsId, project.selected.id],
+          ['tasks', wsId, `project:${project.selected.id}`],
+          ['workspace', wsId, 'tasks-for-projects'],
+        ])
+          void client.invalidateQueries({ queryKey: key });
+      }
       for (const family of ['tasks', 'tasks-full', 'task_lists']) {
         void client.invalidateQueries({ queryKey: [family, boardId] });
       }
@@ -126,7 +137,8 @@ export function TaskPlanComposer({
         className="space-y-5"
         onSubmit={(event) => {
           event.preventDefault();
-          if (submitting.current || !name.trim() || !list) return;
+          if (submitting.current || !name.trim() || !list || !project.canSubmit)
+            return;
           submitting.current = true;
           mutation.mutate();
         }}
@@ -188,13 +200,18 @@ export function TaskPlanComposer({
               onChange={setAttachSource}
             />
           )}
+          <TaskPlanProject plan={project} />
           <p className="text-muted-foreground text-sm">
             {t('destinationConsent')}
           </p>
           <Button
             type="submit"
             disabled={
-              query.isError || !name.trim() || !list || mutation.isPending
+              query.isError ||
+              !name.trim() ||
+              !list ||
+              !project.canSubmit ||
+              mutation.isPending
             }
           >
             {t(mutation.isPending ? 'creating' : 'create')}

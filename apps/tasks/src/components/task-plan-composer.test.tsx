@@ -7,14 +7,16 @@ import en from '../../messages/en.json';
 import vietnamese from '../../messages/vi.json';
 import { TaskPlanComposer } from './task-plan-composer';
 
-const { createTask, boards, translation } = vi.hoisted(() => ({
+const { createTask, boards, projects, translation } = vi.hoisted(() => ({
   createTask: vi.fn(),
   boards: vi.fn(),
+  projects: vi.fn(),
   translation: { locale: 'en' },
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   createWorkspaceTask: createTask,
   listWorkspaceBoardsWithLists: boards,
+  listWorkspaceTaskProjects: projects,
 }));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
@@ -56,6 +58,7 @@ const data = {
 };
 const sourceUrl =
   'https://lettin.tuturuuu.com/en/workspace/wiki/world/overview?entry=entry';
+let currentClient: QueryClient;
 let dispose: () => void = () => {};
 afterEach(() => {
   dispose();
@@ -69,6 +72,10 @@ async function mount(source: string | undefined = sourceUrl) {
   });
   client.setQueryData(['task-plan-boards', 'workspace'], data);
   boards.mockResolvedValue(data);
+  projects.mockResolvedValue([
+    { id: 'project-1', name: 'Creative series', status: 'active' },
+  ]);
+  currentClient = client;
   const container = document.createElement('div');
   const root = createRoot(container);
   await act(async () =>
@@ -128,6 +135,11 @@ async function submit(container: HTMLElement) {
 it('does not create on opening and defaults source sharing off', async () => {
   const container = await mount();
   expect(createTask).not.toHaveBeenCalled();
+  expect(projects).not.toHaveBeenCalled();
+  expect(
+    container.querySelector<HTMLInputElement>('input[name=projectAssociation]')
+      ?.checked
+  ).toBe(false);
   expect(
     container.querySelector<HTMLInputElement>('input[type=checkbox]')?.checked
   ).toBe(false);
@@ -299,3 +311,195 @@ it.each([new TypeError('Failed to fetch'), new Error('Internal server error')])(
     expect(createTask).toHaveBeenCalledTimes(1);
   }
 );
+
+async function toggleProject(container: HTMLElement) {
+  await act(async () =>
+    container
+      .querySelector<HTMLInputElement>('input[name=projectAssociation]')!
+      .click()
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  });
+}
+it('loads workspace project choices only after opt-in and requires explicit selection', async () => {
+  const container = await mount();
+  await fill(container);
+  await toggleProject(container);
+  expect(projects).toHaveBeenCalledExactlyOnceWith('workspace');
+  expect(
+    container.querySelector<HTMLSelectElement>('select[name=projectId]')?.value
+  ).toBe('');
+  expect(
+    container.querySelector<HTMLButtonElement>('button[type=submit]')?.disabled
+  ).toBe(true);
+  await submit(container);
+  expect(createTask).not.toHaveBeenCalled();
+});
+it('associates only the chosen destination project without attaching source content', async () => {
+  createTask.mockResolvedValue({ task: { id: 'created-task' } });
+  const container = await mount();
+  await fill(container);
+  await toggleProject(container);
+  await change(
+    container.querySelector<HTMLSelectElement>('select[name=projectId]')!,
+    'project-1'
+  );
+  await submit(container);
+  expect(createTask).toHaveBeenCalledExactlyOnceWith('workspace', {
+    name: 'Draw a character study',
+    listId: 'list-1',
+    project_ids: ['project-1'],
+  });
+});
+it('omits a previously selected project when association is unchecked', async () => {
+  createTask.mockResolvedValue({ task: { id: 'created-task' } });
+  const container = await mount();
+  await fill(container);
+  await toggleProject(container);
+  await change(
+    container.querySelector<HTMLSelectElement>('select[name=projectId]')!,
+    'project-1'
+  );
+  await toggleProject(container);
+  await submit(container);
+  expect(createTask.mock.calls[0]?.[1]).not.toHaveProperty('project_ids');
+});
+it('blocks project load failure without retrying automatically and allows explicit opt-out', async () => {
+  const container = await mount();
+  projects.mockRejectedValue(new Error('Forbidden'));
+  createTask.mockResolvedValue({ task: { id: 'created-task' } });
+  await fill(container);
+  await toggleProject(container);
+  expect(projects).toHaveBeenCalledTimes(1);
+  expect(container.textContent).toContain(en['task-plan'].projectsFailed);
+  await submit(container);
+  expect(createTask).not.toHaveBeenCalled();
+  await toggleProject(container);
+  await submit(container);
+  expect(createTask.mock.calls[0]?.[1]).toEqual({
+    name: 'Draw a character study',
+    listId: 'list-1',
+  });
+});
+it('blocks stale project selection after refreshed choices remove the project', async () => {
+  const container = await mount();
+  await fill(container);
+  await toggleProject(container);
+  await change(
+    container.querySelector<HTMLSelectElement>('select[name=projectId]')!,
+    'project-1'
+  );
+  await act(async () =>
+    currentClient.setQueryData(['task-plan-projects', 'workspace'], [])
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  });
+  expect(container.textContent).toContain(en['task-plan'].noProjects);
+  await submit(container);
+  expect(createTask).not.toHaveBeenCalled();
+});
+it('preserves the selected project in the locked form after denied creation', async () => {
+  createTask.mockRejectedValueOnce(new Error('Forbidden'));
+  const container = await mount();
+  await fill(container);
+  await toggleProject(container);
+  await change(
+    container.querySelector<HTMLSelectElement>('select[name=projectId]')!,
+    'project-1'
+  );
+  await submit(container);
+  expect(
+    container.querySelector<HTMLSelectElement>('select[name=projectId]')?.value
+  ).toBe('project-1');
+  expect(createTask).toHaveBeenCalledTimes(1);
+  expect(container.querySelector('fieldset')?.disabled).toBe(true);
+  await submit(container);
+  expect(createTask).toHaveBeenCalledTimes(1);
+  expect(createTask.mock.calls[0]?.[1].project_ids).toEqual(['project-1']);
+});
+it.each([
+  ['en', en],
+  ['vi', vietnamese],
+] as const)(
+  'renders %s project consent and empty-choice recovery',
+  async (locale, messages) => {
+    translation.locale = locale;
+    const container = await mount();
+    projects.mockResolvedValue([]);
+    expect(container.textContent).toContain(
+      messages['task-plan'].attachProject
+    );
+    expect(container.textContent).toContain(
+      messages['task-plan'].projectConsent
+    );
+    await toggleProject(container);
+    expect(container.textContent).toContain(
+      messages['task-plan'].chooseProject
+    );
+    expect(container.textContent).toContain(messages['task-plan'].noProjects);
+  }
+);
+
+it('blocks association while the opted-in project read is pending', async () => {
+  const container = await mount();
+  let resolve!: (value: unknown) => void;
+  projects.mockImplementation(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      })
+  );
+  await fill(container);
+  await toggleProject(container);
+  expect(
+    container.querySelector<HTMLSelectElement>('select[name=projectId]')
+      ?.disabled
+  ).toBe(true);
+  await submit(container);
+  expect(createTask).not.toHaveBeenCalled();
+  await act(async () => resolve([]));
+});
+it('lets an explicit retry recover the project read without creating automatically', async () => {
+  const container = await mount();
+  projects
+    .mockRejectedValueOnce(new Error('Unavailable'))
+    .mockResolvedValueOnce([
+      { id: 'project-1', name: 'Creative series', status: 'active' },
+    ]);
+  await fill(container);
+  await toggleProject(container);
+  expect(projects).toHaveBeenCalledTimes(1);
+  const retry = [...container.querySelectorAll('button')].find(
+    (button) => button.textContent === en['task-plan'].retry
+  )!;
+  await act(async () => retry.click());
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  });
+  expect(projects).toHaveBeenCalledTimes(2);
+  expect(container.textContent).toContain('Creative series');
+  expect(createTask).not.toHaveBeenCalled();
+});
+it('rejects stale cached association after a background project read fails', async () => {
+  const container = await mount();
+  await fill(container);
+  await toggleProject(container);
+  await change(
+    container.querySelector<HTMLSelectElement>('select[name=projectId]')!,
+    'project-1'
+  );
+  projects.mockRejectedValueOnce(new Error('Forbidden'));
+  await act(async () =>
+    currentClient.invalidateQueries({
+      queryKey: ['task-plan-projects', 'workspace'],
+    })
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  });
+  expect(container.textContent).toContain(en['task-plan'].projectsFailed);
+  await submit(container);
+  expect(createTask).not.toHaveBeenCalled();
+});

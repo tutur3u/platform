@@ -1356,3 +1356,27 @@ Regression coverage in `apps/tasks/src/components/task-plan-composer.test.tsx`
 checks each API priority, clearing, preserved choices after failed creation, and unchanged source consent.
 The composer fixtures render choices from both English and Vietnamese message bundles.
 Exact-head Tasks build and repository CI remain separate delivery gates.
+
+## Explicit destination project association
+
+Tasks planning, including the Lettin handoff, can associate the new task with one
+existing destination workspace project. This control starts unchecked. Project
+choices are loaded through the canonical authenticated internal API only after
+opt-in, and the creator must select a currently available project. Opening the
+composer never creates a project, task, or source reference. No notebook content
+or metadata determines the project; source-link consent remains independent.
+
+Pending or failed project reads and a selection removed by refreshed choices
+block submission with association enabled. The creator can retry the read or
+uncheck association to continue without a project. Failed task creation preserves
+the project choice in the locked single-use form. Check the selected board before
+starting another form; neither read nor creation failures trigger automatic retries. The canonical task API revalidates
+workspace project ownership and destination task authorization at submission.
+Existing project and board access rules apply; notebook grants and publication
+never change.
+
+`apps/tasks/src/components/task-plan-composer.test.tsx` covers opt-in-only reads,
+required current selection, ID-only creation payloads, opt-out, unavailable and
+removed projects, denial preservation, and both language bundles. These fixtures
+double the internal API and translation hook; exact-head app builds and API CI
+remain separate delivery evidence.
