@@ -687,3 +687,12 @@ fence prevents duplicate clicks before mutation state rerenders. Reset controls
 on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
+
+### Authorized overview facets
+
+Private Studio facets must derive both visible records and options from the
+current authorized overview. Do not keep an independent record cache or query
+extra source content to populate a facet. When a selected tag disappears, remove
+its option and reset the selection; workspace changes reset all local facets.
+Cover combined facets and revocation with rendered tests, and distinguish those
+fixtures from hosted account acceptance.
