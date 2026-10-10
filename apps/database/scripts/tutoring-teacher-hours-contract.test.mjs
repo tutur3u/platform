@@ -15,7 +15,7 @@ const root = path.resolve(
 );
 const read = (name) => readFileSync(path.join(root, name), 'utf8');
 const migration = read(
-  'apps/database/supabase/migrations/20261007060000_tutoring_teacher_hours.sql'
+  'apps/database/supabase/migrations/20261010140000_tutoring_teacher_hours.sql'
 );
 const verifier = read(
   'apps/database/scripts/verify-tutoring-teacher-hours-contract.mjs'
