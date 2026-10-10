@@ -184,9 +184,12 @@ not a finite job budget or hosted shutdown guarantee. Keep that limitation visib
 For Live context erasure, count the128-key page ceiling and each deleted archive
 key rather than treating a batch delete as one billed key. Full pages schedule a
 confirmation wake; failed deletion preserves the archive and can retry. Finalization
-also writes session state in its public-settlement and final steps after erasure
-completes. Count duplicate completion writes and require durable completion proof
-before optimizing them away; memory-only flags may follow a failed durable write.
+still writes session state in its public-settlement and final steps when its
+completion receipt is absent or incomplete; erasure alone cannot skip those steps.
+The completed-receipt guard above skips finalization writes only after matching
+durable/current completion and rechecking obligations after the read. Count the
+receipt read and independent registry/room cleanup separately. Memory-only flags
+may follow a failed durable write and must never acknowledge completion.
 
 Public Live billing currently scans the complete saved map. Include quota settlement,
 share completion, usage reporting, per-record writes and the final map write in the

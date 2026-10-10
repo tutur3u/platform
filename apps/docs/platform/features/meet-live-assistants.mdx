@@ -163,11 +163,14 @@ Context erasure separately lists at most 128 archived turns per wake and deletes
 those keys in a batch; each deleted key remains part of the storage envelope.
 A full batch schedules a confirmation wake to discover any remaining turns.
 Deletion failure retains the archive and schedules another attempt. Session
-finalization also persists state from both public-billing settlement and its
-final step, even when no billing records remain. Duplicate finalization can
-therefore write session state after context erasure has completed. Require a
-durable completion check before claiming duplicate wakes perform no work; an
-in-memory flag alone cannot establish that a prior progress write succeeded.
+finalization persists state from both public-billing settlement and its final
+step when the persisted completion receipt is absent, incomplete or inconsistent
+with current obligations. Context erasure alone does not establish completion.
+The completed-receipt guard described in the runbook performs one session-key
+read and skips finalization writes only when durable and current completion agree
+for the same session and owner, with no pending usage or public billing. It
+rechecks obligations after the read. An in-memory flag alone cannot establish that
+a prior progress write succeeded; registry and room compensation remain separate.
 
 Public-billing settlement currently iterates the entire saved billing map in one
 invocation. A record needing quota settlement, share completion and usage reporting
