@@ -1,4 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { reportEmailContentDigest } from '@tuturuuu/users-core/reports/email-reply-identity';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  APPROVED_REPORT,
+  createAdminClientStub,
+  QUEUE_ROW,
+  type Result,
+  writesFor,
+} from './processor.test-fixtures';
+import {
+  recoveryEvidence,
+  recoveryReport,
+  recoveryRun,
+  recoverySchedule,
+  recoveryUser,
+} from './processor-recovery.fixture';
 
 const loadEmailPreview = vi.hoisted(() => vi.fn());
 vi.mock('@tuturuuu/users-core/reports/email-preview', () => ({
@@ -35,6 +50,7 @@ vi.mock('./context', () => ({
   loadScopedReportContext: async () => ({
     deterministicMetrics: {},
     previousReport: null,
+    humanFeedbackEvidence: recoveryEvidence,
   }),
 }));
 vi.mock('./generation', () => ({
@@ -44,173 +60,9 @@ vi.mock('./generation', () => ({
 
 import { processPeriodicReportAutomation } from './processor';
 
-type Result = { data: unknown; error: unknown };
-interface Write {
-  op: 'insert' | 'update' | 'upsert';
-  payload: Record<string, unknown>;
-  table: string;
-}
-
-const QUEUE_ROW = {
-  locked_at: new Date().toISOString(),
-  locked_by: 'worker-1',
-  attempt_count: 0,
-  delivery_kind: 'send' as 'send' | 'test',
-  id: 'queue-1',
-  recipient_email: 'learner@example.com',
-  report_id: 'report-1',
-  user_id: 'user-1',
-  ws_id: 'ws-1',
-};
-
-const APPROVED_REPORT = {
-  user_id: 'user-1',
-  content: 'Steady progress this month.',
-  feedback: 'Keep practising past papers.',
-  id: 'report-1',
-  report_approval_status: 'APPROVED',
-  title: 'Monthly report · Mai',
-};
-
-function createAdminClientStub(
-  overrides: Record<string, Result> = {},
-  runs: unknown[] = [],
-  writeResults: Record<string, Result> = {}
-) {
-  const writes: Write[] = [];
-  const reads: Record<string, Result> = {
-    external_user_monthly_reports: { data: APPROVED_REPORT, error: null },
-    sent_emails: { data: null, error: null },
-    user_report_email_attempts: { data: null, error: null },
-    user_report_email_queue: { data: { id: 'queue-1' }, error: null },
-    workspace_email_credentials: {
-      data: { source_email: 'reports@school.edu', source_name: 'School' },
-      error: null,
-    },
-    workspace_users: { data: { email: 'Learner@Example.com ' }, error: null },
-    workspaces: { data: { creator_id: 'creator-1' }, error: null },
-    ...overrides,
-  };
-
-  /**
-   * PostgREST-style chain over a real promise: every builder method returns the
-   * same proxy, and awaiting it resolves the configured row for that table.
-   * Proxying a Promise (instead of hand-rolling a `then`) keeps `await` and
-   * `Promise.all` behaving exactly like the driver.
-   */
-  const makeBuilder = (table: string, result = reads[table]) => {
-    const settled = Promise.resolve<Result>(
-      result ?? { data: null, error: null }
-    );
-    const proxy: Record<string, unknown> = new Proxy(settled, {
-      get(target, property) {
-        if (
-          property === 'then' ||
-          property === 'catch' ||
-          property === 'finally'
-        ) {
-          const member = Reflect.get(target, property, target);
-          return typeof member === 'function' ? member.bind(target) : member;
-        }
-
-        return (payload: Record<string, unknown>) => {
-          if (
-            property === 'insert' ||
-            property === 'update' ||
-            property === 'upsert'
-          ) {
-            writes.push({ op: property, payload, table });
-            if (writeResults[table])
-              return makeBuilder(table, writeResults[table]);
-          }
-          return proxy;
-        };
-      },
-    }) as unknown as Record<string, unknown>;
-
-    return proxy;
-  };
-
-  const privateSchema = {
-    from: (table: string) => makeBuilder(table),
-    rpc: (name: string, args: Record<string, unknown>) => {
-      if (name === 'periodic_report_delivery_contract_ready')
-        return Promise.resolve({ data: true, error: null });
-      if (name === 'finish_periodic_report_email') {
-        if (reads.finish_periodic_report_email)
-          return Promise.resolve(reads.finish_periodic_report_email);
-        if (args.p_queue_id === '00000000-0000-0000-0000-000000000000')
-          return Promise.resolve({ data: false, error: null });
-        if (
-          args.p_worker_id !== QUEUE_ROW.locked_by ||
-          args.p_locked_at !== QUEUE_ROW.locked_at
-        )
-          return Promise.resolve({ data: false, error: null });
-        const lease = reads.user_report_email_queue;
-        if (lease?.error || !lease?.data)
-          return Promise.resolve({ data: false, error: lease?.error ?? null });
-        writes.push({
-          table: 'user_report_email_queue',
-          op: 'update',
-          payload: {
-            status: args.p_status,
-            last_error: args.p_error ?? null,
-            recipient_email: args.p_recipient_email,
-            sent_at: args.p_sent_at,
-            provider_message_id: args.p_provider_message_id,
-          },
-        });
-        writes.push({
-          table: 'external_user_monthly_reports',
-          op: 'update',
-          payload: {
-            delivery_status:
-              args.p_status === 'sent' && QUEUE_ROW.delivery_kind === 'test'
-                ? 'draft'
-                : args.p_status,
-            last_delivery_error: args.p_error ?? null,
-            ...(QUEUE_ROW.delivery_kind === 'send' && args.p_sent_at
-              ? { delivered_at: args.p_sent_at }
-              : {}),
-          },
-        });
-        return Promise.resolve({ data: true, error: null });
-      }
-      return Promise.resolve(
-        name === 'claim_periodic_report_emails'
-          ? {
-              data:
-                runs.length ||
-                ['sent', 'blocked', 'cancelled'].includes(
-                  String(
-                    writesFor(writes, 'user_report_email_queue').at(-1)?.payload
-                      .status
-                  )
-                )
-                  ? []
-                  : [{ ...QUEUE_ROW }],
-              error: null,
-            }
-          : { data: runs, error: null }
-      );
-    },
-  };
-
-  return {
-    client: {
-      from: (table: string) => makeBuilder(table),
-      schema: () => privateSchema,
-    },
-    writes,
-  };
-}
-
-function writesFor(writes: Write[], table: string) {
-  return writes.filter((write) => write.table === table);
-}
-
 describe('periodic report email delivery', () => {
   beforeEach(() => {
+    vi.stubEnv('REPORT_EMAIL_REPLY_IDENTITY_ENABLED', 'false');
     loadEmailPreview.mockReset().mockResolvedValue({
       html: '<html><body>Branded report preview</body></html>',
       approvalStatus: 'APPROVED',
@@ -229,6 +81,123 @@ describe('periodic report email delivery', () => {
     isEmailBlacklisted.mockResolvedValue(false);
     fromWorkspace.mockResolvedValue({ send });
     send.mockResolvedValue({ messageId: 'provider-1', success: true });
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('preserves sending when the enabled identity receiver is not ready', async () => {
+    vi.stubEnv('REPORT_EMAIL_REPLY_IDENTITY_ENABLED', 'true');
+    const { client, rpcCalls } = createAdminClientStub();
+    await processPeriodicReportAutomation(client as never, 'worker');
+    expect(send).toHaveBeenCalledOnce();
+    expect(send.mock.calls[0]?.[0].content).not.toHaveProperty('replyTo');
+    expect(rpcCalls).not.toContain('reserve_report_email_reply_identity');
+  });
+
+  it.each(['accepted', 'application_sent', 'lease_lost', 'success', 'unknown'])(
+    'preserves acceptance and application completion boundaries for %s',
+    async (boundary) => {
+      vi.stubEnv('REPORT_EMAIL_REPLY_IDENTITY_ENABLED', 'true');
+      vi.stubEnv('REPORT_EMAIL_REPLY_IDENTITY_KEY', 'ab'.repeat(32));
+      vi.stubEnv('REPORT_EMAIL_REPLY_IDENTITY_KEY_VERSION', '1');
+      vi.stubEnv('REPORT_EMAIL_REPLY_DOMAIN', 'reply.example.com');
+      let stored: Record<string, unknown> = {};
+      const outcomes: unknown[] = [];
+      const lease: Result = { data: { id: 'queue-1' }, error: null };
+      const { client, writes } = createAdminClientStub(
+        { user_report_email_queue: lease },
+        [],
+        {},
+        (name, args) => {
+          if (name === 'report_email_reply_receiving_ready')
+            return { data: true, error: null };
+          if (name === 'reserve_report_email_reply_identity') {
+            stored = Object.fromEntries(
+              Object.entries(args).map(([k, v]) => [k.replace(/^p_/, ''), v])
+            );
+            stored.id = 'identity';
+            stored.outcome = 'reserved';
+            expect(stored.review_revision).toBe(
+              APPROVED_REPORT.review_revision
+            );
+            expect(stored.content_sha256).toBe(
+              reportEmailContentDigest(
+                APPROVED_REPORT.title,
+                '<html><body>Branded report preview</body></html>'
+              )
+            );
+            return { data: stored, error: null };
+          }
+          outcomes.push(args.p_outcome);
+          return {
+            data:
+              boundary === args.p_outcome
+                ? null
+                : { ...stored, outcome: args.p_outcome },
+            error: null,
+          };
+        }
+      );
+      if (boundary === 'lease_lost')
+        send.mockImplementation(async () => {
+          lease.data = null;
+          return { success: true, messageId: 'provider-1' };
+        });
+      if (boundary === 'unknown')
+        send.mockResolvedValue({ success: false, deliveryOutcome: 'unknown' });
+      await processPeriodicReportAutomation(client as never, 'worker');
+      expect(send).toHaveBeenCalledOnce();
+      expect(send.mock.calls[0]?.[0].content.replyTo).toEqual([
+        expect.stringMatching(/^r-[0-9a-f]{48}@reply\.example\.com$/),
+      ]);
+      const queue = writesFor(writes, 'user_report_email_queue');
+      if (boundary === 'lease_lost') {
+        expect(queue).toEqual([]);
+        expect(writesFor(writes, 'external_user_monthly_reports')).toEqual([]);
+      } else {
+        expect(queue.at(-1)?.payload.status).toBe(
+          boundary === 'success' ? 'sent' : 'blocked'
+        );
+        if (boundary !== 'unknown')
+          expect(queue.at(-1)?.payload).toMatchObject({
+            provider_message_id: 'provider-1',
+            sent_at: expect.any(String),
+          });
+      }
+      expect(outcomes).toEqual(
+        boundary === 'unknown'
+          ? ['submitting', 'outcome_unknown']
+          : [
+              'submitting',
+              'accepted',
+              ...(['success', 'application_sent'].includes(boundary)
+                ? ['application_sent']
+                : []),
+            ]
+      );
+      if (boundary === 'accepted' || boundary === 'unknown')
+        expect(writesFor(writes, 'sent_emails')).toEqual([]);
+    }
+  );
+
+  it('settles email leases before claiming the single generation batch', async () => {
+    const { client, rpcCalls } = createAdminClientStub();
+    const result = await processPeriodicReportAutomation(
+      client as never,
+      'worker'
+    );
+    expect(result).toMatchObject({
+      processedEmails: 1,
+      emailBatches: 1,
+      emailDrainStopReason: 'queue_empty',
+      processedRuns: 0,
+    });
+    expect(rpcCalls.indexOf('claim_periodic_report_runs')).toBeGreaterThan(
+      rpcCalls.lastIndexOf('finish_periodic_report_email')
+    );
+    expect(
+      rpcCalls.filter((name) => name === 'claim_periodic_report_runs')
+    ).toHaveLength(1);
   });
 
   it('does not claim or send email before completion tracking is available', async () => {
@@ -568,42 +537,28 @@ describe('periodic report email delivery', () => {
 });
 
 describe('monthly AI generation recovery', () => {
-  const run = {
-    id: 'run-1',
-    attempt_count: 2,
-    cadence: 'monthly',
-    generation_mode: 'ai',
-    group_id: 'group-1',
-    period_start: '2026-08-01',
-    period_end: '2026-08-31',
-    schedule_id: 'schedule-1',
-    ws_id: 'ws-1',
-  };
+  const run = recoveryRun;
   function fixture(status: string, writeResults: Record<string, Result> = {}) {
     return createAdminClientStub(
       {
         user_report_schedules: {
-          data: { created_by: 'teacher-1', manager_instruction: '' },
+          data: recoverySchedule,
           error: null,
         },
         workspace_user_groups_users: {
-          data: [{ user_id: 'user-1' }],
+          data: [{ user_id: recoveryUser.id }],
           error: null,
         },
-        workspace_user_groups: { data: { name: 'Class' }, error: null },
+        workspace_user_groups: {
+          data: { name: 'Class', ws_id: run.ws_id },
+          error: null,
+        },
         workspace_users: {
-          data: [
-            {
-              id: 'user-1',
-              display_name: 'Learner',
-              full_name: null,
-              note: null,
-            },
-          ],
+          data: [recoveryUser],
           error: null,
         },
         external_user_monthly_reports: {
-          data: { id: 'report-1', generation_status: status },
+          data: { ...recoveryReport, generation_status: status },
           error: null,
         },
       },

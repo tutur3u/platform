@@ -173,3 +173,21 @@ When contributing to the platform:
 3. Write tests for new features
 4. Update documentation
 5. Submit a pull request with a clear description
+
+### Task-owned temporary files for check stages
+
+When an admitted runner has a constrained `/tmp` user quota, prepare a unique,
+existing current-user directory with mode `0700` on a filesystem with freshly
+verified quota and free-space capacity. Set `TUTURUUU_CHECK_CHILD_TMPDIR` to its
+absolute real path when invoking normal `bun check` through `ttr resources run`.
+The option changes `TMPDIR`, `TMP`, and `TEMP` only for validation children.
+Keep the check runner's own `TMPDIR`, `HOME`, and `TTR_RESOURCES_HOME` unchanged;
+both shared queues remain in their original locations. Directory validation
+alone does not establish capacity or authorize cleanup.
+
+Invalid directories fail without falling back to `/tmp`. Child processes carry
+a sentinel preserved through Turbo strict mode that rejects a nested `bun check`
+CLI before it creates a queue;
+imports of the check module remain allowed. Run another broad check separately
+through the original queues. This option does not skip checks, change resource
+limits, or turn an incomplete or failing check into a pass.

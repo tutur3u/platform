@@ -183,6 +183,7 @@ describe('unwired content-free eligibility handler', () => {
     null,
     undefined,
     {},
+    Object.create({ eligible: true }),
     { eligible: false },
     { eligible: null },
     { eligible: 'true' },
@@ -196,6 +197,26 @@ describe('unwired content-free eligibility handler', () => {
     const d = dependencies({ check: vi.fn(async () => raw) });
     await responseBody(await createStaffEligibilityHandler(d)(request()), 503);
     expect(d.check).toHaveBeenCalledExactlyOnceWith(actor);
+  });
+  it('rejects a missing own eligibility key under prototype pollution', async () => {
+    const before = Object.getOwnPropertyDescriptor(
+      Object.prototype,
+      'eligible'
+    );
+    const response = await (async () => {
+      try {
+        Object.defineProperty(Object.prototype, 'eligible', {
+          value: true,
+          configurable: true,
+        });
+        const d = dependencies({ check: vi.fn(async () => ({})) });
+        return await createStaffEligibilityHandler(d)(request());
+      } finally {
+        if (before) Object.defineProperty(Object.prototype, 'eligible', before);
+        else delete (Object.prototype as { eligible?: unknown }).eligible;
+      }
+    })();
+    await responseBody(response, 503);
   });
   it.each([401, 403, 503] as const)(
     'preserves typed check rejection %s',

@@ -120,6 +120,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 ## 5. Maintainability
 
 - **Module Boundaries**: When a file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
+- **Mira Composer Geometry**: Enter inserts a newline and only the side primary action sends typed text. Limit growth to five lines and report rendered composer height for transcript padding and scroll-to-bottom clearance. Validate the composer inside `PersistentShellDock` with wrapped drafts, text scale, IME, and safe-area variants; a fixed one-line estimate is insufficient.
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 
@@ -199,3 +200,17 @@ provider/device operation or production delivery.
   cancellation-only fixtures do not prove recovery. Surface scoped upload
   failures at the active controls from current state so superseded operations
   cannot report a newer operation's failure.
+
+- **Assistant settings gutters**: Keep embedded live preferences and local-model sections aligned with personal settings at 16px horizontal padding. Preserve standalone sheet padding. Reuse SettingsRouteFrame for the existing branded title, physical safe area and floating Back boundary; do not add feature chrome. The settings layout matrix covers 320/390/430px and 1x/2x text plus final-control scroll clearance; widget geometry does not prove an authenticated installed artifact.
+
+## Profile avatar removal
+
+Capture `ProfilePickerIntent` before opening the removal confirmation and check
+it after the sheet and mutation complete. It invalidates an account departure,
+including a return to the original account. Keep avatar removal on
+`removeAvatarResult` so actor-bound queue admission and API dispatch preserve
+safe typed media failures. Reuse the existing EN/VI removal labels in recovery.
+For bounded confirmation sheets, enable `AppDialogScaffold.scrollHeader` so a
+scaled heading can scroll without hiding the fixed actions. The focused
+`profile_avatar_removal_test.dart` and `profile_media_actor_race_test.dart`
+exercise these boundaries; mock coverage does not qualify storage/device runtime.
