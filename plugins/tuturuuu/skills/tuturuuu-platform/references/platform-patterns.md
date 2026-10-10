@@ -718,3 +718,14 @@ Use explicit visitor intent, clipboard failure/manual selection recovery, duplic
 submission fences and keyed destination lifetimes to suppress stale completion.
 Shared components can receive localized labels from owning apps instead of adding
 implicit shared translation keys to unrelated app bundles.
+
+## Private creator workflow metadata
+
+Treat internal drafting labels as distinct from publication status and access
+roles. Exclude private metadata in the atomic publication write and again in all
+public projection reads, including historical snapshots and nested entries.
+Retain the saved draft and existing permission/revision checks. Test real D1
+publication plus historical JSON, revocation and workspace fences. Compose studio
+filters over saved authorized records, preserve search, and explicitly document
+whether relationship filters require both endpoints. Never infer publication from
+a readiness label or add it to public profiles.
