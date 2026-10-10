@@ -552,6 +552,22 @@ not cap recurring invocation counts, billed rows, response bytes or total spend.
 See the database request deadline section in the Cron Control runbook for controlled
 unit evidence versus hosted scheduling and independent-stop release gates.
 
+## Native Meet realtime toolchain
+
+For the native Meet realtime Vite+ workspace, keep the original production Wrangler
+entry and migration history intact while CI qualifies `dist/worker/wrangler.json`.
+Run emitted-config identity/binding checks and real SQLite routing probes after the
+native CI build, alongside the existing lifecycle/protocol integration gates. The
+initial configuration type-check and entry lint scope do not certify all retained
+service source. See the programming realtime runbook for fixture commands and
+hosted-media/cost/cutover boundaries.
+
+For native Worker workspaces tested with explicit Node scripts, provide a separate
+Vitest config with an empty include list. Root Vitest discovers all project configs
+before file filtering; loading the Cloudflare Vite plugin can start an unrelated
+Worker and fail collection on unbuilt imports or missing secrets. Preserve the
+explicit protocol and real Worker gates in the owning CI workflow.
+
 ## Vite+ native service Worker boundary
 
 Give an adopted native Worker an owning private workspace, pinned Vite+/Cloudflare
