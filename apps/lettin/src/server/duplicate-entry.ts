@@ -6,7 +6,7 @@ import {
   worldRole,
   writeAccess,
 } from './context';
-import { lettinDraftSchema } from './schema';
+import { copyContextFactSchema, lettinDraftSchema } from './schema';
 import { draftArtwork } from './wiki-references';
 
 // The caller has already resolved notebook access. The INSERT repeats its fence.
@@ -25,11 +25,30 @@ export async function duplicateEntry(
   if (source.version !== command.version)
     throw new LettinError(409, 'Revision conflict');
   const saved = JSON.parse(source.draft);
+  const context =
+    command.contextFact === undefined
+      ? undefined
+      : copyContextFactSchema.safeParse(command.contextFact);
+  if (context && (!context.success || saved.kind !== 'character'))
+    throw new LettinError(400, 'Invalid character context');
+  const contextFact = context?.success ? context.data : undefined;
+  const wiki = saved.wiki ?? { aliases: [], facts: [], relationships: [] };
   const parsed = lettinDraftSchema.safeParse({
     ...saved,
     title: command.title,
-    links: [],
-    ...(saved.wiki ? { wiki: { ...saved.wiki, relationships: [] } } : {}),
+    links: command.linkSource ? [command.entryId] : [],
+    ...(saved.wiki || contextFact
+      ? {
+          wiki: {
+            ...wiki,
+            relationships: [],
+            facts: [
+              ...(wiki.facts ?? []),
+              ...(contextFact ? [contextFact] : []),
+            ],
+          },
+        }
+      : {}),
   });
   if (!parsed.success) throw new LettinError(400, 'Invalid saved draft');
   const id = crypto.randomUUID();
