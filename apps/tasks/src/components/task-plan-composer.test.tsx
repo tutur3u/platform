@@ -179,7 +179,7 @@ it('preserves form and source consent after denied creation without automatic re
   expect(
     container.querySelector<HTMLInputElement>('input[type=checkbox]')?.checked
   ).toBe(true);
-  expect(container.querySelector('[role=alert]')?.textContent).toBe(
+  expect(container.querySelector('[role=alert] p')?.textContent).toBe(
     'createFailed'
   );
 });
@@ -209,3 +209,19 @@ it('locks the form while a create is pending', async () => {
   expect(createTask).toHaveBeenCalledTimes(1);
   await act(async () => resolve({ task: { id: 'created-task' } }));
 });
+
+it.each([new TypeError('Failed to fetch'), new Error('Internal server error')])(
+  'prevents another create after an unconfirmed response: %s',
+  async (error) => {
+    createTask.mockRejectedValue(error);
+    const container = await mount();
+    await fill(container);
+    await submit(container);
+    expect(container.querySelector('fieldset')?.disabled).toBe(true);
+    expect(
+      container.querySelector('[role=alert] a')?.getAttribute('href')
+    ).toBe('/personal/boards/board-1');
+    await submit(container);
+    expect(createTask).toHaveBeenCalledTimes(1);
+  }
+);

@@ -8424,7 +8424,7 @@
     "chooseList": "Choose a list",
     "create": "Create task",
     "created": "Task created.",
-    "createFailed": "Unable to create the task. Check your destination permissions before trying again. Your form is preserved.",
+    "createFailed": "Task creation could not be confirmed. Your task may already exist. Check the selected board before starting another task. This form is preserved and cannot be submitted again.",
     "creating": "Creating…",
     "destinationConsent": "The task name and any attached reference will be visible under the selected board’s existing access rules. Creating a task does not publish your notebook.",
     "hint": "Plan your next creative step in this workspace. Choose the destination and review what you share before creating it.",

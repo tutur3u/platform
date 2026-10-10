@@ -8424,7 +8424,7 @@
     "chooseList": "Chọn danh sách",
     "create": "Tạo công việc",
     "created": "Đã tạo công việc.",
-    "createFailed": "Không thể tạo công việc. Kiểm tra quyền tại nơi lưu trước khi thử lại. Biểu mẫu của bạn được giữ nguyên.",
+    "createFailed": "Chưa thể xác nhận việc tạo công việc. Công việc có thể đã được tạo. Kiểm tra bảng đã chọn trước khi bắt đầu công việc khác. Biểu mẫu được giữ nguyên và không thể gửi lại.",
     "creating": "Đang tạo…",
     "destinationConsent": "Tên công việc và liên kết được đính kèm sẽ hiển thị theo quyền truy cập hiện tại của bảng đã chọn. Tạo công việc không xuất bản sổ tay của bạn.",
     "hint": "Lên kế hoạch cho bước sáng tạo tiếp theo trong không gian làm việc này. Chọn nơi lưu và kiểm tra thông tin bạn chia sẻ trước khi tạo.",

@@ -1335,3 +1335,9 @@ its root internal API import to source. A preserved JSX transform otherwise fail
 Vite import analysis before mounted tests run. Other local suites may still need
 source aliases for unbuilt dependency subpaths; record those failures separately
 and use exact-head CI for application builds.
+
+Task planning keeps each creation form single-use after submission. If the response
+cannot confirm creation, the form stays preserved and locked, with a link to the
+selected board. Check that board before starting another task: the server may have
+inserted it even when the response failed. This guard does not provide server-side
+idempotency across new forms or page reloads.

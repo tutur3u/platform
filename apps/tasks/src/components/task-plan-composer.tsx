@@ -29,6 +29,7 @@ export function TaskPlanComposer({
   const [listId, setListId] = useState('');
   const [attachSource, setAttachSource] = useState(false);
   const submitting = useRef(false);
+  const [creationUnconfirmed, setCreationUnconfirmed] = useState(false);
   const query = useQuery({
     queryKey: ['task-plan-boards', wsId],
     queryFn: () => listWorkspaceBoardsWithLists(wsId),
@@ -75,6 +76,9 @@ export function TaskPlanComposer({
           : {}),
       });
     },
+    onError: () => {
+      setCreationUnconfirmed(true);
+    },
     onSuccess: () => {
       for (const family of ['tasks', 'tasks-full', 'task_lists']) {
         void client.invalidateQueries({ queryKey: [family, boardId] });
@@ -120,14 +124,13 @@ export function TaskPlanComposer({
           event.preventDefault();
           if (submitting.current || !name.trim() || !list) return;
           submitting.current = true;
-          mutation.mutate(undefined, {
-            onSettled: () => {
-              submitting.current = false;
-            },
-          });
+          mutation.mutate();
         }}
       >
-        <fieldset disabled={mutation.isPending} className="space-y-5">
+        <fieldset
+          disabled={mutation.isPending || creationUnconfirmed}
+          className="space-y-5"
+        >
           <label className="block space-y-2">
             {t('name')}
             <Input
@@ -192,7 +195,17 @@ export function TaskPlanComposer({
             {t(mutation.isPending ? 'creating' : 'create')}
           </Button>
         </fieldset>
-        {mutation.isError && <p role="alert">{t('createFailed')}</p>}
+        {mutation.isError && (
+          <div role="alert" className="space-y-2">
+            <p>{t('createFailed')}</p>
+            <Link
+              className="underline"
+              href={`/${routeWsId}/boards/${boardId}`}
+            >
+              {t('openBoards')}
+            </Link>
+          </div>
+        )}
       </form>
     </section>
   );
