@@ -639,3 +639,13 @@ explicit sharing choice, default legacy records to private, and enforce it on
 server reads and metadata. Lettin About sharing is separate from canonical
 account identity; see the profile decisions in the Lettin and user-management
 feature docs and their projection/privacy regression tests.
+
+## Date-only creator planning handoffs
+
+For navigation-only ecosystem integrations, use registered app origins and carry
+only the minimal explicitly chosen navigation value. Validate Gregorian day
+strings without rollover or server timezone conversion; keep notebook IDs and
+private text out of a date-only Calendar handoff. Destination session/workspace
+permissions remain authoritative. Block navigation during unresolved editor
+changes and reset context-local selections together with their owning context.
+See the Lettin Calendar decision and URL/rendered regressions.
