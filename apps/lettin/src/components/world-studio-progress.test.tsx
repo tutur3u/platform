@@ -145,9 +145,7 @@ it('retains typed search when progress changes and provides an empty matching re
       <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
     )
   );
-  const input = [...container.querySelectorAll('label')]
-    .find((label) => label.textContent === 'searchWiki')!
-    .querySelector('input')!;
+  const input = browseField('searchWiki') as HTMLInputElement;
   expect(input.type).toBe('text');
   await act(async () => {
     Object.getOwnPropertyDescriptor(
