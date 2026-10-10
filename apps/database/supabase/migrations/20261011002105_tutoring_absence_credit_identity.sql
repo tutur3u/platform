@@ -129,7 +129,6 @@ begin
     parent_removed:=not exists(select 1 from public.workspaces where id=c.ws_id)
       or not exists(select 1 from public.workspace_user_groups where id=c.group_id and ws_id=c.ws_id)
       or not exists(select 1 from public.workspace_users where id=c.student_user_id and ws_id=c.ws_id)
-      or not exists(select 1 from public.workspace_user_groups_users where group_id=c.group_id and user_id=c.student_user_id)
       or (old.session_id is not null and not exists(select 1 from private.workspace_user_group_sessions where id=old.session_id));
     if tg_op='DELETE' and parent_removed then
       -- Required scope FKs already own deletion when their parent is gone.

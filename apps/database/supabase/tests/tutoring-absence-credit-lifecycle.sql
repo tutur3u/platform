@@ -158,6 +158,13 @@ select lives_ok($q$delete from public.workspace_user_groups_users where group_id
 select is((select jsonb_agg(to_jsonb(a) order by id) from public.user_group_attendance a
  where group_id=pg_temp.fid(92731) and user_id=pg_temp.fid(92721)),
  (select snapshot from attendance_before_departure),'membership departure preserves exact attendance history');
+-- Enrollment departure is not an FK cascade and never permits direct deletion.
+create temp table orphan_before_delete as select jsonb_build_object('attendance',to_jsonb(a),'credit',to_jsonb(c)) snapshot
+ from public.user_group_attendance a join private.tutoring_absence_credits c on c.original_attendance_id=a.id where a.id=pg_temp.fid(92755);
+select throws_ok($q$delete from public.user_group_attendance where id=pg_temp.fid(92755)$q$,'40001','Source absence requires explicit credit resolution','membership departure does not authorize direct linked attendance deletion');
+select is((select jsonb_build_object('attendance',to_jsonb(a),'credit',to_jsonb(c))
+ from public.user_group_attendance a join private.tutoring_absence_credits c on c.original_attendance_id=a.id where a.id=pg_temp.fid(92755)),
+ (select snapshot from orphan_before_delete),'denied orphan deletion preserves exact attendance and credit revision/history');
 select ok(exists(select 1 from private.tutoring_absence_credits where original_attendance_id=pg_temp.fid(92752) and state='CREDITED' and attendance_id is null),'teardown retains DONE original source snapshot');
 select is(pg_temp.create_credit(92755,92772)->>'createdCount','1','original replay survives membership departure');
 select is(pg_temp.change_credit(92755,92778,'2','CANCELLED')->>'state','RELEASED','tenant-authorized release survives missing enrollment/source');
