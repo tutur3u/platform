@@ -1436,3 +1436,26 @@ but loses sequence controls. Clear reading filters removes tag, search and kind
 filters together and returns to the notebook overview. These local reading
 filters do not publish, grant access or persist preferences. EN/VI regressions:
 `reading-tag-filter.test.tsx` and `public-world.test.tsx`.
+
+### Private saved work-stage summary
+
+The authenticated notebook studio shows totals for all saved entries in the current
+notebook across Unstarted, Drafting, Revising and Ready, including zero-count
+stages. Historical entries without a stage count as Unstarted. The summary reads
+the saved private draft stage, even when a published snapshot has another stage.
+It excludes the notebook itself and remains independent of entry-kind, search,
+publication, tag and work-stage browsing filters.
+
+This is an authored organization aid, not completion or publication evidence.
+Ready does not publish content. Unsaved editor changes are excluded until saved
+and refreshed through the existing studio query. The summary appears in private
+browsing only, creates no new stored metrics, profile fields, source references,
+permissions or public projections, and offers no implicit bulk action. Saving and
+publishing retain their existing access and revision checks.
+
+Regression evidence: `work-progress-summary.test.tsx` verifies both languages,
+historical defaults, zero stages, saved versus published values, refreshed records
+and unchanged input; `world-studio-progress.test.tsx` verifies that filtering the
+visible list does not narrow summary counts. Existing `server/work-progress.test.ts`
+checks save/publication isolation and public stage omission. Exact-head CI and
+hosted studio acceptance remain independent delivery gates.

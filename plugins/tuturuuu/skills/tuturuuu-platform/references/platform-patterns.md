@@ -852,3 +852,13 @@ from search/tag/page results. Empty filtered lists need scoped clear-filter link
 not an identity 404 or a switch to global discovery. Reuse public filter validation
 and first-page results, preserve owner-sharing projection rules, and cover
 malformed parameters plus unpublished creators before accepting empty recovery.
+
+### Private saved-stage summaries
+
+Derive organization counts from the already-authorized saved notebook entries,
+not the editor buffer or published records. Keep the summary dataset separate
+from browsing facets, count historical missing stages using the documented
+Unstarted default, and show zero stages. Explain that Ready is authored progress
+rather than publication or completion evidence. Do not persist computed metrics
+or extend public projections. Lettin's bilingual summary and studio filter
+regressions preserve these boundaries.
