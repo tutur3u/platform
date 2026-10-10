@@ -348,3 +348,37 @@ it.each([true, false])(
     expect(mutateAsync).not.toHaveBeenCalled();
   }
 );
+it('changes private work progress only through an explicit revision-aware save', async () => {
+  mutateAsync.mockResolvedValueOnce({ id: 'world' });
+  const onDirty = vi.fn();
+  await act(async () =>
+    root.render(
+      <EntryEditor
+        wsId="workspace"
+        worldId="world"
+        record={record}
+        worldRole="owner"
+        isWorld
+        entries={[]}
+        onDirty={onDirty}
+      />
+    )
+  );
+  const control = [...container.querySelectorAll('select')].find((el) =>
+    el.parentElement?.textContent?.includes('workProgressHint')
+  )!;
+  expect(control.value).toBe('unstarted');
+  await act(async () => {
+    control.value = 'ready';
+    control.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  expect(onDirty).toHaveBeenLastCalledWith(true);
+  expect(mutateAsync).not.toHaveBeenCalled();
+  await click('saveDraft');
+  expect(mutateAsync).toHaveBeenCalledTimes(1);
+  expect(mutateAsync.mock.calls[0]?.[0]).toMatchObject({
+    action: 'saveWorld',
+    version: 1,
+    draft: { workProgress: 'ready' },
+  });
+});

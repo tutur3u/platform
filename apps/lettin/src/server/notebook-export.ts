@@ -55,6 +55,7 @@ export async function exportNotebook(
       throw new LettinError(422, 'Invalid saved document depth');
     const parsed = lettinDraftSchema.safeParse(data);
     if (!parsed.success) throw new LettinError(422, 'Invalid saved document');
+    if (scope === 'published') delete parsed.data.workProgress;
     return publishedReferences(parsed.data, ids);
   };
   const result: LettinNotebookExport = {
