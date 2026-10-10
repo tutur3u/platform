@@ -6,6 +6,12 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Private saved-reference filters should operate only on the current authorized
+  projection. Do not recover withdrawn titles from identifiers or historical
+  caches. Keep filters ephemeral and reset their component boundary on actor
+  changes, while preserving actor-scoped query and mutation keys. See
+  [Lettin saved libraries](../../../../../apps/docs/platform/features/lettin.mdx).
+
 - For public catalogue facets, filter the published snapshot in the authoritative
   query before applying pagination and its next-page sentinel. Keep URL filters
   through search and paging, and share bounded validation between the page and
