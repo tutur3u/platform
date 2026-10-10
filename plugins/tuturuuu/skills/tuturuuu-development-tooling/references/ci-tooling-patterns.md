@@ -534,3 +534,12 @@ trigger, vars and secret names. Deploy only the immutable artifact qualified by
 that CI run, using its emitted Wrangler config; preserve source config for named
 secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
+
+Cron Control database recovery and lookup each carry a 30-second AbortSignal and
+reject redirects with `redirect: 'manual'`. Keep body consumption attached to the
+lookup signal and preserve failure short-circuiting before later phases. Timeouts
+can leave ambiguous remote outcomes; retain pending recovery state and idempotent
+RPC behavior, without adding immediate re-enqueue feedback. These deadlines do
+not cap recurring invocation counts, billed rows, response bytes or total spend.
+See the database request deadline section in the Cron Control runbook for controlled
+unit evidence versus hosted scheduling and independent-stop release gates.
