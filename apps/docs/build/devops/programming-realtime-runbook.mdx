@@ -478,8 +478,24 @@ progress and ambiguous-close recovery contracts.
 one hour. This is a backoff ceiling, not a finite attempt or lifetime limit:
 100 reconstructed deferrals still produce future deadlines and retain pending
 tracks. A new publication obligation can reset the retry counter and deadline.
-The SFU client also lacks an explicit request/body deadline. Do not certify this
-path as bounded autonomous cleanup or an account-spend cap. A repair must retain
+`CloudflareSfuClient.request` performs one fetch per call without an explicit
+AbortSignal, request/body deadline, response byte limit or redirect policy. Its
+300-character error detail limit applies after `response.text()` has consumed the
+complete body; successful responses likewise await the complete JSON body. A
+stalled fetch or body prevents cleanup from reaching failure deferral. In the
+standalone server, it also retains that room in `cleanupInFlight`, so subsequent
+interval sweeps skip provider cleanup for the room until the promise settles.
+These are source-audit findings; existing SFU request tests do not exercise stalled
+requests, stalled bodies, oversized responses or deadline clock boundaries.
+
+Provider ambiguity retains unresolved tracks. The helper confirms absence after
+failed closure and persists confirmed progress per session; a failed progress
+write aborts instead of reporting that progress as durable. Future deadline/body
+bounds must preserve this recovery contract, including ambiguous remote completion
+after local cancellation. An aborted request does not prove the provider stopped
+media or cancelled its operation.
+
+Do not certify this path as bounded autonomous cleanup or an account-spend cap. A repair must retain
 unresolved media obligations while adding durable pre-I/O attempts/age, a finite
 operation envelope, authenticated recovery and stop/reschedule fences. Never
 clear pending tracks merely because retries or provider confirmation failed.

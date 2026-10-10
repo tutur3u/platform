@@ -204,6 +204,13 @@ repeat successful provider work. Counter saturation at 32 and hourly backoff do
 not terminate the job, and new obligations can reset the delay. Preserve pending
 tracks and confirmed-progress recovery while introducing a durable finite job
 budget, bounded calls/body reads and authenticated stop/reschedule fences.
+The SFU client awaits fetch and full text/JSON bodies without explicit deadlines
+or byte bounds; trimming error details after `response.text()` does not bound the
+read. A stalled promise prevents failure deferral and keeps standalone-server
+cleanup marked in flight. Test stalled fetch/body, oversized response, clock
+boundaries and ambiguous completion before accepting a deadline repair. Preserve
+absence confirmation and fail-closed progress persistence; cancellation alone
+cannot establish remote media shutdown.
 Controlled helper counts exclude surrounding room storage/alarm operations and
 do not prove hosted SFU shutdown or account-wide billing safety.
 
