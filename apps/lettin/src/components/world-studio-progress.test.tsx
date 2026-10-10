@@ -128,7 +128,10 @@ it('retains typed search when progress changes and provides an empty matching re
       <WorldStudio wsId="workspace" worldId="notebook" section="characters" />
     )
   );
-  const input = container.querySelector('input')!;
+  const input = [...container.querySelectorAll('label')]
+    .find((label) => label.textContent === 'searchWiki')!
+    .querySelector('input')!;
+  expect(input.type).toBe('text');
   await act(async () => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -138,6 +141,9 @@ it('retains typed search when progress changes and provides an empty matching re
   });
   await setProgress('ready');
   expect(input.value).toBe('Alice');
+  expect(
+    container.querySelector<HTMLInputElement>('input[type="date"]')!.value
+  ).toBe('');
   expect(container.querySelector('[data-testid="results"]')!.textContent).toBe(
     ''
   );
