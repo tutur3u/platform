@@ -307,3 +307,25 @@ Framework adapters without a canonical username omit the optional menu item.
 Regression coverage: `public-profile-url.test.ts` checks legacy usernames,
 configured origins, and rejected paths; `satellite-user-menu-items.test.tsx`
 checks signed-in, signed-out, and missing-profile menu behavior.
+
+
+### Explicit public link copying
+
+The public `/u/[username]` page offers an explicit copy-link control using the
+canonical `https://tuturuuu.com/u/[username]` address. It copies only that routing
+URL, never biography text, account metadata, private fields, workspace identifiers
+or tracking query values. Default public fields remain avatar, banner, display
+name and biography; additional details still require explicit owner sharing.
+The control is an action for a visitor, not a new profile data field or a grant.
+It does not send messages, create notifications or publish anything automatically.
+
+The shared `PublicLinkButton` accepts only the canonical public-profile and
+published-notebook route shapes. The owning surface must first provide an
+already-public projection; URL validation is not authorization. It writes to the
+clipboard only after a click, announces success, and offers a read-only selectable
+URL after clipboard denial/unavailability. Duplicate clicks are fenced and old
+completion is suppressed when the destination changes or the control unmounts.
+App-provided English/Vietnamese labels keep the shared component free of implicit
+translation namespace requirements. Regression coverage: `public-content-link.test.ts`,
+`public-link-button.test.tsx` and profile page/projection tests. Hosted clipboard
+permissions and exact-head app/shared-package CI remain separate evidence gates.
