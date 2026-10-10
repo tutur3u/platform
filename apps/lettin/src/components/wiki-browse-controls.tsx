@@ -14,12 +14,14 @@ export function WikiBrowseControls({
   canSort,
   disabled,
   onChange,
+  onClear,
 }: {
   filters: WikiFilters;
   tags: string[];
   canSort: boolean;
   disabled: boolean;
   onChange: (filters: WikiFilters) => void;
+  onClear?: () => void;
 }) {
   const t = useTranslations('lettin');
   const selectClass = 'block w-full rounded border border-input bg-card p-2';
@@ -92,7 +94,9 @@ export function WikiBrowseControls({
       <Button
         variant="ghost"
         disabled={disabled}
-        onClick={() => onChange({ ...initialWikiFilters })}
+        onClick={() =>
+          onClear ? onClear() : onChange({ ...initialWikiFilters })
+        }
       >
         {t('clearFilters')}
       </Button>

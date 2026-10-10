@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createRoom, joinRoom, projectRoom } from '@tuturuuu/multiplayer';
-import { expect, it } from 'vitest';
+import { expect, it } from 'vite-plus/test';
 import { newestRoomView } from './room-cache';
 
 it('does not restore hidden teams when an older HTTP request finishes after the admin toggle', async () => {

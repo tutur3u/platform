@@ -15,11 +15,13 @@ export function DocumentView({
   showOutline = false,
   showReadingStatistics = false,
   outlineScope = 'lettin-document',
+  publicOutlineEntryId,
 }: {
   draft: LettinDraft;
   showOutline?: boolean;
   showReadingStatistics?: boolean;
   outlineScope?: string;
+  publicOutlineEntryId?: string | null;
 }) {
   const t = useTranslations('lettin');
   const outline = showOutline
@@ -83,7 +85,11 @@ export function DocumentView({
       )}
       <ArtworkGallery items={draft.gallery} />
       {outline && (
-        <DocumentOutline items={outline.items} truncated={outline.truncated} />
+        <DocumentOutline
+          items={outline.items}
+          truncated={outline.truncated}
+          publicEntryId={publicOutlineEntryId}
+        />
       )}
       {renderDocumentNode(
         draft.content,
