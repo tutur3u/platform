@@ -6,6 +6,12 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Private saved-reference filters should operate only on the current authorized
+  projection. Do not recover withdrawn titles from identifiers or historical
+  caches. Keep filters ephemeral and reset their component boundary on actor
+  changes, while preserving actor-scoped query and mutation keys. See
+  [Lettin saved libraries](../../../../../apps/docs/platform/features/lettin.mdx).
+
 - For public catalogue facets, filter the published snapshot in the authoritative
   query before applying pagination and its next-page sentinel. Keep URL filters
   through search and paging, and share bounded validation between the page and
@@ -613,3 +619,14 @@ load without exercising more application behavior. Preserve the real mutation,
 quota race and cross-actor assertions; do not raise global timeouts or replace D1
 with mocks. Lettin's creator-bookmark quota regression uses 499 seeded references
 and two concurrent saves to verify the 500-reference boundary.
+
+## Scoped artwork reading dialogs
+
+Use the already projected gallery item and its validated media URL for a larger
+reading view. Preserve alt text, caption and credit; use accessible dialog titles,
+localized close controls, focus return and Escape behavior. Keep the dialog closed
+until the reader asks to open it. Direct media URLs preserve revocation checks;
+do not introduce optimizer caches, download endpoints or permission changes.
+In jsdom, assert the rendered referrer-policy attribute and allow the shared
+Radix focus scope's deferred unmount callback to settle before asserting focus
+return; keep the actual dialog interaction rather than replacing it with a mock.

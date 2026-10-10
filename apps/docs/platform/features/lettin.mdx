@@ -884,6 +884,22 @@ and dirty-navigation fences and context resets. `storage.test.ts` uses local D1
 to verify saved private notes, public omission and workspace/revocation boundaries.
 These fixtures do not establish hosted dialog or keyboard acceptance.
 
+### Larger artwork reading view
+
+Every valid gallery image has an explicit, keyboard-accessible View artwork
+action. The dialog shows the same source image at a larger size with its authored
+alt text, caption and credit. It stays closed until requested, and supports
+Escape and a localized Close artwork control. It does not provide an export or
+download action. The gallery remains bounded to twelve images in authored order.
+
+Public readers receive only the published gallery projection. Authorized private
+previews retain their existing media access checks. Both views use direct media
+URLs without optimizer caching or referrer forwarding; opening the dialog does
+not publish, copy or grant access to a source. This feature does not change cover
+artwork or profile visibility. Regression evidence: `artwork-viewer.test.tsx`
+exercises real dialog interaction, focus return, bilingual controls, escaped
+attribution and invalid URLs; `artwork-gallery.test.tsx` covers gallery bounds
+and `gallery-storage.test.ts` covers publication and media retention boundaries.
 ### Typed private quick capture
 
 Quick capture defaults to a page and lets creators explicitly choose any supported
@@ -904,3 +920,29 @@ selection, explicit commands, reset, failure and blocked controls, and the local
 `storage.test.ts` covers page, character and story privacy, cross-workspace denial
 and revoked collaborator access. Exact-head builds and hosted dialog acceptance
 remain independent delivery gates.
+
+## Private saved-library filters
+
+The authenticated saved-library page lets readers filter their saved notebook
+and creator references by availability and current published title. Each library
+starts with all references visible and an empty search. Search is case-insensitive,
+Unicode-normalized, bounded to 100 characters, and remains only in component
+state. Filters do not change the URL, persist preferences, trigger source reads,
+remove references, or share the private library. Changing actors resets filters
+and uses the existing actor-scoped API and query cache.
+
+Only the title already returned by the authorized library response is searchable.
+Unavailable references have no searchable title or source link; search never
+falls back to IDs or cached historical metadata. The unavailable facet with empty
+search makes those references manageable. A filtered empty result offers a clear
+control to recover all references; a truly empty library keeps its existing message.
+Removal still requires an explicit action and successful server confirmation,
+and denied removal preserves the reference and current filters. Notebook
+publication, profile sharing defaults and source-access rules are unchanged.
+
+Rendered regressions in `saved-library-filters.test.tsx` cover both libraries,
+local-only read/write counts, unavailable projections, clear recovery, actor
+changes, failed removal, Unicode matching and both shipped language bundles.
+Existing reader/creator library and bookmark API/D1 tests retain their boundary
+coverage. Fixture translations and APIs are doubled; exact-head Lettin builds
+and repository CI remain separate delivery evidence.
