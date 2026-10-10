@@ -820,3 +820,11 @@ or replacing labels. Respect the original collection limit. Keep source-link
 consent separate, read the saved source revision, and repeat actor/workspace/media
 fences in the atomic copy. Context copies never transfer grants or publication.
 Lettin's context-copy D1/UI regressions cover these boundaries.
+
+## Published reader sequences
+
+Derive previous/next destinations from the same filtered public projection used
+by the reader sidebar. Hide the controls for an excluded selection or a list
+with fewer than two entries; never wrap to another notebook or resolve missing
+IDs through private APIs. Reuse the public reader's entry selection/URL handler.
+Cover filter changes and both list ends alongside localized accessible labels.
