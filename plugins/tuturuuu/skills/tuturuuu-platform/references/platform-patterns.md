@@ -705,3 +705,13 @@ or private studio drafts. Keep suggestions bounded while permitting exact manual
 input. Apply tag admission before sidebar/collection/sequence and relationship
 endpoint filtering; retain selected-document reading without stale neighbor links.
 Clear all local reader filters together and test combined search/kind/tag behavior.
+
+### Character card fact previews
+
+Use the card's existing authorized draft projection: public readers must replace
+private draft fields with published snapshots before rendering previews. Show a
+bounded number of escaped nonempty facts in authored order, with Unicode-safe
+text bounds and full values retained in the entry reader. Do not infer profile
+fields or add source reads/publication commands for presentation. Keep content
+notices first and preserve the card's single explicit selection control. Coverage:
+`character-card-facts.test.tsx`.
