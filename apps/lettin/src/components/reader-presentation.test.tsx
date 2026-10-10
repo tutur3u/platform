@@ -4,7 +4,9 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import en from '../../messages/en.json';
 import vietnamese from '../../messages/vi.json';
+import { DocumentView } from './document-view';
 import { ReaderPresentation } from './reader-presentation';
+import { createStarterDraft } from './starter-drafts';
 
 const language = vi.hoisted(() => ({ value: 'en' }));
 vi.mock('next-intl', () => ({
@@ -135,4 +137,22 @@ it('normalizes an unsupported programmatic option to the default presentation', 
       .querySelector('.lettin-reader-presentation')
       ?.getAttribute('data-reader-size')
   ).toBe('default');
+});
+
+it('keeps a private DocumentView preview outside the reader controls and wrapper', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const host = document.createElement('div');
+  const root = createRoot(host);
+  const draft = createStarterDraft('Private notebook', 'blank', (key) => key);
+  const original = JSON.stringify(draft);
+  try {
+    await act(() => root.render(<DocumentView draft={draft} />));
+    expect(host.querySelector('article')).not.toBeNull();
+    expect(host.querySelector('.lettin-reader-presentation')).toBeNull();
+    expect(host.querySelector('fieldset')).toBeNull();
+    expect(host.querySelector('select')).toBeNull();
+    expect(JSON.stringify(draft)).toBe(original);
+  } finally {
+    await act(() => root.unmount());
+  }
 });

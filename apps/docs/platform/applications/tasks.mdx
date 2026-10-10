@@ -1341,3 +1341,68 @@ cannot confirm creation, the form stays preserved and locked, with a link to the
 selected board. Check that board before starting another task: the server may have
 inserted it even when the response failed. This guard does not provide server-side
 idempotency across new forms or page reloads.
+
+## Explicit task planning priority
+
+The Tasks `/{wsId}/tasks/new` composer, including the Lettin handoff, offers an
+optional priority choice: critical, high, normal, or low. It starts with no
+priority and omits the API field until the creator chooses one. Clearing a
+choice omits it again. No notebook content or metadata determines priority.
+Failed creation preserves the choice in the locked single-use form; mutation
+retries stay disabled. Check the selected board before starting another form. Source-reference sharing remains unchecked and independently consented,
+and the destination API retains workspace and task authorization.
+
+Regression coverage in `apps/tasks/src/components/task-plan-composer.test.tsx`
+checks each API priority, clearing, preserved choices after failed creation, and unchanged source consent.
+The composer fixtures render choices from both English and Vietnamese message bundles.
+Exact-head Tasks build and repository CI remain separate delivery gates.
+
+## Explicit destination project association
+
+Tasks planning, including the Lettin handoff, can associate the new task with one
+existing destination workspace project. This control starts unchecked. Project
+choices are loaded through the canonical authenticated internal API only after
+opt-in, and the creator must select a currently available project. Opening the
+composer never creates a project, task, or source reference. No notebook content
+or metadata determines the project; source-link consent remains independent.
+
+Pending or failed project reads and a selection removed by refreshed choices
+block submission with association enabled. The creator can retry the read or
+uncheck association to continue without a project. Failed task creation preserves
+the project choice in the locked single-use form. Check the selected board before
+starting another form; neither read nor creation failures trigger automatic retries. The canonical task API revalidates
+workspace project ownership and destination task authorization at submission.
+Existing project and board access rules apply; notebook grants and publication
+never change.
+
+`apps/tasks/src/components/task-plan-composer.test.tsx` covers opt-in-only reads,
+required current selection, ID-only creation payloads, opt-out, unavailable and
+removed projects, denial preservation, and both language bundles. These fixtures
+double the internal API and translation hook; exact-head app builds and API CI
+remain separate delivery evidence.
+
+## Authored task planning notes
+
+The Tasks `/{wsId}/tasks/new` composer, including the Lettin handoff, starts with
+empty optional planning notes. Creators may enter up to 2,000 characters for the
+chosen destination task. Notes are visible under the destination task's existing
+permissions. The composer saves only this authored text as literal rich-document
+paragraphs; line breaks are retained and markup is treated as text. It does not
+read or prefill notebook text, artwork or profile data.
+
+Notebook-link sharing remains independently off by default, and project association
+requires its own explicit selection. An opted-in source link is appended as a
+separate paragraph; unchecking it removes only the link. Empty or whitespace-only
+notes add no description unless a source link is selected. Changing the destination
+board preserves the authored plan while requiring a new list choice. Creation still
+requires explicit submission and current destination permissions. An unconfirmed
+response retains the form and notes in the existing locked recovery state, preventing
+an automatic retry or duplicate create. Closing the composer discards these local
+notes; they are not a durable draft.
+
+Regression coverage: `task-plan-description.test.ts` exercises literal text, line
+breaks, independent link composition and serialized size bounds;
+`task-plan-composer.test.tsx` covers empty defaults, both shipped languages, optional
+notes without source/project sharing, source removal, oversized input rejection and
+uncertain creation recovery. Hosted task creation and the exact-head Tasks build
+remain separate delivery gates.

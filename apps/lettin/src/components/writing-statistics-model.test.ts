@@ -110,3 +110,24 @@ it('bounds wide trees and identifies incomplete counts', () => {
   expect(counts.truncated).toBe(true);
   expect(counts.words).toBe(9999);
 });
+
+it('bounds work for a wide frontier rejected by the depth limit', () => {
+  let reads = 0;
+  const frontier = Array.from({ length: 25_000 }, () => text('hidden'));
+  const observed = new Proxy(frontier, {
+    get(target, property, receiver) {
+      if (typeof property === 'string' && /^\d+$/.test(property)) reads++;
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  let content: LettinNode = { type: 'doc', content: observed };
+  for (let depth = 0; depth < 25; depth++) content = doc(content);
+  expect(documentWritingStatistics(content)).toEqual({
+    words: 0,
+    characters: 0,
+    truncated: true,
+  });
+  expect(reads).toBeLessThanOrEqual(20_000);
+  expect(frontier).toHaveLength(25_000);
+  expect(frontier.every((node) => node.text === 'hidden')).toBe(true);
+});
