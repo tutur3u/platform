@@ -12,6 +12,24 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get assistantDownloadPhasePending => 'Pending';
+
+  @override
+  String get assistantDownloadPhaseQueued => 'Queued';
+
+  @override
+  String get assistantDownloadPhaseTransferring => 'Downloading';
+
+  @override
+  String get assistantDownloadPhaseRetryWait => 'Waiting to retry';
+
+  @override
+  String get assistantDownloadPhasePaused => 'Paused';
+
+  @override
+  String get assistantDownloadPhaseVerifying => 'Verifying download';
+
+  @override
   String get adminAccountsActive => 'Access enabled';
 
   @override

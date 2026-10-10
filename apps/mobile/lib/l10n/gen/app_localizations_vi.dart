@@ -12,6 +12,24 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get assistantDownloadPhasePending => 'Đang chờ';
+
+  @override
+  String get assistantDownloadPhaseQueued => 'Trong hàng đợi';
+
+  @override
+  String get assistantDownloadPhaseTransferring => 'Đang tải xuống';
+
+  @override
+  String get assistantDownloadPhaseRetryWait => 'Chờ thử lại';
+
+  @override
+  String get assistantDownloadPhasePaused => 'Đã tạm dừng';
+
+  @override
+  String get assistantDownloadPhaseVerifying => 'Đang xác minh bản tải';
+
+  @override
   String get adminAccountsActive => 'Đã cho phép truy cập';
 
   @override
