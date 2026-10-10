@@ -211,6 +211,15 @@ cleanup marked in flight. Test stalled fetch/body, oversized response, clock
 boundaries and ambiguous completion before accepting a deadline repair. Preserve
 absence confirmation and fail-closed progress persistence; cancellation alone
 cannot establish remote media shutdown.
+Use `sfu-cost.test.ts` for counted actual-client/helper transport fixtures: stalled
+fetch and success/error bodies remain pending after one simulated hour; 1 MiB
+error content is consumed before 300-character display truncation. Two known-mid
+sessions across 24 failed reconstructions produce 48 close and 48 inventory calls,
+zero progress writes and preserved obligations. Failed durable progress replays
+24 acknowledged closes/writes; a saved completion receipt prevents subsequent
+provider calls. A timeout alone can amplify caller retries: pair it with persistent
+finite attempts/age, per-wake operation bounds and durable stop/reschedule fences.
+These tests characterize retained behavior; they do not implement those bounds.
 Controlled helper counts exclude surrounding room storage/alarm operations and
 do not prove hosted SFU shutdown or account-wide billing safety.
 

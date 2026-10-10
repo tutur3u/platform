@@ -485,8 +485,28 @@ complete body; successful responses likewise await the complete JSON body. A
 stalled fetch or body prevents cleanup from reaching failure deferral. In the
 standalone server, it also retains that room in `cleanupInFlight`, so subsequent
 interval sweeps skip provider cleanup for the room until the promise settles.
-These are source-audit findings; existing SFU request tests do not exercise stalled
-requests, stalled bodies, oversized responses or deadline clock boundaries.
+`packages/realtime/src/meet/sfu-cost.test.ts` now exercises the actual SFU client
+and cleanup helper through controlled fetch/response streams. A pending fetch,
+HTTP 200 body and HTTP 503 body each remain unresolved after one simulated hour,
+with one transport invocation and no supplied abort signal. The fixtures then
+finish their own streams so the tests leave no pending work. The client performs
+no automatic retry. A 1 MiB error response (256 chunks of 4 KiB) is fully consumed
+before the displayed detail is truncated to 300 characters.
+
+For two known-mid sessions, 24 helper reconstructions with repeated failed closes
+and confirmed-present inventories issue 48 close requests and 48 inventory
+requests, with zero progress-write attempts and both obligations retained. For
+one session whose close succeeds but progress persistence fails, 24 reconstructions
+issue 24 acknowledged close requests and 24 failed write attempts. Once progress
+is durably saved, another 24 reconstructions issue no provider calls or writes.
+These count calls to the real client/helper, with fixture transport and storage
+callbacks; they do not measure hosted billing, room alarm/storage operations,
+provider redirect hops or remote media completion.
+
+A timeout-only repair could let the existing caller retry previously stalled work
+and increase provider traffic. Introduce deadlines together with persistent finite
+job attempts/age, bounded per-wake operations and stop/reschedule fences. Deadline
+clock boundaries and real Worker/provider acceptance remain unverified.
 
 Provider ambiguity retains unresolved tracks. The helper confirms absence after
 failed closure and persists confirmed progress per session; a failed progress
