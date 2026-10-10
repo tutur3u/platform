@@ -942,6 +942,24 @@ selection, explicit commands, reset, failure and blocked controls, and the local
 and revoked collaborator access. Exact-head builds and hosted dialog acceptance
 remain independent delivery gates.
 
+### Copying published notebook and entry links
+
+Public notebook readers can explicitly copy the canonical Lettin notebook URL or
+the selected published-entry URL. Only an entry present in the current published
+projection is included as `?entry=...`; unavailable or arbitrary query-selected
+IDs fall back to the notebook URL. Source notebook and entry IDs are routing
+identifiers, not access grants. A later unpublish/retirement may make a copied link
+unavailable; copying does not freeze content or bypass publication checks.
+
+The shared control copies only a validated public URL. It does not include private
+workspace paths, actor identifiers, draft text, titles, profile details, tracking
+values or permissions. Clipboard denial exposes a manually selectable URL and a
+retry action. Copying never sends a message, notifies a creator, publishes content
+or records a reader interaction. Regression evidence: `public-world.test.tsx`,
+`public-content-link.test.ts` and `public-link-button.test.tsx` cover published-entry
+selection, route fences, explicit intent, failure recovery and stale completion.
+Exact-head CI and hosted browser clipboard acceptance remain separate gates.
+
 ## Private saved-library filters
 
 The authenticated saved-library page lets readers filter their saved notebook

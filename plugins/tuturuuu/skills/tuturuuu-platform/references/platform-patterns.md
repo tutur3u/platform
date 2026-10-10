@@ -706,3 +706,15 @@ permission are absent, remove image and hyperlink targets and explain the loss
 before apply. Reuse the private D1 import transaction and fence preview source so
 one importer cannot apply another importer's privileged plan. Keep consent,
 publication and creator revocation regression evidence separate from hosted CI.
+
+## Explicit public routing links
+
+Public copy/share controls must derive destinations from an already-public server
+projection, not `window.location`, arbitrary search values or private workspace
+routes. A canonical route helper validates shape but does not grant source access.
+Copy only the public routing URL and whitelist supported query keys; avoid actor,
+tracking, draft and profile metadata. Do not freeze publication by copying a link.
+Use explicit visitor intent, clipboard failure/manual selection recovery, duplicate
+submission fences and keyed destination lifetimes to suppress stale completion.
+Shared components can receive localized labels from owning apps instead of adding
+implicit shared translation keys to unrelated app bundles.
