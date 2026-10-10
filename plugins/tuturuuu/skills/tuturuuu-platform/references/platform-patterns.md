@@ -690,6 +690,18 @@ on context changes. Recipient acceptance is a distinct workflow; do not claim
 an owner confirmation establishes recipient consent. Lettin's collaborator DOM
 and D1 role/revocation regressions cover these boundaries.
 
+## Staging a published snapshot as a draft
+
+Keep snapshot restoration separate from persistence and publication. Confirm the
+local replacement, clone the available published value, replace the whole draft
+rather than merging authored optional fields, and reset tag/rich-text buffers together.
+Retain current private workflow labels separately from the public authored snapshot;
+never restore historical public labels over current private metadata.
+Preserve the last saved draft for local discard. Pending mutations and every cover, inline or gallery upload, together with
+source editing, must block restoration, including confirmation after availability
+changes. Use existing save commands and actor/workspace/revision/target fences;
+staging a snapshot does not revive unavailable references or grant publication.
+See the Lettin decision and restore/editor/local D1 regression coverage.
 ## Published notebook collections
 
 Use only the public snapshot payload when composing reader collections and search.

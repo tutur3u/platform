@@ -23,6 +23,7 @@ import { ArtworkGalleryEditor } from './artwork-gallery-editor';
 import { CreationGuidanceEditor } from './creation-guidance-editor';
 import { validGallery } from './gallery-model';
 import { PublicationPreview } from './publication-preview';
+import { PublishedDraftRestore } from './published-draft-restore';
 import { RichEditor } from './rich-editor';
 import { useLettinMutation } from './use-lettin';
 import { WikiDetailsEditor } from './wiki-details-editor';
@@ -60,6 +61,7 @@ export function EntryEditor({
   const [discardOpen, setDiscardOpen] = useState(false);
   const [savedDraft, setSavedDraft] = useState(record.draft);
   const [saved, setSaved] = useState(false);
+  const [inlineUploads, setInlineUploads] = useState(0);
   const editGeneration = useRef(0);
   const update = (patch: Partial<LettinDraft>) => {
     editGeneration.current += 1;
@@ -263,9 +265,14 @@ export function EntryEditor({
           setMarkdownEditing(editing);
           if (editing) update({});
         }}
-        onImageUpload={async (file) =>
-          (await uploadLettinArtwork(wsId, worldId, file)).image
-        }
+        onImageUpload={async (file) => {
+          setInlineUploads((count) => count + 1);
+          try {
+            return (await uploadLettinArtwork(wsId, worldId, file)).image;
+          } finally {
+            setInlineUploads((count) => count - 1);
+          }
+        }}
         value={draft.content}
         onChange={(content) => update({ content })}
       />
@@ -315,6 +322,26 @@ export function EntryEditor({
           >
             {t('saveDraft')}
           </Button>
+          <PublishedDraftRestore
+            published={record.published_at ? record.published : null}
+            disabled={
+              mutation.isPending ||
+              upload.isPending ||
+              galleryUploading ||
+              inlineUploads > 0 ||
+              markdownEditing
+            }
+            onRestore={(published) => {
+              editGeneration.current += 1;
+              setDraft({ ...published, workProgress: draft.workProgress });
+              setTagsText((published.tags ?? []).join(', '));
+              setEditorKey((key) => key + 1);
+              setMarkdownEditing(false);
+              setDirty(true);
+              setSaved(false);
+              onDirty(true);
+            }}
+          />
           {dirty && (
             <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
               <DialogTrigger asChild>
