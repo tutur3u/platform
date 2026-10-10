@@ -7,7 +7,10 @@ import {
   readImmediateRequestBody,
 } from './immediate-request-body';
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 function stalled(cancel = vi.fn()) {
   let controller!: ReadableStreamDefaultController<Uint8Array>;
   const pull = vi.fn(() => new Promise<void>(() => {}));
@@ -135,3 +138,39 @@ it('absorbs a late read rejection and cancellation error after timeout', async (
   expect(vi.getTimerCount()).toBe(0);
   expect(body.locked).toBe(false);
 });
+
+it.each(['chunk', 'end'] as const)(
+  'rejects a %s at the elapsed deadline before the timer callback runs',
+  async (boundary) => {
+    vi.useFakeTimers();
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(0);
+    let reads = 0;
+    const body = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          reads++;
+          if (boundary === 'end' && reads === 1) {
+            clock.mockReturnValue(MAX_IMMEDIATE_REQUEST_DURATION_MS - 1);
+            controller.enqueue(new TextEncoder().encode('{}'));
+            return;
+          }
+          clock.mockReturnValue(MAX_IMMEDIATE_REQUEST_DURATION_MS);
+          if (boundary === 'end') controller.close();
+          else controller.enqueue(new TextEncoder().encode('{}'));
+        },
+      },
+      { highWaterMark: 0 }
+    );
+    const request = new Request('http://localhost', {
+      method: 'POST',
+      body,
+      duplex: 'half',
+    } as RequestInit);
+    await expect(readImmediateRequestBody(request)).rejects.toBeInstanceOf(
+      ImmediateRequestTimeoutError
+    );
+    expect(reads).toBe(boundary === 'end' ? 2 : 1);
+    expect(body.locked).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+  }
+);

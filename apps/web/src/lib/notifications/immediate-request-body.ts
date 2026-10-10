@@ -23,6 +23,11 @@ export async function readImmediateRequestBody(
 ): Promise<string> {
   const reader = request.body?.getReader();
   if (!reader) return '';
+  const startedAt = performance.now();
+  const assertWithinDeadline = () => {
+    if (performance.now() - startedAt >= MAX_IMMEDIATE_REQUEST_DURATION_MS)
+      throw new ImmediateRequestTimeoutError();
+  };
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_, reject) => {
     timer = setTimeout(
@@ -34,7 +39,10 @@ export async function readImmediateRequestBody(
   const chunks: Uint8Array[] = [];
   try {
     for (;;) {
+      // Immediately resolved reads can run before the timer callback is serviced.
+      assertWithinDeadline();
       const { done, value } = await Promise.race([reader.read(), deadline]);
+      assertWithinDeadline();
       if (done) break;
       if (chunks.length >= MAX_IMMEDIATE_REQUEST_CHUNKS) {
         throw new ImmediateRequestTooLargeError();

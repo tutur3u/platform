@@ -965,3 +965,11 @@ cancel the editor, including a switch away and back.
 Retained sender image and gradient backgrounds in Original view keep their
 foreground colors, because a background-color alone does not establish the
 painted contrast. An opaque solid child resumes contrast correction.
+
+
+The immediate request reader checks monotonic elapsed time before and after each
+stream read, including end-of-stream. Immediately resolved chunks cannot bypass
+the ten-second deadline while timer callbacks await service; wall-clock changes
+do not extend it. The existing byte/chunk/selection limits and authenticated
+request ownership remain unchanged. Deadline regressions count actual stream reads
+at the exact boundary; this bounds request intake, not automatic draining or spend.
