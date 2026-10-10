@@ -69,12 +69,12 @@ jobs:
         run: node --test scripts/ci/mail-profile-runtime.test.mjs
       - name: Normal setup through the shared resource queue
         run: |
-          bun ttr resources status --json
-          bun ttr resources run -- bun setup
+          bun packages/sdk/src/cli/resources-entry.ts status --json
+          bun packages/sdk/src/cli/resources-entry.ts run -- bun setup
       - name: Run exact profile and independent browser transport contract
         run: |
-          bun ttr resources status --json
-          bun ttr resources run -- node scripts/ci/mail-profile-runtime.mjs "$PROFILE_EXPECTED_HEAD"
+          bun packages/sdk/src/cli/resources-entry.ts status --json
+          bun packages/sdk/src/cli/resources-entry.ts run -- node scripts/ci/mail-profile-runtime.mjs "$PROFILE_EXPECTED_HEAD"
       - name: Retain scoped terminal evidence
         if: always()
         uses: actions/upload-artifact@v7

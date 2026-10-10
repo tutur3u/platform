@@ -108,3 +108,32 @@ test('a failed cleanup preserves its first failure without repeating stop operat
   await assert.rejects(cleanup.run(), (error) => error === failure);
   assert.deepEqual(calls, ['stop']);
 });
+test('fresh hosted setup queues through the lightweight resources entry before SDK exports exist', () => {
+  const workflow = fs.readFileSync(
+    new URL(
+      '../../.github/workflows/mail-profile-runtime-contract.yaml',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  assert.equal(
+    workflow.split('bun packages/sdk/src/cli/resources-entry.ts status --json')
+      .length - 1,
+    2
+  );
+  assert.match(
+    workflow,
+    /bun packages\/sdk\/src\/cli\/resources-entry\.ts run -- bun setup/u
+  );
+  assert.match(
+    workflow,
+    /bun packages\/sdk\/src\/cli\/resources-entry\.ts run -- node scripts\/ci\/mail-profile-runtime\.mjs "\$PROFILE_EXPECTED_HEAD"/u
+  );
+  assert.doesNotMatch(workflow, /bun ttr resources/u);
+  const entry = fs.readFileSync(
+    new URL('../../packages/sdk/src/cli/resources-entry.ts', import.meta.url),
+    'utf8'
+  );
+  assert.match(entry, /from '\.\/resources'/u);
+  assert.doesNotMatch(entry, /from '\.\/commands'|from '\.\.\/platform'/u);
+});
