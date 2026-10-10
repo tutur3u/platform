@@ -15072,7 +15072,11 @@
     "value": "Value"
   },
   "public_profile": {
+    "copyFailed": "The link could not be copied. Select it below to copy manually.",
+    "copyLink": "Copy public profile link",
     "description": "Public Tuturuuu profile.",
+    "linkCopied": "Public link copied.",
+    "manualCopyLink": "Public profile link",
     "title": "Tuturuuu profile"
   },
   "qr": {

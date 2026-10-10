@@ -449,6 +449,24 @@ redelivery, actual workspace saves, live editor lease renewal and an independent
 operational stop remain separate acceptance boundaries. Do not deploy this fixture
 or claim a platform-wide cost cap from these tests.
 
+### Failed Parley candidate evidence
+
+For the Parley CI-built candidate, preserve the exact built artifact when a local
+fixture fails after a successful build. Bounded error-body diagnostics distinguish
+identity-route failures from incomplete page responses; neither a retained artifact
+nor successful compilation qualifies the candidate. Reproduce the pinned artifact
+through the resource broker before changing runtime behavior. Deployment still
+requires successful validation and separately authorized production promotion.
+
+When an identity route returns a generic HTTP 500, inspect the local harness's
+`getLogs()` output before changing the metadata route. Cache-handler module
+resolution can fail before the route implementation runs. A downloaded artifact
+may also retain CI-absolute WASM and data imports: that is a replay portability
+failure, distinct from a response failure observed on its original runner.
+Keep the downloaded files unchanged. Private relocation mappings must resolve to
+those same asset bytes and preserve their module types; record every mapping.
+A relocated diagnostic replay does not qualify the canonical deployment artifact.
+
 ## Native Vite+ Worker candidate
 
 `apps/meet-realtime` has a separate Vite+ workspace for the existing native Worker.
@@ -635,3 +653,14 @@ not cap request volume, total spending or Durable Object alarms, and does not
 provide an independent durable authenticated stop fence. Applicable account alerts
 and an independent stop remain unverified; no production billing configuration is
 changed by this implementation.
+
+The pinned Parley adapter registers static default and remote cache handlers before
+returning from Next's custom-handler loader. The installed app-route and app-page
+regression checks prevent the removed minified aliases from triggering a dynamic
+`None` handler import; a successful build still requires built-Worker identity and
+complete sequential/concurrent bilingual page acceptance.
+
+Parley uses `localePrefix: never`: built-Worker bilingual probes request the
+canonical `/access-denied` URL with an explicit `Accept-Language: en` or `vi`.
+A prefixed `/vi/access-denied` request redirects and sets a locale cookie; a
+fetch client without a cookie jar must not infer Vietnamese from that prefix.

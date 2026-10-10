@@ -56,6 +56,7 @@ vi.mock('@tuturuuu/ui/input', () => ({
 vi.mock('@/i18n/navigation', () => ({
   Link: (props: ComponentProps<'a'>) => <a {...props} />,
 }));
+vi.mock('./notebook-export', () => ({ NotebookExport: () => null }));
 vi.mock('./collaborators', () => ({ Collaborators: () => null }));
 vi.mock('./duplicate-entry', () => ({ DuplicateEntry: () => null }));
 vi.mock('./entry-editor', () => ({

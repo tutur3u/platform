@@ -3,6 +3,11 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import Page, { generateMetadata } from './page';
 
 const mocks = vi.hoisted(() => ({ read: vi.fn(), connection: vi.fn() }));
+vi.mock('@tuturuuu/ui/public-link-button', () => ({
+  PublicLinkButton: ({ url }: { url: string | null }) => (
+    <output data-public-link={url ?? ''} />
+  ),
+}));
 vi.mock('@tuturuuu/icons', () => ({ UserRound: () => null }));
 vi.mock('next/server', () => ({ connection: mocks.connection }));
 vi.mock('next/navigation', () => ({
@@ -34,6 +39,7 @@ it('renders only the default public identity and omits private profile values', 
   const boundary = Page(props);
   const child = boundary.props.children;
   const html = renderToStaticMarkup(await child.type(child.props));
+  expect(html).toContain('https://tuturuuu.com/u/creator');
   expect(html).toContain('Public Creator');
   expect(html).toContain('Public biography');
   expect(html).toContain('https://example.com/avatar');

@@ -9,6 +9,11 @@ import { artworkGallerySchema, artworkImageSchema } from './artwork-schema';
 import { richTextNodeSchema } from './rich-text-schema';
 import { wikiKinds, wikiSchema } from './wiki-schema';
 
+export const copyContextFactSchema = z.object({
+  label: z.string().trim().min(1).max(80),
+  value: z.string().trim().min(1).max(1000),
+});
+
 export const lettinDraftSchema = z.object({
   workProgress: z.enum(workProgressOptions).optional(),
   creationGuidance: z
@@ -71,6 +76,8 @@ export const lettinCommandSchema = z.discriminatedUnion('action', [
     entryId: id,
     version,
     title: z.string().trim().min(1).max(160),
+    linkSource: z.boolean().optional(),
+    contextFact: copyContextFactSchema.optional(),
   }),
   z.object({
     action: z.literal('saveWorld'),

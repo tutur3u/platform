@@ -1,11 +1,23 @@
 'use client';
-import type { LettinRecord } from '@tuturuuu/internal-api/lettin';
+import type {
+  LettinRecord,
+  LettinWorkProgress,
+} from '@tuturuuu/internal-api/lettin';
 import { useTranslations } from 'next-intl';
 import { workProgressOptions } from '../work-progress';
 
 /** Saved notebook entries only; browsing filters and local editor buffers are excluded. */
 export function WorkProgressSummary({ entries }: { entries: LettinRecord[] }) {
   const t = useTranslations('lettin');
+  const counts: Record<LettinWorkProgress, number> = {
+    unstarted: 0,
+    drafting: 0,
+    revising: 0,
+    ready: 0,
+  };
+  for (const entry of entries) {
+    counts[entry.draft.workProgress ?? 'unstarted'] += 1;
+  }
   return (
     <section
       aria-label={t('workProgressSummary')}
@@ -21,9 +33,7 @@ export function WorkProgressSummary({ entries }: { entries: LettinRecord[] }) {
             </dt>
             <dd className="font-medium">
               {t('workProgressSummaryCount', {
-                count: entries.filter(
-                  (entry) => (entry.draft.workProgress ?? 'unstarted') === stage
-                ).length,
+                count: counts[stage],
               })}
             </dd>
           </div>

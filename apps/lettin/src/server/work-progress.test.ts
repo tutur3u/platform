@@ -4,6 +4,7 @@ import { convertV4MiniflareOptions, Miniflare } from 'miniflare';
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import type { Actor, Store } from './context';
 import { mutate } from './mutations';
+import { exportNotebook } from './notebook-export';
 import { readPublic, readWorld } from './queries';
 import { lettinDraftSchema } from './schema';
 
@@ -215,4 +216,51 @@ it('uses existing collaborator, workspace and revision fences rather than label-
   await expect(readWorld(db, outsider, worldId)).rejects.toMatchObject({
     status: 403,
   });
+});
+
+it('keeps historical published export labels private while preserving owner-consented draft labels', async () => {
+  await mutate(db, owner, {
+    action: 'saveWorld',
+    worldId,
+    version: 1,
+    draft: { ...draft, workProgress: 'drafting' },
+  });
+  const entryId = (
+    await mutate(db, owner, {
+      action: 'createEntry',
+      worldId,
+      draft: { ...draft, workProgress: 'revising' },
+    })
+  ).id;
+  await db.batch([
+    db
+      .prepare('UPDATE worlds SET published=?,published_at=? WHERE id=?')
+      .bind(
+        JSON.stringify({ ...draft, workProgress: 'ready' }),
+        '2026-10-09',
+        worldId
+      ),
+    db
+      .prepare('UPDATE entries SET published=?,published_at=? WHERE id=?')
+      .bind(
+        JSON.stringify({ ...draft, workProgress: 'unstarted' }),
+        '2026-10-09',
+        entryId
+      ),
+  ]);
+  const saved = await exportNotebook(db, owner, worldId, 'draft', true);
+  expect(saved.world.document.workProgress).toBe('drafting');
+  expect(saved.entries[0]!.document.workProgress).toBe('revising');
+  const publicOnly = await exportNotebook(
+    db,
+    owner,
+    worldId,
+    'published',
+    false
+  );
+  expect(publicOnly.world.document).not.toHaveProperty('workProgress');
+  expect(publicOnly.entries[0]!.document).not.toHaveProperty('workProgress');
+  const unchanged = await readWorld(db, owner, worldId);
+  expect(unchanged.world.draft.workProgress).toBe('drafting');
+  expect(unchanged.entries[0]!.draft.workProgress).toBe('revising');
 });
