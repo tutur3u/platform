@@ -1085,9 +1085,9 @@ relationships are remapped only between included entries; missing targets are
 removed. Source notebook ID, export scope/time and entry IDs remain private preview
 provenance, not permission claims. File claims are untrusted and grant no access.
 
-Files contain artwork URLs rather than bytes. This importer removes cover/inline
-images and hyperlink targets, retaining image alternative text, document text and
-credits. It performs no remote fetch or media permission transfer. The review
+Files contain artwork URLs rather than bytes. This importer removes cover, gallery
+and inline images and hyperlink targets, retaining inline-image alternative text,
+document text and document credits. It performs no remote fetch or media permission transfer. The review
 explains this intentional limitation; creators can add authorized artwork later.
 Unknown identity/grant fields are discarded through the active document schema.
 Source files are limited to 10 MiB and 1,000 entries; the sanitized preview plan
