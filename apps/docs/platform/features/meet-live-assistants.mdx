@@ -129,6 +129,27 @@ Project-wide free allowances and Cloudflare Live Worker duration, storage, and
 requests are not fully allocated to individual meetings. Missing usage stays
 marked incomplete; these estimates do not replace provider invoices.
 
+## Registry lease clock integrity
+
+Active Live sessions require nonnegative safe-integer start and renewal timestamps.
+A renewal must lie between session start and the current server clock. Corrupt,
+nonfinite or future timestamps fail before a registry request; the session tick
+uses its existing `session_unavailable` stop path to end capture and retain billing,
+room-release and privacy cleanup obligations. A server clock rollback can therefore
+end an active session instead of silently extending privacy discoverability.
+
+This applies to personal and room Live sessions. Valid leases retain the twelve-hour
+renewal and twenty-three-hour retryable-failure boundaries. Ended sessions still
+attempt registry removal even when their lease timestamps are invalid. These checks
+do not introduce finite compensation attempts, authenticated background Stop or a
+spending cap. Count those independent obligations separately.
+
+Regression coverage: `registry-heartbeat.test.ts` exercises invalid timestamps,
+reconstruction without registration I/O, exact lease boundaries, duplicate renewal
+and ended-session removal. `session-cleanup.test.ts` checks independent compensation.
+These helper tests use controlled namespaces; real SQLite persistence, hosted
+privacy revocation and the complete stop/reschedule path remain release gates.
+
 ## Deployment and verification
 
 Apply the additive `meet_private_ai_memory` migration through the repository's
