@@ -1200,3 +1200,30 @@ historical projections, copies, revisions, workspace boundaries and revocation;
 `world-studio-progress.test.tsx` exercises real studio filtering and opening;
 `entry-editor.test.tsx` verifies explicit save. These fixtures are separate from
 exact-head app builds and hosted browser acceptance.
+
+### Optional source references for private copies
+
+The saved-entry copy dialog offers **Link this copy to the source entry**, off by
+default. Selecting it adds only the source entry ID to the new copy's links.
+Other links and typed relationships are cleared as before. The operation remains
+within the same authorized notebook and workspace, checks the saved source
+revision and artwork atomically, and creates an unpublished record. It does not
+change source content, publication, collaborators, ownership or profile sharing.
+
+The optional link is a reference to the living source record, not an immutable
+history or ownership claim. If the creator later publishes the copy, that source
+ID is retained in its stored published snapshot; this is stated before opting in.
+The public projection omits the link until the source is separately published.
+Source content remains subject to its own publication and access rules. Public
+readers offer navigation only to entries in the current published notebook
+projection. The source is never automatically published with its copy.
+
+Reopening the dialog clears the choice. A failed request retains the title and
+consent for an explicit retry; pending or dirty editors disable the control.
+English and Vietnamese labels explain the private default and later publication
+boundary. `duplicate-entry.test.ts` uses real local D1 to check the optional link,
+clearing other references, unpublished copies, unchanged sources, revision and
+workspace fences, and separate editor/publisher permissions.
+`duplicate-entry.test.tsx` covers explicit consent, reopening, failure and both
+language labels. Cross-notebook variants and canonical-context management remain
+outside this same-notebook reference workflow.
