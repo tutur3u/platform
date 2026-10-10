@@ -421,7 +421,6 @@ price estimate or account-wide cap. Storage failures, active sessions, provider
 media cleanup, external alerting and independent operator stop controls require
 separate acceptance evidence.
 
-
 ### Channel offline retry reservation verification
 
 Run Bun from a private directory outside the repository Bun preload ancestry,
@@ -449,6 +448,46 @@ The harness closes its Worker and clears its own scheduled alarms. Hosted alarm
 redelivery, actual workspace saves, live editor lease renewal and an independent
 operational stop remain separate acceptance boundaries. Do not deploy this fixture
 or claim a platform-wide cost cap from these tests.
+
+## Native Vite+ Worker candidate
+
+`apps/meet-realtime` has a separate Vite+ workspace for the existing native Worker.
+Use Node 24 with its pinned Cloudflare Vite plugin and Wrangler dependencies.
+`bun run --cwd apps/meet-realtime dev` uses loopback port 8786; stop any existing
+owner on that port only with its authorization. The plugin disables remote bindings
+and the inspector. It uses the original Worker entry, three Durable Object bindings
+and migration history without changing the production deployment command.
+
+CI runs the scoped entry/config Oxlint checks, Oxfmt checks for newly authored
+configuration/runtime verification, and configuration type-check before building
+the candidate. The configuration type-check does not certify every retained server
+or UI source file. Existing protocol, lifecycle and local integration gates remain
+required. Existing Biome gates continue to cover retained source. Node protocol checks use
+`test:protocol`, independently of the shared Vitest `test` entry. Flags forwarded
+after Node test filenames become test arguments; they do not configure Vitest
+worker limits or coverage for Node. Meet CI invokes the existing protocol checks
+explicitly, without claiming Vitest coverage for them.
+
+The native build produces `apps/meet-realtime/dist/worker/wrangler.json`. CI sets
+`MEET_REALTIME_TEST_CONFIG=dist/worker/wrangler.json` while running
+`bun run test:runtime` from the workspace. The fixture verifies the emitted bindings
+and migrations, complete health JSON, unauthenticated denial for each routing
+family, and a signed disposable room-state read through real SQLite Durable Object
+storage. Running that script without the variable exercises the source config with
+local runtime bundling; queue it through `ttr resources` and use a private home
+`TMPDIR` if the default temporary directory is quota constrained. The harness
+closes its own runtime after the tests; its identities and secrets are disposable.
+
+These checks do not validate hosted SFU/TURN media, authenticated product admission,
+background-work cost limits or production cutover. Keep those acceptance gates
+separate. Do not deploy the candidate or change migration tags merely because the
+native bundle or a health probe succeeds. Release builds belong in exact-commit CI.
+
+The Meet workspace has a separate `vitest.config.ts` with no Vitest test files.
+Root Vitest discovery otherwise loads `vite.config.ts` and starts the Cloudflare
+plugin even when selecting another app’s tests, requiring unrelated Worker imports
+and secrets before collection. Keep protocol and Worker/SQLite tests in the explicit
+Node commands above and in Meet CI; the empty Vitest scope does not replace them.
 
 ### Completed Live finalization receipts
 
@@ -482,6 +521,7 @@ calls/alarms. Initial fixture seeding and the final evidence read are separate
 setup/inspection operations. The harness closes automatically, uses no remote
 credentials and rejects downstream fetches. It exercises the finalization helper
 against real storage, not the hosted Live provider or authenticated Stop flow.
+
 
 ## Meeting media cleanup cost envelope
 

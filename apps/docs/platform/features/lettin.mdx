@@ -946,6 +946,24 @@ selection, explicit commands, reset, failure and blocked controls, and the local
 and revoked collaborator access. Exact-head builds and hosted dialog acceptance
 remain independent delivery gates.
 
+### Copying published notebook and entry links
+
+Public notebook readers can explicitly copy the canonical Lettin notebook URL or
+the selected published-entry URL. Only an entry present in the current published
+projection is included as `?entry=...`; unavailable or arbitrary query-selected
+IDs fall back to the notebook URL. Source notebook and entry IDs are routing
+identifiers, not access grants. A later unpublish/retirement may make a copied link
+unavailable; copying does not freeze content or bypass publication checks.
+
+The shared control copies only a validated public URL. It does not include private
+workspace paths, actor identifiers, draft text, titles, profile details, tracking
+values or permissions. Clipboard denial exposes a manually selectable URL and a
+retry action. Copying never sends a message, notifies a creator, publishes content
+or records a reader interaction. Regression evidence: `public-world.test.tsx`,
+`public-content-link.test.ts` and `public-link-button.test.tsx` cover published-entry
+selection, route fences, explicit intent, failure recovery and stale completion.
+Exact-head CI and hosted browser clipboard acceptance remain separate gates.
+
 ## Private saved-library filters
 
 The authenticated saved-library page lets readers filter their saved notebook
@@ -1068,3 +1086,66 @@ Preview version guidance describes the selected version neutrally in both Englis
 and Vietnamese. It must not identify the published snapshot as the draft. The
 bilingual `publication-preview.test.tsx` regression checks the dialog description
 before and after switching versions as well as the version-specific status.
+### Scoped notebook JSON export
+
+The notebook studio offers an explicit JSON document export, using published
+documents by default. The notebook owner may instead export saved private drafts
+after affirmative confirmation; collaborators cannot bulk-export private drafts.
+Unsaved editor changes block export. The server verifies the app-session actor,
+workspace/notebook permissions and chosen scope, then rechecks notebook access
+before returning the file. Published scope also rechecks that the notebook and
+all included entries remain published, rejecting a concurrent unpublish. Actor lifetime and dialog intent fences suppress
+deferred downloads after account departure, closing the dialog or leaving the
+studio. Nothing is exported automatically on opening the dialog.
+
+Format `lettin-notebook`, version one, includes scope, export time, source notebook
+and entry IDs, and validated document fields. Published exports omit unpublished
+entries and filter structured links/relationships to included entry IDs. Exports
+omit actor/workspace IDs, collaboration grants, profiles and saved-reader data.
+They contain artwork URLs rather than image bytes; managed URLs retain their
+existing access and retirement behavior. Offline artwork availability is not
+implied; the reviewed import below creates private copies without artwork. Downloaded files are controlled by the person who
+explicitly exports them; original records and publication permissions are unchanged.
+
+Exports are limited to 1,000 entries and 10 MiB. Each document comes from a saved
+server read; this is not an atomic multi-document database snapshot. The active
+draft schema projects known fields, so newly integrated document fields must retain
+export regression coverage. Regression evidence: `notebook-export.test.ts`, export
+route tests and `notebook-export.test.tsx`. Exact app CI and hosted download/account
+switch verification remain separate delivery gates.
+
+
+
+### Reviewed notebook JSON import
+
+Approved creators with workspace document-management permission can import a
+version-one `lettin-notebook` JSON file from the workspace Studio. The creator
+chooses a new title and explicitly confirms permission to copy all included
+content into the selected workspace, including private material. A stored,
+actor/workspace-bound preview expires after fifteen minutes; its entry list must
+be reviewed before a separate apply action. Account changes, mismatched preview
+owners, expired previews and revoked creator access stop the operation.
+
+Import always creates a new private notebook and new private entries, with fresh
+IDs and revision one. It never changes originals, restores publication, creates
+collaborators or imports reader/profile/moderation data. Structured links and wiki
+relationships are remapped only between included entries; missing targets are
+removed. Source notebook ID, export scope/time and entry IDs remain private preview
+provenance, not permission claims. File claims are untrusted and grant no access.
+
+Files contain artwork URLs rather than bytes. This importer removes cover, gallery
+and inline images and hyperlink targets, retaining inline-image alternative text,
+document text and document credits. It performs no remote fetch or media permission transfer. The review
+explains this intentional limitation; creators can add authorized artwork later.
+Unknown identity/grant fields are discarded through the active document schema.
+Source files are limited to 10 MiB and 1,000 entries; the sanitized preview plan
+is additionally limited to 1 MiB because it occupies one D1 row; malformed formats, duplicate IDs,
+executable nodes and excessive nesting are rejected. Applying the same preview is
+idempotent and commits the new drafts in one D1 transaction. Import is a copy
+workflow, not an in-place restore or full-fidelity offline backup.
+
+Regression evidence: `notebook-import.test.ts`, the import route tests and
+`notebook-import.test.tsx`, including D1 creation, ownership/expiry fences,
+relationship remapping, media stripping, source consent, duplicate submissions
+and stale actor/dialog completion. Exact-head CI and hosted file/account switching
+acceptance remain separate from focused fixture verification.
