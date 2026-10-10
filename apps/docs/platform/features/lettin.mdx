@@ -1107,6 +1107,37 @@ Preview version guidance describes the selected version neutrally in both Englis
 and Vietnamese. It must not identify the published snapshot as the draft. The
 bilingual `publication-preview.test.tsx` regression checks the dialog description
 before and after switching versions as well as the version-specific status.
+
+### Stage a draft from the published version
+
+The creator notebook and entry editor offer a confirmation to start from the
+current published snapshot. Confirmation replaces only the local editor buffer,
+including tags and optional metadata; it does not merge newer private fields into
+the older version. The current private work-progress label is retained separately;
+a historical public label never overrides it. Rich text remounts so its buffer
+matches the staged snapshot.
+The editor becomes dirty. Saving and publication remain separate explicit actions;
+the previously saved private draft and public snapshot remain unchanged until
+those actions. Discarding the staged edit returns to the last saved private draft.
+Authored credits, usage guidance, links and relationships remain part of the
+snapshot. Existing validation may reject a save if referenced targets or media
+are no longer available; restoration does not grant access or revive them.
+
+Restoration is unavailable without a current published snapshot and is blocked
+while a mutation, cover, gallery or inline artwork upload, or source-mode edit is
+pending. All overlapping uploads must settle before staging. Editors can stage
+and save drafts but do not gain publication authority. Saves use the existing
+workspace, actor and revision fences, so stale revisions conflict rather than
+silently replacing newer saved work. Unpublishing removes the available source.
+No profile field or owner-sharing rule changes.
+
+Regression evidence: `published-draft-restore.test.tsx` covers bilingual explicit
+confirmation, cancellation, clone isolation and changing availability;
+`entry-editor.test.tsx` covers notebook/entry commands, optional-field replacement,
+local-only staging, gallery replacement, discard and overlapping upload fences. Local D1 `creation-guidance.test.ts` verifies
+workspace/stale-revision denial, metadata preservation and unchanged public reads
+after an explicit restored-draft save. Exact-head builds and hosted editor/dialog
+acceptance remain independent delivery gates.
 ### Scoped notebook JSON export
 
 The notebook studio offers an explicit JSON document export, using published
