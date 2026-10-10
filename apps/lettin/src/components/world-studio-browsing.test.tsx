@@ -113,3 +113,41 @@ it('retains selected facets across opening an entry and returning to browsing', 
     'Private entry'
   );
 });
+
+it('keeps sibling context keys distinct while preserving Calendar state and resetting it on notebook change', async () => {
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    await act(() =>
+      root.render(<WorldStudio wsId="workspace" worldId="world" />)
+    );
+    const date = container.querySelector<HTMLInputElement>('input[type=date]')!;
+    await act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value'
+      )!.set!.call(date, '2026-10-10');
+      date.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(() =>
+      root.render(
+        <WorldStudio wsId="workspace" worldId="world" section="characters" />
+      )
+    );
+    expect(
+      container.querySelector<HTMLInputElement>('input[type=date]')!.value
+    ).toBe('2026-10-10');
+    await act(() =>
+      root.render(<WorldStudio wsId="workspace" worldId="other" />)
+    );
+    expect(
+      container.querySelector<HTMLInputElement>('input[type=date]')!.value
+    ).toBe('');
+    expect(
+      errors.mock.calls.filter((call) =>
+        call.some((value) => String(value).includes('same key'))
+      )
+    ).toEqual([]);
+  } finally {
+    errors.mockRestore();
+  }
+});
