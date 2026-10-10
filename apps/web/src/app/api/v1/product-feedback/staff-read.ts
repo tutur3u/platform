@@ -158,7 +158,8 @@ async function admit(
         result.error instanceof StaffReadError ? result.error.status : 503
       ),
     };
-  if (!deps.enabled()) return { response: failure(503) };
+  const flag = await attempt(async () => deps.enabled());
+  if (!flag.ok || !flag.value) return { response: failure(503) };
   return { actor: result.value };
 }
 export function createStaffListHandler(deps: StaffReadDependencies) {

@@ -23,7 +23,7 @@ const tanstackWebVercelWorkflows = new Set([
   'vercel-preview-tanstack-web.yaml',
   'vercel-production-tanstack-web.yaml',
 ]);
-const PRODUCTION_PUSH_CANCEL_PREDICATE = `cancel-in-progress: \${{ github.event_name == 'push' && github.ref == 'refs/heads/production' }}`;
+
 const SECRET_INTERPOLATION_PATTERN =
   /\$\{\{[^}\n]*\bsecrets\.[A-Z_][A-Z0-9_]*[^}\n]*\}\}/u;
 
@@ -94,7 +94,7 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
   }
 });
 
-test('production Vercel workflows cancel only superseded production push runs', () => {
+test('production Vercel workflows serialize deployments without cancellation', () => {
   const productionWorkflows = vercelWorkflows.filter((workflowName) =>
     workflowName.startsWith('vercel-production-')
   );
@@ -111,9 +111,9 @@ test('production Vercel workflows cancel only superseded production push runs', 
 
     assert.ok(
       header.includes(
-        `\nconcurrency:\n  ${concurrencyGroup}\n  ${PRODUCTION_PUSH_CANCEL_PREDICATE}\n`
+        `\nconcurrency:\n  ${concurrencyGroup}\n  cancel-in-progress: false\n`
       ),
-      `${workflowName} must cancel only a superseded production push run`
+      `${workflowName} must serialize deployment runs`
     );
     assert.ok(
       !concurrencyGroups.has(concurrencyGroup),
@@ -155,7 +155,7 @@ test('production Vercel planner resolves once and calls affected apps in the pus
   assert.match(workflow, /\n {2}workflow_dispatch:/);
   assert.ok(
     workflow.includes(
-      `\nconcurrency:\n  group: production-deployment-planner-\${{ github.ref }}\n  ${PRODUCTION_PUSH_CANCEL_PREDICATE}\n`
+      `\nconcurrency:\n  group: production-deployment-planner-\${{ github.ref }}\n  cancel-in-progress: false\n`
     ),
     'the production planner must not be canceled by main commits or manual recovery runs'
   );
@@ -248,7 +248,7 @@ test('non-Vercel deployment cancellation policies remain environment-specific', 
   assert.match(discordWorkflow, /cancel-in-progress: true/);
 });
 
-test('external app build cancels superseded runs instead of passing a skipped build', () => {
+test('external app validation preserves protected commits instead of passing a skipped build', () => {
   const workflow = fs.readFileSync(
     path.join(
       repoRoot,
@@ -262,7 +262,7 @@ test('external app build cancels superseded runs instead of passing a skipped bu
 
   assert.match(
     header,
-    /\nconcurrency:\n {2}group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}\n {2}cancel-in-progress: true\n/
+    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main'.*github\.ref != 'refs\/heads\/production'/
   );
   assert.doesNotMatch(
     workflow,
@@ -798,32 +798,24 @@ test('Supabase staging migration includes every local migration when pushing', (
   assert.match(deployJob, /scripts\/ci\/record-deployment-marker\.ts/);
 });
 
-test('E2E runs only for matching commit changes or explicit dispatch', () => {
+test('Docker-backed E2E remains paused for push and manual dispatch', () => {
   const workflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
+    path.join(repoRoot, '.github/workflows/e2e-tests.yaml'),
     'utf8'
   );
-  const header = workflow.slice(0, workflow.indexOf('\njobs:'));
-
-  assert.match(header, /\n {4}paths:\n/);
-  assert.match(header, /- "apps\/\*\*"/);
-  assert.match(header, /- "packages\/\*\*"/);
-  assert.match(header, /- "scripts\/ci\/e2e-\*"/);
-  assert.doesNotMatch(header, /\n {2}schedule:/);
-  assert.match(header, /\n {2}workflow_dispatch:/);
-  assert.match(
-    header,
-    /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref == 'refs\/heads\/release-please--branches--production--release-notes' && github\.sha \|\| github\.ref \}\}/
-  );
-  assert.match(
-    header,
-    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main' && github\.ref != 'refs\/heads\/production' && github\.ref != 'refs\/heads\/release-please--branches--production--release-notes'/
-  );
-  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
-  assert.doesNotMatch(workflow, /needs\.check-ci/);
-
-  const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
-  assert.doesNotMatch(config, /['"]e2e-tests\.yaml['"]\s*:/);
+  assert.match(workflow, /\n {2}workflow_dispatch:/);
+  for (const job of [
+    'relevance',
+    'prepare-e2e-images',
+    'e2e',
+    'inventory-storefront-cache-e2e',
+    'cleanup-e2e-images',
+  ]) {
+    assert.match(
+      readWorkflowJobBlock('e2e-tests.yaml', job),
+      /if: \$\{\{ false \}\}/
+    );
+  }
 });
 
 test('branch name check allows release-please generated branches', () => {
@@ -968,7 +960,8 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   );
   const expectedReleasePaths = workspacePaths
     .filter((workspacePath) => {
-      if (workspacePath === 'apps/web') return false;
+      if (['apps/web', 'apps/tanstack-web'].includes(workspacePath))
+        return false;
       if (workspacePath === 'apps/mobile') return true;
 
       return Boolean(workspaceVersions.get(workspacePath));
@@ -1004,6 +997,11 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   assert.deepEqual(configuredReleasePaths, expectedReleasePaths);
 
   for (const [workspacePath, version] of workspaceVersions) {
+    if (workspacePath === 'apps/tanstack-web') {
+      assert.equal(config.packages[workspacePath], undefined);
+      assert.equal(manifest[workspacePath], version); // Retain the frozen historical version.
+      continue;
+    }
     if (workspacePath === 'apps/mobile') {
       const pubspec = fs.readFileSync(
         path.join(repoRoot, workspacePath, 'pubspec.yaml'),

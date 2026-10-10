@@ -1,7 +1,7 @@
 ---
 title: 'API Reference'
 description: 'Overview of the public Tuturuuu HTTP API, authentication, and where the canonical OpenAPI contract lives.'
-updatedAt: '2026-06-21'
+updatedAt: '2026-10-08'
 ---
 
 # API Reference
@@ -9,14 +9,11 @@ updatedAt: '2026-06-21'
 This section documents the public Tuturuuu HTTP API. It is reference material for
 integrators calling Tuturuuu endpoints from outside the platform.
 
-<Note>
-  Tuturuuu is mid-migration from the legacy `apps/web` Next.js platform
-  (port `7803`) to a TanStack Start frontend plus a dedicated Rust backend
-  (port `7820`). Endpoint hosts and paths may shift as routes move behind the
-  Rust backend. See
-  [Tanstack + Rust migration](/platform/architecture/tanstack-rust-migration)
-  for the current state.
-</Note>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## What this API covers
 
@@ -26,8 +23,9 @@ responses, chat completions, embeddings, images, and versioned agents. See
 [Generate AI Completion](/reference/api-reference/endpoint/generate) endpoint
 remains available as a compatibility adapter.
 
-The full surface of internal and migrated platform routes is defined by the
-backend OpenAPI contract rather than enumerated here.
+The [source route inventory](/reference/repository/catalog) locates active
+Next.js handlers and their owners. Internal routes are not automatically public
+integration contracts; use the product-specific API/SDK guide for supported use.
 
 ## Authentication
 
@@ -40,24 +38,25 @@ Authentication depends on the endpoint:
 - **Legacy workspace API keys.** The compatibility AI generate endpoint still
   accepts its existing request-body `accessKey` contract while integrations
   migrate to AI Studio.
-- **Bearer tokens / session cookies.** Migrated platform routes behind the Rust
-  backend authenticate the caller's Supabase session — either a browser session
-  cookie or a `Bearer` token — and some accept app-session tokens. These routes
-  are not general-purpose public endpoints; they back first-party Tuturuuu apps.
+- **App sessions / session cookies.** First-party Next.js routes resolve actors
+  through their owning application boundary and check workspace permissions.
+  Supported bearer authentication is endpoint-specific. Internal routes are not
+  general-purpose public endpoints merely because they exist in source.
 
 Never commit API keys or tokens. Reference credentials by environment variable
 name and supply them at request time.
 
-## Canonical OpenAPI specification
+## Active contracts and retained migration specification
 
-The authoritative machine-readable contract for the Rust backend lives in the
-repository at:
+The inactive Rust migration retains its specification at:
 
 ```
 apps/backend/api/openapi.yaml
 ```
 
-This `Tuturuuu Rust Backend API` spec is the source of truth for migrated routes,
-their request/response schemas, security requirements, and status codes. The
-legacy public API also lives under `apps/web/src/app/api/v1` until the
-corresponding routes finish moving behind the Rust backend.
+It describes retained migration work, not the deployed API. Rust and TanStack
+Start are not in use and are not refreshed by ordinary Next.js changes. Active
+HTTP behavior lives in the owning Next.js app, and shared first-party contracts
+live in `packages/internal-api`. Use the [AI Studio API](/reference/api-reference/ai-studio),
+[SDK](/reference/packages/sdk), and [active runtime map](/build/devops/active-runtime)
+for current integration and operating guidance.

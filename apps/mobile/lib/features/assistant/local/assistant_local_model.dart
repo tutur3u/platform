@@ -63,3 +63,19 @@ const assistantLocalModels = [
     licenseUrl: 'https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct',
   ),
 ];
+
+/// Download candidates use existing target admission. Known installed weights
+/// and an active operation remain manageable, without asserting engine
+/// readiness.
+List<AssistantLocalModel> assistantLocalModelsForSettings({
+  required bool targetSupported,
+  required Set<String> installed,
+  String? activeModelId,
+}) => List.unmodifiable(
+  assistantLocalModels.where(
+    (model) =>
+        installed.contains(model.id) ||
+        model.id == activeModelId ||
+        (targetSupported && !model.requiresLicensedImport),
+  ),
+);

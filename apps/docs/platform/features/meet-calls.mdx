@@ -1408,3 +1408,21 @@ context, focus retention, loading/error/empty feedback, explicit retry, and a
 held account A→B→A lookup. Pointer selection passes this fixture; the demonstrated
 repair is missing state feedback, not proof of the reported production portal
 failure. Browser/provider runtime verification remains separate.
+
+
+### Offline room document checkpoint budget
+
+Meet's private rich-text document keeps its durable unsaved state when checkpoint
+callbacks fail. Without a currently valid editor connection, it reserves at most
+three automatic attempts within two minutes, at least 30 seconds apart. Reservations
+persist before callback I/O; duplicate alarms, restarts and failed completion writes
+cannot replenish them. Exhaustion or age expiry stops automatic checkpoint work.
+An authorized editor rejoin can recover the retained document; a viewer rejoin cannot
+restart the stopped job. Active editor ticket leases keep their existing checkpoint
+behavior. This rule applies to meeting-document channel rooms, not programming
+project checkpoints, media cleanup or a platform spending cap.
+
+Regression evidence: `channel-retry-budget.test.ts` counts operations and tests
+failure/clock/restart/recovery boundaries; `test-fixtures/channel-retry` verifies
+reservation persistence against real local Worker SQLite with controlled callback
+failures. Hosted alarm delivery and actual workspace storage remain separate gates.

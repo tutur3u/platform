@@ -1049,9 +1049,9 @@ widget checks require device gesture verification after delivery.
 Day, three-day, and week timelines support smooth two-finger pinch zoom from
 65% to 250%, defaulting to 100%. The fractional time under the pinch stays under
 the fingers; shell-owned Timeline zoom controls offer accessible zoom in, zoom
-out, and reset actions with the same anchored geometry. One-finger scrolling,
-date swipes and snapping, event taps, and long-press creation keep their existing
-behavior. Event timestamps, durations, and all-day/date column widths do not change.
+out, and reset actions with the same anchored geometry. Reduced motion applies
+control zoom and initial time positioning immediately, preserving the time/date anchor.
+One-finger scrolling, date snapping, event taps, timestamps and column widths retain their behavior.
 
 Completed zoom is stored in the existing account/workspace-scoped Calendar cache
 and reused across timeline modes and dates. Workspace/account switches cancel
@@ -1060,8 +1060,8 @@ scope and logout races; unavailable preference storage leaves zoom usable locall
 Month, year, and agenda views retain their existing layout. Shared minimum card
 height remains part of both painting and overlap grouping at every zoom level.
 `calendar_timeline_zoom_test.dart`, `calendar_zoom_lifecycle_test.dart`, and
-`calendar_timeline_zoom_state_test.dart` cover gesture coexistence, focal anchors,
-bounds, accessible controls, and scoped preference restoration.
+`calendar_timeline_zoom_state_test.dart` cover gestures, anchors and scoped restoration;
+`calendar_reduced_motion_test.dart` covers immediate positioning and interrupted animation.
 
 ## Day highlighting, all-day spans and past events
 

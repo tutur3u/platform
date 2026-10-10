@@ -19,7 +19,10 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import { ArtworkGalleryEditor } from './artwork-gallery-editor';
+import { CreationGuidanceEditor } from './creation-guidance-editor';
 import { DocumentView } from './document-view';
+import { validGallery } from './gallery-model';
 import { RichEditor } from './rich-editor';
 import { useLettinMutation } from './use-lettin';
 import { WikiDetailsEditor } from './wiki-details-editor';
@@ -45,6 +48,7 @@ export function EntryEditor({
   const t = useTranslations('lettin');
   const mutation = useLettinMutation(wsId);
   const [draft, setDraft] = useState(record.draft);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const [version, setVersion] = useState(record.version);
   const [dirty, setDirty] = useState(false);
   const [tagsText, setTagsText] = useState(
@@ -149,6 +153,17 @@ export function EntryEditor({
           onChange={(e) => update({ description: e.target.value })}
         />
       </label>
+      <label className="block space-y-2 text-sm">
+        {t('contentNotice')}
+        <Textarea
+          value={draft.contentNotice ?? ''}
+          maxLength={500}
+          onChange={(e) => update({ contentNotice: e.target.value })}
+        />
+        <span className="text-muted-foreground text-xs">
+          {t('contentNoticeHint')}
+        </span>
+      </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block space-y-2 text-sm">
           {t('imageUrl')}
@@ -168,6 +183,10 @@ export function EntryEditor({
           />
         </label>
       </div>
+      <CreationGuidanceEditor
+        value={draft.creationGuidance}
+        onChange={(creationGuidance) => update({ creationGuidance })}
+      />
       {!isWorld && (
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2 text-sm">
@@ -219,6 +238,16 @@ export function EntryEditor({
         <span className="text-muted-foreground text-xs">{t('uploadHint')}</span>
       </label>
       {upload.isError && <p role="alert">{t('requestFailed')}</p>}
+      <ArtworkGalleryEditor
+        wsId={wsId}
+        worldId={worldId}
+        items={draft.gallery ?? []}
+        onChange={(gallery) => update({ gallery })}
+        onPendingChange={(pending) => {
+          setGalleryUploading(pending);
+          if (pending) update({});
+        }}
+      />
       {isWorld && (
         <WikiThemeEditor
           theme={draft.theme}
@@ -278,10 +307,12 @@ export function EntryEditor({
             disabled={
               mutation.isPending ||
               upload.isPending ||
+              galleryUploading ||
               !dirty ||
               markdownEditing ||
               !draft.title.trim() ||
-              !validWiki(draft)
+              !validWiki(draft) ||
+              !validGallery(draft.gallery)
             }
             onClick={save}
           >
@@ -292,7 +323,9 @@ export function EntryEditor({
               <DialogTrigger asChild>
                 <Button
                   variant="ghost"
-                  disabled={mutation.isPending || upload.isPending}
+                  disabled={
+                    mutation.isPending || upload.isPending || galleryUploading
+                  }
                 >
                   {t('discardDraft')}
                 </Button>
@@ -334,6 +367,7 @@ export function EntryEditor({
                 disabled={
                   mutation.isPending ||
                   upload.isPending ||
+                  galleryUploading ||
                   dirty ||
                   markdownEditing
                 }
@@ -347,6 +381,7 @@ export function EntryEditor({
                   disabled={
                     mutation.isPending ||
                     upload.isPending ||
+                    galleryUploading ||
                     dirty ||
                     markdownEditing
                   }
@@ -365,6 +400,9 @@ export function EntryEditor({
           <p role="alert" className="text-sm">
             {t('invalidWiki')}
           </p>
+        )}
+        {!validGallery(draft.gallery) && (
+          <p role="alert">{t('invalidGallery')}</p>
         )}
         {mutation.errorMessage && (
           <p className="text-sm" role="alert">
