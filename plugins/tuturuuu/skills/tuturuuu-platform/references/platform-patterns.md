@@ -682,3 +682,19 @@ permission are absent, remove image and hyperlink targets and explain the loss
 before apply. Reuse the private D1 import transaction and fence preview source so
 one importer cannot apply another importer's privileged plan. Keep consent,
 publication and creator revocation regression evidence separate from hosted CI.
+
+### Scoped notebook copies into Drive
+
+Use the canonical workspace storage client for explicit bounded JSON-copy actions.
+Keep source-export consent separate from unchecked destination-sharing consent,
+unique generic filenames and overwrite disabled. Guard each injected transport
+stage against actor/context changes, including signed PUT and finalization; omit
+progress/XHR paths when they would bypass that guard. Preserve successful, partial
+finalization and uncertain results rather than equating upload with saved metadata.
+The canonical storage client retries a failed signed PUT without Content-Type.
+Fence transport admission to one PUT per explicit action when this copy contract
+forbids retries; a context guard alone does not prevent that fallback.
+No automatic retry or deletion; previously admitted writes may finish, and source
+retirement does not retract separately authorized copies. Keep default downloads
+and their local-only behavior intact. Coverage: notebook-drive-copy and
+notebook-export-drive tests; hosted access acceptance is independent.
