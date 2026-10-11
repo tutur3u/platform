@@ -98,7 +98,13 @@ test('same preflight scripts precede every heavy step without error overrides', 
 
 function fixture(
   dir,
-  { disabled = false, change = 'source', missingConfig = false, error } = {}
+  {
+    disabled = false,
+    change = 'source',
+    missingConfig = false,
+    error,
+    missingHelper,
+  } = {}
 ) {
   for (const file of [
     'tuturuuu.ts',
@@ -107,6 +113,9 @@ function fixture(
     'scripts/ci/resolve-changed-files-core.ts',
     'scripts/ci/github-deployment-markers.ts',
     'scripts/ci/workflow-config-core.ts',
+    'scripts/ci/production-test-only-paths.ts',
+    'scripts/ci/workspace-dependency-closure.ts',
+    'scripts/ci/overflow-notes-ci.js',
     'scripts/ci/check-workflow-config.ts',
     'scripts/ci/release-only-changes.js',
   ]) {
@@ -163,6 +172,15 @@ function fixture(
     fs.unlinkSync(path.join(dir, 'scripts/ci/resolve-changed-files-core.ts'));
   if (error === 'release_relevance')
     fs.unlinkSync(path.join(dir, 'scripts/ci/release-only-changes.js'));
+  if (missingHelper) {
+    assert.ok(
+      [
+        'production-test-only-paths.ts',
+        'workspace-dependency-closure.ts',
+      ].includes(missingHelper)
+    );
+    fs.unlinkSync(path.join(dir, 'scripts/ci', missingHelper));
+  }
   // Run shell steps with the same Node executable as this test, without installs.
   fs.mkdirSync(path.join(dir, 'bin'));
   fs.symlinkSync(process.execPath, path.join(dir, 'bin/node'));
@@ -225,7 +243,9 @@ function runPreflight(options) {
         ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step.run],
         { cwd: dir, env, encoding: 'utf8' }
       );
-      if (result.status !== 0) return { failure: id, heavy: false, outputs };
+      if (result.status !== 0) {
+        return { failure: id, heavy: false, outputs, stderr: result.stderr };
+      }
       outputs[id] = Object.fromEntries(
         fs
           .readFileSync(outputFile, 'utf8')
@@ -295,7 +315,7 @@ for (const [name, options, config, release, heavy] of [
 ]) {
   test(`actual inline scripts preserve ${name} decisions`, () => {
     const result = runPreflight(options);
-    assert.equal(result.failure, null);
+    assert.equal(result.failure, null, result.stderr);
     assert.equal(result.outputs.check_config.should_run, config);
     assert.equal(result.outputs.release_relevance.run_checks, release);
     assert.equal(result.heavy, heavy);
@@ -308,6 +328,20 @@ for (const id of preflightIds) {
     assert.equal(result.failure, id);
     assert.equal(result.heavy, false);
     assert.equal(result.outputs[id], undefined);
+  });
+}
+
+for (const missingHelper of [
+  'production-test-only-paths.ts',
+  'workspace-dependency-closure.ts',
+]) {
+  test(`missing real ${missingHelper} stops preflight with its import diagnostic`, () => {
+    const result = runPreflight({ missingHelper });
+    assert.equal(result.failure, 'check_config');
+    assert.equal(result.heavy, false);
+    assert.equal(result.outputs.check_config, undefined);
+    assert.match(result.stderr, /ERR_MODULE_NOT_FOUND/);
+    assert.ok(result.stderr.includes(missingHelper));
   });
 }
 
