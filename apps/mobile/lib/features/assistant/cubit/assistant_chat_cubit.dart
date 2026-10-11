@@ -35,9 +35,12 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required Future<void> Function(String? modelId) onChatRestored,
     void Function(SafeErrorDiagnostics diagnostics)? onSoulRefreshFailed,
     OperationalErrorReporter? operationalReporter,
+    Future<void> Function(String theme, bool Function() isCurrent)?
+    onThemeRequested,
   }) : _operationalReporter =
            operationalReporter ??
            MobileObservability.instance.operationalReporter,
+       _onThemeRequested = onThemeRequested,
        _repository = repository,
        _preferences = preferences,
        _onWorkspaceContextChanged = onWorkspaceContextChanged,
@@ -47,6 +50,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
        _onChatRestored = onChatRestored,
        super(AssistantChatState(fallbackChatId: repository.generateUuid()));
 
+  final Future<void> Function(String theme, bool Function() isCurrent)?
+  _onThemeRequested;
   final OperationalErrorReporter _operationalReporter;
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;

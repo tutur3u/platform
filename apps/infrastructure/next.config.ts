@@ -13,6 +13,7 @@ const cronMonitoringTraceIncludes = {
 };
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'infrastructure',
   async rewrites() {
     return {
       afterFiles: [],

@@ -11,16 +11,30 @@ confirmed account identity. Failed lookups deny access.
 
 ## Discovery and session review
 
-The scenario library at `/` supports text search and category filters. The
+The scenario library at `/` supports text search and category filters. Discovery
+also shows the facilitator’s three most recent sessions and a dedicated join
+area explaining the shared Meet runtime. Recent sessions are scoped to the signed-in
+facilitator; they are not workspace-wide activity or aggregate progress metrics.
+An unavailable recent-session archive shows a retry hint without hiding the
+scenario library or presenting a false empty archive. The
 **New testing session** navigation item opens `/sessions/new`, where facilitators
-select a published scenario, acknowledge participation, and create a room. Open
+search and select one published scenario, read its briefing, acknowledge
+participation, and create a room. Selection starts with the first published
+scenario. Changing the selection resets the acknowledgement; search does not
+change the selected scenario, which remains named in the setup panel. Open
 `/scenarios/[scenarioId]` to read the public briefing, preview role names and
 confirm participation before creating a session. Hidden role briefs and AI
 instructions never enter the discovery client payload.
 
 `/sessions` is the signed-in facilitator's paginated archive. Each
 `/sessions/[meetingId]` review reuses Meet's metered AI transcript, summary,
-decision and follow-up tools. Private research notes are shown separately and
+decision and follow-up tools. The review includes a **Meeting details in Meet** link targeting the same
+workspace and meeting, plus invitation controls that copy the Parley room URL
+or room code. Invitations do not grant app access or bypass room admission.
+The saved scenario debrief rubric is shown only after facilitator ownership and
+host checks, and is omitted when empty. It comes from the immutable session
+snapshot, so later scenario edits cannot rewrite the review guide.
+Private research notes are shown separately and
 remain facilitator-only, even when meeting notes are shared with participants. Research notes are paginated newest first, with full-session note and decision totals; the note-type filter applies to the current page.
 These satellite-only routes are owned by `apps/parley`; the current TanStack
 migration manifest scans `apps/web`, not satellite app trees.
@@ -66,8 +80,10 @@ viseme synthesis or a full 3D avatar.
    realtime and provider environment contracts as Meet. Browser authentication
    uses shared provider cookies; no Parley-specific app-session token is required. The app uses port 7834
    and `parley.tuturuuu.localhost`.
-3. Validate the shared runtime and build Meet, Parley and Infrastructure through
-   `ttr resources run`. The extraction affects all three consumers.
+3. Run focused non-build tests through `ttr resources run`; require the real
+   Parley build and applicable type, lint and test workflows in CI for the exact
+   commit. Do not run local release builds. Shared runtime changes also require
+   the affected Meet and Infrastructure CI builds.
 4. Sync the reviewed release to production through the authorized release
    workflow. Verify that the production database migration job applies all
    Parley migrations. Meet and Parley Worker deployments wait for the database
@@ -128,3 +144,21 @@ verify authentication, then retry the failed CI deployment. Never reactivate a
 broken version merely to unblock secret configuration. OpenNext artifacts may
 contain absolute build-host asset paths; deploy on the original build platform,
 or relocate only generated imports to the identical included assets.
+
+## Regression evidence and further opportunities
+
+`session-setup.test.tsx` checks selection, fresh participation acknowledgement,
+search recovery and selected-scenario visibility. `session-invitation.test.tsx`
+checks room-only sharing and clipboard failure recovery. `meet-links.test.ts`
+checks that a shared-runtime Parley origin cannot misdirect the Meet handoff.
+`recent-sessions.test.tsx` checks the three-session limit and distinguishes
+archive errors from an empty archive. The review route tests enforce facilitator ownership before loading the snapshot
+and rendering the private rubric. These fixtures do not validate hosted
+authentication, call media, billing or clipboard permissions in every browser.
+
+Useful follow-on work includes opt-in scheduled practice through Calendar,
+explicitly reviewed task creation from debrief decisions, and private comparisons
+between repeated sessions. These are proposals, not current behavior. Scheduling
+needs an explicit participant and recording consent flow; task creation must use
+the destination workspace’s permissions; comparisons should cite source evidence
+and never infer personality or provide unvalidated psychological scores.

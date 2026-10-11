@@ -1,5 +1,5 @@
 import type { Run, TeamLimits } from '@tuturuuu/multiplayer';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { runInsights } from './run-insights';
 
 const limits: TeamLimits = {

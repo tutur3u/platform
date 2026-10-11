@@ -3,6 +3,7 @@ import { type Actor, isCreator, LettinError, type Store } from './context';
 import { richTextNodeSchema, safeLink } from './rich-text-schema';
 
 export const creatorAboutSchema = z.object({
+  shared: z.boolean().default(false),
   headline: z.string().trim().max(160),
   pronouns: z.string().trim().max(80),
   location: z.string().trim().max(160),
@@ -27,6 +28,7 @@ export const creatorAboutSchema = z.object({
 });
 export type CreatorAbout = z.infer<typeof creatorAboutSchema>;
 export const emptyCreatorAbout: CreatorAbout = {
+  shared: false,
   headline: '',
   pronouns: '',
   location: '',
@@ -62,4 +64,10 @@ export async function saveCreatorAbout(
     .first();
   if (!row) throw new LettinError(403);
   return details;
+}
+
+/** Existing About text is private until its owner explicitly opts in. */
+export async function readPublicCreatorAbout(db: Store, userId: string) {
+  const details = await readCreatorAbout(db, userId);
+  return details.shared === true ? details : null;
 }

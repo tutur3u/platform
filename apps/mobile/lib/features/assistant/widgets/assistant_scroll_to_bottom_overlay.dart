@@ -11,10 +11,12 @@ class AssistantScrollToBottomOverlay extends StatelessWidget {
     required this.navigationExpanded,
     required this.visible,
     required this.onPressed,
+    this.composerHeight,
     super.key,
   });
 
   final bool composerVisible;
+  final double? composerHeight;
   final bool isFullscreen;
   final bool navigationExpanded;
   final bool visible;
@@ -26,6 +28,7 @@ class AssistantScrollToBottomOverlay extends StatelessWidget {
     final bottom = assistantTranscriptBottomClearance(
       context,
       composerVisible: composerVisible,
+      composerHeight: composerHeight,
     );
     return Positioned(
       left: 0,

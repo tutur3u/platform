@@ -30,7 +30,11 @@ export async function readCreatorIdentity(
   if (!bannerError && !parsedBanner.success)
     throw new Error('Unable to read creator banner');
   return {
-    ...data,
+    id: data.id,
+    display_name: data.display_name,
+    handle: data.handle,
+    bio: data.bio,
+    avatar_url: data.avatar_url,
     banner_url: parsedBanner.success
       ? (parsedBanner.data?.banner_url ?? null)
       : null,

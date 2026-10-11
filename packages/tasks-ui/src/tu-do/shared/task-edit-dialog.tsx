@@ -17,7 +17,6 @@ import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { SUPABASE_PROVIDER_SYNC_ORIGIN } from '@tuturuuu/ui/hooks/supabase-provider';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { scrollToCollaborationCaret } from '@tuturuuu/ui/text-editor/collaboration-carets';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -68,12 +67,11 @@ import {
   getTaskDialogHeaderInfo,
   TaskDialogHeader,
 } from './task-edit-dialog/components/task-dialog-header';
+import { TaskDialogLoadingShell } from './task-edit-dialog/components/task-dialog-loading-shell';
 import { TaskNameInput } from './task-edit-dialog/components/task-name-input';
 import { TaskSuggestionMenus } from './task-edit-dialog/components/task-suggestion-menus';
-import {
-  MAX_DESCRIPTION_SETTLE_MS,
-  NAME_UPDATE_DEBOUNCE_MS,
-} from './task-edit-dialog/constants';
+import { NAME_UPDATE_DEBOUNCE_MS } from './task-edit-dialog/constants';
+import { getTaskDescriptionRecoveryVersion } from './task-edit-dialog/description-reconciliation';
 import {
   buildRecoverableTaskDescriptionVersions,
   type RecoverableTaskDescriptionVersion,
@@ -90,8 +88,11 @@ import {
   useTaskData,
 } from './task-edit-dialog/hooks/use-task-data';
 import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
+import { useTaskDescriptionBaseline } from './task-edit-dialog/hooks/use-task-description-baseline';
+import { useTaskDescriptionReceipt } from './task-edit-dialog/hooks/use-task-description-receipt';
 import { useTaskDialogClose } from './task-edit-dialog/hooks/use-task-dialog-close';
 import { useTaskDialogKeyboardShortcuts } from './task-edit-dialog/hooks/use-task-dialog-keyboard-shortcuts';
+import { useTaskDialogSettling } from './task-edit-dialog/hooks/use-task-dialog-settling';
 import { useTaskFormReset } from './task-edit-dialog/hooks/use-task-form-reset';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
 import { useTaskMediaUpload } from './task-edit-dialog/hooks/use-task-media-upload';
@@ -291,10 +292,6 @@ export function TaskEditDialog({
   // not mount yet: its content lives in the Yjs document, which only exists once
   // realtime is enabled after hydration.
   const isAwaitingTaskHydration = isHydratingTask && !taskLoadError;
-  // Skeletons must not outlive a stalled connection: if realtime never syncs
-  // (offline, channel error) the content still has to appear.
-  const [hasWaitedForDescription, setHasWaitedForDescription] = useState(false);
-
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -332,7 +329,14 @@ export function TaskEditDialog({
       })
     );
   const taskRealtimeBroadcastRef = useRef<BoardBroadcastFn | null>(null);
+  const { confirmedSavedContent, confirmSavedDescription } =
+    useTaskDescriptionReceipt({
+      isOpen,
+      taskId: task?.id,
+      wsId: effectiveTaskWsId,
+    });
   const [hasHydratedYjsState, setHasHydratedYjsState] = useState(false);
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showDescriptionVersionsDialog, setShowDescriptionVersionsDialog] =
     useState(false);
   const [restoringDescriptionVersionId, setRestoringDescriptionVersionId] =
@@ -521,6 +525,7 @@ export function TaskEditDialog({
       if (!didPersist) return false;
 
       persistedDescriptionRef.current = serializedDescription;
+      confirmSavedDescription(content);
       descriptionPersistenceGuardRef.current =
         createTaskDescriptionPersistenceGuardState({
           persistedDescription: serializedDescription,
@@ -537,7 +542,7 @@ export function TaskEditDialog({
 
       return true;
     },
-    [boardId, effectiveTaskWsId, queryClient, task?.id]
+    [boardId, effectiveTaskWsId, queryClient, task?.id, confirmSavedDescription]
   );
 
   // Yjs collaboration — paid tiers get immediate broadcasts; free tier coalesces rapid edits
@@ -576,29 +581,12 @@ export function TaskEditDialog({
     );
   }, [hydrated, isOpen, isCreateMode, effectiveRealtimeEnabled, task?.id]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setHasWaitedForDescription(false);
-      return;
-    }
-
-    const timeout = setTimeout(
-      () => setHasWaitedForDescription(true),
-      MAX_DESCRIPTION_SETTLE_MS
-    );
-
-    return () => clearTimeout(timeout);
-  }, [isOpen]);
-
-  /**
-   * The dialog shows one skeleton until everything behind it is ready.
-   *
-   * Hydrating the task and syncing its Yjs document used to surface as two
-   * separate loading states back to back — skeleton, then a half-faded empty
-   * editor — which read as the dialog loading twice.
-   */
-  const isDialogSettling =
-    isAwaitingTaskHydration || (isYjsSyncing && !hasWaitedForDescription);
+  const isDialogSettling = useTaskDialogSettling({
+    isOpen,
+    taskId: task?.id,
+    isHydratingTask: isAwaitingTaskHydration,
+    isYjsSyncing,
+  });
 
   const { data: descriptionHistoryData } = useQuery({
     queryKey: ['task-history', effectiveTaskWsId, task?.id, 'description'],
@@ -635,13 +623,38 @@ export function TaskEditDialog({
     [formState.description]
   );
 
-  const latestRestorableDescriptionVersion = useMemo(() => {
-    const latestVersion = recoverableDescriptionVersions[0] ?? null;
-    if (!latestVersion) return null;
-    return latestVersion.description === currentSerializedDescription
-      ? null
-      : latestVersion;
-  }, [currentSerializedDescription, recoverableDescriptionVersions]);
+  const descriptionBaseline = useTaskDescriptionBaseline({
+    taskId: task?.id,
+    isOpen,
+    isReady: !isAwaitingTaskHydration && !isYjsSyncing,
+    editor: editorInstance,
+  });
+
+  const latestRestorableDescriptionVersion = useMemo(
+    () =>
+      getTaskDescriptionRecoveryVersion({
+        versions: recoverableDescriptionVersions,
+        currentContent:
+          editorInstance && !editorInstance.isDestroyed
+            ? editorInstance.getJSON()
+            : formState.description,
+        persistedContent: getDescriptionContent(task?.description),
+        baselineContent: descriptionBaseline,
+        confirmedSavedContent,
+        isSettling: isDialogSettling || isYjsSyncing,
+        schema: editorInstance?.schema,
+      }),
+    [
+      recoverableDescriptionVersions,
+      formState.description,
+      task?.description,
+      descriptionBaseline,
+      confirmedSavedContent,
+      isDialogSettling,
+      isYjsSyncing,
+      editorInstance,
+    ]
+  );
 
   // Update user when props change
   useEffect(() => {
@@ -721,7 +734,6 @@ export function TaskEditDialog({
   const [newProjectName, setNewProjectName] = useState('');
 
   // Editor state
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(true);
   const [descriptionStorageLength, setDescriptionStorageLength] = useState(() =>
     getTaskDescriptionStorageLength(formState.description)
@@ -1284,6 +1296,7 @@ export function TaskEditDialog({
           getTaskDescriptionStorageLength(restoredContent)
         );
         persistedDescriptionRef.current = serializedRestoredDescription;
+        confirmSavedDescription(restoredContent);
         descriptionPersistenceGuardRef.current =
           createTaskDescriptionPersistenceGuardState({
             persistedDescription: serializedRestoredDescription,
@@ -1339,6 +1352,7 @@ export function TaskEditDialog({
     },
     [
       applyRestoredDescriptionToOpenEditor,
+      confirmSavedDescription,
       boardId,
       effectiveTaskWsId,
       formState.setDescription,
@@ -2008,6 +2022,7 @@ export function TaskEditDialog({
 
     if (didPersist) {
       persistedDescriptionRef.current = currentSerializedDescription;
+      confirmSavedDescription(currentContent);
       descriptionPersistenceGuardRef.current =
         createTaskDescriptionPersistenceGuardState({
           persistedDescription: currentSerializedDescription,
@@ -2023,6 +2038,7 @@ export function TaskEditDialog({
     editorInstance,
     boardId,
     queryClient,
+    confirmSavedDescription,
   ]);
 
   const hasPendingRealtimeDescriptionChanges = useCallback(() => {
@@ -2766,7 +2782,7 @@ export function TaskEditDialog({
                   ref={setScrollContainer}
                   className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
                 >
-                  <div className="flex flex-col">
+                  <TaskDialogLoadingShell loading={isDialogSettling}>
                     <TaskNameInput
                       name={formState.name}
                       isCreateMode={isCreateMode}
@@ -2777,7 +2793,7 @@ export function TaskEditDialog({
                       setName={setTaskName}
                       updateName={updateName}
                       flushNameUpdate={flushNameUpdate}
-                      disabled={taskTitleDisabled}
+                      disabled={taskTitleDisabled || isDialogSettling}
                       isHydrating={isAwaitingTaskHydration && !formState.name}
                     />
 
@@ -2913,19 +2929,8 @@ export function TaskEditDialog({
                       />
                     )}
 
-                    {isAwaitingTaskHydration ? (
-                      <TaskDescriptionHydrationPlaceholder />
-                    ) : (
+                    {!isAwaitingTaskHydration && (
                       <div className="relative">
-                        {/* The editor is mounted underneath so its realtime
-                            document can settle, but stays covered by the same
-                            skeleton until it has content to show — one loading
-                            state for the dialog instead of two in a row. */}
-                        {isDialogSettling && (
-                          <div className="absolute inset-0 z-10 bg-background">
-                            <TaskDescriptionHydrationPlaceholder />
-                          </div>
-                        )}
                         <TaskDescriptionEditor
                           description={formState.description}
                           setDescription={formState.setDescription}
@@ -3012,7 +3017,7 @@ export function TaskEditDialog({
                         isLocking={lockingEventId}
                       />
                     )}
-                  </div>
+                  </TaskDialogLoadingShell>
                 </div>
               </div>
 
@@ -3219,31 +3224,5 @@ export function TaskEditDialog({
         />
       )}
     </>
-  );
-}
-
-/**
- * Stand-in for the description editor while a task hydrates. The real editor is
- * bound to the task's Yjs document, which only exists once realtime turns on
- * after hydration, so mounting it earlier would show a permanently empty
- * description and read as an unsaved local edit.
- */
-function TaskDescriptionHydrationPlaceholder() {
-  return (
-    <div aria-hidden className="relative">
-      {/* Mirrors the editor's footprint — a toolbar strip above a tall body — so
-          swapping the real editor in does not move everything below it. */}
-      <div className="flex h-11 items-center gap-1 border-dynamic-border border-b px-2">
-        {Array.from({ length: 8 }, (_, index) => (
-          <Skeleton className="size-7 rounded-md" key={index} />
-        ))}
-      </div>
-      <div className="min-h-[calc(100vh-16rem)] space-y-3 px-4 pt-6 md:px-8">
-        <Skeleton className="h-4 w-11/12" />
-        <Skeleton className="h-4 w-9/12" />
-        <Skeleton className="h-4 w-10/12" />
-        <Skeleton className="h-4 w-1/2" />
-      </div>
-    </div>
   );
 }

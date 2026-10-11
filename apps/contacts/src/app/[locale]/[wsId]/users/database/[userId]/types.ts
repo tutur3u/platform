@@ -1,4 +1,4 @@
-import type { Database, WorkspaceUserReport } from '@tuturuuu/types';
+import type { Database } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { ReactNode } from 'react';
 
@@ -60,4 +60,23 @@ export type UserDetailTab = {
   content: ReactNode;
 };
 
-export type UserReport = WorkspaceUserReport;
+// The workspace view does not expose the table's review_revision.
+// Keep this display DTO tied to the queried view, including its nullability.
+export type UserReport = Omit<
+  Database['private']['Views']['external_user_monthly_reports_workspace_view']['Row'],
+  | 'creator_display_name'
+  | 'creator_email'
+  | 'creator_full_name'
+  | 'group_name'
+  | 'group_ws_id'
+  | 'modifier_display_name'
+  | 'modifier_email'
+  | 'modifier_full_name'
+  | 'user_archived'
+  | 'user_archived_until'
+  | 'user_display_name'
+  | 'user_email'
+  | 'user_full_name'
+  | 'user_note'
+  | 'user_ws_id'
+>;

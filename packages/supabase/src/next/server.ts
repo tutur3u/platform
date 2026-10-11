@@ -220,11 +220,16 @@ function createAppSessionIsolatedRequestClient<T = Database>() {
 export function createAdminClient<T = Database>({
   noCookie = false,
   auditActorId,
+  fetch,
 }: {
   noCookie?: boolean;
   /** Verified server-side actor; never copy this from an incoming header. */
   auditActorId?: string;
+  fetch?: typeof globalThis.fetch;
 } = {}): SupabaseClient<T> | Promise<SupabaseClient<T>> {
+  if (fetch !== undefined && noCookie !== true) {
+    throw new Error('Scoped admin fetch requires noCookie: true');
+  }
   if (auditActorId !== undefined) {
     if (
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -236,7 +241,22 @@ export function createAdminClient<T = Database>({
     const { url, key } = checkEnvVariables({ useSecretKey: true });
     return createBrowserClient<T>(url, key, {
       isSingleton: false,
-      global: { headers: { 'x-ttr-audit-actor-id': auditActorId } },
+      global: {
+        headers: { 'x-ttr-audit-actor-id': auditActorId },
+        ...(fetch !== undefined ? { fetch } : {}),
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
+    });
+  }
+  if (fetch !== undefined) {
+    const { url, key } = checkEnvVariables({ useSecretKey: true });
+    return createBrowserClient<T>(url, key, {
+      isSingleton: false,
+      global: { fetch },
       auth: {
         autoRefreshToken: false,
         persistSession: false,

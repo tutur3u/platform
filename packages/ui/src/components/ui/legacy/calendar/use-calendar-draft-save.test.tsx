@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
-import { expect, it, vi } from 'vitest';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { expect, it, vi } from 'vitest';
 import { useCalendarDraftSave } from './use-calendar-draft-save';
 
 const query = vi.hoisted(() => ({

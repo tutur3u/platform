@@ -59,6 +59,45 @@ void main() {
   Future<File> payload(List<int> contents) =>
       File('${directory.path}/${model.id}.download').writeAsBytes(contents);
 
+  test('native transfer exposes pending and verification phases', () async {
+    final result = downloads.download(model, wifiOnly: true);
+    await entered();
+    expect(downloads.state.value!.phase.name, 'transferring');
+    final observed = <String>[];
+    downloads.state.addListener(() {
+      observed.add(downloads.state.value!.phase.name);
+    });
+    transport.transfer.done.complete(await payload(bytes));
+    await result;
+    expect(observed, contains('verifying'));
+    expect(downloads.state.value!.complete, isTrue);
+  });
+
+  test('same job retains actual phases when settings reattach', () async {
+    SharedPreferences.setMockInitialValues({});
+    final result = downloads.download(model, wifiOnly: true);
+    await entered();
+    transport.transfer.status.value = ModelTransferStatus.queued;
+    final settings = AssistantLocalModelsCubit(
+      workspaceId: 'team',
+      isScopeCurrent: () => true,
+      store: _SettingsStore(downloads),
+      supported: () async => true,
+      preferences: AssistantLocalPreferences(currentUserId: () => 'owner'),
+    );
+    await settings.load();
+    expect(settings.state.downloadPhase, ModelDownloadPhase.queued);
+    transport.transfer.status.value = ModelTransferStatus.retryWait;
+    expect(settings.state.downloadPhase, ModelDownloadPhase.retryWait);
+    await settings.close();
+    expect(downloads.busy, isTrue);
+    transport.transfer.status.value = ModelTransferStatus.pending;
+    expect(downloads.state.value!.phase, ModelDownloadPhase.pending);
+    transport.transfer.done.complete(await payload(bytes));
+    await result;
+    expect(transport.starts, 1);
+  });
+
   test(
     'coalesces taps, retains network consent and verifies before publication',
     () async {

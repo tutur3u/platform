@@ -12,7 +12,10 @@ import {
   runIsolatedLifecycle,
   stageDisposableProject,
 } from './run-supabase-isolated.js';
-import { runTimeTrackerControlConcurrency } from './time-tracker-control-concurrency.mjs';
+import {
+  runTimeTrackerControlConcurrency,
+  runTimeTrackerReplacementConcurrency,
+} from './time-tracker-control-concurrency.mjs';
 
 const repositoryRoot = process.cwd();
 const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -36,7 +39,11 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
-const fixtures = ['time-tracker-control.sql'];
+const fixtures = [
+  'time-tracker-control.sql',
+  'time-tracker-writer-catalog.sql',
+  'time-tracker-replace-running.sql',
+];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,
@@ -110,6 +117,7 @@ const runner = async (command, args, cwd) => {
       assertStrictTap(tap);
     }
     await runTimeTrackerControlConcurrency(metadata);
+    await runTimeTrackerReplacementConcurrency(metadata);
     return { code: 0 };
   }
   return runCommand(

@@ -9,6 +9,7 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'contacts',
   async rewrites() {
     return {
       // Contacts owns feedback routes with satellite app-session auth. A

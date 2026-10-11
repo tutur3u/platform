@@ -8,6 +8,7 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'mind',
   transpilePackages: [
     '@tuturuuu/internal-api',
     '@tuturuuu/mind-core',

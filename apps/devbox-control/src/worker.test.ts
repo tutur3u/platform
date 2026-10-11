@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vite-plus/test';
 
 vi.mock('cloudflare:workers', () => ({ DurableObject: class {} }));
 const { default: worker } = await import('./worker');

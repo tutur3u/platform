@@ -20,7 +20,9 @@ const fetchMock = vi.fn();
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('fetch', fetchMock);
-  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }));
+  fetchMock.mockResolvedValue(
+    new Response('{"success":true}', { status: 200 })
+  );
 });
 function hook() {
   const client = new QueryClient({

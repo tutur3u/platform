@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vite-plus/test';
 import { sign, verify } from './auth';
 import type { Env } from './env';
 import { resolveSession } from './session';

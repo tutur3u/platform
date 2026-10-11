@@ -10,6 +10,22 @@ vi.mock('@playwright/test', () => ({
   test: { step },
   expect: browserExpect,
 }));
+const privacyUrl =
+  'https://synthetic.test/api/v1/lettin/worlds?worldId=synthetic-world';
+const scopedOptions = {
+  headers: { authorization: 'Bearer synthetic-scoped-session' },
+  maxRedirects: 0,
+};
+
+function syntheticSessionOptions() {
+  return vi.fn<Parameters<typeof verifyLettinPrivateImport>[3]>(
+    (destination) => {
+      expect(new URL(destination).origin).toBe('https://synthetic.test');
+      return scopedOptions;
+    }
+  );
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   step.mockReset();
@@ -20,6 +36,7 @@ test('import dialog action is bounded and preserves its failure through cleanup'
   step.mockImplementation((_name, action) => action());
   const info = vi.spyOn(console, 'info').mockImplementation(() => {});
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const sessionOptions = syntheticSessionOptions();
   const failure = new Error('locator.click private-provider-value');
   const goto = vi.fn().mockResolvedValue(undefined);
   const click = vi.fn().mockRejectedValue(failure);
@@ -34,9 +51,11 @@ test('import dialog action is bounded and preserves its failure through cleanup'
     verifyLettinPrivateImport(
       context,
       'https://synthetic.test',
-      'synthetic-workspace'
+      'synthetic-workspace',
+      sessionOptions
     )
   ).rejects.toBe(failure);
+  expect(sessionOptions).not.toHaveBeenCalled();
   expect(setDefaultTimeout).toHaveBeenCalledWith(15_000);
   expect(goto).toHaveBeenCalledWith(
     'https://synthetic.test/synthetic-workspace/wiki',
@@ -64,6 +83,7 @@ for (const stalledPhase of [
   test(`${stalledPhase} is inside a bounded step and retains its timeout through cleanup`, async () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const sessionOptions = syntheticSessionOptions();
     const failure = new Error('synthetic phase deadline');
     failure.name = 'TimeoutError';
     let enteredPhase = '';
@@ -132,7 +152,8 @@ for (const stalledPhase of [
       verifyLettinPrivateImport(
         context,
         'https://synthetic.test',
-        'synthetic-workspace'
+        'synthetic-workspace',
+        sessionOptions
       )
     ).rejects.toBe(failure);
     expect(blockedOperation).toBe(true);
@@ -143,11 +164,14 @@ for (const stalledPhase of [
       expect(phases).not.toContain('apply private import');
     }
     if (stalledPhase === 'confirm imported privacy') {
-      expect(get).toHaveBeenCalledWith(
-        'https://synthetic.test/api/v1/lettin/worlds?worldId=synthetic-world',
-        { timeout: 30_000 }
-      );
+      expect(get).toHaveBeenCalledWith(privacyUrl, {
+        timeout: 30_000,
+        ...scopedOptions,
+      });
+      expect(sessionOptions).toHaveBeenCalledExactlyOnceWith(privacyUrl);
       expect(json).toHaveBeenCalledOnce();
+    } else {
+      expect(sessionOptions).not.toHaveBeenCalled();
     }
   });
 }
@@ -183,19 +207,22 @@ test.each([200, 401, 403, 500])(
       locator: () => control,
       url: () => 'https://synthetic.test/wiki/synthetic-world/overview',
     };
+    const sessionOptions = syntheticSessionOptions();
     // Even an empty error body must not look like a passing privacy assertion.
     const json = vi.fn().mockResolvedValue([]);
     const close = vi.fn().mockResolvedValue(undefined);
+    const get = vi.fn().mockResolvedValue({ status: () => status, json });
     const context = {
       setDefaultTimeout: vi.fn(),
       newPage: async () => page,
       close,
-      request: { get: async () => ({ status: () => status, json }) },
+      request: { get },
     } as unknown as BrowserContext;
     const result = verifyLettinPrivateImport(
       context,
       'https://synthetic.test',
-      'synthetic-workspace'
+      'synthetic-workspace',
+      sessionOptions
     );
     if (status === 200) {
       await expect(result).resolves.toBeUndefined();
@@ -204,6 +231,11 @@ test.each([200, 401, 403, 500])(
       await expect(result).rejects.toThrow();
       expect(json).not.toHaveBeenCalled();
     }
+    expect(sessionOptions).toHaveBeenCalledExactlyOnceWith(privacyUrl);
+    expect(get).toHaveBeenCalledExactlyOnceWith(privacyUrl, {
+      timeout: 30_000,
+      ...scopedOptions,
+    });
     expect(close).toHaveBeenCalledOnce();
   }
 );

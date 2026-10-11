@@ -21,11 +21,9 @@ import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 
 const PROCESSING_DEADLINE_MS = 165_000;
 const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
-
 function getPrivateNotificationClient(sbAdmin: any) {
   return sbAdmin.schema('private');
 }
-
 type NotificationBatchRow = {
   channel: string;
   email: string | null;
@@ -556,6 +554,7 @@ async function handleGET(req: NextRequest) {
 
           const skipReason = await getNotificationSkipReason(sbAdmin, {
             blockedEmailCache,
+            channel: batch.channel,
             membershipCache,
             notification,
           });
@@ -710,6 +709,7 @@ async function handleGET(req: NextRequest) {
 
           const preSendSkipReason = await getNotificationSkipReason(sbAdmin, {
             blockedEmailCache,
+            channel: batch.channel,
             membershipCache,
             notification: batchNotification,
             recipientEmail: userEmail || null,

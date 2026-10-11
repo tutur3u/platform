@@ -1,5 +1,2 @@
-User-Agent: *
+User-agent: *
 Allow: /
-Disallow: /api/
-
-Sitemap: https://meet.tuturuuu.com/sitemap.xml

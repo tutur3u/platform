@@ -1,5 +1,5 @@
 import type { Trace } from '@tuturuuu/multiplayer';
-import { expect, it } from 'vitest';
+import { expect, it } from 'vite-plus/test';
 import { traceContext } from './trace-context';
 
 it('retains complete earlier reads after more than six actions', () => {

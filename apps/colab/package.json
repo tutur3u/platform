@@ -3,13 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 7835",
-    "build": "vite build && tsc --noEmit",
+    "dev": "vp dev --host 127.0.0.1 --port 7835",
+    "build": "vp build && tsc --noEmit",
     "type-check": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vp test --pool=threads",
     "preview": "wrangler dev --port 8795",
     "deploy": "bun run build && wrangler deploy",
-    "deploy:dry-run": "bun run build && wrangler deploy --dry-run"
+    "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
+    "lint": "vp lint --config .oxlintrc.json src vite.config.ts --deny-warnings",
+    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts --check"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.8",
@@ -32,8 +34,8 @@
     "@vitejs/plugin-react": "^6.1.1",
     "miniflare": "^4.20260730.0",
     "typescript": "7.0.2",
-    "vite": "^8.3.0",
-    "vitest": "^5.0.0",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.1.0",
+    "vite-plus": "1.1.0",
     "wrangler": "^4.131.1"
   }
 }

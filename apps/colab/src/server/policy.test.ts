@@ -1,5 +1,5 @@
 import { mockApps, seedRecords } from '@tuturuuu/multiplayer';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { executeMockTool } from './ai';
 import { authRoute, sign, verify } from './auth';
 import type { Env } from './env';

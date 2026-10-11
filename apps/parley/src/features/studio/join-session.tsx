@@ -3,6 +3,7 @@ import { decodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code'
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { unstable_rethrow } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { joinScenario } from './actions';
@@ -20,7 +21,12 @@ export function JoinSession() {
           return;
         }
         startTransition(async () => {
-          await joinScenario(data);
+          try {
+            await joinScenario(data);
+          } catch (error) {
+            unstable_rethrow(error);
+            toast.error(t('join_failed'));
+          }
         });
       }}
     >

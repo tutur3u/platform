@@ -18,7 +18,7 @@ concurrency:
 jobs:
   verify:
     name: Verify exact-source native and wasm Rust
-    if: github.ref == 'refs/heads/main'
+    if: ${{ false }} # Rust is paused until explicit resumption.
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -87,7 +87,7 @@ jobs:
   worker-bundle:
     name: Verify exact-source Worker package
     needs: verify
-    if: github.ref == 'refs/heads/main'
+    if: ${{ false }} # Rust is paused until explicit resumption.
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:

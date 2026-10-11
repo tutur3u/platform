@@ -45,3 +45,8 @@ describe('app public paths', () => {
     );
   });
 });
+it('permits anonymous username profiles in both locales', () => {
+  expect(APP_PUBLIC_PATHS).toEqual(
+    expect.arrayContaining(['/u', '/en/u', '/vi/u'])
+  );
+});

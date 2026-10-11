@@ -1,0 +1,44 @@
+---
+title: "Rewise"
+description: "Private AI conversations, tool surfaces, and access limitations."
+updatedAt: '2026-10-08'
+---
+
+Rewise (`rewise.tuturuuu.com`, `apps/rewise`) is an AI conversation surface with
+app-session, workspace, and AI access gates. It is distinct from the product
+[AI Studio](/platform/ai/ai-studio), workspace
+[Chat](/platform/applications/chat), and the long-term AI vision.
+
+## Available source surfaces
+
+| Route | Surface |
+| --- | --- |
+| `/{wsId}` | Conversation overview |
+| `/{wsId}/new` | New conversation |
+| `/{wsId}/c/{chatId}` | Existing conversation |
+| `/{wsId}/tools` | Tool listing |
+| `/{wsId}/tools/{toolId}` | Tool-specific surface |
+| `/{wsId}/imagine` | Retained image-oriented surface |
+
+A retained route is not a claim that its configured model is enabled. The
+image-oriented page currently supplies a disabled Imagen model configuration;
+do not describe it as a generally available image-generation product based on
+route presence alone. Provider/model availability must be checked against the
+actual UI and server policy.
+
+## Access, usage, and memory
+
+AI whitelist/eligibility and workspace access are checked before serving the
+private experience. Model policy, credits, usage accounting, and tool permissions
+remain part of the owning AI execution path. Read the
+[Model catalog](/platform/ai/model-catalog),
+[Usage guards](/platform/features/usage-accounting-guards), and
+[Memory service](/platform/ai/memory-service) before extending a flow.
+
+Memory is scoped context; it does not authorize publishing or other actions.
+Conversations, tools, and generated/private content are noindex. Public AI
+product descriptions belong on the main site's public pages.
+
+The [Rewise route reference](/reference/repository/routes/rewise) locates every
+page and API handler. It should be read alongside the implementation's access
+checks, not treated as an external public API guarantee.

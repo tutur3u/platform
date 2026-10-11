@@ -265,7 +265,6 @@ export default function PostsFilters({
                   options={userGroups.map((group) => ({
                     label: group.name || 'No name',
                     value: group.id,
-                    count: group.amount,
                   }))}
                 />
               ) : null}
@@ -281,7 +280,6 @@ export default function PostsFilters({
                   options={excludedUserGroups.map((group) => ({
                     label: group.name || 'No name',
                     value: group.id,
-                    count: group.amount,
                   }))}
                 />
               ) : null}

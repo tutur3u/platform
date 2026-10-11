@@ -1,3 +1,4 @@
+import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -71,11 +72,16 @@ type PageProps = {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { owner, repo } = await params;
-  return {
+  const { locale, owner, repo, view = [] } = await params;
+  return createPageMetadata({
+    baseUrl: 'https://git.tuturuuu.com',
     description: `Browse ${owner}/${repo} on Tuturuuu Git`,
+    locale,
+    localePrefix: 'never',
+    pathname: `/${[owner, repo, ...view].map(encodeURIComponent).join('/')}`,
+    siteName: 'Tuturuuu Git',
     title: `${owner}/${repo} · Tuturuuu Git`,
-  };
+  });
 }
 
 export default async function RepositoryPage({

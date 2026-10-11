@@ -1,4 +1,10 @@
 {
+  "assistantDownloadPhasePending": "Pending",
+  "assistantDownloadPhaseQueued": "Queued",
+  "assistantDownloadPhaseTransferring": "Downloading",
+  "assistantDownloadPhaseRetryWait": "Waiting to retry",
+  "assistantDownloadPhasePaused": "Paused",
+  "assistantDownloadPhaseVerifying": "Verifying download",
   "@@locale": "en",
   "@assistantCreditsSummary": {
     "placeholders": {
@@ -4515,5 +4521,17 @@
   "assistantMemorySaveChanges": "Save my changes",
   "notificationsReadCleanupUnavailable": "Read accepted. Some system notifications could not be dismissed.",
   "notificationsReadRefreshUnavailable": "Read accepted. The inbox could not refresh. Pull to refresh.",
-  "notificationsReadError": "Could not accept the read action. Try again."
+  "notificationsReadError": "Could not accept the read action. Try again.",
+  "notesLocalAiTitle": "Summarize on device",
+  "notesLocalAiDescription": "Use an installed model for a short local summary. Review before adding to your note. No note text is sent to an AI service.",
+  "notesLocalAiModel": "Installed model",
+  "notesLocalAiMissingModel": "Install or import this model in Mira settings first.",
+  "notesLocalAiUnsupported": "Local inference is unavailable on this device.",
+  "notesLocalAiInput": "Choose a nonempty note with at most 5,000 characters.",
+  "notesLocalAiEngine": "Could not generate a local summary. No remote service was used.",
+  "notesLocalAiSaveError": "Could not confirm adding the summary. Check your note before saving again.",
+  "notesLocalAiStop": "Stop",
+  "notesLocalAiGenerate": "Generate locally",
+  "notesLocalAiAppend": "Append summary",
+  "notesLocalAiDiscard": "Discard preview"
 }

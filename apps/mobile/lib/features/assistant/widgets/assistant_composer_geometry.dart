@@ -25,9 +25,9 @@ double assistantComposerBottomOffset(BuildContext context) =>
 double assistantTranscriptBottomClearance(
   BuildContext context, {
   required bool composerVisible,
+  double? composerHeight,
 }) => composerVisible
-    ? assistantComposerHeight(context) +
+    ? (composerHeight ?? assistantComposerHeight(context) + 2) +
           assistantComposerBottomOffset(context) +
-          2 + // One-pixel ShellDockSurface border above and below content.
           16
     : MediaQuery.paddingOf(context).bottom + 16;

@@ -1,0 +1,300 @@
+---
+title: "Oxc and Cloudflare adoption"
+description: "Incremental Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries."
+updatedAt: '2026-10-10'
+---
+
+## Decision and current state
+
+Gradually adopt **Oxlint and Oxfmt over Biome**, and move application hosting
+toward **Cloudflare**. These are independent changes: Oxc can lint and format
+Next.js source without changing its runtime. Vite+ consolidates tooling; it does
+not translate Next.js routes, server components, or server actions.
+
+The foundation adds root-pinned Oxlint/Oxfmt, shared configuration and explicit-file
+commands. Existing Biome scripts, CI, editor defaults, import organization and
+release/generated-file formatting remain authoritative. No workspace has completed
+the switch merely because these tools are installed.
+
+Lettin and Parley already have Next.js/OpenNext Worker deployments. Their next
+architecture milestone is a Vite-native runtime preserving existing contracts.
+React Router Framework Mode with the Cloudflare Vite plugin is a candidate requiring
+a scoped compatibility proof. The retained `apps/tanstack-web` remains paused.
+
+## Platform-wide target and daily checkpoints
+
+The ultimate target is **every active application using Vite+, hosted on
+Cloudflare, with Oxc linting/formatting**. Work proceeds incrementally alongside
+the product backlog; the initial Worker inventory below is the first wave, not a
+limit on the program. Retained paused applications remain excluded until resumed.
+Mobile continues to use its native Flutter toolchain; shared services and web
+surfaces follow the platform target without implying a rewrite of native UI.
+
+Keep per-app ownership, prerequisites and exact-head receipts in the private
+request backlog and coordination board. Checkpoint reviewable PRs as each unit
+finishes. Separate implemented, CI-verified, runtime-accepted and production-delivered
+states. A merge does not establish hosting cutover. Capture new Worker/app scope
+and compatibility findings before dispatching the next unit; avoid competing
+migration and product owners in the same files.
+
+## Complete Worker migration scope
+
+The migration includes every active Worker-backed app/service, not only Lettin
+and Parley. Framework replacement applies to Next/OpenNext web apps; native
+Workers retain their fetch/email/scheduled/RPC entrypoints while adopting Vite+
+and Oxc tooling. A backend service does not need React or a router to qualify.
+
+| Active surface | Current boundary | Migration acceptance |
+| --- | --- | --- |
+| Meet | Next/OpenNext web Worker and shared Meet services | Vite-native web routes; preserve meeting/session APIs, AI entrypoints, media and Durable Object classes |
+| Parley | Next/OpenNext web Worker | Vite-native studio and participant routes; preserve private reviews, snapshots and Meet bindings |
+| Lettin | Next/OpenNext web Worker with D1/R2 | Vite-native routes; preserve publication, ownership, D1 session and R2 contracts |
+| Colab | Vite React assets plus native Worker | Adopt Vite+ without changing auth, sponsorship, room Durable Objects or SPA routing |
+| Meet realtime | Native Worker and Durable Objects | Adopt shared tooling; preserve signalling, TURN/SFU contracts and realtime health checks |
+| Coordination | Native Worker service | Preserve coordination protocol, authentication, object identity and storage |
+| Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |
+| Cron control | Scheduled/native Worker | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding |
+| Mail email routing | Native email Worker within Mail | Preserve MIME ingestion, R2 permissions and the owning Mail webhook contract |
+
+This inventory follows active checked-in Wrangler configurations. Existing
+`apps/backend` and `apps/tanstack-web` Wrangler files are retained paused artifacts,
+not migration targets. New active Worker configurations must join the inventory.
+Deployment existence and canonical health still require live evidence.
+
+Begin with the portable session core and the already Vite-native Colab toolchain,
+then use the same verified conventions for native service workers. Meet, Parley
+and Lettin require the shared framework-adapter work before full web replacement.
+Each app retains its own exact-commit test/type/lint/build and Worker acceptance
+receipts; one green app cannot establish another app's readiness.
+
+## cf CLI adoption alongside Vite+
+
+Prefer Cloudflare's **cf CLI** over Wrangler as each operation proves compatible.
+This is a phased tooling decision, separate from framework migration and production
+promotion. Existing Wrangler commands/configurations remain authoritative until
+that scope passes its replacement gates.
+
+[Cloudflare's launch announcement](https://blog.cloudflare.com/cloudflare-cf-cli-launch/)
+introduces cf in open beta, with JSON output and a generated API command surface.
+Vite-built Workers can migrate to typed `cloudflare.config.ts`; configuration uses
+Vite modes, whose semantics differ from Wrangler environments. cf still delegates
+some development/deployment paths to Wrangler. Recheck upstream support before
+implementing a scope; the announcement is not evidence of repository compatibility.
+
+1. **Read-only discovery first.** Pin a reviewed cf version through the owning
+   workspace's package manager. Verify help/schema, authentication and selected
+   account independently; existing Wrangler login does not establish cf access.
+   Exercise bounded inventory/observability queries and record supported command
+   mappings. Filter JSON to required fields and keep raw logs/credentials private.
+2. **Pilot a Vite-native Worker.** Coordination or Colab is a candidate after its
+   Vite+ artifact gates pass. Review migration output in an isolated worktree;
+   do not run a repository-wide migrator. Verify compatibility with the pinned
+   Vite+ core, Cloudflare plugin and test runner before adopting typed configuration.
+3. **Prove configuration and artifact parity.** Compare resolved settings for
+   every used mode: account/name, routes/domains, compatibility date/flags, assets,
+   service bindings, Durable Object names/classes/migrations, storage identifiers,
+   triggers, secrets and observability. Preserve resource identity; never infer
+   that a similarly named mode selects the same deployed environment. Select one
+   authoritative configuration per scope, with an explicit fallback procedure.
+4. **Replace operations separately.** Map local development, type generation,
+   tests, CI bundling, validation upload, tail, version inspection, deployment and
+   rollback individually. Unsupported or unverified operations retain Wrangler.
+   CI must exercise the final emitted artifact and preserve exact-SHA and target
+   identity checks; a CLI rename or dry run alone cannot establish runtime health.
+5. **Roll out per owner.** Update scripts, workflow permissions, runbooks and skill
+   references together after focused tests and exact-commit CI pass. Production
+   commands change only with separately authorized promotion, bounded scope and
+   verified rollback. Keep paused runtimes excluded.
+
+### Discovery runtime and authentication
+
+Use Node.js 22.18 or later to execute cf. Installing a dependency with Bun does
+not mean the CLI should run on Bun: Cloudflare documents that commands loading
+`cloudflare.config.ts` fail on the Bun runtime. Verify the executor separately
+from the package manager. See [installation and authentication](https://developers.cloudflare.com/cf/get-started/).
+
+For capability discovery before project adoption, run a reviewed, exact cf version
+through `npm exec --yes --package=cf@<reviewed-version> -- cf --help` from a private
+scratch directory outside app configuration and `.env` ancestry. This avoids a
+global install or repository dependency change. Use an anonymous `cf cli search`
+query describing the operation, then inspect that command's help/schema. Discovery
+proves command availability, not authenticated operation or Worker artifact parity.
+
+Parse `cf auth whoami` JSON and require `authenticated === true`; exit status zero
+alone does not establish authentication. An unauthenticated result can return
+`authenticated: false` and an error with a successful process exit. Preserve that
+failure instead of proceeding to API calls. cf uses separate credentials from
+Wrangler; do not copy credential files or assume a prior Wrangler login applies.
+
+API commands can remember selected accounts in project-local cache files. Use
+explicit target identity and isolate discovery before touching app worktrees;
+review any resulting local files. Neither command discovery nor `--dry-run`
+authorizes migration, configuration mutation, resource creation or deployment.
+
+The current foundation does not install cf or convert Worker configurations.
+Track CLI capability gaps independently from app migration so an unsupported
+operation does not block portable libraries or Oxc adoption.
+
+## Use the tooling foundation
+
+From the repository root, pass **explicit files you own**:
+
+```bash
+bun oxc:lint scripts/oxc.js scripts/oxc.test.js
+bun oxc:format scripts/oxc.js scripts/oxc.test.js
+bun oxc:write scripts/oxc.js
+node --test scripts/oxc.test.js
+```
+
+Lint fails on warnings/errors. Format checks do not write; `oxc:write` explicitly
+applies formatting. The wrapper rejects empty selections, flags, globs, directories,
+symlinks resolving outside the permitted source, build/dependency trees and paused
+runtimes. Installed tools run with two threads, without Turbo or builds. Tests cover
+scope rejection, native-dialog linting, read-only formatting and idempotence.
+
+The baseline uses correctness rules, native-dialog prohibition, TypeScript/React/
+accessibility plugins, and two-space, 80-column, single-quote, semicolon, LF,
+ES5-trailing-comma formatting. This is **not Biome rule parity**. Manifest sorting
+is disabled; import and Tailwind sorting are not enabled.
+
+## Move one workspace at a time
+
+1. Inventory Biome rules/suppressions, file types, editors, Turbo/CI tasks and
+   generated-file producers. Compare read-only Oxc output on owned files.
+2. Map rules by behavior, including accessibility, hooks, unused imports and
+   intentional exceptions. Record gaps and compensating validators; preserve
+   CSS/Tailwind validation and import organization.
+3. Isolate formatting from product logic. Preserve generated/vendor ownership;
+   translate suppressions only when their semantics match.
+4. Select one formatter per migrated scope and update CI, editors, generators and
+   docs together. Require applicable exact-commit test/type/lint/build evidence.
+5. Remove Biome only once every remaining scope and release tool has equivalent
+   coverage. Preserve auth, i18n, source-size, import-boundary and runtime guards.
+
+Vite+'s monorepo migrator operates at the workspace root and rewrites shared
+catalogs/lockfiles. Do not run it for a single-app task. Review bounded dependency
+and configuration changes instead; use package-manager commands for dependencies.
+Verify Vite+/Vite/Vitest version compatibility before changing shared test runners.
+
+## First-party portability contract
+
+Maintain domain rules and application services as ordinary TypeScript modules.
+Reusable React components may depend on React and framework-independent UI
+primitives; they receive navigation, translated labels and data through typed
+props or a small explicitly scoped provider. React Server Components are an
+optional adapter surface, never a prerequisite for consuming the domain package.
+
+| Layer | Owns | Avoids |
+| --- | --- | --- |
+| Domain | Pure decisions, validation, immutable snapshots, permission predicates | Framework imports, request globals, storage drivers |
+| Service | Workflows with injected actor, clock, repositories and capabilities | Reading ambient cookies/env or assuming trusted clients |
+| Portable React UI | Semantic tokens, presentation, interaction state, accessibility | Next/router/translation hooks and server-only imports |
+| Framework adapter | Route loaders/actions, HTTP mapping, navigation, localization, request credentials | Duplicating domain rules or bypassing policy |
+| Runtime adapter | D1/R2/Supabase clients, Worker bindings and scheduling | Leaking credentials or runtime-specific types into portable exports |
+
+Prefer existing first-party packages and narrow public subpath exports over a new
+universal framework wrapper. Keep Next-specific compatibility entrypoints stable
+while adding portable ones. Do not call an entire package framework-agnostic just
+because one file is pure: consumers must resolve its entrypoint without transitively
+loading Next/OpenNext or Cloudflare. Validate import graphs and consumer builds in
+CI. Runtime-specific optional adapters must have explicit entrypoints/dependencies.
+
+Use standard `Request`, `Response`, `Headers`, URLs and `AbortSignal` at HTTP
+boundaries where appropriate. Pass request context per invocation; never store
+actors or bindings in process-wide mutable state. Inject verified identity rather
+than accepting browser-provided user IDs as authority. Preserve audience, expiry,
+MFA, consent, membership and revocation checks in reusable policy services.
+
+Current seams include Lettin's Actor/Store context and SQL permission fences,
+with bindings/identity/HTTP as framework adapters. Parley/Meet domain contracts can
+remain shared while routes, session lookup and meeting UI adapters are extracted.
+A package can support Next.js, React Router or other React hosts by implementing
+these small adapters; support for every framework is a goal requiring consumer
+verification, not an automatic guarantee.
+
+## Vite-native Worker acceptance gates
+
+Compare emitted compatibility flags against each service’s source configuration;
+Devbox Control currently has no flags, so its verifier must not require
+`nodejs_compat` simply because another Worker uses it.
+
+| Boundary | Required preservation and evidence |
+| --- | --- |
+| Routes | Public/private/API inventory, bilingual paths, redirects/rewrites, metadata, noindex and deep links |
+| Identity | Satellite app-session audience/expiry, allowlists, MFA, workspace membership, owner consent and actor attribution |
+| API | Existing internal-api contracts and TanStack Query; injected request credentials |
+| UI | Navigation/translation/server adapters extracted without changing semantic tokens |
+| Lettin | D1 session behavior, R2 permissions, schemas/data, draft/publication snapshots and writeAccess fences |
+| Parley/Meet | Immutable scenarios, private facilitator reviews, participant invitations, signalling/media, Durable Objects and AI bindings |
+| Runtime | SSR, assets, auth denial/redirects, cache, errors, cancellation and bindings in real local Workers with isolated fixtures |
+| Delivery | Exact-commit CI build, staging runtime acceptance, then authorized canonical promotion with rollback and product checks |
+
+Prove a small authenticated vertical slice before replacing the complete app.
+Document fixture boundaries and hosted dependencies: local Durable Objects do not
+validate Cloudflare SFU/TURN. Hosting adoption does not imply migrating every store
+to D1 or replacing Supabase. Database changes, schedules, secrets and canonical
+traffic each need a bounded plan. Pin the promotion range, retain a rollback
+artifact and verify schema/binding compatibility and health before promotion.
+
+## Runaway-work and cost acceptance
+
+Every migration or change that adds or amplifies billable work must include a
+cost-safety review. The [reported runaway Durable Object alarm incident](https://serverlesshorrors.com/all/cloudflare-108k/)
+is a warning about self-sustaining work, not an independently verified account
+of provider usage. Do not rely on future refunds, billing notifications or a
+per-invocation CPU limit to cap total storage, requests, retries or downstream spend.
+
+[Durable Object alarms](https://developers.cloudflare.com/durable-objects/api/alarms/)
+are at-least-once and automatically retry thrown errors. Explicit rescheduling can
+create another chain beyond those retries. Ingress rate limits cannot stop work
+that an alarm, queue consumer or cron trigger already owns.
+
+| Control | Acceptance evidence |
+| --- | --- |
+| Work bounds | Bound operations, scanned rows/pages, payload size, fan-out and concurrency per wake; bound attempts and elapsed age for finite jobs. Persistent failures or no progress exhaust a durable budget rather than resetting on wake or restart. |
+| Scheduling | Empty/completed/expired/cancelled jobs do not reschedule. A valid next deadline is finite and in the future; retries use capped backoff. Recurring activity requires an explicit owner and renewable lease/expiry, with a documented stop path. |
+| Retry identity | Duplicate delivery and restarts preserve job identity, attempts, cursor and idempotency fences. A consumer cannot re-enter its own enqueue path indefinitely. Checkpoint progress without multiplying writes per item. |
+| Durable shutdown | Check a persisted stop/lease fence before expensive work and before rescheduling, including racing callbacks. Test a scoped authenticated stop path that preserves resumable data. Removing public routes or stopping ingress is insufficient. |
+| Storage amplification | Use indexed/bounded reads; avoid unbounded list/scan fallback in hot paths. Batch writes where useful, then measure the actual billing unit: batching does not necessarily reduce billed keys/rows/messages. |
+| Cost envelope | Record normal and failure-case operation counts per job/session and expected maximum admitted concurrency/volume. Include storage, queue retries, AI/media and logging; calculate with current product pricing and record assumptions. |
+| Detection and response | Verify which usage/anomaly alerts the account and products support, who receives them and how quickly they can react. Record sampled per-service rates, retry/no-progress counters and a tested independent operator stop procedure. |
+
+Require regressions for empty queues, expired state, duplicate execution, restart,
+clock/deadline boundaries, persistent downstream failure, no progress and stop-versus-
+reschedule races. Count storage/downstream calls as well as final return values;
+prove bounds under repeated wakes in isolated fixtures and the real local Worker.
+Exact-commit CI must exercise the emitted artifact. Keep live account settings,
+alert delivery and hosted shutdown verification as separate production evidence.
+
+CPU limits constrain an invocation, not the number of invocations or all billable
+services. Usage notifications are detection, not an automatic spending cutoff.
+Choose service-specific limits with measured workloads; do not silently apply an
+arbitrary global value that breaks realtime or recovery behavior. See current
+[Workers pricing and custom CPU limits](https://developers.cloudflare.com/workers/platform/pricing/)
+and [available billing alerts](https://developers.cloudflare.com/notifications/notification-available/).
+Any automatic circuit breaker must itself perform bounded work and fail safely
+without deleting original data or retrying indefinitely.
+
+Existing tests and code must be inspected per service; this foundation establishes
+review gates and does not assert that every deployed alarm is protected or that
+account alerts are configured.
+
+## Incident evidence
+
+Correlate scoped failing requests with authenticated Worker tail exceptions and
+the deployed revision. A hung-request cancellation establishes a runtime failure;
+nearby framework warnings are clues, not root-cause proof. Offline artifact replay
+can isolate middleware/server boundaries, but missing modules or post-build config
+patches do not establish a valid replacement release. Keep raw logs private.
+Build success alone does not establish request health.
+
+Follow [active runtime ownership](/build/devops/active-runtime) and the
+[delivery runbook](/build/devops/github-actions-runbook). Release builds remain in
+CI; a migration direction does not authorize production cutover.
+
+## Upstream references
+
+- [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html)
+- [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html)
+- [Vite+ migration](https://viteplus.dev/guide/migrate)
+- [React Router on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/)

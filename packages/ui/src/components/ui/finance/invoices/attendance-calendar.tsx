@@ -41,12 +41,20 @@ export function AttendanceCalendar({
       if (!map.has(dateKey)) {
         map.set(dateKey, new Map());
       }
-      map
-        .get(dateKey)!
-        .set(
-          attendance.group_id || 'default',
-          attendance.status?.toUpperCase() || 'PRESENT'
-        );
+      const groupStatuses = map.get(dateKey)!;
+      const groupId = attendance.group_id || 'default';
+      const status = attendance.status?.toUpperCase() || 'PRESENT';
+      const priority = (value: string | undefined) =>
+        value === 'ABSENT'
+          ? 3
+          : value === 'LATE'
+            ? 2
+            : value === 'PRESENT'
+              ? 1
+              : 0;
+      if (priority(status) >= priority(groupStatuses.get(groupId))) {
+        groupStatuses.set(groupId, status);
+      }
     });
     return map;
   }, [userAttendance]);

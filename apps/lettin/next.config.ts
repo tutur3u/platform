@@ -9,6 +9,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const web = resolveTuturuuuWebAppUrl();
 const nextConfig = createNextIntlPlugin()(
   createTuturuuuNextConfig({
+    seoApp: 'lettin',
     async rewrites() {
       return {
         beforeFiles: [],

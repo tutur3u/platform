@@ -11,6 +11,19 @@ on:
       - production
       - main
   workflow_dispatch:
+    inputs:
+      allow_cloudflare_verification_failures:
+        description: "Allow only verified canonical Cloudflare failures; all database prerequisites remain required"
+        type: boolean
+        default: false
+      expected_sha:
+        description: "Exact production SHA required when opting into migration recovery"
+        type: string
+        default: ""
+      expected_project_ref:
+        description: "Expected production project reference required for migration recovery"
+        type: string
+        default: ""
 
 concurrency:
   group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production') || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main')))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
@@ -43,8 +56,12 @@ jobs:
           TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           TRIGGER_SHA: ${{ github.event.workflow_run.head_sha }}
           TRIGGER_WORKFLOW: ${{ github.event.workflow_run.name }}
+          ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: ${{ inputs.allow_cloudflare_verification_failures }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          EXPECTED_PROJECT_REF: ${{ inputs.expected_project_ref }}
         run: |
           set -euo pipefail
+          ALLOW_CLOUDFLARE_VERIFICATION_FAILURES=${ALLOW_CLOUDFLARE_VERIFICATION_FAILURES:-false}
           TARGET_SHA=""
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
@@ -79,6 +96,14 @@ jobs:
             fi
           else
             echo "::notice::Skipping production migration because the triggering workflow was '$TRIGGER_WORKFLOW'."
+          fi
+
+          if [ "$ALLOW_CLOUDFLARE_VERIFICATION_FAILURES" = "true" ] && \
+             { [ "$EVENT_NAME" != "workflow_dispatch" ] || [ "$CURRENT_REF_NAME" != "production" ] || \
+               ! [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$EXPECTED_SHA" != "$TARGET_SHA" ] || \
+               ! [[ "$EXPECTED_PROJECT_REF" =~ ^[a-z0-9]{20}$ ]]; }; then
+            echo "::error::Migration recovery requires manual production dispatch and the exact expected SHA."
+            exit 1
           fi
 
           if [ -n "$TARGET_SHA" ] && ! [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]; then
@@ -125,8 +150,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DATABASE_AFFECTED: ${{ steps.check_config.outputs.should_run }}
+          ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: ${{ inputs.allow_cloudflare_verification_failures }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          CURRENT_REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
+          ALLOW_CLOUDFLARE_VERIFICATION_FAILURES=${ALLOW_CLOUDFLARE_VERIFICATION_FAILURES:-false}
 
           SHOULD_DEPLOY=false
 
@@ -136,7 +166,7 @@ jobs:
             echo "Checking production deployment planner status..."
             VERCEL_RUN=$(gh api \
               "repos/${{ github.repository }}/actions/workflows/vercel-production.yaml/runs?branch=production&head_sha=$TARGET_SHA&per_page=1" \
-              --jq '.workflow_runs[0] // {} | {conclusion: .conclusion, status: .status, created_at: .created_at, head_branch: .head_branch, head_sha: .head_sha}')
+              --jq '.workflow_runs[0] // {} | {id: .id, name: .name, run_attempt: .run_attempt, conclusion: .conclusion, status: .status, created_at: .created_at, head_branch: .head_branch, head_sha: .head_sha}')
 
             VERCEL_CONCLUSION=$(echo "$VERCEL_RUN" | jq -r '.conclusion // "missing"')
             VERCEL_STATUS=$(echo "$VERCEL_RUN" | jq -r '.status // "missing"')
@@ -148,11 +178,37 @@ jobs:
             echo "Production deployment planner branch: $VERCEL_BRANCH"
             echo "Production deployment planner SHA: $VERCEL_SHA"
 
+            RECOVERY_ALLOWED=false
+            if [ "$ALLOW_CLOUDFLARE_VERIFICATION_FAILURES" = "true" ]; then
+              if [ "$EVENT_NAME" != "workflow_dispatch" ] || [ "$CURRENT_REF_NAME" != "production" ] || \
+                 ! [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$EXPECTED_SHA" != "$TARGET_SHA" ]; then
+                echo "::error::Migration recovery requires manual production dispatch and the exact expected SHA."
+                exit 1
+              fi
+              if [ "$VERCEL_STATUS" = "completed" ] && [ "$VERCEL_CONCLUSION" = "failure" ] && \
+                 [ "$VERCEL_SHA" = "$TARGET_SHA" ] && [ "$VERCEL_BRANCH" = "production" ]; then
+                RECOVERY_DIR=$(mktemp -d)
+                trap 'rm -rf -- "$RECOVERY_DIR"' EXIT
+                printf '%s\n' "$VERCEL_RUN" > "$RECOVERY_DIR/planner.json"
+                chmod 600 "$RECOVERY_DIR/planner.json"
+                PLANNER_ID=$(echo "$VERCEL_RUN" | jq -r '.id')
+                PLANNER_ATTEMPT=$(echo "$VERCEL_RUN" | jq -r '.run_attempt')
+                gh api --paginate --slurp \
+                  "repos/${{ github.repository }}/actions/runs/$PLANNER_ID/attempts/$PLANNER_ATTEMPT/jobs?per_page=100" \
+                  > "$RECOVERY_DIR/jobs.json"
+                chmod 600 "$RECOVERY_DIR/jobs.json"
+                RECOVERY_PLANNER_FILE="$RECOVERY_DIR/planner.json" \
+                  RECOVERY_JOBS_FILE="$RECOVERY_DIR/jobs.json" GITHUB_OUTPUT="$RECOVERY_DIR/output" \
+                  node --experimental-strip-types scripts/ci/check-production-migration-recovery.ts
+                RECOVERY_ALLOWED=$(sed -n 's/^recovery_allowed=//p' "$RECOVERY_DIR/output")
+              fi
+            fi
+
             if [ "$VERCEL_SHA" != "$TARGET_SHA" ]; then
               echo "::notice::Skipping production migration because no production deployment planner run was found for $TARGET_SHA."
             elif [ "$VERCEL_BRANCH" != "production" ]; then
               echo "::notice::Skipping production migration because the matching production deployment planner ran on '$VERCEL_BRANCH'."
-            elif [ "$VERCEL_CONCLUSION" != "success" ]; then
+            elif [ "$VERCEL_CONCLUSION" != "success" ] && [ "$RECOVERY_ALLOWED" != "true" ]; then
               echo "::notice::Skipping production migration because the production deployment planner for $TARGET_SHA has conclusion '$VERCEL_CONCLUSION'."
             else
               echo "Checking successful production platform deployment marker..."
@@ -256,9 +312,16 @@ jobs:
       - name: Deploy migrations to production
         env:
           PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+          ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: ${{ inputs.allow_cloudflare_verification_failures }}
+          EXPECTED_PROJECT_REF: ${{ inputs.expected_project_ref }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
         run: |
+          if [ "$ALLOW_CLOUDFLARE_VERIFICATION_FAILURES" = "true" ] && \
+             { [ -z "$EXPECTED_PROJECT_REF" ] || [ "$PRODUCTION_PROJECT_ID" != "$EXPECTED_PROJECT_REF" ]; }; then
+            echo "::error::Migration recovery production project binding does not match."
+            exit 1
+          fi
           cd apps/database
           supabase link --project-ref "$PRODUCTION_PROJECT_ID"
           supabase db push --include-all

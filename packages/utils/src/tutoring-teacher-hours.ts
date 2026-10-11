@@ -73,6 +73,15 @@ export function validateHoursWeek(week: HoursWeek): void {
     }
     let previousEnd = -1;
     for (const interval of intervals) {
+      if (
+        !interval ||
+        typeof interval !== 'object' ||
+        Array.isArray(interval) ||
+        Object.keys(interval).length !== 2 ||
+        typeof interval.start !== 'string' ||
+        typeof interval.end !== 'string'
+      )
+        throw new Error('Invalid teacher-hours interval shape');
       const start = minute(interval.start);
       const end = minute(interval.end, true);
       if (end <= start || start < previousEnd) {

@@ -118,6 +118,7 @@ impl fmt::Debug for RedactedSecret {
 pub(crate) struct ContactDataConfig {
     supabase_url: String,
     service_role_key: RedactedSecret,
+    public_storage_origin: Option<RedactedSecret>,
 }
 
 impl ContactDataConfig {
@@ -132,7 +133,14 @@ impl ContactDataConfig {
         Self {
             supabase_url: supabase_url.into().trim().trim_end_matches('/').to_owned(),
             service_role_key: RedactedSecret::new(service_role_key),
+            public_storage_origin: None,
         }
+    }
+
+    pub(crate) fn with_public_storage_origin(mut self, value: impl Into<String>) -> Self {
+        let value = value.into();
+        self.public_storage_origin = (!value.is_empty()).then(|| RedactedSecret::new(value));
+        self
     }
 
     pub(crate) fn configured(&self) -> bool {
@@ -206,6 +214,7 @@ pub(crate) fn contact_data_config_from_env() -> ContactDataConfig {
         first_env_value(&SUPABASE_URL_KEYS),
         first_env_value(&SUPABASE_SERVICE_ROLE_KEY_KEYS),
     )
+    .with_public_storage_origin(std::env::var("SUPABASE_PUBLIC_STORAGE_ORIGIN").unwrap_or_default())
 }
 
 #[cfg(feature = "native")]

@@ -1,3 +1,5 @@
+import { isVerifiedProductionTestPath } from './scripts/ci/production-test-only-paths.ts';
+import { buildWorkspaceDependencyClosure } from './scripts/ci/workspace-dependency-closure.ts';
 import { ci } from './tuturuuu.ci.ts';
 
 export { ci } from './tuturuuu.ci.ts';
@@ -364,6 +366,8 @@ const databaseMigrationAffectingPaths = new Set([
   'scripts/ci/check-workflow-config.ts',
   'scripts/ci/github-deployment-markers.ts',
   'scripts/ci/record-deployment-marker.ts',
+  'scripts/ci/production-test-only-paths.ts',
+  'scripts/ci/workspace-dependency-closure.ts',
   'scripts/ci/resolve-changed-files-core.ts',
   'scripts/ci/resolve-changed-files.ts',
   'scripts/ci/workflow-config-core.ts',
@@ -427,129 +431,6 @@ function getScopedVercelOwners(filePath: string): ReadonlySet<string> | null {
     scopedVercelAffectingPaths.find(({ prefix }) => filePath.startsWith(prefix))
       ?.apps ?? null
   );
-}
-
-type WorkspaceDependencyCache = {
-  closureByPackage: Map<string, Set<string> | null>;
-  manifestsByName: Map<string, WorkspaceManifest>;
-};
-
-const WORKSPACE_DEPENDENCY_CONTENT_CACHE_LIMIT = 16;
-const workspaceDependencyCacheByReference = new WeakMap<
-  readonly WorkspaceManifest[],
-  WorkspaceDependencyCache
->();
-const workspaceDependencyCacheByContent = new Map<
-  string,
-  WorkspaceDependencyCache
->();
-
-function getWorkspaceDependencyCacheKey(
-  manifests: readonly WorkspaceManifest[]
-): string {
-  return JSON.stringify(
-    manifests
-      .map(({ dependencies, name, path }) => ({
-        dependencies: [...dependencies].sort(),
-        name,
-        path,
-      }))
-      .sort(
-        (left, right) =>
-          left.name.localeCompare(right.name) ||
-          left.path.localeCompare(right.path) ||
-          JSON.stringify(left.dependencies).localeCompare(
-            JSON.stringify(right.dependencies)
-          )
-      )
-  );
-}
-
-function getWorkspaceDependencyCache(
-  manifests: readonly WorkspaceManifest[]
-): WorkspaceDependencyCache {
-  const referenceMatch = workspaceDependencyCacheByReference.get(manifests);
-
-  if (referenceMatch) {
-    return referenceMatch;
-  }
-
-  const contentKey = getWorkspaceDependencyCacheKey(manifests);
-  let cache = workspaceDependencyCacheByContent.get(contentKey);
-
-  if (cache) {
-    workspaceDependencyCacheByContent.delete(contentKey);
-    workspaceDependencyCacheByContent.set(contentKey, cache);
-  } else {
-    cache = {
-      closureByPackage: new Map(),
-      manifestsByName: new Map(
-        manifests.map((manifest) => [manifest.name, manifest])
-      ),
-    };
-    workspaceDependencyCacheByContent.set(contentKey, cache);
-
-    if (
-      workspaceDependencyCacheByContent.size >
-      WORKSPACE_DEPENDENCY_CONTENT_CACHE_LIMIT
-    ) {
-      const oldestKey = workspaceDependencyCacheByContent.keys().next().value;
-
-      if (oldestKey !== undefined) {
-        workspaceDependencyCacheByContent.delete(oldestKey);
-      }
-    }
-  }
-
-  workspaceDependencyCacheByReference.set(manifests, cache);
-  return cache;
-}
-
-function buildWorkspaceDependencyClosure(
-  packageName: string,
-  manifests: readonly WorkspaceManifest[]
-): Set<string> | null {
-  const { closureByPackage, manifestsByName } =
-    getWorkspaceDependencyCache(manifests);
-
-  if (closureByPackage.has(packageName)) {
-    return closureByPackage.get(packageName) ?? null;
-  }
-
-  const rootManifest = manifestsByName.get(packageName);
-
-  if (!rootManifest) {
-    closureByPackage.set(packageName, null);
-    return null;
-  }
-
-  const closure = new Set<string>();
-  const stack = [rootManifest.name];
-
-  while (stack.length > 0) {
-    const currentName = stack.pop();
-
-    if (!currentName || closure.has(currentName)) {
-      continue;
-    }
-
-    closure.add(currentName);
-
-    const manifest = manifestsByName.get(currentName);
-
-    if (!manifest) {
-      continue;
-    }
-
-    for (const dependencyName of manifest.dependencies) {
-      if (manifestsByName.has(dependencyName)) {
-        stack.push(dependencyName);
-      }
-    }
-  }
-
-  closureByPackage.set(packageName, closure);
-  return closure;
 }
 
 function getChangedWorkspaceName(
@@ -650,9 +531,10 @@ export function getWorkflowDecision({
       shouldRun: true,
     };
   }
-
   if (target.app === 'platform') {
-    const databasePaths = normalizedChangedFiles.filter(isDatabaseSchemaPath);
+    const databasePaths = normalizedChangedFiles.filter(
+      isDatabaseMigrationAffectingPath
+    );
     if (databasePaths.length > 0) {
       return {
         matchedPaths: databasePaths,
@@ -662,7 +544,6 @@ export function getWorkflowDecision({
       };
     }
   }
-
   const dependencyClosure =
     'packageName' in target
       ? buildWorkspaceDependencyClosure(target.packageName, workspaceManifests)
@@ -677,25 +558,35 @@ export function getWorkflowDecision({
   }
 
   const matchedPaths = normalizedChangedFiles.filter((filePath) => {
+    if (
+      workflowName === target.productionWorkflow &&
+      isVerifiedProductionTestPath(filePath)
+    ) {
+      return false;
+    }
+
     const scopedOwners = getScopedVercelOwners(filePath);
 
     if (scopedOwners) {
       return scopedOwners.has(target.app);
     }
-
     if (
       (isCloudflareTarget
         ? globalCloudflareAffectingPaths
         : globalVercelAffectingPaths
-      ).has(filePath)
+      ).has(filePath) ||
+      (isCloudflareTarget &&
+        ((filePath ===
+          'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch' &&
+          target.app === 'parley') ||
+          (filePath === 'patches/@opennextjs%2Fcloudflare@1.20.6.patch' &&
+            ['meet', 'lettin', 'parley'].includes(target.app))))
     ) {
       return true;
     }
-
     if (isOwnWorkflowChange(filePath, workflowName)) {
       return true;
     }
-
     if (
       ('additionalPaths' in target &&
         target.additionalPaths.some((prefix) => filePath.startsWith(prefix))) ||

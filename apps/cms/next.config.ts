@@ -10,6 +10,7 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveCmsWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'cms',
   images: {
     remotePatterns: [
       {

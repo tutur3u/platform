@@ -9,6 +9,7 @@ import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model_store.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
+import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
 import 'package:mobile/features/assistant/local/widgets/assistant_local_model_tile.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -113,7 +114,7 @@ class _AssistantLocalModelsSectionState
       final enabled =
           state.loaded && state.supported && !state.busy && !_picking;
       return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -151,7 +152,11 @@ class _AssistantLocalModelsSectionState
                   (model) => model.id == state.selected,
                 ))
               Text(l10n.assistantLocalSelectionUnknown),
-            for (final model in assistantLocalModels) ...[
+            for (final model in assistantLocalModelsForSettings(
+              targetSupported: state.supported,
+              installed: state.installed,
+              activeModelId: state.busy ? state.modelId : null,
+            )) ...[
               const Divider(),
               AssistantLocalModelTile(
                 model: model,
@@ -173,6 +178,22 @@ class _AssistantLocalModelsSectionState
                 ),
               ),
               if (state.busy && state.modelId == model.id) ...[
+                if (state.operation == LocalModelsOperation.downloading &&
+                    _models.supportsBackgroundDownloads)
+                  Text(switch (state.downloadPhase) {
+                    ModelDownloadPhase.pending =>
+                      l10n.assistantDownloadPhasePending,
+                    ModelDownloadPhase.queued =>
+                      l10n.assistantDownloadPhaseQueued,
+                    ModelDownloadPhase.transferring =>
+                      l10n.assistantDownloadPhaseTransferring,
+                    ModelDownloadPhase.retryWait =>
+                      l10n.assistantDownloadPhaseRetryWait,
+                    ModelDownloadPhase.paused =>
+                      l10n.assistantDownloadPhasePaused,
+                    ModelDownloadPhase.verifying =>
+                      l10n.assistantDownloadPhaseVerifying,
+                  }),
                 Semantics(
                   label: l10n.assistantLocalLoading,
                   child: LinearProgressIndicator(

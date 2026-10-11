@@ -327,6 +327,12 @@ When a linked product is absent or has no matching inventory unit, the operator
 must configure or select a product before creating an invoice; the preview must
 never invent a tuition price.
 
+In the subscription invoice calendar, each group’s day color and tooltip show
+its worst attendance status: Absent takes priority over Late, then Present,
+regardless of the order of records. This display rule is shared by Finance and
+the platform Finance surface; it does not change billable attendance, quantities,
+or dates.
+
 For a reported `Days Attended > 0` with `Total Sessions = 0`, inspect the
 authenticated subscription context response's `scheduledSessionsByGroupId`,
 the selected group's recurring series and canceled exceptions, and the effective

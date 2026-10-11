@@ -14,10 +14,23 @@ describe('Git proxy matcher', () => {
     '/tutur3u/platform/blob/turbo.json',
     '/tutur3u/platform/blob/apps/git/package.json',
     '/tutur3u/platform/blob/SECURITY.md',
+    '/tutur3u/platform/blob/sitemap.xml',
+    '/tutur3u/platform/blob/robots.txt',
+    '/sitemap.xml/nested',
+    '/robots.txt/nested',
+    '/sitemap.xml.bak',
+    '/robots.txt.md',
   ])(
     'routes repository files containing dots through locale handling',
     (path) => {
       expect(matchesProxy(path)).toBe(true);
+    }
+  );
+
+  it.each(['/sitemap.xml', '/robots.txt'])(
+    'leaves root metadata outside locale handling',
+    (pathname) => {
+      expect(matchesProxy(pathname)).toBe(false);
     }
   );
 

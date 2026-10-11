@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { createTestHarness } from 'wrangler';
 
 const token = randomUUID() + randomUUID();
 const server = createTestHarness({
   workers: [
     {
-      configPath: 'apps/coordination/wrangler.jsonc',
+      configPath:
+        process.env.COORDINATION_TEST_CONFIG ??
+        fileURLToPath(new URL('../wrangler.jsonc', import.meta.url)),
       secrets: { COORDINATION_TOKEN: token },
     },
   ],

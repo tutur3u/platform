@@ -21,6 +21,8 @@ async function requeueStalePushBatches(env: Env) {
       method: 'POST',
       headers: databaseHeaders(env),
       body: '{}',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(30_000),
     }
   );
   if (!response.ok)
@@ -33,7 +35,11 @@ async function hasImmediateWork(env: Env) {
   url.searchParams.set('status', 'eq.pending');
   url.searchParams.set('delivery_mode', 'eq.immediate');
   url.searchParams.set('limit', '1');
-  const response = await fetch(url, { headers: databaseHeaders(env) });
+  const response = await fetch(url, {
+    headers: databaseHeaders(env),
+    redirect: 'manual',
+    signal: AbortSignal.timeout(30_000),
+  });
   if (!response.ok)
     throw new Error(`Immediate batch lookup failed: ${response.status}`);
   const rows = (await response.json()) as { id: string }[];

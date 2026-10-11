@@ -1,7 +1,7 @@
 ---
 title: "System Design Overview"
 description: "Comprehensive overview of Tuturuuu's architectural patterns, principles, and design philosophy"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 Tuturuuu's architecture is built on a foundation of proven design patterns and principles that prioritize **extensibility**, **resilience**, **scalability**, and **maintainability**. This section provides a comprehensive guide to the system's architectural decisions and implementation patterns.
@@ -17,14 +17,11 @@ Tuturuuu's architecture is built on a foundation of proven design patterns and p
   the cited source files over the prose.
 </Note>
 
-<Warning>
-  **Active migration.** `apps/web` (Next.js, port `7803`) is being superseded by
-  `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust API, port
-  `7820`). Patterns described here as "Next.js + tRPC" reflect the legacy
-  `apps/web` runtime. See
-  [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
-  for the route-ownership contract and target architecture.
-</Warning>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Architectural Philosophy
 

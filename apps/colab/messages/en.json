@@ -229,6 +229,7 @@
       "unchecked": "To do"
     },
     "close": "Close",
+    "public_profile": "Public profile",
     "retry": "Retry"
   },
   "compile": "Generate skills",

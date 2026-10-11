@@ -1,7 +1,7 @@
 ---
 title: "Encapsulation Patterns"
 description: "Strategies for preventing unwanted communication within and between services in Tuturuuu's architecture"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 Encapsulation is a critical architectural quality that prevents unwanted coupling and maintains clear boundaries. This document covers patterns for preventing unwanted communication both **within an app** (cross-layer) and **between apps** (cross-service).
@@ -25,13 +25,11 @@ event ACLs. Each "in Tuturuuu" snippet below is marked as either *real* or
 not as files that exist today.
 </Warning>
 
-<Note>
-**Migration in progress.** `apps/web` (Next.js, port 7803) is being replaced by
-`apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port 7820). The
-encapsulation principles here remain valid across both stacks, but treat any
-`apps/web`-specific path as legacy-or-current rather than permanent. See
-[TanStack Start and Rust Migration](/platform/architecture/tanstack-rust-migration).
-</Note>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Preventing Cross-Layer Communication (Inside an App)
 

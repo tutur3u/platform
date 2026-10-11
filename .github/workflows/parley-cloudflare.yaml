@@ -1,10 +1,10 @@
 name: Parley Cloudflare
 on:
   pull_request:
-    paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts']
+    paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts', 'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch']
   push:
     branches: [main]
-    paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts']
+    paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts', 'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch']
   workflow_dispatch:
   workflow_call:
 permissions:
@@ -63,10 +63,18 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+      - name: Generate shared build metadata
+        env:
+          PLATFORM_BUILD_ENVIRONMENT: ${{ github.ref == 'refs/heads/production' && 'production' || 'preview' }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
       - run: bun x --no-install turbo run build --filter='@tuturuuu/parley^...' --concurrency=2
       - run: bun run --cwd packages/meet-core test
       - run: bun run --cwd apps/parley test
+      - run: node --test apps/parley/scripts/opennext-candidate.test.mjs
       - name: Build Parley for Workers
+        id: parley-build
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
           NEXT_PUBLIC_MEETING_APP: parley
@@ -78,9 +86,16 @@ jobs:
           command: cd apps/parley && bun run build:cloudflare
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Verify complete CI-built Parley responses locally
+        working-directory: apps/parley/test-fixtures/built-worker
+        timeout-minutes: 5
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: node --test diagnostic.test.mjs verify.mjs
       - run: bun run --cwd apps/parley cf:typecheck
       - run: bun x --no-install wrangler deploy --dry-run -c apps/parley/wrangler.jsonc
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - if: always() && steps.parley-build.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: parley-worker-${{ github.sha }}
           path: apps/parley/.open-next

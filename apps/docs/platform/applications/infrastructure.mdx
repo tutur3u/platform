@@ -1,0 +1,52 @@
+---
+title: "Infrastructure"
+description: "Privileged operations, diagnostics, configuration, and hosted scheduler ownership."
+updatedAt: '2026-10-08'
+---
+
+Infrastructure (`infrastructure.tuturuuu.com`, `apps/infrastructure`) is the
+privileged operational console. It exposes workspace/account controls,
+monitoring, configuration, and selected provider gateways. The existence of a
+console route never bypasses its operator eligibility and permission checks.
+
+## Operational areas
+
+- Workspace/user administration, internal accounts, external-app registration,
+  account benefits, and app coordination.
+- AI policy, agents, credits, rate limits, abuse intelligence/events, blocked
+  IPs, recovery/appeals, and entity-creation limits.
+- Email queues/templates/audit, push notifications, and Calendar sync.
+- Mobile/desktop deployment records, versions, translations, holidays,
+  timezones, Devboxes, and migration diagnostics.
+- Monitoring for requests, logs, analytics, projects, deployments, rollouts,
+  resources, and retained cron/control surfaces.
+
+The [route reference](/reference/repository/catalog) lists every current
+Infrastructure entry point in its numbered source pages. Feature-specific
+operating rules remain in [DevOps](/build/devops/overview) and
+[Commercial controls](/platform/features/commercial-controls).
+
+## Current schedulers
+
+Hosted Calendar provider sync and smart scheduling run through Infrastructure's
+Vercel schedule and authenticated Calendar gateway. The
+[Cloudflare Cron Control Worker](/build/devops/cloudflare-cron-control) owns
+immediate notification recovery. The Docker cron runner is retired. Retained
+Docker controls and stale local heartbeat records do not establish the health
+of either hosted scheduler.
+
+Use the [active runtime map](/build/devops/active-runtime) to trace a job from
+scheduler to gateway to processor. Verify recent domain results as well as a
+successful scheduler invocation.
+
+## Privacy and change control
+
+Console pages and APIs are noindex, including errors, auth redirects, and
+non-HTML responses covered by the app policy. Search controls supplement actor,
+workspace, permission, token, and storage checks. Runtime logs use native
+`console.*` with the original severity; operational log-drain services are
+separate boundaries.
+
+A configuration edit, deploy action, external registration, or production write
+requires its own authorized workflow. Reading a runbook or recalling a private
+record is not authority to execute it.

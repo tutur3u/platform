@@ -89,6 +89,8 @@ jobs:
       workflow_name: docker-setup-check.yaml
 
   release-relevance:
+    # Docker setup is inactive until explicitly resumed.
+    if: ${{ false }}
     name: Check release-only changes
     runs-on: ubuntu-latest
     outputs:
@@ -118,7 +120,8 @@ jobs:
   verify:
     name: Verify Docker Setup
     needs: [check-ci, release-relevance]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.release-relevance.outputs.run_checks == 'true'
+    # Also blocks manual dispatch; the shared switchboard is not the only gate.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

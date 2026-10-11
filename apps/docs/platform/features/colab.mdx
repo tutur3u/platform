@@ -1,6 +1,6 @@
 ---
 title: Colab team prompt workshops
-updated: 2026-09-11
+updated: 2026-10-10
 description: Run invite-only AI learning workshops on Cloudflare with isolated mock tools.
 ---
 
@@ -8,6 +8,37 @@ Colab at `colab.tuturuuu.com` is a standalone React application served by a
 Cloudflare Worker. A SQLite Durable Object owns each room. The reusable
 `@tuturuuu/multiplayer` package defines room policy and safe member-specific
 projections; the Worker owns authentication, inference, storage and WebSockets.
+
+## Vite+ toolchain
+
+Colab uses the pinned local Vite+ CLI for development, tests and client builds.
+Its existing React/Tailwind plugins, framework-import bundle guard and Cloudflare
+Worker entrypoint remain intact. Tests import `vite-plus/test`; the shared Vitest
+and coverage version is aligned with Vite+'s bundled runner. Colab retains a direct
+`vite` dependency aliased to the same `@voidzero-dev/vite-plus-core` release, so
+Bun resolves plugin peers and configuration types to one Vite implementation.
+See the [Vite+ dependency rules](https://viteplus.dev/guide/migrate-rules#vite-and-overrides).
+Use Node 24.11+ (CI
+pins Node 24), Node 22.18+, or Node 26+; Node 25 is outside the package's declared
+support range.
+
+`bun run lint` uses Oxlint through Vite+ and `bun run format:check` provides a
+read-only Oxfmt comparison. Explicit `.oxlintrc.json` and `.oxfmtrc.json` files avoid native config-loader
+resolution through Bun's shared package store; the CLI uses these files directly. The initial Oxlint gate covers core/TypeScript/Oxc correctness and native-dialog
+prohibition. React compiler diagnostics and additional accessibility rules need
+separate behavior-reviewed fixes before enabling those rule families; existing
+Biome accessibility/hooks checks remain authoritative. Biome
+remains the repository formatter until this scope's formatting/rule parity and
+editor/generator changes are complete; do not enable competing format writers.
+Colab tests use the thread pool with per-file isolation retained. Repeated fork-pool
+runs on Vitest 5.0.0 and 5.0.3 failed collection while opening temporary transformed
+modules under `/tmp/.../ssr` or `/tmp/.../client`; the same focused suites passed
+with `--pool=threads`. One worker, result-cache disabling, and Node 24 did not
+resolve that collection failure. Treat it as a runner boundary to investigate,
+not evidence that product assertions failed; preserve every suite and assertion.
+
+This tooling change does not alter cookies, sponsorship, Durable Object class
+names, bindings, storage, routes or canonical deployment ownership.
 
 ## Shared application shell
 
@@ -105,13 +136,11 @@ assets, and attaches the `colab.tuturuuu.com` custom domain. Use the authorized
 Tuturuuu Cloudflare account. Provision a cryptographically random
 `COLAB_SESSION_SECRET` through Wrangler's secret input; never commit it.
 
-```sh
-cd apps/colab
-bun run build
-bun run deploy:dry-run
-bunx wrangler secret put COLAB_SESSION_SECRET
-bun run deploy
-```
+The exact-commit Cloudflare workflow owns client builds, Worker dry-run bundling,
+asset publication and authorized production deployment. Do not run release builds
+or build-triggering deploy scripts on the shared host. Provision secrets through
+an explicitly authorized secret-management flow, separately from tooling changes.
+
 
 Rotate the session secret only intentionally: it signs out all Colab sessions.
 Room state persists in Durable Object SQLite storage across Worker deployments.
@@ -120,17 +149,20 @@ there is no automatic data deletion policy in this release.
 
 ## Verification
 
+Queue focused non-build checks through the shared resource broker:
+
 ```sh
-cd packages/multiplayer
-bun run test
-cd ../../apps/colab
-bun run test
-bun run build
-WRANGLER_LOG_PATH=/private/tmp/colab-wrangler.log bunx wrangler deploy --dry-run --outdir /private/tmp/colab-worker
-node scripts/verify-runtime.mjs
-cd ../..
-bun check
+cd apps/colab
+ttr resources run -- bun run test --maxWorkers=2
+ttr resources run -- bun run lint
 ```
+
+Use a supported Node runtime for the CLI. Require exact-commit CI type/lint/test
+and real Vite+ client/Worker build validation. Runtime/browser verification may
+consume immutable CI artifacts or local dev bundling with isolated persistence;
+it does not authorize a local release build or deployment. Do not run `bun check`
+on this shared host because its dependency graph can build workspaces.
+
 
 The finite runtime script starts a local Worker on port 8795 with a test-only
 signing secret, uses isolated in-memory Durable Objects, verifies access and
@@ -150,7 +182,7 @@ Cloudflare upload alone does not establish that central sign-in is deployed.
 `.github/workflows/colab-cloudflare.yaml` validates affected `main` and
 `production` revisions and deploys only `production`. The repository switchboard
 in `tuturuuu.ci.ts` controls it. Manual dispatch on `production` retries a release.
-The validation job tests both workspaces, builds the client, bundles the Worker,
+The validation job pins supported Node, tests both workspaces, runs Oxlint, builds the client, bundles the Worker,
 and uploads revision-specific assets. Deployment downloads those same assets,
 records the Git SHA in the Worker version message, and checks canonical health
 and every asset hash. Verification retries up to 12 times, five seconds apart,
@@ -230,8 +262,8 @@ notification and workspace-invitation endpoints are proxied to the central app,
 with central authentication cookies, same-origin mutation checks, and preserved
 query filters. These account endpoints are never exposed to simulated AI tools.
 
-Validate with `bun run build`, `bun run test`, and the finite
-`scripts/verify-runtime.mjs` under Node after a Wrangler dry run. The runtime
+Validate with focused non-build tests, exact-commit CI builds, and the finite
+`scripts/verify-runtime.mjs` under supported Node using verified Worker artifacts. The runtime
 verifier covers default-login redirects, guest invitation documents, separate
 sidebar destinations, notification read/archive actions with mock data, and
 English/Vietnamese desktop/mobile layouts. No production notification is changed.
@@ -395,3 +427,30 @@ payloads are not copied into audit entries. Host operations are admin-only;
 team work entries follow the current live-sharing policy, including immediate
 WebSocket removal when sharing is disabled. Old rooms begin with an empty log;
 this is a bounded workshop activity record, not a compliance archive.
+
+## Idempotent workshop expiry
+
+The room expiry alarm emits one `ended` audit entry per scheduled end timestamp.
+Open rooms become read-only; already read-only or private rooms keep their mode
+and still receive that single end event. A durable completion marker is committed
+atomically with the room and private audit state. Duplicate alarm delivery and
+object restart do not increment the revision, rewrite state or reschedule an
+already completed expiry. A host's later end timestamp can expire independently.
+Early delivery schedules the existing future deadline; open-ended rooms do no work.
+
+The first expiry performs three state writes (room, audit, completion marker).
+Each duplicate performs three bounded point reads and no writes or downstream
+calls. This prevents duplicate-write amplification, not all alarm-related billing.
+Storage failure rolls back the whole expiry transaction and remains visible to
+Cloudflare's bounded platform retry mechanism; the handler adds no retry chain.
+`apps/colab/src/server/room-alarm.test.ts` covers 100 repeated wakes, restart,
+all room modes, atomic failure recovery, schedule extension and early/no-end cases
+using SQLite with a Worker context fixture. `node --test apps/colab/scripts/verify-expiry-runtime.mjs` also invokes the actual
+expiry handler in a loopback Worker and SQLite Durable Object through Wrangler's
+test harness, including an aborting SQL trigger to verify rollback. The test-only
+configuration has a separate fixture identity and no production bindings, remote
+services or secrets; the harness closes its temporary runtime after the tests.
+Run it through `ttr resources run --` locally; CI runs it before the real app build.
+Use a private writable `TMPDIR` if the host's shared temporary directory rejects
+writes. This test invokes the handler through fixture RPC; hosted alarm scheduling,
+platform retries and production cost caps remain separate acceptance evidence.

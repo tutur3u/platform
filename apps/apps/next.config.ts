@@ -3,6 +3,6 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 
-const nextConfig = createTuturuuuNextConfig();
+const nextConfig = createTuturuuuNextConfig({ seoApp: 'apps' });
 
 export default withNextIntl(nextConfig);

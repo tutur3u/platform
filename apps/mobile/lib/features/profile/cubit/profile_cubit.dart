@@ -243,7 +243,10 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(state.copyWith(mediaFailure: null, mediaTarget: null));
 
   /// Removes avatar.
-  Future<bool> removeAvatar() => _updateProfileField(_repository.removeAvatar);
+  Future<bool> removeAvatar() => _updateMedia(
+    _repository.removeAvatarResult,
+    ProfileMediaTarget.removeAvatar,
+  );
 
   void clearError() => emit(state.copyWith(error: null));
 

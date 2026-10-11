@@ -4,6 +4,15 @@ description: "High-level CI/CD overview, with current operational runbooks linke
 updatedAt: "2026-09-29"
 ---
 
+<Note>
+Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+the Docker cron runner is retired. Rust and TanStack Start are not in use and
+must not be run, tested, or updated until further notice. Retained Docker and
+migration sections below are historical procedures. Current hosted Next.js,
+package, Worker, database, and mobile workflows retain their own gates. See the
+[active runtime map](/build/devops/active-runtime).
+</Note>
+
 This page is the entry point for CI/CD. The day-to-day operational detail now lives
 in the dedicated DevOps pages below so the docs stay current as workflows change.
 
@@ -46,7 +55,34 @@ Tuturuuu currently automates:
   active production deployment.
 - The external-app internal-package build uses the same cancel-superseded policy, so rapid pushes cannot finish as green no-op builds.
 - Database migrations are not treated the same as app deploys; staging and production each have explicit prerequisite logic, with staging now sourced from `main`.
-- Docker changes are guarded by `docker-setup-check.yaml`, including dev and production image builds.
+- Docker setup and image-build CI (`docker-setup-check.yaml`) are disabled, including manual dispatch, until explicitly resumed.
+
+## Cross-app users-core regression tests
+
+The canonical approval regressions live outside the package source tree:
+
+- `packages/users-core/tests/approvals/get-tenant-boundary.test.ts`
+- `packages/users-core/tests/approvals/review-reads-tenant-boundary.test.ts`
+
+The source type-check project keeps `rootDir: "src"`. Vitest discovers the
+cross-app tests separately through `packages/users-core/vitest.config.ts`;
+relocating these tests does not expand the package's source compiler boundary.
+
+That config maps the Web-specific imports `@/lib/post-email-queue` and
+`@/features/reports/report-limits` to their exact `apps/web/src` files before
+its default `@` alias, which still points to `packages/users-core/src`.
+The exact `@tuturuuu/satellite/auth` mapping points to
+`packages/satellite/src/auth.ts`; it keeps the satellite namespace separate
+from the package-local `@` imports.
+
+Run selected tests from `packages/users-core` with that canonical config and
+the receiver's qualified dependencies. For a source `TS6059` error, check that
+the cross-app test is outside `src`. For a Vitest module-resolution failure,
+check the owning cwd, specific alias destination, and installed dependency
+closure before changing compiler roots or alias scope.
+
+A config/source handoff or historical donor test and type results do not prove
+the current receiver's test, type, CI, or runtime outcome.
 
 ## When To Use This Page
 

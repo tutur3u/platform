@@ -21,6 +21,7 @@ export function useLettinMutation(wsId: string) {
   const client = useQueryClient();
   const t = useTranslations('lettin');
   const mutation = useMutation({
+    retry: false,
     mutationFn: (command: LettinCommand) => mutateLettin(wsId, command),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ['lettin', wsId] });

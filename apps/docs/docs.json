@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Tuturuuu Docs",
-  "description": "Technical documentation for building, integrating, operating, and contributing to the Tuturuuu platform.",
+  "description": "Product guides, workflows, integrations, versions, and operations for the Tuturuuu platform.",
   "colors": {
     "primary": "#000000",
     "light": "#ffffff",
@@ -18,6 +18,7 @@
           {
             "group": "Overview",
             "pages": [
+              "overview/start-here",
               "overview/vision",
               "overview/organization-guide",
               "overview/agent-operating-manual"
@@ -28,8 +29,17 @@
             "pages": [
               "platform/overview",
               {
+                "group": "User guides",
+                "pages": [
+                  "platform/guides/getting-started",
+                  "platform/guides/workflows",
+                  "platform/guides/troubleshooting"
+                ]
+              },
+              {
                 "group": "Features",
                 "pages": [
+                  "platform/features/search-indexing",
                   "platform/features/command-center-dashboard",
                   "platform/features/assistant-live",
                   "platform/features/mobile-timer",
@@ -249,6 +259,7 @@
               {
                 "group": "Applications",
                 "pages": [
+                  "platform/applications/overview",
                   "platform/applications/apps",
                   "platform/applications/calendar",
                   "platform/features/calendar-scheduling-summary",
@@ -283,7 +294,18 @@
                   "platform/applications/teach",
                   "platform/applications/hive",
                   "platform/applications/mind",
-                  "platform/applications/hive-world-event-troubleshooting"
+                  "platform/applications/hive-world-event-troubleshooting",
+                  "platform/applications/contacts",
+                  "platform/applications/forms",
+                  "platform/applications/track",
+                  "platform/applications/meet",
+                  "platform/applications/pay",
+                  "platform/applications/rewise",
+                  "platform/applications/parley",
+                  "platform/applications/infrastructure",
+                  "platform/applications/tools",
+                  "platform/applications/shortener",
+                  "platform/applications/mobile"
                 ]
               },
               "platform/apps/parley"
@@ -293,10 +315,12 @@
             "group": "Build",
             "pages": [
               "build/overview",
+              "build/mail/report-email-replies",
               {
                 "group": "DevOps & Deployment",
                 "pages": [
                   "build/devops/overview",
+                  "build/devops/active-runtime",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
                   "build/devops/tanstack-rust-local-deploy",
@@ -322,9 +346,11 @@
               },
               "build/development-tools/overview",
               "build/development-tools/development",
+              "build/development-tools/without-docker",
               "build/development-tools/codex-plugin",
               "build/development-tools/chatgpt-mcp",
               "build/development-tools/monorepo-architecture",
+              "build/development-tools/oxc-cloudflare-adoption",
               "build/development-tools/git-conventions",
               "build/development-tools/stacked-pull-requests",
               "build/development-tools/local-supabase-development",
@@ -335,6 +361,7 @@
               "build/development-tools/documenting",
               "build/development-tools/mobile-state-regressions",
               "build/development-tools/public-seo",
+              "build/development-tools/seo-strategy",
               {
                 "group": "Skills",
                 "pages": ["build/skills/overview", "build/skills/installation"]
@@ -427,6 +454,83 @@
                   "reference/api-reference/ai-studio",
                   "reference/api-reference/endpoint/generate"
                 ]
+              },
+              {
+                "group": "Repository inventory",
+                "pages": [
+                  "reference/repository/catalog",
+                  "reference/repository/versions",
+                  {
+                    "group": "Dependencies",
+                    "pages": [
+                      "reference/repository/dependencies-1",
+                      "reference/repository/dependencies-2",
+                      "reference/repository/dependencies-3",
+                      "reference/repository/dependencies-4",
+                      "reference/repository/python-dependencies-1",
+                      "reference/repository/python-dependencies-2",
+                      "reference/repository/dart-dependencies-1",
+                      "reference/repository/dart-dependencies-2",
+                      "reference/repository/dart-dependencies-3",
+                      "reference/repository/dart-dependencies-4"
+                    ]
+                  },
+                  {
+                    "group": "Routes by app",
+                    "pages": [
+                      "reference/repository/routes/ai",
+                      "reference/repository/routes/apps",
+                      "reference/repository/routes/calendar",
+                      "reference/repository/routes/chat",
+                      "reference/repository/routes/chat-realtime",
+                      "reference/repository/routes/cms",
+                      "reference/repository/routes/colab",
+                      "reference/repository/routes/contacts",
+                      "reference/repository/routes/coordination",
+                      "reference/repository/routes/cron-control",
+                      "reference/repository/routes/database",
+                      "reference/repository/routes/devbox-control",
+                      "reference/repository/routes/discord",
+                      "reference/repository/routes/docs",
+                      "reference/repository/routes/drive",
+                      "reference/repository/routes/external",
+                      "reference/repository/routes/finance",
+                      "reference/repository/routes/forms",
+                      "reference/repository/routes/git",
+                      "reference/repository/routes/hive",
+                      "reference/repository/routes/hive-realtime",
+                      "reference/repository/routes/infrastructure-1",
+                      "reference/repository/routes/infrastructure-2",
+                      "reference/repository/routes/inventory",
+                      "reference/repository/routes/learn",
+                      "reference/repository/routes/lettin",
+                      "reference/repository/routes/mail",
+                      "reference/repository/routes/meet",
+                      "reference/repository/routes/meet-realtime",
+                      "reference/repository/routes/mind",
+                      "reference/repository/routes/mobile",
+                      "reference/repository/routes/nova",
+                      "reference/repository/routes/parley",
+                      "reference/repository/routes/pay",
+                      "reference/repository/routes/playground",
+                      "reference/repository/routes/redis",
+                      "reference/repository/routes/rewise",
+                      "reference/repository/routes/shortener",
+                      "reference/repository/routes/storage-unzip-proxy",
+                      "reference/repository/routes/storefront",
+                      "reference/repository/routes/supermemory",
+                      "reference/repository/routes/tasks",
+                      "reference/repository/routes/teach",
+                      "reference/repository/routes/tools",
+                      "reference/repository/routes/track",
+                      "reference/repository/routes/web-1",
+                      "reference/repository/routes/web-2",
+                      "reference/repository/routes/web-3",
+                      "reference/repository/routes/web-4",
+                      "reference/repository/routes/web-5"
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -468,5 +572,11 @@
       "github": "https://github.com/tutur3u",
       "linkedin": "https://www.linkedin.com/company/tuturuuu"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/platform/workspace-routing",
+      "destination": "/platform/architecture/routing"
+    }
+  ]
 }

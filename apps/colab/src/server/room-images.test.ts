@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { expect, it } from 'vitest';
+import { expect, it } from 'vite-plus/test';
 import { RoomImages } from './room-images';
 
 it('stores chunked private images, denies other teams, and deletes all assets', async () => {
