@@ -61,3 +61,11 @@ Unknown or inconsistent diagnostic formats keep the category null. Matching is
 exact: whitespace, case, continuation lines and runtime values are never
 normalized into an owned category. These enums identify evidence; they do not
 change fixture expectations, security checks or schema qualification.
+
+A separate `constraintCategory` classifies six exact generated CHECK-message
+relation/constraint pairs from the frozen creation migration: creation-intent
+staff email/name and employee staff email/name/lifecycle/recovery. The original
+`messageCategory` remains `other_redacted`. Generated messages omit schema, so
+schema identity is not inferred. SQLSTATE must be 23514; unknown pairs or altered
+text remain `other_redacted`; invalid caught evidence emits null. This diagnostic
+does not change SQL, the 25 assertions or the strict 172-assertion success gate.

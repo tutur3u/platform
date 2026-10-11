@@ -426,3 +426,81 @@ test('signup fixed message category preserves scope and schema success gates', (
   assert.equal(receipt().assertions, 172);
   assert.equal(receipt({ cleanupSucceeded: false }).schemaQualified, false);
 });
+
+test('signup CHECK diagnostics classify only frozen relation and constraint pairs', () => {
+  const contracts = [
+    [
+      'employee_creation_intents',
+      'employee_creation_intents_staff_email_check',
+      'intent_staff_email_check',
+    ],
+    [
+      'employee_creation_intents',
+      'employee_creation_intents_managed_name_check',
+      'intent_managed_name_check',
+    ],
+    [
+      'infrastructure_employees',
+      'infrastructure_employees_staff_email_check',
+      'employee_staff_email_check',
+    ],
+    [
+      'infrastructure_employees',
+      'infrastructure_employees_managed_name_check',
+      'employee_managed_name_check',
+    ],
+    [
+      'infrastructure_employees',
+      'infrastructure_employees_lifecycle_state_check',
+      'employee_lifecycle_check',
+    ],
+    [
+      'infrastructure_employees',
+      'infrastructure_employees_check',
+      'employee_recovery_check',
+    ],
+  ];
+  for (const [relation, constraint, category] of contracts) {
+    const message = `new row for relation "${relation}" violates check constraint "${constraint}"`;
+    for (const ordinal of [22, 23]) {
+      const [value] = signupCaughtDiagnostics(
+        caughtTap(ordinal, '23514', message),
+        [ordinal]
+      );
+      assert.equal(value.constraintCategory, category);
+      assert.equal(value.messageCategory, 'other_redacted');
+      assert.equal(value.expectedMessageMatches, false);
+      assert.equal(JSON.stringify(value).includes(message), false);
+      assert.equal(
+        signupCaughtDiagnostics(caughtTap(ordinal, '42501', message), [
+          ordinal,
+        ])[0].constraintCategory,
+        'other_redacted'
+      );
+    }
+  }
+});
+test('signup CHECK diagnostics reject unknown pairs and message normalization', () => {
+  const message =
+    'new row for relation "infrastructure_employees" violates check constraint "infrastructure_employees_staff_email_check"';
+  for (const bad of [
+    `${message} PRIVATE`,
+    ` ${message}`,
+    message.toUpperCase(),
+    message.replace('infrastructure_employees"', 'employee_creation_intents"'),
+    message.replace('staff_email_check', 'PRIVATE_check'),
+    'password=PRIVATE token=SECRET',
+  ]) {
+    const [value] = signupCaughtDiagnostics(caughtTap(22, '23514', bad), [22]);
+    assert.equal(value.constraintCategory, 'other_redacted');
+    assert.equal(JSON.stringify(value).includes('PRIVATE'), false);
+    assert.equal(JSON.stringify(value).includes('SECRET'), false);
+  }
+});
+test('invalid signup caught evidence keeps constraint classification null', () => {
+  const tap = caughtTap(22, '23514', 'PRIVATE').replace(
+    'Failed test 22:',
+    'Failed test 23:'
+  );
+  assert.equal(signupCaughtDiagnostics(tap, [22])[0].constraintCategory, null);
+});
