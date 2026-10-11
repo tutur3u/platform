@@ -1,6 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export const TASK_EMAIL_MAX_OVERDUE_MS = 24 * 60 * 60 * 1000;
+export const TASK_EMAIL_UNAVAILABLE_SKIP_REASON = 'skipped: task_unavailable';
 export const TASK_EMAIL_OVERDUE_SKIP_REASON =
   'skipped: task_due_older_than_1_day';
 
@@ -39,8 +40,9 @@ export async function getTaskEmailSkipReason(
     .eq('id', taskId)
     .eq('task_lists.workspace_boards.ws_id', workspaceId)
     .maybeSingle();
+  if (error) throw new Error('Current task email due date unavailable');
+  if (task === null) return TASK_EMAIL_UNAVAILABLE_SKIP_REASON;
   if (
-    error ||
     !task ||
     task.id !== taskId ||
     task.task_lists?.workspace_boards?.ws_id !== workspaceId

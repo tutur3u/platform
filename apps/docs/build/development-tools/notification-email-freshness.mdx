@@ -20,6 +20,22 @@ remaining items. An all-overdue batch completes with skipped delivery logs and
 makes no email provider request. The skip reason is
 `skipped: task_due_older_than_1_day`.
 
+A tenant-scoped lookup that succeeds with an explicitly null task row is a known
+unavailable task (for example, deleted or moved). It is skipped with
+`skipped: task_unavailable`, so other eligible items in a mixed batch can proceed.
+Undefined or malformed lookup results remain unknown and fail closed.
+
+Skip and settlement writes must succeed before the dispatcher continues. If an
+email provider was already attempted, a later settlement error remains an unknown
+outcome for reconciliation; the digest is not marked retryable or automatically
+resent. A provider `success: false` result can represent a transport timeout and
+does not prove rejection. Existing explicit suppression reasons still settle as
+skipped; other unsuccessful or thrown provider outcomes require reconciliation.
+The same settlement protection applies to push delivery because the write helpers
+are shared: accepted or ambiguous push attempts remain in processing for
+reconciliation. Only zero deliveries with every device rejected as invalid proves
+no push was accepted. Push freshness eligibility is unchanged.
+
 Missing task/workspace bindings, conflicting payload task IDs, tenant mismatch,
 lookup errors and invalid current due dates fail before delivery. They are not
 recorded as a proven overdue skip. Existing delivery-attempt and ambiguous

@@ -4,8 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   logs: [] as Array<{ id: string; notifications: Record<string, unknown> }>,
   channel: 'email',
+  push: vi.fn(async (_args: unknown) => ({
+    deliveredCount: 1,
+    invalidTokens: [] as string[],
+  })),
   dueByTask: new Map<string, string | null>(),
   lookupError: false,
+  missingTaskIds: new Set<string>(),
   markSkipped: vi.fn(async () => {}),
   markSent: vi.fn(async () => {}),
   markBatchSent: vi.fn(async () => {}),
@@ -22,7 +27,7 @@ const mocks = vi.hoisted(() => ({
 const batch = () => ({
   id: 'batch-1',
   channel: mocks.channel,
-  user_id: null,
+  user_id: mocks.channel === 'push' ? 'user-1' : null,
   email: 'recipient@example.com',
   ws_id: 'ws-1',
   window_start: '2026-10-11T00:00:00Z',
@@ -36,11 +41,13 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
         const query = {
           eq: vi.fn(),
           maybeSingle: async () => ({
-            data: {
-              id: taskId,
-              end_date: mocks.dueByTask.get(taskId) ?? null,
-              task_lists: { workspace_boards: { ws_id: 'ws-1' } },
-            },
+            data: mocks.missingTaskIds.has(taskId)
+              ? null
+              : {
+                  id: taskId,
+                  end_date: mocks.dueByTask.get(taskId) ?? null,
+                  task_lists: { workspace_boards: { ws_id: 'ws-1' } },
+                },
             error: mocks.lookupError ? new Error('lookup') : null,
           }),
           single: async () => {
@@ -95,7 +102,7 @@ vi.mock('@tuturuuu/transactional/emails/notification-digest', () => ({
   generateSubjectLine: (items: unknown[]) => `${items.length} items`,
 }));
 vi.mock('@/lib/notifications/push-delivery', () => ({
-  sendPushNotificationBatch: vi.fn(),
+  sendPushNotificationBatch: mocks.push,
 }));
 vi.mock('@/lib/notifications/immediate-helpers', () => ({
   PROCESSING_DEADLINE_MS: 165000,
@@ -138,6 +145,11 @@ vi.mock('@/lib/notifications/batched-helpers', async (original) => {
     filterRootScopedBatches: async (_: unknown, batches: unknown[]) => batches,
     fetchPendingBatchDeliveryLogs: async () => mocks.logs,
     fetchUsersByIds: async () => new Map(),
+    cleanupInvalidPushTokens: vi.fn(async () => {}),
+    fetchPushDevicesForUser: async () => [
+      { token: 'device-1' },
+      { token: 'device-2' },
+    ],
     getPrivateNotificationClient: () => ({
       from: () => ({
         update: () => {
@@ -183,7 +195,12 @@ beforeEach(() => {
   vi.spyOn(Date, 'now').mockReturnValue(NOW);
   vi.stubEnv('CRON_SECRET', 'cron-secret');
   mocks.channel = 'email';
+  mocks.push.mockResolvedValue({ deliveredCount: 1, invalidTokens: [] });
   mocks.lookupError = false;
+  mocks.missingTaskIds.clear();
+  mocks.markSkipped.mockResolvedValue(undefined);
+  mocks.markSent.mockResolvedValue(undefined);
+  mocks.markBatchSent.mockResolvedValue(undefined);
   mocks.dueByTask.clear();
   mocks.beforeWorkspace.mockImplementation(() => {});
   mocks.logs = ['fresh', 'old'].map((id) => ({
@@ -224,6 +241,45 @@ describe.each(['immediate', 'digest'])('%s email freshness route', (kind) => {
         })
       );
   });
+  it('skips a confirmed absent task and still sends the eligible item', async () => {
+    mocks.missingTaskIds.add('old');
+    await callRoute(kind);
+    expect(mocks.markSkipped).toHaveBeenCalledWith(
+      expect.anything(),
+      kind === 'immediate'
+        ? [expect.objectContaining({ id: 'log-old' })]
+        : ['log-old'],
+      'skipped: task_unavailable'
+    );
+    expect(mocks.send).toHaveBeenCalledTimes(1);
+    expect(mocks.markSent).toHaveBeenCalledWith(expect.anything(), [
+      'log-fresh',
+    ]);
+    expect(mocks.markBatchSent).toHaveBeenCalledWith(
+      expect.anything(),
+      'batch-1',
+      2
+    );
+    if (kind === 'digest')
+      expect(mocks.digest.mock.calls.at(-1)?.[0]).toMatchObject({
+        notifications: [expect.objectContaining({ id: 'fresh' })],
+      });
+  });
+  it('stops before provider when skipped-log persistence fails', async () => {
+    mocks.markSkipped.mockRejectedValueOnce(new Error('skip write'));
+    await callRoute(kind);
+    expect(mocks.send).not.toHaveBeenCalled();
+    expect(mocks.begin).not.toHaveBeenCalled();
+    expect(mocks.markBatchSent).not.toHaveBeenCalled();
+    expect(mocks.markBatchFailed).toHaveBeenCalled();
+  });
+  it('does not mark an attempted email retryable when its status write fails', async () => {
+    mocks.markSent.mockRejectedValueOnce(new Error('status write'));
+    await callRoute(kind);
+    expect(mocks.send).toHaveBeenCalledTimes(1);
+    expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+    expect(mocks.markBatchSent).not.toHaveBeenCalled();
+  });
   it('skips all overdue items before rendering or delivery attempt', async () => {
     mocks.dueByTask.set('fresh', new Date(NOW - 86400001).toISOString());
     await callRoute(kind);
@@ -240,6 +296,37 @@ describe.each(['immediate', 'digest'])('%s email freshness route', (kind) => {
     expect(mocks.markSkipped).not.toHaveBeenCalled();
     expect(mocks.markBatchFailed).toHaveBeenCalled();
   });
+  if (kind === 'digest') {
+    it('keeps a provider transport exception pending reconciliation', async () => {
+      mocks.send.mockRejectedValueOnce(new Error('transport timeout'));
+      const response = await callRoute(kind);
+      expect(await response.json()).toMatchObject({
+        results: [{ status: 'reconciliation_required' }],
+      });
+      expect(mocks.send).toHaveBeenCalledTimes(1);
+      expect(mocks.markSent).not.toHaveBeenCalled();
+      expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+    });
+    it('does not treat an ambiguous false provider result as rejection', async () => {
+      mocks.send.mockResolvedValueOnce({ success: false });
+      const response = await callRoute(kind);
+      expect(await response.json()).toMatchObject({
+        results: [{ status: 'reconciliation_required' }],
+      });
+      expect(mocks.send).toHaveBeenCalledTimes(1);
+      expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+    });
+    it('keeps accepted delivery unknown when batch settlement fails', async () => {
+      mocks.markBatchSent.mockRejectedValueOnce(new Error('batch settlement'));
+      const response = await callRoute(kind);
+      expect(await response.json()).toMatchObject({
+        results: [{ status: 'reconciliation_required' }],
+      });
+      expect(mocks.send).toHaveBeenCalledTimes(1);
+      expect(mocks.markSent).toHaveBeenCalledTimes(1);
+      expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+    });
+  }
   if (kind === 'digest')
     it('rechecks every item after intervening workspace lookup', async () => {
       mocks.dueByTask.set('old', new Date(NOW + 1000).toISOString());
@@ -260,5 +347,65 @@ describe.each(['immediate', 'digest'])('%s email freshness route', (kind) => {
       'log-old',
     ]);
     expect(mocks.markSkipped).not.toHaveBeenCalled();
+  });
+});
+
+describe('digest push settlement safety', () => {
+  beforeEach(() => {
+    mocks.channel = 'push';
+  });
+  it('keeps accepted push delivery pending reconciliation if settlement fails', async () => {
+    mocks.markSent.mockRejectedValueOnce(new Error('push settlement'));
+    const response = await callRoute('digest');
+    expect(await response.json()).toMatchObject({
+      results: [{ status: 'reconciliation_required' }],
+    });
+    expect(mocks.push).toHaveBeenCalledTimes(1);
+    expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+  });
+  it('keeps accepted push delivery pending reconciliation if batch settlement fails', async () => {
+    mocks.markBatchSent.mockRejectedValueOnce(
+      new Error('push batch settlement')
+    );
+    const response = await callRoute('digest');
+    expect(await response.json()).toMatchObject({
+      results: [{ status: 'reconciliation_required' }],
+    });
+    expect(mocks.push).toHaveBeenCalledTimes(1);
+    expect(mocks.markSent).toHaveBeenCalledTimes(1);
+    expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+  });
+  it('does not downgrade a thrown push transport attempt into retryable failure', async () => {
+    mocks.push.mockRejectedValueOnce(new Error('push transport'));
+    const response = await callRoute('digest');
+    expect(await response.json()).toMatchObject({
+      results: [{ status: 'reconciliation_required' }],
+    });
+    expect(mocks.markSent).not.toHaveBeenCalled();
+    expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+  });
+  it.each([[], ['device-1']])(
+    'keeps zero-delivery rejection %j ambiguous if settlement fails',
+    async (invalidTokens) => {
+      mocks.push.mockResolvedValueOnce({ deliveredCount: 0, invalidTokens });
+      const response = await callRoute('digest');
+      expect(await response.json()).toMatchObject({
+        results: [{ status: 'reconciliation_required' }],
+      });
+      expect(mocks.markSent).not.toHaveBeenCalled();
+      expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+    }
+  );
+  it('allows ordinary failure only when every push device is proven invalid', async () => {
+    mocks.push.mockResolvedValueOnce({
+      deliveredCount: 0,
+      invalidTokens: ['device-1', 'device-2'],
+    });
+    const response = await callRoute('digest');
+    expect(await response.json()).toMatchObject({
+      results: [{ status: 'failed' }],
+    });
+    expect(mocks.markSent).not.toHaveBeenCalled();
+    expect(mocks.markBatchFailed).toHaveBeenCalledTimes(1);
   });
 });

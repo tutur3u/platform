@@ -4,6 +4,7 @@ import {
   getTaskEmailSkipReason,
   TASK_EMAIL_MAX_OVERDUE_MS,
   TASK_EMAIL_OVERDUE_SKIP_REASON,
+  TASK_EMAIL_UNAVAILABLE_SKIP_REASON,
 } from './task-email-freshness';
 
 const NOW = Date.parse('2026-10-11T12:00:00Z');
@@ -32,6 +33,17 @@ function client(
   eq.mockReturnValue(query);
   const from = vi.fn(() => ({ select: vi.fn(() => query) }));
   return { sb: { from } as unknown as TypedSupabaseClient, from, eq };
+}
+
+function lookupClient(data: unknown, error: unknown = null) {
+  const query = {
+    eq: vi.fn(),
+    maybeSingle: vi.fn(async () => ({ data, error })),
+  };
+  query.eq.mockReturnValue(query);
+  return {
+    from: vi.fn(() => ({ select: vi.fn(() => query) })),
+  } as unknown as TypedSupabaseClient;
 }
 
 describe('task email current due-date freshness', () => {
@@ -96,6 +108,28 @@ describe('task email current due-date freshness', () => {
       );
     }
     expect(from).not.toHaveBeenCalled();
+  });
+  it('skips a confirmed absent task without claiming overdue', async () => {
+    expect(
+      await getTaskEmailSkipReason(lookupClient(null), notification, NOW)
+    ).toBe(TASK_EMAIL_UNAVAILABLE_SKIP_REASON);
+  });
+  it.each([undefined, {}, false, { id: 'task-1', end_date: null }])(
+    'fails closed for malformed or undefined lookup data %s',
+    async (data) => {
+      await expect(
+        getTaskEmailSkipReason(lookupClient(data), notification, NOW)
+      ).rejects.toThrow('unavailable');
+    }
+  );
+  it('does not interpret a null row with a lookup error as known absence', async () => {
+    await expect(
+      getTaskEmailSkipReason(
+        lookupClient(null, new Error('lookup')),
+        notification,
+        NOW
+      )
+    ).rejects.toThrow('unavailable');
   });
   it('leaves non-task notifications alone', async () => {
     const { sb, from } = client(null);

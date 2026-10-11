@@ -120,6 +120,7 @@ async function handleGET(req: NextRequest) {
         break;
       }
 
+      let deliveryMayHaveSucceeded = false;
       try {
         await getPrivateNotificationClient(sbAdmin)
           .from('notification_batches')
@@ -250,11 +251,17 @@ async function handleGET(req: NextRequest) {
             },
           };
 
+          deliveryMayHaveSucceeded = true;
           const pushResult = await sendPushNotificationBatch({
             notification: pushNotification,
             devices,
           });
 
+          if (pushResult.deliveredCount === 0) {
+            // Only every device being invalid proves the push was not accepted.
+            deliveryMayHaveSucceeded =
+              pushResult.invalidTokens.length !== devices.length;
+          }
           await cleanupInvalidPushTokens(sbAdmin, pushResult.invalidTokens);
 
           if (pushResult.deliveredCount === 0) {
@@ -360,6 +367,7 @@ async function handleGET(req: NextRequest) {
             })
           );
 
+          deliveryMayHaveSucceeded = true;
           const result = await sendSystemEmail({
             recipients: { to: [userEmail] },
             content: {
@@ -439,6 +447,17 @@ async function handleGET(req: NextRequest) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
 
+        if (deliveryMayHaveSucceeded) {
+          // An attempted delivery may be accepted; keep processing state for reconciliation.
+          results.push({
+            batch_id: batch.id,
+            channel: batch.channel,
+            error: errorMessage,
+            status: 'reconciliation_required',
+          });
+          failedCount++;
+          continue;
+        }
         await markBatchFailed(sbAdmin, batch.id, errorMessage);
 
         results.push({

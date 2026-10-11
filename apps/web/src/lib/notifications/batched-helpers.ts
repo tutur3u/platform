@@ -310,11 +310,12 @@ export async function markDeliveryLogsSentByIds(
 
   if (logIds.length > 0) {
     for (const idChunk of chunkValues([...new Set(logIds)])) {
-      await getPrivateNotificationClient(sbAdmin)
+      const { error } = await getPrivateNotificationClient(sbAdmin)
         .from('notification_delivery_log')
         .update(patch)
         .in('id', idChunk)
         .eq('status', 'pending');
+      if (error) throw error;
     }
     return;
   }
@@ -323,11 +324,12 @@ export async function markDeliveryLogsSentByIds(
     return;
   }
 
-  await getPrivateNotificationClient(sbAdmin)
+  const { error } = await getPrivateNotificationClient(sbAdmin)
     .from('notification_delivery_log')
     .update(patch)
     .eq('batch_id', batchId)
     .eq('status', 'pending');
+  if (error) throw error;
 }
 
 export async function markDeliveryLogsSkipped(
@@ -347,11 +349,12 @@ export async function markDeliveryLogsSkipped(
   };
 
   for (const idChunk of chunkValues([...new Set(logIds)])) {
-    await getPrivateNotificationClient(sbAdmin)
+    const { error } = await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update(patch)
       .in('id', idChunk)
       .eq('status', 'pending');
+    if (error) throw error;
   }
 }
 
@@ -360,7 +363,7 @@ export async function markBatchSent(
   batchId: string,
   notificationCount: number
 ) {
-  await getPrivateNotificationClient(sbAdmin)
+  const { error } = await getPrivateNotificationClient(sbAdmin)
     .from('notification_batches')
     .update({
       status: 'sent',
@@ -369,6 +372,7 @@ export async function markBatchSent(
       updated_at: new Date().toISOString(),
     })
     .eq('id', batchId);
+  if (error) throw error;
 }
 
 export async function markBatchFailed(
