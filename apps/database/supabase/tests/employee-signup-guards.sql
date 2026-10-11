@@ -41,9 +41,11 @@ select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000
 set local role authenticated;
 select throws_ok($$update public.user_private_details set full_name='Direct authenticated rename' where user_id='00000000-0000-4000-8000-000000009901'$$,'42501',null,'real authenticated private-details update cannot rename employee');
 reset role;
+-- Resume the provider transaction's deferred final-row check after the earlier fixture flush.
+set constraints auth.check_employee_creation_commit deferred;
 select throws_ok($$insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values('00000000-0000-4000-8000-000000009904','unbound-fixture@tuturuuu.com','{"employee_onboarding":true}','{"full_name":"Unbound fixture"}')$$,'23514','Employee creation intent is missing','trusted marker alone cannot bypass authorized intent');
 insert into private.employee_creation_intents(user_id,staff_email,managed_name,actor_id) values('00000000-0000-4000-8000-000000009905','unbanned-fixture@tuturuuu.com','Unbanned fixture','00000000-0000-4000-8000-000000009900');
-select throws_ok($$insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values('00000000-0000-4000-8000-000000009905','unbanned-fixture@tuturuuu.com',now(),'{}','{}')$$,'23514','Employee creation must remain confirmed and pending','final provider transaction cannot commit an unbanned pending employee');
+select throws_ok($$do $provider$ begin insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values('00000000-0000-4000-8000-000000009905','unbanned-fixture@tuturuuu.com',now(),'{}','{}'); set constraints auth.check_employee_creation_commit immediate; end; $provider$;$$,'23514','Employee creation must remain confirmed and pending','final provider transaction cannot commit an unbanned pending employee');
 select ok(not exists(select 1 from auth.users where id='00000000-0000-4000-8000-000000009905'),'failed provider commit rolls back identity');
 select ok(not exists(select 1 from private.infrastructure_employees where user_id='00000000-0000-4000-8000-000000009905'),'failed provider commit rolls back employee registry');
 select * from finish();
