@@ -12,6 +12,7 @@ import {
   stopOwnedChildren,
   storageProxyFailure,
   TRANSPORT_TITLE,
+  webpackAppEnvironment,
 } from './mail-profile-runtime.mjs';
 
 const hosted = {
@@ -288,4 +289,34 @@ test('startup diagnostics identify only known owned apps without exposing output
     ),
     'unclassified-fixture-failure'
   );
+});
+
+test('owned Web and Lettin webpack children select the existing compatible mode', () => {
+  for (const port of ['7803', '7833']) {
+    const env = Object.freeze({
+      NEXT_PUBLIC_APP_URL: `http://127.0.0.1:${port}`,
+      NODE_ENV: 'development',
+      NODE_OPTIONS: '--experimental-require-module',
+    });
+    assert.deepEqual(webpackAppEnvironment(env), {
+      ...env,
+      NEXT_WEBPACK_BUILD: '1',
+    });
+    assert.equal(Object.hasOwn(env, 'NEXT_WEBPACK_BUILD'), false);
+  }
+});
+
+test('owned webpack mode overrides incompatible inheritance without changing other settings', () => {
+  for (const mode of [undefined, '0', '1']) {
+    const env = Object.freeze({
+      NEXT_WEBPACK_BUILD: mode,
+      NODE_EXTRA_CA_CERTS: '/owned-fixture/ca.pem',
+      NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+    });
+    assert.deepEqual(webpackAppEnvironment(env), {
+      ...env,
+      NEXT_WEBPACK_BUILD: '1',
+    });
+    assert.equal(env.NEXT_WEBPACK_BUILD, mode);
+  }
 });

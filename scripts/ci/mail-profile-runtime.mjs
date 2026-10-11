@@ -160,6 +160,10 @@ async function command(
   }
 }
 
+export function webpackAppEnvironment(env) {
+  return { ...env, NEXT_WEBPACK_BUILD: '1' };
+}
+
 async function startApp(app, port, env, children, reports) {
   const log = await fs.open(
     path.join(reports, `${app}-private.log`),
@@ -181,7 +185,7 @@ async function startApp(app, port, env, children, reports) {
     ],
     {
       cwd: path.join(root, 'apps', app),
-      env,
+      env: webpackAppEnvironment(env),
       detached: true,
       stdio: ['ignore', log.fd, log.fd],
     }
