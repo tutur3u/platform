@@ -42,3 +42,14 @@ assertion range, and agree with the failure count. Malformed or oversized eviden
 sets `assertionOrdinalsValid` to false and emits an empty array. Match valid numbers
 to the exact frozen fixture offline; descriptions and expected/actual values are
 never exposed. These numbers locate failures and do not change any passing gate.
+
+### Signup exception contract diagnostics
+
+For failed first-packet assertions 22 and 23 only, the receipt can include the
+actual five-character SQLSTATE and a boolean comparison against the fixed expected
+message. Caught messages, wanted messages, SQL, identities and TAP descriptions
+remain private. Unknown or inconsistent pgTAP diagnostic formats emit invalid
+classification with null values; absence of an exception is not inferred. These
+diagnostics do not alter the expected 23514 contracts or the strict 172-assertion
+success and cleanup gates. The previous timing-only fixture change remained
+unqualified after both assertions failed again.

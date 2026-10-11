@@ -99,6 +99,67 @@ export function failedAssertionOrdinals(tap, expected) {
   return ordinals;
 }
 
+const signupFailureContracts = new Map([
+  [22, 'Employee creation intent is missing'],
+  [23, 'Employee creation must remain confirmed and pending'],
+]);
+
+export function signupCaughtDiagnostics(tap, ordinals) {
+  if (
+    typeof tap !== 'string' ||
+    Buffer.byteLength(tap, 'utf8') > 1024 * 1024 ||
+    !Array.isArray(ordinals) ||
+    JSON.stringify(failedAssertionOrdinals(tap, 25)) !==
+      JSON.stringify(ordinals)
+  ) {
+    throw new Error('Invalid signup diagnostic binding');
+  }
+  const lines = tap.split(/\r?\n/u);
+  return ordinals
+    .filter((ordinal) => signupFailureContracts.has(ordinal))
+    .map((ordinal) => {
+      const empty = {
+        ordinal,
+        diagnosticValid: false,
+        actualSqlstate: null,
+        expectedSqlstate: '23514',
+        expectedMessageMatches: null,
+        noException: null,
+      };
+      const start = lines.findIndex((line) =>
+        new RegExp(`^not ok ${ordinal}(?: - .*)?$`, 'u').test(line)
+      );
+      const next = lines.findIndex(
+        (line, index) => index > start && /^(?:not ok |ok |1\.\.)/u.test(line)
+      );
+      const block = lines.slice(start + 1, next < 0 ? lines.length : next);
+      const headers = block.filter((line) => /^#\s*Failed test\b/u.test(line));
+      const caught = block.filter((line) => /^#\s*caught\s*:/u.test(line));
+      const wanted = block.filter((line) => /^#\s*wanted\s*:/u.test(line));
+      if (
+        headers.length !== 1 ||
+        !new RegExp(`^#\\s*Failed test ${ordinal}:`, 'u').test(headers[0]) ||
+        caught.length !== 1 ||
+        wanted.length !== 1 ||
+        block.indexOf(wanted[0]) !== block.indexOf(caught[0]) + 1 ||
+        wanted[0].replace(/^#\s*wanted: /u, '') !==
+          `23514: ${signupFailureContracts.get(ordinal)}`
+      ) {
+        return empty;
+      }
+      const match = /^#\s*caught: ([0-9A-Z]{5}): (.*)$/u.exec(caught[0]);
+      if (!match) return empty;
+      return {
+        ...empty,
+        diagnosticValid: true,
+        actualSqlstate: match[1],
+        expectedMessageMatches:
+          match[2] === signupFailureContracts.get(ordinal),
+        noException: false,
+      };
+    });
+}
+
 export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
   const phases = [
     'full-schema-snapshot',
@@ -149,6 +210,10 @@ export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
     assertionOrdinalsValid = false;
     failedOrdinals = [];
   }
+  let signupExceptions = [];
+  if (phase === 'packet-tap' && packetOrdinal === 1 && assertionOrdinalsValid) {
+    signupExceptions = signupCaughtDiagnostics(tap, failedOrdinals);
+  }
   return {
     phase,
     packetOrdinal,
@@ -159,6 +224,7 @@ export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
     failingAssertions,
     failedAssertionOrdinals: failedOrdinals,
     assertionOrdinalsValid,
+    signupExceptions,
     bailout: /^Bail out!/mu.test(tap),
     skippedOrTodo: /#\s*(?:SKIP|TODO)\b/iu.test(tap),
   };
