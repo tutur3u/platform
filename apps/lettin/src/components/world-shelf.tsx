@@ -12,6 +12,7 @@ import {
   type StudioMembership,
   StudioMembershipFilter,
 } from './studio-membership-filter';
+import { StudioTagFilter } from './studio-tag-filter';
 
 type WorldShelfProps = {
   wsId: string;
@@ -26,6 +27,14 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
   const t = useTranslations('lettin');
   const [search, setSearch] = useState('');
   const [membership, setMembership] = useState<StudioMembership>('all');
+  const [tag, setTag] = useState<string | null>(null);
+  const tags = [...new Set(shelf.flatMap((world) => world.draft.tags ?? []))]
+    .filter((value) => value.trim())
+    .sort();
+  const activeTag = tag !== null && tags.includes(tag) ? tag : null;
+  useEffect(() => {
+    if (tag !== null && activeTag === null) setTag(null);
+  }, [tag, activeTag]);
   const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
   const publishedCount = shelf.filter((world) => world.published_at).length;
   const worlds = shelf.filter((world) => {
@@ -35,6 +44,7 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
     return (
       matchesStudioMembership(world.role, membership) &&
       matchesStatus &&
+      (activeTag === null || world.draft.tags?.includes(activeTag)) &&
       `${world.draft.title} ${world.draft.description} ${(world.draft.tags ?? []).join(' ')}`
         .toLocaleLowerCase()
         .includes(search.toLocaleLowerCase())
@@ -89,6 +99,7 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
         </fieldset>
       </div>
       <StudioMembershipFilter value={membership} onChange={setMembership} />
+      <StudioTagFilter tags={tags} value={activeTag} onChange={setTag} />
       <p role="status" className="sr-only">
         {t('worldCount', { count: announcedCount })}
       </p>
@@ -102,6 +113,7 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
               setSearch('');
               setFilter('all');
               setMembership('all');
+              setTag(null);
             }}
           >
             {t('clearFilters')}

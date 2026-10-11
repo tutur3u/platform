@@ -967,3 +967,12 @@ and key the local state to the notebook rather than each selected entry. Suspend
 styles in browsing without discarding choices; keep private previews and author
 theme settings separate. See the Lettin reader decision and
 `reader-presentation.test.tsx`/`public-world.test.tsx` transition regressions.
+
+### Authorized overview facets
+
+Private Studio facets must derive both visible records and options from the
+current authorized overview. Do not keep an independent record cache or query
+extra source content to populate a facet. When a selected tag disappears, remove
+its option and reset the selection; workspace changes reset all local facets.
+Cover combined facets and revocation with rendered tests, and distinguish those
+fixtures from hosted account acceptance.
