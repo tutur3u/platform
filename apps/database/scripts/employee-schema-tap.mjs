@@ -72,6 +72,33 @@ export function schemaReceipt({
   };
 }
 
+export function failedAssertionOrdinals(tap, expected) {
+  if (
+    typeof tap !== 'string' ||
+    Buffer.byteLength(tap, 'utf8') > 1024 * 1024 ||
+    !Number.isSafeInteger(expected) ||
+    expected < 0 ||
+    expected > 500
+  ) {
+    throw new Error('Invalid bounded TAP diagnostic');
+  }
+  const ordinals = [];
+  for (const line of tap.split(/\r?\n/u)) {
+    if (!/^not ok\b/u.test(line)) continue;
+    const match = /^not ok ([1-9]\d*)(?: - .*)?$/u.exec(line);
+    const ordinal = match ? Number(match[1]) : NaN;
+    if (
+      !Number.isSafeInteger(ordinal) ||
+      ordinal > expected ||
+      ordinal <= (ordinals.at(-1) ?? 0)
+    ) {
+      throw new Error('Invalid failed assertion ordinal');
+    }
+    ordinals.push(ordinal);
+  }
+  return ordinals;
+}
+
 export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
   const phases = [
     'full-schema-snapshot',
@@ -103,6 +130,25 @@ export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
     Buffer.byteLength(result.stdout, 'utf8') <= 1024 * 1024
       ? result.stdout
       : '';
+  const failingAssertions = Math.min(
+    500,
+    tap.split(/\r?\n/u).filter((line) => /^not ok \d+(?:\s|$)/u.test(line))
+      .length
+  );
+  let failedOrdinals = [];
+  let assertionOrdinalsValid = true;
+  try {
+    failedOrdinals = failedAssertionOrdinals(
+      result.stdout ?? '',
+      foundationPackets[packetOrdinal - 1]?.[1] ?? 0
+    );
+    if (failedOrdinals.length !== failingAssertions) {
+      throw new Error('Failed ordinal count differs');
+    }
+  } catch {
+    assertionOrdinalsValid = false;
+    failedOrdinals = [];
+  }
   return {
     phase,
     packetOrdinal,
@@ -110,11 +156,9 @@ export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
     processError: result.error != null,
     timedOut: result.error?.code === 'ETIMEDOUT',
     signaled: Boolean(result.signal),
-    failingAssertions: Math.min(
-      500,
-      tap.split(/\r?\n/u).filter((line) => /^not ok \d+(?:\s|$)/u.test(line))
-        .length
-    ),
+    failingAssertions,
+    failedAssertionOrdinals: failedOrdinals,
+    assertionOrdinalsValid,
     bailout: /^Bail out!/mu.test(tap),
     skippedOrTodo: /#\s*(?:SKIP|TODO)\b/iu.test(tap),
   };
