@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { DocumentView } from './document-view';
+import { ReaderPresentation } from './reader-presentation';
 import { ReadingSequence } from './reading-sequence';
 import { ReadingTagFilter } from './reading-tag-filter';
 import { WikiBrowser } from './wiki-browser';
@@ -158,28 +159,30 @@ export function PublicWorld({
             manualCopyLabel={t('publicLinkManualCopy')}
           />
         </div>
-        {browse ? (
-          <>
-            {!['timeline', 'relationships'].includes(section) && (
-              <h1 className="mb-6 text-3xl">{t(`section${section}`)}</h1>
-            )}
-            <WikiBrowser
-              entries={section === 'relationships' ? tagged : visible}
-              search={search}
-              section={section}
-              disabled={false}
-              onSelect={select}
+        <ReaderPresentation key={world.id} active={!browse}>
+          {browse ? (
+            <>
+              {!['timeline', 'relationships'].includes(section) && (
+                <h1 className="mb-6 text-3xl">{t(`section${section}`)}</h1>
+              )}
+              <WikiBrowser
+                entries={section === 'relationships' ? tagged : visible}
+                search={search}
+                section={section}
+                disabled={false}
+                onSelect={select}
+              />
+            </>
+          ) : (
+            <DocumentView
+              draft={draft}
+              showOutline
+              showReadingStatistics
+              publicOutlineEntryId={entry?.id ?? null}
+              outlineScope={`lettin-${world.id}-${entry?.id ?? 'notebook'}`}
             />
-          </>
-        ) : (
-          <DocumentView
-            draft={draft}
-            showOutline
-            showReadingStatistics
-            publicOutlineEntryId={entry?.id ?? null}
-            outlineScope={`lettin-${world.id}-${entry?.id ?? 'notebook'}`}
-          />
-        )}
+          )}
+        </ReaderPresentation>
         {entry && (
           <ReadingSequence
             entries={visible.map(({ id, draft }) => ({

@@ -1683,6 +1683,29 @@ omission and partial-warning reset. `writing-statistics-model.test.ts` covers
 Unicode segmentation, leaf/attribute exclusion, block boundaries and traversal
 limits. Exact-commit CI and hosted reader acceptance remain separate gates.
 
+## Reader-local text appearance
+
+Published notebook and entry reading views offer default, large and extra-large
+text size, plus default or relaxed line spacing. The default keeps the existing
+reader styles. These choices adjust inherited article body text; fixed headings,
+metadata sizes and author font families retain their existing hierarchy. The
+controls appear in reading views and are omitted from printed pages.
+
+Choices live only in the mounted notebook reader, including navigation between
+its published entries. Browsing temporarily hides the controls and suspends their
+styles; returning to reading restores the choices. Reset restores both defaults.
+Opening another notebook or leaving the reader discards the preferences. There
+is no local-storage persistence, API request, content edit, creator-profile change
+or publication operation. Private studio previews do not receive these controls.
+Source availability, media consent and access remain enforced by existing public
+projections and media routes.
+
+Regression coverage: `reader-presentation.test.tsx` covers both shipped languages,
+independent settings, reset, browsing transitions, bounded choices and notebook
+remounts. `public-world.test.tsx` exercises entry navigation and preserves the
+published source projection. CSS rules are scoped to the reader wrapper; real
+browser layout and the exact-head Lettin build remain separate delivery evidence.
+
 ## Private Studio membership filters
 
 The authenticated Studio notebook shelf starts with all notebooks in the actor's
@@ -1752,3 +1775,23 @@ An unavailable receipt store blocks apply before transport. These receipts conta
 only mutation and destination identifiers, never notebook content.
 The existing notebook import sanitizer removes artwork/image sources and
 hyperlink marks while retaining safe text; copies do not keep artwork URL references.
+
+## Private Studio tag filters
+
+The general Studio and creative-space notebook shelves default to **All tags**.
+Creators can select an exact saved notebook tag from the current authorized
+overview; tags on wiki entries or unsaved editor buffers are outside this facet.
+The tag selector combines with membership, publication and text search, preserving
+the server's notebook order. Options are distinct nonblank tags in deterministic
+text order. Shelf statistics continue to describe the full authorized overview.
+
+Changing workspace resets every facet. Clearing empty results resets all four
+facets. Overview changes immediately remove withdrawn records and their tag
+options; a selected tag that is no longer present resets to All tags. No additional
+content reads, writes or stored preferences occur. Existing notebook access,
+publication, source consent and public profile sharing rules remain unchanged.
+
+Regression evidence: `studio-tag-filter.test.tsx` covers combined facets, exact
+tag matching, duplicates, empty recovery, workspace reset, revoked records,
+removed tag options and both language bundles. These rendered fixtures are
+separate from exact-head CI/build and hosted browser acceptance.
