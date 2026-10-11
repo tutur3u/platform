@@ -384,9 +384,12 @@ describe('digest push settlement safety', () => {
     expect(mocks.markSent).not.toHaveBeenCalled();
     expect(mocks.markBatchFailed).not.toHaveBeenCalled();
   });
-  it.each([[], ['device-1']])(
+  it.each<{ invalidTokens: string[] }>([
+    { invalidTokens: [] },
+    { invalidTokens: ['device-1'] },
+  ])(
     'keeps zero-delivery rejection %j ambiguous if settlement fails',
-    async (invalidTokens) => {
+    async ({ invalidTokens }) => {
       mocks.push.mockResolvedValueOnce({ deliveredCount: 0, invalidTokens });
       const response = await callRoute('digest');
       expect(await response.json()).toMatchObject({
