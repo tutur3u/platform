@@ -21,6 +21,7 @@ export function WikiBrowsingPanel({
   disabled,
   filters,
   onChange,
+  onClear,
   onSelect,
 }: {
   entries: LettinRecord[];
@@ -29,6 +30,7 @@ export function WikiBrowsingPanel({
   disabled: boolean;
   filters: WikiFilters;
   onChange: (filters: WikiFilters) => void;
+  onClear?: () => void;
   onSelect: (id: string) => void;
 }) {
   const t = useTranslations('lettin'),
@@ -73,6 +75,7 @@ export function WikiBrowsingPanel({
         canSort={!['timeline', 'relationships'].includes(section)}
         disabled={disabled}
         onChange={onChange}
+        onClear={onClear}
       />
       <p className="mb-5 text-muted-foreground text-sm">
         {t('wikiSavedBrowseHint')}

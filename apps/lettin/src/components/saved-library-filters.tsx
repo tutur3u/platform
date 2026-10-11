@@ -2,13 +2,22 @@
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  type SavedLibraryOrder,
+  savedLibraryOrders,
+} from './saved-library-ordering';
 
 const availabilityOptions = ['all', 'available', 'unavailable'] as const;
 export type SavedLibraryFilters = {
   search: string;
+  order: SavedLibraryOrder;
   availability: (typeof availabilityOptions)[number];
 };
-const initialFilters: SavedLibraryFilters = { search: '', availability: 'all' };
+const initialFilters: SavedLibraryFilters = {
+  search: '',
+  availability: 'all',
+  order: 'newest',
+};
 export function useSavedLibraryFilters() {
   return useState(initialFilters);
 }
@@ -70,10 +79,30 @@ export function SavedLibraryFilterControls({
           ))}
         </select>
       </label>
+      <label className="block space-y-2">
+        {t('savedLibraryOrder')}
+        <select
+          className="w-full rounded-md border border-input bg-background p-2"
+          value={filters.order}
+          onChange={(event) => {
+            const order = event.target.value;
+            if (savedLibraryOrders.some((option) => option === order))
+              onChange({ ...filters, order: order as SavedLibraryOrder });
+          }}
+        >
+          {savedLibraryOrders.map((value) => (
+            <option key={value} value={value}>
+              {t(`savedLibraryOrder_${value}`)}
+            </option>
+          ))}
+        </select>
+      </label>
       <p className="text-muted-foreground text-sm">
         {t('savedLibraryFilterHint')}
       </p>
-      {(filters.search || filters.availability !== 'all') && (
+      {(filters.search ||
+        filters.availability !== 'all' ||
+        filters.order !== 'newest') && (
         <Button
           type="button"
           variant="ghost"
