@@ -102,7 +102,9 @@ for (const [name, aggregate, checkName, shardName] of [
             'check-ci',
             'duplicate-validation',
             'test-shards',
-            ...(hasRootSuite ? ['root-script-tests'] : []),
+            ...(hasRootSuite
+              ? ['root-script-tests', 'backend-source-qualification']
+              : []),
           ]
         : ['check-ci']
     );
@@ -229,7 +231,7 @@ test('real release detector defaults to run for missing and invalid comparisons'
 
 // Execute each committed gate with GitHub's implicit success dependency rule:
 // a status function must override it so a failed proof cannot skip validation.
-function evaluateValidationGate(job, needs, isCancelled = false) {
+function evaluateValidationGate(job, needs, isCancelled = false, github = {}) {
   const body = job.if.replace(/^\$\{\{\s*|\s*\}\}$/g, '');
   if (!/\b(?:always|cancelled|failure|success)\(\)/.test(body)) {
     if (
@@ -241,8 +243,9 @@ function evaluateValidationGate(job, needs, isCancelled = false) {
   return Function(
     'needs',
     'cancelled',
+    'github',
     `return (${source});`
-  )(needs, () => isCancelled);
+  )(needs, () => isCancelled, github);
 }
 
 for (const [workflowName, jobs] of [
@@ -363,11 +366,118 @@ test('unit aggregate requires fresh root success even when package proof skips s
       DUPLICATE_RUN_CHECKS: runChecks,
       TEST_RESULT: shards,
       ROOT_SCRIPT_RESULT: rootResult,
+      RUST_QUALIFICATION_REQUIRED: 'false',
     });
     assert.equal(
       result.status === 0,
       pass,
       `${duplicate}/${runChecks}/${shards}/${rootResult}`
     );
+  }
+});
+
+test('Rust source qualification is bounded and restricted to the release integration ref', () => {
+  const job = readWorkflow('turbo-unit-tests.yaml').jobs[
+    'backend-source-qualification'
+  ];
+  assert.deepEqual(job.needs, ['check-ci']);
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.equal(job['timeout-minutes'], 45);
+  assert.equal(job.env.CARGO_BUILD_JOBS, '2');
+  assert.equal(job.defaults.run['working-directory'], './apps/backend');
+  const toolchain = job.steps.find((step) => step.with?.toolchain);
+  assert.equal(
+    toolchain.uses,
+    'dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87'
+  );
+  assert.equal(toolchain.with.toolchain, '1.95.0');
+  assert.equal(toolchain.with.components, 'clippy, rustfmt');
+  assert.equal(toolchain.with.targets, 'wasm32-unknown-unknown');
+  const checkout = job.steps.find((step) =>
+    step.uses?.startsWith('actions/checkout@')
+  );
+  assert.equal(checkout.with.ref, expression('github.sha'));
+  assert.equal(checkout.with['persist-credentials'], false);
+  const commands = job.steps.map((step) => step.run).filter(Boolean);
+  for (const command of [
+    'cargo fmt --check',
+    'cargo clippy --locked --all-targets --features native -- -D warnings',
+    'cargo test --locked --lib -- --test-threads=2',
+    'cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker',
+  ])
+    assert.ok(commands.includes(command), command);
+  assert.ok(!JSON.stringify(job).includes('secrets.'));
+  for (const [ref, shouldRun, runChecks, result, expected] of [
+    ['fix/release-5795-reconciliation', 'true', 'true', 'success', true],
+    ['main', 'true', 'true', 'success', false],
+    ['production', 'true', 'true', 'success', false],
+    ['fix/another-release', 'true', 'true', 'success', false],
+    ['fix/release-5795-reconciliation', 'false', 'true', 'success', false],
+    ['fix/release-5795-reconciliation', 'true', 'false', 'success', false],
+    ['fix/release-5795-reconciliation', 'true', 'true', 'failure', false],
+  ]) {
+    const needs = {
+      'check-ci': {
+        result,
+        outputs: { should_run: shouldRun, run_checks: runChecks },
+      },
+    };
+    assert.equal(
+      evaluateValidationGate(job, needs, false, { ref: `refs/heads/${ref}` }),
+      expected
+    );
+  }
+});
+
+test('release aggregate requires fresh Rust success even when package proof skips shards', () => {
+  const job = readWorkflow('turbo-unit-tests.yaml').jobs.build;
+  const step = job.steps[0];
+  assert.equal(
+    step.env.RUST_RESULT,
+    expression('needs.backend-source-qualification.result')
+  );
+  assert.equal(
+    step.env.RUST_QUALIFICATION_REQUIRED,
+    expression("github.ref == 'refs/heads/fix/release-5795-reconciliation'")
+  );
+  for (const reuse of [true, false]) {
+    for (const rust of ['success', 'failure', 'cancelled', 'skipped', '']) {
+      const needs = {
+        'check-ci': {
+          result: 'success',
+          outputs: { should_run: 'true', run_checks: 'true' },
+        },
+        'duplicate-validation': {
+          result: reuse ? 'success' : 'skipped',
+          outputs: { run_checks: reuse ? 'false' : '' },
+        },
+        'test-shards': { result: reuse ? 'skipped' : 'success' },
+        'root-script-tests': { result: 'success' },
+        'backend-source-qualification': { result: rust },
+      };
+      assert.equal(evaluateValidationGate(job, needs), true);
+      const env = {
+        DUPLICATE_RESULT: needs['duplicate-validation'].result,
+        DUPLICATE_RUN_CHECKS: needs['duplicate-validation'].outputs.run_checks,
+        TEST_RESULT: needs['test-shards'].result,
+        ROOT_SCRIPT_RESULT: 'success',
+        RUST_QUALIFICATION_REQUIRED: 'true',
+        RUST_RESULT: rust,
+      };
+      assert.equal(
+        runAggregate(step, env).status === 0,
+        rust === 'success',
+        `${reuse}/${rust}`
+      );
+      assert.notEqual(
+        runAggregate(step, { ...env, ROOT_SCRIPT_RESULT: 'failure' }).status,
+        0
+      );
+      assert.equal(
+        runAggregate(step, { ...env, RUST_QUALIFICATION_REQUIRED: 'false' })
+          .status,
+        0
+      );
+    }
   }
 });

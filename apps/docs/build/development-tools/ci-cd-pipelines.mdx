@@ -7,7 +7,9 @@ updatedAt: "2026-10-12"
 <Note>
 Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
 the Docker cron runner is retired. Rust and TanStack Start are not in use and
-must not be run, tested, or updated until further notice. Retained Docker and
+remain paused for runtime and deployment. The branch-scoped hosted Rust source
+qualification below is the authorized exception for this release integration;
+it does not activate either migration runtime. Retained Docker and
 migration sections below are historical procedures. Current hosted Next.js,
 package, Worker, database, and mobile workflows retain their own gates. See the
 [active runtime map](/build/devops/active-runtime).
@@ -78,6 +80,24 @@ package shards do not prove root script qualification: require the exact-head
 job, prerequisite results, complete discovery count, and full TAP summary.
 Historical failures remain unresolved until their actual cases pass on the
 qualified source; do not infer a fix from a different branch's test bytes.
+
+## Hosted Rust source qualification
+
+On `fix/release-5795-reconciliation` only, the existing `Test` workflow runs
+`Rust source qualification (1.95)` after the shared configuration and release
+relevance gates. The read-only job checks out the exact workflow commit, records
+its SHA and Cargo manifest/lock hashes, and uses pinned Rust 1.95.0 with two Cargo
+build workers. It runs formatting, warning-denying native Clippy, all native
+library tests with two test threads, and the wasm Worker target check against the
+locked dependency graph. It needs no application secrets or deployment action.
+
+The stable `Unit Tests (24)` aggregate requires this fresh job to succeed on
+that branch, including when verified package duplicate evidence skips shards.
+A skipped Rust job or successful root script tests do not qualify Rust: require
+the exact-head job and its complete Cargo results. Other branches retain their
+existing package/root gates. The standalone Rust workflows, TanStack migration,
+and backend deployment remain paused; the backend is a future migration target,
+and Web continues to serve the live API.
 
 ## Cross-app users-core regression tests
 

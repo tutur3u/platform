@@ -60,7 +60,7 @@ function listWorkflowFiles() {
 }
 
 function readStepBlocks(source) {
-  const starts = [...source.matchAll(/^\s+- (?:name|uses):/gmu)].map(
+  const starts = [...source.matchAll(/^\s+- (?:name|uses|run):/gmu)].map(
     (match) => match.index
   );
 
@@ -68,6 +68,69 @@ function readStepBlocks(source) {
     source.slice(start, starts[index + 1] ?? source.length)
   );
 }
+
+function isFiniteRoomLifecycleStep(step) {
+  const run = step.match(/^\s+run: \|\n([\s\S]*)$/mu)?.[1];
+  const command = run
+    ?.split('\n')
+    .map((line) => line.trim())
+    .join('\n')
+    .trim();
+  const expected = [
+    'cd "$RUNNER_TEMP"',
+    'bun test \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-empty-lifecycle.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-lifecycle-race.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-recovery.test.ts"',
+  ].join('\n');
+  return (
+    /^\s+- name: Test durable room lifecycle and recovery$/mu.test(step) &&
+    /^\s+shell: bash$/mu.test(step) &&
+    /^\s+timeout-minutes: 2$/mu.test(step) &&
+    command === expected
+  );
+}
+
+test('finite outside-workspace worker fixtures are distinct from package test tasks', () => {
+  const source = readWorkflow('meet-cloudflare.yaml');
+  const step = readStepBlocks(source).find((block) =>
+    block.includes('- name: Test durable room lifecycle and recovery')
+  );
+  assert.ok(isFiniteRoomLifecycleStep(step));
+  assert.ok(
+    !isFiniteRoomLifecycleStep(
+      step.replace('$RUNNER_TEMP', 'packages/realtime')
+    )
+  );
+  assert.ok(
+    !isFiniteRoomLifecycleStep(
+      step.replace('timeout-minutes: 2', 'timeout-minutes: 20')
+    )
+  );
+  assert.ok(!isFiniteRoomLifecycleStep(`${step}        bun run test\n`));
+  assert.ok(
+    !isFiniteRoomLifecycleStep(
+      step.replace('room-do-recovery.test.ts', 'unknown.test.ts')
+    )
+  );
+});
+
+test('step inspection keeps unnamed run commands separate from named metadata tests', () => {
+  const steps = readStepBlocks(`
+      - name: Check build identity
+        run: node --test metadata.test.js
+      - run: bun run --cwd packages/types build
+      - run: bun run test
+        working-directory: packages/realtime
+      - uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test --filter=@tuturuuu/realtime
+  `);
+  assert.equal(steps.length, 4);
+  assert.doesNotMatch(steps[0], /bun run/);
+  assert.match(steps[2], /bun run test/);
+  assert.doesNotMatch(steps[2], /run-with-turbo-remote-cache/);
+});
 
 function readCacheKeyFields(step) {
   const lines = step.split('\n');
@@ -401,11 +464,13 @@ test('cacheable JavaScript workflow commands use the remote-cache wrapper', () =
         /\bbun(?: run)? (?:build|type-check)(?=[:\s])/u,
         `${workflowName} has an unwrapped cacheable root task`
       );
-      assert.doesNotMatch(
-        step,
-        /\bbun(?: run)? test(?=\s)/u,
-        `${workflowName} has an unwrapped cacheable test task`
-      );
+      if (!isFiniteRoomLifecycleStep(step)) {
+        assert.doesNotMatch(
+          step,
+          /\bbun(?: run)? test(?=\s)/u,
+          `${workflowName} has an unwrapped cacheable test task`
+        );
+      }
       assert.doesNotMatch(
         step,
         /\bbun run --filter[^\n]*\b(?:build|test|type-check)\b/u,
