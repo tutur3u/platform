@@ -9,9 +9,12 @@ test('translation checks run once per PR update and still cover both protected b
   assert.deepEqual(workflow.on.push.branches, ['main', 'production']);
   assert.equal(workflow.on.pull_request, null);
   assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
-  // PR merge refs isolate forks and preserve validation of the merged result.
-  // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-  assert.equal(workflow.concurrency.group, 'i18n-${{ github.ref }}');
+  // PR merge refs coalesce; protected and generated release runs retain exact evidence.
+  assert.equal(
+    workflow.concurrency.group,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
+    "${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}"
+  );
   for (const id of [
     'i18n-sort-check',
     'i18n-translation-check',
@@ -61,11 +64,17 @@ test('failed invitation cohorts retain distinct diagnostic artifacts', () => {
 
 test('superseded PR runs cancel, protected release evidence does not', () => {
   for (const name of ['i18n-check.yaml', 'e2e-tests.yaml']) {
-    const policy = readWorkflow(name).concurrency['cancel-in-progress'];
+    const concurrency = readWorkflow(name).concurrency;
+    const policy = concurrency['cancel-in-progress'];
     assert.equal(
       policy,
       // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-      "${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' }}"
+      "${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}"
+    );
+    assert.equal(
+      concurrency.group,
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
+      "${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}"
     );
   }
 });
