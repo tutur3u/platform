@@ -28,7 +28,7 @@ const nextLoaderPath = webRequire.resolve(
 
 // Apply the actual repository hunk with exact context, never a replacement
 // implementation of the adapter's manifest selection or inlining behavior.
-function applyPluginHunk(source, patch) {
+function applyPluginHunk(source, patch, reverse = false) {
   const section = patch.split(`diff --git a/${pluginPath} b/${pluginPath}\n`);
   assert.equal(section.length, 2, 'exactly one plugin patch section');
   const lines = section[1].trimEnd().split('\n');
@@ -48,8 +48,10 @@ function applyPluginHunk(source, patch) {
   assert.equal(match[1], match[3], 'unchanged hunk position');
   const sourceLines = source.split('\n');
   const start = Number(match[1]) - 1;
-  assert.deepEqual(sourceLines.slice(start, start + oldLines.length), oldLines);
-  sourceLines.splice(start, oldLines.length, ...newLines);
+  const expected = reverse ? newLines : oldLines;
+  const replacement = reverse ? oldLines : newLines;
+  assert.deepEqual(sourceLines.slice(start, start + expected.length), expected);
+  sourceLines.splice(start, expected.length, ...replacement);
   return sourceLines.join('\n');
 }
 
@@ -120,26 +122,37 @@ test('repository adapter patch inlines genuine preview props without fallbacks',
     await readFile(join(installed, 'package.json'), 'utf8')
   );
   assert.equal(packageInfo.version, '1.20.6');
-  const originalSource = await readFile(join(installed, pluginPath), 'utf8');
+  const installedSource = await readFile(join(installed, pluginPath), 'utf8');
   const patch = await readFile(patchPath, 'utf8');
+  // Frozen Bun installation has already applied the repository patch. Restore
+  // only its exact plugin hunk to recover the genuine negative-control source.
+  const originalSource = applyPluginHunk(installedSource, patch, true);
+  assert.notEqual(
+    originalSource,
+    installedSource,
+    'installed patch changes source'
+  );
+  const patchedSource = applyPluginHunk(originalSource, patch);
+  assert.equal(patchedSource, installedSource, 'exact patch round trip');
+  const unpatched = join(temp, 'unpatched-adapter');
   const patched = join(temp, 'adapter');
-  for (const relative of ['package.json', pluginPath, normalizePath]) {
-    await mkdir(dirname(join(patched, relative)), { recursive: true });
-    await copyFile(join(installed, relative), join(patched, relative));
+  for (const target of [unpatched, patched]) {
+    for (const relative of ['package.json', pluginPath, normalizePath]) {
+      await mkdir(dirname(join(target, relative)), { recursive: true });
+      await copyFile(join(installed, relative), join(target, relative));
+    }
+    // Genuine plugins keep their relative imports and Bun's dependency graph,
+    // including the native AST implementation; only the exact hunk differs.
+    await symlink(
+      dirname(dirname(installed)),
+      join(target, 'node_modules'),
+      'dir'
+    );
   }
-  // The copied genuine plugin retains its own relative imports and the same
-  // Bun-installed dependency graph, including the native AST implementation.
-  await symlink(
-    dirname(dirname(installed)),
-    join(patched, 'node_modules'),
-    'dir'
-  );
-  await writeFile(
-    join(patched, pluginPath),
-    applyPluginHunk(originalSource, patch)
-  );
+  await writeFile(join(unpatched, pluginPath), originalSource);
+  await writeFile(join(patched, pluginPath), patchedSource);
   const originalApi = await import(
-    pathToFileURL(join(installed, pluginPath)).href
+    pathToFileURL(join(unpatched, pluginPath)).href
   );
   const patchedApi = await import(
     pathToFileURL(join(patched, pluginPath)).href

@@ -4,6 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const test = require('node:test');
+const { runInNewContext } = require('node:vm');
 const {
   NOTES_REF,
   isValidatedOverflowNotesPush,
@@ -12,6 +13,24 @@ const {
   buildReleaseNotesDocument,
 } = require('./release-please-overflow-recovery-core');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
+
+// These policy expressions use the shared JavaScript/GitHub boolean subset.
+// Evaluate the committed expressions instead of requiring one spelling of a guard.
+function evaluatePolicy(value, github) {
+  const expression = value.replace(/^\$\{\{([\s\S]*)\}\}$/u, '$1').trim();
+  return runInNewContext(
+    expression,
+    {
+      github,
+      startsWith: (value, prefix) => value.startsWith(prefix),
+      format: (template, ...args) =>
+        template.replace(/\{(\d+)\}/gu, (_, index) =>
+          String(args[Number(index)])
+        ),
+    },
+    { timeout: 1000 }
+  );
+}
 
 test('validates exact committed notes delta against production, retaining all unknown work', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'overflow-notes-ci-'));
@@ -108,16 +127,54 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     'biome-check.yaml',
     'supabase-baseline.yaml',
   ]) {
-    assert.ok(
-      readWorkflow(name).concurrency['cancel-in-progress'].includes(
-        `github.ref != '${NOTES_REF}'`
-      )
-    );
-    assert.ok(
-      readWorkflow(name).concurrency.group.includes(
-        `github.ref == '${NOTES_REF}' && github.sha || github.ref`
-      ),
-      `${name}: notes pending runs need unique commit groups`
+    const policy = readWorkflow(name).concurrency;
+    const base = {
+      workflow: name,
+      sha: 'a'.repeat(40),
+      event_name: 'push',
+      run_id: '100',
+    };
+    const variants = [
+      base,
+      { ...base, sha: 'b'.repeat(40) },
+      { ...base, event_name: 'workflow_dispatch' },
+      { ...base, run_id: '101' },
+    ];
+    for (const ref of [
+      NOTES_REF,
+      'refs/heads/main',
+      'refs/heads/production',
+      'refs/heads/release-please--branches--production',
+    ]) {
+      const groups = variants.map((variant) => {
+        const github = { ...variant, ref };
+        assert.equal(
+          evaluatePolicy(policy['cancel-in-progress'], github),
+          false
+        );
+        const group = policy.group.replace(
+          /\$\{\{([\s\S]*?)\}\}/gu,
+          (_, expression) => evaluatePolicy(expression, github)
+        );
+        assert.equal(
+          group,
+          `${name}-${ref}-${github.sha}-${github.event_name}-${github.run_id}`,
+          `${name}: protected evidence retains SHA, event and run identity`
+        );
+        return group;
+      });
+      assert.equal(new Set(groups).size, variants.length);
+    }
+    const featureGroups = variants.map((variant) => {
+      const github = { ...variant, ref: 'refs/heads/fix/ordinary-feature' };
+      assert.equal(evaluatePolicy(policy['cancel-in-progress'], github), true);
+      return policy.group.replace(/\$\{\{([\s\S]*?)\}\}/gu, (_, expression) =>
+        evaluatePolicy(expression, github)
+      );
+    });
+    assert.deepEqual(
+      featureGroups,
+      variants.map(() => `${name}-refs/heads/fix/ordinary-feature-latest`)
     );
   }
   assert.equal(readWorkflow('biome-check.yaml').on.push, null);
