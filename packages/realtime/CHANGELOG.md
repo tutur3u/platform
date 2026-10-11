@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/tutur3u/platform/compare/realtime-v0.10.0...realtime-v0.10.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **meet:** end empty rooms and allow owner restoration ([2d6f856](https://github.com/tutur3u/platform/commit/2d6f8562511f0264f700003fa9a2a60b0198e2b5)) ([#5924](https://github.com/tutur3u/platform/issues/5924)) ([c5f75c0](https://github.com/tutur3u/platform/commit/c5f75c0f4fa66a0933123b5580ff6bfa69914481))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/realtime-v0.9.0...realtime-v0.10.0) (2026-09-25)
 
 

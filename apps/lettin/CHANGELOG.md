@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.4.0](https://github.com/tutur3u/platform/compare/lettin-v1.3.0...lettin-v1.4.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides and enforce app SEO and runtime pause ([e79cb7e](https://github.com/tutur3u/platform/commit/e79cb7e96c7db4d1baedb09b7420ca41b75e367f))
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+* **lettin:** add guided wiki entry starters ([e1d1fb5](https://github.com/tutur3u/platform/commit/e1d1fb5a991891ca256faecf06dfd32ea603d964)) ([#6102](https://github.com/tutur3u/platform/issues/6102)) ([ff0e909](https://github.com/tutur3u/platform/commit/ff0e90901c95388c645e3ed9ee243fefd0663327))
+
+
+### Bug Fixes
+
+* **ci:** integrate approval tests and Lettin upload transport ([#6065](https://github.com/tutur3u/platform/issues/6065)) ([e18cede](https://github.com/tutur3u/platform/commit/e18cedecadbb2b4044a4545a9b0acf75b9565635))
+* **finance:** bound subscription schedules and block invalid inventory ([f4163bf](https://github.com/tutur3u/platform/commit/f4163bf6697316a06a8b2d3922d9664937dd6940)) ([#5990](https://github.com/tutur3u/platform/issues/5990)) ([f2096f6](https://github.com/tutur3u/platform/commit/f2096f6e20d27dd998a03d11c7b0769d7f06bb2e))
+* **finance:** expose safe invoice history recovery ([8a53d36](https://github.com/tutur3u/platform/commit/8a53d367d6888e592a0d64f760d47234d858bd73)) ([#6034](https://github.com/tutur3u/platform/issues/6034)) ([fd65a3d](https://github.com/tutur3u/platform/commit/fd65a3db6f7472771374192ab07f5a97c6fcaee8))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **lettin:** add safe deployment verifier diagnostics ([242d341](https://github.com/tutur3u/platform/commit/242d341bf78d42477c0a923778e63ecc8dc29bc4)) ([#6091](https://github.com/tutur3u/platform/issues/6091)) ([d9fe807](https://github.com/tutur3u/platform/commit/d9fe8072136908fd9f9f5fda9bcf22b5c02d29f5))
+* **lettin:** align verifier fixtures with Vitest ([dc46a1b](https://github.com/tutur3u/platform/commit/dc46a1b1002f9ca8a967d063f0481b42353a2028))
+* **lettin:** finalize banner uploads before updating profile ([c02388f](https://github.com/tutur3u/platform/commit/c02388fa493d9844f6cdfda8b16c9dcc2414655b))
+* **lettin:** restore accessible identity field labels ([#5947](https://github.com/tutur3u/platform/issues/5947)) ([c0bdec5](https://github.com/tutur3u/platform/commit/c0bdec52f1557faa16b9e98212f1604330290ef5))
+* **lettin:** restore exact profile upload labels ([b838502](https://github.com/tutur3u/platform/commit/b8385022fcb936bd0598f3286246abc1ca0406f0))
+* **lettin:** restore exact upload labels and bound import preview ([#6027](https://github.com/tutur3u/platform/issues/6027)) ([d374e50](https://github.com/tutur3u/platform/commit/d374e50650e1a75579bcbd601e3d855350d16e64))
+* **lettin:** separate identity labels from policy descriptions ([477a315](https://github.com/tutur3u/platform/commit/477a315b2c7d27f8f320ac066c33c51636180791))
+
 ## [1.3.0](https://github.com/tutur3u/platform/compare/lettin-v1.2.0...lettin-v1.3.0) (2026-10-04)
 
 
