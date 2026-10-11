@@ -1745,3 +1745,23 @@ An unavailable receipt store blocks apply before transport. These receipts conta
 only mutation and destination identifiers, never notebook content.
 The existing notebook import sanitizer removes artwork/image sources and
 hyperlink marks while retaining safe text; copies do not keep artwork URL references.
+
+## Private Studio tag filters
+
+The general Studio and creative-space notebook shelves default to **All tags**.
+Creators can select an exact saved notebook tag from the current authorized
+overview; tags on wiki entries or unsaved editor buffers are outside this facet.
+The tag selector combines with membership, publication and text search, preserving
+the server's notebook order. Options are distinct nonblank tags in deterministic
+text order. Shelf statistics continue to describe the full authorized overview.
+
+Changing workspace resets every facet. Clearing empty results resets all four
+facets. Overview changes immediately remove withdrawn records and their tag
+options; a selected tag that is no longer present resets to All tags. No additional
+content reads, writes or stored preferences occur. Existing notebook access,
+publication, source consent and public profile sharing rules remain unchanged.
+
+Regression evidence: `studio-tag-filter.test.tsx` covers combined facets, exact
+tag matching, duplicates, empty recovery, workspace reset, revoked records,
+removed tag options and both language bundles. These rendered fixtures are
+separate from exact-head CI/build and hosted browser acceptance.

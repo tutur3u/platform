@@ -957,3 +957,12 @@ Count expandable body text, exclude metadata/marks/media, and retain the partial
 warning at traversal limits. Do not imply reading time or draft publication from
 these counts. Regression: `published-reading-statistics.test.tsx` and
 `writing-statistics-model.test.ts`.
+
+### Authorized overview facets
+
+Private Studio facets must derive both visible records and options from the
+current authorized overview. Do not keep an independent record cache or query
+extra source content to populate a facet. When a selected tag disappears, remove
+its option and reset the selection; workspace changes reset all local facets.
+Cover combined facets and revocation with rendered tests, and distinguish those
+fixtures from hosted account acceptance.
