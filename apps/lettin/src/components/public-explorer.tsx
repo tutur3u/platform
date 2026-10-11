@@ -12,14 +12,17 @@ export function PublicExplorer({
   page = 1,
   search = '',
   tag,
+  clearHref = '/worlds',
 }: {
   worlds: LettinPublicWorld[];
   page?: number;
   search?: string;
   tag?: string;
+  clearHref?: string;
 }) {
   const t = useTranslations('lettin');
   const filtered = worlds.slice(0, 24);
+  const hasFilters = !!search || !!tag || page > 1;
   return (
     <main className="mx-auto max-w-[90rem] px-5 py-12 md:px-10">
       <header className="lettin-section-heading grid gap-7 md:grid-cols-[1fr_22rem] md:items-end">
@@ -52,12 +55,12 @@ export function PublicExplorer({
       )}
       {!filtered.length && (
         <p className="notebook-paper rounded-xl p-10">
-          {t(search || tag ? 'noResults' : 'emptyPublic')}
+          {t(hasFilters ? 'noResults' : 'emptyPublic')}
           <Link
             className="lettin-secondary-link mt-5"
-            href={search || tag ? '/worlds' : '/dashboard'}
+            href={hasFilters ? clearHref : '/dashboard'}
           >
-            {t(search || tag ? 'clearFilters' : 'openNotebook')}
+            {t(hasFilters ? 'clearFilters' : 'openNotebook')}
             <ArrowRight size={16} />
           </Link>
         </p>

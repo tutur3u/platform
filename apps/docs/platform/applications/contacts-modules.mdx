@@ -110,3 +110,22 @@ not silently send to fewer recipients. Database read errors remain failures.
 This prerequisite does not change announcement history, statuses, or queue leases.
 Provider acceptance, durable receipt publication, and safe recovery from ambiguous
 processing remain separate delivery requirements.
+
+### Inert topic delivery ledger
+
+The private delivery-attempt foundation reserves a parent revision and an
+immutable attempt snapshot. It has no service write API, no sender integration,
+and no historical backfill. Readiness explicitly reports
+`activationEnabled: false`. Existing announcement, recipient, attachment, queue,
+and feature-toggle behavior stays unchanged; the topic feature remains off by
+default. This foundation alone does not repair uncertain delivery or prevent
+replay by the existing queue.
+
+The `topic-delivery-foundation-contract.yaml` workflow applies the complete
+schema, runs strict pgTAP and real two-connection ownership/snapshot contention,
+and generates actual schema types for the exact commit. Local source checks are
+not SQL or provider-delivery proof. Browser roles cannot access the new private
+ledger, and its service role receives read access only. Activation requires a
+separate reviewed atomic caller conversion, current feature and actor-permission
+admission, and an accepted/rejected/unknown provider-outcome contract. No uncertain
+attempt may be treated as a safe automatic retry or discarded history.
