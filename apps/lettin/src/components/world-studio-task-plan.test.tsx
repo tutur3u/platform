@@ -24,6 +24,7 @@ vi.mock('@/i18n/navigation', () => ({
 vi.mock('./navigation-guard', () => ({
   useNavigationGuard: () => ({ dirty: false, setDirty: () => {} }),
 }));
+vi.mock('./notebook-copy', () => ({ NotebookCopy: () => null }));
 vi.mock('./notebook-export', () => ({
   NotebookExport: ({ worldId }: { worldId: string }) => (
     <button type="button" data-world={worldId}>
