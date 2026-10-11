@@ -1676,6 +1676,29 @@ omission and partial-warning reset. `writing-statistics-model.test.ts` covers
 Unicode segmentation, leaf/attribute exclusion, block boundaries and traversal
 limits. Exact-commit CI and hosted reader acceptance remain separate gates.
 
+## Reader-local text appearance
+
+Published notebook and entry reading views offer default, large and extra-large
+text size, plus default or relaxed line spacing. The default keeps the existing
+reader styles. These choices adjust inherited article body text; fixed headings,
+metadata sizes and author font families retain their existing hierarchy. The
+controls appear in reading views and are omitted from printed pages.
+
+Choices live only in the mounted notebook reader, including navigation between
+its published entries. Browsing temporarily hides the controls and suspends their
+styles; returning to reading restores the choices. Reset restores both defaults.
+Opening another notebook or leaving the reader discards the preferences. There
+is no local-storage persistence, API request, content edit, creator-profile change
+or publication operation. Private studio previews do not receive these controls.
+Source availability, media consent and access remain enforced by existing public
+projections and media routes.
+
+Regression coverage: `reader-presentation.test.tsx` covers both shipped languages,
+independent settings, reset, browsing transitions, bounded choices and notebook
+remounts. `public-world.test.tsx` exercises entry navigation and preserves the
+published source projection. CSS rules are scoped to the reader wrapper; real
+browser layout and the exact-head Lettin build remain separate delivery evidence.
+
 ## Private Studio membership filters
 
 The authenticated Studio notebook shelf starts with all notebooks in the actor's

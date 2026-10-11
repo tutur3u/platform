@@ -958,6 +958,16 @@ warning at traversal limits. Do not imply reading time or draft publication from
 these counts. Regression: `published-reading-statistics.test.tsx` and
 `writing-statistics-model.test.ts`.
 
+
+### Reader-local presentation
+
+Keep reader size and spacing controls outside the published projection. Scope
+styles to the mounted reading wrapper, use finite choices and a combined reset,
+and key the local state to the notebook rather than each selected entry. Suspend
+styles in browsing without discarding choices; keep private previews and author
+theme settings separate. See the Lettin reader decision and
+`reader-presentation.test.tsx`/`public-world.test.tsx` transition regressions.
+
 ### Authorized overview facets
 
 Private Studio facets must derive both visible records and options from the
