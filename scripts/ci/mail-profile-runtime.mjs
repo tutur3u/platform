@@ -15,9 +15,13 @@ import {
   profilePreflight,
 } from './mail-profile-runtime-preflight.mjs';
 
-import { privateStartupDiagnostics } from './mail-profile-startup-diagnostics.mjs';
+import {
+  observeFixtureFailure,
+  privateStartupDiagnostics,
+  safeFixtureFailure,
+} from './mail-profile-startup-diagnostics.mjs';
 
-export { assertHostedOwner, profilePreflight };
+export { assertHostedOwner, profilePreflight, safeFixtureFailure };
 
 export const PROFILE_TITLE =
   'saves canonical identity and a rich About profile with reload persistence';
@@ -332,22 +336,6 @@ export function storageProxyFailure(response) {
   response.end();
 }
 
-export function safeFixtureFailure(error) {
-  const message = error instanceof Error ? error.message : '';
-  if (/^Owned command failed \((?:\d+|SIG[A-Z]+)\)$/u.test(message))
-    return 'owned-command-exit';
-  const reasons = new Map([
-    ['Owned command exceeded its deadline', 'owned-command-deadline'],
-    ['Owned app readiness deadline exceeded', 'app-readiness-deadline'],
-    ['Owned web app exited before readiness', 'web-app-before-readiness'],
-    ['Owned lettin app exited before readiness', 'lettin-app-before-readiness'],
-    ['Full fixture or scoped Supabase stop failed', 'fixture-or-stop-failed'],
-    ['Owned cleanup failed', 'owned-cleanup-failed'],
-    ['Preflight and receipt failed', 'preflight-receipt-failed'],
-  ]);
-  return reasons.get(message) ?? 'unclassified-fixture-failure';
-}
-
 async function storageProxy(tls) {
   const server = https.createServer(
     { key: await fs.readFile(tls.key), cert: await fs.readFile(tls.cert) },
@@ -471,116 +459,123 @@ export async function main() {
       );
     }
     const binary = await ensureSupabaseBinary(path.join(root, 'apps/database'));
-    const runner = async (tool, args, cwd) => {
-      if (!args.includes('test')) {
-        await command(tool, args, { cwd, timeout: 900000, capture: true });
-        return { code: 0 };
-      }
-      const status = JSON.parse(
-        await command(tool, ['--workdir', cwd, 'status', '-o', 'json'], {
-          cwd,
-          capture: true,
-        })
-      );
-      assert.equal(status.API_URL, 'http://127.0.0.1:8001');
-      assert.ok(status.ANON_KEY && status.SERVICE_ROLE_KEY);
-      tls = await certificates(disposable);
-      proxy = await storageProxy(tls);
-      const env = {
-        ...process.env,
-        NODE_ENV: 'development',
-        NODE_OPTIONS: '--max-old-space-size=4096 --experimental-require-module',
-        NODE_EXTRA_CA_CERTS: tls.ca,
-        NEXT_PUBLIC_SUPABASE_URL: status.API_URL,
-        SUPABASE_SERVER_URL: status.API_URL,
-        SUPABASE_URL: status.API_URL,
-        SUPABASE_SECRET_KEY: status.SERVICE_ROLE_KEY,
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.ANON_KEY,
-        BASE_URL: 'http://127.0.0.1:7803',
-        WEB_APP_URL: 'http://127.0.0.1:7803',
-        NEXT_PUBLIC_WEB_APP_URL: 'http://127.0.0.1:7803',
-        INTERNAL_WEB_API_ORIGIN: 'http://127.0.0.1:7803',
-        TUTURUUU_APP_COORDINATION_SECRET: randomBytes(32).toString('hex'),
-        SUPABASE_PUBLIC_STORAGE_ORIGIN: 'https://127.0.0.1:8443',
-        LETTIN_BASE_URL: 'http://127.0.0.1:7833',
-        LETTIN_APP_URL: 'http://127.0.0.1:7833',
-        NEXT_PUBLIC_LETTIN_APP_URL: 'http://127.0.0.1:7833',
-      };
-      await command(
-        'bun',
-        [
-          'turbo:local',
-          'run',
-          'build',
-          '--concurrency=2',
-          '--filter=@tuturuuu/web^...',
-          '--filter=@tuturuuu/lettin^...',
-        ],
-        { env, timeout: 900000 }
-      );
-      await startApp(
-        'web',
-        7803,
-        { ...env, NEXT_PUBLIC_APP_URL: env.BASE_URL },
-        children,
-        reports
-      );
-      await startApp(
-        'lettin',
-        7833,
-        { ...env, NEXT_PUBLIC_APP_URL: env.LETTIN_BASE_URL },
-        children,
-        reports
-      );
-      const config = path.join(reports, 'playwright.config.cjs');
-      await fs.writeFile(
-        config,
-        playwrightConfig(
-          path.join(root, 'apps/web/e2e'),
-          reports,
-          path.join(root, 'apps/web/node_modules/@playwright/test')
-        )
-      );
-      let browserError;
-      try {
+    const runner = observeFixtureFailure(
+      async (tool, args, cwd) => {
+        if (!args.includes('test')) {
+          await command(tool, args, { cwd, timeout: 900000, capture: true });
+          return { code: 0 };
+        }
+        const status = JSON.parse(
+          await command(tool, ['--workdir', cwd, 'status', '-o', 'json'], {
+            cwd,
+            capture: true,
+          })
+        );
+        assert.equal(status.API_URL, 'http://127.0.0.1:8001');
+        assert.ok(status.ANON_KEY && status.SERVICE_ROLE_KEY);
+        tls = await certificates(disposable);
+        proxy = await storageProxy(tls);
+        const env = {
+          ...process.env,
+          NODE_ENV: 'development',
+          NODE_OPTIONS:
+            '--max-old-space-size=4096 --experimental-require-module',
+          NODE_EXTRA_CA_CERTS: tls.ca,
+          NEXT_PUBLIC_SUPABASE_URL: status.API_URL,
+          SUPABASE_SERVER_URL: status.API_URL,
+          SUPABASE_URL: status.API_URL,
+          SUPABASE_SECRET_KEY: status.SERVICE_ROLE_KEY,
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.ANON_KEY,
+          BASE_URL: 'http://127.0.0.1:7803',
+          WEB_APP_URL: 'http://127.0.0.1:7803',
+          NEXT_PUBLIC_WEB_APP_URL: 'http://127.0.0.1:7803',
+          INTERNAL_WEB_API_ORIGIN: 'http://127.0.0.1:7803',
+          TUTURUUU_APP_COORDINATION_SECRET: randomBytes(32).toString('hex'),
+          SUPABASE_PUBLIC_STORAGE_ORIGIN: 'https://127.0.0.1:8443',
+          LETTIN_BASE_URL: 'http://127.0.0.1:7833',
+          LETTIN_APP_URL: 'http://127.0.0.1:7833',
+          NEXT_PUBLIC_LETTIN_APP_URL: 'http://127.0.0.1:7833',
+        };
         await command(
           'bun',
-          ['x', '--no-install', 'playwright', 'test', '--config', config],
-          { cwd: path.join(root, 'apps/web'), env, timeout: 600000 }
+          [
+            'turbo:local',
+            'run',
+            'build',
+            '--concurrency=2',
+            '--filter=@tuturuuu/web^...',
+            '--filter=@tuturuuu/lettin^...',
+          ],
+          { env, timeout: 900000 }
         );
-        assertBrowserResults(
-          JSON.parse(
-            await fs.readFile(path.join(reports, 'results.json'), 'utf8')
+        await startApp(
+          'web',
+          7803,
+          { ...env, NEXT_PUBLIC_APP_URL: env.BASE_URL },
+          children,
+          reports
+        );
+        await startApp(
+          'lettin',
+          7833,
+          { ...env, NEXT_PUBLIC_APP_URL: env.LETTIN_BASE_URL },
+          children,
+          reports
+        );
+        const config = path.join(reports, 'playwright.config.cjs');
+        await fs.writeFile(
+          config,
+          playwrightConfig(
+            path.join(root, 'apps/web/e2e'),
+            reports,
+            path.join(root, 'apps/web/node_modules/@playwright/test')
           )
         );
-      } catch (error) {
-        browserError = error;
-      } finally {
+        let browserError;
         try {
-          await appCleanup.run();
-        } catch {
-          cleanupFailures.push('app-processes');
-        }
-        children.length = 0;
-        const closingProxy = proxy;
-        proxy = null;
-        try {
-          closingProxy.closeAllConnections();
-          await new Promise((resolve, reject) =>
-            closingProxy.close((error) => (error ? reject(error) : resolve()))
+          await command(
+            'bun',
+            ['x', '--no-install', 'playwright', 'test', '--config', config],
+            { cwd: path.join(root, 'apps/web'), env, timeout: 600000 }
           );
-        } catch {
-          cleanupFailures.push('storage-proxy');
+          assertBrowserResults(
+            JSON.parse(
+              await fs.readFile(path.join(reports, 'results.json'), 'utf8')
+            )
+          );
+        } catch (error) {
+          browserError = error;
+        } finally {
+          try {
+            await appCleanup.run();
+          } catch {
+            cleanupFailures.push('app-processes');
+          }
+          children.length = 0;
+          const closingProxy = proxy;
+          proxy = null;
+          try {
+            closingProxy.closeAllConnections();
+            await new Promise((resolve, reject) =>
+              closingProxy.close((error) => (error ? reject(error) : resolve()))
+            );
+          } catch {
+            cleanupFailures.push('storage-proxy');
+          }
         }
+        if (browserError) throw browserError;
+        assert.equal(
+          cleanupFailures.length,
+          0,
+          'Owned browser fixture cleanup failed'
+        );
+        return { code: 0 };
+      },
+      safeFixtureFailure,
+      (reason) => {
+        failureReason ??= reason;
       }
-      if (browserError) throw browserError;
-      assert.equal(
-        cleanupFailures.length,
-        0,
-        'Owned browser fixture cleanup failed'
-      );
-      return { code: 0 };
-    };
+    );
     const lifecycleCode = await isolated.runIsolatedLifecycle({
       binaryPath: binary,
       metadata,
@@ -608,7 +603,7 @@ export async function main() {
     );
     primary = 0;
   } catch (error) {
-    failureReason = safeFixtureFailure(error);
+    failureReason ??= safeFixtureFailure(error);
     throw error;
   } finally {
     if (!appCleanup.attempted) {

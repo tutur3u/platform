@@ -3,7 +3,9 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { safeFixtureFailure } from './mail-profile-runtime.mjs';
 import {
+  observeFixtureFailure,
   privateStartupDiagnostics,
   startupCategories,
 } from './mail-profile-startup-diagnostics.mjs';
@@ -47,4 +49,57 @@ test('private collection is bounded and rejects symlink log sources', async () =
   } finally {
     await fs.rm(reports, { recursive: true });
   }
+});
+
+test('inner safe startup reason survives lifecycle assertion wrapping', async () => {
+  let reason;
+  const inner = new Error('Owned web app exited before readiness');
+  const runner = observeFixtureFailure(
+    async () => {
+      throw inner;
+    },
+    safeFixtureFailure,
+    (value) => {
+      reason ??= value;
+    }
+  );
+  await assert.rejects(runner(), (error) => error === inner);
+  let wrapper;
+  try {
+    assert.equal(1, 0, 'Full fixture or scoped Supabase stop failed');
+  } catch (error) {
+    wrapper = error;
+  }
+  assert.equal(safeFixtureFailure(wrapper), 'unclassified-fixture-failure');
+  reason ??= safeFixtureFailure(wrapper);
+  assert.equal(reason, 'web-app-before-readiness');
+});
+
+test('failure observation passes successful values without recording a failure', async () => {
+  const records = [];
+  const runner = observeFixtureFailure(
+    async (...args) => args,
+    safeFixtureFailure,
+    (value) => records.push(value)
+  );
+  assert.deepEqual(await runner('owned', 2), ['owned', 2]);
+  assert.deepEqual(records, []);
+});
+
+test('failure observation exposes only fixed classification and preserves rejection identity', async () => {
+  const records = [];
+  const inner = new Error(
+    'token=private-value /secret/path arbitrary startup text'
+  );
+  const runner = observeFixtureFailure(
+    async () => {
+      throw inner;
+    },
+    safeFixtureFailure,
+    (value) => records.push(value)
+  );
+  await assert.rejects(runner(), (error) => error === inner);
+  assert.deepEqual(records, ['unclassified-fixture-failure']);
+  assert.equal(JSON.stringify(records).includes('private-value'), false);
+  assert.equal(JSON.stringify(records).includes('/secret/path'), false);
 });

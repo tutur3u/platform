@@ -77,3 +77,31 @@ export async function privateStartupDiagnostics(reports, children) {
   }
   return records;
 }
+
+// Preserve only the existing fixed safe reason before lifecycle wrappers consume errors.
+export function observeFixtureFailure(operation, classify, record) {
+  return async (...args) => {
+    try {
+      return await operation(...args);
+    } catch (error) {
+      record(classify(error));
+      throw error;
+    }
+  };
+}
+
+export function safeFixtureFailure(error) {
+  const message = error instanceof Error ? error.message : '';
+  if (/^Owned command failed \((?:\d+|SIG[A-Z]+)\)$/u.test(message))
+    return 'owned-command-exit';
+  const reasons = new Map([
+    ['Owned command exceeded its deadline', 'owned-command-deadline'],
+    ['Owned app readiness deadline exceeded', 'app-readiness-deadline'],
+    ['Owned web app exited before readiness', 'web-app-before-readiness'],
+    ['Owned lettin app exited before readiness', 'lettin-app-before-readiness'],
+    ['Full fixture or scoped Supabase stop failed', 'fixture-or-stop-failed'],
+    ['Owned cleanup failed', 'owned-cleanup-failed'],
+    ['Preflight and receipt failed', 'preflight-receipt-failed'],
+  ]);
+  return reasons.get(message) ?? 'unclassified-fixture-failure';
+}
