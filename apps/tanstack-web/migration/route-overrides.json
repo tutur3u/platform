@@ -1,5 +1,15 @@
 {
   "routes": {
+    "api:/api/v1/workspaces/:wsId/external-projects/storage-analytics:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/storage-analytics/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class GET/HEAD preserve private authorization and lazy Postgres analytics cache with uncached quota and provider fallback. Rust mirrors cache decoding and HEAD, falling through to Next for R2 and unported methods; existing satellite-session and rate-limit parity remain backlog. Rust is not deployed."
+    },
+    "api:/api/v1/workspaces/:wsId/users/reports/:reportId/generate:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class authenticated POST generation uses an immutable report snapshot, acknowledged conditional writes and full scoped human-feedback provenance. Rust generation parity and authoritative runtime coverage probe remain pending."
+    },
     "api:/api/v1/notifications/account-preferences:apps/web/src/app/api/v1/notifications/account-preferences/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -2904,6 +2914,16 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "First-class Web GET/HEAD retains existing admission and daily behavior; periodic report reads require both subject and group workspace. Existing Rust GET source kept faithful; no traffic cutover or canonical approval activation."
+    },
+    "api:/api/v1/workspaces/:wsId/lettin/drive-copy/upload-url:apps/web/src/app/api/v1/workspaces/[wsId]/lettin/drive-copy/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Lettin-only notebook-copy POST authenticates signed app session, expected actor, workspace Drive management and bounded provider-scoped JSON. Rust parity is backlog; paused runtimes remain inactive."
+    },
+    "api:/api/v1/workspaces/:wsId/lettin/drive-copy/finalize-upload:apps/web/src/app/api/v1/workspaces/[wsId]/lettin/drive-copy/finalize-upload/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Lettin-only notebook-copy POST authenticates signed app session, expected actor, workspace Drive management and bounded provider-scoped JSON. Rust parity is backlog; paused runtimes remain inactive."
     }
   }
 }

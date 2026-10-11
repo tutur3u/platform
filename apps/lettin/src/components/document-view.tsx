@@ -7,16 +7,21 @@ import { CreationGuidance } from './creation-guidance';
 import { renderDocumentNode } from './document-nodes';
 import { DocumentOutline } from './document-outline';
 import { buildDocumentOutline } from './document-outline-model';
+import { PublishedReadingStatistics } from './published-reading-statistics';
 import { wikiOf } from './wiki-model';
 
 export function DocumentView({
   draft,
   showOutline = false,
+  showReadingStatistics = false,
   outlineScope = 'lettin-document',
+  publicOutlineEntryId,
 }: {
   draft: LettinDraft;
   showOutline?: boolean;
+  showReadingStatistics?: boolean;
   outlineScope?: string;
+  publicOutlineEntryId?: string | null;
 }) {
   const t = useTranslations('lettin');
   const outline = showOutline
@@ -42,6 +47,9 @@ export function DocumentView({
       <h1 className="break-words text-4xl md:text-5xl">{draft.title}</h1>
       {draft.credit && (
         <p className="text-muted-foreground text-sm">{draft.credit}</p>
+      )}
+      {showReadingStatistics && (
+        <PublishedReadingStatistics content={draft.content} />
       )}
       <CreationGuidance value={draft.creationGuidance} />
       <p className="text-lg text-muted-foreground">{draft.description}</p>
@@ -77,7 +85,11 @@ export function DocumentView({
       )}
       <ArtworkGallery items={draft.gallery} />
       {outline && (
-        <DocumentOutline items={outline.items} truncated={outline.truncated} />
+        <DocumentOutline
+          items={outline.items}
+          truncated={outline.truncated}
+          publicEntryId={publicOutlineEntryId}
+        />
       )}
       {renderDocumentNode(
         draft.content,

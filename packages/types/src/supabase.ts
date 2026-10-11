@@ -4848,6 +4848,27 @@ export type Database = {
           },
         ];
       };
+      external_project_storage_analytics_cache: {
+        Row: {
+          adapter: string;
+          computed_at: string | null;
+          payload: Json | null;
+          ws_id: string;
+        };
+        Insert: {
+          adapter: string;
+          computed_at?: string | null;
+          payload?: Json | null;
+          ws_id: string;
+        };
+        Update: {
+          adapter?: string;
+          computed_at?: string | null;
+          payload?: Json | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       external_provider_costs: {
         Row: {
           account_id: string;
@@ -45800,6 +45821,10 @@ export type Database = {
           p_to_currency: string;
         };
         Returns: number;
+      };
+      get_external_project_storage_analytics: {
+        Args: { p_adapter: string; p_ws_id: string };
+        Returns: Json;
       };
       get_feature_adoption: {
         Args: { feature_action_prefix: string };
