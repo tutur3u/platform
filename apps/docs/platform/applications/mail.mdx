@@ -555,7 +555,7 @@ use `vercel pull`. `apps/mail/vercel.json` disables Vercel Git integration.
 The exact-head `mail-profile-runtime-contract.yaml` follows resource CLI changes and uses
 frozen normal setup through the shared queue for Lettin profile upload/save/reload and
 independent Chromium session transport tests. Its exclusive disposable VM owns complete-schema
-Supabase Auth/REST/Storage on safe local API port 8001, local D1 fixtures and Next apps.
+Supabase Auth/REST/Storage on safe local API port 8001, local D1 fixtures and Next apps. The profile browser and session cookies use registered `http://localhost:7833`; Web/API, storage and readiness retain their independent IPv4 bindings. This fixture origin matches the existing signed-upload CORS registry without widening capability or authentication policy.
 Storage uses an owned HTTPS proxy and one-day CA with normal verification. Chromium sandboxing
 stays enabled: hosted-only setup authenticates Google's signed Release/Packages SHA256 chain,
 extracts only a fresh packaged helper without maintainer scripts, and records package/helper hashes.

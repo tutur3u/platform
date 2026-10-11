@@ -161,6 +161,15 @@ async function command(
   }
 }
 
+/** Registered browser origin; API/storage/listeners keep their IPv4 bindings. */
+export function lettinProfileFixtureOrigins() {
+  return {
+    LETTIN_BASE_URL: 'http://localhost:7833',
+    LETTIN_APP_URL: 'http://localhost:7833',
+    NEXT_PUBLIC_LETTIN_APP_URL: 'http://localhost:7833',
+  };
+}
+
 export function webpackAppEnvironment(env) {
   return { ...env, NEXT_WEBPACK_BUILD: '1' };
 }
@@ -499,9 +508,7 @@ export async function main() {
           INTERNAL_WEB_API_ORIGIN: 'http://127.0.0.1:7803',
           TUTURUUU_APP_COORDINATION_SECRET: randomBytes(32).toString('hex'),
           SUPABASE_PUBLIC_STORAGE_ORIGIN: 'https://127.0.0.1:8443',
-          LETTIN_BASE_URL: 'http://127.0.0.1:7833',
-          LETTIN_APP_URL: 'http://127.0.0.1:7833',
-          NEXT_PUBLIC_LETTIN_APP_URL: 'http://127.0.0.1:7833',
+          ...lettinProfileFixtureOrigins(),
         };
         await command(
           'bun',

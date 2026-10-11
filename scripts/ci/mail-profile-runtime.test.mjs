@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   assertBrowserResults,
   assertHostedOwner,
+  lettinProfileFixtureOrigins,
   ownedCleanupOnce,
   PROFILE_TITLE,
   playwrightConfig,
@@ -319,4 +320,26 @@ test('owned webpack mode overrides incompatible inheritance without changing oth
     });
     assert.equal(env.NEXT_WEBPACK_BUILD, mode);
   }
+});
+
+test('profile browser and cookie origins use the registered localhost satellite without changing API bindings', () => {
+  const origins = lettinProfileFixtureOrigins();
+  assert.deepEqual(origins, {
+    LETTIN_BASE_URL: 'http://localhost:7833',
+    LETTIN_APP_URL: 'http://localhost:7833',
+    NEXT_PUBLIC_LETTIN_APP_URL: 'http://localhost:7833',
+  });
+  const inherited = Object.freeze({
+    BASE_URL: 'http://127.0.0.1:7803',
+    INTERNAL_WEB_API_ORIGIN: 'http://127.0.0.1:7803',
+    SUPABASE_URL: 'http://127.0.0.1:8001',
+    SUPABASE_PUBLIC_STORAGE_ORIGIN: 'https://127.0.0.1:8443',
+  });
+  const selected = { ...inherited, ...origins };
+  for (const [key, value] of Object.entries(inherited))
+    assert.equal(selected[key], value);
+  assert.equal(
+    new URL(selected.LETTIN_BASE_URL).origin,
+    origins.LETTIN_APP_URL
+  );
 });

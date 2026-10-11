@@ -225,3 +225,28 @@ it('allows PUT with no requested headers and never trusts forwarded hosts', () =
   request.headers.set('X-Forwarded-Host', 'lettin.tuturuuu.com');
   expect(profileMediaUploadOptions(request).status).toBe(403);
 });
+
+it('allows registered Lettin fixture preflight while retaining denial of the IPv4 alias', () => {
+  const origin = 'http://localhost:7833';
+  const request = preflight(origin);
+  const allowed = bannerOptions(request);
+  expect(allowed.status).toBe(204);
+  expect(allowed.headers.get('access-control-allow-origin')).toBe(origin);
+  expect(allowed.headers.get('access-control-allow-methods')).toBe('PUT');
+  expect(allowed.headers.has('access-control-allow-credentials')).toBe(false);
+  const put = new Request(request.url, {
+    method: 'PUT',
+    headers: { Origin: origin, 'Content-Type': 'image/webp' },
+  });
+  expect(
+    withProfileMediaUploadCors(
+      put,
+      new Response(null, { status: 401 })
+    ).headers.get('access-control-allow-origin')
+  ).toBe(origin);
+  const rejected = bannerOptions(preflight('http://127.0.0.1:7833'));
+  expect(rejected.status).toBe(403);
+  expect(rejected.headers.has('access-control-allow-origin')).toBe(false);
+  for (const effect of Object.values(effects))
+    expect(effect).not.toHaveBeenCalled();
+});
