@@ -9,6 +9,11 @@ import { NextResponse } from 'next/server';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 import {
+  beginBatchDeliveryAttempt,
+  fetchNotificationBatchReconciliation,
+  markBatchReconciliationRequired,
+} from '@/lib/notifications/batch-reconciliation';
+import {
   buildNotificationItems,
   cleanupInvalidPushTokens,
   type DeliveryLogRow,
@@ -57,11 +62,16 @@ async function handleGET(req: NextRequest) {
     const blockedEmailCache = new Map<string, boolean>();
     const membershipCache = new Map<string, boolean>();
 
+    const reconciliation = await fetchNotificationBatchReconciliation(
+      sbAdmin,
+      Math.min(processingDeadline, Date.now() + 2000)
+    );
     const batches = await fetchPendingBatchedNotificationBatches(sbAdmin);
 
     if (batches.length === 0) {
       return NextResponse.json({
         message: 'No pending batched notifications to process',
+        reconciliation,
         processed: 0,
         failed: 0,
       });
@@ -73,6 +83,7 @@ async function handleGET(req: NextRequest) {
       return NextResponse.json({
         message:
           'No pending batched notifications to process (filtered by root workspace)',
+        reconciliation,
         processed: 0,
         failed: 0,
       });
@@ -251,6 +262,7 @@ async function handleGET(req: NextRequest) {
             },
           };
 
+          await beginBatchDeliveryAttempt(sbAdmin, batch.id);
           deliveryMayHaveSucceeded = true;
           const pushResult = await sendPushNotificationBatch({
             notification: pushNotification,
@@ -367,6 +379,7 @@ async function handleGET(req: NextRequest) {
             })
           );
 
+          await beginBatchDeliveryAttempt(sbAdmin, batch.id);
           deliveryMayHaveSucceeded = true;
           const result = await sendSystemEmail({
             recipients: { to: [userEmail] },
@@ -448,7 +461,8 @@ async function handleGET(req: NextRequest) {
           error instanceof Error ? error.message : 'Unknown error';
 
         if (deliveryMayHaveSucceeded) {
-          // An attempted delivery may be accepted; keep processing state for reconciliation.
+          // Keep attempted delivery out of the pending/retry selector.
+          await markBatchReconciliationRequired(sbAdmin, batch.id);
           results.push({
             batch_id: batch.id,
             channel: batch.channel,
@@ -472,6 +486,7 @@ async function handleGET(req: NextRequest) {
 
     return NextResponse.json({
       message: 'Batch processing completed',
+      reconciliation,
       processed: processedCount,
       failed: failedCount,
       results,

@@ -54,3 +54,46 @@ not mean production traffic has moved.
 
 Source checks do not prove production activation or delivered email. No migration
 or manual notification replay is required by this change.
+
+## Retained batch reconciliation
+
+The digest persists `delivery_in_flight` in the processing batch before calling
+a provider. The write must return the exact processing batch ID; zero updated
+rows or database errors prevent provider contact. A settlement or ambiguous attempt error writes the fixed
+`reconciliation_required` marker while keeping status `processing`. If that write
+fails, the cron returns an error; the earlier in-flight marker remains the durable
+unknown-outcome signal. Neither marker is a provider acceptance receipt.
+
+Each authorized digest cron also performs a bounded read-only inspection of up to
+50 marked processing batches in the root workspace, with a separate two-second
+discovery budget capped by the overall processing deadline. The budget is checked
+before each query; an in-flight query may exceed it. It reports `reconciliation`
+entries with batch IDs, persisted log counts and `terminal_log_snapshot`. At most
+1001 logs are read per batch; empty, oversized, pending, failed, missing-date or
+ambiguous-error snapshots never qualify. Null-workspace batches and older
+unmarked processing rows require separate tenant-bound operator inspection.
+
+This inspection never sends a notification, updates logs, resets a batch or
+automatically marks a batch sent. A true snapshot only means every observed log
+is already `sent` with a valid settlement timestamp and either no error or an
+explicit `skipped: ` reason. It is not provider acceptance or inbox arrival proof,
+and it cannot exclude a concurrently started queue insert.
+
+For an authorized reconciliation, first select the exact processing batch by ID
+and its marker through an authenticated, tenant-bound read-only client. Capture
+all attached delivery log IDs, statuses, timestamps and skip reasons. Resolve
+any active queue/dispatcher ownership before treating the snapshot as complete.
+Only when every log is already terminal sent/skipped, the complete batch membership
+is settled, and the corresponding outcome is known may an explicitly authorized
+operator prepare a separately reviewed batch-only status update, guarded by
+its ID, current processing status and unchanged marker. Use the complete log
+count; do not change delivery logs or contact a provider during that operation.
+The current helper has no conditional reconciliation guard; do not call it as
+a reconciliation shortcut. The cron does not provide that mutation capability.
+
+Pending logs after an attempted provider call require correlated provider outcome
+receipts and a separately reviewed settlement operation. Unknown/accepted outcomes
+remain held: do not use Retry, mark failed/pending, clear the marker, or resend.
+If receipts or complete membership are unavailable, retain processing and record
+the unresolved batch ID. This change adds no automatic unknown-outcome recovery,
+new schema or production migration.

@@ -22,6 +22,8 @@ const mocks = vi.hoisted(() => ({
     subject: 'task',
   })),
   begin: vi.fn(async () => {}),
+  reconcile: vi.fn(async () => []),
+  markReconciliation: vi.fn(async () => {}),
   beforeWorkspace: vi.fn(),
 }));
 const batch = () => ({
@@ -88,6 +90,11 @@ vi.mock('@/lib/email-blacklist', () => ({
 }));
 vi.mock('@/lib/notifications/mail-push', () => ({
   getMailPushSkipReason: async () => null,
+}));
+vi.mock('@/lib/notifications/batch-reconciliation', () => ({
+  beginBatchDeliveryAttempt: mocks.begin,
+  fetchNotificationBatchReconciliation: mocks.reconcile,
+  markBatchReconciliationRequired: mocks.markReconciliation,
 }));
 vi.mock('@/lib/notifications/delivery-attempt', () => ({
   beginDeliveryAttempt: mocks.begin,
@@ -201,6 +208,9 @@ beforeEach(() => {
   mocks.markSkipped.mockResolvedValue(undefined);
   mocks.markSent.mockResolvedValue(undefined);
   mocks.markBatchSent.mockResolvedValue(undefined);
+  mocks.begin.mockResolvedValue(undefined);
+  mocks.markReconciliation.mockResolvedValue(undefined);
+  mocks.reconcile.mockResolvedValue([]);
   mocks.dueByTask.clear();
   mocks.beforeWorkspace.mockImplementation(() => {});
   mocks.logs = ['fresh', 'old'].map((id) => ({
@@ -410,5 +420,37 @@ describe('digest push settlement safety', () => {
     });
     expect(mocks.markSent).not.toHaveBeenCalled();
     expect(mocks.markBatchFailed).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('digest durable reconciliation', () => {
+  it('persists a processing reconciliation marker after attempted email settlement fails', async () => {
+    mocks.markSent.mockRejectedValueOnce(new Error('settlement'));
+    const response = await callRoute('digest');
+    expect(await response.json()).toMatchObject({
+      results: [{ status: 'reconciliation_required' }],
+    });
+    expect(mocks.begin).toHaveBeenCalledWith(expect.anything(), 'batch-1');
+    expect(mocks.markReconciliation).toHaveBeenCalledWith(
+      expect.anything(),
+      'batch-1'
+    );
+    expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+  });
+  it('does not contact a provider when no processing row accepted the durable attempt marker', async () => {
+    mocks.begin.mockRejectedValueOnce(
+      new Error('Batch processing marker not persisted')
+    );
+    await callRoute('digest');
+    expect(mocks.send).not.toHaveBeenCalled();
+    expect(mocks.markReconciliation).not.toHaveBeenCalled();
+    expect(mocks.markBatchFailed).toHaveBeenCalled();
+  });
+  it('surfaces marker persistence failure without downgrading an attempted delivery', async () => {
+    mocks.markSent.mockRejectedValueOnce(new Error('settlement'));
+    mocks.markReconciliation.mockRejectedValueOnce(new Error('marker'));
+    const response = await callRoute('digest');
+    expect(response.status).toBe(500);
+    expect(mocks.markBatchFailed).not.toHaveBeenCalled();
   });
 });
