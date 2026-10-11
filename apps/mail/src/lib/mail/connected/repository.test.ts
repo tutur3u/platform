@@ -251,3 +251,115 @@ it('preserves exact Google URI permission validation', async () => {
     exchangeToken('google', { grant_type: 'refresh_token' })
   ).rejects.toMatchObject({ status: 409 });
 });
+
+function conflictAccount(): ConnectedAccount {
+  return {
+    id: 'cross-instance',
+    user_id: 'owner',
+    ws_id: 'workspace',
+    provider: 'google',
+    address: 'synthetic@example.test',
+    revision: 7,
+    credentials: seal(
+      { accessToken: 'expired', refreshToken: 'old', expiresAt: 0 },
+      'owner'
+    ),
+  };
+}
+function newerCredentials(overrides: Record<string, unknown> = {}) {
+  return {
+    credentials: seal(
+      {
+        accessToken: 'winner',
+        refreshToken: 'rotated',
+        expiresAt: Date.now() + 3600000,
+        ...overrides,
+      },
+      'owner'
+    ),
+    revision: 8,
+  };
+}
+function refreshResponse() {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ access_token: 'loser', expires_in: 3600 })
+        )
+      )
+  );
+}
+it('adopts a fresh fenced cross-instance winner without writing it again', async () => {
+  const account = conflictAccount();
+  const winner = newerCredentials();
+  refreshResponse();
+  mocks.maybeSingle
+    .mockResolvedValueOnce({ data: null, error: null })
+    .mockResolvedValueOnce({ data: winner, error: null });
+  expect(await accessToken(account)).toBe('winner');
+  expect(account.credentials).toBe(winner.credentials);
+  expect(account.revision).toBe(8);
+  expect(mocks.update).toHaveBeenCalledTimes(1);
+  expect(mocks.select).toHaveBeenLastCalledWith('credentials,revision');
+  expect(mocks.eq.mock.calls.slice(-4)).toEqual([
+    ['id', 'cross-instance'],
+    ['user_id', 'owner'],
+    ['ws_id', 'workspace'],
+    ['provider', 'google'],
+  ]);
+});
+it('does not adopt credentials after a database write error', async () => {
+  const account = conflictAccount();
+  const original = { ...account };
+  refreshResponse();
+  mocks.maybeSingle.mockResolvedValueOnce({ data: null, error: {} });
+  await expect(accessToken(account)).rejects.toMatchObject({ status: 409 });
+  expect(mocks.maybeSingle).toHaveBeenCalledTimes(1);
+  expect(account).toEqual(original);
+});
+it.each<[string, () => unknown, unknown]>([
+  ['deleted', () => null, null],
+  ['read error', () => newerCredentials(), {}],
+  ['same revision', () => ({ ...newerCredentials(), revision: 7 }), null],
+  ['lower revision', () => ({ ...newerCredentials(), revision: 6 }), null],
+  [
+    'fractional revision',
+    () => ({ ...newerCredentials(), revision: 7.5 }),
+    null,
+  ],
+  ['expired', () => newerCredentials({ expiresAt: 0 }), null],
+  ['missing access token', () => newerCredentials({ accessToken: '' }), null],
+  ['missing refresh token', () => newerCredentials({ refreshToken: '' }), null],
+  ['corrupt', () => ({ credentials: 'corrupt', revision: 8 }), null],
+])(
+  'rejects the %s winner without changing the account',
+  async (_, winner, error) => {
+    const account = conflictAccount();
+    const original = { ...account };
+    refreshResponse();
+    mocks.maybeSingle
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: winner(), error });
+    await expect(accessToken(account)).rejects.toMatchObject({ status: 409 });
+    expect(account).toEqual(original);
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+  }
+);
+it('does not adopt a token rejected by the provider during forced refresh', async () => {
+  const account = conflictAccount();
+  const original = { ...account };
+  refreshResponse();
+  mocks.maybeSingle
+    .mockResolvedValueOnce({ data: null, error: null })
+    .mockResolvedValueOnce({
+      data: newerCredentials({ accessToken: 'expired' }),
+      error: null,
+    });
+  await expect(accessToken(account, true)).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(account).toEqual(original);
+});

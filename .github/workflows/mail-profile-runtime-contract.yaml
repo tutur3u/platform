@@ -13,6 +13,7 @@ on:
       - "apps/database/scripts/run-supabase*.js"
       - "packages/auth/**"
       - "packages/satellite/**"
+      - "packages/sdk/src/cli/resources*"
       - "packages/storage-core/**"
       - "packages/supabase/**"
       - "scripts/ci/mail-profile-runtime*"
@@ -66,7 +67,7 @@ jobs:
           cd apps/web
           bun x --no-install playwright install --with-deps chromium
       - name: Check fixture lifecycle contract
-        run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs
+        run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs scripts/ci/mail-profile-runtime-paths.test.mjs
       - name: Normal setup through the shared resource queue
         run: |
           bun packages/sdk/src/cli/resources-entry.ts status --json

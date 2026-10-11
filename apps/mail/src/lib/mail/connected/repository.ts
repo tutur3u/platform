@@ -114,6 +114,53 @@ type RefreshedCredentials = {
   encrypted: string;
   revision: number;
 };
+function refreshConflict() {
+  return new ConnectedMailError(
+    409,
+    'Mail credentials changed; reload this account'
+  );
+}
+async function winningRefresh(
+  account: ConnectedAccount,
+  previousToken: string,
+  force: boolean
+): Promise<RefreshedCredentials> {
+  const { data, error } = await (await table('mail_connected_accounts'))
+    .select('credentials,revision')
+    .eq('id', account.id)
+    .eq('user_id', account.user_id)
+    .eq('ws_id', account.ws_id)
+    .eq('provider', account.provider)
+    .maybeSingle();
+  if (
+    error ||
+    !data ||
+    !Number.isInteger(data.revision) ||
+    data.revision <= account.revision
+  )
+    throw refreshConflict();
+  let winner: Credentials;
+  try {
+    winner = unseal<Credentials>(data.credentials, account.user_id);
+  } catch {
+    throw refreshConflict();
+  }
+  if (
+    typeof winner?.accessToken !== 'string' ||
+    !winner.accessToken ||
+    typeof winner.refreshToken !== 'string' ||
+    !winner.refreshToken ||
+    !Number.isFinite(winner.expiresAt) ||
+    winner.expiresAt <= Date.now() + 60000 ||
+    (force && winner.accessToken === previousToken)
+  )
+    throw refreshConflict();
+  return {
+    token: winner.accessToken,
+    encrypted: data.credentials,
+    revision: data.revision,
+  };
+}
 const refreshes = new Map<string, Promise<RefreshedCredentials>>();
 function applyRefresh(
   account: ConnectedAccount,
@@ -150,11 +197,8 @@ export async function accessToken(account: ConnectedAccount, force = false) {
       .eq('revision', account.revision)
       .select('id')
       .maybeSingle();
-    if (error || !data)
-      throw new ConnectedMailError(
-        409,
-        'Mail credentials changed; reload this account'
-      );
+    if (error) throw refreshConflict();
+    if (!data) return winningRefresh(account, credentials.accessToken, force);
     return { token: updated.accessToken, encrypted, revision };
   })().finally(() => refreshes.delete(account.id));
   refreshes.set(account.id, pending);

@@ -552,8 +552,8 @@ and `VERCEL_MAIL_PROJECT_ID`. Keep production Supabase/SES values in the Vercel
 project. Do not put those values, `TURBO_TOKEN` or `TURBO_TEAM` into workflow env;
 use `vercel pull`. `apps/mail/vercel.json` disables Vercel Git integration.
 
-The dedicated `mail-profile-runtime-contract.yaml` checks out the exact PR head,
-uses frozen normal setup through the resource queue and unchanged named tests:
+The exact-head `mail-profile-runtime-contract.yaml` also follows resource CLI changes,
+uses frozen normal setup through the shared queue and unchanged named tests:
 Lettin profile upload/save/reload and independent Chromium session transport tests.
 Its exclusive disposable hosted VM owns a complete-schema Supabase project at
 safe local API port 8001, including Auth/REST/Storage, local D1 fixtures and Next apps.
@@ -562,8 +562,8 @@ normal certificate verification and browser sandboxing. No provider credentials,
 raw traces or private CA key are published. Missing/skipped/retried tests and
 failed cleanup fail the gate. Fixtures delete only their own synthetic IDs/media;
 finally stops only the recorded project and owned app/proxy processes.
-The disabled broad E2E pipeline stays disabled. The terminal artifact records
-source, actual results and cleanup. This proves local profile/session behavior,
+The broad E2E pipeline stays disabled. Terminal evidence records source/results/cleanup
+and proves only local profile/session behavior,
 not Cloudflare Worker/provider/production/customer delivery; pgTAP/schema types
 remain separate gates.
 
@@ -1034,19 +1034,18 @@ Both registered callback URLs point to the Mail origin's
 `https://www.googleapis.com/auth/gmail.modify`. This is a restricted Google scope;
 complete the provider's required consent verification before public rollout.
 Register the Microsoft app for organizational and personal Microsoft accounts
-when both are intended. Delegated scopes are `User.Read`, `Mail.ReadWrite`,
-`Mail.Send`, and `offline_access`. No Calendar scopes are requested by Mail.
+when both are intended. Scopes: `User.Read`, `Mail.ReadWrite`, `Mail.Send`,
+and `offline_access`; Mail requests no Calendar scopes.
 
 OAuth uses PKCE, random hashed state, an HttpOnly SameSite browser cookie, a
 10-minute expiry, atomic state consumption, and renewed personal-workspace access
 checks during the callback. Private connection, OAuth and send-claim tables have
 RLS and no `anon`/`authenticated` grants. Expired tokens refresh on the server;
-refresh writes compare credential revisions so reconnect/disconnect wins races.
+refresh writes compare revisions; only a newer scoped, valid winner can resolve a conflict.
 An unauthorized read can refresh and retry once; mutations are not automatically
 replayed. Disconnect removes local access and encrypted credentials without
 changing provider messages. Provider-side application consent can be revoked in
 Google/Microsoft account settings.
-
 Sends reserve an account/request claim; acceptance records a receipt. Proven pre-send
 failures or explicit provider rejections release only their matching sending claim for user retry.
 Completed requests acknowledge without resending; in-flight, unknown or post-acceptance failures require provider Sent checks.
@@ -1055,11 +1054,12 @@ meeting fixtures unless real-account actions have been explicitly authorized.
 
 Regression coverage: `apps/mail/src/lib/mail/connected/*.test.ts`, connected
 composer/reply tests, managed `mail-reply-actions.test.ts`, and the private-table
-checks in `apps/database/supabase/tests/connected-mail-accounts.sql`. Require the
+checks in `apps/database/supabase/tests/connected-mail-accounts.sql`. The DB gate compares
+the three generated private Mail table contracts against committed types, ignoring
+only presentation; it does not certify unrelated schema drift. Require the
 Mail and affected workspace CI type-check, lint, tests and real app builds for the
-exact authored commit. Synthetic tests do not establish Google/Microsoft app
-consent, real mailbox delivery, or organizer-side RSVP processing; verify those
-with configured test accounts after deployment.
+exact authored commit. Synthetic tests do not prove provider consent, delivery or RSVP;
+verify those with configured test accounts after deployment.
 
 ### Complete-schema database gate
 

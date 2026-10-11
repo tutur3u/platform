@@ -9,6 +9,8 @@ on:
       - "apps/database/scripts/programming-database-tap.mjs"
       - "apps/database/scripts/programming-database-tap.test.mjs"
       - "apps/database/scripts/connected-mail-accounts-contract.test.mjs"
+      - "apps/database/scripts/connected-mail-types-drift*"
+      - "packages/types/src/supabase.ts"
       - "tuturuuu.ci.ts"
       - ".github/workflows/connected-mail-accounts-contract.yaml"
   push:
@@ -21,6 +23,8 @@ on:
       - "apps/database/scripts/programming-database-tap.mjs"
       - "apps/database/scripts/programming-database-tap.test.mjs"
       - "apps/database/scripts/connected-mail-accounts-contract.test.mjs"
+      - "apps/database/scripts/connected-mail-types-drift*"
+      - "packages/types/src/supabase.ts"
       - "tuturuuu.ci.ts"
       - ".github/workflows/connected-mail-accounts-contract.yaml"
   workflow_dispatch:
@@ -63,9 +67,11 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify TAP parser and bounded fixture sessions
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/connected-mail-accounts-contract.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/connected-mail-accounts-contract.test.mjs apps/database/scripts/connected-mail-types-drift.test.mjs
       - name: Apply complete schema, run strict pgTAP, generate actual schema types
         run: node apps/database/scripts/verify-connected-mail-accounts-contract.mjs
+      - name: Reject drift in the three private Connected Mail tables
+        run: node apps/database/scripts/connected-mail-types-drift.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: connected-mail-accounts-types-${{ github.event.pull_request.head.sha || github.sha }}
