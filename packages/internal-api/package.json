@@ -386,6 +386,11 @@
       "types": "./dist/notes-voice.d.ts",
       "import": "./dist/notes-voice.js",
       "require": "./dist/notes-voice.js"
+    },
+    "./product-feedback": {
+      "types": "./dist/product-feedback.d.ts",
+      "import": "./dist/product-feedback.js",
+      "require": "./dist/product-feedback.js"
     }
   },
   "devDependencies": {

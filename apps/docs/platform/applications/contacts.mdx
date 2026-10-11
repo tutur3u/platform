@@ -1,0 +1,51 @@
+---
+title: "Contacts"
+description: "CRM users, groups, reports, attendance, workforce, and module access."
+updatedAt: '2026-10-08'
+---
+
+Contacts (`contacts.tuturuuu.com`, `apps/contacts`) owns the workspace-user CRM
+surface. A CRM workspace user and a signed-in platform account are different
+entities; links between them are explicit. Central login, the Contacts app
+session, workspace membership, and feature/role checks govern access.
+
+## Find the right area
+
+| Area | Workspace route | Purpose |
+| --- | --- | --- |
+| Users | `/{wsId}/users` | CRM overview and user operations |
+| Database | `/{wsId}/users/database` | User records and details |
+| Groups | `/{wsId}/users/groups` | Group membership, calendars, schedules, and content |
+| Attendance | `/{wsId}/users/attendance` | Attendance workflows |
+| Reports | `/{wsId}/users/reports` | User/group reporting |
+| Guest leads | `/{wsId}/users/guest-leads` | Lead workflows |
+| Topic announcements | `/{wsId}/users/topic-announcements` | Contacts, templates, announcements, delivery, and import |
+| Workforce | `/{wsId}/workforce` | Workforce surface where available |
+
+Some areas depend on workspace modules. An unavailable module must distinguish
+access denial, disabled configuration, and loading/failure states; it should not
+pretend that all of these mean a missing record. See
+[Contacts module availability](/platform/applications/contacts-modules).
+
+## Related workflows
+
+[User management](/platform/features/user-management) describes user and account
+boundaries. [Reports](/platform/applications/reports) and
+[Tutoring](/platform/applications/tutoring) explain the education/CRM flows.
+Group access does not grant a linked parent unrestricted editing rights.
+Outreach and topic announcements require their own delivery configuration and
+recipient rules.
+
+## Ownership and privacy
+
+Contacts owns the users routes removed from Web. Shared domain/UI code lives in
+`packages/users-core` and `packages/users-ui`. Non-owned workspace destinations
+redirect to their canonical app rather than being implemented as catch-all API
+proxies. Workspace CRM records, reports, attendance, and outreach are private
+and receive noindex directives. The public product description belongs on the
+main site's CRM page.
+
+[Source routes](/reference/repository/routes/contacts) list all Contacts pages
+and handlers. [Permissions](/platform/architecture/workspaces-permissions)
+and [Satellite apps](/platform/architecture/satellite-apps) explain the shared
+access contract.

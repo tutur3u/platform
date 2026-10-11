@@ -119,7 +119,7 @@ describe('getNotificationSkipReason', () => {
     expect(reason).toBe(NOTIFICATION_STALE_WORKSPACE_MEMBERSHIP_SKIP_REASON);
   });
 
-  it('skips non-internal recipient emails', async () => {
+  it('skips malformed recipient emails', async () => {
     const reason = await getNotificationSkipReason(
       {
         from: vi.fn(() => ({
@@ -137,12 +137,12 @@ describe('getNotificationSkipReason', () => {
       },
       {
         notification: createNotification(),
-        recipientEmail: 'member@example.com',
+        recipientEmail: 'invalid-email',
       }
     );
 
     expect(reason).toBe(
-      buildNotificationUndeliverableSkipReason('external_recipient_domain')
+      buildNotificationUndeliverableSkipReason('invalid_recipient_email')
     );
   });
 

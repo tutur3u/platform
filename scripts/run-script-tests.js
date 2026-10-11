@@ -3,11 +3,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { isPausedImplementationTest } = require('./paused-runtimes.js');
 
 const DEFAULT_ROOTS = ['scripts'];
 const DEFAULT_SUPPLEMENTAL_PATHS = [
   '.github/actions/setup-turbo-fallback-cache/action.test.js',
   '.github/actions/run-with-turbo-remote-cache/action.test.js',
+  'apps/database/scripts/declarative-schema-readiness.test.js',
   'apps/database/scripts/delete-storage-buckets.test.js',
   'apps/database/scripts/new-migration.test.js',
   'apps/database/scripts/rls-perf-initplan-migration.test.js',
@@ -97,7 +99,9 @@ function discoverScriptTests({
     addConfiguredPath(supplementalPath, options, selected);
   }
 
-  const files = [...selected].sort((left, right) => left.localeCompare(right));
+  const files = [...selected]
+    .filter((file) => !isPausedImplementationTest(file))
+    .sort((left, right) => left.localeCompare(right));
   if (files.length === 0) {
     throw new Error(
       `Script-test discovery returned zero files for roots: ${roots.join(', ')}`

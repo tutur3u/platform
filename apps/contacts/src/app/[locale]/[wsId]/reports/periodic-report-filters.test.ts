@@ -9,6 +9,7 @@ it('defaults to pending monthly reports without hiding older undated reports', (
   expect(periodicReportFilters.stage.defaultValue).toBe('pending');
   expect(periodicReportFilters.approval.defaultValue).toBe('all');
   expect(periodicReportFilters.cadence.defaultValue).toBe('monthly');
+  expect(periodicReportFilters.cadence.parse('all')).toBe('all');
   expect(periodicReportFilters.start.defaultValue).toBe('');
   expect(periodicReportFilters.end.defaultValue).toBe('');
 });
