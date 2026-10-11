@@ -126,7 +126,7 @@ test('fresh hosted setup queues through the lightweight resources entry before S
   );
   assert.match(
     workflow,
-    /bun packages\/sdk\/src\/cli\/resources-entry\.ts run -- bun setup/u
+    /bun packages\/sdk\/src\/cli\/resources-entry\.ts run -- node scripts\/ci\/mail-profile-runtime-setup\.mjs/u
   );
   assert.match(
     workflow,
