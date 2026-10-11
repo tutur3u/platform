@@ -128,7 +128,11 @@ it('combines membership, publication and search; clears all facets after empty r
     [...container.querySelectorAll('button[aria-pressed="true"]')].map(
       (el) => el.textContent
     )
-  ).toEqual([en.lettin.all, en.lettin.studioMembership_all]);
+  ).toEqual([
+    en.lettin.all,
+    en.lettin.studioMembership_all,
+    en.lettin.studioArtwork_all,
+  ]);
 });
 it('resets local facets and destination links when changing workspace', async () => {
   await render();
