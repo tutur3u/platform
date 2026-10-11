@@ -2528,7 +2528,7 @@
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/react": "^19.2.18",
-        "typescript": "^7.0.2",
+        "typescript": "7.0.2",
         "vitest": "^5.0.0",
       },
       "peerDependencies": {
