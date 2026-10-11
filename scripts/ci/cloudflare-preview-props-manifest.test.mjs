@@ -21,7 +21,8 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const pluginPath = 'dist/cli/build/patches/plugins/load-manifest.js';
 const normalizePath = 'dist/cli/utils/normalize-path.js';
 const patchPath = join(root, 'patches/@opennextjs%2Fcloudflare@1.20.6.patch');
-const nextLoaderPath = createRequire(import.meta.url).resolve(
+const webRequire = createRequire(join(root, 'apps/web/package.json'));
+const nextLoaderPath = webRequire.resolve(
   'next/dist/server/load-manifest.external.js'
 );
 
@@ -113,7 +114,7 @@ test('repository adapter patch inlines genuine preview props without fallbacks',
   const temp = await mkdtemp(join(tmpdir(), 'cloudflare-preview-props-test-'));
   t.after(() => rm(temp, { recursive: true, force: true }));
   const installed = await realpath(
-    join(root, 'node_modules/@opennextjs/cloudflare')
+    join(root, 'apps/meet/node_modules/@opennextjs/cloudflare')
   );
   const packageInfo = JSON.parse(
     await readFile(join(installed, 'package.json'), 'utf8')

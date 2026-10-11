@@ -799,16 +799,16 @@ test('spawnDevCommands retries Portless route-lock app startup once', async () =
   );
   assert.match(writes.stdout, /-- Using port 4518/u);
 });
-
-test('root app dev scripts route through the reusable workspace launcher', () => {
+test('root app dev scripts preserve paused migration and workspace launchers', () => {
   const pkg = JSON.parse(
     fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
   );
-
   for (const targetName of Object.keys(DEV_TARGETS).sort()) {
     assert.equal(
       pkg.scripts[`dev:${targetName}`],
-      `node scripts/dev-workspaces.js ${targetName}`
+      targetName === 'tanstack-web'
+        ? 'node scripts/paused-runtimes.js migration'
+        : `node scripts/dev-workspaces.js ${targetName}`
     );
   }
 });

@@ -97,7 +97,10 @@ test('all matrix failures propagate through stable required check names', () => 
     const job = workflow.jobs[gate];
     assert.equal(job.name, expectedName);
     assert.ok(job.needs.includes(workers));
-    assert.match(job.if, /always\(\)/);
+    assert.match(
+      job.if,
+      file === 'mobile.yaml' ? /always\(\)/ : /!cancelled\(\)/
+    );
     assert.equal(workflow.jobs[workers].strategy['fail-fast'], false);
     assert.deepEqual(
       workflow.jobs[workers].strategy.matrix.shard,
@@ -108,25 +111,51 @@ test('all matrix failures propagate through stable required check names', () => 
       check.env.TEST_RESULT,
       new RegExp(`needs\\.${workers}\\.result`)
     );
-    // Exercise the actual shell guard, including cancellation and skipped shards.
-    for (const state of ['failure', 'cancelled', 'skipped', '']) {
-      assert.throws(() =>
-        execFileSync('bash', ['-c', check.run], {
-          env: {
-            ...process.env,
-            TEST_RESULT: state,
-            QUALITY_RESULT: 'success',
-          },
-        })
+    // Run Actions' fail-fast shell with every unrelated prerequisite satisfied.
+    const successful = {
+      ...process.env,
+      TEST_RESULT: 'success',
+      QUALITY_RESULT: 'success',
+      REALTIME_RESULT: 'success',
+      ROOT_SCRIPT_RESULT: 'success',
+      DUPLICATE_RESULT: 'skipped',
+      DUPLICATE_RUN_CHECKS: '',
+    };
+    const required = [
+      'TEST_RESULT',
+      ...(file === 'mobile.yaml' ? ['QUALITY_RESULT', 'REALTIME_RESULT'] : []),
+      ...(file === 'turbo-unit-tests.yaml' ? ['ROOT_SCRIPT_RESULT'] : []),
+    ];
+    if (file === 'mobile.yaml') {
+      assert.ok(job.needs.includes('realtime-parity'));
+      assert.match(check.env.REALTIME_RESULT, /needs\.realtime-parity\.result/);
+    }
+    if (file === 'turbo-unit-tests.yaml') {
+      assert.ok(job.needs.includes('root-script-tests'));
+      assert.match(
+        check.env.ROOT_SCRIPT_RESULT,
+        /needs\.root-script-tests\.result/
       );
     }
-    execFileSync('bash', ['-c', check.run], {
-      env: {
-        ...process.env,
-        TEST_RESULT: 'success',
-        QUALITY_RESULT: 'success',
-      },
-    });
+    const shell = [
+      '--noprofile',
+      '--norc',
+      '-e',
+      '-o',
+      'pipefail',
+      '-c',
+      check.run,
+    ];
+    for (const dependency of required) {
+      for (const state of ['failure', 'cancelled', 'skipped', '']) {
+        assert.throws(() =>
+          execFileSync('bash', shell, {
+            env: { ...successful, [dependency]: state },
+          })
+        );
+      }
+    }
+    execFileSync('bash', shell, { env: successful });
     assert.match(
       workflow.concurrency['cancel-in-progress'],
       /refs\/heads\/main/
