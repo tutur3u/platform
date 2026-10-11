@@ -328,3 +328,107 @@ it('combines exact published tags with kind/search, removes stale sequence links
     await act(() => root.unmount());
   }
 });
+
+it('retains reader appearance when navigating between published entries in one notebook', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const first = createStarterDraft(
+    'First published entry',
+    'blank',
+    (key) => key
+  );
+  const second = createStarterDraft(
+    'Second published entry',
+    'blank',
+    (key) => key
+  );
+  const world: LettinPublicWorld = {
+    id: 'reader-world',
+    creatorId: 'creator',
+    published: first,
+    entries: [
+      { id: 'first', published: first },
+      { id: 'second', published: second },
+    ],
+  };
+  const original = JSON.stringify(world);
+  const container = document.createElement('div');
+  const root = createRoot(container);
+  try {
+    await act(() =>
+      root.render(<PublicWorld world={world} initialEntry="first" />)
+    );
+    const size = [...container.querySelectorAll('label')]
+      .find((label) => label.textContent?.includes('readerTextSize'))
+      ?.querySelector('select');
+    expect(size).toBeDefined();
+    await act(() => {
+      size!.value = 'large';
+      size!.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    const entry = [...container.querySelectorAll('nav button')].find(
+      (button) => button.textContent === 'Second published entry'
+    );
+    expect(entry).toBeDefined();
+    await act(() => (entry as HTMLButtonElement).click());
+    expect(
+      container
+        .querySelector('.lettin-reader-presentation')
+        ?.getAttribute('data-reader-size')
+    ).toBe('large');
+    expect(JSON.stringify(world)).toBe(original);
+  } finally {
+    await act(() => root.unmount());
+  }
+});
+
+it('pauses reader choices in browsing, restores them on return and resets them for another notebook', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const published = createStarterDraft('Notebook', 'blank', (key) => key);
+  const world: LettinPublicWorld = {
+    id: 'reader-world',
+    creatorId: 'creator',
+    published,
+    entries: [],
+  };
+  const original = JSON.stringify(world);
+  const host = document.createElement('div');
+  const root = createRoot(host);
+  const choose = async (select: HTMLSelectElement, value: string) => {
+    await act(() => {
+      select.value = value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  };
+  const presentation = () => host.querySelector('.lettin-reader-presentation')!;
+  try {
+    await act(() => root.render(<PublicWorld world={world} />));
+    const controls =
+      host.querySelectorAll<HTMLSelectElement>('fieldset select');
+    await choose(controls[0]!, 'largest');
+    await choose(controls[1]!, 'relaxed');
+    const kind = host.querySelector<HTMLSelectElement>('aside select')!;
+    await choose(kind, 'characters');
+    expect(host.querySelector('fieldset')).toBeNull();
+    expect(host.querySelector('[data-browser]')).not.toBeNull();
+    expect(presentation().getAttribute('data-reader-size')).toBe('default');
+    expect(presentation().getAttribute('data-reader-spacing')).toBe('default');
+    await choose(kind, 'overview');
+    expect(host.querySelector('[data-browser]')).toBeNull();
+    expect(presentation().getAttribute('data-reader-size')).toBe('largest');
+    expect(presentation().getAttribute('data-reader-spacing')).toBe('relaxed');
+    expect(
+      host.querySelectorAll<HTMLSelectElement>('fieldset select')[0]!.value
+    ).toBe('largest');
+    await act(() =>
+      root.render(<PublicWorld world={{ ...world, id: 'other' }} />)
+    );
+    expect(presentation().getAttribute('data-reader-size')).toBe('default');
+    expect(presentation().getAttribute('data-reader-spacing')).toBe('default');
+    expect(
+      host.querySelector<HTMLButtonElement>('fieldset button')!.disabled
+    ).toBe(true);
+    expect(JSON.stringify(world)).toBe(original);
+  } finally {
+    await act(() => root.unmount());
+  }
+});

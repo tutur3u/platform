@@ -30,7 +30,12 @@ vi.mock('@tuturuuu/ui/input', () => ({
   Input: (props: ComponentProps<'input'>) => <input {...props} />,
 }));
 vi.mock('./content-notice', () => ({ ContentNotice: () => null }));
-const world = (id: string, role: LettinRole, published = false) => ({
+const world = (
+  id: string,
+  role: LettinRole,
+  published = false,
+  tags = ['test']
+) => ({
   id,
   role,
   version: 1,
@@ -42,7 +47,7 @@ const world = (id: string, role: LettinRole, published = false) => ({
     kind: 'world' as const,
     image: '',
     credit: '',
-    tags: ['test'],
+    tags,
     links: [],
     content: { type: 'doc' },
   },
@@ -87,72 +92,95 @@ async function search(value: string) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
 }
+async function selectTag(value: string) {
+  await act(() => {
+    const select = container.querySelector('select')!;
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+const tagOptions = () =>
+  [...container.querySelector('select')!.querySelectorAll('option')].map(
+    (option) => option.textContent
+  );
+const taggedShelf = [
+  world('Owned draft', 'owner', false, ['fantasy', 'fantasy', ' ']),
+  world('Owned published', 'owner', true, ['mystery']),
+  world('Shared editor', 'editor', false, ['fantasy']),
+  world('Shared publisher', 'publisher', true, ['fantasy', 'mystery']),
+];
 it.each(['en', 'vi'])(
-  'filters existing owner/editor/publisher roles locally in %s',
+  'combines current tags and membership in %s without transport',
   async (locale) => {
     state.locale = locale;
     const messages = locale === 'vi' ? vietnamese.lettin : en.lettin;
     const transport = vi.fn();
     vi.stubGlobal('fetch', transport);
-    await render();
-    expect(titles()).toEqual(shelf.map((item) => item.id));
-    await click(messages.studioMembership_owned);
-    expect(titles()).toEqual(['Owned draft', 'Owned published']);
-    await click(messages.studioMembership_collaborating);
-    expect(titles()).toEqual(['Shared editor', 'Shared publisher']);
-    expect(
-      container.querySelector('button[aria-pressed="true"]')?.textContent
-    ).toBe(messages.all);
-    expect(
-      [...container.querySelectorAll('button[aria-pressed="true"]')].map(
-        (el) => el.textContent
-      )
-    ).toContain(messages.studioMembership_collaborating);
-    await click(messages.studioMembership_all);
+    await render(taggedShelf);
     expect(titles()).toHaveLength(4);
+    expect(tagOptions()).toEqual([
+      messages.studioAllTags,
+      'fantasy',
+      'mystery',
+    ]);
+    expect(
+      container.querySelector('label select')?.parentElement?.textContent
+    ).toContain(messages.studioTagFilter);
+    await selectTag('fantasy');
+    await click(messages.studioMembership_collaborating);
+    await click(messages.published);
+    expect(titles()).toEqual(['Shared publisher']);
+    await search('Shared');
+    expect(titles()).toEqual(['Shared publisher']);
     expect(transport).not.toHaveBeenCalled();
   }
 );
-it('combines membership, publication and search; clears all facets after empty results', async () => {
-  await render();
+it('clears tag, membership, publication and search together after empty results', async () => {
+  await render(taggedShelf);
+  await selectTag('mystery');
   await click(en.lettin.studioMembership_collaborating);
-  await click(en.lettin.published);
-  expect(titles()).toEqual(['Shared publisher']);
-  await search('Owned');
-  expect(titles()).toEqual([]);
-  expect(container.textContent).toContain(en.lettin.noStudioResults);
-  await click(en.lettin.clearFilters);
-  expect(titles()).toHaveLength(4);
-  expect(container.querySelector('input')?.value).toBe('');
-  expect(
-    [...container.querySelectorAll('button[aria-pressed="true"]')].map(
-      (el) => el.textContent
-    )
-  ).toEqual([en.lettin.all, en.lettin.studioMembership_all]);
-});
-it('resets local facets and destination links when changing workspace', async () => {
-  await render();
-  await click(en.lettin.studioMembership_owned);
   await click(en.lettin.draft);
-  await search('Owned');
-  expect(titles()).toEqual(['Owned draft']);
-  await render(shelf, 'workspace-b');
-  expect(titles()).toHaveLength(4);
+  await search('missing');
+  expect(titles()).toEqual([]);
+  await click(en.lettin.clearFilters);
+  expect(titles()).toEqual(taggedShelf.map((item) => item.id));
+  expect(container.querySelector('select')?.value).toBe('');
   expect(container.querySelector('input')?.value).toBe('');
+});
+it('resets the tag and other facets on workspace change', async () => {
+  await render(taggedShelf);
+  await selectTag('fantasy');
+  await click(en.lettin.studioMembership_owned);
+  expect(titles()).toEqual(['Owned draft']);
+  await render(taggedShelf, 'workspace-b');
+  expect(titles()).toHaveLength(4);
+  expect(container.querySelector('select')?.value).toBe('');
   expect(
     [...container.querySelectorAll('a')].every((link) =>
       link.getAttribute('href')?.startsWith('/workspace-b/')
     )
   ).toBe(true);
 });
-it('uses current overview roles and removes withdrawn access instead of retaining filtered records', async () => {
-  await render();
-  await click(en.lettin.studioMembership_collaborating);
-  await render([world('Shared editor', 'owner'), shelf[3]!]);
-  expect(titles()).toEqual(['Shared publisher']);
+it('drops revoked records and options, resets an obsolete tag, and does not reactivate it later', async () => {
+  await render(taggedShelf);
+  await selectTag('fantasy');
+  await render([taggedShelf[1]!]);
+  expect(titles()).toEqual(['Owned published']);
+  expect(tagOptions()).toEqual([en.lettin.studioAllTags, 'mystery']);
+  expect(container.querySelector('select')?.value).toBe('');
+  await render(taggedShelf);
+  expect(titles()).toHaveLength(4);
   await render([]);
-  expect(titles()).toEqual([]);
+  expect(tagOptions()).toEqual([en.lettin.studioAllTags]);
   expect(container.querySelectorAll('a')).toHaveLength(0);
-  await click(en.lettin.clearFilters);
-  expect(titles()).toEqual([]);
+});
+it('matches exact saved tags rather than tag substrings or descriptions', async () => {
+  await render([
+    world('One', 'owner', false, ['art']),
+    world('Two', 'editor', false, ['artwork']),
+  ]);
+  await selectTag('art');
+  expect(titles()).toEqual(['One']);
+  await selectTag('artwork');
+  expect(titles()).toEqual(['Two']);
 });

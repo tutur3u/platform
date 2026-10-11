@@ -1676,6 +1676,29 @@ omission and partial-warning reset. `writing-statistics-model.test.ts` covers
 Unicode segmentation, leaf/attribute exclusion, block boundaries and traversal
 limits. Exact-commit CI and hosted reader acceptance remain separate gates.
 
+## Reader-local text appearance
+
+Published notebook and entry reading views offer default, large and extra-large
+text size, plus default or relaxed line spacing. The default keeps the existing
+reader styles. These choices adjust inherited article body text; fixed headings,
+metadata sizes and author font families retain their existing hierarchy. The
+controls appear in reading views and are omitted from printed pages.
+
+Choices live only in the mounted notebook reader, including navigation between
+its published entries. Browsing temporarily hides the controls and suspends their
+styles; returning to reading restores the choices. Reset restores both defaults.
+Opening another notebook or leaving the reader discards the preferences. There
+is no local-storage persistence, API request, content edit, creator-profile change
+or publication operation. Private studio previews do not receive these controls.
+Source availability, media consent and access remain enforced by existing public
+projections and media routes.
+
+Regression coverage: `reader-presentation.test.tsx` covers both shipped languages,
+independent settings, reset, browsing transitions, bounded choices and notebook
+remounts. `public-world.test.tsx` exercises entry navigation and preserves the
+published source projection. CSS rules are scoped to the reader wrapper; real
+browser layout and the exact-head Lettin build remain separate delivery evidence.
+
 ## Private Studio membership filters
 
 The authenticated Studio notebook shelf starts with all notebooks in the actor's
@@ -1745,3 +1768,64 @@ An unavailable receipt store blocks apply before transport. These receipts conta
 only mutation and destination identifiers, never notebook content.
 The existing notebook import sanitizer removes artwork/image sources and
 hyperlink marks while retaining safe text; copies do not keep artwork URL references.
+
+## Private Studio tag filters
+
+The general Studio and creative-space notebook shelves default to **All tags**.
+Creators can select an exact saved notebook tag from the current authorized
+overview; tags on wiki entries or unsaved editor buffers are outside this facet.
+The tag selector combines with membership, publication and text search, preserving
+the server's notebook order. Options are distinct nonblank tags in deterministic
+text order. Shelf statistics continue to describe the full authorized overview.
+
+Changing workspace resets every facet. Clearing empty results resets all four
+facets. Overview changes immediately remove withdrawn records and their tag
+options; a selected tag that is no longer present resets to All tags. No additional
+content reads, writes or stored preferences occur. Existing notebook access,
+publication, source consent and public profile sharing rules remain unchanged.
+
+Regression evidence: `studio-tag-filter.test.tsx` covers combined facets, exact
+tag matching, duplicates, empty recovery, workspace reset, revoked records,
+removed tag options and both language bundles. These rendered fixtures are
+separate from exact-head CI/build and hosted browser acceptance.
+
+## Browsing reviewed notebook entries
+
+The private import and owner-copy review screens show up to 20 entry titles per
+page, in the server preview's original order. Creators can search the titles
+locally, ignoring letter case and combining accents, and clear the search to
+return to the first page. The result summary always states the total entries in
+the approved preview. No extra source read or network request is made.
+
+This is a review aid, not entry selection. Searching, paging or seeing no matches
+never changes the stored preview, consent, import limits or final creation scope:
+creation includes every entry approved by that preview. Replacing the preview
+resets search and page state. Pending creation disables the browsing controls;
+existing actor/workspace/owner consent and server permission gates remain in force.
+
+Regression evidence: `notebook-import-entries.test.tsx` exercises bounded pages,
+EN/VI labels, accent-aware title matching, empty matches, preview replacement,
+pending controls and unchanged apply behavior. Existing import/copy tests cover
+server-preview IDs and staged creation boundaries. Hosted browser acceptance and
+exact-head CI remain separate gates.
+
+## Private Studio notebook ordering
+
+General Studio and creative-space shelves preserve their existing server order by
+default. Creators can choose ascending or descending title order over notebooks
+in the current authorized overview. Ordering uses the current interface locale,
+compares numbers naturally (2 before 10), and ignores case and accent differences
+when comparing titles. Equal titles retain their current server order. The view
+combines ordering with membership, publication, tag and search filters.
+
+The choice stays in component state and resets when changing workspaces. Clearing
+an empty filtered result restores all facets and the default Studio order. Updated
+overviews immediately remove revoked notebooks; sorting never fetches historical
+metadata, mutates the response, writes preferences, shares content, or changes
+source access or publication. This applies to private creator shelves only.
+
+Regression evidence: `studio-order.test.tsx` covers natural locale comparisons,
+stable ties, input immutability, combined facets, workspace and empty recovery,
+revoked records and both language bundles. Existing membership and tag tests
+retain their coverage. Rendered tests use UI and transport doubles; exact-head CI
+and hosted browser acceptance remain separate delivery gates.

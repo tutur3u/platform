@@ -957,3 +957,22 @@ Count expandable body text, exclude metadata/marks/media, and retain the partial
 warning at traversal limits. Do not imply reading time or draft publication from
 these counts. Regression: `published-reading-statistics.test.tsx` and
 `writing-statistics-model.test.ts`.
+
+
+### Reader-local presentation
+
+Keep reader size and spacing controls outside the published projection. Scope
+styles to the mounted reading wrapper, use finite choices and a combined reset,
+and key the local state to the notebook rather than each selected entry. Suspend
+styles in browsing without discarding choices; keep private previews and author
+theme settings separate. See the Lettin reader decision and
+`reader-presentation.test.tsx`/`public-world.test.tsx` transition regressions.
+
+### Authorized overview facets
+
+Private Studio facets must derive both visible records and options from the
+current authorized overview. Do not keep an independent record cache or query
+extra source content to populate a facet. When a selected tag disappears, remove
+its option and reset the selection; workspace changes reset all local facets.
+Cover combined facets and revocation with rendered tests, and distinguish those
+fixtures from hosted account acceptance.
