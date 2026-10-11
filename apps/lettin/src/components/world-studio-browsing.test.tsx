@@ -76,6 +76,7 @@ vi.mock('./navigation-guard', () => ({
 vi.mock('./entry-editor', () => ({
   EntryEditor: () => <div>entry-editor</div>,
 }));
+vi.mock('./notebook-copy', () => ({ NotebookCopy: () => null }));
 vi.mock('./notebook-export', () => ({ NotebookExport: () => null }));
 vi.mock('./collaborators', () => ({ Collaborators: () => <div /> }));
 vi.mock('./wiki-sidebar', () => ({ WikiSidebar: () => <div /> }));
