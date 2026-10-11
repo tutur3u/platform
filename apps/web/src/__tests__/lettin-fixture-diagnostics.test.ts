@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   LETTIN_FIXTURE_COMMAND_OPTIONS,
   lettinFixturePhase,
+  runLettinFixtureCommand,
 } from '../../e2e/helpers/lettin-fixture-diagnostics';
 
 afterEach(() => vi.restoreAllMocks());
@@ -55,5 +56,40 @@ describe('Lettin fixture diagnostics', () => {
       expect(error).toMatchObject({ code: 'ETIMEDOUT', signal: 'SIGKILL' });
     }
     expect(Date.now() - started).toBeLessThan(3000);
+  });
+
+  it('runs local Wrangler through normal Bun while retaining all fixture bounds', () => {
+    const execute = vi.fn(() => undefined);
+    const args = [
+      '--no-install',
+      'wrangler',
+      'd1',
+      'migrations',
+      'apply',
+      'LETTIN_DB',
+      '--local',
+    ];
+    const before = [...args];
+    runLettinFixtureCommand(args, '/owned/lettin', execute);
+    expect(execute).toHaveBeenCalledExactlyOnceWith('bun', ['x', ...before], {
+      ...LETTIN_FIXTURE_COMMAND_OPTIONS,
+      cwd: '/owned/lettin',
+    });
+    expect(args).toEqual(before);
+  });
+
+  it('propagates normal tool failures without fallback or retries', () => {
+    const error = new Error('private fixture command failed');
+    const execute = vi.fn(() => {
+      throw error;
+    });
+    expect(() =>
+      runLettinFixtureCommand(
+        ['--no-install', 'wrangler'],
+        '/owned/lettin',
+        execute
+      )
+    ).toThrow(error);
+    expect(execute).toHaveBeenCalledTimes(1);
   });
 });
