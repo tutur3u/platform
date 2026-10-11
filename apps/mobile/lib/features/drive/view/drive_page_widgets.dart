@@ -263,22 +263,25 @@ class _MetricChip extends StatelessWidget {
             Icon(icon, size: 15, color: effectiveTint),
             const SizedBox(width: 8),
           ],
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: theme.typography.small.copyWith(
-                  fontWeight: FontWeight.w700,
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: theme.typography.small.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              Text(
-                label,
-                style: theme.typography.xSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
+                Text(
+                  label,
+                  style: theme.typography.xSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

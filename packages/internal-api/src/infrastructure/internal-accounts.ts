@@ -149,3 +149,40 @@ export async function resetAccountPassword(
     }
   );
 }
+
+export interface CreateInternalEmployeePayload {
+  email: string;
+  displayName: string;
+  temporaryPassword: string;
+}
+
+export type CreateInternalEmployeeResponse =
+  | {
+      account: { id: string; email: string; displayName: string };
+      status: 'created';
+    }
+  | {
+      status: 'pending';
+      code:
+        | 'account_creation_outcome_unknown'
+        | 'employee_provisioning_pending';
+      message: string;
+    };
+
+export async function createInternalEmployee(
+  payload: CreateInternalEmployeePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<CreateInternalEmployeeResponse>(
+    '/api/v1/infrastructure/internal-accounts/employees',
+    {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-tuturuuu-account-action': '1',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}

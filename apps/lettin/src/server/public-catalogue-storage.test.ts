@@ -109,19 +109,25 @@ it('uses exact published tags and keeps later draft revisions out of summaries a
   ).toHaveLength(1);
 });
 it('filters before pagination and intersects tag, creator and text search', async () => {
-  for (let i = 0; i < 30; i++) {
-    const worldId = (
-      await mutate(db, actor, {
-        action: 'createWorld',
-        draft: {
-          ...draft,
-          title: `Notebook ${i}`,
-          tags: [i < 27 ? 'chosen' : 'other'],
-        },
-      })
-    ).id;
-    await mutate(db, actor, { action: 'publishWorld', worldId, version: 1 });
-  }
+  // This query fixture exercises pagination, not 60 sequential mutations.
+  // One set-based D1 write also avoids timed-out setup leaking into the next test.
+  await db
+    .prepare(`
+      WITH RECURSIVE notebooks(i) AS (
+        SELECT 0 UNION ALL SELECT i + 1 FROM notebooks WHERE i < 29
+      )
+      INSERT INTO worlds(id, ws_id, owner_id, draft, published, published_at)
+      SELECT 'catalogue-' || i, ?, ?, ?,
+        json_set(?, '$.title', 'Notebook ' || i,
+          '$.tags', json_array(CASE WHEN i < 27 THEN 'chosen' ELSE 'other' END)),
+        '2026-09-14T00:00:00.000Z'
+      FROM notebooks
+    `)
+    .bind(actor.wsId, actor.id, JSON.stringify(draft), JSON.stringify(draft))
+    .run();
+  expect(
+    await db.prepare('SELECT COUNT(*) AS count FROM worlds').first('count')
+  ).toBe(30);
   const filters = { tag: 'chosen', creatorId: actor.id, search: 'Notebook' };
   expect(await readPublic(db, undefined, filters)).toHaveLength(25);
   expect(await readPublic(db, undefined, { ...filters, page: 2 })).toHaveLength(

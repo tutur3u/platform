@@ -24,6 +24,14 @@ vi.mock('@/i18n/navigation', () => ({
 vi.mock('./navigation-guard', () => ({
   useNavigationGuard: () => ({ dirty: false, setDirty: () => {} }),
 }));
+vi.mock('./notebook-copy', () => ({ NotebookCopy: () => null }));
+vi.mock('./notebook-export', () => ({
+  NotebookExport: ({ worldId }: { worldId: string }) => (
+    <button type="button" data-world={worldId}>
+      exportNotebook
+    </button>
+  ),
+}));
 vi.mock('./duplicate-entry', () => ({ DuplicateEntry: () => null }));
 vi.mock('./quick-note', () => ({ QuickNote: () => null }));
 vi.mock('./entry-editor', () => ({ EntryEditor: () => null }));
@@ -46,6 +54,7 @@ it.each([undefined, worldId, entryId])(
         initialEntry={initialEntry}
       />
     );
+    expect(html).toContain(`data-world="${worldId}">exportNotebook`);
     const href = html.match(/href="([^"]+)"[^>]*>planTask/);
     expect(href).not.toBeNull();
     const url = new URL(href![1]!.replaceAll('&amp;', '&'));
