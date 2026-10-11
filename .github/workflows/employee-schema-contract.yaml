@@ -1,0 +1,72 @@
+name: Employee creation and restoration schema
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact reviewed creation/restoration stack commit (40 hex characters)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: employee-schema-${{ inputs.source_sha }}-${{ github.run_id }}
+  cancel-in-progress: false
+jobs:
+  check-ci:
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: employee-schema-contract.yaml
+  schema:
+    needs: check-ci
+    if: always() && needs.check-ci.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+      EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
+    steps:
+      - name: Require the enabled schema gate
+        env:
+          CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
+        run: test "$CONTRACT_ENABLED" = true
+      - name: Validate exact source selection
+        run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA)) process.exit(1)'
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source
+          persist-credentials: false
+      - uses: ./control/.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install exact source dependencies
+        working-directory: source
+        run: bash ../control/scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Verify strict TAP and receipt gates
+        run: node --test control/apps/database/scripts/programming-database-tap.test.mjs control/apps/database/scripts/employee-schema-tap.test.mjs
+      - name: Apply full isolated schema and qualify 172 rollback assertions
+        working-directory: source
+        run: node ../control/apps/database/scripts/verify-employee-schema-contract.mjs
+      - name: Stop only this exact owned isolated database
+        if: always()
+        working-directory: source
+        run: node ../control/apps/database/scripts/verify-employee-schema-contract.mjs --cleanup
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: employee-schema-${{ inputs.source_sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/employee-schema-receipts/qualification.json
+          if-no-files-found: error
+          retention-days: 3
