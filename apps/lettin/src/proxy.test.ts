@@ -32,9 +32,6 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 vi.mock('@tuturuuu/utils/shared-cookie', () => ({
   getTuturuuuSharedCookieOptions: (options: unknown) => options,
 }));
-vi.mock('next-intl/middleware', () => ({
-  default: () => () => NextResponse.next(),
-}));
 
 vi.mock('./workspace-route-status', () => ({
   getWorkspaceRouteStatus: mocks.routeStatus,
@@ -212,4 +209,87 @@ it('tags the actual canonical-locale no-op branch for a synthetic internal-path 
   } finally {
     vi.unstubAllEnvs();
   }
+});
+
+it.each(['en', 'vi'])(
+  'canonicalizes an explicitly %s-prefixed profile and retains its locale',
+  async (locale) => {
+    const path = '/00000000-0000-0000-0000-000000000000/profile';
+    const response = await proxy(
+      new NextRequest(
+        `https://lettin.tuturuuu.com/${locale}${path}?tab=preferences`
+      )
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      `https://lettin.tuturuuu.com${path}?tab=preferences`
+    );
+    expect(response.cookies.get('NEXT_LOCALE')?.value).toBe(locale);
+    expect(mocks.refresh).not.toHaveBeenCalled();
+  }
+);
+
+it('authenticates the original unprefixed profile and rewrites it through real next-intl without a redirect', async () => {
+  const path = '/00000000-0000-0000-0000-000000000000/profile';
+  mocks.refresh.mockResolvedValue({
+    ok: true,
+    claims: { sub: 'verified-user' },
+    response: NextResponse.next(),
+  });
+  const request = new NextRequest(
+    `https://lettin.tuturuuu.com${path}?tab=preferences`
+  );
+  const response = await proxy(request);
+  expect(response.status).toBe(200);
+  expect(response.headers.get('location')).toBeNull();
+  const rewritten = new URL(response.headers.get('x-middleware-rewrite')!);
+  expect(rewritten.pathname).toBe(`/en${path}`);
+  expect(rewritten.searchParams.get('tab')).toBe('preferences');
+  expect(mocks.refresh).toHaveBeenCalledWith(
+    request,
+    expect.objectContaining({ requireWebAppSession: true, targetApp: 'lettin' })
+  );
+  expect(mocks.routeStatus).toHaveBeenCalledWith(
+    request,
+    path,
+    request.headers,
+    'en'
+  );
+});
+
+it('keeps MFA enforcement on an original unprefixed profile', async () => {
+  const path = '/00000000-0000-0000-0000-000000000000/profile';
+  mocks.refresh.mockResolvedValue({ ok: false, error: 'MFA required' });
+  const response = await proxy(
+    new NextRequest(`https://lettin.tuturuuu.com${path}`)
+  );
+  const location = new URL(response.headers.get('location')!);
+  expect(response.status).toBe(307);
+  expect(location.pathname).toBe('/login');
+  expect(location.searchParams.get('next')).toBe(path);
+  expect(location.searchParams.get('refresh')).toBe('1');
+  expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  expect(mocks.stale).not.toHaveBeenCalled();
+  expect(mocks.routeStatus).not.toHaveBeenCalled();
+});
+
+it('keeps the shared browser session requirement on an original unprefixed profile', async () => {
+  const path = '/00000000-0000-0000-0000-000000000000/profile';
+  mocks.webSession.mockReturnValue(false);
+  mocks.supabaseSession.mockReturnValue(false);
+  mocks.refresh.mockResolvedValue({
+    ok: true,
+    claims: { sub: 'verified-user' },
+    response: NextResponse.next(),
+  });
+  const response = await proxy(
+    new NextRequest(`https://lettin.tuturuuu.com${path}`)
+  );
+  const location = new URL(response.headers.get('location')!);
+  expect(response.status).toBe(307);
+  expect(location.pathname).toBe('/login');
+  expect(location.searchParams.get('next')).toBe(path);
+  expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  expect(mocks.refresh).toHaveBeenCalled();
+  expect(mocks.routeStatus).not.toHaveBeenCalled();
 });
