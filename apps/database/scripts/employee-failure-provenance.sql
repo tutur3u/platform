@@ -15,22 +15,79 @@ perform set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-0000000
 end; $claims$;
 set constraints auth.check_employee_creation_commit deferred;
 
+-- Match a static guard signature in memory only; never publish its inputs.
+create function pg_temp.employee_guard_category(state text, message text, context text)
+returns text language plpgsql immutable set search_path = '' as $category$
+declare frame text;
+begin
+  if state is distinct from '23514' or message is null or context is null
+    or octet_length(message)>256 or octet_length(context)>8192 then return 'unclassified'; end if;
+  frame := split_part(context,E'\n',1);
+  if message='Employee creation intent does not match identity'
+    and frame ~ '^PL/pgSQL function (private\.)?bind_employee_creation_intent\(\) line [1-9][0-9]* at RAISE\r?$' then
+    return 'intent_identity_mismatch';
+  elsif message='Employee creation intent is missing'
+    and frame ~ '^PL/pgSQL function (public\.)?create_user_profile\(\) line [1-9][0-9]* at RAISE\r?$' then
+    return 'creation_intent_missing';
+  elsif message='Employee onboarding registry is missing'
+    and frame ~ '^PL/pgSQL function (private\.)?check_employee_creation_commit\(\) line [1-9][0-9]* at RAISE\r?$' then
+    return 'onboarding_registry_missing';
+  elsif message='Employee creation must remain confirmed and pending'
+    and frame ~ '^PL/pgSQL function (private\.)?check_employee_creation_commit\(\) line [1-9][0-9]* at RAISE\r?$' then
+    return 'creation_final_row_invalid';
+  elsif message='Personal workspaces can only have one member'
+    and frame ~ '^PL/pgSQL function (public\.)?enforce_personal_workspace_single_member\(\) line [1-9][0-9]* at RAISE\r?$' then
+    return 'personal_workspace_second_member';
+  end if;
+  return 'unclassified';
+end;
+$category$;
+
+-- Synthetic classifier checks run inside this diagnostic's rollback transaction.
+do $classifier_checks$
+declare item record;
+begin
+  for item in select * from (values
+    ('Employee creation intent does not match identity','private.bind_employee_creation_intent','intent_identity_mismatch'),
+    ('Employee creation intent is missing','public.create_user_profile','creation_intent_missing'),
+    ('Employee onboarding registry is missing','private.check_employee_creation_commit','onboarding_registry_missing'),
+    ('Employee creation must remain confirmed and pending','private.check_employee_creation_commit','creation_final_row_invalid'),
+    ('Personal workspaces can only have one member','public.enforce_personal_workspace_single_member','personal_workspace_second_member')
+  ) as cases(message,function_name,category) loop
+    if pg_temp.employee_guard_category('23514',item.message,'PL/pgSQL function '||item.function_name||'() line 1 at RAISE')<>item.category
+      or pg_temp.employee_guard_category('23514',item.message,'PL/pgSQL function '||split_part(item.function_name,'.',2)||'() line 1 at RAISE')<>item.category
+      or pg_temp.employee_guard_category('42501',item.message,'PL/pgSQL function '||item.function_name||'() line 1 at RAISE')<>'unclassified'
+      or pg_temp.employee_guard_category('23514',item.message||' suffix','PL/pgSQL function '||item.function_name||'() line 1 at RAISE')<>'unclassified'
+      or pg_temp.employee_guard_category('23514',item.message,'PL/pgSQL function unrelated() line 1 at RAISE')<>'unclassified'
+      or pg_temp.employee_guard_category('23514',item.message,E'SQL statement "redacted"\nPL/pgSQL function '||item.function_name||'() line 1 at RAISE')<>'unclassified'
+      or pg_temp.employee_guard_category('23514',item.message,repeat('x',8193))<>'unclassified'
+      or pg_temp.employee_guard_category('23514',repeat('x',257),'PL/pgSQL function '||item.function_name||'() line 1 at RAISE')<>'unclassified' then
+      raise exception 'Diagnostic guard classifier failed';
+    end if;
+  end loop;
+end;
+$classifier_checks$;
+
 create function pg_temp.employee_failure_provenance(statement text, ordinal integer)
 returns jsonb language plpgsql set search_path = '' as $probe$
 declare state text; caught_schema text; caught_table text; caught_constraint text;
+  caught_message text; caught_context text; guard_category text := 'unclassified';
   matches integer; check_kind boolean; category text := 'other_redacted'; origin text;
 begin
   if ordinal not in (22,23) then raise exception 'Unsupported diagnostic ordinal'; end if;
   begin
     execute statement;
     return jsonb_build_object('ordinal',ordinal,'sqlstate',null,'noException',true,
-      'structuredOriginCategory','no_exception','constraintCategory','other_redacted','catalogBound',false);
+      'structuredOriginCategory','no_exception','constraintCategory','other_redacted','catalogBound',false,
+      'guardCategory','unclassified');
   exception when others then
     get stacked diagnostics state = returned_sqlstate, caught_schema = schema_name,
-      caught_table = table_name, caught_constraint = constraint_name;
+      caught_table = table_name, caught_constraint = constraint_name,
+      caught_message = message_text, caught_context = pg_exception_context;
     -- Never serialize structured names, messages, details, context, values or their hashes.
     if coalesce(caught_schema,'')='' and coalesce(caught_table,'')='' and coalesce(caught_constraint,'')='' then
       origin := 'empty_structured_provenance'; matches := 0;
+      guard_category := pg_temp.employee_guard_category(state,caught_message,caught_context);
     else
       select count(*),bool_and(c.contype='c') into matches,check_kind
       from pg_catalog.pg_constraint c
@@ -52,7 +109,8 @@ begin
       end if;
     end if;
     return jsonb_build_object('ordinal',ordinal,'sqlstate',state,'noException',false,
-      'structuredOriginCategory',origin,'constraintCategory',category,'catalogBound',matches=1);
+      'structuredOriginCategory',origin,'constraintCategory',category,'catalogBound',matches=1,
+      'guardCategory',guard_category);
   end;
 end;
 $probe$;

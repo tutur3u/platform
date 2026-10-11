@@ -11,6 +11,7 @@ function row(ordinal, changes = {}) {
     structuredOriginCategory: 'empty_structured_provenance',
     constraintCategory: 'other_redacted',
     catalogBound: false,
+    guardCategory: 'unclassified',
     ...changes,
   };
 }
@@ -44,6 +45,42 @@ test('no exception is diagnostic evidence only', () => {
     structuredOriginCategory: 'no_exception',
   });
   assert.equal(parseProvenance(text(none, row(23)))[0].noException, true);
+});
+test('fixed guard categories remain diagnostic signatures, not catalog evidence', () => {
+  for (const guardCategory of [
+    'intent_identity_mismatch',
+    'creation_intent_missing',
+    'onboarding_registry_missing',
+    'creation_final_row_invalid',
+    'personal_workspace_second_member',
+  ]) {
+    const guard = row(22, { guardCategory });
+    assert.deepEqual(parseProvenance(text(guard, row(23)))[0], guard);
+  }
+});
+test('guard categories reject contradictory catalog, no-exception and SQLSTATE evidence', () => {
+  const guardCategory = 'personal_workspace_second_member';
+  for (const invalid of [
+    row(22, { guardCategory: 'PRIVATE' }),
+    row(22, { guardCategory, sqlstate: '42501' }),
+    row(22, { guardCategory, noException: true, sqlstate: null }),
+    row(22, {
+      guardCategory,
+      structuredOriginCategory: 'unknown_structured_provenance',
+    }),
+    row(22, {
+      guardCategory,
+      structuredOriginCategory: 'catalog_check',
+      constraintCategory: 'employee_lifecycle_check',
+      catalogBound: true,
+    }),
+    row(22, { guardCategory, context: 'PRIVATE' }),
+    row(22, { guardCategory, functionName: 'PRIVATE' }),
+    row(22, { guardCategory, exceptionHash: 'PRIVATE' }),
+    row(22, { guardCategory, sourceLine: 1 }),
+  ]) {
+    assert.throws(() => parseProvenance(text(invalid, row(23))));
+  }
 });
 test('private fields, invalid enum values and contradictory provenance fail closed', () => {
   for (const invalid of [
