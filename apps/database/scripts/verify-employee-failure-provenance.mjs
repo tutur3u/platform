@@ -53,7 +53,7 @@ const probePath = path.join(
   'apps/database/scripts/employee-failure-provenance.sql'
 );
 const probeSha256 =
-  'ffa2eeea53dac204cebdc50380e4ff73be8a6a3fd512dcb994341d0f0920238c';
+  '59dc87bd0665d785cc3b01dbd8b2b610647cd17f8e6214c24f151f8e96667d35';
 if (
   createHash('sha256').update(readFileSync(probePath)).digest('hex') !==
   probeSha256
@@ -269,7 +269,7 @@ try {
   lifecycleCode = 1;
 }
 const receipt = {
-  version: 1,
+  version: 2,
   diagnosticOnly: true,
   schemaQualified: false,
   assertionsQualified: false,

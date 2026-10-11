@@ -14,6 +14,14 @@ const categories = new Set([
   'employee_lifecycle_check',
   'employee_recovery_check',
 ]);
+const guardCategories = new Set([
+  'unclassified',
+  'intent_identity_mismatch',
+  'creation_intent_missing',
+  'onboarding_registry_missing',
+  'creation_final_row_invalid',
+  'personal_workspace_second_member',
+]);
 const keys = [
   'ordinal',
   'sqlstate',
@@ -21,6 +29,7 @@ const keys = [
   'structuredOriginCategory',
   'constraintCategory',
   'catalogBound',
+  'guardCategory',
 ].sort();
 
 export function parseProvenance(output) {
@@ -39,7 +48,7 @@ export function parseProvenance(output) {
     const names = [...line.matchAll(/"([^"\\]*)"\s*:/gu)].map(
       (match) => match[1]
     );
-    if (names.length !== 6 || new Set(names).size !== 6) {
+    if (names.length !== 7 || new Set(names).size !== 7) {
       throw new Error('Exact unique keys required');
     }
     const row = JSON.parse(line);
@@ -52,7 +61,8 @@ export function parseProvenance(output) {
       typeof row.noException !== 'boolean' ||
       typeof row.catalogBound !== 'boolean' ||
       !origins.has(row.structuredOriginCategory) ||
-      !categories.has(row.constraintCategory)
+      !categories.has(row.constraintCategory) ||
+      !guardCategories.has(row.guardCategory)
     ) {
       throw new Error('Invalid provenance');
     }
@@ -83,6 +93,16 @@ export function parseProvenance(output) {
         row.sqlstate !== '23514')
     ) {
       throw new Error('Known CHECK mismatch');
+    }
+    if (
+      row.guardCategory !== 'unclassified' &&
+      (row.noException ||
+        row.sqlstate !== '23514' ||
+        row.structuredOriginCategory !== 'empty_structured_provenance' ||
+        row.catalogBound ||
+        row.constraintCategory !== 'other_redacted')
+    ) {
+      throw new Error('Known guard mismatch');
     }
     return row;
   });

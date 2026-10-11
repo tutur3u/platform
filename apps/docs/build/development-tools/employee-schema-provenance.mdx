@@ -15,6 +15,15 @@ Names resolve against the disposable catalog. Known categories additionally requ
 an exact frozen private relation/constraint pair; unknown provenance remains redacted.
 Raw SQL, exception messages, details, context, row values and names are never published.
 Commands suppress raw database output and emit only parsed bounded records.
+Version 2 adds guardCategory. A known category requires SQLSTATE 23514, empty
+structured names, an exact whitelisted static message and the innermost matching
+function frame. Only the fixed category is published. Unknown or oversized
+diagnostics remain unclassified; contradictory serialized records are rejected.
+Catalog categories are unchanged.
+Empty structured names alone establish no catalog binding or particular guard origin.
+A guard category is a static source-signature match, not a catalog constraint or
+schema qualification. The probe checks its classifier with synthetic inputs inside
+the same rollback transaction before collecting the two actual records.
 Exact owned cleanup must succeed.
 
 The separate employee-provenance artifact is diagnostic evidence. Command success means
