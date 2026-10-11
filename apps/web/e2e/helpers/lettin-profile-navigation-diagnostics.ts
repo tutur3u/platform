@@ -21,12 +21,53 @@ export function profileNavigationRoute(
   }
 }
 
+function navigationLocale(
+  value: string | undefined,
+  origin: string | undefined
+) {
+  if (value === undefined) return 'unavailable';
+  try {
+    const url = new URL(value);
+    if (url.origin !== new URL(origin ?? '').origin) return 'external';
+    return url.pathname.match(/^\/(en|vi)(?=\/)/u)?.[1] ?? 'unprefixed';
+  } catch {
+    return 'unparseable';
+  }
+}
+
+export function profileNavigationEdge(
+  source: string,
+  destination: string | undefined,
+  origin: string | undefined
+) {
+  let samePath: boolean | null = null;
+  try {
+    if (destination !== undefined) {
+      const from = new URL(source);
+      const to = new URL(destination);
+      samePath = from.origin === to.origin && from.pathname === to.pathname;
+    }
+  } catch {
+    /* Invalid destinations remain unknown. */
+  }
+  return {
+    route: profileNavigationRoute(source, origin),
+    locale: navigationLocale(source, origin),
+    targetRoute:
+      destination === undefined
+        ? 'unavailable'
+        : profileNavigationRoute(destination, origin),
+    targetLocale: navigationLocale(destination, origin),
+    samePath,
+  };
+}
+
 export async function observeProfileNavigation<T>(
   page: Page,
   origin: string | undefined,
   navigate: () => Promise<T>
 ): Promise<T> {
-  const hops: { route: string; status: number }[] = [];
+  const responses: { item: Response; status: number }[] = [];
   let truncated = false;
   const response = (item: Response) => {
     try {
@@ -35,13 +76,13 @@ export async function observeProfileNavigation<T>(
         item.frame() !== page.mainFrame()
       )
         return;
-      if (hops.length === 20) {
+      if (responses.length === 20) {
         truncated = true;
         return;
       }
       const status = item.status();
       if (!Number.isInteger(status) || status < 100 || status > 599) return;
-      hops.push({ route: profileNavigationRoute(item.url(), origin), status });
+      responses.push({ item, status });
     } catch {
       // Observation must never change navigation or authentication behavior.
     }
@@ -51,7 +92,27 @@ export async function observeProfileNavigation<T>(
     return await navigate();
   } catch (error) {
     console.warn('[lettin-e2e] profile navigation diagnostics', {
-      hops,
+      hops: responses.map(({ item, status }) => {
+        try {
+          return {
+            ...profileNavigationEdge(
+              item.url(),
+              item.request().redirectedTo()?.url(),
+              origin
+            ),
+            status,
+          };
+        } catch {
+          return {
+            route: 'unparseable',
+            locale: 'unparseable',
+            targetRoute: 'unavailable',
+            targetLocale: 'unavailable',
+            samePath: null,
+            status,
+          };
+        }
+      }),
       truncated,
     });
     throw error;
