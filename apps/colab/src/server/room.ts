@@ -48,7 +48,7 @@ export class ColabRoom extends DurableObject<Env> {
     room.audit = audit ? JSON.parse(audit.value) : [];
     return room;
   }
-  private save(room: Room, notify = true) {
+  private save(room: Room, notify = true, endedAt?: number) {
     room.revision++;
     // Keep private audit data out of the legacy room JSON. Older Worker versions
     // spread unknown room fields into their projections during a rollback.
@@ -62,6 +62,11 @@ export class ColabRoom extends DurableObject<Env> {
         'INSERT OR REPLACE INTO state(id, value) VALUES(2, ?)',
         JSON.stringify(audit ?? [])
       );
+      if (endedAt !== undefined)
+        this.ctx.storage.sql.exec(
+          'INSERT OR REPLACE INTO state(id, value) VALUES(3, ?)',
+          JSON.stringify(endedAt)
+        );
     });
     if (notify) this.broadcast(room);
   }
@@ -578,8 +583,15 @@ export class ColabRoom extends DurableObject<Env> {
       await this.ctx.storage.setAlarm(room.endsAt);
       return;
     }
+    // Alarms may run again after successful storage or an object restart.
+    const completed = this.ctx.storage.sql
+      .exec<{ value: string }>('SELECT value FROM state WHERE id = 3')
+      .toArray()[0];
+    if (completed && JSON.parse(completed.value) === room.endsAt) return;
     if (room.mode === 'open') room.mode = 'readonly';
     this.record(room, 'ended');
-    this.save(room);
+    // The marker and room/audit writes share one transaction. A later schedule
+    // extension has a different deadline and can expire independently.
+    this.save(room, true, room.endsAt);
   }
 }

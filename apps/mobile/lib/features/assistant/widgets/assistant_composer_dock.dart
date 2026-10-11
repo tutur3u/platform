@@ -12,6 +12,7 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
 import 'package:mobile/features/assistant/widgets/assistant_dock_surface.dart';
 import 'package:mobile/features/assistant/widgets/assistant_inline_voice_controls.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
@@ -41,6 +42,7 @@ class AssistantComposerDock extends StatelessWidget {
     this.voiceCapture,
     this.onAttachVoice,
     this.onSendVoice,
+    this.onHeightChanged,
     this.embedded = false,
     this.localOnly = false,
     this.localBlocked = false,
@@ -60,6 +62,7 @@ class AssistantComposerDock extends StatelessWidget {
   final AssistantShellState shellState;
   final AssistantRepository? repository;
   final bool embedded;
+  final ValueChanged<double>? onHeightChanged;
   final bool localOnly;
   final bool localBlocked;
   final bool localGenerating;
@@ -106,17 +109,9 @@ class AssistantComposerDock extends StatelessWidget {
             focusNode: focusNode,
             style: const TextStyle(fontSize: 16, height: 1.25),
             minLines: 1,
-            textInputAction: TextInputAction.send,
-            onSubmitted:
-                localBlocked ||
-                    chatState.status == AssistantChatStatus.restoring
-                ? null
-                : (_) {
-                    if (controller.text.trim().isNotEmpty ||
-                        chatState.composerAttachments.isNotEmpty) {
-                      unawaited(onSend());
-                    }
-                  },
+            maxLines: 5,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
             onTapOutside: (_) => focusNode.unfocus(),
             decoration: InputDecoration(
               hintText: context.l10n.assistantAskPlaceholder,
@@ -184,12 +179,32 @@ class AssistantComposerDock extends StatelessWidget {
                     ),
             ),
           );
-    if (embedded) return composer;
-    return SizedBox(
-      height: assistantComposerHeight(context) + bottomInset,
-      child: FloatingDockRail(
-        navigation: AssistantDockSurface(child: composer),
-        primary: navigationToggle(context),
+    final sizedComposer = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: assistantComposerHeight(context)),
+      child: composer,
+    );
+    if (embedded) {
+      return AssistantComposerSizeReporter(
+        // ShellDockSurface adds a one-pixel border above and below content.
+        onHeightChanged: onHeightChanged == null
+            ? null
+            : (height) => onHeightChanged!(height + 2),
+        child: sizedComposer,
+      );
+    }
+    return AssistantComposerSizeReporter(
+      onHeightChanged: onHeightChanged,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FloatingDockRail(
+              navigation: AssistantDockSurface(child: sizedComposer),
+              primary: navigationToggle(context),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -4,6 +4,15 @@ description: "How branches map to environments, and what happens between preview
 updatedAt: "2026-09-23"
 ---
 
+<Note>
+Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+the Docker cron runner is retired. Rust and TanStack Start are not in use and
+must not be run, tested, or updated until further notice. Retained Docker and
+migration sections below are historical procedures. Current hosted Next.js,
+package, Worker, database, and mobile workflows retain their own gates. See the
+[active runtime map](/build/devops/active-runtime).
+</Note>
+
 This page explains how Tuturuuu moves from code to running environments.
 
 ## Generated Release Formatting
@@ -107,9 +116,10 @@ smart-scheduling (every six hours) schedules in its `vercel.json` and
 Calendar must not keep a second direct Vercel schedule: direct scheduler requests
 do not carry the private hosting header.
 
-Docker retains these jobs in `apps/web/cron.config.json` with `vercel: false`.
-That flag excludes them from generated web Vercel schedules while keeping the
-Docker runner enabled. After deployment, verify a fresh provider sync timestamp
+The retired Docker configuration retains these jobs in
+`apps/web/cron.config.json` with `vercel: false`. That flag excludes them from
+generated Web Vercel schedules; it does not activate a Docker runner. The
+Infrastructure hosted schedules are the active Calendar owners. After deployment, verify a fresh provider sync timestamp
 with all Calendar clients closed; a READY deployment alone is insufficient.
 
 ### Browser App Version Metadata
@@ -172,38 +182,24 @@ the checked-out commit:
 Blue/green is the safer path when uptime matters because the new image is built and
 health-checked before the proxy is reloaded.
 
-## Migration Release Path (TanStack + Rust)
+## Inactive migration and retained Docker tooling
 
-`apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web`
-(TanStack Start) plus `apps/backend` (the Rust HTTP core, port `7820`). See
-[the TanStack/Rust migration overview](/platform/architecture/tanstack-rust-migration)
-for the full plan.
+`apps/tanstack-web` and `apps/backend` are not in use. Their source and runbooks
+are retained for a possible future resumption; they are not release dependencies
+for the live Next.js apps. Migration-specific builds, workers, Docker comparisons,
+and cutover gates must not be required for ordinary Next.js delivery. Keep source
+tracking required by repository policy without claiming a runtime cutover.
 
-While that migration is incomplete, Docker blue/green remains the canonical
-production rollout and rollback mechanism for the live hostname. Cloudflare
-Workers are used as a separate, incremental **preview** surface to prove Worker
-compatibility for `apps/tanstack-web` and `apps/backend` before any cutover:
-
-- Validate the Wrangler deploy configs without contacting Cloudflare with
-  `bun check:cloudflare`.
-- Deploy the Rust backend Worker (`apps/backend/wrangler.jsonc`) and the
-  TanStack Start Worker (`apps/tanstack-web/wrangler.jsonc`) to preview, then
-  smoke both returned origins with `bun smoke:cloudflare`.
-- Do not route the production hostname to preview Workers until the
-  TanStack/Rust route manifest, compare-mode Docker E2E, benchmark report, and
-  cutover gates (`bun migration:tanstack:gates`) all pass.
-- Rollback from the preview path is DNS/routing-based (remove the Cloudflare
-  route or roll back the Worker version); the Docker blue/green `apps/web` stack
-  keeps serving the canonical hostname throughout.
-
-The full Cloudflare preview, secret-bootstrap, smoke, and cutover-gate runbook
-lives in
-[Web Docker Deployment → Cloudflare Preview Path](/build/devops/web-docker-deployment).
+Docker setup is also outside the current supported path, and the Docker cron
+runner is retired. The earlier self-hosted commands in this page are retained
+reference procedures. Hosted Vercel/Cloudflare delivery and the owning scheduler
+configuration establish active release behavior. See the
+[active runtime map](/build/devops/active-runtime).
 
 ## Team Release Checklist
 
 1. Merge the change set with green CI.
-2. If Docker behavior changed, make sure `docker-setup-check.yaml` is green.
+2. Docker setup is inactive; do not require or run `docker-setup-check.yaml` until explicitly resumed.
 3. If database migrations changed, confirm the `main`-driven staging path first.
    Check that app code remains usable against the old production schema: the
    production Vercel planner deploys apps before the production migration job

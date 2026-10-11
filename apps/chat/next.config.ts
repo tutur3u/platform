@@ -10,6 +10,7 @@ const INFRASTRUCTURE_APP_URL = resolveTuturuuuInfrastructureAppUrl();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'chat',
   transpilePackages: [
     '@tuturuuu/auth',
     '@tuturuuu/internal-api',

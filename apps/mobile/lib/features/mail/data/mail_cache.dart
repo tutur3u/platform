@@ -79,6 +79,12 @@ class MailCache {
         final payload = await fetch();
         checkScope();
         return payload;
+      } on ApiException catch (error) {
+        checkScope();
+        if (error.statusCode == 401 || error.statusCode == 403) {
+          await denyAccess(wsId);
+        }
+        rethrow;
       } on Object {
         checkScope();
         rethrow;

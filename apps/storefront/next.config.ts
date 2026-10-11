@@ -21,6 +21,7 @@ const INVENTORY_APP_URL = resolveInternalAppUrl({
 });
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'storefront',
   images: {
     remotePatterns: [
       {

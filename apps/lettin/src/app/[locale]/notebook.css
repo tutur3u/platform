@@ -302,3 +302,30 @@
   border-radius: 0.55rem;
   box-shadow: 7px 7px 0 var(--secondary);
 }
+
+/* Reader-local choices keep the publisher's theme and fixed heading hierarchy. */
+.lettin-reader-presentation[data-reader-size="large"] .lettin-prose {
+  font-size: 1.2rem;
+}
+
+.lettin-reader-presentation[data-reader-size="largest"] .lettin-prose {
+  font-size: 1.4rem;
+}
+
+.lettin-reader-presentation[data-reader-spacing="relaxed"] .lettin-prose {
+  line-height: 2.1;
+}
+
+@media print {
+  .lettin-reader-controls {
+    display: none;
+  }
+
+  .lettin-reader-presentation[data-reader-size] .lettin-prose {
+    font-size: 1.03rem;
+  }
+
+  .lettin-reader-presentation[data-reader-spacing] .lettin-prose {
+    line-height: 1.8;
+  }
+}

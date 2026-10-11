@@ -13,6 +13,7 @@ import { readWorkspaceManifests } from './workflow-config-core.ts';
 
 type ProductionTargetDecision = {
   changeResult: ChangedFilesResult;
+  migrationChangeResult?: ChangedFilesResult;
   matchedPaths: string[];
   reason: string;
   shouldRun: boolean;
@@ -97,8 +98,12 @@ export async function resolveProductionVercelTargets({
   const selectionEvent = packageResume ? 'push' : eventName;
   return Promise.all(
     targets.map(async ({ productionWorkflow }) => {
+      const isPlatform =
+        productionWorkflow === 'vercel-production-platform.yaml';
+      const commitDriven = selectionEvent === 'push';
       const changeResult = await resolveChangedFiles({
-        requireExplicitDeployment: packageResume,
+        requireExplicitDeployment:
+          packageResume || (isPlatform && commitDriven),
         eventName: selectionEvent,
         headSha,
         refName,
@@ -108,7 +113,7 @@ export async function resolveProductionVercelTargets({
       // An exact deployment marker is positive coverage evidence, not an
       // unavailable empty changed-file list. Ordinary dispatch semantics stay intact.
       if (
-        packageResume &&
+        (packageResume || (isPlatform && commitDriven)) &&
         changeResult.available &&
         changeResult.source === 'deployment-marker' &&
         changeResult.baseSha === headSha
@@ -116,8 +121,7 @@ export async function resolveProductionVercelTargets({
         return {
           changeResult,
           matchedPaths: [],
-          reason:
-            'successful deployment marker already covers the recovery SHA',
+          reason: 'successful deployment marker already covers the target SHA',
           shouldRun: false,
           workflowName: productionWorkflow,
         };
@@ -128,6 +132,54 @@ export async function resolveProductionVercelTargets({
         workflowName: productionWorkflow,
         workspaceManifests,
       });
+
+      // Configuration gating remains authoritative, including disabled platform.
+      if (
+        isPlatform &&
+        commitDriven &&
+        getWorkflowDecision({
+          changedFiles: null,
+          eventName: selectionEvent,
+          workflowName: productionWorkflow,
+          workspaceManifests,
+        }).shouldRun
+      ) {
+        // Use the migration workflow's own marker semantics, never the platform
+        // deployment baseline: deployment can advance while migration apply is held.
+        const migrationChangeResult = await resolveChangedFiles({
+          eventName: 'workflow_run',
+          headSha,
+          refName,
+          rootDir,
+          workflowName: 'supabase-production.yaml',
+        });
+        const migrationDecision = getWorkflowDecision({
+          changedFiles: migrationChangeResult.available
+            ? migrationChangeResult.files
+            : null,
+          eventName: 'workflow_run',
+          workflowName: 'supabase-production.yaml',
+          workspaceManifests,
+        });
+        return {
+          changeResult,
+          migrationChangeResult,
+          ...decision,
+          ...(migrationDecision.shouldRun
+            ? {
+                shouldRun: true,
+                matchedPaths: [
+                  ...new Set([
+                    ...decision.matchedPaths,
+                    ...migrationDecision.matchedPaths,
+                  ]),
+                ],
+              }
+            : {}),
+          reason: `${migrationDecision.shouldRun ? 'platform deployment is required to gate production database migrations' : decision.reason}; migration baseline ${migrationChangeResult.source}: ${migrationDecision.reason}`,
+          workflowName: productionWorkflow,
+        };
+      }
 
       return {
         changeResult,

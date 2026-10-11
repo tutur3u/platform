@@ -20,6 +20,7 @@ export const periodicReportFilters = {
     'pending'
   ),
   cadence: parseAsStringLiteral([
+    'all',
     'weekly',
     'monthly',
     'quarterly',

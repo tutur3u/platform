@@ -1,8 +1,14 @@
 import type { SendEmailResult } from '@tuturuuu/email-service';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isEmail } from '@tuturuuu/utils/email/client';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { isEmailBlacklisted } from '@/lib/email-blacklist';
+
+import {
+  type EmailEligibilityClient,
+  getEmailPreferenceSkipReason,
+  getEmailRecipientSkipDetail,
+} from './email-eligibility';
 
 export const NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const NOTIFICATION_QUERY_CHUNK_SIZE = 500;
@@ -17,7 +23,7 @@ export const NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON =
 export const NOTIFICATION_UNDELIVERABLE_EMAIL_SKIP_REASON_PREFIX =
   'skipped: undeliverable_email';
 
-type SupabaseLike = {
+type SupabaseLike = EmailEligibilityClient & {
   from: (table: string) => any;
   rpc?: unknown;
 };
@@ -25,6 +31,8 @@ type SupabaseLike = {
 export type NotificationSkipCandidate = {
   created_at: string;
   id: string;
+  type?: string | null;
+  code?: string | null;
   scope?: string | null;
   user_id?: string | null;
   ws_id?: string | null;
@@ -32,6 +40,7 @@ export type NotificationSkipCandidate = {
 
 export type NotificationSkipReasonOptions = {
   blockedEmailCache?: Map<string, boolean>;
+  channel?: string;
   errorMessage?: string | null;
   membershipCache?: Map<string, boolean>;
   notification: NotificationSkipCandidate;
@@ -69,9 +78,9 @@ function getRecipientSkipReason(recipientEmail?: string | null): string | null {
     return buildNotificationUndeliverableSkipReason('missing_recipient_email');
   }
 
-  return isValidTuturuuuEmail(recipientEmail)
+  return isEmail(recipientEmail)
     ? null
-    : buildNotificationUndeliverableSkipReason('external_recipient_domain');
+    : buildNotificationUndeliverableSkipReason('invalid_recipient_email');
 }
 
 function getProviderSkipReason({
@@ -150,7 +159,7 @@ async function getBlacklistSkipReason(
   recipientEmail?: string | null,
   blockedEmailCache?: Map<string, boolean>
 ): Promise<string | null> {
-  if (!recipientEmail || !isValidTuturuuuEmail(recipientEmail)) {
+  if (!recipientEmail || !isEmail(recipientEmail)) {
     return null;
   }
 
@@ -179,6 +188,7 @@ export async function getNotificationSkipReason(
   sbAdmin: SupabaseLike,
   {
     blockedEmailCache,
+    channel,
     errorMessage,
     membershipCache,
     notification,
@@ -200,9 +210,26 @@ export async function getNotificationSkipReason(
     return NOTIFICATION_STALE_WORKSPACE_MEMBERSHIP_SKIP_REASON;
   }
 
+  if (channel === 'email') {
+    const preferenceReason = await getEmailPreferenceSkipReason(
+      sbAdmin,
+      notification
+    );
+    if (preferenceReason) return preferenceReason;
+  }
+
   const recipientReason = getRecipientSkipReason(recipientEmail);
   if (recipientReason) {
     return recipientReason;
+  }
+
+  if (recipientEmail) {
+    const detail = await getEmailRecipientSkipDetail(
+      sbAdmin,
+      notification,
+      recipientEmail
+    );
+    if (detail) return buildNotificationUndeliverableSkipReason(detail);
   }
 
   const blacklistReason = await getBlacklistSkipReason(

@@ -1,4 +1,7 @@
+import { createSeoHeaders, PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
+import { tryToParsePath } from 'next/dist/lib/try-to-parse-path';
 import { describe, expect, it, vi } from 'vitest';
+import { siteConfig } from '@/constants/configs';
 import { PUBLIC_SEO_ROUTES } from '@/lib/seo/public-routes';
 import { getPublishedChangelogEntries } from '@/lib/seo/published-changelog';
 import robots from './robots';
@@ -34,19 +37,54 @@ describe('SEO metadata routes', () => {
     }
   });
 
-  it('advertises the sitemap while protecting private routes and allowing redirects', () => {
+  it('advertises the sitemap and lets crawlers read redirects and noindex directives', () => {
     const metadata = robots();
     const rules = Array.isArray(metadata.rules)
       ? metadata.rules[0]
       : metadata.rules;
 
     expect(metadata.sitemap).toMatch(/\/sitemap\.xml$/);
-    expect(rules?.allow).toBe('/');
-    expect(rules?.disallow).toEqual(
-      expect.arrayContaining(['/api/', '/onboarding', '/vi/onboarding'])
+    expect(metadata.sitemap).toBe(
+      new URL('/sitemap.xml', siteConfig.url).toString()
     );
-    expect(rules?.disallow).not.toContain('/pricing');
-    expect(rules?.disallow).not.toContain('/products/meet-together');
+    expect(metadata.host).toBe(siteConfig.url);
+    expect(rules).toEqual({ userAgent: '*', allow: '/' });
+  });
+
+  it('keeps private Web routes noindexed while declared public products remain indexable', () => {
+    const patterns = [
+      ...PUBLIC_SEO_ROUTES.map(({ pathname }) =>
+        pathname.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      ),
+      'changelog/[^/]+',
+    ];
+    const rules = createSeoHeaders('web', patterns, {
+      VERCEL_ENV: 'production',
+    });
+    const noindexed = (pathname: string) =>
+      rules.some((rule) => {
+        const parsed = tryToParsePath(rule.source);
+        expect(parsed.error).toBeUndefined();
+        return (
+          new RegExp(parsed.regexStr ?? '').test(pathname) &&
+          rule.headers.some(
+            ({ key, value }) =>
+              key === 'X-Robots-Tag' && value === PRIVATE_ROBOTS_HEADER
+          )
+        );
+      });
+
+    for (const pathname of [
+      '/api/v1/users',
+      '/onboarding',
+      '/vi/onboarding',
+      '/personal/tasks',
+    ]) {
+      expect(noindexed(pathname), pathname).toBe(true);
+    }
+    for (const pathname of ['/products/tasks', '/vi/products/tasks']) {
+      expect(noindexed(pathname), pathname).toBe(false);
+    }
   });
 
   it('adds newly published entries without changing the public route manifest', async () => {

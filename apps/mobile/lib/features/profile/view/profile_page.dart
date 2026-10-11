@@ -18,6 +18,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/features/profile/view/profile_avatar_picker.dart';
+import 'package:mobile/features/profile/view/profile_avatar_removal.dart';
 import 'package:mobile/features/profile/view/profile_banner.dart';
 import 'package:mobile/features/profile/view/profile_media_recovery.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
@@ -320,7 +321,8 @@ class _ProfileView extends StatelessWidget {
                                     title: l10n.profileRemoveAvatar,
                                     value: l10n.profileDangerAction,
                                     isDestructive: true,
-                                    onTap: () => _confirmRemoveAvatar(context),
+                                    onTap: () =>
+                                        confirmRemoveProfileAvatar(context),
                                   ),
                               ],
                             ),
@@ -373,51 +375,6 @@ class _ProfileView extends StatelessWidget {
           },
         ),
       ),
-    );
-  }
-
-  Future<void> _confirmRemoveAvatar(BuildContext context) async {
-    final confirmed = await showAdaptiveSheet<bool>(
-      context: context,
-      maxDialogWidth: 420,
-      builder: (dialogContext) => AppDialogScaffold(
-        title: dialogContext.l10n.profileRemoveAvatar,
-        description: dialogContext.l10n.profileRemoveAvatarDescription,
-        icon: Icons.delete_outline_rounded,
-        maxWidth: 420,
-        maxHeightFactor: 0.56,
-        actions: [
-          shad.OutlineButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(dialogContext.l10n.profileCancel),
-          ),
-          shad.DestructiveButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(dialogContext.l10n.profileRemoveAvatar),
-          ),
-        ],
-        child: const SizedBox.shrink(),
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) {
-      return;
-    }
-
-    final success = await context.read<ProfileCubit>().removeAvatar();
-    if (!context.mounted) {
-      return;
-    }
-
-    shad.showToast(
-      context: context,
-      builder: (toastContext, _) => success
-          ? shad.Alert(
-              title: Text(toastContext.l10n.profileAvatarRemoveSuccess),
-            )
-          : shad.Alert.destructive(
-              title: Text(toastContext.l10n.profileAvatarRemoveError),
-            ),
     );
   }
 

@@ -1,0 +1,109 @@
+---
+title: "Develop and document without Docker"
+description: "Minimal Next.js setup, local documentation preview, focused checks, and remote database alternatives."
+updatedAt: '2026-10-08'
+---
+
+## Choose the smallest environment
+
+| Work | Needed locally | External boundary |
+| --- | --- | --- |
+| Docs, navigation, inventory | Node/Bun, repository files | Network only for first pinned Mintlify download |
+| Utility, route-policy, and mocked service tests | Bun and installed dependencies | Fixtures replace the documented boundaries |
+| Next.js app/UI development | Bun, the owning Next app, required app env | Approved hosted dev/staging services when needed |
+| Database integration or migration application | Isolated Supabase/Postgres fixture | Approved remote devbox or a disposable test database |
+| Hosted cron diagnosis | Read access to owning workflow/provider telemetry | Vercel/Cloudflare and the deployed processor |
+| Native mobile work | Flutter/platform tooling | Product providers and approved test services |
+
+Docker setup, the Docker cron runner, Rust, and TanStack Start are not required
+for the active path. A particular database/container integration test may still
+need an isolated container runtime; offload that test rather than treating it as
+a requirement for every task. Fixtures do not prove a real database migration or
+hosted media network works.
+
+## Install and run an active app
+
+Use the repository's pinned Bun and Node requirements from the
+[version reference](/reference/repository/versions):
+
+```bash
+bun install --frozen-lockfile
+```
+
+Use the owning app's documented environment variables and an approved dev/staging
+service configuration. Keep values in ignored local env files. A remote database
+URL is not permission to change production data. Do not require `bun setup` for
+minimal onboarding: it can build packages and probe Docker/local services.
+
+When runtime development is needed, start only the selected Next app, for example
+`bun dev:web` or `bun dev:calendar`. Portless provides the established app host
+and central-login boundary. The package's `dev:app` is available for direct-port
+work, but cross-app auth still needs valid local origins and coordinated URLs.
+Do not start Rust or TanStack Start merely to satisfy an old setup paragraph.
+
+## Preview documentation locally
+
+```bash
+bun dev:docs
+```
+
+This runs `scripts/local-docs.js` from the repository root. It executes the
+pinned Mintlify CLI through `npx` in `apps/docs` and needs no Docker daemon,
+Compose stack, database, Rust, or TanStack Start. The CLI pin is read from `apps/docs/mintlify-version.json`, independently of
+retained Docker configuration.
+The first run downloads that version; later runs can reuse the npm cache.
+Stop the foreground preview with Ctrl+C.
+
+For another port or a finite link check:
+
+```bash
+bun dev:docs --port 3333
+node scripts/local-docs.js broken-links
+node scripts/local-docs.js --print-command
+```
+
+`--print-command` shows the exact command without starting a server. `bun dev:docs:local` is a compatibility alias for the same local preview.
+`bun dev:docs:down` is disabled while Docker setup is paused; stop the local
+foreground preview with Ctrl+C.
+
+## Validate without building apps
+
+```bash
+node scripts/generate-docs-inventory.js --check
+node scripts/generate-app-seo.js --check
+node scripts/docs-audit.js
+node --test scripts/docs-audit.test.js scripts/generate-app-seo.test.js
+```
+
+Focused tests can use explicit worker bounds. Before broad validation, inspect
+`ttr resources status --json` and run heavy commands through
+`ttr resources run -- <command>`. Repository policy prohibits local builds and
+`bun check`, whose graph can build dependencies. Require relevant test,
+type-check, lint, real app builds, and strict Mintlify validation in CI for the
+exact source commit. Neither this local path nor a fixture test waives a required
+integration check.
+
+## Use remote fixtures deliberately
+
+An approved remote devbox can host isolated Supabase or database-dependent
+suites while local editing stays lightweight. Verify the runner's actual host
+and checkout; a same-machine container does not offload work. For SQL migrations,
+apply to an isolated database and record its exact schema/test evidence. Hosted
+Supabase dev/staging services can support read-only application testing when
+configured, but they are not interchangeable with a disposable migration test
+fixture.
+
+See [Remote devboxes](/build/development-tools/remote-devboxes),
+[Local Supabase development](/build/development-tools/local-supabase-development)
+for optional isolated fixtures, and the
+[active runtime map](/build/devops/active-runtime) for current ownership.
+
+The docs wrapper runs with Node 24. When the host uses another Node major,
+`npx` supplies an isolated Node 24 executable alongside the pinned Mintlify CLI;
+it does not replace the host Node installation. The initial download needs
+network access. CI installs Node 24 directly.
+
+Focused Forms metadata/loader tests resolve their mocked Supabase server boundary
+from source via `apps/forms/vitest.config.ts`, so they do not require a shared
+package build or a Docker database. They cover author noindex settings and
+anonymous/protected snapshots; they do not prove live database access.

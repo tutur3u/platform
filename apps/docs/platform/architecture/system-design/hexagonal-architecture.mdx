@@ -22,13 +22,10 @@ borrows an idea from this pattern, the text says so explicitly.
 </Note>
 
 <Note>
-**Architecture is moving.** Tuturuuu is migrating the legacy Next.js
-`apps/web` runtime (port `7803`) to TanStack Start (`apps/tanstack-web`) plus a
-dedicated Rust backend (`apps/backend`, port `7820`). The emerging backend is
-the Rust service, not a TypeScript "microservice." See
-[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
-for the canonical target. Treat the patterns below as portable design ideas, not
-a permanent structural mandate.
+**Active runtime.** Web and satellite apps use Next.js. Rust and TanStack Start
+are paused and not in use; their retained designs are not a setup or parity
+requirement. See the [active runtime map](/build/devops/active-runtime).
+Treat the patterns below as portable design ideas, not a structural mandate.
 </Note>
 
 ## Core Concept

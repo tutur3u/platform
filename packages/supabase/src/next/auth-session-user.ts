@@ -1,14 +1,48 @@
 import type { TypedSupabaseClient } from '../types';
 import type { SupabaseUser } from './user';
 
+export type SessionUserCheckOptions = {
+  readonly check: () => void;
+};
+
 const LogAuthTiming = process.env.NODE_ENV === 'development';
 
 export async function resolveAuthenticatedSessionUser(
-  supabase: TypedSupabaseClient
+  supabase: TypedSupabaseClient,
+  options?: SessionUserCheckOptions
 ): Promise<{
   user: SupabaseUser | null;
   authError: (Error & { code?: string; status?: number }) | null;
 }> {
+  if (options) {
+    options.check();
+    if (typeof supabase.auth.getClaims === 'function') {
+      try {
+        // Claims are optional and never authorize the returned identity.
+        await supabase.auth.getClaims();
+      } catch {
+        // A current stop must escape this optional-claims fallback.
+        options.check();
+      }
+      options.check();
+    }
+
+    options.check();
+    let result: Awaited<ReturnType<typeof supabase.auth.getUser>>;
+    try {
+      result = await supabase.auth.getUser();
+    } catch (error) {
+      options.check();
+      throw error;
+    }
+    options.check();
+    const {
+      data: { user },
+      error: authError,
+    } = result;
+    return { user, authError };
+  }
+
   try {
     if (typeof supabase.auth.getClaims === 'function') {
       const t0 = LogAuthTiming ? Date.now() : 0;

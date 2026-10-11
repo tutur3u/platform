@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 import { optimizeProfileMedia } from './profile-media-optimize';
 import { publicStorageUrl } from './profile-media-public-url';
 import { readProfileMediaBody } from './profile-media-upload-body';
+import { withProfileMediaUploadCors } from './profile-media-upload-cors';
 
 /** SQL-defined service-role RPC pending generated-schema refresh. */
 type BannerOperationStatusRpc = (
@@ -32,6 +33,8 @@ function isIssuedBannerOperation(data: unknown, path: string | undefined) {
 /** A signed capability, not a logged-in upload: preserves native/offline clients. */
 export function createProfileMediaPutHandler(kind: ProfileMediaKind) {
   return async (request: Request) => {
+    const respond = (response: Response) =>
+      withProfileMediaUploadCors(request, response);
     try {
       const token = new URL(request.url).searchParams.get('token');
       if (!token || token.length > 4096)
@@ -128,22 +131,28 @@ export function createProfileMediaPutHandler(kind: ProfileMediaKind) {
           'Unable to store optimized profile image',
           503
         );
-      return NextResponse.json(
-        { publicUrl, bytes: optimized.length },
-        {
-          headers: { 'Cache-Control': 'no-store' },
-        }
+      return respond(
+        NextResponse.json(
+          { publicUrl, bytes: optimized.length },
+          {
+            headers: { 'Cache-Control': 'no-store' },
+          }
+        )
       );
     } catch (error) {
       if (error instanceof ProfileUploadError)
-        return NextResponse.json(
-          { message: error.message },
-          { status: error.status }
+        return respond(
+          NextResponse.json(
+            { message: error.message },
+            { status: error.status }
+          )
         );
       console.error('Unable to optimize profile media upload');
-      return NextResponse.json(
-        { message: 'Profile upload unavailable' },
-        { status: 503 }
+      return respond(
+        NextResponse.json(
+          { message: 'Profile upload unavailable' },
+          { status: 503 }
+        )
       );
     }
   };

@@ -194,6 +194,27 @@ Verified, so nobody re-investigates these:
 - **Web Analytics** — `@vercel/analytics` is not mounted in any app, so the
   per-event meter stays near zero even though the dashboard toggle is on.
 
+## Production test-only selection
+
+Production selection excludes only the three audited Vitest files under
+`apps/tools/src/app/[locale]/random/` listed in
+`scripts/ci/production-test-only-paths.ts`. Runtime source and manifest references
+and Tools runtime globs were checked before listing them. Recheck those boundaries
+before extending the list or importing a listed test into runtime code. Validation
+CI and preview selection still include these changes. Unlisted tests, snapshots,
+MDX, JSON, manifests, lockfiles, build tooling, workflows and migrations retain
+normal selection. Missing or empty change evidence and missing workspace manifests
+remain open; manual dispatch, disabled targets, deployment-marker baselines,
+exact-SHA package recovery and migration gates keep their existing behavior.
+Earlier undeployed runtime changes still deploy even when the latest commit only
+changes a listed test. Avoided deployment counts, runner minutes and dollar savings
+require measurements after an authorized release and are currently unknown.
+
+The reusable `.github/workflows/ci-check.yml` checkout must include both
+`production-test-only-paths.ts` and `workspace-dependency-closure.ts`, which
+`tuturuuu.ts` imports. The selection test executes the checker using only that
+declared sparse file set, so a missing helper fails before workflow selection.
+
 ## Checking Current Spend
 
 The dashboard breakdown lives under **Usage**, switchable between *By Project*

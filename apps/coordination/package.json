@@ -1,0 +1,20 @@
+{
+  "name": "@tuturuuu/coordination",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev --host 127.0.0.1 --port 8798",
+    "build": "vp build",
+    "type-check": "wrangler types --env-interface CoordinationEnv worker-configuration.d.ts && tsc --project tsconfig.json",
+    "test": "node --test src/worker.test.mjs",
+    "lint": "vp lint --config .oxlintrc.json src vite.config.ts --deny-warnings",
+    "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts --check"
+  },
+  "packageManager": "bun@1.4.1",
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.63.1",
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.1.0",
+    "vite-plus": "1.1.0"
+  }
+}

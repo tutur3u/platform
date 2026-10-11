@@ -299,3 +299,109 @@ it.each([
     expect(f.upload).not.toHaveBeenCalled();
   }
 );
+
+it.each([
+  'https://lettin.tuturuuu.com',
+  'https://lettin.tuturuuu.localhost:1355',
+  'https://profile.lettin.tuturuuu.localhost:1355',
+])('makes successful capability PUT readable to %s', async (origin) => {
+  const signed = ticket();
+  const upload = request(signed.token);
+  upload.headers.set('Origin', origin);
+  const response = await createProfileMediaPutHandler('avatar')(upload);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    publicUrl: `https://storage.test/${actor}/${signed.claims.jti}.webp`,
+    bytes: Buffer.byteLength('optimized'),
+  });
+  expect(response.headers.get('access-control-allow-origin')).toBe(origin);
+  expect(response.headers.get('vary')).toBe('Origin');
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(response.headers.has('access-control-allow-credentials')).toBe(false);
+  expect(f.consume).toHaveBeenCalledTimes(1);
+});
+
+it.each(['native', 'untrusted'] as const)(
+  'retains capability upload behavior without a CORS grant for %s',
+  async (client) => {
+    const upload = request(ticket().token);
+    if (client === 'untrusted')
+      upload.headers.set('Origin', 'https://attacker.test');
+    const response = await createProfileMediaPutHandler('avatar')(upload);
+    expect(response.status).toBe(200);
+    expect(response.headers.has('access-control-allow-origin')).toBe(false);
+    expect(f.consume).toHaveBeenCalledTimes(1);
+    expect(f.admin).toHaveBeenCalledWith({ noCookie: true });
+    expect(f.upload).toHaveBeenCalledTimes(1);
+  }
+);
+
+it.each([
+  ['mime', 400, 'Unsupported profile image'],
+  ['token', 401, 'Invalid upload ticket'],
+  ['consume', 409, 'Already consumed'],
+  ['body', 413, 'Source image exceeds the size limit'],
+  ['storage', 503, 'Unable to store optimized profile image'],
+  ['generic', 503, 'Profile upload unavailable'],
+] as const)(
+  'makes terminal %s errors readable without changing their body/status',
+  async (failure, status, message) => {
+    const upload = request(failure === 'token' ? 'invalid' : ticket().token);
+    upload.headers.set('Origin', 'https://lettin.tuturuuu.com');
+    if (failure === 'mime') upload.headers.set('Content-Type', 'image/svg+xml');
+    if (failure === 'consume')
+      f.consume.mockRejectedValue(new ProfileUploadError(message, status));
+    if (failure === 'body')
+      upload.headers.set('Content-Length', String(2 * 1024 ** 2 + 1));
+    if (failure === 'storage')
+      f.upload.mockResolvedValue({ error: { code: 'synthetic' } });
+    if (failure === 'generic')
+      f.admin.mockRejectedValue(new Error('synthetic'));
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const response = await createProfileMediaPutHandler('avatar')(upload);
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual({ message });
+      expect(response.headers.get('access-control-allow-origin')).toBe(
+        'https://lettin.tuturuuu.com'
+      );
+      expect(response.headers.get('vary')).toBe('Origin');
+      expect(response.headers.has('access-control-allow-credentials')).toBe(
+        false
+      );
+    } finally {
+      log.mockRestore();
+    }
+  }
+);
+
+it.each(['issued', 'changed', 'outage'] as const)(
+  'preserves trusted-origin banner lifecycle responses for %s',
+  async (state) => {
+    const operation = randomUUID();
+    const signed = createAppCoordinationToken({
+      userId: actor,
+      targetApp: 'profile-media-upload',
+      scopes: ['profile-media:banner', `banner-operation:${operation}`],
+      expiresInSeconds: 600,
+    });
+    f.rpc.mockResolvedValue({
+      data: { state, file_path: `${actor}/${operation}.webp` },
+      error: state === 'outage' ? { code: 'synthetic' } : null,
+    });
+    const upload = request(signed.token);
+    upload.headers.set('Origin', 'https://lettin.tuturuuu.com');
+    const response = await createProfileMediaPutHandler('banner')(upload);
+    expect(response.status).toBe(
+      state === 'issued' ? 200 : state === 'outage' ? 503 : 409
+    );
+    expect(response.headers.get('access-control-allow-origin')).toBe(
+      'https://lettin.tuturuuu.com'
+    );
+    expect(f.consume).toHaveBeenCalledTimes(1);
+    if (state !== 'issued') {
+      expect(f.optimize).not.toHaveBeenCalled();
+      expect(f.upload).not.toHaveBeenCalled();
+    }
+  }
+);

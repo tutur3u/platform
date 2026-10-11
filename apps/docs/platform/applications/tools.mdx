@@ -1,0 +1,32 @@
+---
+title: "Tools"
+description: "Public QR and random utilities with stable canonical URLs."
+updatedAt: '2026-10-08'
+---
+
+Tools (`tools.tuturuuu.com`, `apps/tools`) serves public, lightweight web
+utilities. It uses stable URLs without locale prefixes; language preferences
+can change copy on the same canonical path.
+
+| Tool | Canonical path | Guide |
+| --- | --- | --- |
+| Directory | `/` | Tool selection |
+| QR generator | `/qr` | [QR](/platform/applications/qr) |
+| Random utilities | `/random` | Options provided by the current random tool UI |
+
+The public sitemap lists only these three paths on the Tools host. Old main-site
+QR aliases redirect to the canonical product destination where configured;
+they must not be published as duplicate pages with unrelated canonicals.
+
+Page-specific metadata names the actual utility. URLs such as `/vi/qr` and
+`/en/qr` are redirect aliases, not distinct indexed translations. Do not emit
+hreflang alternates when the app serves only one stable URL per page.
+
+The utility input is separate from its public explanatory metadata. Avoid
+placing user-entered text or private data into canonical URLs, search schemas,
+or static sitemap entries. Authentication and API paths are excluded by the
+shared indexing policy.
+
+[Tools routes](/reference/repository/routes/tools) and
+[SEO strategy](/build/development-tools/seo-strategy) describe implementation
+and public-discovery expectations.

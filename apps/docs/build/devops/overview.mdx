@@ -1,7 +1,7 @@
 ---
 title: "DevOps & Deployment"
 description: "The operational map for how Tuturuuu is built, deployed, migrated, and validated."
-updatedAt: "2026-09-03"
+updatedAt: "2026-10-08"
 ---
 
 This section is the runbook for shipping and operating Tuturuuu. It documents the
@@ -16,20 +16,23 @@ released, or recovered.
 | Platform web app (`apps/web`)                                                                                                                                                         | `.github/workflows/vercel-preview-platform.yaml`, `.github/workflows/vercel-production-platform.yaml`   | Vercel preview build validation and production deploy   |
 | Satellite web apps (every app under `apps/*` with a `vercel-preview-<app>.yaml` / `vercel-production-<app>.yaml` pair: `apps`, `nova`, `rewise`, `calendar`, `finance`, `inventory`, `infrastructure`, `meet`, `tasks`, `track`, `shortener`, `qr`, `cms`, `mail`, `learn`, `teach`, `chat`, `drive`, `mind`, `storefront`) | `.github/workflows/vercel-preview-*.yaml`, `.github/workflows/vercel-production-*.yaml`                                          | Vercel preview and production deployments               |
 | Database schema (`apps/database`)                                                                                                                                                     | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml`                 | Supabase staging and production projects                |
-| Self-hosted web runtime (`apps/web`)                                                                                                                                                  | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
-| Paused migration web runtime (`apps/tanstack-web`)                                                                                                                                    | `apps/tanstack-web/Dockerfile`, `apps/tanstack-web/wrangler.jsonc`, `.github/workflows/rust-backend.yml`, `.github/workflows/vercel-*-tanstack-web.yaml` | Local/manual use only; automatic CI and production builds are disabled in `tuturuuu.ts` |
-| Paused Rust backend (`apps/backend`)                                                                                                                                                  | `apps/backend/Dockerfile`, `apps/backend/wrangler.jsonc`, `.github/workflows/rust-backend.yml`          | Local/manual use only; it is not deployed and its combined migration CI is disabled |
+| Self-hosted web runtime (`apps/web`)                                                                                                                                                  | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Inactive retained Docker setup; not an active delivery path |
+| Paused migration web runtime (`apps/tanstack-web`)                                                                                                                                    | `apps/tanstack-web/Dockerfile`, `apps/tanstack-web/wrangler.jsonc`, `.github/workflows/rust-backend.yml`, `.github/workflows/vercel-*-tanstack-web.yaml` | Paused; not in use; no source, dependency, test, or CI refresh |
+| Paused Rust backend (`apps/backend`)                                                                                                                                                  | `apps/backend/Dockerfile`, `apps/backend/wrangler.jsonc`, `.github/workflows/rust-backend.yml`          | Paused; not deployed or in use; no source, dependency, test, or CI refresh |
 | Discord utilities (`apps/discord`)                                                                                                                                                    | `.github/workflows/discord-modal-deploy.yml`                                                            | Modal                                                   |
 | Mobile artifacts (`apps/mobile`)                                                                                                                                                      | `.github/workflows/mobile-build-*.yaml`                                                                 | Build artifacts for Android, iOS, macOS, Windows        |
 | Shared packages (`packages/*`)                                                                                                                                                        | `.github/workflows/release-*.yaml`                                                                      | npm                                                     |
 
 ## Read This In Order
 
-1. [Environments & Release Flow](/build/devops/environments-release-flow)
-2. [Web Docker Deployment](/build/devops/web-docker-deployment)
-3. [TanStack/Rust Local And Deployment](/build/devops/tanstack-rust-local-deploy)
+1. [Active runtime and retired services](/build/devops/active-runtime)
+2. [Develop without Docker](/build/development-tools/without-docker)
+3. [Environments & Release Flow](/build/devops/environments-release-flow)
 4. [GitHub Actions Runbook](/build/devops/github-actions-runbook)
 5. [Secrets & Configuration](/build/devops/secrets-and-configuration)
+
+Docker and Rust/TanStack runbooks are retained historical references. Their
+commands and CI are inactive until explicitly resumed.
 
 ## Core Principles
 
@@ -40,8 +43,8 @@ released, or recovered.
   That path runs the same blocking checks as Discord Python CI through
   `scripts/check-discord-python.js`.
 - Vercel handles hosted satellite web deployments, platform preview build validation, and the hosted platform production deploy. Automatic TanStack production builds are disabled while that migration is paused. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
-- Self-hosted web deployment is Docker-based, and blue/green rollout is the supported rebuild-before-restart path.
-- The TanStack/Rust migration is paused. Its source remains available for local or explicitly approved manual work, but automatic Rust/TanStack CI, Cloudflare workflow jobs, TanStack production builds, and the migration E2E matrix stay disabled until maintenance resumes. The shared E2E bundle now builds only the maintained Next.js frontend, and `apps/web` remains the production source of truth.
+- Docker setup and its CI/E2E image provisioning are inactive. The Docker cron runner is retired; use the owning hosted scheduler and processor runbooks.
+- Rust/TanStack Start are paused and not in use. Do not build, test, port, refresh manifests, or update their dependencies until further notice. Docker-backed E2E jobs are paused; direct Next Playwright requires an explicitly prepared safe fixture and does not provision containers.
 - Secrets live in GitHub Actions secrets/variables or local env files such as `apps/web/.env.local`. They do not belong in the repo.
 
 ## Vercel Cost Controls
@@ -107,7 +110,7 @@ flowchart LR
 
 - TanStack/Rust migration maintenance is paused. `rust-backend.yml` and automatic TanStack production builds are switchboard-disabled; the retained source and runbooks are for local or explicitly approved future resumption work.
 - `apps/web` now supports both in-place Docker production deploys and blue/green deploys.
-- `docker-setup-check.yaml` validates Docker parity, renders both compose files, and builds both the dev and production web images.
+- `docker-setup-check.yaml` is disabled, including manual dispatch; retained image parity steps do not execute.
 - Production Redis in Docker now requires a token, but `scripts/docker-web.js`
   satisfies that automatically by generating and injecting the value unless you
   explicitly opt out with `--without-redis`. Watcher-managed Infrastructure

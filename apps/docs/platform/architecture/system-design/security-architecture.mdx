@@ -1,7 +1,7 @@
 ---
 title: "Security Architecture"
 description: "Comprehensive security justification and architectural security patterns in Tuturuuu"
-updatedAt: "2026-07-13"
+updatedAt: '2026-10-08'
 ---
 
 Security is a foundational architectural concern in Tuturuuu, embedded at every level of the system design. This document explains the core architectural patterns that provide comprehensive security coverage.
@@ -16,7 +16,11 @@ This document focuses on **architecture-level security patterns**. For implement
 <Warning>
 **What is real vs. illustrative.** Tuturuuu's web tier (`apps/web`) is a conventional Next.js App Router app, not a network of independently keyed microservices. Several patterns below (a single API gateway, service-to-service token exchange, an immutable event-sourced audit log) are presented as **conceptual / target patterns** to explain the reasoning — they are explicitly labeled where they are not implemented as written. The concrete code examples (the `withApiAuth` wrapper, Supabase Row-Level Security, the Rust backend's Supabase auth) reflect the real codebase.
 
-The platform is also mid-migration: `apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). See [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) for how security responsibilities move into the Rust backend.
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 </Warning>
 
 ## Plan-aware egress and abuse allowances
@@ -488,7 +492,11 @@ Trigger it from server code with `securityScanTask.trigger({ userId })` (or `bat
 
 ## Security Under the TanStack + Rust Migration
 
-`apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). Several security responsibilities move accordingly:
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 - **Boundary authentication** shifts into the Rust backend (`apps/backend/src/supabase_auth.rs`), which validates Supabase access tokens from cookies or Bearer headers against Supabase Auth using the service-role key.
 - **TanStack web** must not call `/trpc` or raw app APIs directly (a guard, `check-tanstack-api-access`, enforces this); product data flows through `packages/internal-api` helpers and REST `/api/v1` routes.

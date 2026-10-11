@@ -1,6 +1,6 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { externalRecipientCases } from '@/lib/notifications/email-eligibility-test-cases';
 import {
   createRecentNotificationWindow,
   getStaleCreatedAt,
@@ -9,29 +9,29 @@ import {
 const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
   const rpcMock = vi.fn();
+  const getUserById = vi.fn();
   const sendPushNotificationBatchMock = vi.fn();
   const sendSystemEmailMock = vi.fn();
   const statusError = vi.fn((): Error | null => null);
-
   return {
     fromMock,
     statusError,
     rpcMock,
+    getUserById,
     sendPushNotificationBatchMock,
     sendSystemEmailMock,
   };
 });
-
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() =>
     Promise.resolve({
       from: mocks.fromMock,
       rpc: mocks.rpcMock,
+      auth: { admin: { getUserById: mocks.getUserById } },
       schema: vi.fn((schemaName: string) => {
         if (schemaName !== 'private') {
           throw new Error(`Unexpected schema ${schemaName}`);
         }
-
         return {
           rpc: mocks.rpcMock,
           from: mocks.fromMock,
@@ -40,19 +40,15 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     })
   ),
 }));
-
 vi.mock('@/lib/notifications/push-delivery', () => ({
   sendPushNotificationBatch: mocks.sendPushNotificationBatchMock,
 }));
-
 vi.mock('@react-email/render', () => ({
   render: vi.fn(async () => '<html />'),
 }));
-
 vi.mock('@tuturuuu/email-service', () => ({
   sendSystemEmail: mocks.sendSystemEmailMock,
 }));
-
 function createResolvedChain<T>(result: T) {
   const chain = Promise.resolve(result) as Promise<T> & {
     eq: ReturnType<typeof vi.fn>;
@@ -64,7 +60,6 @@ function createResolvedChain<T>(result: T) {
     select: ReturnType<typeof vi.fn>;
     single: ReturnType<typeof vi.fn>;
   };
-
   chain.eq = vi.fn(() => chain);
   chain.in = vi.fn(() => chain);
   chain.limit = vi.fn(() => Promise.resolve(result));
@@ -73,7 +68,6 @@ function createResolvedChain<T>(result: T) {
   chain.range = vi.fn(() => Promise.resolve(result));
   chain.select = vi.fn(() => chain);
   chain.single = vi.fn(() => Promise.resolve(result));
-
   return chain;
 }
 
@@ -115,7 +109,6 @@ describe('send-immediate route', () => {
     email: Array<{ email: string }>;
     id: string;
   }>;
-
   beforeEach(() => {
     mocks.statusError.mockReturnValue(null);
     vi.clearAllMocks();
@@ -127,10 +120,11 @@ describe('send-immediate route', () => {
         name: string,
         args: { p_emails?: string[]; p_notification_types?: string[] }
       ) => {
+        if (name === 'should_send_notification')
+          return { data: true, error: null };
         if (name === 'list_immediate_notification_email_configs') {
           return { data: [], error: null };
         }
-
         if (name === 'get_email_block_statuses') {
           return {
             data: (args.p_emails ?? []).map((email) => ({
@@ -141,7 +135,6 @@ describe('send-immediate route', () => {
             error: null,
           };
         }
-
         throw new Error(`Unexpected RPC ${name}`);
       }
     );
@@ -152,7 +145,6 @@ describe('send-immediate route', () => {
     mocks.sendSystemEmailMock.mockResolvedValue({
       success: true,
     });
-
     batches = [
       {
         channel: 'push',
@@ -192,7 +184,6 @@ describe('send-immediate route', () => {
         id: 'user-1',
       },
     ];
-
     mocks.fromMock.mockImplementation((table: string) => {
       switch (table) {
         case 'notification_batches':
@@ -269,7 +260,6 @@ describe('send-immediate route', () => {
       }
     });
   });
-
   it('sends immediate push batches through FCM', async () => {
     const response = await POST(
       new Request('http://localhost/api/notifications/send-immediate', {
@@ -280,7 +270,6 @@ describe('send-immediate route', () => {
         method: 'POST',
       }) as any
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       failed: 0,
@@ -304,7 +293,6 @@ describe('send-immediate route', () => {
       }),
     });
   });
-
   it('accepts the Cloudflare recovery token without exposing the database key', async () => {
     vi.stubEnv('CRON_CONTROL_DELIVERY_TOKEN', 'cloudflare-recovery-secret');
     const response = await POST(
@@ -316,13 +304,11 @@ describe('send-immediate route', () => {
     expect(response.status).toBe(200);
     expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledTimes(1);
   });
-
   it('delivers push to a member outside the root workspace', async () => {
     const otherWorkspaceId = '00000000-0000-4000-8000-000000000222';
     batches[0]!.ws_id = otherWorkspaceId;
     deliveryLogs[0]!.notifications.ws_id = otherWorkspaceId;
     deliveryLogs[0]!.notifications.data.workspace_id = otherWorkspaceId;
-
     const response = await POST(
       new Request('http://localhost/api/notifications/send-immediate', {
         body: JSON.stringify({ batch_id: 'batch-1' }),
@@ -330,7 +316,6 @@ describe('send-immediate route', () => {
         method: 'POST',
       }) as any
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       processed: 1,
@@ -338,13 +323,11 @@ describe('send-immediate route', () => {
     });
     expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledOnce();
   });
-
   it('keeps non-root email batches out of the push rollout', async () => {
     const otherWorkspaceId = '00000000-0000-4000-8000-000000000222';
     batches[0]!.channel = 'email';
     batches[0]!.ws_id = otherWorkspaceId;
     deliveryLogs[0]!.notifications.ws_id = otherWorkspaceId;
-
     const response = await POST(
       new Request('http://localhost/api/notifications/send-immediate', {
         body: JSON.stringify({ batch_id: 'batch-1' }),
@@ -352,15 +335,12 @@ describe('send-immediate route', () => {
         method: 'POST',
       }) as any
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ processed: 0 });
     expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
   });
-
   it('skips notifications older than one day', async () => {
     deliveryLogs[0]!.notifications.created_at = getStaleCreatedAt();
-
     const response = await POST(
       new Request('http://localhost/api/notifications/send-immediate', {
         body: JSON.stringify({ batch_id: 'batch-1' }),
@@ -370,7 +350,6 @@ describe('send-immediate route', () => {
         method: 'POST',
       }) as any
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       failed: 0,
@@ -386,14 +365,12 @@ describe('send-immediate route', () => {
     });
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
   });
-
   it('skips workspace notifications for removed members', async () => {
     const otherWorkspaceId = '00000000-0000-4000-8000-000000000222';
     batches[0]!.ws_id = otherWorkspaceId;
     deliveryLogs[0]!.notifications.ws_id = otherWorkspaceId;
     deliveryLogs[0]!.notifications.data.workspace_id = otherWorkspaceId;
     workspaceMembership = null;
-
     const response = await POST(
       new Request('http://localhost/api/notifications/send-immediate', {
         body: JSON.stringify({ batch_id: 'batch-1' }),
@@ -403,7 +380,6 @@ describe('send-immediate route', () => {
         method: 'POST',
       }) as any
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       failed: 0,
@@ -419,7 +395,6 @@ describe('send-immediate route', () => {
     });
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
   });
-
   it('skips push batches when the user has no registered devices', async () => {
     mocks.fromMock.mockImplementation((table: string) => {
       switch (table) {
@@ -496,7 +471,6 @@ describe('send-immediate route', () => {
           throw new Error(`Unexpected table ${table}`);
       }
     });
-
     const response = await POST(
       new Request('http://localhost/api/notifications/send-immediate', {
         body: JSON.stringify({ batch_id: 'batch-1' }),
@@ -506,7 +480,6 @@ describe('send-immediate route', () => {
         method: 'POST',
       }) as any
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       failed: 0,
@@ -522,39 +495,56 @@ describe('send-immediate route', () => {
     });
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
   });
-
-  it('skips external-recipient email batches before send', async () => {
-    batches[0] = {
-      ...batches[0]!,
-      channel: 'email',
-    };
-    users[0]!.email = [{ email: 'member@example.com' }];
-
-    const response = await POST(
-      new Request('http://localhost/api/notifications/send-immediate', {
-        body: JSON.stringify({ batch_id: 'batch-1' }),
-        headers: {
-          authorization: 'Bearer cron-secret',
+  it.each(externalRecipientCases)(
+    'checks external-recipient $label before send',
+    async ({ confirmed, profile, verified, expected }) => {
+      mocks.getUserById.mockResolvedValue({
+        data: {
+          user: {
+            email: verified,
+            email_confirmed_at: confirmed ? '2026-10-01T00:00:00Z' : undefined,
+          },
         },
-        method: 'POST',
-      }) as any
-    );
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      failed: 0,
-      processed: 1,
-      results: [
-        expect.objectContaining({
-          batch_id: 'batch-1',
-          channel: 'email',
-          status: 'skipped',
-        }),
-      ],
-    });
-    expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
-  });
-
+        error: null,
+      });
+      batches[0] = {
+        ...batches[0]!,
+        channel: 'email',
+      };
+      users[0]!.email = [{ email: profile }];
+      batches[0]!.email = 'old@example.com';
+      const response = await POST(
+        new Request('http://localhost/api/notifications/send-immediate', {
+          body: JSON.stringify({ batch_id: 'batch-1' }),
+          headers: {
+            authorization: 'Bearer cron-secret',
+          },
+          method: 'POST',
+        }) as any
+      );
+      expect(response.status).toBe(200);
+      expect(mocks.getUserById).toHaveBeenCalledWith('user-1');
+      if (expected === 'sent') {
+        expect(mocks.sendSystemEmailMock).toHaveBeenCalledWith(
+          expect.objectContaining({ recipients: { to: [profile] } })
+        );
+      }
+      await expect(response.json()).resolves.toMatchObject({
+        failed: 0,
+        processed: 1,
+        results: [
+          expect.objectContaining({
+            batch_id: 'batch-1',
+            channel: 'email',
+            status: expected,
+          }),
+        ],
+      });
+      expect(mocks.sendSystemEmailMock).toHaveBeenCalledTimes(
+        expected === 'sent' ? 1 : 0
+      );
+    }
+  );
   it('marks blocked email batches as skipped instead of failed', async () => {
     batches[0] = {
       ...batches[0]!,
@@ -571,7 +561,6 @@ describe('send-immediate route', () => {
       error: 'All recipients blocked or rate limited',
       success: false,
     });
-
     const response = await POST(
       new Request('http://localhost/api/notifications/send-immediate', {
         body: JSON.stringify({ batch_id: 'batch-1' }),
@@ -581,7 +570,6 @@ describe('send-immediate route', () => {
         method: 'POST',
       }) as any
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       failed: 0,
@@ -595,7 +583,6 @@ describe('send-immediate route', () => {
       ],
     });
   });
-
   it('skips blacklisted email batches before send', async () => {
     batches[0] = {
       ...batches[0]!,

@@ -5,6 +5,44 @@ import { lstat, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { codesignDiagnostic } from './codesign-diagnostic.mjs';
 
+const identityOutputLimit = 65536;
+function hasAsciiControl(value) {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code <= 0x1f || code === 0x7f) return true;
+  }
+  return false;
+}
+
+function importedIdentity(output, requested) {
+  if (
+    typeof output !== 'string' ||
+    Buffer.byteLength(output, 'utf8') > identityOutputLimit
+  )
+    throw new Error('Invalid signing identity listing');
+  const fingerprints = new Set();
+  let rows = 0;
+  let total;
+  for (const line of output.split('\n')) {
+    if (!line.trim()) continue;
+    const summary = line.match(/^\s*(\d+) valid identities found\s*$/u);
+    if (summary) {
+      if (total !== undefined)
+        throw new Error('Invalid signing identity listing');
+      total = Number(summary[1]);
+      continue;
+    }
+    const row = line.match(/^\s*\d+\) ([A-Fa-f0-9]{40}) "([^"]+)"\s*$/u);
+    if (!row || hasAsciiControl(row[2]) || total !== undefined)
+      throw new Error('Invalid signing identity listing');
+    rows += 1;
+    if (row[2] === requested) fingerprints.add(row[1].toUpperCase());
+  }
+  if (total !== rows || fingerprints.size !== 1)
+    throw new Error('Unique valid signing identity required');
+  return [...fingerprints][0];
+}
+
 // Commands handling private inputs never inherit stdout/stderr. The caller gets
 // only fixed stage/classification errors; the keychain, P12 and API key always leave with the runner.
 export async function withMacosSigning(
@@ -22,7 +60,15 @@ export async function withMacosSigning(
   ];
   if (
     names.some((name) => !process.env[name]) ||
-    !process.env.MACOS_SIGNING_IDENTITY.startsWith('Developer ID Application:')
+    !/^[A-Z0-9]{10}$/u.test(process.env.APPLE_TEAM_ID) ||
+    !/^Developer ID Application: [^"]+$/u.test(
+      process.env.MACOS_SIGNING_IDENTITY
+    ) ||
+    process.env.MACOS_SIGNING_IDENTITY.length > 1024 ||
+    hasAsciiControl(process.env.MACOS_SIGNING_IDENTITY) ||
+    !process.env.MACOS_SIGNING_IDENTITY.endsWith(
+      ` (${process.env.APPLE_TEAM_ID})`
+    )
   ) {
     throw new Error(
       'macOS beta publication requires Developer ID signing and notarization credentials'
@@ -46,6 +92,7 @@ export async function withMacosSigning(
             'unlock-keychain': 'keychain-unlock',
             import: 'certificate-import',
             'set-key-partition-list': 'keychain-partition',
+            'find-identity': 'signing-identity-preflight',
             'delete-keychain': 'keychain-cleanup',
           }[args[0]] ?? 'keychain-command')
         : command === 'codesign'
@@ -63,6 +110,9 @@ export async function withMacosSigning(
       return execute(command, args, {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
+        ...(command === 'security' && args[0] === 'find-identity'
+          ? { maxBuffer: identityOutputLimit, timeout: 10000 }
+          : {}),
       });
     } catch (error) {
       if (command === 'codesign')
@@ -103,6 +153,11 @@ export async function withMacosSigning(
       password,
       keychain,
     ]);
+    // Resolve only the imported keychain; never fall back to a runner identity.
+    const fingerprint = importedIdentity(
+      exec('security', ['find-identity', '-v', '-p', 'codesigning', keychain]),
+      identity
+    );
     const sign = (path, artifactKind, entitlements) =>
       exec(
         'codesign',
@@ -112,7 +167,7 @@ export async function withMacosSigning(
           'runtime',
           '--timestamp',
           '--sign',
-          identity,
+          fingerprint,
           '--keychain',
           keychain,
           ...(entitlements ? ['--entitlements', entitlements] : []),

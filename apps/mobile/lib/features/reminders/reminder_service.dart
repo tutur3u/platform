@@ -176,10 +176,29 @@ class ReminderService extends ChangeNotifier {
   Future<void> updateSettings(ReminderSettings next) async {
     final userId = _userId;
     if (userId == null) return;
+    // Invalidate an enabled plan before opt-out or offset changes can await.
+    // Its recorded OS IDs remain available to the replacement refresh.
+    final generation = ++_scopeGeneration;
     settings = next;
     notifyListeners();
-    await next.save(userId);
+    try {
+      await next.save(userId);
+    } on Object catch (error) {
+      if (_isCurrent(userId, generation)) {
+        if (_refreshing case final running?) await running;
+        if (_isCurrent(userId, generation)) {
+          status = status.copyWith(
+            error: error.toString(),
+            isRefreshing: false,
+          );
+          notifyListeners();
+        }
+      }
+      rethrow;
+    }
+    if (!_isCurrent(userId, generation)) return;
     if (_refreshing case final running?) await running;
+    if (!_isCurrent(userId, generation)) return;
     await refresh();
   }
 

@@ -1,6 +1,8 @@
+import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { externalRecipientCases } from '@/lib/notifications/email-eligibility-test-cases';
 
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -26,6 +28,7 @@ const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
   const pushDeleteInMock = vi.fn();
   const rpcMock = vi.fn();
+  const getUserById = vi.fn();
   const sendPushNotificationBatchMock = vi.fn();
   const sendSystemEmailMock = vi.fn();
 
@@ -33,6 +36,7 @@ const mocks = vi.hoisted(() => {
     fromMock,
     pushDeleteInMock,
     rpcMock,
+    getUserById,
     sendPushNotificationBatchMock,
     sendSystemEmailMock,
   };
@@ -43,6 +47,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     Promise.resolve({
       from: mocks.fromMock,
       rpc: mocks.rpcMock,
+      auth: { admin: { getUserById: mocks.getUserById } },
       schema: vi.fn((schemaName: string) => {
         if (schemaName !== 'private') {
           throw new Error(`Unexpected schema ${schemaName}`);
@@ -59,6 +64,17 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@/lib/notifications/push-delivery', () => ({
   sendPushNotificationBatch: mocks.sendPushNotificationBatchMock,
 }));
+
+vi.mock(
+  '@tuturuuu/transactional/emails/notification-digest',
+  async (importOriginal) => {
+    const original =
+      await importOriginal<
+        typeof import('@tuturuuu/transactional/emails/notification-digest')
+      >();
+    return { ...original, default: vi.fn(original.default) };
+  }
+);
 
 vi.mock('@react-email/render', () => ({
   render: vi.fn(async () => '<html />'),
@@ -144,14 +160,17 @@ describe('process-notification-batches route', () => {
     });
     blockedEmails = new Set<string>();
     mocks.rpcMock.mockImplementation(
-      async (_name: string, args: { p_emails: string[] }) => ({
-        data: args.p_emails.map((email) => ({
-          email,
-          is_blocked: blockedEmails.has(email),
-          reason: null,
-        })),
-        error: null,
-      })
+      async (name: string, args: { p_emails: string[] }) =>
+        name === 'should_send_notification'
+          ? { data: true, error: null }
+          : {
+              data: args.p_emails.map((email) => ({
+                email,
+                is_blocked: blockedEmails.has(email),
+                reason: null,
+              })),
+              error: null,
+            }
     );
     mocks.sendSystemEmailMock.mockResolvedValue({
       success: true,
@@ -453,37 +472,96 @@ describe('process-notification-batches route', () => {
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
   });
 
-  it('skips external-recipient email batches before send', async () => {
-    batches[0] = {
-      ...batches[0]!,
-      channel: 'email',
-    };
-    users[0]!.email = [{ email: 'member@example.com' }];
+  it.each(externalRecipientCases)(
+    'checks external-recipient $label before send',
+    async ({ confirmed, profile, verified, expected }) => {
+      mocks.getUserById.mockResolvedValue({
+        data: {
+          user: {
+            email: verified,
+            email_confirmed_at: confirmed ? '2026-10-01T00:00:00Z' : undefined,
+          },
+        },
+        error: null,
+      });
+      batches[0] = {
+        ...batches[0]!,
+        channel: 'email',
+      };
+      users[0]!.email = [{ email: profile }];
+      batches[0]!.email = 'old@example.com';
 
+      const response = await GET(
+        new NextRequest(
+          'http://localhost/api/cron/process-notification-batches',
+          {
+            headers: {
+              authorization: 'Bearer cron-secret',
+            },
+          }
+        )
+      );
+
+      expect(response.status).toBe(200);
+      expect(mocks.getUserById).toHaveBeenCalledWith('user-1');
+      if (expected === 'sent') {
+        expect(mocks.sendSystemEmailMock).toHaveBeenCalledWith(
+          expect.objectContaining({ recipients: { to: [profile] } })
+        );
+      }
+      await expect(response.json()).resolves.toMatchObject({
+        failed: 0,
+        processed: 1,
+        results: [
+          expect.objectContaining({
+            batch_id: 'batch-1',
+            channel: 'email',
+            status: expected,
+          }),
+        ],
+      });
+      expect(mocks.sendSystemEmailMock).toHaveBeenCalledTimes(
+        expected === 'sent' ? 1 : 0
+      );
+    }
+  );
+
+  it('excludes an opted-out event from a mixed digest while sending the eligible event', async () => {
+    batches[0]!.channel = 'email';
+    const first = deliveryLogs[0]!;
+    deliveryLogs.push({
+      ...first,
+      id: 'log-2',
+      notification_id: 'notification-2',
+      notifications: {
+        ...first.notifications,
+        id: 'notification-2',
+        type: 'task_mention',
+        title: 'Eligible mention',
+      },
+    });
+    const previous = mocks.rpcMock.getMockImplementation()!;
+    mocks.rpcMock.mockImplementation((name, args) =>
+      name === 'should_send_notification'
+        ? Promise.resolve({
+            data: (args as any).p_event_type !== 'security_alert',
+            error: null,
+          })
+        : previous(name, args)
+    );
     const response = await GET(
       new NextRequest(
         'http://localhost/api/cron/process-notification-batches',
-        {
-          headers: {
-            authorization: 'Bearer cron-secret',
-          },
-        }
+        { headers: { authorization: 'Bearer cron-secret' } }
       )
     );
-
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      failed: 0,
-      processed: 1,
-      results: [
-        expect.objectContaining({
-          batch_id: 'batch-1',
-          channel: 'email',
-          status: 'skipped',
-        }),
-      ],
-    });
-    expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
+    expect(mocks.sendSystemEmailMock).toHaveBeenCalledOnce();
+    expect(
+      vi
+        .mocked(NotificationDigestEmail)
+        .mock.calls[0]![0]!.notifications?.map((item) => item.id)
+    ).toEqual(['notification-2']);
   });
 
   it('marks blocked email batches as skipped instead of failed', async () => {

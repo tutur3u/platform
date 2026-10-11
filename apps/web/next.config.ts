@@ -11,8 +11,8 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import { generate as generatePublicSeoRoutes } from '../../scripts/generate-public-seo-routes';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
-// Discover indexable public pages on every dev/build, including Docker builds.
-generatePublicSeoRoutes();
+// Discover current indexable pages before configuring HTTP indexing boundaries.
+const publicSeoPaths = generatePublicSeoRoutes();
 
 const withNextIntl = createNextIntlPlugin();
 const offlineConfig = getOfflineTurbopackConfig({
@@ -81,6 +81,13 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
   isDockerStandaloneBuild && !isNativeDockerStandaloneBuild ? 4 : undefined
 );
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'web',
+  seoPublicPathPatterns: [
+    ...publicSeoPaths.map((pathname) =>
+      pathname.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    ),
+    'changelog/[^/]+',
+  ],
   ...offlineConfig,
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),

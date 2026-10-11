@@ -1,0 +1,127 @@
+---
+title: "Active runtime and scheduler ownership"
+description: "The live Next.js path, retired Docker cron runner, inactive migration targets, and current scheduling evidence."
+updatedAt: '2026-10-09'
+---
+
+## Current operating decision
+
+The supported application path is the maintained Next.js Web and satellite apps,
+shared TypeScript packages, and their owning hosted services. **The Docker cron
+runner is retired. Docker setup, `apps/backend` (Rust), and `apps/tanstack-web`
+(TanStack Start) are not in use.** They are not prerequisites for documentation,
+routine development, focused validation, or Next.js release delivery.
+
+This applies to the live app surfaces, developer onboarding, and incident
+runbooks. Retained files, Compose services, scripts, dashboards, route manifests,
+and future-cutover procedures are historical or resumption references. Their
+presence does not establish an active service. An explicitly isolated experiment
+or separately approved resumption can use those artifacts; it must not silently
+become a prerequisite for the active path.
+
+TanStack **Query** remains in use for client fetching/caching. It is independent
+of the inactive TanStack **Start** runtime. Migration-specific source refreshes, tests, dependency updates, and CI are
+paused until further notice. Shared contracts still belong in reusable packages;
+do not require updates to the inactive trees for a live Next.js change.
+
+Gradual Cloudflare adoption is the target direction, with scoped Vite-native
+Lettin/Parley candidates first. Their existing Next.js/OpenNext Worker hosting
+remains current. Portable first-party libraries and thin framework adapters must
+preserve identity, storage, localization and API contracts before canonical traffic
+changes. This does not resume the retained TanStack Start app or authorize cutover.
+See [Oxc and Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
+
+## Runtime map
+
+| Boundary | Active source/owner | What to verify |
+| --- | --- | --- |
+| Main platform | `apps/web` Next.js | Exact commit build/deployment and authenticated route behavior |
+| Satellite products | Owning Next.js apps and shared packages | Per-app session audience, route owner, and deployment marker |
+| Database | Hosted Supabase and authorized migration workflows | Schema promotion results, RLS, and relevant domain records |
+| Realtime/edge services | Owning Cloudflare Worker/service configuration | Worker deployment, runtime health, and product result |
+| Documentation | `apps/docs` with pinned local Mintlify or hosted docs | Navigation, links, MDX, inventory freshness |
+| Mobile | `apps/mobile` Flutter | Owning analysis/test/release artifact evidence |
+| Docker cron runner | Retired | Do not restart it as incident recovery |
+| Docker setup | Not in use | Retained runbooks are optional historical references |
+| Rust/TanStack Start | Paused and not in use | Do not require their builds, services, or cutover gates |
+
+## Hosted scheduler map
+
+| Job family | Scheduler declaration | Processor path |
+| --- | --- | --- |
+| Web scheduled processors | `apps/web/vercel.json`, generated from eligible `apps/web/cron.config.json` entries | Owning authenticated Web cron handlers |
+| Calendar provider sync | `apps/infrastructure/vercel.json` (every 15 minutes) | Infrastructure `/api/cron/calendar/provider-sync` gateway → Calendar |
+| Calendar smart scheduling | `apps/infrastructure/vercel.json` (every six hours) | Infrastructure `/api/cron/calendar/smart-schedule` gateway → Calendar |
+| Immediate notification recovery | `apps/cron-control/wrangler.jsonc` (every five minutes) | Cloudflare recovery gate → authenticated Web immediate-delivery processor |
+
+The [Cloudflare Cron Control guide](/build/devops/cloudflare-cron-control)
+explains the idle skip, requeue RPC, pending-batch check, and delivery token.
+Calendar's Infrastructure gateway authenticates the scheduler and uses its
+configured credential to reach Calendar. It must not be bypassed by adding a
+second direct Calendar schedule.
+
+`vercel: false` in the old Web cron catalog excludes that entry from Web's
+Vercel scheduler. It does **not** mean the retired Docker runner will execute
+it. A route or enabled source configuration is not proof of an active schedule.
+If a job appears only in retained Docker configuration, identify its hosted
+owner explicitly before calling it active. Do not activate a replacement or
+change production schedules merely to resolve documentation ambiguity.
+
+## Diagnose missed work without Docker
+
+1. Identify the owning scheduler declaration and deployed revision.
+2. Inspect the hosted invocation result, authentication failure, timeout, and
+   retry behavior for the relevant bounded time window.
+3. Trace the processor/gateway response and terminal domain state. For Calendar,
+   confirm a fresh provider-sync timestamp with all clients closed. For
+   notifications, confirm claimed/terminal delivery state rather than merely a
+   scheduled invocation.
+4. Use an authorized, scoped manual processor recovery only when necessary;
+   retain deduplication and recipient/workspace rules.
+5. Report missing deployment or scheduler evidence separately from source
+   correctness.
+
+Stale `tmp/docker-web/cron/status.json`, old runner heartbeats, and queued local
+Docker recovery requests are not health signals for these hosted schedulers.
+Retained tooling may still contain runner/watchdog code. The standard Docker
+commands, Docker setup CI, Docker-backed E2E jobs, inactive implementation test
+suites, and migration refresh commands are disabled. This does not delete the
+retained files or cancel already-running external jobs.
+
+## Regression and maintenance evidence
+
+`node --test scripts/ci/paused-migration-workflows.test.js` guards the Docker setup and migration pause, including manual workflow jobs. `scripts/docs-audit.test.js` guards the active-runtime decision,
+links, navigation, and reproducible documentation/SEO inventories. Hosted job
+configuration and actual execution evidence remain necessary for operational
+claims. [Without Docker](/build/development-tools/without-docker) gives the
+minimal development path.
+
+## Update and test pause until further notice
+
+Default Node script-test discovery excludes inactive Docker/Rust/TanStack
+implementation suites while retaining tests that verify the pause. Shared
+Next.js unit tests, type checks, lint, and app builds stay active. The old
+Docker-backed E2E workflow is paused, so it no longer establishes browser
+integration proof. Direct Playwright commands can target an already prepared,
+safe local Next.js environment without starting Docker; their seeded database
+requirements still apply. A hosted build is not a replacement for that missing
+integration evidence.
+
+`bun update-all` targets maintained workspace names explicitly. Legacy shell
+and batch entrypoints delegate to the same updater. Renovate ignores inactive
+app manifests and Docker files; broad lockfile maintenance is disabled to avoid
+refreshing retained dependencies. Shared lockfile resolutions can still reflect
+active package changes and must be reviewed separately from paused manifests.
+Generated documentation inventories do not refresh Rust/TanStack source or
+versions. Existing migration runbooks remain retained reference material.
+
+Resumption requires an explicit instruction and a coordinated change to the
+command guards, test discovery, CI job/switchboard gates, dependency policy,
+docs inventory, and operating docs. Do not selectively re-enable one gate and
+assume the rest of the runtime is maintained.
+
+Release Please excludes the inactive TanStack Start package from release generation;
+its historical manifest version remains frozen. Renovate also ignores the inactive
+runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
+Policy tests guard these exclusions. Do not reactivate them indirectly during
+ordinary active-package release maintenance.

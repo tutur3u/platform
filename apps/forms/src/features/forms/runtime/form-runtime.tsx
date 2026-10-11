@@ -312,6 +312,12 @@ function FormRuntimeContent({
 
   const draftKey = `tuturuuu_form_draft_${form.id}`;
 
+  useEffect(() => {
+    // `setAnswers` keeps the ref in step now, so this no longer assigns it by
+    // hand — two writers to the same ref is how they drift.
+    setAnswers(initialAnswers ?? {});
+  }, [initialAnswers, setAnswers]);
+
   useFormDraft({
     draftKey,
     form,
@@ -328,12 +334,6 @@ function FormRuntimeContent({
     setCurrentSectionId,
     setSectionTrail,
   });
-
-  useEffect(() => {
-    // `setAnswers` keeps the ref in step now, so this no longer assigns it by
-    // hand — two writers to the same ref is how they drift.
-    setAnswers(initialAnswers ?? {});
-  }, [initialAnswers, setAnswers]);
 
   useEffect(() => {
     if (responseCopyEmail) {

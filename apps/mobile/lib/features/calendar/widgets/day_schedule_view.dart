@@ -88,11 +88,19 @@ class _DayScheduleViewState extends State<DayScheduleView> {
         widget.selectedDate.day == now.day;
 
     final targetHour = isToday ? (now.hour - 1).clamp(0, 20) : 8;
-    final offset = targetHour * hourH;
+    final offset = (targetHour * hourH).clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    );
+
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _scrollController.jumpTo(offset);
+      return;
+    }
 
     unawaited(
       _scrollController.animateTo(
-        offset.clamp(0, _scrollController.position.maxScrollExtent),
+        offset,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       ),

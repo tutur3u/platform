@@ -4,6 +4,14 @@ description: "Migration contract for replacing apps/web with apps/tanstack-web p
 updatedAt: "2026-10-02"
 ---
 
+<Warning>
+Retained inactive reference. Docker setup, Rust, and TanStack Start are paused
+and not in use. The Docker cron runner is retired. Do not execute the retained
+build, test, migration, deployment, or dependency-update procedures until
+explicitly resumed. Docker-backed E2E jobs are also paused. Use the
+[active runtime map](/build/devops/active-runtime) for current operations.
+</Warning>
+
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
 `apps/web` runtime. It uses TanStack Start, TanStack Router, TanStack Query,
 Vite, React 19, Tailwind 4, and the existing Tuturuuu shared packages.

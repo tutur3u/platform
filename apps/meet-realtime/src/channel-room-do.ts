@@ -46,9 +46,11 @@ export class ChannelRoomDurableObject implements DurableObject {
     checkpointAt: number;
     version: number;
     checkpointFailures?: number;
+    checkpointRetry?: { attempts: number; expiresAt: number };
     checkpointStatus?: DocumentCheckpointStatus;
   } | null = null;
   private ready: Promise<void>;
+  private alarmInFlight: Promise<void> | null = null;
   constructor(
     private state: DurableObjectState,
     private env: ChannelRoomEnv
@@ -126,8 +128,15 @@ export class ChannelRoomDurableObject implements DurableObject {
     };
     socket.serializeAttachment(attachment);
     this.state.acceptWebSocket(socket);
-    if (this.metadata && (this.metadata.checkpointFailures ?? 0) >= 3) {
+    if (
+      this.metadata &&
+      ticket.role === 'editor' &&
+      ((this.metadata.checkpointFailures ?? 0) >= 3 ||
+        (this.metadata.checkpointRetry?.attempts ?? 0) >= 3 ||
+        (this.metadata.checkpointRetry?.expiresAt ?? Infinity) <= Date.now())
+    ) {
       this.metadata.checkpointFailures = 0;
+      delete this.metadata.checkpointRetry;
       this.metadata.checkpointAt = Date.now();
       this.dirty = true;
       this.state.waitUntil(this.schedulePersistence());
@@ -340,7 +349,13 @@ export class ChannelRoomDurableObject implements DurableObject {
     const alarm = await this.state.storage.getAlarm();
     if (!alarm || alarm > deadline) await this.state.storage.setAlarm(deadline);
   }
-  async alarm() {
+  alarm() {
+    this.alarmInFlight ??= this.runAlarm().finally(() => {
+      this.alarmInFlight = null;
+    });
+    return this.alarmInFlight;
+  }
+  private async runAlarm() {
     await this.ready;
     if (this.dirty) {
       this.dirty = false;
@@ -364,8 +379,9 @@ export class ChannelRoomDurableObject implements DurableObject {
     const metadata = this.metadata;
     if (!metadata) return Infinity;
     if (
-      (metadata.checkpointFailures ?? 0) >= 3 &&
-      this.state.getWebSockets().length === 0
+      ((metadata.checkpointFailures ?? 0) >= 3 && !this.hasActiveEditor()) ||
+      (metadata.checkpointRetry?.attempts ?? 0) >= 3 ||
+      (metadata.checkpointRetry?.expiresAt ?? Infinity) <= Date.now()
     )
       return Infinity;
     const update = Y.encodeStateAsUpdate(this.doc);
@@ -378,6 +394,20 @@ export class ChannelRoomDurableObject implements DurableObject {
     ).join('');
     if (hash === metadata.savedHash) return Infinity;
     if (Date.now() < metadata.checkpointAt) return metadata.checkpointAt;
+    if (!this.hasActiveEditor()) {
+      const retry = metadata.checkpointRetry ?? {
+        attempts: 0,
+        expiresAt: Date.now() + 120_000,
+      };
+      const reserved = {
+        ...metadata,
+        checkpointAt: Date.now() + 30_000,
+        checkpointRetry: { ...retry, attempts: retry.attempts + 1 },
+      };
+      // Failed persistence must not spend provider work or replenish attempts.
+      await this.state.storage.put('metadata', reserved);
+      Object.assign(metadata, reserved);
+    }
     const exp = Math.floor(Date.now() / 1000) + 30;
     const token = signRealtimePayload(
       {
@@ -425,6 +455,7 @@ export class ChannelRoomDurableObject implements DurableObject {
       metadata.savedHash = hash;
       metadata.checkpointStatus = 'saved';
       metadata.checkpointFailures = 0;
+      delete metadata.checkpointRetry;
     } catch {
       metadata.checkpointFailures = (metadata.checkpointFailures ?? 0) + 1;
       metadata.checkpointStatus = failure;
@@ -435,22 +466,37 @@ export class ChannelRoomDurableObject implements DurableObject {
       event: DOCUMENT_CHECKPOINT_EVENT,
       payload: { status: metadata.checkpointStatus, version },
     });
-    metadata.checkpointAt =
+    metadata.checkpointAt = Math.max(
+      metadata.checkpointAt,
       Date.now() +
-      Math.min(
-        60000,
-        10000 * 2 ** Math.min(metadata.checkpointFailures ?? 0, 3)
-      );
+        Math.min(
+          60000,
+          10000 * 2 ** Math.min(metadata.checkpointFailures ?? 0, 3)
+        )
+    );
     await this.state.storage.put({
       metadata,
       document: Y.encodeStateAsUpdate(this.doc),
     });
-    if (version !== metadata.version) return metadata.checkpointAt;
-    return metadata.savedHash === hash ||
-      ((metadata.checkpointFailures ?? 0) >= 3 &&
-        this.state.getWebSockets().length === 0)
-      ? Infinity
-      : metadata.checkpointAt;
+    if (
+      ((metadata.checkpointFailures ?? 0) >= 3 && !this.hasActiveEditor()) ||
+      (metadata.checkpointRetry?.attempts ?? 0) >= 3 ||
+      (metadata.checkpointRetry?.expiresAt ?? Infinity) <= Date.now()
+    )
+      return Infinity;
+    return version !== metadata.version || metadata.savedHash !== hash
+      ? Math.min(
+          metadata.checkpointAt,
+          metadata.checkpointRetry?.expiresAt ?? Infinity
+        )
+      : Infinity;
+  }
+
+  private hasActiveEditor() {
+    return this.state.getWebSockets().some((socket) => {
+      const { ticket } = socket.deserializeAttachment() as Attachment;
+      return ticket.role === 'editor' && ticket.exp * 1000 > Date.now();
+    });
   }
   private presenceState(exclude?: WebSocket) {
     const result: Record<string, Record<string, unknown>[]> = {};

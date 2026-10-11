@@ -3,8 +3,11 @@ import { ArrowUpRight, BookOpen, Network } from '@tuturuuu/icons';
 import type { LettinRecord } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { CharacterCardFacts } from './character-card-facts';
+import { ContentNotice } from './content-notice';
+import { hasSavedWikiChanges } from './wiki-browse-model';
 import {
-  relationshipEdges,
+  matchingRelationshipEdges,
   timelineEntries,
   type WikiSection,
   wikiOf,
@@ -15,25 +18,19 @@ export function WikiBrowser({
   onSelect,
   disabled,
   search = '',
+  showDraftChanges = false,
 }: {
   entries: LettinRecord[];
   section: WikiSection;
   search?: string;
+  showDraftChanges?: boolean;
   onSelect: (id: string) => void;
   disabled: boolean;
 }) {
   const t = useTranslations('lettin');
   if (section === 'relationships') {
-    const edges = relationshipEdges(entries).filter((edge) =>
-      [
-        edge.source.draft.title,
-        edge.target.draft.title,
-        edge.label,
-        t(`relationship${edge.kind}`),
-      ]
-        .join(' ')
-        .toLocaleLowerCase()
-        .includes(search.trim().toLocaleLowerCase())
+    const edges = matchingRelationshipEdges(entries, search, (kind) =>
+      t(`relationship${kind}`)
     );
     return (
       <section className="wiki-connections">
@@ -108,6 +105,7 @@ export function WikiBrowser({
           <>
             <h3 className="mt-8 mb-3">{t('undatedEntries')}</h3>
             <EntryCards
+              showDraftChanges={showDraftChanges}
               entries={undated}
               onSelect={onSelect}
               disabled={disabled}
@@ -118,14 +116,21 @@ export function WikiBrowser({
     );
   }
   return (
-    <EntryCards entries={entries} onSelect={onSelect} disabled={disabled} />
+    <EntryCards
+      showDraftChanges={showDraftChanges}
+      entries={entries}
+      onSelect={onSelect}
+      disabled={disabled}
+    />
   );
 }
 function EntryCards({
+  showDraftChanges,
   entries,
   onSelect,
   disabled,
 }: {
+  showDraftChanges: boolean;
   entries: LettinRecord[];
   onSelect: (id: string) => void;
   disabled: boolean;
@@ -141,6 +146,7 @@ function EntryCards({
           disabled={disabled}
           onClick={() => onSelect(entry.id)}
         >
+          <ContentNotice notice={entry.draft.contentNotice} />
           {entry.draft.image && (
             // biome-ignore lint/performance/noImgElement: Artwork access is revocable.
             <img
@@ -153,7 +159,10 @@ function EntryCards({
           <div>
             <span className="wiki-entry-kind">
               {t(`kind${entry.draft.kind}`)} ·{' '}
-              {t(entry.published_at ? 'published' : 'draft')}
+              {t(entry.published ? 'published' : 'draft')}
+              {showDraftChanges && hasSavedWikiChanges(entry) && (
+                <> · {t('wikiSavedChanges')}</>
+              )}
             </span>
             <h3>
               {entry.draft.title}
@@ -163,6 +172,7 @@ function EntryCards({
             {wikiOf(entry.draft).aliases.length > 0 && (
               <small>{wikiOf(entry.draft).aliases.join(' · ')}</small>
             )}
+            <CharacterCardFacts draft={entry.draft} />
           </div>
         </button>
       ))}

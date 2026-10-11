@@ -249,7 +249,6 @@ mod workspace_mobile_module_flags;
 #[cfg(test)]
 mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
-mod workspaces_inventory_season_merges;
 mod workspace_post_permissions;
 mod workspace_user_group_member_count;
 mod workspace_users_me;
@@ -349,6 +348,7 @@ mod workspaces_inventory_polar_product_sync;
 mod workspaces_inventory_polar_settings;
 mod workspaces_inventory_product_form_options;
 mod workspaces_inventory_sales;
+mod workspaces_inventory_season_merges;
 mod workspaces_inventory_statistics;
 mod workspaces_inventory_storefronts;
 mod workspaces_inventory_storefronts_storefrontid_listings;

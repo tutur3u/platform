@@ -1,17 +1,16 @@
 import type { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database, Json } from '@tuturuuu/types/supabase';
-import type { PeriodicReportGenerationContext } from './generation';
+import {
+  type ReportIdentity,
+  type ScheduleOrigin,
+  snapshotReportIdentity,
+} from './feedback-consumer';
+import { loadHumanFeedbackEvidence } from './feedback-evidence';
 
 type AdminClient = Awaited<ReturnType<typeof createAdminClient<Database>>>;
 
-interface ScopedContextInput {
-  cadence: PeriodicReportGenerationContext['cadence'];
-  groupId: string;
-  periodEnd: string;
-  periodStart: string;
-  reportId?: string;
-  userId: string;
-  wsId: string;
+interface ScopedContextInput extends ReportIdentity {
+  scheduleOrigin: ScheduleOrigin;
 }
 
 interface ScopedMetric {
@@ -89,8 +88,12 @@ export function buildScopedDeterministicMetrics({
 
 export async function loadScopedReportContext(
   sbAdmin: AdminClient,
-  input: ScopedContextInput
+  callerInput: ScopedContextInput
 ) {
+  const identity = snapshotReportIdentity(callerInput);
+  const scheduleOrigin = Object.freeze({ ...callerInput.scheduleOrigin });
+  const input = { ...identity, scheduleOrigin };
+  // Legacy metrics keep their existing UTC/date semantics, independently of feedback.
   const rangeStart = `${input.periodStart}T00:00:00.000Z`;
   const rangeEnd = `${input.periodEnd}T23:59:59.999Z`;
   const privateDb = sbAdmin.schema('private');
@@ -163,7 +166,7 @@ export async function loadScopedReportContext(
       .eq('user_id', input.userId)
       .eq('group_id', input.groupId)
       .eq('cadence', input.cadence)
-      .neq('id', input.reportId ?? '00000000-0000-0000-0000-000000000000')
+      .neq('id', input.reportId)
       .lt('period_end', input.periodStart)
       .order('period_end', { ascending: false })
       .limit(1)
@@ -174,7 +177,20 @@ export async function loadScopedReportContext(
   if (checksResult.error) throw checksResult.error;
   if (previousResult.error) throw previousResult.error;
 
+  const humanFeedbackEvidence = await loadHumanFeedbackEvidence(sbAdmin, {
+    ...identity,
+    scheduleTimezone: scheduleOrigin.scheduleTimezone,
+  });
+  if (humanFeedbackEvidence.status === 'ready') {
+    Object.freeze(humanFeedbackEvidence.metadata);
+    for (const record of humanFeedbackEvidence.records) Object.freeze(record);
+    Object.freeze(humanFeedbackEvidence.records);
+  }
+  Object.freeze(humanFeedbackEvidence);
   return {
+    identity,
+    scheduleOrigin,
+    humanFeedbackEvidence,
     deterministicMetrics: buildScopedDeterministicMetrics({
       attendance: attendanceResult.data ?? [],
       dailyChecks: checksResult.data ?? [],

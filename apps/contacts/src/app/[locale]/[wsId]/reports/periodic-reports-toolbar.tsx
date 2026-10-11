@@ -26,7 +26,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 
-const cadences: PeriodicReportCadence[] = [
+const cadences: (PeriodicReportCadence | 'all')[] = [
+  'all',
   'weekly',
   'monthly',
   'quarterly',
@@ -45,6 +46,7 @@ export type PeriodicSortDirection = 'asc' | 'desc';
 
 export function PeriodicReportsToolbar({
   stageLabel,
+  hideCadence = false,
   stageChanged = false,
   periodStart = '',
   periodEnd = '',
@@ -66,16 +68,17 @@ export function PeriodicReportsToolbar({
   sortDirection,
 }: {
   stageLabel?: string;
+  hideCadence?: boolean;
   stageChanged?: boolean;
   periodStart?: string;
   periodEnd?: string;
   onPeriodChange?: (start: string, end: string) => void;
   approvalStatus: PeriodicApprovalFilter;
   generationStatus?: 'all' | 'draft';
-  cadence: PeriodicReportCadence;
+  cadence: PeriodicReportCadence | 'all';
   deliveryStatus: PeriodicDeliveryFilter;
   onApprovalStatusChange: (value: PeriodicApprovalFilter) => void;
-  onCadenceChange: (value: PeriodicReportCadence) => void;
+  onCadenceChange: (value: PeriodicReportCadence | 'all') => void;
   onDeliveryStatusChange: (value: PeriodicDeliveryFilter) => void;
   onQueryChange: (value: string) => void;
   onReset: () => void;
@@ -85,7 +88,7 @@ export function PeriodicReportsToolbar({
   ) => void;
   query: string;
   isSearching: boolean;
-  resultCount: number;
+  resultCount?: number;
   sortBy: PeriodicSortBy;
   sortDirection: PeriodicSortDirection;
 }) {
@@ -185,6 +188,7 @@ export function PeriodicReportsToolbar({
             onChange={(event) => onQueryChange(event.target.value)}
             className="pr-9 pl-9"
             placeholder={reportsT('search_periodic')}
+            aria-label={reportsT('search_periodic')}
           />
           {isSearching ? (
             <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
@@ -208,6 +212,7 @@ export function PeriodicReportsToolbar({
               size="icon"
               className="relative shrink-0"
               aria-label={t('common.filters')}
+              title={t('common.filters')}
             >
               <ListFilter className="h-4 w-4" />
               {activeFilterCount > 0 ? (
@@ -269,6 +274,7 @@ export function PeriodicReportsToolbar({
               size="icon"
               className="shrink-0"
               aria-label={t('common.sort')}
+              title={t('common.sort')}
             >
               <ArrowUpDown className="h-4 w-4" />
             </Button>
@@ -325,23 +331,29 @@ export function PeriodicReportsToolbar({
       </div>
       <div className="flex justify-end text-muted-foreground text-xs">
         <span className="shrink-0 font-medium tabular-nums">
-          {reportsT('matching_reports', { count: resultCount })}
+          {resultCount === undefined
+            ? '—'
+            : reportsT('matching_reports', { count: resultCount })}
         </span>
       </div>
-      <Tabs
-        value={cadence}
-        onValueChange={(value) =>
-          onCadenceChange(value as PeriodicReportCadence)
-        }
-      >
-        <TabsList className="grid h-auto w-full grid-cols-4">
-          {cadences.map((item) => (
-            <TabsTrigger key={item} value={item} className="h-full min-w-0">
-              <span className="truncate">{reportsT(item)}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      {!hideCadence && (
+        <Tabs
+          value={cadence}
+          onValueChange={(value) =>
+            onCadenceChange(value as PeriodicReportCadence | 'all')
+          }
+        >
+          <TabsList className="grid h-auto w-full grid-cols-5">
+            {cadences.map((item) => (
+              <TabsTrigger key={item} value={item} className="h-full min-w-0">
+                <span className="truncate">
+                  {item === 'all' ? t('common.all') : reportsT(item)}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
     </div>
   );
 }

@@ -4,6 +4,15 @@ description: 'Field guide summarizing the AGENTS.md policies for autonomous cont
 updatedAt: '2026-09-12'
 ---
 
+<Note>
+Web and satellite Next.js apps are active. Docker setup is inactive, the Docker
+cron runner is retired, and Rust/TanStack Start are paused and not in use. Do not
+run their implementation tests/builds or update source, manifests, dependencies,
+or version references until explicitly resumed. Root AGENTS.md owns current
+cross-cutting rules; use [active runtime](/build/devops/active-runtime) and
+[development without Docker](/build/development-tools/without-docker).
+</Note>
+
 This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth. The root file is now a hard-policy index; detailed reusable implementation patterns live in the repo-local Tuturuuu Codex plugin skills under `plugins/tuturuuu/skills/*/references/`.
 
 ## Core Principles
@@ -12,7 +21,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 - **Shared worktree discipline** – Assume humans or other agents may have dirty files in the same checkout; inspect before editing and never clean up work you do not own.
 - **Deterministic & reproducible** – Generated artefacts must come from scripted commands; rerunning the workflow should produce the same result.
 - **Security first** – Never surface secret values. Reference environment variables by name and keep sensitive flows audited.
-- **Document product decisions** – Record customer-facing rules in the relevant platform feature page with scope, default, affected apps, and exceptions; check implementation and documentation across live and migration paths before delivery.
+- **Document product decisions** – Record customer-facing rules in the relevant platform feature page with scope, default, affected apps, and exceptions; check active implementation and docs before delivery; paused Rust/TanStack sources remain frozen.
 - **Authorized completion** – Continue the requested implementation, relevant checks, fixes, and delivery. Ask only for a missing decision, permission, or access.
 - **Focused knowledge** – Add durable gotchas to the narrowest plugin skill reference instead of expanding the root operating manual by default.
 
@@ -84,7 +93,7 @@ Use the repo-local Tuturuuu Codex plugin for detailed pattern catalogs:
 - Roles: Execution (ship code/docs), Review (verify lint/type/test/build), Architecture (cross-cutting improvements), Knowledge (docs & schema sync).
 - Only one agent modifies a file set at a time; reviewers work read-only unless paired.
 - Prefer linear history (rebases) and group commits by concern (schema vs code vs docs).
-- For behavior spanning apps, assign one owner to the product decision and its feature page. Each implementation lane reports the surfaces it checked and any intentional difference; the integrator compares those reports with the live app and migration path before merging.
+- For behavior spanning apps, assign one owner to the product decision and its feature page. Each implementation lane reports the surfaces it checked and any intentional difference; the integrator compares those reports with the live apps before merging; do not update paused migration paths.
 
 ### Open Pull Request Worktrees
 

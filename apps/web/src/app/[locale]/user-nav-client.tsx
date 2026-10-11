@@ -18,6 +18,7 @@ import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { AnimatedSlotText } from '@tuturuuu/ui/custom/animated-slot-text';
+import { PublicProfileMenuItem } from '@tuturuuu/ui/custom/satellite-user-menu-items';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -38,6 +39,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { getPublicProfilePath } from '@tuturuuu/utils/public-profile-url';
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -341,6 +343,12 @@ export default function UserNavClient({
               </div>
               <DropdownMenuSeparator />
             </>
+          )}
+          {user && getPublicProfilePath(user.handle) && (
+            <PublicProfileMenuItem
+              href={getPublicProfilePath(user.handle)!}
+              label={t('common.public_profile')}
+            />
           )}
           <DashboardMenuItem />
           <RewiseMenuItem />

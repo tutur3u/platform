@@ -85,6 +85,19 @@ function AboutForm({
         }}
       >
         <fieldset disabled={mutation.isPending} className="space-y-5">
+          <label className="notebook-paper block space-y-2 p-6 text-sm">
+            <span className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={draft.shared === true}
+                onChange={(event) => change({ shared: event.target.checked })}
+              />
+              {t('shareCreatorAbout')}
+            </span>
+            <span className="block text-muted-foreground">
+              {t('shareCreatorAboutHint')}
+            </span>
+          </label>
           <div className="notebook-paper grid gap-4 p-6 sm:grid-cols-2">
             {(['headline', 'pronouns', 'location'] as const).map((key) => (
               <label className="block space-y-2 text-sm" key={key}>

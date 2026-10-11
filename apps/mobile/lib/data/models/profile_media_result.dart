@@ -15,7 +15,7 @@ enum ProfileMediaFailureKind {
   unknown,
 }
 
-enum ProfileMediaTarget { avatar, banner, removeBanner }
+enum ProfileMediaTarget { avatar, banner, removeAvatar, removeBanner }
 
 /// Display and copy metadata excludes arbitrary messages and capability URLs.
 class ProfileMediaFailure {

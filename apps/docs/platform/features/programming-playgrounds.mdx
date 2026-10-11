@@ -66,6 +66,22 @@ are supported; runtime API requests, WebSockets and form submission are disabled
 Unsupported preview
 behaviors must remain explicit rather than weakening the application origin.
 
+Offline programming rooms reserve at most three automatic checkpoint attempts
+within two minutes of the first offline attempt, at least 30 seconds apart. The
+reservation is persisted before the provider call, so duplicate alarms and object
+restarts cannot replenish it. At exhaustion or expiry, the room retains its unsaved
+document and revision without scheduling more offline retries. A current authorized
+owner may explicitly checkpoint the retained document; a confirmed save clears
+the retry budget. Viewer requests cannot recover or overwrite it. Active signed
+connections retain their existing checkpoint and ticket-expiry behavior; this
+offline bound is not a platform spending cap.
+
+Regression coverage: `collaboration-retry-budget.test.ts` counts provider/storage
+operations through failures, duplicates, restarts, deadlines and owner recovery.
+The isolated Worker/SQLite fixture reconstructs handlers against real persistence
+and invokes alarm logic explicitly; hosted alarm delivery and Drive remain separate
+acceptance evidence.
+
 Keep the room open when Drive reports a save failure. Durable room state and
 Drive confirmation are distinct. A busy project or conflicting revision must
 not be silently overwritten. Stopping an environment terminates its processes;
@@ -104,3 +120,11 @@ release only an unpublished project's quota; existing projects are retained.
 Regression evidence: `runner-files.test.ts`, the local programming Worker probe,
 `playground-service.test.ts`, `programming-collaboration.test.ts`, and the
 hosted-playgrounds pgTAP suite.
+
+
+The framework-independent `@tuturuuu/realtime/core/retry-budget` planner owns
+finite attempt/deadline decisions; the Worker persists reservations before I/O
+and retains authorization and recovery. Invalid durable retry state stops without
+resetting the job or deleting documents. See
+`apps/docs/build/devops/programming-realtime-runbook.mdx#portable-offline-retry-planning`
+for the adapter contract and planner, counted-handler and SQLite regressions.

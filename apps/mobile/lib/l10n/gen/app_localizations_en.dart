@@ -12,6 +12,24 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get assistantDownloadPhasePending => 'Pending';
+
+  @override
+  String get assistantDownloadPhaseQueued => 'Queued';
+
+  @override
+  String get assistantDownloadPhaseTransferring => 'Downloading';
+
+  @override
+  String get assistantDownloadPhaseRetryWait => 'Waiting to retry';
+
+  @override
+  String get assistantDownloadPhasePaused => 'Paused';
+
+  @override
+  String get assistantDownloadPhaseVerifying => 'Verifying download';
+
+  @override
   String get adminAccountsActive => 'Access enabled';
 
   @override
@@ -10604,4 +10622,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsReadError => 'Could not accept the read action. Try again.';
+
+  @override
+  String get notesLocalAiTitle => 'Summarize on device';
+
+  @override
+  String get notesLocalAiDescription => 'Use an installed model for a short local summary. Review before adding to your note. No note text is sent to an AI service.';
+
+  @override
+  String get notesLocalAiModel => 'Installed model';
+
+  @override
+  String get notesLocalAiMissingModel => 'Install or import this model in Mira settings first.';
+
+  @override
+  String get notesLocalAiUnsupported => 'Local inference is unavailable on this device.';
+
+  @override
+  String get notesLocalAiInput => 'Choose a nonempty note with at most 5,000 characters.';
+
+  @override
+  String get notesLocalAiEngine => 'Could not generate a local summary. No remote service was used.';
+
+  @override
+  String get notesLocalAiSaveError => 'Could not confirm adding the summary. Check your note before saving again.';
+
+  @override
+  String get notesLocalAiStop => 'Stop';
+
+  @override
+  String get notesLocalAiGenerate => 'Generate locally';
+
+  @override
+  String get notesLocalAiAppend => 'Append summary';
+
+  @override
+  String get notesLocalAiDiscard => 'Discard preview';
 }

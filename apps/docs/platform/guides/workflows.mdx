@@ -1,0 +1,82 @@
+---
+title: "Daily workflows"
+description: "Connect planning, meetings, writing, forms, CRM, commerce, and learning without assuming automatic actions."
+updatedAt: '2026-10-08'
+---
+
+## Plan and execute a day
+
+Use the [Command Center](/platform/features/command-center-dashboard) to review
+priorities. Organize actionable work in [Tasks](/platform/applications/tasks),
+fixed events in [Calendar](/platform/applications/calendar), and actual work
+sessions in [Track](/platform/applications/track). Smart scheduling has explicit
+[priority](/platform/features/smart-scheduling/priority-system) and
+[duration](/platform/features/smart-scheduling/duration-optimization) rules;
+calendar provider synchronization is separate from the local planning view.
+
+Review [progress and goals](/platform/features/progress-goals-leaderboards) after
+updating source work. A dashboard summary is a view over records, not a second
+place to maintain the same task manually.
+
+## Turn a meeting into reviewed work
+
+[Meet](/platform/applications/meet) separates planning, participating, recording,
+transcription, and follow-up proposals. Review the generated evidence before
+creating a task or calendar event. See
+[Follow-ups](/platform/features/meet-followups),
+[Live assistants](/platform/features/meet-live-assistants), and
+[Solo mode](/platform/features/meet-solo-mode). Provider connectivity, access,
+and consent affect which tools are available; opening a room is not evidence
+that transcription or an external provider is working.
+
+## Capture ideas and knowledge
+
+Workspace Notes, documents, whiteboards, habits, readings, and planning surfaces
+remain in Web where they have not been assigned to another app. Use
+[Mind](/platform/applications/mind) for mindboards and nested ideas,
+[Drive](/platform/applications/drive) for files, and
+[Tulletin](/platform/features/lettin) for creative worlds and published wiki
+revisions. These are separate content models; following an app link does not
+copy or synchronize every record.
+
+[Notes voice analysis](/platform/features/notes-voice-analysis) records locally
+until the user explicitly submits transcription/analysis. Saving the reviewed
+result creates a workspace Note; it does not automatically create tasks or
+events. A partial transcript can be useful even when analysis fails, and retries
+must preserve the actor/workspace scope.
+
+## Collect information and follow up
+
+Build and share a [Form](/platform/applications/forms), then review responses
+and analytics in its studio. Manage the people and groups who participate in
+[Contacts](/platform/applications/contacts). Forms responses and CRM membership
+are separate: do not assume a response creates a user, group enrollment, or
+outreach message unless an explicitly configured product workflow does so.
+
+## Run a sales workflow
+
+Use [Inventory](/platform/applications/inventory) for catalog, stock, costing,
+bundles, and checkout readiness. Publish a
+[Storefront](/platform/applications/storefront) for buyers. Review provider
+payment evidence and audit trails before treating an order as paid. Browser
+success return URLs are navigation signals, not an independent payment proof.
+[Finance](/platform/applications/finance) handles financial records;
+[Pay](/platform/applications/pay) handles workspace subscription billing.
+These three products have different responsibilities.
+
+## Run a learning workflow
+
+[Teach](/platform/applications/teach) serves educators;
+[Learn](/platform/applications/learn) serves eligible learners and linked
+parents. Education access and parent visibility are explicit. Programming runs
+use the configured Judge/Devbox boundary: local editor diagnostics do not prove
+a submission verdict. [Nova](/platform/applications/nova) has separate
+prompt-learning and challenge experiences.
+
+## Integrate rather than duplicate
+
+Developers should use [shared internal API contracts](/platform/architecture/data-fetching)
+and the [SDK](/reference/packages/sdk). The
+[route catalog](/reference/repository/catalog) helps locate an owner, but private
+internal handlers are not automatically supported third-party APIs. AI recall
+is context, not permission to send messages, publish, or mutate a workspace.

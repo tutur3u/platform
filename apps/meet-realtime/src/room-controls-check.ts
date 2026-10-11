@@ -14,7 +14,6 @@ import { validateMeetCheckEndpoint } from './check-endpoint';
 import { waitForCheckSocket } from './check-socket';
 
 const endpoint = validateMeetCheckEndpoint(
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: finite standalone verification harness.
   process.env.MEET_CHECK_REALTIME_URL || 'ws://127.0.0.1:8799/realtime'
 );
 const secret = process.env.MEET_REALTIME_TOKEN_SECRET;

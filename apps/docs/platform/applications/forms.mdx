@@ -1,0 +1,50 @@
+---
+title: "Forms"
+description: "Create forms, publish share links, embed them, and review responses and analytics."
+updatedAt: '2026-10-08'
+---
+
+Forms (`forms.tuturuuu.com`, `apps/forms`) owns the complete form product:
+builder, studio, respondent experience, responses, analytics, and its form APIs.
+Web redirects legacy form destinations to this app.
+
+## Create, review, and share
+
+1. Open `/{wsId}/forms` in an authorized workspace.
+2. Create a form at `/{wsId}/forms/new`, then edit its structure and content in
+   `/{wsId}/forms/{formId}`.
+3. Configure questions, validation, layout, access, and sharing. Preview the
+   respondent flow before sending the link.
+4. Share `/f/{shareCode}` or use the embed tools. A protected form can still
+   require login; possession of a URL is not a universal access grant.
+5. Review responses and analytics in the private studio.
+
+The current question catalog includes text and typed inputs, choices, rating
+and scales, NPS, ranking, and presentation blocks. The precise question types,
+validation behavior, response formatting, and analytics rules are in
+[Forms: question types, embedding, SEO, and collaboration](/platform/features/forms-embedding-and-seo).
+Use [Studio layouts](/platform/features/forms-studio-layouts) for layout and
+editing behavior.
+
+## Embedding and search
+
+The SDK is delivered at `/embed.js`; the embedded route is
+`/embed/{shareCode}`. Embed wrappers are noindex and distinct from the canonical
+respondent page. The author's SEO controls can override title, description,
+social image, canonical, keywords, and noindex on a shared form. Public shared
+forms retain this existing opt-out behavior; protected or unavailable forms
+keep their access-aware metadata. Private studio and response data stay noindex.
+Forms are not enumerated into a public sitemap from workspace records.
+
+## Collaboration and data
+
+Studio presence/broadcast uses private form channels. Forms tables live in the
+private database schema and are accessed through authorized server logic.
+Respondent state, submissions, protected content, and studio access must stay
+separate. Reopening a shared form can restore the signed-in respondent's own
+state; this does not expose another respondent's answers.
+
+[Forms route reference](/reference/repository/routes/forms),
+[Search indexing](/platform/features/search-indexing), and
+[Forms feature details](/platform/features/forms-embedding-and-seo) provide the
+implementation and behavior contracts.

@@ -1,7 +1,7 @@
 ---
 title: "Observability & Monitoring"
 description: "How Tuturuuu observes the platform today, and the patterns that guide where it is heading"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 Observability gives you the ability to understand system behavior by examining
@@ -27,12 +27,11 @@ plainly and keeps the pattern only for its teaching value.
 
 ## Architecture in Transition
 
-The legacy `apps/web` Next.js runtime (port `7803`) is being replaced by
-`apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`).
-The observability surface described below lives mostly in `apps/web` today and
-is migrating alongside the rest of the platform. See
-[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
-for the contract, runtime shape, and ports.
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ---
 

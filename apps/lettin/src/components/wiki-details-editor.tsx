@@ -2,25 +2,15 @@
 import type {
   LettinDraft,
   LettinRecord,
-  LettinRelationshipKind,
   LettinWiki,
 } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
+import { WikiFactsEditor } from './wiki-facts-editor';
 import { wikiOf } from './wiki-model';
+import { WikiRelationshipsEditor } from './wiki-relationships-editor';
 
-const relationKinds: LettinRelationshipKind[] = [
-  'related',
-  'family',
-  'friend',
-  'rival',
-  'member',
-  'located',
-  'part',
-  'role',
-  'appears',
-];
 export function WikiDetailsEditor({
   draft,
   entries,
@@ -55,56 +45,11 @@ export function WikiDetailsEditor({
           {t('aliasesHint')}
         </span>
       </label>
-      <fieldset className="wiki-fieldset">
-        <legend>{t('facts')}</legend>
-        {wiki.facts.map((fact, index) => (
-          <div className="wiki-property-row" key={index}>
-            <Input
-              aria-label={t('factLabel')}
-              maxLength={80}
-              value={fact.label}
-              onChange={(e) =>
-                patch({
-                  facts: wiki.facts.map((v, i) =>
-                    i === index ? { ...v, label: e.target.value } : v
-                  ),
-                })
-              }
-            />
-            <Input
-              aria-label={t('factValue')}
-              maxLength={1000}
-              value={fact.value}
-              onChange={(e) =>
-                patch({
-                  facts: wiki.facts.map((v, i) =>
-                    i === index ? { ...v, value: e.target.value } : v
-                  ),
-                })
-              }
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() =>
-                patch({ facts: wiki.facts.filter((_, i) => i !== index) })
-              }
-            >
-              {t('remove')}
-            </Button>
-          </div>
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          disabled={wiki.facts.length >= 40}
-          onClick={() =>
-            patch({ facts: [...wiki.facts, { label: '', value: '' }] })
-          }
-        >
-          {t('addFact')}
-        </Button>
-      </fieldset>
+      <WikiFactsEditor
+        kind={draft.kind}
+        facts={wiki.facts}
+        onChange={(facts) => patch({ facts })}
+      />
       <fieldset className="wiki-fieldset">
         <legend>{t('chronology')}</legend>
         <p className="mb-3 text-muted-foreground text-sm">
@@ -179,93 +124,13 @@ export function WikiDetailsEditor({
           </Button>
         )}
       </fieldset>
-      <fieldset className="wiki-fieldset">
-        <legend>{t('relationships')}</legend>
-        {wiki.relationships.map((relation, index) => (
-          <div
-            className="wiki-relationship-row"
-            key={`${relation.targetId}-${relation.kind}`}
-          >
-            <select
-              aria-label={t('relationshipType')}
-              value={relation.kind}
-              onChange={(e) =>
-                patch({
-                  relationships: wiki.relationships.map((v, i) =>
-                    i === index
-                      ? { ...v, kind: e.target.value as LettinRelationshipKind }
-                      : v
-                  ),
-                })
-              }
-            >
-              {relationKinds.map((kind) => (
-                <option key={kind} value={kind}>
-                  {t(`relationship${kind}`)}
-                </option>
-              ))}
-            </select>
-            <span>
-              {entries.find((entry) => entry.id === relation.targetId)?.draft
-                .title ?? t('unavailableEntry')}
-            </span>
-            <Input
-              aria-label={t('relationshipLabel')}
-              maxLength={160}
-              value={relation.label}
-              onChange={(e) =>
-                patch({
-                  relationships: wiki.relationships.map((v, i) =>
-                    i === index ? { ...v, label: e.target.value } : v
-                  ),
-                })
-              }
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() =>
-                patch({
-                  relationships: wiki.relationships.filter(
-                    (_, i) => i !== index
-                  ),
-                })
-              }
-            >
-              {t('remove')}
-            </Button>
-          </div>
-        ))}
-        <select
-          aria-label={t('addRelationship')}
-          value=""
-          disabled={wiki.relationships.length >= 100}
-          onChange={(e) => {
-            if (e.target.value)
-              patch({
-                relationships: [
-                  ...wiki.relationships,
-                  { targetId: e.target.value, kind: 'related', label: '' },
-                ],
-              });
-          }}
-        >
-          <option value="">{t('addRelationship')}</option>
-          {entries
-            .filter(
-              (entry) =>
-                entry.id !== recordId &&
-                !wiki.relationships.some(
-                  (r) => r.targetId === entry.id && r.kind === 'related'
-                )
-            )
-            .map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.draft.title} · {t(`kind${entry.draft.kind}`)}
-              </option>
-            ))}
-        </select>
-      </fieldset>
+      <WikiRelationshipsEditor
+        key={recordId}
+        wiki={wiki}
+        entries={entries}
+        recordId={recordId}
+        onChange={onChange}
+      />
     </div>
   );
 }

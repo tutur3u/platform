@@ -30,7 +30,6 @@ const PEERS: Record<string, { name: string; userId: string }> = {
   c: { name: 'Peer C', userId: '5dbf5a89-915e-4be8-98f2-9743db25114d' },
 };
 const SECRET = process.env.MEET_REALTIME_TOKEN_SECRET || 'integration-secret';
-// biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone verification harness, never a cached Turbo task.
 const REMOTE_URL = process.env.MEET_CHECK_REALTIME_URL;
 const ROOM_URL = validateMeetCheckEndpoint(
   REMOTE_URL || `ws://127.0.0.1:${ROOM_PORT}/realtime`

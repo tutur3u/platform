@@ -90,3 +90,23 @@ paths fail, the current process remains blocked and reports the original denial,
 but durable revocation cannot be guaranteed while all persistence is unavailable.
 Regression coverage: `notes_voice_revocation_test.dart` exercises real encrypted
 cache failures/restart, failed publication, scoped ordering, and MFA retention.
+
+## On-device text summaries
+
+An open, unencrypted note can explicitly generate a short text summary using an
+already installed Mira model. Notes verifies the catalog digest and device
+capability before loading its own local inference session. This flow does not
+download models, send note text to an AI service, or replace the server voice
+transcription flow. It provides no offline speech recognition.
+
+Generated text is a volatile preview. Appending requires explicit review and a
+current actor, workspace, note selection and editor revision. Editing, navigation,
+auth changes, locking or backgrounding invalidates the preview. Appending preserves
+existing rich text and uses the ordinary Notes save queue. Offline acceptance means
+local queue persistence, not server synchronization. The editor guard is not a
+cross-device database compare-and-set. Unaccepted previews are not persisted.
+
+Source and mocked widget tests do not establish real supported-device inference,
+model quality, memory behavior or offline network isolation. Validate those on an
+actual supported device with the pinned model digest before claiming device runtime
+readiness.

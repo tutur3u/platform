@@ -152,6 +152,47 @@ bun run test -- src/lib/external-projects/email-policy.test.ts \
 - Before apply, upload those files through the external-project asset app-server upload route. Abort the apply if a local public asset is missing so CMS never receives storage paths for objects that were not uploaded.
 - Asset `storagePath`/`storage_path` values must stay under `external-projects/`. Do not point CMS assets at Drive, finance, or other workspace storage namespaces; delivery and admin cleanup only operate on assets that satisfy the CMS namespace invariant.
 
+## Storage analytics cache
+
+The authenticated external-project storage analytics endpoint reads Supabase project
+statistics from a private Postgres snapshot keyed by workspace and adapter. It
+calculates file totals and highlights from `storage.objects` metadata, with a
+1,000-object cap and an explicit `truncated` flag. Archived versions and folder
+placeholders do not contribute to file totals.
+
+Snapshots expire after five minutes. Storage inserts, updates, deletes, and moves
+invalidate workspace snapshots in the same transaction, including direct uploads.
+A shared workspace lock serializes refresh and invalidation so a concurrent file
+change cannot leave a newly stored stale snapshot. Workspace quota is read live.
+The cache is available only through a service-role RPC, after endpoint access and
+rate-limit checks.
+
+R2 uses the bounded provider scan. A missing RPC during an additive migration
+rollout also uses that scan; other database failures remain visible. Production
+activation requires the normal gated Supabase migration workflow. No cache
+backfill is required.
+
+The first-class Next handler preserves bodyless `HEAD` responses and request-time
+authorization. Its future Rust port mirrors the Supabase cache response with live
+quota and falls through to Next for fully configured R2 providers and unported
+methods. Rust is not deployed; satellite-session and rate-limit parity remain
+tracked prerequisites for a future cutover.
+
+### Database contract gate
+
+`external-project-storage-analytics-contract.yaml` checks the exact PR head with
+all tracked Supabase schema inputs. Its verifier requires the reviewed migration
+body under the root-reserved forward filename, runs all 15 strict SQL assertions,
+generates actual public/private/storage types, and closes its owned disposable
+stack. A skipped wrapper or local source test does not establish this DB gate.
+After the 15-assertion sequential fixture, the gate uses distinct bounded psql
+sessions for first-cache-row refresh versus insert/update. It observes the
+contender waiting on the actual workspace advisory lock (namespace 73007), then
+requires invalidation and exact recalculation after both sessions complete.
+Authored Node wiring tests do not establish that race; its actual hosted receipt
+is required before merge. Linux's shared rootful Docker daemon is not a
+qualified contained executor; do not run this verifier there to bypass that gate.
+
 ## Team Guidance
 
 - Link into the CMS-native route map directly.

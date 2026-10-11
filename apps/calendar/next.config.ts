@@ -26,6 +26,7 @@ const TASKS_APP_URL = resolveInternalAppUrl({
 });
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'calendar',
   ...getOfflineTurbopackConfig(),
   transpilePackages: ['@tuturuuu/ui'],
   images: {

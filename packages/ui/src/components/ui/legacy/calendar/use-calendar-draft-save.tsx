@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  getGoogleCalendarColorOptions,
   type CalendarSourceOption,
+  getGoogleCalendarColorOptions,
 } from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';

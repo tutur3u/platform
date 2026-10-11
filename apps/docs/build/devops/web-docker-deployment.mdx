@@ -4,6 +4,23 @@ description: "Run the web app in Docker for development, production, and blue/gr
 updatedAt: "2026-07-10"
 ---
 
+<Warning>
+Retained inactive reference. Docker setup, Rust, and TanStack Start are paused
+and not in use. The Docker cron runner is retired. Do not execute the retained
+build, test, migration, deployment, or dependency-update procedures until
+explicitly resumed. Docker-backed E2E jobs are also paused. Use the
+[active runtime map](/build/devops/active-runtime) for current operations.
+</Warning>
+
+<Warning>
+  Retained Docker deployment reference. Docker setup is not in use in the
+  current supported development/runtime path. The Docker cron runner is retired.
+  Use the [active runtime map](/build/devops/active-runtime) and
+  [development without Docker](/build/development-tools/without-docker) for
+  current guidance. Commands below describe the retained self-hosted tooling,
+  not a required setup or proof of a running deployment.
+</Warning>
+
 This is the operational guide for the Docker-based `apps/web` runtime and the
 parallel `apps/tanstack-web` migration runtime.
 
@@ -1079,171 +1096,26 @@ migration service is stopped if necessary and removed. This keeps
 `hive-db-migrate` from lingering after `depends_on` starts it while Hive
 services come up.
 
-## Native Cron Runner
+## Retired Docker cron runner
 
-Self-hosted production cron jobs use `apps/web/cron.config.json` as the shared
-source of truth. `apps/web/vercel.json.crons` should stay generated from that
-file with:
+The Docker `web-cron-runner` is retired and is not an active scheduler or a
+prerequisite for the hosted Next.js apps. Retained images, Compose service
+entries, watchdog scripts, heartbeat files, and recovery controls are historical
+implementation artifacts. Do not start or recreate the runner to restore cron
+processing, and do not interpret its stale heartbeat as an active service outage.
 
-```bash
-node scripts/sync-web-crons.js --check
-node scripts/sync-web-crons.js
-```
+Current scheduled work uses the owning app's hosted Vercel schedules and the
+[Cloudflare Cron Control Worker](/build/devops/cloudflare-cron-control). Calendar
+provider sync and smart scheduling enter the Infrastructure gateway, then the
+Calendar app. Web cron configuration generation remains useful for Vercel;
+`vercel: false` means that Web does not schedule a job on Vercel, not that an
+active Docker runner will execute it.
 
-Use `--check` in CI and local verification when cron definitions change. The
-sync script preserves Vercel behavior by copying each enabled job's `path` and
-`schedule` from the shared config into `apps/web/vercel.json`.
-
-In Docker production, the `web-cron-runner` service runs
-`scripts/watch-web-crons.js` against `INTERNAL_WEB_API_ORIGIN`, defaulting to
-`http://web-proxy:7803`. Requests include
-`Authorization: Bearer ${CRON_SECRET || VERCEL_CRON_SECRET}` so the same route
-auth gate can protect Vercel and native Docker executions.
-The cron-runner image bundles the `cron-parser` dependency used by that script,
-so runtime execution does not depend on `node_modules` existing in the mounted
-host checkout.
-
-When neither `CRON_SECRET` nor `VERCEL_CRON_SECRET` is set on the host, the
-Docker environment generator creates a persisted internal secret at
-`tmp/docker-web/cron-token` and injects it into both the web containers and the
-`web-cron-runner` service as `CRON_SECRET`. This keeps native Docker cron auth
-self-contained while preserving explicit host-provided secrets when present.
-
-Watcher startup also keeps the Docker control sidecar and cron runner present.
-`bun serve:web:docker:bg`, `bun serve:web:docker:bg:watch`, and watcher
-recovery recreate or resume `web-blue-green-watcher` first, refresh
-`web-docker-control`, then ensure `web-cron-runner` exists with a no-recreate
-Compose start. A healthy existing cron runner is left running; a missing control
-sidecar or runner fails watcher bootstrap instead of leaving the stack without
-native cron recovery or execution.
-
-`web-cron-runner` is the executor. The blue/green watcher is one recovery
-consumer, not the owner of cron execution. Each watcher poll reconciles
-cron-runner health before normal deploy work by checking the
-`web-cron-runner` container state, Docker healthcheck result, and
-`tmp/docker-web/cron/status.json.updatedAt`. If the container is missing,
-unhealthy, or the heartbeat is stale, the watcher writes the existing
-`tmp/docker-web/watch/control/cron-runner-recovery.request.json` request and
-processes it immediately with a force-recreate of `web-cron-runner`. It then
-waits for a fresh heartbeat before reporting `cron-runner-recovered`; if the
-Compose restart fails, the request remains on disk with `lastError` and the
-watcher backs off before retrying.
-
-`web-docker-control` also owns an independent cron-runner watchdog. The watchdog
-defaults on, reads the same cron runner heartbeat, inspects the
-`web-cron-runner` container, ensures `web-blue-green-watcher`, and
-force-recreates only `web-cron-runner` when the heartbeat is stale/missing or
-the container is missing/unhealthy. This keeps cron recovery available even when
-the blue/green watcher heartbeat is stale. The watchdog does not recover the
-whole serving stack; route-origin failures such as an unreachable
-`INTERNAL_WEB_API_ORIGIN` / `web-proxy` are reported in monitoring diagnostics
-for an operator to fix separately.
-
-Cron runner heartbeats refresh both runner liveness and schedule metadata. When
-the runner starts a cycle or keeps a long execution alive, it recomputes each
-enabled job's next future run from `apps/web/cron.config.json`, current runtime
-control overrides, and UTC time. The monitoring API also derives future
-`nextRunAt` values from config/control if an older persisted status file still
-contains stale schedule fields, while preserving the separate stale/live runner
-health signal from `status.json.updatedAt`.
-
-`web-cron-runner` also protects itself. The entrypoint restarts the child
-`scripts/watch-web-crons.js` process when the status heartbeat is missing,
-invalid, or stale after startup grace, and the Docker healthcheck calls the same
-entrypoint heartbeat check. This prevents a hung cron child from looking
-healthy just because the process still exists.
-
-Useful cron-runner recovery knobs:
-
-- `DOCKER_WEB_WATCHER_CRON_RUNNER_STALE_AFTER_MS` controls watcher heartbeat
-  staleness detection. Default: `120000`.
-- `DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_WAIT_MS` controls how long the
-  watcher waits for a fresh heartbeat after restart. Default: `90000`.
-- `DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_POLL_MS` controls the heartbeat wait
-  poll interval. Default: `2000`.
-- `PLATFORM_CRON_RUNNER_STATUS_STALE_AFTER_MS` controls the entrypoint child
-  watchdog. Default: `120000`.
-- `PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED` disables the
-  `web-docker-control` cron-runner watchdog when set to `true`. Default:
-  `false`.
-- `PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS` controls the
-  `web-docker-control` watchdog polling interval. Default: `30000`.
-- `PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS` controls
-  `web-docker-control` heartbeat staleness detection. Default: `120000`.
-- `PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS` controls
-  `web-docker-control` recovery cooldown after a restart attempt. Default:
-  `60000`.
-- `PLATFORM_CRON_DOCKER_TELEMETRY_TIMEOUT_MS` bounds Docker `ps` / `logs`
-  probes used for cron telemetry. Default: `10000`.
-
-`web-docker-control` is an internal-only sidecar with the Docker CLI, Docker
-socket, and host worktree mount. `apps/web` reaches it through
-`PLATFORM_DOCKER_CONTROL_URL` and `PLATFORM_DOCKER_CONTROL_TOKEN` for hardcoded
-watcher/cron-runner recovery actions only; it does not expose a general Docker
-or shell interface. Its status file at
-`tmp/docker-web/docker-control/status.json` includes both the latest manual or
-watchdog recovery attempt and the latest watchdog check, which the cron
-monitoring dashboard surfaces alongside watcher and runner heartbeat warnings.
-When the runner heartbeat is stale, future cron times in the dashboard are
-scheduled estimates derived from config/control, not proof that the runner will
-execute them.
-
-Runtime cron telemetry is intentionally file-based and local to the host:
-
-- `tmp/docker-web/cron/status.json` for runner health, the current cycle, and
-  the latest manual run lifecycle records. Manual runs move through `queued`,
-  `processing`, and a final `success` / `failed` / `timeout` / `skipped` state.
-  While any run is processing, the runner refreshes this heartbeat and, for
-  manual runs, captured route console logs so the monitoring UI can show
-  near-realtime status and log updates. Heartbeat refreshes also recompute
-  future per-job and aggregate `nextRunAt` values so a recovered runner does not
-  keep serving stale schedule badges.
-- `tmp/docker-web/cron/state.json` for restart-safe last-run markers.
-- `tmp/docker-web/cron/executions/*.jsonl` for per-run route response,
-  duration, status, and captured web-container console logs.
-- `tmp/docker-web/watch/control/cron-control.json` for the global enabled
-  switch.
-- `tmp/docker-web/watch/control/cron-run-requests/*.json` for queued manual
-  runs created by the monitoring UI.
-
-Disabling cron execution blocks scheduled jobs and leaves manual run requests
-queued until cron execution is enabled again. The runner also supports
-`--once`, which is used by script tests to verify due-run detection, queued
-manual runs, restart-safe state, and log persistence without starting the
-long-running loop.
-
-Calendar jobs run every 15 minutes (provider sync) and six hours (smart
-scheduling) from `apps/web/cron.config.json`. The Docker scheduler sends these
-two fixed paths to the infrastructure app's `/api/cron/calendar/:job` gateway;
-the old web-origin paths no longer have handlers. Other jobs continue using
-`INTERNAL_WEB_API_ORIGIN`.
-
-The infrastructure gateway authenticates `CRON_SECRET` (or `VERCEL_CRON_SECRET`)
-before loading the existing encrypted `mobile_calendar_gateway:v1` credential.
-It forwards only provider sync and smart scheduling to the fixed Calendar origin,
-attaching the private hosting header and server cron authentication. Deploy the
-infrastructure gateway before promoting the scheduler change. The scheduler,
-infrastructure, and Calendar must share cron authentication configuration.
-No new hosting credential is copied into scheduler environments or mobile builds.
-Missing credentials fail closed; redirects are never followed with credentials.
-Verify actual successful job executions after rollout, rather than relying on
-the next-run estimate. The gateway has a four-minute upstream deadline and a
-bounded JSON response; failures remain visible to the scheduler.
-
-The Calendar cron handler invokes its local workspace sync handler directly.
-That handler selects active Google and Microsoft connections, refreshes provider
-credentials on the server, and persists events independently of any open client.
-Background privileges are derived from verified cron authorization, never the
-JSON `source` field. Calendar should not also be scheduled through Trigger.dev.
-Microsoft OAuth connections now persist the account-bound refresh credential
-before their request-local MSAL cache is discarded. Existing Microsoft rows with
-an empty `refresh_token` need one reconnect: the old callback stored no durable
-credential, so a background job cannot recover it. Token refresh preserves the
-calendar write scopes needed for invitations. Never log the serialized MSAL
-cache, access tokens, refresh credentials, or provider sync tokens.
-
-Mobile renders its cached snapshot immediately and revalidates on opening or
-resuming Calendar; this fetch does not initiate provider synchronization.
+Use the [active runtime and scheduler map](/build/devops/active-runtime) for
+ownership and verification. Any job found only in the old Docker configuration
+needs an explicitly assigned hosted scheduler before it can be considered active.
+This documentation update does not activate replacement jobs or delete retained
+runtime files.
 
 ## Auto-Deploy Watcher
 

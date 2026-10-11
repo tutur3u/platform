@@ -476,3 +476,31 @@ describe('satellite app-session route inventory', () => {
     }
   });
 });
+
+describe('Lettin notebook-copy route audience boundary', () => {
+  it('isolates Lettin sessions from broad Drive storage routes', () => {
+    const shared = readFileSync(
+      resolve(
+        repoRoot,
+        'apps/web/src/app/api/v1/workspaces/[wsId]/lettin/drive-copy/shared.ts'
+      ),
+      'utf8'
+    );
+    expect(shared).toContain("targetApp: 'lettin'");
+    expect(shared).toContain("appSessionTargets: 'lettin'");
+    expect(shared).toContain("withoutPermission('manage_drive')");
+    const generic = readFileSync(
+      resolve(
+        repoRoot,
+        'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/route-auth.ts'
+      ),
+      'utf8'
+    );
+    const targets = generic
+      .split('FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS = [')[1]!
+      .split(']')[0]!;
+    expect(targets).toContain("'drive'");
+    expect(targets).toContain("'finance'");
+    expect(targets).not.toContain("'lettin'");
+  });
+});

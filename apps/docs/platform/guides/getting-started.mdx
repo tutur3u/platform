@@ -1,0 +1,60 @@
+---
+title: "Get started with a workspace"
+description: "Accounts, app selection, workspace identity, permissions, and safe first steps."
+updatedAt: '2026-10-08'
+---
+
+## Sign in and choose the right workspace
+
+1. Open the [platform](https://tuturuuu.com) or a product from the
+   [Apps gateway](https://apps.tuturuuu.com).
+2. Complete central sign-in. Satellite apps use a coordinated session handoff;
+   their login and verification URLs are not public content pages.
+3. Choose your personal or team workspace. If you have a pending invitation,
+   accept it through the app's invitation flow before expecting team access.
+4. Open the product you need and check its access state. An app tile does not
+   override membership, product flags, or a role's permissions.
+
+A workspace is the boundary for team data and permissions. Browser routes can
+use `personal`, `internal`, a UUID, or an accepted workspace handle. Persistent
+records and server authorization use the resolved workspace UUID. Do not copy a
+workspace slug into a database field that expects an ID.
+
+See [Workspaces and permissions](/platform/architecture/workspaces-permissions)
+for the full model and [Routing](/platform/architecture/routing) for redirects.
+
+## Start with a small workflow
+
+- Create a task in [Tasks](/platform/applications/tasks) and choose its board,
+  status, assignee, and scheduling fields where available.
+- Put a fixed appointment in [Calendar](/platform/applications/calendar).
+  Scheduling suggestions and provider synchronization have their own state;
+  saving a task is not proof that a provider calendar has synchronized.
+- Track a work session in [Track](/platform/applications/track), then review
+  its history instead of estimating completion from a running timer.
+- Upload a file through [Drive](/platform/applications/drive) or start a
+  [Chat](/platform/applications/chat) discussion with the right audience.
+
+## Configure the experience
+
+Theme and language controls are documented under
+[Themes](/platform/personalization/themes) and
+[Language](/platform/personalization/language). Sidebar customization is in
+[Sidebar navigation](/platform/personalization/sidebar-navigation). Mobile
+modules follow their own [default and experiment rules](/platform/features/mobile-workspace-tools).
+
+A configured root destination applies when opening the app root; visiting a
+workspace home directly keeps that home destination. Hidden workspaces can be
+restored without deleting them: see [Hidden workspaces](/platform/features/hidden-workspaces).
+
+## Understand sharing before publishing
+
+Workspace membership, a shared link, a public form, a published storefront, and
+an external app token are different access mechanisms. Share only through the
+owning product's supported flow. A URL's presence in a browser or docs inventory
+is not proof that its data is public. Search exclusion also does not replace
+access controls. Read [Search indexing](/platform/features/search-indexing)
+and the product's publishing guide.
+
+If a module is unavailable, use [Troubleshooting](/platform/guides/troubleshooting)
+before recreating an account or changing workspace data.

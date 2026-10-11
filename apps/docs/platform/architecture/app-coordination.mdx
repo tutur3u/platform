@@ -385,3 +385,41 @@ permission checks must resolve `personal` from that explicit user context rather
 than falling back to cookie-bound Supabase Auth on the app host. App-session
 cookies are Tuturuuu-managed, so the app host may not have a local Supabase Auth
 user even though the user is authenticated.
+
+## Coordination Worker leases and alarm costs
+
+`apps/coordination/src/object.ts` stores one SQLite row per hashed entity.
+Authenticator acquisitions have a five-minute lease and retention deadline;
+meeting acquisitions have a ten-minute lease with fingerprint retention initially
+set to two hours. A busy acquisition does not extend those deadlines. A meeting
+release clears its lease but preserves fingerprint retention; an authenticator
+release deletes its row. Completion requires the current owner and an unexpired
+lease. These are coordination/idempotency contracts, not account-spend caps.
+
+The alarm deletes an expired row and reads its remaining expiry. Before expiry
+it schedules that same deadline; after expiry or release it deletes the alarm.
+It makes no downstream HTTP calls. Controlled probes of the actual object with
+local SQLite counted two SQL statements and one alarm-set call per early
+callback. A due callback changed one row and removed the alarm. Twenty-four
+reconstructed callbacks after deletion made 72 SQL statements (including each
+constructor's schema statement), zero changed/read rows, and 24 alarm-delete
+calls, without scheduling new alarms. Twenty-four busy request retries made 72
+SQL statements, read 48 rows and set the same alarm 24 times. Count statements,
+rows and alarm operations separately; they are not interchangeable billing units.
+
+A failed alarm write after acquisition leaves the persisted lease intact:
+24 reconstructed request retries still do not acquire it twice, but repeat alarm
+write attempts. A controlled delayed-write race can leave one alarm after an
+authenticator release; that callback finds no row and removes the alarm without
+reviving the lease. This is not a durable authenticated stop-fence guarantee.
+The probes invoke the object directly with mocked alarm methods and local SQLite;
+they do not certify Worker ingress auth, hosted SQLite billing, delivered alarm
+retries, clock rollback, or provider-wide emergency shutdown. Existing
+`apps/coordination/src/worker.test.mjs` exercises the real local Worker/SQLite
+request contracts. Keep hosted alarm and independent-stop evidence separate.
+
+Repeated authenticated requests, or new acquisitions after expiry, can still
+create billable work. A finite row lifetime does not bound total ingress, entity
+count or account spend. Verify applicable alerts and an independent operator stop
+before certifying this service's cost controls; do not configure production
+billing or resources merely to qualify an adoption candidate.
