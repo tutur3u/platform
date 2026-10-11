@@ -5,7 +5,10 @@ description: Qualify the employee creation and restoration schema in an exact-so
 
 Run `employee-schema-contract.yaml` from a reviewed control revision and set
 `source_sha` to the full reviewed creation/restoration stack commit. The workflow
-checks out that exact source separately; it never substitutes current main or
+keeps the trusted control checkout at the workspace root for the shared setup
+action and checks out the exact source under `source/`. Commands run from that
+source directory invoke the reviewed control scripts via `../apps` and
+`../scripts`; they never substitute current main or
 connects to staging or production. Its installed CLI starts a disposable
 full-migration Supabase project using the same isolated runner as the Tutoring
 contract gates. Startup/reset and each fixture are bounded; an always-run cleanup

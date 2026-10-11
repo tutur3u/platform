@@ -37,14 +37,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
-          path: control
           persist-credentials: false
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.source_sha }}
           path: source
           persist-credentials: false
-      - uses: ./control/.github/actions/setup-bun-with-retry
+      - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.1
       - uses: actions/setup-node@v7
@@ -53,16 +52,16 @@ jobs:
           package-manager-cache: false
       - name: Install exact source dependencies
         working-directory: source
-        run: bash ../control/scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+        run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify strict TAP and receipt gates
-        run: node --test control/apps/database/scripts/programming-database-tap.test.mjs control/apps/database/scripts/employee-schema-tap.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Apply full isolated schema and qualify 172 rollback assertions
         working-directory: source
-        run: node ../control/apps/database/scripts/verify-employee-schema-contract.mjs
+        run: node ../apps/database/scripts/verify-employee-schema-contract.mjs
       - name: Stop only this exact owned isolated database
         if: always()
         working-directory: source
-        run: node ../control/apps/database/scripts/verify-employee-schema-contract.mjs --cleanup
+        run: node ../apps/database/scripts/verify-employee-schema-contract.mjs --cleanup
       - uses: actions/upload-artifact@v7
         if: always()
         with:
