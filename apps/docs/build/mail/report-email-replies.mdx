@@ -1,0 +1,65 @@
+---
+title: "Report email reply foundation"
+description: "Private identity and send fences, with receiving held disabled."
+---
+
+This P1 foundation adds private opaque identities for periodic report sends.
+It does not receive replies, expose activity, notify staff, or add a report UI.
+Existing report sending remains unchanged while the feature is disabled.
+
+## Receiving stays disabled
+
+`REPORT_EMAIL_REPLY_IDENTITY_ENABLED` defaults off. The SQL function
+`private.report_email_reply_receiving_ready()` always returns false in P1.
+Even setting the feature flag cannot attach a Reply-To address. A later source
+phase must implement durable receiving and qualify the exact reply domain before
+changing this readiness contract. Domain configuration is not readiness evidence.
+No provider, DNS, secret, or production database changes belong to this phase.
+
+Future receiving qualification must establish durable authenticated ingress,
+exact envelope-domain routing, sender authentication provenance, replay controls,
+report ACLs, retention, and a synthetic end-to-end canary. Workspace activity,
+notifications and UX remain separate phases.
+
+## Identity and retries
+
+Each immutable identity freezes workspace, report, subject, queue, report review
+revision, normalized recipient, live/test kind, rendered subject/HTML digest,
+reply domain and key version. A random UUID names the generation. The conservative
+generation key is queue + revision + recipient + kind. Unchanged definitive
+rejections reuse the identity. Changed recipient, revision or test/live kind
+cannot reuse it. A prior submitting, accepted or unknown outcome blocks another
+send of the same report/kind even after an operator resets or replaces the queue. Repeating a
+successful test requires a future explicit send-intent contract.
+
+A cryptographic 24-byte token forms `r-<48 lowercase hex>@<reply domain>`.
+SQL stores its SHA-256 lookup digest and AES-256-GCM encrypted reconstruction,
+with the immutable tuple as authenticated additional data. Each encryption uses
+a fresh 12-byte nonce and 16-byte authentication tag. The raw token must never
+appear in logs, URLs, public DTOs, notification payloads or browser storage.
+
+Future qualified configuration uses `REPORT_EMAIL_REPLY_DOMAIN`,
+`REPORT_EMAIL_REPLY_IDENTITY_KEY` as a dedicated 32-byte lowercase hex key, and
+`REPORT_EMAIL_REPLY_IDENTITY_KEY_VERSION` as a positive integer. Never reuse
+another application's encryption secret. This foundation fails closed if a
+retry's key version or domain differs; rotation requires a later reviewed keyring
+and lifecycle contract. Do not rotate configuration to bypass outcome fences.
+
+## Send receipts and access
+
+Reservation and submission lock report then queue and validate the current lease,
+workspace ownership, approved revision, recipient and test/live kind. Private
+identity tables enable RLS and revoke client access. Only service-role RPCs can
+write, and only service role can read encrypted identity metadata.
+
+Submission is durable before provider invocation. Acceptance and uncertain
+outcomes survive lease loss and queue resets. A provider exception after
+submission becomes an unknown outcome; it never schedules automatic resend.
+Provider acceptance is separate from application completion, recipient-server
+delivery and inbox arrival. Tracking failure preserves the acceptance fact.
+
+Apply the new migration only to a disposable local database for qualification,
+run `supabase/tests/report-email-reply-identity.sql`, then generate Supabase types
+from that migrated local schema. Root owns production migration, merge and
+receiving activation. Never replay historical production migrations or use a
+blanket resend/recovery operation to qualify this feature.

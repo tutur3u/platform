@@ -17,9 +17,9 @@ import { rewriteSupabaseConfig } from './run-supabase-isolated.js';
 export const sha256 = (bytes) =>
   createHash('sha256').update(bytes).digest('hex');
 export const employeeDrafts = [
-  'supabase/migrations/20261008020000_employee_creation_identity.sql',
-  'supabase/migrations/20261008020100_employee_creation_finalization.sql',
-  'supabase/migrations/20261008020200_employee_restoration.sql',
+  'supabase/migrations/20261011002107_employee_creation_identity.sql',
+  'supabase/migrations/20261011002108_employee_creation_finalization.sql',
+  'supabase/migrations/20261011002109_employee_restoration.sql',
   'supabase/tests/employee-signup-guards.sql',
   'supabase/tests/employee-administrator.sql',
   'supabase/tests/employee-finalization.sql',

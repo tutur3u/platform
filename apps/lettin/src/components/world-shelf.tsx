@@ -3,31 +3,64 @@ import { ArrowUpRight, BookOpen, Search } from '@tuturuuu/icons';
 import type { LettinOverview } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
-export function WorldShelf({
-  wsId,
-  shelf,
-}: {
+import { ContentNotice } from './content-notice';
+import {
+  matchesStudioMembership,
+  type StudioMembership,
+  StudioMembershipFilter,
+} from './studio-membership-filter';
+import {
+  orderStudioWorlds,
+  type StudioOrder,
+  StudioOrderControl,
+} from './studio-order';
+import { StudioTagFilter } from './studio-tag-filter';
+
+type WorldShelfProps = {
   wsId: string;
   shelf: LettinOverview['worlds'];
-}) {
+};
+
+export function WorldShelf(props: WorldShelfProps) {
+  return <WorldShelfContent key={props.wsId} {...props} />;
+}
+
+function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
   const t = useTranslations('lettin');
+  const locale = useLocale();
+  const [order, setOrder] = useState<StudioOrder>('source');
   const [search, setSearch] = useState('');
+  const [membership, setMembership] = useState<StudioMembership>('all');
+  const [tag, setTag] = useState<string | null>(null);
+  const tags = [...new Set(shelf.flatMap((world) => world.draft.tags ?? []))]
+    .filter((value) => value.trim())
+    .sort();
+  const activeTag = tag !== null && tags.includes(tag) ? tag : null;
+  useEffect(() => {
+    if (tag !== null && activeTag === null) setTag(null);
+  }, [tag, activeTag]);
   const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
   const publishedCount = shelf.filter((world) => world.published_at).length;
-  const worlds = shelf.filter((world) => {
-    const matchesStatus =
-      filter === 'all' ||
-      (filter === 'published' ? !!world.published_at : !world.published_at);
-    return (
-      matchesStatus &&
-      `${world.draft.title} ${world.draft.description} ${(world.draft.tags ?? []).join(' ')}`
-        .toLocaleLowerCase()
-        .includes(search.toLocaleLowerCase())
-    );
-  });
+  const worlds = orderStudioWorlds(
+    shelf.filter((world) => {
+      const matchesStatus =
+        filter === 'all' ||
+        (filter === 'published' ? !!world.published_at : !world.published_at);
+      return (
+        matchesStudioMembership(world.role, membership) &&
+        matchesStatus &&
+        (activeTag === null || world.draft.tags?.includes(activeTag)) &&
+        `${world.draft.title} ${world.draft.description} ${(world.draft.tags ?? []).join(' ')}`
+          .toLocaleLowerCase()
+          .includes(search.toLocaleLowerCase())
+      );
+    }),
+    order,
+    locale
+  );
   const [announcedCount, setAnnouncedCount] = useState(worlds.length);
   useEffect(() => {
     const timer = setTimeout(() => setAnnouncedCount(worlds.length), 500);
@@ -76,6 +109,9 @@ export function WorldShelf({
           ))}
         </fieldset>
       </div>
+      <StudioMembershipFilter value={membership} onChange={setMembership} />
+      <StudioTagFilter tags={tags} value={activeTag} onChange={setTag} />
+      <StudioOrderControl value={order} onChange={setOrder} />
       <p role="status" className="sr-only">
         {t('worldCount', { count: announcedCount })}
       </p>
@@ -88,6 +124,9 @@ export function WorldShelf({
             onClick={() => {
               setSearch('');
               setFilter('all');
+              setMembership('all');
+              setTag(null);
+              setOrder('source');
             }}
           >
             {t('clearFilters')}
@@ -101,6 +140,7 @@ export function WorldShelf({
             href={`/${wsId}/worlds/${world.id}`}
             className="notebook-cover block overflow-hidden focus-visible:outline-2 focus-visible:outline-ring"
           >
+            <ContentNotice notice={world.draft.contentNotice} />
             <div
               className={`studio-world-art studio-world-art-${index % 3} flex h-52 items-center justify-center overflow-hidden`}
             >

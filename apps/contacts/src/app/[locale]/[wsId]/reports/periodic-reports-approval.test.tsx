@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -7,7 +8,8 @@ const mocks = vi.hoisted(() => ({
   edit: vi.fn(),
   list: vi.fn(),
 }));
-vi.mock('@tuturuuu/internal-api/reports', () => ({
+vi.mock('@tuturuuu/internal-api/reports', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/internal-api/reports')>()),
   PERIODIC_REPORT_STAGES: [
     'draft',
     'pending',
@@ -53,6 +55,12 @@ vi.mock('@tuturuuu/ui/hooks/use-debounce', () => ({
 vi.mock('../users/reports/group-reports-selector', () => ({
   default: () => null,
 }));
+vi.mock('./periodic-delivery-batch-dialog', () => ({
+  PeriodicDeliveryBatchDialog: () => null,
+}));
+vi.mock('./periodic-recipient-remediation', () => ({
+  PeriodicRecipientRemediation: () => null,
+}));
 vi.mock('./periodic-email-readiness', () => ({
   PeriodicEmailReadiness: () => null,
 }));
@@ -85,7 +93,7 @@ beforeEach(() => {
   );
   mocks.list.mockResolvedValue({
     page: 1,
-    pageSize: 20,
+    pageSize: 100,
     total: 1,
     data: [
       {
@@ -106,10 +114,16 @@ it('approval-only supervisor uses the dedicated approval operation without conte
   const invalidate = vi.spyOn(client, 'invalidateQueries');
   render(
     <QueryClientProvider client={client}>
-      <PeriodicReportsPanel permissions={permissions} wsId="workspace-1" />
+      <WorkspaceVisibilityProvider actorId="supervisor-a">
+        <PeriodicReportsPanel permissions={permissions} wsId="workspace-1" />
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
   fireEvent.click(await screen.findByRole('button', { name: 'approve' }));
+  expect(mocks.list).toHaveBeenCalledWith(
+    'workspace-1',
+    expect.objectContaining({ pageSize: 100 })
+  );
   await waitFor(() =>
     expect(mocks.approve).toHaveBeenCalledWith('workspace-1', {
       action: 'approve',
@@ -131,10 +145,12 @@ it('does not render approval action for a supervisor without approval permission
   });
   render(
     <QueryClientProvider client={client}>
-      <PeriodicReportsPanel
-        permissions={{ ...permissions, canApproveReports: false }}
-        wsId="workspace-1"
-      />
+      <WorkspaceVisibilityProvider actorId="supervisor-a">
+        <PeriodicReportsPanel
+          permissions={{ ...permissions, canApproveReports: false }}
+          wsId="workspace-1"
+        />
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
   await screen.findByText('Synthetic monthly report');
@@ -142,5 +158,27 @@ it('does not render approval action for a supervisor without approval permission
     screen.queryByRole('button', { name: 'approve' })
   ).not.toBeInTheDocument();
   expect(mocks.approve).not.toHaveBeenCalled();
+  client.clear();
+});
+
+it('does not render previous actor reports while the new authorized load is pending', async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const view = (actorId: string) => (
+    <QueryClientProvider client={client}>
+      <WorkspaceVisibilityProvider actorId={actorId}>
+        <PeriodicReportsPanel permissions={permissions} wsId="workspace-1" />
+      </WorkspaceVisibilityProvider>
+    </QueryClientProvider>
+  );
+  const result = render(view('supervisor-a'));
+  await screen.findByText('Synthetic monthly report');
+  mocks.list.mockImplementation(() => new Promise(() => {}));
+  result.rerender(view('supervisor-b'));
+  expect(
+    screen.queryByText('Synthetic monthly report')
+  ).not.toBeInTheDocument();
+  result.unmount();
   client.clear();
 });

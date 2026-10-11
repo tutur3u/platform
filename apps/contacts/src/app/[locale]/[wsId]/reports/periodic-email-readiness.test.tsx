@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ get: vi.fn() }));
@@ -25,7 +26,9 @@ async function show(overrides: Record<string, boolean>) {
   });
   render(
     <QueryClientProvider client={client}>
-      <PeriodicEmailReadiness wsId="workspace-1" />
+      <WorkspaceVisibilityProvider actorId="actor-a">
+        <PeriodicEmailReadiness wsId="workspace-1" />
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
   await screen.findByRole('link', { name: 'email_settings' });
@@ -88,11 +91,42 @@ it('keeps unavailable readiness visible and recovers on retry', async () => {
   });
   render(
     <QueryClientProvider client={client}>
-      <PeriodicEmailReadiness wsId="workspace" />
+      <WorkspaceVisibilityProvider actorId="actor-a">
+        <PeriodicEmailReadiness wsId="workspace" />
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
   expect(await screen.findByText('readiness_unavailable')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'retry' }));
   expect(await screen.findByText('email_automatic_ready')).toBeInTheDocument();
+  client.clear();
+});
+
+it('hides prior account settings until the new account load is authorized', async () => {
+  mocks.get.mockResolvedValueOnce({
+    emailDelivery: {
+      ready: true,
+      globalGateEnabled: true,
+      periodicGateEnabled: true,
+      senderConfigured: true,
+      autoSendAfterApproval: false,
+    },
+  });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const view = (actorId: string) => (
+    <QueryClientProvider client={client}>
+      <WorkspaceVisibilityProvider actorId={actorId}>
+        <PeriodicEmailReadiness wsId="workspace" />
+      </WorkspaceVisibilityProvider>
+    </QueryClientProvider>
+  );
+  const result = render(view('actor-a'));
+  await screen.findByText('email_manual_ready');
+  mocks.get.mockImplementation(() => new Promise(() => {}));
+  result.rerender(view('actor-b'));
+  expect(screen.queryByText('email_manual_ready')).not.toBeInTheDocument();
+  result.unmount();
   client.clear();
 });

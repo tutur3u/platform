@@ -7,9 +7,35 @@
 
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types';
+import { z } from 'zod';
 
 import { EMAIL_REGEX } from '../constants';
 import type { BlacklistCheckResult, BlacklistedEmail } from '../types';
+
+const suppressionStatusSchema = z.object({
+  email: z.string(),
+  is_blocked: z.boolean(),
+  reason: z.string().nullish(),
+});
+
+function suppressionUnavailable(): Error {
+  return new Error('Email suppression lookup unavailable. Try again later.');
+}
+
+function parseSuppressionStatuses(data: unknown, requested: Set<string>) {
+  const parsed = z.array(suppressionStatusSchema).safeParse(data);
+  if (!parsed.success) throw suppressionUnavailable();
+  const statuses = new Map<string, z.infer<typeof suppressionStatusSchema>>();
+  for (const row of parsed.data) {
+    const email = row.email.toLowerCase();
+    if (!requested.has(email) || statuses.has(email)) {
+      throw suppressionUnavailable();
+    }
+    statuses.set(email, row);
+  }
+  if (statuses.size !== requested.size) throw suppressionUnavailable();
+  return statuses;
+}
 
 // =============================================================================
 // Blacklist Checker Class
@@ -53,58 +79,38 @@ export class BlacklistChecker {
     }
 
     try {
-      // Use existing RPC function for batch checking
-      const { data: blockStatuses, error } = await supabase.rpc(
-        'get_email_block_statuses',
-        { p_emails: validEmails }
-      );
-
-      if (error) {
-        console.error('[BlacklistChecker] RPC error:', error);
-        // Fail open - allow emails but log the issue
-        console.warn(
-          '[BlacklistChecker] Failing open due to DB error - allowing all valid emails'
-        );
-        return { allowed: validEmails, blocked: invalidEmails };
-      }
-
+      const requested = new Set(validEmails);
+      const { data, error } = await supabase.rpc('get_email_block_statuses', {
+        p_emails: [...requested],
+      });
+      if (error) throw suppressionUnavailable();
+      const statuses = parseSuppressionStatuses(data, requested);
       const result: BlacklistCheckResult = {
         allowed: [],
         blocked: [...invalidEmails],
       };
-
-      // Process RPC results
-      if (blockStatuses && Array.isArray(blockStatuses)) {
-        for (const status of blockStatuses) {
-          // Skip entries with null email (shouldn't happen but be safe)
-          if (!status.email) continue;
-
-          if (status.is_blocked) {
-            // Determine entry type from reason (if it contains 'domain' it's a domain block)
-            const isDomainBlock =
-              status.reason?.toLowerCase().includes('domain') ?? false;
-            result.blocked.push({
-              email: status.email,
-              reason: status.reason || 'Blacklisted',
-              entryType: isDomainBlock ? 'domain' : 'email',
-            });
-          } else {
-            result.allowed.push(status.email);
-          }
+      // Preserve recipient spelling: the service filters the original addresses.
+      for (const email of emails) {
+        if (!this.isValidEmailFormat(email)) continue;
+        const normalized = email.toLowerCase();
+        const status = statuses.get(normalized);
+        if (!status) throw suppressionUnavailable();
+        if (status.is_blocked) {
+          result.blocked.push({
+            email,
+            reason: status.reason || 'Blacklisted',
+            entryType: status.reason?.toLowerCase().includes('domain')
+              ? 'domain'
+              : 'email',
+          });
+        } else {
+          result.allowed.push(normalized);
         }
-      } else {
-        // If no results returned, assume all valid emails are allowed
-        result.allowed = validEmails;
       }
-
       return result;
-    } catch (error) {
-      console.error('[BlacklistChecker] Error checking blacklist:', error);
-      // Fail open - allow emails but log the issue
-      console.warn(
-        '[BlacklistChecker] Failing open due to exception - allowing all valid emails'
-      );
-      return { allowed: validEmails, blocked: invalidEmails };
+    } catch {
+      // Lookup uncertainty is retryable, never permission to contact a recipient.
+      throw suppressionUnavailable();
     }
   }
 
@@ -130,20 +136,15 @@ export class BlacklistChecker {
         { p_email: email.toLowerCase() }
       );
 
-      if (error) {
-        console.error('[BlacklistChecker] RPC error:', error);
-        // Fail open
-        return { allowed: true };
+      if (error || typeof isBlocked !== 'boolean') {
+        throw suppressionUnavailable();
       }
-
       return {
         allowed: !isBlocked,
         reason: isBlocked ? 'Email is blacklisted' : undefined,
       };
-    } catch (error) {
-      console.error('[BlacklistChecker] Error checking email:', error);
-      // Fail open
-      return { allowed: true };
+    } catch {
+      throw suppressionUnavailable();
     }
   }
 

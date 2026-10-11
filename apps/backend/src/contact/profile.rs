@@ -357,7 +357,6 @@ pub(super) async fn current_user_profile_patch_data_response(
     if !config.contact_data.configured() {
         return contact_data_layer_not_ready_response(request);
     }
-
     if let Some(original) = updates.get("handle").and_then(|value| value.as_str()) {
         let normalized = original.trim().to_lowercase();
         if original != normalized || !valid_new_handle(&normalized) {
@@ -405,7 +404,12 @@ pub(super) async fn current_user_profile_patch_data_response(
             updates["handle"] = json!(handle);
         }
     }
-
+    let banner_origin = updates
+        .get("banner_url")
+        .map(|_| super::profile_banner::public_banner_origin(&config.contact_data));
+    if matches!(banner_origin, Some(None)) {
+        return contact_data_layer_not_ready_response(request);
+    }
     if !super::profile_banner::canonical_profile_banner_patch(
         &updates,
         &actor.claims.sub,
@@ -426,10 +430,7 @@ pub(super) async fn current_user_profile_patch_data_response(
         return contact_data_layer_not_ready_response(request);
     };
     let mut payload = json!({ "p_user_id": actor.claims.sub, "p_patch": updates });
-    if banner_change {
-        let Some(origin) = url_origin(&config.contact_data.supabase_url) else {
-            return contact_data_layer_not_ready_response(request);
-        };
+    if let Some(Some(origin)) = banner_origin {
         payload["p_storage_origin"] = json!(origin);
     }
     let body = match serde_json::to_string(&payload) {
@@ -441,7 +442,6 @@ pub(super) async fn current_user_profile_patch_data_response(
             ));
         }
     };
-
     match send_contact_data_request(
         &config.contact_data,
         outbound,

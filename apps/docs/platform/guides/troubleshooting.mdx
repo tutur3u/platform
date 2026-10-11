@@ -1,0 +1,54 @@
+---
+title: "Troubleshooting and glossary"
+description: "Resolve access, stale data, scheduling, publication, and payment questions using the owning product."
+updatedAt: '2026-10-08'
+---
+
+## Troubleshoot by symptom
+
+| Symptom | What to check | Detailed guide |
+| --- | --- | --- |
+| Login loops or expired handoff | Central account session, intended app audience, local origin mapping, and MFA continuation | [Authentication](/platform/architecture/authentication), [Satellite apps](/platform/architecture/satellite-apps) |
+| Workspace or module missing | Membership, hidden workspace state, product enablement, role permissions, and account eligibility | [Permissions](/platform/architecture/workspaces-permissions), [Contacts modules](/platform/applications/contacts-modules) |
+| Calendar data looks old | Owning Infrastructure schedule, gateway result, and provider sync timestamp with clients closed | [Active runtime](/build/devops/active-runtime), [Calendar](/platform/applications/calendar) |
+| AI request unavailable | Model policy, provider setup, whitelist/entitlement, credits, and request error | [Model catalog](/platform/ai/model-catalog), [Usage guards](/platform/features/usage-accounting-guards) |
+| Shared form inaccessible | Publication/access mode, share code, author controls, and session requirements | [Forms](/platform/applications/forms) |
+| A world update is not public | Whether the new draft revision was explicitly published | [Tulletin](/platform/features/lettin) |
+| Checkout returned but order is pending | Provider confirmation/webhook and order audit state | [Storefront](/platform/applications/storefront), [Inventory](/platform/applications/inventory) |
+| Search does not show a page | Public eligibility, noindex, canonical, sitemap, response status, and Search Console evidence | [SEO runbook](/build/development-tools/public-seo) |
+| Old Docker cron status is stale | The Docker runner is retired; inspect the owning hosted scheduler | [Active runtime](/build/devops/active-runtime) |
+| Rust/TanStack setup fails | These runtimes are not in use; use the maintained Next.js path | [Without Docker](/build/development-tools/without-docker) |
+
+A useful bug report includes the app, relevant route pattern, locale, workspace
+alias, expected behavior, actual error/status, and build version or commit where
+available. Keep private content, tokens, raw credentials, and personal records
+out of public issues and documentation.
+
+## Glossary
+
+| Term | Meaning |
+| --- | --- |
+| Workspace | Team or personal data and permission boundary |
+| Workspace user | Product/CRM record; not necessarily an authenticated platform account |
+| Member | Account with workspace membership and effective permissions |
+| Satellite | Dedicated app host with its own session audience and route ownership |
+| Central handoff | Controlled login/session exchange from Web to an app |
+| Internal API | Shared client contract for app-to-app/platform requests |
+| Publication | Product-specific transition making selected content available publicly |
+| Share code or public token | Product-specific access identifier; not general workspace membership |
+| Noindex | Search-engine directive excluding a resource from search results |
+| Robots allow/disallow | Crawl controls; not authorization or a reliable privacy mechanism |
+| Canonical | Preferred public URL for a piece of content |
+| Hreflang | Language-version relationship between stable URLs |
+| Build metadata | Source and deployment identity; separate from a package version |
+| Migration parity | Retained source compatibility tracking; not a production cutover |
+| TanStack Query | Active client fetching/caching library |
+| TanStack Start | Paused frontend migration runtime, not in use |
+| Hosted cron | Scheduled invocation owned by Vercel or a configured Worker |
+
+## Evidence levels
+
+A source file proves an implementation exists. A passing test proves the checked
+behavior in its fixture. A successful build proves compilation for that commit.
+A deployment marker identifies delivery. A recent processor result proves a job
+ran. Keep these distinct when reporting product readiness or incident recovery.

@@ -97,10 +97,12 @@ describe('mapUrlToApp', () => {
 
   it('maps registered app return URLs for production and localhost development', () => {
     expect(
-      mapUrlToApp('https://nova.ai.vn/verify-token?nextUrl=%2Fdashboard')
+      mapUrlToApp('https://nova.tuturuuu.com/verify-token?nextUrl=%2Fdashboard')
     ).toBe('nova');
     expect(
-      mapUrlToApp('https://rewise.me/verify-token?nextUrl=%2Fpersonal')
+      mapUrlToApp(
+        'https://rewise.tuturuuu.com/verify-token?nextUrl=%2Fpersonal'
+      )
     ).toBe('rewise');
     expect(
       mapUrlToApp('http://localhost:7806/verify-token?nextUrl=%2Fcalendar')
@@ -118,6 +120,15 @@ describe('mapUrlToApp', () => {
       mapUrlToApp('https://meet.tuturuuu.com/verify-token?nextUrl=%2F')
     ).toBe('meet');
   });
+
+  it.each(['https://nova.ai.vn', 'https://rewise.me'])(
+    'rejects retired app return origin %s',
+    (origin) => {
+      expect(
+        mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)
+      ).toBeNull();
+    }
+  );
 
   it.each([
     ['platform', 'https://tuturuuu.localhost/verify-token?nextUrl=%2F'],

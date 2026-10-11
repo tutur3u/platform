@@ -10,7 +10,12 @@ import { type ImportSourceEntry, parseExocorpseExport } from './import-schema';
 import { safeImage, safeLink } from './rich-text-schema';
 import { lettinDraftSchema } from './schema';
 export type ImportPlan = {
-  source?: 'cms' | 'file';
+  source?: 'cms' | 'file' | 'notebook';
+  provenance?: {
+    worldId: string;
+    scope: 'published' | 'draft';
+    exportedAt: string;
+  };
   world: LettinDraft;
   entries: { id: string; sourceId: string; draft: LettinDraft }[];
   blacklist: {

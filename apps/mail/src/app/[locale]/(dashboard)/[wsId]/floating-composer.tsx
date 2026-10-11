@@ -1,5 +1,4 @@
 'use client';
-
 import {
   copyMailDraftAttachments,
   createMailDraft,
@@ -306,15 +305,15 @@ export function FloatingComposer({
       setSaveState('offline');
       return;
     }
+    markDirty();
     const saved = await persist(snapshot, true);
     if (!saved || attachments.length) return;
     draftIdRef.current = null;
     setDraftId(null);
     setAttachments([]);
     setMailboxId(nextMailboxId);
-    markDirty();
+    setDirty(true);
   };
-
   const uploadFiles = async (files: FileList | File[], inline = false) => {
     markDirty();
     setUploading(true);
@@ -344,18 +343,18 @@ export function FloatingComposer({
       setUploading(false);
     }
   };
-
   const performSend = async () => {
     if (!canSend || uploading) return;
+    const sendingVersion = dirtyVersionRef.current;
     const savedDraftId = await persist();
     if (dirty && !savedDraftId) {
       toast.error(t('save_failed'));
       return;
     }
+    if (dirtyVersionRef.current !== sendingVersion) return;
     await onSend(mailboxId, { ...snapshot, draftId: savedDraftId });
     onOpenChange(false);
   };
-
   const requestSend = async () => {
     if (!canSend) return;
     const warnings = getComposerWarnings({
@@ -627,6 +626,7 @@ export function FloatingComposer({
               attachments={attachments}
               onRemove={async (attachment) => {
                 if (!draftId) return;
+                markDirty();
                 await deleteMailDraftAttachment(
                   workspaceId,
                   mailboxId,

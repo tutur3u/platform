@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
+  closedTap,
   employeeDrafts,
   expectedTapCounts,
   packets,
   runtimeFiles,
   verifyPacketCounts,
   verifySources,
-  closedTap,
 } from './employee-validation-core.mjs';
 import {
   admissionProfile,
@@ -15,7 +16,6 @@ import {
   dedicatedPolicy,
 } from './employee-validation-supervisor.mjs';
 import { parseAdmission } from './verify-employee-validation.mjs';
-import { createHash } from 'node:crypto';
 
 // Pure contracts only. No driver, source verifier success path, host, command,
 // filesystem, SQL, typegen, HTTP, provider or native adapter is invoked.
@@ -27,15 +27,15 @@ const current = {
   'employee-restoration.sql': 41,
 };
 const names = [
-  '20261008020000_employee_creation_identity.sql',
-  '20261008020100_employee_creation_finalization.sql',
-  '20261008020200_employee_restoration.sql',
+  '20261011002107_employee_creation_identity.sql',
+  '20261011002108_employee_creation_finalization.sql',
+  '20261011002109_employee_restoration.sql',
 ].map((name) => `apps/database/supabase/migrations/${name}`);
 const oldNames = employeeDrafts.map((name) =>
   name
-    .replace('20261008020000', '20261007100000')
-    .replace('20261008020100', '20261007100100')
-    .replace('20261008020200', '20261007100200')
+    .replace('20261011002107', '20261007100000')
+    .replace('20261011002108', '20261007100100')
+    .replace('20261011002109', '20261007100200')
 );
 let passed = 0;
 async function check(label, fn) {

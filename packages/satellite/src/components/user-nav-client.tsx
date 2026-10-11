@@ -8,6 +8,7 @@ import { Dialog } from '@tuturuuu/ui/dialog';
 import { DropdownMenuSeparator } from '@tuturuuu/ui/dropdown-menu';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
+import { getPublicProfileUrl } from '@tuturuuu/utils/public-profile-url';
 import { useTranslations } from 'next-intl';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import {
@@ -149,6 +150,7 @@ export default function UserNavClient({
     (process.env.NODE_ENV === 'production'
       ? 'https://tuturuuu.com'
       : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
+  const publicProfileUrl = getPublicProfileUrl(user?.handle, centralUrl);
   const secondaryLabel = resolveUserNavSecondaryLabel({
     email: user?.email,
     workspaceName: workspaceSelector?.workspace.name,
@@ -204,6 +206,11 @@ export default function UserNavClient({
           t={t}
           sidebar={sidebar}
           signedIn={Boolean(user)}
+          publicProfile={
+            publicProfileUrl
+              ? { href: publicProfileUrl, label: t('common.public_profile') }
+              : undefined
+          }
           workspaceSelect={workspaceSelector?.renderWorkspaceSelect?.({
             isCollapsed: false,
             standalone: true,

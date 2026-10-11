@@ -1,0 +1,49 @@
+name: Documentation and SEO contracts
+on:
+  pull_request:
+  push:
+    branches: [main, production]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: docs-seo-${{ github.ref }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+jobs:
+  check-ci:
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: docs-seo-check.yaml
+  validate:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - name: Install locked dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Check repository inventories and public SEO assets
+        run: |
+          node scripts/generate-docs-inventory.js --check
+          node scripts/generate-app-seo.js --check
+          node scripts/docs-audit.js
+      - name: Validate docs, SEO, and inactive-runtime contracts
+        run: node --test --test-concurrency=2 scripts/docs-audit.test.js scripts/generate-app-seo.test.js scripts/paused-runtimes.test.js scripts/ci/paused-migration-workflows.test.js
+      - name: Verify public and private route headers
+        run: bun x vitest run --config packages/utils/vitest.config.ts packages/utils/src/seo.test.ts packages/utils/src/next-config.test.ts packages/utils/src/common/metadata.test.ts --maxWorkers 2
+      - name: Strict Mintlify validation
+        run: node scripts/local-docs.js validate

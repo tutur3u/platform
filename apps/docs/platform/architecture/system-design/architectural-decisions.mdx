@@ -1,7 +1,7 @@
 ---
 title: "Core Architectural Decisions"
 description: "Deep dive into the four fundamental architectural choices that define Tuturuuu's system design"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 This document explains four foundational architectural decisions that inform Tuturuuu's system design. Each section explores the **rationale**, **detailed justification**, and the **alternatives considered**.
@@ -15,15 +15,11 @@ true of the codebase today; clearly labelled examples are illustrative and may
 not map to a real file path. Trust the code over any architectural prose.
 </Warning>
 
-<Info>
-**Active migration.** The legacy `apps/web` Next.js runtime (port `7803`) is
-being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (a
-Rust API runtime on port `7820`). The "React Modular Monolith" and
-"tRPC API Gateway" framing on this page describes the legacy `apps/web` stack
-that is being superseded. See
-[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
-for the migration contract.
-</Info>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## 1. Decomposition Into Independently Deployable Apps
 

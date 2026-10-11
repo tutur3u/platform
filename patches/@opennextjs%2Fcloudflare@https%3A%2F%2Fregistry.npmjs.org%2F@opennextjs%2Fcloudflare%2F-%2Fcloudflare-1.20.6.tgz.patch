@@ -1,0 +1,713 @@
+diff --git a/dist/cli/build/build.js b/dist/cli/build/build.js
+index ff65e677da64fc73cb245ac83aad102afd5fb9ea..df64ff25e877cf4cf2c2604e36b3617fee123289 100644
+--- a/dist/cli/build/build.js
++++ b/dist/cli/build/build.js
+@@ -7,6 +7,7 @@ import { patchOriginalNextConfig } from "@opennextjs/aws/build/patch/patches/ind
+ import { printHeader } from "@opennextjs/aws/build/utils.js";
+ import logger from "@opennextjs/aws/logger.js";
+ import { ensureNextjsVersionSupported } from "../utils/nextjs-support.js";
++import { patchMiddlewareCacheComponents } from "./patches/plugins/cache-components.js";
+ import { bundleServer } from "./bundle-server.js";
+ import { bundleNodeMiddleware } from "./open-next/bundle-node-middleware.js";
+ import { compileCacheAssetsManifestSqlFile } from "./open-next/compile-cache-assets-manifest.js";
+@@ -80,6 +81,7 @@ export async function build(options, config, projectOpts, wranglerConfig, allowU
+     if (hasNodeMiddleware) {
+         await bundleNodeMiddleware(options);
+     }
++    await patchMiddlewareCacheComponents(options);
+     createStaticAssets(options, { useBasePath: true });
+     if (config.dangerous?.disableIncrementalCache !== true) {
+         const { useTagCache, metaFiles } = createCacheAssets(options);
+diff --git a/dist/cli/build/bundle-server.js b/dist/cli/build/bundle-server.js
+index f59e677181f1d0007993e36e05901f1f012689f9..d40eee1256e989527e909fcf45615ae662a9d209 100644
+--- a/dist/cli/build/bundle-server.js
++++ b/dist/cli/build/bundle-server.js
+@@ -12,6 +12,7 @@ import { patchVercelOgLibrary } from "./patches/ast/patch-vercel-og-library.js";
+ import { patchWebpackRuntime } from "./patches/ast/webpack-runtime.js";
+ import { inlineDynamicRequires } from "./patches/plugins/dynamic-requires.js";
+ import { inlineFindDir } from "./patches/plugins/find-dir.js";
++import { cacheComponentsSchedulerModule, patchCacheComponents, usesCacheComponents } from "./patches/plugins/cache-components.js";
+ import { patchInstrumentation } from "./patches/plugins/instrumentation.js";
+ import { inlineLoadManifest } from "./patches/plugins/load-manifest.js";
+ import { patchNextServer } from "./patches/plugins/next-server.js";
+@@ -58,9 +59,12 @@ export async function bundleServer(buildOpts, projectOpts) {
+     const packagePath = getPackagePath(buildOpts);
+     const openNextServer = path.join(outputPath, packagePath, `index.mjs`);
+     const openNextServerBundle = path.join(outputPath, packagePath, `handler.mjs`);
++    const initializeCacheComponentsScheduler = usesCacheComponents(nextConfig) && !buildHelper.compareSemver(buildOpts.nextVersion, "<", "16.2.11");
+     const updater = new ContentUpdater(buildOpts);
+     const result = await build({
+-        entryPoints: [openNextServer],
++        ...(initializeCacheComponentsScheduler
++            ? { stdin: { contents: `import "${cacheComponentsSchedulerModule}"; export { handler } from ${JSON.stringify(openNextServer)};`, resolveDir: buildOpts.appPath, sourcefile: "cache-components-server-entry.mjs" } }
++            : { entryPoints: [openNextServer] }),
+         bundle: true,
+         outfile: openNextServerBundle,
+         format: "esm",
+@@ -68,6 +72,8 @@ export async function bundleServer(buildOpts, projectOpts) {
+         // Minify code as much as possible but stay safe by not renaming identifiers
+         minifyWhitespace: projectOpts.minify && !debug,
+         minifyIdentifiers: false,
++        // React PPR resume compares component names with the build-time shell.
++        keepNames: true,
+         minifySyntax: projectOpts.minify && !debug,
+         legalComments: "none",
+         metafile: true,
+@@ -89,6 +95,7 @@ export async function bundleServer(buildOpts, projectOpts) {
+             fixRequire(updater),
+             handleOptionalDependencies(optionalDependencies),
+             patchInstrumentation(updater, buildOpts),
++            patchCacheComponents(updater, buildOpts, nextConfig),
+             patchPagesRouterContext(buildOpts),
+             inlineFindDir(updater, buildOpts),
+             inlineLoadManifest(updater, buildOpts),
+diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/plugins/cache-components.d.ts b/dist/cli/build/patches/plugins/cache-components.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2632e4f849758467ac40926288bec575a9c09c82
+--- /dev/null
++++ b/dist/cli/build/patches/plugins/cache-components.d.ts
+@@ -0,0 +1,62 @@
++import { type BuildOptions } from "@opennextjs/aws/build/helper.js";
++import type { ContentUpdater, Plugin } from "@opennextjs/aws/plugins/content-updater.js";
++import type { NextConfig } from "@opennextjs/aws/types/next-types.js";
++type CacheComponentsNextConfig = NextConfig & {
++    cacheComponents?: boolean;
++    experimental?: {
++        cacheComponents?: boolean;
++        dynamicIO?: boolean;
++    };
++};
++/**
++ * The flag moved from `experimental.dynamicIO` to `experimental.cacheComponents` to a top level
++ * option over the Next 15/16 canaries, so accept every spelling.
++ */
++export declare function usesCacheComponents(nextConfig: CacheComponentsNextConfig): boolean;
++/**
++ * Bare specifier the patched scheduler requires. `patchCacheComponents` resolves it to the copied
++ * `cache-components-scheduler` template, so the generated code carries no build machine paths.
++ */
++export declare const cacheComponentsSchedulerModule = "__opennext_cache_components_scheduler";
++export declare const cacheComponentsSchedulerFileFilter: RegExp;
++export declare const moduleLoadingSignalFileFilter: RegExp;
++/**
++ * Next stages Cache Components renders across event loop tasks, using `_idleStart` timer alignment
++ * and `process.nextTick` to bound them. Neither behaves the same on workerd, so swap the staged
++ * runner for a workerd implementation and stub the now unreachable timer group.
++ *
++ * The matched code ships in every Next 16.2+ bundle, so only register the patches - and their
++ * fail-loudly errors - for apps that actually enable Cache Components.
++ */
++export declare function patchCacheComponents(updater: ContentUpdater, buildOpts: BuildOptions, nextConfig: NextConfig): Plugin;
++export declare function patchModuleLoadingSignal(contents: string, modulePath: string): string;
++export declare function patchCacheComponentsScheduler(contents: string, runtimePath: string): string;
++/**
++ * Cache interception is compiled into the external middleware before the server bundle plugins run,
++ * so patch its output where Cloudflare takes ownership of the AWS build. Only apps combining Cache
++ * Components with cache interception hit the unresumable shell.
++ */
++export declare function patchMiddlewareCacheComponents(buildOpts: BuildOptions): void;
++export declare const runInSequentialTasksRule = "\nrule:\n  pattern:\n    selector: function_declaration\n    context: \"function $FUNCTION($$$ARGS) { $$$BODY }\"\n  all:\n    - has:\n        regex: DANGEROUSLY_runPendingImmediatesAfterCurrentTask\n        stopBy: end\n    - any:\n        - has:\n            regex: '[\"'']_idleStart[\"'']\\s*in'\n            stopBy: end\n        - has:\n            regex: createAtomicTimerGroup\n            stopBy: end\nfix: |-\n  function $FUNCTION(first, ...rest) {\n    return require(\"__opennext_cache_components_scheduler\").runInSequentialTasks(first, ...rest);\n  }\n";
++/**
++ * Next subscribes every render's `CacheSignal` to one module-scoped signal, and both store timer
++ * cleanup closures, so a later request can clear a handle owned by an older one. workerd rejects
++ * that cross-request I/O and the render truncates. Keep the signals and subscriptions request
++ * scoped, with a shared registry forwarding imports through request-owned notifications.
++ */
++export declare const requestScopedModuleLoadingSignalRule = "\nrule:\n  pattern:\n    selector: function_declaration\n    context: \"function $FUNCTION() { if (!$SIGNAL) { $SIGNAL = new $CTOR(); } return $SIGNAL; }\"\nfix: |-\n  function $FUNCTION() {\n    if (!$SIGNAL) {\n      $SIGNAL = {\n        pendingModuleLoads: new Set(),\n        moduleLoadSubscribers: new Set(),\n        requestSignals: new WeakMap(),\n      };\n    }\n\n    const requestScope = globalThis[Symbol.for(\"__cloudflare-context__\")] ?? globalThis;\n    let requestModuleLoadingSignal = $SIGNAL.requestSignals.get(requestScope);\n    if (!requestModuleLoadingSignal) {\n      requestModuleLoadingSignal = new $CTOR();\n      const trackedModuleLoads = new Set();\n\n      requestModuleLoadingSignal.__openNextModuleLoadingRegistry = $SIGNAL;\n      requestModuleLoadingSignal.__openNextTrackModuleLoad = function (promise) {\n        if (trackedModuleLoads.has(promise)) return;\n\n        trackedModuleLoads.add(promise);\n        promise.then(\n          () => trackedModuleLoads.delete(promise),\n          () => trackedModuleLoads.delete(promise)\n        );\n        requestModuleLoadingSignal.trackRead(promise);\n      };\n      $SIGNAL.requestSignals.set(requestScope, requestModuleLoadingSignal);\n    }\n\n    for (const pendingModuleLoad of $SIGNAL.pendingModuleLoads) {\n      requestModuleLoadingSignal.__openNextTrackModuleLoad(pendingModuleLoad);\n    }\n    return requestModuleLoadingSignal;\n  }\n";
++/** Record and announce each import before attaching it to the current request's signal. */
++export declare const trackModuleLoadingPromiseRule = "\nrule:\n  pattern:\n    selector: expression_statement\n    context: \"$MODULE_LOADING_SIGNAL.trackRead($PROMISE);\"\nfix: |-\n  $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry.pendingModuleLoads.add($PROMISE);\n  $PROMISE.then(\n    () => $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry.pendingModuleLoads.delete($PROMISE),\n    () => $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry.pendingModuleLoads.delete($PROMISE)\n  );\n  for (const notifyModuleLoad of $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry.moduleLoadSubscribers) {\n    notifyModuleLoad($PROMISE);\n  }\n  $MODULE_LOADING_SIGNAL.__openNextTrackModuleLoad($PROMISE)\n";
++/** Forward future imports through promises created and observed by the subscribing request. */
++export declare const forwardModuleLoadingPromisesRule = "\nrule:\n  pattern:\n    selector: lexical_declaration\n    context: \"const $UNSUBSCRIBE = $MODULE_LOADING_SIGNAL.subscribeToReads($CACHE_SIGNAL);\"\nfix: |-\n  const openNextModuleLoadingRegistry = $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry;\n  const openNextQueuedModuleLoads = [];\n  let openNextSubscriptionActive = true;\n  let openNextResolveNotification;\n\n  function openNextWaitForModuleLoads() {\n    const notification = new Promise((resolve) => {\n      openNextResolveNotification = resolve;\n    });\n    void notification.then(() => {\n      openNextResolveNotification = undefined;\n      if (!openNextSubscriptionActive) return;\n\n      for (const promise of openNextQueuedModuleLoads.splice(0)) {\n        $MODULE_LOADING_SIGNAL.__openNextTrackModuleLoad(promise);\n      }\n      openNextWaitForModuleLoads();\n    });\n  }\n\n  openNextWaitForModuleLoads();\n  const openNextNotifyModuleLoad = (promise) => {\n    if (!openNextSubscriptionActive) return;\n    openNextQueuedModuleLoads.push(promise);\n    openNextResolveNotification();\n  };\n  openNextModuleLoadingRegistry.moduleLoadSubscribers.add(openNextNotifyModuleLoad);\n\n  const openNextUnsubscribe = $MODULE_LOADING_SIGNAL.subscribeToReads($CACHE_SIGNAL);\n  const $UNSUBSCRIBE = () => {\n      openNextSubscriptionActive = false;\n      openNextModuleLoadingRegistry.moduleLoadSubscribers.delete(openNextNotifyModuleLoad);\n      openNextResolveNotification();\n      openNextUnsubscribe();\n  };\n";
++/**
++ * Webpack emits the timer group and the sequential-task runner as separate modules. The runner is
++ * replaced above, so stub the unreachable timer group rather than ship its `_idleStart` mutation.
++ */
++export declare const disableAtomicTimerGroupRule = "\nrule:\n  pattern:\n    selector: function_declaration\n    context: \"function $FUNCTION($$$ARGS) { $$$BODY }\"\n  all:\n    - has:\n        regex: '[\"'']_idleStart[\"'']\\s*in'\n        stopBy: end\n    - has:\n        regex: Cannot schedule more timers into a group that already executed\n        stopBy: end\n    - has:\n        regex: '\\bsetTimeout\\s*\\('\n        stopBy: end\nfix: |-\n  function $FUNCTION() {\n    throw new Error(\"OpenNext replaced this incompatible Cache Components timer group\");\n  }\n";
++/**
++ * The interceptor only has the cached PPR shell, not the postponed state Next needs to resume a
++ * Cache Components render, so these routes must reach Next's handler. Other ISR routes are unchanged.
++ */
++export declare const bypassPprCacheInterceptionRule = "\nrule:\n  pattern: if (isISR) { $$$BODY }\n  inside:\n    pattern: async function cacheInterceptor($$$ARGS) { $$$FUNCTION_BODY }\n    stopBy: end\nfix: |-\n  if (isISR && !(\n    PrerenderManifest?.routes?.[localizedPath]?.renderingMode === \"PARTIALLY_STATIC\" ||\n    PrerenderManifest?.routes?.[localizedPath]?.experimentalPPR === true ||\n    Object.values(PrerenderManifest?.dynamicRoutes ?? {}).some((route) =>\n      new RegExp(route.routeRegex).test(localizedPath) &&\n      (route.renderingMode === \"PARTIALLY_STATIC\" || route.experimentalPPR === true)\n    )\n  )) { $$$BODY }\n";
++export {};
+diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/plugins/cache-components.js b/dist/cli/build/patches/plugins/cache-components.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..ddaff99a58ca31721eccf6125ecd5a9da5602134
+--- /dev/null
++++ b/dist/cli/build/patches/plugins/cache-components.js
+@@ -0,0 +1,311 @@
++import { existsSync, readFileSync, writeFileSync } from "node:fs";
++import path from "node:path";
++import { loadConfig } from "@opennextjs/aws/adapters/config/util.js";
++import { compareSemver } from "@opennextjs/aws/build/helper.js";
++import { patchCode } from "@opennextjs/aws/build/patch/astCodePatcher.js";
++import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
++/**
++ * The flag moved from `experimental.dynamicIO` to `experimental.cacheComponents` to a top level
++ * option over the Next 15/16 canaries, so accept every spelling.
++ */
++export function usesCacheComponents(nextConfig) {
++    return Boolean(nextConfig.cacheComponents ??
++        nextConfig.experimental?.cacheComponents ??
++        nextConfig.experimental?.dynamicIO);
++}
++/**
++ * Bare specifier the patched scheduler requires. `patchCacheComponents` resolves it to the copied
++ * `cache-components-scheduler` template, so the generated code carries no build machine paths.
++ */
++export const cacheComponentsSchedulerModule = "__opennext_cache_components_scheduler";
++const atomicTimerGroupErrorPattern = /Cannot schedule more timers into a group that already executed/;
++const moduleLoadingSignalPattern = /moduleLoadingSignal/;
++export const cacheComponentsSchedulerFileFilter = getCrossPlatformPathRegex(String.raw `/(?:next/dist/compiled/next-server/app-page(?:-turbo)?(?:-experimental)?\.runtime\.prod|\.next/server/chunks/.+)\.js$`, { escape: false });
++export const moduleLoadingSignalFileFilter = getCrossPlatformPathRegex(String.raw `/next/dist/(?:esm/)?server/app-render/module-loading/track-module-loading\.instance\.js$`, { escape: false });
++/**
++ * Next stages Cache Components renders across event loop tasks, using `_idleStart` timer alignment
++ * and `process.nextTick` to bound them. Neither behaves the same on workerd, so swap the staged
++ * runner for a workerd implementation and stub the now unreachable timer group.
++ *
++ * The matched code ships in every Next 16.2+ bundle, so only register the patches - and their
++ * fail-loudly errors - for apps that actually enable Cache Components.
++ */
++export function patchCacheComponents(updater, buildOpts, nextConfig) {
++    if (!usesCacheComponents(nextConfig) || compareSemver(buildOpts.nextVersion, "<", "16.2.11")) {
++        return {
++            name: "patch-cache-components",
++            setup() { },
++        };
++    }
++    const schedulerPath = path.join(buildOpts.outputDir, "cloudflare-templates/cache-components-scheduler.js");
++    // `ContentUpdater` silently skips a callback whose filter stops matching, so a renamed error
++    // message or moved file would otherwise ship an unpatched build.
++    const applied = { scheduler: false, "module loading signal": false };
++    updater.updateContent("cache-components-scheduler", [
++        {
++            filter: cacheComponentsSchedulerFileFilter,
++            contentFilter: atomicTimerGroupErrorPattern,
++            callback: async ({ contents, path: runtimePath }) => {
++                applied.scheduler = true;
++                return patchCacheComponentsScheduler(contents, runtimePath);
++            },
++        },
++    ]);
++    updater.updateContent("cache-components-module-loading-signal", [
++        {
++            filter: moduleLoadingSignalFileFilter,
++            contentFilter: moduleLoadingSignalPattern,
++            callback: async ({ contents, path: modulePath }) => {
++                applied["module loading signal"] = true;
++                return patchModuleLoadingSignal(contents, modulePath);
++            },
++        },
++    ]);
++    return {
++        name: "patch-cache-components",
++        setup(build) {
++            build.onResolve({ filter: new RegExp(`^${cacheComponentsSchedulerModule}$`) }, () => ({
++                path: schedulerPath,
++            }));
++            build.onEnd((result) => {
++                // Another plugin already failed the build, so do not bury its error under ours.
++                if (result.errors.length > 0) {
++                    return;
++                }
++                const missing = Object.entries(applied)
++                    .filter(([, wasApplied]) => !wasApplied)
++                    .map(([name]) => name);
++                if (missing.length > 0) {
++                    throw new Error(`Cache Components is enabled but the Next.js ${missing.join(" and ")} patch${missing.length > 1 ? "es" : ""} matched nothing. Next.js likely moved or reshaped the code these patches target, and the app would render incorrectly on Workers. Please report this against @opennextjs/cloudflare with your Next.js version.`);
++                }
++            });
++        },
++    };
++}
++export function patchModuleLoadingSignal(contents, modulePath) {
++    const trackedPromiseCount = contents.match(/\bmoduleLoadingSignal\.trackRead\s*\(/g)?.length ?? 0;
++    const trackedPromises = patchCode(contents, trackModuleLoadingPromiseRule);
++    if (trackedPromiseCount === 0 ||
++        trackedPromises === contents ||
++        (trackedPromises.match(/\.__openNextTrackModuleLoad\s*\(/g)?.length ?? 0) !== trackedPromiseCount) {
++        throw new Error(`Failed to patch module promise tracking in ${modulePath}`);
++    }
++    const forwardedPromises = patchCode(trackedPromises, forwardModuleLoadingPromisesRule);
++    if (forwardedPromises === trackedPromises) {
++        throw new Error(`Failed to patch module promise forwarding in ${modulePath}`);
++    }
++    const patchedContents = patchCode(forwardedPromises, requestScopedModuleLoadingSignalRule);
++    if (patchedContents === forwardedPromises) {
++        throw new Error(`Failed to patch the module loading signal in ${modulePath}`);
++    }
++    return patchedContents;
++}
++export function patchCacheComponentsScheduler(contents, runtimePath) {
++    const patchedScheduler = patchCode(contents, runInSequentialTasksRule);
++    if (patchedScheduler === contents) {
++        throw new Error(`Failed to patch the Cache Components scheduler in ${runtimePath}`);
++    }
++    const patchedContents = patchCode(patchedScheduler, disableAtomicTimerGroupRule);
++    if (atomicTimerGroupErrorPattern.test(patchedContents)) {
++        throw new Error(`Failed to patch the Cache Components scheduler in ${runtimePath}`);
++    }
++    return patchedContents;
++}
++/**
++ * Cache interception is compiled into the external middleware before the server bundle plugins run,
++ * so patch its output where Cloudflare takes ownership of the AWS build. Only apps combining Cache
++ * Components with cache interception hit the unresumable shell.
++ */
++export function patchMiddlewareCacheComponents(buildOpts) {
++    if (buildOpts.config.dangerous?.enableCacheInterception !== true) {
++        return;
++    }
++    if (!usesCacheComponents(loadConfig(path.join(buildOpts.appBuildOutputPath, ".next")))) {
++        return;
++    }
++    const middlewarePath = path.join(buildOpts.outputDir, "middleware", "handler.mjs");
++    if (!existsSync(middlewarePath)) {
++        throw new Error("Cannot patch cache interception because the middleware bundle is missing");
++    }
++    const contents = readFileSync(middlewarePath, "utf8");
++    if (!contents.includes("async function cacheInterceptor(")) {
++        throw new Error("Cannot find cache interception in the generated middleware bundle");
++    }
++    const patchedContents = patchCode(contents, bypassPprCacheInterceptionRule);
++    if (patchedContents === contents) {
++        throw new Error("Failed to patch cache interception for Cache Components routes");
++    }
++    writeFileSync(middlewarePath, patchedContents);
++}
++export const runInSequentialTasksRule = `
++rule:
++  pattern:
++    selector: function_declaration
++    context: "function $FUNCTION($$$ARGS) { $$$BODY }"
++  all:
++    - has:
++        regex: DANGEROUSLY_runPendingImmediatesAfterCurrentTask
++        stopBy: end
++    - any:
++        - has:
++            regex: '["'']_idleStart["'']\\s*in'
++            stopBy: end
++        - has:
++            regex: createAtomicTimerGroup
++            stopBy: end
++fix: |-
++  function $FUNCTION(first, ...rest) {
++    return require("${cacheComponentsSchedulerModule}").runInSequentialTasks(first, ...rest);
++  }
++`;
++/**
++ * Next subscribes every render's `CacheSignal` to one module-scoped signal, and both store timer
++ * cleanup closures, so a later request can clear a handle owned by an older one. workerd rejects
++ * that cross-request I/O and the render truncates. Keep the signals and subscriptions request
++ * scoped, with a shared registry forwarding imports through request-owned notifications.
++ */
++export const requestScopedModuleLoadingSignalRule = `
++rule:
++  pattern:
++    selector: function_declaration
++    context: "function $FUNCTION() { if (!$SIGNAL) { $SIGNAL = new $CTOR($$$CTOR_ARGS); } return $SIGNAL; }"
++fix: |-
++  function $FUNCTION() {
++    if (!$SIGNAL) {
++      $SIGNAL = {
++        pendingModuleLoads: new Set(),
++        moduleLoadSubscribers: new Set(),
++        requestSignals: new WeakMap(),
++      };
++    }
++
++    const requestScope = globalThis[Symbol.for("__cloudflare-context__")] ?? globalThis;
++    let requestModuleLoadingSignal = $SIGNAL.requestSignals.get(requestScope);
++    if (!requestModuleLoadingSignal) {
++      requestModuleLoadingSignal = new $CTOR($$$CTOR_ARGS);
++      const trackedModuleLoads = new Set();
++
++      requestModuleLoadingSignal.__openNextModuleLoadingRegistry = $SIGNAL;
++      requestModuleLoadingSignal.__openNextTrackModuleLoad = function (promise) {
++        if (trackedModuleLoads.has(promise)) return;
++
++        trackedModuleLoads.add(promise);
++        promise.then(
++          () => trackedModuleLoads.delete(promise),
++          () => trackedModuleLoads.delete(promise)
++        );
++        requestModuleLoadingSignal.trackRead(promise);
++      };
++      $SIGNAL.requestSignals.set(requestScope, requestModuleLoadingSignal);
++    }
++
++    for (const pendingModuleLoad of $SIGNAL.pendingModuleLoads) {
++      requestModuleLoadingSignal.__openNextTrackModuleLoad(pendingModuleLoad);
++    }
++    return requestModuleLoadingSignal;
++  }
++`;
++/** Record and announce each import before attaching it to the current request's signal. */
++export const trackModuleLoadingPromiseRule = `
++rule:
++  pattern:
++    selector: expression_statement
++    context: "$MODULE_LOADING_SIGNAL.trackRead($PROMISE);"
++fix: |-
++  $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry.pendingModuleLoads.add($PROMISE);
++  $PROMISE.then(
++    () => $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry.pendingModuleLoads.delete($PROMISE),
++    () => $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry.pendingModuleLoads.delete($PROMISE)
++  );
++  for (const notifyModuleLoad of $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry.moduleLoadSubscribers) {
++    notifyModuleLoad($PROMISE);
++  }
++  $MODULE_LOADING_SIGNAL.__openNextTrackModuleLoad($PROMISE)
++`;
++/** Forward future imports through promises created and observed by the subscribing request. */
++export const forwardModuleLoadingPromisesRule = `
++rule:
++  pattern:
++    selector: lexical_declaration
++    context: "const $UNSUBSCRIBE = $MODULE_LOADING_SIGNAL.subscribeToReads($CACHE_SIGNAL);"
++fix: |-
++  const openNextModuleLoadingRegistry = $MODULE_LOADING_SIGNAL.__openNextModuleLoadingRegistry;
++  const openNextQueuedModuleLoads = [];
++  let openNextSubscriptionActive = true;
++  let openNextResolveNotification;
++
++  function openNextWaitForModuleLoads() {
++    const notification = new Promise((resolve) => {
++      openNextResolveNotification = resolve;
++    });
++    void notification.then(() => {
++      openNextResolveNotification = undefined;
++      if (!openNextSubscriptionActive) return;
++
++      for (const promise of openNextQueuedModuleLoads.splice(0)) {
++        $MODULE_LOADING_SIGNAL.__openNextTrackModuleLoad(promise);
++      }
++      openNextWaitForModuleLoads();
++    });
++  }
++
++  openNextWaitForModuleLoads();
++  const openNextNotifyModuleLoad = (promise) => {
++    if (!openNextSubscriptionActive) return;
++    openNextQueuedModuleLoads.push(promise);
++    openNextResolveNotification();
++  };
++  openNextModuleLoadingRegistry.moduleLoadSubscribers.add(openNextNotifyModuleLoad);
++
++  const openNextUnsubscribe = $MODULE_LOADING_SIGNAL.subscribeToReads($CACHE_SIGNAL);
++  const $UNSUBSCRIBE = () => {
++      openNextSubscriptionActive = false;
++      openNextModuleLoadingRegistry.moduleLoadSubscribers.delete(openNextNotifyModuleLoad);
++      openNextResolveNotification();
++      openNextUnsubscribe();
++  };
++`;
++/**
++ * Webpack emits the timer group and the sequential-task runner as separate modules. The runner is
++ * replaced above, so stub the unreachable timer group rather than ship its `_idleStart` mutation.
++ */
++export const disableAtomicTimerGroupRule = `
++rule:
++  pattern:
++    selector: function_declaration
++    context: "function $FUNCTION($$$ARGS) { $$$BODY }"
++  all:
++    - has:
++        regex: '["'']_idleStart["'']\\s*in'
++        stopBy: end
++    - has:
++        regex: Cannot schedule more timers into a group that already executed
++        stopBy: end
++    - has:
++        regex: '\\bsetTimeout\\s*\\('
++        stopBy: end
++fix: |-
++  function $FUNCTION() {
++    throw new Error("OpenNext replaced this incompatible Cache Components timer group");
++  }
++`;
++/**
++ * The interceptor only has the cached PPR shell, not the postponed state Next needs to resume a
++ * Cache Components render, so these routes must reach Next's handler. Other ISR routes are unchanged.
++ */
++export const bypassPprCacheInterceptionRule = `
++rule:
++  pattern: if (isISR) { $$$BODY }
++  inside:
++    pattern: async function cacheInterceptor($$$ARGS) { $$$FUNCTION_BODY }
++    stopBy: end
++fix: |-
++  if (isISR && !(
++    PrerenderManifest?.routes?.[localizedPath]?.renderingMode === "PARTIALLY_STATIC" ||
++    PrerenderManifest?.routes?.[localizedPath]?.experimentalPPR === true ||
++    Object.values(PrerenderManifest?.dynamicRoutes ?? {}).some((route) =>
++      new RegExp(route.routeRegex).test(localizedPath) &&
++      (route.renderingMode === "PARTIALLY_STATIC" || route.experimentalPPR === true)
++    )
++  )) { $$$BODY }
++`;
+diff --git a/dist/cli/build/patches/plugins/load-manifest.js b/dist/cli/build/patches/plugins/load-manifest.js
+index b0616a9a1a2729c3bc1cf03dd88edde8afa09d08..78de2b802e6aa702d4fdf40da219489ac7abe1d8 100644
+--- a/dist/cli/build/patches/plugins/load-manifest.js
++++ b/dist/cli/build/patches/plugins/load-manifest.js
+@@ -31,7 +31,7 @@ async function getLoadManifestRule(buildOpts) {
+     const { outputDir } = buildOpts;
+     const baseDir = join(outputDir, "server-functions/default", getPackagePath(buildOpts));
+     const dotNextDir = join(baseDir, ".next");
+-    const manifests = await glob(join(dotNextDir, "**/{*-manifest,required-server-files,prefetch-hints}.json"), {
++    const manifests = await glob(join(dotNextDir, "**/{*-manifest,required-server-files,prefetch-hints,preview-props}.json"), {
+         windowsPathsNoEscape: true,
+     });
+     const returnManifests = (await Promise.all(manifests.map(async (manifest) => `
+diff --git a/dist/cli/build/patches/plugins/next-server.js b/dist/cli/build/patches/plugins/next-server.js
+index d816e838c1b2a23355161f0859ba9cd81f76d6d0..a4e5eed50c4946214883923171f8ef8481109a5e 100644
+--- a/dist/cli/build/patches/plugins/next-server.js
++++ b/dist/cli/build/patches/plugins/next-server.js
+@@ -104,6 +104,9 @@ fix: |-
+   globalThis[handlersMapSymbol].set("default", require('${normalizePath(handlerPath)}').default);
+   globalThis[handlersMapSymbol].set("remote", require('${normalizePath(handlerPath)}').default);
+   globalThis[handlersSetSymbol] = new Set(globalThis[handlersMapSymbol].values());
++  // The installed registry replaces Next's dynamic custom-handler loader.
++  // Stop before compiled runtimes reference the original minified aliases.
++  return;
+ `;
+ }
+ /**
+diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/dist/cli/templates/cache-components-scheduler.d.ts b/dist/cli/templates/cache-components-scheduler.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f7cd72dca9cf69ebe508860669d11cc58ad1cb3f
+--- /dev/null
++++ b/dist/cli/templates/cache-components-scheduler.d.ts
+@@ -0,0 +1,12 @@
++/**
++ * Cache Components staged rendering for workerd.
++ *
++ * Next drains the immediates React queued between two stages so each stage flushes before the next
++ * unblocks more content. It builds that boundary from `process.nextTick`, which workerd implements
++ * as `queueMicrotask`, so the drain ends before React has scheduled its flush and the render slips a
++ * stage. workerd runs timers and immediates from one ordered macrotask queue and drains microtasks
++ * between two of them, so an immediate is an exact "everything queued before me has run" signal:
++ * count the outstanding ones and hop until none remain.
++ */
++/** Drop-in for Next's `runInSequentialTasks`: each callback gets its own settled task. */
++export declare function runInSequentialTasks<T>(first: () => T, ...rest: Array<() => void>): Promise<T>;
+diff --git a/node_modules/@tuturuuu/parley/node_modules/@opennextjs/cloudflare/dist/cli/templates/cache-components-scheduler.js b/dist/cli/templates/cache-components-scheduler.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..703c2fb001c60d16bbebba80f0144a978084e803
+--- /dev/null
++++ b/dist/cli/templates/cache-components-scheduler.js
+@@ -0,0 +1,214 @@
++/**
++ * Cache Components staged rendering for workerd.
++ *
++ * Next drains the immediates React queued between two stages so each stage flushes before the next
++ * unblocks more content. It builds that boundary from `process.nextTick`, which workerd implements
++ * as `queueMicrotask`, so the drain ends before React has scheduled its flush and the render slips a
++ * stage. workerd runs timers and immediates from one ordered macrotask queue and drains microtasks
++ * between two of them, so an immediate is an exact "everything queued before me has run" signal:
++ * count the outstanding ones and hop until none remain.
++ */
++import { AsyncLocalStorage } from "node:async_hooks";
++import { setImmediate as timersPromisesSetImmediate } from "node:timers/promises";
++import { promisify } from "node:util";
++/** Keeps one render from waiting on another's immediates. */
++const runStorage = new AsyncLocalStorage();
++const REQUEST_CONTEXT = Symbol.for("__cloudflare-context__");
++function createRequestScope() {
++    return { unattributed: 0, stagedTail: Promise.resolve() };
++}
++/**
++ * Next awaits the RSC payload before it stages, so React resumes from promises created outside the
++ * run where `runStorage` cannot see it - which is why Next's own capture is process wide. The
++ * request is the next widest owner that still keeps one request from gating another.
++ */
++const scopes = new WeakMap();
++const isolateScope = createRequestScope();
++function currentScope() {
++    const context = globalThis[REQUEST_CONTEXT];
++    if (typeof context !== "object" || context === null) {
++        return isolateScope;
++    }
++    let scope = scopes.get(context);
++    if (!scope) {
++        scope = createRequestScope();
++        scopes.set(context, scope);
++    }
++    return scope;
++}
++/** Fail rather than advance a stage over work it still owns, which is what truncates responses. */
++const MAX_SETTLE_HOPS = 1000;
++const COUNTED = Symbol.for("__opennext.cache-components.countedSetImmediate");
++let scheduleMacrotask;
++// workerd's global callback API does not expose Node's custom-promisify hook. Capture its native
++// promise API before Next replaces the `node:timers/promises` export, then expose that as the hook.
++const scheduleMacrotaskPromisified = timersPromisesSetImmediate;
++/** Next patches `setImmediate` when its server environment loads, so wrap whatever is installed. */
++function install() {
++    const current = globalThis.setImmediate;
++    if (scheduleMacrotask && current[COUNTED]) {
++        return scheduleMacrotask;
++    }
++    const previousSetImmediate = globalThis.setImmediate;
++    const previousClearImmediate = globalThis.clearImmediate;
++    const releaseByImmediate = new WeakMap();
++    const previousPromisifiedSetImmediate = previousSetImmediate[promisify.custom] ?? scheduleMacrotaskPromisified;
++    const countCurrentWork = () => {
++        const run = runStorage.getStore();
++        // A render must also wait for work it did not root itself, so charge the rest to the request.
++        const owner = run ?? currentScope();
++        if (owner === isolateScope)
++            return;
++        let released = false;
++        if (run)
++            run.pending++;
++        else
++            owner.unattributed++;
++        return () => {
++            if (released)
++                return;
++            released = true;
++            if (run)
++                run.pending--;
++            else
++                owner.unattributed--;
++        };
++    };
++    const countedSetImmediate = (callback, ...args) => {
++        const release = countCurrentWork();
++        try {
++            const immediate = previousSetImmediate(() => {
++                release?.();
++                callback(...args);
++            });
++            if (release && typeof immediate === "object" && immediate !== null) {
++                releaseByImmediate.set(immediate, release);
++            }
++            return immediate;
++        }
++        catch (error) {
++            // Nothing was scheduled, so nothing will settle the count.
++            release?.();
++            throw error;
++        }
++    };
++    Object.defineProperty(countedSetImmediate, COUNTED, { value: true });
++    if (previousPromisifiedSetImmediate) {
++        const countedSetImmediatePromise = (value, options) => {
++            const release = countCurrentWork();
++            try {
++                const pending = previousPromisifiedSetImmediate(value, options);
++                if (!release)
++                    return pending;
++                return pending.then((result) => {
++                    release();
++                    return result;
++                }, (error) => {
++                    release();
++                    throw error;
++                });
++            }
++            catch (error) {
++                release?.();
++                throw error;
++            }
++        };
++        Object.defineProperty(countedSetImmediate, promisify.custom, {
++            value: countedSetImmediatePromise,
++        });
++    }
++    const countedClearImmediate = (immediate) => {
++        // A clear that threw left the immediate live, so it stays counted.
++        previousClearImmediate(immediate);
++        if (typeof immediate === "object" && immediate !== null) {
++            releaseByImmediate.get(immediate)?.();
++        }
++    };
++    globalThis.setImmediate = countedSetImmediate;
++    globalThis.clearImmediate = countedClearImmediate;
++    // Hops must not count themselves, so they go through the unwrapped function.
++    scheduleMacrotask = previousSetImmediate;
++    return scheduleMacrotask;
++}
++function ignore() { }
++// React captures `setImmediate` while its runtime loads. Install before the Next server is evaluated
++// so those captured references are counted too; installing only on the first staged render is late.
++install();
++/** Drop-in for Next's `runInSequentialTasks`: each callback gets its own settled task. */
++export function runInSequentialTasks(first, ...rest) {
++    const hop = install();
++    const scope = currentScope();
++    const run = { pending: 0, scope };
++    const previousRun = scope.stagedTail;
++    let releaseRun;
++    scope.stagedTail = new Promise((resolve) => (releaseRun = resolve));
++    return new Promise((resolve, reject) => {
++        let result;
++        let stage = 0;
++        let hops = 0;
++        let finished = false;
++        const fail = (error) => {
++            if (finished)
++                return;
++            finished = true;
++            releaseRun();
++            reject(error);
++        };
++        const complete = () => {
++            if (finished)
++                return;
++            finished = true;
++            releaseRun();
++            resolve(result);
++        };
++        const schedule = (callback) => {
++            try {
++                hop(callback);
++            }
++            catch (error) {
++                fail(error);
++            }
++        };
++        const settleThen = (next) => {
++            schedule(() => {
++                const pending = run.pending + run.scope.unattributed;
++                if (pending === 0) {
++                    next();
++                    return;
++                }
++                if (hops++ < MAX_SETTLE_HOPS) {
++                    settleThen(next);
++                    return;
++                }
++                fail(new Error(`Cache Components render did not settle: ${pending} immediate(s) still pending after ${MAX_SETTLE_HOPS} tasks.`));
++            });
++        };
++        const enterStage = () => {
++            try {
++                runStorage.run(run, () => {
++                    if (stage === 0) {
++                        result = first();
++                        // A later task may reject this; the caller sees it through the returned promise.
++                        const thenable = result;
++                        if (thenable && typeof thenable.then === "function") {
++                            thenable.then(ignore, ignore);
++                        }
++                    }
++                    else {
++                        rest[stage - 1]();
++                    }
++                });
++            }
++            catch (error) {
++                fail(error);
++                return;
++            }
++            stage++;
++            hops = 0;
++            settleThen(stage > rest.length ? complete : enterStage);
++        };
++        // Next schedules one timer group at a time. Queue groups from this request so their stages do
++        // not alternate, but do not make one request wait for another request's render.
++        void previousRun.then(() => schedule(enterStage));
++    });
++}

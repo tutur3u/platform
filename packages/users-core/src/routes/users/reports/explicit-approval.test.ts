@@ -41,13 +41,19 @@ function database(approvalEnabled = false, existing = true) {
   const calls: Call[] = [];
   const from = (table: string) => {
     let writes = false;
+    let returning = false;
     const result = () => ({
       data:
         table === 'workspace_configs'
           ? { value: String(approvalEnabled) }
           : table === 'external_user_monthly_reports_workspace_view'
             ? existing
-              ? { id: 'report-1', generation_mode: 'manual' }
+              ? {
+                  id: 'report-1',
+                  user_id: userId,
+                  group_id: groupId,
+                  generation_mode: 'manual',
+                }
               : null
             : table === 'external_user_monthly_reports'
               ? writes
@@ -60,14 +66,24 @@ function database(approvalEnabled = false, existing = true) {
     for (const method of ['select', 'eq', 'limit', 'insert', 'update'])
       builder[method] = (...args: unknown[]) => {
         calls.push({ table, method, args });
+        if (method === 'select' && writes) returning = true;
         if (['insert', 'update'].includes(method)) writes = true;
         return builder;
       };
     builder.maybeSingle = async () => result();
     builder.single = async () => result();
     // biome-ignore lint/suspicious/noThenProperty: faithfully emulate the awaited PostgREST builder.
-    builder.then = (resolve: (value: unknown) => unknown) =>
-      Promise.resolve(result()).then(resolve);
+    builder.then = (resolve: (value: unknown) => unknown) => {
+      const response = result();
+      if (table === 'external_user_monthly_reports' && writes)
+        return Promise.resolve({
+          data: returning
+            ? [{ id: 'report-1', user_id: userId, group_id: groupId }]
+            : null,
+          error: null,
+        }).then(resolve);
+      return Promise.resolve(response).then(resolve);
+    };
     return builder;
   };
   mocks.admin.mockResolvedValue({ from, schema: () => ({ from }) });

@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   adminRpc: vi.fn(),
+  userGetMaybeSingle: vi.fn(),
+  userGetSelect: vi.fn(),
+  userGetEq: vi.fn(),
   createAdminClient: vi.fn(),
   getPermissions: vi.fn(),
   getWorkspaceUserLinkForUser: vi.fn(),
@@ -29,7 +32,9 @@ vi.mock('../../lib/user-groups/guest-membership', () => ({
 
 import {
   handleDeleteWorkspaceUserRequest,
+  handleGetWorkspaceUserRequest,
   handleUpdateWorkspaceUserRequest,
+  type WorkspaceUserMutationActor,
 } from './workspace-user';
 
 const actor = { email: 'manager@example.com', id: 'actor-1' };
@@ -151,5 +156,151 @@ describe('workspace user mutation handlers', () => {
         p_ws_id: 'workspace-1',
       }
     );
+  });
+});
+
+describe('workspace user recipient read handler', () => {
+  const request = new Request('https://contacts.example/api/user');
+  const user = {
+    id: 'user-1',
+    full_name: 'Full name',
+    display_name: 'Display',
+    email: 'recipient@example.com',
+    phone: 'private-phone',
+    archived: false,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.normalizeWorkspaceId.mockResolvedValue('normalized-workspace');
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: (p: string) => p === 'update_users',
+    });
+    mocks.userGetMaybeSingle.mockResolvedValue({ data: user, error: null });
+    const query = {
+      eq: mocks.userGetEq,
+      maybeSingle: mocks.userGetMaybeSingle,
+    };
+    mocks.userGetEq.mockReturnValue(query);
+    mocks.userGetSelect.mockReturnValue(query);
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn((table: string) => {
+        expect(table).toBe('workspace_users');
+        return { select: mocks.userGetSelect };
+      }),
+    });
+  });
+
+  async function read(
+    params = context,
+    readActor: WorkspaceUserMutationActor = actor
+  ) {
+    const response = await handleGetWorkspaceUserRequest(
+      request,
+      params,
+      readActor
+    );
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    return response;
+  }
+
+  it('returns a single minimal object, scoped to normalized workspace and exact user', async () => {
+    const response = await read();
+    expect(response.status).toBe(200);
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      request,
+      user: actor,
+      wsId: 'normalized-workspace',
+    });
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.userGetSelect).toHaveBeenCalledWith(
+      'id, full_name, display_name, email'
+    );
+    expect(mocks.userGetEq.mock.calls).toEqual([
+      ['ws_id', 'normalized-workspace'],
+      ['id', 'user-1'],
+    ]);
+    expect(mocks.userGetMaybeSingle).toHaveBeenCalledOnce();
+    expect(await response.json()).toEqual({
+      id: 'user-1',
+      full_name: 'Full name',
+      display_name: 'Display',
+      email: 'recipient@example.com',
+    });
+  });
+
+  it('rejects missing actor before privileged data access', async () => {
+    expect((await read(context, { id: '' })).status).toBe(401);
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { userId: '', wsId: 'workspace-1' },
+    { userId: 'user-1', wsId: ' ' },
+  ])(
+    'rejects invalid scope before permissions/admin access (%j)',
+    async (params) => {
+      expect((await read({ params: Promise.resolve(params) })).status).toBe(
+        400
+      );
+      expect(mocks.getPermissions).not.toHaveBeenCalled();
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    }
+  );
+
+  it('does not query privileged data for a nonmember', async () => {
+    mocks.getPermissions.mockResolvedValue(null);
+    expect((await read()).status).toBe(404);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('requires update_users even when the actor can view users', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: (p: string) => p === 'view_users',
+    });
+    expect((await read()).status).toBe(403);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 for a user absent from the selected workspace', async () => {
+    mocks.userGetMaybeSingle.mockResolvedValue({ data: null, error: null });
+    const response = await read();
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: 'Not found' });
+    expect(mocks.userGetEq).toHaveBeenCalledWith(
+      'ws_id',
+      'normalized-workspace'
+    );
+  });
+
+  it('returns generic database errors without leaking private details', async () => {
+    mocks.userGetMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'private database detail' },
+    });
+    const response = await read();
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      message: 'Error fetching workspace user',
+    });
+  });
+
+  it('returns generic errors for thrown database failures', async () => {
+    mocks.userGetMaybeSingle.mockRejectedValue(new Error('private failure'));
+    expect((await read()).status).toBe(500);
+  });
+
+  it('preserves nullable recipient fields', async () => {
+    mocks.userGetMaybeSingle.mockResolvedValue({
+      data: { id: 'user-1', full_name: null, display_name: null, email: null },
+      error: null,
+    });
+    expect(await (await read()).json()).toEqual({
+      id: 'user-1',
+      full_name: null,
+      display_name: null,
+      email: null,
+    });
   });
 });

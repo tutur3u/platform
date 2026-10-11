@@ -38,7 +38,7 @@ export function ReportStatusDashboard({
           </div>
           <div
             className={cn(
-              'grid min-w-0 gap-2 sm:grid-cols-2',
+              'grid min-w-0 grid-cols-2 gap-2',
               columns === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-3'
             )}
           >

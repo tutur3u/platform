@@ -9,7 +9,7 @@ export const PORT = process.env.PORT || 7805;
 export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
 const DEFAULT_NOVA_APP_URL = PROD_MODE
-  ? 'https://nova.ai.vn'
+  ? 'https://nova.tuturuuu.com'
   : getLocalInternalAppUrl('nova', `http://localhost:${PORT}`);
 const DEFAULT_WEB_APP_URL = PROD_MODE
   ? 'https://tuturuuu.com'

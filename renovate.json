@@ -2,7 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base", "customManagers:biomeVersions"],
   "lockFileMaintenance": {
-    "enabled": true,
+    "enabled": false,
     "automerge": true
   },
   "baseBranches": ["main"],
@@ -14,5 +14,20 @@
       "matchUpdateTypes": ["minor", "patch"],
       "matchCurrentVersion": "!/^0/"
     }
+  ],
+  "ignorePaths": [
+    "apps/backend/**",
+    "apps/tanstack-web/**",
+    "**/Dockerfile",
+    "**/*.Dockerfile",
+    "docker-compose*.yml",
+    "docker-compose/**",
+    "docker-bake*.hcl",
+    ".github/workflows/docker-setup-check.yaml",
+    ".github/workflows/e2e-tests.yaml",
+    ".github/workflows/rust-backend.yml",
+    ".github/workflows/rust-verify.yml",
+    ".github/workflows/tanstack-route-manifest.yaml",
+    ".github/workflows/vercel-*-tanstack-web.yaml"
   ]
 }

@@ -113,3 +113,216 @@ decoded frame counts, Stop/revoke cleanup and repeated-start evidence; a returne
 track is insufficient. The fixture neither tests hosted SFU nor replaces native
 WebView acceptance. See the runbook before installing/driving its exact-commit
 artifact. Use T3 Device so verification remains visible to the user.
+
+## Parley Cache Components candidate acceptance
+
+Parley's isolated stable-tarball adapter candidate backports upstream PR 1318 and
+must retain the real Node middleware bundler alongside both the scheduler and
+request-scoped module-loading patches, plus the repository's PPR name and preview
+manifest fixes. Its static default/remote cache-handler registration returns
+before the compiled Next custom-handler loader can reuse removed minified aliases.
+Verify URL-keyed Bun patch isolation from Meet/Lettin; a preview
+that rejects Node middleware cannot be repaired by simply removing its guard.
+When changing the candidate dependency, update both workflow path filters and
+`tuturuuu.ts` selection to its active patch. Selection regressions must derive the
+patch from the app manifest and root patchedDependencies rather than an obsolete
+filename copied into the test.
+
+Run the actual installed Next AST compatibility tests before the
+CI build; moved source shapes must fail closed. After CI builds, use the isolated
+`apps/parley/test-fixtures/built-worker` harness with canonical URL/Host, local
+bindings and blocked outbound fetch. Require exact source SHA and complete bilingual
+pages across sequential and concurrent requests. This tests the anonymous built-page
+boundary, not authenticated product flows or hosted recovery. See the
+[Cloudflare validation runbook](/build/devops/github-actions-runbook#meet-lettin-and-parley-cloudflare-validation).
+
+## Offline programming checkpoint retries
+
+Persist the offline retry reservation before checkpoint I/O; never keep its
+attempt count only in memory. Programming rooms allow three automatic offline
+attempts within two minutes, separated by 30 seconds, retaining unresolved
+documents on expiry/exhaustion. Successful owner-authorized checkpoints clear
+the budget; viewer recovery remains forbidden. Recheck active connections after
+awaited provider work so a concurrent join retains its expiry sweep.
+
+Use `collaboration-retry-budget.test.ts` for counted duplicate/restart/deadline/
+failure/recovery coverage and the isolated Worker/SQLite fixture documented in
+`programming-realtime-runbook.mdx`. Distinguish explicit handler invocation and
+stubbed provider failures from hosted alarm delivery and actual Drive saves.
+This offline bound does not certify live retry, media cleanup or account spending.
+
+
+
+The framework-independent `@tuturuuu/realtime/core/retry-budget` planner owns
+finite attempt/deadline decisions; the Worker persists reservations before I/O
+and retains authorization and recovery. Invalid durable retry state stops without
+resetting the job or deleting documents. See
+`apps/docs/build/devops/programming-realtime-runbook.mdx#portable-offline-retry-planning`
+for the adapter contract and planner, counted-handler and SQLite regressions.
+
+## Offline channel checkpoint reservations
+
+Channel rooms persist a finite three-attempt, two-minute offline job before
+callback I/O. Failed reservation writes must spend zero callbacks; failed completion
+writes must not replenish persisted attempts. Keep 30-second minimum future
+reservation deadlines, terminal-state stops and retained document bytes. Only an
+authorized editor rejoin may reset a stopped job; viewer sockets and expired editor
+tickets do not establish recurring checkpoint authority.
+
+Use `channel-retry-budget.test.ts` for counted failures, duplicates, reconstruction,
+clock boundaries and recovery. The isolated `test-fixtures/channel-retry` Worker
+uses real SQLite and controlled callback/completion failures. Record written keys,
+not just batched put calls. This finite offline budget does not certify hosted alarm
+delivery, live lease renewal, independent stop or total account spend. Follow the
+channel reservation verification section in the programming realtime runbook.
+
+## Failed Parley candidate evidence
+
+Retain successful CI-built Parley artifacts even when subsequent fixture validation
+fails, with bounded error-body diagnostics. A failed identity probe blocks page
+acceptance; retained artifacts are diagnostic evidence, not qualified releases.
+See the programming realtime runbook for pinned replay and delivery boundaries.
+Inspect structured harness logs for a generic identity-route HTTP 500; cache
+initialization may fail before the handler runs. Distinguish CI-absolute WASM/data
+imports that prevent downloaded-artifact replay from the original runtime failure.
+Preserve original files and asset bytes when using private relocation mappings;
+that diagnostic replay does not qualify the canonical artifact.
+
+## Completed Live finalization receipts
+
+Completed Live finalization must confirm its persisted session receipt and recheck
+current obligations after the read; in-memory completion does not acknowledge a
+failed write. Keep independent registry/room cleanup and incomplete billing/context
+retries. See the counted regressions and operation envelope in
+`apps/docs/build/devops/programming-realtime-runbook.mdx#completed-live-finalization-receipts`.
+
+## Active Live alarm audit
+
+Read the active-session alarm scope in the Meet Live feature page before changing
+its recurring schedule. Pause does not skip tick-level registry, room and billing
+work. Successful registry renewal extends discoverability; the 23-hour outage
+boundary is not a fixed session lifetime. Count public settlement, review expiry,
+room commands, primary settlement/usage, renewal reservations and reconnects
+separately. Source-path inventory is not counted runtime evidence. Require explicit
+recurring lease expiry and durable authenticated Stop/reschedule tests without
+losing quota coverage, privacy discoverability or unresolved obligations.
+
+
+## Meet Live compensation after termination
+
+Read the ended-session compensation section in
+`apps/docs/platform/features/meet-live-assistants.mdx` before changing Live alarm
+budgets. `session.ts` dispatches registry/room compensation and billing/context
+finalization independently after `ended`; stopping provider output does not stop
+all background obligations. The current cleanup helper arms before I/O and writes
+completion flags afterward without a finite durable attempt reservation or expiry.
+Registry failure or an ambiguous successful call can continue across restarts.
+
+Require a joint operation envelope, pre-I/O durable reservation, finite deadline,
+terminal pending state retaining unresolved obligations, authenticated recovery
+and durable stop checks before dispatch/rescheduling. Count registry RPCs, room
+requests, quota/usage calls, context-erasure work and written keys separately.
+Test duplicate/restart/clock/no-progress cases, pre- and post-I/O write failures,
+Stop/revocation races and real Worker/SQLite persistence. Do not truncate retries
+by dropping quota reservations, private deletion obligations or billing receipts.
+`session-cleanup.test.ts` covers independent compensation and confirmed completion,
+not a finite job budget or hosted shutdown guarantee. Keep that limitation visible.
+
+For Live context erasure, count the128-key page ceiling and each deleted archive
+key rather than treating a batch delete as one billed key. Full pages schedule a
+confirmation wake; failed deletion preserves the archive and can retry. Finalization
+still writes session state in its public-settlement and final steps when its
+completion receipt is absent or incomplete; erasure alone cannot skip those steps.
+The completed-receipt guard above skips finalization writes only after matching
+durable/current completion and rechecking obligations after the read. Count the
+receipt read and independent registry/room cleanup separately. Memory-only flags
+may follow a failed durable write and must never acknowledge completion.
+
+Public Live billing currently scans the complete saved map. Include quota settlement,
+share completion, usage reporting, per-record writes and the final map write in the
+wake budget. Count retry-scheduler calls separately from delivered alarms. Verify
+quota progress survives usage failures, and successful reporting followed by a
+failed final write remains recoverable across reconstruction. A page limit needs
+a durable cursor and per-record progress; never truncate outstanding obligations.
+
+For active Live registry renewal, test the exact 12-hour renewal and 23-hour failure
+boundaries, duplicate/reconstructed calls, future persisted timestamps and Stop
+while registration is in flight. The existing age check is a privacy lease guard,
+not a finite attempt reservation. A future timestamp can suppress renewal beyond
+the original lease; require validated clock state and bounded future deadlines.
+Count registration and compensating removal RPCs separately, and retain failed
+removal obligations. Controlled helper tests do not prove hosted discoverability,
+real durable timestamp persistence or authenticated stop/reschedule fencing.
+
+For Meeting media compensation, read the operation envelope in the programming
+realtime runbook. Count legacy inventory, close and failed-close confirmation per
+provider session, each track and each progress write. The helper traverses the
+complete pending session set; repeated reconstruction and failed persistence can
+repeat successful provider work. Counter saturation at 32 and hourly backoff do
+not terminate the job, and new obligations can reset the delay. Preserve pending
+tracks and confirmed-progress recovery while introducing a durable finite job
+budget, bounded calls/body reads and authenticated stop/reschedule fences.
+The SFU client awaits fetch and full text/JSON bodies without explicit deadlines
+or byte bounds; trimming error details after `response.text()` does not bound the
+read. A stalled promise prevents failure deferral and keeps standalone-server
+cleanup marked in flight. Test stalled fetch/body, oversized response, clock
+boundaries and ambiguous completion before accepting a deadline repair. Preserve
+absence confirmation and fail-closed progress persistence; cancellation alone
+cannot establish remote media shutdown.
+Use `sfu-cost.test.ts` for counted actual-client/helper transport fixtures: stalled
+fetch and success/error bodies remain pending after one simulated hour; 1 MiB
+error content is consumed before 300-character display truncation. Two known-mid
+sessions across 24 failed reconstructions produce 48 close and 48 inventory calls,
+zero progress writes and preserved obligations. Failed durable progress replays
+24 acknowledged closes/writes; a saved completion receipt prevents subsequent
+provider calls. A timeout alone can amplify caller retries: pair it with persistent
+finite attempts/age, per-wake operation bounds and durable stop/reschedule fences.
+These tests characterize retained behavior; they do not implement those bounds.
+Controlled helper counts exclude surrounding room storage/alarm operations and
+do not prove hosted SFU shutdown or account-wide billing safety.
+
+## Live registry clock integrity
+
+Active Live renewal rejects nonfinite, negative, unsafe or future persisted clock
+values before registration; renewal may not predate session admission. Preserve
+this fail-closed behavior during clock rollback and route errors through the existing
+session stop path without dropping cleanup or billing obligations. Ended-session
+registry removal bypasses the active lease check. Keep the twelve-hour renewal and
+twenty-three-hour failure boundaries, and verify them in `registry-heartbeat.test.ts`
+alongside reconstruction, duplicate suppression and invalid-clock removal. This
+clock fence does not replace finite compensation budgets or hosted stop evidence.
+
+## RunnerWake notification fanout
+
+RunnerWake has no alarm retry loop, but each accepted notification enumerates every
+retained socket again. Count send and close attempts separately; duplicate requests
+and object reconstruction do not persist deduplication progress. Keep Worker token
+and runner-auth checks before forwarding. A per-request operation count is not a
+socket-retention, ingress or account-spend cap. See the RunnerWake envelope in the
+GitHub Actions runbook and `apps/devbox-control/src/wake.test.ts` before changing
+fanout, socket leases or authenticated stop behavior.
+
+## Coordination ingress read budget
+
+Authenticated `/v1/coordinate` requests keep the existing 2 KiB body limit and
+now stop after at most 256 reader calls or five seconds, including empty chunks
+and stalled reads. Deadline equality rejects. Failed reads or parsing return the
+existing invalid-request response before schema dispatch or Durable Object work.
+Cancellation is attempted once without awaiting an unresponsive stream source;
+its failure cannot hide the original read error. Authentication still precedes
+reading. Coordination leases, fingerprints, owner checks and cleanup are unchanged.
+
+`apps/coordination/src/request-body.test.mjs` counts reads and cancellation across
+24 reconstructions, exact deadline boundaries, byte overflow, malformed JSON and
+failed or stalled cancellation. `worker.test.mjs` exercises the real local Worker
+and SQLite coordination contracts. Reader tests use controlled sources and clocks,
+not hosted ingress or billed-operation measurement. The per-request bound does
+not cap request volume, total spending or Durable Object alarms, and does not
+provide an independent durable authenticated stop fence. Applicable account alerts
+and an independent stop remain unverified; no production billing configuration is
+changed by this implementation.
+
+Parley uses `localePrefix: never`: built-Worker bilingual probes request the
+canonical `/access-denied` URL with an explicit `Accept-Language: en` or `vi`.
+A prefixed `/vi/access-denied` request redirects and sets a locale cookie; a
+fetch client without a cookie jar must not infer Vietnamese from that prefix.

@@ -177,7 +177,11 @@ export function buildSharedFormMetadata({
       canonical: presentation.seo.canonicalUrl ?? pageUrl,
     },
     keywords: presentation.seo.keywords,
-    ...(presentation.seo.noIndex ? { robots: NO_INDEX_ROBOTS } : {}),
+    // Override the private root layout only for a successfully loaded public
+    // snapshot; protected/unavailable forms and author opt-outs stay noindex.
+    robots: presentation.seo.noIndex
+      ? NO_INDEX_ROBOTS
+      : { index: true, follow: true },
     openGraph: {
       type: 'website',
       url: pageUrl,

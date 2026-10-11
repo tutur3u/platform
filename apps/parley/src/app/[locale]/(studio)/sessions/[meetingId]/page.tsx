@@ -20,7 +20,9 @@ import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
+import { meetReviewUrl } from '@/features/studio/meet-links';
 import { ResearchNotes } from '@/features/studio/research-notes';
+import { SessionInvitation } from '@/features/studio/session-invitation';
 
 export default async function Review({
   params,
@@ -67,12 +69,20 @@ export default async function Review({
           </p>
           <p className="max-w-2xl text-muted-foreground">{t('review_hint')}</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href={`/r/${encodeRoomCode(meetingId)}`}>
-            {t('open_room')}
-            <ArrowUpRight className="size-4" />
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href={meetReviewUrl(access.meeting.ws_id, meetingId)}>
+              {t('open_in_meet')}
+              <ArrowUpRight className="size-4" />
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/r/${encodeRoomCode(meetingId)}`}>
+              {t('open_room')}
+              <ArrowUpRight className="size-4" />
+            </Link>
+          </Button>
+        </div>
       </header>
       <section
         aria-label={t('breakdown')}
@@ -108,6 +118,20 @@ export default async function Review({
               meetingId={meetingId}
             />
           </section>
+          {scenario.rubric && (
+            <section
+              className="space-y-3 rounded-xl border bg-card p-5"
+              aria-label={t('debrief_rubric')}
+            >
+              <h2 className="font-semibold text-lg">{t('debrief_rubric')}</h2>
+              <p className="text-muted-foreground text-sm">
+                {t('debrief_rubric_hint')}
+              </p>
+              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                {scenario.rubric}
+              </p>
+            </section>
+          )}
           <details className="rounded-xl border p-5">
             <summary className="cursor-pointer font-semibold">
               {t('briefing')}
@@ -117,12 +141,15 @@ export default async function Review({
             </p>
           </details>
         </div>
-        <ResearchNotes
-          meetingId={meetingId}
-          notes={notes.notes}
-          page={page}
-          hasMore={notes.hasMore}
-        />
+        <aside className="space-y-6">
+          <SessionInvitation roomCode={encodeRoomCode(meetingId)} />
+          <ResearchNotes
+            meetingId={meetingId}
+            notes={notes.notes}
+            page={page}
+            hasMore={notes.hasMore}
+          />
+        </aside>
       </div>
       <p className="border-t pt-5 text-muted-foreground text-xs">
         {t('research_note')}

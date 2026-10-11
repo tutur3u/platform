@@ -1,4 +1,6 @@
+import { feedbackHelp } from './feedback';
 import { boxHelp } from './help-devbox';
+import { formatHelp, type HelpTopic } from './help-format';
 import { getGlobalHelp } from './help-global';
 import { resourcesHelp } from './resources';
 
@@ -6,13 +8,6 @@ export { getGlobalHelp } from './help-global';
 
 import { externalAdminHelp } from './external-admin';
 
-interface HelpTopic {
-  commands?: string[];
-  description?: string;
-  examples?: string[];
-  options?: string[];
-  usage: string;
-}
 const helpTopics: Record<string, HelpTopic> = {
   box: boxHelp,
   boards: {
@@ -82,6 +77,7 @@ const helpTopics: Record<string, HelpTopic> = {
     ],
     usage: 'ttr config set-base-url <url>',
   },
+  feedback: feedbackHelp,
   finance: {
     commands: [
       'wallets [list|get|balance|create|update|delete]',
@@ -927,29 +923,6 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
     },
   },
 };
-
-function formatHelp(topic: HelpTopic, heading: string) {
-  return [
-    heading,
-    '',
-    topic.description,
-    '',
-    `Usage: ${topic.usage}`,
-    topic.commands?.length
-      ? ['', 'Commands:', ...topic.commands.map((line) => `  ${line}`)]
-      : [],
-    topic.options?.length
-      ? ['', 'Options:', ...topic.options.map((line) => `  ${line}`)]
-      : [],
-    topic.examples?.length
-      ? ['', 'Examples:', ...topic.examples.map((line) => `  ${line}`)]
-      : [],
-  ]
-    .flat()
-    .filter((line) => line !== undefined)
-    .join('\n')
-    .replace(/\n{3,}/gu, '\n\n');
-}
 
 function normalizeHelpAction(group: string, action?: string) {
   if (group !== 'tasks') {

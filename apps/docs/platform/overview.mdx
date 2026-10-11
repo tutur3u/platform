@@ -1,27 +1,24 @@
 ---
 title: 'Platform Overview'
 description: 'How Tuturuuu products, AI systems, and personalization layers fit together.'
-updatedAt: '2026-09-15'
+updatedAt: '2026-10-08'
 ---
 
 # Tuturuuu Platform Overview
 
 The Tuturuuu platform combines proactive AI, unified applications, and automation tooling to help every visionary move from ambition to execution. Use this section to understand how each layer works and where to dive deeper.
 
-<Note>
-  Tuturuuu is mid-migration. The Next.js `apps/web` platform (port 7803) is being
-  replaced by `apps/tanstack-web` (TanStack Start) plus a dedicated Rust
-  `apps/backend` API. Most docs still describe the live `apps/web` shape, which
-  remains valid today. See the
-  [TanStack Start and Rust migration](/platform/architecture/tanstack-rust-migration)
-  for the runtime contract and what moves where.
-</Note>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Explore the Platform
 
-- **Applications** – Tuturuuu ships as a catalog of standalone web apps that each run on their own host, may serve product APIs locally, and can fall back to `apps/web` for unmatched or explicitly central route families. Browse the [Applications catalog](/platform/applications/calendar) covering [Calendar](/platform/applications/calendar), [Finance](/platform/applications/finance), [Drive](/platform/applications/drive), [Chat](/platform/applications/chat), [CMS](/platform/applications/cms), [Inventory](/platform/applications/inventory), [Storefront](/platform/applications/storefront), and the [Apps gateway](/platform/applications/apps).
+- **Applications** – Tuturuuu ships as a catalog of standalone web apps that each run on their own host, may serve product APIs locally, and can fall back to `apps/web` for unmatched or explicitly central route families. Browse the [Applications catalog](/platform/applications/overview) covering [Calendar](/platform/applications/calendar), [Finance](/platform/applications/finance), [Drive](/platform/applications/drive), [Chat](/platform/applications/chat), [CMS](/platform/applications/cms), [Inventory](/platform/applications/inventory), [Storefront](/platform/applications/storefront), and the [Apps gateway](/platform/applications/apps).
 - **Experience Apps** – See how Tuturuuu Calendar, Tuturuuu Tasks, Tuturuuu Meet, and the Command Center Dashboard deliver daily flow. Start with the [Command Center Dashboard](/platform/features/command-center-dashboard), or turn Meet notes into [reviewed calendar and task follow-ups](/platform/features/meet-followups).
-- **AI & Automation** – Learn how Mira (our Jarvis), Aurora, Nova, and Rewise power intelligent workflows in the [AI Overview](/platform/ai/structured-data).
+- **AI & Automation** – Learn how Mira, Nova, and Rewise support intelligent workflows in the [AI Overview](/platform/ai/structured-data).
 - **Shared Components** – Reuse building blocks from the [Component Library](/platform/components/overview).
 - **Personalization** – Tailor the workspace using [Themes](/platform/personalization/themes) and [Language settings](/platform/personalization/language).
 
@@ -38,7 +35,7 @@ has not been hard-cut over to a satellite or another approved owner.
 Use the [satellite app ownership guide](/platform/architecture/satellite-apps)
 for local route, proxy, and auth boundaries. The
 [TanStack and Rust migration guide](/platform/architecture/tanstack-rust-migration)
-tracks the separate frontend and backend cutover model.
+retains historical designs; both runtimes are paused and not in use.
 
 The [Apps gateway](/platform/applications/apps) (`apps.tuturuuu.com`) sits in
 front of the routable apps as a launcher and redirect layer — it surfaces app
@@ -58,64 +55,20 @@ browser registrations upgrade in place. Do not add Serwist packages to an app
 or depend on that project's release schedule. Extend the shared internal
 runtime and its focused tests instead.
 
-## How It All Fits Together
+## How it fits together
 
-```mermaid
-graph TB
-    subgraph Apps["Satellite Apps"]
-        Cal["Calendar"]
-        Fin["Finance"]
-        Drive["Drive"]
-        Chat["Chat"]
-        More["…"]
-    end
+The Apps gateway links to standalone Next.js products. Each product owns its
+publications, permissions, and local route handlers; central API families remain
+in Web. Shared packages provide UI, internal API clients, authentication, and
+storage helpers. Supabase, Trigger.dev, and product-specific Cloudflare services
+support these apps according to their owning runbooks.
 
-    subgraph Experience["Experience Layer"]
-        CC["Command Center"]
-        TuPlan["Tuturuuu Calendar"]
-        TuDo["Tuturuuu Tasks"]
-        Meet["Tuturuuu Meet"]
-    end
-
-    Core["Central Platform API<br/>(apps/web)"]
-
-    subgraph AI["AI Layer"]
-        Mira["Mira"]
-        Aurora["Aurora"]
-        Nova["Nova"]
-        Rewise["Rewise"]
-    end
-
-    subgraph Auto["Automation Layer"]
-        Agents["Agents"]
-        Cloud["Cloud Exec"]
-        Int["Integrations"]
-    end
-
-    Apps -->|/api/*| Core
-    Experience --> Core
-    Core --> Mira
-    Mira --> Agents
-    Agents --> Core
-    Aurora --> Mira
-    Nova --> Mira
-    Rewise --> Aurora
-    Agents --> Cloud
-    Cloud --> Int
-    Int --> Core
-
-    style Mira fill:#4f46e5,stroke:#3730a3,color:#fff
-    style Agents fill:#4f46e5,stroke:#3730a3,color:#fff
-    style Core fill:#4f46e5,stroke:#3730a3,color:#fff
-```
-
-<Note>
-  The AI- and automation-layer model above (Mira/Aurora/Nova/Rewise) is the
-  conceptual organizing picture. In the running platform these flow through the
-  central `apps/web` API alongside the satellite apps; the migration to
-  `apps/tanstack-web` plus the Rust `apps/backend` is reshaping where this API
-  boundary lives.
-</Note>
+Use the [complete product directory](/platform/applications/overview) and
+[repository catalog](/reference/repository/catalog) to locate products and
+supporting services. [Versions](/reference/repository/versions) are derived from
+maintained source manifests and lockfiles; a source entry is not a deployment or
+entitlement guarantee. Private workspace pages remain authenticated and
+[excluded from search indexing](/platform/features/search-indexing).
 
 ## Next Steps
 

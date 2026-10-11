@@ -34,6 +34,19 @@ Signing credentials are available only to their OS-specific packaging step,
 after Flutter compilation. They are never passed into Turbo, Flutter, a source
 archive, or an artifact path.
 
+Windows compilation precedes the same strict signing-readiness check; missing
+credentials fail the job before signing, packaging or artifact upload, and never
+permit an unsigned public package. A successful compile step is not a signed
+release. macOS preflight admits only one distinct valid code-signing fingerprint
+matching the configured Developer ID name and team in its owned temporary
+keychain; missing or ambiguous results block signing. This listing does not prove
+private-key usability or certificate trust, cannot repair missing or invalid
+material, and preserves strict signature, team and notarization verification.
+The existing verified-platform subset policy can still publish a successful
+Linux package when another platform fails; release dispatch and credential
+configuration remain operator-owned. Regression coverage is in
+`desktop-beta-workflow.test.mjs` and `sign-macos.test.mjs`.
+
 | Platform | Configuration |
 | --- | --- |
 | Windows | `WINDOWS_SIGNING_CERTIFICATE_PFX_B64`, `WINDOWS_SIGNING_CERTIFICATE_PASSWORD` secrets: trusted Authenticode code-signing certificate with private key. |

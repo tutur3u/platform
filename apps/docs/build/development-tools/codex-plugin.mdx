@@ -31,6 +31,7 @@ generated Next.js instruction blocks retain their canonical owners.
 | Task capture or templates | `tuturuuu-cli-tasks`, then task or template procedure |
 | Finance read or mutation | `tuturuuu-cli-finance`, then finance diagnostics/examples |
 | Rollback or shared API rollout recovery | `tuturuuu-rollout-recovery`, then live graph and recovery evidence |
+| Declarative database adoption readiness | `tuturuuu-database/references/declarative-schema-adoption.md`, read-only checker and baseline evidence gates |
 | PR integration | `tuturuuu-pr-merge-sync`, then merge gates and watcher commands |
 | Skill or prompt audit | `tuturuuu-development-tooling/references/agent-guidance-review.md` |
 
@@ -273,6 +274,31 @@ passed.
 `.github/workflows/codex-plugin.yaml` runs the plugin-local validator and parses
 the docs navigation JSON. The workflow is enabled through `tuturuuu.ts`, matching
 the repo's other CI switchboard-controlled checks.
+
+### Native parallel validation pilot
+
+After checkout, Python 3.13 setup, plugin validation and the hash-locked MCP
+dependency install, one native `parallel` group runs the MCP boundary/stdio suite
+and orchestration-evidence suite. Both read repository source and use separate
+temporary fixtures; neither consumes the other's output. Each suite retains its
+original discovery command and applies a five-minute timeout and a 1 GiB
+per-process virtual memory ceiling. The job has a fifteen-minute timeout and
+read-only permissions.
+
+GitHub's [June 25, 2026 announcement](https://github.blog/changelog/2026-06-25-actions-steps-can-now-be-run-in-parallel/)
+and [workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsparallel)
+document `parallel` as background steps followed by an implicit wait. Any suite
+failure fails that barrier and the job; no step uses `continue-on-error`. Docs
+navigation validation stays after the barrier. Triggers, switchboard gating and
+the required check name remain unchanged.
+
+Run `node --test scripts/ci/codex-plugin-parallel-workflow.test.js` to check the
+parsed workflow's prerequisite order, bounded two-suite group and failure gates.
+This structural check does not execute GitHub's scheduler. Confirm overlapping
+suite intervals and successful completion in the automatic exact-head hosted run
+before treating the pilot as qualified. No speed improvement is established;
+compare equivalent runner, source, dependency/cache and suite inputs before
+claiming one. Roll back by expanding the two children into sequential steps.
 
 The CI check currently verifies:
 

@@ -13,6 +13,10 @@ import { wrapRequestClientForProxyOnlyTables } from '../next/protected-tables';
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const APP_SESSION_BEARER_PREFIX = 'ttr_app_';
 
+export type RequestClientFetchOptions = {
+  readonly fetch: typeof globalThis.fetch;
+};
+
 type RequestLike = Pick<Request, 'headers'> & Partial<Pick<Request, 'url'>>;
 
 function extractForwardedHeaderValue(value: string | null) {
@@ -59,11 +63,15 @@ function createRequestAdminProxyClient<T = Database>(): SupabaseClient<T> {
   });
 }
 
-function createNoCookieAnonProxyClient<T = Database>(): SupabaseClient<T> {
+function createNoCookieAnonProxyClient<T = Database>(
+  options?: RequestClientFetchOptions
+): SupabaseClient<T> {
   const { url, key } = checkEnvVariables({ useSecretKey: false });
 
   return createBrowserClient<T>(url, key, {
+    ...(options ? { isSingleton: false } : {}),
     global: {
+      ...(options ? { fetch: options.fetch } : {}),
       headers: {
         Authorization: `Bearer ${key}`,
       },
@@ -76,9 +84,11 @@ function createNoCookieAnonProxyClient<T = Database>(): SupabaseClient<T> {
   });
 }
 
-function createAppSessionIsolatedRequestClient<T = Database>() {
+function createAppSessionIsolatedRequestClient<T = Database>(
+  options?: RequestClientFetchOptions
+) {
   return wrapRequestClientForProxyOnlyTables(
-    createNoCookieAnonProxyClient<T>(),
+    createNoCookieAnonProxyClient<T>(options),
     createRequestAdminProxyClient<T>()
   );
 }
@@ -164,10 +174,11 @@ function createRequestCookieHandler(
 }
 
 export async function createRequestClient<T = Database>(
-  request: RequestLike
+  request: RequestLike,
+  options?: RequestClientFetchOptions
 ): Promise<SupabaseClient<T>> {
   if (requestHasAppSessionAuth(request)) {
-    return createAppSessionIsolatedRequestClient<T>();
+    return createAppSessionIsolatedRequestClient<T>(options);
   }
 
   const accessToken = getBearerAccessToken(request);
@@ -175,7 +186,9 @@ export async function createRequestClient<T = Database>(
   if (accessToken) {
     const { url, key } = checkEnvVariables({ useSecretKey: false });
     const userClient = createBrowserClient<T>(url, key, {
+      ...(options ? { isSingleton: false } : {}),
       global: {
+        ...(options ? { fetch: options.fetch } : {}),
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -199,6 +212,7 @@ export async function createRequestClient<T = Database>(
     resolveRequestUrlFromRequest(request)
   );
   const userClient = createServerClient<T>(url, key, {
+    ...(options ? { global: { fetch: options.fetch } } : {}),
     cookieOptions,
     cookies: createRequestCookieHandler(request, url, cookieOptions),
   });

@@ -11,13 +11,8 @@ interface PageProps {
   params: Promise<{ locale: string }>;
 }
 
-/**
- * The landing page is the one indexable surface in this app — everything else
- * sits behind a workspace session, and the root layout marks the app
- * `indexable: false`. Overriding robots here rather than app-wide keeps the
- * studio and every `/f/<shareCode>` page out of search results by default while
- * still letting the marketing page rank.
- */
+/** The root layout protects private pages. Public landing and accessible
+ * shared forms explicitly override it; author opt-outs remain respected. */
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {

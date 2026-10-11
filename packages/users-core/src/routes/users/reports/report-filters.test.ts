@@ -42,7 +42,6 @@ afterEach(() => {
 
 it('applies period overlap to rows and counts, includes unapproved legacy records, and scopes test deliveries', async () => {
   const urls: URL[] = [];
-  let countArgs: unknown;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string | URL, init?: RequestInit) => {
@@ -58,19 +57,18 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
           JSON.stringify({ id: 'workspace', timezone: 'Asia/Ho_Chi_Minh' }),
           { headers }
         );
-      if (url.pathname.endsWith('/rpc/get_periodic_report_stage_counts')) {
-        countArgs = JSON.parse(String(init?.body));
-        return new Response('{"pending":1}', { headers });
-      }
       if (url.pathname.endsWith('/user_report_email_queue'))
         return new Response(
           '[{"report_id":"report-1","status":"sent","sent_at":"2026-09-11T15:20:44Z"}]',
           { headers }
         );
       if (init?.method === 'HEAD') return new Response(null, { headers });
-      return new Response('[{"id":"report-1","delivery_status":"draft"}]', {
-        headers,
-      });
+      return new Response(
+        '[{"id":"report-1","delivery_status":"draft","report_stage":"pending","user_email":"student@example.test","last_delivery_error":null}]',
+        {
+          headers,
+        }
+      );
     })
   );
   const response = await GET(
@@ -95,12 +93,6 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
   );
   expect(reportQueries).toHaveLength(1);
   expect(reportQueries[0]?.searchParams.get('report_stage')).toBe('eq.pending');
-  expect(countArgs).toMatchObject({
-    p_ws_id: 'workspace',
-    p_group_ids: ['group-1'],
-    p_period_start: '2026-08-01',
-    p_period_end: '2026-08-31',
-  });
   for (const url of reportQueries) {
     expect(url.searchParams.get('period_end')).toBe('gte.2026-08-01');
     expect(url.searchParams.get('period_start')).toBe('lte.2026-08-31');

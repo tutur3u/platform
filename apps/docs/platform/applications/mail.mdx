@@ -785,8 +785,19 @@ thread. Repeat a provider event to verify no duplicate, and remove mailbox membe
 before a queued delivery to verify suppression. A successful Firebase response
 alone does not prove device receipt or navigation.
 
-The `process-immediate-notifications` cron runs every five minutes through both
-the platform cron configuration and Vercel. It drains pending immediate batches
+The five-minute recovery timer runs in Cloudflare Cron Control; the authenticated
+web cron endpoint remains available for manual recovery. Explicit immediate
+requests read at most 256 KiB in 4,096 chunks after authentication, with a
+ten-second total read deadline. Stalled/slow bodies return HTTP 408 before any
+database/provider work; chunks do not renew the deadline and cancellation cannot
+extend it. Exceeding byte/chunk bounds returns
+HTTP 413 before JSON parsing or database work. They accept at most
+100 batch IDs and reject oversized or overlong IDs rather
+than silently truncating them. Unrequested batches remain pending; the empty-body
+automatic processor retains complete queue selection to preserve rollout filtering.
+This shared email/push rule preserves complete delivery logs, recipient consent
+and ambiguous-send rules. See the [explicit selection budget](/build/devops/cloudflare-cron-control#explicit-immediate-selection-budget)
+and immediate-selection/request-budget regressions. The timer drains pending batches
 when a database webhook is missed, and recovers failed or abandoned Mail batches
 with at most three retries. A processing lease is considered abandoned after ten
 minutes. Every attempt repeats the same access and preference checks. A persisted
@@ -954,3 +965,11 @@ cancel the editor, including a switch away and back.
 Retained sender image and gradient backgrounds in Original view keep their
 foreground colors, because a background-color alone does not establish the
 painted contrast. An opaque solid child resumes contrast correction.
+
+
+The immediate request reader checks monotonic elapsed time before and after each
+stream read, including end-of-stream. Immediately resolved chunks cannot bypass
+the ten-second deadline while timer callbacks await service; wall-clock changes
+do not extend it. The existing byte/chunk/selection limits and authenticated
+request ownership remain unchanged. Deadline regressions count actual stream reads
+at the exact boundary; this bounds request intake, not automatic draining or spend.

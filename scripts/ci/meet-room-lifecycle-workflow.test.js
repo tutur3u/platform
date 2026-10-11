@@ -12,14 +12,9 @@ const {
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { parse } = require('yaml');
+const { readWorkflow } = require('./workflow-yaml-test-helper');
 const repoRoot = path.resolve(__dirname, '../..');
-const workflow = parse(
-  readFileSync(
-    path.join(repoRoot, '.github/workflows/meet-cloudflare.yaml'),
-    'utf8'
-  )
-);
+const workflow = readWorkflow('meet-cloudflare.yaml');
 
 test('actual lifecycle CI command runs only its explicit worker regressions outside Bun preload ancestry', () => {
   const step = workflow.jobs.validate.steps.find(
@@ -61,6 +56,8 @@ test('actual lifecycle CI command runs only its explicit worker regressions outs
       'room-do-empty-lifecycle.test.ts',
       'room-do-lifecycle-race.test.ts',
       'room-do-recovery.test.ts',
+      'collaboration-retry-budget.test.ts',
+      'channel-retry-budget.test.ts',
     ].map((file) => `apps/meet-realtime/src/${file}`);
     assert.deepEqual(observed.argv, [
       'test',

@@ -270,10 +270,6 @@ describe('application metadata coverage', () => {
   });
 
   it('covers the non-Next public application shells', () => {
-    const tanStackHead = readFileSync(
-      resolve(repoRoot, 'apps/tanstack-web/src/lib/platform/app-shell.ts'),
-      'utf8'
-    );
     const mobileHead = readFileSync(
       resolve(repoRoot, 'apps/mobile/web/index.html'),
       'utf8'
@@ -282,8 +278,6 @@ describe('application metadata coverage', () => {
       readFileSync(resolve(repoRoot, 'apps/docs/docs.json'), 'utf8')
     ) as { description?: string };
 
-    expect(tanStackHead).toContain('max-image-preview:large');
-    expect(tanStackHead).toContain("name: 'twitter:site'");
     expect(mobileHead).toContain('name="robots" content="noindex, nofollow"');
     expect(mobileHead).toContain('property="og:image"');
     expect(docsConfig.description).toMatch(/Tuturuuu platform/);

@@ -1,0 +1,97 @@
+name: Retained Parley offline diagnostic
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: parley-387-offline-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'tutur3u/platform'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out trusted diagnostic source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          path: control
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - name: Check workflow switchboard
+        id: gate
+        working-directory: control
+        run: node --experimental-strip-types scripts/ci/check-workflow-config.ts --workflow parley-offline-diagnostic.yaml --event-name workflow_dispatch
+      - name: Check ephemeral runner isolation
+        if: steps.gate.outputs.should_run == 'true'
+        env:
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: |
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          sudo -n unshare --mount --net --propagation private true
+          outer_net=$(readlink /proc/self/ns/net)
+          outer_mount=$(readlink /proc/self/ns/mnt)
+          capability_unit="parley-capability-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          trap 'status=$?; if [ "$status" -ne 0 ]; then timeout --signal=TERM --kill-after=2s 5s sudo -n systemctl stop "$capability_unit" || true; fi; exit "$status"' EXIT
+          timeout --signal=TERM --kill-after=2s 27s sudo -n systemd-run \
+            --unit="$capability_unit" \
+            --wait --collect --pipe -p MemoryMax=17179869184 -p CPUQuota=1000% \
+            -p TasksMax=256 -p PrivateNetwork=yes -p RuntimeMaxSec=20 \
+            -p TimeoutStopSec=2 -p KillMode=control-group \
+            /usr/bin/unshare --mount --net --propagation private \
+            /usr/bin/python3 -B -c 'import importlib.util,sys; s=importlib.util.spec_from_file_location("replay",sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.isolation({"outerNet":sys.argv[2],"outerMount":sys.argv[3]})' \
+            "$GITHUB_WORKSPACE/control/scripts/ci/replay-parley-worker.py" "$outer_net" "$outer_mount"
+      - name: Check out immutable tooling manifest
+        if: steps.gate.outputs.should_run == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: 387caf4872a59cc4944b16324a2554062393d7d1
+          persist-credentials: false
+          path: tools
+      - name: Install frozen tools without lifecycle scripts
+        if: steps.gate.outputs.should_run == 'true'
+        working-directory: tools
+        env:
+          BUN_INSTALL: ${{ runner.temp }}/parley-bun
+        run: |
+          bash scripts/ci/setup-bun-with-backoff.sh 1.4.1
+          "$BUN_INSTALL/bin/bun" install --frozen-lockfile --ignore-scripts --filter @tuturuuu/parley
+      - name: Retrieve exact retained artifact
+        if: steps.gate.outputs.should_run == 'true'
+        id: artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          umask 077
+          diagnostic_root=$(mktemp -d "$RUNNER_TEMP/parley387.XXXXXX")
+          echo "root=$diagnostic_root" >> "$GITHUB_OUTPUT"
+          gh api repos/tutur3u/platform/actions/artifacts/11583133658 > "$diagnostic_root/metadata.json"
+          python3 -B -c 'import importlib.util,sys; s=importlib.util.spec_from_file_location("replay",sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.validate_metadata(m.read_json(sys.argv[2]))' "$GITHUB_WORKSPACE/control/scripts/ci/replay-parley-worker.py" "$diagnostic_root/metadata.json"
+          gh api repos/tutur3u/platform/actions/artifacts/11583133658/zip > "$diagnostic_root/worker.zip"
+          python3 -B control/scripts/ci/replay-parley-worker.py prepare "$diagnostic_root" --source "$GITHUB_WORKSPACE/tools" --node "$(command -v node)"
+      - name: Replay once in an isolated bounded unit
+        if: steps.gate.outputs.should_run == 'true'
+        env:
+          DIAGNOSTIC_ROOT: ${{ steps.artifact.outputs.root }}
+        run: |
+          sudo -n systemd-run --unit="parley-offline-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --wait --collect --pipe -p MemoryMax=17179869184 -p CPUQuota=1000% \
+            -p TasksMax=256 -p RuntimeMaxSec=70 -p TimeoutStopSec=10 -p KillMode=control-group \
+            /usr/bin/unshare --mount --net --propagation private \
+            /usr/bin/python3 -B "$GITHUB_WORKSPACE/control/scripts/ci/replay-parley-worker.py" run "$DIAGNOSTIC_ROOT"
+      - name: Retain allowlisted diagnostic result
+        if: always() && steps.artifact.outputs.root != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: parley-387-offline-diagnostic-${{ github.run_id }}
+          path: ${{ steps.artifact.outputs.root }}/diagnostic-result.json
+          retention-days: 1
+          if-no-files-found: warn

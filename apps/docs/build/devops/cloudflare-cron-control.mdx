@@ -38,3 +38,125 @@ An `Immediate batch delivery failed: 400` log may mean the web proxy rejected
 the request before the processor ran. Check the proxy response source and the
 Worker user agent, body, and content type. A `401` points to the web and Worker
 delivery tokens being out of sync.
+
+## Vite+ toolchain and validation
+
+Cron Control owns a private Bun workspace with pinned Vite+ 1.1.0, the matching
+Vite core alias, Cloudflare Vite plugin 1.63.1 and Wrangler 4.149.0. The owning
+Wrangler supports the existing September 28 compatibility date; do not substitute
+an older root runtime. The production Worker source, identity, five-minute trigger,
+secret names and delivery protocol remain the same. `vite.config.ts` disables
+remote bindings; the independent unit-test config does not start the Worker plugin.
+
+From `apps/cron-control`, use Node 24 for `bun run lint`, `bun run test`,
+`bun run type-check` and `node --test scripts/verify-worker-runtime.mjs`.
+Use `ttr resources run -- <command>` for heavy local checks and a private home
+`TMPDIR` if `/tmp` quota prevents runtime storage. Do not run release builds locally.
+CI builds with `bun run build`, repeats the real local Worker HTTP checks using
+`CRON_TEST_CONFIG=dist/worker/wrangler.json`, and checks emitted name/account,
+compatibility date, trigger, vars and required secret names against the source.
+CI retains `cron-control-worker-<full source SHA>`; the production-only job downloads
+that tested artifact rather than rebuilding it. Keep explicit deployment approval
+and exact-SHA production follow-through outside ordinary main integration.
+
+Oxlint correctness rules are scoped to source/config files; Oxfmt configuration
+and `format:check` are available for explicit parity review. Repository Biome
+remains authoritative until the scope's formatting/rule/editor/generator gates
+migrate together. No global formatting or framework migrator is needed.
+
+The runtime fixture uses dummy credentials and tests complete health JSON and
+rejection of HTTP invocation paths. It never dispatches a scheduled event and
+cannot certify database recovery, web delivery, fanout or total-spend bounds.
+The existing four unit regressions preserve RPC-before-lookup ordering, idle skip,
+authenticated delivery, redirect rejection and failure short-circuiting with
+mocked downstream calls. A successful hosted schedule and terminal batch status,
+persistent attempt/age limits, independent stop and alert evidence remain separate
+acceptance work. The five-minute cadence and a delivery timeout are not total-spend caps.
+
+Keep pool/worker defaults in the unit config and the package script as `vp test`.
+Shared sharded CI appends its worker limit; validate `bun run test --maxWorkers=2`
+under Node 24 to ensure the script accepts that override without duplicate options.
+
+Vite+ 1.1.0 requires matching Vitest/coverage-v8 5.0.3. The root runner dependency,
+root override and provider are pinned together; test the coverage override with
+`bun run test --maxWorkers=2 --coverage` under Node 24. Ordinary tests alone do not
+exercise the coverage version guard. Keep that guard enabled.
+
+## Explicit immediate selection budget
+
+After authentication, the web route reads at most 256 KiB in 4,096 stream chunks
+before parsing JSON. Exceeding either bound returns HTTP 413, cancels the stream
+and starts no database/provider work. The byte ceiling fits 100 maximum-length
+IDs even when JSON-escaped. Malformed JSON retains HTTP 400. These request bounds do not
+cap automatic delivery work or account spending. A ten-second total body-read
+deadline returns HTTP 408 before database/provider work for stalled or slow
+streams; receiving a chunk does not renew it. Monotonic elapsed checks before
+and after each read, including end-of-stream, reject late reads even before the
+timer callback runs. Cancellation is best effort and
+cannot extend the deadline or replace an overflow/transport error.
+
+Authenticated explicit batch selection accepts at most 100 `batch_ids`, with the
+existing single-ID length bound applied to every ID. Oversized requests fail
+validation before database access; split manual requests instead of silently
+dropping IDs. Selection deduplicates IDs and uses one read capped at 100 rows.
+Unrequested batches stay pending; selected batches retain complete delivery logs
+and the existing atomic claims and ambiguous-send reconciliation fence.
+
+Automatic recovery (empty body) retains complete pagination. Capping its oldest
+window before root-workspace email filtering can repeatedly select ineligible
+batches and starve later eligible deliveries. Further automatic selection bounds
+require rollout-aware durable progress; do not silently truncate shared fetchAll
+results or mark partial delivery logs as a completed batch.
+
+The counted immediate-selection regressions cover explicit requests against
+1,001 queued batches, duplicates, no progress, database failures and complete
+automatic pagination. Request-budget and existing send-immediate route tests cover
+validation and provider replay safeguards. The bound does not cap logs per batch,
+devices, provider messages, automatic prefetch or recurring spend. Hosted delivery,
+row accounting, durable cancellation and independent-stop evidence remain follow-up.
+
+## Recovery request envelope
+
+One idle recovery invocation still sends two database requests: stale-batch
+requeue followed by the pending-batch lookup. A pending result adds one web delivery
+request. At the configured five-minute cadence, 288 distinct invocations therefore
+mean 576 database requests on an idle day, or 864 total requests when every lookup
+finds work. These are request counts under those assumptions, not billed rows or a
+hard daily cap; duplicate execution and downstream delivery fanout add work.
+
+A failed requeue stops before lookup. A failed delivery occurs after both database
+requests, so 24 independently retried calls perform 72 requests. The Worker has no
+persistent retry reservation or recurring lease expiry. Its 180-second AbortSignal
+covers web delivery; database recovery and lookup each use a 30-second
+request deadline, as described below. The lookup asks for one row but consumes the complete JSON
+response, so that query parameter does not prove a response-byte or storage-work cap.
+
+Before bounding this path, verify actual database recovery rows and downstream
+messages, reserve durable progress, bound every network phase and response read,
+and preserve pending batch recovery across failures. Test duplicate schedules,
+clock and stop/reschedule races rather than treating sequential helper calls as
+hosted alarm evidence. Controlled fetch probes establish request ordering/counts;
+real scheduled Worker, database, provider, authenticated independent-stop and alert
+acceptance remain separate gates.
+
+## Database request deadlines and redirects
+
+Cron Control gives stale-batch recovery and pending-batch lookup separate
+30-second AbortSignals. Lookup JSON consumption uses the same request signal;
+headers arriving before the deadline do not restart it. A timeout propagates and
+prevents subsequent lookup or delivery phases from starting. Recovery remains
+before lookup, and the existing web-delivery deadline remains 180 seconds.
+
+Database requests use manual redirects and reject non-success statuses, so the
+Worker does not follow a redirect with its database credentials. A failed request
+can have an unknown server-side outcome; preserve pending batches and the existing
+idempotent database recovery contract. Do not add an immediate re-enqueue loop to
+compensate for a timeout. The recurring schedule may retry later.
+
+These per-request limits bound waiting when fetch honors cancellation, not the
+number of recurring invocations, database rows, response bytes or provider messages.
+They do not establish finite background jobs, authenticated independent Stop or a
+spending cap. Worker unit tests cover stalled first/second phases, a stalled lookup
+body and redirect short-circuiting with controlled fetch/abort behavior. Require
+exact-head CI lint, types, tests and real emitted Worker checks; hosted scheduled
+recovery and database/provider acceptance remain separate gates.

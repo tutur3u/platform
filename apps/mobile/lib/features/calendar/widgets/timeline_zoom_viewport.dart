@@ -77,6 +77,15 @@ class _TimelineZoomViewportState extends State<TimelineZoomViewport>
   ];
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context) && _animation.isAnimating) {
+      _animation.stop();
+      _applyZoom(_animationEnd);
+    }
+  }
+
+  @override
   void didUpdateWidget(TimelineZoomViewport oldWidget) {
     super.didUpdateWidget(oldWidget);
     final target = calendarTimelineZoom(widget.zoom);
@@ -103,7 +112,12 @@ class _TimelineZoomViewportState extends State<TimelineZoomViewport>
       _captureAnchor((_viewport?.size.height ?? 0) / 2);
       _animationStart = _zoom;
       _animationEnd = target;
-      _animation.forward(from: 0);
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _animation.stop();
+        _applyZoom(target);
+      } else {
+        _animation.forward(from: 0);
+      }
     }
   }
 

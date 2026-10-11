@@ -1,34 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://nova.ai.vn/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://nova.ai.vn/" />
-    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.ai.vn/vi" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.ai.vn/" />
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <loc>https://nova.tuturuuu.com/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/" />
   </url>
   <url>
-    <loc>https://nova.ai.vn/vi</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://nova.ai.vn/" />
-    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.ai.vn/vi" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.ai.vn/" />
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <loc>https://nova.tuturuuu.com/vi</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/" />
   </url>
   <url>
-    <loc>https://nova.ai.vn/learn</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://nova.ai.vn/learn" />
-    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.ai.vn/vi/learn" />
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://nova.tuturuuu.com/learn</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn" />
   </url>
   <url>
-    <loc>https://nova.ai.vn/vi/learn</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://nova.ai.vn/learn" />
-    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.ai.vn/vi/learn" />
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://nova.tuturuuu.com/vi/learn</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/learn/introduction</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn/introduction" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn/introduction" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn/introduction" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/vi/learn/introduction</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn/introduction" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn/introduction" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn/introduction" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/learn/basic-techniques</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn/basic-techniques" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn/basic-techniques" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn/basic-techniques" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/vi/learn/basic-techniques</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn/basic-techniques" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn/basic-techniques" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn/basic-techniques" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/learn/advanced-strategies</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn/advanced-strategies" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn/advanced-strategies" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn/advanced-strategies" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/vi/learn/advanced-strategies</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn/advanced-strategies" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn/advanced-strategies" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn/advanced-strategies" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/learn/best-practices</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn/best-practices" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn/best-practices" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn/best-practices" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/vi/learn/best-practices</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/learn/best-practices" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/learn/best-practices" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/learn/best-practices" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/competitions/neo-league/prompt-the-future/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/competitions/neo-league/prompt-the-future/about" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/competitions/neo-league/prompt-the-future/about" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/competitions/neo-league/prompt-the-future/about" />
+  </url>
+  <url>
+    <loc>https://nova.tuturuuu.com/vi/competitions/neo-league/prompt-the-future/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nova.tuturuuu.com/competitions/neo-league/prompt-the-future/about" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://nova.tuturuuu.com/vi/competitions/neo-league/prompt-the-future/about" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nova.tuturuuu.com/competitions/neo-league/prompt-the-future/about" />
   </url>
 </urlset>

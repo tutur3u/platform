@@ -20,7 +20,7 @@ import {
   readTokenFromStdin,
   receiveTokenFromBrowser,
 } from './auth';
-import { runCalendarCommand } from './calendar';
+import { runCalendarFeedbackDispatch } from './calendar-feedback-dispatch';
 import {
   type CliConfig,
   clearHostScopedConfig,
@@ -34,6 +34,7 @@ import {
 } from './config';
 import { runDevboxCommandWithSession } from './devbox-session';
 import { runExternalCommand } from './external-admin';
+import { validateFeedbackCommand } from './feedback';
 import { runFinanceCommand } from './finance';
 import { getGlobalHelp, getHelpOutput } from './help';
 import {
@@ -2048,6 +2049,7 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
+  if (group === 'feedback') validateFeedbackCommand(positionals, flags, argv);
   let config = await readCliConfig();
   if (flags['no-update-check'] !== true && !isCliUpdateCheckDisabled()) {
     const nextConfig = await checkForCliUpdate({
@@ -2183,6 +2185,14 @@ export async function runCli(argv = process.argv.slice(2)) {
     }
   }
 
+  if (
+    await runCalendarFeedbackDispatch(
+      { client, flags, json, positionals },
+      () => getWorkspaceId(config, flags)
+    )
+  ) {
+    return;
+  }
   const workspaceId = getWorkspaceId(config, flags);
 
   if (group === 'external') {
@@ -2191,17 +2201,6 @@ export async function runCli(argv = process.argv.slice(2)) {
       flags,
       json,
       positionals: positionals.slice(1),
-      workspaceId,
-    });
-    return;
-  }
-
-  if (group === 'calendar') {
-    await runCalendarCommand({
-      client,
-      flags,
-      json,
-      positionals,
       workspaceId,
     });
     return;

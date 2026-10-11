@@ -1,5 +1,5 @@
 import { seedRecords } from '@tuturuuu/multiplayer';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vite-plus/test';
 import type { Env } from './env';
 import { executeImageTool } from './image-tool';
 

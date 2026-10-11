@@ -189,9 +189,9 @@ describe('resolveInternalAppUrl', () => {
       resolveInternalAppUrl({
         appName: 'nova',
         candidates: ['https://tuturuuu.com', 'https://learn.tuturuuu.com'],
-        fallback: 'https://nova.ai.vn',
+        fallback: 'https://nova.tuturuuu.com',
       })
-    ).toBe('https://nova.ai.vn');
+    ).toBe('https://nova.tuturuuu.com');
   });
 
   it('keeps custom app origins that are not registered to another app', () => {

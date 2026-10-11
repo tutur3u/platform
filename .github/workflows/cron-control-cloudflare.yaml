@@ -6,6 +6,7 @@ on:
       - '.github/workflows/cron-control-cloudflare.yaml'
       - 'apps/web/vercel.json'
       - 'bun.lock'
+      - 'package.json'
       - 'tuturuuu.ts'
   push:
     branches: [main]
@@ -14,6 +15,7 @@ on:
       - '.github/workflows/cron-control-cloudflare.yaml'
       - 'apps/web/vercel.json'
       - 'bun.lock'
+      - 'package.json'
       - 'tuturuuu.ts'
   workflow_dispatch:
   workflow_call:
@@ -47,10 +49,29 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - run: bun x --no-install wrangler types --env-interface CronControlEnv apps/cron-control/worker-configuration.d.ts -c apps/cron-control/wrangler.jsonc
-      - run: bun x --no-install tsc --project apps/cron-control/tsconfig.json
-      - run: bun x --no-install vitest run apps/cron-control/src/worker.test.ts
-      - run: bun x --no-install wrangler deploy --dry-run -c apps/cron-control/wrangler.jsonc
+      - run: bun run type-check
+        working-directory: apps/cron-control
+      - run: bun run lint
+        working-directory: apps/cron-control
+      - run: bun run test
+        working-directory: apps/cron-control
+      - name: Verify source Worker HTTP boundaries
+        run: node --test apps/cron-control/scripts/verify-worker-runtime.mjs
+      - name: Build the Vite-native Worker
+        run: bun run build
+        working-directory: apps/cron-control
+      - name: Verify emitted Worker identity and HTTP boundaries
+        env:
+          CRON_TEST_CONFIG: ${{ github.workspace }}/apps/cron-control/dist/worker/wrangler.json
+        run: node --test apps/cron-control/scripts/verify-worker-runtime.mjs
+      - run: bun x --no-install wrangler deploy --dry-run -c dist/worker/wrangler.json
+        working-directory: apps/cron-control
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: cron-control-worker-${{ github.sha }}
+          path: apps/cron-control/dist
+          retention-days: 7
+          if-no-files-found: error
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
@@ -72,7 +93,12 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: cron-control-worker-${{ github.sha }}
+          path: apps/cron-control/dist
       - name: Install Worker secrets
+        working-directory: apps/cron-control
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
           SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
@@ -81,8 +107,9 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" && test -n "$SUPABASE_URL" && test -n "$SUPABASE_SECRET_KEY" && test -n "$CRON_CONTROL_DELIVERY_TOKEN" || { echo 'Missing Cron Control credential'; exit 1; }
           node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "CRON_CONTROL_DELIVERY_TOKEN"]; fs.writeFileSync(process.env.RUNNER_TEMP + "/cron-control-secrets.json", JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });'
-          bun x --no-install wrangler secret bulk "$RUNNER_TEMP/cron-control-secrets.json" -c apps/cron-control/wrangler.jsonc
-      - run: bun x --no-install wrangler deploy -c apps/cron-control/wrangler.jsonc --message "$GITHUB_SHA"
+          bun x --no-install wrangler secret bulk "$RUNNER_TEMP/cron-control-secrets.json" -c wrangler.jsonc
+      - run: bun x --no-install wrangler deploy -c dist/worker/wrangler.json --message "$GITHUB_SHA"
+        working-directory: apps/cron-control
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
       - name: Record successful Cloudflare deployment

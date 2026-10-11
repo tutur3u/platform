@@ -91,8 +91,9 @@ class SettingsRepository {
     return prefs.getString(_themeModeKey) ?? 'system';
   }
 
-  Future<void> setThemeMode(String mode) async {
+  Future<void> setThemeMode(String mode, {bool Function()? shouldWrite}) async {
     final prefs = await SharedPreferences.getInstance();
+    if (shouldWrite?.call() == false) return;
     await prefs.setString(_themeModeKey, mode);
   }
 

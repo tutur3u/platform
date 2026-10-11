@@ -2,20 +2,21 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import {
+  commandFailure,
+  requireCommand,
+  safeFailure,
+  validateSupervisedCommand,
+} from './employee-validation-command.mjs';
+import {
   closedTap,
   expectedTapCounts,
   packets,
+  verifyAdmission,
   verifyPacketCounts,
   verifyStaged,
-  verifyAdmission,
 } from './employee-validation-core.mjs';
-import {
-  requireCommand,
-  safeFailure,
-  commandFailure,
-  validateSupervisedCommand,
-} from './employee-validation-command.mjs';
 import { daemonArguments } from './employee-validation-host.mjs';
+
 const recoveryByError = new WeakMap();
 export const getAttemptRecovery = (error) => recoveryByError.get(error) ?? null;
 const secondaryFailure = (error, phase) => ({

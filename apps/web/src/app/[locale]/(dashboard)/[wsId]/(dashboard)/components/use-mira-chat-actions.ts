@@ -7,7 +7,7 @@ import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import type { Dispatch, SetStateAction } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { resetGenerativeUIStore } from '@/components/json-render/generative-ui-store';
 import type { MessageFileAttachment } from './file-preview-chips';
 import type { ThinkingMode } from './mira-chat-constants';
@@ -71,8 +71,39 @@ export function useMiraChatActions({
   thinkingMode,
   wsId,
 }: UseMiraChatActionsParams) {
+  const pendingOwnerRef = useRef<{ workspace: string } | null>(null);
+  const generationRef = useRef(0);
+  const mountedRef = useRef(true);
+  const workspaceRef = useRef(wsId);
+  if (workspaceRef.current !== wsId) generationRef.current++;
+  workspaceRef.current = wsId;
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      generationRef.current++;
+      pendingOwnerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const owner = pendingOwnerRef.current;
+    if (owner && owner.workspace !== wsId) {
+      pendingOwnerRef.current = null;
+      setPendingPrompt(null);
+    }
+  }, [wsId, setPendingPrompt]);
+
   const { mutateAsync: createChatMutation } = useMutation({
-    mutationFn: async (userInput: string) => {
+    retry: false,
+    mutationFn: async ({
+      userInput,
+      current,
+    }: {
+      userInput: string;
+      current: () => boolean;
+    }) => {
+      if (!current()) return null;
       if (gatewayModelId.startsWith('chatgpt/')) {
         const data = await createChatGPTChat({
           id: stableChatId,
@@ -117,41 +148,84 @@ export function useMiraChatActions({
         userInput,
       };
     },
-    onSuccess: (data, userInput) => {
-      setChat({
-        id: data.id,
-        title: data.title,
-        model: gatewayModelId,
-        is_public: false,
-      });
-      setStoredChatId(data.id);
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}${wsId}`, data.id);
-      sendMessageWithCurrentConfig({
-        id: generateRandomUUID(),
-        role: 'user',
-        parts: [{ type: 'text', text: userInput }],
-      });
-      setPendingPrompt(null);
-    },
-    onError: () => {
-      toast.error(t('error'));
-      setPendingPrompt(null);
-    },
   });
 
   const createChat = useCallback(
-    async (userInput: string) => {
+    async (
+      userInput: string,
+      isCurrent?: () => boolean,
+      onChatCreated?: (chatId: string) => void
+    ) => {
+      const generation = generationRef.current;
+      const live = () =>
+        mountedRef.current &&
+        generation === generationRef.current &&
+        workspaceRef.current === wsId;
+      if (!live() || !(isCurrent?.() ?? true)) return false;
       if (model.disabled) {
         setInput(userInput);
-        return;
+        return false;
       }
+      const owner = { workspace: wsId };
+      pendingOwnerRef.current = owner;
+      const current = () =>
+        live() && pendingOwnerRef.current === owner && (isCurrent?.() ?? true);
+      const clearOwnedPrompt = () => {
+        // Cancellation revokes dispatch, not cleanup of this attempt's prompt.
+        if (live() && pendingOwnerRef.current === owner) {
+          pendingOwnerRef.current = null;
+          setPendingPrompt(null);
+        }
+      };
       setPendingPrompt(userInput);
-      await createChatMutation(userInput).catch(() => {});
+      try {
+        const data = await createChatMutation({ userInput, current });
+        // Remote creation may have succeeded. A superseded result does not
+        // authorize local state, storage, or another message dispatch.
+        if (!data || !current()) return false;
+        onChatCreated?.(data.id);
+        if (!current()) return false;
+        setChat({
+          id: data.id,
+          title: data.title,
+          model: gatewayModelId,
+          is_public: false,
+        });
+        setStoredChatId(data.id);
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}${wsId}`, data.id);
+        const accepted = await sendMessageWithCurrentConfig({
+          id: generateRandomUUID(),
+          role: 'user',
+          parts: [{ type: 'text', text: userInput }],
+        });
+        if (!current()) return false;
+        return accepted !== false;
+      } catch {
+        if (current()) {
+          toast.error(t('error'));
+        }
+        return false;
+      } finally {
+        clearOwnedPrompt();
+      }
     },
-    [model.disabled, setInput, setPendingPrompt, createChatMutation]
+    [
+      model.disabled,
+      setInput,
+      setPendingPrompt,
+      createChatMutation,
+      setChat,
+      setStoredChatId,
+      gatewayModelId,
+      sendMessageWithCurrentConfig,
+      t,
+      wsId,
+    ]
   );
 
   const resetConversationState = useCallback(() => {
+    generationRef.current++;
+    pendingOwnerRef.current = null;
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}${wsId}`);
     localStorage.setItem(
       `${WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX}${wsId}`,

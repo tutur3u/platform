@@ -1,0 +1,113 @@
+---
+title: "SEO strategy across Tuturuuu"
+description: "Search intent, canonical ownership, product and docs content, privacy, localization, and measurable outcomes."
+updatedAt: '2026-10-08'
+---
+
+## Goals and audience
+
+Help someone discover the appropriate product, understand a concrete workflow,
+verify the implementation contract, and start an eligible workspace experience.
+Keep private content out of search. Measure qualified discovery and successful
+onboarding rather than treating raw indexed URL count as the goal.
+
+| Search intent | Canonical content | Next useful destination |
+| --- | --- | --- |
+| Tuturuuu identity and capabilities | Web homepage, about, product directory | Product page and docs getting started |
+| Tasks/calendar/time planning | Web Tasks/Calendar/Track pages | App guide, scheduling rules, private app entry |
+| CRM/forms/business operations | Web CRM/Forms/Finance/Inventory pages | App guide, permission and publishing details |
+| Shopping for a published product | Owning Storefront product page | Store/cart; private checkout stays unindexed |
+| Learning a subject or tool | Nova public lessons, Tools pages, docs learning guides | Relevant practice or authenticated product |
+| Creating and discovering worlds | Tulletin landing, public explorer, published world | Creator content and authorized private studio |
+| Integrating or operating Tuturuuu | Docs SDK/API/package/runtime guides | Source-derived route/version references |
+
+## Own one public URL per purpose
+
+Web owns broad product and solution descriptions. The satellite owns the usable
+public tool or published content when it serves one. Docs owns learning and
+integration contracts. Link these together with meaningful labels rather than
+copying the same landing page onto every host. Preserve redirect aliases when
+moving a public page; update canonicals, internal links, and sitemap ownership
+together.
+
+Every indexable page needs a specific title, an accurate description, a
+self-consistent canonical, and a useful server-rendered introduction. Metadata
+must describe visible behavior and actual availability. Avoid unsupported
+customer counts, ratings, compliance claims, AI autonomy, or inferred features
+from a retained route. A keyword tag does not replace useful content.
+
+## Build content around actual workflows
+
+A product guide explains purpose, access, the common workflow, outcomes,
+limitations, and related products. Feature pages record scope, defaults,
+exceptions, and regression evidence. Tutorials teach one reproducible task.
+Reference pages identify contracts and versions. Troubleshooting pages map a
+symptom to the owning boundary and observable evidence.
+
+Use the [product directory](/platform/applications/overview),
+[getting started](/platform/guides/getting-started),
+[workflows](/platform/guides/workflows), and
+[repository inventory](/reference/repository/catalog) as the content hubs.
+Prefer substantive first-party explanations over automatically creating thin
+pages for every keyword, API handler, query variant, or unsupported use case.
+Generated route references locate source; they do not replace product tutorials.
+
+## Localization and social discovery
+
+Web and Nova public pages use unprefixed English and `/vi` Vietnamese URLs.
+Distinct language pages need reciprocal hreflang and an English `x-default`.
+Canonical URLs exclude tracking/search parameters. Public apps that use one
+stable URL with locale preferences do not advertise fictitious translations.
+Maintain user-visible metadata copy in both message bundles when adding strings.
+
+Use the actual page/product title and description in Open Graph and Twitter
+cards. Use valid absolute images and meaningful alt text. Private record names,
+bearer tokens, emails, submitted answers, and hidden-case data must not leak into
+public schemas, titles, or discovery feeds.
+
+## Technical requirements
+
+- Apply the [shared indexing policy](/platform/features/search-indexing) to every
+  Next app and new route; default private routes to noindex.
+- Keep sitemap URLs on the owning host. Include only canonical, indexable,
+  successful content. Do not publish auth, order-token, cart, or checkout URLs.
+- Use a publication-aware anonymous reader for dynamic discovery. An admin query
+  or signed-in session must not expand a public sitemap.
+- Use real publication/update timestamps for `lastmod`; omit it when no reliable
+  timestamp exists. Do not mark every static page fresh on each request/build.
+- Keep redirects and noindex responses crawlable so search engines can see them.
+- Serve real 404s for missing published content, maintain redirect continuity for
+  moved public pages, and avoid soft-404 success pages in sitemaps.
+- Keep important copy and links in server HTML. Deferred interactive demos must
+  not be the only explanation of a product.
+- Use structured data only for actual visible entities. Organization/WebSite/
+  WebPage/WebApplication can describe the platform; product, article, or other
+  schemas require the corresponding real content and data. Do not fabricate
+  reviews or expect a rich-result guarantee.
+- Noindex preview/staging and inactive migration shells. Authentication and
+  authorization remain independent of SEO.
+
+## Measurement and review
+
+For each verified release, inspect served headers, HTML, canonical/hreflang,
+sitemap and robots responses, and publication/access edge cases. Submit the
+owning public sitemaps through authorized Search Console/Bing accounts. Track:
+
+| Measure | Interpretation |
+| --- | --- |
+| Canonical indexed public pages | Compare declared eligible pages with Google's selected canonical/status |
+| Excluded private pages | Investigate any private route indexed or eligible unexpectedly |
+| Impressions and clicks by intent/page | Discover gaps in copy, topics, and public page usefulness |
+| Qualified app opens/onboarding | Connect discovery to an actual useful next step, with privacy-aware analytics |
+| Documentation task completion | Use feedback/search failures to prioritize missing instructions |
+| Crawl errors, redirects, and stale sitemaps | Find implementation/ownership drift |
+
+Establish a baseline before interpreting changes. Compare the same window and
+intent/page groups, accounting for release timing and seasonality. Search indexing
+and ranking are external outcomes; passing code checks does not prove either.
+Search Console account access, submission, and production deployment require
+their own authorized delivery scope.
+
+References: [Google developer SEO](https://developers.google.com/search/docs/fundamentals/get-started-developers),
+[localized versions](https://developers.google.com/search/docs/specialty/international/localized-versions),
+and [sitemap guidance](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap).

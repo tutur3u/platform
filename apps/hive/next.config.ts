@@ -14,6 +14,7 @@ const HIVE_REALTIME_HTTP_URL =
   getTuturuuuPortlessAppOrigin('hive-realtime');
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'hive',
   ...(hiveDockerBuild ? { output: 'standalone' } : {}),
   ...(hiveDockerBuild
     ? {

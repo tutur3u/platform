@@ -8,6 +8,7 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  seoApp: 'pay',
   async rewrites() {
     return {
       beforeFiles: [],

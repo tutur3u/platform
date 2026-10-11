@@ -73,27 +73,19 @@ export default function PostsClient({
   });
   const rawSearchParams = useMemo<PostsSearchParams>(
     () => ({
-      approvalStatus:
-        queryState.approvalStatus ?? searchParams.approvalStatus ?? undefined,
-      end: queryState.end ?? searchParams.end ?? undefined,
-      excludedGroups:
-        (queryState.excludedGroups?.length ?? 0) > 0
-          ? queryState.excludedGroups
-          : (searchParams.excludedGroups ?? undefined),
-      includedGroups:
-        (queryState.includedGroups?.length ?? 0) > 0
-          ? queryState.includedGroups
-          : (searchParams.includedGroups ?? undefined),
+      approvalStatus: queryState.approvalStatus ?? undefined,
+      end: queryState.end ?? undefined,
+      excludedGroups: queryState.excludedGroups,
+      includedGroups: queryState.includedGroups,
       page: currentPage,
       pageSize: currentPageSize,
-      queueStatus:
-        queryState.queueStatus ?? searchParams.queueStatus ?? undefined,
-      showAll: queryState.showAll ?? searchParams.showAll ?? undefined,
-      stage: queryState.stage ?? searchParams.stage ?? undefined,
-      start: queryState.start ?? searchParams.start ?? undefined,
-      userId: queryState.userId ?? searchParams.userId ?? undefined,
+      queueStatus: queryState.queueStatus ?? undefined,
+      showAll: queryState.showAll ?? undefined,
+      stage: queryState.stage ?? undefined,
+      start: queryState.start ?? undefined,
+      userId: queryState.userId ?? undefined,
     }),
-    [currentPage, currentPageSize, queryState, searchParams]
+    [currentPage, currentPageSize, queryState]
   );
   const effectiveSearchParams = useMemo<PostsSearchParams>(() => {
     const withDefaultStage = applyDefaultPostStageFilter(rawSearchParams);
@@ -179,41 +171,15 @@ export default function PostsClient({
         workspacePostsQuery
       ),
     enabled: canFetchPosts,
-    placeholderData: (previousData) => previousData,
   });
   const loadError = bootstrapError ?? postsError;
   const isInitialLoading =
-    isBootstrapLoading || (isLoading && !postsResponse) || !canFetchPosts;
+    isBootstrapLoading ||
+    (!loadError && ((isLoading && !postsResponse) || !canFetchPosts));
   const postsData = postsResponse
     ? { count: postsResponse.count, data: postsResponse.data }
     : { count: 0, data: [] as PostEmail[] };
-  const postsStatus =
-    postsResponse?.summary ??
-    ({
-      approvals: { approved: 0, pending: 0, rejected: 0, skipped: 0 },
-      queue: {
-        blocked: 0,
-        cancelled: 0,
-        failed: 0,
-        processing: 0,
-        queued: 0,
-        sent: 0,
-        skipped: 0,
-      },
-      stages: {
-        approved_awaiting_delivery: 0,
-        delivery_failed: 0,
-        missing_check: 0,
-        pending_approval: 0,
-        processing: 0,
-        queued: 0,
-        rejected: 0,
-        sent: 0,
-        skipped: 0,
-        undeliverable: 0,
-      },
-      total: 0,
-    } as PostEmailStatusSummary);
+  const postsStatus = postsResponse?.summary;
 
   const handleSetParams = useCallback(
     (params: { page?: number; pageSize?: string }) => {
@@ -303,7 +269,7 @@ export default function PostsClient({
 
       {isInitialLoading ? (
         <PostStatusSummarySkeleton />
-      ) : (
+      ) : postsStatus && !loadError ? (
         <PostStatusSummary
           activeStage={activeStage}
           summary={postsStatus}
@@ -317,20 +283,22 @@ export default function PostsClient({
             ) : null
           }
         />
-      )}
+      ) : null}
 
       <Card className="min-w-0 border-border/60 shadow-sm">
         <CardHeader className="space-y-1 pb-3">
           <CardTitle className="text-base">
-            {t('ws-post-emails.matching_recipients', {
-              filtered: postsData?.count || 0,
-              total: postsStatus.total,
-            })}
+            {postsStatus && !loadError
+              ? t('ws-post-emails.matching_recipients', {
+                  filtered: postsResponse?.count ?? postsStatus.total,
+                  total: postsStatus.total,
+                })
+              : t('ws-post-emails.total_recipients')}
           </CardTitle>
         </CardHeader>
         <CardContent className="min-w-0">
           <div className="relative min-h-144 overflow-y-auto">
-            {loadError && !postsResponse ? (
+            {loadError ? (
               <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-muted-foreground">
                 <p>{t('common.error_loading_data')}</p>
                 <Button

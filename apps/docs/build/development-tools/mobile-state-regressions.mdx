@@ -3,6 +3,25 @@ title: 'Mobile state and lifecycle regressions'
 description: 'Diagnose retained state, owned overlays, and asynchronous mobile failures with real host coverage.'
 ---
 
+## Separate repeated push handling from duplicate Mail events
+
+Mobile startup initializes push handling before a restored auth session starts.
+Both entry paths must await the same initialization so one foreground delivery
+has one receiver. Fetch the cold-start message before attaching listeners;
+a failed lookup must not leave a receiver behind when setup retries.
+`push_notification_initialization_test.dart` exercises overlapping setup,
+retry after failure, disposal, and distinct notifications through the service.
+
+Duplicates on both Web and mobile lists require a separate producer diagnosis.
+Mail receipts prevent re-enqueue of the same message for the same recipient;
+forwarding can create distinct messages in different mailboxes. Compare redacted
+notification, message, mailbox, receipt and batch identities before changing
+that policy. A client display fix does not prove a shared producer issue resolved.
+
+Web notification type labels interpolate runtime types, which the static key
+scanner cannot enumerate. `notification-type-translations.test.ts` checks the
+incoming Mail label in both owning Web bundles, including a key absent from both.
+
 ## Remove the route owned by the departed session
 
 An account or workspace switch can happen while an editor is covered by another
@@ -100,3 +119,22 @@ closure. A new queue remains able to synchronize the current actor's resources.
 `offline_queue_disposal_regression_test.dart` covers held connectivity, actor
 ABA, disposal before/during initialization, replacement queues, and admitted
 ordinary and inventory acknowledgments using a real scoped temporary cache.
+
+## Measure the Mira composer after layout
+
+Mira text entry grows from one to five lines. Enter inserts a newline; the side
+primary action sends the draft. Keep the existing controller, focus, attachment,
+and restoring-state admission when adjusting this widget.
+
+The composer reports its rendered height to the assistant page. Use that height
+for transcript padding and scroll-to-bottom clearance, including the shell
+surface border. A one-line text estimate cannot cover wrapped drafts or enlarged
+text inside the published shell slot. Keep the system safe area separate from
+an IME inset already consumed by the shell Scaffold.
+
+Run `assistant_composer_multiline_test.dart` and
+`assistant_composer_geometry_test.dart` under
+`apps/mobile/test/features/assistant/widgets` before `bun check:mobile`. The
+geometry regression renders the real composer in `PersistentShellDock` and
+checks multiline growth, large text, keyboard and physical safe-area variants.
+These fixtures do not establish authenticated native-device behavior.

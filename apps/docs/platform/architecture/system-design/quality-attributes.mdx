@@ -1,7 +1,7 @@
 ---
 title: "Quality Attributes"
 description: "Maintainability, testability, and deployability in Tuturuuu's architecture"
-updatedAt: "2026-06-21"
+updatedAt: '2026-10-08'
 ---
 
 This document covers three critical quality attributes that are foundational to long-term system success: **Maintainability** (the ease of evolving and fixing the system), **Testability** (the ability to verify system correctness), and **Deployability** (the ease and safety of releasing changes).
@@ -14,9 +14,11 @@ These quality attributes are not added after the fact but are designed into the 
 **How to read this page.** Several patterns below (Hexagonal Architecture, ports/adapters, event sourcing, replay testing) are presented as **teaching models**, not as a description of the current codebase. Tuturuuu's apps are conventional **Next.js App Router** apps (plus a Rust backend) that share a single Supabase project — there are no `domain/`/`infrastructure/` hexagonal layers, no event store, and no per-app inter-service contracts package. Code samples that show those layers are **illustrative**; sections labeled **"In Tuturuuu today"** describe the real, verifiable structure. Treat the rest as design guidance for how we want isolated modules to behave.
 </Warning>
 
-<Info>
-**Active migration.** `apps/web` (Next.js, port `7803`) is being incrementally replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). The maintainability and deployability properties described here are being carried forward into that target architecture. See [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration) for the current state.
-</Info>
+The maintained runtime is Next.js Web and its satellite apps. Rust
+(`apps/backend`) and TanStack Start (`apps/tanstack-web`) are paused and not in
+use. Docker setup is inactive and the Docker cron runner is retired. Retained
+migration designs describe a possible future, not live traffic or a current
+setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 <Info>
 To understand how different architectural patterns affect these quality attributes, see [Architectural Patterns Comparison](/platform/architecture/system-design/architectural-patterns-comparison).
@@ -42,7 +44,7 @@ In a monolithic, tightly-coupled system, understanding how to make a change requ
 ```text
 apps/
 ├── web/          // Main Next.js platform (port 7803) - workspace management
-├── tanstack-web/ // TanStack Start successor to apps/web (migration in progress)
+├── tanstack-web/ // TanStack Start successor to apps/web (migration paused)
 ├── backend/      // Rust backend (port 7820)
 ├── finance/      // Finance surface
 ├── calendar/     // Calendar surface
