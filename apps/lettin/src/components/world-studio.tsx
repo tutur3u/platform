@@ -14,6 +14,7 @@ import { CreatorCalendarPlan } from './creator-calendar-plan';
 import { DuplicateEntry } from './duplicate-entry';
 import { EntryEditor } from './entry-editor';
 import { useNavigationGuard } from './navigation-guard';
+import { NotebookCopy } from './notebook-copy';
 import { NotebookExport } from './notebook-export';
 import { QuickNote } from './quick-note';
 import { initialWikiFilters } from './wiki-browse-model';
@@ -122,6 +123,15 @@ export function WorldStudio({
             {t('planTask')} <ArrowUpRight size={16} />
           </a>
         )}
+
+        <NotebookCopy
+          wsId={wsId}
+          worldId={worldId}
+          worldRole={data.role}
+          sourceVersion={data.world.version}
+          sourceTitle={data.world.draft.title}
+          disabled={dirty}
+        />
 
         <NotebookExport
           wsId={wsId}

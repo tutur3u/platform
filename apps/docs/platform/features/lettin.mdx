@@ -1695,3 +1695,53 @@ They do not change public catalogue/profile surfaces. Regression evidence:
 combined facets, empty recovery, workspace reset, revoked access and both language
 bundles. These rendered fixtures do not replace exact-head CI or hosted account and
 workspace acceptance.
+
+## Reviewed private notebook copies
+
+A notebook owner can use **Copy notebook** in the private notebook studio to
+prepare an independent private copy in the same workspace. The owner names the
+copy and explicitly consents to copying all saved drafts and entries. The first
+submission exports through the existing owner-only saved-draft endpoint and
+creates a server-validated import preview. The owner reviews the title, entry
+list and import boundaries, then separately confirms creation. Opening the dialog
+or preparing the preview does not create a notebook.
+
+The copy uses existing export/import limits, projection and relationship-ID
+remapping. It copies saved source documents with artwork/image sources and
+hyperlink marks removed by the existing importer, excludes unsaved
+editor changes, and transfers no collaborators, profile information or private
+safety records. It stays unpublished and is not synchronized with the source.
+Existing staged imports and new copies retain their actor/workspace permissions.
+The saved export uses bounded sequential reads rather than an atomic snapshot;
+the portable payload is independent of later source edits. Observing a new saved
+version in the Studio discards the current review and requires a new preview.
+
+The control is available only to owners, requires a current workspace actor and
+a clean editor, and resets consent and review when the actor, workspace, source,
+saved version or dirty state changes. Closing, backing out or unmounting cancels
+continuation into later API stages. Backing out requires fresh consent and a new
+source read. The server remains authoritative for source export and destination
+import permissions. An already submitted creation may finish after closure; the
+client cannot undo it and does not retry it automatically.
+
+A confirmed creation is shown even if the Studio refresh fails, with a link to
+the new notebook and an explicit warning against creating it again. An uncertain
+creation result blocks another submission and asks the owner to check the Studio.
+Regression evidence: `notebook-copy.test.tsx` covers staged consent, no automatic
+creation, source/actor/version/dirty fences, closure, duplicate submissions and
+truthful refresh/uncertain outcomes. Existing export/import API and D1 tests
+retain server-boundary coverage. UI/transport fixtures are doubled; exact-head CI
+and hosted browser acceptance remain separate delivery gates.
+
+
+Copy creation receipts are scoped to the current actor, workspace and source
+notebook in browser-session storage. Closing or reopening the dialog, or a
+transient saved-version/dirty-state remount, resets consent and review but does
+not clear an admitted unknown or confirmed creation. A submitted creation's
+response may update its scoped receipt after closure without refreshing stale
+Studio state. Unknown acceptance blocks a fresh creation; inspect the Studio
+before proceeding. No automatic retry or reconciliation write is performed.
+An unavailable receipt store blocks apply before transport. These receipts contain
+only mutation and destination identifiers, never notebook content.
+The existing notebook import sanitizer removes artwork/image sources and
+hyperlink marks while retaining safe text; copies do not keep artwork URL references.
