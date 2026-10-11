@@ -6,6 +6,11 @@ on:
         description: Exact reviewed creation/restoration stack commit (40 hex characters)
         required: true
         type: string
+      structured_provenance:
+        description: Diagnostic-only two-statement provenance; never 172 qualification
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -27,6 +32,7 @@ jobs:
     env:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
+      EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
     steps:
       - name: Require the enabled schema gate
         env:
@@ -34,6 +40,9 @@ jobs:
         run: test "$CONTRACT_ENABLED" = true
       - name: Validate exact source selection
         run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA)) process.exit(1)'
+      - name: Validate structured diagnostic selection
+        if: inputs.structured_provenance == true
+        run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/main" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5c7c08e23a3d410bdbdc066f5c4dd2776fbeabd7") process.exit(1)'
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
@@ -55,17 +64,31 @@ jobs:
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
+      - name: Verify diagnostic-only provenance parser
+        run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
       - name: Apply full isolated schema and qualify 172 rollback assertions
+        if: inputs.structured_provenance != true
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs
+      - name: Collect diagnostic-only structured exception provenance
+        if: inputs.structured_provenance == true
+        working-directory: source
+        run: node ../apps/database/scripts/verify-employee-failure-provenance.mjs
       - name: Stop only this exact owned isolated database
         if: always()
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs --cleanup
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: always() && inputs.structured_provenance != true
         with:
           name: employee-schema-${{ inputs.source_sha }}-${{ github.run_id }}
           path: ${{ runner.temp }}/employee-schema-receipts/qualification.json
+          if-no-files-found: error
+          retention-days: 3
+      - uses: actions/upload-artifact@v7
+        if: always() && inputs.structured_provenance == true
+        with:
+          name: employee-provenance-${{ inputs.source_sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/employee-schema-receipts/provenance.json
           if-no-files-found: error
           retention-days: 3
