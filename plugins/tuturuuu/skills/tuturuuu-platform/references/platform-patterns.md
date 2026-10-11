@@ -634,12 +634,19 @@ and remaining acceptance evidence; release builds stay in CI.
 
 Reuse the existing notebook entry-kind list and authorized create command for
 plain text capture. Default to a page, retain the selected kind on failure, and
-reset it only after successful capture or context replacement. Keep pending and
+reset it only after successful capture, explicit confirmed local discard or context replacement. Keep pending and
 dirty-editor fences on every input, including kind selection. Do not inject
 structured starter metadata or publish captured entries implicitly. Cover the
 supported kinds against the draft schema, translated rendered labels and actual
 D1 publication/workspace/revocation boundaries; local fixtures do not establish
 hosted dialog acceptance. See the Lettin feature decision and quick-note tests.
+
+Local draft discard requires an explicit review and confirmation, leaving saved
+entries untouched. Closing the form preserves its nondurable draft and dismisses
+discard review. Fence save, editing and discard against pending commands and editor
+blocking; check the handler as well as disabled buttons. Regression coverage should
+exercise cancellation, close/reopen, context boundaries and the saved-entry Open
+action after a later local discard.
 
 ### Local D1 quota fixtures
 

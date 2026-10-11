@@ -903,9 +903,18 @@ offers a separate Open action; opening remains disabled while the current editor
 has unsaved changes. Notebook/workspace context replacement resets local capture.
 Publishing still requires the existing separate role and revision checks.
 
+Closing the quick-note form keeps its local draft until notebook/workspace context
+replacement, leaving the studio, or reloading. Discard draft opens an inline review
+with Keep draft and Confirm discard choices. Only confirmation clears the local
+title, text and selected entry type; saved entries and the latest saved-entry Open
+action remain intact. Editing and saving are paused during this review, and editor
+blocking or pending creation also blocks discard. This control neither deletes
+stored content nor changes publication, collaborator access or source sharing.
+
 Regression evidence: `quick-note-model.test.ts` validates bounds and actual draft
 schema; `quick-note.test.tsx` covers commands, failure, repeated submits, pending
-and dirty-navigation fences and context resets. `storage.test.ts` uses local D1
+and dirty-navigation fences, context resets, translated discard review, cancellation,
+local-only confirmation and preservation of saved entries. `storage.test.ts` uses local D1
 to verify saved private notes, public omission and workspace/revocation boundaries.
 These fixtures do not establish hosted dialog or keyboard acceptance.
 
