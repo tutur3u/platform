@@ -50,42 +50,37 @@ function readCompositeStep(action, name) {
   return action.slice(start, next === -1 ? undefined : next);
 }
 
-test('docs-only changes skip all Vercel deploy workflows', () => {
+function assertVercelControlScope(changedFiles, platformGate = false) {
   const rootDir = createFixtureRoot();
-
   for (const workflowName of vercelWorkflows) {
-    assertWorkflowDecision(
-      {
-        changedFiles: ['apps/docs/build/devops/github-actions-runbook.mdx'],
-        rootDir,
-        workflowName,
-      },
-      false
-    );
+    const expected = platformGate && workflowName.includes('-platform.');
+    assertWorkflowDecision({ changedFiles, rootDir, workflowName }, expected);
   }
+  assertWorkflowDecision(
+    { changedFiles, rootDir, workflowName: 'mobile.yaml' },
+    true
+  );
+}
+
+test('docs-only changes skip all Vercel deploy workflows', () => {
+  assertVercelControlScope([
+    'apps/docs/build/devops/github-actions-runbook.mdx',
+  ]);
 });
 
-test('CI orchestration changes do not rebuild application artifacts', () => {
-  const rootDir = createFixtureRoot();
-  const changedFiles = [
+test('CI wrappers do not rebuild application artifacts', () => {
+  assertVercelControlScope([
     '.github/workflows/ci-check.yml',
     '.github/workflows/vercel-production.yaml',
     'scripts/ci/resolve-production-vercel-targets.ts',
-    'scripts/ci/workflow-config-core.ts',
-    'tuturuuu.ci.ts',
-    'tuturuuu.ts',
-  ];
+  ]);
+});
 
-  for (const workflowName of vercelWorkflows) {
-    assertWorkflowDecision(
-      {
-        changedFiles,
-        rootDir,
-        workflowName,
-      },
-      false
-    );
-  }
+test('database CI controls retain only the required platform deployment', () => {
+  assertVercelControlScope(
+    ['scripts/ci/workflow-config-core.ts', 'tuturuuu.ci.ts', 'tuturuuu.ts'],
+    true
+  );
 });
 
 test('app-only changes run only that app', () => {

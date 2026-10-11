@@ -1,0 +1,27 @@
+---
+title: Employee schema qualification
+description: Qualify the employee creation and restoration schema in an exact-source disposable database.
+---
+
+Run `employee-schema-contract.yaml` from a reviewed control revision and set
+`source_sha` to the full reviewed creation/restoration stack commit. The workflow
+checks out that exact source separately; it never substitutes current main or
+connects to staging or production. Its installed CLI starts a disposable
+full-migration Supabase project using the same isolated runner as the Tutoring
+contract gates. Startup/reset and each fixture are bounded; an always-run cleanup
+step stops only the owned project, without retaining a database backup.
+
+The foundation gate requires all five packets: signup guards (25), administrator
+(20), finalization (34), identity contract (52), and restoration (41). Each packet
+must emit one complete, sequential, non-skipped pgTAP plan and close its synthetic
+transaction with rollback. Missing packets, a different count, failed SQL,
+truncated output, or unsuccessful cleanup fail the gate. The private command
+output is not uploaded; the small JSON artifact binds the exact source and fixture
+hashes to the 172 assertions and cleanup outcome.
+
+Verify the helper with
+`node --test apps/database/scripts/employee-schema-tap.test.mjs`.
+A green schema result is not native admission/lease/fence qualification, a GoTrue
+or provider transaction, employee activation, or production SQL application.
+The feedback layer's 105 assertions remain a separate later stack qualification;
+they are not silently included or waived by this foundation job.
