@@ -8,6 +8,7 @@ import {
   foundationPackets,
   schemaFailureDiagnostic,
   schemaReceipt,
+  signupCaughtDiagnostics,
 } from './employee-schema-tap.mjs';
 
 const tap = (count) =>
@@ -226,4 +227,113 @@ test('failed assertion ordinals deny oversized output without raw leakage', () =
   assert.equal(diagnostic.assertionOrdinalsValid, false);
   assert.deepEqual(diagnostic.failedAssertionOrdinals, []);
   assert.equal(JSON.stringify(diagnostic).includes('PRIVATE'), false);
+});
+
+const caughtTap = (ordinal, code, message) =>
+  `not ok ${ordinal} - PRIVATE description\n# Failed test ${ordinal}: "PRIVATE"\n#       caught: ${code}: ${message}\n#       wanted: 23514: ${ordinal === 22 ? 'Employee creation intent is missing' : 'Employee creation must remain confirmed and pending'}\n`;
+test('signup caught diagnostic recognizes both fixed contracts', () => {
+  for (const [ordinal, message] of [
+    [22, 'Employee creation intent is missing'],
+    [23, 'Employee creation must remain confirmed and pending'],
+  ]) {
+    const [value] = signupCaughtDiagnostics(
+      caughtTap(ordinal, '23514', message),
+      [ordinal]
+    );
+    assert.equal(value.actualSqlstate, '23514');
+    assert.equal(value.expectedMessageMatches, true);
+    assert.equal(value.diagnosticValid, true);
+    assert.equal(value.noException, false);
+  }
+});
+test('signup caught diagnostic distinguishes another SQLSTATE', () => {
+  const [value] = signupCaughtDiagnostics(
+    caughtTap(22, '42501', 'Employee creation intent is missing'),
+    [22]
+  );
+  assert.equal(value.actualSqlstate, '42501');
+  assert.equal(value.expectedMessageMatches, true);
+  assert.equal(value.expectedSqlstate, '23514');
+});
+test('signup caught diagnostic exposes no unexpected sensitive message', () => {
+  const tap = caughtTap(23, '23514', 'password=PRIVATE token=SECRET');
+  const value = schemaFailureDiagnostic('packet-tap', 1, { stdout: tap });
+  assert.equal(value.signupExceptions[0].expectedMessageMatches, false);
+  for (const text of [
+    'PRIVATE',
+    'SECRET',
+    'password',
+    'token',
+    'caught:',
+    'wanted:',
+  ]) {
+    assert.equal(JSON.stringify(value).includes(text), false);
+  }
+});
+test('signup caught diagnostic denies missing or unknown caught formats', () => {
+  for (const line of [
+    '# caught: no exception',
+    '# caught: PRIVATE',
+    '# caught: 123: PRIVATE',
+  ]) {
+    const tap = `not ok 22\n# Failed test 22: "PRIVATE"\n${line}\n`;
+    const [value] = signupCaughtDiagnostics(tap, [22]);
+    assert.equal(value.diagnosticValid, false);
+    assert.equal(value.actualSqlstate, null);
+    assert.equal(value.expectedMessageMatches, null);
+    assert.equal(value.noException, null);
+  }
+});
+test('signup caught diagnostic denies duplicate or mismatched headers', () => {
+  const tap = caughtTap(22, '23514', 'PRIVATE');
+  for (const bad of [
+    `${tap}# caught: 23514: PRIVATE\n`,
+    tap.replace('Failed test 22:', 'Failed test 23:'),
+    `${tap}# Failed test 22: "PRIVATE"\n`,
+    tap.replace(
+      '#       wanted:',
+      '# PRIVATE multiline continuation\n#       wanted:'
+    ),
+  ]) {
+    assert.equal(signupCaughtDiagnostics(bad, [22])[0].diagnosticValid, false);
+  }
+});
+test('signup caught diagnostic is restricted to packet one ordinals22 and23', () => {
+  assert.deepEqual(
+    signupCaughtDiagnostics(caughtTap(21, '23514', 'PRIVATE'), [21]),
+    []
+  );
+  assert.deepEqual(
+    schemaFailureDiagnostic('packet-tap', 2, {
+      stdout: caughtTap(22, '23514', 'PRIVATE'),
+    }).signupExceptions,
+    []
+  );
+  assert.deepEqual(
+    schemaFailureDiagnostic('packet-execution', 1, {
+      stdout: caughtTap(22, '23514', 'PRIVATE'),
+    }).signupExceptions,
+    []
+  );
+});
+test('signup caught diagnostic rejects oversized output and ordinal injection', () => {
+  assert.throws(() => signupCaughtDiagnostics('x'.repeat(1048577), []));
+  assert.throws(() =>
+    signupCaughtDiagnostics(caughtTap(22, '23514', 'PRIVATE'), [23])
+  );
+  assert.throws(() => signupCaughtDiagnostics('not ok 22\nnot ok 22', [22]));
+});
+test('signup caught diagnostic keeps separate failure block bindings', () => {
+  const tap =
+    caughtTap(22, '23514', 'Employee creation intent is missing') +
+    caughtTap(23, '23505', 'PRIVATE');
+  const values = signupCaughtDiagnostics(tap, [22, 23]);
+  assert.deepEqual(
+    values.map((value) => value.actualSqlstate),
+    ['23514', '23505']
+  );
+  assert.deepEqual(
+    values.map((value) => value.expectedMessageMatches),
+    [true, false]
+  );
 });
