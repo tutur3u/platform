@@ -10,8 +10,11 @@ test('translation checks run once per PR update and still cover both protected b
   assert.equal(workflow.on.pull_request, null);
   assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
   // PR merge refs isolate forks and preserve validation of the merged result.
-  // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-  assert.equal(workflow.concurrency.group, 'i18n-${{ github.ref }}');
+  assert.equal(
+    workflow.concurrency.group,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
+    "${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}"
+  );
   for (const id of [
     'i18n-sort-check',
     'i18n-translation-check',
@@ -65,7 +68,7 @@ test('superseded PR runs cancel, protected release evidence does not', () => {
     assert.equal(
       policy,
       // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-      "${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' }}"
+      "${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}"
     );
   }
 });

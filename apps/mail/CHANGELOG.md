@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/mail-v0.28.0...mail-v0.29.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides and enforce app SEO and runtime pause ([e79cb7e](https://github.com/tutur3u/platform/commit/e79cb7e96c7db4d1baedb09b7420ca41b75e367f))
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+
+
+### Bug Fixes
+
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **mail:** fence mailbox and attachment changes during send ([b86ea36](https://github.com/tutur3u/platform/commit/b86ea3654cc5ef16b020a92210ab0730b79fb2fa))
+* **mail:** follow app theme and preserve email contrast ([#5948](https://github.com/tutur3u/platform/issues/5948)) ([92426f8](https://github.com/tutur3u/platform/commit/92426f85b802b2d13389877c746f3a7571f3bfed))
+* **mail:** follow app theme and preserve readable email contrast ([6a3b180](https://github.com/tutur3u/platform/commit/6a3b180699e3612346c02ad82a9224d3e8de2081))
+* **mail:** preserve contrast on solid and painted email surfaces ([fe28d62](https://github.com/tutur3u/platform/commit/fe28d6250e9c8a51048cd7b6220aa436e06e89a0))
+* **mail:** preserve edits while send awaits draft save ([ce722b1](https://github.com/tutur3u/platform/commit/ce722b1e794acbfd8c3bfd8c44bbd6e62044dd00)) ([#6078](https://github.com/tutur3u/platform/issues/6078)) ([59cbfe9](https://github.com/tutur3u/platform/commit/59cbfe9384bbe99501e29a3efe02f19d989cad36))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/mail-v0.27.0...mail-v0.28.0) (2026-10-04)
 
 

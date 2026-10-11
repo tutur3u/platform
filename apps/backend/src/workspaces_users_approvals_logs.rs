@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     supabase_auth,
 };
@@ -39,18 +39,8 @@ struct WorkspaceMembershipRow {
     membership_type: Option<String>,
 }
 
-pub(crate) async fn handle_workspaces_users_approvals_logs_route(
-    config: &BackendConfig,
-    request: BackendRequest<'_>,
-    outbound: &impl OutboundHttpClient,
-) -> Option<BackendResponse> {
-    let raw_ws_id = approvals_logs_ws_id(request.path)?;
-
-    Some(match request.method {
-        "GET" => approvals_logs_response(config, request, raw_ws_id, outbound).await,
-        method => no_store_response(method_not_allowed(method, "GET")),
-    })
-}
+mod methods;
+pub(crate) use methods::handle_route as handle_workspaces_users_approvals_logs_route;
 
 async fn approvals_logs_response(
     config: &BackendConfig,
@@ -567,3 +557,6 @@ fn invalid_query_response() -> BackendResponse {
 fn message_response(status: u16, message: &str) -> BackendResponse {
     no_store_response(json_response(status, json!({ "message": message })))
 }
+
+#[cfg(test)]
+mod tests;

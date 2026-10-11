@@ -9,6 +9,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    pool: 'threads',
     exclude: ['**/dist/**', '**/node_modules/**'],
     hookTimeout: 15_000,
     setupFiles: ['./vitest.setup.ts'],

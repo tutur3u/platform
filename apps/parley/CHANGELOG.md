@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.0](https://github.com/tutur3u/platform/compare/parley-v1.3.0...parley-v1.4.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides and enforce app SEO and runtime pause ([e79cb7e](https://github.com/tutur3u/platform/commit/e79cb7e96c7db4d1baedb09b7420ca41b75e367f))
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+* **meet:** keep participant media visible alongside collaboration ([0f684f7](https://github.com/tutur3u/platform/commit/0f684f78f93e1b7f5f1961c8520b8f93b8e60659)) ([#5935](https://github.com/tutur3u/platform/issues/5935)) ([bcdd4da](https://github.com/tutur3u/platform/commit/bcdd4daf1f1a11d5ade99c015aca2eae69d61a63))
+* **meet:** simplify the in-call document toolbar ([6020a1e](https://github.com/tutur3u/platform/commit/6020a1eddfc4f8cab9179daf1feb126f9dfc0501)) ([#5918](https://github.com/tutur3u/platform/issues/5918)) ([fa358e7](https://github.com/tutur3u/platform/commit/fa358e76517e5bc9793caf72658738d9bf2b42d6))
+
+
+### Bug Fixes
+
+* **finance:** bound subscription schedules and block invalid inventory ([f4163bf](https://github.com/tutur3u/platform/commit/f4163bf6697316a06a8b2d3922d9664937dd6940)) ([#5990](https://github.com/tutur3u/platform/issues/5990)) ([f2096f6](https://github.com/tutur3u/platform/commit/f2096f6e20d27dd998a03d11c7b0769d7f06bb2e))
+* **finance:** expose safe invoice history recovery ([8a53d36](https://github.com/tutur3u/platform/commit/8a53d367d6888e592a0d64f760d47234d858bd73)) ([#6034](https://github.com/tutur3u/platform/issues/6034)) ([fd65a3d](https://github.com/tutur3u/platform/commit/fd65a3db6f7472771374192ab07f5a97c6fcaee8))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **meet:** end empty rooms and allow owner restoration ([2d6f856](https://github.com/tutur3u/platform/commit/2d6f8562511f0264f700003fa9a2a60b0198e2b5)) ([#5924](https://github.com/tutur3u/platform/issues/5924)) ([c5f75c0](https://github.com/tutur3u/platform/commit/c5f75c0f4fa66a0933123b5580ff6bfa69914481))
+* **meet:** explain unavailable assistant workspaces ([92441d5](https://github.com/tutur3u/platform/commit/92441d5115f27b572841496e962e15a8c035d4a4)) ([#5986](https://github.com/tutur3u/platform/issues/5986)) ([e3505dc](https://github.com/tutur3u/platform/commit/e3505dc9c1e2534a772c3f7a03c53dc7a3b5fad8))
+* **meet:** stop credit recovery retries and explain AI failures ([6def199](https://github.com/tutur3u/platform/commit/6def199b12e9d2b1a86785ae5a81761604589d7f)) ([#5938](https://github.com/tutur3u/platform/issues/5938)) ([1193fa8](https://github.com/tutur3u/platform/commit/1193fa8304eb0acbd4c19f53479f499280563ddb))
+
 ## [1.3.0](https://github.com/tutur3u/platform/compare/parley-v1.2.0...parley-v1.3.0) (2026-10-04)
 
 

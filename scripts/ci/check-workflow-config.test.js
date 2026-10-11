@@ -66,7 +66,7 @@ test('docs-only changes skip all Vercel deploy workflows', () => {
   }
 });
 
-test('CI orchestration changes do not rebuild application artifacts', () => {
+test('CI orchestration changes preserve the platform migration deployment gate', () => {
   const rootDir = createFixtureRoot();
   const changedFiles = [
     '.github/workflows/ci-check.yml',
@@ -84,7 +84,7 @@ test('CI orchestration changes do not rebuild application artifacts', () => {
         rootDir,
         workflowName,
       },
-      false
+      /^vercel-(?:preview|production)-platform\.yaml$/u.test(workflowName)
     );
   }
 });

@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.4.0](https://github.com/tutur3u/platform/compare/meet-core-v1.3.0...meet-core-v1.4.0) (2026-10-09)
+
+
+### Features
+
+* **meet:** keep participant media visible alongside collaboration ([0f684f7](https://github.com/tutur3u/platform/commit/0f684f78f93e1b7f5f1961c8520b8f93b8e60659)) ([#5935](https://github.com/tutur3u/platform/issues/5935)) ([bcdd4da](https://github.com/tutur3u/platform/commit/bcdd4daf1f1a11d5ade99c015aca2eae69d61a63))
+* **meet:** simplify the in-call document toolbar ([6020a1e](https://github.com/tutur3u/platform/commit/6020a1eddfc4f8cab9179daf1feb126f9dfc0501)) ([#5918](https://github.com/tutur3u/platform/issues/5918)) ([fa358e7](https://github.com/tutur3u/platform/commit/fa358e76517e5bc9793caf72658738d9bf2b42d6))
+
+
+### Bug Fixes
+
+* **meet:** avoid generating notes for empty saved speech ([b17cd52](https://github.com/tutur3u/platform/commit/b17cd52430f9d5849b6898ea2df0d0ab4982bc49)) ([#5940](https://github.com/tutur3u/platform/issues/5940)) ([da868c5](https://github.com/tutur3u/platform/commit/da868c5498a18bf0bbbafabb2509aed3c80d039f))
+* **meet:** bind shared documents to collaboration ([cf2c962](https://github.com/tutur3u/platform/commit/cf2c962e52fa0f57f843775f4627d80fffa02563)) ([#5934](https://github.com/tutur3u/platform/issues/5934)) ([aedd877](https://github.com/tutur3u/platform/commit/aedd8774ec681ffd9711ee2b9d4988c4c4b799bf))
+* **meet:** commit capture leases before admitting operations ([df452d5](https://github.com/tutur3u/platform/commit/df452d55cad587d2eea7b54ad238728972079009))
+* **meet:** end empty rooms and allow owner restoration ([2d6f856](https://github.com/tutur3u/platform/commit/2d6f8562511f0264f700003fa9a2a60b0198e2b5)) ([#5924](https://github.com/tutur3u/platform/issues/5924)) ([c5f75c0](https://github.com/tutur3u/platform/commit/c5f75c0f4fa66a0933123b5580ff6bfa69914481))
+* **meet:** explain unavailable assistant workspaces ([92441d5](https://github.com/tutur3u/platform/commit/92441d5115f27b572841496e962e15a8c035d4a4)) ([#5986](https://github.com/tutur3u/platform/issues/5986)) ([e3505dc](https://github.com/tutur3u/platform/commit/e3505dc9c1e2534a772c3f7a03c53dc7a3b5fad8))
+* **meet:** fence automatic finalizers by capture epoch ([9a7826d](https://github.com/tutur3u/platform/commit/9a7826dcd3fb8d7eb7ec1576bfeddcd06628c864))
+* **meet:** fence transcription capture by actor and room scope ([5d8257f](https://github.com/tutur3u/platform/commit/5d8257f8b8cbfd9ff1da640a9ebc4cdbdec8146a))
+* **meet:** retry final notes persistence without regeneration ([eab84a6](https://github.com/tutur3u/platform/commit/eab84a64929fb722c8bbaa29087b86d763e236a0))
+* **meet:** retry notes persistence without repeating generation ([#5978](https://github.com/tutur3u/platform/issues/5978)) ([d1265f2](https://github.com/tutur3u/platform/commit/d1265f222c0e0cf3d7af85eedc356bdc644d346c))
+* **meet:** retry settled transcript persistence ([459bb48](https://github.com/tutur3u/platform/commit/459bb48e87dfc327dc82c011035dbee6c928e30e)) ([#5982](https://github.com/tutur3u/platform/issues/5982)) ([7cfb5d7](https://github.com/tutur3u/platform/commit/7cfb5d71b2a8763034804ffcebc576293c6b8899))
+* **meet:** scope transcription capture to committed actor and room ([#5980](https://github.com/tutur3u/platform/issues/5980)) ([1f85042](https://github.com/tutur3u/platform/commit/1f85042bee9d99c9f10fe0f50b046874c3cc2557))
+* **meet:** show live document collaborators in toolbar ([d26bf74](https://github.com/tutur3u/platform/commit/d26bf74add981bac864ad7142e51d5ac9f33c43c)) ([#5939](https://github.com/tutur3u/platform/issues/5939)) ([11eac0c](https://github.com/tutur3u/platform/commit/11eac0c3de1cb58fd6824acf16819ef625eae1ae))
+* **meet:** stop credit recovery retries and explain AI failures ([6def199](https://github.com/tutur3u/platform/commit/6def199b12e9d2b1a86785ae5a81761604589d7f)) ([#5938](https://github.com/tutur3u/platform/issues/5938)) ([1193fa8](https://github.com/tutur3u/platform/commit/1193fa8304eb0acbd4c19f53479f499280563ddb))
+* **meet:** use account identity for assistant workspace admission ([d928646](https://github.com/tutur3u/platform/commit/d928646ddebe6a456f559073a9fc50872773a43e)) ([#5937](https://github.com/tutur3u/platform/issues/5937)) ([6809ba4](https://github.com/tutur3u/platform/commit/6809ba498f045f903f0fc6d0241d8fffa49e1cb3))
+
 ## [1.3.0](https://github.com/tutur3u/platform/compare/meet-core-v1.2.1...meet-core-v1.3.0) (2026-10-04)
 
 

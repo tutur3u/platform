@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import test from 'node:test';
-import sharp from 'sharp';
 import { syntheticProfileImage } from '../../apps/web/e2e/helpers/profile-media-fixture.ts';
+
+const webRequire = createRequire(
+  new URL('../../apps/web/package.json', import.meta.url)
+);
+const sharp = webRequire('sharp');
 
 test('profile upload fixture decodes before optimizing to WebP', async () => {
   const image = syntheticProfileImage();

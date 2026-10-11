@@ -26,5 +26,9 @@ export default defineConfig({
   root: import.meta.dirname,
   esbuild: { jsx: 'automatic' },
   oxc: false,
-  test: { environment: 'node', include: ['src/**/*.test.{ts,tsx}'] },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.{ts,tsx}'],
+    pool: 'threads',
+  },
 });

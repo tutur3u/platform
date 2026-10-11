@@ -1,0 +1,448 @@
+# Source contracts for the future Rust target; Web remains the live runtime.
+CurrentUserProfile:
+  get:
+    summary: Current user profile
+    description: >
+      Migrated replacement for apps/web/src/app/api/v1/users/me/profile/route.ts.
+      The Rust backend verifies Tuturuuu app-session JWTs in native and
+      Cloudflare Worker runtimes, then reads users and user_private_details
+      through the server-owned Supabase REST adapter with the service-role key.
+    security:
+      - AppSessionBearer: []
+      - AppSessionCookie: []
+    responses:
+      "200":
+        description: Token-derived current user profile preview.
+        headers:
+          Cache-Control:
+            schema:
+              type: string
+              examples:
+                - no-store, no-cache, must-revalidate
+          CDN-Cache-Control:
+            schema:
+              type: string
+              examples:
+                - no-store
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/CurrentUserProfile"
+      "401":
+        description: Missing or invalid app-session token.
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ContactUnauthorized"
+      "503":
+        description: App coordination secret or contact data adapter configuration is missing.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "../openapi.yaml#/components/schemas/AppSessionConfigurationError"
+                - $ref: "../openapi.yaml#/components/schemas/ContactDataLayerNotReady"
+      "500":
+        description: Supabase profile read failed.
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ContactServerError"
+      "405":
+        description: Unsupported HTTP method.
+        headers:
+          Allow:
+            schema:
+              type: string
+              examples:
+                - GET, HEAD, PATCH
+  patch:
+    summary: Update current user profile
+    description: >
+      Migrated profile mutation. Authenticates the same app-session sources as
+      GET, enforces same-origin confirmation for cookie-authenticated
+      mutations, validates the legacy display_name/bio/avatar_url JSON shape,
+      and updates the users row through the server-owned Supabase REST adapter.
+    security:
+      - AppSessionBearer: []
+      - AppSessionCookie: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/PatchCurrentUserProfileRequest"
+    responses:
+      "200":
+        description: Profile updated successfully.
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ProfileUpdateResponse"
+      "400":
+        description: Invalid profile payload or no valid fields to update.
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ContactValidationError"
+      "403":
+        description: Cookie-authenticated mutation did not include same-origin confirmation.
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ContactSameOriginRequired"
+      "411":
+        $ref: "../openapi.yaml#/components/responses/RequestBodyLengthRequired"
+      "413":
+        $ref: "../openapi.yaml#/components/responses/RequestBodyTooLarge"
+      "401":
+        description: Missing or invalid app-session token.
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ContactUnauthorized"
+      "503":
+        description: App coordination secret or contact data adapter configuration is missing.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "../openapi.yaml#/components/schemas/AppSessionConfigurationError"
+                - $ref: "../openapi.yaml#/components/schemas/ContactDataLayerNotReady"
+      "500":
+        description: Supabase profile update failed.
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ContactServerError"
+      "405":
+        description: Unsupported HTTP method.
+  head:
+    summary: Current user profile headers
+    description: Runs the same app-session profile read as GET and returns no body.
+    security:
+      - AppSessionBearer: []
+      - AppSessionCookie: []
+    responses:
+      "200":
+        description: Profile read succeeded; the HEAD response body is empty.
+      "401":
+        description: Missing or invalid app-session token; no body.
+      "503":
+        description: App coordination or contact adapter configuration missing; no body.
+      "500":
+        description: Supabase profile read failed; no body.
+
+InventorySalesPeriodMerges:
+  get:
+    summary: Preview an inventory season merge
+    description: >
+      Source mirror for a permission-checked merge preview. Web remains the live API runtime.
+      Inventory-targeted app sessions and revalidated Supabase sessions are supported.
+    security:
+      - AppSessionBearer: []
+      - AppSessionCookie: []
+      - SupabaseBearer: []
+      - SupabaseBrowserSessionCookie: []
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: sourceId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: targetId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: version
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 1
+    responses:
+      "200":
+        description: Successful read.
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      "400":
+        description: Invalid query or request payload.
+      "401":
+        description: Missing or invalid authenticated principal.
+      "403":
+        description: Workspace permission or membership denied.
+      "404":
+        description: Workspace or requested resource not found.
+      "409":
+        description: Concurrent changes or merge conflicts require a refreshed preview.
+      "500":
+        description: Data access or response validation failed.
+      "503":
+        description: Season merge schema is not ready.
+  post:
+    summary: Apply an inventory season merge
+    description: >
+      Source mirror for an explicit version-bound season merge. Actor and workspace are resolved server-side from authenticated access.
+    security:
+      - AppSessionBearer: []
+      - AppSessionCookie: []
+      - SupabaseBearer: []
+      - SupabaseBrowserSessionCookie: []
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [sourceId, targetId, version, descriptionPolicy, rulePolicy, pricePolicy]
+            properties:
+              sourceId:
+                type: string
+                format: uuid
+              targetId:
+                type: string
+                format: uuid
+              version:
+                type: string
+                format: uuid
+              descriptionPolicy:
+                type: string
+                enum: [source, target]
+              rulePolicy:
+                type: string
+                enum: [source, target]
+              pricePolicy:
+                type: string
+                enum: [block, target]
+    responses:
+      "200":
+        description: Merge result returned.
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      "400":
+        description: Invalid query or request payload.
+      "401":
+        description: Missing or invalid authenticated principal.
+      "403":
+        description: Workspace permission or membership denied.
+      "404":
+        description: Workspace or requested resource not found.
+      "409":
+        description: Concurrent changes or merge conflicts require a refreshed preview.
+      "500":
+        description: Data access or response validation failed.
+      "503":
+        description: Season merge schema is not ready.
+
+PendingApprovalSummary:
+  get:
+    summary: Read pending approval counts
+    description: >
+      Source mirror that requires authenticated workspace membership and manage_workspace_settings permission.
+    security:
+      - SupabaseBearer: []
+      - SupabaseBrowserSessionCookie: []
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Successful read.
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      "401":
+        description: Missing or invalid authenticated principal.
+      "403":
+        description: Workspace permission or membership denied.
+      "404":
+        description: Workspace or requested resource not found.
+      "500":
+        description: Data access or response validation failed.
+  head:
+    summary: Read pending approval count headers
+    description: >
+      GET-backed bodyless source contract. Requires the separately reviewed approval HEAD implementation; this draft is not runtime qualification.
+    security:
+      - SupabaseBearer: []
+      - SupabaseBrowserSessionCookie: []
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Successful read. No response body.
+      "401":
+        description: Missing or invalid authenticated principal. No response body.
+      "403":
+        description: Workspace permission or membership denied. No response body.
+      "404":
+        description: Workspace or requested resource not found. No response body.
+      "500":
+        description: Data access or response validation failed. No response body.
+
+UserApprovals:
+  get:
+    summary: List workspace approval items
+    description: >
+      Source mirror for report or post approval items. The kind selects the required approve_reports or approve_posts permission.
+    security:
+      - SupabaseBearer: []
+      - SupabaseBrowserSessionCookie: []
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: kind
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [reports, posts]
+    responses:
+      "200":
+        description: Successful read.
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      "400":
+        description: Invalid query or request payload.
+      "401":
+        description: Missing or invalid authenticated principal.
+      "403":
+        description: Workspace permission or membership denied.
+      "404":
+        description: Workspace or requested resource not found.
+      "500":
+        description: Data access or response validation failed.
+
+UserApprovalLogs:
+  get:
+    summary: Read the latest workspace approval log
+    description: >
+      Source mirror for an approved report or post log. Requires the corresponding kind-specific identifier and approval permission.
+    security:
+      - SupabaseBearer: []
+      - SupabaseBrowserSessionCookie: []
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: kind
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [reports, posts]
+      - name: reportId
+        in: query
+        required: false
+        description: Required when kind is reports.
+        schema:
+          type: string
+      - name: postId
+        in: query
+        required: false
+        description: Required when kind is posts.
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Successful read.
+        content:
+          application/json:
+            schema:
+              type: [object, "null"]
+              additionalProperties: true
+      "400":
+        description: Invalid query or request payload.
+      "403":
+        description: Workspace permission or membership denied.
+      "404":
+        description: Workspace or requested resource not found.
+      "500":
+        description: Data access or response validation failed.
+  head:
+    summary: Read approval log headers
+    description: >
+      GET-backed bodyless source contract. Requires the separately reviewed approval HEAD implementation; this draft is not runtime qualification.
+    security:
+      - SupabaseBearer: []
+      - SupabaseBrowserSessionCookie: []
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: kind
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [reports, posts]
+      - name: reportId
+        in: query
+        required: false
+        description: Required when kind is reports.
+        schema:
+          type: string
+      - name: postId
+        in: query
+        required: false
+        description: Required when kind is posts.
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Successful read. No response body.
+      "400":
+        description: Invalid query or request payload. No response body.
+      "403":
+        description: Workspace permission or membership denied. No response body.
+      "404":
+        description: Workspace or requested resource not found. No response body.
+      "500":
+        description: Data access or response validation failed. No response body.

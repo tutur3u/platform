@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const { readOpenApiSource } = require('./backend-openapi-path-items');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const MANIFEST_PATH = path.join(
@@ -172,9 +173,7 @@ function rustOwnedMigratedRoutes(manifest) {
 
 test('migrated Rust-owned routes are documented in backend OpenAPI', () => {
   const manifest = readJson(MANIFEST_PATH);
-  const operations = collectOpenApiOperations(
-    fs.readFileSync(OPENAPI_PATH, 'utf8')
-  );
+  const operations = collectOpenApiOperations(readOpenApiSource(OPENAPI_PATH));
   const missingOperations = [];
 
   for (const route of rustOwnedMigratedRoutes(manifest)) {
@@ -196,7 +195,7 @@ test('migrated Rust-owned routes are documented in backend OpenAPI', () => {
 });
 
 test('buffered JSON Rust routes document request body size guard responses', () => {
-  const openApiSource = fs.readFileSync(OPENAPI_PATH, 'utf8');
+  const openApiSource = readOpenApiSource(OPENAPI_PATH);
   const responseRefs = collectOpenApiResponseRefs(openApiSource);
   const responseComponents = collectOpenApiComponentKeys(
     openApiSource,

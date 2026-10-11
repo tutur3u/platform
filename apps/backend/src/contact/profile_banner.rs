@@ -201,6 +201,59 @@ fn owned_banner_path<'a>(value: &'a str, actor: &str, origin: &str) -> Option<&'
     value.strip_prefix(&format!("{origin}/storage/v1/object/public/banners/"))
 }
 
+pub(super) fn canonical_profile_banner_patch(
+    updates: &serde_json::Value,
+    actor: &str,
+    config: &ContactDataConfig,
+) -> bool {
+    let Some(value) = updates.get("banner_url").and_then(|v| v.as_str()) else {
+        return true;
+    };
+    let Some(origin) = public_banner_origin(config) else {
+        return false;
+    };
+    let Ok(parsed) = url::Url::parse(value) else {
+        return false;
+    };
+    if parsed.origin().ascii_serialization() != origin {
+        return true;
+    }
+    let raw = parsed.path().as_bytes();
+    let mut bytes = Vec::new();
+    let mut i = 0;
+    while i < raw.len() {
+        if raw[i] == b'%' && i + 2 < raw.len() {
+            let Ok(hex) = std::str::from_utf8(&raw[i + 1..i + 3]) else {
+                return false;
+            };
+            let Ok(byte) = u8::from_str_radix(hex, 16) else {
+                return false;
+            };
+            bytes.push(byte);
+            i += 3;
+        } else {
+            bytes.push(raw[i]);
+            i += 1;
+        }
+    }
+    let Ok(decoded) = String::from_utf8(bytes) else {
+        return false;
+    };
+    let mut parts = Vec::new();
+    for part in decoded.split('/') {
+        if part == ".." {
+            parts.pop();
+        } else if !part.is_empty() && part != "." {
+            parts.push(part);
+        }
+    }
+    let path = format!("/{}", parts.join("/"));
+    if !path.starts_with(&format!("/storage/v1/object/public/banners/{actor}/")) {
+        return true;
+    }
+    owned_banner_path(value, actor, &origin).is_some()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -342,57 +395,4 @@ mod tests {
             assert!(owned_banner_path(&bad, actor, origin).is_none());
         }
     }
-}
-
-pub(super) fn canonical_profile_banner_patch(
-    updates: &serde_json::Value,
-    actor: &str,
-    config: &ContactDataConfig,
-) -> bool {
-    let Some(value) = updates.get("banner_url").and_then(|v| v.as_str()) else {
-        return true;
-    };
-    let Some(origin) = public_banner_origin(config) else {
-        return false;
-    };
-    let Ok(parsed) = url::Url::parse(value) else {
-        return false;
-    };
-    if parsed.origin().ascii_serialization() != origin {
-        return true;
-    }
-    let raw = parsed.path().as_bytes();
-    let mut bytes = Vec::new();
-    let mut i = 0;
-    while i < raw.len() {
-        if raw[i] == b'%' && i + 2 < raw.len() {
-            let Ok(hex) = std::str::from_utf8(&raw[i + 1..i + 3]) else {
-                return false;
-            };
-            let Ok(byte) = u8::from_str_radix(hex, 16) else {
-                return false;
-            };
-            bytes.push(byte);
-            i += 3;
-        } else {
-            bytes.push(raw[i]);
-            i += 1;
-        }
-    }
-    let Ok(decoded) = String::from_utf8(bytes) else {
-        return false;
-    };
-    let mut parts = Vec::new();
-    for part in decoded.split('/') {
-        if part == ".." {
-            parts.pop();
-        } else if !part.is_empty() && part != "." {
-            parts.push(part);
-        }
-    }
-    let path = format!("/{}", parts.join("/"));
-    if !path.starts_with(&format!("/storage/v1/object/public/banners/{actor}/")) {
-        return true;
-    }
-    owned_banner_path(value, actor, &origin).is_some()
 }

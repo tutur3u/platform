@@ -86,11 +86,26 @@ for (const [name, aggregate, checkName, shardName] of [
     const condition = expression(
       "!cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'"
     );
-    assert.equal(job.if, condition);
+    const hasRootSuite = name === 'turbo-unit-tests.yaml';
+    assert.equal(
+      job.if,
+      hasRootSuite
+        ? expression(
+            "!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'"
+          )
+        : condition
+    );
     assert.deepEqual(
       job.needs,
       shardName
-        ? ['check-ci', 'duplicate-validation', 'test-shards']
+        ? [
+            'check-ci',
+            'duplicate-validation',
+            'test-shards',
+            ...(hasRootSuite
+              ? ['root-script-tests', 'backend-source-qualification']
+              : []),
+          ]
         : ['check-ci']
     );
     if (shardName) {
@@ -105,7 +120,20 @@ for (const [name, aggregate, checkName, shardName] of [
         job.steps[0].env.TEST_RESULT,
         expression('needs.test-shards.result')
       );
-      assert.equal(job.steps[0].run, 'test "$TEST_RESULT" = success');
+      if (hasRootSuite) {
+        assert.equal(
+          job.steps[0].env.ROOT_SCRIPT_RESULT,
+          expression('needs.root-script-tests.result')
+        );
+        assert.equal(
+          job.steps[0].env.DUPLICATE_RESULT,
+          expression('needs.duplicate-validation.result')
+        );
+        assert.equal(
+          job.steps[0].env.DUPLICATE_RUN_CHECKS,
+          expression('needs.duplicate-validation.outputs.run_checks')
+        );
+      } else assert.equal(job.steps[0].run, 'test "$TEST_RESULT" = success');
       assert.deepEqual(workflow.permissions, { contents: 'read' });
       assert.deepEqual(workflow.jobs['check-ci'].permissions, {
         contents: 'read',
@@ -203,7 +231,7 @@ test('real release detector defaults to run for missing and invalid comparisons'
 
 // Execute each committed gate with GitHub's implicit success dependency rule:
 // a status function must override it so a failed proof cannot skip validation.
-function evaluateValidationGate(job, needs, isCancelled = false) {
+function evaluateValidationGate(job, needs, isCancelled = false, github = {}) {
   const body = job.if.replace(/^\$\{\{\s*|\s*\}\}$/g, '');
   if (!/\b(?:always|cancelled|failure|success)\(\)/.test(body)) {
     if (
@@ -215,8 +243,9 @@ function evaluateValidationGate(job, needs, isCancelled = false) {
   return Function(
     'needs',
     'cancelled',
+    'github',
     `return (${source});`
-  )(needs, () => isCancelled);
+  )(needs, () => isCancelled, github);
 }
 
 for (const [workflowName, jobs] of [
@@ -233,6 +262,7 @@ for (const [workflowName, jobs] of [
           outputs: { should_run: 'true', run_checks: 'true' },
         },
         'test-shards': { result: 'success' },
+        'root-script-tests': { result: 'success' },
       };
       for (const [result, output, expected] of [
         ['failure', undefined, true],
@@ -251,7 +281,9 @@ for (const [workflowName, jobs] of [
         };
         assert.equal(
           evaluateValidationGate(workflow.jobs[id], needs),
-          expected,
+          workflowName === 'turbo-unit-tests.yaml' && id === 'build'
+            ? true
+            : expected,
           `${result}/${output ?? 'absent'}`
         );
       }
@@ -275,11 +307,177 @@ for (const [workflowName, jobs] of [
         needs['check-ci'].outputs.run_checks = 'true';
         needs['test-shards'].result = 'failure';
         assert.equal(evaluateValidationGate(workflow.jobs[id], needs), true);
-        assert.equal(
-          workflow.jobs[id].steps[0].run,
-          'test "$TEST_RESULT" = success'
-        );
+        const result = runAggregate(workflow.jobs[id].steps[0], {
+          TEST_RESULT: 'failure',
+          ROOT_SCRIPT_RESULT: 'success',
+          DUPLICATE_RESULT: 'failure',
+          DUPLICATE_RUN_CHECKS: '',
+        });
+        assert.notEqual(result.status, 0);
       }
     });
   }
 }
+
+function runAggregate(step, env) {
+  return spawnSync(
+    'bash',
+    ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step.run],
+    { env: { ...process.env, ...env }, encoding: 'utf8' }
+  );
+}
+
+test('unit aggregate requires fresh root success even when package proof skips shards', () => {
+  const job = readWorkflow('turbo-unit-tests.yaml').jobs.build;
+  const needs = {
+    'check-ci': {
+      result: 'success',
+      outputs: { should_run: 'true', run_checks: 'true' },
+    },
+    'duplicate-validation': {
+      result: 'success',
+      outputs: { run_checks: 'false' },
+    },
+    'test-shards': { result: 'skipped' },
+    'root-script-tests': { result: 'failure' },
+  };
+  assert.equal(evaluateValidationGate(job, needs), true);
+  const step = job.steps[0];
+  for (const [duplicate, runChecks, shards, rootResult, pass] of [
+    ['success', 'false', 'skipped', 'success', true],
+    ['success', 'false', 'skipped', 'failure', false],
+    ['success', 'false', 'skipped', 'cancelled', false],
+    ['success', 'false', 'skipped', 'skipped', false],
+    ['success', 'false', 'skipped', '', false],
+    ['failure', 'false', 'skipped', 'success', false],
+    ['skipped', '', 'skipped', 'success', false],
+    ['success', 'true', 'skipped', 'success', false],
+    ['success', '', 'skipped', 'success', false],
+    ['success', 'invalid', 'skipped', 'success', false],
+    ['failure', 'false', 'success', 'success', true],
+    ['skipped', '', 'success', 'success', true],
+    ['success', 'true', 'success', 'success', true],
+    ['skipped', '', 'failure', 'success', false],
+    ['skipped', '', 'cancelled', 'success', false],
+    ['skipped', '', 'success', 'failure', false],
+  ]) {
+    const result = runAggregate(step, {
+      DUPLICATE_RESULT: duplicate,
+      DUPLICATE_RUN_CHECKS: runChecks,
+      TEST_RESULT: shards,
+      ROOT_SCRIPT_RESULT: rootResult,
+      RUST_QUALIFICATION_REQUIRED: 'false',
+    });
+    assert.equal(
+      result.status === 0,
+      pass,
+      `${duplicate}/${runChecks}/${shards}/${rootResult}`
+    );
+  }
+});
+
+test('Rust source qualification is bounded and restricted to the release integration ref', () => {
+  const job = readWorkflow('turbo-unit-tests.yaml').jobs[
+    'backend-source-qualification'
+  ];
+  assert.deepEqual(job.needs, ['check-ci']);
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.equal(job['timeout-minutes'], 45);
+  assert.equal(job.env.CARGO_BUILD_JOBS, '2');
+  assert.equal(job.defaults.run['working-directory'], './apps/backend');
+  const toolchain = job.steps.find((step) => step.with?.toolchain);
+  assert.equal(
+    toolchain.uses,
+    'dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87'
+  );
+  assert.equal(toolchain.with.toolchain, '1.95.0');
+  assert.equal(toolchain.with.components, 'clippy, rustfmt');
+  assert.equal(toolchain.with.targets, 'wasm32-unknown-unknown');
+  const checkout = job.steps.find((step) =>
+    step.uses?.startsWith('actions/checkout@')
+  );
+  assert.equal(checkout.with.ref, expression('github.sha'));
+  assert.equal(checkout.with['persist-credentials'], false);
+  const commands = job.steps.map((step) => step.run).filter(Boolean);
+  for (const command of [
+    'cargo fmt --check',
+    'cargo clippy --locked --all-targets --features native -- -D warnings',
+    'cargo test --locked --lib -- --test-threads=2',
+    'cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker',
+  ])
+    assert.ok(commands.includes(command), command);
+  assert.ok(!JSON.stringify(job).includes('secrets.'));
+  for (const [ref, shouldRun, runChecks, result, expected] of [
+    ['fix/release-5795-reconciliation', 'true', 'true', 'success', true],
+    ['main', 'true', 'true', 'success', false],
+    ['production', 'true', 'true', 'success', false],
+    ['fix/another-release', 'true', 'true', 'success', false],
+    ['fix/release-5795-reconciliation', 'false', 'true', 'success', false],
+    ['fix/release-5795-reconciliation', 'true', 'false', 'success', false],
+    ['fix/release-5795-reconciliation', 'true', 'true', 'failure', false],
+  ]) {
+    const needs = {
+      'check-ci': {
+        result,
+        outputs: { should_run: shouldRun, run_checks: runChecks },
+      },
+    };
+    assert.equal(
+      evaluateValidationGate(job, needs, false, { ref: `refs/heads/${ref}` }),
+      expected
+    );
+  }
+});
+
+test('release aggregate requires fresh Rust success even when package proof skips shards', () => {
+  const job = readWorkflow('turbo-unit-tests.yaml').jobs.build;
+  const step = job.steps[0];
+  assert.equal(
+    step.env.RUST_RESULT,
+    expression('needs.backend-source-qualification.result')
+  );
+  assert.equal(
+    step.env.RUST_QUALIFICATION_REQUIRED,
+    expression("github.ref == 'refs/heads/fix/release-5795-reconciliation'")
+  );
+  for (const reuse of [true, false]) {
+    for (const rust of ['success', 'failure', 'cancelled', 'skipped', '']) {
+      const needs = {
+        'check-ci': {
+          result: 'success',
+          outputs: { should_run: 'true', run_checks: 'true' },
+        },
+        'duplicate-validation': {
+          result: reuse ? 'success' : 'skipped',
+          outputs: { run_checks: reuse ? 'false' : '' },
+        },
+        'test-shards': { result: reuse ? 'skipped' : 'success' },
+        'root-script-tests': { result: 'success' },
+        'backend-source-qualification': { result: rust },
+      };
+      assert.equal(evaluateValidationGate(job, needs), true);
+      const env = {
+        DUPLICATE_RESULT: needs['duplicate-validation'].result,
+        DUPLICATE_RUN_CHECKS: needs['duplicate-validation'].outputs.run_checks,
+        TEST_RESULT: needs['test-shards'].result,
+        ROOT_SCRIPT_RESULT: 'success',
+        RUST_QUALIFICATION_REQUIRED: 'true',
+        RUST_RESULT: rust,
+      };
+      assert.equal(
+        runAggregate(step, env).status === 0,
+        rust === 'success',
+        `${reuse}/${rust}`
+      );
+      assert.notEqual(
+        runAggregate(step, { ...env, ROOT_SCRIPT_RESULT: 'failure' }).status,
+        0
+      );
+      assert.equal(
+        runAggregate(step, { ...env, RUST_QUALIFICATION_REQUIRED: 'false' })
+          .status,
+        0
+      );
+    }
+  }
+});
