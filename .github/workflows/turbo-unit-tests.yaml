@@ -51,6 +51,53 @@ jobs:
           WORKFLOW_NAME: turbo-unit-tests.yaml
         run: node scripts/ci/check-completed-validation.js
 
+  root-script-tests:
+    name: Root script tests (24)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      NODE_PATH: ${{ github.workspace }}/apps/web/node_modules
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+
+      - name: Verify script-test prerequisites
+        run: |
+          ruby --version
+          node -e "console.log(require.resolve('@playwright/test'))"
+
+      - name: Run complete root script suite
+        run: |
+          node <<'NODE'
+          const { discoverScriptTests } = require('./scripts/run-script-tests.js');
+          const { spawnSync } = require('node:child_process');
+          const files = discoverScriptTests();
+          console.log(`Discovered ${files.length} script test files.`);
+          const result = spawnSync(process.execPath, ['--experimental-strip-types', '--test', '--test-concurrency=2', '--test-reporter=tap', ...files], { stdio: 'inherit' });
+          if (result.error) throw result.error;
+          process.exitCode = result.status ?? 1;
+          NODE
+
   test-shards:
     name: Unit test shard (${{ matrix.shard }})
     needs: [check-ci, duplicate-validation]
@@ -116,11 +163,18 @@ jobs:
 
   build:
     name: Unit Tests (24)
-    needs: [check-ci, duplicate-validation, test-shards]
-    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
+    needs: [check-ci, duplicate-validation, test-shards, root-script-tests]
+    if: ${{ !cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Require every unit-test shard
         env:
           TEST_RESULT: ${{ needs.test-shards.result }}
-        run: test "$TEST_RESULT" = success
+          ROOT_SCRIPT_RESULT: ${{ needs.root-script-tests.result }}
+          DUPLICATE_RESULT: ${{ needs.duplicate-validation.result }}
+          DUPLICATE_RUN_CHECKS: ${{ needs.duplicate-validation.outputs.run_checks }}
+        run: |
+          if [ "$DUPLICATE_RESULT" != success ] || [ "$DUPLICATE_RUN_CHECKS" != false ]; then
+            test "$TEST_RESULT" = success
+          fi
+          test "$ROOT_SCRIPT_RESULT" = success
