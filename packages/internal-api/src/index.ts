@@ -339,6 +339,7 @@ export {
   withForwardedInternalApiAuth,
   withPayApiBaseUrl,
 } from './client';
+export * from './connected-mail';
 export {
   createWorkspaceCronJob,
   deleteWorkspaceCronJob,
@@ -1273,10 +1274,7 @@ export {
   type WorkspaceUserReferralDiscount,
 } from './promotions';
 export * from './public-account-api';
-export {
-  getPublicWorkspacePrices,
-  type PublicWorkspacePrices,
-} from './public-pricing';
+export * from './public-pricing';
 export * from './rate-limit-appeals';
 export * from './rate-limits';
 export {

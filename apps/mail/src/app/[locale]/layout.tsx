@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Send and receive Tuturuuu team mailboxes for exact @tuturuuu.com accounts.',
-        vi: 'Gửi và nhận hộp thư nhóm Tuturuuu cho các tài khoản chính xác @tuturuuu.com.',
+        en: 'Read and send Gmail, Outlook, and managed Tuturuuu mailboxes.',
+        vi: 'Đọc và gửi thư qua Gmail, Outlook và hộp thư Tuturuuu được quản lý.',
       },
       indexable: false,
       keywords: [

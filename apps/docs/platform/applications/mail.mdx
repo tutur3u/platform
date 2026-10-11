@@ -542,33 +542,30 @@ deployment precedes the migration.
 
 ## CI and deployment
 
-Mail has dedicated Vercel workflows:
+Mail preview and production use `.github/workflows/vercel-preview-mail.yaml`
+and `vercel-production-mail.yaml`, registered in `tuturuuu.ci.ts` through
+`ci-check.yml`. Preview builds prebuilt Vercel CLI artifacts. Production uses
+concurrency to prevent stale deployment; manual dispatch requires `refs/heads/production`.
+Credentials belong to the corresponding `vercel-preview-mail` or
+`vercel-production-mail` GitHub Environment: `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
+and `VERCEL_MAIL_PROJECT_ID`. Keep production Supabase/SES values in the Vercel
+project. Do not put those values, `TURBO_TOKEN` or `TURBO_TEAM` into workflow env;
+use `vercel pull`. `apps/mail/vercel.json` disables Vercel Git integration.
 
-- `.github/workflows/vercel-preview-mail.yaml`
-- `.github/workflows/vercel-production-mail.yaml`
-
-Both workflows are registered in `tuturuuu.ts` and use the shared
-`ci-check.yml` switchboard. They require environment-scoped Vercel credentials
-plus `VERCEL_MAIL_PROJECT_ID`; production Supabase and SES values should live in
-the Vercel project environment rather than GitHub Actions.
-
-The preview workflow builds and deploys prebuilt artifacts through Vercel CLI.
-The production workflow also uses workflow concurrency so stale production runs
-are canceled instead of deploying after a newer production commit is pushed.
-
-Deployment credentials must stay environment-scoped in GitHub Actions. The
-preview job is bound to the `vercel-preview-mail` GitHub Environment, and the
-production job is bound to `vercel-production-mail`. Store `VERCEL_TOKEN`,
-`VERCEL_ORG_ID`, and `VERCEL_MAIL_PROJECT_ID` in those environments instead of
-repository-wide or organization-wide secrets. Do not add `TURBO_TOKEN`,
-`TURBO_TEAM`, production Supabase service keys, or SES credentials to
-workflow-level `env`; Mail deploys should rely on Vercel project environment
-variables pulled by `vercel pull`. Manual production dispatch is only valid from
-`refs/heads/production`.
-
-`apps/mail/vercel.json` disables Vercel Git deployments and GitHub integration
-so preview and production deploys only happen through the CI workflows.
-
+The exact-head `mail-profile-runtime-contract.yaml` also follows resource CLI changes,
+uses frozen normal setup through the shared queue and unchanged named tests:
+Lettin profile upload/save/reload and independent Chromium session transport tests.
+Its exclusive disposable hosted VM owns a complete-schema Supabase project at
+safe local API port 8001, including Auth/REST/Storage, local D1 fixtures and Next apps.
+Storage uses an owned HTTPS proxy and one-day CA trusted by Node/Chromium with
+normal certificate verification and browser sandboxing. No provider credentials,
+raw traces or private CA key are published. Missing/skipped/retried tests and
+failed cleanup fail the gate. Fixtures delete only their own synthetic IDs/media;
+finally stops only the recorded project and owned app/proxy processes.
+The broad E2E pipeline stays disabled. Terminal evidence records source/results/cleanup
+and proves only local profile/session behavior,
+not Cloudflare Worker/provider/production/customer delivery; pgTAP/schema types
+remain separate gates.
 
 ## Mail client navigation and recovery
 
@@ -973,3 +970,109 @@ the ten-second deadline while timer callbacks await service; wall-clock changes
 do not extend it. The existing byte/chunk/selection limits and authenticated
 request ownership remain unchanged. Deadline regressions count actual stream reads
 at the exact boundary; this bounds request intake, not automatic draining or spend.
+
+## Personal Gmail and Outlook accounts
+
+Mail also offers **Connected accounts** in a personal workspace. Any authenticated
+Tuturuuu user with access to that personal workspace may connect Gmail or Outlook;
+managed Tuturuuu mailboxes retain their existing staff/reviewer and mailbox-role
+checks. Connections belong to the authorizing user, not to workspace members or
+shared mailbox delegates. Account discovery and every provider operation bind both
+user and workspace before decrypting credentials.
+
+The connected view reads provider mail directly. Inbox, Sent, Drafts, Archive,
+Trash and Spam, provider search, pagination, read state, stars, archive, trash and
+restore therefore operate on Gmail/Outlook rather than a separate local mirror.
+Mailbox operations use immutable Outlook IDs. Refresh retrieves current provider
+state; this view does not implement push notifications, offline mail storage,
+custom-folder/label management, or Google Tasks/Microsoft To Do synchronization.
+Calendar account consent remains separate from Mail consent.
+
+Compose, Reply, Reply All and Forward send through the connected provider. Reply-To
+can contain multiple addresses; Reply All retains To/Cc roles, removes the user's
+address and deduplicates case-insensitively. Replies to sent messages target the
+original recipients. Bcc is never copied into a reply. Forwarding copies selected
+original attachments from authorized source bytes and starts without recipients.
+MIME carries Unicode subjects, threading headers and calendar scheduling types.
+Gmail replies and reply drafts additionally retain the authorized provider thread
+ID when the subject is unchanged apart from reply prefixes; forwards and changed
+subjects start a new conversation.
+Attachments are limited to 10 MiB in the browser and outbound MIME to 20 MiB.
+Message preview and JSON request reads have bounded server-side limits. Aggregate
+attachment bytes are checked before MIME encoding, including forwarded copies.
+
+Drafts are saved in the provider mailbox and can be opened, edited, and sent from
+Drafts. Gmail edits update the existing draft. Graph does not support updating a
+draft with raw MIME, so an edit first creates a confirmed replacement and deletes
+the unchanged original with an ETag fence. A deletion conflict retains both drafts
+and reports that partial outcome. Untouched draft HTML, inline image content IDs, threading headers and attachment
+bytes are preserved. Original HTML is recovered from the authorized provider
+source for saving; previews still use sanitized content. Save edited drafts before using the native Drafts send action.
+
+HTML previews use a script-disabled sandbox and a restrictive CSP; remote images
+are blocked. Original attachments download as files with `nosniff`. Personal
+calendar invitations use the same bounded iTIP parser as managed Mail. Accept,
+Decline and Tentative send a single-attendee `METHOD:REPLY` to the stored organizer,
+retaining UID, sequence and recurrence identity. No calendar event is copied into
+Tuturuuu, and ambiguous/delegated/cancelled requests do not expose RSVP controls.
+
+### OAuth setup and delivery verification
+
+Configure these server-only variables for the Mail deployment:
+
+- `MAIL_CONNECTED_ACCOUNTS_KEY`: a dedicated 32-byte encryption key encoded as
+  64 hexadecimal characters. Credentials and PKCE verifiers use AES-256-GCM
+  with the authenticated user ID as associated data. Keep the key stable; changing
+  it requires reconnecting accounts.
+- `MAIL_GOOGLE_CLIENT_ID`, `MAIL_GOOGLE_CLIENT_SECRET`,
+  `MAIL_GOOGLE_REDIRECT_URI`.
+- `MAIL_MICROSOFT_CLIENT_ID`, `MAIL_MICROSOFT_CLIENT_SECRET`,
+  `MAIL_MICROSOFT_REDIRECT_URI`.
+
+Both registered callback URLs point to the Mail origin's
+`/api/v1/mail/connected/callback`. Enable the Gmail API and grant
+`https://www.googleapis.com/auth/gmail.modify`. This is a restricted Google scope;
+complete the provider's required consent verification before public rollout.
+Register the Microsoft app for organizational and personal Microsoft accounts
+when both are intended. Scopes: `User.Read`, `Mail.ReadWrite`, `Mail.Send`,
+and `offline_access`; Mail requests no Calendar scopes.
+
+OAuth uses PKCE, random hashed state, an HttpOnly SameSite browser cookie, a
+10-minute expiry, atomic state consumption, and renewed personal-workspace access
+checks during the callback. Private connection, OAuth and send-claim tables have
+RLS and no `anon`/`authenticated` grants. Expired tokens refresh on the server;
+refresh writes compare revisions; only a newer scoped, valid winner can resolve a conflict.
+An unauthorized read can refresh and retry once; mutations are not automatically
+replayed. Disconnect removes local access and encrypted credentials without
+changing provider messages. Provider-side application consent can be revoked in
+Google/Microsoft account settings.
+Sends reserve an account/request claim; acceptance records a receipt. Proven pre-send
+failures or explicit provider rejections release only their matching sending claim for user retry.
+Completed requests acknowledge without resending; in-flight, unknown or post-acceptance failures require provider Sent checks.
+Provider acceptance is not a delivery receipt. Test only with disposable mail and
+meeting fixtures unless real-account actions have been explicitly authorized.
+
+Regression coverage: `apps/mail/src/lib/mail/connected/*.test.ts`, connected
+composer/reply tests, managed `mail-reply-actions.test.ts`, and the private-table
+checks in `apps/database/supabase/tests/connected-mail-accounts.sql`. The DB gate compares
+the three generated private Mail table contracts against committed types, ignoring
+only presentation; it does not certify unrelated schema drift. Require the
+Mail and affected workspace CI type-check, lint, tests and real app builds for the
+exact authored commit. Synthetic tests do not prove provider consent, delivery or RSVP;
+verify those with configured test accounts after deployment.
+
+### Complete-schema database gate
+
+The `Connected Mail database contract` workflow runs on normal pull-request
+updates that change migrations, its fixture or verifier. It checks out the exact
+PR head, applies every tracked Supabase migration in an isolated hosted database,
+and requires all 10 assertions in `connected-mail-accounts.sql` to pass without
+skips. Its enabled-gate check fails if the workflow is disabled.
+
+After TAP succeeds, it generates actual `public`, `private` and `storage` schema
+types and uploads `connected-mail-accounts-types-<head>` for three days. Inspect
+the exact run's reset, fixture-labelled TAP, type-generation and owned-project
+stop results, then compare the downloaded types with the authored private Mail
+tables before merging. A generated artifact or staging wrapper success alone
+does not prove the entire contract. This disposable gate does not apply production
+migrations or establish provider consent, mailbox delivery or RSVP outcomes.

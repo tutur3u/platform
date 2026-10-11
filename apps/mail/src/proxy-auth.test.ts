@@ -43,7 +43,8 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
 }));
 
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/auth/proxy')>()),
   consumeVerifyTokenRequest: (
     ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
   ) => mocks.consumeVerifyTokenRequest(...args),
@@ -135,6 +136,33 @@ describe('Mail proxy auth handoff', () => {
       )
     );
     expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: 'Unauthorized' });
+    expect(mocks.clearSupabaseAuthCookies).toHaveBeenCalledOnce();
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('preserves MFA recovery cookies when the Bearer guard requires assurance', async () => {
+    const rejection = NextResponse.json(
+      { code: 'MFA_REQUIRED', error: 'MFA verification required' },
+      {
+        status: 403,
+        headers: { 'X-Tuturuuu-Auth-Assurance': 'required' },
+      }
+    );
+    rejection.cookies.set('sb-project-auth-token', 'rotated-session');
+    mocks.guardApiProxyRequest.mockResolvedValueOnce(rejection);
+    const response = await proxy(
+      new NextRequest(
+        'https://mail.tuturuuu.localhost/api/v1/workspaces/personal/mail/bootstrap',
+        { headers: { authorization: 'Bearer needs-assurance' } }
+      )
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ code: 'MFA_REQUIRED' });
+    expect(response.cookies.get('sb-project-auth-token')?.value).toBe(
+      'rotated-session'
+    );
+    expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 

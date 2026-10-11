@@ -24,57 +24,59 @@ export function ProfileMediaField({
   onChange: (url: string) => void;
 }) {
   const t = useTranslations('lettin');
-  const hintId = useId();
+  const inputId = useId();
+  const hintId = `${inputId}-hint`;
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<
     'invalidProfileImage' | 'profileUploadLimit' | 'requestFailed' | null
   >(null);
   return (
     <div className="space-y-2">
-      <label className="block space-y-2 text-sm">
+      <label htmlFor={inputId} className="block text-sm">
         {t(kind === 'avatar' ? 'profileavatar_url' : 'profilebanner_url')}
-        <Input
-          type="file"
-          aria-describedby={hintId}
-          disabled={disabled}
-          accept="image/png,image/jpeg,image/webp,image/gif"
-          onChange={async (event) => {
-            const file = event.currentTarget.files?.[0];
-            event.currentTarget.value = '';
-            if (!file) return;
-            setError(null);
-            if (
-              !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(
-                file.type
-              ) ||
-              !file.size ||
-              file.size > (kind === 'avatar' ? 2 : 5) * 1024 ** 2
-            ) {
-              setError('invalidProfileImage');
-              return;
-            }
-            setUploading(true);
-            onPending(true);
-            try {
-              const publicUrl =
-                kind === 'banner'
-                  ? (await uploadCurrentUserBanner(file)).publicUrl
-                  : await uploadCurrentUserProfileMedia(kind, file);
-              onChange(publicUrl);
-            } catch (error) {
-              setError(
-                error instanceof InternalApiError && error.status === 429
-                  ? 'profileUploadLimit'
-                  : 'requestFailed'
-              );
-            } finally {
-              setUploading(false);
-              onPending(false);
-            }
-          }}
-        />
       </label>
-      <small id={hintId} className="text-muted-foreground">
+      <Input
+        id={inputId}
+        aria-describedby={hintId}
+        type="file"
+        disabled={disabled}
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        onChange={async (event) => {
+          const file = event.currentTarget.files?.[0];
+          event.currentTarget.value = '';
+          if (!file) return;
+          setError(null);
+          if (
+            !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(
+              file.type
+            ) ||
+            !file.size ||
+            file.size > (kind === 'avatar' ? 2 : 5) * 1024 ** 2
+          ) {
+            setError('invalidProfileImage');
+            return;
+          }
+          setUploading(true);
+          onPending(true);
+          try {
+            const publicUrl =
+              kind === 'banner'
+                ? (await uploadCurrentUserBanner(file)).publicUrl
+                : await uploadCurrentUserProfileMedia(kind, file);
+            onChange(publicUrl);
+          } catch (error) {
+            setError(
+              error instanceof InternalApiError && error.status === 429
+                ? 'profileUploadLimit'
+                : 'requestFailed'
+            );
+          } finally {
+            setUploading(false);
+            onPending(false);
+          }
+        }}
+      />
+      <small id={hintId} className="block text-muted-foreground">
         {t(kind === 'avatar' ? 'avatarUploadHint' : 'bannerUploadHint')}
       </small>
       {hasImage && (

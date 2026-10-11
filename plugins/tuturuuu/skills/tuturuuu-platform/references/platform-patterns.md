@@ -441,6 +441,10 @@ Docker setup is inactive and the Docker cron runner is retired; local docs use
   elsewhere instead of squeezing gallery and detail preview columns together.
 - Keep repeated action labels scoped in tests with `within(...)` when multiple
   zones intentionally expose the same command.
+- Give form controls concise labels and attach help with `aria-describedby`.
+  Hint text nested inside a wrapping label becomes part of the accessible name
+  and breaks exact-label browser selectors. Cover names and descriptions in
+  both supported languages; diagnose a missing input before waiting on its API.
 
 
 ## Bounded billing projections
@@ -976,3 +980,29 @@ extra source content to populate a facet. When a selected tag disappears, remove
 its option and reset the selection; workspace changes reset all local facets.
 Cover combined facets and revocation with rendered tests, and distinguish those
 fixtures from hosted account acceptance.
+
+## Connected Mail provider boundaries
+
+Personal Gmail/Outlook accounts remain separate from managed Mail domains and
+shared mailbox roles. Bind every credential read to actor + workspace; consent
+must use browser-bound, expiring, atomically consumed state and PKCE. Keep tokens
+encrypted with owner-associated data and compare credential revisions on refresh.
+After a successful refresh, update every coalesced request account snapshot so
+message metadata fan-out does not repeatedly refresh an obsolete revision. Clear
+the OAuth state cookie using its original callback path.
+Provider mail actions must update provider state, not only a local projection.
+Preserve To/Cc roles and Reply-To multiplicity, omit Bcc from replies, and resolve
+forwarded attachments from the authorized provider account. Gmail reply sends
+and drafts need the source thread ID as well as References/In-Reply-To and a
+matching subject; forwards and changed subjects should not force that thread. Use persisted send
+claims; never automatically replay an ambiguous provider mutation. Graph MIME
+draft edits require a confirmed replacement before deleting an unchanged original
+with an ETag fence. Preserve original draft HTML, inline content IDs and threading
+from authorized source bytes, rather than copying the sanitized preview as the
+new source. Bound aggregate attachment bytes before base64 allocation. Record
+partial replacement failures truthfully.
+
+Task previews must preserve external Google/Outlook meetings even when local
+copies are unlocked. Keep Web, Calendar and Tasks on the shared blocked-event
+policy. See the Mail and Tasks application docs and connected-provider regression
+suite for setup, behavior scope and real-account delivery evidence.
