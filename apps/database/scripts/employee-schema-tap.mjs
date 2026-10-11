@@ -117,6 +117,47 @@ const signupMessageCategories = new Map([
   ['Employee onboarding registry is missing', 'registry_missing'],
 ]);
 
+// PostgreSQL CHECK messages omit schema; only fixed relation/constraint pairs
+// derived from the frozen creation migration may produce diagnostic categories.
+const signupConstraintCategories = new Map([
+  [
+    'employee_creation_intents.employee_creation_intents_staff_email_check',
+    'intent_staff_email_check',
+  ],
+  [
+    'employee_creation_intents.employee_creation_intents_managed_name_check',
+    'intent_managed_name_check',
+  ],
+  [
+    'infrastructure_employees.infrastructure_employees_staff_email_check',
+    'employee_staff_email_check',
+  ],
+  [
+    'infrastructure_employees.infrastructure_employees_managed_name_check',
+    'employee_managed_name_check',
+  ],
+  [
+    'infrastructure_employees.infrastructure_employees_lifecycle_state_check',
+    'employee_lifecycle_check',
+  ],
+  [
+    'infrastructure_employees.infrastructure_employees_check',
+    'employee_recovery_check',
+  ],
+]);
+
+function signupConstraintCategory(code, message) {
+  if (code !== '23514') return 'other_redacted';
+  const match =
+    /^new row for relation "([a-z_]+)" violates check constraint "([a-z_]+)"$/u.exec(
+      message
+    );
+  return match
+    ? (signupConstraintCategories.get(`${match[1]}.${match[2]}`) ??
+        'other_redacted')
+    : 'other_redacted';
+}
+
 export function signupCaughtDiagnostics(tap, ordinals) {
   if (
     typeof tap !== 'string' ||
@@ -139,6 +180,7 @@ export function signupCaughtDiagnostics(tap, ordinals) {
         expectedMessageMatches: null,
         noException: null,
         messageCategory: null,
+        constraintCategory: null,
       };
       const start = lines.findIndex((line) =>
         new RegExp(`^not ok ${ordinal}(?: - .*)?$`, 'u').test(line)
@@ -172,6 +214,7 @@ export function signupCaughtDiagnostics(tap, ordinals) {
         noException: false,
         messageCategory:
           signupMessageCategories.get(match[2]) ?? 'other_redacted',
+        constraintCategory: signupConstraintCategory(match[1], match[2]),
       };
     });
 }
