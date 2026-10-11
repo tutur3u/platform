@@ -17,6 +17,7 @@ import { verifyLettinMarkdownPersistence } from './helpers/lettin-markdown-persi
 import { verifyLettinPrivateImport } from './helpers/lettin-private-import';
 import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
 import { observeProfileNavigation } from './helpers/lettin-profile-navigation-diagnostics';
+import { verifyLettinPublicCreatorProfile } from './helpers/lettin-public-creator-profile';
 import {
   createLettinBrowserContext,
   createLettinSessionRequestOptions,
@@ -566,15 +567,15 @@ test.describe
               'Building quiet worlds.'
             );
           });
-          await phase('verify public creator profile', async () => {
-            await page.goto(`${origin}/creators/${username}`);
-            await expect(
-              page.getByText('Synthetic worldbuilder', { exact: true })
-            ).toBeVisible();
-            await expect(
-              page.getByText(creatorEmail, { exact: true })
-            ).toHaveCount(0);
-          });
+          await phase('verify public creator profile', () =>
+            verifyLettinPublicCreatorProfile(page, {
+              origin: origin!,
+              workspaceId,
+              session,
+              username,
+              creatorEmail,
+            })
+          );
         },
         'profile'
       );
