@@ -1788,3 +1788,23 @@ Regression evidence: `studio-tag-filter.test.tsx` covers combined facets, exact
 tag matching, duplicates, empty recovery, workspace reset, revoked records,
 removed tag options and both language bundles. These rendered fixtures are
 separate from exact-head CI/build and hosted browser acceptance.
+
+## Browsing reviewed notebook entries
+
+The private import and owner-copy review screens show up to 20 entry titles per
+page, in the server preview's original order. Creators can search the titles
+locally, ignoring letter case and combining accents, and clear the search to
+return to the first page. The result summary always states the total entries in
+the approved preview. No extra source read or network request is made.
+
+This is a review aid, not entry selection. Searching, paging or seeing no matches
+never changes the stored preview, consent, import limits or final creation scope:
+creation includes every entry approved by that preview. Replacing the preview
+resets search and page state. Pending creation disables the browsing controls;
+existing actor/workspace/owner consent and server permission gates remain in force.
+
+Regression evidence: `notebook-import-entries.test.tsx` exercises bounded pages,
+EN/VI labels, accent-aware title matching, empty matches, preview replacement,
+pending controls and unchanged apply behavior. Existing import/copy tests cover
+server-preview IDs and staged creation boundaries. Hosted browser acceptance and
+exact-head CI remain separate gates.
