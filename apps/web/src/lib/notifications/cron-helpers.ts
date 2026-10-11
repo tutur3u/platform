@@ -10,6 +10,11 @@ import {
   getEmailRecipientSkipDetail,
 } from './email-eligibility';
 
+import {
+  getTaskEmailSkipReason,
+  type TaskEmailNotification,
+} from './task-email-freshness';
+
 export const NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const NOTIFICATION_QUERY_CHUNK_SIZE = 500;
 export const NOTIFICATION_SELECT_PAGE_SIZE = 1000;
@@ -28,7 +33,7 @@ type SupabaseLike = EmailEligibilityClient & {
   rpc?: unknown;
 };
 
-export type NotificationSkipCandidate = {
+export type NotificationSkipCandidate = TaskEmailNotification & {
   created_at: string;
   id: string;
   type?: string | null;
@@ -216,6 +221,8 @@ export async function getNotificationSkipReason(
       notification
     );
     if (preferenceReason) return preferenceReason;
+    const taskReason = await getTaskEmailSkipReason(sbAdmin, notification);
+    if (taskReason) return taskReason;
   }
 
   const recipientReason = getRecipientSkipReason(recipientEmail);

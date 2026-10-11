@@ -356,6 +356,7 @@
               "build/development-tools/local-supabase-development",
               "build/development-tools/employee-schema-qualification",
               "build/development-tools/employee-schema-provenance",
+              "build/development-tools/notification-email-freshness",
               "build/development-tools/remote-devboxes",
               "build/development-tools/ci-cd-pipelines",
               "build/development-tools/ci-cd-optimization",

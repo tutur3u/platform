@@ -2,7 +2,18 @@ import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beginBatchDeliveryAttempt } from '@/lib/notifications/batch-reconciliation';
 import { externalRecipientCases } from '@/lib/notifications/email-eligibility-test-cases';
+
+vi.mock('@/lib/notifications/batch-reconciliation', () => ({
+  fetchNotificationBatchReconciliation: vi.fn(async () => []),
+  beginBatchDeliveryAttempt: vi.fn(async () => {}),
+  markBatchReconciliationRequired: vi.fn(async () => {}),
+}));
+
+vi.mock('@/lib/notifications/task-email-freshness', () => ({
+  getTaskEmailSkipReason: vi.fn(async () => null),
+}));
 
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -149,7 +160,6 @@ describe('process-notification-batches route', () => {
     email: Array<{ email: string }> | null;
     id: string;
   }>;
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('CRON_SECRET', 'cron-secret');
@@ -175,7 +185,6 @@ describe('process-notification-batches route', () => {
     mocks.sendSystemEmailMock.mockResolvedValue({
       success: true,
     });
-
     batches = [
       {
         channel: 'push',
@@ -215,7 +224,6 @@ describe('process-notification-batches route', () => {
         id: 'user-1',
       },
     ];
-
     mocks.fromMock.mockImplementation((table: string) => {
       switch (table) {
         case 'notification_batches':
@@ -292,7 +300,6 @@ describe('process-notification-batches route', () => {
       }
     });
   });
-
   it('processes batched push deliveries and removes invalid tokens', async () => {
     const response = await GET(
       new NextRequest(
@@ -304,7 +311,6 @@ describe('process-notification-batches route', () => {
         }
       )
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       failed: 0,
@@ -331,14 +337,15 @@ describe('process-notification-batches route', () => {
         id: 'notification-1',
       }),
     });
+    expect(beginBatchDeliveryAttempt).toHaveBeenCalledBefore(
+      mocks.sendPushNotificationBatchMock
+    );
     expect(mocks.pushDeleteInMock).toHaveBeenCalledWith('token', [
       'stale-token',
     ]);
   });
-
   it('drains fully stale batches as skipped', async () => {
     deliveryLogs[0]!.notifications.created_at = getStaleCreatedAt();
-
     const response = await GET(
       new NextRequest(
         'http://localhost/api/cron/process-notification-batches',
@@ -349,7 +356,6 @@ describe('process-notification-batches route', () => {
         }
       )
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       failed: 0,
@@ -366,7 +372,6 @@ describe('process-notification-batches route', () => {
     });
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
   });
-
   it('skips push batches when the user has no registered devices', async () => {
     mocks.fromMock.mockImplementation((table: string) => {
       switch (table) {
@@ -443,7 +448,6 @@ describe('process-notification-batches route', () => {
           throw new Error(`Unexpected table ${table}`);
       }
     });
-
     const response = await GET(
       new NextRequest(
         'http://localhost/api/cron/process-notification-batches',
@@ -454,7 +458,6 @@ describe('process-notification-batches route', () => {
         }
       )
     );
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       failed: 0,
@@ -471,7 +474,6 @@ describe('process-notification-batches route', () => {
     });
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
   });
-
   it.each(externalRecipientCases)(
     'checks external-recipient $label before send',
     async ({ confirmed, profile, verified, expected }) => {
@@ -490,7 +492,6 @@ describe('process-notification-batches route', () => {
       };
       users[0]!.email = [{ email: profile }];
       batches[0]!.email = 'old@example.com';
-
       const response = await GET(
         new NextRequest(
           'http://localhost/api/cron/process-notification-batches',
@@ -501,7 +502,6 @@ describe('process-notification-batches route', () => {
           }
         )
       );
-
       expect(response.status).toBe(200);
       expect(mocks.getUserById).toHaveBeenCalledWith('user-1');
       if (expected === 'sent') {

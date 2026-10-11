@@ -7805,13 +7805,13 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "cron:/api/cron/process-notification-batches:apps/web/src/legacy-api-routes/cron/process-notification-batches/route.ts",
+      "id": "cron:/api/cron/process-notification-batches:apps/web/src/app/api/cron/process-notification-batches/route.ts",
       "kind": "cron",
       "methods": [
         "GET"
       ],
       "routePath": "/api/cron/process-notification-batches",
-      "sourceFile": "apps/web/src/legacy-api-routes/cron/process-notification-batches/route.ts",
+      "sourceFile": "apps/web/src/app/api/cron/process-notification-batches/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
