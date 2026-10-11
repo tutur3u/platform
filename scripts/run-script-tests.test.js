@@ -6,6 +6,7 @@ const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const {
+  DEFAULT_SUPPLEMENTAL_PATHS,
   discoverScriptTests,
   runScriptTests,
 } = require('./run-script-tests.js');
@@ -173,4 +174,162 @@ test('missing-root subprocesses exit nonzero and name the root', (t) => {
 
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /missing-child-root/);
+});
+
+const employeeTests = [
+  'apps/database/scripts/employee-validation-source-contract.test.mjs',
+  'apps/database/scripts/employee-validation-stage-cleanup.test.mjs',
+];
+
+function defaultFixture(t) {
+  const repoRoot = createFixture(t);
+  for (const file of DEFAULT_SUPPLEMENTAL_PATHS) write(repoRoot, file);
+  write(repoRoot, 'scripts/ordinary.test.js');
+  write(repoRoot, 'apps/database/scripts/runtime-gate.test.mjs');
+  return repoRoot;
+}
+
+test('default discovery admits only the selected employee sources and list mode never spawns', (t) => {
+  const repoRoot = defaultFixture(t);
+  const files = discoverScriptTests({ repoRoot });
+  for (const file of employeeTests) {
+    assert.equal(files.filter((candidate) => candidate === file).length, 1);
+  }
+  assert.deepEqual(
+    files,
+    [...new Set(files)].sort((a, b) => a.localeCompare(b))
+  );
+  assert.equal(
+    files.includes('apps/database/scripts/runtime-gate.test.mjs'),
+    false
+  );
+  assert.equal(
+    runScriptTests({
+      repoRoot,
+      listOnly: true,
+      spawnImpl() {
+        assert.fail('list mode must never execute a test');
+      },
+    }),
+    0
+  );
+});
+
+test('default execution separates the employee pair into one bounded serial process', (t) => {
+  const repoRoot = defaultFixture(t);
+  const calls = [];
+  assert.equal(
+    runScriptTests({
+      repoRoot,
+      spawnImpl(command, args, options) {
+        calls.push({ command, args, options });
+        return { status: 0 };
+      },
+    }),
+    0
+  );
+  assert.equal(calls.length, 2);
+  const [legacy, employee] = calls;
+  assert.equal(legacy.command, process.execPath);
+  assert.deepEqual(legacy.options, { cwd: repoRoot, stdio: 'inherit' });
+  assert.deepEqual(legacy.args.slice(0, 2), [
+    '--experimental-strip-types',
+    '--test',
+  ]);
+  assert.deepEqual(
+    legacy.args.slice(2),
+    discoverScriptTests({ repoRoot }).filter(
+      (file) => !employeeTests.includes(file)
+    )
+  );
+  assert.equal(employee.command, process.execPath);
+  assert.ok(employee.args.includes('--max-old-space-size=64'));
+  assert.ok(employee.args.includes('--test-isolation=none'));
+  assert.ok(employee.args.includes('--test-concurrency=1'));
+  assert.deepEqual(
+    employee.args.slice(employee.args.indexOf('--test') + 1),
+    employeeTests
+  );
+  assert.equal(employee.options.cwd, repoRoot);
+  assert.equal(employee.options.stdio, 'inherit');
+  assert.equal(employee.options.timeout, 60000);
+  assert.equal(employee.options.killSignal, 'SIGKILL');
+});
+
+test('a legacy failure stops before any employee source execution', (t) => {
+  const repoRoot = defaultFixture(t);
+  let calls = 0;
+  assert.equal(
+    runScriptTests({
+      repoRoot,
+      spawnImpl() {
+        calls++;
+        return { status: 7 };
+      },
+    }),
+    7
+  );
+  assert.equal(calls, 1);
+});
+
+for (const [label, result, expected] of [
+  ['nonzero exit', { status: 4 }, 4],
+  ['signal', { status: 0, signal: 'SIGKILL' }, 1],
+  ['missing status', { status: null }, 1],
+]) {
+  test(`employee-only execution fails closed on ${label} without a legacy process`, (t) => {
+    const repoRoot = createFixture(t);
+    for (const file of employeeTests) write(repoRoot, file);
+    let calls = 0;
+    assert.equal(
+      runScriptTests({
+        repoRoot,
+        roots: [],
+        supplementalPaths: employeeTests,
+        spawnImpl() {
+          calls++;
+          return result;
+        },
+      }),
+      expected
+    );
+    assert.equal(calls, 1);
+  });
+}
+
+for (const code of ['ETIMEDOUT', 'ENOENT']) {
+  test(`employee batch preserves ${code} as the primary spawn error`, (t) => {
+    const repoRoot = defaultFixture(t);
+    const failure = Object.assign(new Error(code), { code });
+    let calls = 0;
+    assert.throws(
+      () =>
+        runScriptTests({
+          repoRoot,
+          spawnImpl() {
+            calls++;
+            return calls === 1
+              ? { status: 0 }
+              : { error: failure, status: null, signal: 'SIGKILL' };
+          },
+        }),
+      (error) => error === failure
+    );
+    assert.equal(calls, 2);
+  });
+}
+
+test('a missing default employee source fails before spawning any batch', (t) => {
+  const repoRoot = defaultFixture(t);
+  fs.unlinkSync(path.join(repoRoot, employeeTests[0]));
+  assert.throws(
+    () =>
+      runScriptTests({
+        repoRoot,
+        spawnImpl() {
+          assert.fail('missing registration must not run tests');
+        },
+      }),
+    /employee-validation-source-contract\.test\.mjs/
+  );
 });

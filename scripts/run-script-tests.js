@@ -5,7 +5,12 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const DEFAULT_ROOTS = ['scripts'];
+const EMPLOYEE_SOURCE_TESTS = Object.freeze([
+  'apps/database/scripts/employee-validation-source-contract.test.mjs',
+  'apps/database/scripts/employee-validation-stage-cleanup.test.mjs',
+]);
 const DEFAULT_SUPPLEMENTAL_PATHS = [
+  ...EMPLOYEE_SOURCE_TESTS,
   '.github/actions/setup-turbo-fallback-cache/action.test.js',
   '.github/actions/run-with-turbo-remote-cache/action.test.js',
   'apps/database/scripts/delete-storage-buckets.test.js',
@@ -120,16 +125,43 @@ function runScriptTests({
     return 0;
   }
 
-  const result = spawnImpl(
-    process.execPath,
-    ['--experimental-strip-types', '--test', ...files],
-    {
-      cwd: repoRoot,
-      stdio: 'inherit',
-    }
+  const employeeFiles = files.filter((file) =>
+    EMPLOYEE_SOURCE_TESTS.includes(file)
   );
-  if (result.error) throw result.error;
-  return result.status ?? 1;
+  const legacyFiles = files.filter(
+    (file) => !EMPLOYEE_SOURCE_TESTS.includes(file)
+  );
+  const batches = [];
+  if (legacyFiles.length > 0) {
+    batches.push({
+      args: ['--experimental-strip-types', '--test', ...legacyFiles],
+      options: { cwd: repoRoot, stdio: 'inherit' },
+    });
+  }
+  if (employeeFiles.length > 0) {
+    batches.push({
+      args: [
+        '--max-old-space-size=64',
+        '--test-isolation=none',
+        '--test-concurrency=1',
+        '--test',
+        ...employeeFiles,
+      ],
+      options: {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        timeout: 60000,
+        killSignal: 'SIGKILL',
+      },
+    });
+  }
+  for (const { args, options } of batches) {
+    const result = spawnImpl(process.execPath, args, options);
+    if (result.error) throw result.error;
+    const status = result.signal ? 1 : (result.status ?? 1);
+    if (status !== 0) return status;
+  }
+  return 0;
 }
 
 function main(argv = process.argv.slice(2)) {

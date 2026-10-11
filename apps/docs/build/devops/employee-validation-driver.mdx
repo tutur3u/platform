@@ -45,6 +45,16 @@ default removal, custom retention, and double-failure precedence before any
 configuration rewrite or metadata creation. Each fixture is bounded to 4096
 bytes, two files, and twelve directories and removes only its own fresh root.
 
+The root `bun test:scripts` runner explicitly registers these two source tests.
+Use `node scripts/run-script-tests.js --list` to inspect membership without
+executing tests. After the ordinary script batch succeeds, the runner executes
+only this pair in one Node process with test isolation disabled, concurrency one,
+a 64 MiB V8 old-space limit, and a 60-second process deadline enforced with
+SIGKILL. A failure or unknown exit stops the run. The old-space limit does not
+cap total process memory. Four previously registered database tests remain in the
+ordinary batch; this change adds no other database scripts or runtime gates.
+This registration provides no SQL, Auth, provider, or physical admission evidence.
+
 Run selected source tests through the existing resource broker from the owning
 checkout, with one Node process and worker, a 64 MiB heap, and a deadline of at
 most 60 seconds. Import-binding checks after relocation remain source evidence.
