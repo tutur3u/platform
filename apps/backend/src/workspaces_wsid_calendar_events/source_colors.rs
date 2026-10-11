@@ -96,12 +96,11 @@ fn apply_source_colors(events: &mut [Value], connections: &[Value]) {
                         .is_some_and(|id| source["workspace_calendar_id"].as_str() == Some(id))
             })
             .collect();
-        if matches.len() == 1 {
-            if let Some(rgb) = opaque_rgb(&matches[0]["color"]) {
-                if let Some(object) = event.as_object_mut() {
-                    object.insert("_calendarColor".into(), Value::String(rgb));
-                }
-            }
+        if matches.len() == 1
+            && let Some(rgb) = opaque_rgb(&matches[0]["color"])
+            && let Some(object) = event.as_object_mut()
+        {
+            object.insert("_calendarColor".into(), Value::String(rgb));
         }
     }
 }

@@ -201,10 +201,10 @@ pub(super) async fn support_inquiry_data_patch_response(
     }
 
     if request.cookie.is_some()
-        && !request
+        && request
             .authorization
             .and_then(|value| value.strip_prefix("Bearer "))
-            .is_some_and(|token| !token.trim().is_empty())
+            .is_none_or(|token| token.trim().is_empty())
         && !is_same_origin_api_request(request)
     {
         return no_store_response(json_response(
