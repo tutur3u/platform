@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { Console } from 'node:console';
+import { Writable } from 'node:stream';
 import test from 'node:test';
 import type { Page, Response } from '@playwright/test';
 import {
@@ -70,7 +72,8 @@ test('navigation failure preserves the error, bounds hops and detaches its liste
   let captured: unknown;
   const warn = console.warn;
   console.warn = (_label, record) => {
-    captured = record;
+    assert.equal(typeof record, 'string');
+    captured = JSON.parse(record);
   };
   try {
     await assert.rejects(
@@ -165,7 +168,8 @@ test('failed navigation reads the redirect edge assigned after the response even
   let captured: unknown;
   const warn = console.warn;
   console.warn = (_label, record) => {
-    captured = record;
+    assert.equal(typeof record, 'string');
+    captured = JSON.parse(record);
   };
   try {
     await assert.rejects(
@@ -237,4 +241,69 @@ test('same profile path on another origin is distinguished without exposing its 
   assert.equal(edge.sameOrigin, false);
   assert.equal(edge.samePath, false);
   assert.doesNotMatch(JSON.stringify(edge), /private-host|00000000/u);
+});
+
+test('real console output retains nested fixed producer categories without private data', async () => {
+  let listener: ((response: Response) => void) | undefined;
+  const frame = {};
+  const path = '/00000000-0000-0000-0000-000000000000/profile';
+  const page = {
+    mainFrame: () => frame,
+    on: (_event: string, callback: typeof listener) => {
+      listener = callback;
+    },
+    off: () => {},
+  } as unknown as Page;
+  const response = {
+    request: () => ({
+      isNavigationRequest: () => true,
+      redirectedTo: () => ({ url: () => `${origin}${path}?token=private` }),
+    }),
+    frame: () => frame,
+    status: () => 307,
+    url: () => `${origin}${path}?secret=private`,
+    headers: () => ({
+      'x-lettin-profile-proxy': 'canonical-locale|unprefixed|en|different',
+      'x-private': 'private-secret',
+    }),
+  } as unknown as Response;
+  let output = '';
+  const stream = new Writable({
+    write(chunk, _encoding, callback) {
+      output += chunk.toString();
+      callback();
+    },
+  });
+  const capturedConsole = new Console({ stdout: stream, stderr: stream });
+  const warn = console.warn;
+  console.warn = capturedConsole.warn.bind(capturedConsole);
+  const failure = new Error('private failure');
+  try {
+    await assert.rejects(
+      observeProfileNavigation(page, origin, async () => {
+        listener?.(response);
+        throw failure;
+      }),
+      (error) => error === failure
+    );
+    const label = '[lettin-e2e] profile navigation diagnostics ';
+    assert.ok(output.startsWith(label));
+    const record = JSON.parse(output.slice(label.length));
+    assert.equal(record.hops.length, 1);
+    assert.deepEqual(record.hops[0].proxy, {
+      stage: 'canonical-locale',
+      requestLocale: 'unprefixed',
+      nextLocale: 'en',
+      sameRequestPath: false,
+    });
+    assert.equal(record.hops[0].sameOrigin, true);
+    assert.equal(record.truncated, false);
+    assert.doesNotMatch(
+      output,
+      /\[Object\]|private|secret|00000000|127\.0\.0\.1/u
+    );
+  } finally {
+    console.warn = warn;
+    stream.end();
+  }
 });

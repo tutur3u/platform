@@ -119,7 +119,7 @@ export async function observeProfileNavigation<T>(
   try {
     return await navigate();
   } catch (error) {
-    console.warn('[lettin-e2e] profile navigation diagnostics', {
+    const diagnostics = {
       hops: responses.map(({ item, status }) => {
         try {
           return {
@@ -144,7 +144,12 @@ export async function observeProfileNavigation<T>(
         }
       }),
       truncated,
-    });
+    };
+    // Preserve nested fixed categories in CI logs instead of opaque [Object].
+    console.warn(
+      '[lettin-e2e] profile navigation diagnostics',
+      JSON.stringify(diagnostics)
+    );
     throw error;
   } finally {
     page.off('response', response);
