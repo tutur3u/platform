@@ -67,13 +67,19 @@ jobs:
           sudo apt-get install -y libnss3-tools
           cd apps/web
           bun x --no-install playwright install --with-deps chromium
+      - name: Verify the existing Chrome sandbox helper
+        env:
+          CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox
+        run: node scripts/ci/mail-profile-runtime-sandbox.mjs "$CHROME_DEVEL_SANDBOX"
       - name: Check fixture lifecycle contract
-        run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs scripts/ci/mail-profile-runtime-paths.test.mjs scripts/ci/mail-profile-startup-diagnostics.test.mjs
+        run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs scripts/ci/mail-profile-runtime-paths.test.mjs scripts/ci/mail-profile-startup-diagnostics.test.mjs scripts/ci/mail-profile-runtime-sandbox.test.mjs
       - name: Normal setup through the shared resource queue
         run: |
           bun packages/sdk/src/cli/resources-entry.ts status --json
           bun packages/sdk/src/cli/resources-entry.ts run -- node scripts/ci/mail-profile-runtime-setup.mjs
       - name: Run exact profile and independent browser transport contract
+        env:
+          CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox
         run: |
           bun packages/sdk/src/cli/resources-entry.ts status --json
           bun packages/sdk/src/cli/resources-entry.ts run -- node scripts/ci/mail-profile-runtime.mjs "$PROFILE_EXPECTED_HEAD"
