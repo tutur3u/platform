@@ -104,6 +104,19 @@ const signupFailureContracts = new Map([
   [23, 'Employee creation must remain confirmed and pending'],
 ]);
 
+const signupMessageCategories = new Map([
+  ['Employee creation intent is missing', 'expected_intent_missing'],
+  [
+    'Employee creation must remain confirmed and pending',
+    'expected_pending_required',
+  ],
+  [
+    'Employee creation intent does not match identity',
+    'intent_identity_mismatch',
+  ],
+  ['Employee onboarding registry is missing', 'registry_missing'],
+]);
+
 export function signupCaughtDiagnostics(tap, ordinals) {
   if (
     typeof tap !== 'string' ||
@@ -125,6 +138,7 @@ export function signupCaughtDiagnostics(tap, ordinals) {
         expectedSqlstate: '23514',
         expectedMessageMatches: null,
         noException: null,
+        messageCategory: null,
       };
       const start = lines.findIndex((line) =>
         new RegExp(`^not ok ${ordinal}(?: - .*)?$`, 'u').test(line)
@@ -156,6 +170,8 @@ export function signupCaughtDiagnostics(tap, ordinals) {
         expectedMessageMatches:
           match[2] === signupFailureContracts.get(ordinal),
         noException: false,
+        messageCategory:
+          signupMessageCategories.get(match[2]) ?? 'other_redacted',
       };
     });
 }

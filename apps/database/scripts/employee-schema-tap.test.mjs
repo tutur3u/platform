@@ -337,3 +337,92 @@ test('signup caught diagnostic keeps separate failure block bindings', () => {
     [true, false]
   );
 });
+
+test('signup fixed message category recognizes only declared owned literals', () => {
+  const cases = [
+    ['Employee creation intent is missing', 'expected_intent_missing'],
+    [
+      'Employee creation must remain confirmed and pending',
+      'expected_pending_required',
+    ],
+    [
+      'Employee creation intent does not match identity',
+      'intent_identity_mismatch',
+    ],
+    ['Employee onboarding registry is missing', 'registry_missing'],
+  ];
+  for (const [message, category] of cases) {
+    const [value] = signupCaughtDiagnostics(
+      caughtTap(22, '23514', message),
+      [22]
+    );
+    assert.equal(value.diagnosticValid, true);
+    assert.equal(value.messageCategory, category);
+    assert.equal(
+      value.expectedMessageMatches,
+      category === 'expected_intent_missing'
+    );
+  }
+});
+test('signup fixed message category redacts arbitrary runtime values', () => {
+  const [value] = signupCaughtDiagnostics(
+    caughtTap(23, '23514', 'PRIVATE password=SECRET'),
+    [23]
+  );
+  assert.equal(value.messageCategory, 'other_redacted');
+  assert.equal(value.expectedMessageMatches, false);
+  for (const text of ['PRIVATE', 'SECRET', 'password', 'caught:', 'wanted:']) {
+    assert.equal(JSON.stringify(value).includes(text), false);
+  }
+});
+test('signup fixed message category never normalizes ambiguous spellings', () => {
+  for (const message of [
+    ' Employee onboarding registry is missing',
+    'Employee onboarding registry is missing ',
+    'employee onboarding registry is missing',
+    'Employee onboarding registry is missing PRIVATE',
+  ]) {
+    const [value] = signupCaughtDiagnostics(
+      caughtTap(22, '23514', message),
+      [22]
+    );
+    assert.equal(value.messageCategory, 'other_redacted');
+  }
+});
+test('signup fixed message category stays null for multiline diagnostics', () => {
+  const tap = caughtTap(
+    22,
+    '23514',
+    'Employee onboarding registry is missing'
+  ).replace('#       wanted:', '# PRIVATE continuation\n#       wanted:');
+  const [value] = signupCaughtDiagnostics(tap, [22]);
+  assert.equal(value.diagnosticValid, false);
+  assert.equal(value.messageCategory, null);
+  assert.equal(JSON.stringify(value).includes('PRIVATE'), false);
+});
+test('signup fixed message category stays null for malformed or duplicate evidence', () => {
+  const valid = caughtTap(
+    22,
+    '23514',
+    'Employee onboarding registry is missing'
+  );
+  for (const tap of [
+    valid.replace('Failed test 22:', 'Failed test 23:'),
+    `${valid}# caught: 23514: PRIVATE\n`,
+    valid.replace('caught: 23514:', 'caught: private:'),
+    valid.replace('wanted: 23514:', 'wanted: 42501:'),
+  ]) {
+    const [value] = signupCaughtDiagnostics(tap, [22]);
+    assert.equal(value.diagnosticValid, false);
+    assert.equal(value.messageCategory, null);
+  }
+});
+test('signup fixed message category preserves scope and schema success gates', () => {
+  const diagnostic = schemaFailureDiagnostic('packet-tap', 2, {
+    stdout: caughtTap(22, '23514', 'Employee onboarding registry is missing'),
+  });
+  assert.deepEqual(diagnostic.signupExceptions, []);
+  assert.equal(receipt().schemaQualified, true);
+  assert.equal(receipt().assertions, 172);
+  assert.equal(receipt({ cleanupSucceeded: false }).schemaQualified, false);
+});
