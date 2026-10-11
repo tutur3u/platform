@@ -76,3 +76,28 @@ types, ordinary GoTrue creation and deferred checks, C1/C2 service cast removal,
 C3 Mail compatibility, employee creation/restoration/reload/privacy behavior,
 and customer or production delivery remain separate unfinished gates. This page
 provides no admission, credential acquisition, bootstrap, or execution recipe.
+
+## Native clock source
+
+`employee-validation-native-clock.mjs` provides only the native clock
+interface consumed by the dedicated client: monotonic and civil milliseconds,
+machine and boot identity, and the reviewed clock origin. It reads the actual
+Linux machine, boot and time namespace identities, binds the reviewed Node
+executable hash, and rejects identity drift, backwards elapsed time and unsafe
+clock ranges. Civil-time rollback does not reset elapsed time; the existing
+client still applies civil admission expiry and its monotonic attempt deadline.
+
+The clock origin is stable across an attested boot and time namespace. It is not
+a lease generation, fence, ownership capability or durable acknowledgement.
+Bind the factory inputs to the exact admission host, Node hash and clock origin;
+the time namespace comes from a separately reviewed launcher descriptor. The
+strict existing admission schema and default denied entry remain unchanged.
+
+The focused clock tests separate real two-process native sampling from synthetic
+rejection and civil-rollback cases. Run them only on pinned Linux through the
+resource broker with one Node process/worker, a 64 MiB heap and a 60-second
+outer deadline. They start at most one bounded read-only Node child and create
+no files, daemon, database, lease or host configuration. A passing clock suite
+establishes neither a native supervisor backend nor physical quota, socket,
+network, fence, recovery, SQL, generated types or provider readiness. The standalone
+driver remains denied until a genuinely admitted backend and clock are supplied.
