@@ -35,3 +35,10 @@ bounded exit status, timeout/signal indicators, and TAP failure flags/counts. It
 contains no assertion descriptions, SQL, exception messages, container paths, or
 credentials. A diagnostic is evidence about the failed stage, not a passing
 packet; verify the same exact source and keep all failed attempts.
+
+The bounded failure diagnostic also records numeric `failedAssertionOrdinals`
+only when the TAP numbers are unique, increasing, within the frozen packet's
+assertion range, and agree with the failure count. Malformed or oversized evidence
+sets `assertionOrdinalsValid` to false and emits an empty array. Match valid numbers
+to the exact frozen fixture offline; descriptions and expected/actual values are
+never exposed. These numbers locate failures and do not change any passing gate.

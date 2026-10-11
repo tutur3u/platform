@@ -4,6 +4,7 @@ import {
   assertPacketTap,
   assertRollbackSource,
   exactSourceSha,
+  failedAssertionOrdinals,
   foundationPackets,
   schemaFailureDiagnostic,
   schemaReceipt,
@@ -149,5 +150,80 @@ test('cleanup diagnostics use no fixture ordinal and retain no container name', 
     stderr: 'supabase_db_PRIVATE',
   });
   assert.equal(diagnostic.packetOrdinal, 0);
+  assert.equal(JSON.stringify(diagnostic).includes('PRIVATE'), false);
+});
+
+test('failed assertion ordinals preserve numeric positions and count', () => {
+  const diagnostic = schemaFailureDiagnostic('packet-tap', 1, {
+    stdout: 'not ok 3 - first failure\nnot ok 21 - second failure\n',
+  });
+  assert.deepEqual(diagnostic.failedAssertionOrdinals, [3, 21]);
+  assert.equal(diagnostic.assertionOrdinalsValid, true);
+  assert.equal(diagnostic.failingAssertions, 2);
+});
+test('failed assertion ordinals retain no private descriptions or values', () => {
+  const diagnostic = schemaFailureDiagnostic('packet-tap', 1, {
+    stdout: 'not ok 2 - password=PRIVATE\n# have: PRIVATE\n# want: SECRET\n',
+  });
+  assert.deepEqual(diagnostic.failedAssertionOrdinals, [2]);
+  assert.equal(JSON.stringify(diagnostic).includes('PRIVATE'), false);
+  assert.equal(JSON.stringify(diagnostic).includes('SECRET'), false);
+});
+test('failed assertion ordinals reject duplicates or reversed order', () => {
+  for (const tap of ['not ok 2\nnot ok 2', 'not ok 3\nnot ok 2']) {
+    assert.throws(() => failedAssertionOrdinals(tap, 25));
+    const diagnostic = schemaFailureDiagnostic('packet-tap', 1, {
+      stdout: tap,
+    });
+    assert.deepEqual(diagnostic.failedAssertionOrdinals, []);
+    assert.equal(diagnostic.assertionOrdinalsValid, false);
+  }
+});
+test('failed assertion ordinals reject out of range and unsafe integers', () => {
+  for (const tap of ['not ok 26', 'not ok 0', 'not ok 9007199254740993']) {
+    assert.throws(() => failedAssertionOrdinals(tap, 25));
+    assert.equal(
+      schemaFailureDiagnostic('packet-tap', 1, {
+        stdout: tap,
+      }).assertionOrdinalsValid,
+      false
+    );
+  }
+});
+test('failed assertion ordinals reject malformed numeric TAP', () => {
+  for (const tap of [
+    'not ok',
+    'not ok -1',
+    'not ok 01',
+    'not ok 1x',
+    'not ok 1.5',
+    'not ok 1 PRIVATE',
+    'not ok 1\t- PRIVATE',
+  ]) {
+    assert.throws(() => failedAssertionOrdinals(tap, 25));
+    const diagnostic = schemaFailureDiagnostic('packet-tap', 1, {
+      stdout: tap,
+    });
+    assert.equal(diagnostic.assertionOrdinalsValid, false);
+    assert.deepEqual(diagnostic.failedAssertionOrdinals, []);
+  }
+});
+test('failed assertion ordinals enforce packet binding and agreement', () => {
+  assert.deepEqual(failedAssertionOrdinals('ok 1\n# not ok 2', 25), []);
+  assert.throws(() => failedAssertionOrdinals('not ok 1', 0));
+  assert.throws(() => failedAssertionOrdinals('', '25'));
+  const diagnostic = schemaFailureDiagnostic('packet-tap', 0, {
+    stdout: 'not ok 1',
+  });
+  assert.equal(diagnostic.failingAssertions, 1);
+  assert.equal(diagnostic.assertionOrdinalsValid, false);
+  assert.deepEqual(diagnostic.failedAssertionOrdinals, []);
+});
+test('failed assertion ordinals deny oversized output without raw leakage', () => {
+  const tap = `not ok 1 - PRIVATE\n${'x'.repeat(1048576)}`;
+  assert.throws(() => failedAssertionOrdinals(tap, 25));
+  const diagnostic = schemaFailureDiagnostic('packet-tap', 1, { stdout: tap });
+  assert.equal(diagnostic.assertionOrdinalsValid, false);
+  assert.deepEqual(diagnostic.failedAssertionOrdinals, []);
   assert.equal(JSON.stringify(diagnostic).includes('PRIVATE'), false);
 });
