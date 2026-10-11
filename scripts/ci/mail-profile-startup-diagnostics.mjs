@@ -12,6 +12,20 @@ const categories = [
     /\b(?:MODULE_NOT_FOUND|ERR_MODULE_NOT_FOUND)\b|Cannot find module|Module not found/u,
   ],
   [
+    'unsupported-cli-option',
+    /\bERR_PARSE_ARGS_UNKNOWN_OPTION\b|(?:unknown|unrecognized) (?:option|argument)\b/iu,
+  ],
+  [
+    'next-config-load',
+    /Failed to load next\.config\.(?:js|mjs|ts)|Invalid next\.config\.(?:js|mjs|ts) options detected/u,
+  ],
+  [
+    'module-export-contract',
+    /\b(?:ERR_PACKAGE_PATH_NOT_EXPORTED|ERR_REQUIRE_ESM|ERR_UNSUPPORTED_DIR_IMPORT)\b|does not provide an export named/u,
+  ],
+  ['node-option-rejected', /bad option:|is not allowed in NODE_OPTIONS/u],
+  ['runtime-syntax', /\bSyntaxError:/u],
+  [
     'cache-components-config',
     /Route segment config.*(?:dynamic|revalidate).*cacheComponents/u,
   ],

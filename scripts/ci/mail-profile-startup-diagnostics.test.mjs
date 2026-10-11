@@ -103,3 +103,64 @@ test('failure observation exposes only fixed classification and preserves reject
   assert.equal(JSON.stringify(records).includes('private-value'), false);
   assert.equal(JSON.stringify(records).includes('/secret/path'), false);
 });
+
+// Synthetic known-family inputs exercise safe enums, not the actual hosted cause.
+const additionalFamilies = [
+  ['unsupported-cli-option', "error: unknown option '--private-option'"],
+  ['next-config-load', 'Failed to load next.config.ts'],
+  ['module-export-contract', 'ERR_PACKAGE_PATH_NOT_EXPORTED'],
+  ['node-option-rejected', '--private-option is not allowed in NODE_OPTIONS'],
+  ['runtime-syntax', 'SyntaxError: unexpected private-value'],
+];
+for (const [category, message] of additionalFamilies) {
+  test(`additional startup family ${category} reveals no private text`, () => {
+    const input = `${message} token=private-value /secret/path https://private.invalid/?credential=private-value`;
+    const output = startupCategories(input);
+    assert.deepEqual(output, [category]);
+    assert.equal(JSON.stringify(output).includes('private-value'), false);
+    assert.equal(JSON.stringify(output).includes('/secret/path'), false);
+    assert.equal(JSON.stringify(output).includes('private.invalid'), false);
+    assert.deepEqual(startupCategories(input + input), [category]);
+  });
+}
+
+test('new private startup families remain bounded enums with cause unproved', async () => {
+  const reports = await fs.mkdtemp(
+    path.join(os.tmpdir(), 'startup-families-test-')
+  );
+  try {
+    await fs.writeFile(
+      path.join(reports, 'web-private.log'),
+      additionalFamilies.map(([, message]) => message).join('\n') +
+        '\ntoken=private-value /secret/path https://private.invalid/credential',
+      { mode: 0o600 }
+    );
+    const records = await privateStartupDiagnostics(reports, [
+      { profileApp: 'web', exitCode: 1, signalCode: null },
+    ]);
+    assert.deepEqual(
+      records[0].categories,
+      additionalFamilies.map(([name]) => name)
+    );
+    assert.equal(records[0].causeProven, false);
+    assert.equal(records[0].logRead, 'bounded-private-tail');
+    assert.equal(records[0].truncated, false);
+    assert.equal(records[0].inspectedBytes, records[0].logBytes);
+    const output = JSON.stringify(records);
+    for (const privateText of [
+      'private-value',
+      '/secret/path',
+      'private.invalid',
+      'unknown option',
+    ])
+      assert.equal(output.includes(privateText), false);
+    assert.deepEqual(
+      startupCategories(
+        'token=private-value /secret/path unknown private cause'
+      ),
+      []
+    );
+  } finally {
+    await fs.rm(reports, { recursive: true });
+  }
+});
