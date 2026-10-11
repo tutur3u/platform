@@ -2,8 +2,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-export const CHROME_SANDBOX = '/opt/google/chrome/chrome-sandbox';
-const PARENTS = ['/', '/opt', '/opt/google', '/opt/google/chrome'];
+export const CHROME_SANDBOX = '/usr/local/libexec/tuturuuu-mail/chrome-sandbox';
+const PARENTS = [
+  '/',
+  '/usr',
+  '/usr/local',
+  '/usr/local/libexec',
+  '/usr/local/libexec/tuturuuu-mail',
+];
 
 export function assertSandboxMetadata(helper, parents, environment) {
   assert.equal(

@@ -6,13 +6,13 @@ import {
 } from './mail-profile-runtime-sandbox.mjs';
 
 const helper = { isFile: true, uid: 0, gid: 0, mode: 0o104755 };
-const parents = Array.from({ length: 4 }, () => ({
+const parents = Array.from({ length: 5 }, () => ({
   isDirectory: true,
   uid: 0,
   mode: 0o40755,
 }));
 
-test('accepts the fixed existing root-owned setuid helper with protected parents', () => {
+test('accepts the fixed provisioned root-owned setuid helper with protected parents', () => {
   assertSandboxMetadata(helper, parents, CHROME_SANDBOX);
 });
 

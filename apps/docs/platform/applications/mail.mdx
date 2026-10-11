@@ -557,11 +557,11 @@ frozen normal setup through the shared queue for Lettin profile upload/save/relo
 independent Chromium session transport tests. Its exclusive disposable VM owns complete-schema
 Supabase Auth/REST/Storage on safe local API port 8001, local D1 fixtures and Next apps.
 Storage uses an owned HTTPS proxy and one-day CA with normal verification. Chromium sandboxing
-stays enabled: existing `/opt/google/chrome/chrome-sandbox` must be a regular root:root `4755`
-file under real root-owned parents not writable by others. Runtime selects it through
-`CHROME_DEVEL_SANDBOX`, following Chromium's [existing-helper option](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md).
-No helper installation, permission changes or security disabling occurs; unsafe/missing helpers
-fail preflight. Metadata tests do not prove compatibility: require actual runtime success.
+stays enabled: hosted-only setup authenticates Google's signed Release/Packages SHA256 chain,
+extracts only a fresh packaged helper without maintainer scripts, and records package/helper hashes.
+Root installs it exclusively at `/usr/local/libexec/tuturuuu-mail/chrome-sandbox` with protected
+parents and `4755` mode; `CHROME_DEVEL_SANDBOX` selects it using Chromium's [helper option](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md).
+No existing `/opt` bytes, shared Linux permissions or security policy change; require actual runtime success.
 Missing/skipped/retried tests and failed cleanup fail the gate; fixtures delete only their
 synthetic IDs/media and stop recorded project/app/proxy processes. No provider credentials,
 raw traces or private CA keys are published. Broad E2E stays disabled; terminal evidence proves

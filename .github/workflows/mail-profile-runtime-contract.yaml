@@ -67,10 +67,16 @@ jobs:
           sudo apt-get install -y libnss3-tools
           cd apps/web
           bun x --no-install playwright install --with-deps chromium
-      - name: Verify the existing Chrome sandbox helper
+      - name: Provision an authenticated sandbox helper in the exclusive hosted VM
+        run: |
+          timeout --signal=TERM --kill-after=5 540s sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT,RUNNER_OS,ImageOS /usr/bin/python3 -I scripts/ci/mail-profile-runtime-sandbox-install.py
+          sudo /usr/bin/cat /usr/local/libexec/tuturuuu-mail/sandbox-provenance.json > "$RUNNER_TEMP/mail-sandbox-provisioning.json"
+      - name: Verify the protected Chrome sandbox helper
         env:
-          CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox
+          CHROME_DEVEL_SANDBOX: /usr/local/libexec/tuturuuu-mail/chrome-sandbox
         run: node scripts/ci/mail-profile-runtime-sandbox.mjs "$CHROME_DEVEL_SANDBOX"
+      - name: Check sandbox provisioning rejection contracts
+        run: /usr/bin/python3 scripts/ci/mail-profile-runtime-sandbox-install.test.py
       - name: Check fixture lifecycle contract
         run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs scripts/ci/mail-profile-runtime-paths.test.mjs scripts/ci/mail-profile-startup-diagnostics.test.mjs scripts/ci/mail-profile-runtime-sandbox.test.mjs
       - name: Normal setup through the shared resource queue
@@ -79,7 +85,7 @@ jobs:
           bun packages/sdk/src/cli/resources-entry.ts run -- node scripts/ci/mail-profile-runtime-setup.mjs
       - name: Run exact profile and independent browser transport contract
         env:
-          CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox
+          CHROME_DEVEL_SANDBOX: /usr/local/libexec/tuturuuu-mail/chrome-sandbox
         run: |
           bun packages/sdk/src/cli/resources-entry.ts status --json
           bun packages/sdk/src/cli/resources-entry.ts run -- node scripts/ci/mail-profile-runtime.mjs "$PROFILE_EXPECTED_HEAD"
@@ -88,6 +94,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: mail-profile-runtime-${{ github.event.pull_request.head.sha }}
-          path: ${{ runner.temp }}/mail-profile-${{ github.run_id }}/terminal.json
+          path: |
+            ${{ runner.temp }}/mail-profile-${{ github.run_id }}/terminal.json
+            ${{ runner.temp }}/mail-sandbox-provisioning.json
           if-no-files-found: error
           retention-days: 3
