@@ -2,6 +2,10 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { externalRecipientCases } from '@/lib/notifications/email-eligibility-test-cases';
 import {
+  createCurrentTaskLookupFixture,
+  createResolvedChain,
+} from '@/lib/notifications/task-email-lookup-test-fixture';
+import {
   createRecentNotificationWindow,
   getStaleCreatedAt,
 } from './test-window';
@@ -49,27 +53,6 @@ vi.mock('@react-email/render', () => ({
 vi.mock('@tuturuuu/email-service', () => ({
   sendSystemEmail: mocks.sendSystemEmailMock,
 }));
-function createResolvedChain<T>(result: T) {
-  const chain = Promise.resolve(result) as Promise<T> & {
-    eq: ReturnType<typeof vi.fn>;
-    in: ReturnType<typeof vi.fn>;
-    limit: ReturnType<typeof vi.fn>;
-    maybeSingle: ReturnType<typeof vi.fn>;
-    order: ReturnType<typeof vi.fn>;
-    range: ReturnType<typeof vi.fn>;
-    select: ReturnType<typeof vi.fn>;
-    single: ReturnType<typeof vi.fn>;
-  };
-  chain.eq = vi.fn(() => chain);
-  chain.in = vi.fn(() => chain);
-  chain.limit = vi.fn(() => Promise.resolve(result));
-  chain.maybeSingle = vi.fn(() => Promise.resolve(result));
-  chain.order = vi.fn(() => chain);
-  chain.range = vi.fn(() => Promise.resolve(result));
-  chain.select = vi.fn(() => chain);
-  chain.single = vi.fn(() => Promise.resolve(result));
-  return chain;
-}
 
 import { POST } from './route';
 
@@ -225,6 +208,8 @@ describe('send-immediate route', () => {
               })
             ),
           };
+        case 'tasks':
+          return createCurrentTaskLookupFixture(createResolvedChain);
         case 'workspaces':
           return {
             select: vi.fn(() =>
@@ -437,6 +422,8 @@ describe('send-immediate route', () => {
               })
             ),
           };
+        case 'tasks':
+          return createCurrentTaskLookupFixture(createResolvedChain);
         case 'workspaces':
           return {
             select: vi.fn(() =>

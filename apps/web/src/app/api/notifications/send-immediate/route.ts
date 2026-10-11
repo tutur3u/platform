@@ -10,6 +10,7 @@ import {
   NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON,
 } from '@/lib/notifications/cron-helpers';
 import { beginDeliveryAttempt } from '@/lib/notifications/delivery-attempt';
+import { filterEmailDeliveryLogs } from '@/lib/notifications/email-delivery-filter';
 import {
   cleanupInvalidPushTokens,
   type DeliveryLogWithNotification,
@@ -216,7 +217,7 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        const deliverableLogs: DeliveryLogWithNotification[] = [];
+        let deliverableLogs: DeliveryLogWithNotification[] = [];
         const skippedByReason = new Map<
           string,
           DeliveryLogWithNotification[]
@@ -256,7 +257,7 @@ export async function POST(req: NextRequest) {
           await markDeliveryLogsSkipped(sbAdmin, logs, reason);
         }
 
-        const skippedCount = [...skippedByReason.values()].reduce(
+        let skippedCount = [...skippedByReason.values()].reduce(
           (count, logs) => count + logs.length,
           0
         );
@@ -336,9 +337,6 @@ export async function POST(req: NextRequest) {
             status: 'sent',
           });
         } else {
-          const deliverableNotification = deliverableLogs[0]!
-            .notifications as NotificationData;
-
           let userEmail: string;
           let userName: string;
 
@@ -351,26 +349,30 @@ export async function POST(req: NextRequest) {
             userName = userEmail;
           }
 
-          const preSendSkipReason = await getNotificationSkipReason(sbAdmin, {
-            blockedEmailCache,
-            channel: batch.channel,
-            membershipCache,
-            notification: deliverableNotification,
-            recipientEmail: userEmail || null,
-          });
+          let workspaceName = 'Tuturuuu';
+          if (batch.ws_id) {
+            const workspace = workspacesMap.get(batch.ws_id);
+            if (workspace) {
+              workspaceName = workspace.name || 'Unknown Workspace';
+            }
+          }
 
-          if (preSendSkipReason) {
-            await markDeliveryLogsSkipped(
-              sbAdmin,
-              deliverableLogs,
-              preSendSkipReason
-            );
-            await markBatchSent(
-              sbAdmin,
-              batch.id,
-              deliverableLogs.length + skippedCount
-            );
-
+          const finalEmailLogs = await filterEmailDeliveryLogs(
+            deliverableLogs,
+            (log) =>
+              getNotificationSkipReason(sbAdmin, {
+                blockedEmailCache,
+                channel: 'email',
+                membershipCache,
+                notification: log.notifications!,
+                recipientEmail: userEmail || null,
+              }),
+            (logs, reason) => markDeliveryLogsSkipped(sbAdmin, logs, reason)
+          );
+          deliverableLogs = finalEmailLogs.deliverableLogs;
+          skippedCount += finalEmailLogs.skippedCount;
+          if (deliverableLogs.length === 0) {
+            await markBatchSent(sbAdmin, batch.id, skippedCount);
             results.push({
               batch_id: batch.id,
               channel: 'email',
@@ -380,14 +382,8 @@ export async function POST(req: NextRequest) {
             processedCount++;
             continue;
           }
-
-          let workspaceName = 'Tuturuuu';
-          if (batch.ws_id) {
-            const workspace = workspacesMap.get(batch.ws_id);
-            if (workspace) {
-              workspaceName = workspace.name || 'Unknown Workspace';
-            }
-          }
+          const deliverableNotification = deliverableLogs[0]!
+            .notifications as NotificationData;
 
           const notifType =
             deliverableNotification.type || deliverableNotification.code || '';

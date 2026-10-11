@@ -103,7 +103,7 @@
     "api:/api/notifications/send-immediate:apps/web/src/app/api/notifications/send-immediate/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class immediate dispatcher allows personal Mail push after durable receipt, current mailbox membership, internal identity and preferences are verified. Other notification types retain root-workspace restriction. Rust parity pending."
+      "note": "First-class immediate dispatcher allows personal Mail push after durable receipt, current mailbox membership, internal identity and preferences are verified. Other notification types retain root-workspace restriction. Rust parity pending. Task email delivery additionally checks the current tenant-scoped due date and skips only tasks overdue strictly more than 24 hours."
     },
     "api:/api/payment/credit-packs/checkouts:apps/web/src/legacy-api-routes/payment/credit-packs/checkouts/route.ts": {
       "status": "accepted-removal",
@@ -2924,6 +2924,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class Lettin-only notebook-copy POST authenticates signed app session, expected actor, workspace Drive management and bounded provider-scoped JSON. Rust parity is backlog; paused runtimes remain inactive."
+    },
+    "cron:/api/cron/process-notification-batches:apps/web/src/app/api/cron/process-notification-batches/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class digest dispatcher reads current tenant-scoped task due dates before email delivery and excludes tasks overdue strictly more than 24 hours. Null and future due dates remain eligible. Rust parity is backlog; Rust is not deployed."
     }
   }
 }
