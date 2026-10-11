@@ -78,6 +78,10 @@ jobs:
         with:
           bun-version: 1.4.1
 
+      - name: Test inline Type Check preflight
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        run: node --test --test-reporter=tap scripts/ci/type-check-inline-workflow.test.js
+
       - name: Restore Turbo fallback cache
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/setup-turbo-fallback-cache
@@ -109,4 +113,4 @@ jobs:
 
       - name: Report skipped type check
         if: steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
-        run: echo "Type Check heavy steps skipped by CI configuration or release-only detection; no compilation was performed." >> "$GITHUB_STEP_SUMMARY"
+        run: echo "Type Check heavy steps skipped by CI configuration or release-only detection; no compilation was performed and inline preflight regression tests were not run." >> "$GITHUB_STEP_SUMMARY"

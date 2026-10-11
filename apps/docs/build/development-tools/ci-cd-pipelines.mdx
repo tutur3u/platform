@@ -1,7 +1,7 @@
 ---
 title: "CI/CD Pipelines"
 description: "High-level CI/CD overview, with current operational runbooks linked from one place."
-updatedAt: "2026-09-29"
+updatedAt: "2026-10-12"
 ---
 
 <Note>
@@ -56,6 +56,19 @@ Tuturuuu currently automates:
 - The external-app internal-package build uses the same cancel-superseded policy, so rapid pushes cannot finish as green no-op builds.
 - Database migrations are not treated the same as app deploys; staging and production each have explicit prerequisite logic, with staging now sourced from `main`.
 - Docker setup and image-build CI (`docker-setup-check.yaml`) are disabled, including manual dispatch, until explicitly resumed.
+
+## Inline Type Check preflight regressions
+
+`type-check.yaml` runs `node --test --test-reporter=tap
+scripts/ci/type-check-inline-workflow.test.js` on its exact checkout with Node 24,
+after the existing Setup Bun step and before dependency installation. Bun is
+required by the workflow YAML test helper; these 21 regression cases need no
+workspace dependency installation.
+
+The step uses the existing configuration and release-relevance gates. A skipped
+step is not test evidence. Before merging a preflight fixture change, verify the
+exact-head hosted step succeeded and its TAP summary reports 21 tests, 21 passes,
+and zero failures, cancellations, skips, or todos.
 
 ## Cross-app users-core regression tests
 
