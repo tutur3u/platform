@@ -55,4 +55,8 @@ jobs:
           node-version: 24
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Build application and shared dependencies without deployment
-        run: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/${{ matrix.app }}
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/${{ matrix.app }}
+          token: ''
+          team: ''

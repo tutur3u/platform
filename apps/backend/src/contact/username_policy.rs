@@ -74,10 +74,13 @@ mod tests {
                 result.body,
                 json!({"message":"Profile change limit reached","code":"display_name_change_limit","retryAfter":expected})
             );
-            assert!(result
-                .headers
-                .iter()
-                .any(|(k, v)| k.eq_ignore_ascii_case("Retry-After") && v == &expected.to_string()));
+            assert!(
+                result
+                    .headers
+                    .iter()
+                    .any(|(k, v)| k.eq_ignore_ascii_case("Retry-After")
+                        && v == &expected.to_string())
+            );
         }
     }
     #[test]
