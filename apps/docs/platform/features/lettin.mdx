@@ -1698,3 +1698,23 @@ independent settings, reset, browsing transitions, bounded choices and notebook
 remounts. `public-world.test.tsx` exercises entry navigation and preserves the
 published source projection. CSS rules are scoped to the reader wrapper; real
 browser layout and the exact-head Lettin build remain separate delivery evidence.
+
+## Private Studio membership filters
+
+The authenticated Studio notebook shelf starts with all notebooks in the actor's
+current authorized overview. Creators can explicitly choose notebooks they own or
+collaborations where they have editor or publisher access. This local facet combines
+with the existing title/description/tag search and publication facet, preserving the
+server's order. Empty filtered results offer a single clear action that resets all
+three facets. Changing workspace resets them; updates to the overview immediately
+replace the displayed records and roles. Shelf statistics still describe the full
+current authorized shelf, rather than only the filtered results.
+
+The controls apply to the general Studio and creative-space shelves. They perform
+no extra reads or writes, persist no preferences, infer no memberships beyond the
+current overview, and change no access, invitations, source consent or publication.
+They do not change public catalogue/profile surfaces. Regression evidence:
+`studio-membership-filter.test.tsx` covers both collaborator roles,
+combined facets, empty recovery, workspace reset, revoked access and both language
+bundles. These rendered fixtures do not replace exact-head CI or hosted account and
+workspace acceptance.
