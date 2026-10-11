@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { convertV4MiniflareOptions, Miniflare } from 'miniflare';
-import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { Actor, Store } from './context';
 import { previewImport } from './import-store';
 import {
@@ -23,6 +23,20 @@ const document = {
   title: 'Source',
   description: 'Saved text',
   image: '/api/v1/lettin/media/00000000-0000-4000-8000-000000000004',
+  gallery: [
+    {
+      image: '/api/v1/lettin/media/00000000-0000-4000-8000-000000000005',
+      alt: 'Managed gallery artwork',
+      caption: 'Source gallery caption',
+      credit: 'Gallery artist',
+    },
+    {
+      image: 'https://example.com/gallery-art.png',
+      alt: 'Remote gallery artwork',
+      caption: '',
+      credit: 'Gallery artist',
+    },
+  ],
   credit: 'Artist',
   kind: 'page',
   tags: ['story'],
@@ -89,14 +103,24 @@ it('remaps only included structured links and retains safe text, credits and pro
   expect(result.blacklist).toEqual([]);
 });
 it('removes remote and managed images and hyperlink targets without fetching them', () => {
-  const result = buildNotebookImportPlan(payload(), 'Copy');
-  const text = JSON.stringify(result.world);
-  expect(result.world.image).toBe('');
-  expect(text).not.toContain('https://');
-  expect(text).not.toContain('/api/');
-  expect(text).toContain('Art description');
-  expect(text).toContain('Reference text');
-  expect(lettinDraftSchema.safeParse(result.world).success).toBe(true);
+  const fetch = vi.spyOn(globalThis, 'fetch');
+  try {
+    const result = buildNotebookImportPlan(payload(), 'Copy');
+    for (const draft of [result.world, result.entries[0]!.draft]) {
+      const text = JSON.stringify(draft);
+      expect(draft.image).toBe('');
+      expect(draft.gallery ?? []).toEqual([]);
+      expect(text).not.toContain('https://');
+      expect(text).not.toContain('/api/');
+      expect(text).toContain('Art description');
+      expect(text).toContain('Reference text');
+      expect(draft.credit).toBe('Artist');
+      expect(lettinDraftSchema.safeParse(draft).success).toBe(true);
+    }
+    expect(fetch).not.toHaveBeenCalled();
+  } finally {
+    fetch.mockRestore();
+  }
 });
 it.each([2, 0])('rejects unsupported format version %s', (version) => {
   expect(() =>
@@ -219,6 +243,17 @@ it('atomically creates private drafts with new ownership and idempotent apply', 
   expect(entries.results).toEqual([
     { id: plan.entries[0]!.id, published: null, version: 1 },
   ]);
+  for (const table of ['worlds', 'entries']) {
+    const rows = await db
+      .prepare(`SELECT draft FROM ${table}`)
+      .all<{ draft: string }>();
+    expect(rows.results).toHaveLength(1);
+    const draft = JSON.parse(rows.results[0]!.draft);
+    expect(draft.gallery ?? []).toEqual([]);
+    expect(rows.results[0]!.draft).not.toContain('https://');
+    expect(rows.results[0]!.draft).not.toContain('/api/');
+    expect(draft.credit).toBe('Artist');
+  }
   for (const table of ['collaborators', 'media', 'creator_blacklist'])
     expect(
       (await db.prepare(`SELECT count(*) AS n FROM ${table}`).first())!.n

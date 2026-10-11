@@ -163,7 +163,8 @@ it('requires separate destination sharing consent before published source export
   expect(mocks.copy).toHaveBeenCalledWith(
     'workspace',
     expect.any(Blob),
-    expect.any(Function)
+    expect.any(Function),
+    'actor-a'
   );
   expect(create).not.toHaveBeenCalled();
   expect(container.querySelector('[role="status"]')?.textContent).toBe(

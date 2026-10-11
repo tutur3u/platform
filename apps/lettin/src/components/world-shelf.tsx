@@ -7,15 +7,34 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { ContentNotice } from './content-notice';
-export function WorldShelf({
-  wsId,
-  shelf,
-}: {
+import {
+  matchesStudioMembership,
+  type StudioMembership,
+  StudioMembershipFilter,
+} from './studio-membership-filter';
+import { StudioTagFilter } from './studio-tag-filter';
+
+type WorldShelfProps = {
   wsId: string;
   shelf: LettinOverview['worlds'];
-}) {
+};
+
+export function WorldShelf(props: WorldShelfProps) {
+  return <WorldShelfContent key={props.wsId} {...props} />;
+}
+
+function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
   const t = useTranslations('lettin');
   const [search, setSearch] = useState('');
+  const [membership, setMembership] = useState<StudioMembership>('all');
+  const [tag, setTag] = useState<string | null>(null);
+  const tags = [...new Set(shelf.flatMap((world) => world.draft.tags ?? []))]
+    .filter((value) => value.trim())
+    .sort();
+  const activeTag = tag !== null && tags.includes(tag) ? tag : null;
+  useEffect(() => {
+    if (tag !== null && activeTag === null) setTag(null);
+  }, [tag, activeTag]);
   const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
   const publishedCount = shelf.filter((world) => world.published_at).length;
   const worlds = shelf.filter((world) => {
@@ -23,7 +42,9 @@ export function WorldShelf({
       filter === 'all' ||
       (filter === 'published' ? !!world.published_at : !world.published_at);
     return (
+      matchesStudioMembership(world.role, membership) &&
       matchesStatus &&
+      (activeTag === null || world.draft.tags?.includes(activeTag)) &&
       `${world.draft.title} ${world.draft.description} ${(world.draft.tags ?? []).join(' ')}`
         .toLocaleLowerCase()
         .includes(search.toLocaleLowerCase())
@@ -77,6 +98,8 @@ export function WorldShelf({
           ))}
         </fieldset>
       </div>
+      <StudioMembershipFilter value={membership} onChange={setMembership} />
+      <StudioTagFilter tags={tags} value={activeTag} onChange={setTag} />
       <p role="status" className="sr-only">
         {t('worldCount', { count: announcedCount })}
       </p>
@@ -89,6 +112,8 @@ export function WorldShelf({
             onClick={() => {
               setSearch('');
               setFilter('all');
+              setMembership('all');
+              setTag(null);
             }}
           >
             {t('clearFilters')}

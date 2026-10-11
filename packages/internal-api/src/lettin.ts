@@ -57,7 +57,13 @@ export type LettinCreationGuidance = {
   usageNotes: string;
   collaboration: 'unspecified' | 'ask-first' | 'open' | 'closed';
 };
+export type LettinWorkProgress =
+  | 'unstarted'
+  | 'drafting'
+  | 'revising'
+  | 'ready';
 export type LettinDraft = {
+  workProgress?: LettinWorkProgress;
   gallery?: LettinArtwork[];
   creationGuidance?: LettinCreationGuidance;
   contentNotice?: string;
@@ -121,6 +127,8 @@ export type LettinCommand =
       entryId: string;
       version: number;
       title: string;
+      linkSource?: boolean;
+      contextFact?: { label: string; value: string };
     }
   | {
       action: 'saveWorld';
@@ -462,3 +470,5 @@ export function applyLettinNotebookImport(
     body: JSON.stringify({ action: 'apply', ...input }),
   });
 }
+
+export { uploadLettinNotebookDriveCopy } from './lettin-drive-copy';
