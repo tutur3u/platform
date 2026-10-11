@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   isPending: false,
   errorMessage: null as string | null,
   locale: null as 'en' | 'vi' | null,
+  dialogChange: (_open: boolean) => {},
 }));
 vi.mock('./use-lettin', () => ({ useLettinMutation: () => state }));
 vi.mock('next-intl', () => ({
@@ -38,16 +39,27 @@ vi.mock('@tuturuuu/ui/dialog', () => {
   const Container = ({ children }: ComponentProps<'div'>) => (
     <div>{children}</div>
   );
-  return Object.fromEntries(
-    [
-      'Dialog',
-      'DialogContent',
-      'DialogHeader',
-      'DialogDescription',
-      'DialogTitle',
-      'DialogTrigger',
-    ].map((name) => [name, Container])
-  );
+  return {
+    ...Object.fromEntries(
+      [
+        'DialogContent',
+        'DialogHeader',
+        'DialogDescription',
+        'DialogTitle',
+        'DialogTrigger',
+      ].map((name) => [name, Container])
+    ),
+    Dialog: ({
+      children,
+      onOpenChange,
+    }: {
+      children: import('react').ReactNode;
+      onOpenChange: (open: boolean) => void;
+    }) => {
+      state.dialogChange = onOpenChange;
+      return <div>{children}</div>;
+    },
+  };
 });
 const container = document.createElement('div');
 const root = createRoot(container);
@@ -218,5 +230,104 @@ it.each(['en', 'vi'] as const)(
       })
     );
     expect(container.querySelector('select')!.value).toBe('page');
+  }
+);
+
+function button(label: string) {
+  return [...container.querySelectorAll('button')].find(
+    (item) => item.textContent === label
+  )!;
+}
+async function click(label: string) {
+  await act(async () => button(label).click());
+}
+it('reviews and cancels discard without saving or changing private input', async () => {
+  await render();
+  expect(button('discardQuickNoteDraft').disabled).toBe(true);
+  await fill();
+  await selectKind('character');
+  await click('discardQuickNoteDraft');
+  expect(container.querySelector('textarea')!.disabled).toBe(true);
+  expect(button('saveQuickNote').disabled).toBe(true);
+  await submit();
+  expect(state.mutateAsync).not.toHaveBeenCalled();
+  await click('keepQuickNoteDraft');
+  expect(container.querySelector('input')!.value).toBe('Idea');
+  expect(container.querySelector('textarea')!.value).toBe('Private text');
+  expect(container.querySelector('select')!.value).toBe('character');
+  expect(button('saveQuickNote').disabled).toBe(false);
+});
+it('clears only local input after confirmation, including a kind-only draft', async () => {
+  await render();
+  await selectKind('story');
+  expect(button('discardQuickNoteDraft').disabled).toBe(false);
+  await click('discardQuickNoteDraft');
+  await click('confirmQuickNoteDiscard');
+  expect(container.querySelector('select')!.value).toBe('page');
+  await fill();
+  await click('discardQuickNoteDraft');
+  await click('confirmQuickNoteDiscard');
+  expect(container.querySelector('input')!.value).toBe('');
+  expect(container.querySelector('textarea')!.value).toBe('');
+  expect(button('discardQuickNoteDraft').disabled).toBe(true);
+  expect(state.mutateAsync).not.toHaveBeenCalled();
+  expect(state.reset).toHaveBeenCalledTimes(2);
+});
+it('closing and reopening preserves the draft and dismisses discard review', async () => {
+  await render();
+  await fill();
+  await click('discardQuickNoteDraft');
+  await act(async () => state.dialogChange(false));
+  await act(async () => state.dialogChange(true));
+  expect(button('confirmQuickNoteDiscard')).toBeUndefined();
+  expect(container.querySelector('textarea')!.value).toBe('Private text');
+  expect(container.querySelector('input')!.disabled).toBe(false);
+  expect(state.mutateAsync).not.toHaveBeenCalled();
+});
+it('blocks confirmed discard when editor access is disabled during review', async () => {
+  await render();
+  await fill();
+  await click('discardQuickNoteDraft');
+  await render(true);
+  expect(button('confirmQuickNoteDiscard').disabled).toBe(true);
+  await click('confirmQuickNoteDiscard');
+  expect(container.querySelector('textarea')!.value).toBe('Private text');
+  await submit();
+  expect(state.mutateAsync).not.toHaveBeenCalled();
+});
+it('blocks discard during creation and preserves the saved entry after later draft discard', async () => {
+  let resolve!: (value: { id: string }) => void;
+  state.mutateAsync.mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        resolve = r;
+      })
+  );
+  const onCreated = await render();
+  await fill();
+  await submit();
+  expect(button('discardQuickNoteDraft').disabled).toBe(true);
+  await click('discardQuickNoteDraft');
+  expect(button('confirmQuickNoteDiscard')).toBeUndefined();
+  await act(async () => resolve({ id: 'saved-note' }));
+  await fill('Second draft', 'Unsubmitted text');
+  await click('discardQuickNoteDraft');
+  await click('confirmQuickNoteDiscard');
+  await click('openQuickNote');
+  expect(onCreated).toHaveBeenCalledWith('saved-note');
+  expect(state.mutateAsync).toHaveBeenCalledTimes(1);
+});
+it.each(['en', 'vi'] as const)(
+  'renders explicit discard choices in %s',
+  async (locale) => {
+    state.locale = locale;
+    const messages = locale === 'en' ? en.lettin : viMessages.lettin;
+    await render();
+    await fill();
+    await click(messages.discardQuickNoteDraft);
+    expect(container.textContent).toContain(messages.quickNoteDiscardTitle);
+    expect(container.textContent).toContain(messages.quickNoteDiscardHint);
+    await click(messages.keepQuickNoteDraft);
+    expect(container.querySelector('textarea')!.value).toBe('Private text');
   }
 );

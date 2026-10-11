@@ -10,6 +10,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readBrowserResultSummary } from './mail-profile-result-summary.mjs';
 import {
   assertHostedOwner,
   profilePreflight,
@@ -430,6 +431,7 @@ export async function main() {
   let primary = 1;
   let failureReason;
   let metadata;
+  let browserResults = [];
   const isolated = await import(
     '../../apps/database/scripts/run-supabase-isolated.js'
   );
@@ -555,7 +557,10 @@ export async function main() {
           } catch {
             cleanupFailures.push('app-processes');
           }
-          children.length = 0;
+          browserResults = await readBrowserResultSummary(
+            path.join(reports, 'results.json'),
+            [PROFILE_TITLE, TRANSPORT_TITLE]
+          );
           const closingProxy = proxy;
           proxy = null;
           try {
@@ -658,13 +663,7 @@ export async function main() {
       scope: 'local application contract; not Cloudflare/provider/production',
       project: metadata?.projectId,
       fixtureRoot: metadata?.disposableRoot,
-      results:
-        primary === 0
-          ? [PROFILE_TITLE, TRANSPORT_TITLE].map((title) => ({
-              title,
-              status: 'passed',
-            }))
-          : [],
+      results: browserResults,
       deploymentProof: false,
       productionProof: false,
     };

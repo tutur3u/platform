@@ -9,6 +9,7 @@ import { WorldShelf } from './world-shelf';
 
 const state = vi.hoisted(() => ({ locale: 'en' }));
 vi.mock('next-intl', () => ({
+  useLocale: () => state.locale,
   useTranslations: () => (key: string) =>
     (state.locale === 'vi' ? vietnamese : en).lettin[
       key as keyof typeof en.lettin
@@ -127,7 +128,11 @@ it('combines membership, publication and search; clears all facets after empty r
     [...container.querySelectorAll('button[aria-pressed="true"]')].map(
       (el) => el.textContent
     )
-  ).toEqual([en.lettin.all, en.lettin.studioMembership_all]);
+  ).toEqual([
+    en.lettin.all,
+    en.lettin.studioMembership_all,
+    en.lettin.studioArtwork_all,
+  ]);
 });
 it('resets local facets and destination links when changing workspace', async () => {
   await render();

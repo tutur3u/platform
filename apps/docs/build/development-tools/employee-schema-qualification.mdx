@@ -1,0 +1,71 @@
+---
+title: Employee schema qualification
+description: Qualify the employee creation and restoration schema in an exact-source disposable database.
+---
+
+Run `employee-schema-contract.yaml` from a reviewed control revision and set
+`source_sha` to the full reviewed creation/restoration stack commit. The workflow
+keeps the trusted control checkout at the workspace root for the shared setup
+action and checks out the exact source under `source/`. Commands run from that
+source directory invoke the reviewed control scripts via `../apps` and
+`../scripts`; they never substitute current main or
+connects to staging or production. Its installed CLI starts a disposable
+full-migration Supabase project using the same isolated runner as the Tutoring
+contract gates. Startup/reset and each fixture are bounded; an always-run cleanup
+step stops only the owned project, without retaining a database backup.
+
+The foundation gate requires all five packets: signup guards (25), administrator
+(20), finalization (34), identity contract (52), and restoration (41). Each packet
+must emit one complete, sequential, non-skipped pgTAP plan and close its synthetic
+transaction with rollback. Missing packets, a different count, failed SQL,
+truncated output, or unsuccessful cleanup fail the gate. The private command
+output is not uploaded; the small JSON artifact binds the exact source and fixture
+hashes to the 172 assertions and cleanup outcome.
+
+Verify the helper with
+`node --test apps/database/scripts/employee-schema-tap.test.mjs`.
+A green schema result is not native admission/lease/fence qualification, a GoTrue
+or provider transaction, employee activation, or production SQL application.
+The feedback layer's 105 assertions remain a separate later stack qualification;
+they are not silently included or waived by this foundation job.
+
+If the schema runner fails after its private receipt directory exists, the receipt
+includes a fixed `failureDiagnostic`: the first failing phase, packet ordinal,
+bounded exit status, timeout/signal indicators, and TAP failure flags/counts. It
+contains no assertion descriptions, SQL, exception messages, container paths, or
+credentials. A diagnostic is evidence about the failed stage, not a passing
+packet; verify the same exact source and keep all failed attempts.
+
+The bounded failure diagnostic also records numeric `failedAssertionOrdinals`
+only when the TAP numbers are unique, increasing, within the frozen packet's
+assertion range, and agree with the failure count. Malformed or oversized evidence
+sets `assertionOrdinalsValid` to false and emits an empty array. Match valid numbers
+to the exact frozen fixture offline; descriptions and expected/actual values are
+never exposed. These numbers locate failures and do not change any passing gate.
+
+### Signup exception contract diagnostics
+
+For failed first-packet assertions 22 and 23 only, the receipt can include the
+actual five-character SQLSTATE and a boolean comparison against the fixed expected
+message. Caught messages, wanted messages, SQL, identities and TAP descriptions
+remain private. Unknown or inconsistent pgTAP diagnostic formats emit invalid
+classification with null values; absence of an exception is not inferred. These
+diagnostics do not alter the expected 23514 contracts or the strict 172-assertion
+success and cleanup gates. The previous timing-only fixture change remained
+unqualified after both assertions failed again.
+
+Validated caught records also include a fixed message category for the four
+owned creation-denial literals: intent missing, pending required, identity tuple
+mismatch, or registry missing. Any other message becomes `other_redacted`.
+Unknown or inconsistent diagnostic formats keep the category null. Matching is
+exact: whitespace, case, continuation lines and runtime values are never
+normalized into an owned category. These enums identify evidence; they do not
+change fixture expectations, security checks or schema qualification.
+
+A separate `constraintCategory` classifies six exact generated CHECK-message
+relation/constraint pairs from the frozen creation migration: creation-intent
+staff email/name and employee staff email/name/lifecycle/recovery. The original
+`messageCategory` remains `other_redacted`. Generated messages omit schema, so
+schema identity is not inferred. SQLSTATE must be 23514; unknown pairs or altered
+text remain `other_redacted`; invalid caught evidence emits null. This diagnostic
+does not change SQL, the 25 assertions or the strict 172-assertion success gate.

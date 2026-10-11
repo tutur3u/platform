@@ -1,4 +1,5 @@
 export const ci = {
+  'employee-schema-contract.yaml': true,
   'actions-storage-report.yaml': true,
   'biome-check.yaml': true,
   'branch-name-check.yaml': true,

@@ -277,7 +277,7 @@ def install(helper, receipt):
             output.seek(0)
             require(digest(output.read()) == receipt['helperSHA256'], 'Helper readback mismatch')
             os.fchown(output.fileno(), 0, 0)
-            os.fchmod(output.fileno(), 0o4755)
+            os.fchmod(output.fileno(), 0o4755)  # nosec B103 - Authenticated helper on an O_EXCL/O_NOFOLLOW fd under root-owned protected parents; Chromium requires setuid.
             metadata = os.fstat(output.fileno())
             require(stat.S_ISREG(metadata.st_mode) and metadata.st_uid == 0
                     and metadata.st_gid == 0 and stat.S_IMODE(metadata.st_mode) == 0o4755,
@@ -302,14 +302,14 @@ def main():
     if libexec.exists() or libexec.is_symlink():
         protected_parent(libexec)
     protected_parent(Path('/var'))
-    temporary_parent = Path('/var/tmp').lstat()
+    temporary_parent = Path('/var/tmp').lstat()  # nosec B108 - Inspect the fixed staging parent; no temporary file is created by lstat.
     require(stat.S_ISDIR(temporary_parent.st_mode) and temporary_parent.st_uid == 0
             and temporary_parent.st_gid == 0
             and stat.S_IMODE(temporary_parent.st_mode) == 0o1777,
             'Temporary staging requires the root-owned sticky directory')
     require(not DIRECTORY.exists() and not DIRECTORY.is_symlink(), 'Destination already exists')
     os.umask(0o077)
-    with tempfile.TemporaryDirectory(prefix='mail-sandbox-', dir='/var/tmp') as temporary:
+    with tempfile.TemporaryDirectory(prefix='mail-sandbox-', dir='/var/tmp') as temporary:  # nosec B108 - Secure randomized creation under the verified root-owned sticky parent, umask 077.
         directory = Path(temporary)
         directory.chmod(0o700)
         transaction = Transaction(directory)

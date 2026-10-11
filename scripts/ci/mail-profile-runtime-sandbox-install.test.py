@@ -36,7 +36,7 @@ def archive(entries):
             member = tarfile.TarInfo(name)
             member.type = kind
             member.size = len(data) if kind == tarfile.REGTYPE else 0
-            member.linkname = '/tmp/foreign'
+            member.linkname = '/tmp/foreign'  # nosec B108 - Deliberately unsafe tar link fixture; never opened or created on the filesystem.
             tar.addfile(member, io.BytesIO(data) if kind == tarfile.REGTYPE else None)
     return output.getvalue()
 

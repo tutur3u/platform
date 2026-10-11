@@ -9,6 +9,7 @@ import { WorldShelf } from './world-shelf';
 
 const state = vi.hoisted(() => ({ locale: 'en' }));
 vi.mock('next-intl', () => ({
+  useLocale: () => state.locale,
   useTranslations: () => (key: string) =>
     (state.locale === 'vi' ? vietnamese : en).lettin[
       key as keyof typeof en.lettin
@@ -99,7 +100,9 @@ async function selectTag(value: string) {
   });
 }
 const tagOptions = () =>
-  [...container.querySelectorAll('option')].map((option) => option.textContent);
+  [...container.querySelector('select')!.querySelectorAll('option')].map(
+    (option) => option.textContent
+  );
 const taggedShelf = [
   world('Owned draft', 'owner', false, ['fantasy', 'fantasy', ' ']),
   world('Owned published', 'owner', true, ['mystery']),

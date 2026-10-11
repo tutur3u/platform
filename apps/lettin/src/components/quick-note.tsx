@@ -35,9 +35,12 @@ export function QuickNote({
   const [body, setBody] = useState('');
   const [kind, setKind] = useState<LettinKind>('page');
   const [busy, setBusy] = useState(false);
+  const [reviewDiscard, setReviewDiscard] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const submitting = useRef(false);
   const blocked = disabled || busy || mutation.isPending;
+  const editingBlocked = blocked || reviewDiscard;
+  const hasLocalDraft = title !== '' || body !== '' || kind !== 'page';
   const draft = quickNoteDraft(title, body, kind);
   return (
     <>
@@ -46,6 +49,7 @@ export function QuickNote({
         onOpenChange={(value) => {
           if (submitting.current) return;
           if (value) mutation.reset();
+          setReviewDiscard(false);
           setOpen(value);
         }}
       >
@@ -63,7 +67,7 @@ export function QuickNote({
             className="space-y-4"
             onSubmit={async (event) => {
               event.preventDefault();
-              if (blocked || submitting.current || !draft) return;
+              if (editingBlocked || submitting.current || !draft) return;
               submitting.current = true;
               setBusy(true);
               try {
@@ -90,13 +94,13 @@ export function QuickNote({
               required
               maxLength={160}
               value={title}
-              disabled={blocked}
+              disabled={editingBlocked}
               onChange={(event) => setTitle(event.target.value)}
             />
             <select
               aria-label={t('kind')}
               value={kind}
-              disabled={blocked}
+              disabled={editingBlocked}
               onChange={(event) => setKind(event.target.value as LettinKind)}
             >
               {entryKinds.map((value) => (
@@ -111,15 +115,63 @@ export function QuickNote({
               maxLength={10000}
               rows={8}
               value={body}
-              disabled={blocked}
+              disabled={editingBlocked}
               onChange={(event) => setBody(event.target.value)}
             />
             <p className="text-muted-foreground text-sm">
               {t('quickNoteBounds')}
             </p>
-            <Button type="submit" disabled={blocked || !draft}>
+            <Button type="submit" disabled={editingBlocked || !draft}>
               {t('saveQuickNote')}
             </Button>
+            {reviewDiscard ? (
+              <fieldset className="space-y-3 rounded-lg border border-border p-3">
+                <legend className="px-1 text-sm">
+                  {t('quickNoteDiscardTitle')}
+                </legend>
+                <p className="text-muted-foreground text-sm">
+                  {t('quickNoteDiscardHint')}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={blocked}
+                    onClick={() => {
+                      if (!blocked) setReviewDiscard(false);
+                    }}
+                  >
+                    {t('keepQuickNoteDraft')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={blocked}
+                    onClick={() => {
+                      if (blocked || submitting.current) return;
+                      setTitle('');
+                      setBody('');
+                      setKind('page');
+                      setReviewDiscard(false);
+                      mutation.reset();
+                    }}
+                  >
+                    {t('confirmQuickNoteDiscard')}
+                  </Button>
+                </div>
+              </fieldset>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={blocked || !hasLocalDraft}
+                onClick={() => {
+                  if (!blocked && hasLocalDraft) setReviewDiscard(true);
+                }}
+              >
+                {t('discardQuickNoteDraft')}
+              </Button>
+            )}
             {mutation.errorMessage && (
               <p role="alert">{mutation.errorMessage}</p>
             )}

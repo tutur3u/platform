@@ -16,6 +16,7 @@ import {
 import { verifyLettinMarkdownPersistence } from './helpers/lettin-markdown-persistence';
 import { verifyLettinPrivateImport } from './helpers/lettin-private-import';
 import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
+import { observeProfileNavigation } from './helpers/lettin-profile-navigation-diagnostics';
 import {
   createLettinBrowserContext,
   createLettinSessionRequestOptions,
@@ -384,7 +385,9 @@ test.describe
             context.newPage()
           );
           await phase('open profile', () =>
-            page.goto(`${origin}/${workspaceId}/profile`)
+            observeProfileNavigation(page, origin, () =>
+              page.goto(`${origin}/${workspaceId}/profile`)
+            )
           );
           const username = `synthetic_${workspaceId.replaceAll('-', '').slice(0, 16)}`;
           await phase('edit canonical identity', async () => {

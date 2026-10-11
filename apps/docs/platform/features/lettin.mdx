@@ -910,9 +910,18 @@ offers a separate Open action; opening remains disabled while the current editor
 has unsaved changes. Notebook/workspace context replacement resets local capture.
 Publishing still requires the existing separate role and revision checks.
 
+Closing the quick-note form keeps its local draft until notebook/workspace context
+replacement, leaving the studio, or reloading. Discard draft opens an inline review
+with Keep draft and Confirm discard choices. Only confirmation clears the local
+title, text and selected entry type; saved entries and the latest saved-entry Open
+action remain intact. Editing and saving are paused during this review, and editor
+blocking or pending creation also blocks discard. This control neither deletes
+stored content nor changes publication, collaborator access or source sharing.
+
 Regression evidence: `quick-note-model.test.ts` validates bounds and actual draft
 schema; `quick-note.test.tsx` covers commands, failure, repeated submits, pending
-and dirty-navigation fences and context resets. `storage.test.ts` uses local D1
+and dirty-navigation fences, context resets, translated discard review, cancellation,
+local-only confirmation and preservation of saved entries. `storage.test.ts` uses local D1
 to verify saved private notes, public omission and workspace/revocation boundaries.
 These fixtures do not establish hosted dialog or keyboard acceptance.
 
@@ -1795,3 +1804,66 @@ Regression evidence: `studio-tag-filter.test.tsx` covers combined facets, exact
 tag matching, duplicates, empty recovery, workspace reset, revoked records,
 removed tag options and both language bundles. These rendered fixtures are
 separate from exact-head CI/build and hosted browser acceptance.
+
+## Browsing reviewed notebook entries
+
+The private import and owner-copy review screens show up to 20 entry titles per
+page, in the server preview's original order. Creators can search the titles
+locally, ignoring letter case and combining accents, and clear the search to
+return to the first page. The result summary always states the total entries in
+the approved preview. No extra source read or network request is made.
+
+This is a review aid, not entry selection. Searching, paging or seeing no matches
+never changes the stored preview, consent, import limits or final creation scope:
+creation includes every entry approved by that preview. Replacing the preview
+resets search and page state. Pending creation disables the browsing controls;
+existing actor/workspace/owner consent and server permission gates remain in force.
+
+Regression evidence: `notebook-import-entries.test.tsx` exercises bounded pages,
+EN/VI labels, accent-aware title matching, empty matches, preview replacement,
+pending controls and unchanged apply behavior. Existing import/copy tests cover
+server-preview IDs and staged creation boundaries. Hosted browser acceptance and
+exact-head CI remain separate gates.
+
+## Private Studio notebook ordering
+
+General Studio and creative-space shelves preserve their existing server order by
+default. Creators can choose ascending or descending title order over notebooks
+in the current authorized overview. Ordering uses the current interface locale,
+compares numbers naturally (2 before 10), and ignores case and accent differences
+when comparing titles. Equal titles retain their current server order. The view
+combines ordering with membership, publication, tag and search filters.
+
+The choice stays in component state and resets when changing workspaces. Clearing
+an empty filtered result restores all facets and the default Studio order. Updated
+overviews immediately remove revoked notebooks; sorting never fetches historical
+metadata, mutates the response, writes preferences, shares content, or changes
+source access or publication. This applies to private creator shelves only.
+
+Regression evidence: `studio-order.test.tsx` covers natural locale comparisons,
+stable ties, input immutability, combined facets, workspace and empty recovery,
+revoked records and both language bundles. Existing membership and tag tests
+retain their coverage. Rendered tests use UI and transport doubles; exact-head CI
+and hosted browser acceptance remain separate delivery gates.
+
+## Private Studio cover-artwork filters
+
+General Studio and creative-space shelves show all accessible notebooks by default.
+Creators can find notebooks with or without saved cover artwork using a local
+facet. The facet follows the existing private cover renderer and the current
+authorized draft overview; it does not inspect published artwork, gallery images,
+remote image availability or historical metadata. A notebook with gallery images
+and no saved cover still appears under **Without cover artwork**.
+
+The facet combines with membership, tags, publication status, search and title
+ordering. Changing workspaces resets it; empty-result clear recovery resets every
+facet and restores default Studio order. Updated overviews immediately remove
+revoked notebooks and move records when their saved cover changes. Filtering
+performs no image probes, source reads, writes, persisted preferences or sharing,
+and changes no source consent, access grants or publication rules.
+
+Rendered regressions in `studio-artwork-filter.test.tsx` cover both languages,
+combined facets, saved-cover changes, revocation, workspace and clear recovery,
+and absence of transport. Existing Studio facet tests retain their coverage.
+Tests use local UI/translation fixtures; exact-head CI and hosted browser
+acceptance remain separate gates.
