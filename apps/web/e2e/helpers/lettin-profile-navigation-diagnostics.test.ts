@@ -5,6 +5,7 @@ import {
   observeProfileNavigation,
   profileNavigationEdge,
   profileNavigationRoute,
+  profileProxyProvenance,
 } from './lettin-profile-navigation-diagnostics';
 
 const origin = 'http://127.0.0.1:7833';
@@ -86,6 +87,7 @@ test('navigation failure preserves the error, bounds hops and detaches its liste
         targetRoute: 'unavailable',
         targetLocale: 'unavailable',
         samePath: null,
+        sameOrigin: null,
         status: 307,
       })),
       truncated: true,
@@ -111,6 +113,7 @@ test('redirect edges distinguish locale cycles without exposing URL data', () =>
       targetRoute: 'profile',
       targetLocale: 'en',
       samePath: false,
+      sameOrigin: true,
     }
   );
   assert.equal(
@@ -128,6 +131,8 @@ test('redirect edges distinguish locale cycles without exposing URL data', () =>
   );
   assert.equal(external.targetRoute, 'external');
   assert.equal(external.targetLocale, 'external');
+  assert.equal(external.sameOrigin, false);
+  assert.equal(external.samePath, false);
   assert.doesNotMatch(JSON.stringify(external), /private|secret|00000000/u);
 });
 
@@ -179,6 +184,7 @@ test('failed navigation reads the redirect edge assigned after the response even
           targetRoute: 'profile',
           targetLocale: 'vi',
           samePath: false,
+          sameOrigin: true,
           status: 307,
         },
       ],
@@ -189,4 +195,46 @@ test('failed navigation reads the redirect edge assigned after the response even
   } finally {
     console.warn = warn;
   }
+});
+
+test('proxy provenance accepts only fixed categories and rejects arbitrary header contents', () => {
+  assert.deepEqual(
+    profileProxyProvenance('canonical-locale|unprefixed|en|different'),
+    {
+      proxy: {
+        stage: 'canonical-locale',
+        requestLocale: 'unprefixed',
+        nextLocale: 'en',
+        sameRequestPath: false,
+      },
+    }
+  );
+  assert.deepEqual(profileProxyProvenance('intl|unprefixed|unprefixed|same'), {
+    proxy: {
+      stage: 'intl',
+      requestLocale: 'unprefixed',
+      nextLocale: 'unprefixed',
+      sameRequestPath: true,
+    },
+  });
+  for (const value of [
+    undefined,
+    '',
+    'private|secret',
+    'intl|en|vi|same|token',
+    'unknown|en|vi|same',
+  ])
+    assert.deepEqual(profileProxyProvenance(value), {});
+});
+
+test('same profile path on another origin is distinguished without exposing its host', () => {
+  const path = '/00000000-0000-0000-0000-000000000000/profile';
+  const edge = profileNavigationEdge(
+    `${origin}${path}`,
+    `https://private-host${path}`,
+    origin
+  );
+  assert.equal(edge.sameOrigin, false);
+  assert.equal(edge.samePath, false);
+  assert.doesNotMatch(JSON.stringify(edge), /private-host|00000000/u);
 });

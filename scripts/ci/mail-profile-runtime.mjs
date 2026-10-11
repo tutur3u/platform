@@ -484,6 +484,7 @@ export async function main() {
         const env = {
           ...process.env,
           NODE_ENV: 'development',
+          TUTURUUU_LETTIN_PROFILE_DIAGNOSTICS: '1',
           NODE_OPTIONS:
             '--max-old-space-size=4096 --experimental-require-module',
           NODE_EXTRA_CA_CERTS: tls.ca,

@@ -41,11 +41,13 @@ export function profileNavigationEdge(
   origin: string | undefined
 ) {
   let samePath: boolean | null = null;
+  let sameOrigin: boolean | null = null;
   try {
     if (destination !== undefined) {
       const from = new URL(source);
       const to = new URL(destination);
-      samePath = from.origin === to.origin && from.pathname === to.pathname;
+      sameOrigin = from.origin === to.origin;
+      samePath = sameOrigin && from.pathname === to.pathname;
     }
   } catch {
     /* Invalid destinations remain unknown. */
@@ -59,7 +61,33 @@ export function profileNavigationEdge(
         : profileNavigationRoute(destination, origin),
     targetLocale: navigationLocale(destination, origin),
     samePath,
+    sameOrigin,
   };
+}
+
+export function profileProxyProvenance(value: string | undefined) {
+  const match = value?.match(
+    /^(canonical-locale|canonical-public|verify-token|login|auth-login|workspace-route-status|intl)\|(en|vi|unprefixed)\|(en|vi|unprefixed)\|(same|different)$/u
+  );
+  if (!match) return {};
+  return {
+    proxy: {
+      stage: match[1],
+      requestLocale: match[2],
+      nextLocale: match[3],
+      sameRequestPath: match[4] === 'same',
+    },
+  };
+}
+
+function responseProxyProvenance(response: Response) {
+  try {
+    return profileProxyProvenance(
+      response.headers?.()['x-lettin-profile-proxy']
+    );
+  } catch {
+    return {};
+  }
 }
 
 export async function observeProfileNavigation<T>(
@@ -100,6 +128,7 @@ export async function observeProfileNavigation<T>(
               item.request().redirectedTo()?.url(),
               origin
             ),
+            ...responseProxyProvenance(item),
             status,
           };
         } catch {
@@ -109,6 +138,7 @@ export async function observeProfileNavigation<T>(
             targetRoute: 'unavailable',
             targetLocale: 'unavailable',
             samePath: null,
+            sameOrigin: null,
             status,
           };
         }

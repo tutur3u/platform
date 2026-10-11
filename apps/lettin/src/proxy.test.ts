@@ -179,3 +179,37 @@ it('preserves pre-stream workspace status and refreshed auth headers', async () 
     'en'
   );
 });
+
+it('tags the actual canonical-locale no-op branch for a synthetic internal-path mismatch', async () => {
+  for (const [key, value] of Object.entries({
+    TUTURUUU_LETTIN_PROFILE_DIAGNOSTICS: '1',
+    NODE_ENV: 'development',
+    GITHUB_ACTIONS: 'true',
+    RUNNER_ENVIRONMENT: 'github-hosted',
+    GITHUB_RUN_ID: '123',
+    GITHUB_SHA: 'a'.repeat(40),
+  }))
+    vi.stubEnv(key, value);
+  const path = '/00000000-0000-0000-0000-000000000000/profile';
+  const origin = 'http://127.0.0.1:7833';
+  const request = new NextRequest(`${origin}${path}`);
+  // This synthetic mismatch models an internal locale rewrite; runtime must
+  // establish whether this branch actually receives that request shape.
+  Object.defineProperty(request, 'nextUrl', {
+    value: new NextRequest(`${origin}/en${path}`).nextUrl,
+  });
+  try {
+    const response = await proxy(request);
+    expect(response.status).toBe(307);
+    // NextRequest normalizes the input loopback host; compare its effective URL.
+    expect(new URL(request.url).origin).toBe('http://localhost:7833');
+    expect(response.headers.get('location')).toBe(request.url);
+    expect(new URL(response.headers.get('location')!).pathname).toBe(path);
+    expect(response.headers.get('x-lettin-profile-proxy')).toBe(
+      'canonical-locale|unprefixed|en|different'
+    );
+    expect(mocks.refresh).not.toHaveBeenCalled();
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
