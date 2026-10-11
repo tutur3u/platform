@@ -5,6 +5,7 @@ import {
   assertRollbackSource,
   exactSourceSha,
   foundationPackets,
+  schemaFailureDiagnostic,
   schemaReceipt,
 } from './employee-schema-tap.mjs';
 
@@ -89,4 +90,64 @@ test('does not promote schema proof into provider or production proof', () => {
 test('rejects branch names or abbreviated commits', () => {
   assert.throws(() => exactSourceSha('main'));
   assert.throws(() => exactSourceSha('9e7'));
+});
+
+test('schema failure diagnostic exposes only fixed fields and ordinal', () => {
+  const diagnostic = schemaFailureDiagnostic('packet-execution', 1, {
+    status: 3,
+    error: { code: 'SECRET', message: 'password=private' },
+    signal: 'PRIVATE',
+    stdout: 'ERROR: private SQL',
+    stderr: 'secret-token',
+  });
+  assert.equal(diagnostic.exitCode, 3);
+  assert.equal(diagnostic.processError, true);
+  assert.equal(diagnostic.signaled, true);
+  assert.equal(JSON.stringify(diagnostic).includes('private'), false);
+  assert.equal(JSON.stringify(diagnostic).includes('SECRET'), false);
+});
+test('schema failure diagnostic retains no TAP assertion descriptions', () => {
+  const diagnostic = schemaFailureDiagnostic('packet-tap', 1, {
+    stdout:
+      'not ok 1 - PRIVATE USER\nBail out! secret-token\nok 2 # SKIP private\n',
+  });
+  assert.equal(diagnostic.failingAssertions, 1);
+  assert.equal(diagnostic.bailout, true);
+  assert.equal(diagnostic.skippedOrTodo, true);
+  assert.equal(JSON.stringify(diagnostic).includes('PRIVATE'), false);
+  assert.equal(JSON.stringify(diagnostic).includes('secret-token'), false);
+});
+test('schema failure diagnostic bounds private output parsing', () => {
+  const diagnostic = schemaFailureDiagnostic('packet-tap', 1, {
+    stdout: `not ok 1 - private\n${'x'.repeat(1048576)}`,
+  });
+  assert.equal(diagnostic.failingAssertions, 0);
+});
+test('schema failure diagnostic preserves timeout without raw error text', () => {
+  assert.equal(
+    schemaFailureDiagnostic('start', 0, {
+      error: { code: 'ETIMEDOUT', message: 'private command' },
+    }).timedOut,
+    true
+  );
+});
+test('schema failure diagnostic rejects untrusted phase or ordinal', () => {
+  assert.throws(() => schemaFailureDiagnostic('secret', 1));
+  assert.throws(() => schemaFailureDiagnostic('packet-tap', 6));
+  assert.throws(() => schemaFailureDiagnostic('packet-tap', '1'));
+});
+test('schema failure diagnostic sanitizes unknown exit statuses', () => {
+  for (const status of ['secret', -1, 256]) {
+    assert.equal(
+      schemaFailureDiagnostic('packet-execution', 1, { status }).exitCode,
+      null
+    );
+  }
+});
+test('cleanup diagnostics use no fixture ordinal and retain no container name', () => {
+  const diagnostic = schemaFailureDiagnostic('cleanup-proof', 0, {
+    stderr: 'supabase_db_PRIVATE',
+  });
+  assert.equal(diagnostic.packetOrdinal, 0);
+  assert.equal(JSON.stringify(diagnostic).includes('PRIVATE'), false);
 });

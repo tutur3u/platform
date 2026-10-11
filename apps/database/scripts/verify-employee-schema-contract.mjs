@@ -8,6 +8,7 @@ import {
   assertRollbackSource,
   exactSourceSha,
   foundationPackets,
+  schemaFailureDiagnostic,
   schemaReceipt,
 } from './employee-schema-tap.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
@@ -155,6 +156,9 @@ const receiptDirectory = path.join(
 mkdirSync(receiptDirectory, { recursive: true, mode: 0o700 });
 const packets = [];
 let cleanupSucceeded = false;
+let currentPhase = 'full-schema-snapshot';
+let packetOrdinal = 0;
+let failureDiagnostic = null;
 const bounded = (command, args, cwd, timeout) => {
   const result = spawnSync(command, args, {
     cwd,
@@ -166,6 +170,11 @@ const bounded = (command, args, cwd, timeout) => {
   });
   // Never print SQL diagnostics, fixture identities, CLI tokens or credentials.
   if (result.error || result.signal || result.status !== 0) {
+    failureDiagnostic ??= schemaFailureDiagnostic(
+      currentPhase,
+      packetOrdinal,
+      result
+    );
     throw new Error('Bounded employee schema command failed');
   }
   return result.stdout;
@@ -176,7 +185,9 @@ const runner = async (command, args, cwd) => {
   try {
     if (args.includes('test')) {
       const container = `supabase_db_${metadata.projectId}`;
-      for (const [file, count] of foundationPackets) {
+      for (const [position, [file, count]] of foundationPackets.entries()) {
+        packetOrdinal = position + 1;
+        currentPhase = 'fixture-hash';
         const fixture = path.join(
           metadata.disposableRoot,
           'supabase/tests',
@@ -191,12 +202,14 @@ const runner = async (command, args, cwd) => {
           throw new Error('Isolated fixture differs');
         }
         const target = '/tmp/employee-schema-contract.sql';
+        currentPhase = 'packet-copy';
         bounded(
           'docker',
           ['cp', fixture, `${container}:${target}`],
           cwd,
           10000
         );
+        currentPhase = 'packet-execution';
         const tap = bounded(
           'docker',
           [
@@ -220,9 +233,25 @@ const runner = async (command, args, cwd) => {
           cwd,
           60000
         );
-        packets.push({ file, assertions: assertPacketTap(tap, count) });
+        currentPhase = 'packet-tap';
+        try {
+          packets.push({ file, assertions: assertPacketTap(tap, count) });
+        } catch {
+          failureDiagnostic ??= schemaFailureDiagnostic(
+            currentPhase,
+            packetOrdinal,
+            { stdout: tap }
+          );
+          throw new Error('Employee packet TAP contract failed');
+        }
       }
     } else {
+      packetOrdinal = 0;
+      currentPhase = args.includes('stop')
+        ? 'cleanup'
+        : args.includes('start')
+          ? 'start'
+          : 'reset';
       bounded(
         command,
         args.includes('start') ? [...args, '--exclude', excluded] : args,
@@ -230,6 +259,7 @@ const runner = async (command, args, cwd) => {
         args.includes('stop') ? 60000 : 600000
       );
       if (args.includes('stop')) {
+        currentPhase = 'cleanup-proof';
         const names = bounded(
           'docker',
           ['ps', '-a', '--format', '{{.Names}}'],
@@ -246,6 +276,7 @@ const runner = async (command, args, cwd) => {
     }
     return { code: 0 };
   } catch {
+    failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
     return { code: 1 };
   }
 };
@@ -267,11 +298,13 @@ try {
   lifecycleCode = await runIsolatedLifecycle({ binaryPath, metadata, runner });
 } catch {
   // No raw exception text can expose SQL values or private CLI output.
+  failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
   lifecycleCode = 1;
 }
 const receipt = {
   ...schemaReceipt({ sourceSha, packets, lifecycleCode, cleanupSucceeded }),
   fixtureHashes,
+  ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
 writeFileSync(
   path.join(receiptDirectory, 'qualification.json'),

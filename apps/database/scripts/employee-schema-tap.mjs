@@ -71,3 +71,51 @@ export function schemaReceipt({
     productionApplied: false,
   };
 }
+
+export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
+  const phases = [
+    'full-schema-snapshot',
+    'start',
+    'reset',
+    'fixture-hash',
+    'packet-copy',
+    'packet-execution',
+    'packet-tap',
+    'cleanup',
+    'cleanup-proof',
+  ];
+  if (
+    !phases.includes(phase) ||
+    !Number.isInteger(packetOrdinal) ||
+    packetOrdinal < 0 ||
+    packetOrdinal > foundationPackets.length
+  ) {
+    throw new Error('Invalid schema diagnostic binding');
+  }
+  const status =
+    Number.isInteger(result.status) &&
+    result.status >= 0 &&
+    result.status <= 255
+      ? result.status
+      : null;
+  const tap =
+    typeof result.stdout === 'string' &&
+    Buffer.byteLength(result.stdout, 'utf8') <= 1024 * 1024
+      ? result.stdout
+      : '';
+  return {
+    phase,
+    packetOrdinal,
+    exitCode: status,
+    processError: result.error != null,
+    timedOut: result.error?.code === 'ETIMEDOUT',
+    signaled: Boolean(result.signal),
+    failingAssertions: Math.min(
+      500,
+      tap.split(/\r?\n/u).filter((line) => /^not ok \d+(?:\s|$)/u.test(line))
+        .length
+    ),
+    bailout: /^Bail out!/mu.test(tap),
+    skippedOrTodo: /#\s*(?:SKIP|TODO)\b/iu.test(tap),
+  };
+}
