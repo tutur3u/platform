@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import en from '../../messages/en.json';
 import vietnamese from '../../messages/vi.json';
+import { orderStudioWorlds } from './studio-order';
 import { WorldShelf } from './world-shelf';
 
 const state = vi.hoisted(() => ({ locale: 'en' }));
@@ -30,7 +31,12 @@ vi.mock('@tuturuuu/ui/input', () => ({
   Input: (props: ComponentProps<'input'>) => <input {...props} />,
 }));
 vi.mock('./content-notice', () => ({ ContentNotice: () => null }));
-const world = (id: string, role: LettinRole, published = false) => ({
+const world = (
+  id: string,
+  role: LettinRole,
+  published = false,
+  tags = ['test']
+) => ({
   id,
   role,
   version: 1,
@@ -42,7 +48,7 @@ const world = (id: string, role: LettinRole, published = false) => ({
     kind: 'world' as const,
     image: '',
     credit: '',
-    tags: ['test'],
+    tags,
     links: [],
     content: { type: 'doc' },
   },
@@ -87,72 +93,92 @@ async function search(value: string) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
 }
+async function select(index: number, value: string) {
+  await act(() => {
+    const control = container.querySelectorAll('select')[index]!;
+    control.value = value;
+    control.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+const orderedShelf = [
+  world('Notebook 10', 'editor', true, ['story']),
+  world('Notebook 2', 'owner', true, ['story']),
+  world('Notebook 1', 'editor', false, ['other']),
+  world('Notebook 3', 'editor', true, ['story']),
+];
 it.each(['en', 'vi'])(
-  'filters existing owner/editor/publisher roles locally in %s',
+  'orders current titles naturally in %s without transport',
   async (locale) => {
     state.locale = locale;
     const messages = locale === 'vi' ? vietnamese.lettin : en.lettin;
     const transport = vi.fn();
     vi.stubGlobal('fetch', transport);
-    await render();
-    expect(titles()).toEqual(shelf.map((item) => item.id));
-    await click(messages.studioMembership_owned);
-    expect(titles()).toEqual(['Owned draft', 'Owned published']);
+    await render(orderedShelf);
+    expect(titles()).toEqual(orderedShelf.map((item) => item.id));
+    expect(
+      container.querySelectorAll('select')[1]?.parentElement?.textContent
+    ).toContain(messages.studioOrder);
+    await select(1, 'ascending');
+    expect(titles()).toEqual([
+      'Notebook 1',
+      'Notebook 2',
+      'Notebook 3',
+      'Notebook 10',
+    ]);
+    await select(0, 'story');
     await click(messages.studioMembership_collaborating);
-    expect(titles()).toEqual(['Shared editor', 'Shared publisher']);
-    expect(
-      container.querySelector('button[aria-pressed="true"]')?.textContent
-    ).toBe(messages.all);
-    expect(
-      [...container.querySelectorAll('button[aria-pressed="true"]')].map(
-        (el) => el.textContent
-      )
-    ).toContain(messages.studioMembership_collaborating);
-    await click(messages.studioMembership_all);
-    expect(titles()).toHaveLength(4);
+    await click(messages.published);
+    await search('Notebook');
+    expect(titles()).toEqual(['Notebook 3', 'Notebook 10']);
+    await select(1, 'descending');
+    expect(titles()).toEqual(['Notebook 10', 'Notebook 3']);
     expect(transport).not.toHaveBeenCalled();
   }
 );
-it('combines membership, publication and search; clears all facets after empty results', async () => {
-  await render();
-  await click(en.lettin.studioMembership_collaborating);
-  await click(en.lettin.published);
-  expect(titles()).toEqual(['Shared publisher']);
-  await search('Owned');
-  expect(titles()).toEqual([]);
-  expect(container.textContent).toContain(en.lettin.noStudioResults);
-  await click(en.lettin.clearFilters);
-  expect(titles()).toHaveLength(4);
-  expect(container.querySelector('input')?.value).toBe('');
-  expect(
-    [...container.querySelectorAll('button[aria-pressed="true"]')].map(
-      (el) => el.textContent
-    )
-  ).toEqual([en.lettin.all, en.lettin.studioMembership_all]);
-});
-it('resets local facets and destination links when changing workspace', async () => {
-  await render();
+it('restores source order and all facets when clearing an empty result', async () => {
+  await render(orderedShelf);
+  await select(1, 'descending');
+  await select(0, 'story');
   await click(en.lettin.studioMembership_owned);
-  await click(en.lettin.draft);
-  await search('Owned');
-  expect(titles()).toEqual(['Owned draft']);
-  await render(shelf, 'workspace-b');
-  expect(titles()).toHaveLength(4);
-  expect(container.querySelector('input')?.value).toBe('');
-  expect(
-    [...container.querySelectorAll('a')].every((link) =>
-      link.getAttribute('href')?.startsWith('/workspace-b/')
-    )
-  ).toBe(true);
-});
-it('uses current overview roles and removes withdrawn access instead of retaining filtered records', async () => {
-  await render();
-  await click(en.lettin.studioMembership_collaborating);
-  await render([world('Shared editor', 'owner'), shelf[3]!]);
-  expect(titles()).toEqual(['Shared publisher']);
-  await render([]);
+  await click(en.lettin.published);
+  await search('missing');
   expect(titles()).toEqual([]);
-  expect(container.querySelectorAll('a')).toHaveLength(0);
   await click(en.lettin.clearFilters);
+  expect(titles()).toEqual(orderedShelf.map((item) => item.id));
+  expect(container.querySelectorAll('select')[1]?.value).toBe('source');
+});
+it('resets order on workspace change and drops revoked records from the ordered view', async () => {
+  await render(orderedShelf);
+  await select(1, 'ascending');
+  await render([orderedShelf[0]!, orderedShelf[2]!]);
+  expect(titles()).toEqual(['Notebook 1', 'Notebook 10']);
+  await render(orderedShelf, 'workspace-b');
+  expect(titles()).toEqual(orderedShelf.map((item) => item.id));
+  expect(container.querySelectorAll('select')[1]?.value).toBe('source');
+  await render([], 'workspace-b');
   expect(titles()).toEqual([]);
 });
+it.each(['en', 'vi'])(
+  'preserves equal-title ties and input records with %s comparisons',
+  (locale) => {
+    const input = [
+      world('Café', 'owner'),
+      world('cafe', 'editor'),
+      world('10', 'owner'),
+      world('2', 'owner'),
+    ];
+    const before = JSON.stringify(input);
+    const ascending = orderStudioWorlds(input, 'ascending', locale);
+    expect(ascending.map((item) => item.id)).toEqual([
+      '2',
+      '10',
+      'Café',
+      'cafe',
+    ]);
+    expect(
+      orderStudioWorlds(input, 'descending', locale).map((item) => item.id)
+    ).toEqual(['Café', 'cafe', '10', '2']);
+    expect(orderStudioWorlds(input, 'source', locale)).toEqual(input);
+    expect(JSON.stringify(input)).toBe(before);
+  }
+);
