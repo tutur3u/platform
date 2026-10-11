@@ -4,6 +4,10 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { externalRecipientCases } from '@/lib/notifications/email-eligibility-test-cases';
 
+vi.mock('@/lib/notifications/task-email-freshness', () => ({
+  getTaskEmailSkipReason: vi.fn(async () => null),
+}));
+
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;

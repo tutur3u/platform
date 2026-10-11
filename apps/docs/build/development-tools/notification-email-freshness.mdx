@@ -1,0 +1,40 @@
+---
+title: "Task notification email freshness"
+description: "Current due-date eligibility for immediate and digest task emails."
+---
+
+Task notification emails are skipped when the current task due date is strictly
+more than 24 hours before the delivery check. Exactly 24 hours overdue, future due
+dates and tasks without a due date remain eligible under the existing recipient,
+notification-age and preference checks. This is an instant-based cutoff, not a
+calendar-day or workspace-timezone comparison.
+
+The dispatcher loads the current task through its task list and workspace board,
+binding both the notification task ID and workspace ID. It does not use the
+queued due-date snapshot for eligibility. A task rescheduled into the future is
+therefore not skipped because its notification contains an older due date.
+
+Immediate and digest dispatchers recheck every email item before rendering.
+Mixed digests omit overdue items and build their subject and content from the
+remaining items. An all-overdue batch completes with skipped delivery logs and
+makes no email provider request. The skip reason is
+`skipped: task_due_older_than_1_day`.
+
+Missing task/workspace bindings, conflicting payload task IDs, tenant mismatch,
+lookup errors and invalid current due dates fail before delivery. They are not
+recorded as a proven overdue skip. Existing delivery-attempt and ambiguous
+provider-result handling remain in place; freshness is not reevaluated after a
+provider attempt. Push and non-task notifications retain their existing checks.
+
+For source validation, run the focused notification freshness and dispatcher
+tests, then `bun check` and a real web app build through the resource queue.
+The digest route is first-class under `apps/web/src/app/api/cron/`; after route
+registration changes, run `node scripts/tanstack-migration-manifest.js generate`
+followed by `node scripts/tanstack-migration-manifest.js check` and
+`bun web:api-routes:check`. The package command `bun migration:tanstack:manifest`
+remains disabled while the alternate runtime is paused; source inventory
+generation does not resume that runtime. Rust route parity remains backlog and does
+not mean production traffic has moved.
+
+Source checks do not prove production activation or delivered email. No migration
+or manual notification replay is required by this change.
