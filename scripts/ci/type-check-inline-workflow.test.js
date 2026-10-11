@@ -244,7 +244,13 @@ function runPreflight(options) {
         { cwd: dir, env, encoding: 'utf8' }
       );
       if (result.status !== 0) {
-        return { failure: id, heavy: false, outputs, stderr: result.stderr };
+        return {
+          failure: id,
+          heavy: false,
+          outputs,
+          output: fs.readFileSync(outputFile, 'utf8'),
+          stderr: result.stderr,
+        };
       }
       outputs[id] = Object.fromEntries(
         fs
@@ -340,6 +346,7 @@ for (const missingHelper of [
     assert.equal(result.failure, 'check_config');
     assert.equal(result.heavy, false);
     assert.equal(result.outputs.check_config, undefined);
+    assert.equal(result.output, '');
     assert.match(result.stderr, /ERR_MODULE_NOT_FOUND/);
     assert.ok(result.stderr.includes(missingHelper));
   });
