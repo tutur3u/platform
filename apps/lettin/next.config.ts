@@ -10,6 +10,9 @@ const web = resolveTuturuuuWebAppUrl();
 const nextConfig = createNextIntlPlugin()(
   createTuturuuuNextConfig({
     seoApp: 'lettin',
+    // Locale canonicalization must inspect the original client URL.
+    // Next's normalized proxy URL can synthesize a default-locale prefix.
+    skipProxyUrlNormalize: true,
     async rewrites() {
       return {
         beforeFiles: [],

@@ -52,3 +52,45 @@ it('falls back to From when Reply-To is absent', async () => {
     expect.objectContaining({ to: ['sender@example.com'] })
   );
 });
+it('keeps multiple Reply-To and To recipients in To and prevents Bcc disclosure', async () => {
+  const open = vi.fn().mockResolvedValue(undefined);
+  await createMailReplyActions(
+    () => '',
+    [{ address: 'me@example.com' }] as MailMailbox[],
+    open
+  ).handleReplyAll({
+    ...message,
+    recipients: [
+      ...message.recipients,
+      { kind: 'reply_to', address: 'team@example.com', displayName: null },
+      { kind: 'to', address: 'other@example.com', displayName: null },
+      { kind: 'bcc', address: 'private@example.com', displayName: null },
+    ],
+  });
+  expect(open).toHaveBeenCalledWith(
+    expect.objectContaining({
+      to: ['support@example.com', 'team@example.com', 'other@example.com'],
+      cc: ['colleague@example.com'],
+    })
+  );
+  expect(JSON.stringify(open.mock.calls[0])).not.toContain(
+    'private@example.com'
+  );
+});
+it('replies to sent mail using its original To recipients', async () => {
+  const open = vi.fn().mockResolvedValue(undefined);
+  await createMailReplyActions(
+    () => '',
+    [{ address: 'me@example.com' }] as MailMailbox[],
+    open
+  ).handleReply({
+    ...message,
+    fromAddress: 'ME@example.com',
+    recipients: [
+      { kind: 'to', address: 'recipient@example.com', displayName: null },
+    ],
+  });
+  expect(open).toHaveBeenCalledWith(
+    expect.objectContaining({ to: ['recipient@example.com'] })
+  );
+});

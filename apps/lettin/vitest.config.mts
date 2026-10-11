@@ -48,5 +48,8 @@ export default defineConfig({
       ),
     },
   },
-  test: { exclude: ['**/.next/**', '**/node_modules/**'] },
+  test: {
+    server: { deps: { inline: ['next-intl'] } },
+    exclude: ['**/.next/**', '**/node_modules/**'],
+  },
 });

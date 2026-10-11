@@ -1,3 +1,4 @@
+import { calendarPreviewBlockedEvents } from '@tuturuuu/utils/calendar-preview-blocked';
 /**
  * Preview Engine for Smart Scheduling
  *
@@ -1036,29 +1037,11 @@ export function generatePreview(
           d.setDate(d.getDate() + windowDays);
           return d;
         })();
-  // Convert existing events to blocked slots
-  // Block events that SHOULD NOT be overlapped:
-  // - Locked events: User-protected, can't be moved
-  // - Past/in-progress events: Already started, can't be moved
-  // - Habit events: Must respect existing habit time slots (via habitEventIds)
-  // Task events CAN be replaced, so don't block them (unless they're habits)
-  const blockedEvents = existingEvents
-    .filter((e) => {
-      if (e._isPreview) return false; // Never block preview events
-      if (e.locked) return true; // Always block locked events
-      // Block events that have already started (in-progress or past)
-      const eventStart = new Date(e.start_at);
-      if (eventStart < now) return true;
-      // Block existing habit events (tasks must respect habit time slots)
-      if (habitEventIds.has(e.id)) return true;
-      // Don't block future task events - they will be replaced
-      return false;
-    })
-    .map((e) => ({
-      id: e.id,
-      start_at: e.start_at,
-      end_at: e.end_at,
-    }));
+  const blockedEvents = calendarPreviewBlockedEvents(
+    existingEvents,
+    now,
+    habitEventIds
+  );
 
   const occupiedSlots = new PreviewSlotTracker(blockedEvents);
 

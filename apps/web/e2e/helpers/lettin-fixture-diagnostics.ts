@@ -43,6 +43,17 @@ export const LETTIN_FIXTURE_COMMAND_OPTIONS = {
   stdio: 'pipe' as const,
 };
 
-export function runLettinFixtureCommand(args: string[], cwd: string) {
-  execFileSync('bunx', args, { ...LETTIN_FIXTURE_COMMAND_OPTIONS, cwd });
+type FixtureCommandRunner = (
+  command: string,
+  args: string[],
+  options: typeof LETTIN_FIXTURE_COMMAND_OPTIONS & { cwd: string }
+) => unknown;
+
+export function runLettinFixtureCommand(
+  args: string[],
+  cwd: string,
+  execute: FixtureCommandRunner = execFileSync
+) {
+  // CI installs Bun itself; use its package runner through the normal Bun shim.
+  execute('bun', ['x', ...args], { ...LETTIN_FIXTURE_COMMAND_OPTIONS, cwd });
 }

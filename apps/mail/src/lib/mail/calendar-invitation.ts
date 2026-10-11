@@ -88,6 +88,14 @@ function hasUnsafeControls(source: string) {
   return false;
 }
 
+function validCalendarDate(value: string) {
+  return /^\d{8}$/u.test(value) && localDateTime(`${value}T000000`);
+}
+
+function validEventDate(value: string) {
+  return validCalendarDate(value) || localDateTime(value.replace(/Z$/u, ''));
+}
+
 function localDateTime(value: string) {
   if (!/^\d{8}T\d{6}$/u.test(value)) return false;
   const year = Number(value.slice(0, 4));
@@ -297,7 +305,7 @@ export function parseCalendarInvitation(
     recurrences.length > 1 ||
     !timezone ||
     (recurrence &&
-      (!/^\d{8}(T\d{6}Z?)?$/u.test(recurrence.value) ||
+      (!validEventDate(recurrence.value) ||
         (recurrence.params.TZID && !localDateTime(recurrence.value)))) ||
     organizer === mailboxAddress.toLowerCase() ||
     organizerProperty?.params['SENT-BY'] ||
@@ -313,7 +321,11 @@ export function parseCalendarInvitation(
     )
   )
     return null;
-  if (!/^\d{8}(T\d{6}Z?)?$/u.test(start) || !/^\d{8}T\d{6}Z$/u.test(stamp))
+  if (
+    !validEventDate(start) ||
+    !/^\d{8}T\d{6}Z$/u.test(stamp) ||
+    !localDateTime(stamp.slice(0, -1))
+  )
     return null;
   const location =
     single(event, 'LOCATION')

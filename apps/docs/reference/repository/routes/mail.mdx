@@ -30,11 +30,13 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/auth/refresh-app-session` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/auth/refresh-app-session/route.ts) |
 | `/api/auth/verify-app-token` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/auth/verify-app-token/route.ts) |
 | `/api/build-info` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/build-info/route.ts) |
+| `/api/v1/mail/connected/callback` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/mail/connected/callback/route.ts) |
 | `/api/v1/mail/domains/[domainId]/catch-all` | GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/mail/domains/%5BdomainId%5D/catch-all/route.ts) |
 | `/api/v1/mail/domains` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/mail/domains/route.ts) |
 | `/api/v1/webhooks/mail/cloudflare` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/webhooks/mail/cloudflare/route.ts) |
 | `/api/v1/webhooks/mail/ses` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/webhooks/mail/ses/route.ts) |
 | `/api/v1/workspaces/[wsId]/mail/bootstrap` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/workspaces/%5BwsId%5D/mail/bootstrap/route.ts) |
+| `/api/v1/workspaces/[wsId]/mail/connected/[[...segments]]` | DELETE, GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/workspaces/%5BwsId%5D/mail/connected/%5B%5B...segments%5D%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/draft` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/workspaces/%5BwsId%5D/mail/mailboxes/%5BmailboxId%5D/ai/draft/route.ts) |
 | `/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/labels` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/workspaces/%5BwsId%5D/mail/mailboxes/%5BmailboxId%5D/ai/labels/route.ts) |
 | `/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/[attachmentId]` | DELETE, GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/mail/src/app/api/v1/workspaces/%5BwsId%5D/mail/mailboxes/%5BmailboxId%5D/drafts/%5BdraftId%5D/attachments/%5BattachmentId%5D/route.ts) |

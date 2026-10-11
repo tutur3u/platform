@@ -264,7 +264,9 @@ export async function createProviderEvent(args: {
 
   const client = createGraphClient(source.accessToken) as any;
   const response = await client
-    .api(`/me/calendars/${source.externalCalendarId}/events`)
+    .api(
+      `/me/calendars/${encodeURIComponent(source.externalCalendarId)}/events`
+    )
     .header('Prefer', 'IdType="ImmutableId"')
     .post({
       ...toMicrosoftEvent(event),
@@ -397,7 +399,7 @@ export async function updateProviderEvent(args: {
   const client = createGraphClient(source.accessToken) as any;
   await client
     .api(
-      `/me/calendars/${existing.externalCalendarId}/events/${existing.externalEventId}`
+      `/me/calendars/${encodeURIComponent(existing.externalCalendarId)}/events/${encodeURIComponent(existing.externalEventId)}`
     )
     .header('Prefer', 'IdType="ImmutableId"')
     .patch(toMicrosoftEvent(event));
@@ -440,7 +442,7 @@ export async function deleteProviderEvent(args: {
   try {
     await client
       .api(
-        `/me/calendars/${existing.externalCalendarId}/events/${existing.externalEventId}`
+        `/me/calendars/${encodeURIComponent(existing.externalCalendarId)}/events/${encodeURIComponent(existing.externalEventId)}`
       )
       .header('Prefer', 'IdType="ImmutableId"')
       .delete();

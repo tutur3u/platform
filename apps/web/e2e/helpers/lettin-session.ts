@@ -50,9 +50,7 @@ export async function createLettinBrowserContext(
 ) {
   const cookieOrigin = sessionOrigin(origin);
   const context = await lettinFixturePhase('create browser context', () =>
-    browser.newContext({
-      ignoreHTTPSErrors: true,
-    })
+    browser.newContext()
   );
   // Private satellite pages require the shared-session cookie as well as
   // verified app claims, matching the existing cross-app E2E fixture contract.

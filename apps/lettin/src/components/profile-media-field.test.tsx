@@ -278,3 +278,21 @@ it('retains the avatar ticket/PUT path without banner finalization', async () =>
     await field.close();
   }
 });
+
+for (const locale of ['en', 'vi']) {
+  it(`keeps simultaneous avatar and banner input identities distinct in ${locale}`, async () => {
+    const avatar = await mount('avatar', locale);
+    const banner = await mount('banner', locale);
+    try {
+      expect(avatar.input.id).not.toBe(banner.input.id);
+      for (const field of [avatar, banner]) {
+        expect(field.input.id).not.toBe('');
+        expect(field.input.labels).toHaveLength(1);
+        expect(field.input.labels?.[0]?.htmlFor).toBe(field.input.id);
+      }
+    } finally {
+      await avatar.close();
+      await banner.close();
+    }
+  });
+}

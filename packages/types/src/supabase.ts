@@ -10298,6 +10298,86 @@ export type Database = {
           },
         ];
       };
+      mail_connected_accounts: {
+        Row: {
+          address: string;
+          created_at: string;
+          credentials: string;
+          id: string;
+          provider: string;
+          provider_account_id: string;
+          revision: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          address: string;
+          created_at?: string;
+          credentials: string;
+          id?: string;
+          provider: string;
+          provider_account_id: string;
+          revision?: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          address?: string;
+          created_at?: string;
+          credentials?: string;
+          id?: string;
+          provider?: string;
+          provider_account_id?: string;
+          revision?: number;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_connected_accounts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_connected_accounts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      mail_connected_sends: {
+        Row: {
+          account_id: string;
+          payload_hash: string;
+          request_id: string;
+          status: string;
+        };
+        Insert: {
+          account_id: string;
+          payload_hash: string;
+          request_id: string;
+          status: string;
+        };
+        Update: {
+          account_id?: string;
+          payload_hash?: string;
+          request_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_connected_sends_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_connected_accounts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       mail_domains: {
         Row: {
           canonical_domain_id: string | null;
@@ -11192,6 +11272,48 @@ export type Database = {
           },
           {
             foreignKeyName: 'mail_notification_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      mail_oauth_requests: {
+        Row: {
+          expires_at: string;
+          provider: string;
+          state_hash: string;
+          user_id: string;
+          verifier: string;
+          ws_id: string;
+        };
+        Insert: {
+          expires_at: string;
+          provider: string;
+          state_hash: string;
+          user_id: string;
+          verifier: string;
+          ws_id: string;
+        };
+        Update: {
+          expires_at?: string;
+          provider?: string;
+          state_hash?: string;
+          user_id?: string;
+          verifier?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_oauth_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_oauth_requests_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';

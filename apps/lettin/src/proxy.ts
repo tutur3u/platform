@@ -31,6 +31,7 @@ import {
 } from './i18n/routing';
 
 import { getLoginRedirect } from './login-redirect';
+import { tagProfileProxyResponse } from './profile-proxy-diagnostics';
 import { getWorkspaceRouteStatus } from './workspace-route-status';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -217,23 +218,40 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
   if (canonicalLocaleRedirect) {
-    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+    return tagProfileProxyResponse(
+      request,
+      clearSupabaseAuthCookies(request, canonicalLocaleRedirect),
+      'canonical-locale'
+    );
   }
 
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
   if (canonicalPublicRedirect) {
-    return clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+    return tagProfileProxyResponse(
+      request,
+      clearSupabaseAuthCookies(request, canonicalPublicRedirect),
+      'canonical-public'
+    );
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
     locales: supportedLocales,
   });
   if (verifyTokenResponse) {
-    return verifyTokenResponse;
+    return tagProfileProxyResponse(
+      request,
+      verifyTokenResponse,
+      'verify-token'
+    );
   }
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
-  if (unlocalizedPath === '/login') return getLoginRedirect(request);
+  if (unlocalizedPath === '/login')
+    return tagProfileProxyResponse(
+      request,
+      await getLoginRedirect(request),
+      'login'
+    );
 
   if (!isPublicLettinPath(unlocalizedPath)) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
@@ -269,7 +287,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
       if (next) url.searchParams.set('next', next);
 
-      return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
+      return tagProfileProxyResponse(
+        request,
+        clearSupabaseAuthCookies(request, NextResponse.redirect(url)),
+        'auth-login'
+      );
     }
 
     const routeStatus = await getWorkspaceRouteStatus(
@@ -283,12 +305,20 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     if (appSessionRefresh.ok) {
       propagateAuthCookies(appSessionRefresh.response, response);
     }
-    return clearSupabaseAuthCookies(request, response);
+    return tagProfileProxyResponse(
+      request,
+      clearSupabaseAuthCookies(request, response),
+      routeStatus ? 'workspace-route-status' : 'intl'
+    );
   }
 
   const response = intlMiddleware(request);
   setLocaleCookie(response, request, getPreferredLocale(request));
-  return clearSupabaseAuthCookies(request, response);
+  return tagProfileProxyResponse(
+    request,
+    clearSupabaseAuthCookies(request, response),
+    'intl'
+  );
 }
 
 export const config = {

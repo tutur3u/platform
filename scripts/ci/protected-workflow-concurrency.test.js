@@ -85,6 +85,7 @@ const validation = [
   'creator-identity-contract.yaml',
   'inventory-offline-contract.yaml',
   'programming-app-builds.yaml',
+  'mail-calendar-tasks-builds.yaml',
   'programming-database-contract.yaml',
   'security-egress-contract.yaml',
 ];

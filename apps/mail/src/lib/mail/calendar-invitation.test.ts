@@ -306,3 +306,17 @@ it('rejects C0 boundaries without a control-character regex and retains supporte
     )
   ).not.toBeNull();
 });
+it('rejects impossible invitation dates rather than exposing RSVP on malformed requests', () => {
+  for (const [original, invalid] of [
+    ['20261002T063000Z', '20260230T063000Z'],
+    ['20261002T063000Z', '20261002T250000Z'],
+    ['20260930T120000Z', '20261330T120000Z'],
+  ]) {
+    expect(
+      parseCalendarInvitation(
+        googleRequest.replace(original!, invalid!),
+        'guest@example.test'
+      )
+    ).toBeNull();
+  }
+});

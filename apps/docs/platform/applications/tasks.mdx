@@ -1406,3 +1406,16 @@ breaks, independent link composition and serialized size bounds;
 notes without source/project sharing, source removal, oversized input rejection and
 uncertain creation recovery. Hosted task creation and the exact-head Tasks build
 remain separate delivery gates.
+
+## Provider meeting commitments in task previews
+
+Task scheduling previews in Tasks, Calendar and Web preserve future Google and
+Microsoft calendar commitments even when the local event copy is unlocked. The
+rule recognizes current provider/source IDs and legacy Google event IDs. Native
+future task slots remain replaceable; locked, in-progress and retained habit slots
+remain blocked. Preview-only copies are excluded. Provider meetings must not
+become free time merely because they are not native locked tasks.
+
+The shared decision lives in `calendar-preview-blocked.ts`; its unit tests and
+`unified-scheduler/provider-commitments.test.ts` in all three apps cover the
+preview integration. This does not add Google Tasks or Microsoft To Do sync.
