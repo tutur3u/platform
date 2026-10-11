@@ -15,6 +15,8 @@ import {
   profilePreflight,
 } from './mail-profile-runtime-preflight.mjs';
 
+import { privateStartupDiagnostics } from './mail-profile-startup-diagnostics.mjs';
+
 export { assertHostedOwner, profilePreflight };
 
 export const PROFILE_TITLE =
@@ -182,10 +184,12 @@ async function startApp(app, port, env, children, reports) {
   );
   await log.close();
   child.on('error', () => {});
+  child.profileApp = app;
   children.push(child);
   const until = Date.now() + 180000;
   while (Date.now() < until) {
-    assert.equal(child.exitCode, null, 'Owned app exited before readiness');
+    if (child.exitCode !== null || child.signalCode !== null)
+      throw new Error(`Owned ${app} app exited before readiness`);
     try {
       const response = await fetch(`http://127.0.0.1:${port}/login`, {
         redirect: 'manual',
@@ -335,6 +339,8 @@ export function safeFixtureFailure(error) {
   const reasons = new Map([
     ['Owned command exceeded its deadline', 'owned-command-deadline'],
     ['Owned app readiness deadline exceeded', 'app-readiness-deadline'],
+    ['Owned web app exited before readiness', 'web-app-before-readiness'],
+    ['Owned lettin app exited before readiness', 'lettin-app-before-readiness'],
     ['Full fixture or scoped Supabase stop failed', 'fixture-or-stop-failed'],
     ['Owned cleanup failed', 'owned-cleanup-failed'],
     ['Preflight and receipt failed', 'preflight-receipt-failed'],
@@ -646,6 +652,7 @@ export async function main() {
         failureReason ??
         (cleanupFailures.length ? 'owned-cleanup-failed' : null),
       appStopAttempted: appCleanup.attempted,
+      startupDiagnostics: await privateStartupDiagnostics(reports, children),
       outcome: primary === 0 && cleanupFailures.length === 0 ? 'PASS' : 'FAIL',
       profile: PROFILE_TITLE,
       transport: TRANSPORT_TITLE,

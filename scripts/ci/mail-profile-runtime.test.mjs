@@ -272,3 +272,20 @@ test('fixture diagnostics classify expected failures without leaking errors', ()
     'owned-cleanup-failed'
   );
 });
+
+test('startup diagnostics identify only known owned apps without exposing output', () => {
+  assert.equal(
+    safeFixtureFailure(new Error('Owned web app exited before readiness')),
+    'web-app-before-readiness'
+  );
+  assert.equal(
+    safeFixtureFailure(new Error('Owned lettin app exited before readiness')),
+    'lettin-app-before-readiness'
+  );
+  assert.equal(
+    safeFixtureFailure(
+      new Error('Owned token=private-value app exited before readiness')
+    ),
+    'unclassified-fixture-failure'
+  );
+});

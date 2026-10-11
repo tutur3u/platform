@@ -17,6 +17,7 @@ on:
       - "packages/storage-core/**"
       - "packages/supabase/**"
       - "scripts/ci/mail-profile-runtime*"
+      - "scripts/ci/mail-profile-startup-diagnostics*"
       - "bun.lock"
       - "tuturuuu.ci.ts"
       - ".github/workflows/mail-profile-runtime-contract.yaml"
@@ -67,7 +68,7 @@ jobs:
           cd apps/web
           bun x --no-install playwright install --with-deps chromium
       - name: Check fixture lifecycle contract
-        run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs scripts/ci/mail-profile-runtime-paths.test.mjs
+        run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs scripts/ci/mail-profile-runtime-paths.test.mjs scripts/ci/mail-profile-startup-diagnostics.test.mjs
       - name: Normal setup through the shared resource queue
         run: |
           bun packages/sdk/src/cli/resources-entry.ts status --json
