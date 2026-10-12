@@ -92,3 +92,15 @@ localization changes.
 - Keep the Assistant center tab, but create new Assistant text conversations as
   native Chat `type="ai"` conversations and send text through the chat message
   stream. Live mode remains an explicit Assistant Live entry.
+
+### Calendar description display
+
+Calendar descriptions are arbitrary provider HTML, Markdown or plain text, not
+TipTap JSON. Reuse `CalendarDescriptionBody` for full details and
+`calendarDescriptionPreview` for compact agenda text. Both are display adapters;
+never persist normalized output or change form/provider payloads. Keep rendering
+native through `flutter_markdown_plus`, block remote images and executable
+HTML content, and use the existing mobile link launcher URL policy. Calendar's
+widget regressions cover both raw `<p>` and Markdown source, malformed/mixed
+content, formatting, URL rejection and accessible enlarged text. A widget fixture
+is not installed-device or provider delivery evidence.
