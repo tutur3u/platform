@@ -6,6 +6,7 @@ import {
   getExistingPostCheckStates,
   recordPostCheckChanges,
 } from '../../../../../lib/post-check-audit';
+import { upsertPostChecks } from '../../../../../lib/post-check-write';
 import { getUserGroupRoutePermissions } from '../../../../../lib/user-groups/route-auth';
 import {
   hasUserGroupPostInWorkspace,
@@ -97,27 +98,25 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Invalid payload' }, { status: 400 });
   }
 
+  const checks = Array.isArray(parsed.data) ? parsed.data : [parsed.data];
+  if (new Set(checks.map((check) => check.user_id)).size !== checks.length) {
+    return NextResponse.json(
+      { message: 'Duplicate user IDs' },
+      { status: 400 }
+    );
+  }
+
   const scoped = await resolveScopedPost(req, params);
   if (!scoped.ok) return scoped.response;
-
-  const checks = Array.isArray(parsed.data) ? parsed.data : [parsed.data];
   const previousStates = await getExistingPostCheckStates(
     scoped.sbAdmin,
     scoped.postId,
     checks.map((check) => check.user_id)
   );
-  const { error } = await scoped.sbAdmin
-    .schema('private')
-    .from('user_group_post_checks')
-    .upsert(
-      checks.map((check) => ({
-        is_completed: check.is_completed,
-        notes: check.notes ?? null,
-        post_id: scoped.postId,
-        user_id: check.user_id,
-      })),
-      { onConflict: 'post_id,user_id' }
-    );
+  const { error } = await upsertPostChecks(
+    scoped.sbAdmin,
+    checks.map((check) => ({ ...check, post_id: scoped.postId }))
+  );
 
   if (error) {
     console.error('Error updating group checks', {

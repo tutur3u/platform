@@ -40,7 +40,7 @@ export function GroupSectionCard({
   return (
     <section
       className={cn(
-        'flex flex-col overflow-hidden rounded-xl border border-border/60 bg-background shadow-sm transition-colors hover:border-border',
+        'flex min-w-0 max-w-full flex-col overflow-hidden rounded-xl border border-border/60 bg-background shadow-sm transition-colors hover:border-border',
         className
       )}
     >
@@ -73,7 +73,12 @@ export function GroupSectionCard({
           </div>
         ) : null}
       </header>
-      <div className={cn('flex flex-1 flex-col p-4 sm:p-5', contentClassName)}>
+      <div
+        className={cn(
+          'flex min-w-0 flex-1 flex-col p-4 sm:p-5',
+          contentClassName
+        )}
+      >
         {children}
       </div>
     </section>

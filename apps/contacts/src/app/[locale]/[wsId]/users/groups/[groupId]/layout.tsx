@@ -88,14 +88,14 @@ async function GroupLayoutContent({ children, params }: LayoutProps) {
       <FeatureSummary
         title={
           <>
-            <h1 className="w-full font-bold text-2xl">
+            <h1 className="wrap-anywhere w-full min-w-0 font-bold text-2xl">
               {group.name || t('ws-user-groups.singular')}
             </h1>
             <Separator className="my-2" />
           </>
         }
         description={
-          <div className="grid flex-wrap gap-2 md:flex">
+          <div className="grid min-w-0 grid-cols-2 gap-2 md:flex md:flex-wrap [&>a]:min-w-0 [&_button]:h-auto [&_button]:min-h-10 [&_button]:whitespace-normal [&_button]:text-left">
             <LinkButton
               href={commonHref}
               title={t('infrastructure-tabs.overview')}

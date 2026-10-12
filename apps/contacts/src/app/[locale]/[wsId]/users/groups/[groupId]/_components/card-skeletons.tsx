@@ -13,20 +13,22 @@ function SectionCardShell({
     <section
       aria-busy="true"
       className={cn(
-        'flex flex-col overflow-hidden rounded-xl border border-border/60 bg-background shadow-sm',
+        'flex min-w-0 max-w-full flex-col overflow-hidden rounded-xl border border-border/60 bg-background shadow-sm',
         className
       )}
       data-group-section-skeleton
     >
-      <header className="flex items-center gap-3 border-border/40 border-b bg-foreground/[0.015] px-4 py-4 sm:px-5">
+      <header className="flex flex-wrap items-center gap-3 border-border/40 border-b bg-foreground/[0.015] px-4 py-4 sm:flex-nowrap sm:px-5">
         <Skeleton className="h-9 w-9 rounded-lg" />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-24" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <Skeleton className="h-4 w-32 max-w-full" />
+          <Skeleton className="h-3 w-24 max-w-full" />
         </div>
         <Skeleton className="h-8 w-20 rounded-md" />
       </header>
-      <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4 sm:p-5">
+        {children}
+      </div>
     </section>
   );
 }
@@ -35,7 +37,7 @@ function MemberRowSkeleton() {
   return (
     <div className="flex items-center gap-3">
       <Skeleton className="h-9 w-9 rounded-full" />
-      <div className="flex flex-1 flex-col gap-1.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <Skeleton className="h-3.5 w-2/5" />
         <Skeleton className="h-3 w-1/4" />
       </div>
@@ -73,7 +75,7 @@ function ListRowSkeleton() {
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border/50 p-3">
       <div className="flex flex-1 items-center gap-3">
         <Skeleton className="h-5 w-5 rounded" />
-        <div className="flex flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <Skeleton className="h-3.5 w-1/2" />
           <Skeleton className="h-3 w-1/4" />
         </div>
@@ -98,7 +100,10 @@ export function AuditLogCardSkeleton() {
     <SectionCardShell className="min-h-72 lg:col-span-2">
       <div className="grid grid-cols-4 gap-3 border-border/50 border-b pb-3">
         {Array.from({ length: 4 }, (_, index) => (
-          <Skeleton key={`audit-header-${index}`} className="h-3 w-20" />
+          <Skeleton
+            key={`audit-header-${index}`}
+            className="h-3 w-full max-w-20"
+          />
         ))}
       </div>
       {Array.from({ length: 4 }, (_, index) => (
@@ -121,7 +126,7 @@ export function GroupOverviewSkeleton() {
   return (
     <div
       aria-busy="true"
-      className="grid w-full grid-cols-1 items-start gap-4 lg:grid-cols-2 lg:gap-5"
+      className="grid w-full min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-2 lg:gap-5"
       data-testid="group-overview-skeleton"
     >
       <MembersCardSkeleton />

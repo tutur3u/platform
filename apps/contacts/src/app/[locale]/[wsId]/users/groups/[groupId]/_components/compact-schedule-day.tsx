@@ -70,7 +70,7 @@ export function CompactScheduleDay({
           onMouseEnter={() => setOpen(true)}
           onFocus={() => setOpen(true)}
           className={cn(
-            'flex aspect-square min-h-[84px] flex-col rounded-md border p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/50',
+            'flex min-h-[72px] w-full min-w-0 flex-col rounded-md border p-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/50 sm:aspect-square sm:min-h-[84px] sm:p-2',
             isCurrentMonth
               ? 'border-border/60 bg-background hover:border-dynamic-blue/40 hover:bg-dynamic-blue/5'
               : 'border-border/30 bg-foreground/[0.02] text-muted-foreground/60',
@@ -82,10 +82,10 @@ export function CompactScheduleDay({
             date: formatDayLabel(day.date, locale, true),
           })}
         >
-          <div className="flex items-center justify-between gap-1">
+          <div className="flex min-w-0 flex-col items-start justify-between gap-0.5 sm:flex-row sm:items-center sm:gap-1">
             <span
               className={cn(
-                'flex h-6 w-6 items-center justify-center rounded-md font-semibold text-xs',
+                'flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-semibold text-xs sm:h-6 sm:w-6',
                 isToday && 'bg-dynamic-blue text-white'
               )}
             >
@@ -98,11 +98,11 @@ export function CompactScheduleDay({
             ) : null}
           </div>
 
-          <div className="mt-1 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+          <div className="mt-1 flex min-h-0 w-full min-w-0 flex-1 flex-col gap-1 overflow-hidden">
             {sessions.slice(0, 2).map((session) => (
               <span
                 key={session.id}
-                className="truncate rounded-sm bg-dynamic-blue/10 px-1.5 py-0.5 font-medium text-[10px] text-dynamic-blue"
+                className="max-w-full truncate rounded-sm bg-dynamic-blue/10 px-1.5 py-0.5 font-medium text-[10px] text-dynamic-blue"
               >
                 {compactSessionTimeLabel(session)}
               </span>
@@ -111,13 +111,13 @@ export function CompactScheduleDay({
               missing.slice(0, 2).map((occurrence) => (
                 <span
                   key={`${occurrence.seriesId}-${occurrence.date}`}
-                  className="truncate rounded-sm bg-dynamic-red/10 px-1.5 py-0.5 font-medium text-[10px] text-dynamic-red"
+                  className="max-w-full truncate rounded-sm bg-dynamic-red/10 px-1.5 py-0.5 font-medium text-[10px] text-dynamic-red"
                 >
                   {t('missing_short')}
                 </span>
               ))}
             {overflowCount > 0 ? (
-              <span className="text-[10px] text-muted-foreground">
+              <span className="max-w-full truncate text-[10px] text-muted-foreground">
                 {t('more_sessions', { count: overflowCount })}
               </span>
             ) : null}

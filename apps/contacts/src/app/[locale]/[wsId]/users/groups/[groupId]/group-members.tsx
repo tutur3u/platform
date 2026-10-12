@@ -171,7 +171,7 @@ export default function GroupMembers({
       title={t('ws-roles.members')}
       description={`${members.length} ${t('ws-roles.members').toLowerCase()}`}
       action={
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">

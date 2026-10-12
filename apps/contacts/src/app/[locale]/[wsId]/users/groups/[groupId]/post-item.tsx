@@ -115,16 +115,18 @@ export const PostItem = memo(function PostItem({
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : -1}
       className={cn(
-        'flex flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
+        'flex min-w-0 flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
         selectedPostId === post.id && 'border-foreground bg-foreground/5',
         onClick ? 'cursor-pointer' : ''
       )}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-left font-semibold text-sm">{post.title}</div>
+      <div className="flex min-w-0 flex-col items-start justify-between gap-2 sm:flex-row">
+        <div className="min-w-0 flex-1">
+          <div className="wrap-anywhere text-left font-semibold text-sm">
+            {post.title}
+          </div>
           <div className="flex flex-wrap items-center gap-2 font-semibold">
             {post.created_at && (
               <div className="flex items-center gap-0.5 text-xs opacity-70">
@@ -156,7 +158,7 @@ export const PostItem = memo(function PostItem({
           </div>
         </div>
         {groupId && (
-          <div className="flex gap-2 text-start">
+          <div className="flex shrink-0 flex-wrap gap-2 text-start">
             <Link href={`/${wsId}/users/groups/${groupId}/posts/${post.id}`}>
               <Button
                 size="sm"
@@ -216,7 +218,7 @@ export const PostItem = memo(function PostItem({
         </div>
       )}
       {configs.showContent && post.content && (
-        <div className="whitespace-pre-line text-start text-sm opacity-70">
+        <div className="wrap-anywhere whitespace-pre-line text-start text-sm opacity-70">
           {post.content}
         </div>
       )}
