@@ -52,4 +52,5 @@ jobs:
         with:
           name: apps-cloudflare-source-${{ github.event.pull_request.head.sha || github.sha }}
           path: apps/apps/dist
+          retention-days: 7
           if-no-files-found: error
