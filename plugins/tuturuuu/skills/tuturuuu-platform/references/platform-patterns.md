@@ -508,12 +508,12 @@ address alone. Recheck current email preferences for each queued event through
 `should_send_notification`, including account channel/category opt-outs, before
 rendering a digest. Lookup failures must stop admission.
 
-Keep EmailService suppression authoritative and do not request a blacklist bypass.
-Transactional account updates and dedicated auth/recovery mail must not inherit a
-marketing opt-out accidentally. The source matrix and sender fixtures live in
-`email-eligibility.test.ts` and the notification route tests. See the recipient
-policy in `apps/docs/platform/architecture/authorization.mdx`; focused fixture
-success is separate from exact-head CI and actual provider/inbox delivery.
+Keep EmailService suppression authoritative; auth/recovery mail retains its policy.
+For queued deadline reminders, `task-reminder-lifecycle.ts` rechecks current task,
+tenant, due-date instant, resolution and watcher before email/push dispatch.
+Lookup/binding failures remain errors. Preserve history and ordinary task events.
+This read does not make provider sends or producer deduplication atomic. See
+`apps/docs/platform/features/task-reminder-delivery.mdx` for scope and regressions.
 
 
 ## Saved versus published browsing

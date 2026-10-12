@@ -14,6 +14,7 @@ import {
   getTaskEmailSkipReason,
   type TaskEmailNotification,
 } from './task-email-freshness';
+import { getTaskReminderSkipReason } from './task-reminder-lifecycle';
 
 export const NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const NOTIFICATION_QUERY_CHUNK_SIZE = 500;
@@ -213,6 +214,19 @@ export async function getNotificationSkipReason(
   );
   if (!isMember) {
     return NOTIFICATION_STALE_WORKSPACE_MEMBERSHIP_SKIP_REASON;
+  }
+
+  // A revision after a provider timeout cannot establish rejection of that send.
+  if (
+    sendResult === undefined &&
+    errorMessage === undefined &&
+    (channel === 'email' || channel === 'push')
+  ) {
+    const reminderReason = await getTaskReminderSkipReason(
+      sbAdmin,
+      notification
+    );
+    if (reminderReason) return reminderReason;
   }
 
   if (channel === 'email') {

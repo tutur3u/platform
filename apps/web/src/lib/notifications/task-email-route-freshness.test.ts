@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   logs: [] as Array<{ id: string; notifications: Record<string, unknown> }>,
   channel: 'email',
+  realAdmission: false,
   push: vi.fn(async (_args: unknown) => ({
     deliveredCount: 1,
     invalidTokens: [] as string[],
@@ -37,6 +38,20 @@ const batch = () => ({
 });
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
+    rpc: async () => ({ data: true, error: null }),
+    auth: {
+      admin: {
+        getUserById: async () => ({
+          data: {
+            user: {
+              email: 'recipient@example.com',
+              email_confirmed_at: '2026-01-01',
+            },
+          },
+          error: null,
+        }),
+      },
+    },
     from: (table: string) => ({
       select: () => {
         let taskId = '';
@@ -48,7 +63,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
               : {
                   id: taskId,
                   end_date: mocks.dueByTask.get(taskId) ?? null,
-                  task_lists: { workspace_boards: { ws_id: 'ws-1' } },
+                  completed_at: null,
+                  closed_at: null,
+                  deleted_at: null,
+                  task_lists: {
+                    status: 'active',
+                    workspace_boards: { ws_id: 'ws-1' },
+                  },
+                  task_watchers: [{ user_id: 'user-1' }],
                 },
             error: mocks.lookupError ? new Error('lookup') : null,
           }),
@@ -74,19 +96,23 @@ vi.mock('@/lib/notifications/cron-helpers', async (original) => {
   return {
     ...actual,
     getNotificationSkipReason: async (
-      sb: Parameters<typeof getTaskEmailSkipReason>[0],
-      options: {
-        channel?: string;
-        notification: Parameters<typeof getTaskEmailSkipReason>[1];
-      }
+      sb: Parameters<typeof actual.getNotificationSkipReason>[0],
+      options: Parameters<typeof actual.getNotificationSkipReason>[1]
     ) =>
-      options.channel === 'email'
-        ? getTaskEmailSkipReason(sb, options.notification)
-        : null,
+      mocks.realAdmission
+        ? actual.getNotificationSkipReason(sb, options)
+        : options.channel === 'email'
+          ? getTaskEmailSkipReason(sb, options.notification)
+          : null,
   };
 });
+vi.mock('@tuturuuu/utils/workspace-helper', async (original) => ({
+  ...(await original<typeof import('@tuturuuu/utils/workspace-helper')>()),
+  verifyWorkspaceMembershipType: async () => ({ ok: true }),
+}));
 vi.mock('@/lib/email-blacklist', () => ({
   preloadBlockedEmailCache: async () => {},
+  isEmailBlacklisted: async () => false,
 }));
 vi.mock('@/lib/notifications/mail-push', () => ({
   getMailPushSkipReason: async () => null,
@@ -202,6 +228,7 @@ beforeEach(() => {
   vi.spyOn(Date, 'now').mockReturnValue(NOW);
   vi.stubEnv('CRON_SECRET', 'cron-secret');
   mocks.channel = 'email';
+  mocks.realAdmission = false;
   mocks.push.mockResolvedValue({ deliveredCount: 1, invalidTokens: [] });
   mocks.lookupError = false;
   mocks.missingTaskIds.clear();
@@ -225,6 +252,51 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe.each(['immediate', 'digest'])('%s email freshness route', (kind) => {
+  it('preserves unknown provider acceptance for a mixed digest revised during send', async () => {
+    mocks.realAdmission = true;
+    const due = new Date(NOW + 1000).toISOString();
+    mocks.dueByTask.set('old', due);
+    mocks.logs = [
+      {
+        id: 'log-reminder',
+        notifications: {
+          ...notification('fresh'),
+          type: 'deadline_reminder',
+          user_id: 'user-1',
+          scope: 'workspace',
+          data: { task_id: 'fresh', end_date: due },
+        },
+      },
+      {
+        id: 'log-other',
+        notifications: {
+          ...notification('old'),
+          user_id: 'user-1',
+          scope: 'workspace',
+        },
+      },
+    ];
+    mocks.send.mockImplementationOnce(async () => {
+      mocks.dueByTask.set('fresh', new Date(NOW + 2000).toISOString());
+      return { success: false };
+    });
+    const response = await callRoute(kind);
+    expect(response.status).toBe(200);
+    expect(mocks.send).toHaveBeenCalledTimes(1);
+    expect(mocks.markSkipped).not.toHaveBeenCalled();
+    expect(mocks.markSent).not.toHaveBeenCalled();
+    expect(mocks.markBatchSent).not.toHaveBeenCalled();
+    expect(mocks.markBatchFailed).not.toHaveBeenCalled();
+    if (kind === 'digest') {
+      expect(await response.json()).toMatchObject({
+        results: [{ status: 'reconciliation_required' }],
+      });
+      expect(mocks.markReconciliation).toHaveBeenCalledWith(
+        expect.anything(),
+        'batch-1'
+      );
+    }
+  });
   it('sends only surviving task items with correct settled counts', async () => {
     const response = await callRoute(kind);
     expect(response.status).toBe(200);
