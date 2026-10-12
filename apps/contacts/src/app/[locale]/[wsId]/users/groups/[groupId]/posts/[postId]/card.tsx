@@ -29,7 +29,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 
 interface Props {
   recipient: GroupPostRecipientRow;
@@ -39,7 +39,7 @@ interface Props {
   canApprovePosts?: boolean;
 }
 
-function UserCard({
+function UserCardEditor({
   recipient,
   wsId,
   post,
@@ -50,6 +50,16 @@ function UserCard({
   const queryClient = useQueryClient();
   const t = useTranslations();
   const tableT = useTranslations('post-email-data-table');
+
+  const [notesDraft, setNotesDraft] = useState(recipient.notes ?? '');
+  const notesEditRevision = useRef(0);
+  const acknowledgedNotesRevision = useRef(0);
+
+  useEffect(() => {
+    if (notesEditRevision.current === acknowledgedNotesRevision.current) {
+      setNotesDraft(recipient.notes ?? '');
+    }
+  }, [recipient.notes]);
 
   const [marker, setMarker] = useState(() => ({
     approvalStatus: recipient.approval_status as
@@ -102,22 +112,26 @@ function UserCard({
   const isEmailBlocked =
     recipient.delivery_issue_reason === 'blacklisted_email_or_domain';
   const stageIconClassName = cn(
-    'mr-1 h-3.5 w-3.5',
+    'mr-1 h-3.5 w-3.5 shrink-0',
     stageAppearance.iconClassName
   );
   const queueIconClassName = cn(
-    'mr-1 h-3.5 w-3.5',
+    'mr-1 h-3.5 w-3.5 shrink-0',
     queueAppearance?.iconClassName
   );
-  const notesDisabled = !hasExistingCheck;
 
-  const { mutate: handleSaveStatus, isPending: isSavingStatus } = useMutation({
+  const {
+    mutate: handleSaveStatus,
+    mutateAsync: saveStatus,
+    isPending: isSavingStatus,
+  } = useMutation({
     mutationFn: async ({
       isCompleted,
       notes,
     }: {
       isCompleted: boolean;
       notes?: string;
+      notesRevision?: number;
     }) => {
       if (!recipient.user_id || !post.id || !post.group_id) {
         throw new Error('Missing required fields');
@@ -126,19 +140,22 @@ function UserCard({
       if (hasExistingCheck) {
         return updateUserGroupPostChecks(wsId, post.group_id, post.id, {
           is_completed: isCompleted,
-          notes: notes ?? marker.notes ?? '',
+          ...(notes === undefined ? {} : { notes }),
           user_id: recipient.user_id,
         });
       }
 
       return createUserGroupPostCheck(wsId, post.group_id, {
         is_completed: isCompleted,
-        notes: notes ?? '',
+        ...(notes === undefined ? {} : { notes }),
         post_id: post.id,
         user_id: recipient.user_id,
       });
     },
     onSuccess: async (_, variables) => {
+      if (variables.notesRevision !== undefined) {
+        acknowledgedNotesRevision.current = variables.notesRevision;
+      }
       setMarker((current) => ({
         ...current,
         approvalStatus: current.hasCheck ? current.approvalStatus : 'PENDING',
@@ -171,6 +188,9 @@ function UserCard({
       ]);
     },
     onSuccess: async () => {
+      notesEditRevision.current += 1;
+      acknowledgedNotesRevision.current = notesEditRevision.current;
+      setNotesDraft('');
       setMarker({
         approvalStatus: undefined,
         hasCheck: false,
@@ -192,22 +212,24 @@ function UserCard({
     },
   });
 
-  const handleSaveNotes = (formData: FormData) => {
-    if (!hasExistingCheck) {
-      return;
+  const handleSaveNotes = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!hasExistingCheck || isSavingStatus || isClearing) return;
+    try {
+      await saveStatus({
+        isCompleted: marker.isCompleted ?? false,
+        notes: notesDraft,
+        notesRevision: notesEditRevision.current,
+      });
+    } catch {
+      // onError reports the failure; keep the draft for a deliberate retry.
     }
-
-    const notes = formData.get('notes') as string;
-    handleSaveStatus({
-      isCompleted: marker.isCompleted ?? false,
-      notes,
-    });
   };
 
   return (
     <Card className="w-full rounded-lg border-border/60 p-4 shadow-sm">
-      <div className="mb-4 flex items-center">
-        <Avatar className="h-12 w-12 rounded-full object-cover">
+      <div className="mb-4 flex items-start gap-3">
+        <Avatar className="h-12 w-12 shrink-0 rounded-full object-cover">
           <AvatarImage
             src={recipient.user_avatar_url || undefined}
             alt={recipient.recipient || 'User avatar'}
@@ -216,19 +238,25 @@ function UserCard({
             {(recipient.recipient || recipient.email || 'U').charAt(0)}
           </AvatarFallback>
         </Avatar>
-        <div className="ml-4 flex w-full items-start justify-between gap-3">
-          <div>
-            <h3 className="font-semibold text-foreground text-lg">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-foreground text-lg [overflow-wrap:anywhere]">
               {recipient.recipient}
             </h3>
             {(recipient.email || recipient.user_phone) && (
-              <p className="text-foreground text-sm">
+              <p className="text-foreground text-sm [overflow-wrap:anywhere]">
                 {recipient.email || recipient.user_phone}
               </p>
             )}
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <Badge variant="outline" className={stageAppearance.className}>
+          <div className="flex min-w-0 flex-wrap gap-2 sm:max-w-1/2 sm:flex-col sm:items-end">
+            <Badge
+              variant="outline"
+              className={cn(
+                'max-w-full whitespace-normal [overflow-wrap:anywhere]',
+                stageAppearance.className
+              )}
+            >
               <stageAppearance.icon className={stageIconClassName} />
               {tableT(stageAppearance.labelKey)}
             </Badge>
@@ -236,16 +264,22 @@ function UserCard({
               <Badge
                 variant="outline"
                 className={cn(
-                  'text-[10px] opacity-90',
+                  'max-w-full whitespace-normal text-[10px] opacity-90 [overflow-wrap:anywhere]',
                   approvalAppearance.className
                 )}
               >
-                <approvalAppearance.icon className="mr-1 h-3.5 w-3.5" />
+                <approvalAppearance.icon className="mr-1 h-3.5 w-3.5 shrink-0" />
                 {tableT(approvalAppearance.labelKey)}
               </Badge>
             )}
             {queueAppearance && (
-              <Badge variant="outline" className={queueAppearance.className}>
+              <Badge
+                variant="outline"
+                className={cn(
+                  'max-w-full whitespace-normal [overflow-wrap:anywhere]',
+                  queueAppearance.className
+                )}
+              >
                 <queueAppearance.icon className={queueIconClassName} />
                 {tableT(queueAppearance.labelKey)}
               </Badge>
@@ -266,13 +300,16 @@ function UserCard({
         </div>
       )}
 
-      <form action={handleSaveNotes} id={`notes-form-${recipient.user_id}`}>
+      <form onSubmit={handleSaveNotes} id={`notes-form-${recipient.user_id}`}>
         <Textarea
-          key={recipient.notes}
           name="notes"
           placeholder={tableT('notes_placeholder')}
-          defaultValue={recipient.notes || ''}
-          disabled={notesDisabled}
+          value={notesDraft}
+          onChange={(event) => {
+            notesEditRevision.current += 1;
+            setNotesDraft(event.target.value);
+          }}
+          disabled={!hasExistingCheck || isClearing}
         />
       </form>
 
@@ -368,7 +405,7 @@ function UserCard({
               variant="outline"
               type="submit"
               form={`notes-form-${recipient.user_id}`}
-              disabled={isSavingStatus}
+              disabled={isSavingStatus || isClearing}
             >
               {isSavingStatus ? (
                 <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
@@ -384,4 +421,11 @@ function UserCard({
   );
 }
 
-export default UserCard;
+export default function UserCard(props: Props) {
+  return (
+    <UserCardEditor
+      key={`${props.wsId}:${props.post.id}:${props.recipient.user_id}`}
+      {...props}
+    />
+  );
+}

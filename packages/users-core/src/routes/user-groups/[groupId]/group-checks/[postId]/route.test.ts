@@ -138,4 +138,69 @@ describe('shared group-check item route', () => {
       postId: POST_ID,
     });
   });
+  it('preserves omitted notes in mixed completion and note changes', async () => {
+    const request = new Request(
+      `https://contacts.tuturuuu.com/api/v1/workspaces/${WORKSPACE_ID}/user-groups/${GROUP_ID}/group-checks/${POST_ID}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify([
+          { user_id: USER_ID, is_completed: true },
+          { user_id: ACTOR_ID, is_completed: false, notes: null },
+        ]),
+      }
+    );
+    const response = await PUT(request, context);
+    expect(response.status).toBe(200);
+    expect(mocks.upsert).toHaveBeenNthCalledWith(
+      1,
+      [{ post_id: POST_ID, user_id: USER_ID, is_completed: true }],
+      { onConflict: 'post_id,user_id' }
+    );
+    expect(mocks.upsert).toHaveBeenNthCalledWith(
+      2,
+      [
+        {
+          post_id: POST_ID,
+          user_id: ACTOR_ID,
+          is_completed: false,
+          notes: null,
+        },
+      ],
+      { onConflict: 'post_id,user_id' }
+    );
+  });
+
+  it('rejects duplicate users before any database writes', async () => {
+    const request = new Request(
+      `https://contacts.tuturuuu.com/api/v1/workspaces/${WORKSPACE_ID}/user-groups/${GROUP_ID}/group-checks/${POST_ID}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify([
+          { user_id: USER_ID, is_completed: true },
+          { user_id: USER_ID, is_completed: false, notes: 'Later value' },
+        ]),
+      }
+    );
+    expect((await PUT(request, context)).status).toBe(400);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+    expect(mocks.recordChanges).not.toHaveBeenCalled();
+  });
+
+  it('does not acknowledge success if the note batch fails', async () => {
+    mocks.upsert
+      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ error: { message: 'Database error' } });
+    const request = new Request(
+      `https://contacts.tuturuuu.com/api/v1/workspaces/${WORKSPACE_ID}/user-groups/${GROUP_ID}/group-checks/${POST_ID}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify([
+          { user_id: USER_ID, is_completed: true },
+          { user_id: ACTOR_ID, is_completed: false, notes: 'Comment' },
+        ]),
+      }
+    );
+    expect((await PUT(request, context)).status).toBe(500);
+    expect(mocks.recordChanges).not.toHaveBeenCalled();
+  });
 });

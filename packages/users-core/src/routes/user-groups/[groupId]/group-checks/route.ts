@@ -6,6 +6,7 @@ import {
   getExistingPostCheckStates,
   recordPostCheckChanges,
 } from '../../../../lib/post-check-audit';
+import { upsertPostChecks } from '../../../../lib/post-check-write';
 import { getUserGroupRoutePermissions } from '../../../../lib/user-groups/route-auth';
 import {
   hasUserGroupPostInWorkspace,
@@ -144,6 +145,12 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const checks = Array.isArray(parsed.data) ? parsed.data : [parsed.data];
+  if (new Set(checks.map((check) => check.user_id)).size !== checks.length) {
+    return NextResponse.json(
+      { message: 'Duplicate user IDs' },
+      { status: 400 }
+    );
+  }
   const postIds = [...new Set(checks.map((check) => check.post_id))];
   if (postIds.length !== 1 || !postIds[0]) {
     return NextResponse.json(
@@ -166,10 +173,7 @@ export async function POST(req: Request, { params }: Params) {
     postId,
     checks.map((check) => check.user_id)
   );
-  const { error } = await scoped.sbAdmin
-    .schema('private')
-    .from('user_group_post_checks')
-    .upsert(checks, { onConflict: 'post_id,user_id' });
+  const { error } = await upsertPostChecks(scoped.sbAdmin, checks);
 
   if (error) {
     console.error('Error saving group checks', {

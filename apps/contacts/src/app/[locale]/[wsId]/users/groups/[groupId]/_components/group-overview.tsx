@@ -63,7 +63,7 @@ export function GroupOverview({
 }: GroupOverviewProps) {
   return (
     <div
-      className="grid w-full grid-cols-1 items-start gap-4 lg:grid-cols-2 lg:gap-5"
+      className="grid w-full min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-2 lg:gap-5"
       data-testid="group-overview-grid"
     >
       <Suspense fallback={<MembersCardSkeleton />}>

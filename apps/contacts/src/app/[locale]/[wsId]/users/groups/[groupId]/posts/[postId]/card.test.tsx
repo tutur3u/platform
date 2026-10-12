@@ -2,7 +2,13 @@
  * @vitest-environment jsdom
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import type { UserGroupPost } from '@tuturuuu/types/db';
 import type { GroupPostRecipientRow } from '@tuturuuu/users-core/lib/group-post-recipient-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -68,7 +74,7 @@ function recipient(overrides: Partial<GroupPostRecipientRow> = {}) {
   } as GroupPostRecipientRow;
 }
 
-function renderCard(value: GroupPostRecipientRow) {
+function renderCard(value: GroupPostRecipientRow, postValue = post) {
   const client = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
@@ -77,7 +83,7 @@ function renderCard(value: GroupPostRecipientRow) {
       <UserCard
         canApprovePosts
         canUpdateUserGroupsPosts
-        post={post}
+        post={postValue}
         recipient={value}
         wsId="11111111-1111-4111-8111-111111111111"
       />
@@ -143,5 +149,234 @@ describe('daily report recipient marker state', () => {
 
     expect(screen.getByText('approval:APPROVED')).toBeDefined();
     expect(screen.getByText('approved')).toBeDefined();
+  });
+  it('saves the current note draft and keeps it after submission', async () => {
+    const savedRecipient = recipient({
+      has_check: true,
+      is_completed: true,
+      notes: 'Old comment',
+    });
+    const rendered = renderCard(savedRecipient);
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'New daily comment' },
+    });
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith(
+        expect.any(String),
+        post.group_id,
+        post.id,
+        {
+          user_id: savedRecipient.user_id,
+          is_completed: true,
+          notes: 'New daily comment',
+        }
+      )
+    );
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'New daily comment'
+    );
+    rendered.unmount();
+    renderCard({ ...savedRecipient, notes: 'New daily comment' });
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'New daily comment'
+    );
+  });
+
+  it('keeps a rejected note draft and never resends notes with status changes', async () => {
+    api.update.mockRejectedValueOnce(new Error('Invalid payload'));
+    renderCard(
+      recipient({
+        has_check: true,
+        is_completed: false,
+        notes: 'Stored comment',
+      })
+    );
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'Unsaved comment' },
+    });
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() => expect(api.update).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(
+        screen
+          .getByRole('button', { name: 'common.save' })
+          .hasAttribute('disabled')
+      ).toBe(false)
+    );
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'Unsaved comment'
+    );
+    expect(refresh).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'common.completed' }));
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
+    expect(api.update.mock.calls[1]?.[3]).toEqual({
+      user_id: recipient().user_id,
+      is_completed: true,
+    });
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'Unsaved comment'
+    );
+  });
+
+  it('resets the draft when the same recipient opens a different post', () => {
+    const client = new QueryClient();
+    const value = recipient({ has_check: true, notes: 'First post comment' });
+    const renderValue = (postValue: UserGroupPost, notes: string) => (
+      <QueryClientProvider client={client}>
+        <UserCard
+          canUpdateUserGroupsPosts
+          post={postValue}
+          recipient={{ ...value, notes }}
+          wsId="workspace"
+        />
+      </QueryClientProvider>
+    );
+    const rendered = render(renderValue(post, 'First post comment'));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'Unsent first draft' },
+    });
+    rendered.rerender(
+      renderValue({ ...post, id: 'different-post' }, 'Second post comment')
+    );
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'Second post comment'
+    );
+  });
+
+  it('preserves an edit back to the original text while an older save is pending', async () => {
+    let finishSave: (() => void) | undefined;
+    api.update.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSave = resolve;
+        })
+    );
+    const client = new QueryClient();
+    const value = recipient({ has_check: true, notes: 'A' });
+    const renderValue = (notes: string) => (
+      <QueryClientProvider client={client}>
+        <UserCard
+          canUpdateUserGroupsPosts
+          post={post}
+          recipient={{ ...value, notes }}
+          wsId="workspace"
+        />
+      </QueryClientProvider>
+    );
+    const rendered = render(renderValue('A'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'B' } });
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() => expect(api.update).toHaveBeenCalledOnce());
+    expect(refresh).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'A' } });
+    await act(async () => {
+      finishSave?.();
+    });
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    rendered.rerender(renderValue('B'));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'A'
+    );
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
+    expect(api.update.mock.calls[1]?.[3]).toEqual({
+      user_id: value.user_id,
+      is_completed: false,
+      notes: 'A',
+    });
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(2));
+    rendered.rerender(renderValue('A'));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'A'
+    );
+    rendered.unmount();
+    renderCard({ ...value, notes: 'A' });
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'A'
+    );
+  });
+
+  it('accepts refreshed notes only after the latest local revision is saved', async () => {
+    const client = new QueryClient();
+    const value = recipient({ has_check: true, notes: 'A' });
+    const renderValue = (notes: string) => (
+      <QueryClientProvider client={client}>
+        <UserCard
+          canUpdateUserGroupsPosts
+          post={post}
+          recipient={{ ...value, notes }}
+          wsId="workspace"
+        />
+      </QueryClientProvider>
+    );
+    const rendered = render(renderValue('A'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'B' } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'A' } });
+    rendered.rerender(renderValue('Other device comment'));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'A'
+    );
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    rendered.rerender(renderValue('Saved on another device'));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'Saved on another device'
+    );
+  });
+
+  it('disables note editing and saving while a reset is awaiting acknowledgement', async () => {
+    let finishReset: (() => void) | undefined;
+    api.clear.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishReset = resolve;
+        })
+    );
+    renderCard(recipient({ has_check: true, notes: 'Stored comment' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'ws_post_details.reset_check' })
+    );
+    await waitFor(() => expect(api.clear).toHaveBeenCalledOnce());
+    expect(screen.getByRole('textbox').hasAttribute('disabled')).toBe(true);
+    expect(
+      screen
+        .getByRole('button', { name: 'common.save' })
+        .hasAttribute('disabled')
+    ).toBe(true);
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'Stored comment'
+    );
+    expect(refresh).not.toHaveBeenCalled();
+    await act(async () => {
+      finishReset?.();
+    });
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('');
+    expect(screen.getByRole('textbox').hasAttribute('disabled')).toBe(true);
+  });
+
+  it('retains a dirty draft when a refreshed recipient has newer server notes', () => {
+    const client = new QueryClient();
+    const value = recipient({ has_check: true, notes: 'Original' });
+    const renderValue = (notes: string) => (
+      <QueryClientProvider client={client}>
+        <UserCard
+          canUpdateUserGroupsPosts
+          post={post}
+          recipient={{ ...value, notes }}
+          wsId="workspace"
+        />
+      </QueryClientProvider>
+    );
+    const rendered = render(renderValue('Original'));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'Local edit' },
+    });
+    rendered.rerender(renderValue('Other device comment'));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'Local edit'
+    );
   });
 });
