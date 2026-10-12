@@ -21,8 +21,64 @@ import {
 } from './python-adapter-code';
 import {
   authenticatePythonInstallation,
+  createRuntimeDiagnosticCollector,
   inspectRuntimeDirectory,
+  MAX_RUNTIME_DIAGNOSTIC_BYTES,
 } from './python-runtime';
+
+it('reports nonzero and signal failures without retaining private stderr or guessing a cause', () => {
+  const privateBytes = Buffer.from(
+    'synthetic-private-path prompt-content credential-value https://example.org/?signature=synthetic-private'
+  );
+  const collector = createRuntimeDiagnosticCollector();
+  expect(collector.receive(privateBytes)).toBe(false);
+  const failure = collector.failure(7, null);
+  expect(failure.message).toBe('isolated local runtime failed');
+  expect(failure.diagnostic).toEqual({
+    version: 1,
+    category: 'UNKNOWN',
+    exitCode: 7,
+    signal: null,
+    stderrBytes: privateBytes.length,
+    stderrHashedBytes: privateBytes.length,
+    stderrSha256: bytesHash(privateBytes),
+    stderrTruncated: false,
+  });
+  expect(JSON.stringify(failure)).not.toContain('synthetic-private');
+  expect(collector.failure(null, 'SIGXFSZ').diagnostic).toMatchObject({
+    category: 'UNKNOWN',
+    exitCode: null,
+    signal: 'SIGXFSZ',
+  });
+  expect(collector.failure(-2, null, 'SPAWN_FAILURE').diagnostic).toMatchObject(
+    {
+      category: 'SPAWN_FAILURE',
+      exitCode: null,
+    }
+  );
+});
+
+it('hashes only the bounded stderr prefix while counting received bytes and truncation', () => {
+  const collector = createRuntimeDiagnosticCollector();
+  const prefix = Buffer.alloc(MAX_RUNTIME_DIAGNOSTIC_BYTES, 'x');
+  expect(collector.receive(prefix.subarray(0, 100))).toBe(false);
+  expect(collector.receive(prefix.subarray(100))).toBe(false);
+  const excess = Buffer.from('synthetic-private-after-bound');
+  expect(collector.receive(excess)).toBe(true);
+  expect(collector.receive(excess)).toBe(true);
+  expect(collector.failure(null, 'SIGKILL', 'STDERR_LIMIT').diagnostic).toEqual(
+    {
+      version: 1,
+      category: 'STDERR_LIMIT',
+      exitCode: null,
+      signal: 'SIGKILL',
+      stderrBytes: prefix.length + excess.length * 2,
+      stderrHashedBytes: MAX_RUNTIME_DIAGNOSTIC_BYTES,
+      stderrSha256: bytesHash(prefix),
+      stderrTruncated: true,
+    }
+  );
+});
 
 it('ships exact owned adapter source with deterministic hash through TypeScript packaging', () => {
   const source = readFileSync(

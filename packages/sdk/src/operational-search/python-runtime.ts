@@ -28,6 +28,89 @@ import {
 import { type EmbeddingRuntime, normalizeVector } from './runtime';
 
 export const MAX_PRIVATE_RUNTIME_BYTES = 512 * 1024 ** 2;
+export const MAX_RUNTIME_DIAGNOSTIC_BYTES = 128 * 1024;
+const runtimeFailureSchema = z
+  .object({
+    version: z.literal(1),
+    category: z.enum([
+      'UNKNOWN',
+      'WALL_LIMIT',
+      'RSS_LIMIT',
+      'STORAGE_LIMIT',
+      'OUTPUT_LIMIT',
+      'STDERR_LIMIT',
+      'SPAWN_FAILURE',
+      'INVALID_RESPONSE',
+    ]),
+    exitCode: z.number().int().min(0).max(255).nullable(),
+    signal: z
+      .enum([
+        'SIGKILL',
+        'SIGTERM',
+        'SIGABRT',
+        'SIGSEGV',
+        'SIGBUS',
+        'SIGXFSZ',
+        'SIGXCPU',
+        'SIGILL',
+        'SIGFPE',
+        'SIGPIPE',
+        'SIGTRAP',
+      ])
+      .nullable(),
+    stderrBytes: z.number().int().nonnegative().safe(),
+    stderrHashedBytes: z
+      .number()
+      .int()
+      .min(0)
+      .max(MAX_RUNTIME_DIAGNOSTIC_BYTES),
+    stderrSha256: z.string().regex(/^[0-9a-f]{64}$/),
+    stderrTruncated: z.boolean(),
+  })
+  .strict();
+export type RuntimeFailureDiagnostic = z.infer<typeof runtimeFailureSchema>;
+export class LocalRuntimeFailure extends Error {
+  readonly diagnostic: Readonly<RuntimeFailureDiagnostic>;
+  constructor(diagnostic: RuntimeFailureDiagnostic) {
+    super('isolated local runtime failed');
+    this.diagnostic = Object.freeze(runtimeFailureSchema.parse(diagnostic));
+  }
+}
+
+export function createRuntimeDiagnosticCollector() {
+  const hash = createHash('sha256');
+  let received = 0;
+  let hashed = 0;
+  return {
+    receive(bytes: Buffer) {
+      received += bytes.length;
+      const prefix = bytes.subarray(0, MAX_RUNTIME_DIAGNOSTIC_BYTES - hashed);
+      hash.update(prefix);
+      hashed += prefix.length;
+      return received > MAX_RUNTIME_DIAGNOSTIC_BYTES;
+    },
+    failure(
+      code: number | null,
+      signal: NodeJS.Signals | null,
+      category: RuntimeFailureDiagnostic['category'] = 'UNKNOWN'
+    ) {
+      const safeSignal = runtimeFailureSchema.shape.signal.safeParse(signal);
+      return new LocalRuntimeFailure({
+        version: 1,
+        category,
+        exitCode:
+          code !== null && Number.isInteger(code) && code >= 0 && code <= 255
+            ? code
+            : null,
+        signal: safeSignal.success ? safeSignal.data : null,
+        stderrBytes: received,
+        stderrHashedBytes: hashed,
+        stderrSha256: hash.copy().digest('hex'),
+        stderrTruncated: received > hashed,
+      });
+    },
+  };
+}
 export function inspectRuntimeDirectory(input: string) {
   const root = safePath(input);
   const stat = lstatSync(root);
@@ -205,23 +288,22 @@ async function runPython(
       env: { PATH: '/usr/bin:/bin', LANG: 'en_US.UTF-8', HF_HUB_OFFLINE: '1' },
     });
     let output = '';
-    let diagnosticBytes = 0;
-    let failure: Error | undefined;
-    const stop = (message: string) => {
-      failure = new Error(message);
+    const diagnostics = createRuntimeDiagnosticCollector();
+    let failure: RuntimeFailureDiagnostic['category'] | undefined;
+    const stop = (category: RuntimeFailureDiagnostic['category']) => {
+      failure ??= category;
       child.kill('SIGKILL');
     };
     const timeout = setTimeout(
-      () => stop('runtime wall-clock budget exceeded'),
+      () => stop('WALL_LIMIT'),
       Math.max(1, Math.min(30000, deadline - Date.now()))
     );
     const memory = setInterval(() => {
       try {
         const current = inspectRuntimeDirectory(root);
-        if (current.headroomBytes < 4 * 1024 ** 3)
-          stop('runtime disk headroom fell below 4 GiB');
+        if (current.headroomBytes < 4 * 1024 ** 3) stop('STORAGE_LIMIT');
       } catch {
-        stop('runtime storage envelope exceeded');
+        stop('STORAGE_LIMIT');
       }
       if (!child.pid) return;
       const result = spawnSync(
@@ -235,7 +317,7 @@ async function runPython(
         }
       );
       if (result.status === 0 && Number(result.stdout.trim()) > 768 * 1024)
-        stop('runtime RSS exceeded 768 MiB sampled bound');
+        stop('RSS_LIMIT');
     }, 500);
     const clear = () => {
       clearTimeout(timeout);
@@ -243,36 +325,32 @@ async function runPython(
     };
     child.stdout.on('data', (bytes: Buffer) => {
       output += bytes.toString();
-      if (Buffer.byteLength(output) > 128 * 1024)
-        stop('runtime output exceeded bound');
+      if (Buffer.byteLength(output) > 128 * 1024) stop('OUTPUT_LIMIT');
     });
     child.stderr.on('data', (bytes: Buffer) => {
-      diagnosticBytes += bytes.length;
-      if (diagnosticBytes > 128 * 1024)
-        stop('runtime diagnostics exceeded bound');
+      if (diagnostics.receive(bytes)) stop('STDERR_LIMIT');
     });
     child.stdin.on('error', () => {});
     child.stdin.end(probe ? '' : JSON.stringify({ text }));
-    child.on('error', (error) => {
+    child.on('error', () => {
       clear();
-      reject(error);
+      failure ??= 'SPAWN_FAILURE';
     });
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       clear();
       try {
         const current = inspectRuntimeDirectory(root);
-        if (current.headroomBytes < 4 * 1024 ** 3)
-          failure = new Error('runtime disk headroom fell below 4 GiB');
+        if (current.headroomBytes < 4 * 1024 ** 3) failure ??= 'STORAGE_LIMIT';
       } catch {
-        failure = new Error('runtime storage envelope exceeded');
+        failure ??= 'STORAGE_LIMIT';
       }
-      if (failure) reject(failure);
-      else if (code !== 0) reject(new Error('isolated local runtime failed'));
+      if (failure || code !== 0)
+        reject(diagnostics.failure(code, signal, failure));
       else {
         try {
           resolve(parseJson(output));
-        } catch (error) {
-          reject(error);
+        } catch {
+          reject(diagnostics.failure(code, signal, 'INVALID_RESPONSE'));
         }
       }
     });
