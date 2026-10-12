@@ -10,6 +10,7 @@ import type { Database } from '@tuturuuu/types';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { readRequiredMfaPolicy } from '@tuturuuu/utils/required-mfa-policy';
 import { InternalAccountAdminError } from './errors';
+import { parseManagedAccountAddress } from './managed-address';
 import {
   isRequiredMfaPolicyAvailable,
   setInternalAccountMfaPolicy,
@@ -54,7 +55,21 @@ export function toInternalAccount(
 ): InternalAccount | null {
   const email = user.email?.trim().toLowerCase();
   if (!email || !isExactTuturuuuDotComEmail(email)) return null;
+  return projectInternalAccount(user, actorUserId, email);
+}
 
+function toDirectoryAccount(user: SupabaseUser, actorUserId: string) {
+  const managed = parseManagedAccountAddress(user.email);
+  return managed
+    ? projectInternalAccount(user, actorUserId, managed.address)
+    : null;
+}
+
+function projectInternalAccount(
+  user: SupabaseUser,
+  actorUserId: string,
+  email: string
+): InternalAccount {
   return {
     bannedUntil: user.banned_until ?? null,
     createdAt: user.created_at,
@@ -300,7 +315,7 @@ export async function listInternalAccountUsers({
   const authUsers = await loadAuthUsers(sbAdmin);
   const mfaPolicyAvailable = await isRequiredMfaPolicyAvailable(sbAdmin);
   const internalAccounts = authUsers
-    .map((user) => toInternalAccount(user, actorUserId))
+    .map((user) => toDirectoryAccount(user, actorUserId))
     .filter((account): account is InternalAccount => account !== null);
   const accountsWithProfiles = await enrichPublicProfiles(
     internalAccounts,
