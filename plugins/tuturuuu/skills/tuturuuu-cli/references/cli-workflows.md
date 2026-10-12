@@ -70,6 +70,13 @@ first-run, CI, and headless environments.
 
 ## Common Commands
 
+In a source preview, `bun ttr backlog search help --lang en|vi --json` and
+`bun ttr backlog search model-status --json` use the native offline entry before
+login. Status without `--runtime-dir` performs no model load/download. Lexical
+queries use an explicit `--db`; derived indexes use full projection invalidation,
+not incremental updates. Source qualification is separate from npm packaging and
+model-runtime admission. See `apps/docs/reference/packages/sdk.mdx`.
+
 ```bash
 ttr login
 ttr login --copy

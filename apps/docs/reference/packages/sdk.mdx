@@ -59,6 +59,13 @@ const doc = await client.documents.create({
 
 ## Features
 
+Source previews support native `ttr backlog search help --lang en|vi --json`
+and `ttr backlog search model-status --json` before login. Lexical queries require
+an explicit `--db`; derived indexes rebuild the full projection when it changes.
+Model status without `--runtime-dir` loads or downloads no model. These source
+commands do not establish published npm availability or model admission. See
+[local operational state](/reference/packages/cli-operational-state).
+
 <CardGroup cols={2}>
   <Card title="Bun CLI" icon="terminal">
     Use `ttr` for browser login, workspace discovery, and task workflows
