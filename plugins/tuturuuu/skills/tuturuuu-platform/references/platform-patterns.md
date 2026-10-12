@@ -988,6 +988,16 @@ its option and reset the selection; workspace changes reset all local facets.
 Cover combined facets and revocation with rendered tests, and distinguish those
 fixtures from hosted account acceptance.
 
+## Invoice export recovery verification
+
+For an invoice PNG failure, verify a retry on the same mounted card, not only
+the error notice. Cover renderer rejection and a null blob, no download on failure,
+one pending retry despite repeated clicks, and one successful download with URL
+cleanup. Retain the actor/workspace/content replacement tests so recovery cannot
+clear a newer attempt. `invoice-png-lifetime.test.tsx` exercises these synthetic
+boundaries; real browser canvas and authenticated customer recovery remain separate
+evidence. Reconcile existing invoice fixes before changing billing date rules.
+
 ## Connected Mail provider boundaries
 
 Personal Gmail/Outlook accounts remain separate from managed Mail domains and

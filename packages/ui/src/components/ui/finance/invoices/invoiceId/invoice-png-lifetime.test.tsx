@@ -342,6 +342,57 @@ describe('actual invoice card PNG export account and invoice lifetime', () => {
     expect(downloads).toEqual([]);
     expect(notices.success).not.toHaveBeenCalled();
   });
+  for (const failure of ['renderer', 'blob'] as const) {
+    it(`allows one same-invoice retry after a ${failure} failure`, async () => {
+      if (failure === 'renderer') {
+        renderer.mockRejectedValueOnce(new Error('Synthetic renderer failure'));
+      } else {
+        renderer.mockResolvedValueOnce({
+          toBlob: (callback: BlobCallback) => callback(null),
+        });
+      }
+      const retry = held<ReturnType<typeof canvas>>();
+      renderer.mockReturnValueOnce(retry.promise);
+      mount();
+      await exportPng();
+      await waitFor(() =>
+        expect(notices.error).toHaveBeenCalledWith('common.export-error')
+      );
+      expect(downloads).toEqual([]);
+      expect(notices.success).not.toHaveBeenCalled();
+      expect(URL.createObjectURL).not.toHaveBeenCalled();
+      await waitFor(() =>
+        expect(
+          screen.getByRole('menuitem', { name: 'invoices.download_image' })
+        ).not.toHaveAttribute('aria-disabled', 'true')
+      );
+
+      await exportPng();
+      await waitFor(() => expect(renderer).toHaveBeenCalledTimes(2));
+      const exporting = screen.getByRole('menuitem', {
+        name: 'ws-reports.exporting_png',
+      });
+      expect(exporting).toHaveAttribute('aria-disabled', 'true');
+      fireEvent.click(exporting);
+      expect(renderer).toHaveBeenCalledTimes(2);
+      expect(downloads).toEqual([]);
+
+      await act(async () => {
+        retry.resolve(canvas());
+        await retry.promise;
+      });
+      await waitFor(() =>
+        expect(downloads).toEqual(['invoice-synthetic_a.png'])
+      );
+      expect(notices.error).toHaveBeenCalledOnce();
+      expect(notices.success).toHaveBeenCalledOnce();
+      expect(URL.createObjectURL).toHaveBeenCalledOnce();
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:synthetic-png');
+      expect(
+        screen.getByRole('menuitem', { name: 'invoices.download_image' })
+      ).not.toHaveAttribute('aria-disabled', 'true');
+    });
+  }
   for (const boundary of [
     'missing-provider',
     'missing-actor',
