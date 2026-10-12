@@ -606,3 +606,54 @@ configuration lives in [the programming realtime runbook](/build/devops/programm
 ### Backlog priority and dependent receipts
 
 Reprioritize requests through the audited `program_backlog.py update <id> --priority <0-3>` command; reimporting a changed priority is rejected. Reopened prerequisites invalidate current dependent verification transitively while preserving audit history and implemented source. Parent recovery never silently restores dependent delivery receipts. See the coordination skill's request-backlog reference and `test_program_backlog.py` for the contract and regressions.
+
+## Operational peer sync source foundation
+
+`packages/sdk/src/operational-sync/` defines a version 1 protocol and an inert
+coordination/replica fixture adapter. It adds no CLI command, HTTP route, production
+store, grant or service. The local offline CLI remains independent. Existing
+runner tokens, resource admission and Git commit windows retain their own scope.
+
+Bindings carry principal, workspace, project, program, machine, agent, source
+store, replica and grant identities. A grant revision binds each request. The
+future server adapter must authenticate the principal and machine, enforce staff
+and personal-project permissions, and recheck current consent/revocation. Client
+identity fields are claims to compare against authority, never authentication.
+The supplied authority callback in tests is synthetic. A SQLite transaction does
+not serialize revocation in a separate provider or database; production needs a
+reviewed atomic grant check or equivalent revocation fence in its server adapter.
+
+Planning events use expected outcome revision and prior hash. The coordinator
+assigns a global cursor and immutable hash chain. Operation IDs dedupe exact
+requests; persisted receipts must match original proposals and immutable event
+history. Changed requests fail, and stale proposals retain an explicit conflict
+alongside the existing history. No clock-based or last-writer-wins resolution is
+implemented. Completion is `user-confirmed`, never `evidence-verified`.
+
+Leases bind the complete owner/grant identity, a monotonically increasing fence
+and server-clock expiry. Acquire, renew and release participate in outcome CAS.
+Expired/released/foreign owners cannot mutate. Tombstones remain in event history
+and block resurrection. Lease expiry never proves that an old process stopped,
+and a lease never bypasses a host resource queue or local commit window.
+
+Replicas validate scope, peer store, audience, contiguous global cursors, per-outcome
+ancestry, hashes and command/projection semantics. SQLite commits the accepted
+page, projection and cursor together. Interrupted application rolls back; exact
+replay is harmless and divergent replay fails. Hashes are integrity checks, not
+peer authentication. Trusted transport and grant validation remain prerequisites.
+
+The fixture adapter requires explicit private paths and initialization, rejects
+symlinks and insecure permissions, and never defaults to the live backlog. Payloads
+allow only planning state and identities; no credentials, personal memory, customer
+archives, arbitrary file bodies or operational-note export is wired. Pages contain
+at most 500 events; stores cap 1,000 outcomes, 10,000 events, 20,000 operation
+receipts and 32 MiB of serialized state. Saturation fails without truncation.
+
+Regression coverage in `operational-sync/engine.test.ts` uses two persisted local
+synthetic replicas. It proves local CAS/conflict/fence/tombstone/recovery behavior,
+not network, provider authentication, consent, private SQL or two-machine delivery.
+The rehashed-projection regression first fails against hash-only chain validation,
+then passes with shared transition validation. Activation remains denied pending
+a reviewed grant/backend/transport adapter, exact-head CI and actual authorized
+runtime qualification. See the focused repository skill reference
+`plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/machine-sync.md`.
