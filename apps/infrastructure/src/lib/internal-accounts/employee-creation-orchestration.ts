@@ -5,6 +5,9 @@ import { Effect, Either } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { InternalAccountAdminError } from './errors';
 
+export const EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE =
+  'EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE';
+
 export class EmployeeCreationError extends InternalAccountAdminError {
   constructor(
     message: string,
@@ -210,6 +213,17 @@ export async function createEmployeeAccount({
     if (Either.isLeft(finalized)) return pending(true);
     const finalizeReply = acknowledgement(finalized.right);
     if (!finalizeReply) return pending(true);
+    if (
+      finalizeReply.error?.code === EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE
+    ) {
+      const committed = FinalizeSchema.safeParse(finalizeReply.data);
+      return pending(
+        !committed.success ||
+          committed.data.id !== user.id ||
+          committed.data.email !== email ||
+          committed.data.displayName !== displayName
+      );
+    }
     if (finalizeReply.error)
       return pending(
         !['23505', '23514', '23503', '42501', 'P0002'].includes(
@@ -265,6 +279,17 @@ export async function createEmployeeAccount({
     );
     if (Either.isLeft(confirmed)) return pending(true);
     const confirmReply = acknowledgement(confirmed.right);
+    if (
+      confirmReply?.error?.code === EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE
+    ) {
+      const committed = ConfirmSchema.safeParse(confirmReply.data);
+      return pending(
+        !committed.success ||
+          committed.data.id !== user.id ||
+          committed.data.email !== email ||
+          committed.data.displayName !== displayName
+      );
+    }
     if (!confirmReply || confirmReply.error) return pending(true);
     const result = ConfirmSchema.safeParse(confirmReply.data);
     if (
