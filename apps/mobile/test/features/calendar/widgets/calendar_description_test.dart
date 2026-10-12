@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/calendar_description_content.dart';
@@ -29,6 +33,122 @@ Iterable<InlineSpan> descendants(InlineSpan span) sync* {
 }
 
 void main() {
+  testWidgets('captures synthetic raw Text control and formatted description', (
+    tester,
+  ) async {
+    final fonts = FontLoader('NotoSans')
+      ..addFont(rootBundle.load('assets/fonts/NotoSans.ttf'));
+    await fonts.load();
+    const description =
+        '<h2>Meeting notes</h2><p>First <strong>bold</strong><br>Next line</p><ul><li>Prepare slides</li><li>Review agenda</li></ul><p><a href="https://example.test">Reference</a></p>';
+    const key = ValueKey('description-capture');
+    for (final formatted in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(fontFamily: 'NotoSans'),
+          home: Scaffold(
+            body: Center(
+              child: RepaintBoundary(
+                key: key,
+                child: Container(
+                  width: 320,
+                  height: 420,
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        formatted
+                            ? 'Formatted description fixture'
+                            : 'Raw Text control fixture',
+                      ),
+                      const SizedBox(height: 16),
+                      if (formatted)
+                        const CalendarDescriptionBody(description: description)
+                      else
+                        const Text(description),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      if (formatted) {
+        expect(find.text('Meeting notes', findRichText: true), findsOneWidget);
+        expect(find.text('Prepare slides', findRichText: true), findsOneWidget);
+      } else {
+        expect(find.text(description), findsOneWidget);
+      }
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(key),
+      );
+      await tester.runAsync(() async {
+        final image = await boundary.toImage();
+        try {
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+          expect(bytes, isNotNull);
+          final output =
+              Platform.environment['CALENDAR_DESCRIPTION_SCREENSHOT_DIR'];
+          if (output != null) {
+            await Directory(output).create(recursive: true);
+            await File(
+              '$output/calendar-description-${formatted ? 'after' : 'before'}.png',
+            ).writeAsBytes(bytes!.buffer.asUint8List());
+          }
+        } finally {
+          image.dispose();
+        }
+      });
+    }
+  });
+
+  testWidgets(
+    'HTML inline code collapses blank lines without parsing emphasis',
+    (tester) async {
+      await tester.pumpApp(
+        const CalendarDescriptionBody(
+          description: '<p><code>first\n\n**literal**\nlast</code></p>',
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('first **literal** last', findRichText: true),
+        findsOneWidget,
+      );
+      final spans = tester
+          .widgetList<SelectableText>(find.byType(SelectableText))
+          .expand((widget) => descendants(widget.textSpan!));
+      expect(
+        spans.any(
+          (span) =>
+              span.toPlainText().contains('**literal**') &&
+              span.style?.fontWeight != FontWeight.bold,
+        ),
+        isTrue,
+      );
+    },
+  );
+
+  testWidgets('HTML preformatted code preserves multiline content', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      const CalendarDescriptionBody(
+        description: '<pre><code>first\n\n**literal**\nlast</code></pre>',
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('first\n\n**literal**\nlast', findRichText: true),
+      findsOneWidget,
+    );
+  });
+
   test('nested tilde fences retain literal HTML code', () {
     expect(
       calendarDescriptionPreview('> ~~~html\n> <p>Example</p>\n> ~~~'),

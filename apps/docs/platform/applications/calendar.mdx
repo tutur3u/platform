@@ -1137,8 +1137,9 @@ Mobile Calendar details render provider HTML paragraphs, line breaks, headings,
 lists, emphasis and safe links through the existing native Markdown renderer.
 Markdown and plain descriptions use the same display path. Timed agenda cards and dashboard Calendar rows show
 a readable two-line text preview; the full formatting remains in event details.
-Malformed HTML retains recoverable text. Script, style and embedded executable
-content are omitted, remote images remain alt text, and links use the existing
+Malformed HTML retains recoverable text. Inline HTML code normalizes line breaks
+to spaces; preformatted code keeps its multiline content. Script, style and
+embedded executable content are omitted, remote images remain alt text, and links use the existing
 mobile launcher scheme and host policy. Theme and system text scaling apply;
 long detail content scrolls.
 

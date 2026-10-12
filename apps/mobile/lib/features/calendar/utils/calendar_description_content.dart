@@ -100,6 +100,7 @@ const _discard = {
   'math',
 };
 
+/// Accepts only destinations supported by the existing mobile link launcher.
 Uri? calendarDescriptionLink(String href) {
   final uri = Uri.tryParse(href.trim());
   if (uri == null) return null;
@@ -181,7 +182,8 @@ String _markdownNode(dom.Node node) {
         width++;
       }
       final fence = '`' * width;
-      return '$fence ${node.text} $fence';
+      final inline = node.text.replaceAll(RegExp(r'\s*[\r\n]+\s*'), ' ');
+      return '$fence $inline $fence';
     case 'hr':
       return '\n\n---\n\n';
     default:
@@ -189,6 +191,7 @@ String _markdownNode(dom.Node node) {
   }
 }
 
+/// Readable compact-card text; full formatting remains in event details.
 String calendarDescriptionPreview(String source) {
   final rendered = md.markdownToHtml(
     calendarDescriptionMarkdown(source),
