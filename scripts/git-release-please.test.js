@@ -107,6 +107,7 @@ test('finalizeMerge runs release checks before creating the merge commit', () =>
         'packages/utils/src/platform-release.test.ts',
       ],
     ],
+    ['node', ['scripts/ci/release-docs-inventory.js', '--integration']],
     ['bun', ['ff']],
     ['git', ['add', '--all']],
     ['bun', ['check']],

@@ -1,5 +1,10 @@
 const { execFileSync } = require('node:child_process');
 const { readFileSync } = require('node:fs');
+const {
+  DOCS_PATH,
+  verifyGitVersions,
+  expectedVersions,
+} = require('./release-docs-inventory');
 const { buildAllowedPaths } = require('./release-please-auto-approve-core');
 
 // Dependency-free JSONC reader: retain string offsets so metadata repairs cannot
@@ -142,7 +147,23 @@ function validateGitWorkspaceLock(base, head = 'HEAD', working = false) {
         .split('\0')
         .filter(Boolean)
     );
-  if (changed.some((file) => file !== 'bun.lock' && !allowed.has(file)))
+  const hasDocs = changed.includes(DOCS_PATH);
+  if (hasDocs) {
+    if (working) {
+      const { resolveProof } = require('./release-docs-inventory');
+      resolveProof(process.cwd(), base, head);
+      if (readFileSync(DOCS_PATH, 'utf8') !== expectedVersions(process.cwd()))
+        throw new Error('Working versions page is not derived output');
+    } else verifyGitVersions(process.cwd(), base, head);
+  }
+  if (
+    changed.some(
+      (file) =>
+        file !== 'bun.lock' &&
+        !(file === DOCS_PATH && hasDocs) &&
+        !allowed.has(file)
+    )
+  )
     throw new Error('Release contains non-generated paths');
   const before = git('show', `${base}:bun.lock`);
   const after = working

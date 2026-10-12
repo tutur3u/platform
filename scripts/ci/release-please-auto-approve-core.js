@@ -116,6 +116,7 @@ function evaluateReleasePullRequest({
   pullRequest,
   targetBranch,
   verifiedWorkspaceLock = false,
+  verifiedDocsInventory = false,
 }) {
   if (pullRequest?.state !== 'open') {
     return skip(`pull request is ${pullRequest?.state || 'missing'}`);
@@ -134,6 +135,12 @@ function evaluateReleasePullRequest({
       `pull request targets ${pullRequest.base?.ref}, not ${targetBranch}`
     );
   }
+
+  if (
+    targetBranch &&
+    pullRequest.head.ref !== `${RELEASE_BRANCH_PREFIX}${targetBranch}`
+  )
+    return skip('head branch is not the exact generated release branch');
 
   const authorLogin = pullRequest.user?.login;
 
@@ -166,7 +173,11 @@ function evaluateReleasePullRequest({
     .filter(
       (filename) =>
         !allowedPaths.has(filename) &&
-        !(filename === 'bun.lock' && verifiedWorkspaceLock)
+        !(filename === 'bun.lock' && verifiedWorkspaceLock) &&
+        !(
+          filename === 'apps/docs/reference/repository/versions.mdx' &&
+          verifiedDocsInventory
+        )
     );
 
   if (unexpected.length > 0) {

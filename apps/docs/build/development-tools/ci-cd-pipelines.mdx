@@ -169,3 +169,24 @@ actual-device validation and deployment are separate gates.
 
 Focused checks: `node --test scripts/ci/learn-preview-build.test.js
 scripts/ci/github-deployment-markers.test.js scripts/ci/release-workflows.test.js`.
+
+### Generated release inventory
+
+Release Please owns platform and independent package version changes. Release
+normalization derives only `apps/docs/reference/repository/versions.mdx` using the
+complete documentation inventory generator. Other stale inventory pages fail the
+job; this phase does not repair unrelated source or navigation changes.
+
+Before updating the generated PR, the workflow captures its previous immutable
+head. A retained versions page must match either the production page, the new
+complete projection, or the independently verified projection at that captured
+head. Changed generator/configuration sources and unproven docs bytes fail closed.
+The amended generated commit keeps its release annotations and is pushed using
+its exact head lease. Concurrent updates reject that push. Auto-approval verifies
+the final immutable page before rechecking the PR head and base.
+
+`bun git-release-please` also regenerates this page after resolving the platform
+version during integration and before validation or commit. Run
+`node scripts/ci/release-docs-inventory.js --verify BASE HEAD` to verify immutable
+release output. This is derived source evidence, not a publication or deployment
+receipt; failed release PR checks continue to block auto-integration.
