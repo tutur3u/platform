@@ -8923,6 +8923,24 @@
     "toasts": {
       "update_failed": "Không thể cập nhật tài khoản nội bộ.",
       "updated": "Đã cập nhật tài khoản nội bộ."
+    },
+    "creation": {
+      "open": "Tạo tài khoản nhân viên",
+      "title": "Tạo tài khoản nhân viên",
+      "description": "Tạo danh tính nhân viên được quản lý sau khi máy chủ xác nhận quyền truy cập và điều kiện sẵn sàng.",
+      "unavailable": "Chức năng tạo tài khoản nhân viên chưa khả dụng. Biểu mẫu này sẽ không tạo tài khoản.",
+      "email": "Email nhân viên",
+      "email_help": "Sử dụng địa chỉ nhân viên chính xác @tuturuuu.com. Tên miền phụ trong danh bạ không cấp quyền nhân viên.",
+      "name": "Họ và tên",
+      "password": "Mật khẩu tạm thời",
+      "password_help": "Sử dụng 12–72 ký tự. Mật khẩu chỉ được giữ trong biểu mẫu và sẽ bị xóa khi đóng.",
+      "denied": "Yêu cầu bị từ chối trước khi tạo tài khoản. Kiểm tra quyền truy cập và trạng thái khả dụng trước khi gửi lại.",
+      "created": "Máy chủ đã xác nhận tạo tài khoản nhân viên. Làm mới danh bạ để kiểm tra.",
+      "inspect": "Cần kiểm tra kết quả. Làm mới danh bạ và nhờ quản trị viên đối soát yêu cầu này. Không tạo lại tài khoản này.",
+      "refresh": "Làm mới danh bạ",
+      "close": "Đóng",
+      "submitting": "Đang gửi…",
+      "submit": "Tạo tài khoản"
     }
   },
   "inventory": {

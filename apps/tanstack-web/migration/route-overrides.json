@@ -2929,6 +2929,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class digest dispatcher reads current tenant-scoped task due dates before email delivery and excludes tasks overdue strictly more than 24 hours. Null and future due dates remain eligible. Rust parity is backlog; Rust is not deployed."
+    },
+    "api:/api/v1/infrastructure/internal-accounts/employees:apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class GET reports default-unavailable readiness and POST authenticates the registered infra actor with fresh root MEMBER/manage_internal_accounts authority and exact confirmed/unbanned root-domain identity. Strict request/operation/tuple acknowledgement boundary uses an injected persistent journal port; no journal, SQL or provider supplier is installed. Rust is not deployed; this default-denied boundary and later qualified runtime parity remain backlog."
     }
   }
 }
