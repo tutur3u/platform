@@ -12,6 +12,82 @@ import {
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
+describe('queued deadline reminder cancellation', () => {
+  it('does not turn a provider timeout into cancellation after a task edit', async () => {
+    const from = vi.fn(() => {
+      throw new Error('must not reclassify current task');
+    });
+    const notification = {
+      id: 'notification-1',
+      created_at: new Date().toISOString(),
+      type: 'deadline_reminder',
+      scope: 'workspace',
+      user_id: 'user-1',
+      ws_id: 'ws-1',
+      entity_type: 'task',
+      entity_id: 'task-1',
+      data: { task_id: 'task-1', end_date: '2026-10-12T12:00:00Z' },
+    };
+    expect(
+      await getNotificationSkipReason(
+        { from },
+        {
+          membershipCache: new Map([['ws-1:user-1', true]]),
+          notification,
+          errorMessage: 'transport timeout',
+          sendResult: { error: 'transport timeout', blockedRecipients: [] },
+        }
+      )
+    ).toBeNull();
+    expect(from).not.toHaveBeenCalled();
+  });
+  it.each(['email', 'push'])(
+    'suppresses an edited deadline before %s dispatch',
+    async (channel) => {
+      const query = {
+        eq: vi.fn(),
+        maybeSingle: vi.fn(async () => ({
+          data: {
+            id: 'task-1',
+            end_date: '2026-10-13T12:00:00Z',
+            closed_at: null,
+            completed_at: null,
+            deleted_at: null,
+            task_lists: {
+              status: 'active',
+              workspace_boards: { ws_id: 'ws-1' },
+            },
+            task_watchers: [{ user_id: 'user-1' }],
+          },
+          error: null,
+        })),
+      };
+      query.eq.mockReturnValue(query);
+      const from = vi.fn(() => ({ select: vi.fn(() => query) }));
+      expect(
+        await getNotificationSkipReason(
+          { from, rpc: vi.fn(async () => ({ data: true, error: null })) },
+          {
+            channel,
+            membershipCache: new Map([['ws-1:user-1', true]]),
+            notification: {
+              id: 'notification-1',
+              created_at: new Date().toISOString(),
+              type: 'deadline_reminder',
+              scope: 'workspace',
+              user_id: 'user-1',
+              ws_id: 'ws-1',
+              entity_type: 'task',
+              entity_id: 'task-1',
+              data: { task_id: 'task-1', end_date: '2026-10-12T12:00:00Z' },
+            },
+          }
+        )
+      ).toBe('skipped: task_reminder_revised');
+    }
+  );
+});
+
 function getRecentCreatedAt(): string {
   return new Date(Date.now() - HOUR_MS).toISOString();
 }

@@ -1,0 +1,34 @@
+---
+title: "Task reminder delivery"
+description: "Current-task revision and cancellation checks before deadline reminder dispatch"
+---
+
+## Queued deadline reminder cancellation
+
+Web dispatch rechecks deadline reminders against the current task before email
+or push delivery, including reminders for changes made in Tasks and Calendar.
+The default is to skip a reminder when its due-date instant has changed, its due
+date was removed, the task was completed, closed or deleted, its list became
+review/done/closed, or the recipient stopped watching it. Equivalent timezone
+representations of the same instant retain the reminder revision.
+
+The lookup binds the task, workspace and recipient. Unknown bindings, malformed
+current state and failed lookups remain errors rather than confirmed cancellation.
+Lifecycle cancellation applies before a send; a task edit after a provider timeout
+cannot turn unknown provider acceptance into a confirmed skipped delivery.
+Skipped delivery logs retain their reason; existing inbox records and reminder
+history are preserved. Ordinary task activity notifications retain their existing
+rules. Email preferences, recipient suppression and the one-day overdue cutoff
+still apply.
+
+This dispatch check does not lock concurrent task edits across a provider send,
+deduplicate concurrent reminder producers, or add persisted snooze, quiet hours,
+digests or configuration UI. Those capabilities require separate implementation
+and runtime evidence. No scheduler configuration changes accompany this rule.
+
+Regression coverage uses `packages/utils/src/__tests__/task-reminder-lifecycle.test.ts`,
+`apps/web/src/lib/notifications/task-reminder-lifecycle.test.ts` and
+`apps/web/src/lib/notifications/cron-helpers.test.ts` for revision, cancellation,
+timezone, recipient and tenant boundaries. Provider delivery and deployed
+behavior remain separate acceptance gates.
+
