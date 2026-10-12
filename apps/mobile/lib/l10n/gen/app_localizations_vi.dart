@@ -717,7 +717,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLocalEngineError => 'Suy luận trên thiết bị không thành công. Hãy chọn lại mô hình để nạp lại. Lời nhắc của bạn không được gửi từ xa.';
 
   @override
-  String get assistantLocalHardware => 'Suy luận cục bộ cần thiết bị được hỗ trợ có ít nhất 4 GiB bộ nhớ. Bộ nhớ khả dụng và khả năng nạp mô hình vẫn quyết định việc sử dụng.';
+  String get assistantLocalHardware => 'Suy luận trên thiết bị yêu cầu thiết bị được hỗ trợ với ít nhất 4 GiB RAM. Android yêu cầu arm64 và Android 11 (API 30) trở lên. Bộ nhớ khả dụng và việc tải bộ thực thi vẫn quyết định trạng thái sẵn sàng.';
 
   @override
   String get assistantLocalHeaderIssue => 'Cần kiểm tra';
@@ -748,6 +748,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLocalLoading => 'Đang chuẩn bị mô hình trên thiết bị';
+
+  @override
+  String get assistantLocalInvalidFormat => 'Tệp này không phải mô hình LiteRT-LM hợp lệ. Hãy xóa và tải xuống hoặc nhập lại mô hình trong danh sách. Lời nhắc của bạn chưa được gửi lên máy chủ.';
+
+  @override
+  String get assistantLocalIncompatibleVersion => 'Mô hình này dùng định dạng LiteRT-LM mà ứng dụng chưa hỗ trợ. Hãy cập nhật ứng dụng hoặc chọn mô hình tương thích trong danh sách. Lời nhắc của bạn chưa được gửi lên máy chủ.';
+
+  @override
+  String get assistantLocalRuntimeUnavailable => 'Bộ thực thi trên thiết bị không khả dụng trên thiết bị hoặc bản cài đặt này. Hãy cập nhật hoặc cài lại ứng dụng trên thiết bị được hỗ trợ, rồi chọn lại mô hình. Lời nhắc của bạn chưa được gửi lên máy chủ.';
 
   @override
   String get assistantLocalMissing => 'Mô hình cục bộ đã chọn không khả dụng. Hãy tải mô hình hoặc chủ động chọn chế độ từ xa.';

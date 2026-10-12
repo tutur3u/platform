@@ -1474,7 +1474,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLocalHardware.
   ///
   /// In en, this message translates to:
-  /// **'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.'**
+  /// **'Local inference requires a supported device with at least 4 GiB of installed memory. Android requires arm64 and Android 11 (API 30) or newer. Available memory and native loading still determine readiness.'**
   String get assistantLocalHardware;
 
   /// No description provided for @assistantLocalHeaderIssue.
@@ -1536,6 +1536,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Preparing on-device model'**
   String get assistantLocalLoading;
+
+  /// No description provided for @assistantLocalInvalidFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is not a valid LiteRT-LM model. Remove it and download or import the listed model again. Your prompt was not sent remotely.'**
+  String get assistantLocalInvalidFormat;
+
+  /// No description provided for @assistantLocalIncompatibleVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'This model uses a LiteRT-LM format this app cannot load. Update the app or choose a compatible listed model. Your prompt was not sent remotely.'**
+  String get assistantLocalIncompatibleVersion;
+
+  /// No description provided for @assistantLocalRuntimeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The on-device runtime is unavailable on this device or app installation. Update or reinstall the app on a supported device, then choose the model again. Your prompt was not sent remotely.'**
+  String get assistantLocalRuntimeUnavailable;
 
   /// No description provided for @assistantLocalMissing.
   ///

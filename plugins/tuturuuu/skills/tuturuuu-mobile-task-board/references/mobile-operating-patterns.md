@@ -215,3 +215,21 @@ For bounded confirmation sheets, enable `AppDialogScaffold.scrollHeader` so a
 scaled heading can scroll without hiding the fixed actions. The focused
 `profile_avatar_removal_test.dart` and `profile_media_actor_race_test.dart`
 exercise these boundaries; mock coverage does not qualify storage/device runtime.
+
+### Local model preparation admission
+
+Keep file integrity, preparation and actual inference evidence separate. The
+store owns pinned length/digest checks; `assistant_model_preparation.dart` reads
+only the 32-byte container prefix before the adapter calls native creation.
+Keep Android admission at the pinned library's API 30 minimum, including
+API 28/29 rejection and API 30 admission controls. Match the bundled native
+reader's major-version admission, including same-major
+minor/patch forward admission. Do not infer full FlatBuffer, backend or hardware
+compatibility from the prefix. Native ABI/library failures get sanitized typed
+recovery; opaque engine failures must not be labeled corruption or memory errors.
+
+Run header, adapter configuration, preparation recovery, restart/reselection and
+runtime tests through the canonical resource queue, then `bun check:mobile`.
+Tiny synthetic headers and injected native errors prove admission/recovery only.
+Real device installation/inference requires its own authorization and evidence;
+never use download completion or mock readiness to close that gate.

@@ -12,83 +12,8 @@ Gen AI SDK. The server supplies a single-use, constrained ephemeral token;
 
 ## Native local text models
 
-Mobile's local text inference adapter uses the pinned Flutter Edge AI LiteRT-LM
-engine directly; it does not route prompts to the remote Assistant API or use a
-global active-model preference. Remote Chat remains the default. Mira quick
-settings and the centralized Assistant settings page share model management:
-install or import a verified model, then explicitly choose it for the current
-account and workspace. The existing persistent dock remains in place when
-switching; local generation exposes a native stop action. Live audio, server
-tools, attachments, and workspace context are unavailable in local text mode.
-Choosing a remote model is an explicit separate action, never a failure fallback.
-
-Local and remote conversations remain separate; switching never uploads local
-history. The unsent composer draft stays in place, and the next send uses the
-chosen mode. Local history is encrypted with the existing device cache and
-partitioned by actor, workspace, and model. Only the latest 32 messages / 64,000
-characters are retained, and cache eviction or clearing can remove them. A new
-local conversation clears that local history after stopping and draining any
-active generation. Deleting weights leaves local mode selected but blocked;
-missing weights, unknown selections, and native load failures never silently
-select a remote provider. Account/session changes, backgrounding, and hiding
-Mira stop and unload native inference before another scoped load.
-
-The initial catalogue pins publisher revisions, file lengths, and SHA-256
-digests for Gemma 3 270M, Qwen 3 0.6B, and SmolLM2 360M. Gemma requires the user to obtain a
-licensed file; the app does not accept a gated model's license on their behalf
-or collect Hugging Face credentials. Qwen and SmolLM2 use their Apache 2.0 distributions.
-Installation verifies the full file before atomic publication, preserves an
-existing valid file after a corrupt download, allows cancellation, and enforces
-a 1 GiB device weight budget, including temporary replacement space.
-
-On Android and iOS, public provider downloads use persisted native background
-jobs with pause, resume, and explicit cancellation. Opening or closing settings
-observes the same job rather than starting another transfer. A restored job is
-not an installed model until its complete file passes the pinned length and
-SHA-256 checks. Public weights are device-owned; actor changes do not select a
-model or attach private conversation data to the transfer. OS scheduling, force
-quit, and connectivity can delay or terminate background work; an interrupted
-job offers retry. Gated providers still require an externally obtained licensed
-file. Other supported desktop platforms retain foreground downloads.
-
-Wi-Fi-only is the default for model downloads and offline module preparation.
-Cellular or unknown connectivity requires an explicit Continue, Use Wi-Fi, or
-Cancel choice before any transfer or preparation API call starts. Continue
-allows cellular for that requested job; Use Wi-Fi preserves a pending plan.
-Offline module plans persist only the requested product IDs and network choice
-in the encrypted actor/workspace cache, never bearer tokens. Foreground resume
-uses current credentials and scope epochs, coalesces overlapping triggers, and
-never expands the requested modules. Network loss retains pending work;
-definitive permission denial removes it, while an MFA challenge leaves it
-pending. Plans expire after 30 days; clearing the corresponding cache can
-remove them.
-
-Settings expose download, checksum, storage, and provider-admission failures
-separately. A completed download does not prove native engine readiness: the
-existing hardware checks and successful engine load still apply. Embedded quick
-settings avoid a second bottom safe-area inset and use content-sized sections.
-Transfer verification, cellular choice, and scoped resume regressions live in
-`assistant_model_downloads_test.dart`, `download_network_consent_test.dart`, and
-`offline_preparation_intent_test.dart` under `apps/mobile/test/`.
-
-Native support is restricted to the archive's supported ABIs: arm64 iOS/macOS,
-arm64 Android API 28+, arm64/x64 Linux, and x64 Windows. Other ABIs remain
-unavailable. The app's existing OS floors are preserved. Product admission also
-requires at least 4 GiB installed RAM; unavailable hardware information fails
-closed. This conservative threshold is not a guarantee of available memory or
-a working accelerator: successful model loading is
-required before readiness. Text generation uses one session, a catalog-specific token
-context, a separate 256-output-token limit, and bounded input. Actor/session
-epoch changes suppress late output and unload tears down the session before
-freeing its model. No local failure silently switches a private prompt to a
-remote provider.
-
-Storage and lifecycle regressions are in
-`apps/mobile/test/features/assistant/local/`. Exact native CI builds and a real
-device generation remain required delivery evidence; synthetic adapters and
-downloaded runtime binaries alone do not prove local inference. macOS beta
-packaging stages SHA-256-pinned runtime companions before the existing audit,
-Developer ID signing, and notarization gates.
+See [Assistant local models](/platform/features/assistant-local-models) for mobile
+installation, compatibility, preparation recovery, and the separate inference gate.
 
 ## Experience
 

@@ -13,7 +13,8 @@ bool permitsAssistantLocalInference({
 }) {
   if (memoryMiB < 4096) return false;
   return switch (abi) {
-    Abi.androidArm64 => androidSdk != null && androidSdk >= 28,
+    // The bundled LiteRT-LM library references Android API 30 symbols.
+    Abi.androidArm64 => androidSdk != null && androidSdk >= 30,
     Abi.iosArm64 ||
     Abi.macosArm64 ||
     Abi.linuxArm64 ||

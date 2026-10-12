@@ -1,31 +1,145 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_edge_ai/flutter_edge_ai.dart';
+import 'package:flutter_edge_ai_litertlm/src/ffi/backend_preference.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/local/assistant_litert_runtime.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model_store.dart';
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_runtime.dart';
+import 'package:mobile/features/assistant/local/assistant_model_preparation.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _NativeModel extends Mock implements InferenceModel {}
 
 void main() {
+  late Directory directory;
+  Future<String> fixture(String id, {List<int>? bytes}) async {
+    final header = ByteData(40);
+    header.buffer.asUint8List().setRange(0, 8, 'LITERTLM'.codeUnits);
+    header
+      ..setUint32(8, 1, Endian.little)
+      ..setUint32(12, 6, Endian.little)
+      ..setUint64(24, 40, Endian.little);
+    return (await File(
+      '${directory.path}/$id.litertlm',
+    ).writeAsBytes(bytes ?? header.buffer.asUint8List())).path;
+  }
+
+  setUp(
+    () async =>
+        directory = await Directory.systemTemp.createTemp('mira-header-'),
+  );
+  tearDown(() => directory.delete(recursive: true));
+  test('rejects invalid container before native creation', () async {
+    var called = false;
+    final path = await fixture('qwen3-600m', bytes: List.filled(40, 0));
+    await expectLater(
+      loadAssistantLiteRtModel(
+        path,
+        createModel: (_, _) async {
+          called = true;
+          return _NativeModel();
+        },
+      ),
+      throwsA(isA<Exception>()),
+    );
+    expect(called, isFalse);
+  });
+  for (final entry in [
+    (
+      () => throw UnsupportedError('requires arm64'),
+      ModelPreparationFailure.runtimeUnavailable,
+    ),
+    (
+      () =>
+          throw ArgumentError('Failed to load dynamic library /private/model'),
+      ModelPreparationFailure.runtimeUnavailable,
+    ),
+    (
+      () => throw Exception('Failed to create engine /private/model'),
+      ModelPreparationFailure.nativeLoad,
+    ),
+  ]) {
+    test('adapter sanitizes ${entry.$2.name} without becoming ready', () async {
+      final scope = Object();
+      final runtime = AssistantLocalRuntime(
+        currentScope: () => scope,
+        load: (path) => loadAssistantLiteRtModel(
+          path,
+          createModel: (_, _) async => entry.$1(),
+        ),
+      );
+      await expectLater(
+        runtime.load(await fixture('qwen3-600m')),
+        throwsA(
+          isA<ModelPreparationException>().having(
+            (error) => error.reason,
+            'reason',
+            entry.$2,
+          ),
+        ),
+      );
+      expect(runtime.ready, isFalse);
+      await runtime.close();
+    });
+  }
+
+  for (final entry in [
+    (
+      'Failed to load libLiteRtLm.so. On Android the usual '
+          'causes are: API < 30',
+      ModelPreparationFailure.runtimeUnavailable,
+    ),
+    (
+      'Failed to create engine. Model may be invalid',
+      ModelPreparationFailure.nativeLoad,
+    ),
+  ]) {
+    test('actual backend wrapper retains ${entry.$2.name} recovery', () async {
+      var disposed = 0;
+      await expectLater(
+        loadAssistantLiteRtModel(
+          await fixture('qwen3-600m'),
+          createModel: (_, config) async {
+            final initialized = await initializeFfiRuntime<InferenceModel>(
+              preferredBackend: config.preferredBackend,
+              logTag: 'synthetic preparation fixture',
+              createClient: _NativeModel.new,
+              initializeClient: (_, _) async => throw Exception(entry.$1),
+              shutdownClient: (_) {
+                disposed++;
+              },
+            );
+            return initialized.client;
+          },
+        ),
+        throwsA(
+          isA<ModelPreparationException>().having(
+            (error) => error.reason,
+            'reason',
+            entry.$2,
+          ),
+        ),
+      );
+      expect(disposed, 1);
+    });
+  }
+
   test('actual Qwen adapter honors the pinned 4096-context artifact', () async {
     var calls = 0;
+    final path = await fixture('qwen3-600m');
     await loadAssistantLiteRtModel(
-      '/app-support/mira-local-models/qwen3-600m.litertlm',
+      path,
       createModel: (spec, config) async {
         calls++;
         expect(config.maxTokens, 4096);
-        expect(
-          config.modelPath,
-          '/app-support/mira-local-models/qwen3-600m.litertlm',
-        );
+        expect(config.modelPath, path);
         expect(spec.fileType, ModelFileType.litertlm);
         expect(spec.modelType, ModelType.general);
         return _NativeModel();
@@ -37,7 +151,7 @@ void main() {
   for (final entry in assistantLocalModels) {
     test('${entry.id} resolves only its app-owned filename', () async {
       await loadAssistantLiteRtModel(
-        '/app-support/${entry.id}.litertlm',
+        await fixture(entry.id),
         createModel: (spec, config) async {
           expect(spec.name, entry.name);
           expect(config.maxTokens, entry.id == 'qwen3-600m' ? 4096 : 2048);
@@ -81,7 +195,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final directory = await Directory.systemTemp.createTemp('mira-restart-');
       addTearDown(() => directory.delete(recursive: true));
-      const bytes = [1, 2, 3, 4];
+      final bytes = await File(await fixture('source')).readAsBytes();
       final synthetic = AssistantLocalModel(
         id: 'qwen3-600m',
         name: 'Synthetic integrity fixture',
@@ -134,7 +248,7 @@ void main() {
       expect(runtime.ready, isTrue);
       await runtime.close();
       verify(native.close).called(1);
-      // Tiny bytes prove persistence/config wiring, never native format compatibility.
+      // Synthetic header proves persistence/config wiring, never native inference.
     },
   );
 
@@ -155,7 +269,7 @@ void main() {
           },
         ),
       );
-      final loading = runtime.load('/app-support/qwen3-600m.litertlm');
+      final loading = runtime.load(await fixture('qwen3-600m'));
       final rejected = expectLater(loading, throwsStateError);
       await admitted.future;
       scope = null;
