@@ -27,6 +27,7 @@ import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/calendar/utils/calendar_description_content.dart';
 import 'package:mobile/features/dashboard/cubit/dashboard_layout_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';

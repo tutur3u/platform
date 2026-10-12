@@ -22,6 +22,7 @@ const {
   decodeReleaseFileBody,
   validateReleaseFileMetadata,
 } = require('./release-file-body');
+const { DOCS_PATH, verifyGitVersions } = require('./release-docs-inventory');
 const { validateWorkspaceLock } = require('./release-workspace-lock');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
@@ -150,6 +151,12 @@ class GitHubClient {
     return decodeReleaseFileBody(blob, response);
   }
 
+  async verifyDocsInventory(baseSha, headSha) {
+    if (![baseSha, headSha].every((sha) => /^[a-f0-9]{40}$/.test(sha)))
+      throw new Error('Immutable docs refs required');
+    return verifyGitVersions(ROOT_DIR, baseSha, headSha);
+  }
+
   async findReleasePullRequest(targetBranch) {
     const pulls = await this.request('GET', '/pulls', {
       query: {
@@ -240,6 +247,7 @@ async function autoApproveReleasePullRequest({
     pullRequest,
     targetBranch,
     verifiedWorkspaceLock: true,
+    verifiedDocsInventory: true,
   });
   if (!eligibility.approve)
     return {
@@ -282,9 +290,18 @@ async function autoApproveReleasePullRequest({
       };
     }
   }
+  let verifiedDocsInventory = false;
+  if (files.some((file) => file.filename === DOCS_PATH)) {
+    await github.verifyDocsInventory(
+      pullRequest.base.sha,
+      pullRequest.head.sha
+    );
+    verifiedDocsInventory = true;
+  }
   const decision = evaluateReleasePullRequest({
     allowedPaths: buildAllowedPaths(config),
     verifiedWorkspaceLock,
+    verifiedDocsInventory,
     approvedAuthors,
     commits,
     files,

@@ -1023,3 +1023,15 @@ Task previews must preserve external Google/Outlook meetings even when local
 copies are unlocked. Keep Web, Calendar and Tasks on the shared blocked-event
 policy. See the Mail and Tasks application docs and connected-provider regression
 suite for setup, behavior scope and real-account delivery evidence.
+
+### Calendar native response protocol
+
+Google meeting replies must retain the freshly read ETag in `If-Match`; missing
+versions reject before dispatch, including outside the recoverable mutation mode.
+Patch only the invited self attendee with `attendeesOmitted` and explicit guest
+notifications. A stale version must not silently refresh and retry the intent.
+`apps/calendar/src/lib/calendar/meeting-provider-protocol.test.ts` runs the real
+SDK serializer behind a closed synthetic fetch boundary; response-route tests
+check private conflict propagation. These fixtures are not organizer receipt
+proof. Real-account acceptance requires an authorized dedicated calendar and
+separate organizer observation; keep production provider admission held.

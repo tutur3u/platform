@@ -40,6 +40,7 @@ vi.mock('@/lib/calendar/meeting-provider-response', async (original) => ({
 }));
 
 import { ColorOperationError } from '@/lib/calendar/google-color-operations/protocol';
+import { MeetingResponseError } from '@/lib/calendar/meeting-provider-response';
 import { POST } from './route';
 
 const eventId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -143,6 +144,19 @@ describe('authenticated meeting responses', () => {
     expect(result.status).toBe(502);
     expect(await result.text()).not.toContain('private provider diagnostic');
     expect(mocks.respond).toHaveBeenCalledTimes(1);
+  });
+  it('returns a private conflict when Google cannot provide an event version', async () => {
+    mocks.respond.mockRejectedValueOnce(
+      new MeetingResponseError(409, 'Google event version unavailable')
+    );
+    const result = await request();
+    expect(result.status).toBe(409);
+    expect(result.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(await result.json()).toEqual({
+      error: 'Google event version unavailable',
+    });
+    expect(mocks.respond).toHaveBeenCalledTimes(1);
+    expect(mocks.recover).not.toHaveBeenCalled();
   });
   it('uses the recoverable Google ledger and skips stale source/provider snapshots when enabled', async () => {
     mocks.enabled.mockReturnValue(true);

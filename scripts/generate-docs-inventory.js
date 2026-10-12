@@ -394,7 +394,7 @@ function outputs(root = ROOT) {
   return { files, routePages, dependencyPages };
 }
 
-function generate({ root = ROOT, check = false } = {}) {
+function plannedFiles(root = ROOT) {
   const { files, routePages, dependencyPages } = outputs(root);
   const configFile = path.join(root, 'apps/docs/docs.json');
   const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
@@ -428,6 +428,12 @@ function generate({ root = ROOT, check = false } = {}) {
   const currentConfig = fs.readFileSync(configFile, 'utf8');
   if (JSON.stringify(JSON.parse(currentConfig)) !== JSON.stringify(config))
     files.set('../docs.json', `${JSON.stringify(config, null, 2)}\n`);
+  return files;
+}
+
+function generate({ root = ROOT, check = false } = {}) {
+  const files = plannedFiles(root);
+  const configFile = path.join(root, 'apps/docs/docs.json');
   const stale = [];
   for (const [file, source] of files) {
     const target =
@@ -445,7 +451,14 @@ function generate({ root = ROOT, check = false } = {}) {
   return stale;
 }
 
-module.exports = { collect, generate, outputs, parseLock, routePath };
+module.exports = {
+  collect,
+  generate,
+  outputs,
+  parseLock,
+  plannedFiles,
+  routePath,
+};
 if (require.main === module) {
   const changed = generate({ check: process.argv.includes('--check') });
   console.log(

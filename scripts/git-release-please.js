@@ -244,6 +244,7 @@ function finalizeMerge({
 } = {}) {
   syncPlatformReleaseVersion(runCommand);
   ensureCleanMerge();
+  runCommand('node', ['scripts/ci/release-docs-inventory.js', '--integration']);
 
   if (format) {
     runCommand('bun', ['ff']);

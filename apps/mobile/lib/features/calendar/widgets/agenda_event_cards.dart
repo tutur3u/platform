@@ -228,7 +228,7 @@ class _AgendaEventCard extends StatelessWidget {
                       if (event.description?.isNotEmpty == true) ...[
                         const SizedBox(height: 6),
                         Text(
-                          event.description!,
+                          calendarDescriptionPreview(event.description!),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(

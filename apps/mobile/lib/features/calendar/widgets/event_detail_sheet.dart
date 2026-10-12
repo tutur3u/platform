@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
+import 'package:mobile/features/calendar/widgets/calendar_description_body.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -44,101 +45,103 @@ class _EventDetailContent extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Color header.
-          Container(
-            height: 6,
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          // Title.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              event.title ?? '',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Color header.
+            Container(
+              height: 6,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-
-          // Date and time.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 18,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _formatDateRange(dateFormat, timeFormat),
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Description.
-          if (event.description?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 12),
+            // Title.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(event.description!, style: textTheme.bodyMedium),
+              child: Text(
+                event.title ?? '',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-          ],
+            const SizedBox(height: 12),
 
-          const SizedBox(height: 24),
-
-          // Action buttons.
-          if (!readOnly)
+            // Date and time.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.of(context).pop('edit'),
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: Text(l10n.calendarEditEvent),
-                    ),
+                  Icon(
+                    Icons.schedule,
+                    size: 18,
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _confirmDelete(context),
-                      icon: Icon(
-                        Icons.delete_outline,
-                        size: 18,
-                        color: colorScheme.error,
+                    child: Text(
+                      _formatDateRange(dateFormat, timeFormat),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
-                      label: Text(
-                        l10n.calendarDeleteEvent,
-                        style: TextStyle(color: colorScheme.error),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: colorScheme.error),
-                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
             ),
-        ],
+
+            // Description.
+            if (event.description?.isNotEmpty ?? false) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: CalendarDescriptionBody(description: event.description!),
+              ),
+            ],
+
+            const SizedBox(height: 24),
+
+            // Action buttons.
+            if (!readOnly)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).pop('edit'),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: Text(l10n.calendarEditEvent),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _confirmDelete(context),
+                        icon: Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                          color: colorScheme.error,
+                        ),
+                        label: Text(
+                          l10n.calendarDeleteEvent,
+                          style: TextStyle(color: colorScheme.error),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: colorScheme.error),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -51,6 +51,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: node scripts/ci/release-please-overflow-recovery.js --target-branch production
 
+      - name: Capture previous generated release head
+        id: previous-release
+        shell: bash
+        run: |
+          set -euo pipefail
+          previous=$(git ls-remote --heads origin refs/heads/release-please--branches--production)
+          if [ -n "$previous" ]; then
+            previous_sha=${previous%%$'\t'*}
+            [[ "$previous_sha" =~ ^[a-f0-9]{40}$ ]]
+            git fetch origin "$previous_sha"
+            echo "sha=$previous_sha" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create or update release PR
         id: release
         uses: googleapis/release-please-action@v5
@@ -80,6 +93,7 @@ jobs:
         shell: bash
         env:
           RELEASE_BRANCH: release-please--branches--production
+          PREVIOUS_RELEASE_SHA: ${{ steps.previous-release.outputs.sha }}
         run: |
           set -euo pipefail
 
@@ -90,8 +104,10 @@ jobs:
 
           git fetch origin "+refs/heads/${RELEASE_BRANCH}:refs/remotes/origin/${RELEASE_BRANCH}"
           release_sha="$(git rev-parse "origin/${RELEASE_BRANCH}")"
+          trusted_scripts=$(mktemp -d)
+          cp -R scripts "${trusted_scripts}/scripts"
           git switch --detach "${release_sha}"
-          trap 'git switch --detach origin/production >/dev/null' EXIT
+          trap 'git switch --detach origin/production >/dev/null; rm -rf -- "${trusted_scripts}"' EXIT
 
           changed_files=()
           while IFS= read -r -d '' file; do
@@ -103,14 +119,19 @@ jobs:
           fi
 
           # Fail before formatting any path outside the generated release set.
-          node scripts/ci/release-workspace-lock.js origin/production HEAD
-          node scripts/ci/normalize-release-notes.js origin/production
+          node "${trusted_scripts}/scripts/ci/release-docs-inventory.js" --refresh origin/production HEAD "${PREVIOUS_RELEASE_SHA}"
+          node "${trusted_scripts}/scripts/ci/release-workspace-lock.js" origin/production HEAD --working
+          node "${trusted_scripts}/scripts/ci/normalize-release-notes.js" origin/production
           npx --yes @biomejs/biome@2.5.13 format --write --files-ignore-unknown=true -- "${changed_files[@]}"
 
           # Refresh only manager-owned metadata: no dependency installation or
           # package lifecycle scripts. Independently reject any non-version delta.
           bun install --lockfile-only --ignore-scripts
-          node scripts/ci/release-workspace-lock.js origin/production HEAD --working
+          node "${trusted_scripts}/scripts/ci/release-docs-inventory.js" --refresh origin/production HEAD "${PREVIOUS_RELEASE_SHA}"
+          node "${trusted_scripts}/scripts/ci/release-workspace-lock.js" origin/production HEAD --working
+          if ! git diff --quiet -- apps/docs/reference/repository/versions.mdx; then
+            changed_files+=(apps/docs/reference/repository/versions.mdx)
+          fi
           if ! git diff --quiet -- bun.lock; then changed_files+=("bun.lock"); fi
 
           if git diff --quiet -- "${changed_files[@]}"; then

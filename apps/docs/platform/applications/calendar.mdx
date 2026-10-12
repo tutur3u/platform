@@ -1106,3 +1106,46 @@ Coverage: `calendar_view_reselect_test.dart` exercises the real Calendar page an
 shared floating shell; `calendar_scroll_reset_test.dart` covers repeated resets,
 week preferences, timezone/year boundaries, reduced motion, and disposal. These
 source checks do not establish native-device or deployed runtime verification.
+
+## Native invitation replies
+
+Accept, Decline and Tentative use the invited account's native provider protocol.
+Google replies patch only the self attendee, with `attendeesOmitted`,
+`sendUpdates=all` and the fresh event's `If-Match` version. Missing versions fail
+with a private HTTP 409 before dispatch; stale versions are not automatically
+retried. The recoverable Google path seals the same response and version for
+replay. Graph replies use the account's native response action with
+`sendResponse=true`.
+
+`meeting-provider-response.test.ts`, `meeting-provider-protocol.test.ts` and the
+response route tests cover these boundaries. The protocol fixture uses the real
+Google SDK serializer with an injected transport and synthetic responses. It
+proves serialized requests and failure handling, not Google acceptance or organizer
+receipt. [Google's conditional modification contract](https://developers.google.com/workspace/calendar/api/guides/version-resources)
+defines the version precondition.
+
+Native provider delivery remains unverified until an authorized dedicated sandbox
+has an invited account, a separate organizer, a recurring event and an exact
+deployed source identity. Verify all three replies on the organizer's provider
+record, including occurrence identity and retained other attendees. A successful
+mutation response or HTML mail link is insufficient evidence. This does not enable
+the separately gated recurrence editor.
+
+## Mobile event descriptions
+
+Mobile Calendar details render provider HTML paragraphs, line breaks, headings,
+lists, emphasis and safe links through the existing native Markdown renderer.
+Markdown and plain descriptions use the same display path. Timed agenda cards and dashboard Calendar rows show
+a readable two-line text preview; the full formatting remains in event details.
+Malformed HTML retains recoverable text. Inline HTML code normalizes line breaks
+to spaces; preformatted code keeps its multiline content. Script, style and
+embedded executable content are omitted, remote images remain alt text, and links use the existing
+mobile launcher scheme and host policy. Theme and system text scaling apply;
+long detail content scrolls.
+
+This is display-only for native and provider events. The editor, stored
+source, recurrence and provider write payloads retain their original description.
+No description conversion is saved. Regression coverage:
+`apps/mobile/test/features/calendar/widgets/calendar_description_test.dart`
+checks the actual detail and agenda widgets, formatted Markdown spans, mixed and
+malformed content, links, image exclusion, light/dark themes and enlarged text.
