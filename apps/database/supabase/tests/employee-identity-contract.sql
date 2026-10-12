@@ -27,6 +27,25 @@ create temporary table original_reservations as select email,to_jsonb(r) as imag
 -- Transactional audit rows prove rollback of every tested write, including the
 -- ordinary grant branch reached before a rejected deferred late marker.
 create temporary table identity_audit(user_id uuid,source text,operation text);
+-- Producer SECURITY DEFINER calls retain their owner while the invoker audit
+-- trigger records the write. Grant only INSERT on this rollback-only observer;
+-- do not change production functions, trigger security, or identity assertions.
+do $$
+declare producer_owner text;
+begin
+  for producer_owner in
+    select distinct r.rolname from pg_catalog.pg_proc p
+    join pg_catalog.pg_roles r on r.oid=p.proowner
+    where p.oid in ('public.create_user_profile()'::regprocedure,
+      'private.check_employee_creation_commit()'::regprocedure)
+  loop
+    if producer_owner not in ('postgres','supabase_admin') then
+      raise exception 'Unexpected fixture producer owner';
+    end if;
+    execute format('grant insert on table pg_temp.identity_audit to %I',producer_owner);
+  end loop;
+end;
+$$;
 create function pg_temp.audit_identity_contract() returns trigger language plpgsql set search_path='' as $$
 declare target uuid;
 begin
