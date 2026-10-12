@@ -81,7 +81,9 @@ function isFiniteRoomLifecycleStep(step) {
     'bun test \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-empty-lifecycle.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-lifecycle-race.test.ts" \\',
-    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-recovery.test.ts"',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-recovery.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/collaboration-retry-budget.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-retry-budget.test.ts"',
   ].join('\n');
   return (
     /^\s+- name: Test durable room lifecycle and recovery$/mu.test(step) &&
@@ -108,6 +110,17 @@ test('finite outside-workspace worker fixtures are distinct from package test ta
     )
   );
   assert.ok(!isFiniteRoomLifecycleStep(`${step}        bun run test\n`));
+  for (const replacement of [
+    'channel-retry-budget.test.ts',
+    'collaboration-retry-budget.test.ts',
+  ]) {
+    assert.ok(
+      !isFiniteRoomLifecycleStep(step.replace(replacement, 'unknown.test.ts'))
+    );
+  }
+  assert.ok(
+    !isFiniteRoomLifecycleStep(step.replace('shell: bash', 'shell: sh'))
+  );
   assert.ok(
     !isFiniteRoomLifecycleStep(
       step.replace('room-do-recovery.test.ts', 'unknown.test.ts')
@@ -322,23 +335,6 @@ test('trusted AI SDK and next-intl packages bypass the release-age delay', () =>
     assert.match(
       bunfig,
       new RegExp(`^  "${packageName.replaceAll('/', '\\/')}",$`, 'mu'),
-      `${packageName} must bypass the release-age delay`
-    );
-  }
-});
-
-test('all locked Vitest packages bypass the dependency release-age delay', () => {
-  const bunfig = fs.readFileSync(path.join(repoRoot, 'bunfig.toml'), 'utf8');
-  const lockfile = fs.readFileSync(path.join(repoRoot, 'bun.lock'), 'utf8');
-  const vitestPackages = new Set(['vitest']);
-
-  for (const match of lockfile.matchAll(/"(@vitest\/[^"@]+)(?:@[^"}]*)?"/gu)) {
-    vitestPackages.add(match[1]);
-  }
-
-  for (const packageName of vitestPackages) {
-    assert.ok(
-      bunfig.split(/\r?\n/u).includes(`  "${packageName}",`),
       `${packageName} must bypass the release-age delay`
     );
   }

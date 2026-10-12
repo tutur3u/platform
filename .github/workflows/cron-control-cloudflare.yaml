@@ -49,17 +49,31 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - run: bun run type-check
+      - name: Generate Worker binding types
+        run: bun x --no-install wrangler types --env-interface CronControlEnv worker-configuration.d.ts -c wrangler.jsonc
         working-directory: apps/cron-control
+      - name: Check Cron Control types
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run type-check --filter=@tuturuuu/cron-control --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - run: bun run lint
         working-directory: apps/cron-control
-      - run: bun run test
-        working-directory: apps/cron-control
+      - name: Test Cron Control
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test --filter=@tuturuuu/cron-control --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Verify source Worker HTTP boundaries
         run: node --test apps/cron-control/scripts/verify-worker-runtime.mjs
       - name: Build the Vite-native Worker
-        run: bun run build
-        working-directory: apps/cron-control
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/cron-control --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Verify emitted Worker identity and HTTP boundaries
         env:
           CRON_TEST_CONFIG: ${{ github.workspace }}/apps/cron-control/dist/worker/wrangler.json

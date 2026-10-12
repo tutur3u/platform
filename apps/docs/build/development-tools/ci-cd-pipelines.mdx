@@ -72,6 +72,17 @@ step is not test evidence. Before merging a preflight fixture change, verify the
 exact-head hosted step succeeded and its TAP summary reports 21 tests, 21 passes,
 and zero failures, cancellations, skips, or todos.
 
+## Worker validation caching
+
+Cron Control and Devbox Control run package build, test and type-check tasks
+through the existing Turbo remote-cache action with explicit workspace filters.
+Meet Realtime uses the same action for build and type-check. Worker builds restore the declared `dist/**` outputs before
+emitted-artifact verification. Cron Control and Devbox Control generate binding types before cached type
+checks because the generated `.d.ts` file is not a declared type-check output.
+Lint, source and emitted runtime checks, SQLite and Durable Object verification,
+and deploy dry-runs still run directly. Remote credentials remain step-scoped and
+are supplied only to trusted main or production runs, never untrusted PRs.
+
 ## Hosted root script qualification
 
 The `Test` workflow runs the complete selection exported by
