@@ -41,6 +41,11 @@ select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000
 set local role authenticated;
 select throws_ok($$update public.user_private_details set full_name='Direct authenticated rename' where user_id='00000000-0000-4000-8000-000000009901'$$,'42501',null,'real authenticated private-details update cannot rename employee');
 reset role;
+-- RESET ROLE preserves JWT GUCs; provider inserts must not inherit the employee actor.
+do $provider_session$ begin
+  perform set_config('request.jwt.claim.sub','',true);
+  perform set_config('request.jwt.claims','{}',true);
+end; $provider_session$;
 -- Resume the provider transaction's deferred final-row check after the earlier fixture flush.
 set constraints auth.check_employee_creation_commit deferred;
 select throws_ok($$insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values('00000000-0000-4000-8000-000000009904','unbound-fixture@tuturuuu.com','{"employee_onboarding":true}','{"full_name":"Unbound fixture"}')$$,'23514','Employee creation intent is missing','trusted marker alone cannot bypass authorized intent');
