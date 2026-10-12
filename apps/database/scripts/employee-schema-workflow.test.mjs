@@ -60,7 +60,7 @@ test('strict receipt tests run from control root', () => {
   assert.doesNotMatch(step, /working-directory:/u);
   assert.match(
     step,
-    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs$/mu
+    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs apps\/database\/scripts\/employee-schema-typegen.test.mjs$/mu
   );
 });
 
@@ -82,5 +82,28 @@ test('always cleanup uses the same source cwd and control script', () => {
   assert.match(
     step,
     /^ {8}run: node \.\.\/apps\/database\/scripts\/verify-employee-schema-contract.mjs --cleanup$/mu
+  );
+});
+
+// Type artifacts belong to the exact disposable-schema receipt, never to selected source.
+test('normal qualification uploads generated schema definitions with its receipt', () => {
+  assert.match(
+    workflow,
+    /path: \|\n {12}\$\{\{ runner.temp \}\}\/employee-schema-receipts\/qualification\.json\n {12}\$\{\{ runner.temp \}\}\/employee-schema-receipts\/generated-types\.ts/u
+  );
+  const controller = readFileSync(
+    new URL('apps/database/scripts/verify-employee-schema-contract.mjs', root),
+    'utf8'
+  );
+  assert.match(controller, /typegen: async \(\) =>/u);
+  assert.match(controller, /generateEmployeeTypes\(/u);
+  assert.match(controller, /consumerQualified: false/u);
+  assert.match(
+    controller,
+    /process.exitCode = receipt.combinedQualified \? 0 : 1/u
+  );
+  assert.match(
+    controller,
+    /label=com.supabase.cli.project=\$\{metadata.projectId\}/u
   );
 });

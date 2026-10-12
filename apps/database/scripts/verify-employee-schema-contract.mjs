@@ -11,6 +11,10 @@ import {
   schemaFailureDiagnostic,
   schemaReceipt,
 } from './employee-schema-tap.mjs';
+import {
+  generateEmployeeTypes,
+  schemaSnapshotHash,
+} from './employee-schema-typegen.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
 import {
   chooseAvailablePortBlock,
@@ -24,6 +28,7 @@ import {
 
 const root = process.cwd();
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
+const controlSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_CONTROL_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
   throw new Error('This gate requires a disposable hosted Linux runner');
 }
@@ -78,7 +83,14 @@ if (process.argv[2] === '--cleanup') {
             return { code: 1 };
           const names = spawnSync(
             'docker',
-            ['ps', '-a', '--format', '{{.Names}}'],
+            [
+              'ps',
+              '-a',
+              '--filter',
+              `label=com.supabase.cli.project=${metadata.projectId}`,
+              '--format',
+              '{{.ID}}',
+            ],
             {
               encoding: 'utf8',
               timeout: 10000,
@@ -91,10 +103,7 @@ if (process.argv[2] === '--cleanup') {
               names.error ||
               names.signal ||
               names.status !== 0 ||
-              names.stdout
-                .trim()
-                .split('\n')
-                .includes(`supabase_db_${metadata.projectId}`)
+              names.stdout.trim().length !== 0
                 ? 1
                 : 0,
           };
@@ -139,6 +148,7 @@ const metadata = await stageDisposableProject({
   basePort: ports.basePort,
   trackedFiles,
   testPath: 'supabase/tests/employee-signup-guards.sql',
+  typegenOutput: 'packages/types/src/supabase.ts',
 });
 writeFileSync(
   ownerPath,
@@ -154,7 +164,10 @@ const receiptDirectory = path.join(
   'employee-schema-receipts'
 );
 mkdirSync(receiptDirectory, { recursive: true, mode: 0o700 });
+const snapshotSha256 = schemaSnapshotHash(root, trackedFiles);
 const packets = [];
+let schemaExecutionSucceeded = false;
+let typegenReceipt = null;
 let cleanupSucceeded = false;
 let currentPhase = 'full-schema-snapshot';
 let packetOrdinal = 0;
@@ -245,6 +258,7 @@ const runner = async (command, args, cwd) => {
           throw new Error('Employee packet TAP contract failed');
         }
       }
+      schemaExecutionSucceeded = true;
     } else {
       packetOrdinal = 0;
       currentPhase = args.includes('stop')
@@ -262,13 +276,18 @@ const runner = async (command, args, cwd) => {
         currentPhase = 'cleanup-proof';
         const names = bounded(
           'docker',
-          ['ps', '-a', '--format', '{{.Names}}'],
+          [
+            'ps',
+            '-a',
+            '--filter',
+            `label=com.supabase.cli.project=${metadata.projectId}`,
+            '--format',
+            '{{.ID}}',
+          ],
           cwd,
           10000
         );
-        if (
-          names.trim().split('\n').includes(`supabase_db_${metadata.projectId}`)
-        ) {
+        if (names.trim().length !== 0) {
           throw new Error('Owned database remains after stop');
         }
         cleanupSucceeded = true;
@@ -295,17 +314,55 @@ try {
     )
       throw new Error('Full schema snapshot differs');
   }
-  lifecycleCode = await runIsolatedLifecycle({ binaryPath, metadata, runner });
+  lifecycleCode = await runIsolatedLifecycle({
+    binaryPath,
+    metadata,
+    runner,
+    typegen: async () => {
+      currentPhase = 'type-generation';
+      packetOrdinal = 0;
+      try {
+        typegenReceipt = await generateEmployeeTypes({
+          binaryPath,
+          metadata,
+          receiptDirectory,
+          sourceSha,
+          controlSha,
+          snapshotSha256,
+        });
+      } catch {
+        failureDiagnostic ??= {
+          phase: 'type-generation',
+          packetOrdinal: 0,
+          redacted: true,
+        };
+        throw new Error('Bounded employee type generation failed');
+      }
+    },
+  });
 } catch {
   // No raw exception text can expose SQL values or private CLI output.
   failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
   lifecycleCode = 1;
 }
 const receipt = {
-  ...schemaReceipt({ sourceSha, packets, lifecycleCode, cleanupSucceeded }),
+  ...schemaReceipt({
+    sourceSha,
+    packets,
+    lifecycleCode: schemaExecutionSucceeded ? 0 : lifecycleCode,
+    cleanupSucceeded,
+  }),
+  controlSha,
+  snapshotSha256,
+  combinedLifecycleCode: lifecycleCode,
+  typesQualified:
+    typegenReceipt !== null && lifecycleCode === 0 && cleanupSucceeded,
+  consumerQualified: false,
+  ...(typegenReceipt ? { typeGeneration: typegenReceipt } : {}),
   fixtureHashes,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
+receipt.combinedQualified = receipt.schemaQualified && receipt.typesQualified;
 writeFileSync(
   path.join(receiptDirectory, 'qualification.json'),
   `${JSON.stringify(receipt, null, 2)}\n`,
@@ -315,6 +372,8 @@ console.log(
   JSON.stringify({
     schemaQualified: receipt.schemaQualified,
     assertions: receipt.assertions,
+    typesQualified: receipt.typesQualified,
+    combinedQualified: receipt.combinedQualified,
   })
 );
-process.exitCode = receipt.schemaQualified ? 0 : 1;
+process.exitCode = receipt.combinedQualified ? 0 : 1;
