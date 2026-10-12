@@ -13,7 +13,10 @@ import {
 } from './employee-schema-tap.mjs';
 import {
   generateEmployeeTypes,
+  readEmployeeNetwork,
+  runTypegenCommand,
   schemaSnapshotHash,
+  startEmployeeNetworkObserver,
 } from './employee-schema-typegen.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
 import {
@@ -48,6 +51,7 @@ const identity = deriveIsolatedIdentity({
   headSha: head,
   repositoryPath: root,
 });
+const network = await readEmployeeNetwork(root);
 const ownerPath = path.join(
   process.env.RUNNER_TEMP,
   'employee-schema-owned.json'
@@ -73,12 +77,17 @@ if (process.argv[2] === '--cleanup') {
         binaryPath,
         metadata,
         runner: async (command, args, cwd) => {
-          const result = spawnSync(command, args, {
-            cwd,
-            timeout: 60000,
-            killSignal: 'SIGKILL',
-            stdio: 'ignore',
-          });
+          await readEmployeeNetwork(root);
+          const result = spawnSync(
+            command,
+            ['--network-id', network.name, ...args],
+            {
+              cwd,
+              timeout: 60000,
+              killSignal: 'SIGKILL',
+              stdio: 'ignore',
+            }
+          );
           if (result.error || result.signal || result.status !== 0)
             return { code: 1 };
           const names = spawnSync(
@@ -114,6 +123,17 @@ if (process.argv[2] === '--cleanup') {
   process.exit(process.exitCode ?? 0);
 }
 const binaryPath = await ensureSupabaseBinary(path.join(root, 'apps/database'));
+if (
+  (
+    await runTypegenCommand(binaryPath, ['--version'], root, {
+      timeoutMs: 10000,
+      maxBytes: 1024,
+    })
+  )
+    .toString()
+    .trim() !== '2.117.0'
+)
+  throw new Error('Employee CLI admission failed');
 const names = execFileSync('docker', ['ps', '-a', '--format', '{{.Names}}'], {
   encoding: 'utf8',
   timeout: 10000,
@@ -165,6 +185,10 @@ const receiptDirectory = path.join(
 );
 mkdirSync(receiptDirectory, { recursive: true, mode: 0o700 });
 const snapshotSha256 = schemaSnapshotHash(root, trackedFiles);
+const networkObserver = startEmployeeNetworkObserver(
+  metadata.projectId,
+  network.id
+);
 const packets = [];
 let schemaExecutionSucceeded = false;
 let typegenReceipt = null;
@@ -196,6 +220,8 @@ const excluded =
   'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
 const runner = async (command, args, cwd) => {
   try {
+    await readEmployeeNetwork(root);
+    if (!args.includes('stop')) await networkObserver.assertHealthy();
     if (args.includes('test')) {
       const container = `supabase_db_${metadata.projectId}`;
       for (const [position, [file, count]] of foundationPackets.entries()) {
@@ -268,7 +294,11 @@ const runner = async (command, args, cwd) => {
           : 'reset';
       bounded(
         command,
-        args.includes('start') ? [...args, '--exclude', excluded] : args,
+        [
+          '--network-id',
+          network.name,
+          ...(args.includes('start') ? [...args, '--exclude', excluded] : args),
+        ],
         cwd,
         args.includes('stop') ? 60000 : 600000
       );
@@ -293,6 +323,7 @@ const runner = async (command, args, cwd) => {
         cleanupSucceeded = true;
       }
     }
+    if (!args.includes('stop')) await networkObserver.assertHealthy();
     return { code: 0 };
   } catch {
     failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
@@ -301,6 +332,8 @@ const runner = async (command, args, cwd) => {
 };
 let lifecycleCode = 1;
 try {
+  await networkObserver.ready();
+  await networkObserver.assertHealthy();
   // Verify complete tracked database snapshot, including every migration, not only fixtures.
   for (const file of trackedFiles.filter(
     (file) => !file.endsWith('/supabase/config.toml')
@@ -322,6 +355,7 @@ try {
       currentPhase = 'type-generation';
       packetOrdinal = 0;
       try {
+        await readEmployeeNetwork(root);
         typegenReceipt = await generateEmployeeTypes({
           binaryPath,
           metadata,
@@ -329,6 +363,7 @@ try {
           sourceSha,
           controlSha,
           snapshotSha256,
+          network,
         });
       } catch {
         failureDiagnostic ??= {
@@ -345,6 +380,7 @@ try {
   failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
   lifecycleCode = 1;
 }
+const networkProof = await networkObserver.finish();
 const receipt = {
   ...schemaReceipt({
     sourceSha,
@@ -354,6 +390,10 @@ const receipt = {
   }),
   controlSha,
   snapshotSha256,
+  networkId: network.id,
+  networkQualified: networkProof.qualified,
+  networkProof,
+  networkCleanupSucceeded: false,
   combinedLifecycleCode: lifecycleCode,
   typesQualified:
     typegenReceipt !== null && lifecycleCode === 0 && cleanupSucceeded,
@@ -362,7 +402,9 @@ const receipt = {
   fixtureHashes,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
-receipt.combinedQualified = receipt.schemaQualified && receipt.typesQualified;
+receipt.controllerQualified =
+  receipt.schemaQualified && receipt.typesQualified && receipt.networkQualified;
+receipt.combinedQualified = false;
 writeFileSync(
   path.join(receiptDirectory, 'qualification.json'),
   `${JSON.stringify(receipt, null, 2)}\n`,
@@ -376,4 +418,4 @@ console.log(
     combinedQualified: receipt.combinedQualified,
   })
 );
-process.exitCode = receipt.combinedQualified ? 0 : 1;
+process.exitCode = receipt.controllerQualified ? 0 : 1;

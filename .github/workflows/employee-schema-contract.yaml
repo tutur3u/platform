@@ -50,6 +50,11 @@ jobs:
           STRUCTURED_PROVENANCE: ${{ inputs.structured_provenance }}
           IDENTITY_DIAGNOSTIC: ${{ inputs.identity_diagnostic }}
         run: node -e 'if (process.env.STRUCTURED_PROVENANCE === "true" && process.env.IDENTITY_DIAGNOSTIC === "true") process.exit(1)'
+      - name: Require network-isolated normal qualification only
+        env:
+          STRUCTURED_PROVENANCE: ${{ inputs.structured_provenance }}
+          IDENTITY_DIAGNOSTIC: ${{ inputs.identity_diagnostic }}
+        run: node -e 'if (process.env.STRUCTURED_PROVENANCE === "true" || process.env.IDENTITY_DIAGNOSTIC === "true") process.exit(1)'
       - name: Validate isolated identity diagnostic selection
         if: inputs.identity_diagnostic == true
         run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/fix/employee-identity-diagnostic-control-20261012" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.GITHUB_EVENT_NAME !== "workflow_dispatch" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5e05c380f60116e9eba41ba42062738229f877a9" || process.env.EMPLOYEE_SCHEMA_CONTROL_SHA === "f5d42a16613e8ce97cb923df55c4c77d024e6cfb") process.exit(1)'
@@ -77,12 +82,15 @@ jobs:
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify strict TAP and receipt gates
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs apps/database/scripts/employee-schema-typegen.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs apps/database/scripts/employee-schema-typegen.test.mjs apps/database/scripts/employee-schema-network.test.mjs
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
       - name: Verify identity diagnostic parser
         if: inputs.identity_diagnostic == true
         run: node --test apps/database/scripts/employee-identity-diagnostic.test.mjs
+      - name: Create the exact owned internal database network
+        if: inputs.structured_provenance != true && inputs.identity_diagnostic != true
+        run: node apps/database/scripts/employee-schema-typegen.mjs --create-network
       - name: Apply full isolated schema and qualify 172 rollback assertions
         if: inputs.structured_provenance != true && inputs.identity_diagnostic != true
         working-directory: source
@@ -99,6 +107,9 @@ jobs:
         if: always()
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs --cleanup
+      - name: Remove only the exact owned internal network and prove drain
+        if: always() && inputs.structured_provenance != true && inputs.identity_diagnostic != true
+        run: node apps/database/scripts/employee-schema-typegen.mjs --remove-network
       - uses: actions/upload-artifact@v7
         if: always() && inputs.structured_provenance != true && inputs.identity_diagnostic != true
         with:
@@ -106,6 +117,7 @@ jobs:
           path: |
             ${{ runner.temp }}/employee-schema-receipts/qualification.json
             ${{ runner.temp }}/employee-schema-receipts/generated-types.ts
+            ${{ runner.temp }}/employee-schema-receipts/network-cleanup.json
           if-no-files-found: error
           retention-days: 3
       - uses: actions/upload-artifact@v7

@@ -1,84 +1,29 @@
-import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import {
+  createEmployeeNetwork,
+  removeEmployeeNetwork,
+  runTypegenCommand,
+  verifyEmployeeNetwork,
+} from './employee-schema-network.mjs';
+
+export {
+  createEmployeeNetwork,
+  createNetworkEventProof,
+  readEmployeeNetwork,
+  removeEmployeeNetwork,
+  runTypegenCommand,
+  startEmployeeNetworkObserver,
+  validateEmployeeNetwork,
+  verifyEmployeeNetwork,
+} from './employee-schema-network.mjs';
 
 const schemaNames = Object.freeze(['public', 'private', 'storage']);
 const reviewedCliVersion = '2.117.0';
 const failure = () => new Error('Bounded employee type generation failed');
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
-
-/** Capture bounded output; drain diagnostics and the owned process group before resolving. */
-export function runTypegenCommand(
-  command,
-  args,
-  cwd,
-  { timeoutMs = 300000, maxBytes = 32 * 1024 * 1024, killGraceMs = 1000 } = {}
-) {
-  return new Promise((resolve, reject) => {
-    let child;
-    try {
-      child = spawn(command, args, {
-        cwd,
-        detached: true,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-    } catch {
-      reject(failure());
-      return;
-    }
-    const chunks = [];
-    let bytes = 0;
-    let denied = false;
-    let forceTimer;
-    const signalGroup = (signal) => {
-      if (!child.pid) return;
-      try {
-        process.kill(-child.pid, signal);
-      } catch (error) {
-        if (error.code !== 'ESRCH') denied = true;
-      }
-    };
-    const terminate = () => {
-      denied = true;
-      signalGroup('SIGTERM');
-      forceTimer ??= setTimeout(() => signalGroup('SIGKILL'), killGraceMs);
-    };
-    const deadline = setTimeout(terminate, timeoutMs);
-    child.stdout.on('data', (chunk) => {
-      bytes += chunk.length;
-      if (bytes > maxBytes) terminate();
-      else if (!denied) chunks.push(chunk);
-    });
-    child.stderr.resume();
-    child.on('error', () => {
-      denied = true;
-    });
-    child.on('close', async (code, signal) => {
-      clearTimeout(deadline);
-      clearTimeout(forceTimer);
-      // A direct child exit is not evidence that its subprocesses have drained.
-      const groupExists = () => {
-        try {
-          if (child.pid) process.kill(-child.pid, 0);
-          return Boolean(child.pid);
-        } catch (error) {
-          return error.code !== 'ESRCH';
-        }
-      };
-      if (groupExists()) {
-        denied = true;
-        signalGroup('SIGKILL');
-        const drainDeadline = Date.now() + 5000;
-        while (groupExists() && Date.now() < drainDeadline) {
-          await new Promise((drain) => setTimeout(drain, 25));
-        }
-      }
-      if (denied || signal || code !== 0) reject(failure());
-      else resolve(Buffer.concat(chunks));
-    });
-  });
-}
 
 /** Hash complete selected schema-source paths and bytes without emitting SQL or fixture contents. */
 export function schemaSnapshotHash(repositoryRoot, trackedFiles) {
@@ -99,6 +44,7 @@ export async function generateEmployeeTypes({
   sourceSha,
   controlSha,
   snapshotSha256,
+  network,
   runner = runTypegenCommand,
 }) {
   if (
@@ -109,6 +55,7 @@ export async function generateEmployeeTypes({
     !/^tt-[a-z0-9-]+-[a-f0-9]{8}-[a-f0-9]{10}$/u.test(metadata.projectId ?? '')
   )
     throw failure();
+  await verifyEmployeeNetwork(network, runner);
   const stat = lstatSync(receiptDirectory);
   if (!stat.isDirectory() || stat.isSymbolicLink()) throw failure();
   const version = (
@@ -120,9 +67,12 @@ export async function generateEmployeeTypes({
     .toString('utf8')
     .trim();
   if (version !== reviewedCliVersion) throw failure();
+  await verifyEmployeeNetwork(network, runner);
   const contents = await runner(
     binaryPath,
     [
+      '--network-id',
+      network.name,
       '--workdir',
       metadata.disposableRoot,
       'gen',
@@ -160,10 +110,28 @@ export async function generateEmployeeTypes({
     snapshotKind: 'tracked-source-before-isolated-config-rewrite',
     schemas: schemaNames,
     cliVersion: version,
+    networkId: network.id,
     artifact,
     sha256: sha256(contents),
     bytes: contents.length,
     generated: true,
     consumerQualified: false,
   };
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  try {
+    const sourceRoot = path.resolve('source');
+    if (process.argv[2] === '--create-network')
+      await createEmployeeNetwork(sourceRoot);
+    else if (process.argv[2] === '--remove-network')
+      await removeEmployeeNetwork(sourceRoot);
+    else throw new Error('Employee internal network admission failed');
+  } catch {
+    console.error('Employee internal network admission failed');
+    process.exitCode = 1;
+  }
 }

@@ -38,7 +38,25 @@ function fixture(t) {
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   return directory;
 }
+const network = {
+  id: 'd'.repeat(64),
+  name: 'tt-employee-net-123-1',
+  labels: Object.fromEntries(
+    ['source', 'control', 'run', 'attempt', 'nonce', 'project'].map((key) => [
+      `ttr.employee.${key}`,
+      key,
+    ])
+  ),
+};
+const networkActual = {
+  Id: network.id,
+  Name: network.name,
+  Internal: true,
+  Driver: 'bridge',
+  Labels: network.labels,
+};
 function request(t, overrides = {}) {
+  const supplied = overrides.runner;
   return {
     binaryPath: '/owned/supabase',
     metadata,
@@ -46,9 +64,16 @@ function request(t, overrides = {}) {
     sourceSha,
     controlSha,
     snapshotSha256,
-    runner: async (_command, args) =>
-      args[0] === '--version' ? Buffer.from('2.117.0\n') : generated,
+    network,
     ...overrides,
+    runner: async (command, args, cwd, options) =>
+      command === 'docker'
+        ? Buffer.from(JSON.stringify([networkActual]))
+        : supplied
+          ? supplied(command, args, cwd, options)
+          : args[0] === '--version'
+            ? Buffer.from('2.117.0\n')
+            : generated,
   };
 }
 
@@ -63,7 +88,6 @@ test('real subprocess stdout is captured while stderr is drained', async () => {
   );
   assert.equal(result.toString(), 'types');
 });
-
 test('nonzero subprocess errors do not disclose its private diagnostics', async () => {
   await assert.rejects(
     runTypegenCommand(
@@ -74,7 +98,6 @@ test('nonzero subprocess errors do not disclose its private diagnostics', async 
     { message: 'Bounded employee type generation failed' }
   );
 });
-
 test('a real sleeping process is terminated and drained by the whole command deadline', async () => {
   await assert.rejects(
     runTypegenCommand(
@@ -86,7 +109,6 @@ test('a real sleeping process is terminated and drained by the whole command dea
     { message: 'Bounded employee type generation failed' }
   );
 });
-
 test('oversized subprocess stdout rejects without returning partial bytes', async () => {
   await assert.rejects(
     runTypegenCommand(
@@ -98,7 +120,6 @@ test('oversized subprocess stdout rejects without returning partial bytes', asyn
     { message: 'Bounded employee type generation failed' }
   );
 });
-
 test('signal-resistant owned descendants are killed before deadline rejection', async (t) => {
   const directory = fixture(t);
   const pidFile = path.join(directory, 'pid');
@@ -124,7 +145,6 @@ test('signal-resistant owned descendants are killed before deadline rejection', 
     'owned descendant must not remain running'
   );
 });
-
 test('types are generated locally on the same project and written only outside source', async (t) => {
   const calls = [];
   const options = request(t, {
@@ -134,7 +154,9 @@ test('types are generated locally on the same project and written only outside s
     },
   });
   const receipt = await generateEmployeeTypes(options);
-  assert.deepEqual(calls[1].args, [
+  assert.deepEqual(calls.find((call) => call.args.includes('gen')).args, [
+    '--network-id',
+    network.name,
     '--workdir',
     '/owned/disposable',
     'gen',
@@ -146,7 +168,10 @@ test('types are generated locally on the same project and written only outside s
     '--query-timeout',
     '30s',
   ]);
-  assert.equal(calls[1].cwd, metadata.disposableRoot);
+  assert.equal(
+    calls.find((call) => call.args.includes('gen')).cwd,
+    metadata.disposableRoot
+  );
   assert.deepEqual(
     readFileSync(path.join(options.receiptDirectory, 'generated-types.ts')),
     generated
@@ -195,7 +220,6 @@ test('unreviewed CLI versions fail before generation', async (t) => {
   );
   assert.equal(calls, 1);
 });
-
 test('source mismatch fails before any CLI command', async (t) => {
   let calls = 0;
   await assert.rejects(
@@ -210,7 +234,6 @@ test('source mismatch fails before any CLI command', async (t) => {
   );
   assert.equal(calls, 0);
 });
-
 test('preexisting artifact is never overwritten', async (t) => {
   const options = request(t);
   const target = path.join(options.receiptDirectory, 'generated-types.ts');
@@ -295,4 +318,20 @@ test('generation failure still executes exact cleanup and returns failure', asyn
   });
   assert.equal(result, 1);
   assert.deepEqual(phases, ['start', 'db', 'test', 'failed-types', 'stop']);
+});
+
+test('unknown internal network denies before any CLI generation', async (t) => {
+  let cliCalls = 0;
+  await assert.rejects(
+    generateEmployeeTypes(
+      request(t, {
+        network: undefined,
+        runner: async () => {
+          cliCalls++;
+          return generated;
+        },
+      })
+    )
+  );
+  assert.equal(cliCalls, 0);
 });

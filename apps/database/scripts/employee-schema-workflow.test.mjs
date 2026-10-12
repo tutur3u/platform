@@ -60,7 +60,7 @@ test('strict receipt tests run from control root', () => {
   assert.doesNotMatch(step, /working-directory:/u);
   assert.match(
     step,
-    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs apps\/database\/scripts\/employee-schema-typegen.test.mjs$/mu
+    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs apps\/database\/scripts\/employee-schema-typegen.test.mjs apps\/database\/scripts\/employee-schema-network.test.mjs$/mu
   );
 });
 
@@ -100,10 +100,27 @@ test('normal qualification uploads generated schema definitions with its receipt
   assert.match(controller, /consumerQualified: false/u);
   assert.match(
     controller,
-    /process.exitCode = receipt.combinedQualified \? 0 : 1/u
+    /process.exitCode = receipt.controllerQualified \? 0 : 1/u
   );
   assert.match(
     controller,
     /label=com.supabase.cli.project=\$\{metadata.projectId\}/u
   );
+});
+
+test('owned internal network admission precedes schema replay and always retires after database cleanup', () => {
+  const create = namedStep('Create the exact owned internal database network');
+  const remove = namedStep(
+    'Remove only the exact owned internal network and prove drain'
+  );
+  assert.match(create, /employee-schema-typegen.mjs --create-network/u);
+  assert.match(remove, /if: always\(\)/u);
+  assert.match(remove, /employee-schema-typegen.mjs --remove-network/u);
+  assert.ok(
+    workflow.indexOf(create) < workflow.indexOf('Apply full isolated schema')
+  );
+  assert.ok(
+    workflow.indexOf(remove) > workflow.indexOf('Stop only this exact owned')
+  );
+  assert.match(workflow, /Require network-isolated normal qualification only/u);
 });
