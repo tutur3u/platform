@@ -45,6 +45,15 @@ types.
 
 ## Verification
 
+For native graph projection checks, use the focused
+`src/operational-graph/projection.test.ts` and `reader.test.ts` suites. The reader
+validates its request before opening or reading SQLite and forwards only parsed
+fields; caller extras must never replace the authoritative snapshot. Use disposable
+synthetic fixtures. For Bun 1.4.1 concurrency fixtures, populate WAL through the
+fixture writer before opening a read-only connection: that runtime cannot read a
+freshly switched WAL database without sidecars. Do not make the reader repair it
+through writes. See `apps/docs/reference/packages/cli-operational-state.mdx`.
+
 For CLI changes, run focused checks first:
 
 ```bash
