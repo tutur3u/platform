@@ -59,7 +59,7 @@ test('generated formatting is path-scoped and race-safe', () => {
   );
   assert.match(
     formatStep,
-    /trap 'git switch --detach origin\/production >\/dev\/null' EXIT/
+    /trap 'git switch --detach origin\/production >\/dev\/null; rm -rf -- "\$\{trusted_scripts\}"' EXIT/
   );
   assert.match(formatStep, /git add -- "\$\{changed_files\[@\]\}"/);
   assert.doesNotMatch(formatStep, /git add --all|git add \./);
@@ -75,12 +75,16 @@ test('generated lock refresh is bounded, version-only, and preserves authors', (
   assert.match(releaseJob, /bun install --lockfile-only --ignore-scripts/);
   assert.match(
     releaseJob,
-    /release-workspace-lock\.js origin\/production HEAD --working/
+    /node "\$\{trusted_scripts\}\/scripts\/ci\/release-workspace-lock\.js" origin\/production HEAD --working/
   );
   assert.match(releaseJob, /changed_files\+=\("bun\.lock"\)/);
   assert.doesNotMatch(releaseJob, /--reset-author|git add --all/);
-  assert.ok(
-    releaseJob.indexOf('release-workspace-lock.js origin/production HEAD') <
-      releaseJob.indexOf('node scripts/ci/normalize-release-notes.js')
+  const guardIndex = releaseJob.indexOf(
+    'release-workspace-lock.js" origin/production HEAD --working'
   );
+  const normalizeIndex = releaseJob.indexOf(
+    'normalize-release-notes.js" origin/production'
+  );
+  assert.ok(guardIndex >= 0 && normalizeIndex > guardIndex);
+  assert.match(releaseJob, /cp -R scripts "\$\{trusted_scripts\}\/scripts"/);
 });
