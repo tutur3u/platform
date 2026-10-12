@@ -42,6 +42,7 @@
                   "platform/features/search-indexing",
                   "platform/features/command-center-dashboard",
                   "platform/features/assistant-live",
+                  "platform/features/assistant-local-models",
                   "platform/features/mobile-timer",
                   "platform/features/mobile-chat",
                   "platform/features/colab",

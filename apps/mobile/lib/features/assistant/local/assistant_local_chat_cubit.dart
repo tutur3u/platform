@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
@@ -10,6 +11,7 @@ import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model_store.dart';
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_runtime.dart';
+import 'package:mobile/features/assistant/local/assistant_model_preparation.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
 /// Native text-only lane: no remote repository, credits, tools or attachments.
@@ -45,6 +47,7 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
   late String _workspace;
   int _version = 0;
   int _selectionVersion = 0;
+  int _preparationRevision = 0;
   String? _selectedModeId;
   int _messageSequence = 0;
   late Future<void> _transition = Future<void>.value();
@@ -63,10 +66,16 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
 
   Future<void> syncWorkspace(String actor, String workspace) async {
     final version = ++_version;
+    ++_preparationRevision;
     _scope = _currentScope();
     _actor = actor;
     _workspace = workspace;
-    emit(const AssistantLocalChatState(phase: LocalChatPhase.loading));
+    emit(
+      AssistantLocalChatState(
+        phase: LocalChatPhase.loading,
+        preparationRevision: _preparationRevision,
+      ),
+    );
     await _enqueue(() async {
       if (!_current || version != _version) return;
       final selected = await _preferences.load(
@@ -87,8 +96,10 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
     }
     _recordSelection(modelId, explicit: true);
     final version = ++_version;
+    ++_preparationRevision;
     emit(
       AssistantLocalChatState(
+        preparationRevision: _preparationRevision,
         selectedModelId: modelId ?? state.selectedModelId,
         phase: LocalChatPhase.loading,
         chat: state.chat,
@@ -118,11 +129,14 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
       }
       if (!current()) return;
       if (modelId == null) {
-        emit(const AssistantLocalChatState());
+        emit(
+          AssistantLocalChatState(preparationRevision: _preparationRevision),
+        );
         return;
       }
       emit(
         AssistantLocalChatState(
+          preparationRevision: _preparationRevision,
           selectedModelId: modelId,
           phase: LocalChatPhase.loading,
         ),
@@ -144,6 +158,7 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
       if (!current()) return;
       emit(
         AssistantLocalChatState(
+          preparationRevision: _preparationRevision,
           selectedModelId: modelId,
           phase: LocalChatPhase.loading,
           chat: AssistantChatState(
@@ -167,12 +182,28 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
       if (current()) {
         emit(
           AssistantLocalChatState(
+            preparationRevision: _preparationRevision,
             selectedModelId: modelId,
             ready: _runtime.ready,
             chat: state.chat,
           ),
         );
       }
+    } on ModelPreparationException catch (error) {
+      if (current()) {
+        _fail(switch (error.reason) {
+          ModelPreparationFailure.invalidFormat =>
+            LocalChatFailure.invalidModelFormat,
+          ModelPreparationFailure.incompatibleVersion =>
+            LocalChatFailure.incompatibleModelVersion,
+          ModelPreparationFailure.runtimeUnavailable =>
+            LocalChatFailure.runtimeUnavailable,
+          ModelPreparationFailure.storage => LocalChatFailure.storage,
+          ModelPreparationFailure.nativeLoad => LocalChatFailure.engine,
+        });
+      }
+    } on FileSystemException {
+      if (current()) _fail(LocalChatFailure.storage);
     } on Object {
       if (current()) _fail(LocalChatFailure.engine);
     }
@@ -180,8 +211,12 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
 
   void _fail(LocalChatFailure failure) => emit(
     AssistantLocalChatState(
+      preparationRevision: _preparationRevision,
       selectedModelId: state.selectedModelId,
-      ready: failure != LocalChatFailure.engine && _runtime.ready,
+      ready:
+          (failure == LocalChatFailure.input ||
+              failure == LocalChatFailure.storage) &&
+          _runtime.ready,
       failure: failure,
       chat: state.chat.copyWith(status: AssistantChatStatus.idle),
     ),
@@ -222,6 +257,7 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
     final output = StringBuffer();
     emit(
       AssistantLocalChatState(
+        preparationRevision: _preparationRevision,
         selectedModelId: state.selectedModelId,
         ready: true,
         phase: LocalChatPhase.generating,
@@ -256,6 +292,7 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
         );
         emit(
           AssistantLocalChatState(
+            preparationRevision: _preparationRevision,
             selectedModelId: state.selectedModelId,
             ready: true,
             phase: LocalChatPhase.generating,
@@ -281,6 +318,7 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
     if (current()) {
       emit(
         AssistantLocalChatState(
+          preparationRevision: _preparationRevision,
           selectedModelId: state.selectedModelId,
           ready: failure != LocalChatFailure.engine && _runtime.ready,
           failure: failure,
@@ -324,6 +362,7 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
       if (current()) {
         emit(
           AssistantLocalChatState(
+            preparationRevision: _preparationRevision,
             selectedModelId: state.selectedModelId,
             ready: _runtime.ready,
             chat: AssistantChatState(
@@ -340,9 +379,15 @@ class AssistantLocalChatCubit extends Cubit<AssistantLocalChatState> {
 
   Future<void> invalidate() async {
     ++_version;
+    ++_preparationRevision;
     _scope = null;
     if (!isClosed) {
-      emit(const AssistantLocalChatState(phase: LocalChatPhase.loading));
+      emit(
+        AssistantLocalChatState(
+          phase: LocalChatPhase.loading,
+          preparationRevision: _preparationRevision,
+        ),
+      );
     }
     final version = _version;
     await _enqueue(_runtime.unload, version);

@@ -5,6 +5,7 @@ import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_runtime.dart';
+import 'package:mobile/features/assistant/local/assistant_model_preparation.dart';
 
 typedef AssistantNativeModelFactory =
     Future<InferenceModel> Function(
@@ -26,21 +27,26 @@ Future<LocalInferenceModel> loadAssistantLiteRtModel(
     throw ArgumentError('Unknown app-owned local model');
   }
   final configuration = matches.single;
-  final model = await (createModel ?? const LiteRtLmEngine().createModel)(
-    InferenceModelSpec(
-      name: configuration.name,
-      modelSource: FileSource(verifiedPath),
-      modelType: ModelType.general,
-      fileType: ModelFileType.litertlm,
-    ),
-    RuntimeConfig(
-      maxTokens: configuration.contextTokens,
-      modelPath: verifiedPath,
-      preferredBackend: PreferredBackend.cpu,
-      maxConcurrentSessions: 1,
-    ),
-  );
-  return _LiteRtModel(model);
+  await inspectAssistantModelHeader(File(verifiedPath));
+  try {
+    final model = await (createModel ?? const LiteRtLmEngine().createModel)(
+      InferenceModelSpec(
+        name: configuration.name,
+        modelSource: FileSource(verifiedPath),
+        modelType: ModelType.general,
+        fileType: ModelFileType.litertlm,
+      ),
+      RuntimeConfig(
+        maxTokens: configuration.contextTokens,
+        modelPath: verifiedPath,
+        preferredBackend: PreferredBackend.cpu,
+        maxConcurrentSessions: 1,
+      ),
+    );
+    return _LiteRtModel(model);
+  } on Object catch (error) {
+    throw assistantNativePreparationError(error);
+  }
 }
 
 class _LiteRtModel implements LocalInferenceModel {

@@ -158,6 +158,12 @@ extension _AssistantPageLocal on _AssistantPageState {
   String _localNotice(LocalChatFailure? failure) => switch (failure) {
     LocalChatFailure.unsupported => context.l10n.assistantLocalHardware,
     LocalChatFailure.missingModel => context.l10n.assistantLocalMissing,
+    LocalChatFailure.invalidModelFormat =>
+      context.l10n.assistantLocalInvalidFormat,
+    LocalChatFailure.incompatibleModelVersion =>
+      context.l10n.assistantLocalIncompatibleVersion,
+    LocalChatFailure.runtimeUnavailable =>
+      context.l10n.assistantLocalRuntimeUnavailable,
     LocalChatFailure.engine => context.l10n.assistantLocalEngineError,
     LocalChatFailure.storage => context.l10n.assistantLocalStorageError,
     LocalChatFailure.input => context.l10n.assistantLocalInputError,

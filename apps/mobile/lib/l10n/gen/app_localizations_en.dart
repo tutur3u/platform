@@ -717,7 +717,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLocalEngineError => 'On-device inference failed. Choose the model again to reload it. Your prompt was not sent remotely.';
 
   @override
-  String get assistantLocalHardware => 'Local inference requires a supported device with at least 4 GiB of installed memory. Available memory and native loading still determine readiness.';
+  String get assistantLocalHardware => 'Local inference requires a supported device with at least 4 GiB of installed memory. Android requires arm64 and Android 11 (API 30) or newer. Available memory and native loading still determine readiness.';
 
   @override
   String get assistantLocalHeaderIssue => 'Needs attention';
@@ -748,6 +748,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantLocalLoading => 'Preparing on-device model';
+
+  @override
+  String get assistantLocalInvalidFormat => 'This file is not a valid LiteRT-LM model. Remove it and download or import the listed model again. Your prompt was not sent remotely.';
+
+  @override
+  String get assistantLocalIncompatibleVersion => 'This model uses a LiteRT-LM format this app cannot load. Update the app or choose a compatible listed model. Your prompt was not sent remotely.';
+
+  @override
+  String get assistantLocalRuntimeUnavailable => 'The on-device runtime is unavailable on this device or app installation. Update or reinstall the app on a supported device, then choose the model again. Your prompt was not sent remotely.';
 
   @override
   String get assistantLocalMissing => 'The selected local model is unavailable. Download it or explicitly choose remote mode.';

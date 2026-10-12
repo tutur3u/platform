@@ -39,7 +39,7 @@ void main() {
       permitsAssistantLocalInference(
         abi: Abi.androidArm64,
         memoryMiB: 4096,
-        androidSdk: 28,
+        androidSdk: 30,
       ),
       isTrue,
     );
