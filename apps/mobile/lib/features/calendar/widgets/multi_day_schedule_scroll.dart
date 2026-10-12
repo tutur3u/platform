@@ -56,9 +56,7 @@ extension _ContinuousDateScroll on _MultiDayScheduleViewState {
     if (index < _bufferDays ~/ 2 || index > _bufferDays * 3 ~/ 2) {
       final shift = index - _bufferDays;
       _shiftDateWindow(shift);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _positionDates(offset - shift * _dayWidth);
-      });
+      _positionDates(offset - shift * _dayWidth);
     }
     final delta = leading.difference(selected).inDays;
     if (delta != 0) {

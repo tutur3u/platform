@@ -362,7 +362,7 @@ class _MultiDayEventCardSurface extends StatelessWidget {
   }
 }
 
-class _MultiDayAllDayRow extends StatelessWidget {
+class _MultiDayAllDayRow extends StatefulWidget {
   const _MultiDayAllDayRow({
     required this.layout,
     required this.scope,
@@ -371,6 +371,7 @@ class _MultiDayAllDayRow extends StatelessWidget {
     required this.maxVisibleRows,
     required this.viewportStart,
     required this.viewportWidth,
+    required this.availableHeight,
     required this.onEventTap,
   });
 
@@ -381,74 +382,144 @@ class _MultiDayAllDayRow extends StatelessWidget {
   final int? maxVisibleRows;
   final double viewportStart;
   final double viewportWidth;
+  final double availableHeight;
   final ValueChanged<CalendarEvent> onEventTap;
 
   static const _rowHeight = 22.0;
   static const _rowGap = 4.0;
 
+  static double rowHeight(BuildContext context) => math.max(
+    _rowHeight,
+    MediaQuery.textScalerOf(
+              context,
+            ).scale(Theme.of(context).textTheme.labelSmall?.fontSize ?? 12) *
+            1.2 +
+        8,
+  );
+
+  static double heightForRows(BuildContext context, int rows) =>
+      rows * rowHeight(context) + math.max(rows - 1, 0) * _rowGap + 14;
+
+  @override
+  State<_MultiDayAllDayRow> createState() => _MultiDayAllDayRowState();
+}
+
+class _MultiDayAllDayRowState extends State<_MultiDayAllDayRow> {
+  Map<Object, double> _targets = {};
+  Map<Object, double> _paintedTops = {};
+  Map<Object, double> _previousTops = {};
+  double? _lastHeight;
+  double _startHeight = 0;
+
+  Object _identity(AllDaySpan span) => (
+    widget.scope,
+    span.event.wsId,
+    span.event.id,
+    span.event.startAt,
+    span.event.endAt,
+  );
+
+  @override
+  void didUpdateWidget(_MultiDayAllDayRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scope != widget.scope) {
+      _targets = {};
+      _paintedTops = {};
+      _previousTops = {};
+      _lastHeight = null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (layout.spans.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final theme = Theme.of(context);
-    final rowHeight = math.max(
-      _rowHeight,
-      MediaQuery.textScalerOf(
-                context,
-              ).scale(theme.textTheme.labelSmall?.fontSize ?? 12) *
-              1.2 +
-          8,
-    );
+    final rowHeight = _MultiDayAllDayRow.rowHeight(context);
     final rows = math.min(
-      layout.maxRow + 1,
-      maxVisibleRows ?? layout.maxRow + 1,
+      widget.layout.maxRow + 1,
+      widget.maxVisibleRows ?? widget.layout.maxRow + 1,
     );
-    final height = rows * rowHeight + (math.max(rows - 1, 0) * _rowGap) + 14;
-
+    final visible = widget.layout.spans
+        .where(
+          (span) =>
+              span.row < rows &&
+              _allDaySpanVisible(
+                span,
+                gutterWidth: widget.timeGutterWidth,
+                dayColumnWidth: widget.dayColumnWidth,
+                viewportStart: widget.viewportStart,
+                viewportWidth: widget.viewportWidth,
+              ),
+        )
+        .toList();
+    final targets = {
+      for (final span in visible)
+        _identity(span):
+            span.row * (rowHeight + _MultiDayAllDayRow._rowGap) + 6,
+    };
+    if (targets.length != _targets.length ||
+        targets.entries.any((entry) => _targets[entry.key] != entry.value)) {
+      _previousTops = Map.of(_paintedTops);
+      _startHeight = _lastHeight ?? widget.availableHeight;
+      _targets = targets;
+    }
+    final targetHeight = _MultiDayAllDayRow.heightForRows(context, rows);
+    final progress = (targetHeight - _startHeight).abs() < 0.01
+        ? 1.0
+        : ((widget.availableHeight - _startHeight) /
+                  (targetHeight - _startHeight))
+              .clamp(0.0, 1.0);
+    final movingRetained = _previousTops.entries.any(
+      (entry) =>
+          targets.containsKey(entry.key) &&
+          (targets[entry.key]! - entry.value).abs() > 0.01,
+    );
+    final rendered = visible.where((span) {
+      final identity = _identity(span);
+      return _previousTops.containsKey(identity) ||
+          (targets[identity]! + rowHeight <= widget.availableHeight + 0.01 &&
+              (!movingRetained || progress >= 1));
+    }).toList();
+    _paintedTops = {
+      for (final span in rendered)
+        _identity(span): _previousTops.containsKey(_identity(span))
+            ? _previousTops[_identity(span)]! +
+                  (targets[_identity(span)]! -
+                          _previousTops[_identity(span)]!) *
+                      progress
+            : targets[_identity(span)]!,
+    };
+    _lastHeight = widget.availableHeight;
+    if (targets.isEmpty) _previousTops = {};
     return SizedBox(
-      height: height,
+      height: widget.availableHeight,
       child: Stack(
         children: [
-          for (final span in layout.spans.where(
-            (span) =>
-                span.row < rows &&
-                _allDaySpanVisible(
-                  span,
-                  gutterWidth: timeGutterWidth,
-                  dayColumnWidth: dayColumnWidth,
-                  viewportStart: viewportStart,
-                  viewportWidth: viewportWidth,
-                ),
-          ))
+          for (final span in rendered)
             Positioned(
-              key: ValueKey((
-                scope,
-                span.event.wsId,
-                span.event.id,
-                span.event.startAt,
-                span.event.endAt,
-              )),
-              left: timeGutterWidth + span.startIndex * dayColumnWidth + 4,
-              top: span.row * (rowHeight + _rowGap) + 6,
-              width: span.span * dayColumnWidth - 8,
+              key: ValueKey(_identity(span)),
+              left:
+                  widget.timeGutterWidth +
+                  span.startIndex * widget.dayColumnWidth +
+                  4,
+              top: _paintedTops[_identity(span)],
+              width: span.span * widget.dayColumnWidth - 8,
               height: rowHeight,
               child: _MultiDayAllDayChip(
                 event: span.event,
                 labelLeft: math.max(
                   0,
-                  viewportStart -
-                      (timeGutterWidth + span.startIndex * dayColumnWidth + 4),
+                  widget.viewportStart -
+                      (widget.timeGutterWidth +
+                          span.startIndex * widget.dayColumnWidth +
+                          4),
                 ),
                 labelRight: math.max(
                   0,
-                  timeGutterWidth +
-                      (span.startIndex + span.span) * dayColumnWidth -
+                  widget.timeGutterWidth +
+                      (span.startIndex + span.span) * widget.dayColumnWidth -
                       4 -
-                      (viewportStart + viewportWidth),
+                      (widget.viewportStart + widget.viewportWidth),
                 ),
-                onTap: () => onEventTap(span.event),
+                onTap: () => widget.onEventTap(span.event),
               ),
             ),
         ],
