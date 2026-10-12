@@ -59,9 +59,29 @@ select throws_ok($$select private.assert_employee_administrator('00000000-0000-4
 update auth.users set email_confirmed_at=now(),email='administrator-fixture@example.com' where id='00000000-0000-4000-8000-000000009920';
 select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','noncompany actor with valid grant is denied');
 update auth.users set email='administrator-fixture@tuturuuu.com' where id='00000000-0000-4000-8000-000000009920';
-update public.workspace_members set type='GUEST' where ws_id='00000000-0000-0000-0000-000000000000' and user_id='00000000-0000-4000-8000-000000009920';
+-- Fixture setup uses the existing service maintenance path, then restores JWT context.
+do $fixture_membership$ declare
+  previous_role text := current_setting('request.jwt.claim.role',true);
+  previous_claims text := current_setting('request.jwt.claims',true);
+begin
+  perform set_config('request.jwt.claim.role','service_role',true);
+  perform set_config('request.jwt.claims','{"role":"service_role"}',true);
+  update public.workspace_members set type='GUEST' where ws_id='00000000-0000-0000-0000-000000000000' and user_id='00000000-0000-4000-8000-000000009920';
+  perform set_config('request.jwt.claim.role',coalesce(previous_role,''),true);
+  perform set_config('request.jwt.claims',coalesce(previous_claims,''),true);
+end; $fixture_membership$;
 select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','guest cannot consume MEMBER default grant');
-update public.workspace_members set type='MEMBER' where ws_id='00000000-0000-0000-0000-000000000000' and user_id='00000000-0000-4000-8000-000000009920';
+-- Fixture setup uses the existing service maintenance path, then restores JWT context.
+do $fixture_membership$ declare
+  previous_role text := current_setting('request.jwt.claim.role',true);
+  previous_claims text := current_setting('request.jwt.claims',true);
+begin
+  perform set_config('request.jwt.claim.role','service_role',true);
+  perform set_config('request.jwt.claims','{"role":"service_role"}',true);
+  update public.workspace_members set type='MEMBER' where ws_id='00000000-0000-0000-0000-000000000000' and user_id='00000000-0000-4000-8000-000000009920';
+  perform set_config('request.jwt.claim.role',coalesce(previous_role,''),true);
+  perform set_config('request.jwt.claims',coalesce(previous_claims,''),true);
+end; $fixture_membership$;
 update public.workspace_default_permissions set enabled=false where ws_id='00000000-0000-0000-0000-000000000000';
 insert into public.workspace_default_permissions(ws_id,permission,member_type,enabled) values
 ('00000000-0000-0000-0000-000000000000','admin','GUEST',true)
