@@ -1,0 +1,186 @@
+---
+title: MIRA proactive work core
+description: Inactive consented due events, reviewable plans and selected dry-run actions.
+---
+
+MIRA helps people review consented work context and get things done through
+bounded plans and selected actions. This source milestone is **inactive**. It
+creates synthetic metadata plans and dry-run receipts only. Missing or
+unqualified authority denies admission. No Worker exports the new class, and no
+production binding, ingress, model, private-content reader or provider is added.
+
+## Scope and product decisions
+
+The portable contracts, due-job engine, review engine and SQLite adapter live in
+`apps/coordination/src/proactive/`. Future web/mobile MIRA surfaces may use them
+after their adapters are qualified. Paid membership does not grant autonomy.
+Default enablement is off. Execution rechecks personal creator/actor ownership,
+paid status, explicit consent, cadence, timezone/quiet hours, pause, budgets,
+source revisions, permission and revocation. A due occurrence is event-driven;
+there is no per-user idle heartbeat or new global Cron.
+
+The initial synthetic policy permits one daily occurrence per authoritative
+cadence, one due-job run and two plan revisions. Cross-occurrence anti-spam and
+budgets require an authoritative atomic adapter before activation. Local job
+counters alone are not an account-wide spend cap.
+
+Journal sources stay private. Plans are separate source-linked suggestions, not
+changes to user journals or inferred mood records. Being away may authorize
+specifically consented read-only research/planning. Calendar/task/finance/email
+mutations, purchases and sends need distinct authority. This implementation only
+supports the selected action `record-dry-run`, which calls no provider.
+
+## Existing infrastructure census
+
+| Existing source | Reuse boundary |
+| --- | --- |
+| Coordination SQLite DO | Transactional leases, with its own expiry-cleanup alarm. Do not reuse that single alarm or identity for due jobs. |
+| Cron-control Worker | Five-minute immediate-notification batch recovery through a private RPC and web processor; not a personal scheduler. |
+| Devbox-control RunnerWake | Hibernating runner wake sockets; operational infrastructure, not a product scheduler. |
+| Meet realtime/Colab Workers | Room/session objects and provider contracts stay scoped to their products. |
+| `packages/utils/src/meet-duration.ts` | Server-side personal creator, active subscription and private tier lookup. Next/Supabase imports make it an entitlement reuse candidate, not a qualified Worker adapter. Free subscriptions do not prove payment. |
+
+The existing product memory service is `packages/ai/src/memory/index.ts`, with
+scope/settings, context/search, edit/forget and ingest operations. Its settings
+code fails closed on lookup errors; successful missing settings retain existing
+enabled defaults, which cannot prove explicit proactive consent. `packages/internal-api/src/ai-memory.ts`
+already exposes product settings and edit revisions. Reuse those consented
+services at a qualified adapter; do not build a second memory store. Current
+memory revisions are opaque strings, so they cannot be fabricated as the
+journal proposal's numeric revision. Task reminder lifecycle checks already
+cover cancellation, revision and recipient watching in
+`packages/utils/src/task-reminder-lifecycle.ts`; calendar payloads already carry
+explicit provider/source and recoverable create identifiers. None of those
+existing interfaces grants this slice external mutation permission.
+
+The active source scan found no Cloudflare Workflow entrypoint or Agents SDK
+scheduler for this product. Hive workflow logic is not Cloudflare Workflows.
+A bounded deployment-workflow query found a successful coordination production
+run; production-filtered cron-control/devbox-control queries returned no runs.
+This is workflow metadata, not current hosted namespace health or measured cost.
+
+## Functional loop and contracts
+
+`Authority.read(identity, now)` returns untrusted adapter output, parsed into a
+strict fresh snapshot before every admission, approval and execution.
+`unavailableAuthority` denies by default. Read errors deny. The due engine pins
+an immutable occurrence, reserves a durable lease/run and computes private
+metadata only. Duplicate wakes return existing state. Expired leases become
+unknown outcomes without another alarm or automatic replay. Accepted-unresolved
+and dead-letter states remain inspectable. Provider acceptance is represented in
+synthetic recovery tests, not a qualified real provider protocol.
+
+A failed second authority read during plan preparation persists an inspectable
+blocked record without retry or another wake. A completed due receipt plus fresh
+scoped context creates an evidence-linked
+reviewable plan. Selected approval binds its revision, the only permitted action
+and expiry. Rejection preserves a feedback category; revision refreshes evidence
+and invalidates older approval scopes, within a two-revision cap. Approval and
+execution recheck authority and current evidence. Changed source, deletion,
+revocation, consent or permission versions revoke selected action. Completed
+dry-run activity receipts are durable and idempotent.
+
+The journal reference proposal has exactly `kind`, UUID `actorId`, UUID
+`personalWorkspaceId`, UUID `sourceId`, positive safe-integer `sourceRevision`,
+strict UTC ISO `observedAt`/`expiresAt`, and required safe-integer deletion,
+revocation and consent versions. Expiry follows observation. Missing versions
+never default. No body, title or mood is accepted. Adoption of the actual journal
+parser requires the journal owner's reviewed file SHA and root binding. Other
+memory/goals/task/calendar/notification interfaces remain injected synthetic
+contracts with opaque string revisions, discriminated from numeric journal
+revisions. No unpublished internal-api module or broad admin read is imported.
+
+After a confirmed authoritative correction/forget, the owning adapter must
+invalidate derived indices and persist the review invalidation fence before
+reuse. Failed deletion cannot be reported as success. This core cannot delete
+original journals or build a private memory index.
+
+SQLite state writes are transactional; alarm reconciliation is a separate
+awaited operation. Resubmitting the same immutable occurrence repairs an
+interrupted alarm write. Atomic state/alarm crash qualification and authenticated
+recovery ingress are held activation gates. Terminal fences prevent late alarms
+from executing work, even after cancellation or restart.
+
+## Bounded cost assumptions
+
+Official documentation was checked on 2026-10-12. These are illustrative
+assumptions, not observed usage, account spend or latency. Shared allowances,
+actual retries, retention overhead, logs, database and provider costs are unknown.
+
+Assume 1,000 opted-in paid users, one daily due event, 30 days: `30,000`
+occurrences. Disabled users emit no events. Assume five DO invocations, one
+active second, 10 SQLite writes, 20 reads and 2 KB retained metadata per
+occurrence. These counts must be measured against a qualified native runtime.
+
+| Candidate | Assumed monthly work |
+| --- | --- |
+| SQLite DO wake-on-due | 150,000 requests; 3,840 GB-s at 128 MB; 300,000 row writes; 600,000 reads; at most 0.06 GB metadata before overhead |
+| Workflows, six steps/occurrence | 30,000 invocations; 180,000 steps; 3 million CPU ms at 100 ms/occurrence; at most 0.12 GB assuming 4 KB state/instance |
+| Per-user five-minute heartbeat | 8,640,000 alarm invocations, 288 times the due wake count; 110,592 GB-s assuming 100 ms active/wake. Not selected. |
+| One global five-minute Cron | 8,640 Worker invocations and 8.64 million candidate checks if each wake scans 1,000 users. Not added. |
+
+[Workflows pricing](https://developers.cloudflare.com/workflows/reference/pricing/)
+uses Workers request/CPU rates plus steps and storage. Steps/storage billing
+started August 10, 2026. Paid allowances are 10 million requests, 30 million CPU
+ms, 500,000 steps and 1 GB-month. Overage rates are $0.30/million requests,
+$0.02/million CPU ms, $0.80/100,000 steps and $0.20/GB-month. Idle waits use no CPU;
+retained state still counts. With shared allowances exhausted, raw-rate scenario
+amounts are `$0.009 + $0.06 + $1.44 + $0.024 = $1.533` before billing granularity,
+account minimum or other services. With all allowances available, these modeled
+dimensions fit within them; that does not make the account or providers free.
+
+[DO pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)
+includes 1 million requests, 400,000 GB-s, 25 billion row reads, 50 million writes
+and 5 GB-month monthly on Paid. Excess rates are $0.15/million requests,
+$12.50/million GB-s, $0.001/million reads, $1/million writes and $0.20/GB-month.
+Compute excess rounds up to the next billable unit. With exhausted compute
+allowances, 150,000 extra requests round to one million, or $0.15, and 3,840
+extra GB-s round to one million GB-s, or $12.50. Raw SQL rate products are $0.30
+writes, $0.0006 reads and $0.012 storage before SKU rounding. Alarm scheduling
+counts as a row write; deletes count as writes and KV methods bill SQLite rows.
+Waiting on network I/O can keep a DO active and billed. The synthetic one-second
+assumption cannot be extrapolated to model calls.
+
+[Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
+has a $5 paid-account monthly minimum and shared request/CPU allowances.
+[Cron](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
+uses UTC schedules; it supplies neither consent nor a total spend fence.
+[DO alarms](https://developers.cloudflare.com/durable-objects/api/alarms/)
+have one slot per object, at-least-once execution and up to six automatic retries
+starting at two seconds. Deleting an alarm cannot replace a terminal fence.
+
+[Agents schedules](https://developers.cloudflare.com/agents/runtime/execution/schedule-tasks/)
+use SQLite and DO alarms. Count their underlying costs; the attempted standalone
+Agents pricing URL was unavailable, so no separate free-price claim is made.
+[Agents limits](https://developers.cloudflare.com/agents/platform/limits/)
+include 30 seconds default CPU/event and 1 GB state/agent.
+[Workflows limits](https://developers.cloudflare.com/workflows/reference/limits/)
+include 1 MiB event/result payloads, 300 creations/second/account and
+100/second/workflow on Paid. Scheduling is not authority to spend or retry
+external effects indefinitely.
+
+## Verification and activation gates
+
+```sh
+cd apps/coordination
+ttr resources run -- bun x --no-install vitest run --config vitest.config.ts src/proactive --maxWorkers=1
+```
+
+Tests use fake clocks, synthetic authority and actual local SQLite. The storage
+seam test replaces the Cloudflare base class, so it is not native workerd/hosted
+DO proof. Coverage binds due admission, cancellation/replay/recovery, rollback,
+evidence/approval fences, bounded feedback revisions and idempotent receipts.
+
+Before activation, root must bind actual paid/personal identity, consent,
+permission, revocation/deletion, source and atomic budget adapters. Qualify native
+alarm/crash/restart behavior, operation counts and durable terminal stop fences.
+Require bounded strict ingress with signed tenant/audience/expiry/replay checks
+or scoped service-binding identity and narrow secret references. This milestone
+installs no endpoint or shared admin credential.
+
+Require exact-commit tests/type/lint/build CI, staging acceptance and a finite
+canary cost budget. Provider acceptance/unknown-outcome tests are required if a
+real provider is added. Root alone authorizes promotion/rollback. Rollback stops
+admission, persists cancellation/revocation and removes future alarms; retain and
+inspect unknown outcomes before replay. A rate limit, CPU cap, billing alert or
+redeploy alone is not a total-spend stop mechanism.
