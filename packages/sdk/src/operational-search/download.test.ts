@@ -100,6 +100,64 @@ function fixture() {
   return { directory, path: join(directory, 'fixture.gguf') };
 }
 
+it('follows the exact documented CDN redirect with credentials omitted and verifies bytes', async () => {
+  const { directory, path } = fixture();
+  const target =
+    'https://us.aws.cdn.hf.co/xet-bridge-us/synthetic?signature=fixture';
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      new Response(null, { status: 302, headers: { location: target } })
+    )
+    .mockResolvedValueOnce(new Response(bytes));
+  try {
+    await expect(
+      downloadArtifact({ path, artifact, fetcher })
+    ).resolves.toEqual({
+      verified: true,
+      bytes: bytes.length,
+      sha256: artifact.sha256,
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1]?.[0]).toBe(target);
+    for (const [, options] of fetcher.mock.calls)
+      expect(options).toMatchObject({
+        credentials: 'omit',
+        redirect: 'manual',
+      });
+    expect(readFileSync(path)).toEqual(bytes);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it.each([
+  'https://us.aws.cdn.hf.co.attacker.example/model',
+  'https://unknown.example/model',
+  'http://us.aws.cdn.hf.co/model',
+  'https://user:pass@us.aws.cdn.hf.co/model',
+  'https://us.aws.cdn.hf.co:444/model',
+])(
+  'rejects unsafe CDN redirect authority before requesting target: %s',
+  async (target) => {
+    const { directory, path } = fixture();
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(null, { status: 302, headers: { location: target } })
+      );
+    try {
+      await expect(
+        downloadArtifact({ path, artifact, fetcher })
+      ).rejects.toThrow('approved public artifact hosts');
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(readFileSync(partialPath(path)).length).toBe(0);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }
+);
+
 it('resumes a retained partial file and promotes only a size/hash/format verified artifact', async () => {
   const { directory, path } = fixture();
   const first = vi

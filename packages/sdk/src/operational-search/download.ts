@@ -90,10 +90,12 @@ async function publicResponse(
     const parsed = new URL(next);
     if (
       parsed.protocol !== 'https:' ||
+      parsed.port !== '' ||
       parsed.username ||
       parsed.password ||
       ![
         'huggingface.co',
+        'us.aws.cdn.hf.co',
         'cas-bridge.xethub.hf.co',
         'cdn-lfs.huggingface.co',
         'cdn-lfs-us-1.huggingface.co',
