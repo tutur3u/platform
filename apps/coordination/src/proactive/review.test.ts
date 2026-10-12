@@ -1,16 +1,16 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import {
-  contextKindSchema,
   type Authority,
   type AuthoritySnapshot,
+  contextKindSchema,
   type DueJob,
 } from './contracts';
 import { DueJobEngine } from './engine';
 import {
+  type ContextEvidence,
   evidenceSchema,
   PlanReviewEngine,
-  type ContextEvidence,
 } from './review';
 import { SqliteJobStore, SqliteReviewStore } from './sqlite-store';
 

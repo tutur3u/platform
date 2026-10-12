@@ -1,9 +1,9 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
-import { DueJobEngine } from './engine';
 import { unavailableAuthority } from './authority';
-import { SqliteJobStore } from './sqlite-store';
 import type { DueJob, JobState } from './contracts';
+import { DueJobEngine } from './engine';
+import { SqliteJobStore } from './sqlite-store';
 
 const job: DueJob = {
   actorId: 'a',

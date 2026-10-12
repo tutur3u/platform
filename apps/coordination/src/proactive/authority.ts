@@ -1,11 +1,11 @@
 import {
-  authoritySnapshotSchema,
-  MAX_RUNS,
-  MIN_CADENCE_MS,
   type Authority,
   type AuthoritySnapshot,
+  authoritySnapshotSchema,
   type DueJob,
   type Identity,
+  MAX_RUNS,
+  MIN_CADENCE_MS,
 } from './contracts';
 
 export const unavailableAuthority: Authority = {

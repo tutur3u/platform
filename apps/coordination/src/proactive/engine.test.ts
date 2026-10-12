@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { unavailableAuthority } from './authority';
-import { DueJobEngine, nextWake } from './engine';
 import type {
   Authority,
   AuthoritySnapshot,
@@ -8,6 +7,7 @@ import type {
   JobState,
   JobStore,
 } from './contracts';
+import { DueJobEngine, nextWake } from './engine';
 
 const now = Date.UTC(2026, 9, 12, 12);
 const job: DueJob = {

@@ -1,10 +1,10 @@
-import {
-  reviewStateSchema,
-  type ReviewState,
-  type ReviewStore,
-} from './review';
 import type { DueJob, JobState, JobStore, Phase } from './contracts';
 import { sameJob, validJob } from './engine';
+import {
+  type ReviewState,
+  type ReviewStore,
+  reviewStateSchema,
+} from './review';
 
 export interface SqlExecutor {
   exec(

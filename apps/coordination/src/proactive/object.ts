@@ -4,9 +4,9 @@ import type { Authority, DueJob, Identity } from './contracts';
 import { DueJobEngine, nextWake } from './engine';
 import { PlanReviewEngine, type SelectedApproval } from './review';
 import {
+  type SqlExecutor,
   SqliteJobStore,
   SqliteReviewStore,
-  type SqlExecutor,
 } from './sqlite-store';
 
 export interface AdapterStorage {

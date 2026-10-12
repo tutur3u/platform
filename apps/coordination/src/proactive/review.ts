@@ -1,17 +1,18 @@
 import { z } from 'zod';
 import { admissionReason, readAuthority } from './authority';
 import {
-  evidenceSchema,
-  type ContextEvidence,
-  type WorkContext,
   type Authority,
+  type AuthoritySnapshot,
+  type ContextEvidence,
   type DueJob,
+  evidenceSchema,
   type Identity,
   type JobStore,
+  type WorkContext,
 } from './contracts';
 
-export { evidenceSchema } from './contracts';
 export type { ContextEvidence, WorkContext } from './contracts';
+export { evidenceSchema } from './contracts';
 
 const planSchema = z
   .object({
@@ -109,7 +110,7 @@ export class PlanReviewEngine {
     plan?: ReviewablePlan
   ): Promise<WorkContext | string> {
     const now = this.clock();
-    let snapshot;
+    let snapshot: AuthoritySnapshot;
     try {
       snapshot = await readAuthority(this.authority, job, now);
     } catch {

@@ -90,6 +90,17 @@ memory/goals/task/calendar/notification interfaces remain injected synthetic
 contracts with opaque string revisions, discriminated from numeric journal
 revisions. No unpublished internal-api module or broad admin read is imported.
 
+`journal-reference.ts` independently validates the reviewed canonical metadata
+contract, preserving numeric `sourceVersion`, GUID identifiers, exact millisecond
+UTC timestamps and positive consent versions. A root-injected parser descriptor
+must carry the reviewed parser SHA and return the same strict metadata. The
+explicit `sourceVersion` to internal `sourceRevision` alias does not coerce or
+default a value. Canonical GUIDs that fail the stricter internal UUID union are
+denied. Missing parser qualification denies even valid-looking fixtures. Returned
+references are synthetic-only with runtime admission denied; there is no import
+of the journal branch, provider or private content. An actual parser binding and
+union qualification remain separate root-owned work.
+
 After a confirmed authoritative correction/forget, the owning adapter must
 invalidate derived indices and persist the review invalidation fence before
 reuse. Failed deletion cannot be reported as success. This core cannot delete

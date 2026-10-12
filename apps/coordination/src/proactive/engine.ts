@@ -1,12 +1,13 @@
 import { admissionReason, readAuthority } from './authority';
 import {
-  LEASE_MS,
-  MAX_LIFETIME_MS,
   type Authority,
+  type AuthoritySnapshot,
   type DueJob,
   type Identity,
   type JobState,
   type JobStore,
+  LEASE_MS,
+  MAX_LIFETIME_MS,
   type Outcome,
 } from './contracts';
 
@@ -59,7 +60,7 @@ export class DueJobEngine {
     if (!validJob(job)) return { kind: 'denied', reason: 'invalid-job' };
     const now = this.clock();
     if (now >= job.expiresAt) return { kind: 'denied', reason: 'expired' };
-    let snapshot;
+    let snapshot: AuthoritySnapshot;
     try {
       snapshot = await readAuthority(this.authority, job, now);
     } catch {
@@ -106,7 +107,7 @@ export class DueJobEngine {
       return { kind: 'state', state: initial };
     if (initial.job.dueAt > this.clock())
       return { kind: 'waiting', at: initial.job.dueAt };
-    let snapshot;
+    let snapshot: AuthoritySnapshot;
     try {
       snapshot = await readAuthority(this.authority, initial.job, this.clock());
     } catch {

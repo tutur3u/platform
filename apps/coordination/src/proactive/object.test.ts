@@ -1,7 +1,9 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it, vi } from 'vitest';
 import type { DueJob } from './contracts';
+
 vi.mock('cloudflare:workers', () => ({ DurableObject: class {} }));
+
 import { createProactiveAdapter } from './object';
 
 it('inactive adapter denies authority and has no alarm after synthetic calls/restart', async () => {
