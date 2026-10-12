@@ -1,0 +1,103 @@
+---
+title: 'Personal journal'
+description: 'Private original journal entries, self-reported mood, and a timezone-aware life and work timeline.'
+---
+
+## Scope and delivery state
+
+The first source slice adds a personal-workspace web journal at
+`/[wsId]/personal-journal`. It preserves original words, event time, the entry's
+chosen IANA timezone, an optional self-reported mood and context, life/work domain,
+and reflection/good moment/challenge/milestone category. No mood is inferred and
+no diagnostic interpretation is made. Existing Notes, mobile profile activity,
+calendar attribution, public profiles, and shared activity consent are unchanged.
+Mobile editing, search, deletion/reopening, source-linked AI reflections, finance,
+social context, and proactive actions remain separate delivery units.
+
+The live storage provider is deliberately unavailable until the migration has
+been applied in ROOT's isolated environment and fresh generated Supabase types
+support the real provider. The API returns `503`, never a simulated save or an
+empty history. Source tests and setup do not prove SQL application or runtime
+acceptance. Relevant exact-commit app build, type, lint, tests, SQL assertions, and
+authenticated runtime evidence are required before delivery is complete.
+
+## Privacy and original source
+
+Journal entries and revision receipts are in separate `private` tables. No
+anonymous or authenticated table/RPC grant exists. Session authorization revalidates
+the current actor with Supabase Auth, accepts the `personal` alias or a UUID
+without privileged handle fallback, verifies MEMBER membership, and
+checks that the workspace is personal, undeleted, and created by that actor before
+storage access. The private service RPC repeats the personal-workspace check.
+Every read and write remains bound to actor, workspace and entry. A disabled
+navigation item is only presentation, never an authorization boundary.
+
+Workspace Notes is unsuitable as unchanged journal storage: its current database
+read policies permit workspace members, and its editor rewrites its document.
+The legacy private per-user notes table is retained without repurposing it.
+Journal original body and self-reported mood never enter public profile or shared
+workspace activity reads.
+
+## Saves, conflicts and history
+
+A create has a stable client UUID. Its UUID is also its initial operation ID.
+Replaying exactly the same original document returns the original receipt.
+Reusing that ID with different content conflicts. An edit has a distinct stable
+operation UUID and expected revision. The private writer serializes an entry,
+checks the revision, then updates the current entry and inserts an immutable
+revision receipt in one transaction. An exact retry returns its receipt even if a
+later independent edit exists. It does not rewrite history or add a revision.
+
+The editor serializes saves and waits for a receipt matching actor, workspace,
+entry ID, revision and original document. It autosaves valid drafts after 700 ms.
+An unsuccessful or ambiguous response retains the immutable attempt and draft on
+this page. Retry sends that same attempt. A `409` stops retries and preserves the
+draft. The user can reread the current saved source, compare it with the draft,
+and explicitly save that draft with a fresh operation and expected revision.
+Another concurrent edit still conflicts. It never silently overwrites the newer entry. During pending,
+unconfirmed or conflicted edits, changing entries is disabled. The current web
+slice has no durable offline outbox: leaving or reloading can lose an unsaved draft,
+and the UI explicitly says so. It never labels an unconfirmed write as saved.
+
+## Timeline and accessibility
+
+The timeline displays original source text and explicit self-reported mood.
+Day/month/year grouping uses the user-selected display timezone. Weeks start on
+Monday in that timezone, including weeks spanning a year boundary. The entry's
+original UTC instant and captured timezone remain intact. The initial display
+zone comes from the device and is editable; team timezone is not assumed.
+
+Lists use keyset continuation, with at most 100 entries per page. The interface
+labels partial history while more pages remain; a failed read does not become an
+empty-history claim. All controls have labels, status changes use a live region,
+invalid timestamp/timezone/body fields have associated accessible errors,
+text wraps, and every journal string is provided in English and Vietnamese.
+
+## Metadata references and future consented context
+
+A portable journal source reference contains only kind, actor ID, verified
+personal workspace ID, source UUID, exact source revision, UTC observation/expiry,
+and authoritative consent/deletion/revocation versions. It contains no title,
+body or mood. Missing authority, disabled consent, deletion, revocation, scope or
+revision mismatch, stale observation or expiry produces an unqualified result.
+The current projection requires an observation no older than 60 seconds and a
+lifetime at most five minutes. It is an injected source contract, not a qualified
+production consent provider or permission to start a scheduler.
+
+Future journal/goals context must use the existing product memory service and
+separate explicit journal consent. References preserve source provenance and
+revision. Inspection/correction/forgetting and index invalidation must honor
+source deletion and consent revocation. Existing successful missing-row memory
+defaults cannot be treated as explicit journal consent. Dreaming cannot silently
+copy private original journal content into another consent store.
+
+## Regression evidence
+
+`packages/internal-api/src/personal-journal.test.ts` checks original-source
+validation, timezone boundaries and malformed success payloads.
+`apps/web/src/lib/personal-journal/` tests cover actor/workspace guards and denied
+unqualified storage. Draft and metadata tests cover exact receipt matching and
+consent/scope/version fences. `apps/database/supabase/tests/personal-journal.sql`
+uses transactional synthetic actors to exercise actual SQL replay, stale-edit
+conflict, immutable original history, private grants and workspace-scope revocation;
+it still must run against the applied schema before being reported as passing.

@@ -217,6 +217,11 @@
       "import": "./dist/notes.js",
       "require": "./dist/notes.js"
     },
+    "./personal-journal": {
+      "types": "./dist/personal-journal.d.ts",
+      "import": "./dist/personal-journal.js",
+      "require": "./dist/personal-journal.js"
+    },
     "./onboarding": {
       "types": "./dist/onboarding.d.ts",
       "import": "./dist/onboarding.js",
