@@ -56,7 +56,7 @@ def main():
     if model.stat().st_mode & 0o077 or cache.stat().st_mode & 0o077:
         raise ValueError("model and runtime cache must be private")
     with EmbeddingEngine(str(model), backend=Backend.CPU(thread_count=1),
-                         max_input_length=512) as engine:
+                         cache_dir=':nocache', max_input_length=512) as engine:
         response = engine.compute_embedding(text, options=EmbeddingOptions(normalize=True, output_size=768, input_overflow_strategy=InputOverflowStrategy.ERROR))
         vector = list(response.embedding)
     if len(vector) != 768 or not all(math.isfinite(value) for value in vector) or not any(vector):

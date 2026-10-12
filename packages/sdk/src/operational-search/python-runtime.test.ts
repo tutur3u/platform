@@ -93,6 +93,41 @@ it('ships exact owned adapter source with deterministic hash through TypeScript 
   );
 });
 
+it('constructs the actual adapter call with explicit no-cache policy and unchanged CPU and file limits', () => {
+  const control = [
+    'import ast,json,sys,types',
+    'tree=ast.parse(open(sys.argv[1],encoding="utf8").read())',
+    'calls=[]',
+    'resource=types.SimpleNamespace(RLIMIT_CPU="CPU",RLIMIT_FSIZE="FSIZE",setrlimit=lambda key,value:calls.append([key,value]))',
+    'backend=types.SimpleNamespace(CPU=lambda **kwargs:{"cpu":kwargs})',
+    'engine=lambda model,**kwargs:{"model":model,**kwargs}',
+    'scope={"resource":resource,"Backend":backend,"EmbeddingEngine":engine,"model":"synthetic-model"}',
+    'constructors=[node for node in ast.walk(tree) if isinstance(node,ast.Call) and isinstance(node.func,ast.Name) and node.func.id=="EmbeddingEngine"]',
+    'assert len(constructors)==1',
+    'for node in ast.walk(tree):',
+    ' if isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and isinstance(node.func.value,ast.Name) and node.func.value.id=="resource" and node.func.attr=="setrlimit":eval(compile(ast.Expression(node),"synthetic-control","eval"),scope)',
+    'created=eval(compile(ast.Expression(constructors[0]),"synthetic-control","eval"),scope)',
+    'print(json.dumps({"engine":created,"limits":calls}))',
+  ].join('\n');
+  const result = execFileSync(
+    process.env.TTR_TEST_PYTHON ?? 'python3',
+    ['-I', '-B', '-c', control, join(import.meta.dirname, 'python-adapter.py')],
+    { encoding: 'utf8', timeout: 5000, maxBuffer: 4096 }
+  );
+  expect(JSON.parse(result)).toEqual({
+    engine: {
+      model: 'synthetic-model',
+      backend: { cpu: { thread_count: 1 } },
+      cache_dir: ':nocache',
+      max_input_length: 512,
+    },
+    limits: [
+      ['CPU', [20, 20]],
+      ['FSIZE', [0, 0]],
+    ],
+  });
+});
+
 it('embeds unchanged manifest bytes and regenerates identical resources offline', () => {
   for (const [filename, embedded, hash] of [
     [
