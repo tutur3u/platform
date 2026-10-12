@@ -3,12 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
+import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_prompt_editor.dart';
+import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Changes the existing shell action without painting another dock surface.
-class AssistantComposerPrimaryAction extends StatelessWidget {
+class AssistantComposerPrimaryAction extends StatefulWidget
+    implements PreferredSizeWidget {
   const AssistantComposerPrimaryAction({
     required this.controller,
     required this.focusNode,
@@ -20,6 +24,8 @@ class AssistantComposerPrimaryAction extends StatelessWidget {
     this.blocked = false,
     this.localGenerating = false,
     this.onStopLocal,
+    this.attachments = const [],
+    this.onRemoveAttachment,
     super.key,
   });
 
@@ -34,9 +40,108 @@ class AssistantComposerPrimaryAction extends StatelessWidget {
   final bool localGenerating;
   final Future<void> Function()? onStopLocal;
 
+  static const double dockHeight = 96;
+  @override
+  Size get preferredSize => const Size(52, dockHeight);
+  final List<AssistantAttachment> attachments;
+  final Future<void> Function(String)? onRemoveAttachment;
+  @override
+  State<AssistantComposerPrimaryAction> createState() => _PrimaryActionState();
+}
+
+class _PrimaryActionState extends State<AssistantComposerPrimaryAction> {
+  late final ValueNotifier<List<AssistantAttachment>> _attachments =
+      ValueNotifier(widget.attachments);
+  bool _editing = false;
+  bool _syncScheduled = false;
+  BuildContext? _editorContext;
+  @override
+  void didUpdateWidget(AssistantComposerPrimaryAction oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_editing && !_syncScheduled) {
+      _syncScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _syncScheduled = false;
+        if (mounted && _editing) _attachments.value = widget.attachments;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    final editor = _editorContext;
+    if (editor != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!editor.mounted) return;
+        final route = ModalRoute.of(editor);
+        if (route != null && route.isActive) {
+          Navigator.of(editor).removeRoute(route);
+        }
+      });
+    }
+    if (!_editing) _attachments.dispose();
+    super.dispose();
+  }
+
+  Future<void> _expand() async {
+    if (_editing) return;
+    _editing = true;
+    _attachments.value = widget.attachments;
+    final controller = widget.controller;
+    final focus = widget.focusNode;
+    final restoreFocus = focus.hasFocus;
+    focus.unfocus();
+    try {
+      await pushScopedSettingsPage(
+        context,
+        rootNavigator: true,
+        builder: (context, isCurrent) {
+          _editorContext = context;
+          return AssistantPromptEditor(
+            controller: controller,
+            attachments: _attachments,
+            onRemoveAttachment: (id) async {
+              if (mounted && isCurrent()) {
+                await widget.onRemoveAttachment?.call(id);
+              }
+            },
+          );
+        },
+      );
+    } finally {
+      _editorContext = null;
+      _editing = false;
+      if (mounted) {
+        if (restoreFocus) focus.requestFocus();
+      } else {
+        _attachments.dispose();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final capture = voiceCapture;
+    final action = _action(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextFieldTapRegion(
+          child: IconButton(
+            key: const ValueKey('assistant-expand-prompt'),
+            constraints: const BoxConstraints.tightFor(width: 52, height: 44),
+            padding: EdgeInsets.zero,
+            tooltip: context.l10n.assistantExpandPrompt,
+            onPressed: () => unawaited(_expand()),
+            icon: const Icon(Icons.open_in_full_rounded),
+          ),
+        ),
+        action,
+      ],
+    );
+  }
+
+  Widget _action(BuildContext context) {
+    final capture = widget.voiceCapture;
     if (capture == null) return _textAction(context, null);
     return BlocBuilder<AssistantVoiceCaptureCubit, AssistantVoiceCaptureState>(
       bloc: capture,
@@ -46,22 +151,23 @@ class AssistantComposerPrimaryAction extends StatelessWidget {
 
   Widget _textAction(BuildContext context, AssistantVoiceCaptureState? voice) =>
       ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
+        valueListenable: widget.controller,
         builder: (context, value, _) {
           final l10n = context.l10n;
-          final hasPrompt = value.text.trim().isNotEmpty || hasAttachments;
+          final hasPrompt =
+              value.text.trim().isNotEmpty || widget.hasAttachments;
           final voiceVisible = voice?.visible ?? false;
           final recording = voice?.recording ?? false;
           final paused = voice?.paused ?? false;
           final sends = hasPrompt || paused;
-          final icon = localGenerating
+          final icon = widget.localGenerating
               ? Icons.stop_rounded
               : recording
               ? Icons.pause_rounded
               : sends
               ? Icons.arrow_upward_rounded
               : Icons.menu_rounded;
-          final label = localGenerating
+          final label = widget.localGenerating
               ? l10n.assistantLocalStop
               : recording
               ? l10n.voicePause
@@ -76,24 +182,24 @@ class AssistantComposerPrimaryAction extends StatelessWidget {
               id: 'assistant-composer-primary',
               icon: icon,
               tooltip: label,
-              enabled: localGenerating
-                  ? onStopLocal != null
+              enabled: widget.localGenerating
+                  ? widget.onStopLocal != null
                   : voiceVisible
                   ? !(voice?.busy ?? false) &&
-                        (recording || (paused && onSendVoice != null))
-                  : !hasPrompt || !blocked,
+                        (recording || (paused && widget.onSendVoice != null))
+                  : !hasPrompt || !widget.blocked,
               onPressed: () {
-                if (localGenerating) {
-                  unawaited(onStopLocal?.call());
+                if (widget.localGenerating) {
+                  unawaited(widget.onStopLocal?.call());
                 } else if (recording) {
-                  unawaited(voiceCapture?.pause());
+                  unawaited(widget.voiceCapture?.pause());
                 } else if (paused) {
-                  unawaited(onSendVoice?.call());
+                  unawaited(widget.onSendVoice?.call());
                 } else if (hasPrompt) {
-                  unawaited(onSend());
+                  unawaited(widget.onSend());
                 } else {
-                  focusNode.unfocus();
-                  onToggleNavigation();
+                  widget.focusNode.unfocus();
+                  widget.onToggleNavigation();
                 }
               },
             ),
