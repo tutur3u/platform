@@ -2294,6 +2294,7 @@
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
+        "zod": "4.6.2",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
