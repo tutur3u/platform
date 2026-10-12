@@ -14,6 +14,10 @@ import { bytesHash } from './cache';
 import {
   PYTHON_ADAPTER_CODE,
   PYTHON_ADAPTER_HASH,
+  PYTHON_INSTALLATION_MANIFEST,
+  PYTHON_INSTALLATION_MANIFEST_HASH,
+  PYTHON_RUNTIME_MANIFEST,
+  PYTHON_RUNTIME_MANIFEST_HASH,
 } from './python-adapter-code';
 import {
   authenticatePythonInstallation,
@@ -31,6 +35,52 @@ it('ships exact owned adapter source with deterministic hash through TypeScript 
   expect(PYTHON_ADAPTER_CODE).toContain(
     'resource.setrlimit(resource.RLIMIT_CPU, (20, 20))'
   );
+});
+
+it('embeds unchanged manifest bytes and regenerates identical resources offline', () => {
+  for (const [filename, embedded, hash] of [
+    [
+      'python-runtime-manifest.json',
+      PYTHON_RUNTIME_MANIFEST,
+      PYTHON_RUNTIME_MANIFEST_HASH,
+    ],
+    [
+      'python-installation-manifest.json',
+      PYTHON_INSTALLATION_MANIFEST,
+      PYTHON_INSTALLATION_MANIFEST_HASH,
+    ],
+  ] as const) {
+    const bytes = readFileSync(join(import.meta.dirname, filename));
+    expect(bytesHash(bytes)).toBe(hash);
+    expect(embedded).toEqual(JSON.parse(bytes.toString('utf8')));
+  }
+  const directory = mkdtempSync(join(tmpdir(), 'ttr-embedded-resources-'));
+  const generated = readFileSync(
+    join(import.meta.dirname, 'python-adapter-code.ts'),
+    'utf8'
+  );
+  try {
+    for (const filename of ['first.ts', 'second.ts']) {
+      const output = join(directory, filename);
+      execFileSync(
+        process.env.TTR_TEST_PYTHON ?? 'python3',
+        [
+          '-I',
+          '-B',
+          '-c',
+          'import runpy,sys,urllib.request; urllib.request.urlopen=lambda *a,**k: (_ for _ in ()).throw(RuntimeError("network forbidden")); sys.argv=sys.argv[1:]; runpy.run_path(sys.argv[0],run_name="__main__")',
+          join(import.meta.dirname, 'prepare-python-runtime.py'),
+          '--embed-only',
+          '--embed-adapter',
+          output,
+        ],
+        { timeout: 5000, maxBuffer: 4096 }
+      );
+      expect(readFileSync(output, 'utf8')).toBe(generated);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 it('rejects a fake same-version interpreter before any execution or child self-report', async () => {
@@ -77,3 +127,5 @@ it('requires a private explicit runtime root and counts only its finite own stor
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+import { execFileSync } from 'node:child_process';

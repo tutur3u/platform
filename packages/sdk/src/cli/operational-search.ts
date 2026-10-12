@@ -161,7 +161,7 @@ export async function runOperationalSearch(
     );
   const readProjection =
     injected?.readProjection ??
-    (await import('../operational-graph/reader'))
+    (await import('../operational-graph/reader.js'))
       .readOutcomeProjectionPageFromPath;
   const cachePath = flags.get('cache');
   if (cachePath) assertDerivedPath(path, cachePath);

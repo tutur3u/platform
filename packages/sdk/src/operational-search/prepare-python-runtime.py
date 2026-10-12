@@ -1,5 +1,6 @@
 """Verify a finite pip resolution against PyPI and emit an exact wheel lock."""
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -16,13 +17,44 @@ def metadata(name, version):
     return json.loads(body), url
 
 
+def embed_resources(output):
+    source = Path(__file__).parent
+    adapter = (source / "python-adapter.py").read_bytes()
+    generated = "// Generated from python-adapter.py by prepare-python-runtime.py.\n"
+    generated += "// biome-ignore-all format: deterministic generated resources\n"
+    generated += "export const PYTHON_ADAPTER_CODE = " + json.dumps(adapter.decode()) + ";\n"
+    generated += "export const PYTHON_ADAPTER_HASH = " + json.dumps(hashlib.sha256(adapter).hexdigest()) + ";\n"
+    for constant, filename in [("PYTHON_RUNTIME_MANIFEST", "python-runtime-manifest.json"),
+                               ("PYTHON_INSTALLATION_MANIFEST", "python-installation-manifest.json")]:
+        content = (source / filename).read_bytes()
+        generated += "export const " + constant + " = " + json.dumps(json.loads(content), separators=(",", ":")) + ";\n"
+        generated += "export const " + constant + "_HASH = " + json.dumps(hashlib.sha256(content).hexdigest()) + ";\n"
+    output_path = Path(output)
+    if output_path.exists() and not output_path.read_text().startswith("// Generated from python-adapter.py by prepare-python-runtime.py.\n"):
+        raise ValueError("refusing to replace an unrelated adapter file")
+    fd = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as target:
+        target.write(generated)
+        target.flush()
+        os.fsync(target.fileno())
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--report", required=True)
-    parser.add_argument("--manifest", required=True)
-    parser.add_argument("--requirements", required=True)
+    parser.add_argument("--report")
+    parser.add_argument("--manifest")
+    parser.add_argument("--requirements")
     parser.add_argument("--embed-adapter")
+    parser.add_argument("--embed-only", action="store_true")
     args = parser.parse_args()
+    if args.embed_only:
+        if not args.embed_adapter or any([args.report, args.manifest, args.requirements]):
+            parser.error("--embed-only requires only --embed-adapter")
+        embed_resources(args.embed_adapter)
+        print(json.dumps({"embedded": True, "offline": True, "modelDownloaded": False}))
+        return
+    if not all([args.report, args.manifest, args.requirements]):
+        parser.error("wheel verification requires --report, --manifest and --requirements")
     report = json.loads(Path(args.report).read_text())
     records = report["install"]
     if not 1 <= len(records) <= 20:
@@ -78,17 +110,7 @@ def main():
             output.flush()
             os.fsync(output.fileno())
     if args.embed_adapter:
-        adapter = Path(__file__).with_name("python-adapter.py").read_text()
-        import hashlib
-        generated = "// Generated from python-adapter.py by prepare-python-runtime.py.\n"
-        generated += "export const PYTHON_ADAPTER_CODE = " + json.dumps(adapter) + ";\n"
-        generated += "export const PYTHON_ADAPTER_HASH = " + json.dumps(hashlib.sha256(adapter.encode()).hexdigest()) + ";\n"
-        output_path = Path(args.embed_adapter)
-        if output_path.exists() and not output_path.read_text().startswith("// Generated from python-adapter.py by prepare-python-runtime.py.\n"):
-            raise ValueError("refusing to replace an unrelated adapter file")
-        fd = os.open(args.embed_adapter, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-        with os.fdopen(fd, "w") as output:
-            output.write(generated)
+        embed_resources(args.embed_adapter)
     print(json.dumps({"verifiedWheels": len(wheels), "bytes": total, "installed": False, "modelDownloaded": False}))
 
 

@@ -20,15 +20,11 @@ import { LITERT_RECIPE, TEXT_LITERT } from './artifact';
 import { bytesHash } from './cache';
 import { verifyArtifact } from './download';
 import {
+  PYTHON_INSTALLATION_MANIFEST as installationManifest,
   PYTHON_ADAPTER_CODE,
   PYTHON_ADAPTER_HASH,
+  PYTHON_RUNTIME_MANIFEST as runtimeManifest,
 } from './python-adapter-code';
-import installationManifest from './python-installation-manifest.json' with {
-  type: 'json',
-};
-import runtimeManifest from './python-runtime-manifest.json' with {
-  type: 'json',
-};
 import { type EmbeddingRuntime, normalizeVector } from './runtime';
 
 export const MAX_PRIVATE_RUNTIME_BYTES = 512 * 1024 ** 2;
