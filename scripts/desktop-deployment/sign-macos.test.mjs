@@ -4,7 +4,24 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { withMacosSigning } from './sign-macos.mjs';
+import { withMacosSigning as signing } from './sign-macos.mjs';
+
+// Existing identity/notary controls use an isolated in-memory search list.
+function withMacosSigning(callback, options = {}) {
+  let list = [];
+  return signing(callback, {
+    ...options,
+    execute(command, args, settings) {
+      const result = options.execute(command, args, settings);
+      if (command !== 'security' || args[0] !== 'list-keychains') return result;
+      if (args.includes('-s')) {
+        list = args.slice(args.indexOf('-s') + 1);
+        return '';
+      }
+      return list.map((name) => JSON.stringify(name)).join('\n');
+    },
+  });
+}
 
 const inputs = {
   MACOS_CERTIFICATE_P12_B64: Buffer.from('fixture-certificate').toString(
