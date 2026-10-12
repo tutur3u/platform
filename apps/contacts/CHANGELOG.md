@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/contacts-v0.27.0...contacts-v0.28.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides and enforce app SEO and runtime pause ([e79cb7e](https://github.com/tutur3u/platform/commit/e79cb7e96c7db4d1baedb09b7420ca41b75e367f))
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+* **reports:** actionable delivery worklist and 100-email batches ([#6100](https://github.com/tutur3u/platform/issues/6100)) ([fc495aa](https://github.com/tutur3u/platform/commit/fc495aa5aa0fdfcf70359b9f6e9c600113eaff66))
+* **reports:** add actionable delivery worklist and 100-email batches ([4e86abc](https://github.com/tutur3u/platform/commit/4e86abcc9dfe127be0116c7d9bafc09addd6ae6f))
+* **tutoring:** offer staff-reviewed draft choices ([728953e](https://github.com/tutur3u/platform/commit/728953ec9819d0d14bbc084aaeb3c017efbebfc5)) ([#5999](https://github.com/tutur3u/platform/issues/5999)) ([e162583](https://github.com/tutur3u/platform/commit/e162583382b394f56500cc868b05f2d94cf17ad1))
+
+
+### Bug Fixes
+
+* **contacts:** add confirmed workspace report email gate control ([#5991](https://github.com/tutur3u/platform/issues/5991)) ([7e52a3f](https://github.com/tutur3u/platform/commit/7e52a3f2b71bb6d399c1fea77b50f1cf2b13e5a1))
+* **contacts:** add scoped report email gate confirmation ([ee903e7](https://github.com/tutur3u/platform/commit/ee903e77e119679b80213c3b9404f756df0079ea))
+* **contacts:** admit app sessions for topic list and preview ([#5995](https://github.com/tutur3u/platform/issues/5995)) ([8077863](https://github.com/tutur3u/platform/commit/8077863d0cc1024e53c551efd0a84dfd537cdede))
+* **contacts:** admit app sessions for topic reads and previews ([bc321d7](https://github.com/tutur3u/platform/commit/bc321d771c23569a8acde07f0467cca0e16a7cf2))
+* **contacts:** align periodic report approval permissions ([4c83050](https://github.com/tutur3u/platform/commit/4c83050cd3dcbc909aba2a84ec32553d9f41ac0a))
+* **contacts:** align report summary accessibility tests ([bef7f6d](https://github.com/tutur3u/platform/commit/bef7f6d25983a7a43003fbdff4e381b2d101d7bf))
+* **contacts:** allow approval-only supervisors to approve monthly reports ([#5987](https://github.com/tutur3u/platform/issues/5987)) ([b7eaadf](https://github.com/tutur3u/platform/commit/b7eaadfc2b0295e71c793fac138ba0f198066962))
+* **contacts:** fence tutoring create completion to its draft ([4ee838d](https://github.com/tutur3u/platform/commit/4ee838d9fa47e989039b88c4c3c7a6dbcc6fff65)) ([#6017](https://github.com/tutur3u/platform/issues/6017)) ([5774b64](https://github.com/tutur3u/platform/commit/5774b64226f7c1e5c0a56cd85792c0ab08898720))
+* **contacts:** guard monthly approval against unsaved previews ([f2cb3be](https://github.com/tutur3u/platform/commit/f2cb3be37f6b699ba995a4ea49a0db493f163a3d)) ([#6011](https://github.com/tutur3u/platform/issues/6011)) ([290e96b](https://github.com/tutur3u/platform/commit/290e96bc2f1f0129f1131bc753acdec0cd2d6dc1))
+* **contacts:** preserve admitted report queue requests ([46d26d2](https://github.com/tutur3u/platform/commit/46d26d29a739671d07799e768533dc82039cec1e))
+* **contacts:** preserve monthly report drafts during refresh ([#5989](https://github.com/tutur3u/platform/issues/5989)) ([c45d044](https://github.com/tutur3u/platform/commit/c45d0446f2eb7dfb473519786b633246923478e5))
+* **contacts:** preserve scoped tutoring queue handoffs ([40e471e](https://github.com/tutur3u/platform/commit/40e471ed8fd71f9f1a64d322f85605bfbb972dd3)) ([#5988](https://github.com/tutur3u/platform/issues/5988)) ([e4c6c36](https://github.com/tutur3u/platform/commit/e4c6c36fa3d9a84d80370f360a330488045b1f98))
+* **contacts:** preserve stored student archive intent ([c65a0bd](https://github.com/tutur3u/platform/commit/c65a0bd1eef27674f0fba99710a82d415f7be46f))
+* **contacts:** preserve student archive intent on unrelated edits ([#5992](https://github.com/tutur3u/platform/issues/5992)) ([7f73a20](https://github.com/tutur3u/platform/commit/7f73a205af07043686616377a38299d6eb37eaeb))
+* **contacts:** retain monthly report drafts across refreshes ([1c3945e](https://github.com/tutur3u/platform/commit/1c3945e7d7cd12d66eb324f6a7bfdd8123a55e87))
+* **finance:** bound subscription schedules and block invalid inventory ([f4163bf](https://github.com/tutur3u/platform/commit/f4163bf6697316a06a8b2d3922d9664937dd6940)) ([#5990](https://github.com/tutur3u/platform/issues/5990)) ([f2096f6](https://github.com/tutur3u/platform/commit/f2096f6e20d27dd998a03d11c7b0769d7f06bb2e))
+* **finance:** expose safe invoice history recovery ([8a53d36](https://github.com/tutur3u/platform/commit/8a53d367d6888e592a0d64f760d47234d858bd73)) ([#6034](https://github.com/tutur3u/platform/issues/6034)) ([fd65a3d](https://github.com/tutur3u/platform/commit/fd65a3db6f7472771374192ab07f5a97c6fcaee8))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **reports:** align approval reads with group tenancy ([c1b9836](https://github.com/tutur3u/platform/commit/c1b98363fcdee693e29a2ccfe9c27ba5a9429157)) ([#6030](https://github.com/tutur3u/platform/issues/6030)) ([9345665](https://github.com/tutur3u/platform/commit/93456655a760c62992228eb82216b74aa246b0c6))
+* **reports:** require explicit approval for ordinary report writes ([99f2548](https://github.com/tutur3u/platform/commit/99f254813edc0a7c1529d11fe38637528cfa9803)) ([#6016](https://github.com/tutur3u/platform/issues/6016)) ([1226576](https://github.com/tutur3u/platform/commit/12265760f93562242829deea1ddc8d8944897460))
+* **reports:** warn before uncertain delivery retries ([a5d1b3d](https://github.com/tutur3u/platform/commit/a5d1b3d3cd7ee6be4db54158eb927e4369a1080e)) ([#6002](https://github.com/tutur3u/platform/issues/6002)) ([a279fcb](https://github.com/tutur3u/platform/commit/a279fcbdffb6a8d278fd31df26a6da6d3b2d2610))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/contacts-v0.26.1...contacts-v0.27.0) (2026-10-04)
 
 

@@ -16,15 +16,37 @@ test('Meet generates source metadata before dependency and Worker builds', () =>
     step.run?.includes('scripts/ci/generate-build-metadata.ts')
   );
   assert.ok(index >= 0, 'shared metadata generation is missing');
-  for (const command of [
-    'packages/types build',
-    'turbo run build',
-    'build:cloudflare',
+  for (const [label, matchesBuild] of [
+    [
+      'types',
+      (command) =>
+        command.includes('bun turbo:local run build') &&
+        command.includes('--filter=@tuturuuu/types'),
+    ],
+    [
+      'supabase',
+      (command) =>
+        command.includes('bun turbo:local run build') &&
+        command.includes('--filter=@tuturuuu/supabase'),
+    ],
+    [
+      'Meet core dependencies',
+      (command) =>
+        command.includes('bun turbo:local run build') &&
+        command.includes("--filter='@tuturuuu/meet-core^...'"),
+    ],
+    ['Worker', (command) => command.includes('bun run build:cloudflare')],
   ]) {
-    const build = steps.findIndex((step) =>
-      (step.run ?? step.with?.command ?? '').includes(command)
+    const builds = steps.flatMap((step, buildIndex) =>
+      matchesBuild(step.run ?? step.with?.command ?? '') ? [buildIndex] : []
     );
-    assert.ok(build > index, `${command} must follow metadata generation`);
+    assert.ok(builds.length > 0, `${label} build is missing`);
+    for (const build of builds) {
+      assert.ok(
+        build > index,
+        `${label} build must follow metadata generation`
+      );
+    }
   }
   const env = steps[index].env;
   assert.equal(

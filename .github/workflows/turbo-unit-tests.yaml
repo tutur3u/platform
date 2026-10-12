@@ -51,6 +51,112 @@ jobs:
           WORKFLOW_NAME: turbo-unit-tests.yaml
         run: node scripts/ci/check-completed-validation.js
 
+  root-script-tests:
+    name: Root script tests (24)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      NODE_PATH: ${{ github.workspace }}/apps/web/node_modules
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+
+      - name: Verify script-test prerequisites
+        run: |
+          ruby --version
+          node -e "console.log(require.resolve('@playwright/test'))"
+
+      - name: Run complete root script suite
+        run: |
+          node <<'NODE'
+          const { discoverScriptTests } = require('./scripts/run-script-tests.js');
+          const { spawnSync } = require('node:child_process');
+          const files = discoverScriptTests();
+          console.log(`Discovered ${files.length} script test files.`);
+          const result = spawnSync(process.execPath, ['--experimental-strip-types', '--test', '--test-concurrency=2', '--test-reporter=tap', ...files], { stdio: 'inherit' });
+          if (result.error) throw result.error;
+          process.exitCode = result.status ?? 1;
+          NODE
+
+  backend-source-qualification:
+    name: Rust source qualification (1.95)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && (github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_HTTP_MULTIPLEXING: "false"
+      CARGO_NET_RETRY: "10"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    defaults:
+      run:
+        working-directory: ./apps/backend
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify checked out source
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          {
+            echo "Source SHA: $GITHUB_SHA"
+            sha256sum apps/backend/Cargo.toml apps/backend/Cargo.lock
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup repository minimum Rust toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # verified stable implementation
+        with:
+          toolchain: "1.95.0"
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Record toolchain
+        run: rustc --version --verbose >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download locked modules
+        run: bash ../../scripts/ci/run-with-backoff.sh cargo fetch --locked
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Clippy native targets
+        run: cargo clippy --locked --all-targets --features native -- -D warnings
+
+      - name: Test complete native library
+        run: cargo test --locked --lib -- --test-threads=2
+
+      - name: Check wasm Worker target
+        run: cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker
+
   test-shards:
     name: Unit test shard (${{ matrix.shard }})
     needs: [check-ci, duplicate-validation]
@@ -116,11 +222,23 @@ jobs:
 
   build:
     name: Unit Tests (24)
-    needs: [check-ci, duplicate-validation, test-shards]
-    if: ${{ !cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
+    needs: [check-ci, duplicate-validation, test-shards, root-script-tests, backend-source-qualification]
+    if: ${{ !cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Require every unit-test shard
         env:
           TEST_RESULT: ${{ needs.test-shards.result }}
-        run: test "$TEST_RESULT" = success
+          ROOT_SCRIPT_RESULT: ${{ needs.root-script-tests.result }}
+          RUST_RESULT: ${{ needs.backend-source-qualification.result }}
+          RUST_QUALIFICATION_REQUIRED: ${{ (github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012') }}
+          DUPLICATE_RESULT: ${{ needs.duplicate-validation.result }}
+          DUPLICATE_RUN_CHECKS: ${{ needs.duplicate-validation.outputs.run_checks }}
+        run: |
+          if [ "$DUPLICATE_RESULT" != success ] || [ "$DUPLICATE_RUN_CHECKS" != false ]; then
+            test "$TEST_RESULT" = success
+          fi
+          test "$ROOT_SCRIPT_RESULT" = success
+          if [ "$RUST_QUALIFICATION_REQUIRED" = true ]; then
+            test "$RUST_RESULT" = success
+          fi

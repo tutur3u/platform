@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.40.0](https://github.com/tutur3u/platform/compare/database-v1.39.0...database-v1.40.0) (2026-10-09)
+
+
+### Features
+
+* **ai:** expose scoped memory editing with truthful audit receipts ([40d89cf](https://github.com/tutur3u/platform/commit/40d89cf1015eb7c5fe64bfd6515d246ef4b5e04a)) ([#5969](https://github.com/tutur3u/platform/issues/5969)) ([110f3d9](https://github.com/tutur3u/platform/commit/110f3d92ebeb6bc40ffbeee69ff578b4bf66d122))
+* **database:** add inert timer control foundation ([abce972](https://github.com/tutur3u/platform/commit/abce9724d6d271a886ce2b36d5bfdd843b033a9e)) ([#5971](https://github.com/tutur3u/platform/issues/5971)) ([db5596e](https://github.com/tutur3u/platform/commit/db5596ec74a79ba85f6637b508eabaf1c92199c1))
+* **reports:** add inert explicit review receipt foundation ([5de658a](https://github.com/tutur3u/platform/commit/5de658a68b45aae760bfd1d04a2149846703f868)) ([#6019](https://github.com/tutur3u/platform/issues/6019)) ([c45eeec](https://github.com/tutur3u/platform/commit/c45eeec56ca6fa53bad248f37556c3e7c1145a47))
+
+
+### Bug Fixes
+
+* **ci:** prevent timer contract credential persistence ([d2e0181](https://github.com/tutur3u/platform/commit/d2e01819f7c4d6ea3be5553f12bfa5fd52cfbb25))
+* **database:** parenthesize timer control config bounds ([257685c](https://github.com/tutur3u/platform/commit/257685c979d71144ee92a77c0015977bc932341b))
+* **reports:** correct review foundation versions and fixtures ([d89c213](https://github.com/tutur3u/platform/commit/d89c21306c6ff21f151a574f955e4d59b41047d7))
+* **reports:** invalidate daily review on creator changes ([7ea0cb6](https://github.com/tutur3u/platform/commit/7ea0cb607d4e1f38bf5f1bedcad6391c1fb50cd4))
+* **reports:** preserve readiness generated type contract ([f25c577](https://github.com/tutur3u/platform/commit/f25c577ddb65e8119b8a2cc033e32d63732f24fc))
+* **reports:** quarantine unknown provider delivery outcomes ([97baa27](https://github.com/tutur3u/platform/commit/97baa2766bfa7a4033ac0ca7335f4930489aafff)) ([#6000](https://github.com/tutur3u/platform/issues/6000)) ([49c922a](https://github.com/tutur3u/platform/commit/49c922a69120d0f37dec9da95beb86d4e1fe0614))
+
 ## [1.39.0](https://github.com/tutur3u/platform/compare/database-v1.38.1...database-v1.39.0) (2026-10-04)
 
 

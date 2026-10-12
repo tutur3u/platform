@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const {
   mkdtempSync,
+  realpathSync,
   mkdirSync,
   writeFileSync,
   symlinkSync,
@@ -44,7 +45,7 @@ test('Oxc requires explicit files and isolates paused/generated source', (t) => 
   const format = commandFor('format', ['src/app.ts'], root);
   assert.ok(format.args.includes('--check'));
   assert.ok(!format.args.includes('--write'));
-  assert.equal(format.args.at(-1), path.join(root, 'src/app.ts'));
+  assert.equal(format.args.at(-1), realpathSync(path.join(root, 'src/app.ts')));
   assert.ok(commandFor('write', ['src/app.ts'], root).args.includes('--write'));
   assert.ok(
     commandFor('lint', ['src/app.ts'], root).args.includes('--deny-warnings')

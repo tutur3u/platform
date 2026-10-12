@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.50.0](https://github.com/tutur3u/platform/compare/internal-api-v0.49.0...internal-api-v0.50.0) (2026-10-09)
+
+
+### Features
+
+* **ai:** expose scoped memory editing with truthful audit receipts ([40d89cf](https://github.com/tutur3u/platform/commit/40d89cf1015eb7c5fe64bfd6515d246ef4b5e04a)) ([#5969](https://github.com/tutur3u/platform/issues/5969)) ([110f3d9](https://github.com/tutur3u/platform/commit/110f3d92ebeb6bc40ffbeee69ff578b4bf66d122))
+* **profile:** add managed web banner editing ([f35c39e](https://github.com/tutur3u/platform/commit/f35c39e32531b1edb38fcc138b621282ebeed972)) ([#5916](https://github.com/tutur3u/platform/issues/5916)) ([07990a5](https://github.com/tutur3u/platform/commit/07990a5515af98cdfb17813aca2a7796211fae95))
+* **reports:** actionable delivery worklist and 100-email batches ([#6100](https://github.com/tutur3u/platform/issues/6100)) ([fc495aa](https://github.com/tutur3u/platform/commit/fc495aa5aa0fdfcf70359b9f6e9c600113eaff66))
+* **reports:** add actionable delivery worklist and 100-email batches ([4e86abc](https://github.com/tutur3u/platform/commit/4e86abcc9dfe127be0116c7d9bafc09addd6ae6f))
+* **tutoring:** offer staff-reviewed draft choices ([728953e](https://github.com/tutur3u/platform/commit/728953ec9819d0d14bbc084aaeb3c017efbebfc5)) ([#5999](https://github.com/tutur3u/platform/issues/5999)) ([e162583](https://github.com/tutur3u/platform/commit/e162583382b394f56500cc868b05f2d94cf17ad1))
+
+
+### Bug Fixes
+
+* **contacts:** add confirmed workspace report email gate control ([#5991](https://github.com/tutur3u/platform/issues/5991)) ([7e52a3f](https://github.com/tutur3u/platform/commit/7e52a3f2b71bb6d399c1fea77b50f1cf2b13e5a1))
+* **contacts:** add scoped report email gate confirmation ([ee903e7](https://github.com/tutur3u/platform/commit/ee903e77e119679b80213c3b9404f756df0079ea))
+* **infrastructure:** export desktop helpers through public entry ([#5906](https://github.com/tutur3u/platform/issues/5906)) ([eada393](https://github.com/tutur3u/platform/commit/eada393c9aa8e304059e0e43ea86512b00c5cd09))
+* **meet:** end empty rooms and allow owner restoration ([2d6f856](https://github.com/tutur3u/platform/commit/2d6f8562511f0264f700003fa9a2a60b0198e2b5)) ([#5924](https://github.com/tutur3u/platform/issues/5924)) ([c5f75c0](https://github.com/tutur3u/platform/commit/c5f75c0f4fa66a0933123b5580ff6bfa69914481))
+* **mira:** scope web soul receipts and publication ([542d32b](https://github.com/tutur3u/platform/commit/542d32b8d29b1fefc8bcbb3ecc84ac8729858272)) ([#5979](https://github.com/tutur3u/platform/issues/5979)) ([630dd81](https://github.com/tutur3u/platform/commit/630dd8119bef867359fbc027d4b26fe13401fc88))
+* **profile:** fence banner mutations to initiating actor ([27cd8e8](https://github.com/tutur3u/platform/commit/27cd8e8739555c6b948f13e04812504a9ce65ec8))
+
 ## [0.49.0](https://github.com/tutur3u/platform/compare/internal-api-v0.48.0...internal-api-v0.49.0) (2026-10-04)
 
 

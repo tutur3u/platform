@@ -1,9 +1,8 @@
-use serde::Deserialize;
 use serde_json::json;
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     supabase_auth,
 };
@@ -28,74 +27,11 @@ const ACCESS_DENIED_MESSAGE: &str = "Workspace access denied";
 const FETCH_COUNTS_FAILED_MESSAGE: &str = "Failed to fetch pending approval counts";
 const INTERNAL_SERVER_ERROR_MESSAGE: &str = "Internal server error";
 
-#[derive(Deserialize)]
-struct WorkspaceIdRow {
-    id: Option<String>,
-}
+mod types;
+use types::*;
 
-#[derive(Deserialize)]
-struct WorkspaceMembershipRow {
-    #[serde(rename = "type")]
-    membership_type: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct WorkspaceCreatorRow {
-    creator_id: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct PermissionRow {
-    permission: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct DefaultPermissionRow {
-    permission: Option<String>,
-}
-
-/// Mirrors the embedded role-membership permission rows:
-/// `workspace_roles!inner(workspace_role_permissions(permission))`.
-#[derive(Deserialize)]
-struct RoleMemberRow {
-    workspace_roles: Option<RoleRow>,
-}
-
-#[derive(Deserialize)]
-struct RoleRow {
-    workspace_role_permissions: Option<Vec<PermissionRow>>,
-}
-
-/// Outcome of resolving the caller's effective workspace permissions, mirroring
-/// the legacy `getPermissions(...)` helper. `None` from the resolver maps to the
-/// legacy `null` return (HTTP 404).
-struct PermissionsContext {
-    is_creator: bool,
-    is_admin: bool,
-    permissions: Vec<String>,
-}
-
-impl PermissionsContext {
-    /// Mirrors `withoutPermission(permission)` from the legacy permissions result.
-    fn without_permission(&self, permission: &str) -> bool {
-        !(self.is_creator
-            || self.is_admin
-            || self.permissions.iter().any(|value| value == permission))
-    }
-}
-
-pub(crate) async fn handle_workspaces_settings_approvals_pending_summary_route(
-    config: &BackendConfig,
-    request: BackendRequest<'_>,
-    outbound: &impl OutboundHttpClient,
-) -> Option<BackendResponse> {
-    let raw_ws_id = pending_summary_ws_id(request.path)?;
-
-    Some(match request.method {
-        "GET" => pending_summary_response(config, request, raw_ws_id, outbound).await,
-        method => no_store_response(method_not_allowed(method, "GET")),
-    })
-}
+mod methods;
+pub(crate) use methods::handle_route as handle_workspaces_settings_approvals_pending_summary_route;
 
 async fn pending_summary_response(
     config: &BackendConfig,
@@ -739,3 +675,6 @@ fn is_workspace_handle(value: &str) -> bool {
 fn message_response(status: u16, message: &str) -> BackendResponse {
     no_store_response(json_response(status, json!({ "error": message })))
 }
+
+#[cfg(test)]
+mod tests;

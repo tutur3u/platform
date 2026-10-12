@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/users-core-v0.10.0...users-core-v0.11.0) (2026-10-09)
+
+
+### Features
+
+* **reports:** actionable delivery worklist and 100-email batches ([#6100](https://github.com/tutur3u/platform/issues/6100)) ([fc495aa](https://github.com/tutur3u/platform/commit/fc495aa5aa0fdfcf70359b9f6e9c600113eaff66))
+* **reports:** add actionable delivery worklist and 100-email batches ([4e86abc](https://github.com/tutur3u/platform/commit/4e86abcc9dfe127be0116c7d9bafc09addd6ae6f))
+* **reports:** add unwired reviewed presentation envelope ([9f9e8d4](https://github.com/tutur3u/platform/commit/9f9e8d48a6561e339693d061f54eb78cc2b395b0)) ([#6022](https://github.com/tutur3u/platform/issues/6022)) ([067812c](https://github.com/tutur3u/platform/commit/067812ca70613faf363bfda771cce0e475c17546))
+* **reports:** validate explicit periodic approval protocol ([914f041](https://github.com/tutur3u/platform/commit/914f0414219754e842a26b9692e17be4da3efa50)) ([#6039](https://github.com/tutur3u/platform/issues/6039)) ([19bc768](https://github.com/tutur3u/platform/commit/19bc76833e78454d42091d815514e811ad3ad1ea))
+
+
+### Bug Fixes
+
+* **ci:** integrate approval tests and Lettin upload transport ([#6065](https://github.com/tutur3u/platform/issues/6065)) ([e18cede](https://github.com/tutur3u/platform/commit/e18cedecadbb2b4044a4545a9b0acf75b9565635))
+* **contacts:** add confirmed workspace report email gate control ([#5991](https://github.com/tutur3u/platform/issues/5991)) ([7e52a3f](https://github.com/tutur3u/platform/commit/7e52a3f2b71bb6d399c1fea77b50f1cf2b13e5a1))
+* **contacts:** add scoped report email gate confirmation ([ee903e7](https://github.com/tutur3u/platform/commit/ee903e77e119679b80213c3b9404f756df0079ea))
+* **contacts:** admit app sessions for topic list and preview ([#5995](https://github.com/tutur3u/platform/issues/5995)) ([8077863](https://github.com/tutur3u/platform/commit/8077863d0cc1024e53c551efd0a84dfd537cdede))
+* **contacts:** admit app sessions for topic reads and previews ([bc321d7](https://github.com/tutur3u/platform/commit/bc321d771c23569a8acde07f0467cca0e16a7cf2))
+* **contacts:** align periodic report approval permissions ([4c83050](https://github.com/tutur3u/platform/commit/4c83050cd3dcbc909aba2a84ec32553d9f41ac0a))
+* **contacts:** allow approval-only supervisors to approve monthly reports ([#5987](https://github.com/tutur3u/platform/issues/5987)) ([b7eaadf](https://github.com/tutur3u/platform/commit/b7eaadfc2b0295e71c793fac138ba0f198066962))
+* **finance:** keep projected invoice dates in billing timezone ([0e5ad56](https://github.com/tutur3u/platform/commit/0e5ad5617318c6348431704b3c92ef2b9c36fd39))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **finance:** reject incomplete subscription schedule reads ([0d4be40](https://github.com/tutur3u/platform/commit/0d4be40e9a4befa6f89dd6d847af0dd0d1c1083b)) ([#6020](https://github.com/tutur3u/platform/issues/6020)) ([702b4de](https://github.com/tutur3u/platform/commit/702b4decb386d5dc1a668b645ffbb8e571d6cacd))
+* **finance:** stabilize projected invoice calendar dates ([#6010](https://github.com/tutur3u/platform/issues/6010)) ([1fb60cc](https://github.com/tutur3u/platform/commit/1fb60ccde0810bd33aa121afbeffb480ede9423f))
+* **mobile:** integrate Assistant and Secrets shell coverage ([141ae72](https://github.com/tutur3u/platform/commit/141ae72cab1c5cb1604dfc654fdc5ff666dc0037))
+* **reports:** align approval reads with group tenancy ([c1b9836](https://github.com/tutur3u/platform/commit/c1b98363fcdee693e29a2ccfe9c27ba5a9429157)) ([#6030](https://github.com/tutur3u/platform/issues/6030)) ([9345665](https://github.com/tutur3u/platform/commit/93456655a760c62992228eb82216b74aa246b0c6))
+* **reports:** require acknowledged draft saves ([8724bc0](https://github.com/tutur3u/platform/commit/8724bc0717d05e344afdbd66cb55a9b98abc270e)) ([#6060](https://github.com/tutur3u/platform/issues/6060)) ([665dc68](https://github.com/tutur3u/platform/commit/665dc684c2187be2fefa4a0fd6d16ff2522ed4b1))
+* **reports:** require explicit approval for ordinary report writes ([99f2548](https://github.com/tutur3u/platform/commit/99f254813edc0a7c1529d11fe38637528cfa9803)) ([#6016](https://github.com/tutur3u/platform/issues/6016)) ([1226576](https://github.com/tutur3u/platform/commit/12265760f93562242829deea1ddc8d8944897460))
+* **reports:** require subject and group approval tenancy ([b46e9de](https://github.com/tutur3u/platform/commit/b46e9dec233963ff67564479e95cfe8eea13f608)) ([#6026](https://github.com/tutur3u/platform/issues/6026)) ([6a5c8bc](https://github.com/tutur3u/platform/commit/6a5c8bc1a9017aeac3c406d9fdd1876f87efa6fe))
+* **reports:** validate reviewed envelope transport boundaries ([5f38889](https://github.com/tutur3u/platform/commit/5f38889722f5ed286d51eb38bb63402227a1249d))
+* **users-core:** isolate cross-app approval regression tests ([1f0d26f](https://github.com/tutur3u/platform/commit/1f0d26f2f0a922e0efb20681073324312d66439f))
+* **users-core:** pin satellite auth test module identity ([be182e8](https://github.com/tutur3u/platform/commit/be182e8c38d261105de6685bfc37a556ce268268))
+* **users-core:** separate cross-app approval tests from source typecheck ([b2729b6](https://github.com/tutur3u/platform/commit/b2729b60fb22091fd4be1a38b34a0378ad19561f))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/users-core-v0.9.4...users-core-v0.10.0) (2026-10-04)
 
 

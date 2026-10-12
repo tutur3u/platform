@@ -379,10 +379,9 @@ fn build_queue_response(
                 .as_deref()
                 .and_then(iso_day)
                 .is_some_and(|day| day >= absence_cutoff)
+            && let Some(date) = &row.session_date
         {
-            if let Some(date) = &row.session_date {
-                reserved_dates.entry(key).or_default().push(date.clone());
-            }
+            reserved_dates.entry(key).or_default().push(date.clone());
         }
         if row.attendance_status.as_deref() == Some("PENDING")
             && let Some(id) = &row.source_feedback_id

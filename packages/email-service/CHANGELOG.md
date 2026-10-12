@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/email-service-v0.6.2...email-service-v0.7.0) (2026-10-09)
+
+
+### Features
+
+* **reports:** add unwired reviewed presentation envelope ([#6022](https://github.com/tutur3u/platform/issues/6022)) ([067812c](https://github.com/tutur3u/platform/commit/067812ca70613faf363bfda771cce0e475c17546))
+
+
+### Bug Fixes
+
+* **email:** classify Cloudflare dispatch outcomes ([d019ff3](https://github.com/tutur3u/platform/commit/d019ff35b8354c2380e563b04abc9706f94cb17b)) ([#6009](https://github.com/tutur3u/platform/issues/6009)) ([a5c318c](https://github.com/tutur3u/platform/commit/a5c318c25ade22d15fb7d5f087e07f6babd21ef9))
+* **email:** fail closed on unavailable suppression checks ([8a90419](https://github.com/tutur3u/platform/commit/8a90419a81bf0c09edcf48a2e0d77cd55689893b)) ([#6096](https://github.com/tutur3u/platform/issues/6096)) ([fc6a0d8](https://github.com/tutur3u/platform/commit/fc6a0d8360891a37e38654bb135e850db6177f95))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **reports:** quarantine unknown provider delivery outcomes ([97baa27](https://github.com/tutur3u/platform/commit/97baa2766bfa7a4033ac0ca7335f4930489aafff)) ([#6000](https://github.com/tutur3u/platform/issues/6000)) ([49c922a](https://github.com/tutur3u/platform/commit/49c922a69120d0f37dec9da95beb86d4e1fe0614))
+* **reports:** validate reviewed envelope transport boundaries ([5f38889](https://github.com/tutur3u/platform/commit/5f38889722f5ed286d51eb38bb63402227a1249d))
+
 ## [0.6.2](https://github.com/tutur3u/platform/compare/email-service-v0.6.1...email-service-v0.6.2) (2026-10-01)
 
 
