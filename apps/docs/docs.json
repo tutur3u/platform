@@ -445,6 +445,7 @@
                 "group": "Packages",
                 "pages": [
                   "reference/packages/sdk",
+                  "reference/packages/cli-operational-state",
                   "reference/packages/masonry",
                   "reference/packages/utils-effect",
                   "reference/packages/supabase",

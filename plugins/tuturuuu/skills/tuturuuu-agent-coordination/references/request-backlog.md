@@ -111,3 +111,17 @@ latest. Managed caches are written by the installer, not patched manually.
 Use `update <id> --priority 0` to reprioritize an existing request without resetting its owner or progress. A repeated intake with changed priority is rejected, rather than silently retaining the older priority. Updates remain transactional and append their audit event.
 
 Reopening a verified prerequisite revokes current verification on its verified dependents transitively. Dependents return to `implemented`, retain their source and links, and record the unmet prerequisite; historical receipts remain in the audit log. Re-verifying a parent does not restore a dependent receipt. Each dependent needs a new explicit current-evidence verification. Snapshot and history remain read-only, and recorded evidence does not prove remote delivery. Regression coverage: `test_program_backlog.py` checks CLI amendments, rollback, transitive reopening, and explicit re-verification.
+
+### Native offline commands
+
+`ttr backlog` reads the legacy ledger without changing it. Native writes require
+explicit additive `migrate --file <exclusive-beforeimage>` and transaction-bound
+`--expected-revision` from `MAX(events.seq)`, plus a stable `--operation-id`. Legacy
+Python writes remain visible to that revision. Never migrate the live ledger for a
+source test. Use disposable private stores, canonical paths without symlinks, and
+keep captured/source/verified delivery separate. `ttr operational-memory` has its
+own store, scope, history and tombstone fence; it does not read personal archives.
+
+Follow `apps/docs/reference/packages/cli-operational-state.mdx` for exact flags,
+immutable export, dry-run restore, identity/history conflicts and runtime gates.
+Local receipts and bundle hashes confer no cross-machine or production authority.

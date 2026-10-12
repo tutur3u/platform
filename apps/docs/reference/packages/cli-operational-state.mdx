@@ -1,0 +1,174 @@
+---
+title: 'Local operational state'
+description: 'Offline backlog and operational notes with retained legacy history and explicit conflicts'
+---
+
+## Scope and defaults
+
+`ttr backlog` manages local program requests. `ttr operational-memory` stores
+explicit operational lessons in a separate SQLite database. Both groups run before
+CLI authentication, platform clients and update checks. They require no login or
+network access. They never import personal conversation archives, product/customer
+memory or CLI credentials. Nothing in a record authorizes a tool action.
+
+Backlog defaults to
+`~/.local/share/tuturuuu/orchestration/programs/platform/backlog.sqlite`.
+Operational memory defaults to `operational-memory.sqlite` in that directory.
+Reads fail when the store is missing. Initialization requires an explicit `--db`
+and refuses existing destinations. Use canonical paths without symlinks, including
+parent directories. On macOS, use `/private/tmp` rather than `/tmp` for fixtures.
+Writable stores require a private parent directory and file permissions of 0700
+and 0600. Commands never change existing permissions automatically.
+
+`--json` emits one JSON object, including failures. Validation, conflicts and store
+errors exit with code 2. A valid but incomplete evidence board exits with code 1,
+matching the Python checker. Help supports `--lang en|vi`. Human command results also
+use JSON so recorded output has one stable representation.
+
+Tiếng Việt: Hai nhóm lệnh quản lý dữ liệu vận hành ngoại tuyến, không yêu cầu đăng
+nhập hoặc kết nối mạng. Lệnh đọc không tự tạo kho. Lệnh ghi yêu cầu phiên bản dự
+kiến và mã thao tác duy nhất. Nhập dữ liệu mặc định chỉ kiểm tra, không ghi đè
+lịch sử hoặc tự xác nhận triển khai.
+
+## Explicit initialization and legacy adoption
+
+Use a disposable store while evaluating these commands:
+
+```sh
+mkdir -m 700 /private/tmp/my-operational-fixture
+ttr backlog init --db /private/tmp/my-operational-fixture/backlog.sqlite --json
+ttr backlog snapshot --db /private/tmp/my-operational-fixture/backlog.sqlite --json
+ttr backlog help --lang vi --json
+```
+
+The existing Python ledger remains authoritative. Native reads support its exact
+`items` and `events` tables, stable IDs and complete original event payloads. Native
+writes require an explicit additive migration, not a migration during a read.
+Migration locks the writer transaction, checks the current event revision,
+validates a complete beforeimage and creates an exclusive private backup before
+adding metadata and native operation receipts. Existing event rows are untouched.
+
+```sh
+ttr backlog migrate --db /private/path/backlog.sqlite \
+  --file /private/path/legacy-beforeimage.json \
+  --expected-revision 862 --operation-id 00000000-0000-4000-8000-000000000001 --json
+```
+
+Replace the example revision and UUID with the inspected revision and a new
+operation ID. Do not migrate a live program ledger as an implementation test.
+The Python tool can continue reading and writing migrated stores. Its writes
+advance `MAX(events.seq)`, so they invalidate stale native expected revisions.
+Migration failures retain any created beforeimage; they do not promise backup
+cleanup or automatic recovery of a failed explicit initialization.
+
+## Intake, progress and evidence
+
+Intake is a nonempty JSON array. Each item has a stable lowercase slug `id`,
+`title`, `kind`, `source`, `acceptance` and unique nonempty `requiredEvidence`.
+Kinds are `bug`, `feature`, `improvement`, `idea` and `delivery`. Optional
+`priority` is an integer from 0 through 3, default 2. Optional `dependencies`
+contains unique existing or same-batch IDs and must remain acyclic. Unknown fields
+are rejected. New intake starts `captured`, with empty owner, note and links.
+Identical repeated intake retains progressed state; conflicting intake rejects
+the entire batch. Amend priority through an audited update.
+
+```sh
+ttr backlog intake --db /private/path/backlog.sqlite --file /private/path/intake.json \
+  --expected-revision 0 --operation-id 00000000-0000-4000-8000-000000000002 --json
+ttr backlog update request-id --db /private/path/backlog.sqlite --status active \
+  --owner local-worker --expected-revision 1 \
+  --operation-id 00000000-0000-4000-8000-000000000003 --json
+ttr backlog history request-id --db /private/path/backlog.sqlite --json
+ttr backlog evidence-check --file /private/path/evidence.json --json
+```
+
+Updates accept `--status`, `--owner`, `--note`, `--link`, `--priority` and
+`--evidence`. States are `captured`, `ready`, `active`, `blocked`, `implemented`,
+`verified` and `deferred`. Ready, active and verified transitions require verified
+prerequisites. Active needs a nonempty owner. Verification requires exactly one
+matching unit in a version 1 program board, matching required gates and a current
+full lowercase commit SHA. Every gate must have one current-head `pass` receipt
+and a locator. Only `merged` or `delivered` units qualify. Stale receipts,
+`pending`, `fail` and `skipped` never qualify. A delivered claim with missing PASS
+fails validation. Reopening a verified prerequisite recursively returns verified
+dependents to `implemented`; all old receipts remain in history. Re-verifying the
+parent does not re-verify its dependents. Existing ready/active dependents retain
+the legacy reopening behavior.
+
+Every mutation requires `--expected-revision N` and `--operation-id UUID`.
+Revision is the maximum event sequence read after `BEGIN IMMEDIATE`. Native operations
+also capture their operation ID, validated request and exact original event interval
+in the additive `operational_operation_proofs` table. Proof rows and response
+receipts commit in the same writer transaction. Legacy item/event columns and
+payloads remain unchanged. Replay validates the original interval, not the latest
+projection, so later legitimate edits do not invalidate an earlier receipt.
+ The same
+operation ID with identical input returns its original receipt, even after later
+writes. Reusing it with different input fails. A stale revision fails without
+writing. Inspect the new snapshot and reconcile deliberately; do not retry blindly
+with a new revision. SQLite contention waits at most one second per lock attempt.
+
+## Operational notes and deletion fences
+
+```sh
+ttr operational-memory init --db /private/path/notes.sqlite --json
+ttr operational-memory put --db /private/path/notes.sqlite --file /private/path/note.json \
+  --expected-revision 0 --operation-id 00000000-0000-4000-8000-000000000004 --json
+ttr operational-memory list --db /private/path/notes.sqlite --json
+ttr operational-memory get lesson-id --db /private/path/notes.sqlite --json
+ttr operational-memory history lesson-id --db /private/path/notes.sqlite --json
+```
+
+A note explicitly declares `id`, `scope`, `project`, `source`, `summary`, `evidence`
+and `status`. Its status is `active`, `superseded` or `tombstone`. Scope and project
+are immutable for an ID. Put a tombstone to revoke a note without removing its
+history. Later writes cannot resurrect it. Notes have independent event revisions
+and never appear in backlog exports. Conflicts leave the proposed input file and
+existing store intact; no last-writer-wins or inferred consent is implemented.
+
+## Immutable export and explicit import
+
+```sh
+ttr backlog export --db /private/path/backlog.sqlite --file /private/path/snapshot.json --json
+ttr backlog import --db /private/path/new-store.sqlite --file /private/path/snapshot.json --dry-run --json
+ttr backlog import --db /private/path/new-store.sqlite --file /private/path/snapshot.json --apply \
+  --expected-revision 0 --operation-id 00000000-0000-4000-8000-000000000005 --json
+```
+
+The same export/import commands exist under `operational-memory`. Exports refuse
+existing files and symlink paths. Version 1 bundles retain source database identity,
+complete original event history, projections and native dedupe receipts with
+captured request/event proofs. Imported responses must agree with their recorded
+operation IDs, request hashes, event payloads and revision intervals. Rehashing an
+envelope does not make a forged receipt valid. SHA-256
+covers canonical JSON. Hashes establish integrity, not authentication. Input is
+bounded to 32 MiB, 10,000 records and 100,000 events/receipts; oversized exports
+fail rather than truncate history. Unknown fields, missing sequences, divergent
+projections, scope changes and tombstone resurrection fail validation.
+
+Import defaults to dry-run and requires an explicit `--db`. A new restore retains
+the bundle identity. Existing stores must have the same identity and an exact
+history prefix; divergence is an explicit conflict. Original sequences and payload
+strings are never renumbered or rewritten. Legacy beforeimages have no native
+identity and must be restored with legacy tooling before explicit adoption.
+Never silently merge unrelated ledgers. Old native receipts without original
+request/event proofs cannot be replayed or imported/exported as qualified receipts.
+Their stores remain readable through snapshot/history. Retain the original SQLite
+store and receipts; do not invent a backfill, reset the ledger or discard its
+operation log to make a write succeed. Adoption requires a separately reviewed
+recovery procedure when the original request evidence is unavailable. Review the selected operational content
+before transferring a bundle. No arbitrary referenced file bodies are included.
+
+## Verification and delivery boundaries
+
+All output records `liveVerificationPerformed: false`. Evidence checking validates
+recorded consistency only; it does not query GitHub, a device, a provider or a
+production service. Local offline commands do not implement authenticated
+cross-machine synchronization, grants, leases or machine resource admission.
+Those require a separate reviewed transport and runtime qualification.
+
+Regression coverage lives in `packages/sdk/src/cli/operational-state.test.ts` and
+exercises real isolated SQLite stores and unchanged Python reads/writes. Run the
+focused suite through the canonical resource queue. Release qualification requires
+Node 24 and Bun 1.4.1 compatibility plus exact-commit CI test/type/lint/SDK build
+gates. SDK publication, integration and production delivery are separate actions.
