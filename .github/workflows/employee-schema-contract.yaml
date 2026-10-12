@@ -11,6 +11,11 @@ on:
         required: false
         default: false
         type: boolean
+      identity_diagnostic:
+        description: Diagnostic-only three-case identity rollback; never 172 qualification
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -40,12 +45,21 @@ jobs:
         run: test "$CONTRACT_ENABLED" = true
       - name: Validate exact source selection
         run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA)) process.exit(1)'
+      - name: Validate mutually exclusive diagnostic modes
+        env:
+          STRUCTURED_PROVENANCE: ${{ inputs.structured_provenance }}
+          IDENTITY_DIAGNOSTIC: ${{ inputs.identity_diagnostic }}
+        run: node -e 'if (process.env.STRUCTURED_PROVENANCE === "true" && process.env.IDENTITY_DIAGNOSTIC === "true") process.exit(1)'
+      - name: Validate isolated identity diagnostic selection
+        if: inputs.identity_diagnostic == true
+        run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/fix/employee-identity-diagnostic-control-20261012" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.GITHUB_EVENT_NAME !== "workflow_dispatch" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5e05c380f60116e9eba41ba42062738229f877a9" || process.env.EMPLOYEE_SCHEMA_CONTROL_SHA === "f5d42a16613e8ce97cb923df55c4c77d024e6cfb") process.exit(1)'
       - name: Validate structured diagnostic selection
         if: inputs.structured_provenance == true
         run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/main" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5c7c08e23a3d410bdbdc066f5c4dd2776fbeabd7") process.exit(1)'
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/checkout@v7
         with:
@@ -66,20 +80,27 @@ jobs:
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
+      - name: Verify identity diagnostic parser
+        if: inputs.identity_diagnostic == true
+        run: node --test apps/database/scripts/employee-identity-diagnostic.test.mjs
       - name: Apply full isolated schema and qualify 172 rollback assertions
-        if: inputs.structured_provenance != true
+        if: inputs.structured_provenance != true && inputs.identity_diagnostic != true
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs
       - name: Collect diagnostic-only structured exception provenance
         if: inputs.structured_provenance == true
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-failure-provenance.mjs
+      - name: Collect rollback-only identity diagnostics
+        if: inputs.identity_diagnostic == true
+        working-directory: source
+        run: node ../apps/database/scripts/verify-employee-identity-diagnostic.mjs
       - name: Stop only this exact owned isolated database
         if: always()
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs --cleanup
       - uses: actions/upload-artifact@v7
-        if: always() && inputs.structured_provenance != true
+        if: always() && inputs.structured_provenance != true && inputs.identity_diagnostic != true
         with:
           name: employee-schema-${{ inputs.source_sha }}-${{ github.run_id }}
           path: ${{ runner.temp }}/employee-schema-receipts/qualification.json
@@ -90,5 +111,12 @@ jobs:
         with:
           name: employee-provenance-${{ inputs.source_sha }}-${{ github.run_id }}
           path: ${{ runner.temp }}/employee-schema-receipts/provenance.json
+          if-no-files-found: error
+          retention-days: 3
+      - uses: actions/upload-artifact@v7
+        if: always() && inputs.identity_diagnostic == true
+        with:
+          name: employee-identity-diagnostic-${{ inputs.source_sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/employee-schema-receipts/identity-diagnostic.json
           if-no-files-found: error
           retention-days: 3
