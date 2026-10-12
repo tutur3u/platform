@@ -31,6 +31,7 @@ export async function hasManagedMailMailbox(user: {
   if (identityError) throw identityError;
   if (
     stored?.id !== user.id ||
+    !stored.email ||
     !stored.email_confirmed_at ||
     stored.email?.toLowerCase() !== user.email?.toLowerCase() ||
     (stored.banned_until && Date.parse(stored.banned_until) > Date.now())
