@@ -57,6 +57,26 @@ beforeEach(() => {
 });
 
 describe('provider meeting replies', () => {
+  it.each([undefined, null, ''])(
+    'rejects a Google reply without an event version: %s',
+    async (etag) => {
+      mocks.get.mockResolvedValueOnce({
+        data: {
+          etag,
+          attendees: [{ email: 'guest@example.com', self: true }],
+          organizer: { self: false },
+        },
+      });
+      await expect(
+        respondToProviderMeeting({
+          source,
+          externalEventId: 'event',
+          response: 'accepted',
+        })
+      ).rejects.toMatchObject({ status: 409 });
+      expect(mocks.patch).not.toHaveBeenCalled();
+    }
+  );
   it.each(['accepted', 'declined', 'tentative'] as const)(
     'Google sends only the current guest %s response',
     async (response) => {
@@ -237,7 +257,10 @@ describe('meeting response failure boundaries', () => {
 
   it('Google matches email case while preserving the provider guest identity', async () => {
     mocks.get.mockResolvedValueOnce({
-      data: { attendees: [{ email: 'GUEST@EXAMPLE.COM', self: true }] },
+      data: {
+        etag: 'version-1',
+        attendees: [{ email: 'GUEST@EXAMPLE.COM', self: true }],
+      },
     });
     await respondToProviderMeeting({
       source,
@@ -253,7 +276,7 @@ describe('meeting response failure boundaries', () => {
           ],
         },
       }),
-      undefined
+      { headers: { 'If-Match': 'version-1' } }
     );
   });
 });

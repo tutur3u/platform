@@ -172,7 +172,7 @@ class _EventRow extends StatelessWidget {
     final monthLabel = start == null
         ? context.l10n.dashboardEventAllDay
         : DateFormat('MMM').format(start);
-    final detail = event.description?.trim();
+    final detail = calendarDescriptionPreview(event.description ?? '');
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -242,7 +242,7 @@ class _EventRow extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (detail != null && detail.isNotEmpty) ...[
+                if (detail.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
                     detail,

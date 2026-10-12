@@ -50,6 +50,8 @@ export async function respondToProviderMeeting(args: {
         403,
         'Only the invited account can respond'
       );
+    if (!event.etag)
+      throw new MeetingResponseError(409, 'Google event version unavailable');
     // attendeesOmitted updates only this participant without dropping other
     // guests, and If-Match rejects a response to a concurrently changed event.
     await calendar.events.patch(
@@ -62,7 +64,7 @@ export async function respondToProviderMeeting(args: {
           attendees: [{ email: self.email, responseStatus: response }],
         },
       },
-      event.etag ? { headers: { 'If-Match': event.etag } } : undefined
+      { headers: { 'If-Match': event.etag } }
     );
     return;
   }
