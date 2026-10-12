@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { EMPLOYEE_CREATION_SIGNATURES } from './employee-creation-database-readiness';
 import {
   createEmployeeAccount,
+  EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE,
   type EmployeeCreationProvider,
 } from './employee-creation-orchestration';
 import {
@@ -309,7 +310,7 @@ describe('typed protected employee creation SQL adapter', () => {
     expect(h.commits()).toBe(0);
     expect(h.rollbacks()).toBe(1);
   });
-  it('does not bind success or let orchestration create after an expired commit acknowledgement', async () => {
+  it('preserves known commit but does not bind success after an expired commit acknowledgement', async () => {
     const h = harness();
     const run = h.transactions.run;
     h.transactions.run = async (work) => {
@@ -318,13 +319,37 @@ describe('typed protected employee creation SQL adapter', () => {
       return reply;
     };
     expect(await h.operations.preflight(named)).toMatchObject({
-      error: { code: 'EMPLOYEE_SCHEMA_UNAVAILABLE' },
+      error: { code: EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE },
     });
     h.setNow(1500);
     expect(await h.operations.finalize(named)).toMatchObject({
       error: { code: 'EMPLOYEE_SCHEMA_UNAVAILABLE' },
     });
     expect(h.commits()).toBe(1);
+  });
+  it('retains an exact committed finalize receipt when readiness expires after acknowledgement', async () => {
+    const h = harness();
+    await h.operations.preflight(named);
+    const run = h.transactions.run;
+    h.transactions.run = async (work) => {
+      const reply = await run(work);
+      h.setNow(2000);
+      return reply;
+    };
+    expect(await h.operations.finalize(named)).toEqual({
+      data: {
+        id: USER,
+        email: named.email,
+        displayName: named.displayName,
+        status: 'pending',
+      },
+      error: { code: EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE },
+    });
+    expect(h.commits()).toBe(2);
+    expect(await h.operations.confirmActivation(identity)).toMatchObject({
+      error: { code: 'EMPLOYEE_SCHEMA_UNAVAILABLE' },
+    });
+    expect(h.commits()).toBe(2);
   });
   it('never forwards extra password fields or a foreign actor to SQL', async () => {
     const h = harness();

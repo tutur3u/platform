@@ -1,7 +1,10 @@
 import 'server-only';
 import { z } from 'zod';
 import { verifyEmployeeDatabaseReadiness } from './employee-creation-database-readiness';
-import type { EmployeeCreationOperations } from './employee-creation-orchestration';
+import {
+  EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE,
+  type EmployeeCreationOperations,
+} from './employee-creation-orchestration';
 import { parseManagedAccountAddress } from './managed-address';
 
 const IdentitySchema = z
@@ -206,7 +209,6 @@ export function createEmployeeCreationSqlOperations({
           throw new Error('Employee schema acknowledgement unavailable');
         return { data: receipt.data, error: null };
       });
-      await assertFreshReadiness();
       const committed = TransactionOutcomeSchema.safeParse(outcome);
       if (!committed.success || committed.data.kind === 'commit_unknown')
         return unavailable();
@@ -225,6 +227,15 @@ export function createEmployeeCreationSqlOperations({
           receipt.data.status !== (phase === 'finalize' ? 'pending' : 'created')
         )
           return unavailable();
+      }
+      try {
+        await assertFreshReadiness();
+      } catch {
+        // SQL commit was acknowledged; lost freshness blocks activation, not commit knowledge.
+        return {
+          data: result.data,
+          error: { code: EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE },
+        };
       }
       if (
         result.error === null &&

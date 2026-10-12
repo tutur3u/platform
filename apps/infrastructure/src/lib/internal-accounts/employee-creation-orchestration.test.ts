@@ -2,6 +2,7 @@ import { AuthApiError } from '@tuturuuu/supabase/auth-errors';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createEmployeeAccount,
+  EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE,
   EmployeeCreationError,
   type EmployeeCreationInput,
   type EmployeeCreationOperations,
@@ -385,6 +386,46 @@ describe('unwired employee creation orchestration', () => {
     const f = fixture();
     f.finalize.mockImplementationOnce(async () => replyForReservedId(reply));
     await pendingResult(f, [1, 1, 1, 0, 0, 0]);
+  });
+  it('retains known committed finalize with expired readiness without activation or a second creation', async () => {
+    const f = fixture();
+    f.finalize.mockImplementationOnce(async () => ({
+      data: { ...account, status: 'pending' },
+      error: { code: EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE },
+    }));
+    const result = await createEmployeeAccount(f.request);
+    expect(result).toMatchObject({
+      status: 'pending',
+      code: 'employee_provisioning_pending',
+    });
+    if (result.status !== 'pending')
+      throw new Error('Expected provisioning to remain pending');
+    expect(result.message).toContain('do not submit another creation request');
+    calls(f, [1, 1, 1, 0, 0, 0]);
+  });
+  it('does not trust a known-commit code without an exact committed tuple', async () => {
+    const f = fixture();
+    f.finalize.mockImplementationOnce(async () => ({
+      data: { ...account, id: otherId, status: 'pending' },
+      error: { code: EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE },
+    }));
+    await pendingResult(f, [1, 1, 1, 0, 0, 0]);
+  });
+  it('retains a known committed confirmation without a created claim or replay', async () => {
+    const f = fixture();
+    f.confirmActivation.mockImplementationOnce(async () => ({
+      data: { ...account, status: 'created' },
+      error: { code: EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE },
+    }));
+    const result = await createEmployeeAccount(f.request);
+    expect(result).toMatchObject({
+      status: 'pending',
+      code: 'employee_provisioning_pending',
+    });
+    if (result.status !== 'pending')
+      throw new Error('Expected provisioning to remain pending');
+    expect(result.message).toContain('do not submit another creation request');
+    calls(f, [1, 1, 1, 1, 1, 1]);
   });
   it('retains lost finalize without activation or retry', async () => {
     const f = fixture();
