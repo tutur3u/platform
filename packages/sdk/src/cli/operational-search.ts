@@ -17,6 +17,7 @@ import {
 import {
   buildIndex,
   collectDocuments,
+  IndexEmbeddingError,
   type ProjectionReader,
 } from '../operational-search/index';
 import {
@@ -30,7 +31,7 @@ import {
 import { search } from '../operational-search/query';
 import type { EmbeddingRuntime } from '../operational-search/runtime';
 import { privateParent } from './operational-files';
-import { fail } from './operational-schema';
+import { fail, OperationalError } from './operational-schema';
 
 const actions = ['query', 'index', 'model-status', 'model-prepare'];
 const help = {
@@ -171,6 +172,9 @@ export async function runOperationalSearch(
   let runtimeFallback: string | null = null;
   let runtimeFailureDiagnostic: Readonly<RuntimeFailureDiagnostic> | null =
     null;
+  let modelLoadedThisCommand = false;
+  let embeddingAttemptsThisCommand = 0;
+  let successfulEmbeddingsThisCommand = 0;
   if (!runtime && runtimeDirectory) {
     try {
       runtime = await createPythonRuntime(runtimeDirectory);
@@ -185,8 +189,12 @@ export async function runOperationalSearch(
     runtime = {
       fingerprint: activeRuntime.fingerprint,
       async embed(...arguments_) {
+        embeddingAttemptsThisCommand++;
         try {
-          return await activeRuntime.embed(...arguments_);
+          const vector = await activeRuntime.embed(...arguments_);
+          successfulEmbeddingsThisCommand++;
+          if (!injected?.runtime) modelLoadedThisCommand = true;
+          return vector;
         } catch (error) {
           if (error instanceof LocalRuntimeFailure)
             runtimeFailureDiagnostic = error.diagnostic;
@@ -197,19 +205,39 @@ export async function runOperationalSearch(
   }
   if (action === 'index') {
     if (!cachePath) fail('INVALID_INPUT', '--cache is required');
-    let cache: Awaited<ReturnType<typeof buildIndex>>;
+    let previous: ReturnType<typeof readCache> | undefined;
     try {
-      cache = await buildIndex({ path, readProjection, runtime });
+      previous = readCache(cachePath);
     } catch (error) {
-      if (!runtime) throw error;
-      runtimeFallback = 'LOCAL_EMBEDDING_FAILED';
-      cache = await buildIndex({ path, readProjection });
+      if (
+        !(error instanceof Error && 'code' in error && error.code === 'ENOENT')
+      )
+        throw error;
     }
+    let result: Awaited<ReturnType<typeof buildIndex>>;
+    try {
+      result = await buildIndex({ path, readProjection, runtime, previous });
+    } catch (error) {
+      if (
+        !runtime ||
+        !(
+          error instanceof IndexEmbeddingError ||
+          (error instanceof OperationalError &&
+            error.code === 'EMBEDDING_CAPACITY')
+        )
+      )
+        throw error;
+      runtimeFallback = 'LOCAL_EMBEDDING_FAILED';
+      result = await buildIndex({ path, readProjection, previous });
+    }
+    const { cache, stats } = result;
     const current = await readProjection({ path, limit: 1 });
     if (
       current.sourceDatabaseId !== cache.sourceDatabaseId ||
       current.revision !== cache.revision ||
-      current.snapshotHash !== cache.snapshotHash
+      current.snapshotHash !== cache.snapshotHash ||
+      current.projectionVersion !== cache.projectionVersion ||
+      !current.semanticCacheAllowed
     )
       fail(
         'PROJECTION_REVISION_CONFLICT',
@@ -222,8 +250,11 @@ export async function runOperationalSearch(
       revision: cache.revision,
       indexed: cache.documents.length,
       embedded: cache.vectors.length,
-      incremental: false,
-      invalidation: 'full snapshot',
+      incremental: stats.reuseEligible,
+      invalidation: stats.reuseEligible ? 'changed records' : 'full snapshot',
+      ...stats,
+      projectionScan: 'full snapshot',
+      lexicalRebuild: 'full snapshot',
       modelFingerprint: cache.modelFingerprint,
       runtimeFallback,
       runtimeFailureDiagnostic,
@@ -232,7 +263,9 @@ export async function runOperationalSearch(
         : runtime
           ? 'litert-local'
           : 'none',
-      modelLoaded: !injected?.runtime && cache.vectors.length > 0,
+      modelLoaded: modelLoadedThisCommand,
+      embeddingAttemptsThisCommand,
+      successfulEmbeddingsThisCommand,
       liveVerificationPerformed: false,
     };
   }
@@ -265,6 +298,20 @@ export async function runOperationalSearch(
   ) {
     cache = undefined;
     cacheStatus = 'stale';
+  }
+  if (cache) {
+    const currentHashes = new Map(
+      source.documents.map((document) => [document.id, document.contentHash])
+    );
+    if (
+      cache.documents.length !== source.documents.length ||
+      cache.documents.some(
+        (document) => currentHashes.get(document.id) !== document.contentHash
+      )
+    ) {
+      cache = undefined;
+      cacheStatus = 'stale-content-policy';
+    }
   }
   const result = await search({
     documents: source.documents,
