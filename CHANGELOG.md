@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.67.1](https://github.com/tutur3u/platform/compare/platform-v0.67.0...platform-v0.67.1) (2026-10-11)
+
+
+### Bug Fixes
+
+* preserve backend behavior while satisfying Clippy ([fc4ddc7](https://github.com/tutur3u/platform/commit/fc4ddc750c9ff5ab93bd4f9898a5f215edce064e))
+* reconcile release API and validation contracts ([d9c00b4](https://github.com/tutur3u/platform/commit/d9c00b4dc739a038d0c3b054ac319c7e1b366436))
+* reconcile release API and validation contracts ([91695ed](https://github.com/tutur3u/platform/commit/91695eda35da104d0d04cb98c44f4a21093145e6))
+
 ## [0.67.0](https://github.com/tutur3u/platform/compare/platform-v0.66.0...platform-v0.67.0) (2026-10-09)
 
 
