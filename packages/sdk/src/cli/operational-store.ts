@@ -5,8 +5,14 @@ import { z } from 'zod';
 import { intakePlan, updatePlan } from './operational-domain';
 import { exclusiveFile, privateParent, safePath } from './operational-files';
 import {
+  makeReceipt,
+  operationBodySchema,
+  operationHash,
+  receiptRowSchema,
+  validateReceipt,
+} from './operational-receipts';
+import {
   canonical,
-  digest,
   type Event,
   eventSchema,
   fail,
@@ -28,6 +34,7 @@ const revisionRow = z.object({ revision: z.number().int().nonnegative() });
 export const storeSchema = `
 CREATE TABLE operational_store_metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL);
 CREATE TABLE operational_operations(operation_id TEXT PRIMARY KEY,payload_hash TEXT NOT NULL,initial_revision INTEGER NOT NULL,final_revision INTEGER NOT NULL,response_json TEXT NOT NULL);
+CREATE TABLE operational_operation_proofs(operation_id TEXT PRIMARY KEY,proof_json TEXT NOT NULL);
 `;
 const backlogSchema =
   'CREATE TABLE items(id TEXT PRIMARY KEY,payload TEXT NOT NULL); CREATE TABLE events(seq INTEGER PRIMARY KEY,item_id TEXT NOT NULL,at TEXT NOT NULL,action TEXT NOT NULL,payload TEXT NOT NULL);';
@@ -37,6 +44,7 @@ const memorySchema =
 export class OperationalStore {
   readonly db: DatabaseSync;
   private readonly fd: number;
+  private inWriteTransaction = false;
   readonly path: string;
   constructor(
     input: string,
@@ -191,6 +199,7 @@ export class OperationalStore {
   transaction<T>(fn: () => T): T {
     if (!this.writable) fail('READ_ONLY', 'write requires writable store');
     this.db.exec('BEGIN IMMEDIATE');
+    this.inWriteTransaction = true;
     try {
       const result = fn();
       this.db.exec('COMMIT');
@@ -198,36 +207,37 @@ export class OperationalStore {
     } catch (error) {
       this.db.exec('ROLLBACK');
       throw error;
+    } finally {
+      this.inWriteTransaction = false;
     }
   }
   mutate(operation: Operation, body: unknown, apply: () => unknown) {
     const op = operationSchema.parse(operation);
-    const hash = digest({
-      kind: this.kind,
-      body,
-      expectedRevision: op.expectedRevision,
-    });
+    const parsedBody = operationBodySchema.parse(body);
+    const hash = operationHash(this.kind, op, parsedBody);
     return this.transaction(() => {
       if (!this.identity())
         fail(
           'MIGRATION_REQUIRED',
           'legacy store requires explicit migrate with a beforeimage export'
         );
-      const existing = this.db
-        .prepare(
-          'SELECT payload_hash,response_json FROM operational_operations WHERE operation_id=?'
-        )
-        .get(op.operationId);
+      const existing = this.operationReceipts().find(
+        (r) => r.operation_id === op.operationId
+      );
       if (existing) {
-        const receipt = z
-          .object({ payload_hash: z.string(), response_json: z.string() })
-          .parse(existing);
-        if (receipt.payload_hash !== hash)
+        if (existing.payload_hash !== hash)
           fail(
             'OPERATION_CONFLICT',
             'operation id was used with different input'
           );
-        return parseJson(receipt.response_json);
+        const identity = this.identity();
+        if (!identity)
+          fail('RECEIPT_PROOF_MISSING', 'native receipt identity unavailable');
+        return validateReceipt(existing, {
+          kind: this.kind,
+          sourceDatabaseId: identity,
+          events: this.history(),
+        });
       }
       const revision = this.revision();
       if (revision !== op.expectedRevision)
@@ -241,17 +251,70 @@ export class OperationalStore {
         sourceDatabaseId: this.identity(),
         liveVerificationPerformed: false,
       };
-      this.db
-        .prepare('INSERT INTO operational_operations VALUES(?,?,?,?,?)')
-        .run(
-          op.operationId,
-          hash,
-          revision,
-          this.revision(),
-          canonical(result)
-        );
+      this.recordOperation(op, parsedBody, result);
       return result;
     });
+  }
+  operationReceipts() {
+    if (
+      !this.db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='operational_operation_proofs'"
+        )
+        .get()
+    )
+      fail(
+        'RECEIPT_PROOF_MISSING',
+        'old native receipts have no request/event proof; history remains readable, do not backfill'
+      );
+    return this.db
+      .prepare(
+        'SELECT o.*,p.proof_json FROM operational_operations o LEFT JOIN operational_operation_proofs p ON p.operation_id=o.operation_id ORDER BY o.operation_id'
+      )
+      .all()
+      .map((row) => {
+        const parsed = z
+          .object({
+            ...receiptRowSchema.shape,
+            proof_json: z.string().nullable(),
+          })
+          .strict()
+          .parse(row);
+        const { proof_json, ...receipt } = parsed;
+        if (!proof_json)
+          fail(
+            'RECEIPT_PROOF_MISSING',
+            'native receipt lacks its original request/event proof'
+          );
+        return { ...receipt, proof: parseJson(proof_json) };
+      });
+  }
+  recordOperation(op: Operation, body: unknown, response: unknown) {
+    if (!this.inWriteTransaction)
+      fail(
+        'RECEIPT_TRANSACTION_REQUIRED',
+        'operation proof must be recorded inside its original writer transaction'
+      );
+    const identity = this.identity();
+    if (!identity)
+      fail('RECEIPT_PROOF_MISSING', 'native receipt identity unavailable');
+    const receipt = makeReceipt(op, body, response, {
+      kind: this.kind,
+      sourceDatabaseId: identity,
+      events: this.history(),
+    });
+    this.db
+      .prepare('INSERT INTO operational_operations VALUES(?,?,?,?,?)')
+      .run(
+        receipt.operation_id,
+        receipt.payload_hash,
+        receipt.initial_revision,
+        receipt.final_revision,
+        receipt.response_json
+      );
+    this.db
+      .prepare('INSERT INTO operational_operation_proofs VALUES(?,?)')
+      .run(receipt.operation_id, canonical(receipt.proof));
   }
   append(item: Item | Note, action: string) {
     const payload = canonical(item);

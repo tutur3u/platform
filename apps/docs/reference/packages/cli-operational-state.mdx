@@ -96,7 +96,13 @@ parent does not re-verify its dependents. Existing ready/active dependents retai
 the legacy reopening behavior.
 
 Every mutation requires `--expected-revision N` and `--operation-id UUID`.
-Revision is the maximum event sequence read after `BEGIN IMMEDIATE`. The same
+Revision is the maximum event sequence read after `BEGIN IMMEDIATE`. Native operations
+also capture their operation ID, validated request and exact original event interval
+in the additive `operational_operation_proofs` table. Proof rows and response
+receipts commit in the same writer transaction. Legacy item/event columns and
+payloads remain unchanged. Replay validates the original interval, not the latest
+projection, so later legitimate edits do not invalidate an earlier receipt.
+ The same
 operation ID with identical input returns its original receipt, even after later
 writes. Reusing it with different input fails. A stale revision fails without
 writing. Inspect the new snapshot and reconcile deliberately; do not retry blindly
@@ -131,7 +137,10 @@ ttr backlog import --db /private/path/new-store.sqlite --file /private/path/snap
 
 The same export/import commands exist under `operational-memory`. Exports refuse
 existing files and symlink paths. Version 1 bundles retain source database identity,
-complete original event history, projections and native dedupe receipts. SHA-256
+complete original event history, projections and native dedupe receipts with
+captured request/event proofs. Imported responses must agree with their recorded
+operation IDs, request hashes, event payloads and revision intervals. Rehashing an
+envelope does not make a forged receipt valid. SHA-256
 covers canonical JSON. Hashes establish integrity, not authentication. Input is
 bounded to 32 MiB, 10,000 records and 100,000 events/receipts; oversized exports
 fail rather than truncate history. Unknown fields, missing sequences, divergent
@@ -142,7 +151,12 @@ the bundle identity. Existing stores must have the same identity and an exact
 history prefix; divergence is an explicit conflict. Original sequences and payload
 strings are never renumbered or rewritten. Legacy beforeimages have no native
 identity and must be restored with legacy tooling before explicit adoption.
-Never silently merge unrelated ledgers. Review the selected operational content
+Never silently merge unrelated ledgers. Old native receipts without original
+request/event proofs cannot be replayed or imported/exported as qualified receipts.
+Their stores remain readable through snapshot/history. Retain the original SQLite
+store and receipts; do not invent a backfill, reset the ledger or discard its
+operation log to make a write succeed. Adoption requires a separately reviewed
+recovery procedure when the original request evidence is unavailable. Review the selected operational content
 before transferring a bundle. No arbitrary referenced file bodies are included.
 
 ## Verification and delivery boundaries

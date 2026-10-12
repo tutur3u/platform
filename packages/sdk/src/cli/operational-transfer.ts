@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { z } from 'zod';
 import { validateProjection } from './operational-domain';
 import { exclusiveFile, MAX_BYTES, safePath } from './operational-files';
+import { receiptSchema, validateReceipt } from './operational-receipts';
 import {
   canonical,
   digest,
@@ -15,33 +16,6 @@ import {
 } from './operational-schema';
 import { OperationalStore, type StoreKind } from './operational-store';
 
-const responseSchema = z
-  .object({
-    result: z.union([
-      itemSchema,
-      noteSchema,
-      z
-        .object({ added: z.array(z.string()), retained: z.array(z.string()) })
-        .strict(),
-      z
-        .object({ migrated: z.literal(true), beforeimageHash: z.string() })
-        .strict(),
-      z.object({ importedEvents: z.number().int().nonnegative() }).strict(),
-    ]),
-    revision: z.number().int().nonnegative(),
-    sourceDatabaseId: z.uuid(),
-    liveVerificationPerformed: z.literal(false),
-  })
-  .strict();
-const receiptSchema = z
-  .object({
-    operation_id: z.uuid(),
-    payload_hash: z.string().regex(/^[0-9a-f]{64}$/),
-    initial_revision: z.number().int().nonnegative(),
-    final_revision: z.number().int().nonnegative(),
-    response_json: z.string(),
-  })
-  .strict();
 const envelopeSchema = z
   .object({
     version: z.literal(1),
@@ -122,22 +96,13 @@ export function validateEnvelope(input: unknown): Envelope {
     if (ids.has(receipt.operation_id))
       fail('OPERATION_CONFLICT', 'duplicate operation receipt');
     ids.add(receipt.operation_id);
-    const response = responseSchema.parse(parseJson(receipt.response_json));
-    if (
-      (bundle.kind === 'backlog' && 'scope' in response.result) ||
-      (bundle.kind === 'operational-memory' && 'acceptance' in response.result)
-    )
-      fail('STORE_KIND_MISMATCH', 'operation receipt mixes stores');
-    if (
-      receipt.initial_revision > receipt.final_revision ||
-      receipt.final_revision > bundle.snapshotRevision ||
-      response.revision !== receipt.final_revision ||
-      response.sourceDatabaseId !== bundle.sourceDatabaseId
-    )
-      fail(
-        'INVALID_HISTORY',
-        'operation receipt revision or identity mismatch'
-      );
+    if (!bundle.sourceDatabaseId)
+      fail('INVALID_HISTORY', 'legacy bundle cannot contain native receipts');
+    validateReceipt(receipt, {
+      kind: bundle.kind,
+      sourceDatabaseId: bundle.sourceDatabaseId,
+      events: bundle.events,
+    });
   }
   if (!bundle.sourceDatabaseId && bundle.operations.length)
     fail('INVALID_HISTORY', 'legacy bundle cannot contain native receipts');
@@ -164,15 +129,7 @@ export function bundleFrom(store: OperationalStore): Envelope {
         : [],
     events: store.history(),
     operations: identity
-      ? z
-          .array(receiptSchema)
-          .parse(
-            store.db
-              .prepare(
-                'SELECT * FROM operational_operations ORDER BY operation_id'
-              )
-              .all()
-          )
+      ? z.array(receiptSchema).parse(store.operationReceipts())
       : [],
   };
   return validateEnvelope({ ...body, contentHash: digest(body) });
@@ -226,19 +183,7 @@ export function migrateStore(
       sourceDatabaseId: store.identity(),
       liveVerificationPerformed: false,
     };
-    store.db
-      .prepare('INSERT INTO operational_operations VALUES(?,?,?,?,?)')
-      .run(
-        op.operationId,
-        digest({
-          kind: store.kind,
-          body,
-          expectedRevision: op.expectedRevision,
-        }),
-        op.expectedRevision,
-        store.revision(),
-        canonical(response)
-      );
+    store.recordOperation(op, body, response);
     return response;
   });
 }
@@ -262,9 +207,9 @@ export function importPlan(store: OperationalStore, bundle: Envelope) {
   // Existing projections must match their own retained event history too.
   bundleFrom(store);
   for (const receipt of bundle.operations) {
-    const existing = store.db
-      .prepare('SELECT * FROM operational_operations WHERE operation_id=?')
-      .get(receipt.operation_id);
+    const existing = store
+      .operationReceipts()
+      .find((r) => r.operation_id === receipt.operation_id);
     if (
       existing &&
       canonical(receiptSchema.parse(existing)) !== canonical(receipt)
@@ -296,6 +241,10 @@ function applyBundle(store: OperationalStore, bundle: Envelope) {
         receipt.final_revision,
         receipt.response_json
       );
+  for (const receipt of bundle.operations)
+    store.db
+      .prepare('INSERT OR IGNORE INTO operational_operation_proofs VALUES(?,?)')
+      .run(receipt.operation_id, canonical(receipt.proof));
   return plan;
 }
 export function importStore(
@@ -345,19 +294,11 @@ export function importStore(
           sourceDatabaseId: store.identity(),
           liveVerificationPerformed: false,
         };
-        store.db
-          .prepare('INSERT INTO operational_operations VALUES(?,?,?,?,?)')
-          .run(
-            operation.operationId,
-            digest({
-              kind,
-              body: { command: 'import', contentHash: bundle.contentHash },
-              expectedRevision: operation.expectedRevision,
-            }),
-            0,
-            store.revision(),
-            canonical(response)
-          );
+        store.recordOperation(
+          operation,
+          { command: 'import', contentHash: bundle.contentHash },
+          response
+        );
         return response;
       });
     } finally {
