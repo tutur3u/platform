@@ -61,10 +61,41 @@ const doc = await client.documents.create({
 
 Source previews support native `ttr backlog search help --lang en|vi --json`
 and `ttr backlog search model-status --json` before login. Lexical queries require
-an explicit `--db`; derived indexes rebuild the full projection when it changes.
+an explicit `--db`.
 Model status without `--runtime-dir` loads or downloads no model. These source
 commands do not establish published npm availability or model admission. See
 [local operational state](/reference/packages/cli-operational-state).
+
+Search indexing reads the full current projection and rebuilds every lexical
+document with complete member content and provenance. Under the same source UUID,
+projection version, and authenticated runtime fingerprint, it can reuse a vector
+for an identical record ID and versioned full-record content hash. Canonical
+membership, provenance, content, or runtime recipe changes invalidate affected
+vectors. Deleted records are omitted. An absent or revoked runtime removes all
+semantic vectors. An older content policy requires one rebuild.
+
+Index output reports `strategy: snapshot-reconciled-vector-reuse-v1`,
+`reuseEligible`, `reused`, `computed`, `removed`, and `invalidated`. `embedded`
+counts committed vectors, with a maximum corpus of eight documents. `incremental`
+means reuse eligibility. `projectionScan` and `lexicalRebuild` remain full-snapshot
+operations; indexing does not consume an event delta feed. A newer cached revision
+or equal-revision snapshot drift denies reuse.
+
+`modelLoaded` reports a successful non-injected embedding return in this command.
+A command that computes no new vectors authenticates the runtime without loading
+the model. `embeddingAttemptsThisCommand` and
+`successfulEmbeddingsThisCommand` also describe this command. A later
+embedding failure can leave `modelLoaded: true` while the committed lexical
+fallback has zero vectors. Partial semantic caches are never published.
+
+Structural cache, projection, and source conflicts propagate as errors. Runtime
+embedding failures and capacity failures use lexical fallback. Before publication,
+the index rereads source UUID, revision, snapshot, version, and cache permission.
+Queries require the current snapshot and exact document IDs and content keys.
+An older content policy produces `stale-content-policy` and lexical fallback.
+Similarity candidates remain uncertain and never authorize closure or merge.
+Source tests and review qualify this reuse behavior separately from real engine
+execution, installed CLI availability, and hosted SDK packaging.
 
 <CardGroup cols={2}>
   <Card title="Bun CLI" icon="terminal">
