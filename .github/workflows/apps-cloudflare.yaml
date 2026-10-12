@@ -1,0 +1,55 @@
+name: Apps Cloudflare Source
+on:
+  pull_request:
+    paths: ['apps/apps/**', 'packages/utils/src/launchable-apps.ts', 'packages/utils/src/constants.ts', 'packages/utils/src/portless.ts', 'bun.lock', '.github/workflows/apps-cloudflare.yaml', 'tuturuuu.ci.ts']
+  push:
+    branches: [main]
+    paths: ['apps/apps/**', 'packages/utils/src/launchable-apps.ts', 'packages/utils/src/constants.ts', 'packages/utils/src/portless.ts', 'bun.lock', '.github/workflows/apps-cloudflare.yaml', 'tuturuuu.ci.ts']
+permissions:
+  contents: read
+concurrency:
+  group: apps-cloudflare-source-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: apps-cloudflare.yaml
+  validate:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun run test:cloudflare
+        working-directory: apps/apps
+      - name: Type-check portable client and Worker without emitting
+        run: bun x --no-install tsc --ignoreConfig --strict --noEmit --moduleResolution bundler --module ESNext --jsx react-jsx --target ESNext --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --types node cloudflare/gateway-worker.ts src/portable/catalogue-entry.tsx src/portable/entry.tsx src/portable/vite-env.d.ts vite.config.ts vitest.cloudflare.config.ts
+        working-directory: apps/apps
+      - run: bun run build:cloudflare
+        working-directory: apps/apps
+      - name: Verify built local Worker and asset boundary
+        working-directory: apps/apps
+        env:
+          CI: 'true'
+        run: CI_SOURCE_SHA=$(git rev-parse HEAD) node --test cloudflare/gateway-built-worker.test.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: apps-cloudflare-source-${{ github.event.pull_request.head.sha || github.sha }}
+          path: apps/apps/dist
+          if-no-files-found: error
