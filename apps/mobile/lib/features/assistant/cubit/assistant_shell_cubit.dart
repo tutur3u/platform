@@ -286,6 +286,38 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     }
   }
 
+  Future<bool> resetWorkspaceContextAcknowledged(
+    String contextId,
+    bool Function() isCurrent,
+  ) async {
+    final actor = _repository.currentActorId;
+    final workspace = state.workspace;
+    final version = _requestVersion;
+    final scope = _currentScopeToken?.call();
+    bool current() =>
+        !isClosed &&
+        actor != null &&
+        workspace != null &&
+        _repository.currentActorId == actor &&
+        _preferences.matchesResetActor(actor) &&
+        _requestVersion == version &&
+        state.workspace?.id == workspace.id &&
+        _currentScopeToken?.call() == scope &&
+        isCurrent();
+    if (!current()) return false;
+    if (!await _preferences.saveWorkspaceContextIdAcknowledged(
+          workspace!.id,
+          contextId,
+          actorId: actor!,
+          isCurrent: current,
+        ) ||
+        !current()) {
+      return false;
+    }
+    emit(state.copyWith(workspaceContextId: contextId));
+    return current();
+  }
+
   Future<void> setWorkspaceContextId(String contextId) async {
     final workspace = state.workspace;
     if (workspace == null) return;

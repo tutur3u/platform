@@ -247,3 +247,138 @@ Regression coverage includes `assistant_chat_operational_reporting_test.dart`,
 legacy SSE adapters, separate creation/local persistence/transport failures,
 privacy, cancellation and sink isolation. They do not prove a customer incident's
 cause or native Crashlytics delivery.
+
+
+## Assistant conversation persistence
+
+Mobile Assistant uses an explicitly acknowledged native Chat creation response.
+Offline placeholders remain available to ordinary Chat consumers, but cannot
+become an Assistant conversation identity. Attachment preparation and a queued
+send share one creation acknowledgment for the same actor, workspace and fallback
+generation. The repository retains one instance-local result for that current
+generation. An uncertain failed result retains the existing creation hold. Upload and send use
+the same validated durable conversation ID. Cancellation settles the send without
+dropping a still-current attachment creation.
+
+Workspace loading, actor lifecycle through workspace loading or closure, and a
+confirmed explicit reset invalidate this generation monotonically. A raw actor
+getter changing away and back without any lifecycle signal is not observable;
+callers must use these lifecycle boundaries. A stale acknowledged result cannot
+qualify a later generation. Opening a different conversation also invalidates
+pending creation before changing selection. Creation publication and ordinary
+selection writes share one actor/workspace preference lock. An already-admitted
+old write drains before the current selection is durably written; stale callbacks
+cannot change the newly selected history or start an old attachment upload. The native creation API validates
+its committed receipt before returning it. A later realtime publication failure
+does not change that known receipt into a failed creation response.
+
+Bare conversation UUIDs select native Chat storage. `ai-chat-` and `legacy-ai-`
+prefixes select existing AI storage. Native permission or availability failures
+never switch stores. Restore failures preserve the selected conversation and
+its history. Only an authoritative missing response for an explicitly selected
+legacy conversation may remove that selection. Ambiguous historical bare UUIDs
+remain selected with an error rather than being silently rewritten.
+
+Native sends read authorized stored AI settings. They do not PATCH persistent
+settings merely to send a message. The native message endpoint has no per-turn
+model, credit, or thinking override; an unsupported selection produces an error.
+`manage_chat` permissions remain required for editing stored settings.
+
+Saved user receipts retain the original client request ID alongside the server
+message ID. Restore and retry preserve that original identity. Changed payloads
+remain subject to the server's idempotency conflict checks. Attachment ownership
+and saved assistant receipts retain the existing stream completion behavior.
+The native composer helper waits for `submitAcknowledged`, which distinguishes
+acknowledged, denied, unknown, and stale outcomes. Only a matching validated saved
+user receipt for the original request can consume the current draft. Starting a
+stream or receiving an assistant reply is insufficient. Composer attachments
+remain until that acknowledgment and are cleared only if their snapshot is still
+current. A later model failure preserves the known saved user and its retry ID.
+Identical follow-up text uses a new request identity; explicit retries retain the
+original one. Queue discard and stale transport completion settle waiting callers
+without a new request or retry timer. A validated saved user acknowledgment
+returns independently of observer cleanup. Cleanup remains owned and drained;
+a delayed or failing cancellation cannot replace that receipt or settle a newer
+request. Selecting another chat retires only the stale request’s still-owned queued
+entry before its debounce can send; drafts and attachments remain available, and
+a later send requires its own matching USER receipt. Default stop and explicit supersession settle only the queued or active
+request they cancel. A canceled attempt retains its draft and attachments; idle
+status is never an acknowledgment. Pre-stream failures, including decoder errors,
+settle the owning request without bypassing uncertainty holds.
+
+Native stream and JSON receipts validate raw UUIDs, canonical message kinds,
+string content, explicit ISO timestamps and metadata before generic model
+coercion. User receipts also require the original request UUID. Malformed batch
+rows reject the batch instead of disappearing during filtering. Ordinary Chat
+parsing retains its existing compatibility behavior.
+
+Assistant snapshots capture the injected actor, workspace, conversation, locale,
+lifecycle epoch and cache revision before awaiting storage. Reads check that origin
+before and after storage/network work; writes pass its revision and scope fence to
+the existing cache store. A changed scope or revision cancels an obsolete snapshot
+without moving it to another actor or retrying it. Completion snapshots are immutable,
+tracked and serialized per key; identical protocol/transport completion requests
+share one publication. Same-scope supersession skips work before admission;
+an admitted authorized write and its rollback finish before the successor. Local
+queue order cannot revoke rollback authority. If the successor fails, the last
+authorized snapshot survives. Close invalidates their leases and drains owned work.
+
+Cache cancellation does not undo a validated USER receipt. Genuine storage failures
+retain the prior authorized snapshot and produce safe diagnostics; valid network
+history remains usable. Explicit restore observes all thrown failures and retains
+selected history on failure. Real disposable encrypted-store controls cover held
+publication, latest reopen, storage faults, scope departure, clear, held reads and
+close drain. Synthetic transport in those tests does not prove live authentication,
+provider behavior or a device session.
+
+Provider-free contract fixtures exercise creation, two sends, reopening after
+each send, and retry after reopening. They also cover malformed IDs, workspace
+mismatches, pending creation rows, denied or unavailable restore, and interrupted
+creation. These checks prove source contracts with synthetic dependencies; they
+do not prove provider calls or an authenticated device session.
+
+Unknown creation outcomes use an actor- and workspace-scoped status marker
+written before HTTP. Missing, unreadable, or unrecognized markers require review;
+there is no automatic migration to a safe state. Validated acknowledgement clears
+the hold only after the existing selected-chat preference is retained. A coded
+request-validation denial before the private RPC is the only failed-request
+release. Transport errors, timeouts, uncoded rate limits and server failures
+retain the hold across repository recreation. The marker contains status only.
+Marker transitions and reads serialize per actor/workspace and reload host
+preferences rather than trusting speculative plugin cache writes. Failed writes
+retain a scope-specific hold until a successful informed acknowledgment. A pending
+clear cannot admit another creation. Selected-ID persistence and marker clearing
+each require their own confirmed result after a durable server acknowledgment.
+
+Native reset returns `Future<bool>` and requires a guarded reset-context adapter.
+An absent adapter, failed preference acknowledgment, or stale actor/workspace
+selection is incomplete. Selected-chat and workspace-context readers serialize
+with reset writes and reload the host value. Failed, thrown, or stale writes also
+reload before releasing readers. Unavailable host recovery produces an unreadable
+selection error instead of publishing speculative cache values. The shell updates its context only after confirmed
+persistence and a current selection check. Callers retain drafts, selection,
+attachments, and history on `false` or an exception. Retries check uncertainty and
+the original request identity before changing saved history.
+
+This hold blocks new creation and retries of an uncertain attempt. Follow-up in
+a verified existing chat remains available. Reset returns `false` without
+changing the selected chat unless an informed new-chat action explicitly passes
+`acknowledgeUnknownCreation: true`. The owning page must inspect history and warn
+that the previous save may already exist. Device/runtime validation and that
+localized confirmation UI are separate delivery gates.
+
+Regression coverage: `assistant_chat_persistence_contract_test.dart`,
+`assistant_creation_marker_test.dart`, `assistant_chat_persistence_test.dart`,
+`assistant_chat_submission_ack_test.dart`, `assistant_chat_cache_publication_test.dart`,
+`assistant_chat_cache_lifecycle_test.dart`,
+`assistant_chat_creation_interleave_test.dart`,
+`assistant_chat_creation_selection_test.dart`,
+`chat_creation_receipt_test.dart`, and the existing Assistant restore and
+transport completion tests in `apps/mobile/test/features/assistant` and
+`apps/mobile/test/features/chat`.
+
+Stream fixture diagnostics record mock entry, response readiness, body listening
+and cancellation separately. Delivery deadlines begin after bounded readiness;
+primary phase failures retain their error and stack when cleanup also fails.
+Synthetic held-mock controls exercise the never-listened body path. These controls
+do not identify an earlier incident's blocked await without its readiness evidence.

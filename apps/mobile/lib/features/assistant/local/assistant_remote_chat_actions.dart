@@ -25,7 +25,7 @@ Future<bool> submitAssistantRemoteChat(
   if (!admitted()) return false;
   final timezone = await (resolveTimezone ?? getCurrentTimezoneIdentifier)();
   if (!admitted()) return false;
-  await chat.submit(
+  final outcome = await chat.submitAcknowledged(
     wsId: wsId,
     message: message,
     modelId: shell.selectedModel.value,
@@ -38,7 +38,7 @@ Future<bool> submitAssistantRemoteChat(
         ? shell.personalWorkspaceId
         : wsId,
   );
-  return accepted();
+  return outcome.acknowledged && accepted();
 }
 
 Future<void> retryAssistantChat(

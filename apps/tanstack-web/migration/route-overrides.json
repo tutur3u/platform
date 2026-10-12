@@ -1375,7 +1375,7 @@
         "POST": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "Conversation creation remains on the live Next.js backend pending Rust parity."
+          "note": "The maintained Next.js POST validates the durable private-RPC conversation identity and retains its 201 receipt when supplemental realtime publication fails. RPC, authorization, and malformed receipt failures remain errors. Rust creation parity remains pending; the inactive runtime is not resumed."
         }
       }
     },

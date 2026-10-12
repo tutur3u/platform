@@ -1,7 +1,8 @@
 // Relative imports retain the existing Assistant API module layout.
-// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars
+// ignore_for_file: always_use_package_imports
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
@@ -12,35 +13,47 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/safe_error_diagnostics.dart';
+import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/assistant_chat_identity.dart';
 import '../models/assistant_models.dart';
 import '../models/assistant_soul_snapshot.dart';
 import 'assistant_calendar_insight.dart';
+import 'assistant_chat_persistence_contract.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
+import 'assistant_preferences.dart';
 import 'assistant_soul_name_writer.dart';
 import 'assistant_soul_reader.dart';
 import 'assistant_stream_parser.dart';
 
+part 'assistant_repository_cache.dart';
+part 'assistant_repository_chat.dart';
 part 'assistant_repository_preferences.dart';
 part 'assistant_repository_soul.dart';
 
-class AssistantRepository with _AssistantSoulRepository {
+class AssistantRepository
+    with _AssistantSoulRepository, _AssistantChatRepository {
   AssistantRepository({
     ApiClient? apiClient,
     ApiClient? tasksApiClient,
     http.Client? httpClient,
     ChatRepository? chatRepository,
+    String? Function()? currentUserId,
+    CacheStore? chatCacheStore,
   }) : this._(
          apiClient ?? ApiClient(),
          tasksApiClient ?? ApiClient(baseUrl: ApiConfig.tasksBaseUrl),
          httpClient ?? http.Client(),
          chatRepository,
+         currentUserId ?? currentCacheUserId,
+         chatCacheStore ?? CacheStore.instance,
        );
 
   AssistantRepository._(
@@ -48,6 +61,8 @@ class AssistantRepository with _AssistantSoulRepository {
     this._tasksApiClient,
     this._httpClient,
     ChatRepository? chatRepository,
+    this._currentUserId,
+    this._chatCacheStore,
   ) : _chatRepository =
           chatRepository ??
           ChatRepository(apiClient: _apiClient, httpClient: _httpClient);
@@ -56,7 +71,124 @@ class AssistantRepository with _AssistantSoulRepository {
   final ApiClient _apiClient;
   final ApiClient _tasksApiClient;
   final http.Client _httpClient;
+  @override
   final ChatRepository _chatRepository;
+  @override
+  final String? Function() _currentUserId;
+  String? get currentActorId => _currentUserId();
+
+  @override
+  final CacheStore _chatCacheStore;
+  SafeErrorDiagnostics? chatCacheDiagnostics;
+  final _chatCacheFlights = <String, _AssistantCacheFlight>{};
+  final _chatCacheTasks = <Future<void>>{};
+  ({
+    String key,
+    int epoch,
+    int revision,
+    String payload,
+    AssistantChatCacheOrigin origin,
+    Future<AssistantChatCachePublication> result,
+  })?
+  _lastChatSnapshot;
+
+  @override
+  AssistantChatCacheOrigin? captureChatCacheOrigin({
+    required String wsId,
+    required String chatId,
+    required bool Function() isCurrent,
+  }) =>
+      _captureChatCacheOrigin(wsId: wsId, chatId: chatId, isCurrent: isCurrent);
+  @override
+  Future<AssistantChatCachePublication> publishAssistantChatSnapshot({
+    required AssistantChatCacheOrigin origin,
+    required AssistantRestoredChat restored,
+  }) => _publishAssistantChatSnapshot(origin: origin, restored: restored);
+  Future<void> drainAssistantChatCache() => _drainAssistantChatCache();
+  Future<void> writeAssistantChatCache({
+    required String wsId,
+    required String chatId,
+    required AssistantRestoredChat restored,
+  }) =>
+      _writeAssistantChatCache(wsId: wsId, chatId: chatId, restored: restored);
+
+  @override
+  void _trackChatCache(Future<void> operation) =>
+      _trackChatCacheOperation(operation);
+  @override
+  AssistantChatCachePublication _cacheFailure(
+    AssistantChatCacheOrigin origin,
+    Object error,
+  ) => _classifyCacheFailure(origin, error);
+
+  int _creationGenerationVersion = 0;
+  ({
+    String scope,
+    String fallbackId,
+    int version,
+    Future<AssistantChatRecord> result,
+  })?
+  _generationCreation;
+
+  /// App actor/workspace lifecycle and confirmed reset boundaries invalidate ACKs.
+  void invalidateChatCreation() {
+    _lastChatSnapshot = null;
+    _creationGenerationVersion++;
+    _generationCreation = null;
+  }
+
+  Future<AssistantChatRecord> createChat({
+    required String id,
+    required String wsId,
+    required String modelId,
+    required String message,
+    required String timezone,
+  }) async {
+    final scope = _creationScopeKey(wsId);
+    var pending = _generationCreation;
+    if (pending != null &&
+        (pending.scope != scope ||
+            pending.fallbackId != id ||
+            pending.version != _creationGenerationVersion)) {
+      invalidateChatCreation();
+      pending = null;
+    }
+    final version = _creationGenerationVersion;
+    bool current() =>
+        version == _creationGenerationVersion &&
+        scope == _creationScopeKey(wsId);
+    final result =
+        pending?.result ??
+        _createChat(
+          id: id,
+          wsId: wsId,
+          modelId: modelId,
+          message: message,
+          timezone: timezone,
+          isCurrentCreation: current,
+        );
+    _generationCreation = (
+      scope: scope,
+      fallbackId: id,
+      version: version,
+      result: result,
+    );
+    try {
+      final acknowledged = await result;
+      if (!current()) {
+        throw const AssistantCreationUncertainException(
+          'Assistant creation generation changed',
+        );
+      }
+      return acknowledged;
+    } on Object {
+      if (identical(_generationCreation?.result, result)) {
+        _generationCreation = null;
+      }
+      rethrow;
+    }
+  }
+
   static final Random _random = Random.secure();
 
   static const _assistantChatCacheTag = 'assistant:chat';
@@ -67,19 +199,6 @@ class AssistantRepository with _AssistantSoulRepository {
       CachePolicies.metadata;
   static const CachePolicy _assistantInsightCachePolicy = CachePolicies.summary;
   static const CachePolicy _assistantHistoryCachePolicy = CachePolicies.summary;
-
-  static CacheKey _assistantChatCacheKey({
-    required String wsId,
-    required String chatId,
-  }) {
-    return CacheKey(
-      namespace: 'assistant.chat_restore',
-      userId: currentCacheUserId(),
-      workspaceId: wsId,
-      locale: currentCacheLocaleTag(),
-      params: {'chatId': chatId},
-    );
-  }
 
   static CacheKey _assistantMetadataCacheKey({
     required String namespace,
@@ -167,19 +286,6 @@ class AssistantRepository with _AssistantSoulRepository {
         .whereType<Map<String, dynamic>>()
         .map(AssistantChatRecord.fromJson)
         .toList(growable: false);
-  }
-
-  Future<void> writeAssistantChatCache({
-    required String wsId,
-    required String chatId,
-    required AssistantRestoredChat restored,
-  }) async {
-    await CacheStore.instance.write(
-      key: _assistantChatCacheKey(wsId: wsId, chatId: chatId),
-      policy: _assistantChatCachePolicy,
-      payload: restored.toJson(),
-      tags: [_assistantChatCacheTag, 'workspace:$wsId', 'module:assistant'],
-    );
   }
 
   Future<String?> resolvePersonalWorkspaceId({
@@ -370,7 +476,19 @@ class AssistantRepository with _AssistantSoulRepository {
             final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
             final mapped = rows
                 .whereType<Map<String, dynamic>>()
-                .map(AssistantChatRecord.fromJson)
+                .map((row) {
+                  final record = AssistantChatRecord.fromJson(row);
+                  final route = AssistantChatRoute.parse(
+                    'ai-chat-${record.id}',
+                  );
+                  return AssistantChatRecord(
+                    id: route.conversationId,
+                    title: record.title,
+                    model: record.model,
+                    isPublic: record.isPublic,
+                    createdAt: record.createdAt,
+                  );
+                })
                 .toList(growable: false);
             final limited = limit == null
                 ? mapped
@@ -379,148 +497,6 @@ class AssistantRepository with _AssistantSoulRepository {
           },
         );
     return result.data ?? const <AssistantChatRecord>[];
-  }
-
-  Future<AssistantRestoredChat?> restoreChat({
-    required String wsId,
-    required String chatId,
-    bool forceRefresh = false,
-  }) async {
-    if (chatId.startsWith('ai-agent-thread-')) return null;
-    final cacheKey = _assistantChatCacheKey(wsId: wsId, chatId: chatId);
-
-    if (!forceRefresh) {
-      final cached = await CacheStore.instance.read<AssistantRestoredChat>(
-        key: cacheKey,
-        decode: _decodeRestoredCache,
-      );
-      if (cached.hasValue && cached.data != null && !cached.isExpired) {
-        unawaited(
-          restoreChat(
-            wsId: wsId,
-            chatId: chatId,
-            forceRefresh: true,
-          ).catchError((_) => null),
-        );
-        return cached.data;
-      }
-    }
-
-    final nativeRestored = await _restoreNativeChat(wsId: wsId, chatId: chatId);
-    if (nativeRestored != null) {
-      await CacheStore.instance.write(
-        key: cacheKey,
-        policy: _assistantChatCachePolicy,
-        payload: nativeRestored.toJson(),
-        tags: [_assistantChatCacheTag, 'workspace:$wsId', 'module:assistant'],
-      );
-      return nativeRestored;
-    }
-
-    late final Map<String, dynamic> payload;
-    try {
-      payload = await _apiClient.postJson('/api/ai/chat/restore', {
-        'chatId': assistantLiveChatUuid(chatId) ?? chatId,
-      });
-    } on ApiException {
-      if (!forceRefresh) {
-        final cached = await CacheStore.instance.read<AssistantRestoredChat>(
-          key: cacheKey,
-          decode: _decodeRestoredCache,
-        );
-        if (cached.hasValue && cached.data != null && !cached.isExpired) {
-          return cached.data;
-        }
-      }
-      return null;
-    }
-
-    final chatRaw = payload['chat'];
-    if (chatRaw is! Map<String, dynamic>) {
-      return null;
-    }
-
-    final messagesRaw = payload['messages'];
-    final messageRows =
-        (messagesRaw is List<dynamic> ? messagesRaw : const <dynamic>[])
-            .whereType<Map<String, dynamic>>()
-            .toList();
-
-    final messages = _restoreMessages(messageRows);
-
-    final attachmentResponse = await _apiClient.postJson(
-      '/api/ai/chat/file-urls',
-      {'wsId': wsId, 'chatId': chatId},
-    );
-
-    final attachmentsByMessageId = <String, List<AssistantAttachment>>{};
-    final files = (attachmentResponse['files'] as List<dynamic>? ?? const [])
-        .whereType<Map<String, dynamic>>()
-        .toList();
-
-    final firstUserMessageId = messages
-        .firstWhere(
-          (message) => message.role == 'user',
-          orElse: () => const AssistantMessage(id: '', role: 'user'),
-        )
-        .id;
-
-    for (var index = 0; index < files.length; index++) {
-      final file = files[index];
-      String? targetMessageId;
-
-      for (final raw in messageRows) {
-        final metadata = raw['metadata'];
-        if (metadata is! Map<String, dynamic>) {
-          continue;
-        }
-        final attachments = metadata['attachments'];
-        if (attachments is! List<dynamic>) {
-          continue;
-        }
-        final hasMatch = attachments.whereType<Map<String, dynamic>>().any((
-          attachment,
-        ) {
-          final storagePath = attachment['storagePath'];
-          final url = attachment['url'];
-          final id = attachment['id'];
-          return storagePath == file['path'] ||
-              url == file['path'] ||
-              id == file['path'];
-        });
-        if (hasMatch) {
-          targetMessageId = raw['id'] as String?;
-          break;
-        }
-      }
-
-      targetMessageId ??= firstUserMessageId.isEmpty
-          ? null
-          : firstUserMessageId;
-      if (targetMessageId == null) {
-        continue;
-      }
-
-      attachmentsByMessageId.putIfAbsent(targetMessageId, () => []);
-      attachmentsByMessageId[targetMessageId]!.add(
-        AssistantAttachment.fromStoredFile(file),
-      );
-    }
-
-    final restored = AssistantRestoredChat(
-      chat: AssistantChatRecord.fromJson(chatRaw),
-      messages: messages,
-      attachmentsByMessageId: attachmentsByMessageId,
-    );
-
-    await CacheStore.instance.write(
-      key: cacheKey,
-      policy: _assistantChatCachePolicy,
-      payload: restored.toJson(),
-      tags: [_assistantChatCacheTag, 'workspace:$wsId', 'module:assistant'],
-    );
-
-    return restored;
   }
 
   Future<void> prewarmWorkspace({
@@ -549,188 +525,6 @@ class AssistantRepository with _AssistantSoulRepository {
         fetchRecentChats(wsId: wsId, limit: 20, forceRefresh: forceRefresh),
       ),
     ]);
-  }
-
-  Future<AssistantChatRecord> createChat({
-    required String id,
-    required String wsId,
-    required String modelId,
-    required String message,
-    required String timezone,
-  }) async {
-    final conversation = await _chatRepository.createConversation(
-      wsId,
-      type: ChatConversationType.ai,
-      title: _titleFromPrompt(message),
-      aiEnabled: true,
-      autoReply: true,
-      modelId: modelId,
-    );
-    return _assistantChatRecordFromConversation(conversation, modelId: modelId);
-  }
-
-  Stream<AssistantStreamEvent> streamChat({
-    required String chatId,
-    required String wsId,
-    required String? workspaceContextId,
-    required String modelId,
-    required List<AssistantMessage> messages,
-    required AssistantThinkingMode thinkingMode,
-    required AssistantCreditSource creditSource,
-    required String timezone,
-    List<AssistantAttachment> attachments = const [],
-    String? creditWsId,
-  }) async* {
-    try {
-      await _chatRepository.updateAiSettings(
-        wsId,
-        chatId,
-        creditSource: _chatCreditSource(creditSource),
-        creditWsId: creditWsId,
-        modelId: modelId,
-        thinkingMode: ChatAiThinkingMode.thinking,
-      );
-
-      var assistantStarted = false;
-      final nativeAttachments = _chatAttachmentDrafts(chatId, attachments);
-      final requestId = messages.reversed
-          .where((message) => message.role == 'user')
-          .firstOrNull
-          ?.id;
-      await for (final event in _chatRepository.sendMessageStream(
-        wsId,
-        chatId,
-        content: _latestUserText(messages),
-        attachments: nativeAttachments,
-        clientRequestId: requestId,
-        miraMode: true,
-      )) {
-        if (event is ChatStreamAssistantDeltaEvent) {
-          if (!assistantStarted) {
-            assistantStarted = true;
-            yield AssistantJsonStreamEvent({
-              'type': 'start',
-              'messageId': generateUuid(),
-            });
-          }
-          yield AssistantJsonStreamEvent({
-            'type': 'text-delta',
-            'delta': event.delta,
-          });
-          continue;
-        }
-
-        if (event is ChatStreamAssistantPartEvent) {
-          if (!assistantStarted) {
-            assistantStarted = true;
-            yield AssistantJsonStreamEvent({
-              'type': 'start',
-              'messageId': generateUuid(),
-            });
-          }
-          yield _assistantEventFromChatPart(event.part);
-          continue;
-        }
-        if (event is ChatStreamMessagesEvent) {
-          final assistantMessages = event.messages.where(
-            (message) => message.kind == ChatMessageKind.assistant,
-          );
-          for (final message in assistantMessages) {
-            if (!assistantStarted) {
-              yield AssistantJsonStreamEvent({
-                'type': 'start',
-                'messageId': message.id,
-              });
-              assistantStarted = true;
-            }
-            yield AssistantJsonStreamEvent({
-              'type': 'saved-message',
-              'messageId': message.id,
-              'text': message.content,
-            });
-          }
-          continue;
-        }
-
-        if (event is ChatStreamErrorEvent) {
-          yield AssistantJsonStreamEvent({
-            'type': 'error',
-            'errorText': event.message,
-          });
-          continue;
-        }
-
-        if (event is ChatStreamDoneEvent) {
-          yield const AssistantDoneStreamEvent();
-        }
-      }
-      return;
-    } on ApiException catch (error) {
-      final legacyConversation =
-          error.statusCode == 400 &&
-          error.message == 'Conversation is not an AI chat';
-      if (!legacyConversation &&
-          error.statusCode != 404 &&
-          error.statusCode != 403) {
-        rethrow;
-      }
-    }
-
-    yield* _streamLegacyChat(
-      chatId: chatId,
-      wsId: wsId,
-      workspaceContextId: workspaceContextId,
-      modelId: modelId,
-      messages: messages,
-      thinkingMode: thinkingMode,
-      creditSource: creditSource,
-      timezone: timezone,
-      creditWsId: creditWsId,
-    );
-  }
-
-  Stream<AssistantStreamEvent> _streamLegacyChat({
-    required String chatId,
-    required String wsId,
-    required String? workspaceContextId,
-    required String modelId,
-    required List<AssistantMessage> messages,
-    required AssistantThinkingMode thinkingMode,
-    required AssistantCreditSource creditSource,
-    required String timezone,
-    String? creditWsId,
-  }) async* {
-    final response = await _apiClient.sendJsonStream('POST', '/api/ai/chat', {
-      'id': assistantLiveChatUuid(chatId) ?? chatId,
-      'wsId': wsId,
-      'workspaceContextId': workspaceContextId,
-      'model': modelId,
-      'messages': messages.map((message) => message.toJson()).toList(),
-      'isMiraMode': true,
-      'timezone': timezone,
-      'thinkingMode': AssistantThinkingMode.thinking.name,
-      'creditSource': creditSource.name,
-      if (creditWsId != null) 'creditWsId': creditWsId,
-    }, accept: 'text/event-stream');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final body = await response.stream.bytesToString();
-      throw ApiException(
-        message: body.isEmpty ? 'Failed to stream chat' : body,
-        statusCode: response.statusCode,
-      );
-    }
-
-    final parser = AssistantSseParser();
-    await for (final chunk in response.stream) {
-      final events = parser.addChunk(chunk);
-      for (final event in events) {
-        yield event;
-      }
-    }
-
-    for (final event in parser.close()) {
-      yield event;
-    }
   }
 
   Future<AssistantAttachment> uploadAttachment({
@@ -859,164 +653,6 @@ class AssistantRepository with _AssistantSoulRepository {
     return signedUrlByPath;
   }
 
-  Future<AssistantRestoredChat?> _restoreNativeChat({
-    required String wsId,
-    required String chatId,
-  }) async {
-    try {
-      final messages = await _chatRepository.listMessages(wsId, chatId);
-      return AssistantRestoredChat(
-        chat: AssistantChatRecord(id: chatId),
-        messages: messages.map(_assistantMessageFromChatMessage).toList(),
-        attachmentsByMessageId: _assistantAttachmentsFromChatMessages(messages),
-      );
-    } on ApiException catch (error) {
-      if (error.statusCode == 404 || error.statusCode == 403) return null;
-      rethrow;
-    }
-  }
-
-  AssistantChatRecord _assistantChatRecordFromConversation(
-    ChatConversation conversation, {
-    String? modelId,
-  }) {
-    return AssistantChatRecord(
-      id: conversation.id,
-      title: conversation.title,
-      model: modelId ?? conversation.metadata['modelId']?.toString(),
-      createdAt: conversation.createdAt,
-    );
-  }
-
-  AssistantMessage _assistantMessageFromChatMessage(ChatMessage message) =>
-      restoreAssistantChatMessage(message);
-
-  Map<String, List<AssistantAttachment>> _assistantAttachmentsFromChatMessages(
-    List<ChatMessage> messages,
-  ) {
-    final out = <String, List<AssistantAttachment>>{};
-    for (final message in messages) {
-      if (message.attachments.isEmpty) continue;
-      out[message.id] = message.attachments
-          .map(_assistantAttachmentFromChatAttachment)
-          .toList(growable: false);
-    }
-    return out;
-  }
-
-  AssistantAttachment _assistantAttachmentFromChatAttachment(
-    ChatAttachment attachment, {
-    String? fallbackId,
-    String? fallbackPath,
-    String? fallbackType,
-    int? fallbackSize,
-  }) {
-    return AssistantAttachment(
-      id: fallbackId ?? attachment.id,
-      name: attachment.filename,
-      size: attachment.sizeBytes ?? fallbackSize ?? 0,
-      type:
-          attachment.contentType ?? fallbackType ?? 'application/octet-stream',
-      localPath: fallbackPath,
-      storagePath: attachment.storagePath,
-      uploadState: AssistantAttachmentUploadState.uploaded,
-    );
-  }
-
-  List<ChatAttachmentDraft> _chatAttachmentDrafts(
-    String conversationId,
-    List<AssistantAttachment> attachments,
-  ) {
-    return attachments
-        .where((attachment) {
-          final path = attachment.storagePath;
-          return path != null && path.startsWith('chats/$conversationId/');
-        })
-        .map(
-          (attachment) => ChatAttachmentDraft(
-            filename: attachment.name,
-            path: attachment.storagePath!,
-            contentType: attachment.type,
-            sizeBytes: attachment.size,
-          ),
-        )
-        .toList(growable: false);
-  }
-
-  AssistantJsonStreamEvent _assistantEventFromChatPart(
-    Map<String, dynamic> part,
-  ) {
-    if (part['type'] == 'reasoning') {
-      return AssistantJsonStreamEvent({
-        'type': 'reasoning-delta',
-        'delta': part['text']?.toString() ?? '',
-      });
-    }
-    return AssistantJsonStreamEvent(part);
-  }
-
-  ChatAiCreditSource _chatCreditSource(AssistantCreditSource source) {
-    return switch (source) {
-      AssistantCreditSource.personal => ChatAiCreditSource.personal,
-      AssistantCreditSource.workspace => ChatAiCreditSource.workspace,
-    };
-  }
-
-  String _latestUserText(List<AssistantMessage> messages) {
-    for (final message in messages.reversed) {
-      if (message.role != 'user') continue;
-      final text = message.parts
-          .where((part) => part.type == 'text')
-          .map((part) => part.text ?? '')
-          .join('\n\n')
-          .trim();
-      if (text.isNotEmpty) return text;
-    }
-    return '';
-  }
-
-  String _titleFromPrompt(String message) {
-    final compact = message.trim().replaceAll(RegExp(r'\s+'), ' ');
-    if (compact.isEmpty) return 'Assistant chat';
-    if (compact.length <= 64) return compact;
-    return '${compact.substring(0, 61)}...';
-  }
-
-  List<AssistantMessage> _restoreMessages(
-    List<Map<String, dynamic>> messagesData,
-  ) {
-    return messagesData
-        .where((message) {
-          final metadata = message['metadata'] as Map<String, dynamic>?;
-          return message['content'] != null ||
-              metadata?['parts'] != null ||
-              metadata?['toolCalls'] != null ||
-              metadata?['reasoning'] != null ||
-              metadata?['sources'] != null;
-        })
-        .map((message) {
-          final parts = restoreAssistantHistoryParts(
-            message['content'] as String?,
-            message['metadata'] as Map<String, dynamic>?,
-          );
-          return AssistantMessage(
-            id: message['id'] as String,
-            role: _normalizeRole(message['role'] as String?),
-            liveTurnId: (message['metadata'] as Map?)?['liveTurnId'] as String?,
-            parts: parts,
-            createdAt: DateTime.tryParse(
-              message['created_at'] as String? ?? '',
-            ),
-          );
-        })
-        .toList();
-  }
-
-  String _normalizeRole(String? role) {
-    if (role == null) return 'assistant';
-    return role.toLowerCase() == 'user' ? 'user' : 'assistant';
-  }
-
   String _uploadContentType(String mimeType) {
     const officeTypes = {
       'application/vnd.ms-excel',
@@ -1032,6 +668,7 @@ class AssistantRepository with _AssistantSoulRepository {
     return mimeType.isEmpty ? 'application/octet-stream' : mimeType;
   }
 
+  @override
   String generateUuid() {
     final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
@@ -1043,7 +680,8 @@ class AssistantRepository with _AssistantSoulRepository {
         '${hex(bytes[4])}${hex(bytes[5])}-'
         '${hex(bytes[6])}${hex(bytes[7])}-'
         '${hex(bytes[8])}${hex(bytes[9])}-'
-        '${hex(bytes[10])}${hex(bytes[11])}${hex(bytes[12])}${hex(bytes[13])}${hex(bytes[14])}${hex(bytes[15])}';
+        '${hex(bytes[10])}${hex(bytes[11])}${hex(bytes[12])}${hex(bytes[13])}'
+        '${hex(bytes[14])}${hex(bytes[15])}';
   }
 }
 

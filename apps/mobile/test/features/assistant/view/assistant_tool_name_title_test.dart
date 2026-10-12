@@ -55,7 +55,9 @@ void main() {
           await tester.runAsync(() async {
             final completed = chat.stream.firstWhere(
               (state) =>
-                  state.messages.lastOrNull?.id == 'saved-reply' &&
+                  state.messages.lastOrNull?.id ==
+                      '33333333-3333-4333-'
+                          '8333-333333333333' &&
                   state.status == AssistantChatStatus.idle,
             );
             await chat.submit(
@@ -78,7 +80,11 @@ void main() {
             ),
             findsOneWidget,
           );
-          expect(chat.state.messages.last.id, 'saved-reply');
+          expect(
+            chat.state.messages.last.id,
+            '33333333-3333-4333-'
+            '8333-333333333333',
+          );
           expect(chat.state.error, isNull);
           if (fails) {
             expect(

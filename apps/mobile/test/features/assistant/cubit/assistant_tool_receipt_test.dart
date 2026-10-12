@@ -92,13 +92,19 @@ void main() {
   Future<void> finish() async {
     final settled = chat.stream.firstWhere(
       (state) =>
-          state.messages.lastOrNull?.id == 'saved-reply' &&
+          state.messages.lastOrNull?.id ==
+              '33333333-3333-4333-'
+                  '8333-333333333333' &&
           state.status == AssistantChatStatus.idle,
     );
     repository.done();
     await settled.timeout(const Duration(seconds: 2));
     expect(chat.state.error, isNull);
-    expect(chat.state.messages.last.id, 'saved-reply');
+    expect(
+      chat.state.messages.last.id,
+      '33333333-3333-4333-'
+      '8333-333333333333',
+    );
   }
 
   test(

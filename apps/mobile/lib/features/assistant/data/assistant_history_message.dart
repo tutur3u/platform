@@ -1,3 +1,4 @@
+import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_history_parts.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -13,4 +14,5 @@ AssistantMessage restoreAssistantChatMessage(ChatMessage message) =>
       parts: restoreAssistantHistoryParts(message.content, message.metadata),
       createdAt: message.createdAt,
       liveTurnId: message.metadata['liveTurnId'] as String?,
+      clientRequestId: assistantClientRequestId(message.metadata),
     );

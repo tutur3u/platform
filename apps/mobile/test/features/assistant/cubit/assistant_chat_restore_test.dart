@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart' show XFile;
@@ -46,6 +45,16 @@ void main() {
     messages: [],
     attachmentsByMessageId: {},
   );
+  Future<AssistantRestoredChat?> restoreWithScope(
+    String wsId,
+    String chatId, {
+    bool forceRefresh = false,
+  }) => repository.restoreChat(
+    wsId: wsId,
+    chatId: chatId,
+    forceRefresh: forceRefresh,
+    cacheOrigin: any(named: 'cacheOrigin'),
+  );
 
   setUpAll(() {
     registerFallbackValue(restored);
@@ -60,10 +69,29 @@ void main() {
       ),
     );
   });
-
   setUp(() {
     repository = _Repository();
+    when(
+      () => repository.hasUnknownChatCreation(any()),
+    ).thenAnswer((_) async => false);
     preferences = _Preferences();
+    when(() => repository.currentActorId).thenReturn('actor');
+    when(() => preferences.matchesResetActor('actor')).thenReturn(true);
+    when(
+      () => preferences.clearChatIdAcknowledged(
+        any(),
+        actorId: any(named: 'actorId'),
+        isCurrent: any(named: 'isCurrent'),
+      ),
+    ).thenAnswer((_) async => true);
+    when(
+      () => preferences.saveWorkspaceContextIdAcknowledged(
+        any(),
+        any(),
+        actorId: any(named: 'actorId'),
+        isCurrent: any(named: 'isCurrent'),
+      ),
+    ).thenAnswer((_) async => true);
     when(repository.generateUuid).thenReturn('new-chat');
     when(() => preferences.loadChatId(any())).thenAnswer((_) async => 'cached');
     when(
@@ -80,17 +108,7 @@ void main() {
       ),
     ).thenAnswer((_) async {});
     when(
-      () => preferences.saveWorkspaceContextId(
-        any(),
-        any(),
-        shouldWrite: any(named: 'shouldWrite'),
-      ),
-    ).thenAnswer((_) async {});
-    when(
-      () => repository.restoreChat(
-        wsId: any(named: 'wsId'),
-        chatId: any(named: 'chatId'),
-      ),
+      () => restoreWithScope(any(named: 'wsId'), any(named: 'chatId')),
     ).thenAnswer((_) async => restored);
     when(
       () => repository.fetchRecentChats(wsId: any(named: 'wsId')),
@@ -98,6 +116,7 @@ void main() {
     cubit = AssistantChatCubit(
       repository: repository,
       preferences: preferences,
+      onResetWorkspaceContext: (_, current) async => current(),
       onWorkspaceContextChanged: (_) async {},
       onSoulRefreshRequested: () async {},
       onImmersiveModeChanged: (_) {},
@@ -105,7 +124,6 @@ void main() {
     );
     addTearDown(cubit.close);
   });
-
   test(
     'attachment decode cannot cross a workspace switch and return',
     () async {
@@ -132,7 +150,6 @@ void main() {
       );
     },
   );
-
   for (final switchBack in [false, true]) {
     test('delayed attachment decode rejects local mode '
         '${switchBack ? 'ABA' : 'selection'}', () async {
@@ -171,7 +188,6 @@ void main() {
       );
     });
   }
-
   test(
     'voice upload rejects actor change while decoding the local file',
     () async {
@@ -198,7 +214,6 @@ void main() {
       );
     },
   );
-
   test(
     'picker scope captured before timezone await rejects stale upload',
     () async {
@@ -223,7 +238,6 @@ void main() {
       );
     },
   );
-
   test(
     'voice attachment creates its chat before uploading and keeps its type',
     () async {
@@ -257,7 +271,6 @@ void main() {
           uploadState: AssistantAttachmentUploadState.uploaded,
         );
       });
-
       await cubit.addComposerAttachments(
         wsId: 'ws',
         files: [
@@ -269,7 +282,6 @@ void main() {
         modelId: 'model',
         timezone: 'UTC',
       );
-
       expect(cubit.state.chat?.id, 'persisted');
       expect(cubit.state.composerAttachments.single.isUploaded, isTrue);
       when(
@@ -332,18 +344,13 @@ void main() {
       ).called(1);
     },
   );
-
   test(
     'Live history reload bypasses cache without hiding current messages',
     () async {
       await cubit.loadWorkspace('ws');
       final fresh = Completer<AssistantRestoredChat?>();
       when(
-        () => repository.restoreChat(
-          wsId: 'ws',
-          chatId: 'cached',
-          forceRefresh: true,
-        ),
+        () => restoreWithScope('ws', 'cached', forceRefresh: true),
       ).thenAnswer((_) => fresh.future);
       final loading = cubit.openChatById('ws', 'cached');
       expect(cubit.state.status, AssistantChatStatus.idle);
@@ -364,7 +371,6 @@ void main() {
       expect(cubit.state.messages.single.id, 'new-live-turn');
     },
   );
-
   test('stream error survives finish events and connection closure', () async {
     await cubit.loadWorkspace('ws');
     when(
@@ -409,7 +415,6 @@ void main() {
     expect(cubit.state.error, 'Service unavailable');
     expect(cubit.state.messages.single.role, 'user');
     final originalMessageId = cubit.state.messages.single.id;
-
     await cubit.retryLast(
       wsId: 'ws',
       modelId: 'model',
@@ -440,7 +445,6 @@ void main() {
       ),
     ).called(2);
   });
-
   test('retry sends the original uploaded voice attachment', () async {
     const voice = AssistantAttachment(
       id: 'audio',
@@ -450,12 +454,13 @@ void main() {
       storagePath: 'chats/cached/audio.m4a',
       uploadState: AssistantAttachmentUploadState.uploaded,
     );
-    when(() => repository.restoreChat(wsId: 'ws', chatId: 'cached')).thenAnswer(
+    when(() => restoreWithScope('ws', 'cached')).thenAnswer(
       (_) async => const AssistantRestoredChat(
         chat: AssistantChatRecord(id: 'cached'),
         messages: [
           AssistantMessage(
             id: 'voice-turn',
+            clientRequestId: '11111111-1111-4111-8111-111111111111',
             role: 'user',
             parts: [AssistantMessagePart(type: 'text', text: 'Please listen')],
           ),
@@ -516,7 +521,6 @@ void main() {
     expect(invocation.single.id, voice.id);
     expect(cubit.state.messages.single.id, 'voice-turn');
   });
-
   test('saved reply replaces the temporary streamed message id', () async {
     await cubit.loadWorkspace('ws');
     when(
@@ -588,7 +592,6 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(cubit.state.history.single.id, 'history');
   });
-
   test('history failure does not hide a restored conversation', () async {
     when(
       () => repository.fetchRecentChats(wsId: 'ws'),
@@ -598,12 +601,11 @@ void main() {
     expect(cubit.state.status, AssistantChatStatus.idle);
     expect(cubit.state.error, isNull);
   });
-
   test('a new workspace rejects delayed restore and history', () async {
     final restore = Completer<AssistantRestoredChat?>();
     final history = Completer<List<AssistantChatRecord>>();
     when(
-      () => repository.restoreChat(wsId: 'old', chatId: 'cached'),
+      () => restoreWithScope('old', 'cached'),
     ).thenAnswer((_) => restore.future);
     when(
       () => repository.fetchRecentChats(wsId: 'old'),
@@ -624,11 +626,10 @@ void main() {
     expect(cubit.state.chat?.id, 'cached');
     expect(cubit.state.history, isEmpty);
   });
-
   test('starting a new conversation cancels an outstanding restore', () async {
     final restore = Completer<AssistantRestoredChat?>();
     when(
-      () => repository.restoreChat(wsId: 'ws', chatId: 'cached'),
+      () => restoreWithScope('ws', 'cached'),
     ).thenAnswer((_) => restore.future);
     final loading = cubit.loadWorkspace('ws');
     await Future<void>.delayed(Duration.zero);
@@ -654,18 +655,13 @@ void main() {
     await first;
     expect(cubit.state.history.single.id, 'newest');
   });
-
   test(
     'submission during chat switch cannot enter the previous conversation',
     () async {
       await cubit.loadWorkspace('ws');
       final pending = Completer<AssistantRestoredChat?>();
       when(
-        () => repository.restoreChat(
-          wsId: 'ws',
-          chatId: 'next',
-          forceRefresh: true,
-        ),
+        () => restoreWithScope('ws', 'next', forceRefresh: true),
       ).thenAnswer((_) => pending.future);
       final opening = cubit.openChatById('ws', 'next');
       await cubit.submit(

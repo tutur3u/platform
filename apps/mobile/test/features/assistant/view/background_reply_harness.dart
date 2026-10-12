@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
@@ -63,6 +64,10 @@ class ReplyWorkspace extends Cubit<WorkspaceState> implements WorkspaceCubit {
 }
 
 class ReplyRepository extends AssistantRepository {
+  // This synthetic repository models an explicitly acknowledged creation scope.
+  @override
+  Future<bool> hasUnknownChatCreation(String wsId) async => false;
+
   final stream = StreamController<AssistantStreamEvent>(sync: true);
   final replacement = StreamController<AssistantStreamEvent>(sync: true);
   Completer<void>? cancelGate;
@@ -79,7 +84,8 @@ class ReplyRepository extends AssistantRepository {
   int saves = 0;
   int ids = 0;
   @override
-  String generateUuid() => 'synthetic-${ids++}';
+  String generateUuid() =>
+      'aaaaaaaa-aaaa-4aaa-8aaa-${(++ids).toString().padLeft(12, '0')}';
   @override
   Future<String?> resolvePersonalWorkspaceId({
     bool forceRefresh = false,
@@ -134,7 +140,32 @@ class ReplyRepository extends AssistantRepository {
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
   }) {
-    return starts++ == 0 ? stream.stream : replacement.stream;
+    final target = starts++ == 0 ? stream : replacement;
+    final user = messages.lastWhere((message) => message.role == 'user');
+    final requestId = user.clientRequestId!;
+    final text = user.parts
+        .where((part) => part.type == 'text')
+        .map((part) => part.text ?? '')
+        .join('\n\n')
+        .trim();
+    final priorListen = target.onListen;
+    target.onListen = () {
+      priorListen?.call();
+      scheduleMicrotask(() {
+        if (!target.isClosed) {
+          target.add(
+            AssistantJsonStreamEvent({
+              'type': 'saved-user-message',
+              'clientRequestId': requestId,
+              'messageId':
+                  'bbbbbbbb-bbbb-4bbb-8bbb-${ids.toString().padLeft(12, '0')}',
+              'text': text,
+            }),
+          );
+        }
+      });
+    };
+    return target.stream;
   }
 
   @override
@@ -144,6 +175,7 @@ class ReplyRepository extends AssistantRepository {
     required String wsId,
     required String chatId,
     bool forceRefresh = false,
+    AssistantChatCacheOrigin? cacheOrigin,
   }) async => null;
   @override
   Future<void> writeAssistantChatCache({

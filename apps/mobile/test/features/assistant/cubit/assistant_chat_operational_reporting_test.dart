@@ -24,6 +24,10 @@ class _Preferences extends AssistantPreferences {
 }
 
 class _Repository extends AssistantRepository {
+  // This synthetic repository models an explicitly acknowledged creation scope.
+  @override
+  Future<bool> hasUnknownChatCreation(String wsId) async => false;
+
   Exception? createError;
   Completer<AssistantChatRecord>? pendingCreate;
   final started = Completer<void>();
@@ -143,7 +147,8 @@ void main() {
     failSink = true;
     repository.createError = const ApiException(
       message: 'private',
-      statusCode: 503,
+      statusCode: 400,
+      code: 'chat_create_invalid_request',
     );
     final failed = cubit.stream.firstWhere(
       (state) => state.status == AssistantChatStatus.error,
@@ -154,7 +159,7 @@ void main() {
     expect(cubit.state.status, AssistantChatStatus.error);
     repository.createError = null;
     await _submit(cubit);
-    // The real debounce and create path must recover despite failed telemetry.
+    // A coded pre-effect rejection permits recovery despite failed telemetry.
     await cubit.stream
         .firstWhere((state) => state.status == AssistantChatStatus.submitting)
         .timeout(const Duration(seconds: 2));

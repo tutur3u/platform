@@ -21,7 +21,7 @@ void main() {
       when(() => chats.listMessages('ws', conversationId)).thenAnswer(
         (_) async => [
           ChatMessage(
-            id: 'saved-turn',
+            id: '11111111-1111-4111-8111-111111111111',
             conversationId: conversationId,
             content: 'Live saved',
             kind: ChatMessageKind.assistant,

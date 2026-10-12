@@ -2,6 +2,7 @@
 // storage helpers concise.
 // ignore_for_file: always_use_package_imports
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:mobile/core/cache/cache_context.dart';
@@ -29,6 +30,105 @@ class AssistantPreferences {
     : _currentUserId = currentUserId ?? currentCacheUserId;
 
   final String? Function() _currentUserId;
+
+  static final _resetTransitions = <String, Future<void>>{};
+
+  static Future<T> _serializedResetPreference<T>(
+    String key,
+    Future<T> Function() work,
+  ) async {
+    final previous = _resetTransitions[key];
+    final released = Completer<void>();
+    _resetTransitions[key] = released.future;
+    try {
+      if (previous != null) await previous;
+      return await work();
+    } finally {
+      released.complete();
+      if (identical(_resetTransitions[key], released.future)) {
+        unawaited(_resetTransitions.remove(key));
+      }
+    }
+  }
+
+  static Future<T> serializeChatSelection<T>(
+    String actorId,
+    String wsId,
+    Future<T> Function() work,
+  ) => _serializedResetPreference(
+    '$actorId::$assistantChatStorageKeyPrefix$wsId',
+    work,
+  );
+
+  Future<String?> _readResetPreference(String prefix, String wsId) async {
+    final key = _key(prefix, wsId);
+    if (key == null) return null;
+    try {
+      return await _serializedResetPreference(key, () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.reload();
+        if (key != _key(prefix, wsId)) return null;
+        return prefs.getString(key);
+      });
+    } on Object {
+      throw const FormatException('Assistant selection storage is unreadable');
+    }
+  }
+
+  bool matchesResetActor(String actorId) => _currentUserId() == actorId;
+
+  Future<bool> clearChatIdAcknowledged(
+    String wsId, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) => _writeResetPreference(
+    wsId,
+    assistantChatStorageKeyPrefix,
+    actorId,
+    isCurrent,
+    (prefs, key) => prefs.remove(key),
+    null,
+  );
+
+  Future<bool> saveWorkspaceContextIdAcknowledged(
+    String wsId,
+    String contextId, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) => _writeResetPreference(
+    wsId,
+    assistantWorkspaceContextStorageKeyPrefix,
+    actorId,
+    isCurrent,
+    (prefs, key) => prefs.setString(key, contextId),
+    contextId,
+  );
+
+  Future<bool> _writeResetPreference(
+    String wsId,
+    String prefix,
+    String actorId,
+    bool Function() isCurrent,
+    Future<bool> Function(SharedPreferences, String) write,
+    String? expected,
+  ) async {
+    bool permitted() => matchesResetActor(actorId) && isCurrent();
+    if (!permitted()) return false;
+    final key = '$actorId::$prefix$wsId';
+    return await _serializedResetPreference(key, () async {
+      final prefs = await SharedPreferences.getInstance();
+      if (!permitted()) return false;
+      var acknowledged = false;
+      try {
+        acknowledged = await write(prefs, key);
+      } finally {
+        // Plugin writes update cache before host acknowledgment, including
+        // false/throw/stale results. Every exit restores the host boundary.
+        await prefs.reload();
+      }
+      return acknowledged && permitted() && prefs.getString(key) == expected;
+    });
+  }
 
   String? _key(String prefix, String wsId) {
     final userId = _currentUserId();
@@ -60,38 +160,40 @@ class AssistantPreferences {
     await prefs.setBool(key, value);
   }
 
-  Future<String?> loadChatId(String wsId) async {
-    final key = _key(assistantChatStorageKeyPrefix, wsId);
-    if (key == null) return null;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantChatStorageKeyPrefix, wsId)) return null;
-    return prefs.getString(key);
-  }
+  Future<String?> loadChatId(String wsId) =>
+      _readResetPreference(assistantChatStorageKeyPrefix, wsId);
 
   Future<void> saveChatId(
     String wsId,
     String chatId, {
     bool Function()? shouldWrite,
-  }) async {
-    final key = _key(assistantChatStorageKeyPrefix, wsId);
-    if (key == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantChatStorageKeyPrefix, wsId) ||
-        shouldWrite?.call() == false) {
-      return;
-    }
-    await prefs.setString(key, chatId);
-  }
+  }) => _writeSelectedChat(wsId, chatId, shouldWrite);
 
-  Future<void> clearChatId(String wsId, {bool Function()? shouldWrite}) async {
-    final key = _key(assistantChatStorageKeyPrefix, wsId);
-    if (key == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantChatStorageKeyPrefix, wsId) ||
-        shouldWrite?.call() == false) {
-      return;
+  Future<void> clearChatId(String wsId, {bool Function()? shouldWrite}) =>
+      _writeSelectedChat(wsId, null, shouldWrite);
+
+  Future<void> _writeSelectedChat(
+    String wsId,
+    String? chatId,
+    bool Function()? shouldWrite,
+  ) async {
+    final actor = _currentUserId();
+    if (actor == null) return;
+    bool current() => shouldWrite?.call() ?? true;
+    final acknowledged = await _writeResetPreference(
+      wsId,
+      assistantChatStorageKeyPrefix,
+      actor,
+      current,
+      (prefs, key) =>
+          chatId == null ? prefs.remove(key) : prefs.setString(key, chatId),
+      chatId,
+    );
+    if (!acknowledged && matchesResetActor(actor) && current()) {
+      throw const FormatException(
+        'Assistant selected identity was not confirmed',
+      );
     }
-    await prefs.remove(key);
   }
 
   Future<AssistantGatewayModel?> loadModel(String wsId) async {
@@ -187,15 +289,8 @@ class AssistantPreferences {
     await prefs.setString(key, source.name);
   }
 
-  Future<String?> loadWorkspaceContextId(String wsId) async {
-    final key = _key(assistantWorkspaceContextStorageKeyPrefix, wsId);
-    if (key == null) return null;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId)) {
-      return null;
-    }
-    return prefs.getString(key);
-  }
+  Future<String?> loadWorkspaceContextId(String wsId) =>
+      _readResetPreference(assistantWorkspaceContextStorageKeyPrefix, wsId);
 
   Future<void> saveWorkspaceContextId(
     String wsId,
