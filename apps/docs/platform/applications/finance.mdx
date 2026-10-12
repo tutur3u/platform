@@ -673,6 +673,14 @@ actor or workspace admission fails closed. The existing print path is unchanged.
 with synthetic held renderer boundaries; this is bounded source evidence, not
 proof of the original customer incident or a live customer export.
 
+A renderer rejection or a null PNG blob reports the existing export error
+without a download, then releases the current attempt so staff can retry the same
+invoice. While that retry is pending, repeated clicks cannot start another capture.
+A successful retry downloads once and releases its temporary object URL.
+The same-card retry cases in `invoice-png-lifetime.test.tsx` cover both failures
+with synthetic renderer boundaries. They do not establish browser canvas behavior
+or customer runtime recovery; those require a disposable authenticated workspace.
+
 ### Invoice template dates
 
 Full and compact invoice cards omit a date that cannot be rendered as a finite
