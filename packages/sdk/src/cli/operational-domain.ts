@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  groupMembers,
+  invalidateGraphVerification,
+  pendingDependencies,
+} from '../operational-graph/duplicate';
 import { verificationFor } from './operational-evidence';
 import {
   canonical,
@@ -100,9 +105,25 @@ export function updatePlan(items: Map<string, Item>, change: Update) {
   const item = { ...previous };
   if (change.status !== undefined) {
     if (['ready', 'active', 'verified'].includes(change.status)) {
-      const pending = (item.dependencies ?? []).filter(
-        (id) => items.get(id)?.status !== 'verified'
-      );
+      if (
+        ['ready', 'active'].includes(change.status) &&
+        item.graph &&
+        item.graph.disposition.kind !== 'open'
+      )
+        fail(
+          'INVALID_STATE',
+          'closed or duplicate requests must reopen before activation'
+        );
+      const pending =
+        change.status === 'verified'
+          ? pendingDependencies(items, item)
+          : [
+              ...new Set(
+                groupMembers(items, item.id).flatMap((member) =>
+                  pendingDependencies(items, member)
+                )
+              ),
+            ];
       if (pending.length)
         fail(
           'DEPENDENCY_PENDING',
@@ -119,6 +140,11 @@ export function updatePlan(items: Map<string, Item>, change: Update) {
       delete item.invalidatedDependencies;
     } else if (previous.status === 'verified') delete item.verification;
     item.status = change.status;
+    if (
+      change.status !== 'verified' &&
+      item.graph?.disposition.kind === 'closed'
+    )
+      item.graph = { ...item.graph, disposition: { kind: 'open' } };
   }
   if (change.priority !== undefined) item.priority = change.priority;
   if (change.owner !== undefined) item.owner = change.owner;
@@ -138,17 +164,23 @@ export function updatePlan(items: Map<string, Item>, change: Update) {
         (id) => proposed.get(id)?.status !== 'verified'
       );
       if (dependent.status === 'verified' && pending.length) {
-        const invalidated = {
+        const invalidated: Item = {
           ...dependent,
-          status: 'implemented' as const,
+          status: 'implemented',
           invalidatedDependencies: pending,
         };
         delete invalidated.verification;
+        if (invalidated.graph?.disposition.kind === 'closed')
+          invalidated.graph = {
+            ...invalidated.graph,
+            disposition: { kind: 'open' },
+          };
         proposed.set(dependent.id, invalidated);
         events.push({ item: invalidated, action: 'dependency-invalidated' });
         changed = true;
       }
     }
   }
-  return { item, events };
+  events.push(...invalidateGraphVerification(proposed));
+  return { item: proposed.get(item.id) ?? item, events };
 }

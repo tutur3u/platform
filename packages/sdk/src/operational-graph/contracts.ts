@@ -107,3 +107,61 @@ export const outcomeProjectionPageSchema = z.discriminatedUnion(
   ]
 );
 export type OutcomeProjectionPage = z.infer<typeof outcomeProjectionPageSchema>;
+
+const memberIds = z
+  .array(slug)
+  .min(1)
+  .max(10_000)
+  .refine((v) => new Set(v).size === v.length);
+export const graphCommandSchema = z.discriminatedUnion('kind', [
+  z
+    .object({ kind: z.literal('parent'), id: slug, parentId: slug.nullable() })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('dependency'),
+      id: slug,
+      dependencyId: slug,
+      action: z.enum(['add', 'remove']),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('related'),
+      id: slug,
+      relatedId: slug,
+      action: z.enum(['add', 'remove']),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('merge'),
+      canonicalId: slug,
+      memberIds,
+      reason: text,
+      confirmation: z.literal('equivalent'),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('unmerge'),
+      id: slug,
+      mergeOperationId: z.uuid(),
+      reason: text,
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('close'),
+      id: slug,
+      reason: text,
+      confirmation: z.literal('user-confirmed'),
+    })
+    .strict(),
+  z.object({ kind: z.literal('reopen'), id: slug, reason: text }).strict(),
+]);
+export type GraphCommand = z.infer<typeof graphCommandSchema>;
+export const graphResultSchema = z
+  .object({ changedIds: z.array(slug).max(10_000) })
+  .strict();
+export type GraphResult = z.infer<typeof graphResultSchema>;
