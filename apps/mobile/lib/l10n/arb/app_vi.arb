@@ -4539,5 +4539,17 @@
   "notesLocalAiStop": "Dừng",
   "notesLocalAiGenerate": "Tạo trên thiết bị",
   "notesLocalAiAppend": "Thêm tóm tắt",
-  "notesLocalAiDiscard": "Bỏ bản xem trước"
+  "notesLocalAiDiscard": "Bỏ bản xem trước",
+  "assistantExpandPrompt": "Mở rộng lời nhắc",
+  "assistantMinimizePrompt": "Thu gọn lời nhắc",
+  "assistantSettingInfo": "Thông tin về {setting}",
+  "@assistantSettingInfo": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantPreviewPlay": "Phát bản xem trước",
+  "assistantPreviewPause": "Tạm dừng bản xem trước"
 }

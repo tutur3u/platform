@@ -23,7 +23,7 @@ show a calling screen with the real connection status and a cancel action;
 microphone/camera/text/end controls appear only after connection. The connected
 controls replace navigation inside the same shell material at the same adaptive
 navbar width. Expanding navigation or ending the call preserves that surface.
-Text chat keeps its existing composer sizing.
+Text chat grows to at least three lines while focused and at most five lines in the dock. The control above Send opens a full-screen draft editor; minimizing returns the same text and selection to the dock without sending.
 
 Live capture requests PCM16 mono, gain control, echo cancellation, and noise
 suppression. Android uses the communication source/mode and speaker route. The
@@ -430,6 +430,33 @@ Delayed file decoding and stale pre-timezone scope are covered by
 Mira Live uses the app background for its calling stage and transcript. Camera, microphone, text-entry and end-call actions are published as content of the existing shell-owned floating dock; the page creates no second control rail. The same dock material persists when switching between Chat input and Live controls. The stage reflects real connection and speaking state, respects reduced motion, and retains permission/recovery feedback. Camera is enabled only after connection, microphone toggling is disabled while connecting, and end-call remains available to cancel an in-progress connection. This presentation does not claim a provider-latency improvement or on-device model execution.
 
 Regression coverage: `assistant_live_mode_view_test.dart` and `assistant_live_call_controls_test.dart` cover narrow/landscape and enlarged-text layouts, real connection-state action availability, and the absence of a body-owned control rail. `shared_navbar_large_text_test.dart` exercises the actual shell at enlarged text size and verifies the same dock Material element survives Chat, Live, global-navigation and full-screen transitions.
+
+### Mobile draft editing and previews
+
+The mobile prompt's expansion control sits above Send. Full-screen editing uses
+that same draft controller and preserves its selection; returning restores the
+previous dock focus. Enter remains a newline. The editor has no Send action and
+keeps the existing upload/removal and guarded submission callbacks unchanged.
+Attachment previews sit above the prompt in both modes. Images and videos open
+media previews; audio opens playback controls without automatic playback.
+Uploading and failed attachments remain identified and removable. Previews are
+bounded and scrollable on narrow screens and at enlarged text sizes.
+
+Assistant settings and its field editors reuse the existing custom floating
+navigation for Back. Other settings frames retain their current navigation.
+Live-browsing, local-model and workspace-memory explanations open from labeled
+information buttons. Hardware, upload/download progress, errors and recovery
+controls remain visible; all original explanatory copy stays in the dialogs.
+Personality values use two-line previews with the full value retained for
+accessibility and field editing. The central Assistant tile waits for completed
+authentication; this presentation does not grant new permissions.
+
+Regression coverage: `assistant_composer_draft_test.dart` observes focused input
+height, control order, draft/selection/focus return, preview state updates and
+blocked submission. `assistant_settings_ux_test.dart` covers authentication
+readiness; existing routed settings tests cover Back and safe-area clearance.
+Widget evidence uses synthetic data and does not establish installed-device
+performance, chat persistence, or provider operation.
 
 ### Central mobile Mira settings
 

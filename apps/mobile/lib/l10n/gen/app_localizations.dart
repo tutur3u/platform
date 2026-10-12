@@ -20220,6 +20220,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard preview'**
   String get notesLocalAiDiscard;
+
+  /// No description provided for @assistantExpandPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand prompt'**
+  String get assistantExpandPrompt;
+
+  /// No description provided for @assistantMinimizePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize prompt'**
+  String get assistantMinimizePrompt;
+
+  /// No description provided for @assistantSettingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'About {setting}'**
+  String assistantSettingInfo(String setting);
+
+  /// No description provided for @assistantPreviewPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play preview'**
+  String get assistantPreviewPlay;
+
+  /// No description provided for @assistantPreviewPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause preview'**
+  String get assistantPreviewPause;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

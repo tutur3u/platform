@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
@@ -34,6 +35,8 @@ class AssistantPersonalityEditor extends StatelessWidget {
                 subtitle: Text(
                   field.options(context)[field.value(state.snapshot!.soul)] ??
                       field.value(state.snapshot!.soul),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 trailing: const Icon(Icons.chevron_right),
                 enabled: !state.busy,

@@ -18,7 +18,11 @@ class AssistantSettingsEditorPage extends StatelessWidget {
     child: MediaQuery.removeViewInsets(
       context: context,
       removeBottom: true,
-      child: SettingsRouteFrame(title: title, child: child),
+      child: SettingsRouteFrame(
+        title: title,
+        customNavigation: true,
+        child: child,
+      ),
     ),
   );
 }
