@@ -25,6 +25,56 @@ const reviewedCliVersion = '2.117.0';
 const failure = () => new Error('Bounded employee type generation failed');
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
+/** Emit only fixed signatures, never the captured startup diagnostics or their values. */
+export function classifyEmployeeStartupFailure(result) {
+  const limit = 65536;
+  if (typeof result?.stderr !== 'string')
+    return {
+      diagnosticKind: 'startup-stderr-signature-v1',
+      category: 'unavailable',
+      capturedBytes: 0,
+    };
+  const bytes = Buffer.byteLength(result.stderr, 'utf8');
+  let category = 'unknown';
+  if (bytes > limit || result.error?.code === 'ENOBUFS') category = 'truncated';
+  else {
+    const patterns = [
+      [
+        'image-operation-signature',
+        /^(?:error: )?failed to (?:pull|inspect) docker image[: ]/imu,
+      ],
+      [
+        'container-create-signature',
+        /^(?:error: )?failed to create docker container[: ]/imu,
+      ],
+      [
+        'container-start-signature',
+        /^(?:error: )?failed to start docker container[: ]/imu,
+      ],
+      [
+        'database-connect-signature',
+        /^(?:error: )?failed to connect to postgres[: ]/imu,
+      ],
+      [
+        'database-health-signature',
+        /^(?:error: )?[a-z0-9_-]{1,128} container is not ready: (?:unhealthy|exited)\b/imu,
+      ],
+      [
+        'container-job-signature',
+        /^(?:error: )?error running container: exit [0-9]+\b/imu,
+      ],
+    ];
+    const found = patterns.filter(([, pattern]) => pattern.test(result.stderr));
+    if (found.length === 1) category = found[0][0];
+    else if (found.length > 1) category = 'ambiguous';
+  }
+  return {
+    diagnosticKind: 'startup-stderr-signature-v1',
+    category,
+    capturedBytes: Math.min(bytes, limit + 1),
+  };
+}
+
 /** Hash complete selected schema-source paths and bytes without emitting SQL or fixture contents. */
 export function schemaSnapshotHash(repositoryRoot, trackedFiles) {
   const entries = [...trackedFiles].sort().map((file) => {

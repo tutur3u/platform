@@ -315,7 +315,10 @@ export async function removeEmployeeNetwork(
   writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, {
     mode: 0o600,
   });
-  if (!receipt.combinedQualified) throw networkFailure();
+  return {
+    networkCleanupSucceeded: true,
+    combinedQualified: receipt.combinedQualified,
+  };
 }
 
 /** Process only fixed event fields; do not retain Docker labels or private diagnostics. */

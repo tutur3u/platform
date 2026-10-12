@@ -570,3 +570,115 @@ for (const image of [
       false
     );
   });
+
+test('exact owned removal acknowledges drain even when prior qualification failed', async (t) => {
+  const { context, owned } = networkFixture(t);
+  writeFileSync(context.marker, JSON.stringify(owned));
+  mkdirSync(context.receiptDirectory);
+  const receiptPath = path.join(context.receiptDirectory, 'qualification.json');
+  writeFileSync(
+    receiptPath,
+    JSON.stringify({
+      sourceSha,
+      controlSha,
+      networkId: owned.id,
+      schemaQualified: false,
+      typesQualified: false,
+      networkQualified: false,
+      combinedQualified: false,
+    })
+  );
+  let removed = false;
+  await assert.doesNotReject(
+    removeEmployeeNetwork('/synthetic', {
+      context,
+      runner: async (_command, args) => {
+        if (args[0] === 'ps' || args[1] === 'ls') return Buffer.from('');
+        if (args[1] === 'rm') {
+          assert.equal(args[2], owned.id);
+          removed = true;
+          return Buffer.from(owned.id);
+        }
+        return Buffer.from(
+          JSON.stringify([
+            {
+              Id: owned.id,
+              Name: owned.name,
+              Internal: true,
+              Driver: 'bridge',
+              Labels: owned.labels,
+              Containers: {},
+            },
+          ])
+        );
+      },
+    })
+  );
+  assert.equal(removed, true);
+  const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+  assert.equal(receipt.networkCleanupSucceeded, true);
+  assert.equal(receipt.combinedQualified, false);
+  assert.equal(receipt.schemaQualified, false);
+  assert.equal(receipt.typesQualified, false);
+  assert.equal(receipt.networkQualified, false);
+});
+
+for (const mode of ['unknown-remove', 'qualification-binding-mismatch'])
+  test(`cleanup ${mode} never acknowledges qualification or mutates its receipt`, async (t) => {
+    const { context, owned } = networkFixture(t);
+    writeFileSync(context.marker, JSON.stringify(owned));
+    mkdirSync(context.receiptDirectory);
+    const receiptPath = path.join(
+      context.receiptDirectory,
+      'qualification.json'
+    );
+    const before = JSON.stringify({
+      sourceSha:
+        mode === 'qualification-binding-mismatch' ? 'f'.repeat(40) : sourceSha,
+      controlSha,
+      networkId: owned.id,
+      schemaQualified: false,
+      typesQualified: false,
+      networkQualified: false,
+      combinedQualified: false,
+    });
+    writeFileSync(receiptPath, before);
+    let removed = false;
+    await assert.rejects(
+      removeEmployeeNetwork('/synthetic', {
+        context,
+        runner: async (_command, args) => {
+          if (args[0] === 'ps' || args[1] === 'ls') return Buffer.from('');
+          if (args[1] === 'rm') {
+            assert.equal(args[2], owned.id);
+            if (mode === 'unknown-remove')
+              throw new Error('private unknown removal response');
+            removed = true;
+            return Buffer.from(owned.id);
+          }
+          return Buffer.from(
+            JSON.stringify([
+              {
+                Id: owned.id,
+                Name: owned.name,
+                Internal: true,
+                Driver: 'bridge',
+                Labels: owned.labels,
+                Containers: {},
+              },
+            ])
+          );
+        },
+      })
+    );
+    assert.equal(readFileSync(receiptPath, 'utf8'), before);
+    assert.equal(removed, mode === 'qualification-binding-mismatch');
+    const cleanupPath = path.join(
+      context.receiptDirectory,
+      'network-cleanup.json'
+    );
+    if (mode === 'unknown-remove')
+      assert.throws(() => readFileSync(cleanupPath));
+    else
+      assert.equal(JSON.parse(readFileSync(cleanupPath, 'utf8')).removed, true);
+  });

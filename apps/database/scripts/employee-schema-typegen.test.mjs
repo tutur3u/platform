@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
+  classifyEmployeeStartupFailure,
   generateEmployeeTypes,
   runTypegenCommand,
   schemaSnapshotHash,
@@ -334,4 +335,71 @@ test('unknown internal network denies before any CLI generation', async (t) => {
     )
   );
   assert.equal(cliCalls, 0);
+});
+
+for (const [category, stderr] of [
+  [
+    'image-operation-signature',
+    'failed to pull docker image: private registry token',
+  ],
+  [
+    'container-create-signature',
+    'failed to create docker container: private name',
+  ],
+  [
+    'container-start-signature',
+    'failed to start docker container "private": opaque',
+  ],
+  [
+    'database-connect-signature',
+    'failed to connect to postgres: postgresql://user:secret@example.test/private',
+  ],
+  [
+    'database-health-signature',
+    'supabase_db_private container is not ready: unhealthy',
+  ],
+  ['container-job-signature', 'error running container: exit 1; private SQL'],
+])
+  test(`startup ${category} produces a literal safe category`, () => {
+    assert.deepEqual(classifyEmployeeStartupFailure({ stderr }), {
+      diagnosticKind: 'startup-stderr-signature-v1',
+      category,
+      capturedBytes: Buffer.byteLength(stderr),
+    });
+  });
+test('startup diagnostics unknown, ambiguous and oversized remain honest and redacted', () => {
+  for (const [stderr, category] of [
+    ['private opaque SQL/token https://example.test/secret', 'unknown'],
+    [
+      'failed to connect to postgres: private\nfailed to pull docker image: other private',
+      'ambiguous',
+    ],
+    [`failed to connect to postgres: ${'SECRET'.repeat(12000)}`, 'truncated'],
+  ]) {
+    const diagnostic = classifyEmployeeStartupFailure({ stderr });
+    assert.equal(diagnostic.category, category);
+    assert.deepEqual(Object.keys(diagnostic), [
+      'diagnosticKind',
+      'category',
+      'capturedBytes',
+    ]);
+    assert.ok(diagnostic.capturedBytes <= 65537);
+    const output = JSON.stringify(diagnostic);
+    for (const value of ['private', 'SECRET', 'https://', 'SQL/token'])
+      assert.equal(output.includes(value), false);
+  }
+});
+test('startup missing diagnostic and buffer-overflow do not invent a matched cause', () => {
+  assert.deepEqual(classifyEmployeeStartupFailure({}), {
+    diagnosticKind: 'startup-stderr-signature-v1',
+    category: 'unavailable',
+    capturedBytes: 0,
+  });
+  assert.equal(
+    classifyEmployeeStartupFailure({
+      stderr: 'failed to connect to postgres: private',
+      error: { code: 'ENOBUFS' },
+    }).category,
+    'truncated'
+  );
 });

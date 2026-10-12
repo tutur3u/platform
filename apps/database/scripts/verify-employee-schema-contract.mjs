@@ -12,6 +12,7 @@ import {
   schemaReceipt,
 } from './employee-schema-tap.mjs';
 import {
+  classifyEmployeeStartupFailure,
   generateEmployeeTypes,
   readEmployeeNetwork,
   runTypegenCommand,
@@ -207,11 +208,12 @@ const bounded = (command, args, cwd, timeout) => {
   });
   // Never print SQL diagnostics, fixture identities, CLI tokens or credentials.
   if (result.error || result.signal || result.status !== 0) {
-    failureDiagnostic ??= schemaFailureDiagnostic(
-      currentPhase,
-      packetOrdinal,
-      result
-    );
+    failureDiagnostic ??= {
+      ...schemaFailureDiagnostic(currentPhase, packetOrdinal, result),
+      ...(currentPhase === 'start'
+        ? { startup: classifyEmployeeStartupFailure(result) }
+        : {}),
+    };
     throw new Error('Bounded employee schema command failed');
   }
   return result.stdout;
