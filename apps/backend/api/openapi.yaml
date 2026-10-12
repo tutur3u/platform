@@ -8441,124 +8441,16 @@ paths:
                 type: string
                 examples:
                   - PATCH
+  /api/v1/workspaces/{wsId}/inventory/sales-periods/merges:
+    $ref: "./paths/release-route-contracts.yaml#/InventorySalesPeriodMerges"
+  /api/v1/workspaces/{wsId}/settings/approvals/pending-summary:
+    $ref: "./paths/release-route-contracts.yaml#/PendingApprovalSummary"
+  /api/v1/workspaces/{wsId}/users/approvals:
+    $ref: "./paths/release-route-contracts.yaml#/UserApprovals"
+  /api/v1/workspaces/{wsId}/users/approvals/logs:
+    $ref: "./paths/release-route-contracts.yaml#/UserApprovalLogs"
   /api/v1/users/me/profile:
-    get:
-      summary: Current user profile
-      description: >
-        Migrated replacement for apps/web/src/app/api/v1/users/me/profile/route.ts.
-        The Rust backend verifies Tuturuuu app-session JWTs in native and
-        Cloudflare Worker runtimes, then reads users and user_private_details
-        through the server-owned Supabase REST adapter with the service-role key.
-      security:
-        - AppSessionBearer: []
-        - AppSessionCookie: []
-      responses:
-        "200":
-          description: Token-derived current user profile preview.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                examples:
-                  - no-store, no-cache, must-revalidate
-            CDN-Cache-Control:
-              schema:
-                type: string
-                examples:
-                  - no-store
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CurrentUserProfile"
-        "401":
-          description: Missing or invalid app-session token.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactUnauthorized"
-        "503":
-          description: App coordination secret or contact data adapter configuration is missing.
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/AppSessionConfigurationError"
-                  - $ref: "#/components/schemas/ContactDataLayerNotReady"
-        "500":
-          description: Supabase profile read failed.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactServerError"
-        "405":
-          description: Unsupported HTTP method.
-          headers:
-            Allow:
-              schema:
-                type: string
-                examples:
-                  - GET, PATCH
-    patch:
-      summary: Update current user profile
-      description: >
-        Migrated profile mutation. Authenticates the same app-session sources as
-        GET, enforces same-origin confirmation for cookie-authenticated
-        mutations, validates the legacy display_name/bio/avatar_url JSON shape,
-        and updates the users row through the server-owned Supabase REST adapter.
-      security:
-        - AppSessionBearer: []
-        - AppSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PatchCurrentUserProfileRequest"
-      responses:
-        "200":
-          description: Profile updated successfully.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProfileUpdateResponse"
-        "400":
-          description: Invalid profile payload or no valid fields to update.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactValidationError"
-        "403":
-          description: Cookie-authenticated mutation did not include same-origin confirmation.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactSameOriginRequired"
-        "411":
-          $ref: "#/components/responses/RequestBodyLengthRequired"
-        "413":
-          $ref: "#/components/responses/RequestBodyTooLarge"
-        "401":
-          description: Missing or invalid app-session token.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactUnauthorized"
-        "503":
-          description: App coordination secret or contact data adapter configuration is missing.
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/AppSessionConfigurationError"
-                  - $ref: "#/components/schemas/ContactDataLayerNotReady"
-        "500":
-          description: Supabase profile update failed.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactServerError"
-        "405":
-          description: Unsupported HTTP method.
+    $ref: "./paths/release-route-contracts.yaml#/CurrentUserProfile"
   /api/v1/inquiries:
     post:
       summary: Create support inquiry

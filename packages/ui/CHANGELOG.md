@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/ui-v0.38.0...ui-v0.39.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+* **meet:** simplify the in-call document toolbar ([6020a1e](https://github.com/tutur3u/platform/commit/6020a1eddfc4f8cab9179daf1feb126f9dfc0501)) ([#5918](https://github.com/tutur3u/platform/issues/5918)) ([fa358e7](https://github.com/tutur3u/platform/commit/fa358e76517e5bc9793caf72658738d9bf2b42d6))
+
+
+### Bug Fixes
+
+* **calendar:** stabilize civil dates and today rendering ([c1abdf0](https://github.com/tutur3u/platform/commit/c1abdf0df75c0a02cc00c37b7a0a5e55c862bf89)) ([#5950](https://github.com/tutur3u/platform/issues/5950)) ([5a00326](https://github.com/tutur3u/platform/commit/5a00326171bec65ec7210de161dd5272bfda22b2))
+* **finance:** bound subscription schedules and block invalid inventory ([f4163bf](https://github.com/tutur3u/platform/commit/f4163bf6697316a06a8b2d3922d9664937dd6940)) ([#5990](https://github.com/tutur3u/platform/issues/5990)) ([f2096f6](https://github.com/tutur3u/platform/commit/f2096f6e20d27dd998a03d11c7b0769d7f06bb2e))
+* **finance:** expose safe invoice history recovery ([8a53d36](https://github.com/tutur3u/platform/commit/8a53d367d6888e592a0d64f760d47234d858bd73)) ([#6034](https://github.com/tutur3u/platform/issues/6034)) ([fd65a3d](https://github.com/tutur3u/platform/commit/fd65a3db6f7472771374192ab07f5a97c6fcaee8))
+* **finance:** fence customer search to verified actor scope ([416d710](https://github.com/tutur3u/platform/commit/416d710961a509c06637ac2a93878f24ae0a03ae)) ([#6031](https://github.com/tutur3u/platform/issues/6031)) ([1d5a023](https://github.com/tutur3u/platform/commit/1d5a023d917ab75e19f575dec51a03be841763bc))
+* **finance:** fence invoice create completion to admitted draft ([5b1cd6f](https://github.com/tutur3u/platform/commit/5b1cd6ff9e228002ceee9d2d347e7a2f5bf61b03)) ([#6023](https://github.com/tutur3u/platform/issues/6023)) ([2e7f99f](https://github.com/tutur3u/platform/commit/2e7f99ffd26d2e877e6e8567c3873bffa6bdcf45))
+* **finance:** fence invoice PNG export lifetimes ([7d21df4](https://github.com/tutur3u/platform/commit/7d21df4d3301a388e6fa2823f68fb25d0c71d1c4)) ([#6038](https://github.com/tutur3u/platform/issues/6038)) ([4a5365a](https://github.com/tutur3u/platform/commit/4a5365ae1a6d28ef142bdc904695491475a740d3))
+* **finance:** isolate customer groups by actor lifetime ([d20c9d5](https://github.com/tutur3u/platform/commit/d20c9d53d23e5ce0ad6c94199d202cd30e522694)) ([#6028](https://github.com/tutur3u/platform/issues/6028)) ([c8f712c](https://github.com/tutur3u/platform/commit/c8f712cfd590b29b2d271cbf6a75895142427a52))
+* **finance:** isolate subscription context by actor lifetime ([55f09f2](https://github.com/tutur3u/platform/commit/55f09f2a86f1956cdad5ddd28bb01a2ae92a0dad)) ([#6024](https://github.com/tutur3u/platform/issues/6024)) ([42e96b9](https://github.com/tutur3u/platform/commit/42e96b93ce1a4ebad8c7fb877bfdecd7d0451bed))
+* **finance:** keep invoice templates usable with invalid dates ([2d4bc6d](https://github.com/tutur3u/platform/commit/2d4bc6d9f3cf0b7a1377b71a59f8efb581e3170e)) ([#6040](https://github.com/tutur3u/platform/issues/6040)) ([c84bb36](https://github.com/tutur3u/platform/commit/c84bb36369c941b67be8ca9be62fe076d34e957a))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **finance:** retain history with unrenderable dates ([95b8513](https://github.com/tutur3u/platform/commit/95b851336bedc480d3e10fba6cea1e3a2c047ff1)) ([#6035](https://github.com/tutur3u/platform/issues/6035)) ([ad0a0d3](https://github.com/tutur3u/platform/commit/ad0a0d3720f560cfe0a8baec1c2b30c1e77c273d))
+* **finance:** scope invoice history to account lifetime ([7fb93ef](https://github.com/tutur3u/platform/commit/7fb93efe2d60f17be5a936067b3141b0330fa0ab)) ([#6033](https://github.com/tutur3u/platform/issues/6033)) ([9dc373a](https://github.com/tutur3u/platform/commit/9dc373abef6838d3fe9cb2c511559d883a63be42))
+* **finance:** stabilize attendance calendar status summaries ([0c22684](https://github.com/tutur3u/platform/commit/0c22684245e101a79e2b3c37b7304e71427eccc8)) ([#6075](https://github.com/tutur3u/platform/issues/6075)) ([0789e90](https://github.com/tutur3u/platform/commit/0789e9091d7218ac6341a2843f43b554839da454))
+* **finance:** tolerate denied invoice preference storage ([0b17e29](https://github.com/tutur3u/platform/commit/0b17e297eae859dac01016e002397cb3a4d0d0ac)) ([#6003](https://github.com/tutur3u/platform/issues/6003)) ([56fa042](https://github.com/tutur3u/platform/commit/56fa04277bad4e3b57cc87be66952cf8ae28c44c))
+* **mobile:** integrate Assistant and Secrets shell coverage ([141ae72](https://github.com/tutur3u/platform/commit/141ae72cab1c5cb1604dfc654fdc5ff666dc0037))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/ui-v0.37.2...ui-v0.38.0) (2026-10-04)
 
 

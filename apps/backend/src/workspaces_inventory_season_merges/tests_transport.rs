@@ -18,21 +18,21 @@ impl OutboundHttpClient for Recording {
             .lock()
             .unwrap()
             .push((request.url.into(), request.body.map(str::to_owned)));
-        if let Some((table, transport)) = self.failure {
-            if request.url.contains(&format!("/{table}?")) {
-                return Box::pin(async move {
-                    if transport {
-                        return Err(crate::outbound::OutboundError::Body(
-                            "synthetic failure".into(),
-                        ));
-                    }
-                    Ok(OutboundResponse {
-                        body_text: "{}".into(),
-                        headers: vec![],
-                        status: 503,
-                    })
-                });
-            }
+        if let Some((table, transport)) = self.failure
+            && request.url.contains(&format!("/{table}?"))
+        {
+            return Box::pin(async move {
+                if transport {
+                    return Err(crate::outbound::OutboundError::Body(
+                        "synthetic failure".into(),
+                    ));
+                }
+                Ok(OutboundResponse {
+                    body_text: "{}".into(),
+                    headers: vec![],
+                    status: 503,
+                })
+            });
         }
         let mut status = 200;
         let body = if request.url.contains("/auth/v1/user") {

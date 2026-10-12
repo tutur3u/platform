@@ -163,7 +163,13 @@ async fn private_noncreator_denied_before_storage_and_null_background() {
             .await
             .unwrap();
         assert_eq!(response.status, 404);
-        assert_eq!(response.cache_control, Some("no-store"));
+        assert_eq!(
+            response.cache_control,
+            Some("no-store, no-cache, must-revalidate")
+        );
+        assert!(response.headers.iter().any(|(name, value)| {
+            name.eq_ignore_ascii_case("cdn-cache-control") && value == "no-store"
+        }));
         assert_eq!(client.storage_calls(), 0);
     }
 }
@@ -180,7 +186,13 @@ async fn explicit_visibility_and_owner_allow_signing_with_original_ttl() {
             .await
             .unwrap();
         assert_eq!(response.status, 200);
-        assert_eq!(response.cache_control, Some("no-store"));
+        assert_eq!(
+            response.cache_control,
+            Some("no-store, no-cache, must-revalidate")
+        );
+        assert!(response.headers.iter().any(|(name, value)| {
+            name.eq_ignore_ascii_case("cdn-cache-control") && value == "no-store"
+        }));
         let calls = client.calls.borrow();
         let storage: Vec<_> = calls
             .iter()

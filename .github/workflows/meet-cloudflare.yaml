@@ -113,10 +113,12 @@ jobs:
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Test build identity and workflow ordering
         run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js
-      - run: bun run --cwd packages/types build
-      - run: bun run --cwd packages/supabase build
-      - run: bun run test
-        working-directory: packages/realtime
+      - name: Build realtime dependencies and test realtime
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --concurrency=2 && bun turbo:local run test --filter=@tuturuuu/realtime --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Test durable room lifecycle and recovery
         timeout-minutes: 2
         shell: bash
@@ -149,21 +151,30 @@ jobs:
         run: |
           bun run lint
           bun run format:check
-          bun run type-check
+      - name: Check realtime Worker types
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run type-check --filter=@tuturuuu/meet-realtime --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Build the native realtime Worker candidate
-        working-directory: apps/meet-realtime
-        run: bun run build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/meet-realtime --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Verify emitted realtime Worker and SQLite routing
         timeout-minutes: 2
         working-directory: apps/meet-realtime
         env:
           MEET_REALTIME_TEST_CONFIG: dist/worker/wrangler.json
         run: bun run test:runtime
-      - run: bun x --no-install turbo run build --filter='@tuturuuu/meet-core^...' --concurrency=2
-      - run: bun run test
-        working-directory: packages/meet-core
-      - run: bun run test
-        working-directory: apps/meet
+      - name: Build Meet dependencies and test Meet packages
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/meet-core^...' --concurrency=2 && bun turbo:local run test --filter=@tuturuuu/meet-core --filter=@tuturuuu/meet --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Verify React prerender resume survives Worker bundling
         run: node --test scripts/ci/meet-cloudflare-render.test.js
       - name: Build the frontend for Workers

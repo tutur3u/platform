@@ -136,6 +136,17 @@ test('planWrapperChanges skips empty legacy route files with no HTTP methods', (
 test('repo import graph keeps legacy API routes concrete without catch-all bridges', () => {
   const apiDir = path.join(REPO_ROOT, 'apps', 'web', 'src', 'app', 'api');
   const bridgeFiles = [];
+  const previewRoutes = new Map([
+    [
+      'v1/meetings/[meetingId]/collaboration/preview/[port]/[[...path]]/route.ts',
+      'previewMeetingPlayground',
+    ],
+    [
+      'v1/users/me/playgrounds/[projectId]/preview/[port]/[[...path]]/route.ts',
+      'playgroundPreviewResponse',
+    ],
+  ]);
+  const previewFiles = [];
 
   function walk(directory) {
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -148,12 +159,26 @@ test('repo import graph keeps legacy API routes concrete without catch-all bridg
         entry.name === 'route.ts' &&
         entryPath.includes(`${path.sep}[[...path]]${path.sep}`)
       ) {
-        bridgeFiles.push(entryPath);
+        const relativePath = path
+          .relative(apiDir, entryPath)
+          .split(path.sep)
+          .join('/');
+        const previewHandler = previewRoutes.get(relativePath);
+        if (previewHandler) {
+          const source = fs.readFileSync(entryPath, 'utf8');
+          assert.doesNotMatch(source, /legacy-api-routes/);
+          assert.match(source, /withSessionAuth/);
+          assert.ok(source.includes(previewHandler), relativePath);
+          previewFiles.push(relativePath);
+        } else {
+          bridgeFiles.push(entryPath);
+        }
       }
     }
   }
 
   walk(apiDir);
+  assert.deepEqual(previewFiles.sort(), [...previewRoutes.keys()].sort());
 
   assert.deepEqual(
     bridgeFiles.map((filePath) => path.relative(REPO_ROOT, filePath)),

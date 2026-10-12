@@ -55,17 +55,29 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun x --no-install wrangler types --env-interface DevboxControlEnv worker-configuration.d.ts -c wrangler.jsonc
         working-directory: apps/devbox-control
-      - run: bun x --no-install tsc --project apps/devbox-control/tsconfig.json
+      - name: Check Devbox Control types
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run type-check --filter=@tuturuuu/devbox-control --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Validate scoped Oxc rules
         run: bun run lint
         working-directory: apps/devbox-control
-      - run: bun run test
-        working-directory: apps/devbox-control
+      - name: Test Devbox Control
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test --filter=@tuturuuu/devbox-control --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Verify the source Worker with disposable credentials
         run: node --test apps/devbox-control/scripts/verify-worker-runtime.mjs
       - name: Build the Vite-native Worker
-        run: bun run build
-        working-directory: apps/devbox-control
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/devbox-control --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Verify the emitted Worker with disposable credentials
         env:
           DEVBOX_TEST_CONFIG: ${{ github.workspace }}/apps/devbox-control/dist/worker/wrangler.json
@@ -94,8 +106,11 @@ jobs:
           node-version: 24
       - run: bun install --frozen-lockfile
       - name: Build the Vite-native Worker
-        run: bun run build
-        working-directory: apps/devbox-control
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/devbox-control --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Require provisioned secrets
         working-directory: apps/devbox-control
         env:

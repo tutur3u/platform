@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/infra-v0.32.0...infra-v0.33.0) (2026-10-09)
+
+
+### Features
+
+* **docs:** expand platform guides and enforce app SEO and runtime pause ([e79cb7e](https://github.com/tutur3u/platform/commit/e79cb7e96c7db4d1baedb09b7420ca41b75e367f))
+* **docs:** expand platform guides, enforce SEO, and pause inactive runtimes ([#6085](https://github.com/tutur3u/platform/issues/6085)) ([df7a159](https://github.com/tutur3u/platform/commit/df7a159e9c657fee4f6e0b593c776d6887b2ae11))
+
+
+### Bug Fixes
+
+* **ci:** restore translation order and desktop test format ([#5904](https://github.com/tutur3u/platform/issues/5904)) ([d8ff4ed](https://github.com/tutur3u/platform/commit/d8ff4edde2320cca59c276b8337df93f62cc1d83))
+* **finance:** bound subscription schedules and block invalid inventory ([f4163bf](https://github.com/tutur3u/platform/commit/f4163bf6697316a06a8b2d3922d9664937dd6940)) ([#5990](https://github.com/tutur3u/platform/issues/5990)) ([f2096f6](https://github.com/tutur3u/platform/commit/f2096f6e20d27dd998a03d11c7b0769d7f06bb2e))
+* **finance:** expose safe invoice history recovery ([8a53d36](https://github.com/tutur3u/platform/commit/8a53d367d6888e592a0d64f760d47234d858bd73)) ([#6034](https://github.com/tutur3u/platform/issues/6034)) ([fd65a3d](https://github.com/tutur3u/platform/commit/fd65a3db6f7472771374192ab07f5a97c6fcaee8))
+* **finance:** reconcile attendance summary with current main ([fb00e6e](https://github.com/tutur3u/platform/commit/fb00e6ef4373adc1b6b9107f9bba883c101c3438))
+* **infrastructure:** exclude reserved inbox push identity ([6992704](https://github.com/tutur3u/platform/commit/699270460e2159c28b5878eb3080d58fc6dc2f1c)) ([#6013](https://github.com/tutur3u/platform/issues/6013)) ([d7dae8e](https://github.com/tutur3u/platform/commit/d7dae8e2b7101a52e8bf12c3d7a2679d320b88c5))
+* **infrastructure:** export desktop helpers through public entry ([#5906](https://github.com/tutur3u/platform/issues/5906)) ([eada393](https://github.com/tutur3u/platform/commit/eada393c9aa8e304059e0e43ea86512b00c5cd09))
+* **infrastructure:** mock current desktop page access boundary ([27ef79b](https://github.com/tutur3u/platform/commit/27ef79ba57a1a965ce88928db7c3172527f66e78)) ([#5941](https://github.com/tutur3u/platform/issues/5941)) ([8e6206a](https://github.com/tutur3u/platform/commit/8e6206a76cdfb03543a7b943f1e9af4dea5ca203))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/infra-v0.31.0...infra-v0.32.0) (2026-10-04)
 
 

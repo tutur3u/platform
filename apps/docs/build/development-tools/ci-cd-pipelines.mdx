@@ -7,7 +7,9 @@ updatedAt: "2026-10-12"
 <Note>
 Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
 the Docker cron runner is retired. Rust and TanStack Start are not in use and
-must not be run, tested, or updated until further notice. Retained Docker and
+remain paused for runtime and deployment. The branch-scoped hosted Rust source
+qualification below is the authorized exception for this release integration;
+it does not activate either migration runtime. Retained Docker and
 migration sections below are historical procedures. Current hosted Next.js,
 package, Worker, database, and mobile workflows retain their own gates. See the
 [active runtime map](/build/devops/active-runtime).
@@ -69,6 +71,58 @@ The step uses the existing configuration and release-relevance gates. A skipped
 step is not test evidence. Before merging a preflight fixture change, verify the
 exact-head hosted step succeeded and its TAP summary reports 21 tests, 21 passes,
 and zero failures, cancellations, skips, or todos.
+
+## Worker validation caching
+
+Cron Control and Devbox Control run package build, test and type-check tasks
+through the existing Turbo remote-cache action with explicit workspace filters.
+Meet Realtime uses the same action for build and type-check. Worker builds restore the declared `dist/**` outputs before
+emitted-artifact verification. Cron Control and Devbox Control generate binding types before cached type
+checks because the generated `.d.ts` file is not a declared type-check output.
+Lint, source and emitted runtime checks, SQLite and Durable Object verification,
+and deploy dry-runs still run directly. Remote credentials remain step-scoped and
+are supplied only to trusted main or production runs, never untrusted PRs.
+
+## Hosted root script qualification
+
+The `Test` workflow runs the complete selection exported by
+`scripts/run-script-tests.js` in a separate `Root script tests (24)` job on the
+exact checkout. Node 24 runs it with two test-file workers and the TAP reporter;
+the existing paused-runtime discovery policy remains unchanged. No shell glob or
+subset replaces the canonical selection.
+
+The job installs the frozen dependencies with the existing Bun setup, verifies
+Ruby and `@playwright/test` resolution, and exposes the owning Web dependency
+location through `NODE_PATH`. It needs no application secrets, browser install,
+workspace build, deployment, or production action. The unit-test aggregation
+requires successful package shards or verified duplicate package evidence, and
+always requires the fresh root script job to succeed when checks are relevant.
+
+Configuration and release-relevance gates still apply. The root script job does
+not reuse the package-shard duplicate-validation result. A skipped job or green
+package shards do not prove root script qualification: require the exact-head
+job, prerequisite results, complete discovery count, and full TAP summary.
+Historical failures remain unresolved until their actual cases pass on the
+qualified source; do not infer a fix from a different branch's test bytes.
+
+## Hosted Rust source qualification
+
+On `fix/release-5795-reconciliation` and
+`fix/main-production-reconciliation-20261012`, the existing `Test` workflow runs
+`Rust source qualification (1.95)` after the shared configuration and release
+relevance gates. The read-only job checks out the exact workflow commit, records
+its SHA and Cargo manifest/lock hashes, and uses pinned Rust 1.95.0 with two Cargo
+build workers. It runs formatting, warning-denying native Clippy, all native
+library tests with two test threads, and the wasm Worker target check against the
+locked dependency graph. It needs no application secrets or deployment action.
+
+The stable `Unit Tests (24)` aggregate requires this fresh job to succeed on
+those branches, including when verified package duplicate evidence skips shards.
+A skipped Rust job or successful root script tests do not qualify Rust: require
+the exact-head job and its complete Cargo results. Other branches retain their
+existing package/root gates. The standalone Rust workflows, TanStack migration,
+and backend deployment remain paused; the backend is a future migration target,
+and Web continues to serve the live API.
 
 ## Cross-app users-core regression tests
 

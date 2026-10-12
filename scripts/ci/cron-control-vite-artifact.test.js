@@ -6,7 +6,12 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 test('Cron Control qualifies emitted configuration and deploys the same immutable artifact', () => {
   const workflow = readWorkflow('cron-control-cloudflare.yaml');
   const steps = workflow.jobs.validate.steps;
-  const build = steps.findIndex((step) => step.run === 'bun run build');
+  const build = steps.findIndex(
+    (step) =>
+      step.uses === './.github/actions/run-with-turbo-remote-cache' &&
+      step.with?.command ===
+        'bun turbo:local run build --filter=@tuturuuu/cron-control --concurrency=2'
+  );
   const emitted = steps.findIndex((step) => step.env?.CRON_TEST_CONFIG);
   const upload = steps.findIndex((step) =>
     step.uses?.startsWith('actions/upload-artifact@')
@@ -40,7 +45,11 @@ test('Cron Control qualifies emitted configuration and deploys the same immutabl
     'apps/cron-control'
   );
   assert.ok(
-    !deployment.some((step) => step.run === 'bun run build'),
+    !deployment.some(
+      (step) =>
+        step.run === 'bun run build' ||
+        /\bbun turbo:local run build\b/u.test(step.with?.command ?? '')
+    ),
     'do not replace the tested artifact with a second build'
   );
 });
