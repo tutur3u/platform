@@ -92,3 +92,14 @@ localization changes.
 - Keep the Assistant center tab, but create new Assistant text conversations as
   native Chat `type="ai"` conversations and send text through the chat message
   stream. Live mode remains an explicit Assistant Live entry.
+
+## Mail notification entry privacy
+
+- Keep Mail push routing actor-bound and UUID-only, then verify mailbox bootstrap
+  before reading detail. Managed subdomain syntax is launcher discovery only.
+- Pass notification-entry image suppression through the owning Mail reader chain;
+  explicit reveal changes that reader, not the saved image preference. Preserve
+  the entry intent across failed-open Retry. Do not grow the generic push service.
+- Use `mail_notification_privacy_test.dart` and existing push/dismissal tests.
+  Device arrival and timing require separately authorized device fixtures; see
+  [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).

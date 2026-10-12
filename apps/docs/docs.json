@@ -285,6 +285,7 @@
                   },
                   "platform/applications/storefront",
                   "platform/applications/mail",
+                  "platform/applications/mail-inbound-notifications",
                   "platform/applications/shiraoki",
                   "platform/applications/nova",
                   "platform/applications/qr",
