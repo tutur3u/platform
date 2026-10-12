@@ -18,7 +18,9 @@ class _SettingsOverviewSection extends StatelessWidget {
           icon: Icons.workspaces_outline,
           title: l10n.settingsNavWorkspace,
           value:
-              context.watch<WorkspaceCubit>().state.currentWorkspace?.name ??
+              context.select<WorkspaceCubit, String?>(
+                (cubit) => cubit.state.currentWorkspace?.name,
+              ) ??
               l10n.settingsNoWorkspaceSelected,
           onTap: () => context.push(Routes.settingsWorkspace),
         ),
@@ -262,11 +264,9 @@ class _PreferencesSection extends StatelessWidget {
 
     final auth = context.watch<AuthCubit?>();
     final userId = auth == null ? currentCacheUserId() : auth.state.user?.id;
-    final workspaceId = context
-        .watch<WorkspaceCubit>()
-        .state
-        .currentWorkspace
-        ?.id;
+    final workspaceId = context.select<WorkspaceCubit, String?>(
+      (cubit) => cubit.state.currentWorkspace?.id,
+    );
     final personalZone = TimezoneSettingsTile(
       userId: userId,
       workspaceId: workspaceId,
