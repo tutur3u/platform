@@ -75,6 +75,162 @@ export function classifyEmployeeStartupFailure(result) {
   };
 }
 
+/** Only fixed connection signatures/target-equality booleans; never emit a captured address. */
+export function employeeStartupConnectionEvidence(result, ownedPort) {
+  const output = {
+    stderrComplete: false,
+    subtypeKnown: false,
+    subtypeAmbiguous: false,
+    refusedSignature: false,
+    timeoutSignature: false,
+    authRejectedSignature: false,
+    dnsFailureSignature: false,
+    ownedIpv4LoopbackTargetSignature: false,
+  };
+  if (
+    typeof result?.stderr !== 'string' ||
+    Buffer.byteLength(result.stderr) > 65536 ||
+    result.error?.code === 'ENOBUFS'
+  )
+    return output;
+  output.stderrComplete = true;
+  const matches = [
+    ['refusedSignature', /connect: connection refused\b/iu],
+    [
+      'timeoutSignature',
+      /(?:i\/o timeout|connect(?:ion)? timeout|context deadline exceeded)\b/iu,
+    ],
+    [
+      'authRejectedSignature',
+      /(?:password authentication failed|SQLSTATE 28P01)\b/iu,
+    ],
+    [
+      'dnsFailureSignature',
+      /(?:no such host|temporary failure in name resolution)\b/iu,
+    ],
+  ].filter(([, expression]) => expression.test(result.stderr));
+  output.subtypeKnown = matches.length === 1;
+  output.subtypeAmbiguous = matches.length > 1;
+  if (output.subtypeKnown) output[matches[0][0]] = true;
+  if (Number.isInteger(ownedPort) && ownedPort >= 1024 && ownedPort <= 65535)
+    output.ownedIpv4LoopbackTargetSignature = new RegExp(
+      `dial tcp 127\\.0\\.0\\.1:${ownedPort}(?:\\s|:)`,
+      'iu'
+    ).test(result.stderr);
+  return output;
+}
+
+const evidenceFailure = () =>
+  new Error('Employee startup evidence unavailable');
+export const employeeStartEvidenceFields = Object.freeze([
+  'observerReady',
+  'observerEndSeen',
+  'observerDrained',
+  'observerUncertain',
+  'daemonVersionInspectionSucceeded',
+  'daemonMatchesReviewedMoby28_0_4',
+  'containerInspectionSucceeded',
+  'ownedContainerIdentityVerified',
+  'soleInternalNetworkVerified',
+  'requested5432MappingPresent',
+  'requested5432MappingMatchesChosenPort',
+  'effective5432MappingPresent',
+  'effective5432MappingMatchesChosenPort',
+  'healthInspectionSucceeded',
+  'healthyObserved',
+  'unhealthyObserved',
+  'loopbackProbeAttempted',
+  'loopbackTcpConnected',
+  'loopbackTcpRefused',
+  'loopbackTcpTimedOut',
+  'loopbackProbeSkippedOwnershipUnproven',
+  'inspectionLostBeforeTeardown',
+]);
+export const emptyEmployeeStartEvidence = () =>
+  Object.fromEntries(employeeStartEvidenceFields.map((key) => [key, false]));
+export function parseEmployeeStartEvidence(value) {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Object.keys(value).length !== employeeStartEvidenceFields.length ||
+    !employeeStartEvidenceFields.every((key) => typeof value[key] === 'boolean')
+  )
+    throw evidenceFailure();
+  return Object.fromEntries(
+    employeeStartEvidenceFields.map((key) => [key, value[key]])
+  );
+}
+const evidenceRecord = (value) =>
+  value && typeof value === 'object' && !Array.isArray(value);
+export function validateEmployeeStartInput(input) {
+  if (
+    !evidenceRecord(input) ||
+    Object.keys(input).sort().join(',') !==
+      'controlSha,dbPort,imageRef,network,projectId,sourceSha' ||
+    !/^[a-f0-9]{40}$/.test(input.sourceSha ?? '') ||
+    !/^[a-f0-9]{40}$/.test(input.controlSha ?? '') ||
+    !/^tt-[a-z0-9-]+-[a-f0-9]{8}-[a-f0-9]{10}$/.test(input.projectId ?? '') ||
+    input.projectId.length > 128 ||
+    Buffer.byteLength(JSON.stringify(input)) > 4096 ||
+    !Number.isInteger(input.dbPort) ||
+    input.dbPort < 1024 ||
+    input.dbPort > 65535 ||
+    input.imageRef !== 'ghcr.io/supabase/postgres:17.6.1.167' ||
+    !evidenceRecord(input.network) ||
+    Object.keys(input.network).sort().join(',') !== 'id,labels,name' ||
+    !/^[a-f0-9]{64}$/.test(input.network.id ?? '') ||
+    !/^tt-employee-net-[1-9][0-9]*-[1-9][0-9]*$/.test(input.network.name ?? '')
+  )
+    throw evidenceFailure();
+  const labels = input.network.labels;
+  if (
+    !evidenceRecord(labels) ||
+    Object.keys(labels).sort().join(',') !==
+      'ttr.employee.attempt,ttr.employee.control,ttr.employee.nonce,ttr.employee.project,ttr.employee.run,ttr.employee.source' ||
+    labels['ttr.employee.source'] !== input.sourceSha ||
+    labels['ttr.employee.control'] !== input.controlSha ||
+    labels['ttr.employee.project'] !== input.projectId ||
+    !/^[a-f0-9-]{36}$/.test(labels['ttr.employee.nonce'] ?? '') ||
+    !/^[1-9][0-9]*$/.test(labels['ttr.employee.run'] ?? '') ||
+    !/^[1-9][0-9]*$/.test(labels['ttr.employee.attempt'] ?? '') ||
+    labels['com.supabase.cli.project'] !== undefined
+  )
+    throw evidenceFailure();
+  if (
+    input.network.name !==
+    `tt-employee-net-${labels['ttr.employee.run']}-${labels['ttr.employee.attempt']}`
+  )
+    throw evidenceFailure();
+  return input;
+}
+export function matchesEmployeeEvidenceNetwork(actual, expected) {
+  return (
+    actual?.id === expected.id &&
+    actual?.name === expected.name &&
+    actual?.internal === true &&
+    actual?.driver === 'bridge' &&
+    actual?.cliProject == null &&
+    ['source', 'control', 'run', 'attempt', 'nonce', 'project'].every(
+      (key) => actual?.labels?.[key] === expected.labels[`ttr.employee.${key}`]
+    )
+  );
+}
+export function isEmployeeReadyMarker(marker, input) {
+  return (
+    evidenceRecord(marker) &&
+    /^[a-f0-9]{64}$/.test(marker.id ?? '') &&
+    new RegExp(`^${input.network.name}-ready-[a-f0-9]{8}$`).test(
+      marker.name ?? ''
+    ) &&
+    /^[a-f0-9-]{36}$/.test(marker.labels?.['ttr.employee.nonce'] ?? '') &&
+    ['source', 'control', 'run', 'attempt', 'project'].every(
+      (key) =>
+        marker.labels?.[`ttr.employee.${key}`] ===
+        input.network.labels[`ttr.employee.${key}`]
+    )
+  );
+}
+
 /** Hash complete selected schema-source paths and bytes without emitting SQL or fixture contents. */
 export function schemaSnapshotHash(repositoryRoot, trackedFiles) {
   const entries = [...trackedFiles].sort().map((file) => {

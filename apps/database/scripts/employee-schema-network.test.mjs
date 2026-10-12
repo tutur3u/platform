@@ -247,6 +247,8 @@ test('actual creator uses internal bridge, fresh nonce labels and exclusive mark
       schemaQualified: true,
       typesQualified: true,
       networkQualified: true,
+      controllerQualified: true,
+      startupEvidenceDrained: true,
       consumerQualified: false,
       combinedQualified: false,
     })

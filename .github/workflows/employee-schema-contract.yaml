@@ -82,7 +82,7 @@ jobs:
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify strict TAP and receipt gates
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs apps/database/scripts/employee-schema-typegen.test.mjs apps/database/scripts/employee-schema-network.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs apps/database/scripts/employee-schema-typegen.test.mjs apps/database/scripts/employee-schema-network.test.mjs apps/database/scripts/employee-schema-start-evidence.test.mjs
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
       - name: Verify identity diagnostic parser
@@ -118,6 +118,7 @@ jobs:
             ${{ runner.temp }}/employee-schema-receipts/qualification.json
             ${{ runner.temp }}/employee-schema-receipts/generated-types.ts
             ${{ runner.temp }}/employee-schema-receipts/network-cleanup.json
+            ${{ runner.temp }}/employee-schema-receipts/start-evidence.json
           if-no-files-found: error
           retention-days: 3
       - uses: actions/upload-artifact@v7

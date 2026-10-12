@@ -3,6 +3,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { startEmployeeDbStartEvidence } from './employee-schema-start-evidence.mjs';
 import {
   assertPacketTap,
   assertRollbackSource,
@@ -13,6 +14,8 @@ import {
 } from './employee-schema-tap.mjs';
 import {
   classifyEmployeeStartupFailure,
+  employeeStartupConnectionEvidence,
+  emptyEmployeeStartEvidence,
   generateEmployeeTypes,
   readEmployeeNetwork,
   runTypegenCommand,
@@ -190,6 +193,14 @@ const networkObserver = startEmployeeNetworkObserver(
   metadata.projectId,
   network.id
 );
+const startupObserver = startEmployeeDbStartEvidence({
+  sourceSha,
+  controlSha,
+  projectId: metadata.projectId,
+  network,
+  dbPort: ports.ports['db.port'],
+  imageRef: 'ghcr.io/supabase/postgres:17.6.1.167',
+});
 const packets = [];
 let schemaExecutionSucceeded = false;
 let typegenReceipt = null;
@@ -211,7 +222,13 @@ const bounded = (command, args, cwd, timeout) => {
     failureDiagnostic ??= {
       ...schemaFailureDiagnostic(currentPhase, packetOrdinal, result),
       ...(currentPhase === 'start'
-        ? { startup: classifyEmployeeStartupFailure(result) }
+        ? {
+            startup: classifyEmployeeStartupFailure(result),
+            startupConnection: employeeStartupConnectionEvidence(
+              result,
+              ports.ports['db.port']
+            ),
+          }
         : {}),
     };
     throw new Error('Bounded employee schema command failed');
@@ -334,7 +351,9 @@ const runner = async (command, args, cwd) => {
 };
 let lifecycleCode = 1;
 try {
-  await networkObserver.ready();
+  await startupObserver.started();
+  const verifiedReadyMarker = await networkObserver.ready();
+  await startupObserver.ready(verifiedReadyMarker);
   await networkObserver.assertHealthy();
   // Verify complete tracked database snapshot, including every migration, not only fixtures.
   for (const file of trackedFiles.filter(
@@ -383,6 +402,17 @@ try {
   lifecycleCode = 1;
 }
 const networkProof = await networkObserver.finish();
+let startupEvidence = emptyEmployeeStartEvidence();
+try {
+  startupEvidence = await startupObserver.finish(networkProof.endMarkerId);
+} catch {
+  startupEvidence.observerUncertain = true;
+}
+writeFileSync(
+  path.join(receiptDirectory, 'start-evidence.json'),
+  `${JSON.stringify({ version: 1, sourceSha, controlSha, evidence: startupEvidence }, null, 2)}\n`,
+  { flag: 'wx', mode: 0o600 }
+);
 const receipt = {
   ...schemaReceipt({
     sourceSha,
@@ -396,6 +426,7 @@ const receipt = {
   networkQualified: networkProof.qualified,
   networkProof,
   networkCleanupSucceeded: false,
+  startupEvidenceDrained: startupEvidence.observerDrained === true,
   combinedLifecycleCode: lifecycleCode,
   typesQualified:
     typegenReceipt !== null && lifecycleCode === 0 && cleanupSucceeded,
@@ -405,7 +436,10 @@ const receipt = {
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
 receipt.controllerQualified =
-  receipt.schemaQualified && receipt.typesQualified && receipt.networkQualified;
+  receipt.schemaQualified &&
+  receipt.typesQualified &&
+  receipt.networkQualified &&
+  receipt.startupEvidenceDrained;
 receipt.combinedQualified = false;
 writeFileSync(
   path.join(receiptDirectory, 'qualification.json'),

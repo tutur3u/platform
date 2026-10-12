@@ -60,7 +60,7 @@ test('strict receipt tests run from control root', () => {
   assert.doesNotMatch(step, /working-directory:/u);
   assert.match(
     step,
-    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs apps\/database\/scripts\/employee-schema-typegen.test.mjs apps\/database\/scripts\/employee-schema-network.test.mjs$/mu
+    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs apps\/database\/scripts\/employee-schema-typegen.test.mjs apps\/database\/scripts\/employee-schema-network.test.mjs apps\/database\/scripts\/employee-schema-start-evidence.test.mjs$/mu
   );
 });
 
@@ -123,4 +123,28 @@ test('owned internal network admission precedes schema replay and always retires
     workflow.indexOf(remove) > workflow.indexOf('Stop only this exact owned')
   );
   assert.match(workflow, /Require network-isolated normal qualification only/u);
+});
+
+test('startup diagnostics are source-bound boolean-only evidence and cannot grant schema/types qualification', () => {
+  const controller = readFileSync(
+    new URL('apps/database/scripts/verify-employee-schema-contract.mjs', root),
+    'utf8'
+  );
+  assert.ok(
+    controller.indexOf('await startupObserver.ready(verifiedReadyMarker)') <
+      controller.indexOf('lifecycleCode = await runIsolatedLifecycle')
+  );
+  assert.match(workflow, /employee-schema-receipts\/start-evidence\.json/u);
+  assert.match(
+    controller,
+    /version: 1, sourceSha, controlSha, evidence: startupEvidence/u
+  );
+  assert.match(
+    controller,
+    /receipt.schemaQualified &&\s+receipt.typesQualified &&\s+receipt.networkQualified &&\s+receipt.startupEvidenceDrained/u
+  );
+  assert.doesNotMatch(
+    controller,
+    /schemaQualified:\s*startupEvidence|typesQualified:\s*startupEvidence/u
+  );
 });

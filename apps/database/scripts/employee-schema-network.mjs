@@ -309,9 +309,11 @@ export async function removeEmployeeNetwork(
     throw networkFailure();
   receipt.networkCleanupSucceeded = true;
   receipt.combinedQualified =
-    receipt.schemaQualified &&
-    receipt.typesQualified &&
-    receipt.networkQualified;
+    receipt.schemaQualified === true &&
+    receipt.typesQualified === true &&
+    receipt.networkQualified === true &&
+    receipt.controllerQualified === true &&
+    receipt.startupEvidenceDrained === true;
   writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, {
     mode: 0o600,
   });
@@ -635,6 +637,7 @@ export function startEmployeeNetworkObserver(
   return {
     async ready() {
       ready = await barrier('ready');
+      return ready;
     },
     async assertHealthy() {
       await new Promise((resolve) => setImmediate(resolve));
