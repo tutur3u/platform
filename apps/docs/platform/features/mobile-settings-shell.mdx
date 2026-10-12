@@ -263,6 +263,18 @@ production localization fallback and explicit theme/locale. Widget renders are
 bounded evidence; exact-build device safe-area, keyboard and visual checks remain
 required.
 
+Preferences observes the active workspace id, and Overview observes its displayed
+name. Workspace loading, module visibility and creation state do not rebuild
+these sections when those values remain unchanged. Renames update the workspace
+row; workspace switches retain calendar preference loading and permission
+revalidation. Other Settings data sources retain their subscriptions, and compact
+spacing, row alignment, editing and persistence keep their existing behavior.
+
+`settings_rebuild_test.dart` observes real widget rebuilds after synthetic
+workspace state emissions, with rename and workspace-switch controls. This
+isolates unnecessary subscription work; it does not measure frame latency or
+establish a TestFlight performance improvement.
+
 ## Handled timezone operational failures
 
 Mobile timezone diagnostics distinguish preference load (`timezoneRead`), API
