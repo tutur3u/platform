@@ -1,7 +1,7 @@
 /* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache signing inputs */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { lstat, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { lstat, open, readdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { codesignDiagnostic } from './codesign-diagnostic.mjs';
 
@@ -12,6 +12,30 @@ function hasAsciiControl(value) {
     if (code <= 0x1f || code === 0x7f) return true;
   }
   return false;
+}
+
+function keychainSearchList(output) {
+  if (
+    typeof output !== 'string' ||
+    Buffer.byteLength(output, 'utf8') > identityOutputLimit
+  )
+    throw new Error('Invalid keychain search list');
+  const entries = output
+    .split('\n')
+    .filter((line) => line.trim())
+    .map((line) => {
+      const entry = JSON.parse(line.trim());
+      if (
+        typeof entry !== 'string' ||
+        !entry.startsWith('/') ||
+        entry.length > 4096 ||
+        hasAsciiControl(entry)
+      )
+        throw new Error('Invalid keychain search list');
+      return entry;
+    });
+  if (entries.length > 128) throw new Error('Invalid keychain search list');
+  return entries;
 }
 
 function importedIdentity(output, requested) {
@@ -83,6 +107,23 @@ export async function withMacosSigning(
   const identity = process.env.MACOS_SIGNING_IDENTITY;
   let stage = 'private-input-preparation';
   let failureDiagnostic = '';
+  let originalSearchList;
+  let searchListWriteAttempted = false;
+  let keychainCreated = false;
+  const privateInputWrites = new Set();
+  let signingError;
+  let restorationFailed = false;
+  let privateCleanupFailed = false;
+  let keychainCleanupFailed = false;
+  const writePrivateInput = async (path, bytes) => {
+    const handle = await open(path, 'wx', 0o600);
+    privateInputWrites.add(path);
+    try {
+      await handle.writeFile(bytes);
+    } finally {
+      await handle.close();
+    }
+  };
   const exec = (command, args, artifactKind = 'unknown') => {
     stage =
       command === 'security'
@@ -93,6 +134,7 @@ export async function withMacosSigning(
             import: 'certificate-import',
             'set-key-partition-list': 'keychain-partition',
             'find-identity': 'signing-identity-preflight',
+            'list-keychains': 'keychain-search-list',
             'delete-keychain': 'keychain-cleanup',
           }[args[0]] ?? 'keychain-command')
         : command === 'codesign'
@@ -110,7 +152,8 @@ export async function withMacosSigning(
       return execute(command, args, {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
-        ...(command === 'security' && args[0] === 'find-identity'
+        ...(command === 'security' &&
+        ['find-identity', 'list-keychains'].includes(args[0])
           ? { maxBuffer: identityOutputLimit, timeout: 10000 }
           : {}),
       });
@@ -121,19 +164,50 @@ export async function withMacosSigning(
     }
   };
   try {
-    await writeFile(
-      certificate,
-      Buffer.from(process.env.MACOS_CERTIFICATE_P12_B64, 'base64'),
-      { mode: 0o600 }
+    originalSearchList = keychainSearchList(
+      exec('security', ['list-keychains', '-d', 'user'])
     );
-    await writeFile(
+    if (originalSearchList.includes(keychain))
+      throw new Error('Owned signing keychain collision');
+    stage = 'private-input-ownership';
+    for (const path of [keychain, certificate, key]) {
+      try {
+        await lstat(path);
+        throw new Error('Preexisting signing path');
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+    }
+    await writePrivateInput(
+      certificate,
+      Buffer.from(process.env.MACOS_CERTIFICATE_P12_B64, 'base64')
+    );
+    await writePrivateInput(
       key,
-      Buffer.from(process.env.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64, 'base64'),
-      { mode: 0o600 }
+      Buffer.from(process.env.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64, 'base64')
     );
     exec('security', ['create-keychain', '-p', password, keychain]);
+    keychainCreated = true;
     exec('security', ['set-keychain-settings', '-lut', '21600', keychain]);
     exec('security', ['unlock-keychain', '-p', password, keychain]);
+    // An explicit codesign keychain does not replace its chain-search list.
+    searchListWriteAttempted = true;
+    exec('security', [
+      'list-keychains',
+      '-d',
+      'user',
+      '-s',
+      ...originalSearchList,
+      keychain,
+    ]);
+    const activeSearchList = keychainSearchList(
+      exec('security', ['list-keychains', '-d', 'user'])
+    );
+    if (
+      JSON.stringify(activeSearchList) !==
+      JSON.stringify([...originalSearchList, keychain])
+    )
+      throw new Error('Signing keychain search list differs');
     exec('security', [
       'import',
       certificate,
@@ -263,17 +337,51 @@ export async function withMacosSigning(
       },
     });
   } catch {
-    throw new Error(
+    signingError = new Error(
       `macOS signing failed at ${stage}${failureDiagnostic}; no public release was created`
     );
   } finally {
-    try {
-      exec('security', ['delete-keychain', keychain]);
-    } catch {
-      /* Keychain may not have been created. */
+    if (searchListWriteAttempted) {
+      try {
+        exec('security', [
+          'list-keychains',
+          '-d',
+          'user',
+          '-s',
+          ...originalSearchList,
+        ]);
+        const restored = keychainSearchList(
+          exec('security', ['list-keychains', '-d', 'user'])
+        );
+        restorationFailed =
+          JSON.stringify(restored) !== JSON.stringify(originalSearchList);
+      } catch {
+        restorationFailed = true;
+      }
     }
-    await Promise.all(
-      [certificate, key].map((path) => rm(path, { force: true }))
+    try {
+      if (keychainCreated) exec('security', ['delete-keychain', keychain]);
+    } catch {
+      keychainCleanupFailed = true;
+    }
+    const cleanup = await Promise.allSettled(
+      [...privateInputWrites].map((path) => rm(path, { force: true }))
+    );
+    privateCleanupFailed = cleanup.some(
+      (result) => result.status === 'rejected'
     );
   }
+  if (restorationFailed)
+    throw new Error(
+      `${signingError ? `${signingError.message}; ` : ''}macOS signing failed at keychain-search-list-restoration; no public release was created`
+    );
+  if (privateCleanupFailed)
+    throw new Error(
+      `${signingError ? `${signingError.message}; ` : ''}macOS signing failed at private-input-cleanup; no public release was created`
+    );
+  if (keychainCleanupFailed)
+    throw new Error(
+      `${signingError ? `${signingError.message}; ` : ''}macOS signing failed at keychain-cleanup; no public release was created`
+    );
+  if (signingError) throw signingError;
 }

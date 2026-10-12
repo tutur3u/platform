@@ -581,6 +581,19 @@ credential-free disable, concurrent dispatch, and actor-ABA publication.
 
 ### Private macOS signing failure diagnostics
 
+The signer temporarily appends its owned keychain to the user search list after
+capturing the exact prior list. An explicit `codesign --keychain` still needs the
+search list for certificate-chain lookup. Registration is verified before signing;
+the original list is restored and verified before the owned keychain is deleted.
+An uncertain registration is also restored, and restoration failure blocks success.
+No default keychain or foreign keychain is changed. Synthetic command tests prove
+this lifecycle; a real protected signing run must still prove private-key usability,
+notarization, and release publication.
+Preexisting files or symlinks at signing paths block preparation. P12 and P8 files
+are created exclusively; only acknowledged keychain creation permits deletion.
+Unknown creation ownership is retained rather than guessed. Private-file cleanup
+errors are redacted and block success.
+
 The macOS signer captures child output privately. Failed `codesign` commands
 publish only an allowlisted category, artifact kind and bounded numeric exit
 status, alongside the fixed signing stage. Categories cover keychain access,
