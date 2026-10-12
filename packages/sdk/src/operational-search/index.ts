@@ -5,7 +5,29 @@ import type {
 } from '../operational-graph/contracts';
 import { cacheSchema, type SearchCache } from './cache';
 import { type SearchDocument, searchableDocumentSchema } from './lexical';
-import type { EmbeddingRuntime } from './runtime';
+import { type EmbeddingRuntime, normalizeVector } from './runtime';
+
+function documentInput(document: { title: string; text: string }) {
+  return {
+    title: document.title.trim(),
+    text: document.text.replace(/\n/g, ' ').trim(),
+  };
+}
+
+export type IndexStats = {
+  strategy: 'snapshot-reconciled-vector-reuse-v1';
+  reuseEligible: boolean;
+  reused: number;
+  computed: number;
+  removed: number;
+  invalidated: number;
+};
+export type IndexResult = { cache: SearchCache; stats: IndexStats };
+export class IndexEmbeddingError extends Error {
+  constructor() {
+    super('local index embedding failed');
+  }
+}
 
 export type ProjectionReader = (
   request: { path: string } & OutcomeProjectionRequest
@@ -46,7 +68,7 @@ export async function collectDocuments({
       if (ids.has(record.id))
         fail('INVALID_PROJECTION', 'repeated projection item');
       ids.add(record.id);
-      const document = searchableDocumentSchema.parse({
+      const content = {
         id: record.id,
         canonicalId: record.canonicalId,
         contributingIds: record.contributingIds,
@@ -65,8 +87,15 @@ export async function collectDocuments({
             ].join('\n')
           )
           .join('\n'),
-        contentHash: digest(record),
         provenance: record.members.map((member) => member.provenance),
+      };
+      const document = searchableDocumentSchema.parse({
+        ...content,
+        contentHash: digest({
+          contentPolicy: 'record-and-document-input-v1',
+          record,
+          embeddingInput: documentInput(content),
+        }),
       });
       bytes += Buffer.byteLength(JSON.stringify(document));
       if (bytes > 24 * 1024 ** 2)
@@ -83,38 +112,78 @@ export async function buildIndex({
   path,
   readProjection,
   runtime,
+  previous,
 }: {
   path: string;
   readProjection: ProjectionReader;
   runtime?: EmbeddingRuntime;
-}): Promise<SearchCache> {
+  previous?: SearchCache;
+}): Promise<IndexResult> {
   const source = await collectDocuments({ path, readProjection });
   if (!source.semanticCacheAllowed || !source.sourceDatabaseId)
     fail(
       'LEGACY_CACHE_DENIED',
       'legacy null identity requires separately authorized adoption before persistent indexing'
     );
+  const prior = previous ? cacheSchema.parse(previous) : undefined;
+  const sameSource = Boolean(
+    prior &&
+      prior.sourceDatabaseId === source.sourceDatabaseId &&
+      prior.projectionVersion === source.projectionVersion
+  );
+  const reuseEligible = Boolean(
+    runtime &&
+      prior &&
+      sameSource &&
+      prior.modelFingerprint === runtime.fingerprint &&
+      prior.revision <= source.revision &&
+      (prior.revision !== source.revision ||
+        prior.snapshotHash === source.snapshotHash)
+  );
+  const priorVectors = new Map(
+    prior?.vectors.map((vector) => [vector.id, vector])
+  );
+  const currentIds = new Set(source.documents.map((document) => document.id));
+  const removed = sameSource
+    ? (prior?.vectors.filter((vector) => !currentIds.has(vector.id)).length ??
+      0)
+    : 0;
   const vectors: SearchCache['vectors'] = [];
+  let reused = 0;
+  let computed = 0;
   if (runtime) {
     if (source.documents.length > 8)
       fail(
         'EMBEDDING_CAPACITY',
         'first semantic indexing slice is bounded to 8 records'
       );
-    for (const document of source.documents)
+    for (const document of source.documents) {
+      const survivor = priorVectors.get(document.id);
+      if (reuseEligible && survivor?.contentHash === document.contentHash) {
+        vectors.push({ ...survivor, values: [...survivor.values] });
+        reused++;
+        continue;
+      }
+      const input = documentInput(document);
+      let values: number[];
+      try {
+        values = normalizeVector(
+          await runtime.embed(input.text, 'document', input.title)
+        );
+      } catch {
+        throw new IndexEmbeddingError();
+      }
       vectors.push({
         id: document.id,
         contentHash: document.contentHash,
-        values: await runtime.embed(
-          document.text.replace(/\n/g, ' '),
-          'document',
-          document.title
-        ),
+        values,
       });
+      computed++;
+    }
   }
-  return cacheSchema.parse({
+  const cache = cacheSchema.parse({
     version: 1,
-    projectionVersion: 1,
+    projectionVersion: source.projectionVersion,
     sourceDatabaseId: source.sourceDatabaseId,
     revision: source.revision,
     snapshotHash: source.snapshotHash,
@@ -122,4 +191,15 @@ export async function buildIndex({
     documents: source.documents,
     vectors,
   });
+  return {
+    cache,
+    stats: {
+      strategy: 'snapshot-reconciled-vector-reuse-v1',
+      reuseEligible,
+      reused,
+      computed,
+      removed,
+      invalidated: (prior?.vectors.length ?? 0) - reused - removed,
+    },
+  };
 }
