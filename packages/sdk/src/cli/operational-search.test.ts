@@ -1,0 +1,167 @@
+import { mkdtempSync, realpathSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { expect, it } from 'vitest';
+import type { OutcomeProjectionPage } from '../operational-graph/contracts';
+import { digest, type Item } from './operational-schema';
+import { runOperationalSearch } from './operational-search';
+
+const item: Item = {
+  id: 'calendar-rsvp',
+  title: 'Calendar RSVP',
+  kind: 'feature',
+  source: 'synthetic:cli',
+  acceptance: 'Persist responses offline',
+  priority: 0,
+  dependencies: [],
+  requiredEvidence: ['focused'],
+  status: 'captured',
+  owner: '',
+  links: [],
+  note: '',
+};
+function page(): OutcomeProjectionPage {
+  return {
+    projectionVersion: 1,
+    sourceDatabaseId: '00000000-0000-4000-8000-000000000001',
+    revision: 1,
+    snapshotHash: digest(item),
+    semanticCacheAllowed: true,
+    records: [
+      {
+        id: item.id,
+        canonicalId: item.id,
+        contributingIds: [item.id],
+        members: [
+          {
+            item,
+            provenance: {
+              itemId: item.id,
+              source: item.source,
+              firstEventSeq: 1,
+              lastEventSeq: 1,
+              events: [
+                {
+                  seq: 1,
+                  at: 'synthetic',
+                  action: 'intake',
+                  payloadHash: digest(item),
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+    nextCursor: null,
+    liveVerificationPerformed: false,
+  };
+}
+
+it('serves EN/VI help and denies model preparation without touching a store or network', async () => {
+  expect(await runOperationalSearch(['--help', '--lang', 'vi'])).toMatchObject({
+    group: 'backlog search',
+    help: expect.stringContaining('Tìm kiếm'),
+  });
+  expect(await runOperationalSearch(['model-status', '--json'])).toMatchObject({
+    ready: false,
+    downloadPerformed: false,
+    runtimeExecuted: false,
+  });
+  await expect(runOperationalSearch(['model-prepare'])).rejects.toThrow(
+    '--runtime-dir'
+  );
+  await expect(runOperationalSearch(['query', 'calendar'])).rejects.toThrow(
+    '--db'
+  );
+  await expect(
+    runOperationalSearch([
+      'query',
+      'calendar',
+      '--db',
+      'fixture',
+      '--db',
+      'other',
+    ])
+  ).rejects.toThrow('duplicate');
+});
+
+it('indexes and queries a private injected native projection, then invalidates changed revisions', async () => {
+  const directory = realpathSync(
+    mkdtempSync(join(tmpdir(), 'ttr-search-cli-'))
+  );
+  const cache = join(directory, 'index.json');
+  let source = page();
+  const injected = { readProjection: () => source };
+  try {
+    expect(
+      await runOperationalSearch(
+        ['index', '--db', 'synthetic', '--cache', cache],
+        injected
+      )
+    ).toMatchObject({
+      indexed: 1,
+      embedded: 0,
+      incremental: false,
+      revision: 1,
+    });
+    expect(statSync(cache).mode & 0o777).toBe(0o600);
+    expect(
+      await runOperationalSearch(
+        ['query', 'calendar', '--db', 'synthetic', '--cache', cache],
+        injected
+      )
+    ).toMatchObject({
+      cacheStatus: 'current',
+      mode: 'lexical',
+      results: [{ id: item.id, actionAuthorized: false }],
+    });
+    source = { ...source, revision: 2, snapshotHash: 'b'.repeat(64) };
+    expect(
+      await runOperationalSearch(
+        ['query', 'calendar', '--db', 'synthetic', '--cache', cache],
+        injected
+      )
+    ).toMatchObject({ cacheStatus: 'stale', revision: 2, mode: 'lexical' });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it('permits ephemeral legacy lexical reads but refuses persistent cache and mixed pages', async () => {
+  const native = page();
+  const legacy: OutcomeProjectionPage = {
+    ...native,
+    sourceDatabaseId: null,
+    semanticCacheAllowed: false,
+  };
+  expect(
+    await runOperationalSearch(['query', 'calendar', '--db', 'synthetic'], {
+      readProjection: () => legacy,
+    })
+  ).toMatchObject({ sourceDatabaseId: null, mode: 'lexical' });
+  await expect(
+    runOperationalSearch(
+      ['index', '--db', 'synthetic', '--cache', '/never-written'],
+      { readProjection: () => legacy }
+    )
+  ).rejects.toThrow('legacy null identity');
+  let count = 0;
+  await expect(
+    runOperationalSearch(['query', 'calendar', '--db', 'synthetic'], {
+      readProjection: () =>
+        ++count === 1
+          ? {
+              ...native,
+              nextCursor: {
+                projectionVersion: 1,
+                sourceDatabaseId: native.sourceDatabaseId,
+                revision: 1,
+                snapshotHash: native.snapshotHash,
+                afterId: item.id,
+              },
+            }
+          : { ...native, revision: 2 },
+    })
+  ).rejects.toThrow('mix projection pages');
+});
