@@ -22,8 +22,10 @@ import {
 import {
   createPythonRuntime,
   inspectRuntimeDirectory,
+  LocalRuntimeFailure,
   MAX_PRIVATE_RUNTIME_BYTES,
   probePythonRuntime,
+  type RuntimeFailureDiagnostic,
 } from '../operational-search/python-runtime';
 import { search } from '../operational-search/query';
 import type { EmbeddingRuntime } from '../operational-search/runtime';
@@ -167,12 +169,31 @@ export async function runOperationalSearch(
   if (cachePath) assertDerivedPath(path, cachePath);
   let runtime = injected?.runtime;
   let runtimeFallback: string | null = null;
+  let runtimeFailureDiagnostic: Readonly<RuntimeFailureDiagnostic> | null =
+    null;
   if (!runtime && runtimeDirectory) {
     try {
       runtime = await createPythonRuntime(runtimeDirectory);
-    } catch {
+    } catch (error) {
       runtimeFallback = 'LOCAL_RUNTIME_UNAVAILABLE';
+      if (error instanceof LocalRuntimeFailure)
+        runtimeFailureDiagnostic = error.diagnostic;
     }
+  }
+  if (runtime) {
+    const activeRuntime = runtime;
+    runtime = {
+      fingerprint: activeRuntime.fingerprint,
+      async embed(...arguments_) {
+        try {
+          return await activeRuntime.embed(...arguments_);
+        } catch (error) {
+          if (error instanceof LocalRuntimeFailure)
+            runtimeFailureDiagnostic = error.diagnostic;
+          throw error;
+        }
+      },
+    };
   }
   if (action === 'index') {
     if (!cachePath) fail('INVALID_INPUT', '--cache is required');
@@ -205,6 +226,7 @@ export async function runOperationalSearch(
       invalidation: 'full snapshot',
       modelFingerprint: cache.modelFingerprint,
       runtimeFallback,
+      runtimeFailureDiagnostic,
       runtimeKind: injected?.runtime
         ? 'injected'
         : runtime
@@ -260,6 +282,7 @@ export async function runOperationalSearch(
     snapshotHash: source.snapshotHash,
     cacheStatus,
     runtimeFallback,
+    runtimeFailureDiagnostic,
     ...result,
   };
 }

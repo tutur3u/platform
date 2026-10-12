@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import type { OutcomeProjectionPage } from '../operational-graph/contracts';
+import { createRuntimeDiagnosticCollector } from '../operational-search/python-runtime';
 import { digest, type Item } from './operational-schema';
 import { runOperationalSearch } from './operational-search';
 
@@ -20,6 +21,79 @@ const item: Item = {
   links: [],
   note: '',
 };
+
+it('exposes only typed redacted runtime failures while preserving lexical index and query fallback', async () => {
+  const directory = realpathSync(
+    mkdtempSync(join(tmpdir(), 'ttr-diagnostic-cli-'))
+  );
+  const cache = join(directory, 'index.json');
+  const collector = createRuntimeDiagnosticCollector();
+  collector.receive(
+    Buffer.from('synthetic-private-prompt signed-url credential')
+  );
+  const known = collector.failure(1, null);
+  const fake = Object.assign(new Error('synthetic-private-error'), {
+    diagnostic: { prompt: 'synthetic-private-prompt' },
+  });
+  const fingerprint = 'a'.repeat(64);
+  try {
+    for (const error of [known, fake]) {
+      const response = await runOperationalSearch(
+        ['index', '--db', 'synthetic', '--cache', cache],
+        {
+          readProjection: page,
+          runtime: {
+            fingerprint,
+            async embed() {
+              throw error;
+            },
+          },
+        }
+      );
+      expect(response).toMatchObject({
+        indexed: 1,
+        embedded: 0,
+        modelLoaded: false,
+        runtimeFallback: 'LOCAL_EMBEDDING_FAILED',
+        runtimeFailureDiagnostic: error === known ? known.diagnostic : null,
+      });
+      expect(JSON.stringify(response)).not.toContain('synthetic-private');
+    }
+    await runOperationalSearch(
+      ['index', '--db', 'synthetic', '--cache', cache],
+      {
+        readProjection: page,
+        runtime: {
+          fingerprint,
+          async embed() {
+            return Array.from({ length: 768 }, (_, i) => (i === 0 ? 1 : 0));
+          },
+        },
+      }
+    );
+    const response = await runOperationalSearch(
+      ['query', 'calendar', '--db', 'synthetic', '--cache', cache],
+      {
+        readProjection: page,
+        runtime: {
+          fingerprint,
+          async embed() {
+            throw known;
+          },
+        },
+      }
+    );
+    expect(response).toMatchObject({
+      mode: 'lexical',
+      fallbackReason: 'SEMANTIC_RUNTIME_FAILED',
+      runtimeFailureDiagnostic: known.diagnostic,
+      results: [{ id: item.id, actionAuthorized: false }],
+    });
+    expect(JSON.stringify(response)).not.toContain('synthetic-private');
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 function page(): OutcomeProjectionPage {
   return {
     projectionVersion: 1,
