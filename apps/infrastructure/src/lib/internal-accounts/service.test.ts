@@ -96,6 +96,46 @@ describe('internal account service', () => {
     ).toBeNull();
   });
 
+  it('lists genuine managed subdomains without widening root-only mutation classification', async () => {
+    const listUsers = vi.fn().mockResolvedValue({
+      data: {
+        nextPage: null,
+        users: [
+          authUser({
+            email: 'employee@xwf.tuturuuu.com',
+            email_confirmed_at: '2026-01-01T00:00:00.000Z',
+            id: 'xwf-user',
+          }),
+          authUser({
+            email: 'employee@team.region.tuturuuu.com',
+            email_confirmed_at: '2026-01-01T00:00:00.000Z',
+            id: 'subdomain-user',
+          }),
+          authUser({
+            email: 'employee@tuturuuu.com.example',
+            email_confirmed_at: '2026-01-01T00:00:00.000Z',
+            id: 'lookalike-user',
+          }),
+        ],
+      },
+      error: null,
+    });
+    const result = await listInternalAccountUsers({
+      actorUserId: 'actor-1',
+      sbAdmin: adminClient({ listUsers }, listingData()),
+    });
+    expect(result.accounts.map((account) => account.id).sort()).toEqual([
+      'subdomain-user',
+      'xwf-user',
+    ]);
+    expect(
+      toInternalAccount(
+        authUser({ email: 'employee@xwf.tuturuuu.com' }),
+        'actor-1'
+      )
+    ).toBeNull();
+  });
+
   it('filters the auth directory without returning external users', async () => {
     const listUsers = vi.fn().mockResolvedValue({
       data: {
