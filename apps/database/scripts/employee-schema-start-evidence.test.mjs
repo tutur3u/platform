@@ -71,6 +71,35 @@ function network() {
     ),
   };
 }
+// Substitute only the fixed Go json actions with their selected synthetic values.
+// This validates the actual production template's literal structure, not Docker execution.
+test('production network template renders complete selected JSON', () => {
+  const source = readFileSync(
+    new URL('./employee-schema-start-evidence.mjs', import.meta.url),
+    'utf8'
+  );
+  const template = source.match(/const networkFormat =\s*'([^'\n]+)';/)[1];
+  const values = new Map([
+    ['json .Id', input.network.id],
+    ['json .Name', input.network.name],
+    ['json .Internal', true],
+    ['json .Driver', 'bridge'],
+    ['json (index .Labels "com.supabase.cli.project")', null],
+    ...Object.entries(input.network.labels).map(([key, value]) => [
+      `json (index .Labels "${key}")`,
+      value,
+    ]),
+  ]);
+  let actions = 0;
+  const rendered = template.replace(/\{\{([^{}]+)\}\}/g, (_, action) => {
+    assert.equal(values.has(action), true, 'only fixed reviewed actions');
+    actions++;
+    return JSON.stringify(values.get(action));
+  });
+  assert.equal(actions, 11);
+  assert.equal(rendered.includes('{{'), false);
+  assert.deepEqual(JSON.parse(rendered), network());
+});
 function snapshot() {
   return {
     id: containerId,

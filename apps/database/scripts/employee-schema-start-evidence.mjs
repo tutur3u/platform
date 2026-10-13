@@ -80,7 +80,7 @@ function dockerRead(args, { maxBytes = 65536, timeoutMs = 2500 } = {}) {
   });
 }
 const networkFormat =
-  '{"id":{{json .Id}},"name":{{json .Name}},"internal":{{json .Internal}},"driver":{{json .Driver}},"cliProject":{{json (index .Labels "com.supabase.cli.project")}},"labels":{"source":{{json (index .Labels "ttr.employee.source")}},"control":{{json (index .Labels "ttr.employee.control")}},"run":{{json (index .Labels "ttr.employee.run")}},"attempt":{{json (index .Labels "ttr.employee.attempt")}},"nonce":{{json (index .Labels "ttr.employee.nonce")}},"project":{{json (index .Labels "ttr.employee.project")}}}';
+  '{"id":{{json .Id}},"name":{{json .Name}},"internal":{{json .Internal}},"driver":{{json .Driver}},"cliProject":{{json (index .Labels "com.supabase.cli.project")}},"labels":{"source":{{json (index .Labels "ttr.employee.source")}},"control":{{json (index .Labels "ttr.employee.control")}},"run":{{json (index .Labels "ttr.employee.run")}},"attempt":{{json (index .Labels "ttr.employee.attempt")}},"nonce":{{json (index .Labels "ttr.employee.nonce")}},"project":{{json (index .Labels "ttr.employee.project")}}}}';
 const containerFormat =
   '{"id":{{json .Id}},"name":{{json .Name}},"image":{{json .Config.Image}},"project":{{json (index .Config.Labels "com.supabase.cli.project")}},"running":{{json .State.Running}},"health":{{if .State.Health}}{{json .State.Health.Status}}{{else}}null{{end}},"mode":{{json .HostConfig.NetworkMode}},"requested":{{json .HostConfig.PortBindings}},"ports":{{json .NetworkSettings.Ports}},"networks":{{json .NetworkSettings.Networks}}}';
 /** No authentication or SQL bytes are sent. Always await the exact socket's close. */
