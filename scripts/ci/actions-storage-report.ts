@@ -175,41 +175,137 @@ export async function paginateGitHubCollection<T>({
   );
 }
 
-function createApiClient({
+const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
+const REQUEST_BUDGET_MS = 30_000;
+const ATTEMPT_BUDGET_MS = 10_000;
+
+// Abort bounds the wait, not the stream's underlying cancellation. Keep both
+// settlement handlers attached after timeout; an uncertain cancel never retries.
+function cancelFailedBody(
+  body: Response['body'],
+  signal: AbortSignal
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let finished = false;
+    function finish(error?: Error) {
+      if (finished) return;
+      finished = true;
+      signal.removeEventListener('abort', onAbort);
+      if (error) reject(error);
+      else resolve();
+    }
+    function onAbort() {
+      finish(new Error('GitHub API GET deadline exceeded.'));
+    }
+    signal.addEventListener('abort', onAbort, { once: true });
+    try {
+      const cancellation = body?.cancel();
+      void Promise.resolve(cancellation).then(
+        () => {
+          if (signal.aborted) onAbort();
+          else finish();
+        },
+        () => finish(new Error('GitHub API GET transport or response failed.'))
+      );
+    } catch {
+      finish(new Error('GitHub API GET transport or response failed.'));
+    }
+    if (signal.aborted) onAbort();
+  });
+}
+
+// Transport and successful JSON reads must cooperate with the supplied signal.
+export function createApiClient({
   apiBase,
   apiVersion,
   token,
+  transport = fetch,
+  now = Date.now,
+  sleep = (milliseconds) =>
+    new Promise<void>((resolve) => setTimeout(resolve, milliseconds)),
+  scheduleAbort = (callback, milliseconds) => {
+    const timer = setTimeout(callback, milliseconds);
+    return () => clearTimeout(timer);
+  },
 }: {
   apiBase: string;
   apiVersion: string;
   token: string;
+  transport?: typeof fetch;
+  now?: () => number;
+  sleep?: (milliseconds: number) => Promise<void>;
+  scheduleAbort?: (callback: () => void, milliseconds: number) => () => void;
 }) {
   async function request<T>(
     path: string,
     query?: Record<string, string | number>
-  ) {
+  ): Promise<T> {
     const url = new URL(path, `${apiBase.replace(/\/$/, '')}/`);
-
     for (const [key, value] of Object.entries(query ?? {})) {
       url.searchParams.set(key, String(value));
     }
-
-    const response = await fetch(url, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'X-GitHub-Api-Version': apiVersion,
-      },
-    });
-
-    if (!response.ok) {
-      throw new GitHubApiError(
-        `GitHub API GET ${url.pathname} failed with ${response.status}.`,
-        response.status
+    const deadline = now() + REQUEST_BUDGET_MS;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const remaining = deadline - now();
+      if (remaining <= 0) throw new Error('GitHub API GET deadline exceeded.');
+      const controller = new AbortController();
+      const cancelTimer = scheduleAbort(
+        () => controller.abort(),
+        Math.min(ATTEMPT_BUDGET_MS, remaining)
       );
+      let retry = false;
+      try {
+        const response = await transport(url, {
+          method: 'GET',
+          signal: controller.signal,
+          headers: {
+            Accept: 'application/vnd.github+json',
+            Authorization: `Bearer ${token}`,
+            'X-GitHub-Api-Version': apiVersion,
+          },
+        });
+        if (!response.ok) {
+          // Retry only after confirmed cancellation of the failed response.
+          await cancelFailedBody(response.body, controller.signal);
+          if (controller.signal.aborted || now() >= deadline) {
+            throw new Error('GitHub API GET deadline exceeded.');
+          }
+          if (RETRYABLE_STATUSES.has(response.status) && attempt < 2) {
+            retry = true;
+          } else {
+            throw new GitHubApiError(
+              `GitHub API GET failed with ${response.status}.`,
+              response.status
+            );
+          }
+        } else {
+          const value = (await response.json()) as T;
+          if (controller.signal.aborted || now() >= deadline) {
+            throw new Error('GitHub API GET deadline exceeded.');
+          }
+          return value;
+        }
+      } catch (error: unknown) {
+        if (error instanceof GitHubApiError) throw error;
+        // Never surface transport errors containing credentials or private URLs.
+        throw new Error(
+          controller.signal.aborted || now() >= deadline
+            ? 'GitHub API GET deadline exceeded.'
+            : 'GitHub API GET transport or response failed.'
+        );
+      } finally {
+        cancelTimer();
+        controller.abort();
+      }
+      if (retry) {
+        const backoff = 250 * (attempt + 1);
+        if (deadline - now() <= backoff) {
+          throw new Error('GitHub API GET deadline exceeded.');
+        }
+        await sleep(backoff);
+      }
     }
-
-    return (await response.json()) as T;
+    throw new Error('GitHub API GET attempts exhausted.');
   }
 
   async function paginate<T>(
@@ -254,7 +350,7 @@ function emitUsageAnnotation(level: UsageLevel, percentage: number) {
   }
 }
 
-function optionalValue<T>(
+export function optionalValue<T>(
   promise: Promise<T>,
   label: string
 ): Promise<T | null> {
