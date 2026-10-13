@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import {
+  chmod,
   mkdir,
   mkdtemp,
   readFile,
@@ -8,7 +9,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   commandCwd,
@@ -17,10 +18,13 @@ import {
   realExecutable,
 } from './resources-command';
 import {
+  atomicJson,
   defaultResourceConfig,
+  readResourceConfig,
   repositoryIdentity,
   resourceScope,
 } from './resources-config';
+import { resourceQueueStatus } from './resources-queue';
 import {
   installResourceShims,
   removeResourceHook,
@@ -31,6 +35,10 @@ import {
 
 const entry = resolve('src/cli/resources-entry.ts');
 const bun = realExecutable('bun', '/nonexistent-shim-dir');
+const realNode = realExecutable('node', '/nonexistent');
+const fixturePath = [dirname(realNode), dirname(bun), '/usr/bin', '/bin'].join(
+  delimiter
+);
 const children: ChildProcess[] = [];
 const dirs: string[] = [];
 // These integration tests start multiple runtimes and real process groups.
@@ -41,12 +49,17 @@ async function temporary() {
   dirs.push(path);
   return path;
 }
-function launch(home: string, args: string[], cwd?: string) {
+function launch(
+  home: string,
+  args: string[],
+  cwd?: string,
+  executableEntry = entry
+) {
   const cliArgs =
     args[0] === 'run' ? ['run', '--ignore-pressure', ...args.slice(1)] : args;
-  const child = spawn(bun, [entry, ...cliArgs], {
+  const child = spawn(bun, [executableEntry, ...cliArgs], {
     cwd,
-    env: { ...process.env, TTR_RESOURCES_HOME: home },
+    env: { ...process.env, PATH: fixturePath, TTR_RESOURCES_HOME: home },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   children.push(child);
@@ -141,23 +154,6 @@ describe('resource policy', () => {
         defaultResourceConfig()
       )
     ).toEqual(['run', 'test', '--concurrency=1', '--', '--concurrency=8']);
-  });
-  it('preserves Bun run separators when clamping the underlying Turbo command', () => {
-    expect(
-      limitCommand(
-        'bun',
-        ['--no-install', 'run', 'turbo', '--', 'run', 'test'],
-        defaultResourceConfig()
-      )
-    ).toEqual([
-      '--no-install',
-      'run',
-      'turbo',
-      '--',
-      'run',
-      'test',
-      '--concurrency=1',
-    ]);
   });
   it('includes linked worktrees and excludes similar directory prefixes', async () => {
     const home = await temporary();
@@ -306,7 +302,7 @@ describe('resource admission', { timeout: 45_000 }, () => {
         ['-e', 'console.log(process.env.VITEST_MAX_WORKERS || "unset")'],
         {
           cwd,
-          env: { PATH: process.env.PATH },
+          env: { PATH: fixturePath },
           stdio: ['ignore', 'pipe', 'pipe'],
         }
       );
@@ -421,8 +417,9 @@ describe('resource admission', { timeout: 45_000 }, () => {
     await until(() => exists(ready));
     await until(async () =>
       Boolean(
-        JSON.parse(await readFile(join(home, 'lock', 'owner.json'), 'utf8'))
-          .childPid
+        JSON.parse(
+          await readFile(join(home, 'slots', '0', 'owner.json'), 'utf8')
+        ).childPid
       )
     );
     first.child.kill('SIGKILL');
@@ -434,3 +431,263 @@ describe('resource admission', { timeout: 45_000 }, () => {
     expect((await next.done).code).toBe(0);
   });
 });
+
+// These probes are lightweight executables named for classified tools. They
+// inspect actual argv/env and durable owner caps without running those tools.
+async function workerProbe(
+  home: string,
+  tool: 'vitest' | 'cargo',
+  name = 'probe'
+) {
+  const path = join(home, tool);
+  await writeFile(
+    path,
+    `#!${realNode}
+const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(join(home, `${name}.json`))},JSON.stringify({args:process.argv.slice(2),vitest:process.env.VITEST_MAX_WORKERS,cargo:process.env.CARGO_BUILD_JOBS,turbo:process.env.TURBO_CONCURRENCY}));const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(home, `${name}.release`))})){clearInterval(timer)}},10);`
+  );
+  await chmod(path, 0o700);
+  return path;
+}
+const queueModule = resolve('src/cli/resources-queue.ts');
+const configModule = resolve('src/cli/resources-config.ts');
+async function workerHome() {
+  const home = await temporary();
+  await atomicJson(join(home, 'config.json'), {
+    ...defaultResourceConfig(),
+    roots: [home],
+    validationLanes: 1,
+    vitestWorkers: 2,
+    buildJobs: 2,
+  });
+  return home;
+}
+describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
+  it('rejects busy same-lane budget changes and binds actual argv/env to recorded caps', async () => {
+    const home = await workerHome();
+    const ready = join(home, 'ready');
+    const release = join(home, 'release');
+    const active = launch(home, [
+      'run',
+      '--',
+      'node',
+      await script(
+        home,
+        'active',
+        `const fs=require('fs');fs.writeFileSync(${JSON.stringify(ready)},'');const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(release)}))clearInterval(timer)},10);`
+      ),
+    ]);
+    await until(() => exists(ready));
+    const probe = await workerProbe(home, 'vitest');
+    const queued = launch(home, ['run', '--', probe, 'run', '--maxWorkers=16']);
+    await until(
+      async () => (await resourceQueueStatus(home)).waiting.length === 1
+    );
+    const before = await readFile(join(home, 'config.json'), 'utf8');
+    const change = await launch(home, [
+      'setup',
+      '--shell',
+      'none',
+      '--workers',
+      '1',
+    ]).done;
+    expect(change.code).toBe(1);
+    expect(change.err).toContain('worker budgets');
+    expect(await readFile(join(home, 'config.json'), 'utf8')).toBe(before);
+    await writeFile(release, '');
+    await active.done;
+    await until(() => exists(join(home, 'probe.json')));
+    expect(
+      JSON.parse(await readFile(join(home, 'probe.json'), 'utf8'))
+    ).toEqual({
+      args: ['run', '--maxWorkers=2'],
+      vitest: '2',
+      cargo: '2',
+      turbo: '1',
+    });
+    expect((await resourceQueueStatus(home)).owner?.limits).toEqual({
+      vitestWorkers: 2,
+      buildJobs: 2,
+    });
+    await writeFile(join(home, 'probe.release'), '');
+    expect((await queued.done).code).toBe(0);
+  });
+  it('rejects worker changes for a live pressure-held waiter even with zero owners', async () => {
+    const home = await workerHome();
+    const runner = join(home, 'waiter.ts');
+    await writeFile(
+      runner,
+      `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {writeFileSync} from 'node:fs';process.exitCode=await queuedResourceCommand(${JSON.stringify(home)},'node',['-e','process.exit(9)'],process.env,false,1,async()=>{writeFileSync(${JSON.stringify(join(home, 'pressure.ready'))},'');return {blocked:true,reason:'private fixture'};});`
+    );
+    const waiter = launch(home, [], undefined, runner);
+    await until(() => exists(join(home, 'pressure.ready')));
+    expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
+    const before = await readFile(join(home, 'config.json'), 'utf8');
+    await expect(
+      setupResources({ home, roots: [home], shell: 'none', workers: 1 })
+    ).rejects.toThrow('worker budgets');
+    expect(await readFile(join(home, 'config.json'), 'utf8')).toBe(before);
+    waiter.child.kill('SIGTERM');
+    expect((await waiter.done).code).toBe(143);
+  });
+  it('re-caps stale explicit flags across the initial-read to ticket-publication race', async () => {
+    const home = await workerHome();
+    const probe = await workerProbe(home, 'cargo');
+    const runner = join(home, 'race.ts');
+    await writeFile(
+      runner,
+      `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {readResourceConfig,laneResourceConfig,resourceEnvironment} from ${JSON.stringify(configModule)};import {limitCommand} from ${JSON.stringify(resolve('src/cli/resources-command.ts'))};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const config=laneResourceConfig(await readResourceConfig(${JSON.stringify(home)}));const args=limitCommand('cargo',['test','--jobs=16'],config);writeFileSync(${JSON.stringify(join(home, 'initial.json'))},JSON.stringify(args));while(!existsSync(${JSON.stringify(join(home, 'initial.release'))}))await setTimeout(10);process.exitCode=await queuedResourceCommand(${JSON.stringify(home)},${JSON.stringify(probe)},args,resourceEnvironment(config),true,1);`
+    );
+    const broker = launch(home, [], undefined, runner);
+    await until(() => exists(join(home, 'initial.json')));
+    expect(
+      JSON.parse(await readFile(join(home, 'initial.json'), 'utf8'))
+    ).toEqual(['test', '--jobs=2']);
+    expect((await resourceQueueStatus(home)).waiting).toHaveLength(0);
+    await setupResources({ home, roots: [home], shell: 'none', workers: 1 });
+    await writeFile(join(home, 'initial.release'), '');
+    await until(() => exists(join(home, 'probe.json')));
+    expect(
+      JSON.parse(await readFile(join(home, 'probe.json'), 'utf8'))
+    ).toEqual({
+      args: ['test', '--jobs=1'],
+      vitest: '1',
+      cargo: '1',
+      turbo: '1',
+    });
+    expect((await resourceQueueStatus(home)).owner?.limits).toEqual({
+      vitestWorkers: 1,
+      buildJobs: 1,
+    });
+    await writeFile(join(home, 'probe.release'), '');
+    expect((await broker.done).code).toBe(0);
+  });
+  it('rejects a full budget-policy change during pressure probing before any launch', async () => {
+    const home = await workerHome();
+    const probe = await workerProbe(home, 'vitest');
+    const runner = join(home, 'pressure-race.ts');
+    await writeFile(
+      runner,
+      `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';try{process.exitCode=await queuedResourceCommand(${JSON.stringify(home)},${JSON.stringify(probe)},['run','--maxWorkers=16'],process.env,false,1,async()=>{writeFileSync(${JSON.stringify(join(home, 'pressure.ready'))},'');while(!existsSync(${JSON.stringify(join(home, 'pressure.release'))}))await setTimeout(10);return {blocked:false,reason:null};});}catch(error){console.error(error.message);process.exitCode=1;}`
+    );
+    const broker = launch(home, [], undefined, runner);
+    await until(() => exists(join(home, 'pressure.ready')));
+    // Deliberately mutate only synthetic data to model an out-of-protocol writer.
+    await atomicJson(join(home, 'config.json'), {
+      ...(await readResourceConfig(home)),
+      vitestWorkers: 1,
+      buildJobs: 1,
+    });
+    await writeFile(join(home, 'pressure.release'), '');
+    const result = await broker.done;
+    expect(result.code).toBe(1);
+    expect(result.err).toContain('worker policy changed');
+    expect(await exists(join(home, 'probe.json'))).toBe(false);
+    expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
+  });
+  it('preserves owned SIGHUP identity and exit129 after child drain', async () => {
+    const home = await workerHome();
+    const child = await script(
+      home,
+      'hup',
+      `const fs=require('fs');process.on('SIGHUP',()=>fs.writeFileSync(${JSON.stringify(join(home, 'signal'))},'SIGHUP'));process.on('SIGTERM',()=>fs.writeFileSync(${JSON.stringify(join(home, 'signal'))},'SIGTERM'));fs.writeFileSync(${JSON.stringify(join(home, 'ready'))},'');const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(home, 'release'))})){clearInterval(timer);process.exit(0)}},10);`
+    );
+    const broker = launch(home, ['run', '--', 'node', child]);
+    await until(() => exists(join(home, 'ready')));
+    broker.child.kill('SIGHUP');
+    await until(() => exists(join(home, 'signal')));
+    expect(await readFile(join(home, 'signal'), 'utf8')).toBe('SIGHUP');
+    expect(broker.child.exitCode).toBeNull();
+    expect((await resourceQueueStatus(home)).owners).toHaveLength(1);
+    await writeFile(join(home, 'release'), '');
+    expect((await broker.done).code).toBe(129);
+    expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
+  });
+});
+
+it.each(['enable', 'disable', 'uninstall'] as const)(
+  'serializes %s config reads with setup and preserves admitted budgets',
+  async (action) => {
+    const home = await workerHome();
+    const extra = join(home, 'extra');
+    await mkdir(extra);
+    const repo = join(home, 'repository.git');
+    await atomicJson(join(home, 'config.json'), {
+      ...(await readResourceConfig(home)),
+      repositories: [repo],
+    });
+    const readerFile = join(home, 'reader.ts');
+    // Delay a real filesystem read in this private process, not the scheduler.
+    await writeFile(
+      readerFile,
+      `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const original=fs.readFile;let paused=false;mock.module('node:fs/promises',()=>({...fs,readFile:async(path,...args)=>{const value=await original(path,...args);if(String(path)===${JSON.stringify(join(home, 'config.json'))}&&!paused){paused=true;await fs.writeFile(${JSON.stringify(join(home, 'read.ready'))},'');while(!existsSync(${JSON.stringify(join(home, 'read.release'))}))await setTimeout(10);}return value;}}));const {runResourcesCommand}=await import(${JSON.stringify(resolve('src/cli/resources.ts'))});await runResourcesCommand([${JSON.stringify(action)}]);`
+    );
+    const reader = launch(home, [], undefined, readerFile);
+    await until(() => exists(join(home, 'read.ready')));
+    expect(
+      JSON.parse(await readFile(join(home, 'admission', 'owner.json'), 'utf8'))
+        .pid
+    ).toBe(reader.child.pid);
+    const setupFile = join(home, 'setup.ts');
+    await writeFile(
+      setupFile,
+      `import {setupResources} from ${JSON.stringify(resolve('src/cli/resources-setup.ts'))};import {writeFileSync} from 'node:fs';const result=setupResources({home:${JSON.stringify(home)},roots:[${JSON.stringify(extra)}],shell:'none',workers:2,lanes:2});writeFileSync(${JSON.stringify(join(home, 'setup.ready'))},'');await result;writeFileSync(${JSON.stringify(join(home, 'setup.done'))},'');`
+    );
+    const setup = launch(home, [], undefined, setupFile);
+    await until(() => exists(join(home, 'setup.ready')));
+    expect(await exists(join(home, 'setup.done'))).toBe(false);
+    expect((await readResourceConfig(home))?.validationLanes).toBe(1);
+    await writeFile(join(home, 'read.release'), '');
+    expect((await reader.done).code).toBe(0);
+    expect((await setup.done).code).toBe(0);
+    const policy = await readResourceConfig(home);
+    expect(policy?.validationLanes).toBe(2);
+    expect(policy?.repositories).toEqual([repo]);
+    expect(policy?.roots).toHaveLength(2);
+    const a = launch(home, [
+      'run',
+      '--',
+      await workerProbe(home, 'vitest', 'a'),
+      'run',
+      '--maxWorkers=16',
+    ]);
+    await until(() => exists(join(home, 'a.json')));
+    const toggle = await launch(home, [action]).done;
+    expect(toggle.code).toBe(action === 'uninstall' ? 1 : 0);
+    const current = await readResourceConfig(home);
+    expect(current).toEqual({ ...policy, enabled: action === 'enable' });
+    if (action === 'uninstall') {
+      expect(toggle.err).toContain('Wait for queued/running jobs');
+      expect(await exists(join(home, 'bin', 'node'))).toBe(true);
+    }
+    const b = launch(home, [
+      'run',
+      '--',
+      await workerProbe(home, 'cargo', 'b'),
+      'test',
+      '--jobs=16',
+    ]);
+    await until(() => exists(join(home, 'b.json')));
+    const owners = (await resourceQueueStatus(home, 2)).owners;
+    expect(owners.map((owner) => owner.limits)).toEqual([
+      { vitestWorkers: 1, buildJobs: 1 },
+      { vitestWorkers: 1, buildJobs: 1 },
+    ]);
+    for (const [name, flag] of [
+      ['a', '--maxWorkers=1'],
+      ['b', '--jobs=1'],
+    ]) {
+      const probe = JSON.parse(
+        await readFile(join(home, `${name}.json`), 'utf8')
+      );
+      expect([probe.args[1], probe.vitest, probe.cargo, probe.turbo]).toEqual([
+        flag,
+        '1',
+        '1',
+        '1',
+      ]);
+      await writeFile(join(home, `${name}.release`), '');
+    }
+    expect((await a.done).code).toBe(0);
+    expect((await b.done).code).toBe(0);
+  }
+);

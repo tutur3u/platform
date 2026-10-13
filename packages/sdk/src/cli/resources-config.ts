@@ -3,15 +3,52 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { availableParallelism, homedir, totalmem } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { z } from 'zod';
 
-export interface ResourceConfig {
-  version: 1;
-  enabled: boolean;
-  roots: string[];
-  repositories: string[];
-  turboConcurrency: number;
-  vitestWorkers: number;
-  buildJobs: number;
+const resourceConfigSchema = z.object({
+  version: z.literal(1),
+  enabled: z.boolean(),
+  roots: z.array(z.string().refine(isAbsolute)),
+  repositories: z.array(z.string().refine(isAbsolute)),
+  turboConcurrency: z.number().int().min(1).max(64),
+  vitestWorkers: z.number().int().min(1).max(64),
+  buildJobs: z.number().int().min(1).max(64),
+  validationLanes: z.union([z.literal(1), z.literal(2)]).optional(),
+});
+export type ResourceConfig = z.infer<typeof resourceConfigSchema>;
+export type ValidationLanes = 1 | 2;
+
+export function resourceLanes(config: ResourceConfig): ValidationLanes {
+  return config.validationLanes ?? 1;
+}
+// Include aggregate budgets even when floor division leaves lane caps unchanged.
+export function resourcePolicyKey(config: ResourceConfig) {
+  return JSON.stringify([
+    resourceLanes(config),
+    config.vitestWorkers,
+    config.buildJobs,
+    1,
+  ]);
+}
+export function laneResourceConfig(config: ResourceConfig): ResourceConfig {
+  const lanes = resourceLanes(config);
+  const host = defaultResourceConfig();
+  if (
+    config.vitestWorkers < lanes ||
+    config.buildJobs < lanes ||
+    (lanes === 2 &&
+      (config.vitestWorkers > host.vitestWorkers ||
+        config.buildJobs > host.buildJobs))
+  )
+    throw new Error(
+      'Lane worker totals must fit the configured and host budget.'
+    );
+  return {
+    ...config,
+    turboConcurrency: 1,
+    vitestWorkers: Math.floor(config.vitestWorkers / lanes),
+    buildJobs: Math.floor(config.buildJobs / lanes),
+  };
 }
 
 export function resourceHome() {
@@ -30,6 +67,7 @@ export function defaultResourceConfig(
   );
   return {
     version: 1,
+    validationLanes: 1,
     enabled: true,
     roots: [],
     repositories: [],
@@ -96,31 +134,13 @@ export async function readResourceConfig(
   home = resourceHome()
 ): Promise<ResourceConfig | undefined> {
   try {
-    const data = JSON.parse(
-      await readFile(join(home, 'config.json'), 'utf8')
-    ) as ResourceConfig;
-    if (
-      data.version !== 1 ||
-      typeof data.enabled !== 'boolean' ||
-      !Array.isArray(data.roots) ||
-      !data.roots.every(
-        (root) => typeof root === 'string' && isAbsolute(root)
-      ) ||
-      !Array.isArray(data.repositories) ||
-      !data.repositories.every(
-        (root) => typeof root === 'string' && isAbsolute(root)
-      ) ||
-      ![data.turboConcurrency, data.vitestWorkers, data.buildJobs].every(
-        (n) => Number.isInteger(n) && n >= 1 && n <= 64
-      )
-    ) {
-      throw new Error(
-        'Invalid resource configuration; rerun ttr resources setup.'
-      );
-    }
+    const data = resourceConfigSchema.parse(
+      JSON.parse(await readFile(join(home, 'config.json'), 'utf8'))
+    );
     return data;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
+      return undefined;
     throw error;
   }
 }

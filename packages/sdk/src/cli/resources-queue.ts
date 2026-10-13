@@ -1,92 +1,60 @@
-import { execFileSync, spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
-import { mkdir, readdir, readFile, rm, stat } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+import { mkdir, rm } from 'node:fs/promises';
 import { constants, setPriority } from 'node:os';
 import { join } from 'node:path';
+import { Writable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { atomicJson } from './resources-config';
+import { limitCommand } from './resources-command';
+import {
+  atomicJson,
+  defaultResourceConfig,
+  laneResourceConfig,
+  readResourceConfig,
+  resourceLanes,
+  resourcePolicyKey,
+  type ValidationLanes,
+} from './resources-config';
 import { memoryPressure } from './resources-diagnostics';
+import {
+  nestedOwner,
+  newOwner,
+  occupancy,
+  processGroupAlive,
+  readOwner,
+  releaseSlot,
+  tickets,
+  withAdmission,
+} from './resources-slots';
 
-export interface ResourceOwner {
-  pid: number;
-  childPid?: number;
-  token: string;
-  cwd: string;
-  tool: string;
-  queuedAt: string;
-  startedAt?: string;
-}
+export {
+  isAncestor,
+  processAlive,
+  type ResourceOwner,
+  readOwner,
+} from './resources-slots';
 
-export function processAlive(pid?: number) {
-  if (!pid || pid < 1) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code === 'EPERM';
-  }
-}
-
-export async function readOwner(
-  path: string
-): Promise<ResourceOwner | undefined> {
-  try {
-    return JSON.parse(await readFile(path, 'utf8')) as ResourceOwner;
-  } catch {
-    return undefined;
-  }
-}
-
-export function isAncestor(pid: number) {
-  try {
-    const rows = execFileSync('ps', ['-axo', 'pid=,ppid='], {
-      encoding: 'utf8',
-      timeout: 3000,
-    })
-      .trim()
-      .split('\n');
-    const table = new Map(
-      rows.map((row) => row.trim().split(/\s+/).map(Number) as [number, number])
-    );
-    const seen = new Set<number>();
-    let parent = process.ppid;
-    while (parent > 1 && !seen.has(parent)) {
-      if (parent === pid) return true;
-      seen.add(parent);
-      parent = table.get(parent) || 1;
-    }
-  } catch {
-    /* Without ancestry evidence, do not bypass admission. */
-  }
-  return false;
-}
-
-export async function resourceQueueStatus(home: string) {
-  const owner = await readOwner(join(home, 'lock', 'owner.json'));
-  const files = await readdir(join(home, 'queue')).catch(() => [] as string[]);
-  const waiting = await Promise.all(
-    files
-      .filter((file) => file.endsWith('.json'))
-      .sort()
-      .map((file) => readOwner(join(home, 'queue', file)))
-  );
+export async function resourceQueueStatus(
+  home: string,
+  laneCount: ValidationLanes = 1
+) {
+  const state = await occupancy(home);
+  const waiting = (await tickets(home)).map((ticket) => ticket.owner);
   return {
-    owner:
-      owner && (processAlive(owner.pid) || processAlive(owner.childPid))
-        ? owner
-        : null,
-    waiting: waiting.filter((item) => item && processAlive(item.pid)),
+    owners: state.owners,
+    laneCount,
+    // Preserve the old field without representing multiple owners as idle.
+    owner: state.owners[0] ?? null,
+    occupied: state.occupied.length,
+    waiting,
   };
 }
-
 function signalChild(pid: number, signal: NodeJS.Signals) {
   try {
     process.kill(-pid, signal);
   } catch {
-    /* Owned child group has exited. */
+    /* The owned group has exited. */
   }
 }
-
 export async function spawnResourceCommand(
   command: string,
   args: string[],
@@ -95,12 +63,27 @@ export async function spawnResourceCommand(
   onSpawn?: (pid: number) => Promise<void>
 ) {
   return new Promise<number>((resolve, reject) => {
-    const child = spawn(command, args, {
-      env,
-      shell: false,
-      stdio: 'inherit',
-      detached: owned,
-    });
+    // An owned group waits on fd 3 until its PID receipt is durable. If the
+    // broker dies first, EOF closes the gate without launching the workload.
+    const launcher = `const fs=require('node:fs');const cp=require('node:child_process');let started=false;
+      for(const signal of ['SIGINT','SIGTERM','SIGHUP'])process.on(signal,()=>{if(!started)process.exit(signal==='SIGINT'?130:signal==='SIGHUP'?129:143)});
+      const gate=fs.createReadStream(null,{fd:3});
+      gate.once('data',()=>{started=true;gate.destroy();const child=cp.spawn(${JSON.stringify(command)},${JSON.stringify(args)},{env:process.env,stdio:'inherit',shell:false});
+        child.once('error',()=>process.exit(1));child.once('exit',(code,signal)=>process.exit(code??(signal==='SIGINT'?130:signal==='SIGHUP'?129:143)));});
+      gate.once('end',()=>{if(!started)process.exit(143)});`;
+    const child = owned
+      ? spawn(process.execPath, ['-e', launcher], {
+          env,
+          shell: false,
+          stdio: ['inherit', 'inherit', 'inherit', 'pipe'],
+          detached: true,
+        })
+      : spawn(command, args, { env, shell: false, stdio: 'inherit' });
+    const gate = owned ? child.stdio[3] : undefined;
+    if (gate)
+      gate.on('error', () => {
+        /* A cancelled launcher closes its gate. */
+      });
     const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP'];
     const handlers = signals.map((signal) => {
       const handler = () => {
@@ -114,155 +97,224 @@ export async function spawnResourceCommand(
     });
     const clean = () =>
       signals.forEach((signal, i) => {
-        process.removeListener(signal, handlers[i]!);
+        const handler = handlers[i];
+        if (handler) process.removeListener(signal, handler);
       });
-    let receipt = Promise.resolve();
+    let receipt: Promise<unknown> = Promise.resolve();
     child.once('spawn', () => {
       if (owned && child.pid) {
         try {
           setPriority(child.pid, constants.priority.PRIORITY_BELOW_NORMAL);
         } catch {
-          /* Priority is advisory. */
+          /* Advisory priority. */
         }
       }
-      if (child.pid && onSpawn) receipt = onSpawn(child.pid);
+      receipt = (child.pid && onSpawn ? onSpawn(child.pid) : Promise.resolve())
+        .then(() => {
+          if (gate instanceof Writable) gate.end('launch');
+        })
+        .catch((error) => {
+          if (child.pid && owned) signalChild(child.pid, 'SIGTERM');
+          throw error;
+        });
+      // Handle immediately; report errors only after the owned group drains.
+      void receipt.catch(() => {});
     });
     child.once('error', (error) => {
       clean();
       reject(error);
     });
     child.once('exit', (code, signal) => {
-      clean();
-      void receipt.then(
-        () =>
+      void (async () => {
+        try {
+          if (owned && child.pid)
+            while (processGroupAlive(child.pid)) await sleep(25);
+          await receipt;
           resolve(
             code ??
               (signal === 'SIGINT' ? 130 : signal === 'SIGHUP' ? 129 : 143)
-          ),
-        reject
-      );
+          );
+        } catch (error) {
+          reject(error);
+        } finally {
+          clean();
+        }
+      })();
     });
   });
 }
-
 export async function queuedResourceCommand(
   home: string,
   command: string,
   args: string[],
   env: NodeJS.ProcessEnv,
-  ignorePressure = false
+  ignorePressure = false,
+  lanes: ValidationLanes = 1,
+  pressureProbe: typeof memoryPressure = memoryPressure
 ) {
   if (process.platform === 'win32')
     throw new Error('Resource admission currently supports macOS and Linux.');
-  const lock = join(home, 'lock');
-  const ownerPath = join(lock, 'owner.json');
-  const previous = await readOwner(ownerPath);
-  // Works even when Turbo strict env removes TTR_RESOURCE_OWNER.
-  if (previous && processAlive(previous.pid) && isAncestor(previous.pid)) {
-    return spawnResourceCommand(command, args, env);
+  const originalArgs = [...args];
+  const parent = await nestedOwner(home);
+  if (parent) {
+    const inherited = parent.limits
+      ? {
+          VITEST_MAX_WORKERS: String(parent.limits.vitestWorkers),
+          CARGO_BUILD_JOBS: String(parent.limits.buildJobs),
+          TURBO_CONCURRENCY: '1',
+        }
+      : {};
+    const caps = laneResourceConfig(
+      (await readResourceConfig(home)) || defaultResourceConfig()
+    );
+    return spawnResourceCommand(
+      command,
+      limitCommand(command, originalArgs, { ...caps, ...parent.limits }),
+      { ...env, ...inherited }
+    );
   }
-  const queue = join(home, 'queue');
-  await mkdir(queue, { recursive: true, mode: 0o700 });
-  const token = randomUUID();
-  const ticket = join(queue, `${Date.now()}-${token}.json`);
-  const owner: ResourceOwner = {
-    pid: process.pid,
-    token,
-    cwd: process.cwd(),
-    tool: command.split('/').pop() || command,
-    queuedAt: new Date().toISOString(),
-  };
-  await atomicJson(ticket, owner);
-  let claimed = false;
-  let cancelled = 0;
+  const owner = newOwner(command.split('/').pop() || command);
+  const ticket = join(home, 'queue', `${Date.now()}-${owner.token}.json`);
+  let slot: string | undefined;
+  let launchArgs = originalArgs;
+  const signalCodes = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 };
+  let cancelled: keyof typeof signalCodes | undefined;
   const cancelInt = () => {
-    cancelled = 130;
+    cancelled = 'SIGINT';
   };
   const cancelTerm = () => {
-    cancelled = 143;
+    cancelled = 'SIGTERM';
+  };
+  const cancelHup = () => {
+    cancelled = 'SIGHUP';
   };
   process.on('SIGINT', cancelInt);
   process.on('SIGTERM', cancelTerm);
-  process.on('SIGHUP', cancelTerm);
+  process.on('SIGHUP', cancelHup);
   try {
+    await withAdmission(
+      home,
+      async () => {
+        await atomicJson(ticket, owner);
+      },
+      () => Boolean(cancelled)
+    );
     let announced = 0;
-    let pressureCheckedAt = 0;
-    let pressure = { blocked: false, reason: null as string | null };
-    for (;;) {
-      if (cancelled) return cancelled;
-      const files = (await readdir(queue))
-        .filter((file) => file.endsWith('.json'))
-        .sort();
-      const live: string[] = [];
-      for (const file of files) {
-        const path = join(queue, file);
-        const item = await readOwner(path);
-        if (item && processAlive(item.pid)) live.push(path);
-        else await rm(path, { force: true });
-      }
-      if (!ignorePressure && Date.now() - pressureCheckedAt > 5000) {
-        pressure = await memoryPressure();
-        pressureCheckedAt = Date.now();
-      }
-      if (live[0] === ticket && !pressure.blocked) {
-        try {
-          await mkdir(lock, { mode: 0o700 });
-          claimed = true;
-          owner.startedAt = new Date().toISOString();
-          await atomicJson(ownerPath, owner);
-          break;
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-          const active = await readOwner(ownerPath);
-          const age =
-            Date.now() -
-            (await stat(lock).catch(() => ({ mtimeMs: Date.now() }))).mtimeMs;
-          // The head waiter alone reclaims; never expire a live process by elapsed time.
+    let pressureReason: string | null = null;
+    while (!slot) {
+      if (cancelled) return signalCodes[cancelled];
+      slot = await withAdmission(
+        home,
+        async () => {
+          const config =
+            (await readResourceConfig(home)) || defaultResourceConfig();
+          if (resourceLanes(config) !== lanes)
+            throw new Error(
+              'Resource lane configuration changed; retry with current settings.'
+            );
+          const policy = resourcePolicyKey(config);
+          const caps = laneResourceConfig(config);
+          launchArgs = limitCommand(command, originalArgs, caps);
+          owner.limits = {
+            vitestWorkers: caps.vitestWorkers,
+            buildJobs: caps.buildJobs,
+          };
+          const live = await tickets(home, true);
+          const state = await occupancy(home, true);
           if (
-            active
-              ? !processAlive(active.pid) && !processAlive(active.childPid)
-              : age > 30_000
-          ) {
-            await rm(lock, { recursive: true, force: true });
-            continue;
-          }
+            state.legacy ||
+            state.initializing ||
+            live.some((ticket) => ticket.owner.scheduler !== 2) ||
+            live[0]?.path !== ticket ||
+            state.occupied.length >= lanes
+          )
+            return undefined;
+          const pressure = ignorePressure
+            ? { blocked: false, reason: null }
+            : await pressureProbe();
+          pressureReason = pressure.reason;
+          if (pressure.blocked || cancelled) return undefined;
+          // Pressure probing is asynchronous. Recheck occupancy and policy before claim.
+          const latest =
+            (await readResourceConfig(home)) || defaultResourceConfig();
+          if (resourcePolicyKey(latest) !== policy)
+            throw new Error(
+              'Resource worker policy changed during admission; retry with current settings.'
+            );
+          const current = await occupancy(home, true);
+          if (
+            current.legacy ||
+            current.initializing ||
+            current.occupied.length >= lanes
+          )
+            return undefined;
+          const path = Array.from({ length: lanes }, (_, i) =>
+            join(home, 'slots', String(i))
+          ).find((path) => !current.occupied.includes(path));
+          if (!path) return undefined;
+          await mkdir(join(home, 'slots'), { recursive: true, mode: 0o700 });
+          await mkdir(path, { mode: 0o700 });
+          owner.startedAt = new Date().toISOString();
+          // Record the claim for cleanup even if writing metadata fails.
+          slot = path;
+          await atomicJson(join(path, 'owner.json'), owner);
+          await rm(ticket, { force: true });
+          return path;
+        },
+        () => Boolean(cancelled)
+      );
+      if (!slot) {
+        if (Date.now() - announced > 30_000) {
+          process.stderr.write(
+            `[ttr resources] queued PID ${process.pid}; ${pressureReason || 'waiting for the shared validation slots'}\n`
+          );
+          announced = Date.now();
         }
+        await sleep(50);
       }
-      if (Date.now() - announced > 30_000) {
-        process.stderr.write(
-          `[ttr resources] queued PID ${process.pid}; ${pressure.reason || 'waiting for the shared validation slot'}\n`
-        );
-        announced = Date.now();
-      }
-      await sleep(250);
     }
-    await rm(ticket, { force: true });
-    if (cancelled) return cancelled;
+    if (cancelled) return signalCodes[cancelled];
     process.stderr.write(`[ttr resources] running PID ${process.pid}\n`);
+    const ownedSlot = slot;
     const code = await spawnResourceCommand(
       command,
-      args,
-      { ...env, TTR_RESOURCE_OWNER: token },
+      launchArgs,
+      {
+        ...env,
+        TTR_RESOURCE_OWNER: owner.token,
+        TURBO_CONCURRENCY: '1',
+        VITEST_MAX_WORKERS: String(owner.limits?.vitestWorkers),
+        CARGO_BUILD_JOBS: String(owner.limits?.buildJobs),
+      },
       true,
       async (pid) => {
         owner.childPid = pid;
-        await atomicJson(ownerPath, owner);
+        await withAdmission(home, async () => {
+          if (
+            (await readOwner(join(ownedSlot, 'owner.json')))?.token !==
+            owner.token
+          )
+            throw new Error(
+              'Owned resource slot changed before child receipt.'
+            );
+          await atomicJson(join(ownedSlot, 'owner.json'), owner);
+        });
+        if (cancelled) signalChild(pid, cancelled);
       }
     );
     process.stderr.write(`[ttr resources] finished; exit ${code}\n`);
-    return code;
+    return cancelled ? signalCodes[cancelled] : code;
   } finally {
     process.removeListener('SIGINT', cancelInt);
     process.removeListener('SIGTERM', cancelTerm);
-    process.removeListener('SIGHUP', cancelTerm);
-    await rm(ticket, { force: true });
-    if (claimed && (await readOwner(ownerPath))?.token === token) {
-      await rm(lock, { recursive: true, force: true });
-    }
+    process.removeListener('SIGHUP', cancelHup);
+    // Ticket names are private UUIDs. A cancelled broker must also be able to
+    // remove its own ticket while an unrelated initializing mutex blocks admission.
+    if ((await readOwner(ticket))?.token === owner.token)
+      await rm(ticket, { force: true });
+    if (slot) await releaseSlot(home, slot, owner.token);
   }
 }
-
 export async function hasResourceOwner(home: string) {
-  const owner = await readOwner(join(home, 'lock', 'owner.json'));
-  return Boolean(owner && processAlive(owner.pid) && isAncestor(owner.pid));
+  return Boolean(await nestedOwner(home));
 }

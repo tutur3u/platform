@@ -10,10 +10,13 @@ import {
 import {
   atomicJson,
   defaultResourceConfig,
+  laneResourceConfig,
   readResourceConfig,
   resourceEnvironment,
   resourceHome,
+  resourceLanes,
   resourceScope,
+  type ValidationLanes,
 } from './resources-config';
 import { resourceSnapshot } from './resources-diagnostics';
 import {
@@ -27,6 +30,7 @@ import {
   setupResources,
   uninstallResources,
 } from './resources-setup';
+import { nestedOwner, withAdmission } from './resources-slots';
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
@@ -41,12 +45,14 @@ Usage: ttr resources <setup|status|monitor|run|enable|disable|uninstall> [option
 
 Setup options:
   --shell zsh|bash|none   shell hooks; defaults to the current shell
+  --lanes <1|2>           validation lanes; default 1, change only when idle
   --workers <1..64>       Vitest/Cargo workers; default adapts to RAM and CPUs
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
 
-One validation job runs per user across all opted-in projects/worktrees.
+One validation lane is the default; opt in to two only after an idle migration.
+All lanes share one per-user FIFO queue and a bounded total worker budget.
 Turbo runs one task; Vitest and Cargo get bounded worker counts. Commands
 outside those projects are unchanged. Running processes are never interrupted.
 macOS/Linux supported. Shell hooks cover new shells, not existing processes.
@@ -76,6 +82,25 @@ export async function runResourcesCommand(argv: string[]) {
     process.stdout.write(resourcesHelp());
     return;
   }
+  const allowed: Record<string, string[]> = {
+    run: ['--ignore-pressure'],
+    shim: [],
+    status: ['--json'],
+    monitor: ['--seconds'],
+    enable: [],
+    disable: [],
+    uninstall: [],
+  };
+  if (action !== 'setup' && allowed[action]) {
+    const start = action === 'shim' ? 2 : 1;
+    for (let i = start; i < options.length; i++) {
+      const option = options[i]!;
+      if (option === '--no-update-check') continue;
+      if (!allowed[action]!.includes(option))
+        throw new Error(`Unknown ${action} option: ${option}`);
+      if (option === '--seconds') i++;
+    }
+  }
   const home = resourceHome();
   if (action === 'run' || action === 'shim') {
     const command = divider < 0 ? [] : argv.slice(divider + 1);
@@ -89,7 +114,10 @@ export async function runResourcesCommand(argv: string[]) {
       (!shim ||
         (config?.enabled && resourceScope(config, commandCwd(command))) ||
         (shim && (await hasResourceOwner(home))));
-    const settings = config || defaultResourceConfig();
+    const total = config || defaultResourceConfig();
+    const caps = laneResourceConfig(total);
+    const parent = enabled ? await nestedOwner(home) : undefined;
+    const settings = parent?.limits ? { ...caps, ...parent.limits } : caps;
     const args = enabled
       ? limitCommand(basename(name), command, settings)
       : command;
@@ -103,9 +131,10 @@ export async function runResourcesCommand(argv: string[]) {
         ? await queuedResourceCommand(
             home,
             real,
-            args,
+            command,
             env,
-            !shim && options.includes('--ignore-pressure')
+            !shim && options.includes('--ignore-pressure'),
+            resourceLanes(total)
           )
         : await spawnResourceCommand(real, args, env);
     return;
@@ -114,15 +143,21 @@ export async function runResourcesCommand(argv: string[]) {
     const roots: string[] = [];
     let shell = basename(process.env.SHELL || 'none');
     let workers: number | undefined;
+    let lanes: ValidationLanes | undefined;
     for (let i = 1; i < options.length; i++) {
       const arg = options[i]!;
-      if (['--root', '--shell', '--workers'].includes(arg)) {
+      if (['--root', '--shell', '--workers', '--lanes'].includes(arg)) {
         const value = options[++i];
         if (!value || value.startsWith('--'))
           throw new Error(`Missing value for ${arg}.`);
         if (arg === '--root') roots.push(value);
         if (arg === '--shell') shell = value;
         if (arg === '--workers') workers = Number(value);
+        if (arg === '--lanes') {
+          if (value !== '1' && value !== '2')
+            throw new Error('--lanes must be 1 or 2.');
+          lanes = value === '1' ? 1 : 2;
+        }
       } else if (!['--dry-run', '--json', '--no-update-check'].includes(arg))
         throw new Error(`Unknown setup option: ${arg}`);
     }
@@ -131,12 +166,14 @@ export async function runResourcesCommand(argv: string[]) {
       roots,
       shell,
       workers,
+      lanes,
       dryRun: options.includes('--dry-run'),
     });
+    if (!plan) throw new Error('Resource setup was cancelled.');
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(plan, null, 2)}\n`
-        : `${options.includes('--dry-run') ? 'Planned' : 'Installed'} resource control: 1 job, ${plan.config.vitestWorkers} Vitest workers.\nProjects: ${plan.config.roots.join(', ')}\nShell hooks: ${plan.shellFiles.join(', ') || 'none'}\nOpen a new shell; existing jobs keep their current settings.\n`
+        : `${options.includes('--dry-run') ? 'Planned' : 'Installed'} resource control: ${resourceLanes(plan.config)} lane(s), ${plan.config.vitestWorkers} total Vitest workers.\nProjects: ${plan.config.roots.join(', ')}\nShell hooks: ${plan.shellFiles.join(', ') || 'none'}\nOpen a new shell; existing jobs keep their current settings.\n`
     );
     return;
   }
@@ -155,7 +192,10 @@ export async function runResourcesCommand(argv: string[]) {
   }
   if (action === 'status') {
     const config = await readResourceConfig(home);
-    const state = await resourceQueueStatus(home);
+    const state = await resourceQueueStatus(
+      home,
+      resourceLanes(config || defaultResourceConfig())
+    );
     const result = {
       installed: Boolean(config),
       enabled: config?.enabled ?? false,
@@ -171,16 +211,18 @@ export async function runResourcesCommand(argv: string[]) {
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(result, null, 2)}\n`
-        : `${result.enabled ? 'Enabled' : 'Not enabled'}: ${result.machine.memoryGiB} GiB RAM, ${result.machine.cpus} CPUs\nLimits: 1 validation job, Turbo ${result.limits.turboConcurrency}, Vitest ${result.limits.vitestWorkers}\nRunning: ${state.owner ? `${state.owner.tool} (PID ${state.owner.pid}) in ${state.owner.cwd}` : 'none'}\nWaiting: ${state.waiting.length}\n`
+        : `${result.enabled ? 'Enabled' : 'Not enabled'}: ${result.machine.memoryGiB} GiB RAM, ${result.machine.cpus} CPUs\nLimits: ${state.laneCount} validation lane(s), Turbo ${result.limits.turboConcurrency}, Vitest ${result.limits.vitestWorkers}\nRunning: ${state.owners.length ? state.owners.map((owner) => `${owner.tool} (PID ${owner.pid}) in ${owner.cwd}`).join('; ') : state.occupied ? 'initializing or awaiting stale-owner inspection' : 'none'}\nWaiting: ${state.waiting.length}\n`
     );
     return;
   }
   if (action === 'enable' || action === 'disable') {
-    const config = await readResourceConfig(home);
-    if (!config) throw new Error('Run ttr resources setup first.');
-    await atomicJson(join(home, 'config.json'), {
-      ...config,
-      enabled: action === 'enable',
+    await withAdmission(home, async () => {
+      const config = await readResourceConfig(home);
+      if (!config) throw new Error('Run ttr resources setup first.');
+      await atomicJson(join(home, 'config.json'), {
+        ...config,
+        enabled: action === 'enable',
+      });
     });
     process.stdout.write(
       `Resource admission ${action}d for future commands.\n`
