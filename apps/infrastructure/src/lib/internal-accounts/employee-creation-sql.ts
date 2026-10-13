@@ -1,10 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import { verifyEmployeeDatabaseReadiness } from './employee-creation-database-readiness';
-import {
-  EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE,
-  type EmployeeCreationOperations,
-} from './employee-creation-orchestration';
+import type { EmployeeCreationOperations } from './employee-creation-orchestration';
 import type { EmployeeSqlQuery } from './employee-sql-catalog-readiness';
 import { parseManagedAccountAddress } from './managed-address';
 
@@ -103,6 +100,9 @@ function sanitizedError(error: unknown): EmployeeSqlEnvelope {
     },
   };
 }
+
+const EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE =
+  'employee_sql_committed_readiness_unavailable';
 
 /** One authenticated creation request. No provider operations or recovery claims. */
 export function createEmployeeCreationSqlOperations({
