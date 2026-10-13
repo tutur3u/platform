@@ -237,7 +237,12 @@ export function executeOperational(args: string[]): unknown {
 }
 export async function runOperationalCli(args: string[]) {
   try {
-    const result = executeOperational(args);
+    const result =
+      args[0] === 'backlog' && args[1] === 'search'
+        ? await import('./operational-search.js').then(
+            ({ runOperationalSearch }) => runOperationalSearch(args.slice(2))
+          )
+        : executeOperational(args);
     process.stdout.write(`${JSON.stringify(result)}\n`);
     if (
       typeof result === 'object' &&
