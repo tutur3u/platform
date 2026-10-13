@@ -41,6 +41,9 @@ jobs:
       - name: Type-check portable client and Worker without emitting
         run: bun x --no-install tsc --ignoreConfig --strict --noEmit --moduleResolution bundler --module ESNext --jsx react-jsx --target ESNext --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --types node cloudflare/gateway-worker.ts src/portable/catalogue-entry.tsx src/portable/entry.tsx src/portable/vite-env.d.ts vite.config.mts vitest.cloudflare.config.ts
         working-directory: apps/apps
+      - name: Build owning Apps Next app
+        working-directory: apps/apps
+        run: bun run build
       - run: bun run build:cloudflare
         working-directory: apps/apps
       - name: Verify built local Worker and asset boundary
