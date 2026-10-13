@@ -3,7 +3,10 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { startEmployeeDbStartEvidence } from './employee-schema-start-evidence.mjs';
+import {
+  startEmployeeDbStartEvidence,
+  startupAdmissionDiagnostic,
+} from './employee-schema-start-evidence.mjs';
 import {
   assertPacketTap,
   assertRollbackSource,
@@ -350,11 +353,16 @@ const runner = async (command, args, cwd) => {
   }
 };
 let lifecycleCode = 1;
+let startupAdmission = 'worker-initialize';
 try {
   await startupObserver.started();
+  startupAdmission = 'primary-network-ready';
   const verifiedReadyMarker = await networkObserver.ready();
+  startupAdmission = 'worker-network-ready';
   await startupObserver.ready(verifiedReadyMarker);
+  startupAdmission = 'observer-health';
   await networkObserver.assertHealthy();
+  startupAdmission = 'admitted';
   // Verify complete tracked database snapshot, including every migration, not only fixtures.
   for (const file of trackedFiles.filter(
     (file) => !file.endsWith('/supabase/config.toml')
@@ -399,6 +407,10 @@ try {
 } catch {
   // No raw exception text can expose SQL values or private CLI output.
   failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
+  if (startupAdmission !== 'admitted') {
+    failureDiagnostic.startupAdmission =
+      startupAdmissionDiagnostic(startupAdmission);
+  }
   lifecycleCode = 1;
 }
 const networkProof = await networkObserver.finish();

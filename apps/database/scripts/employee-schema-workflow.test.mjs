@@ -148,3 +148,35 @@ test('startup diagnostics are source-bound boolean-only evidence and cannot gran
     /schemaQualified:\s*startupEvidence|typesQualified:\s*startupEvidence/u
   );
 });
+
+test('admission diagnostic labels describe actual await boundaries without changing qualification', () => {
+  const controller = readFileSync(
+    new URL('apps/database/scripts/verify-employee-schema-contract.mjs', root),
+    'utf8'
+  );
+  for (const [stage, call] of [
+    ['worker-initialize', 'await startupObserver.started()'],
+    ['primary-network-ready', 'await networkObserver.ready()'],
+    [
+      'worker-network-ready',
+      'await startupObserver.ready(verifiedReadyMarker)',
+    ],
+    ['observer-health', 'await networkObserver.assertHealthy()'],
+  ]) {
+    const start = controller.indexOf(`startupAdmission = '${stage}'`);
+    assert.ok(start >= 0);
+    assert.ok(controller.indexOf(call, start) > start);
+  }
+  assert.match(
+    controller,
+    /failureDiagnostic\.startupAdmission =\s+startupAdmissionDiagnostic\(startupAdmission\)/u
+  );
+  assert.match(
+    controller,
+    /receipt.schemaQualified &&\s+receipt.typesQualified &&\s+receipt.networkQualified &&\s+receipt.startupEvidenceDrained/u
+  );
+  assert.match(
+    controller,
+    /process.exitCode = receipt.controllerQualified \? 0 : 1/u
+  );
+});

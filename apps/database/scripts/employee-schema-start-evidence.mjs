@@ -20,6 +20,19 @@ export {
   validateEmployeeStartInput,
 } from './employee-schema-typegen.mjs';
 
+/** A literal await-boundary label, never an exception, selected reply, or private path. */
+export function startupAdmissionDiagnostic(stage) {
+  return [
+    'worker-initialize',
+    'primary-network-ready',
+    'worker-network-ready',
+    'observer-health',
+    'admitted',
+  ].includes(stage)
+    ? stage
+    : 'unknown';
+}
+
 const fail = () => new Error('Employee startup evidence unavailable');
 const daemon = 'unix:///var/run/docker.sock';
 const record = (value) =>

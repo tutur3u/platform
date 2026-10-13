@@ -21,6 +21,7 @@ import {
   parseEmployeeStartEvidence,
   probeEmployeeLoopback,
   startEmployeeDbStartEvidence,
+  startupAdmissionDiagnostic,
   validateEmployeeStartInput,
 } from './employee-schema-start-evidence.mjs';
 import { employeeStartupConnectionEvidence } from './employee-schema-typegen.mjs';
@@ -575,3 +576,114 @@ for (const drain of [false, undefined, 'true', true])
     assert.equal(result.combinedQualified, drain === true);
     assert.equal(after.controllerQualified ? 0 : 1, drain === true ? 0 : 1);
   });
+
+test('admission diagnostics accept only literal await stages and never echo private input', () => {
+  for (const stage of [
+    'worker-initialize',
+    'primary-network-ready',
+    'worker-network-ready',
+    'observer-health',
+    'admitted',
+  ])
+    assert.equal(startupAdmissionDiagnostic(stage), stage);
+  for (const stage of [
+    'postgres://synthetic-private',
+    { stage: 'worker-initialize' },
+    undefined,
+  ])
+    assert.equal(startupAdmissionDiagnostic(stage), 'unknown');
+});
+
+// This runs the actual worker module and Linux authority/group guards. Docker is a private
+// fixed-response executable fixture, not a real daemon. Non-Linux hosts must report SKIP.
+for (const mode of [
+  'valid',
+  'malformed-network',
+  'missing-network',
+  'foreign-network',
+  'wrong-authority',
+  'wrong-group',
+]) {
+  test(`production worker Linux admission ${mode}`, {
+    skip: process.platform !== 'linux',
+    timeout: 10000,
+  }, async (t) => {
+    const root = mkdtempSync(
+      path.join(os.tmpdir(), 'employee-production-entry-test-')
+    );
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    const selected = network();
+    if (mode === 'foreign-network') selected.labels.project = 'foreign';
+    const rows = [
+      markerEvent(marker.id, marker.name),
+      markerEvent(endId, 'end'),
+    ];
+    const script = `#!${process.execPath}
+const args = process.argv.slice(2), mode = ${JSON.stringify(mode)};
+if (args.includes('events')) {
+  process.stdout.write(${JSON.stringify(`${rows.map((row) => JSON.stringify(row)).join('\n')}\n`)});
+  setInterval(() => {}, 1000);
+} else if (args.includes('version')) {
+  process.stdout.write(${JSON.stringify('28.0.4\n')});
+} else if (args.includes('network') && args.includes('inspect')) {
+  if (mode === 'missing-network') process.exit(1);
+  process.stdout.write(mode === 'malformed-network' ? '{' : ${JSON.stringify(JSON.stringify(selected))});
+} else process.exit(1);
+`;
+    writeFileSync(path.join(root, 'docker'), script, { mode: 0o700 });
+    const observer = startEmployeeDbStartEvidence(input, {
+      rpcMs: 1000,
+      deadlineMs: 5000,
+      forkWorker: (file, args, options) => {
+        assert.deepEqual(Object.keys(options.env).sort(), [
+          'DOCKER_CONFIG',
+          'GITHUB_ACTIONS',
+          'GITHUB_EVENT_NAME',
+          'GITHUB_REPOSITORY',
+          'PATH',
+        ]);
+        assert.equal(options.detached, true);
+        const child = fork(file, args, {
+          ...options,
+          env: {
+            ...options.env,
+            PATH: root,
+            GITHUB_ACTIONS: 'true',
+            GITHUB_EVENT_NAME: 'workflow_dispatch',
+            GITHUB_REPOSITORY:
+              mode === 'wrong-authority'
+                ? 'foreign/repository'
+                : 'tutur3u/platform',
+          },
+        });
+        if (mode === 'wrong-group') {
+          const send = child.send.bind(child);
+          child.send = (message, callback) =>
+            send(
+              message.type === 'init'
+                ? {
+                    ...message,
+                    value: { ...message.value, groupPid: child.pid + 1 },
+                  }
+                : message,
+              callback
+            );
+        }
+        return child;
+      },
+    });
+    try {
+      if (mode === 'valid') {
+        await observer.started();
+        assert.equal((await observer.ready(marker)).observerReady, true);
+      } else await assert.rejects(observer.started(), /unavailable/);
+    } finally {
+      const result = await observer.finish(endId);
+      assert.equal(result.observerDrained, true);
+      assert.equal(result.observerReady, mode === 'valid');
+      assert.equal(result.observerEndSeen, mode === 'valid');
+      assert.equal(result.observerUncertain, mode !== 'valid');
+      assert.equal(result.loopbackProbeAttempted, false);
+    }
+  });
+}
