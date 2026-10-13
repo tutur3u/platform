@@ -12,6 +12,8 @@ import 'package:mobile/features/assistant/local/assistant_remote_scope_guard.dar
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'assistant_chat_creation_harness.dart' show CreationHarness;
+
 class _Repository extends Mock implements AssistantRepository {}
 
 class _Preferences extends Mock implements AssistantPreferences {}
@@ -627,15 +629,12 @@ void main() {
     expect(cubit.state.history, isEmpty);
   });
   test('starting a new conversation cancels an outstanding restore', () async {
-    final restore = Completer<AssistantRestoredChat?>();
-    when(
-      () => restoreWithScope('ws', 'cached'),
-    ).thenAnswer((_) => restore.future);
-    final loading = cubit.loadWorkspace('ws');
-    await Future<void>.delayed(Duration.zero);
-    await cubit.resetConversation('ws');
-    restore.complete(restored);
-    await loading;
+    await cubit.close();
+    final actual = CreationHarness(nativeRestore: true);
+    await actual.setup();
+    cubit = actual.chat;
+    addTearDown(actual.close);
+    expect(await actual.resetDuringPendingRestore(), true);
     expect(cubit.state.chat, isNull);
     expect(cubit.state.messages, isEmpty);
     expect(cubit.state.status, AssistantChatStatus.idle);

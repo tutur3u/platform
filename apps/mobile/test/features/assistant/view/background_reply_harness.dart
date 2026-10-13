@@ -32,7 +32,7 @@ class ReplyAuth extends Cubit<AuthState> implements AuthCubit {
     : super(
         const AuthState.authenticated(
           User(
-            id: 'synthetic-actor',
+            id: '33333333-3333-4333-8333-333333333333',
             appMetadata: {},
             userMetadata: {},
             aud: 'authenticated',
@@ -50,7 +50,10 @@ class ReplyWorkspace extends Cubit<WorkspaceState> implements WorkspaceCubit {
     : super(
         const WorkspaceState(
           status: WorkspaceStatus.loaded,
-          currentWorkspace: Workspace(id: 'synthetic-ws', name: 'Workspace'),
+          currentWorkspace: Workspace(
+            id: '22222222-2222-4222-8222-222222222222',
+            name: 'Workspace',
+          ),
         ),
       );
   void change(String id) => emit(
@@ -89,7 +92,7 @@ class ReplyRepository extends AssistantRepository {
   @override
   Future<String?> resolvePersonalWorkspaceId({
     bool forceRefresh = false,
-  }) async => 'synthetic-ws';
+  }) async => '22222222-2222-4222-8222-222222222222';
   @override
   Future<AssistantSoul> fetchSoul({bool forceRefresh = false}) async =>
       const AssistantSoul();

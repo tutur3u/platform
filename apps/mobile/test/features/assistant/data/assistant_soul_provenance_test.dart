@@ -22,6 +22,10 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const _actorA = '33333333-3333-4333-8333-333333333333';
+const _actorB = '44444444-4444-4444-8444-444444444444';
+const _workspaceId = '22222222-2222-4222-8222-222222222222';
+
 class _Storage extends Mock implements FlutterSecureStorage {}
 
 class _Repository extends Mock implements AssistantRepository {}
@@ -51,13 +55,13 @@ class _Api extends ApiClient {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async => {
-    'soul': {'name': body['name'], 'user_id': 'actor-a'},
+    'soul': {'name': body['name'], 'user_id': _actorA},
   };
   int calls = 0;
   Completer<Map<String, dynamic>>? held;
   final started = Completer<void>();
   Exception? error;
-  Object? receipt = {'name': 'Confirmed', 'user_id': 'actor-a'};
+  Object? receipt = {'name': 'Confirmed', 'user_id': _actorA};
   @override
   Future<Map<String, dynamic>> getJson(
     String path, {
@@ -81,7 +85,7 @@ void main() {
   String? actor;
   Completer<void>? initGate;
   setUp(() async {
-    actor = 'actor-a';
+    actor = _actorA;
     initGate = null;
     directory = await Directory.systemTemp.createTemp('soul-provenance-');
     storage = _Storage();
@@ -153,7 +157,7 @@ void main() {
     );
     final rejection = expectLater(pending, throwsStateError);
     await Future<void>.delayed(Duration.zero);
-    actor = 'actor-b';
+    actor = _actorB;
     initGate!.complete();
     await rejection;
     expect(api.calls, 0);
@@ -172,16 +176,16 @@ void main() {
       final rejection = expectLater(pending, throwsStateError);
       await api.started.future;
       actor = null;
-      await store.clearResources(userId: 'actor-a');
-      actor = 'actor-a';
+      await store.clearResources(userId: _actorA);
+      actor = _actorA;
       api.held!.complete({
-        'soul': {'name': 'Old', 'user_id': 'actor-a'},
+        'soul': {'name': 'Old', 'user_id': _actorA},
       });
       await rejection;
       expect(
         (await store.read(
-          key: verifiedSoulKey('actor-a'),
-          decode: (json) => decodeVerifiedSoul(json, 'actor-a'),
+          key: verifiedSoulKey(_actorA),
+          decode: (json) => decodeVerifiedSoul(json, _actorA),
         )).data,
         isNull,
       );
@@ -191,7 +195,7 @@ void main() {
     null,
     {},
     {'name': 1},
-    {'name': 'Other', 'user_id': 'actor-b'},
+    {'name': 'Other', 'user_id': _actorB},
     {'name': 'Valid', 'tone': 1},
   ]) {
     test('malformed or foreign receipt $receipt is never confirmed', () async {
@@ -232,11 +236,11 @@ void main() {
     'offline writer survives restart without promoting local intent',
     () async {
       await store.write(
-        key: verifiedSoulKey('actor-a'),
+        key: verifiedSoulKey(_actorA),
         policy: CachePolicies.metadata,
         payload: verifiedSoulPayload(
           const AssistantSoul(name: 'Confirmed'),
-          'actor-a',
+          _actorA,
         ),
       );
       final writer = AssistantSoulNameWriter(
@@ -271,7 +275,7 @@ void main() {
       key: CacheKey(
         namespace: 'assistant.soul',
         userId: actor,
-        locale: verifiedSoulKey('actor-a').locale,
+        locale: verifiedSoulKey(_actorA).locale,
       ),
       policy: CachePolicies.metadata,
       payload: const AssistantSoul(name: 'Legacy pending').toJson(),
@@ -290,10 +294,10 @@ void main() {
       final pending = reader().read(forceRefresh: true);
       final rejection = expectLater(pending, throwsStateError);
       await queue.started!.future;
-      actor = 'actor-b';
+      actor = _actorB;
       if (clear) {
-        await store.clearResources(userId: 'actor-a');
-        actor = 'actor-a';
+        await store.clearResources(userId: _actorA);
+        actor = _actorA;
       }
       queue.gate!.complete();
       await rejection;
@@ -340,7 +344,7 @@ void main() {
         preferences: AssistantPreferences(currentUserId: () => actor),
       );
       try {
-        await shell.loadWorkspace(const Workspace(id: 'ws'));
+        await shell.loadWorkspace(const Workspace(id: _workspaceId));
         expect(shell.state.soul.name, 'Confirmed');
         await shell.renameAssistant('Pending');
         expect(shell.state.soul.name, 'Confirmed');
@@ -368,13 +372,13 @@ void main() {
     final confirmed = await writer.renameSnapshot('New');
     expect(confirmed.verifiedSoul?.name, 'New');
     api.held!.complete({
-      'soul': {'name': 'Old', 'user_id': 'actor-a'},
+      'soul': {'name': 'Old', 'user_id': _actorA},
     });
     await rejected;
     expect(
       (await store.read(
-        key: verifiedSoulKey('actor-a'),
-        decode: (json) => decodeVerifiedSoul(json, 'actor-a'),
+        key: verifiedSoulKey(_actorA),
+        decode: (json) => decodeVerifiedSoul(json, _actorA),
       )).data?.name,
       'New',
     );

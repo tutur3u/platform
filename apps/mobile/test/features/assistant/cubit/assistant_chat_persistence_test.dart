@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
-import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,9 +33,17 @@ class _ResetStore extends InMemorySharedPreferencesStore {
   @override
   Future<bool> setValue(String type, String key, Object value) async {
     await beforeWrite?.call();
-    return !contextFails && await super.setValue(type, key, value);
+    final record = jsonDecode(value as String) as Map<String, dynamic>;
+    if (removeFails && record['selectedChatId'] == null) return false;
+    if (contextFails && record['contextId'] == 'personal') return false;
+    return await super.setValue(type, key, value);
   }
 }
+
+const resetActor = '33333333-3333-4333-8333-333333333333';
+const resetWs = '11111111-1111-4111-8111-111111111111';
+const resetChat = '22222222-2222-4222-8222-222222222222';
+const resetOtherActor = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 
 void main() {
   setUpAll(() {
@@ -209,57 +218,78 @@ void main() {
     expect(await cubit.resetConversation('ws'), isFalse);
     expect(cubit.state.chat?.id, 'selected');
   });
-  test(
-    'marker write failure throws without resetting selected history',
-    () async {
-      await cubit.loadWorkspace('ws');
-      final before = cubit.state;
-      when(
-        () => repository.hasUnknownChatCreation('ws'),
-      ).thenAnswer((_) async => true);
-      when(() => repository.acknowledgeUnknownChatCreation('ws')).thenThrow(
-        const AssistantCreationUncertainException('Synthetic write failure'),
-      );
-      await expectLater(
-        cubit.resetConversation('ws', acknowledgeUnknownCreation: true),
-        throwsA(isA<AssistantCreationUncertainException>()),
-      );
-      expect(cubit.state, before);
-      verifyNever(
-        () => preferences.clearChatId(
-          any(),
-          shouldWrite: any(named: 'shouldWrite'),
-        ),
-      );
-    },
-  );
-  test('informed reset succeeds only after marker acknowledgment', () async {
-    await cubit.loadWorkspace('ws');
-    when(
-      () => repository.hasUnknownChatCreation('ws'),
-    ).thenAnswer((_) async => true);
-    when(
-      () => repository.acknowledgeUnknownChatCreation('ws'),
-    ).thenAnswer((_) async {});
-    when(
-      () =>
-          preferences.clearChatId('ws', shouldWrite: any(named: 'shouldWrite')),
-    ).thenAnswer((_) async {});
-    when(
-      () => preferences.saveWorkspaceContextId(
-        'ws',
-        'personal',
-        shouldWrite: any(named: 'shouldWrite'),
-      ),
-    ).thenAnswer((_) async {});
-    expect(
-      await cubit.resetConversation('ws', acknowledgeUnknownCreation: true),
-      isTrue,
+  for (final denied in [true, false]) {
+    test(
+      'prepared reset ${denied ? 'failure retains' : 'commit clears'} history',
+      () async {
+        final host = _ResetStore({
+          'flutter.$resetActor::mira-dashboard-chat-$resetWs': resetChat,
+          'flutter.$resetActor::mira-dashboard-workspace-context-$resetWs':
+              'prior',
+        })..contextFails = denied;
+        SharedPreferences.resetStatic();
+        SharedPreferencesStorePlatform.instance = host;
+        final actualRepo = AssistantRepository(currentUserId: () => resetActor);
+        final actualPrefs = AssistantPreferences(
+          currentUserId: () => resetActor,
+        );
+        final shell =
+            AssistantShellCubit(
+              repository: actualRepo,
+              preferences: actualPrefs,
+            )..emit(
+              const AssistantShellState(
+                workspace: Workspace(id: resetWs),
+                workspaceContextId: 'prior',
+              ),
+            );
+        final actualChat = AssistantChatCubit(
+          repository: actualRepo,
+          preferences: actualPrefs,
+          prepareResetWorkspaceContext: shell.prepareResetWorkspaceContext,
+          onWorkspaceContextChanged: (_) async {},
+          onSoulRefreshRequested: () async {},
+          onImmersiveModeChanged: (_) {},
+          onChatRestored: (_) async {},
+        );
+        actualChat.emit(
+          actualChat.state.copyWith(
+            workspaceId: resetWs,
+            storedChatId: resetChat,
+            chat: const AssistantChatRecord(id: resetChat),
+          ),
+        );
+        final before = actualChat.state;
+        try {
+          final outcome = await actualChat.resetConversationAcknowledged(
+            resetWs,
+            acknowledgeUnknownCreation: true,
+          );
+          expect(
+            outcome.disposition,
+            denied
+                ? AssistantResetDisposition.uncertain
+                : AssistantResetDisposition.committedCurrent,
+          );
+          expect(actualChat.state.chat?.id, denied ? resetChat : null);
+          expect(actualChat.state.messages, before.messages);
+          expect(
+            actualChat.state.composerAttachments,
+            before.composerAttachments,
+          );
+          expect(shell.state.workspaceContextId, denied ? 'prior' : 'personal');
+          expect(
+            await actualPrefs.loadChatId(resetWs),
+            denied ? resetChat : null,
+          );
+          expect(await actualRepo.hasUnknownChatCreation(resetWs), denied);
+        } finally {
+          await actualChat.close();
+          await shell.close();
+        }
+      },
     );
-    expect(cubit.state.creationOutcomeUnknown, isFalse);
-    expect(cubit.state.storedChatId, isNull);
-    verify(() => repository.acknowledgeUnknownChatCreation('ws')).called(1);
-  });
+  }
   test(
     'stale workspace reset returns false without acknowledging a marker',
     () async {
@@ -382,61 +412,62 @@ void main() {
       '($failRemoval)',
       () async {
         final store = _ResetStore({
-          'flutter.actor::mira-dashboard-chat-ws': 'selected',
-          'flutter.actor::mira-dashboard-workspace-context-ws': 'prior',
+          'flutter.$resetActor::mira-dashboard-chat-$resetWs': resetChat,
+          'flutter.$resetActor::mira-dashboard-workspace-context-$resetWs':
+              'prior',
         });
         SharedPreferences.resetStatic();
         SharedPreferencesStorePlatform.instance = store;
         store
           ..removeFails = failRemoval
           ..contextFails = !failRemoval;
-        final real = AssistantPreferences(currentUserId: () => 'actor');
+        final real = AssistantPreferences(currentUserId: () => resetActor);
         final result = failRemoval
             ? await real.clearChatIdAcknowledged(
-                'ws',
-                actorId: 'actor',
+                resetWs,
+                actorId: resetActor,
                 isCurrent: () => true,
               )
             : await real.saveWorkspaceContextIdAcknowledged(
-                'ws',
+                resetWs,
                 'personal',
-                actorId: 'actor',
+                actorId: resetActor,
                 isCurrent: () => true,
               );
         expect(result, isFalse);
-        expect(await real.loadChatId('ws'), 'selected');
-        expect(await real.loadWorkspaceContextId('ws'), 'prior');
+        expect(await real.loadChatId(resetWs), resetChat);
+        expect(await real.loadWorkspaceContextId(resetWs), 'prior');
         SharedPreferences.resetStatic();
-        expect(await real.loadChatId('ws'), 'selected');
-        expect(await real.loadWorkspaceContextId('ws'), 'prior');
+        expect(await real.loadChatId(resetWs), resetChat);
+        expect(await real.loadWorkspaceContextId(resetWs), 'prior');
       },
     );
   }
   test(
     'strict preference write does not transfer consent after actor change',
     () async {
-      var actor = 'actor';
+      var actor = resetActor;
       final store = _ResetStore({
-        'flutter.actor::mira-dashboard-chat-ws': 'selected',
+        'flutter.$resetActor::mira-dashboard-chat-$resetWs': resetChat,
       });
       SharedPreferences.resetStatic();
       SharedPreferencesStorePlatform.instance = store;
       final real = AssistantPreferences(currentUserId: () => actor);
       store.beforeWrite = () async {
-        actor = 'other';
+        actor = resetOtherActor;
       };
       expect(
         await real.clearChatIdAcknowledged(
-          'ws',
-          actorId: 'actor',
+          resetWs,
+          actorId: resetActor,
           isCurrent: () => true,
         ),
         isFalse,
       );
       expect(
         await real.clearChatIdAcknowledged(
-          'ws',
-          actorId: 'actor',
+          resetWs,
+          actorId: resetActor,
           isCurrent: () => true,
         ),
         isFalse,

@@ -196,68 +196,50 @@ mixin _AssistantChatRepository {
     required bool Function() isCurrentCreation,
   }) async {
     final key = _creationScopeKey(wsId);
-    return await AssistantCreationMarker.serialized(key, () async {
-      final prefs = await AssistantCreationMarker.load(key);
-      void check() {
-        _checkCreationScope(key, wsId);
-        if (!isCurrentCreation()) {
-          throw const AssistantCreationUncertainException(
-            'Assistant creation generation changed',
-          );
-        }
-      }
-
-      check();
-      if (await AssistantCreationMarker.unknown(prefs, key, check)) {
-        throw const AssistantCreationUncertainException(
-          'Assistant creation outcome requires review',
-        );
-      }
-      await AssistantCreationMarker.write(prefs, key, 'unknown:v1', check);
-      final acknowledged = await _createAcknowledgedConversation(
-        wsId,
-        message,
-        modelId,
-        key,
-        prefs,
+    bool current() => key == _creationScopeKey(wsId) && isCurrentCreation();
+    final store = _creationStore(wsId, current);
+    final AssistantResetEnvelope attempt;
+    try {
+      attempt = await store.beginCreation(id);
+    } on AssistantCreationSelectedException {
+      rethrow;
+    } on Object {
+      store.hold();
+      throw const AssistantCreationUncertainException(
+        'Assistant creation hold could not be confirmed',
       );
-      check();
-      final conversation = acknowledged.conversation;
-      final preferenceKey =
-          '${key.split('::').first}::$assistantChatStorageKeyPrefix$wsId';
-      try {
-        await AssistantPreferences.serializeChatSelection(
-          key.split('::').first,
-          wsId,
-          () async {
-            check();
-            if (!await prefs.setString(preferenceKey, conversation.id)) {
-              throw const AssistantCreationUncertainException(
-                'Assistant selected identity could not be saved',
-              );
-            }
-            check();
-            await prefs.reload();
-            check();
-            if (prefs.getString(preferenceKey) != conversation.id) {
-              throw const AssistantCreationUncertainException(
-                'Assistant selected identity was not confirmed',
-              );
-            }
-            await AssistantCreationMarker.write(prefs, key, 'clear:v1', check);
-          },
-        );
-      } on Object {
-        AssistantCreationMarker.hold(key);
-        throw const AssistantCreationUncertainException(
-          'Assistant creation acknowledgement could not be retained',
-        );
-      }
-      return _assistantChatRecordFromConversation(
-        conversation,
-        modelId: modelId,
+    }
+    if (!current()) {
+      store.hold();
+      throw const AssistantCreationUncertainException(
+        'Assistant creation origin changed before transport',
       );
-    });
+    }
+    final acknowledged = await _createAcknowledgedConversation(
+      wsId,
+      message,
+      modelId,
+      store,
+      attempt,
+    );
+    if (!current()) {
+      store.hold();
+      throw const AssistantCreationUncertainException(
+        'Assistant creation generation changed',
+      );
+    }
+    try {
+      await store.finishCreation(attempt, acknowledged: acknowledged);
+    } on Object {
+      store.hold();
+      throw const AssistantCreationUncertainException(
+        'Assistant durable creation receipt could not be retained',
+      );
+    }
+    return _assistantChatRecordFromConversation(
+      acknowledged.conversation,
+      modelId: modelId,
+    );
   }
 
   Stream<AssistantStreamEvent> streamChat({
@@ -634,47 +616,48 @@ mixin _AssistantChatRepository {
     return '$actor::mira-chat-creation::$wsId';
   }
 
-  void _checkCreationScope(String key, String wsId) {
-    if (key != _creationScopeKey(wsId)) {
+  AssistantResetPreferences _creationStore(
+    String wsId, [
+    bool Function()? current,
+  ]) {
+    final actor = _creationScopeKey(wsId).split('::').first;
+    final store = AssistantResetPreferences(
+      actorId: actor,
+      workspaceId: wsId,
+      isCurrent: () => _currentUserId() == actor && (current?.call() ?? true),
+    );
+    if (this is AssistantRepository) {
+      (this as AssistantRepository)._creationEnvelopeKeys.add(store.key);
+    }
+    return store;
+  }
+
+  Future<bool> hasUnknownChatCreation(String wsId) async {
+    final store = _creationStore(wsId);
+    try {
+      return await store.hasUnknownCreation();
+    } on Object {
+      store.hold();
       throw const AssistantCreationUncertainException(
-        'Assistant creation actor changed',
+        'Assistant creation scope is unreadable',
       );
     }
   }
 
-  Future<bool> hasUnknownChatCreation(String wsId) async {
-    final key = _creationScopeKey(wsId);
-    return await AssistantCreationMarker.serialized(key, () async {
-      final prefs = await AssistantCreationMarker.load(key);
-      return await AssistantCreationMarker.unknown(
-        prefs,
-        key,
-        () => _checkCreationScope(key, wsId),
-      );
-    });
-  }
-
-  /// Only informed explicit consent may release a failed scope's hold.
+  /// Legacy clearing cannot grant creation authority. Only a current process
+  /// receipt from the complete informed reset protocol can do so.
   Future<void> acknowledgeUnknownChatCreation(String wsId) async {
-    final key = _creationScopeKey(wsId);
-    await AssistantCreationMarker.serialized(key, () async {
-      final prefs = await AssistantCreationMarker.load(key);
-      await AssistantCreationMarker.write(
-        prefs,
-        key,
-        'clear:v1',
-        () => _checkCreationScope(key, wsId),
-        informed: true,
-      );
-    });
+    throw const AssistantCreationUncertainException(
+      'Assistant creation requires an informed reset receipt',
+    );
   }
 
   Future<AcknowledgedChatConversation> _createAcknowledgedConversation(
     String wsId,
     String message,
     String modelId,
-    String key,
-    SharedPreferences prefs,
+    AssistantResetPreferences store,
+    AssistantResetEnvelope attempt,
   ) async {
     try {
       return await _chatRepository.createAcknowledgedConversation(
@@ -685,12 +668,7 @@ mixin _AssistantChatRepository {
     } on ApiException catch (error) {
       if (error.statusCode == 400 &&
           error.code == 'chat_create_invalid_request') {
-        await AssistantCreationMarker.write(
-          prefs,
-          key,
-          'clear:v1',
-          () => _checkCreationScope(key, wsId),
-        );
+        await store.finishCreation(attempt, denial: error);
       }
       rethrow;
     }

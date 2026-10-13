@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Captured before I/O; never transferred to a different actor or selection.
 final class AssistantChatCacheOrigin {
@@ -171,92 +168,6 @@ final class AssistantCreationUncertainException implements Exception {
   final String message;
   @override
   String toString() => message;
-}
-
-/// Shared across repository instances, with independent actor/workspace locks.
-/// Legacy preferences publish speculative cache values before host completion.
-final class AssistantCreationMarker {
-  static final Map<String, Future<void>> _transitions = {};
-  static final Set<String> _failedScopes = {};
-
-  static Future<SharedPreferences> load(String key) async {
-    try {
-      return await SharedPreferences.getInstance();
-    } on Object {
-      _failedScopes.add(key);
-      throw const AssistantCreationUncertainException(
-        'Assistant creation marker is unavailable',
-      );
-    }
-  }
-
-  static Future<T> serialized<T>(
-    String key,
-    Future<T> Function() action,
-  ) async {
-    final prior = _transitions[key];
-    final done = Completer<void>();
-    _transitions[key] = done.future;
-    if (prior != null) await prior;
-    try {
-      return await action();
-    } finally {
-      done.complete();
-      if (identical(_transitions[key], done.future)) {
-        unawaited(_transitions.remove(key));
-      }
-    }
-  }
-
-  static Future<bool> unknown(
-    SharedPreferences prefs,
-    String key,
-    void Function() checkScope,
-  ) async {
-    try {
-      await prefs.reload();
-      checkScope();
-      return _failedScopes.contains(key) || prefs.getString(key) != 'clear:v1';
-    } on Object {
-      _failedScopes.add(key);
-      throw const AssistantCreationUncertainException(
-        'Assistant creation marker is unreadable',
-      );
-    }
-  }
-
-  static Future<void> write(
-    SharedPreferences prefs,
-    String key,
-    String status,
-    void Function() checkScope, {
-    bool informed = false,
-  }) async {
-    try {
-      checkScope();
-      if (!await prefs.setString(key, status)) {
-        throw const AssistantCreationUncertainException(
-          'Assistant creation marker could not be saved',
-        );
-      }
-      checkScope();
-      await prefs.reload();
-      checkScope();
-      if (prefs.getString(key) != status) {
-        throw const AssistantCreationUncertainException(
-          'Assistant creation marker was not confirmed',
-        );
-      }
-      if (informed) _failedScopes.remove(key);
-    } on Object {
-      _failedScopes.add(key);
-      throw const AssistantCreationUncertainException(
-        'Assistant creation marker could not be confirmed',
-      );
-    }
-  }
-
-  static void hold(String key) => _failedScopes.add(key);
 }
 
 ({

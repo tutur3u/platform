@@ -15,12 +15,14 @@ import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import '../data/assistant_chat_persistence_contract.dart';
 import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
+import '../data/assistant_reset_preferences.dart';
 import '../data/assistant_stream_parser.dart';
 import '../models/assistant_models.dart';
 import 'assistant_tool_output.dart';
 
 part 'assistant_chat_attachments.dart';
 part 'assistant_chat_restore.dart';
+part 'assistant_chat_reset.dart';
 part 'assistant_chat_state.dart';
 part 'assistant_chat_stream_reconcile.dart';
 part 'assistant_chat_submission.dart';
@@ -35,8 +37,12 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required Future<void> Function() onSoulRefreshRequested,
     required void Function(bool isImmersive) onImmersiveModeChanged,
     required Future<void> Function(String? modelId) onChatRestored,
+    // Retained for existing constructors; an effectful callback cannot prepare.
+    // ignore: avoid_unused_constructor_parameters
     Future<bool> Function(String contextId, bool Function() isCurrent)?
     onResetWorkspaceContext,
+    AssistantPreparedResetContext? Function(String, bool Function())?
+    prepareResetWorkspaceContext,
     void Function(SafeErrorDiagnostics diagnostics)? onSoulRefreshFailed,
     OperationalErrorReporter? operationalReporter,
     Future<void> Function(String theme, bool Function() isCurrent)?
@@ -44,7 +50,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }) : _operationalReporter =
            operationalReporter ??
            MobileObservability.instance.operationalReporter,
-       _onResetWorkspaceContext = onResetWorkspaceContext,
+       _prepareResetWorkspaceContext = prepareResetWorkspaceContext,
        _onThemeRequested = onThemeRequested,
        _repository = repository,
        _preferences = preferences,
@@ -55,8 +61,10 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
        _onChatRestored = onChatRestored,
        super(AssistantChatState(fallbackChatId: repository.generateUuid()));
 
-  final Future<bool> Function(String contextId, bool Function() isCurrent)?
-  _onResetWorkspaceContext;
+  final AssistantPreparedResetContext? Function(String, bool Function())?
+  _prepareResetWorkspaceContext;
+  final _resetOperations = <Future<AssistantResetOutcome>>{};
+  bool _closing = false;
   final Future<void> Function(String theme, bool Function() isCurrent)?
   _onThemeRequested;
   final OperationalErrorReporter _operationalReporter;
@@ -68,7 +76,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final void Function(SafeErrorDiagnostics diagnostics)? _onSoulRefreshFailed;
   final void Function(bool isImmersive) _onImmersiveModeChanged;
   final Future<void> Function(String? modelId) _onChatRestored;
-
   bool _hasChatCacheOrigin = false;
   final _chatCacheObservers = <Future<void>>{};
   String? _queuedSubmissionRequestId;
@@ -88,10 +95,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   int? _pendingAttachmentWorkspaceVersion;
 
   void _emitIfOpen(AssistantChatState nextState) {
-    if (isClosed) {
-      return;
+    if (!isClosed) {
+      emit(nextState);
     }
-    emit(nextState);
   }
 
   Future<void> loadWorkspace(String wsId) => _loadWorkspace(wsId);
@@ -111,7 +117,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     if (uploaded.isEmpty) {
       return const [];
     }
-
     emit(
       state.copyWith(
         composerAttachments: state.composerAttachments
@@ -247,10 +252,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   Future<bool> resetConversation(
     String wsId, {
     bool acknowledgeUnknownCreation = false,
-  }) => _resetConversation(
-    wsId,
-    acknowledgeUnknownCreation: acknowledgeUnknownCreation,
-  );
+  }) => _resetConversationBoolean(wsId, acknowledgeUnknownCreation);
 
   Map<String, dynamic> buildExportPayload({
     required String wsId,
@@ -664,7 +666,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       final parts = message.parts.map((part) {
         if (part.type != 'dynamic-tool') return part;
 
-        // Mark any streaming tool as completed
         final isStreaming =
             part.state == 'input-streaming' ||
             part.state == 'input-start' ||
@@ -685,10 +686,13 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
   @override
   Future<void> close() async {
+    _closing = true;
+    _workspaceVersion++;
     _repository.invalidateChatCreation();
     _queueDebounce?.cancel();
     await _streamSubscription?.cancel();
     await super.close();
+    await Future.wait(_resetOperations.toList());
     await Future.wait(_submissionObserverCleanups.toList());
     await Future.wait(_chatCacheObservers.toList());
     if (_hasChatCacheOrigin) await _repository.drainAssistantChatCache();

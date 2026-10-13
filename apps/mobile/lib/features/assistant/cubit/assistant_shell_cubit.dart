@@ -10,6 +10,7 @@ import 'package:mobile/data/models/workspace.dart';
 
 import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
+import '../data/assistant_reset_preferences.dart';
 import '../models/assistant_models.dart';
 import '../models/assistant_soul_snapshot.dart';
 
@@ -154,12 +155,6 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       unawaited(
         _preferences.saveCreditSource(workspace.id, activeCreditSource),
       );
-      unawaited(
-        _preferences.saveWorkspaceContextId(
-          workspace.id,
-          storedWorkspaceContext,
-        ),
-      );
     } on Exception catch (error) {
       if (isClosed || requestVersion != _requestVersion) return;
       _emitIfOpen(
@@ -284,6 +279,37 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       }
       return false;
     }
+  }
+
+  AssistantPreparedResetContext? prepareResetWorkspaceContext(
+    String contextId,
+    bool Function() isCurrent,
+  ) {
+    final actor = _repository.currentActorId;
+    final workspace = state.workspace;
+    final version = _requestVersion;
+    final scope = _currentScopeToken?.call();
+    bool current() =>
+        !isClosed &&
+        actor != null &&
+        workspace != null &&
+        _repository.currentActorId == actor &&
+        _preferences.matchesResetActor(actor) &&
+        _requestVersion == version &&
+        state.workspace?.id == workspace.id &&
+        _currentScopeToken?.call() == scope &&
+        isCurrent();
+    if (!current()) return null;
+    return AssistantPreparedResetContext(
+      actorId: actor!,
+      workspaceId: workspace!.id,
+      isCurrent: current,
+      publishCurrent: () {
+        if (!current()) return false;
+        emit(state.copyWith(workspaceContextId: contextId));
+        return current();
+      },
+    );
   }
 
   Future<bool> resetWorkspaceContextAcknowledged(

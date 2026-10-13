@@ -94,7 +94,12 @@ extension _AssistantCacheOperations on AssistantRepository {
         return _cacheFailure(origin, error);
       }
     }();
-    final observed = result.then<void>((_) {});
+    final observed = result.then<void>((publication) {
+      if (publication.status != AssistantChatCacheStatus.published &&
+          identical(_lastChatSnapshot?.result, result)) {
+        _lastChatSnapshot = null;
+      }
+    });
     flight.tail = observed;
     _trackChatCache(
       observed.whenComplete(() {

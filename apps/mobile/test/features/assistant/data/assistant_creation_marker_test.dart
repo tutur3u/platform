@@ -1,15 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
+
+import '../cubit/assistant_chat_creation_harness.dart' as creation;
+import 'assistant_reset_commit_test.dart' as reset;
 
 class _Api extends Mock implements ApiClient {}
 
@@ -39,13 +44,18 @@ class _ControlledStore extends InMemorySharedPreferencesStore {
   @override
   Future<bool> setValue(String type, String key, Object value) async {
     await beforeWrite?.call();
-    if (value == 'clear:v1') {
+    final record = value is String && key.contains('mira-conversation-envelope')
+        ? jsonDecode(value) as Map<String, dynamic>
+        : null;
+    if (record != null &&
+        (record['resetConsent'] != null ||
+            (record['creation'] as Map)['status'] == 'clear')) {
       if (throwClear) throw StateError('Synthetic failed host write');
       if (failClear) return false;
       final wait = delayedClear;
       if (wait != null && !await wait.future) return false;
     }
-    if (failSelected && key.contains('mira-dashboard-chat-')) return false;
+    if (failSelected && record?['selectedChatId'] == chat) return false;
     return await super.setValue(type, key, value);
   }
 }
@@ -76,7 +86,27 @@ class _ResetPreferenceStore extends InMemorySharedPreferencesStore {
 }
 
 const ws = '11111111-1111-4111-8111-111111111111';
+const markerActor = '33333333-3333-4333-8333-333333333333';
 const chat = '22222222-2222-4222-8222-222222222222';
+// Synthetic tests invoke the complete informed protocol. This adapter cannot
+// clear a production marker or make an unacknowledged reset appear successful.
+Future<void> informedReset(
+  AssistantRepository repository,
+  String workspace,
+) async {
+  final actor = repository.currentActorId!;
+  final result = await AssistantResetPreferences(
+    actorId: actor,
+    workspaceId: workspace,
+    isCurrent: () => repository.currentActorId == actor,
+  ).reset(repository.generateUuid(), informed: true);
+  if (!result.committedCurrent) {
+    throw const AssistantCreationUncertainException(
+      'Synthetic reset incomplete',
+    );
+  }
+}
+
 void main() {
   late _Api api;
   late _Chats chats;
@@ -91,7 +121,7 @@ void main() {
       chatRepository: chats,
       currentUserId: () => '33333333-3333-4333-8333-333333333333',
     );
-    await repository.acknowledgeUnknownChatCreation(ws);
+    await informedReset(repository, ws);
   });
   test('failed marker write denies creation before HTTP and informed '
       'acknowledgment', () async {
@@ -158,6 +188,15 @@ void main() {
           chatRepository: ChatRepository(apiClient: api),
           currentUserId: () => actor,
         );
+        if (failure == 'selected' || failure == 'post-ack') {
+          store
+            ..failClear = false
+            ..failSelected = false;
+          await informedReset(fresh(), ws);
+          store
+            ..failClear = failure == 'post-ack'
+            ..failSelected = failure == 'selected';
+        }
         Future<AssistantChatRecord> create() => fresh().createChat(
           id: chat,
           wsId: ws,
@@ -168,10 +207,13 @@ void main() {
         await expectLater(
           failure == 'selected' || failure == 'post-ack'
               ? create()
-              : fresh().acknowledgeUnknownChatCreation(ws),
+              : informedReset(fresh(), ws),
           throwsA(isA<Object>()),
         );
         final acceptedCalls = calls;
+        if (failure == 'selected' || failure == 'post-ack') {
+          expect(acceptedCalls, 1);
+        }
         store
           ..failClear = false
           ..throwClear = false
@@ -188,7 +230,7 @@ void main() {
           throwsA(isA<AssistantCreationUncertainException>()),
         );
         expect(calls, acceptedCalls);
-        await fresh().acknowledgeUnknownChatCreation(ws);
+        await informedReset(fresh(), ws);
         expect(await fresh().hasUnknownChatCreation(ws), isFalse);
       },
     );
@@ -203,7 +245,7 @@ void main() {
       SharedPreferences.resetStatic();
       SharedPreferencesStorePlatform.instance = store;
       store.delayedClear = Completer<bool>();
-      final clear = repository.acknowledgeUnknownChatCreation(ws);
+      final clear = informedReset(repository, ws);
       await Future<void>.delayed(Duration.zero);
       var settled = false;
       final read = repository.hasUnknownChatCreation(ws).then((value) {
@@ -249,7 +291,7 @@ void main() {
         currentUserId: () => actor,
       );
       expect(await scoped.hasUnknownChatCreation(ws), isTrue);
-      await scoped.acknowledgeUnknownChatCreation(ws);
+      await informedReset(scoped, ws);
       expect(await scoped.hasUnknownChatCreation(ws), isFalse);
       expect(await scoped.hasUnknownChatCreation(chat), isTrue);
       actor = '44444444-4444-4444-8444-444444444444';
@@ -367,7 +409,7 @@ void main() {
         await expectLater(
           phase == 'read'
               ? scoped.hasUnknownChatCreation(ws)
-              : scoped.acknowledgeUnknownChatCreation(ws),
+              : informedReset(scoped, ws),
           throwsA(isA<AssistantCreationUncertainException>()),
         );
         store
@@ -407,7 +449,7 @@ void main() {
         chatRepository: ChatRepository(apiClient: api),
         currentUserId: () => actor,
       );
-      final clear = direct.acknowledgeUnknownChatCreation(ws);
+      final clear = informedReset(direct, ws);
       await Future<void>.delayed(Duration.zero);
       final create = direct.createChat(
         id: chat,
@@ -430,8 +472,9 @@ void main() {
         'reset $failure preserves same-singleton host value ($removal)',
         () async {
           final store = _ResetPreferenceStore({
-            'flutter.actor::mira-dashboard-chat-$ws': chat,
-            'flutter.actor::mira-dashboard-workspace-context-$ws': 'prior',
+            'flutter.$markerActor::mira-dashboard-chat-$ws': chat,
+            'flutter.$markerActor::mira-dashboard-workspace-context-$ws':
+                'prior',
           })..throws = failure == 'throw';
           if (failure == 'held') {
             store.held = Completer<void>();
@@ -442,18 +485,18 @@ void main() {
           SharedPreferences.resetStatic();
           SharedPreferencesStorePlatform.instance = store;
           final preferences = AssistantPreferences(
-            currentUserId: () => 'actor',
+            currentUserId: () => markerActor,
           );
           final write = removal
               ? preferences.clearChatIdAcknowledged(
                   ws,
-                  actorId: 'actor',
+                  actorId: markerActor,
                   isCurrent: () => true,
                 )
               : preferences.saveWorkspaceContextIdAcknowledged(
                   ws,
                   'personal',
-                  actorId: 'actor',
+                  actorId: markerActor,
                   isCurrent: () => true,
                 );
           final safeWrite = write.catchError((Object _) => false);
@@ -558,17 +601,19 @@ void main() {
     'reset cache recovery failure remains unreadable across same-instance read',
     () async {
       final store = _ResetPreferenceStore({
-        'flutter.actor::mira-dashboard-chat-$ws': chat,
+        'flutter.$markerActor::mira-dashboard-chat-$ws': chat,
       });
       SharedPreferences.resetStatic();
       SharedPreferencesStorePlatform.instance = store;
-      final preferences = AssistantPreferences(currentUserId: () => 'actor');
+      final preferences = AssistantPreferences(
+        currentUserId: () => markerActor,
+      );
       expect(await preferences.loadChatId(ws), chat);
       store.unreadable = true;
       await expectLater(
         preferences.clearChatIdAcknowledged(
           ws,
-          actorId: 'actor',
+          actorId: markerActor,
           isCurrent: () => true,
         ),
         throwsStateError,
@@ -578,4 +623,59 @@ void main() {
       expect(await preferences.loadChatId(ws), chat);
     },
   );
+  group('canonical known selection creation boundary', () {
+    late reset.ResetHost host;
+    late AssistantResetPreferences store;
+    Future<Map<String, dynamic>> raw() async =>
+        jsonDecode(
+              (await host.getAll())['flutter.${reset.envelopeKey}']! as String,
+            )
+            as Map<String, dynamic>;
+    setUp(() {
+      host = reset.ResetHost();
+      store = AssistantResetPreferences(
+        actorId: reset.actor,
+        workspaceId: reset.ws,
+        isCurrent: () => true,
+      );
+    });
+    const attempt = reset.attempt;
+    const operation = reset.operation;
+    test('known selected ACK denies recreated repository creation', () async {
+      final h = creation.CreationHarness(hostStore: host);
+      await h.setup();
+      addTearDown(h.close);
+      h.response.complete(h.receipt());
+      await h.repository.createChat(
+        id: attempt,
+        wsId: ws,
+        modelId: 'synthetic/model',
+        message: 'Synthetic',
+        timezone: 'UTC',
+      );
+      expect(await store.hasUnknownCreation(), false);
+      final before = await raw();
+      final writes = host.writes;
+      Object? denied;
+      await creation.CreationRepository(h.api, h.actor)
+          .createChat(
+            id: operation,
+            wsId: ws,
+            modelId: 'synthetic/model',
+            message: 'Synthetic',
+            timezone: 'UTC',
+          )
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stack) {
+              denied = error;
+            },
+          );
+      expect(h.posts, 1);
+      expect(host.writes, writes);
+      expect(await raw(), before);
+      expect(await store.hasUnknownCreation(), false);
+      expect(denied, isA<AssistantCreationSelectedException>());
+    });
+  });
 }

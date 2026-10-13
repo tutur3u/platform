@@ -107,9 +107,9 @@ void main() {
         h.auth.change(signedIn);
         await tester.pump();
       } else {
-        h.workspace.change('synthetic-other-ws');
+        h.workspace.change('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
         await tester.pump();
-        h.workspace.change('synthetic-ws');
+        h.workspace.change('22222222-2222-4222-8222-222222222222');
         await tester.pump();
       }
       h.repository.stream.add(

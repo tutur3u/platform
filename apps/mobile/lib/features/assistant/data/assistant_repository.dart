@@ -20,7 +20,6 @@ import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/assistant_models.dart';
 import '../models/assistant_soul_snapshot.dart';
@@ -28,7 +27,7 @@ import 'assistant_calendar_insight.dart';
 import 'assistant_chat_persistence_contract.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
-import 'assistant_preferences.dart';
+import 'assistant_reset_preferences.dart';
 import 'assistant_soul_name_writer.dart';
 import 'assistant_soul_reader.dart';
 import 'assistant_stream_parser.dart';
@@ -131,7 +130,11 @@ class AssistantRepository
   _generationCreation;
 
   /// App actor/workspace lifecycle and confirmed reset boundaries invalidate ACKs.
-  void invalidateChatCreation() {
+  final _creationEnvelopeKeys = <String>{};
+  void invalidateChatCreation({bool retainResetConsent = false}) {
+    if (!retainResetConsent) {
+      _creationEnvelopeKeys.forEach(AssistantResetPreferences.revokeConsent);
+    }
     _lastChatSnapshot = null;
     _creationGenerationVersion++;
     _generationCreation = null;

@@ -33,6 +33,39 @@ void main() {
       () => api.postJson('/api/v1/workspaces/$ws/chat/conversations', any()),
     ).called(1);
   });
+  for (final offset in [
+    '+24:60',
+    '+23:60',
+    '-24:00',
+    '+00:60',
+    '-23:60',
+    'Z',
+    '+00:00',
+    '+07:30',
+    '-05:45',
+    '+23:59',
+  ]) {
+    test('direct creation raw offset $offset', () async {
+      final api = _Api();
+      when(() => api.postJson(any(), any())).thenAnswer(
+        (_) async => {
+          'conversation': {...raw, 'createdAt': '2026-10-13T10:00:00$offset'},
+        },
+      );
+      final result = ChatRepository(apiClient: api)
+          .createAcknowledgedConversation(
+            ws,
+            title: 'Fixture',
+            modelId: 'synthetic/model',
+          );
+      if (['+24:60', '+23:60', '-24:00', '+00:60', '-23:60'].contains(offset)) {
+        await expectLater(result, throwsFormatException);
+      } else {
+        expect((await result).conversation.id, id);
+      }
+      verify(() => api.postJson(any(), any())).called(1);
+    });
+  }
   for (final change in [
     {'title': 42},
     {'description': 42},

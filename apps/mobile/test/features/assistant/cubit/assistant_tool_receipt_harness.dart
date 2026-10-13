@@ -96,9 +96,9 @@ class ToolReceiptRepository extends ReplyRepository {
     output();
     done();
     prepared = await nativeStream(
-      chatId: 'chat',
-      wsId: 'synthetic-ws',
-      workspaceContextId: 'synthetic-ws',
+      chatId: '11111111-1111-4111-8111-111111111111',
+      wsId: '22222222-2222-4222-8222-222222222222',
+      workspaceContextId: '22222222-2222-4222-8222-222222222222',
       modelId: 'model',
       messages: const [
         AssistantMessage(

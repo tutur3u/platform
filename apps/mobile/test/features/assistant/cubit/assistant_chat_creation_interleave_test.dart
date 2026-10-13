@@ -1,10 +1,41 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 import 'assistant_chat_creation_harness.dart';
+
+class _BeginReturnHost extends InMemorySharedPreferencesStore {
+  _BeginReturnHost() : super.withData({});
+  bool unknownWritten = false;
+  void Function()? afterReceiptRead;
+  @override
+  Future<bool> setValue(String type, String key, Object value) async {
+    final result = await super.setValue(type, key, value);
+    if (key.contains('mira-conversation-envelope') && value is String) {
+      final record = jsonDecode(value) as Map<String, dynamic>;
+      final creation = record['creation'] as Map;
+      if (creation['status'] == 'unknown' && creation['attemptId'] != null) {
+        unknownWritten = true;
+      }
+    }
+    return result;
+  }
+
+  @override
+  Future<Map<String, Object>> getAll() async {
+    final record = await super.getAll();
+    if (unknownWritten) {
+      unknownWritten = false;
+      afterReceiptRead?.call();
+    }
+    return record;
+  }
+}
 
 void main() {
   late CreationHarness h;
@@ -169,4 +200,74 @@ void main() {
       expect(second.requestId, isNot(first.requestId));
     },
   );
+  for (final departure in ['load', 'open', 'close', 'actor']) {
+    test(
+      'begin receipt return denies departed $departure origin before POST',
+      () async {
+        await h.close();
+        SharedPreferences.resetStatic();
+        final host = _BeginReturnHost();
+        h = CreationHarness(hostStore: host);
+        await h.setup();
+        final boundary = Completer<void>();
+        Future<void>? lifecycle;
+        host.afterReceiptRead = () {
+          var reads = 0;
+          h.actor.onRead = () {
+            // The last qualification read captures its actor snapshot before
+            // delivering a reentrant lifecycle event. Admission must reread.
+            if (++reads != 3) return;
+            h.actor.onRead = null;
+            expect(h.started.isCompleted, false);
+            switch (departure) {
+              case 'load':
+                lifecycle = h.chat.loadWorkspace(otherWs);
+              case 'open':
+                lifecycle = h.chat.openChatById(ws, saved);
+              case 'close':
+                lifecycle = h.chat.close();
+              case 'actor':
+                h.actor.id = otherActor;
+            }
+            boundary.complete();
+          };
+        };
+        final originalId = h.chat.state.fallbackChatId;
+        Object? failure;
+        final creation = h.repository
+            .createChat(
+              id: originalId,
+              wsId: ws,
+              modelId: 'model',
+              message: 'Synthetic departing creation',
+              timezone: 'UTC',
+            )
+            .then<void>(
+              (_) {},
+              onError: (Object error) {
+                failure = error;
+              },
+            );
+        await boundary.future;
+        // Complete only the original synthetic HTTP fixture if it was admitted.
+        // This prevents an old-source negative control from hanging on its ACK.
+        h.response.complete(h.receipt());
+        await creation;
+        await lifecycle;
+        final raw = await host.getAll();
+        final record =
+            jsonDecode(
+                  raw['flutter.$actorId::mira-conversation-envelope::v1::$ws']!
+                      as String,
+                )
+                as Map;
+        expect(h.posts, 0);
+        expect(failure, isA<AssistantCreationUncertainException>());
+        expect((record['creation'] as Map)['status'], 'unknown');
+        expect((record['creation'] as Map)['attemptId'], originalId);
+        expect(h.repository.uploads, isEmpty);
+        expect(h.sends, isEmpty);
+      },
+    );
+  }
 }

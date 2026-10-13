@@ -342,4 +342,41 @@ void main() {
       },
     );
   }
+  test('explicit identical request recovers after storage failure', () async {
+    final scope = origin();
+    await repository.publishAssistantChatSnapshot(
+      origin: scope,
+      restored: snapshot('A'),
+    );
+    var writes = 0;
+    var fail = true;
+    disk.checkpoint = (stage) {
+      if (stage == 'snapshot') {
+        writes++;
+        if (fail) throw StateError('Synthetic recoverable storage failure');
+      }
+    };
+    expect(
+      (await repository.publishAssistantChatSnapshot(
+        origin: scope,
+        restored: snapshot('S'),
+      )).status,
+      AssistantChatCacheStatus.failed,
+    );
+    expect(await read(scope), 'A');
+    fail = false;
+    expect(
+      (await repository.publishAssistantChatSnapshot(
+        origin: scope,
+        restored: snapshot('S'),
+      )).status,
+      AssistantChatCacheStatus.published,
+    );
+    expect(writes, 2);
+    expect(await read(scope), 'S');
+    await repository.drainAssistantChatCache();
+    disk.checkpoint = null;
+    await disk.reopen();
+    expect(await read(scope), 'S');
+  });
 }

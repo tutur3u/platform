@@ -200,7 +200,7 @@ void main() {
           } else {
             h.workspace.change('synthetic-other');
             await tester.pump();
-            h.workspace.change('synthetic-ws');
+            h.workspace.change('22222222-2222-4222-8222-222222222222');
           }
           await tester.pumpAndSettle();
           expect(input, findsNothing);

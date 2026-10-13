@@ -9,6 +9,7 @@ import 'package:mobile/features/assistant/data/assistant_chat_persistence_contra
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -24,7 +25,15 @@ const saved = '44444444-4444-4444-8444-444444444444';
 class CreationApi extends Mock implements ApiClient {}
 
 class CreationActor {
-  String id = actorId;
+  String _id = actorId;
+  void Function()? onRead;
+  String get id {
+    final snapshot = _id;
+    onRead?.call();
+    return snapshot;
+  }
+
+  set id(String value) => _id = value;
 }
 
 // Creation, marker persistence, settings and USER NDJSON use real repository
@@ -117,11 +126,29 @@ class CreationHarness {
     api = CreationApi();
     actor = CreationActor();
     repository = CreationRepository(api, actor, nativeRestore: nativeRestore);
-    await repository.acknowledgeUnknownChatCreation(ws);
-    await repository.acknowledgeUnknownChatCreation(otherWs);
-    actor.id = otherActor;
-    await repository.acknowledgeUnknownChatCreation(otherWs);
-    actor.id = actorId;
+    final fixturePrefs = await SharedPreferences.getInstance();
+    for (final scope in [
+      (actorId, ws),
+      (actorId, otherWs),
+      (otherActor, otherWs),
+    ]) {
+      // Explicit synthetic confirmed records; legacy clear is never adopted.
+      await fixturePrefs.setString(
+        '${scope.$1}::mira-conversation-envelope::v1::${scope.$2}',
+        jsonEncode({
+          'schema': 1,
+          'actorId': scope.$1,
+          'workspaceId': scope.$2,
+          'revision': 1,
+          'generation': 1,
+          'selectedChatId': null,
+          'contextId': ws,
+          'creation': {'status': 'clear', 'attemptId': null},
+          'resetConsent': null,
+          'resetIntent': null,
+        }),
+      );
+    }
     response = Completer<Map<String, dynamic>>();
     started = Completer<void>();
     sends = [];
@@ -220,13 +247,42 @@ class CreationHarness {
     chat = AssistantChatCubit(
       repository: repository,
       preferences: AssistantPreferences(currentUserId: () => actor.id),
-      onResetWorkspaceContext: (_, current) async => current(),
+      prepareResetWorkspaceContext: (_, current) =>
+          AssistantPreparedResetContext(
+            actorId: actor.id,
+            workspaceId: ws,
+            isCurrent: current,
+            publishCurrent: current,
+          ),
       onWorkspaceContextChanged: (_) async {},
       onSoulRefreshRequested: () async {},
       onImmersiveModeChanged: (_) {},
       onChatRestored: (_) async {},
     );
     await chat.loadWorkspace(ws);
+    if (await repository.hasUnknownChatCreation(ws)) {
+      // A prior negative control in this isolate can hold this synthetic scope.
+      // Only the complete informed reset protocol releases that process hold.
+      if (!await chat.resetConversation(ws, acknowledgeUnknownCreation: true)) {
+        throw StateError('Synthetic reset fixture was not acknowledged');
+      }
+    }
+  }
+
+  Future<bool> resetDuringPendingRestore() async {
+    final history = Completer<void>();
+    historyGate = history.future;
+    await AssistantPreferences(
+      currentUserId: () => actor.id,
+    ).saveChatId(ws, saved);
+    final loading = chat.loadWorkspace(ws);
+    await historyEntered.future;
+    try {
+      return await chat.resetConversation(ws, acknowledgeUnknownCreation: true);
+    } finally {
+      history.complete();
+      await loading;
+    }
   }
 
   Future<void> close() async {

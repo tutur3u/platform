@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
@@ -39,11 +40,13 @@ class _HeldSelectionStore extends InMemorySharedPreferencesStore {
   bool hold = false;
   @override
   Future<bool> setValue(String type, String key, Object value) async {
-    if (hold && key == 'flutter.$actorId::mira-dashboard-chat-$ws') {
-      if (value == saved) {
+    if (hold &&
+        key == 'flutter.$actorId::mira-conversation-envelope::v1::$ws') {
+      final selected = (jsonDecode(value as String) as Map)['selectedChatId'];
+      if (selected == saved) {
         oldEntered.complete();
         await oldRelease.future;
-      } else if (value == known) {
+      } else if (selected == known) {
         knownEntered.complete();
         await knownRelease.future;
       }

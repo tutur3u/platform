@@ -61,12 +61,12 @@ void main() {
                   state.status == AssistantChatStatus.idle,
             );
             await chat.submit(
-              wsId: 'synthetic-ws',
+              wsId: '22222222-2222-4222-8222-222222222222',
               message: 'Synthetic rename request',
               modelId: 'model',
               thinkingMode: AssistantThinkingMode.thinking,
               creditSource: AssistantCreditSource.workspace,
-              workspaceContextId: 'synthetic-ws',
+              workspaceContextId: '22222222-2222-4222-8222-222222222222',
               timezone: 'UTC',
             );
             await completed.timeout(const Duration(seconds: 2));

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
@@ -24,9 +25,29 @@ void main() {
   late AssistantRepository repository;
   setUp(() async {
     SharedPreferences.setMockInitialValues({
-      '33333333-3333-4333-8333-333333333333::mira-chat-creation::$ws':
-          'clear:v1',
+      '33333333-3333-4333-8333-333333333333::'
+          'mira-conversation-envelope::v1::$ws': jsonEncode({
+        'schema': 1,
+        'actorId': '33333333-3333-4333-8333-333333333333',
+        'workspaceId': ws,
+        'revision': 1,
+        'generation': 1,
+        'selectedChatId': null,
+        'contextId': null,
+        'creation': {'status': 'clear', 'attemptId': null},
+        'resetConsent': null,
+        'resetIntent': null,
+      }),
     });
+    // Each fixture uses the actual informed protocol, never legacy adoption.
+    final reset = await AssistantResetPreferences(
+      actorId: '33333333-3333-4333-8333-333333333333',
+      workspaceId: ws,
+      isCurrent: () => true,
+    ).reset('77777777-7777-4777-8777-777777777777', informed: true);
+    if (!reset.committedCurrent) {
+      throw StateError('Synthetic reset not confirmed');
+    }
     api = _Api();
     chats = _Chats();
     repository = AssistantRepository(
@@ -35,7 +56,6 @@ void main() {
       chatRepository: chats,
       currentUserId: () => '33333333-3333-4333-8333-333333333333',
     );
-    await repository.acknowledgeUnknownChatCreation(ws);
     when(
       () => api.getJson(
         '/api/v1/workspaces/$ws/chat/conversations/$chat/ai-settings',
@@ -436,6 +456,10 @@ void main() {
   for (final ndjson in [true, false]) {
     for (final variant in [
       'valid',
+      for (final offset in ['+24:60', '+23:60', '-24:00', '+00:60', '-23:60'])
+        'offset:$offset',
+      for (final offset in ['+00:00', '+07:30', '-05:45', '+23:59'])
+        'valid-offset:$offset',
       'kind',
       'missing-kind',
       'numeric-kind',
@@ -469,6 +493,11 @@ void main() {
             'content': 'Synthetic reply',
             'metadata': <String, dynamic>{},
           };
+          if (variant.startsWith('offset:') ||
+              variant.startsWith('valid-offset:')) {
+            user['createdAt'] =
+                '2026-10-13T10:00:00${variant.split(':').skip(1).join(':')}';
+          }
           switch (variant) {
             case 'kind':
               user['kind'] = 'not-a-message-kind';
@@ -561,7 +590,7 @@ void main() {
                 timezone: 'UTC',
               )
               .toList();
-          if (variant != 'valid') {
+          if (variant != 'valid' && !variant.startsWith('valid-offset:')) {
             await expectLater(events, throwsFormatException);
           } else {
             final actualEvents = await events;
