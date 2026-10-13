@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   lstatSync,
@@ -84,11 +85,18 @@ export function validateEmployeeAppliedIdentity(value) {
     ![
       'employee-creation-composed-v1',
       'employee-creation-composed-reviewed-marker-v1',
+      'employee-creation-composed-reviewed-auth-declaration-v1',
     ].includes(value.profile) ||
     (value.profile === 'employee-creation-composed-reviewed-marker-v1' &&
       value.sourceSha !== '9224768b9789c525e05b78f9e381949f91267a8f') ||
+    (value.profile ===
+      'employee-creation-composed-reviewed-auth-declaration-v1' &&
+      value.sourceSha !== 'f8696ed991cfa4b6c51bb86d59a93632cb5da2af') ||
     (value.profile === 'employee-creation-composed-v1' &&
-      value.sourceSha === '9224768b9789c525e05b78f9e381949f91267a8f') ||
+      [
+        '9224768b9789c525e05b78f9e381949f91267a8f',
+        'f8696ed991cfa4b6c51bb86d59a93632cb5da2af',
+      ].includes(value.sourceSha)) ||
     !['sourceSha', 'controlSha'].every(
       (key) =>
         /^[a-f0-9]{40}$/.test(value[key] ?? '') &&
@@ -435,4 +443,70 @@ export function employeeConsumerCompilerConfig({
       ...(control ? [control] : []),
     ],
   };
+}
+
+function readEmployeeCommitHeader(repositoryRoot, sourceSha) {
+  if (!/^[a-f0-9]{40}$/.test(sourceSha ?? '')) throw denied();
+  const header = execFileSync('git', ['cat-file', 'commit', sourceSha], {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+    timeout: 10000,
+    maxBuffer: 65536,
+  }).split('\n\n')[0];
+  const trees = [...header.matchAll(/^tree ([a-f0-9]{40})$/gm)];
+  const parents = [...header.matchAll(/^parent ([a-f0-9]{40})$/gm)];
+  if (trees.length !== 1 || parents.length !== 1) throw denied();
+  return { sourceSha, treeSha: trees[0][1], parentSha: parents[0][1] };
+}
+export function observeEmployeeSourceCommit(
+  repositoryRoot,
+  sourceSha,
+  deltaFiles = null
+) {
+  const identity = readEmployeeCommitHeader(repositoryRoot, sourceSha);
+  if (deltaFiles === null) return identity;
+  const parentIdentity = readEmployeeCommitHeader(
+    repositoryRoot,
+    identity.parentSha
+  );
+  const output = execFileSync(
+    'git',
+    [
+      'diff-tree',
+      '--no-commit-id',
+      '--name-status',
+      '--no-renames',
+      '-r',
+      identity.parentSha,
+      sourceSha,
+    ],
+    { cwd: repositoryRoot, encoding: 'utf8', timeout: 10000, maxBuffer: 65536 }
+  ).trim();
+  const digest = (commit, file) =>
+    hash(
+      execFileSync('git', ['show', `${commit}:${file}`], {
+        cwd: repositoryRoot,
+        timeout: 10000,
+        maxBuffer: 2 * 1024 * 1024,
+      })
+    );
+  const parentDelta = output
+    ? output.split('\n').map((line) => {
+        const [change, file, ...extra] = line.split('\t');
+        if (
+          extra.length ||
+          !['A', 'M'].includes(change) ||
+          !deltaFiles.some((row) => row.path === file)
+        )
+          throw denied();
+        return {
+          path: file,
+          change,
+          beforeSha256:
+            change === 'A' ? null : digest(identity.parentSha, file),
+          sha256: digest(sourceSha, file),
+        };
+      })
+    : [];
+  return { ...identity, parentIdentity, parentDelta };
 }

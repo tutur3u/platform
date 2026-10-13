@@ -36,7 +36,7 @@ const sourceSha = process.env.EMPLOYEE_COMPOSED_SOURCE_FIXTURE_SHA;
 const sourceRoot = process.env.EMPLOYEE_COMPOSED_SOURCE_FIXTURE_ROOT;
 const consumers = () => observeEmployeeConsumerFiles(sourceRoot);
 const identity = () => ({
-  profile: 'employee-creation-composed-reviewed-marker-v1',
+  profile: 'employee-creation-composed-reviewed-auth-declaration-v1',
   sourceSha,
   controlSha: 'f47e6ba5952359c85f0ef1791be5e379cd5768b3',
   projectId: `tt-source-${sourceSha?.slice(0, 8)}-0123456789`,
@@ -303,7 +303,15 @@ test('compiler configuration checks actual public entries and actual declared pa
 });
 
 // Compiler commands are injected; these fixture controls never qualify real types.
-for (const drift of ['none', 'supplier', 'journal', 'generated'])
+for (const drift of [
+  'none',
+  'supplier',
+  'journal',
+  'generated',
+  'auth-patch',
+  'auth-control',
+  'lock',
+])
   test(`compiler reobserves complete closure and lifecycle cleans up: ${drift}`, async () => {
     const controls = qualificationControlPaths.map((file) => ({
       path: file,
@@ -431,7 +439,15 @@ for (const drift of ['none', 'supplier', 'journal', 'generated'])
                     ? artifact
                     : path.join(
                         fixture,
-                        (drift === 'supplier' ? supplier : journal).path
+                        drift === 'supplier'
+                          ? supplier.path
+                          : drift === 'journal'
+                            ? journal.path
+                            : drift === 'auth-patch'
+                              ? 'patches/@supabase%2Fauth-js@2.117.1.patch'
+                              : drift === 'auth-control'
+                                ? 'packages/supabase/type-tests/auth-webauthn-compat.ts'
+                                : 'bun.lock'
                       );
                 writeFileSync(target, 'changed disposable bytes');
               }
@@ -455,3 +471,24 @@ for (const drift of ['none', 'supplier', 'journal', 'generated'])
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+test('applied identity cannot use prior profiles to admit the auth successor', () => {
+  assert.equal(
+    validateEmployeeAppliedIdentity(identity()).profile,
+    'employee-creation-composed-reviewed-auth-declaration-v1'
+  );
+  for (const profile of [
+    'employee-creation-composed-v1',
+    'employee-creation-composed-reviewed-marker-v1',
+  ])
+    assert.throws(() =>
+      validateEmployeeAppliedIdentity({ ...identity(), profile })
+    );
+  for (const sourceSha of [
+    '9224768b9789c525e05b78f9e381949f91267a8f',
+    'f'.repeat(40),
+  ])
+    assert.throws(() =>
+      validateEmployeeAppliedIdentity({ ...identity(), sourceSha })
+    );
+});

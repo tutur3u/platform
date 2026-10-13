@@ -1,8 +1,10 @@
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { observeEmployeeConsumerFiles } from './employee-schema-composed-consumers.mjs';
+import {
+  observeEmployeeConsumerFiles,
+  observeEmployeeSourceCommit,
+} from './employee-schema-composed-consumers.mjs';
 import { selectEmployeeComposedProfile } from './employee-schema-composed-profile.mjs';
 import {
   assertPacketTap,
@@ -48,7 +50,10 @@ export function observedEmployeeFile(root, file) {
     sha256: employeeQualificationHash(readFileSync(current)),
   };
 }
-export function selectEmployeeQualificationProfile(choice) {
+export function selectEmployeeQualificationProfile(
+  choice,
+  sourceSha = reviewedAuthSourceChain.sourceSha
+) {
   if (choice === 'foundation')
     return Object.freeze({
       name: 'employee-creation-foundation-v1',
@@ -59,9 +64,14 @@ export function selectEmployeeQualificationProfile(choice) {
       assertions: 172,
     });
   if (choice !== 'composed') throw denied();
+  const chain =
+    sourceSha === reviewedMarkerSourceChain.sourceSha
+      ? reviewedMarkerSourceChain
+      : reviewedAuthSourceChain;
+  if (sourceSha !== chain.sourceSha) throw denied();
   return Object.freeze({
     ...selectEmployeeComposedProfile('employee-creation-composed-v1'),
-    name: reviewedMarkerSourceChain.profile,
+    name: chain.profile,
     sourceFiles: Object.freeze(
       selectEmployeeComposedProfile(
         'employee-creation-composed-v1'
@@ -71,7 +81,14 @@ export function selectEmployeeQualificationProfile(choice) {
               ...row,
               sha256: reviewedMarkerSourceChain.delta.afterSha256,
             })
-          : row
+          : row.path === 'bun.lock' && chain === reviewedAuthSourceChain
+            ? Object.freeze({
+                ...row,
+                sha256: reviewedAuthSourceChain.files.find(
+                  (file) => file.path === row.path
+                ).sha256,
+              })
+            : row
       )
     ),
     choice,
@@ -89,7 +106,7 @@ export function observeEmployeeQualification({
   controlFiles,
   expectedControlFiles,
 }) {
-  const selected = selectEmployeeQualificationProfile(choice);
+  const selected = selectEmployeeQualificationProfile(choice, sourceSha);
   exactSourceSha(sourceSha);
   if (
     !Array.isArray(controlFiles) ||
@@ -126,11 +143,21 @@ export function observeEmployeeQualification({
     sourceSha === '68a47c83c4ecc40f422749a6dd288b82a75441d6'
   )
     throw denied();
+  const chain =
+    selected.name === reviewedAuthSourceChain.profile
+      ? reviewedAuthSourceChain
+      : reviewedMarkerSourceChain;
+  const authFiles =
+    chain === reviewedAuthSourceChain
+      ? chain.files.map(({ path: file }) =>
+          observedEmployeeFile(repositoryRoot, file)
+        )
+      : [];
   const manifest = {
     profile: selected.name,
     baseSourceSha: selected.baseSourceSha,
     sourceSha,
-    sourceChain: reviewedMarkerSourceChain,
+    sourceChain: chain,
     files: selected.sourceFiles.map(({ path: file }) =>
       observedEmployeeFile(repositoryRoot, file)
     ),
@@ -138,11 +165,12 @@ export function observeEmployeeQualification({
       observedEmployeeFile(repositoryRoot, file)
     ),
   };
-  const binding = validateEmployeeReviewedMarkerManifest(
-    manifest,
-    authoritativeSourceSha,
-    gitIdentity
-  );
+  if (chain === reviewedAuthSourceChain) manifest.authFiles = authFiles;
+  const validator =
+    chain === reviewedAuthSourceChain
+      ? validateEmployeeReviewedAuthManifest
+      : validateEmployeeReviewedMarkerManifest;
+  const binding = validator(manifest, authoritativeSourceSha, gitIdentity);
   const consumers = observeEmployeeConsumerFiles(repositoryRoot);
   const profileFiles = [];
   for (const [file, hash] of [
@@ -159,10 +187,24 @@ export function observeEmployeeQualification({
     if (observed.sha256 !== hash) throw denied();
     profileFiles.push(observed);
   }
+  const closure = [
+    ...manifest.files,
+    ...profileFiles,
+    ...consumers.files,
+    ...authFiles,
+  ];
+  const unique = new Map();
+  for (const row of closure) {
+    if (unique.has(row.path) && unique.get(row.path).sha256 !== row.sha256)
+      throw denied();
+    unique.set(row.path, row);
+  }
+  if (unique.size !== (chain === reviewedAuthSourceChain ? 52 : 47))
+    throw denied();
   const fullSourceManifest = {
     sourceSha,
-    sourceChain: reviewedMarkerSourceChain,
-    files: [...manifest.files, ...profileFiles, ...consumers.files],
+    sourceChain: chain,
+    files: [...unique.values()],
   };
   return {
     selected,
@@ -199,7 +241,11 @@ export function evaluateEmployeeQualificationPackets(
       lifecycleCode,
       cleanupSucceeded,
     });
-  return evaluateEmployeeReviewedMarkerPackets(
+  const evaluate =
+    observation.selected.name === reviewedAuthSourceChain.profile
+      ? evaluateEmployeeReviewedAuthPackets
+      : evaluateEmployeeReviewedMarkerPackets;
+  return evaluate(
     {
       manifest: observation.manifest,
       packets: packets.map(({ file, sourceSha, sha256, exitCode, tap }) => ({
@@ -277,6 +323,71 @@ export const reviewedMarkerSourceChain = freezeReviewed({
       'c235ef476cb41cc783342ccd85009296e6878eaeb7e1fcc260812f6a59138a82',
   },
 });
+// Reviewed source/dependency recipe only; no installed runtime or compiler qualification.
+export const reviewedAuthSourceChain = freezeReviewed({
+  profile: 'employee-creation-composed-reviewed-auth-declaration-v1',
+  sourceSha: 'f8696ed991cfa4b6c51bb86d59a93632cb5da2af',
+  treeSha: 'df8329077114ab799dd2f4b0a8d30c773574f6a5',
+  parentSha: '9224768b9789c525e05b78f9e381949f91267a8f',
+  parentAuthorization: reviewedMarkerSourceChain,
+  provenance: {
+    integratedManifestSha256:
+      'a8f5beed59a1e0159d9a662f408ebf4934c6b5984d7165f36f62888b0e9327d6',
+    authFreezeSha256:
+      '0af76bd86fe4be7b97ad57afc39fc4752934df28e98775cce1b4fe2b32cb6697',
+    authReviewSha256:
+      '2b1c36745684742ec8d30d99b070a659cb503158264f9687ccc48cb97badf2b8',
+    authCheckpointSha256:
+      '5a33bb879c5b5f19e42d14e032d1f8cc0a34f0055cd21c48f4568dca9e37f45f',
+  },
+  files: [
+    {
+      path: 'package.json',
+      change: 'M',
+      beforeSha256:
+        'f39481cbcf90b0094b48e5243fbd549008a8b3a5aaa8bfe6467de9ebd763fb87',
+      sha256:
+        '65aadf02ea91c3135361c7e0e7efb905bdc89de35e0449a944a48d5f6ca30d6f',
+    },
+    {
+      path: 'bun.lock',
+      change: 'M',
+      beforeSha256:
+        '2c1db57eae3a77096d1ed000c2fc8bb211e5bf5132f429def3e785e9bd31b378',
+      sha256:
+        '8a1cd80f6472844aee670160611122a3c6dfdca180eafb3d60fb59d9d307d3dd',
+    },
+    {
+      path: 'patches/@supabase%2Fauth-js@2.117.1.patch',
+      change: 'A',
+      beforeSha256: null,
+      sha256:
+        'f98c25782e72caedbfa71a98aba7534bb9e6a33cd814313309993eb113497fde',
+    },
+    {
+      path: 'packages/supabase/type-tests/auth-webauthn-compat.ts',
+      change: 'A',
+      beforeSha256: null,
+      sha256:
+        '11160e84a9505663a749d7795daf960649dfc3ced500f5ebde1cb471953e0791',
+    },
+    {
+      path: 'packages/supabase/type-tests/auth-webauthn-compat.tsconfig.json',
+      change: 'A',
+      beforeSha256: null,
+      sha256:
+        'ffed6ff385bb1b24c18ca757671e1f6b7485ac03dd02ebaeb2c8be4697609f9f',
+    },
+    {
+      path: 'apps/docs/build/development-tools/development.mdx',
+      change: 'M',
+      beforeSha256:
+        'b5635b41022874dc4534d0bdeb0cd9995b07251c47ff68b1ca3f3bf20109f726',
+      sha256:
+        '15194aae0f38108c9d156ed5566af579a832180641c5d5710d0ddff7d12869da',
+    },
+  ],
+});
 function reviewedKeys(value, keys) {
   if (
     !value ||
@@ -291,16 +402,13 @@ function reviewedKeys(value, keys) {
 /** Read the actual commit object; shallow checkouts still carry its tree/parent header. */
 export function observeEmployeeGitCommit(repositoryRoot, sourceSha) {
   exactSourceSha(sourceSha);
-  const header = execFileSync('git', ['cat-file', 'commit', sourceSha], {
-    cwd: repositoryRoot,
-    encoding: 'utf8',
-    timeout: 10000,
-    maxBuffer: 65536,
-  }).split('\n\n')[0];
-  const trees = [...header.matchAll(/^tree ([a-f0-9]{40})$/gm)];
-  const parents = [...header.matchAll(/^parent ([a-f0-9]{40})$/gm)];
-  if (trees.length !== 1 || parents.length !== 1) throw denied();
-  return { sourceSha, treeSha: trees[0][1], parentSha: parents[0][1] };
+  return observeEmployeeSourceCommit(
+    repositoryRoot,
+    sourceSha,
+    sourceSha === reviewedAuthSourceChain.sourceSha
+      ? reviewedAuthSourceChain.files
+      : null
+  );
 }
 export function validateEmployeeReviewedMarkerManifest(
   manifest,
@@ -334,6 +442,15 @@ export function validateEmployeeReviewedMarkerManifest(
     JSON.stringify(manifest.sourceChain) !== JSON.stringify(chain)
   )
     throw denied();
+  validateReviewedRows(manifest, original, false);
+  return freezeReviewed({
+    profile: chain.profile,
+    sourceSha: chain.sourceSha,
+    sourceChainSha256: employeeQualificationHash(JSON.stringify(chain)),
+    sourceManifestSha256: employeeQualificationHash(JSON.stringify(manifest)),
+  });
+}
+function validateReviewedRows(manifest, original, auth) {
   for (const [rows, required] of [
     [manifest.files, original.sourceFiles],
     [manifest.migrations, original.migrations],
@@ -344,9 +461,13 @@ export function validateEmployeeReviewedMarkerManifest(
       const expected = required[index];
       // Validate raw observations against an explicit successor recipe. Never rewrite rows for V1.
       const requiredHash =
-        expected.path === chain.delta.path
-          ? chain.delta.afterSha256
-          : expected.sha256;
+        expected.path === reviewedMarkerSourceChain.delta.path
+          ? reviewedMarkerSourceChain.delta.afterSha256
+          : auth && expected.path === 'bun.lock'
+            ? reviewedAuthSourceChain.files.find(
+                (row) => row.path === expected.path
+              ).sha256
+            : expected.sha256;
       if (
         rows[index].path !== expected.path ||
         rows[index].sha256 !== requiredHash
@@ -355,10 +476,108 @@ export function validateEmployeeReviewedMarkerManifest(
     }
   }
   if (
-    original.sourceFiles.find((row) => row.path === chain.delta.path)
-      ?.sha256 !== chain.delta.beforeSha256
+    original.sourceFiles.find(
+      (row) => row.path === reviewedMarkerSourceChain.delta.path
+    )?.sha256 !== reviewedMarkerSourceChain.delta.beforeSha256
   )
     throw denied();
+}
+export function validateEmployeeReviewedAuthManifest(
+  manifest,
+  expectedSourceSha,
+  gitIdentity
+) {
+  reviewedKeys(manifest, [
+    'profile',
+    'baseSourceSha',
+    'sourceSha',
+    'sourceChain',
+    'files',
+    'migrations',
+    'authFiles',
+  ]);
+  reviewedKeys(gitIdentity, [
+    'sourceSha',
+    'treeSha',
+    'parentSha',
+    'parentIdentity',
+    'parentDelta',
+  ]);
+  const chain = reviewedAuthSourceChain;
+  const original = selectEmployeeComposedProfile(
+    'employee-creation-composed-v1'
+  );
+  reviewedKeys(manifest.sourceChain, Object.keys(chain));
+  reviewedKeys(manifest.sourceChain.provenance, Object.keys(chain.provenance));
+  reviewedKeys(
+    manifest.sourceChain.parentAuthorization,
+    Object.keys(reviewedMarkerSourceChain)
+  );
+  reviewedKeys(
+    manifest.sourceChain.parentAuthorization.delta,
+    Object.keys(reviewedMarkerSourceChain.delta)
+  );
+  reviewedKeys(
+    manifest.sourceChain.parentAuthorization.provenance,
+    Object.keys(reviewedMarkerSourceChain.provenance)
+  );
+  if (
+    original.sourceFiles.find((row) => row.path === 'bun.lock')?.sha256 !==
+    chain.files.find((row) => row.path === 'bun.lock').beforeSha256
+  )
+    throw denied();
+  if (
+    expectedSourceSha !== chain.sourceSha ||
+    manifest.sourceSha !== chain.sourceSha ||
+    manifest.profile !== chain.profile ||
+    manifest.baseSourceSha !== original.baseSourceSha ||
+    JSON.stringify(manifest.sourceChain) !== JSON.stringify(chain) ||
+    !['sourceSha', 'treeSha', 'parentSha'].every(
+      (key) => gitIdentity[key] === chain[key]
+    )
+  )
+    throw denied();
+  reviewedKeys(gitIdentity.parentIdentity, [
+    'sourceSha',
+    'treeSha',
+    'parentSha',
+  ]);
+  if (
+    !['sourceSha', 'treeSha', 'parentSha'].every(
+      (key) =>
+        gitIdentity.parentIdentity[key] === reviewedMarkerSourceChain[key]
+    )
+  )
+    throw denied();
+  if (
+    !Array.isArray(gitIdentity.parentDelta) ||
+    gitIdentity.parentDelta.length !== 6 ||
+    !Array.isArray(manifest.authFiles) ||
+    manifest.authFiles.length !== 6
+  )
+    throw denied();
+  const delta = [...gitIdentity.parentDelta].sort((a, b) =>
+    a.path.localeCompare(b.path)
+  );
+  const required = [...chain.files].sort((a, b) =>
+    a.path.localeCompare(b.path)
+  );
+  for (let index = 0; index < 6; index++) {
+    reviewedKeys(delta[index], ['path', 'change', 'beforeSha256', 'sha256']);
+    if (
+      !['path', 'change', 'beforeSha256', 'sha256'].every(
+        (key) => delta[index][key] === required[index][key]
+      )
+    )
+      throw denied();
+    reviewedKeys(manifest.authFiles[index], ['path', 'sha256']);
+    if (
+      manifest.authFiles[index].path !== chain.files[index].path ||
+      manifest.authFiles[index].sha256 !== chain.files[index].sha256
+    )
+      throw denied();
+  }
+  validateReviewedRows(manifest, original, true);
   return freezeReviewed({
     profile: chain.profile,
     sourceSha: chain.sourceSha,
@@ -371,12 +590,33 @@ export function evaluateEmployeeReviewedMarkerPackets(
   expectedSourceSha,
   gitIdentity
 ) {
-  reviewedKeys(input, ['manifest', 'packets']);
-  const binding = validateEmployeeReviewedMarkerManifest(
-    input.manifest,
+  return evaluateReviewedPackets(
+    input,
     expectedSourceSha,
-    gitIdentity
+    gitIdentity,
+    validateEmployeeReviewedMarkerManifest
   );
+}
+export function evaluateEmployeeReviewedAuthPackets(
+  input,
+  expectedSourceSha,
+  gitIdentity
+) {
+  return evaluateReviewedPackets(
+    input,
+    expectedSourceSha,
+    gitIdentity,
+    validateEmployeeReviewedAuthManifest
+  );
+}
+function evaluateReviewedPackets(
+  input,
+  expectedSourceSha,
+  gitIdentity,
+  validator
+) {
+  reviewedKeys(input, ['manifest', 'packets']);
+  const binding = validator(input.manifest, expectedSourceSha, gitIdentity);
   const selected = selectEmployeeComposedProfile(
     'employee-creation-composed-v1'
   );

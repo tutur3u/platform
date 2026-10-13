@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { validateEmployeeComposedManifest } from './employee-schema-composed-profile.mjs';
+import {
+  selectEmployeeComposedProfile,
+  validateEmployeeComposedManifest,
+} from './employee-schema-composed-profile.mjs';
 import {
   employeeQualificationExecutionReceipt,
   employeeQualificationHash,
@@ -10,8 +13,10 @@ import {
   observeEmployeeGitCommit,
   observeEmployeeQualification,
   qualificationControlPaths,
+  reviewedAuthSourceChain,
   reviewedMarkerSourceChain,
   selectEmployeeQualificationProfile,
+  validateEmployeeReviewedAuthManifest,
   validateEmployeeReviewedMarkerManifest,
 } from './employee-schema-qualification-profile.mjs';
 
@@ -61,7 +66,10 @@ test('foundation retains literal original 172 and composed selects literal 281',
     [25, 20, 34, 52, 41]
   );
   const selected = selectEmployeeQualificationProfile('composed');
-  assert.equal(selected.name, 'employee-creation-composed-reviewed-marker-v1');
+  assert.equal(
+    selected.name,
+    'employee-creation-composed-reviewed-auth-declaration-v1'
+  );
   assert.equal(selected.packets.length, 7);
   assert.equal(selected.assertions, 281);
   for (const name of [
@@ -75,7 +83,7 @@ test('foundation retains literal original 172 and composed selects literal 281',
 test('actual full S bytes close old40, independent consumer5 and immutable profile2', () => {
   const observation = composed();
   assert.equal(observation.manifest.files.length, 40);
-  assert.equal(observation.fullSourceManifest.files.length, 47);
+  assert.equal(observation.fullSourceManifest.files.length, 52);
   assert.notEqual(
     observation.sourceManifestSha256,
     observation.profileSourceManifestSha256
@@ -134,7 +142,7 @@ for (const group of ['files', 'migrations'])
       if (change === 'changed') manifest[group][0].sha256 = 'f'.repeat(64);
       if (change === 'duplicate') manifest[group][1] = manifest[group][0];
       assert.throws(() =>
-        validateEmployeeReviewedMarkerManifest(manifest, sourceSha, gitIdentity)
+        validateEmployeeReviewedAuthManifest(manifest, sourceSha, gitIdentity)
       );
     });
 test('complete synthetic TAP validates transcripts and cannot qualify any layer', () => {
@@ -280,14 +288,21 @@ test('immutable V1 denies raw reviewed SQL row while the closed successor admits
   );
   assert.throws(() => validateEmployeeComposedManifest(oldManifest, sourceSha));
   assert.equal(
-    validateEmployeeReviewedMarkerManifest(
+    validateEmployeeReviewedAuthManifest(
       observed.manifest,
       sourceSha,
       gitIdentity
     ).profile,
-    reviewedMarkerSourceChain.profile
+    reviewedAuthSourceChain.profile
   );
-  assert.deepEqual(sourceChain, reviewedMarkerSourceChain);
+  assert.deepEqual(sourceChain, reviewedAuthSourceChain);
+  assert.throws(() =>
+    validateEmployeeReviewedMarkerManifest(
+      observed.manifest,
+      sourceSha,
+      gitIdentity
+    )
+  );
 });
 for (const change of [
   'missing-provenance',
@@ -299,12 +314,13 @@ for (const change of [
   'old-hash',
   'extra-row-key',
 ])
-  test(`closed reviewed marker recipe denies ${change}`, () => {
+  test(`closed reviewed auth recipe denies ${change}`, () => {
     const manifest = structuredClone(composed().manifest),
       identity = { ...gitIdentity };
     if (change === 'missing-provenance') delete manifest.sourceChain.provenance;
     if (change === 'changed-provenance')
-      manifest.sourceChain.provenance.markerReviewSha256 = 'f'.repeat(64);
+      manifest.sourceChain.parentAuthorization.provenance.markerReviewSha256 =
+        'f'.repeat(64);
     if (change === 'wrong-parent') identity.parentSha = 'f'.repeat(40);
     if (change === 'wrong-tree') identity.treeSha = 'f'.repeat(40);
     if (change === 'descendant') {
@@ -318,7 +334,7 @@ for (const change of [
       ).sha256 = reviewedMarkerSourceChain.delta.beforeSha256;
     if (change === 'extra-row-key') manifest.files[0].approved = true;
     assert.throws(() =>
-      validateEmployeeReviewedMarkerManifest(
+      validateEmployeeReviewedAuthManifest(
         manifest,
         manifest.sourceSha,
         identity
@@ -326,11 +342,24 @@ for (const change of [
     );
   });
 test('all provenance digests and actual Git tree/parent are bound independently of packet parsing', () => {
-  assert.deepEqual(gitIdentity, {
+  assert.deepEqual(
+    {
+      sourceSha: gitIdentity.sourceSha,
+      treeSha: gitIdentity.treeSha,
+      parentSha: gitIdentity.parentSha,
+    },
+    {
+      sourceSha: reviewedAuthSourceChain.sourceSha,
+      treeSha: reviewedAuthSourceChain.treeSha,
+      parentSha: reviewedAuthSourceChain.parentSha,
+    }
+  );
+  assert.deepEqual(gitIdentity.parentIdentity, {
     sourceSha: reviewedMarkerSourceChain.sourceSha,
     treeSha: reviewedMarkerSourceChain.treeSha,
     parentSha: reviewedMarkerSourceChain.parentSha,
   });
+  assert.equal(gitIdentity.parentDelta.length, 6);
   assert.equal(Object.keys(reviewedMarkerSourceChain.provenance).length, 5);
   assert.ok(
     Object.values(reviewedMarkerSourceChain.provenance).every((value) =>
@@ -342,5 +371,117 @@ test('all provenance digests and actual Git tree/parent are bound independently 
       (p) => p.assertions
     ),
     [25, 20, 34, 52, 41, 48, 61]
+  );
+});
+
+test('auth recipe changes exactly SQL and lock in raw V1 forty rows, with unique52 closure', () => {
+  const observed = composed();
+  const original = selectEmployeeComposedProfile(
+    'employee-creation-composed-v1'
+  );
+  const changed = observed.manifest.files.filter(
+    (row, index) => row.sha256 !== original.sourceFiles[index].sha256
+  );
+  assert.deepEqual(
+    changed.map((row) => row.path).sort(),
+    [
+      'apps/infrastructure/src/lib/internal-accounts/employee-creation-sql.ts',
+      'bun.lock',
+    ].sort()
+  );
+  assert.equal(
+    new Set(observed.fullSourceManifest.files.map((row) => row.path)).size,
+    52
+  );
+  assert.equal(observed.manifest.authFiles.length, 6);
+  assert.deepEqual(
+    observed.manifest.sourceChain.parentAuthorization,
+    reviewedMarkerSourceChain
+  );
+  assert.throws(() =>
+    validateEmployeeReviewedMarkerManifest(
+      observed.manifest,
+      sourceSha,
+      gitIdentity
+    )
+  );
+});
+for (const change of [
+  'missing-delta',
+  'extra-delta',
+  'duplicate-delta',
+  'wrong-change',
+  'before-hash',
+  'patch-hash',
+  'lock-hash',
+  'missing-auth-row',
+  'reordered-auth',
+  'auth-provenance',
+  'parent-header',
+  'unlisted-source',
+])
+  test(`auth declaration exact recipe denies ${change}`, () => {
+    const manifest = structuredClone(composed().manifest),
+      identity = structuredClone(gitIdentity);
+    if (change === 'missing-delta') identity.parentDelta.pop();
+    if (change === 'extra-delta')
+      identity.parentDelta.push({
+        ...identity.parentDelta[0],
+        path: 'unlisted.ts',
+      });
+    if (change === 'duplicate-delta')
+      identity.parentDelta[1] = identity.parentDelta[0];
+    if (change === 'wrong-change') identity.parentDelta[0].change = 'D';
+    if (change === 'before-hash')
+      identity.parentDelta.find((row) => row.path === 'bun.lock').beforeSha256 =
+        'f'.repeat(64);
+    if (change === 'patch-hash')
+      identity.parentDelta.find((row) =>
+        row.path.startsWith('patches/')
+      ).sha256 = 'f'.repeat(64);
+    if (change === 'lock-hash')
+      manifest.files.find((row) => row.path === 'bun.lock').sha256 = 'f'.repeat(
+        64
+      );
+    if (change === 'missing-auth-row') manifest.authFiles.pop();
+    if (change === 'reordered-auth') manifest.authFiles.reverse();
+    if (change === 'auth-provenance')
+      manifest.sourceChain.provenance.authFreezeSha256 = 'f'.repeat(64);
+    if (change === 'parent-header')
+      identity.parentIdentity.treeSha = 'f'.repeat(40);
+    if (change === 'unlisted-source') manifest.files[0].sha256 = 'f'.repeat(64);
+    assert.throws(() =>
+      validateEmployeeReviewedAuthManifest(manifest, sourceSha, identity)
+    );
+  });
+
+for (const [group, keys] of [
+  ['auth', Object.keys(reviewedAuthSourceChain.provenance)],
+  ['marker', Object.keys(reviewedMarkerSourceChain.provenance)],
+])
+  for (const key of keys)
+    test(`closed ${group} provenance denies altered ${key}`, () => {
+      const manifest = structuredClone(composed().manifest);
+      const provenance =
+        group === 'auth'
+          ? manifest.sourceChain.provenance
+          : manifest.sourceChain.parentAuthorization.provenance;
+      provenance[key] = 'f'.repeat(64);
+      assert.throws(() =>
+        validateEmployeeReviewedAuthManifest(manifest, sourceSha, gitIdentity)
+      );
+    });
+test('marker profile rejects auth S even with its own exact manifest schema and recipe', () => {
+  const { authFiles, ...manifest } = structuredClone(composed().manifest);
+  assert.equal(authFiles.length, 6);
+  manifest.profile = reviewedMarkerSourceChain.profile;
+  manifest.sourceChain = reviewedMarkerSourceChain;
+  const header = {
+    sourceSha: gitIdentity.sourceSha,
+    treeSha: gitIdentity.treeSha,
+    parentSha: gitIdentity.parentSha,
+  };
+  assert.throws(() =>
+    validateEmployeeReviewedMarkerManifest(manifest, sourceSha, header)
   );
 });
