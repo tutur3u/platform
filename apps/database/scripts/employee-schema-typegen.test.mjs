@@ -487,3 +487,65 @@ test('INIT failure replies are exact and fixed; raw, forged or later-request rea
     'init-unknown'
   );
 });
+
+test('composed generation denies mismatched applied catalog before any command or write', async (t) => {
+  const appliedIdentity = {
+    profile: 'employee-creation-composed-v1',
+    sourceSha,
+    controlSha,
+    projectId: metadata.projectId,
+    snapshotSha256,
+    networkId: network.id,
+    sourceManifestSha256: 'e'.repeat(64),
+    consumerManifestSha256: 'f'.repeat(64),
+    controlManifestSha256: 'a'.repeat(64),
+  };
+  let called = false;
+  for (const catalog of [
+    undefined,
+    {
+      ...appliedIdentity,
+      kind: 'applied-employee-catalog-v1',
+      projectId: 'foreign',
+      actualCatalogDefinitionHash: 'a'.repeat(64),
+      appliedMigrationLedgerHash: 'b'.repeat(64),
+    },
+  ]) {
+    const input = request(t, { appliedIdentity, catalog });
+    input.runner = async () => {
+      called = true;
+      return generated;
+    };
+    await assert.rejects(generateEmployeeTypes(input));
+  }
+  assert.equal(called, false);
+});
+
+test('composed generation carries actual catalog and full source identity without granting consumer admission', async (t) => {
+  const appliedIdentity = {
+    profile: 'employee-creation-composed-v1',
+    sourceSha,
+    controlSha,
+    projectId: metadata.projectId,
+    snapshotSha256,
+    networkId: network.id,
+    sourceManifestSha256: 'e'.repeat(64),
+    consumerManifestSha256: 'f'.repeat(64),
+    controlManifestSha256: 'a'.repeat(64),
+  };
+  const catalog = {
+    ...appliedIdentity,
+    kind: 'applied-employee-catalog-v1',
+    actualCatalogDefinitionHash: 'a'.repeat(64),
+    appliedMigrationLedgerHash: 'b'.repeat(64),
+  };
+  const receipt = await generateEmployeeTypes(
+    request(t, { appliedIdentity, catalog })
+  );
+  assert.deepEqual(receipt.appliedIdentity, appliedIdentity);
+  assert.equal(
+    receipt.actualCatalogDefinitionHash,
+    catalog.actualCatalogDefinitionHash
+  );
+  assert.equal(receipt.consumerQualified, false);
+});

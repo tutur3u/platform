@@ -6,6 +6,18 @@ on:
         description: Exact reviewed creation/restoration stack commit (40 hex characters)
         required: true
         type: string
+      qualification:
+        description: Selected rollback qualification profile
+        required: true
+        default: foundation
+        type: choice
+        options:
+          - foundation
+          - composed
+      authoritative_source_sha:
+        description: Root-published full-union commit S, required for composed and equal to source_sha
+        required: false
+        type: string
       structured_provenance:
         description: Diagnostic-only two-statement provenance; never 172 qualification
         required: false
@@ -38,6 +50,8 @@ jobs:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
+      EMPLOYEE_SCHEMA_QUALIFICATION: ${{ inputs.qualification }}
+      EMPLOYEE_SCHEMA_AUTHORITATIVE_SOURCE_SHA: ${{ inputs.authoritative_source_sha }}
     steps:
       - name: Require the enabled schema gate
         env:
@@ -82,16 +96,25 @@ jobs:
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify strict TAP and receipt gates
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs apps/database/scripts/employee-schema-typegen.test.mjs apps/database/scripts/employee-schema-network.test.mjs apps/database/scripts/employee-schema-start-evidence.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs apps/database/scripts/employee-schema-typegen.test.mjs apps/database/scripts/employee-schema-network.test.mjs apps/database/scripts/employee-schema-start-evidence.test.mjs apps/database/scripts/employee-schema-network-proof.test.mjs
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
       - name: Verify identity diagnostic parser
         if: inputs.identity_diagnostic == true
         run: node --test apps/database/scripts/employee-identity-diagnostic.test.mjs
+      - name: Verify composed profile and actual source consumer closure
+        if: inputs.qualification == 'composed'
+        env:
+          EMPLOYEE_COMPOSED_SOURCE_FIXTURE_ROOT: ${{ github.workspace }}/source
+          EMPLOYEE_COMPOSED_SOURCE_FIXTURE_SHA: ${{ inputs.source_sha }}
+        run: node --test apps/database/scripts/employee-schema-qualification-profile.test.mjs apps/database/scripts/employee-schema-composed-consumers.test.mjs
+      - name: Verify observed qualification source and control before runtime
+        working-directory: source
+        run: node ../apps/database/scripts/verify-employee-schema-contract.mjs --preflight
       - name: Create the exact owned internal database network
         if: inputs.structured_provenance != true && inputs.identity_diagnostic != true
         run: node apps/database/scripts/employee-schema-typegen.mjs --create-network
-      - name: Apply full isolated schema and qualify 172 rollback assertions
+      - name: Apply full isolated schema and qualify selected rollback assertions
         if: inputs.structured_provenance != true && inputs.identity_diagnostic != true
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs

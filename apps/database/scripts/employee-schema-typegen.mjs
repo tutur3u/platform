@@ -3,12 +3,17 @@ import { lstatSync, readFileSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { validateEmployeeAppliedIdentity } from './employee-schema-composed-consumers.mjs';
 import {
   createEmployeeNetwork,
   removeEmployeeNetwork,
   runTypegenCommand,
   verifyEmployeeNetwork,
 } from './employee-schema-network.mjs';
+import {
+  collectEmployeeNetworkProof,
+  emptyEmployeeNetworkDiagnostics,
+} from './employee-schema-network-proof.mjs';
 
 export {
   createEmployeeNetwork,
@@ -326,6 +331,8 @@ export async function generateEmployeeTypes({
   snapshotSha256,
   network,
   runner = runTypegenCommand,
+  appliedIdentity,
+  catalog,
 }) {
   if (
     !/^[a-f0-9]{40}$/u.test(sourceSha ?? '') ||
@@ -335,6 +342,26 @@ export async function generateEmployeeTypes({
     !/^tt-[a-z0-9-]+-[a-f0-9]{8}-[a-f0-9]{10}$/u.test(metadata.projectId ?? '')
   )
     throw failure();
+  if (appliedIdentity !== undefined) {
+    validateEmployeeAppliedIdentity(appliedIdentity);
+    if (
+      catalog?.kind !== 'applied-employee-catalog-v1' ||
+      !Object.keys(appliedIdentity).every(
+        (key) => catalog[key] === appliedIdentity[key]
+      ) ||
+      !/^[a-f0-9]{64}$/.test(catalog.actualCatalogDefinitionHash ?? '') ||
+      !/^[a-f0-9]{64}$/.test(catalog.appliedMigrationLedgerHash ?? '')
+    )
+      throw failure();
+    if (
+      appliedIdentity.sourceSha !== sourceSha ||
+      appliedIdentity.controlSha !== controlSha ||
+      appliedIdentity.projectId !== metadata.projectId ||
+      appliedIdentity.snapshotSha256 !== snapshotSha256 ||
+      appliedIdentity.networkId !== network.id
+    )
+      throw failure();
+  }
   await verifyEmployeeNetwork(network, runner);
   const stat = lstatSync(receiptDirectory);
   if (!stat.isDirectory() || stat.isSymbolicLink()) throw failure();
@@ -396,6 +423,13 @@ export async function generateEmployeeTypes({
     bytes: contents.length,
     generated: true,
     consumerQualified: false,
+    ...(appliedIdentity === undefined
+      ? {}
+      : {
+          appliedIdentity,
+          actualCatalogDefinitionHash: catalog.actualCatalogDefinitionHash,
+          appliedMigrationLedgerHash: catalog.appliedMigrationLedgerHash,
+        }),
   };
 }
 
@@ -494,7 +528,11 @@ export async function finishEmployeeControllerWorkers({
   relay,
   startup,
 }) {
-  let networkProof = { qualified: false, observerDrained: false };
+  let networkProof = {
+    qualified: false,
+    observerDrained: false,
+    diagnostics: emptyEmployeeNetworkDiagnostics(),
+  };
   let relayEvidence = { ...emptyEmployeeRelayEvidence(), denied: true };
   let startupEvidence = {
     ...emptyEmployeeStartEvidence(),
@@ -509,20 +547,7 @@ export async function finishEmployeeControllerWorkers({
       typeof actual.observerDrained !== 'boolean'
     )
       throw evidenceFailure();
-    networkProof = Object.fromEntries(
-      [
-        'qualified',
-        'observerDrained',
-        'networkId',
-        'containerIds',
-        'images',
-        'readyMarkerId',
-        'endMarkerId',
-        'completeHistoryWindow',
-      ]
-        .filter((key) => Object.hasOwn(actual, key))
-        .map((key) => [key, actual[key]])
-    );
+    networkProof = collectEmployeeNetworkProof(actual);
     if (!actual.observerDrained) failures.push('network-drain-unconfirmed');
   } catch {
     failures.push('network-finish-denied');
