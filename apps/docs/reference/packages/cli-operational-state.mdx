@@ -159,6 +159,38 @@ operation log to make a write succeed. Adoption requires a separately reviewed
 recovery procedure when the original request evidence is unavailable. Review the selected operational content
 before transferring a bundle. No arbitrary referenced file bodies are included.
 
+## Read-only outcome projection
+
+The SDK source adapter in `operational-graph/reader.ts` reads an existing backlog
+through `readOutcomeProjectionPageFromPath({ path, limit, cursor })`. It does not
+initialize, migrate or export the store. The injected
+`buildOutcomeProjectionPage({ snapshot, limit, cursor })` accepts validated
+existing records and their complete event history for isolated fixtures.
+
+Projection version 1 returns each existing stable ID, its current self-canonical
+ID and contributing IDs, and members containing the complete original item and
+event provenance. Acceptance, notes, links, dependencies, required evidence and
+recorded verification remain separate member fields. This initial reader does
+not implement duplicate merging, graph mutation or semantic search.
+
+Identity, revision, items and events come from one SQLite read transaction.
+Continuation cursors bind the projection version, source database UUID, event
+revision and snapshot hash. A changed snapshot raises a conflict; consumers must
+restart their read. Any identity, revision or projection-version change requires
+derived-cache invalidation. Legacy stores retain a null identity and explicitly
+deny semantic caching until separately authorized adoption. Reads never adopt a
+legacy store. The reader bounds input to 10,000 items, 100,000 events and 32 MiB,
+with pages of at most 500 records.
+
+Bun 1.4.1 cannot open a read-only WAL database immediately after its journal mode
+changes while its WAL sidecars are absent. A populated WAL fixture works. The
+reader fails rather than creating sidecars or making a write to repair that
+runtime limitation; use an already compatible runtime or store state.
+
+Regression coverage is in `operational-graph/projection.test.ts` and
+`operational-graph/reader.test.ts`, using synthetic records and real disposable
+SQLite stores, including a concurrent writer during a consistent read.
+
 ## Verification and delivery boundaries
 
 All output records `liveVerificationPerformed: false`. Evidence checking validates
