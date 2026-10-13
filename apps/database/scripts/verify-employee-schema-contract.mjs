@@ -410,6 +410,10 @@ try {
   if (startupAdmission !== 'admitted') {
     failureDiagnostic.startupAdmission =
       startupAdmissionDiagnostic(startupAdmission);
+    if (startupAdmission === 'worker-initialize') {
+      failureDiagnostic.startupInitialization =
+        startupObserver.initializationFailure();
+    }
   }
   lifecycleCode = 1;
 }

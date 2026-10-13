@@ -409,6 +409,7 @@ function fixtureWorker(t, mode) {
       if(m.type==='ready')result.observerReady=${mode !== 'false-ready'};
       if(m.type==='finish'){result.observerReady=true;result.observerEndSeen=true;}
       if(${JSON.stringify(mode)}==='raw')result.raw='synthetic-private';
+      if(${JSON.stringify(mode)}==='known-init-denial'){process.send({id:m.id,ok:false,reason:'network-read-denied'});return;}
       if(${JSON.stringify(mode)}==='hang')return;
       process.send({id:m.id,ok:true,result});
     }); setInterval(()=>{},1000);`;
@@ -441,7 +442,7 @@ test('real isolated IPC lifecycle returns only booleans after owned worker drain
   assert.deepEqual(parseEmployeeStartEvidence(result), result);
 });
 
-for (const mode of ['false-ready', 'raw', 'hang'])
+for (const mode of ['false-ready', 'raw', 'hang', 'known-init-denial'])
   test(`real IPC ${mode} denies and drains only its owned worker`, async (t) => {
     const observer = startEmployeeDbStartEvidence(input, {
       forkWorker: fixtureWorker(t, mode),
@@ -455,6 +456,8 @@ for (const mode of ['false-ready', 'raw', 'hang'])
     const result = await observer.finish(endId);
     assert.equal(result.observerDrained, true);
     assert.equal(result.observerUncertain, true);
+    if (mode === 'known-init-denial')
+      assert.equal(observer.initializationFailure(), 'network-read-denied');
   });
 
 test('failed selected read cannot become unhealthy or carry private error text', async () => {
@@ -593,97 +596,3 @@ test('admission diagnostics accept only literal await stages and never echo priv
   ])
     assert.equal(startupAdmissionDiagnostic(stage), 'unknown');
 });
-
-// This runs the actual worker module and Linux authority/group guards. Docker is a private
-// fixed-response executable fixture, not a real daemon. Non-Linux hosts must report SKIP.
-for (const mode of [
-  'valid',
-  'malformed-network',
-  'missing-network',
-  'foreign-network',
-  'wrong-authority',
-  'wrong-group',
-]) {
-  test(`production worker Linux admission ${mode}`, {
-    skip: process.platform !== 'linux',
-    timeout: 10000,
-  }, async (t) => {
-    const root = mkdtempSync(
-      path.join(os.tmpdir(), 'employee-production-entry-test-')
-    );
-    t.after(() => rmSync(root, { recursive: true, force: true }));
-    const selected = network();
-    if (mode === 'foreign-network') selected.labels.project = 'foreign';
-    const rows = [
-      markerEvent(marker.id, marker.name),
-      markerEvent(endId, 'end'),
-    ];
-    const script = `#!${process.execPath}
-const args = process.argv.slice(2), mode = ${JSON.stringify(mode)};
-if (args.includes('events')) {
-  process.stdout.write(${JSON.stringify(`${rows.map((row) => JSON.stringify(row)).join('\n')}\n`)});
-  setInterval(() => {}, 1000);
-} else if (args.includes('version')) {
-  process.stdout.write(${JSON.stringify('28.0.4\n')});
-} else if (args.includes('network') && args.includes('inspect')) {
-  if (mode === 'missing-network') process.exit(1);
-  process.stdout.write(mode === 'malformed-network' ? '{' : ${JSON.stringify(JSON.stringify(selected))});
-} else process.exit(1);
-`;
-    writeFileSync(path.join(root, 'docker'), script, { mode: 0o700 });
-    const observer = startEmployeeDbStartEvidence(input, {
-      rpcMs: 1000,
-      deadlineMs: 5000,
-      forkWorker: (file, args, options) => {
-        assert.deepEqual(Object.keys(options.env).sort(), [
-          'DOCKER_CONFIG',
-          'GITHUB_ACTIONS',
-          'GITHUB_EVENT_NAME',
-          'GITHUB_REPOSITORY',
-          'PATH',
-        ]);
-        assert.equal(options.detached, true);
-        const child = fork(file, args, {
-          ...options,
-          env: {
-            ...options.env,
-            PATH: root,
-            GITHUB_ACTIONS: 'true',
-            GITHUB_EVENT_NAME: 'workflow_dispatch',
-            GITHUB_REPOSITORY:
-              mode === 'wrong-authority'
-                ? 'foreign/repository'
-                : 'tutur3u/platform',
-          },
-        });
-        if (mode === 'wrong-group') {
-          const send = child.send.bind(child);
-          child.send = (message, callback) =>
-            send(
-              message.type === 'init'
-                ? {
-                    ...message,
-                    value: { ...message.value, groupPid: child.pid + 1 },
-                  }
-                : message,
-              callback
-            );
-        }
-        return child;
-      },
-    });
-    try {
-      if (mode === 'valid') {
-        await observer.started();
-        assert.equal((await observer.ready(marker)).observerReady, true);
-      } else await assert.rejects(observer.started(), /unavailable/);
-    } finally {
-      const result = await observer.finish(endId);
-      assert.equal(result.observerDrained, true);
-      assert.equal(result.observerReady, mode === 'valid');
-      assert.equal(result.observerEndSeen, mode === 'valid');
-      assert.equal(result.observerUncertain, mode !== 'valid');
-      assert.equal(result.loopbackProbeAttempted, false);
-    }
-  });
-}

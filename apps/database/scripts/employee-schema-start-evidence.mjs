@@ -6,8 +6,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  employeeInitAdmissionReason,
+  employeeInitFailureReason,
   emptyEmployeeStartEvidence,
   employeeStartEvidenceFields as fields,
+  parseEmployeeInitFailureReply,
   parseEmployeeStartEvidence,
   matchesEmployeeEvidenceNetwork as sameNetwork,
   validateEmployeeStartInput,
@@ -17,23 +20,14 @@ import {
 export {
   emptyEmployeeStartEvidence,
   parseEmployeeStartEvidence,
+  startupAdmissionDiagnostic,
   validateEmployeeStartInput,
 } from './employee-schema-typegen.mjs';
 
-/** A literal await-boundary label, never an exception, selected reply, or private path. */
-export function startupAdmissionDiagnostic(stage) {
-  return [
-    'worker-initialize',
-    'primary-network-ready',
-    'worker-network-ready',
-    'observer-health',
-    'admitted',
-  ].includes(stage)
-    ? stage
-    : 'unknown';
-}
-
-const fail = () => new Error('Employee startup evidence unavailable');
+const fail = (reason) =>
+  Object.assign(new Error('Employee startup evidence unavailable'), {
+    initializationReason: employeeInitFailureReason(reason),
+  });
 const daemon = 'unix:///var/run/docker.sock';
 const record = (value) =>
   value && typeof value === 'object' && !Array.isArray(value);
@@ -265,16 +259,21 @@ export async function createEmployeeEvidenceObserver(
 ) {
   validateEmployeeStartInput(input);
   const result = emptyEmployeeStartEvidence();
-  const root = JSON.parse(
-    await read([
-      'network',
-      'inspect',
-      '--format',
-      networkFormat,
-      input.network.id,
-    ])
-  );
-  if (!sameNetwork(root, input.network)) throw fail();
+  let root;
+  try {
+    root = JSON.parse(
+      await read([
+        'network',
+        'inspect',
+        '--format',
+        networkFormat,
+        input.network.id,
+      ])
+    );
+  } catch {
+    throw fail('network-read-denied');
+  }
+  if (!sameNetwork(root, input.network)) throw fail('network-owner-denied');
   try {
     const version = (
       await read(['version', '--format', '{{.Server.Version}}'], {
@@ -472,6 +471,7 @@ export function startEmployeeDbStartEvidence(
   let serial = 0,
     ended = false,
     denied = false,
+    initializationFailure = 'init-unknown',
     last = emptyEmployeeStartEvidence();
   const rejectAll = () => {
     denied = true;
@@ -481,10 +481,24 @@ export function startEmployeeDbStartEvidence(
     }
     waiting.clear();
   };
-  child.on('error', rejectAll);
-  child.on('close', rejectAll);
+  child.on('error', () => {
+    if (waiting.has(1)) initializationFailure = 'worker-spawn';
+    rejectAll();
+  });
+  child.on('close', () => {
+    if (waiting.has(1) && initializationFailure === 'init-unknown')
+      initializationFailure = 'worker-exit';
+    rejectAll();
+  });
   child.on('message', (message) => {
     try {
+      const reason = parseEmployeeInitFailureReply(message);
+      if (reason) {
+        if (!waiting.has(1)) throw fail();
+        initializationFailure = reason;
+        rejectAll();
+        return;
+      }
       if (
         !record(message) ||
         Object.keys(message).sort().join(',') !== 'id,ok,result' ||
@@ -499,6 +513,7 @@ export function startEmployeeDbStartEvidence(
       last = result;
       entry.resolve(result);
     } catch {
+      if (waiting.has(1)) initializationFailure = 'ipc-denied';
       rejectAll();
     }
   });
@@ -511,6 +526,7 @@ export function startEmployeeDbStartEvidence(
       const id = ++serial;
       const timer = setTimeout(() => {
         waiting.delete(id);
+        if (id === 1) initializationFailure = 'ipc-deadline';
         denied = true;
         reject(fail());
       }, rpcMs);
@@ -557,6 +573,8 @@ export function startEmployeeDbStartEvidence(
   initialized.catch(() => {}); // Retain the failure until the caller's explicit started() boundary.
   return {
     started: () => initialized,
+    initializationFailure: () =>
+      employeeInitFailureReason(initializationFailure),
     async ready(marker) {
       await initialized;
       const result = await rpc('ready', marker);
@@ -616,23 +634,28 @@ if (process.argv[2] === '--worker') {
         let result;
         if (message.type === 'init' && first) {
           first = false;
-          if (
-            process.platform !== 'linux' ||
-            process.env.GITHUB_ACTIONS !== 'true' ||
-            process.env.GITHUB_REPOSITORY !== 'tutur3u/platform' ||
-            process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch' ||
-            message.value?.groupPid !== process.pid ||
-            Number(
-              readFileSync('/proc/self/stat', 'utf8')
-                .split(') ')
-                .at(-1)
-                .split(' ')[2]
-            ) !== process.pid ||
-            !Number.isInteger(message.value?.deadlineMs) ||
-            message.value.deadlineMs < 1000 ||
-            message.value.deadlineMs > 25 * 60 * 1000
-          )
-            throw fail();
+          let group = null;
+          if (process.platform === 'linux') {
+            try {
+              group = Number(
+                readFileSync('/proc/self/stat', 'utf8')
+                  .split(') ')
+                  .at(-1)
+                  .split(' ')[2]
+              );
+            } catch {
+              throw fail('group-read-denied');
+            }
+          }
+          const reason = employeeInitAdmissionReason(message.value, {
+            platform: process.platform,
+            actions: process.env.GITHUB_ACTIONS,
+            repository: process.env.GITHUB_REPOSITORY,
+            event: process.env.GITHUB_EVENT_NAME,
+            pid: process.pid,
+            group,
+          });
+          if (reason !== 'none') throw fail(reason);
           deadline = setTimeout(retire, message.value.deadlineMs);
           observer = await createEmployeeEvidenceObserver(message.value.input);
           phase = 'started';
@@ -651,6 +674,17 @@ if (process.argv[2] === '--worker') {
         } else throw fail();
         process.send?.({ id: message.id, ok: true, result });
       })
-      .catch(retire);
+      .catch((error) => {
+        if (message?.type === 'init' && message.id === 1 && process.connected) {
+          process.send(
+            {
+              id: 1,
+              ok: false,
+              reason: employeeInitFailureReason(error?.initializationReason),
+            },
+            retire
+          );
+        } else retire();
+      });
   });
 }

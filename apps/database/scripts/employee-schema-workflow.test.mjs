@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { fork } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
+import { startEmployeeDbStartEvidence } from './employee-schema-start-evidence.mjs';
 
 const root = new URL('../../../', import.meta.url);
 const workflow = readFileSync(
@@ -180,3 +184,156 @@ test('admission diagnostic labels describe actual await boundaries without chang
     /process.exitCode = receipt.controllerQualified \? 0 : 1/u
   );
 });
+
+const sourceSha = 'a'.repeat(40),
+  controlSha = 'b'.repeat(40);
+const projectId = 'tt-source-aaaaaaaa-0123456789';
+const input = {
+  sourceSha,
+  controlSha,
+  projectId,
+  dbPort: 54329,
+  imageRef: 'ghcr.io/supabase/postgres:17.6.1.167',
+  network: {
+    id: 'c'.repeat(64),
+    name: 'tt-employee-net-1-1',
+    labels: {
+      'ttr.employee.source': sourceSha,
+      'ttr.employee.control': controlSha,
+      'ttr.employee.project': projectId,
+      'ttr.employee.run': '1',
+      'ttr.employee.attempt': '1',
+      'ttr.employee.nonce': 'd'.repeat(36),
+    },
+  },
+};
+const endId = 'f'.repeat(64);
+const marker = {
+  id: '1'.repeat(64),
+  name: `${input.network.name}-ready-12345678`,
+  labels: input.network.labels,
+};
+function network() {
+  return {
+    id: input.network.id,
+    name: input.network.name,
+    internal: true,
+    driver: 'bridge',
+    cliProject: null,
+    labels: Object.fromEntries(
+      Object.entries(input.network.labels).map(([key, value]) => [
+        key.replace('ttr.employee.', ''),
+        value,
+      ])
+    ),
+  };
+}
+const markerEvent = (id, name) => ({
+  Type: 'network',
+  Action: 'create',
+  Actor: { ID: id, Attributes: { name } },
+});
+// This runs the actual worker module and Linux authority/group guards. Docker is a private
+// fixed-response executable fixture, not a real daemon. Non-Linux hosts must report SKIP.
+for (const mode of [
+  'valid',
+  'malformed-network',
+  'missing-network',
+  'foreign-network',
+  'wrong-authority',
+  'wrong-group',
+]) {
+  test(`production worker Linux admission ${mode}`, {
+    skip: process.platform !== 'linux',
+    timeout: 10000,
+  }, async (t) => {
+    const root = mkdtempSync(
+      path.join(os.tmpdir(), 'employee-production-entry-test-')
+    );
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    const selected = network();
+    if (mode === 'foreign-network') selected.labels.project = 'foreign';
+    const rows = [
+      markerEvent(marker.id, marker.name),
+      markerEvent(endId, 'end'),
+    ];
+    const script = `#!${process.execPath}
+const args = process.argv.slice(2), mode = ${JSON.stringify(mode)};
+if (args.includes('events')) {
+  process.stdout.write(${JSON.stringify(`${rows.map((row) => JSON.stringify(row)).join('\n')}\n`)});
+  setInterval(() => {}, 1000);
+} else if (args.includes('version')) {
+  process.stdout.write(${JSON.stringify('28.0.4\n')});
+} else if (args.includes('network') && args.includes('inspect')) {
+  if (mode === 'missing-network') process.exit(1);
+  process.stdout.write(mode === 'malformed-network' ? '{' : ${JSON.stringify(JSON.stringify(selected))});
+} else process.exit(1);
+`;
+    writeFileSync(path.join(root, 'docker'), script, { mode: 0o700 });
+    const observer = startEmployeeDbStartEvidence(input, {
+      forkWorker: (file, args, options) => {
+        assert.deepEqual(Object.keys(options.env).sort(), [
+          'DOCKER_CONFIG',
+          'GITHUB_ACTIONS',
+          'GITHUB_EVENT_NAME',
+          'GITHUB_REPOSITORY',
+          'PATH',
+        ]);
+        assert.equal(options.detached, true);
+        const child = fork(file, args, {
+          ...options,
+          env: {
+            ...options.env,
+            PATH: root,
+            GITHUB_ACTIONS: 'true',
+            GITHUB_EVENT_NAME: 'workflow_dispatch',
+            GITHUB_REPOSITORY:
+              mode === 'wrong-authority'
+                ? 'foreign/repository'
+                : 'tutur3u/platform',
+          },
+        });
+        const send = child.send.bind(child);
+        child.send = (message, callback) => {
+          if (message.type === 'init') {
+            assert.equal(message.value.deadlineMs, 25 * 60 * 1000);
+            assert.equal(message.value.groupPid, child.pid);
+          }
+          return send(
+            mode === 'wrong-group' && message.type === 'init'
+              ? {
+                  ...message,
+                  value: { ...message.value, groupPid: child.pid + 1 },
+                }
+              : message,
+            callback
+          );
+        };
+        return child;
+      },
+    });
+    try {
+      if (mode === 'valid') {
+        await observer.started();
+        assert.equal((await observer.ready(marker)).observerReady, true);
+      } else {
+        await assert.rejects(observer.started(), /unavailable/);
+        const expected = {
+          'malformed-network': 'network-read-denied',
+          'missing-network': 'network-read-denied',
+          'foreign-network': 'network-owner-denied',
+          'wrong-authority': 'authority-denied',
+          'wrong-group': 'group-denied',
+        };
+        assert.equal(observer.initializationFailure(), expected[mode]);
+      }
+    } finally {
+      const result = await observer.finish(endId);
+      assert.equal(result.observerDrained, true);
+      assert.equal(result.observerReady, mode === 'valid');
+      assert.equal(result.observerEndSeen, mode === 'valid');
+      assert.equal(result.observerUncertain, mode !== 'valid');
+      assert.equal(result.loopbackProbeAttempted, false);
+    }
+  });
+}

@@ -231,6 +231,77 @@ export function isEmployeeReadyMarker(marker, input) {
   );
 }
 
+/** A literal await-boundary label, never an exception, selected reply, or private path. */
+export function startupAdmissionDiagnostic(stage) {
+  return [
+    'worker-initialize',
+    'primary-network-ready',
+    'worker-network-ready',
+    'observer-health',
+    'admitted',
+  ].includes(stage)
+    ? stage
+    : 'unknown';
+}
+
+/** Literal initialization rejection reasons; no environment values or exceptions cross IPC. */
+export const employeeInitFailureReasons = Object.freeze([
+  'init-shape',
+  'authority-denied',
+  'group-read-denied',
+  'group-denied',
+  'deadline-denied',
+  'input-denied',
+  'network-read-denied',
+  'network-owner-denied',
+  'worker-spawn',
+  'worker-exit',
+  'ipc-deadline',
+  'ipc-denied',
+  'init-unknown',
+]);
+export function employeeInitFailureReason(value) {
+  return employeeInitFailureReasons.includes(value) ? value : 'init-unknown';
+}
+export function parseEmployeeInitFailureReply(value) {
+  if (!evidenceRecord(value) || value.ok !== false) return null;
+  if (
+    Object.keys(value).sort().join(',') !== 'id,ok,reason' ||
+    value.id !== 1 ||
+    !employeeInitFailureReasons.includes(value.reason)
+  )
+    throw evidenceFailure();
+  return value.reason;
+}
+export function employeeInitAdmissionReason(value, context) {
+  if (
+    !evidenceRecord(value) ||
+    Object.keys(value).sort().join(',') !== 'deadlineMs,groupPid,input'
+  )
+    return 'init-shape';
+  if (
+    context.platform !== 'linux' ||
+    context.actions !== 'true' ||
+    context.repository !== 'tutur3u/platform' ||
+    context.event !== 'workflow_dispatch'
+  )
+    return 'authority-denied';
+  if (value.groupPid !== context.pid || context.group !== context.pid)
+    return 'group-denied';
+  if (
+    !Number.isInteger(value.deadlineMs) ||
+    value.deadlineMs < 1000 ||
+    value.deadlineMs > 25 * 60 * 1000
+  )
+    return 'deadline-denied';
+  try {
+    validateEmployeeStartInput(value.input);
+  } catch {
+    return 'input-denied';
+  }
+  return 'none';
+}
+
 /** Hash complete selected schema-source paths and bytes without emitting SQL or fixture contents. */
 export function schemaSnapshotHash(repositoryRoot, trackedFiles) {
   const entries = [...trackedFiles].sort().map((file) => {

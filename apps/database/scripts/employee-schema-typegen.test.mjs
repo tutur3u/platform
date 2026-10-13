@@ -14,7 +14,10 @@ import path from 'node:path';
 import test from 'node:test';
 import {
   classifyEmployeeStartupFailure,
+  employeeInitAdmissionReason,
+  employeeInitFailureReason,
   generateEmployeeTypes,
+  parseEmployeeInitFailureReply,
   runTypegenCommand,
   schemaSnapshotHash,
 } from './employee-schema-typegen.mjs';
@@ -401,5 +404,86 @@ test('startup missing diagnostic and buffer-overflow do not invent a matched cau
       error: { code: 'ENOBUFS' },
     }).category,
     'truncated'
+  );
+});
+
+test('actual default initialization bounds preserve strict authority, process group and input admission', () => {
+  const selected = {
+    sourceSha,
+    controlSha,
+    projectId: metadata.projectId,
+    dbPort: 54329,
+    imageRef: 'ghcr.io/supabase/postgres:17.6.1.167',
+    network: {
+      id: 'c'.repeat(64),
+      name: 'tt-employee-net-1-1',
+      labels: {
+        'ttr.employee.source': sourceSha,
+        'ttr.employee.control': controlSha,
+        'ttr.employee.project': metadata.projectId,
+        'ttr.employee.run': '1',
+        'ttr.employee.attempt': '1',
+        'ttr.employee.nonce': 'd'.repeat(36),
+      },
+    },
+  };
+  const value = { input: selected, groupPid: 42, deadlineMs: 25 * 60 * 1000 };
+  const context = {
+    platform: 'linux',
+    actions: 'true',
+    repository: 'tutur3u/platform',
+    event: 'workflow_dispatch',
+    pid: 42,
+    group: 42,
+  };
+  assert.equal(employeeInitAdmissionReason(value, context), 'none');
+  assert.equal(
+    employeeInitAdmissionReason({ ...value, deadlineMs: 5000 }, context),
+    'none'
+  );
+  for (const [candidate, ctx, expected] of [
+    [{ ...value, raw: 'synthetic-private' }, context, 'init-shape'],
+    [value, { ...context, platform: 'darwin' }, 'authority-denied'],
+    [
+      value,
+      { ...context, repository: 'foreign/repository' },
+      'authority-denied',
+    ],
+    [{ ...value, groupPid: 43 }, context, 'group-denied'],
+    [value, { ...context, group: 43 }, 'group-denied'],
+    [{ ...value, deadlineMs: 1500001 }, context, 'deadline-denied'],
+    [{ ...value, deadlineMs: 999 }, context, 'deadline-denied'],
+    [
+      { ...value, input: { ...selected, imageRef: 'foreign/image' } },
+      context,
+      'input-denied',
+    ],
+  ])
+    assert.equal(employeeInitAdmissionReason(candidate, ctx), expected);
+});
+
+test('INIT failure replies are exact and fixed; raw, forged or later-request reasons cannot cross IPC', () => {
+  assert.equal(
+    parseEmployeeInitFailureReply({
+      id: 1,
+      ok: false,
+      reason: 'network-read-denied',
+    }),
+    'network-read-denied'
+  );
+  assert.equal(
+    parseEmployeeInitFailureReply({ id: 1, ok: true, result: {} }),
+    null
+  );
+  for (const reply of [
+    { id: 2, ok: false, reason: 'network-read-denied' },
+    { id: 1, ok: false, reason: 'none' },
+    { id: 1, ok: false, reason: 'postgres://synthetic-private' },
+    { id: 1, ok: false, reason: 'authority-denied', raw: 'synthetic-private' },
+  ])
+    assert.throws(() => parseEmployeeInitFailureReply(reply), /unavailable/);
+  assert.equal(
+    employeeInitFailureReason('postgres://synthetic-private'),
+    'init-unknown'
   );
 });
