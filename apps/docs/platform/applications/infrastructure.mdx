@@ -1,6 +1,6 @@
 ---
-title: "Infrastructure"
-description: "Privileged operations, diagnostics, configuration, and hosted scheduler ownership."
+title: 'Infrastructure'
+description: 'Privileged operations, diagnostics, configuration, and hosted scheduler ownership.'
 updatedAt: '2026-10-08'
 ---
 
@@ -50,3 +50,39 @@ separate boundaries.
 A configuration edit, deploy action, external registration, or production write
 requires its own authorized workflow. Reading a runbook or recalling a private
 record is not authority to execute it.
+
+## Employee SQL transport qualification
+
+Employee creation remains unavailable until its protected SQL supplier and
+project readiness are independently qualified. The fixed transport prototype
+accepts only preflight, finalize and activation-confirm operations. Each request
+owns one terminable child and TLS connection; no shared pool, caller SQL,
+account password or inherited database configuration enters that boundary.
+
+The executor is shared through the server-only
+`@tuturuuu/inventory-core/infrastructure/employee-sql/process` leaf; only this
+leaf's dependency closure is framework-free. Original Infrastructure entry
+points remain compatibility entries, while the canonical raw worker and protocol
+are colocated under `packages/inventory-core/src/lib/infrastructure/employee-sql/`.
+Before binding the Web supplier, verify that the compiled route's `.nft.json`
+trace and resolved `fork()` target load the canonical worker, protocol, and
+runtime dependencies. Relocation requires qualification of the exact source and
+build with refreshed signed attestations, even when raw worker/protocol hashes
+are unchanged.
+
+The parent requires external Ed25519-signed project and execution attestations,
+including the exact worker and protocol hashes. Missing bindings deny before
+spawning. Ordered, same-connection catalog checkpoints validate the role, cluster,
+ledger, function bodies and effective privileges before effects and COMMIT.
+The parent records an uncertain commit before authorizing COMMIT; lost commit
+acknowledgement never authorizes a blind retry or replacement account ID.
+
+The process requests cancellation at 13 seconds and kills only its owned child
+at 14.5 seconds, reserving cleanup time within the qualification profile's
+15-second budget. It waits for actual child closure. Client process/TCP drain
+controls do not establish server transaction rollback or row-lock release.
+Before wiring the supplier, qualify delayed connection/query/lock/COMMIT cases
+against disposable PostgreSQL, verify backend and lock drain, and verify the
+static worker/protocol assets in the exact hosted Next build and file trace.
+Source tests, schema assertions and signed synthetic fixtures cannot replace
+those gates or activate account creation.
