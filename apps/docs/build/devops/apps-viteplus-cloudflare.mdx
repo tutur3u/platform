@@ -1,0 +1,54 @@
+---
+title: "Apps gateway on Vite+ and Cloudflare"
+description: "Validate the additive public Apps gateway without changing canonical traffic."
+---
+
+The staging gateway is a separate public catalogue and redirect entry. It does not
+replace the existing Next Apps app, authenticated launcher, workspace controls or
+account-assurance flow. Those continue on `https://apps.tuturuuu.com`.
+
+## Build and validation
+
+Run the owning `test:cloudflare` script for route, cookie, header and catalogue
+controls. Require `build:cloudflare` and a built Worker runtime check in exact-commit
+CI. Existing Next scripts stay unchanged and their build remains required. Vite+
+builds the separate portable catalogue and Worker entry; it does not port Next APIs.
+
+The staging config names `tuturuuu-apps-vite-staging` with no production custom
+domain, database, scheduler, secret or durable-state binding. Local preview must
+keep remote bindings disabled. Source configuration does not prove a deployed app.
+
+## Public and authenticated behavior
+
+App aliases and redirect destinations come from the existing shared catalogue.
+Unknown app/API routes return 404, mutations return 405, and destinations cannot
+be chosen by a query parameter. Encoded path segments and repeated query values
+are preserved, including the existing default `source=apps` marker.
+
+Explicit English/Vietnamese prefixes redirect to the prefix-free route and set
+a host-only `NEXT_LOCALE` cookie. The host-only scope is intentional for isolated
+staging; any production shared-domain cookie treatment needs its own qualification.
+The catalogue reads that cookie and the language header, renders meaningful HTML
+before hydration, and keeps theme selection from the browser's existing `theme`
+value without writing a preference. Native controls remain keyboard accessible.
+
+Entries with app-session/Supabase cookies or any explicit Authorization header
+return to the original Apps origin for its existing authentication and assurance
+checks. This fallback does not validate credentials or grant access. The public
+Worker never proxies authenticated APIs. Replies are private/no-store and vary
+with cookie, authorization and language. Staging is noindex; the Worker rejects
+requests addressed to the canonical production host. Full font/design/authenticated
+provider and production SEO parity are still separate acceptance gates.
+
+## Staging and rollback
+
+No deployment command is part of this slice. Before a staging deployment, verify
+the account, isolated target, emitted Worker/assets, source SHA, required provider
+authority and rollback plan. Build-info reports only a supplied source SHA; absence
+is not success. The source field is not a substitute for artifact provenance.
+
+Preserve the original Next/Vercel artifact and route until the full app meets
+parity and an explicit scoped traffic switch is authorized. Rollback restores
+the prior route/artifact; this public slice never changes customer data or durable
+state. Do not run a global Vite+ migrator or refresh paused Rust/TanStack runtimes
+to complete this app-local port.
