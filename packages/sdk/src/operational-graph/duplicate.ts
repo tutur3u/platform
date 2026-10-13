@@ -5,12 +5,32 @@ export function canonicalId(item: Item): string {
   const disposition = item.graph?.disposition;
   return disposition?.kind === 'duplicate' ? disposition.canonicalId : item.id;
 }
-export function groupMembers(items: Map<string, Item>, id: string): Item[] {
+export function groupIndex(items: Map<string, Item>) {
+  const members = new Map<string, Item[]>();
+  const unverified = new Set<string>();
+  const positions = new Map<string, number>();
+  for (const item of items.values()) {
+    const root = canonicalId(item);
+    const group = members.get(root) ?? [];
+    group.push(item);
+    members.set(root, group);
+    if (item.status !== 'verified') unverified.add(root);
+  }
+  for (const group of members.values()) {
+    group.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    group.forEach((item, position) => {
+      positions.set(item.id, position);
+    });
+  }
+  return { members, unverified, positions };
+}
+export function groupMembers(
+  items: Map<string, Item>,
+  id: string,
+  groups = groupIndex(items)
+): Item[] {
   const item = requireItem(items, id);
-  const root = canonicalId(item);
-  return [...items.values()]
-    .filter((member) => canonicalId(member) === root)
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return groups.members.get(canonicalId(item)) ?? [];
 }
 export function requireItem(items: Map<string, Item>, id: string): Item {
   const item = items.get(id);
@@ -24,14 +44,12 @@ export function graphMetadata(item: Item): NonNullable<Item['graph']> {
 }
 export function pendingDependencies(
   items: Map<string, Item>,
-  item: Item
+  item: Item,
+  groups = groupIndex(items)
 ): string[] {
   return (item.dependencies ?? []).filter((id) => {
     const dependency = items.get(id);
-    return (
-      !dependency ||
-      groupMembers(items, id).some((member) => member.status !== 'verified')
-    );
+    return !dependency || groups.unverified.has(canonicalId(dependency));
   });
 }
 export function revokeVerification(item: Item): Item {
@@ -44,25 +62,34 @@ export function revokeVerification(item: Item): Item {
 }
 export function invalidateGraphVerification(items: Map<string, Item>) {
   const events: { item: Item; action: string }[] = [];
+  const groups = groupIndex(items);
+  const orderedIds = [...items.keys()].sort();
   let changed = true;
   while (changed) {
     changed = false;
-    for (const item of [...items.values()].sort((a, b) =>
-      a.id < b.id ? -1 : a.id > b.id ? 1 : 0
-    )) {
+    for (const id of orderedIds) {
+      const item = requireItem(items, id);
       if (item.status !== 'verified') continue;
-      const pending = pendingDependencies(items, item);
+      const pending = pendingDependencies(items, item, groups);
       const closedGroupPending =
         item.graph?.disposition.kind === 'closed' &&
-        groupMembers(items, item.id).some(
-          (member) => member.status !== 'verified'
-        );
+        groups.unverified.has(canonicalId(item));
       if (!pending.length && !closedGroupPending) continue;
       const next = {
         ...revokeVerification(item),
         invalidatedDependencies: pending,
       };
       items.set(item.id, next);
+      const root = canonicalId(next);
+      const group = groups.members.get(root);
+      const position = groups.positions.get(next.id);
+      if (!group || position === undefined)
+        fail(
+          'INVALID_STATE',
+          'invalidated member missing from canonical index'
+        );
+      group[position] = next;
+      groups.unverified.add(root);
       events.push({ item: next, action: 'graph-dependency-invalidated' });
       changed = true;
     }
@@ -103,6 +130,7 @@ export function duplicatePlan(
       'canonical target cannot be one of its duplicate members'
     );
   const selected = new Set(change.memberIds);
+  const groups = groupIndex(items);
   for (const id of change.memberIds) {
     const member = requireItem(items, id);
     const current = member.graph?.disposition;
@@ -118,7 +146,7 @@ export function duplicatePlan(
         );
     }
     if (
-      groupMembers(items, id).some(
+      groupMembers(items, id, groups).some(
         (other) => other.id !== root.id && !selected.has(other.id)
       )
     )

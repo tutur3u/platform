@@ -2,7 +2,12 @@ import { fail, type Operation } from '../cli/operational-schema';
 import type { OperationalStore } from '../cli/operational-store';
 import { type GraphCommand, graphCommandSchema } from './contracts';
 import { graphPlan, graphReadiness, validateOutcomeGraph } from './domain';
-import { canonicalId, groupMembers, requireItem } from './duplicate';
+import {
+  canonicalId,
+  groupIndex,
+  groupMembers,
+  requireItem,
+} from './duplicate';
 
 export function applyGraphCommand({
   store,
@@ -50,17 +55,25 @@ export function readGraphOutcome({
     fail('READ_ONLY', 'graph navigation requires a read-only backlog store');
   return store.read(() => {
     const items = store.readItems();
-    validateOutcomeGraph(items);
+    const groups = groupIndex(items);
+    validateOutcomeGraph(items, groups);
     const item = requireItem(items, id);
+    const root = canonicalId(item);
     return {
       id,
-      canonicalId: canonicalId(item),
-      members: groupMembers(items, id),
+      canonicalId: root,
+      members: groupMembers(items, id, groups),
       children: [...items.values()]
-        .filter((child) => child.graph?.parentId === id)
+        .filter((child) => {
+          const parentId = child.graph?.parentId;
+          return (
+            parentId !== undefined &&
+            canonicalId(requireItem(items, parentId)) === root
+          );
+        })
         .map((child) => child.id)
         .sort(),
-      readiness: graphReadiness(items, id),
+      readiness: graphReadiness(items, id, groups),
       revision: store.revision(),
       sourceDatabaseId: store.identity(),
       liveVerificationPerformed: false,

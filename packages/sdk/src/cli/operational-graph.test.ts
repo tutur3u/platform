@@ -240,3 +240,125 @@ it('uses the real local CLI entry before auth/network imports and writes structu
     )
   ).toBe(false);
 });
+
+it('hosted repair CLI show shares alias-parent navigation and follows unmerge', () => {
+  seed();
+  const writer = new OperationalStore(path, 'backlog', true);
+  try {
+    writer.intake(
+      [
+        {
+          id: 'child-outcome',
+          title: 'Child',
+          kind: 'feature',
+          source: 'synthetic:cli',
+          acceptance: 'Unique child',
+          requiredEvidence: ['focused'],
+        },
+      ],
+      { expectedRevision: writer.revision(), operationId: randomUUID() }
+    );
+  } finally {
+    writer.close();
+  }
+  let revision = 3;
+  function command(kind: string, change: unknown, operationId = randomUUID()) {
+    const result = executeOperational([
+      'backlog',
+      'graph',
+      kind,
+      '--db',
+      path,
+      '--file',
+      file(change),
+      '--expected-revision',
+      String(revision),
+      '--operation-id',
+      operationId,
+      '--json',
+    ]);
+    revision++;
+    return result;
+  }
+  command('parent', {
+    kind: 'parent',
+    id: 'child-outcome',
+    parentId: 'duplicate-outcome',
+  });
+  const mergeOperationId = randomUUID();
+  command(
+    'merge',
+    {
+      kind: 'merge',
+      canonicalId: 'canonical-outcome',
+      memberIds: ['duplicate-outcome'],
+      reason: 'Explicit equivalence',
+      confirmation: 'equivalent',
+    },
+    mergeOperationId
+  );
+  for (const id of ['canonical-outcome', 'duplicate-outcome']) {
+    expect(
+      executeOperational([
+        'backlog',
+        'graph',
+        'show',
+        id,
+        '--db',
+        path,
+        '--json',
+      ])
+    ).toMatchObject({
+      id,
+      canonicalId: 'canonical-outcome',
+      children: ['child-outcome'],
+      liveVerificationPerformed: false,
+    });
+  }
+  expect(() =>
+    executeOperational([
+      'backlog',
+      'graph',
+      'show',
+      'unknown-outcome',
+      '--db',
+      path,
+      '--json',
+    ])
+  ).toThrow('unknown request');
+  expect(() =>
+    command('parent', {
+      kind: 'parent',
+      id: 'canonical-outcome',
+      parentId: 'child-outcome',
+    })
+  ).toThrow('cycle');
+  command('unmerge', {
+    kind: 'unmerge',
+    id: 'duplicate-outcome',
+    mergeOperationId,
+    reason: 'Distinct obligation',
+  });
+  expect(
+    executeOperational([
+      'backlog',
+      'graph',
+      'show',
+      'canonical-outcome',
+      '--db',
+      path,
+      '--json',
+    ])
+  ).toMatchObject({ children: [] });
+  expect(
+    executeOperational([
+      'backlog',
+      'graph',
+      'show',
+      'duplicate-outcome',
+      '--db',
+      path,
+      '--json',
+    ])
+  ).toMatchObject({ children: ['child-outcome'] });
+});

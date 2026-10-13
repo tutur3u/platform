@@ -6,6 +6,7 @@ import {
   changedItems,
   duplicatePlan,
   graphMetadata,
+  groupIndex,
   groupMembers,
   invalidateGraphVerification,
   pendingDependencies,
@@ -28,7 +29,10 @@ function assertAcyclic(edges: Map<string, Set<string>>, code: string) {
   for (const id of edges.keys()) visit(id);
 }
 
-export function validateOutcomeGraph(items: Map<string, Item>) {
+export function validateOutcomeGraph(
+  items: Map<string, Item>,
+  groups = groupIndex(items)
+) {
   if (items.size > 10_000)
     fail('PROJECTION_CAPACITY', 'graph exceeds the 10,000-item bound');
   validateProjection(items);
@@ -61,17 +65,15 @@ export function validateOutcomeGraph(items: Map<string, Item>) {
       if (!requireItem(items, related).graph?.relatedIds?.includes(item.id))
         fail('INVALID_RELATION', 'related links must be symmetric');
     }
-    if (item.status === 'verified' && pendingDependencies(items, item).length)
+    if (
+      item.status === 'verified' &&
+      pendingDependencies(items, item, groups).length
+    )
       fail(
         'INVALID_STATE',
         'verified request has pending canonical dependencies'
       );
-    if (
-      item.graph?.disposition.kind === 'closed' &&
-      groupMembers(items, item.id).some(
-        (member) => member.status !== 'verified'
-      )
-    )
+    if (item.graph?.disposition.kind === 'closed' && groups.unverified.has(id))
       fail(
         'INVALID_EVIDENCE',
         'closed canonical group has unverified member obligations'
@@ -81,12 +83,18 @@ export function validateOutcomeGraph(items: Map<string, Item>) {
   assertAcyclic(parents, 'INVALID_PARENT');
 }
 
-export function graphReadiness(items: Map<string, Item>, id: string) {
-  validateOutcomeGraph(items);
+export function graphReadiness(
+  items: Map<string, Item>,
+  id: string,
+  groups = groupIndex(items)
+) {
+  validateOutcomeGraph(items, groups);
   const item = requireItem(items, id);
-  const members = groupMembers(items, id);
+  const members = groupMembers(items, id, groups);
   const pending = [
-    ...new Set(members.flatMap((member) => pendingDependencies(items, member))),
+    ...new Set(
+      members.flatMap((member) => pendingDependencies(items, member, groups))
+    ),
   ].sort();
   return {
     id,
@@ -109,7 +117,8 @@ export function graphPlan(
   input: unknown,
   operationId: string
 ) {
-  validateOutcomeGraph(before);
+  const beforeGroups = groupIndex(before);
+  validateOutcomeGraph(before, beforeGroups);
   const change = graphCommandSchema.parse(input);
   const items = new Map(before);
   if (change.kind === 'merge' || change.kind === 'unmerge') {
@@ -156,11 +165,7 @@ export function graphPlan(
       case 'close':
         if (graph.disposition.kind !== 'open')
           fail('INVALID_STATE', 'close requires an open canonical request');
-        if (
-          groupMembers(items, item.id).some(
-            (member) => member.status !== 'verified'
-          )
-        )
+        if (beforeGroups.unverified.has(canonicalId(item)))
           fail(
             'INVALID_EVIDENCE',
             'every unique member obligation needs its own current verification'

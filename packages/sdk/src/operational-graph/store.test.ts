@@ -14,12 +14,14 @@ import {
   type Board,
   canonical,
   digest,
+  type Item,
   type Operation,
 } from '../cli/operational-schema';
 import { initStore, OperationalStore } from '../cli/operational-store';
 import { bundleFrom, validateEnvelope } from '../cli/operational-transfer';
 import type { GraphCommand } from './contracts';
-import { graphPlan } from './domain';
+import { graphPlan, validateOutcomeGraph } from './domain';
+import { invalidateGraphVerification } from './duplicate';
 import { readOutcomeProjectionPageFromPath } from './reader';
 import {
   applyGraphCommand,
@@ -554,3 +556,131 @@ it('rejects an alias continuation cursor instead of repeating the first canonica
     })
   ).toThrow('canonical record');
 });
+
+class CountedItems extends Map<string, Item> {
+  scans = 0;
+  override values() {
+    this.scans++;
+    return super.values();
+  }
+}
+
+it('hosted repair indexes canonical validation once while preserving member evidence', () => {
+  for (const id of ids) verify(id);
+  apply(merge);
+  apply({
+    kind: 'dependency',
+    id: 'dependent-outcome',
+    dependencyId: 'duplicate-outcome',
+    action: 'add',
+  });
+  apply({
+    kind: 'dependency',
+    id: 'dependent-outcome',
+    dependencyId: 'prerequisite-outcome',
+    action: 'add',
+  });
+  const items = new CountedItems(writer.readItems());
+  validateOutcomeGraph(items);
+  expect(items.scans).toBeLessThanOrEqual(3);
+  const member = items.get('duplicate-outcome');
+  if (!member) throw new Error('fixture member missing');
+  items.set(member.id, { ...member, verification: undefined });
+  expect(() => validateOutcomeGraph(items)).toThrow('lacks evidence');
+});
+
+it('hosted repair updates indexed invalidation states and preserves deterministic events', () => {
+  for (const id of ids) verify(id);
+  apply(merge);
+  apply({
+    kind: 'dependency',
+    id: 'canonical-outcome',
+    dependencyId: 'prerequisite-outcome',
+    action: 'add',
+  });
+  apply({
+    kind: 'dependency',
+    id: 'dependent-outcome',
+    dependencyId: 'duplicate-outcome',
+    action: 'add',
+  });
+  apply({
+    kind: 'close',
+    id: 'canonical-outcome',
+    reason: 'All unique evidence checked',
+    confirmation: 'user-confirmed',
+  });
+  const items = new CountedItems(writer.readItems());
+  const prerequisite = items.get('prerequisite-outcome');
+  if (!prerequisite) throw new Error('fixture prerequisite missing');
+  items.set(prerequisite.id, {
+    ...prerequisite,
+    status: 'implemented',
+    verification: undefined,
+  });
+  const events = invalidateGraphVerification(items);
+  expect(
+    events.map(({ item, action }) => [
+      item.id,
+      action,
+      item.invalidatedDependencies,
+    ])
+  ).toEqual([
+    [
+      'canonical-outcome',
+      'graph-dependency-invalidated',
+      ['prerequisite-outcome'],
+    ],
+    [
+      'dependent-outcome',
+      'graph-dependency-invalidated',
+      ['duplicate-outcome'],
+    ],
+  ]);
+  expect(items.get('canonical-outcome')?.graph?.disposition.kind).toBe('open');
+  expect(items.get('dependent-outcome')?.verification).toBeUndefined();
+  expect(items.get('duplicate-outcome')?.status).toBe('verified');
+  expect(items.scans).toBeLessThanOrEqual(2);
+});
+
+it.each(['canonical-outcome', 'duplicate-outcome'])(
+  'hosted repair lists alias-parent children through %s across merge and unmerge',
+  (id) => {
+    apply({
+      kind: 'parent',
+      id: 'dependent-outcome',
+      parentId: 'duplicate-outcome',
+    });
+    apply({
+      kind: 'parent',
+      id: 'prerequisite-outcome',
+      parentId: 'canonical-outcome',
+    });
+    const op = operation();
+    apply(merge, op);
+    const history = writer.history();
+    const view = readGraphOutcome({ store: reader(), id });
+    expect(view.children).toEqual([
+      'dependent-outcome',
+      'prerequisite-outcome',
+    ]);
+    expect(view.members.map((member) => member.id)).toEqual([
+      'canonical-outcome',
+      'duplicate-outcome',
+    ]);
+    expect(view.liveVerificationPerformed).toBe(false);
+    expect(writer.history()).toEqual(history);
+    apply({
+      kind: 'unmerge',
+      id: 'duplicate-outcome',
+      mergeOperationId: op.operationId,
+      reason: 'Separate requirements',
+    });
+    expect(
+      readGraphOutcome({ store: reader(), id: 'canonical-outcome' }).children
+    ).toEqual(['prerequisite-outcome']);
+    expect(
+      readGraphOutcome({ store: reader(), id: 'duplicate-outcome' }).children
+    ).toEqual(['dependent-outcome']);
+  }
+);
