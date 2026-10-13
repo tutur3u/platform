@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { URL as NodeURL } from 'node:url';
 import { z } from 'zod';
 import type {
   EmployeeOperationAuthority,
@@ -78,7 +79,7 @@ export function createEmployeeStoreTestPhaseFixture(deps: {
   ): void;
 }): EmployeeCreationPhaseAdapter {
   const migration = readFileSync(
-    new URL(
+    new NodeURL(
       '../../../../database/supabase/migrations/20261011002108_employee_creation_finalization.sql',
       import.meta.url
     ),
