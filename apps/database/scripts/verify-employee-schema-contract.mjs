@@ -3,7 +3,25 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  compileEmployeeComposedConsumers,
+  employeeComposedChainComplete,
+  readEmployeeAppliedCatalog,
+} from './employee-schema-composed-consumers.mjs';
 import { startEmployeeLoopbackRelay } from './employee-schema-loopback-relay.mjs';
+import {
+  assertEmployeeQualificationUnchanged,
+  employeeQualificationExecutionReceipt,
+  employeeQualificationHash,
+  evaluateEmployeeQualificationPackets,
+  observedEmployeeFile,
+  observeEmployeeGitCommit,
+  observeEmployeeQualification,
+  qualificationControlPaths,
+  selectEmployeeQualificationProfile,
+  selectedFailureDiagnostic,
+} from './employee-schema-qualification-profile.mjs';
 import {
   startEmployeeDbStartEvidence,
   startupAdmissionDiagnostic,
@@ -12,9 +30,6 @@ import {
   assertPacketTap,
   assertRollbackSource,
   exactSourceSha,
-  foundationPackets,
-  schemaFailureDiagnostic,
-  schemaReceipt,
 } from './employee-schema-tap.mjs';
 import {
   classifyEmployeeStartupFailure,
@@ -55,6 +70,45 @@ if (
   }).trim()
 )
   throw new Error('Tracked source differs from the selected commit');
+const choice = process.env.EMPLOYEE_SCHEMA_QUALIFICATION;
+const selected = selectEmployeeQualificationProfile(
+  process.argv[2] === '--cleanup' ? 'foundation' : choice
+);
+let observation = null;
+let qualificationInput = null;
+if (process.argv[2] !== '--cleanup') {
+  const controlRoot = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../..'
+  );
+  const controlFiles = qualificationControlPaths.map((file) =>
+    observedEmployeeFile(controlRoot, file)
+  );
+  const expectedControlFiles = qualificationControlPaths.map((file) => ({
+    path: file,
+    sha256: employeeQualificationHash(
+      execFileSync('git', ['show', `${controlSha}:${file}`], {
+        cwd: controlRoot,
+        timeout: 10000,
+        maxBuffer: 1024 * 1024,
+      })
+    ),
+  }));
+  qualificationInput = {
+    repositoryRoot: root,
+    choice,
+    sourceSha,
+    observedSourceSha: head,
+    gitIdentity:
+      choice === 'composed' ? observeEmployeeGitCommit(root, head) : undefined,
+    authoritativeSourceSha:
+      process.env.EMPLOYEE_SCHEMA_AUTHORITATIVE_SOURCE_SHA,
+    controlFiles,
+    expectedControlFiles,
+  };
+  observation = observeEmployeeQualification(qualificationInput);
+  if (process.argv[2] === '--preflight') process.exit(0);
+}
 const identity = deriveIsolatedIdentity({
   headSha: head,
   repositoryPath: root,
@@ -160,7 +214,7 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
-const fixtureHashes = foundationPackets.map(([file]) => {
+const fixtureHashes = selected.packets.map(({ file }) => {
   const relative = `apps/database/supabase/tests/${file}`;
   if (!trackedFiles.includes(relative))
     throw new Error('Required employee packet absent');
@@ -219,10 +273,23 @@ process.env.DOCKER_HOST = 'unix:///var/run/docker.sock';
 const packets = [];
 let schemaExecutionSucceeded = false;
 let typegenReceipt = null;
+let catalogReceipt = null;
+let consumerReceipt = null;
 let cleanupSucceeded = false;
 let currentPhase = 'full-schema-snapshot';
 let packetOrdinal = 0;
 let failureDiagnostic = null;
+const appliedIdentity = () => ({
+  profile: selected.name,
+  sourceSha,
+  controlSha,
+  projectId: metadata.projectId,
+  snapshotSha256,
+  networkId: network.id,
+  sourceManifestSha256: observation.sourceManifestSha256,
+  consumerManifestSha256: observation.consumers.consumerManifestSha256,
+  controlManifestSha256: observation.controlManifestSha256,
+});
 const bounded = (command, args, cwd, timeout) => {
   const result = spawnSync(command, args, {
     cwd,
@@ -235,7 +302,7 @@ const bounded = (command, args, cwd, timeout) => {
   // Never print SQL diagnostics, fixture identities, CLI tokens or credentials.
   if (result.error || result.signal || result.status !== 0) {
     failureDiagnostic ??= {
-      ...schemaFailureDiagnostic(currentPhase, packetOrdinal, result),
+      ...selectedFailureDiagnostic(currentPhase, packetOrdinal, result),
       ...(currentPhase === 'start'
         ? {
             startup: classifyEmployeeStartupFailure(result),
@@ -249,6 +316,15 @@ const bounded = (command, args, cwd, timeout) => {
     throw new Error('Bounded employee schema command failed');
   }
   return result.stdout;
+};
+const readAppliedCatalog = () => {
+  currentPhase = 'catalog';
+  return readEmployeeAppliedCatalog({
+    identity: appliedIdentity(),
+    migrations: selected.migrations,
+    metadata,
+    runner: bounded,
+  });
 };
 const excluded =
   'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
@@ -268,7 +344,10 @@ const runner = async (command, args, cwd) => {
     if (!args.includes('stop')) await networkObserver.assertHealthy();
     if (args.includes('test')) {
       const container = `supabase_db_${metadata.projectId}`;
-      for (const [position, [file, count]] of foundationPackets.entries()) {
+      for (const [
+        position,
+        { file, assertions: count },
+      ] of selected.packets.entries()) {
         packetOrdinal = position + 1;
         currentPhase = 'fixture-hash';
         const fixture = path.join(
@@ -318,9 +397,16 @@ const runner = async (command, args, cwd) => {
         );
         currentPhase = 'packet-tap';
         try {
-          packets.push({ file, assertions: assertPacketTap(tap, count) });
+          packets.push({
+            file,
+            assertions: assertPacketTap(tap, count),
+            sourceSha,
+            sha256: actual,
+            exitCode: 0,
+            tap,
+          });
         } catch {
-          failureDiagnostic ??= schemaFailureDiagnostic(
+          failureDiagnostic ??= selectedFailureDiagnostic(
             currentPhase,
             packetOrdinal,
             { stdout: tap }
@@ -328,6 +414,7 @@ const runner = async (command, args, cwd) => {
           throw new Error('Employee packet TAP contract failed');
         }
       }
+      evaluateEmployeeQualificationPackets(observation, packets, 0, false);
       schemaExecutionSucceeded = true;
     } else {
       packetOrdinal = 0;
@@ -370,7 +457,10 @@ const runner = async (command, args, cwd) => {
     if (!args.includes('stop')) await networkObserver.assertHealthy();
     return { code: 0 };
   } catch {
-    failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
+    failureDiagnostic ??= selectedFailureDiagnostic(
+      currentPhase,
+      packetOrdinal
+    );
     return { code: 1 };
   }
 };
@@ -412,6 +502,8 @@ try {
       try {
         await relay.phase('typegen');
         await readEmployeeNetwork(root);
+        if (choice === 'composed') catalogReceipt = readAppliedCatalog();
+        currentPhase = 'type-generation';
         typegenReceipt = await generateEmployeeTypes({
           binaryPath,
           metadata,
@@ -420,10 +512,48 @@ try {
           controlSha,
           snapshotSha256,
           network,
+          ...(choice === 'composed'
+            ? { appliedIdentity: appliedIdentity(), catalog: catalogReceipt }
+            : {}),
         });
+        if (choice === 'composed') {
+          if (
+            JSON.stringify(readAppliedCatalog()) !==
+            JSON.stringify(catalogReceipt)
+          )
+            throw new Error('Applied catalog changed during type generation');
+          assertEmployeeQualificationUnchanged(qualificationInput, observation);
+          currentPhase = 'consumer-compile';
+          const consumerTrackedFiles = execFileSync('git', ['ls-files', '-z'], {
+            cwd: root,
+            encoding: 'utf8',
+            timeout: 10000,
+            maxBuffer: 16 * 1024 * 1024,
+          })
+            .split('\0')
+            .filter(Boolean);
+          consumerReceipt = await compileEmployeeComposedConsumers({
+            repositoryRoot: root,
+            receiptDirectory,
+            trackedFiles: consumerTrackedFiles,
+            identity: appliedIdentity(),
+            typeGeneration: typegenReceipt,
+            catalog: catalogReceipt,
+            consumers: observation.consumers,
+            runner: runTypegenCommand,
+          });
+          assertEmployeeQualificationUnchanged(qualificationInput, observation);
+          if (
+            JSON.stringify(readAppliedCatalog()) !==
+            JSON.stringify(catalogReceipt)
+          )
+            throw new Error(
+              'Applied catalog changed during consumer compilation'
+            );
+        }
       } catch {
         failureDiagnostic ??= {
-          phase: 'type-generation',
+          phase: currentPhase,
           packetOrdinal: 0,
           redacted: true,
         };
@@ -433,7 +563,7 @@ try {
   });
 } catch {
   // No raw exception text can expose SQL values or private CLI output.
-  failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
+  failureDiagnostic ??= selectedFailureDiagnostic(currentPhase, packetOrdinal);
   if (startupAdmission !== 'admitted') {
     failureDiagnostic.startupAdmission =
       startupAdmissionDiagnostic(startupAdmission);
@@ -444,6 +574,34 @@ try {
   }
   lifecycleCode = 1;
 }
+const packetReceipt = employeeQualificationExecutionReceipt(
+  observation,
+  packets,
+  schemaExecutionSucceeded ? 0 : lifecycleCode,
+  cleanupSucceeded
+);
+const chainComplete =
+  choice === 'composed' &&
+  employeeComposedChainComplete({
+    identity: appliedIdentity(),
+    catalog: catalogReceipt,
+    typeGeneration: typegenReceipt,
+    consumer: consumerReceipt,
+    lifecycleCode,
+    cleanupSucceeded,
+    packetsValidated: packetReceipt.packetTranscriptValidated,
+  });
+const schemaReceipt = () => ({
+  ...packetReceipt,
+  version: 1,
+  profile: selected.name,
+  catalogQualified: false,
+  ...(catalogReceipt ? { catalog: catalogReceipt } : {}),
+  ...(consumerReceipt ? { consumer: consumerReceipt } : {}),
+  sourceManifestSha256: observation.sourceManifestSha256 ?? null,
+  consumerManifestSha256: observation.consumers?.consumerManifestSha256 ?? null,
+  controlManifestSha256: observation.controlManifestSha256,
+});
 const finalization = await finishEmployeeControllerWorkers({
   network: networkObserver,
   relay,
@@ -484,13 +642,27 @@ const receipt = {
     relayEvidence.drained &&
     !relayEvidence.denied,
   combinedLifecycleCode: lifecycleCode,
-  typesQualified:
-    typegenReceipt !== null && lifecycleCode === 0 && cleanupSucceeded,
+  typesQualified: typegenReceipt?.appliedIdentity
+    ? false
+    : typegenReceipt !== null && lifecycleCode === 0 && cleanupSucceeded,
   consumerQualified: false,
   ...(typegenReceipt ? { typeGeneration: typegenReceipt } : {}),
   fixtureHashes,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
+if (typegenReceipt?.appliedIdentity) {
+  const qualified =
+    chainComplete &&
+    networkProof.qualified === true &&
+    networkProof.observerDrained === true &&
+    startupEvidence.observerDrained === true &&
+    finalization.failures.length === 0 &&
+    receipt.relayQualified === true;
+  receipt.schemaQualified = qualified;
+  receipt.typesQualified = qualified;
+  receipt.consumerQualified = qualified;
+  receipt.catalogQualified = qualified;
+}
 receipt.controllerQualified =
   receipt.schemaQualified &&
   receipt.typesQualified &&
@@ -499,9 +671,12 @@ receipt.controllerQualified =
   receipt.relayQualified &&
   receipt.startupEvidenceDrained;
 receipt.combinedQualified = false;
+const serializedReceipt = `${JSON.stringify(receipt, null, 2)}\n`;
+if (Buffer.byteLength(serializedReceipt) > 65536)
+  throw new Error('Employee qualification receipt exceeds bound');
 writeFileSync(
   path.join(receiptDirectory, 'qualification.json'),
-  `${JSON.stringify(receipt, null, 2)}\n`,
+  serializedReceipt,
   { mode: 0o600 }
 );
 console.log(

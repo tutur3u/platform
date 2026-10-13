@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { readEmployeeCleanupReceipt } from './employee-schema-cleanup-receipt.mjs';
 import { startEmployeeDbStartEvidence } from './employee-schema-start-evidence.mjs';
 
 const root = new URL('../../../', import.meta.url);
@@ -64,13 +65,13 @@ test('strict receipt tests run from control root', () => {
   assert.doesNotMatch(step, /working-directory:/u);
   assert.match(
     step,
-    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs apps\/database\/scripts\/employee-schema-typegen.test.mjs apps\/database\/scripts\/employee-schema-network.test.mjs apps\/database\/scripts\/employee-schema-start-evidence.test.mjs$/mu
+    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs apps\/database\/scripts\/employee-schema-typegen.test.mjs apps\/database\/scripts\/employee-schema-network.test.mjs apps\/database\/scripts\/employee-schema-start-evidence.test.mjs apps\/database\/scripts\/employee-schema-network-proof.test.mjs$/mu
   );
 });
 
 test('schema runner uses source cwd and control script', () => {
   const step = namedStep(
-    'Apply full isolated schema and qualify 172 rollback assertions'
+    'Apply full isolated schema and qualify selected rollback assertions'
   );
   assert.match(step, /^ {8}working-directory: source$/mu);
   assert.match(
@@ -101,7 +102,7 @@ test('normal qualification uploads generated schema definitions with its receipt
   );
   assert.match(controller, /typegen: async \(\) =>/u);
   assert.match(controller, /generateEmployeeTypes\(/u);
-  assert.match(controller, /consumerQualified: false/u);
+  assert.match(controller, /receipt\.consumerQualified = qualified/u);
   assert.match(
     controller,
     /process.exitCode = receipt.controllerQualified \? 0 : 1/u
@@ -245,10 +246,8 @@ for (const mode of [
   'wrong-authority',
   'wrong-group',
 ]) {
-  test(`production worker Linux admission ${mode}`, {
-    skip: process.platform !== 'linux',
-    timeout: 10000,
-  }, async (t) => {
+  const options = { skip: process.platform !== 'linux', timeout: 10000 };
+  test(`production worker Linux admission ${mode}`, options, async (t) => {
     const root = mkdtempSync(
       path.join(os.tmpdir(), 'employee-production-entry-test-')
     );
@@ -341,3 +340,176 @@ if (args.includes('events')) {
 }
 
 import './employee-schema-loopback-relay.test.mjs';
+
+test('qualification choice selects a real named profile and denies missing composed source before runtime', () => {
+  assert.match(
+    workflow,
+    /qualification:\n[\s\S]*?type: choice\n[\s\S]*?options:\n +?- foundation\n +?- composed/u
+  );
+  assert.match(
+    workflow,
+    /EMPLOYEE_SCHEMA_QUALIFICATION: \$\{\{ inputs.qualification \}\}/u
+  );
+  assert.match(
+    workflow,
+    /EMPLOYEE_SCHEMA_AUTHORITATIVE_SOURCE_SHA: \$\{\{ inputs.authoritative_source_sha \}\}/u
+  );
+  const preflight = namedStep(
+    'Verify observed qualification source and control before runtime'
+  );
+  assert.match(preflight, /verify-employee-schema-contract.mjs --preflight/u);
+  assert.ok(
+    workflow.indexOf(preflight) <
+      workflow.indexOf('Create the exact owned internal database network')
+  );
+  const controller = readFileSync(
+    new URL('apps/database/scripts/verify-employee-schema-contract.mjs', root),
+    'utf8'
+  );
+  assert.ok(
+    controller.includes(
+      'observation = observeEmployeeQualification(qualificationInput)'
+    )
+  );
+  assert.ok(
+    controller.indexOf(
+      'observation = observeEmployeeQualification(qualificationInput)'
+    ) < controller.indexOf('const network = await readEmployeeNetwork')
+  );
+  assert.match(controller, /selected.packets.entries\(\)/u);
+  assert.match(controller, /readEmployeeAppliedCatalog\(/u);
+  assert.match(controller, /compileEmployeeComposedConsumers\(/u);
+  assert.match(
+    controller,
+    /evaluateEmployeeQualificationPackets\(observation, packets/u
+  );
+});
+
+test('actual controller refuses an oversized private qualification after draining every owner', async () => {
+  const controller = readFileSync(
+    new URL('apps/database/scripts/verify-employee-schema-contract.mjs', root),
+    'utf8'
+  );
+  const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
+  const execute = new AsyncFunction(
+    'inputs',
+    `
+    const { finishEmployeeControllerWorkers, writeFileSync, path } = inputs;
+    const networkObserver = {}, relay = {}, startupObserver = {}, receiptDirectory = 'owned';
+    const sourceSha = 'a'.repeat(40), controlSha = 'b'.repeat(40);
+    const packets = [], lifecycleCode = 1, schemaExecutionSucceeded = false, cleanupSucceeded = false;
+    const snapshotSha256 = '', typegenReceipt = null, fixtureHashes = [], failureDiagnostic = undefined;
+    const network = { id: 'd'.repeat(64), labels: { 'ttr.employee.nonce': '00000000-0000-4000-8000-000000000000', 'ttr.employee.run': '123', 'ttr.employee.attempt': '1' } };
+    const schemaReceipt = () => ({ version: 1, sourceSha, schemaQualified: false, assertions: 0, oversized: 'x'.repeat(65536) });
+    ${controller.slice(controller.indexOf('const finalization ='), controller.indexOf('console.log(', controller.indexOf('const finalization =')))}
+  `
+  );
+  let drains = 0,
+    writes = 0;
+  await assert.rejects(
+    execute({
+      finishEmployeeControllerWorkers: async () => {
+        drains++;
+        return {
+          networkProof: { qualified: false, observerDrained: true },
+          relayEvidence: { listenerReady: false, drained: true },
+          startupEvidence: { observerDrained: true },
+          failures: [],
+        };
+      },
+      writeFileSync: () => {
+        writes++;
+      },
+      path,
+    }),
+    /receipt exceeds bound/u
+  );
+  assert.equal(drains, 1);
+  assert.equal(writes, 1); // Startup evidence is persisted; oversized qualification is denied.
+});
+
+// Exercise the actual controller envelope against the protected cleanup boundary.
+for (const packetTranscriptValidated of [true, false])
+  test(`composed envelope permits owned drained cleanup: packets=${packetTranscriptValidated}`, () => {
+    const controller = readFileSync(
+      new URL(
+        'apps/database/scripts/verify-employee-schema-contract.mjs',
+        root
+      ),
+      'utf8'
+    );
+    const declaration = controller.slice(
+      controller.indexOf('const schemaReceipt = () =>'),
+      controller.indexOf('const finalization =')
+    );
+    const envelope = new Function(
+      'packetReceipt',
+      'selected',
+      'catalogReceipt',
+      'consumerReceipt',
+      'observation',
+      `${declaration}; return schemaReceipt();`
+    )(
+      {
+        sourceSha: 'a'.repeat(40),
+        packetTranscriptValidated,
+        schemaQualified: false,
+        typesQualified: false,
+        consumerQualified: false,
+      },
+      { name: 'employee-creation-composed-reviewed-marker-v1' },
+      null,
+      null,
+      { controlManifestSha256: 'b'.repeat(64) }
+    );
+    const directory = mkdtempSync(path.join(os.tmpdir(), 'employee-envelope-'));
+    const context = {
+      receiptDirectory: directory,
+      source: 'a'.repeat(40),
+      control: 'c'.repeat(40),
+      run: '123',
+      attempt: '1',
+    };
+    const expected = {
+      id: 'd'.repeat(64),
+      labels: { 'ttr.employee.nonce': 'nonce' },
+    };
+    const receipt = {
+      ...envelope,
+      controlSha: context.control,
+      networkId: expected.id,
+      networkNonce: 'nonce',
+      runId: context.run,
+      runAttempt: context.attempt,
+      workerDrainRecordedAt: Date.now(),
+      networkObserverDrained: true,
+      networkProof: { observerDrained: true },
+      relayEvidence: { drained: true },
+      startupEvidenceDrained: true,
+    };
+    const write = (value) =>
+      writeFileSync(
+        path.join(directory, 'qualification.json'),
+        JSON.stringify(value),
+        { mode: 0o600 }
+      );
+    try {
+      write(receipt);
+      assert.deepEqual(readEmployeeCleanupReceipt(context, expected), receipt);
+      for (const delta of [
+        { version: 2 },
+        { sourceSha: 'e'.repeat(40) },
+        { runAttempt: '2' },
+        { networkNonce: 'foreign' },
+        { networkObserverDrained: false },
+        { networkProof: { observerDrained: false } },
+        { relayEvidence: { drained: false } },
+        { startupEvidenceDrained: false },
+      ]) {
+        write({ ...receipt, ...delta });
+        assert.throws(() => readEmployeeCleanupReceipt(context, expected));
+      }
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });

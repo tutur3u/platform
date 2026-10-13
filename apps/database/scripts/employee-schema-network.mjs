@@ -9,7 +9,18 @@ import {
   writeEmployeeNetworkCleanupReceipt,
 } from './employee-schema-cleanup-receipt.mjs';
 
+import {
+  createEmployeeNetworkDiagnostics,
+  finalizeEmployeeNetworkDiagnostics,
+  networkCoverageProof,
+  safeEvent,
+} from './employee-schema-network-proof.mjs';
+
 export { validateEmployeeNetwork } from './employee-schema-cleanup-receipt.mjs';
+export {
+  createNetworkEventProof,
+  networkCoverageProof,
+} from './employee-schema-network-proof.mjs';
 
 import { deriveIsolatedIdentity } from './run-supabase-isolated.js';
 
@@ -293,172 +304,6 @@ export async function removeEmployeeNetwork(
   };
 }
 
-/** Process only fixed event fields; do not retain Docker labels or private diagnostics. */
-export function createNetworkEventProof(projectId, networkId) {
-  const containers = new Map();
-  const connections = new Map();
-  let failed = false,
-    events = 0,
-    bytes = 0;
-  return {
-    accept(line) {
-      bytes += Buffer.byteLength(line);
-      events++;
-      if (bytes > 16 * 1024 * 1024 || events > 10000) {
-        failed = true;
-        return;
-      }
-      let event;
-      try {
-        event = JSON.parse(line);
-      } catch {
-        failed = true;
-        return;
-      }
-      const id = event.Actor?.ID,
-        attrs = event.Actor?.Attributes;
-      if (
-        event.Type === 'network' &&
-        ['connect', 'disconnect'].includes(event.Action) &&
-        /^[a-f0-9]{64}$/.test(attrs?.container ?? '')
-      ) {
-        const set = connections.get(attrs.container) ?? new Set();
-        if (event.Action === 'connect') set.add(id);
-        else set.delete(id);
-        connections.set(attrs.container, set);
-        if (containers.has(attrs.container) && id !== networkId) failed = true;
-      }
-      if (
-        event.Type !== 'container' ||
-        attrs?.['com.supabase.cli.project'] !== projectId
-      )
-        return;
-      if (!/^[a-f0-9]{64}$/.test(id ?? '')) {
-        failed = true;
-        return;
-      }
-      if (event.Action === 'create') {
-        if (containers.has(id)) {
-          failed = true;
-          return;
-        }
-        if (
-          !/^ghcr\.io\/supabase\/[a-z0-9_-]+(?::[A-Za-z0-9._-]+|@sha256:[a-f0-9]{64})$/.test(
-            attrs.image ?? ''
-          )
-        )
-          failed = true;
-        containers.set(id, { id, image: attrs.image, started: false });
-      } else if (event.Action === 'start') {
-        const container = containers.get(id),
-          set = connections.get(id);
-        if (!container || !set || set.size !== 1 || !set.has(networkId))
-          failed = true;
-        else container.started = true;
-      } else if (event.Action === 'destroy' && !containers.has(id))
-        failed = true;
-    },
-    result() {
-      return {
-        qualified:
-          !failed &&
-          containers.size > 0 &&
-          [...containers.values()].every((item) => item.started) &&
-          [...containers.values()].some((item) =>
-            /^ghcr\.io\/supabase\/postgres-meta[:@]/.test(item.image ?? '')
-          ),
-        networkId,
-        containerIds: [...containers.keys()].sort(),
-        images: [
-          ...new Set([...containers.values()].map((item) => item.image)),
-        ].sort(),
-      };
-    },
-    healthy() {
-      return !failed;
-    },
-  };
-}
-/** Compare a complete authoritative history window to the live subscription. */
-export function networkCoverageProof(
-  live,
-  history,
-  ready,
-  end,
-  projectId,
-  networkId
-) {
-  const window = (events) => {
-    const anchor = (marker) =>
-      events.findIndex(
-        (event) =>
-          event.Type === 'network' &&
-          event.Action === 'create' &&
-          event.Actor?.ID === marker.id &&
-          event.Actor?.Attributes?.name === marker.name
-      );
-    const first = anchor(ready),
-      last = anchor(end);
-    if (first < 0 || last <= first) return null;
-    const rows = events.slice(first + 1, last);
-    const ids = new Set(
-      rows
-        .filter(
-          (event) =>
-            event.Type === 'container' &&
-            event.Actor?.Attributes?.['com.supabase.cli.project'] === projectId
-        )
-        .map((event) => event.Actor.ID)
-    );
-    return rows.filter((event) =>
-      event.Type === 'container'
-        ? ids.has(event.Actor?.ID) &&
-          ['create', 'start', 'destroy'].includes(event.Action)
-        : event.Type === 'network' &&
-          ids.has(event.Actor?.Attributes?.container) &&
-          ['connect', 'disconnect'].includes(event.Action)
-    );
-  };
-  const a = window(live),
-    b = window(history);
-  if (!a || !b || JSON.stringify(a) !== JSON.stringify(b))
-    return { qualified: false };
-  const proof = createNetworkEventProof(projectId, networkId);
-  for (const event of b) proof.accept(JSON.stringify(event));
-  const result = proof.result();
-  const destroyed = new Set(
-    b
-      .filter(
-        (event) => event.Type === 'container' && event.Action === 'destroy'
-      )
-      .map((event) => event.Actor.ID)
-  );
-  return {
-    ...result,
-    qualified:
-      result.qualified && result.containerIds.every((id) => destroyed.has(id)),
-    readyMarkerId: ready.id,
-    endMarkerId: end.id,
-    completeHistoryWindow: true,
-  };
-}
-function safeEvent(line) {
-  const e = JSON.parse(line),
-    a = e.Actor?.Attributes;
-  return {
-    Type: e.Type,
-    Action: e.Action,
-    Actor: {
-      ID: e.Actor?.ID,
-      Attributes: {
-        container: a?.container,
-        name: a?.name,
-        image: a?.image,
-        'com.supabase.cli.project': a?.['com.supabase.cli.project'],
-      },
-    },
-  };
-}
 async function retireMarker(expected, runner) {
   await verifyEmployeeNetwork(expected, runner);
   const rows = JSON.parse(
@@ -525,6 +370,9 @@ export function startEmployeeNetworkObserver(
     context,
   } = {}
 ) {
+  const diagnostics = createEmployeeNetworkDiagnostics();
+  let streamObserved = false,
+    streamFailed = false;
   const journal = [],
     waiters = new Set();
   let pending = '',
@@ -540,17 +388,26 @@ export function startEmployeeNetworkObserver(
   );
   child.stderr.resume();
   child.on('error', () => {
+    diagnostics.record('stream-error');
+    streamFailed = true;
     failed = true;
   });
   child.on('close', () => {
+    if (!retiring) {
+      diagnostics.record('stream-early-close');
+      streamFailed = true;
+    }
     if (!retiring) failed = true;
     for (const wake of waiters) wake();
   });
   child.stdout.on('data', (chunk) => {
     if (failed) return;
+    streamObserved = true;
     bytes += chunk.length;
     pending += chunk.toString();
     if (bytes > 16 * 1024 * 1024 || pending.length > 262144) {
+      diagnostics.record('stream-budget');
+      streamFailed = true;
       failed = true;
       child.kill('SIGTERM');
       return;
@@ -560,16 +417,24 @@ export function startEmployeeNetworkObserver(
       try {
         journal.push(safeEvent(pending.slice(0, newline)));
       } catch {
+        diagnostics.record('stream-event-malformed');
+        streamFailed = true;
         failed = true;
       }
       pending = pending.slice(newline + 1);
       newline = pending.indexOf('\n');
+    }
+    if (journal.length > 10000) {
+      diagnostics.record('stream-journal-budget');
+      streamFailed = true;
     }
     if (journal.length > 10000) failed = true;
     for (const wake of waiters) wake();
   });
   const closed = new Promise((resolve) => child.once('close', resolve));
   const deadline = setTimeout(() => {
+    diagnostics.record('stream-deadline');
+    streamFailed = true;
     failed = true;
     child.kill('SIGKILL');
   }, timeoutMs);
@@ -645,10 +510,12 @@ export function startEmployeeNetworkObserver(
     },
     async finish() {
       let result = { qualified: false },
+        stage = 'barrier',
         observerDrained = false;
       try {
         if (!ready) throw networkFailure();
         end = await barrier('end');
+        stage = 'history-read';
         const snapshot = await runner(
           'docker',
           [
@@ -663,10 +530,13 @@ export function startEmployeeNetworkObserver(
           process.cwd(),
           { timeoutMs: 10000, maxBytes: 16 * 1024 * 1024 }
         );
+        stage = 'history-parse';
         const lines = snapshot.toString().trim().split('\n');
+        if (lines.length > 10000) diagnostics.record('history-budget');
         if (lines.length > 10000) throw networkFailure();
         const history = lines.map(safeEvent);
         await new Promise((resolve) => setImmediate(resolve));
+        stage = 'coverage';
         result = networkCoverageProof(
           journal,
           history,
@@ -676,8 +546,21 @@ export function startEmployeeNetworkObserver(
           networkId
         );
       } catch {
+        diagnostics.record(
+          stage === 'barrier'
+            ? 'barrier-denied'
+            : stage === 'history-read'
+              ? 'history-read-denied'
+              : stage === 'coverage'
+                ? 'coverage-evaluation-denied'
+                : 'history-parse-denied'
+        );
         failed = true;
       } finally {
+        if (child.exitCode !== null || child.signalCode !== null) {
+          diagnostics.record('stream-early-close');
+          streamFailed = true;
+        }
         if (child.exitCode !== null || child.signalCode !== null) failed = true;
         retiring = true;
         child.kill('SIGTERM');
@@ -693,6 +576,19 @@ export function startEmployeeNetworkObserver(
         qualified:
           result.qualified && !failed && !pending.trim() && observerDrained,
         observerDrained,
+        diagnostics: finalizeEmployeeNetworkDiagnostics(
+          result.diagnostics,
+          diagnostics.result(),
+          {
+            observerStreamAccepted: streamFailed
+              ? 'FAIL'
+              : streamObserved
+                ? 'PASS'
+                : 'UNKNOWN',
+            trailingLineEmpty: !pending.trim() ? 'PASS' : 'FAIL',
+            observerDrained: observerDrained ? 'PASS' : 'FAIL',
+          }
+        ),
       };
     },
   };
