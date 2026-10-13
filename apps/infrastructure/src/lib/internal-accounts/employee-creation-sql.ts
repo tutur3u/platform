@@ -5,7 +5,10 @@ import {
   EMPLOYEE_SQL_COMMITTED_READINESS_UNAVAILABLE,
   type EmployeeCreationOperations,
 } from './employee-creation-orchestration';
+import type { EmployeeSqlQuery } from './employee-sql-catalog-readiness';
 import { parseManagedAccountAddress } from './managed-address';
+
+export type { EmployeeSqlQuery } from './employee-sql-catalog-readiness';
 
 const IdentitySchema = z
   .object({
@@ -47,10 +50,7 @@ export type EmployeeSqlEnvelope = {
   data: unknown;
   error: null | { code: string };
 };
-export type EmployeeSqlQuery = (
-  strings: TemplateStringsArray,
-  ...parameters: string[]
-) => PromiseLike<unknown>;
+
 const TransportQualificationSchema = z
   .object({
     kind: z.literal('qualified-exclusive-owned'),
