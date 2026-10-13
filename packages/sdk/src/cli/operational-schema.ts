@@ -59,6 +59,30 @@ export const boardSchema = z
   })
   .strict();
 export type Board = z.infer<typeof boardSchema>;
+export const dispositionSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('open') }).strict(),
+  z.object({ kind: z.literal('closed'), reason: text }).strict(),
+  z
+    .object({
+      kind: z.literal('duplicate'),
+      canonicalId: slug,
+      mergeOperationId: z.uuid(),
+      reason: text,
+    })
+    .strict(),
+]);
+export const graphMetadataSchema = z
+  .object({
+    version: z.literal(1),
+    parentId: slug.optional(),
+    relatedIds: z
+      .array(slug)
+      .max(10_000)
+      .refine((v) => new Set(v).size === v.length)
+      .optional(),
+    disposition: dispositionSchema,
+  })
+  .strict();
 export const intakeItemSchema = z
   .object({
     id: slug,
@@ -85,6 +109,7 @@ export const itemSchema = intakeItemSchema
     note: z.string().max(32_768),
     verification: boardSchema.optional(),
     invalidatedDependencies: strings.optional(),
+    graph: graphMetadataSchema.optional(),
   })
   .strict();
 export type Item = z.infer<typeof itemSchema>;

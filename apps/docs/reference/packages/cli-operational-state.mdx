@@ -167,11 +167,12 @@ initialize, migrate or export the store. The injected
 `buildOutcomeProjectionPage({ snapshot, limit, cursor })` accepts validated
 existing records and their complete event history for isolated fixtures.
 
-Projection version 1 returns each existing stable ID, its current self-canonical
-ID and contributing IDs, and members containing the complete original item and
+Projection version 1 returns each canonical root's existing stable ID and all
+contributing IDs, with members containing the complete original item and
 event provenance. Acceptance, notes, links, dependencies, required evidence and
-recorded verification remain separate member fields. This initial reader does
-not implement duplicate merging, graph mutation or semantic search.
+recorded verification remain separate member fields. Records without duplicate
+relationships remain self-canonical. This reader does not perform graph mutations
+or semantic search.
 
 Identity, revision, items and events come from one SQLite read transaction.
 Continuation cursors bind the projection version, source database UUID, event
@@ -190,6 +191,55 @@ runtime limitation; use an already compatible runtime or store state.
 Regression coverage is in `operational-graph/projection.test.ts` and
 `operational-graph/reader.test.ts`, using synthetic records and real disposable
 SQLite stores, including a concurrent writer during a consistent read.
+
+## Native outcome relationships
+
+`ttr backlog graph` adds explicit parent, dependency, related and duplicate
+relationships to existing offline records. It keeps their original IDs, acceptance,
+evidence requirements, notes, links, dependencies and full event history. Reads
+never adopt a legacy ledger. Writes use the same native revision CAS and original
+request/event receipt proofs as `backlog update`.
+
+```sh
+ttr backlog graph help --lang en --json
+ttr backlog graph show outcome-id --db /private/path/backlog.sqlite --json
+ttr backlog graph readiness outcome-id --db /private/path/backlog.sqlite --json
+ttr backlog graph merge --db /private/path/backlog.sqlite --file /private/path/merge.json \
+  --expected-revision 12 --operation-id 00000000-0000-4000-8000-000000000012 --json
+```
+
+A merge command file contains `kind: "merge"`, `canonicalId`, nonempty unique
+`memberIds`, a reason and `confirmation: "equivalent"`. Explicit equivalence is
+required; similarity and related links never authorize closure. Every contributing
+member remains individually available through canonical navigation and in the
+lossless projection. Recanonicalizing a group requires selecting its complete
+membership. Dependency collapse into a self dependency, hierarchy cycles and
+canonical chains are conflicts, never silently removed obligations.
+
+Parent organization does not create a blocking dependency. Dependency commands
+use `kind: "dependency"`, `id`, `dependencyId` and `action: "add" | "remove"`.
+Parent commands use `kind: "parent"`, `id` and a nullable `parentId`; related
+commands use `kind: "related"`, `id`, `relatedId` and the same add/remove action.
+Related links are symmetric and do not grant readiness or equivalence.
+
+Duplicate closure is separate from verified delivery. Canonical readiness includes
+all members' unmet prerequisites; a dependency on any alias resolves to the
+complete group. Each member retains its own acceptance and evidence gates. An
+explicit `close` requires `confirmation: "user-confirmed"`, a reason and current
+verification for every unique member obligation. Reopen clears affected current
+verdicts, including verified dependents, while retaining old receipts in history.
+Re-verification never happens automatically.
+
+`unmerge` requires the member ID, its current `mergeOperationId` and a reason.
+It reopens that member without restoring a stale beforeimage or replacing later
+notes, links or evidence history. Reopening a duplicate uses this explicit unmerge
+path. Ordinary reopen uses `kind: "reopen"`, `id` and a reason. All mutation files
+must match the selected CLI action and require the native write flags.
+
+Regression coverage is in `operational-graph/store.test.ts` and
+`cli/operational-graph.test.ts`, alongside the retained receipt/projection suites.
+The source-only peer protocol remains separate; these local relationships do not
+activate authentication, networking, leases or a server.
 
 ## Verification and delivery boundaries
 
