@@ -565,9 +565,17 @@ for (const drain of [false, undefined, 'true', true])
       'qualification.json'
     );
     const before = {
+      version: 1,
       sourceSha,
       controlSha,
       networkId: input.network.id,
+      networkNonce: input.network.labels['ttr.employee.nonce'],
+      runId: '1',
+      runAttempt: '1',
+      workerDrainRecordedAt: Date.now(),
+      networkObserverDrained: true,
+      networkProof: { observerDrained: true },
+      relayEvidence: { drained: true },
       schemaQualified: true,
       typesQualified: true,
       networkQualified: true,
@@ -576,11 +584,13 @@ for (const drain of [false, undefined, 'true', true])
       combinedQualified: false,
     };
     writeFileSync(receiptPath, JSON.stringify(before));
+    let mutations = 0;
     const result = await removeEmployeeNetwork('/synthetic', {
       context,
       runner: async (_command, args) => {
         if (args[0] === 'ps' || args[1] === 'ls') return Buffer.from('');
         if (args[1] === 'rm') {
+          mutations++;
           assert.equal(args[2], input.network.id);
           return Buffer.from(input.network.id);
         }
@@ -597,10 +607,17 @@ for (const drain of [false, undefined, 'true', true])
           ])
         );
       },
-    });
+    }).catch(() => ({
+      networkCleanupSucceeded: false,
+      combinedQualified: false,
+    }));
     const after = JSON.parse(readFileSync(receiptPath, 'utf8'));
-    assert.equal(result.networkCleanupSucceeded, true);
-    assert.equal(after.networkCleanupSucceeded, true);
+    assert.equal(result.networkCleanupSucceeded, drain === true);
+    assert.equal(
+      after.networkCleanupSucceeded,
+      drain === true ? true : undefined
+    );
+    assert.equal(mutations, drain === true ? 1 : 0);
     for (const key of ['schemaQualified', 'typesQualified', 'networkQualified'])
       assert.equal(after[key], true);
     assert.equal(after.controllerQualified, drain === true);

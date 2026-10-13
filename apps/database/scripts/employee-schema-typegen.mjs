@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync, writeFileSync } from 'node:fs';
+import net from 'node:net';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
@@ -235,8 +236,10 @@ export function isEmployeeReadyMarker(marker, input) {
 export function startupAdmissionDiagnostic(stage) {
   return [
     'worker-initialize',
+    'relay-initialize',
     'primary-network-ready',
     'worker-network-ready',
+    'relay-network-ready',
     'observer-health',
     'admitted',
   ].includes(stage)
@@ -411,4 +414,134 @@ if (
     console.error('Employee internal network admission failed');
     process.exitCode = 1;
   }
+}
+
+const relayFields = [
+  'listenerReady',
+  'markerReady',
+  'targetVerified',
+  'connected',
+  'denied',
+  'drained',
+];
+export const emptyEmployeeRelayEvidence = () =>
+  Object.fromEntries(relayFields.map((key) => [key, false]));
+export function parseEmployeeRelayEvidence(value) {
+  if (
+    !value ||
+    Object.keys(value).sort().join(',') !== [...relayFields].sort().join(',') ||
+    relayFields.some((key) => typeof value[key] !== 'boolean')
+  )
+    throw new Error('Employee loopback relay unavailable');
+  return Object.fromEntries(relayFields.map((key) => [key, value[key]]));
+}
+function ipv4(address) {
+  if (net.isIP(address) !== 4)
+    throw new Error('Employee loopback relay unavailable');
+  return (
+    address
+      .split('.')
+      .reduce((value, octet) => value * 256 + Number(octet), 0) >>> 0
+  );
+}
+/** A peer must belong to a daemon-selected private subnet, never a caller-provided host. */
+export function validateEmployeeRelayPeer(snapshot, network, input) {
+  validateEmployeeStartInput(input);
+  if (
+    !matchesEmployeeEvidenceNetwork(network, input.network) ||
+    !Array.isArray(network.subnets) ||
+    network.subnets.length !== 1 ||
+    !/^[a-f0-9]{64}$/.test(snapshot?.id ?? '') ||
+    snapshot.name !== `/supabase_db_${input.projectId}` ||
+    snapshot.project !== input.projectId ||
+    snapshot.image !== input.imageRef ||
+    snapshot.running !== true ||
+    snapshot.health !== 'healthy' ||
+    snapshot.networkCount !== 1 ||
+    snapshot.endpoint?.id !== input.network.id
+  )
+    throw new Error('Employee loopback relay unavailable');
+  const [subnet, prefixText, extra] =
+    network.subnets[0].Subnet?.split('/') ?? [];
+  if (extra !== undefined || !/^\d{1,2}$/.test(prefixText ?? ''))
+    throw new Error('Employee loopback relay unavailable');
+  const prefix = Number(prefixText),
+    address = ipv4(snapshot.endpoint.ip),
+    base = ipv4(subnet);
+  if (
+    prefix < 8 ||
+    prefix > 30 ||
+    snapshot.endpoint.prefix !== prefix ||
+    !(
+      address >>> 24 === 10 ||
+      address >>> 16 === 0xc0a8 ||
+      address >>> 20 === 0xac1
+    )
+  )
+    throw new Error('Employee loopback relay unavailable');
+  const mask = (0xffffffff << (32 - prefix)) >>> 0;
+  if (
+    (address & mask) !== (base & mask) ||
+    address === (base & mask) >>> 0 ||
+    address === ((base & mask) | (~mask >>> 0)) >>> 0
+  )
+    throw new Error('Employee loopback relay unavailable');
+  return { id: snapshot.id, host: snapshot.endpoint.ip, port: 5432 };
+}
+/** Every owner is retired independently. A rejection never supplies a guessed drain ACK. */
+export async function finishEmployeeControllerWorkers({
+  network,
+  relay,
+  startup,
+}) {
+  let networkProof = { qualified: false, observerDrained: false };
+  let relayEvidence = { ...emptyEmployeeRelayEvidence(), denied: true };
+  let startupEvidence = {
+    ...emptyEmployeeStartEvidence(),
+    observerUncertain: true,
+  };
+  const failures = [];
+  try {
+    const actual = await network.finish();
+    if (
+      !evidenceRecord(actual) ||
+      typeof actual.qualified !== 'boolean' ||
+      typeof actual.observerDrained !== 'boolean'
+    )
+      throw evidenceFailure();
+    networkProof = Object.fromEntries(
+      [
+        'qualified',
+        'observerDrained',
+        'networkId',
+        'containerIds',
+        'images',
+        'readyMarkerId',
+        'endMarkerId',
+        'completeHistoryWindow',
+      ]
+        .filter((key) => Object.hasOwn(actual, key))
+        .map((key) => [key, actual[key]])
+    );
+    if (!actual.observerDrained) failures.push('network-drain-unconfirmed');
+  } catch {
+    failures.push('network-finish-denied');
+  }
+  const endId = /^[a-f0-9]{64}$/.test(networkProof.endMarkerId ?? '')
+    ? networkProof.endMarkerId
+    : undefined;
+  try {
+    relayEvidence = parseEmployeeRelayEvidence(await relay.finish(endId));
+    if (!relayEvidence.drained) failures.push('relay-drain-unconfirmed');
+  } catch {
+    failures.push('relay-finish-denied');
+  }
+  try {
+    startupEvidence = parseEmployeeStartEvidence(await startup.finish(endId));
+    if (!startupEvidence.observerDrained)
+      failures.push('startup-drain-unconfirmed');
+  } catch {
+    failures.push('startup-finish-denied');
+  }
+  return { networkProof, relayEvidence, startupEvidence, failures };
 }

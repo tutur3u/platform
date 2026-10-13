@@ -10,6 +10,7 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import './employee-schema-observer-shutdown.test.mjs';
 import {
   createEmployeeNetwork,
   createNetworkEventProof,
@@ -147,6 +148,19 @@ test('a successful database-only trace cannot stand in for missing typegen-conta
   assert.equal(proof.result().qualified, false);
 });
 
+// Synthetic affirmative drain facts for the existing removal fixtures, not runtime proof.
+const workerDrains = (context, owned) => ({
+  ...JSON.parse(
+    '{"version":1,"networkObserverDrained":true,"networkProof":{"observerDrained":true},"relayEvidence":{"drained":true},"startupEvidenceDrained":true}'
+  ),
+  sourceSha,
+  controlSha,
+  networkId: owned.id,
+  networkNonce: owned.labels['ttr.employee.nonce'],
+  workerDrainRecordedAt: Date.now(),
+  runId: context.run,
+  runAttempt: context.attempt,
+});
 function networkFixture(t) {
   const directory = fixture(t);
   const context = {
@@ -241,14 +255,11 @@ test('actual creator uses internal bridge, fresh nonce labels and exclusive mark
   writeFileSync(
     qualificationPath,
     JSON.stringify({
-      sourceSha,
-      controlSha,
-      networkId: network.id,
+      ...workerDrains(context, marker),
       schemaQualified: true,
       typesQualified: true,
       networkQualified: true,
       controllerQualified: true,
-      startupEvidenceDrained: true,
       consumerQualified: false,
       combinedQualified: false,
     })
@@ -311,6 +322,11 @@ test('foreign owner or any remaining project/foreign attachment denies removal',
   ]) {
     const { context, owned } = networkFixture(t);
     writeFileSync(context.marker, JSON.stringify(owned));
+    mkdirSync(context.receiptDirectory);
+    writeFileSync(
+      path.join(context.receiptDirectory, 'qualification.json'),
+      JSON.stringify(workerDrains(context, owned))
+    );
     const calls = [];
     await assert.rejects(
       removeEmployeeNetwork('/synthetic', {
@@ -340,6 +356,10 @@ test('foreign owner or any remaining project/foreign attachment denies removal',
           );
         },
       })
+    );
+    assert.equal(
+      calls.some((args) => args[0] === 'ps'),
+      mode !== 'foreign-owner'
     );
     assert.equal(
       calls.some((args) => args[1] === 'rm'),
@@ -581,9 +601,7 @@ test('exact owned removal acknowledges drain even when prior qualification faile
   writeFileSync(
     receiptPath,
     JSON.stringify({
-      sourceSha,
-      controlSha,
-      networkId: owned.id,
+      ...workerDrains(context, owned),
       schemaQualified: false,
       typesQualified: false,
       networkQualified: false,
@@ -635,10 +653,9 @@ for (const mode of ['unknown-remove', 'qualification-binding-mismatch'])
       'qualification.json'
     );
     const before = JSON.stringify({
+      ...workerDrains(context, owned),
       sourceSha:
         mode === 'qualification-binding-mismatch' ? 'f'.repeat(40) : sourceSha,
-      controlSha,
-      networkId: owned.id,
       schemaQualified: false,
       typesQualified: false,
       networkQualified: false,
@@ -674,13 +691,10 @@ for (const mode of ['unknown-remove', 'qualification-binding-mismatch'])
       })
     );
     assert.equal(readFileSync(receiptPath, 'utf8'), before);
-    assert.equal(removed, mode === 'qualification-binding-mismatch');
+    assert.equal(removed, false);
     const cleanupPath = path.join(
       context.receiptDirectory,
       'network-cleanup.json'
     );
-    if (mode === 'unknown-remove')
-      assert.throws(() => readFileSync(cleanupPath));
-    else
-      assert.equal(JSON.parse(readFileSync(cleanupPath, 'utf8')).removed, true);
+    assert.throws(() => readFileSync(cleanupPath));
   });

@@ -1,7 +1,16 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { lstatSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import {
+  readEmployeeCleanupReceipt,
+  validateEmployeeNetwork,
+  writeEmployeeCleanupQualification,
+  writeEmployeeNetworkCleanupReceipt,
+} from './employee-schema-cleanup-receipt.mjs';
+
+export { validateEmployeeNetwork } from './employee-schema-cleanup-receipt.mjs';
+
 import { deriveIsolatedIdentity } from './run-supabase-isolated.js';
 
 const failure = () => new Error('Bounded employee type generation failed');
@@ -88,25 +97,6 @@ const networkFields = [
 ];
 const networkFailure = () =>
   new Error('Employee internal network admission failed');
-export function validateEmployeeNetwork(actual, expected) {
-  if (
-    !expected ||
-    !/^[a-f0-9]{64}$/.test(expected.id ?? '') ||
-    actual.Id !== expected.id ||
-    actual.Name !== expected.name ||
-    actual.Internal !== true ||
-    actual.Driver !== 'bridge' ||
-    actual.Labels?.['com.supabase.cli.project'] !== undefined ||
-    !networkFields.every(
-      (key) =>
-        typeof expected.labels?.[labelPrefix + key] === 'string' &&
-        actual.Labels?.[labelPrefix + key] ===
-          expected.labels[labelPrefix + key]
-    )
-  )
-    throw networkFailure();
-  return expected;
-}
 export async function verifyEmployeeNetwork(
   expected,
   runner = runTypegenCommand
@@ -242,6 +232,7 @@ export async function removeEmployeeNetwork(
   { runner = runTypegenCommand, context = networkContext(sourceRoot) } = {}
 ) {
   const expected = await readEmployeeNetwork(sourceRoot, runner, context);
+  const receipt = readEmployeeCleanupReceipt(context, expected);
   const remaining = await runner(
     'docker',
     [
@@ -266,6 +257,7 @@ export async function removeEmployeeNetwork(
     Object.keys(JSON.parse(networkBytes.toString())[0].Containers ?? {}).length
   )
     throw networkFailure();
+  readEmployeeCleanupReceipt(context, expected);
   await runner('docker', ['network', 'rm', expected.id], process.cwd(), {
     timeoutMs: 10000,
     maxBytes: 1024,
@@ -286,27 +278,7 @@ export async function removeEmployeeNetwork(
   );
   if (ids.toString().trim()) throw networkFailure();
   const directory = context.receiptDirectory;
-  mkdirSync(directory, { recursive: true, mode: 0o700 });
-  writeFileSync(
-    path.join(directory, 'network-cleanup.json'),
-    JSON.stringify({
-      version: 1,
-      sourceSha: context.source,
-      controlSha: context.control,
-      networkId: expected.id,
-      removed: true,
-      projectContainersAbsent: true,
-    }),
-    { flag: 'wx', mode: 0o600 }
-  );
-  const receiptPath = path.join(directory, 'qualification.json');
-  const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
-  if (
-    receipt.sourceSha !== context.source ||
-    receipt.controlSha !== context.control ||
-    receipt.networkId !== expected.id
-  )
-    throw networkFailure();
+  writeEmployeeNetworkCleanupReceipt(directory, context, expected);
   receipt.networkCleanupSucceeded = true;
   receipt.combinedQualified =
     receipt.schemaQualified === true &&
@@ -314,9 +286,7 @@ export async function removeEmployeeNetwork(
     receipt.networkQualified === true &&
     receipt.controllerQualified === true &&
     receipt.startupEvidenceDrained === true;
-  writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, {
-    mode: 0o600,
-  });
+  writeEmployeeCleanupQualification(directory, receipt);
   return {
     networkCleanupSucceeded: true,
     combinedQualified: receipt.combinedQualified,
@@ -521,6 +491,30 @@ async function retireMarker(expected, runner) {
   );
   if (remaining.toString().trim()) throw networkFailure();
 }
+async function drainObserverGroup(child, closed) {
+  let didClose = false;
+  void closed.then(() => {
+    didClose = true;
+  });
+  if (!Number.isInteger(child.pid) || child.pid <= 0) return false;
+  const exists = () => {
+    try {
+      process.kill(-child.pid, 0);
+      return true;
+    } catch (error) {
+      return error.code !== 'ESRCH';
+    }
+  };
+  try {
+    process.kill(-child.pid, 'SIGKILL');
+  } catch {
+    // Only subsequent group absence and actual close can acknowledge drain.
+  }
+  const until = Date.now() + 5000;
+  while ((!didClose || exists()) && Date.now() < until)
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  return didClose && !exists();
+}
 export function startEmployeeNetworkObserver(
   projectId,
   networkId,
@@ -650,7 +644,8 @@ export function startEmployeeNetworkObserver(
         throw networkFailure();
     },
     async finish() {
-      let result = { qualified: false };
+      let result = { qualified: false },
+        observerDrained = false;
       try {
         if (!ready) throw networkFailure();
         end = await barrier('end');
@@ -686,14 +681,18 @@ export function startEmployeeNetworkObserver(
         if (child.exitCode !== null || child.signalCode !== null) failed = true;
         retiring = true;
         child.kill('SIGTERM');
-        const force = setTimeout(() => child.kill('SIGKILL'), 1000);
-        await closed;
-        clearTimeout(force);
+        observerDrained = await drainObserverGroup(child, closed);
+        if (!observerDrained) {
+          child.stdout.destroy();
+          child.stderr.destroy();
+        }
         clearTimeout(deadline);
       }
       return {
         ...result,
-        qualified: result.qualified && !failed && !pending.trim(),
+        qualified:
+          result.qualified && !failed && !pending.trim() && observerDrained,
+        observerDrained,
       };
     },
   };

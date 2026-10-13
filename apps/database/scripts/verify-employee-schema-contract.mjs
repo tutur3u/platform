@@ -3,6 +3,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { startEmployeeLoopbackRelay } from './employee-schema-loopback-relay.mjs';
 import {
   startEmployeeDbStartEvidence,
   startupAdmissionDiagnostic,
@@ -18,7 +19,7 @@ import {
 import {
   classifyEmployeeStartupFailure,
   employeeStartupConnectionEvidence,
-  emptyEmployeeStartEvidence,
+  finishEmployeeControllerWorkers,
   generateEmployeeTypes,
   readEmployeeNetwork,
   runTypegenCommand,
@@ -204,6 +205,17 @@ const startupObserver = startEmployeeDbStartEvidence({
   dbPort: ports.ports['db.port'],
   imageRef: 'ghcr.io/supabase/postgres:17.6.1.167',
 });
+const relay = startEmployeeLoopbackRelay({
+  sourceSha,
+  controlSha,
+  projectId: metadata.projectId,
+  network,
+  dbPort: ports.ports['db.port'],
+  imageRef: 'ghcr.io/supabase/postgres:17.6.1.167',
+});
+// The reviewed native CLI reads this supported shell override before project dotenv.
+process.env.SUPABASE_SERVICES_HOSTNAME = '127.0.0.1';
+process.env.DOCKER_HOST = 'unix:///var/run/docker.sock';
 const packets = [];
 let schemaExecutionSucceeded = false;
 let typegenReceipt = null;
@@ -242,6 +254,16 @@ const excluded =
   'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
 const runner = async (command, args, cwd) => {
   try {
+    if (args.includes('start')) await relay.phase('start');
+    else if (args.includes('reset')) await relay.phase('reset');
+    else if (args.includes('stop')) {
+      // A relay failure must not prevent exact owned database cleanup.
+      try {
+        await relay.phase('cleanup');
+      } catch {
+        /* Final receipt retains denial. */
+      }
+    }
     await readEmployeeNetwork(root);
     if (!args.includes('stop')) await networkObserver.assertHealthy();
     if (args.includes('test')) {
@@ -356,10 +378,14 @@ let lifecycleCode = 1;
 let startupAdmission = 'worker-initialize';
 try {
   await startupObserver.started();
+  startupAdmission = 'relay-initialize';
+  await relay.started();
   startupAdmission = 'primary-network-ready';
   const verifiedReadyMarker = await networkObserver.ready();
   startupAdmission = 'worker-network-ready';
   await startupObserver.ready(verifiedReadyMarker);
+  startupAdmission = 'relay-network-ready';
+  await relay.ready(verifiedReadyMarker);
   startupAdmission = 'observer-health';
   await networkObserver.assertHealthy();
   startupAdmission = 'admitted';
@@ -384,6 +410,7 @@ try {
       currentPhase = 'type-generation';
       packetOrdinal = 0;
       try {
+        await relay.phase('typegen');
         await readEmployeeNetwork(root);
         typegenReceipt = await generateEmployeeTypes({
           binaryPath,
@@ -417,13 +444,12 @@ try {
   }
   lifecycleCode = 1;
 }
-const networkProof = await networkObserver.finish();
-let startupEvidence = emptyEmployeeStartEvidence();
-try {
-  startupEvidence = await startupObserver.finish(networkProof.endMarkerId);
-} catch {
-  startupEvidence.observerUncertain = true;
-}
+const finalization = await finishEmployeeControllerWorkers({
+  network: networkObserver,
+  relay,
+  startup: startupObserver,
+});
+const { networkProof, relayEvidence, startupEvidence } = finalization;
 writeFileSync(
   path.join(receiptDirectory, 'start-evidence.json'),
   `${JSON.stringify({ version: 1, sourceSha, controlSha, evidence: startupEvidence }, null, 2)}\n`,
@@ -439,10 +465,24 @@ const receipt = {
   controlSha,
   snapshotSha256,
   networkId: network.id,
+  networkNonce: network.labels['ttr.employee.nonce'],
+  runId: network.labels['ttr.employee.run'],
+  runAttempt: network.labels['ttr.employee.attempt'],
+  workerDrainRecordedAt: Date.now(),
+  networkObserverDrained: networkProof.observerDrained === true,
+  workerFinishFailures: finalization.failures,
   networkQualified: networkProof.qualified,
   networkProof,
   networkCleanupSucceeded: false,
   startupEvidenceDrained: startupEvidence.observerDrained === true,
+  relayEvidence,
+  relayQualified:
+    relayEvidence.listenerReady &&
+    relayEvidence.markerReady &&
+    relayEvidence.targetVerified &&
+    relayEvidence.connected &&
+    relayEvidence.drained &&
+    !relayEvidence.denied,
   combinedLifecycleCode: lifecycleCode,
   typesQualified:
     typegenReceipt !== null && lifecycleCode === 0 && cleanupSucceeded,
@@ -455,6 +495,8 @@ receipt.controllerQualified =
   receipt.schemaQualified &&
   receipt.typesQualified &&
   receipt.networkQualified &&
+  receipt.networkObserverDrained &&
+  receipt.relayQualified &&
   receipt.startupEvidenceDrained;
 receipt.combinedQualified = false;
 writeFileSync(

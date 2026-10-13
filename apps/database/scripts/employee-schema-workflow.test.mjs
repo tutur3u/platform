@@ -145,7 +145,7 @@ test('startup diagnostics are source-bound boolean-only evidence and cannot gran
   );
   assert.match(
     controller,
-    /receipt.schemaQualified &&\s+receipt.typesQualified &&\s+receipt.networkQualified &&\s+receipt.startupEvidenceDrained/u
+    /receipt.schemaQualified &&\s+receipt.typesQualified &&\s+receipt.networkQualified &&\s+receipt.networkObserverDrained &&\s+receipt.relayQualified &&\s+receipt.startupEvidenceDrained/u
   );
   assert.doesNotMatch(
     controller,
@@ -160,11 +160,13 @@ test('admission diagnostic labels describe actual await boundaries without chang
   );
   for (const [stage, call] of [
     ['worker-initialize', 'await startupObserver.started()'],
+    ['relay-initialize', 'await relay.started()'],
     ['primary-network-ready', 'await networkObserver.ready()'],
     [
       'worker-network-ready',
       'await startupObserver.ready(verifiedReadyMarker)',
     ],
+    ['relay-network-ready', 'await relay.ready(verifiedReadyMarker)'],
     ['observer-health', 'await networkObserver.assertHealthy()'],
   ]) {
     const start = controller.indexOf(`startupAdmission = '${stage}'`);
@@ -177,7 +179,7 @@ test('admission diagnostic labels describe actual await boundaries without chang
   );
   assert.match(
     controller,
-    /receipt.schemaQualified &&\s+receipt.typesQualified &&\s+receipt.networkQualified &&\s+receipt.startupEvidenceDrained/u
+    /receipt.schemaQualified &&\s+receipt.typesQualified &&\s+receipt.networkQualified &&\s+receipt.networkObserverDrained &&\s+receipt.relayQualified &&\s+receipt.startupEvidenceDrained/u
   );
   assert.match(
     controller,
@@ -337,3 +339,5 @@ if (args.includes('events')) {
     }
   });
 }
+
+import './employee-schema-loopback-relay.test.mjs';
