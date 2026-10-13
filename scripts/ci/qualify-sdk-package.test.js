@@ -415,6 +415,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
           .join('\n')
       );
     if (command === 'npm' && args[0] === 'install') {
+      if (changes.installFailure) return changes.installFailure;
       consumer = options.cwd;
       const installed = path.join(consumer, 'node_modules/tuturuuu');
       fs.cpSync(stageSdk, installed, { recursive: true });
@@ -483,7 +484,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
     sourceSha,
     run,
   });
-  return { receipt, commands, consumer };
+  return { receipt, commands, consumer, root };
 }
 
 test('injected pipeline checks shipped resources and compiled-entry controls without package tools', async (t) => {
@@ -585,4 +586,66 @@ test('a process-helper-only change selects package qualification', () => {
     true,
     'helper-only changes must run the drain controls'
   );
+});
+
+test('install failure retains only bounded diagnostic hashes and allowlisted reported codes before cleanup', async (t) => {
+  const secret = 'synthetic-private-token';
+  const stderr =
+    `npm error code ERESOLVE\nnpm error /private/customer ${secret} https://registry.invalid/auth?token=${secret}\n` +
+    'x'.repeat(9000);
+  const stdout = `private stdout ${secret}`;
+  const { receipt, commands, root } = await injectedPipeline(t, {
+    installFailure: { status: 1, signal: null, stdout, stderr },
+  });
+  assert.equal(receipt.qualified, false);
+  assert.equal(receipt.blocker.code, 'PACKAGE_INSTALL_FAILED');
+  assert.equal(receipt.temporaryFixtureDrained, true);
+  const diagnostic = receipt.installFailure;
+  assert.equal(diagnostic.exitStatus, 1);
+  assert.equal(diagnostic.signal, null);
+  assert.equal(diagnostic.npmCode, 'ERESOLVE');
+  assert.equal(diagnostic.category, 'dependency-resolution');
+  for (const [name, text] of Object.entries({ stdout, stderr })) {
+    const bytes = Buffer.from(text),
+      prefix = bytes.subarray(0, 4096);
+    assert.deepEqual(diagnostic[name], {
+      hashedBytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+      prefixHashedBytes: prefix.length,
+      prefixSha256: createHash('sha256').update(prefix).digest('hex'),
+    });
+  }
+  const saved = fs.readFileSync(path.join(root, 'output/receipt.json'), 'utf8');
+  assert.doesNotMatch(
+    saved,
+    /synthetic-private-token|registry\.invalid|customer|private stdout/
+  );
+  assert.deepEqual(JSON.parse(saved).installFailure, diagnostic);
+  assert.equal(commands.at(-1)[1][0], 'install');
+  const unknown = await injectedPipeline(t, {
+    installFailure: {
+      status: null,
+      signal: 'SIGTERM',
+      stdout: '',
+      stderr: 'npm error code SECRET_VALUE\nnpm error code E404 token=private',
+    },
+  });
+  assert.equal(unknown.receipt.installFailure.npmCode, null);
+  assert.equal(unknown.receipt.installFailure.category, 'unclassified');
+  assert.equal(unknown.receipt.installFailure.signal, 'SIGTERM');
+});
+
+test('serial build uses the cache wrapper with empty default credentials', () => {
+  const workflow = fs.readFileSync(
+    path.resolve(
+      __dirname,
+      '../../.github/workflows/sdk-package-qualification.yaml'
+    ),
+    'utf8'
+  );
+  assert.match(
+    workflow,
+    /name: Build SDK and dependencies serially\n\s+uses: \.\/\.github\/actions\/run-with-turbo-remote-cache\n\s+with:\n\s+command: timeout --kill-after=10s 900s bun turbo:local run build --concurrency=1 --filter=tuturuuu\.\.\./
+  );
+  assert.doesNotMatch(workflow, /(?:token|team|api|signature-key):|secrets\./);
 });

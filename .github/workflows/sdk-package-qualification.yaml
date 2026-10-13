@@ -53,7 +53,9 @@ jobs:
       - name: Test qualification controls
         run: timeout --kill-after=10s 30s node --test scripts/ci/qualify-sdk-package.test.js
       - name: Build SDK and dependencies serially
-        run: timeout --kill-after=10s 900s bun turbo:local run build --concurrency=1 --filter=tuturuuu...
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: timeout --kill-after=10s 900s bun turbo:local run build --concurrency=1 --filter=tuturuuu...
       - name: Qualify packed and installed compiled CLI
         env:
           QUALIFICATION_OUTPUT: ${{ runner.temp }}/sdk-package-qualification

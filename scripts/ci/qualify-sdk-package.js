@@ -17,6 +17,46 @@ function fail(code, message) {
   error.code = code;
   throw error;
 }
+function installFailureDiagnostic(result) {
+  const codes = {
+    ERESOLVE: 'dependency-resolution',
+    E404: 'registry-response',
+    E401: 'registry-response',
+    ETARGET: 'dependency-resolution',
+    EINTEGRITY: 'integrity',
+    ENOTFOUND: 'network',
+    ECONNRESET: 'network',
+    ETIMEDOUT: 'network',
+    EACCES: 'filesystem',
+  };
+  const streams = {};
+  let npmCode = null;
+  for (const name of ['stdout', 'stderr']) {
+    const bytes = Buffer.from(result[name]);
+    const prefix = bytes.subarray(0, 4096);
+    streams[name] = {
+      hashedBytes: bytes.length,
+      sha256: hash(bytes),
+      prefixHashedBytes: prefix.length,
+      prefixSha256: hash(prefix),
+    };
+    for (const match of prefix
+      .toString()
+      .matchAll(/^npm (?:error|ERR!) code ([A-Z0-9_]+)\s*$/gm))
+      if (Object.hasOwn(codes, match[1])) npmCode = match[1];
+  }
+  return {
+    exitStatus: Number.isSafeInteger(result.status) ? result.status : null,
+    signal: ['SIGABRT', 'SIGKILL', 'SIGTERM', 'SIGSEGV', 'SIGINT'].includes(
+      result.signal
+    )
+      ? result.signal
+      : null,
+    npmCode,
+    category: npmCode ? codes[npmCode] : 'unclassified',
+    ...streams,
+  };
+}
 function safeMember(value) {
   if (
     typeof value !== 'string' ||
@@ -434,8 +474,10 @@ async function qualify({ root, output, sourceSha, run = runProcess }) {
       consumer,
       180000
     );
-    if (install.status !== 0)
+    if (install.status !== 0) {
+      receipt.installFailure = installFailureDiagnostic(install);
       fail('PACKAGE_INSTALL_FAILED', 'Isolated npm install failed');
+    }
     const installed = path.join(consumer, 'node_modules/tuturuuu');
     if (
       fs.lstatSync(installed).isSymbolicLink() ||
