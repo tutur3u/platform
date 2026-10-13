@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "runtime": "litert-lm",
+  "runtimeVersion": "0.18.0",
+  "environment": {
+    "implementation_name": "cpython",
+    "implementation_version": "3.12.15",
+    "os_name": "posix",
+    "platform_machine": "arm64",
+    "platform_release": "27.0.0",
+    "platform_system": "Darwin",
+    "platform_version": "Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132",
+    "python_full_version": "3.12.15",
+    "platform_python_implementation": "CPython",
+    "python_version": "3.12",
+    "sys_platform": "darwin"
+  },
+  "wheelBytes": 23563452,
+  "source": "https://github.com/google-ai-edge/LiteRT-LM/releases/tag/v0.18.0",
+  "wheels": [
+    {
+      "name": "litert-lm",
+      "version": "0.18.0",
+      "filename": "litert_lm-0.18.0-py3-none-any.whl",
+      "sha256": "fa22fb54598aa8593bce29c5816fa40eb1d00d2dc56e689a00019b4ad7a6da12",
+      "bytes": 97305,
+      "url": "https://files.pythonhosted.org/packages/7d/47/d873e8f53be07fc6c9e412234adcb6345d6356abbd7a8f115c473d32207d/litert_lm-0.18.0-py3-none-any.whl",
+      "license": "Apache-2.0",
+      "licenseEvidence": "https://pypi.org/pypi/litert-lm/0.18.0/json",
+      "evidence": "https://pypi.org/pypi/litert-lm/0.18.0/json"
+    },
+    {
+      "name": "litert-lm-api",
+      "version": "0.18.0",
+      "filename": "litert_lm_api-0.18.0-py3-none-macosx_12_0_arm64.whl",
+      "sha256": "9fd0c55835e469a035c1b75cde4797b26292963c2c36d9fcdfceb965ffa08a37",
+      "bytes": 21430649,
+      "url": "https://files.pythonhosted.org/packages/cc/df/147e5fa60cf8964bdcbc022cbd38502f91ea415bf82bed2c9335fcf9be9d/litert_lm_api-0.18.0-py3-none-macosx_12_0_arm64.whl",
+      "license": "Apache-2.0",
+      "licenseEvidence": "https://pypi.org/pypi/litert-lm-api/0.18.0/json",
+      "evidence": "https://pypi.org/pypi/litert-lm-api/0.18.0/json"
+    },
+    {
+      "name": "litert-lm-builder",
+      "version": "0.18.0",
+      "filename": "litert_lm_builder-0.18.0-py3-none-any.whl",
+      "sha256": "77a0969bcab6a89a32861887fc45bb6cc6683ac64e2b43fc84fd4074c8879903",
+      "bytes": 41228,
+      "url": "https://files.pythonhosted.org/packages/3c/c6/7edea6f665610b9a0c33d9de005ac619a4a96d60e7a07a7f0fe0b86a6846/litert_lm_builder-0.18.0-py3-none-any.whl",
+      "license": "Apache-2.0",
+      "licenseEvidence": "https://pypi.org/pypi/litert-lm-builder/0.18.0/json",
+      "evidence": "https://pypi.org/pypi/litert-lm-builder/0.18.0/json"
+    },
+    {
+      "name": "absl-py",
+      "version": "2.5.1",
+      "filename": "absl_py-2.5.1-py3-none-any.whl",
+      "sha256": "721200f2f0e9960f2ca9dc3a2a706b201f5f75d812c158f059cbbe29eeafbdb8",
+      "bytes": 137673,
+      "url": "https://files.pythonhosted.org/packages/b3/7d/01e62f59e4166af1be6238d9f2b7f3453630c51b8044b412d05b5606532a/absl_py-2.5.1-py3-none-any.whl",
+      "license": "Apache-2.0",
+      "licenseEvidence": "https://pypi.org/pypi/absl-py/2.5.1/json",
+      "evidence": "https://pypi.org/pypi/absl-py/2.5.1/json"
+    },
+    {
+      "name": "click",
+      "version": "8.5.0",
+      "filename": "click-8.5.0-py3-none-any.whl",
+      "sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360",
+      "bytes": 125251,
+      "url": "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl",
+      "license": "BSD-3-Clause",
+      "licenseEvidence": "https://pypi.org/pypi/click/8.5.0/json",
+      "evidence": "https://pypi.org/pypi/click/8.5.0/json"
+    },
+    {
+      "name": "flatbuffers",
+      "version": "25.12.19",
+      "filename": "flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "sha256": "7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4",
+      "bytes": 26661,
+      "url": "https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "license": "Apache 2.0",
+      "licenseEvidence": "https://pypi.org/pypi/flatbuffers/25.12.19/json",
+      "evidence": "https://pypi.org/pypi/flatbuffers/25.12.19/json"
+    },
+    {
+      "name": "prompt_toolkit",
+      "version": "3.0.53",
+      "filename": "prompt_toolkit-3.0.53-py3-none-any.whl",
+      "sha256": "01c0891d7f9237d5e339f7d3e42cdae80b7534abb1c7c0e3352efba6231492f2",
+      "bytes": 392288,
+      "url": "https://files.pythonhosted.org/packages/54/6f/84908cad2d6aa5144abcf7b42709fe4fdb459bc640ec7ac5786e7693dabc/prompt_toolkit-3.0.53-py3-none-any.whl",
+      "license": "BSD-3-Clause",
+      "licenseEvidence": "https://raw.githubusercontent.com/prompt-toolkit/python-prompt-toolkit/3.0.53/LICENSE",
+      "evidence": "https://pypi.org/pypi/prompt_toolkit/3.0.53/json"
+    },
+    {
+      "name": "wcwidth",
+      "version": "0.9.2",
+      "filename": "wcwidth-0.9.2-cp310-abi3-macosx_11_0_arm64.whl",
+      "sha256": "ae0800c5339423cc53d33a266ad264b42ba8aaa16d4464f6e6b1bee607f50b17",
+      "bytes": 609960,
+      "url": "https://files.pythonhosted.org/packages/a0/07/cb6940e81134b7ed25fa312ee9ab536a63db0793b149f88a90e603ceace9/wcwidth-0.9.2-cp310-abi3-macosx_11_0_arm64.whl",
+      "license": "MIT",
+      "licenseEvidence": "https://raw.githubusercontent.com/jquast/wcwidth/0.9.2/LICENSE",
+      "evidence": "https://pypi.org/pypi/wcwidth/0.9.2/json"
+    },
+    {
+      "name": "protobuf",
+      "version": "7.36.2",
+      "filename": "protobuf-7.36.2-cp310-abi3-macosx_10_9_universal2.whl",
+      "sha256": "cbc70b17ee27e28894c7fee8bb04be1abead49e936bc70eb60052531eee2079e",
+      "bytes": 456039,
+      "url": "https://files.pythonhosted.org/packages/32/72/98342feb672507c8f3a69e34b4fa8961f608edba5c1a48a6f47156d92cb5/protobuf-7.36.2-cp310-abi3-macosx_10_9_universal2.whl",
+      "license": "3-Clause BSD License",
+      "licenseEvidence": "https://pypi.org/pypi/protobuf/7.36.2/json",
+      "evidence": "https://pypi.org/pypi/protobuf/7.36.2/json"
+    },
+    {
+      "name": "questionary",
+      "version": "2.1.1",
+      "filename": "questionary-2.1.1-py3-none-any.whl",
+      "sha256": "a51af13f345f1cdea62347589fbb6df3b290306ab8930713bfae4d475a7d4a59",
+      "bytes": 36753,
+      "url": "https://files.pythonhosted.org/packages/3c/26/1062c7ec1b053db9e499b4d2d5bc231743201b74051c973dadeac80a8f43/questionary-2.1.1-py3-none-any.whl",
+      "license": "MIT",
+      "licenseEvidence": "https://pypi.org/pypi/questionary/2.1.1/json",
+      "evidence": "https://pypi.org/pypi/questionary/2.1.1/json"
+    },
+    {
+      "name": "tomli",
+      "version": "2.5.0",
+      "filename": "tomli-2.5.0-cp312-cp312-macosx_11_0_arm64.whl",
+      "sha256": "9ebf8d19b17bd0daeb7b7dec81a946a439b753942fd0210d6e96c532249eea6b",
+      "bytes": 164074,
+      "url": "https://files.pythonhosted.org/packages/a5/b1/44c0341f2224397855723c7a8a39f718ea6fcbcc3dacc66e5aeca0f334e3/tomli-2.5.0-cp312-cp312-macosx_11_0_arm64.whl",
+      "license": "MIT",
+      "licenseEvidence": "https://pypi.org/pypi/tomli/2.5.0/json",
+      "evidence": "https://pypi.org/pypi/tomli/2.5.0/json"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "bytes": 45571,
+      "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+      "license": "PSF-2.0",
+      "licenseEvidence": "https://pypi.org/pypi/typing_extensions/4.16.0/json",
+      "evidence": "https://pypi.org/pypi/typing_extensions/4.16.0/json"
+    }
+  ],
+  "modelDownloaded": false,
+  "apiProbePerformed": false
+}
