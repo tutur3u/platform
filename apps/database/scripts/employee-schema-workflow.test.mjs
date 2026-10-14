@@ -60,13 +60,13 @@ test('strict receipt tests run from control root', () => {
   assert.doesNotMatch(step, /working-directory:/u);
   assert.match(
     step,
-    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs$/mu
+    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs apps\/database\/scripts\/employee-normalization-qualification.test.mjs$/mu
   );
 });
 
 test('schema runner uses source cwd and control script', () => {
   const step = namedStep(
-    'Apply full isolated schema and qualify 172 rollback assertions'
+    'Apply isolated schema and qualify the selected rollback packet'
   );
   assert.match(step, /^ {8}working-directory: source$/mu);
   assert.match(
@@ -82,5 +82,18 @@ test('always cleanup uses the same source cwd and control script', () => {
   assert.match(
     step,
     /^ {8}run: node \.\.\/apps\/database\/scripts\/verify-employee-schema-contract.mjs --cleanup$/mu
+  );
+});
+
+test('normalization is an opt-in exact packet mode; diagnostics cannot substitute', () => {
+  assert.match(workflow, /normalization_only:[\s\S]*?default: false/u);
+  assert.match(
+    workflow,
+    /EMPLOYEE_NORMALIZATION_ONLY: \$\{\{ inputs.normalization_only \}\}/u
+  );
+  assert.ok(
+    namedStep('Reject incompatible qualification selections').includes(
+      'process.exit(1)'
+    )
   );
 });

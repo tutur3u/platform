@@ -69,3 +69,29 @@ staff email/name and employee staff email/name/lifecycle/recovery. The original
 schema identity is not inferred. SQLSTATE must be 23514; unknown pairs or altered
 text remain `other_redacted`; invalid caught evidence emits null. This diagnostic
 does not change SQL, the 25 assertions or the strict 172-assertion success gate.
+
+### Reviewed mailbox normalization packet
+
+For the frozen PR #6258 additive mailbox normalization, dispatch the same workflow
+from its reviewed control branch with `normalization_only=true`,
+`structured_provenance=false`, and the full quarantined candidate `source_sha`.
+Candidate reachability is qualification-only publication; it does not update the
+PR branch or authorize a main merge.
+
+This opt-in mode verifies the exact reviewed migration and 20-case fixture hashes.
+It stages the complete candidate database snapshot except that one additive
+migration, applies the baseline, records the actual function catalog, applies the
+exact amendment, and records the catalog again. Owner, ACL, security-definer flag,
+empty search path, signature, language and restricted execution privileges must be
+preserved; the applied function body must exactly match the frozen migration.
+The selected test then requires plan 20, all assertions passing, no skips, and an
+observed rollback. The receipt includes both catalog observations and qualifies
+only this packet after successful owned cleanup. It explicitly leaves the
+separate 172-assertion foundation qualification false; default workflow behavior
+and its five original packets are unchanged.
+
+Inspect `qualification.json` for `normalizationQualified=true`, the exact source
+and control SHAs, `catalogVerified=true`, the 20 assertions and successful cleanup
+before integrating the frozen migration and test into the PR. A green job or the
+old 172-suite alone cannot substitute for this receipt. No provider or production
+SQL operation is authorized by this isolated qualification.

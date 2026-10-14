@@ -6,6 +6,11 @@ on:
         description: Exact reviewed creation/restoration stack commit (40 hex characters)
         required: true
         type: string
+      normalization_only:
+        description: Qualify only the frozen 20-case mailbox normalization and applied catalog
+        required: false
+        default: false
+        type: boolean
       structured_provenance:
         description: Diagnostic-only two-statement provenance; never 172 qualification
         required: false
@@ -33,6 +38,8 @@ jobs:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
+      EMPLOYEE_NORMALIZATION_ONLY: ${{ inputs.normalization_only }}
+      EMPLOYEE_STRUCTURED_PROVENANCE: ${{ inputs.structured_provenance }}
     steps:
       - name: Require the enabled schema gate
         env:
@@ -40,6 +47,8 @@ jobs:
         run: test "$CONTRACT_ENABLED" = true
       - name: Validate exact source selection
         run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA)) process.exit(1)'
+      - name: Reject incompatible qualification selections
+        run: node -e 'if (process.env.EMPLOYEE_NORMALIZATION_ONLY === "true" && process.env.EMPLOYEE_STRUCTURED_PROVENANCE === "true") process.exit(1)'
       - name: Validate structured diagnostic selection
         if: inputs.structured_provenance == true
         run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/main" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5c7c08e23a3d410bdbdc066f5c4dd2776fbeabd7") process.exit(1)'
@@ -63,10 +72,10 @@ jobs:
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify strict TAP and receipt gates
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs apps/database/scripts/employee-normalization-qualification.test.mjs
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
-      - name: Apply full isolated schema and qualify 172 rollback assertions
+      - name: Apply isolated schema and qualify the selected rollback packet
         if: inputs.structured_provenance != true
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs
