@@ -10,6 +10,7 @@ import {
   normalizationReceipt,
   normalizationSQLFailure,
   prepareNormalizationTestDependency,
+  retainNormalizationFailure,
   verifyMailboxCatalog,
   verifyNormalizationInputs,
 } from './employee-normalization-qualification.mjs';
@@ -192,6 +193,7 @@ let currentPhase = 'full-schema-snapshot';
 let packetOrdinal = 0;
 let failureDiagnostic = null;
 const bounded = (command, args, cwd, timeout) => {
+  const clientBefore = new Date().toISOString();
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
@@ -200,6 +202,7 @@ const bounded = (command, args, cwd, timeout) => {
     maxBuffer: 1024 * 1024,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  const clientAfter = new Date().toISOString();
   // Never print SQL diagnostics, fixture identities, CLI tokens or credentials.
   if (result.error || result.signal || result.status !== 0) {
     failureDiagnostic ??= schemaFailureDiagnostic(
@@ -207,8 +210,26 @@ const bounded = (command, args, cwd, timeout) => {
       packetOrdinal,
       result
     );
-    if (normalizationOnly)
-      Object.assign(failureDiagnostic, normalizationSQLFailure(result.stderr));
+    if (normalizationOnly) {
+      const diagnostic =
+        currentPhase === 'packet-execution' &&
+        testDependencyPhase === 'verified' &&
+        args.includes('-f')
+          ? retainNormalizationFailure(result, {
+              directory: path.join(
+                process.env.RUNNER_TEMP,
+                `employee-schema-private-${metadata.projectId}`
+              ),
+              phase: currentPhase,
+              packetOrdinal,
+              clientBefore,
+              clientAfter,
+              sourceSha,
+              controlSha: process.env.EMPLOYEE_SCHEMA_CONTROL_SHA,
+            })
+          : normalizationSQLFailure(result.stderr);
+      Object.assign(failureDiagnostic, diagnostic);
+    }
     throw new Error('Bounded employee schema command failed');
   }
   return result.stdout;
@@ -331,7 +352,7 @@ const runner = async (command, args, cwd) => {
             '-t',
             '-v',
             'ON_ERROR_STOP=1',
-            ...(normalizationOnly ? ['-v', 'VERBOSITY=sqlstate'] : []),
+            ...(normalizationOnly ? ['-v', 'VERBOSITY=verbose'] : []),
             '-U',
             'supabase_admin',
             '--dbname',

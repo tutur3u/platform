@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import fs, { readFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import {
   normalizationPacket,
@@ -7,6 +10,7 @@ import {
   normalizationSQLFailure,
   pgTapBootstrapSQL,
   prepareNormalizationTestDependency,
+  retainNormalizationFailure,
   testDependencyCatalogSQL,
   verifyMailboxCatalog,
   verifyNormalizationInputs,
@@ -388,5 +392,241 @@ test('runner stages the baseline without the additive migration, applies it then
   assert.ok(
     runner.indexOf('verifyMailboxCatalog(catalog.before') <
       runner.indexOf('for (const [position')
+  );
+});
+
+const privateCheckDiagnostic =
+  'psql:/tmp/employee-schema-contract.sql:16: ERROR:  23514: private-token fixture@example.com\nDETAIL: Failing row contains (00000000-0000-4000-8000-000000094501, private-token).\nCONTEXT: PL/pgSQL function private.fixture_guard() line 9 at RAISE\nSCHEMA NAME: auth\nTABLE NAME: users\nCONSTRAINT NAME: fixture_guard_check\n';
+test('private-diagnostic retention captures named23514', () => {
+  const diagnostic = normalizationSQLFailure(privateCheckDiagnostic);
+  assert.equal(diagnostic.constraint, 'fixture_guard_check');
+  assert.equal(diagnostic.fixtureLine, 16);
+  assert.equal(diagnostic.sqlState, '23514');
+});
+
+const diagnosticHomes = [];
+const diagnosticResult = {
+  stdout: '1..20\n',
+  stderr: privateCheckDiagnostic,
+  status: 3,
+  signal: null,
+  error: undefined,
+};
+function diagnosticContext() {
+  const home = fs.mkdtempSync(join(tmpdir(), 'employee-private-diagnostic-'));
+  diagnosticHomes.push(home);
+  return {
+    directory: join(home, 'raw'),
+    sourceSha: 'a'.repeat(40),
+    controlSha: 'b'.repeat(40),
+    phase: 'packet-execution',
+    packetOrdinal: 1,
+    clientBefore: '2026-10-14T00:00:00.000Z',
+    clientAfter: '2026-10-14T00:00:00.001Z',
+  };
+}
+test.afterEach(() => {
+  test.mock.restoreAll();
+  syncBuiltinESMExports();
+  for (const home of diagnosticHomes.splice(0))
+    fs.rmSync(home, { recursive: true, force: true });
+});
+test('private-diagnostic retention binds private result and phase', () => {
+  const context = diagnosticContext();
+  const result = retainNormalizationFailure(diagnosticResult, context);
+  assert.equal(result.privateEvidence.retained, true);
+  const raw = JSON.parse(readFileSync(join(context.directory, 'failure.json')));
+  assert.equal(raw.sourceSha, context.sourceSha);
+  assert.equal(raw.controlSha, context.controlSha);
+  assert.equal(raw.phase, 'packet-execution');
+  assert.equal(raw.packetOrdinal, 1);
+  assert.equal(raw.clientBefore, context.clientBefore);
+  assert.equal(raw.clientAfter, context.clientAfter);
+  assert.equal(raw.status, 3);
+  assert.equal(fs.statSync(context.directory).mode & 0o777, 0o700);
+  assert.equal(
+    fs.statSync(join(context.directory, 'failure.json')).mode & 0o777,
+    0o600
+  );
+  assert.equal(
+    retainNormalizationFailure(diagnosticResult, {
+      ...context,
+      phase: 'unknown',
+    }).privateEvidence.retained,
+    false
+  );
+});
+test('private-diagnostic retention distinguishes synthetic row and unknown', () => {
+  assert.equal(
+    normalizationSQLFailure(privateCheckDiagnostic).setupRow,
+    'setup-auth-row-1'
+  );
+  assert.equal(
+    normalizationSQLFailure(
+      privateCheckDiagnostic.replace(
+        '00000000-0000-4000-8000-000000094501',
+        '00000000-0000-4000-8000-000000099999'
+      )
+    ).setupRow,
+    null
+  );
+  assert.equal(
+    normalizationSQLFailure(
+      privateCheckDiagnostic.replace(
+        'private-token).',
+        '00000000-0000-4000-8000-000000094502).'
+      )
+    ).setupRow,
+    null
+  );
+});
+test('private-diagnostic retention never projects raw values', () => {
+  const safe = JSON.stringify(
+    retainNormalizationFailure(diagnosticResult, diagnosticContext())
+  );
+  for (const secret of [
+    'private-token',
+    'fixture@example.com',
+    '00000000-0000-4000-8000-000000094501',
+    'Failing row contains',
+    'at RAISE',
+  ])
+    assert.equal(safe.includes(secret), false);
+  const parsed = JSON.parse(safe);
+  assert.equal(parsed.contextFunction, 'private.fixture_guard');
+  assert.equal(parsed.contextLine, 9);
+  assert.match(parsed.textEvidence.detailSHA256, /^[a-f0-9]{64}$/u);
+});
+test('private-diagnostic retention malformed fields remain unknown', () => {
+  assert.deepEqual(
+    normalizationSQLFailure(
+      'psql:/tmp/employee-schema-contract.sql:27: ERROR:  23505\n'
+    ),
+    { fixtureLine: 27, sqlState: '23505' }
+  );
+  assert.deepEqual(normalizationSQLFailure('private-token'), {
+    fixtureLine: null,
+    sqlState: null,
+  });
+  assert.equal(
+    normalizationSQLFailure(privateCheckDiagnostic.repeat(2)).fixtureLine,
+    null
+  );
+  const bad = normalizationSQLFailure(
+    privateCheckDiagnostic
+      .replace('SCHEMA NAME: auth', 'SCHEMA NAME: untrusted')
+      .replace(
+        'CONSTRAINT NAME: fixture_guard_check',
+        'CONSTRAINT NAME: private-token@example.com'
+      )
+  );
+  assert.equal(bad.schema, null);
+  assert.equal(bad.table, null);
+  assert.equal(bad.constraint, null);
+});
+test('private-diagnostic retention bounds oversized streams', () => {
+  const result = retainNormalizationFailure(
+    { ...diagnosticResult, stderr: 'x'.repeat(1024 * 1024 + 1) },
+    diagnosticContext()
+  );
+  assert.equal(result.privateEvidence.retained, false);
+  assert.equal(result.fixtureLine, null);
+  assert.equal(result.privateEvidence.stderrBytes, 1024 * 1024 + 1);
+  assert.match(result.privateEvidence.stderrSHA256, /^[a-f0-9]{64}$/u);
+});
+test('private-diagnostic retention write and read failures stay unavailable', () => {
+  const first = diagnosticContext();
+  const good = retainNormalizationFailure(diagnosticResult, first);
+  assert.equal(good.privateEvidence.retained, true);
+  assert.equal(
+    retainNormalizationFailure(diagnosticResult, first).privateEvidence
+      .retained,
+    false
+  );
+  const second = diagnosticContext();
+  test.mock.method(fs, 'readFileSync', () => {
+    throw new Error('private-reader-fault');
+  });
+  syncBuiltinESMExports();
+  const readFailure = retainNormalizationFailure(diagnosticResult, second);
+  assert.equal(readFailure.privateEvidence.retained, false);
+  assert.equal(
+    JSON.stringify(readFailure).includes('private-reader-fault'),
+    false
+  );
+  assert.equal(
+    normalizationReceipt({ ...successful, lifecycleCode: 1 })
+      .normalizationQualified,
+    false
+  );
+});
+test('private-diagnostic retention preserves signal and process failure truth', () => {
+  const context = diagnosticContext();
+  const safe = retainNormalizationFailure(
+    {
+      ...diagnosticResult,
+      status: null,
+      signal: 'SIGTERM',
+      error: new Error('private-process-token'),
+    },
+    context
+  );
+  const raw = JSON.parse(readFileSync(join(context.directory, 'failure.json')));
+  assert.equal(raw.signaled, true);
+  assert.equal(raw.processError, true);
+  assert.equal(raw.status, null);
+  assert.equal(JSON.stringify(safe).includes('private-process-token'), false);
+});
+test('private-diagnostic retention success remains diagnostic free', () => {
+  const receipt = normalizationReceipt(successful);
+  assert.equal(receipt.normalizationQualified, true);
+  assert.equal('failureDiagnostic' in receipt, false);
+  assert.equal(receipt.schemaQualified, false);
+  assert.equal(receipt.foundation172Qualified, false);
+});
+test('private-diagnostic retention cannot override qualification guards', () => {
+  for (const changed of [
+    { lifecycleCode: 1 },
+    { cleanupSucceeded: false },
+    { testDependencyPhase: 'not-started' },
+    { catalogVerified: false },
+    { packets: [] },
+  ]) {
+    const receipt = normalizationReceipt({
+      ...successful,
+      ...changed,
+      failureDiagnostic: { constraint: 'fixture_guard_check' },
+    });
+    assert.equal(receipt.normalizationQualified, false);
+    assert.equal(receipt.providerQualified, false);
+    assert.equal(receipt.productionApplied, false);
+  }
+});
+test('private-diagnostic retention preserves foundation mode selection', () => {
+  const runner = readFileSync(
+    new URL('./verify-employee-schema-contract.mjs', import.meta.url),
+    'utf8'
+  );
+  assert.match(
+    runner,
+    /const selectedPackets = normalizationOnly\s*\? \[normalizationPacket\]\s*: foundationPackets;/u
+  );
+  assert.match(runner, /if \(normalizationOnly\) \{\s*const diagnostic/u);
+});
+test('private-diagnostic retention richer request only guards selected packet', () => {
+  const runner = readFileSync(
+    new URL('./verify-employee-schema-contract.mjs', import.meta.url),
+    'utf8'
+  );
+  assert.ok(
+    runner.includes("...(normalizationOnly ? ['-v', 'VERBOSITY=verbose'] : [])")
+  );
+  assert.match(
+    runner,
+    /testDependencyPhase === 'verified'\s*&&\s*args\.includes\('-f'\)/u
+  );
+  assert.ok(runner.includes('retainNormalizationFailure(result, {'));
+  assert.ok(
+    runner.includes("throw new Error('Bounded employee schema command failed')")
   );
 });

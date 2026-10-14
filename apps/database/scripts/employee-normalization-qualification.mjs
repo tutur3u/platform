@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { exactSourceSha } from './employee-schema-tap.mjs';
 
 export const normalizationPacket = Object.freeze([
@@ -160,20 +162,142 @@ export function prepareNormalizationTestDependency(
   return evidence;
 }
 
-// psql VERBOSITY=sqlstate suppresses values, messages, details and SQL context.
+const digest = (value) => createHash('sha256').update(value).digest('hex');
+const identifier = /^[a-z_][a-z0-9_$]{0,62}$/u;
+const setupIdentities = new Map([
+  ['00000000-0000-4000-8000-000000094501', 'setup-auth-row-1'],
+  ['00000000-0000-4000-8000-000000094502', 'setup-auth-row-2'],
+]);
+
 export function normalizationSQLFailure(stderr) {
   const unknown = { fixtureLine: null, sqlState: null };
   if (typeof stderr !== 'string' || Buffer.byteLength(stderr, 'utf8') > 65536)
     return unknown;
   const matches = [
     ...stderr.matchAll(
-      /^psql:\/tmp\/employee-schema-contract\.sql:(\d+): ERROR: +([0-9A-Z]{5})\s*$/gmu
+      /^psql:\/tmp\/employee-schema-contract\.sql:(\d+): ERROR: +([0-9A-Z]{5})(?:: ([^\n]*))?\s*$/gmu
     ),
   ];
   if (matches.length !== 1) return unknown;
-  const line = Number(matches[0][1]);
-  if (!Number.isSafeInteger(line) || line < 1 || line > 700) return unknown;
-  return { fixtureLine: line, sqlState: matches[0][2] };
+  const [, rawLine, sqlState, message] = matches[0];
+  const fixtureLine = Number(rawLine);
+  if (
+    !Number.isSafeInteger(fixtureLine) ||
+    fixtureLine < 1 ||
+    fixtureLine > 700
+  )
+    return unknown;
+  if (message === undefined) return { fixtureLine, sqlState };
+  const field = (name) => {
+    const found = [
+      ...stderr.matchAll(new RegExp(`^${name}: +([^\\n]*)$`, 'gmu')),
+    ];
+    return found.length === 1 ? found[0][1] : null;
+  };
+  const schema = field('SCHEMA NAME');
+  const trustedSchema = ['auth', 'public', 'private'].includes(schema)
+    ? schema
+    : null;
+  const name = (label) => {
+    const value = field(label);
+    return trustedSchema && value && identifier.test(value) ? value : null;
+  };
+  const detail = field('DETAIL');
+  const context = field('CONTEXT');
+  const functionMatch = context?.match(
+    /^PL\/pgSQL function ((?:auth|public|private)\.[a-z_][a-z0-9_$]{0,62})\([^)]*\) line ([1-9][0-9]{0,5}) at [A-Z ]+$/u
+  );
+  const rows = [...setupIdentities]
+    .filter(([id]) => detail?.toLowerCase().includes(id))
+    .map(([, label]) => label);
+  return {
+    fixtureLine,
+    sqlState,
+    schema: trustedSchema,
+    table: name('TABLE NAME'),
+    constraint: name('CONSTRAINT NAME'),
+    contextFunction: functionMatch?.[1] ?? null,
+    contextLine: functionMatch ? Number(functionMatch[2]) : null,
+    setupRow:
+      fixtureLine === 16 &&
+      trustedSchema === 'auth' &&
+      name('TABLE NAME') === 'users' &&
+      detail?.startsWith('Failing row contains (') &&
+      rows.length === 1
+        ? rows[0]
+        : null,
+    textEvidence: {
+      messageSHA256: digest(message),
+      detailSHA256: detail === null ? null : digest(detail),
+      contextSHA256: context === null ? null : digest(context),
+    },
+  };
+}
+
+export function retainNormalizationFailure(result, context) {
+  const stdout = typeof result.stdout === 'string' ? result.stdout : '';
+  const stderr = typeof result.stderr === 'string' ? result.stderr : '';
+  const evidence = {
+    retained: false,
+    stdoutBytes: Buffer.byteLength(stdout),
+    stdoutSHA256: digest(stdout),
+    stderrBytes: Buffer.byteLength(stderr),
+    stderrSHA256: digest(stderr),
+  };
+  const safe = () => ({
+    ...normalizationSQLFailure(stderr),
+    privateEvidence: evidence,
+  });
+  try {
+    const sourceSha = exactSourceSha(context.sourceSha);
+    const controlSha = exactSourceSha(context.controlSha);
+    if (
+      context.phase !== 'packet-execution' ||
+      context.packetOrdinal !== 1 ||
+      evidence.stdoutBytes + evidence.stderrBytes > 1024 * 1024 ||
+      typeof result.stdout !== 'string' ||
+      typeof result.stderr !== 'string'
+    )
+      return safe();
+    try {
+      mkdirSync(context.directory, { mode: 0o700 });
+    } catch (error) {
+      if (error?.code !== 'EEXIST') return safe();
+    }
+    const directory = lstatSync(context.directory);
+    if (
+      !directory.isDirectory() ||
+      directory.isSymbolicLink() ||
+      (directory.mode & 0o777) !== 0o700 ||
+      directory.uid !== process.getuid()
+    )
+      return safe();
+    const bytes = `${JSON.stringify({
+      sourceSha,
+      controlSha,
+      phase: context.phase,
+      packetOrdinal: 1,
+      clientBefore:
+        typeof context.clientBefore === 'string' ? context.clientBefore : null,
+      clientAfter:
+        typeof context.clientAfter === 'string' ? context.clientAfter : null,
+      status: Number.isInteger(result.status) ? result.status : null,
+      signaled: Boolean(result.signal),
+      processError: Boolean(result.error),
+      stdout,
+      stderr,
+    })}\n`;
+    const file = join(context.directory, 'failure.json');
+    writeFileSync(file, bytes, { flag: 'wx', mode: 0o600 });
+    const stored = readFileSync(file);
+    if (digest(stored) !== digest(bytes)) return safe();
+    evidence.retained = true;
+    evidence.rawSHA256 = digest(stored);
+    evidence.rawBytes = stored.length;
+  } catch {
+    // Safe artifact records unavailability; raw errors never leave this boundary.
+  }
+  return safe();
 }
 
 export function verifyNormalizationInputs(migration, fixture) {
