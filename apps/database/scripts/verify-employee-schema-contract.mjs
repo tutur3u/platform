@@ -9,6 +9,7 @@ import {
   normalizationPacket,
   normalizationReceipt,
   normalizationSQLFailure,
+  prepareNormalizationTestDependency,
   verifyMailboxCatalog,
   verifyNormalizationInputs,
 } from './employee-normalization-qualification.mjs';
@@ -184,6 +185,8 @@ mkdirSync(receiptDirectory, { recursive: true, mode: 0o700 });
 const packets = [];
 const catalog = {};
 let catalogVerified = false;
+let testDependency = null;
+let testDependencyPhase = 'not-started';
 let cleanupSucceeded = false;
 let currentPhase = 'full-schema-snapshot';
 let packetOrdinal = 0;
@@ -233,6 +236,28 @@ const runner = async (command, args, cwd) => {
           '--dbname',
           'postgres',
         ];
+        testDependency = prepareNormalizationTestDependency(
+          (sql, phase) => {
+            testDependencyPhase = phase;
+            return bounded(
+              'docker',
+              [
+                'exec',
+                '--env',
+                'PGOPTIONS=-c search_path=public,extensions -c statement_timeout=10000 -c lock_timeout=3000',
+                ...sqlArgs.slice(1),
+                '-c',
+                sql,
+              ],
+              cwd,
+              15000
+            );
+          },
+          (evidence) => {
+            testDependency = evidence;
+          }
+        );
+        testDependencyPhase = 'verified';
         catalog.before = JSON.parse(
           bounded('docker', [...sqlArgs, '-c', mailboxCatalogSQL], cwd, 10000)
         );
@@ -394,6 +419,8 @@ const receipt = normalizationOnly
       cleanupSucceeded,
       catalogVerified,
       catalog,
+      testDependency,
+      testDependencyPhase,
       fixtureHashes,
     })
   : {
