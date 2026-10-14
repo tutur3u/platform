@@ -133,6 +133,7 @@ jobs:
 
   types-emission:
     name: Types emission artifact
+    timeout-minutes: 30
     needs: types-emission-check-ci
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.types_emission_only == true && needs.types-emission-check-ci.outputs.should_run == 'true' }}
     permissions:
