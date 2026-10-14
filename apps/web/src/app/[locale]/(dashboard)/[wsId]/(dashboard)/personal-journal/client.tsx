@@ -85,11 +85,13 @@ export default function JournalClient({
                 setPeriod(value);
             }}
           >
-            {['day', 'week', 'month', 'year'].map((value) => (
-              <option key={value} value={value}>
-                {t(value)}
-              </option>
-            ))}
+            {(['day', 'week', 'month', 'year'] satisfies JournalPeriod[]).map(
+              (value) => (
+                <option key={value} value={value}>
+                  {t(value)}
+                </option>
+              )
+            )}
           </select>
         </div>
         <Button disabled={busy} onClick={() => select()}>
