@@ -3,6 +3,15 @@ name: TypeScript Type Check
 on:
   push:
   workflow_dispatch:
+    inputs:
+      types_emission_only:
+        type: boolean
+        default: false
+        description: Produce a nonpublishing Types supplier artifact only
+      source_sha:
+        type: string
+        required: false
+        description: Exact source commit for opted-in Types emission
 
 # Only obsolete ordinary branch pushes supersede validation. Canonical/release
 # evidence and explicit manual attempts keep independent immutable groups.
@@ -12,6 +21,7 @@ concurrency:
 
 jobs:
   type-check:
+    if: ${{ inputs.types_emission_only != true }}
     name: Type Check
     permissions:
       contents: read
@@ -114,3 +124,63 @@ jobs:
       - name: Report skipped type check
         if: steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
         run: echo "Type Check heavy steps skipped by CI configuration or release-only detection; no compilation was performed and inline preflight regression tests were not run." >> "$GITHUB_STEP_SUMMARY"
+
+  types-emission-check-ci:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.types_emission_only == true }}
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: type-check.yaml
+
+  types-emission:
+    name: Types emission artifact
+    needs: types-emission-check-ci
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.types_emission_only == true && needs.types-emission-check-ci.outputs.should_run == 'true' }}
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout control
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Validate exact source input
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          node -e "if (!/^[a-f0-9]{40}$/.test(process.env.SOURCE_SHA || '')) throw new Error('Exact Types source SHA required')"
+      - name: Checkout exact Types source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: types-source
+          persist-credentials: false
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - name: Install exact source dependencies
+        working-directory: types-source
+        run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Build canonical Types package
+        id: types_build
+        working-directory: types-source/packages/types
+        run: bun run build
+      - name: Seal complete Types emission artifact
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          CONTROL_SHA: ${{ github.sha }}
+          ARTIFACT_ROOT: ${{ runner.temp }}/types-emission-artifact
+        run: |
+          export BUN_BINARY="$(command -v bun)"
+          node scripts/ci/types-emission-artifact.js create --source types-source --artifact "$ARTIFACT_ROOT" --source-sha "$SOURCE_SHA" --control-sha "$CONTROL_SHA"
+      - name: Upload nonpublishing Types supplier
+        uses: actions/upload-artifact@v7
+        with:
+          name: types-emission-${{ inputs.source_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/types-emission-artifact/
+          if-no-files-found: error
+          retention-days: 3

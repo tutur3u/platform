@@ -23,15 +23,24 @@ const expression = (body) => `\${{ ${body} }}`;
 
 test('singleton keeps the Type Check context, event surface and runner with a read-only token', () => {
   assert.equal(workflow.name, 'TypeScript Type Check');
-  assert.deepEqual(workflow.on, { push: null, workflow_dispatch: null });
-  assert.deepEqual(Object.keys(workflow.jobs), ['type-check']);
+  assert.equal(workflow.on.push, null);
+  assert.equal(
+    workflow.on.workflow_dispatch.inputs.types_emission_only.default,
+    false
+  );
+  assert.equal(workflow.on.workflow_dispatch.inputs.source_sha.type, 'string');
+  assert.deepEqual(Object.keys(workflow.jobs), [
+    'type-check',
+    'types-emission-check-ci',
+    'types-emission',
+  ]);
   assert.equal(job.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
   assert.equal(job.concurrency, undefined);
   assert.equal(workflow.permissions, undefined);
   assert.deepEqual(job.permissions, { contents: 'read' });
   assert.equal(job.needs, undefined);
-  assert.equal(job.if, undefined);
+  assert.equal(job.if, expression('inputs.types_emission_only != true'));
   const checkouts = job.steps.filter((step) =>
     step.uses?.startsWith('actions/checkout@')
   );
