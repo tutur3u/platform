@@ -234,6 +234,268 @@ export function normalizationSQLFailure(stderr) {
   };
 }
 
+// Only identifiers from this owned isolated database can leave the raw boundary.
+export const normalizationDiagnosticCatalogSQL = `SELECT coalesce(json_agg(
+  json_build_object('schema', n.nspname, 'table', t.relname, 'constraint', c.conname)
+  ORDER BY n.nspname, t.relname, c.conname), '[]'::json)::text
+  FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
+  JOIN pg_namespace n ON n.oid=t.relnamespace
+  WHERE n.nspname IN ('auth','public','private');`;
+
+const diagnosticFields = [
+  'status',
+  'reason',
+  'fixtureLine',
+  'sqlState',
+  'schema',
+  'table',
+  'constraint',
+  'row',
+  'origin',
+  'catalogSHA256',
+];
+const diagnosticReasons = [
+  'READABLE_CONSTRAINT_AND_ROW',
+  'ROW_UNKNOWN',
+  'FORMAT_UNKNOWN',
+  'CATALOG_UNAVAILABLE',
+  'IDENTITY_UNKNOWN',
+];
+
+export function projectNormalizationDiagnostic(stderr, catalog) {
+  const result = {
+    status: 'UNKNOWN',
+    reason: 'FORMAT_UNKNOWN',
+    fixtureLine: null,
+    sqlState: null,
+    schema: null,
+    table: null,
+    constraint: null,
+    row: null,
+    origin: null,
+    catalogSHA256: null,
+  };
+  if (
+    typeof stderr !== 'string' ||
+    Buffer.byteLength(stderr) > 65536 ||
+    Array.from(stderr).some((character) => {
+      const code = character.codePointAt(0);
+      return (code < 32 && ![9, 10, 13].includes(code)) || code === 127;
+    })
+  )
+    return result;
+  const errors = [
+    ...stderr.matchAll(
+      /^psql:\/tmp\/employee-schema-contract\.sql:(\d+): ERROR: +([0-9A-Z]{5}): ([^\r\n]*)\r?$/gmu
+    ),
+  ];
+  if (errors.length !== 1) return result;
+  const [, line, state, message] = errors[0];
+  const number = Number(line);
+  if (!Number.isSafeInteger(number) || number < 1 || number > 700)
+    return result;
+  result.fixtureLine = number;
+  result.sqlState = state;
+  if (
+    !Array.isArray(catalog) ||
+    catalog.length > 2048 ||
+    catalog.some(
+      (x) =>
+        !x ||
+        !['auth', 'public', 'private'].includes(x.schema) ||
+        !identifier.test(x.table) ||
+        !identifier.test(x.constraint)
+    )
+  ) {
+    result.reason = 'CATALOG_UNAVAILABLE';
+    return result;
+  }
+  result.catalogSHA256 = digest(JSON.stringify(catalog));
+  const field = (label) => {
+    const values = [
+      ...stderr.matchAll(
+        new RegExp(`^[ \\t]*${label}:[ \\t]*([^\\r\\n]*)\\r?$`, 'gmu')
+      ),
+    ];
+    return values.length === 1 ? values[0][1] : null;
+  };
+  const schema = field('SCHEMA NAME'),
+    table = field('TABLE NAME');
+  const constraint = field('CONSTRAINT NAME');
+  const standard = message.match(
+    /^new row for relation "([a-z_][a-z0-9_$]{0,62})" violates check constraint "([a-z_][a-z0-9_$]{0,62})"$/u
+  );
+  const hasVerbose = schema !== null || table !== null || constraint !== null;
+  const candidates = catalog.filter((x) =>
+    hasVerbose
+      ? x.schema === schema &&
+        x.table === table &&
+        x.constraint === constraint &&
+        (!standard || (standard[1] === table && standard[2] === constraint))
+      : standard && x.table === standard[1] && x.constraint === standard[2]
+  );
+  if (candidates.length !== 1) {
+    result.reason = 'IDENTITY_UNKNOWN';
+    return result;
+  }
+  const chosen = candidates[0];
+  result.schema = chosen.schema;
+  result.table = chosen.table;
+  result.constraint = chosen.constraint;
+  result.origin = hasVerbose ? 'verbose-fields' : 'standard-message';
+  const detail = field('DETAIL');
+  const rows = [...setupIdentities].filter(([id]) =>
+    detail?.toLowerCase().includes(id)
+  );
+  if (
+    number === 16 &&
+    chosen.schema === 'auth' &&
+    chosen.table === 'users' &&
+    detail?.startsWith('Failing row contains (') &&
+    rows.length === 1
+  )
+    result.row = rows[0][1];
+  result.status = result.row === null ? 'PARTIAL' : 'COMPLETE';
+  result.reason =
+    result.row === null ? 'ROW_UNKNOWN' : 'READABLE_CONSTRAINT_AND_ROW';
+  return result;
+}
+
+export function normalizationDiagnosticEnvelope(
+  projection,
+  sourceSha,
+  controlSha
+) {
+  return {
+    version: 1,
+    sourceSha: exactSourceSha(sourceSha),
+    controlSha: exactSourceSha(controlSha),
+    phase: 'packet-execution-diagnostic',
+    projection,
+    projectionSHA256: digest(JSON.stringify(projection)),
+    projectionBytes: Buffer.byteLength(JSON.stringify(projection)),
+  };
+}
+
+export function validateNormalizationDiagnosticArtifact(bytes) {
+  try {
+    if (Buffer.byteLength(bytes) > 1024 * 1024) throw new Error();
+    const receipt = JSON.parse(String(bytes));
+    const rootKeys = [
+      'version',
+      'sourceSha',
+      'controlSha',
+      'scope',
+      'normalizationQualified',
+      'schemaQualified',
+      'foundation172Qualified',
+      'assertions',
+      'packets',
+      'fixtureHashes',
+      'migrationSHA256',
+      'catalogVerified',
+      'catalog',
+      'testDependency',
+      'testDependencyPhase',
+      'testDependencyVerified',
+      'lifecycleCode',
+      'cleanupSucceeded',
+      'providerQualified',
+      'productionApplied',
+      'failureDiagnostic',
+      'diagnosticTransport',
+    ];
+    if (Object.keys(receipt).some((key) => !rootKeys.includes(key)))
+      throw new Error();
+    const forbidden = new Set([
+      'stdout',
+      'stderr',
+      'message',
+      'detail',
+      'context',
+      'raw',
+      'rawBody',
+      'rawMessage',
+      'rawDetail',
+      'rawContext',
+      'failingRow',
+      'error',
+    ]);
+    const check = (value) => {
+      if (!value || typeof value !== 'object') return;
+      for (const [key, item] of Object.entries(value)) {
+        if (forbidden.has(key)) throw new Error();
+        check(item);
+      }
+    };
+    check(receipt);
+    exactSourceSha(receipt.sourceSha);
+    exactSourceSha(receipt.controlSha);
+    if (receipt.normalizationQualified === true && !receipt.failureDiagnostic)
+      return { status: 'NOT_REQUIRED' };
+    const e = receipt.diagnosticTransport,
+      p = e?.projection;
+    if (
+      e?.version !== 1 ||
+      e.sourceSha !== receipt.sourceSha ||
+      e.controlSha !== receipt.controlSha ||
+      e.phase !== 'packet-execution-diagnostic' ||
+      Object.keys(e).sort().join() !==
+        [
+          'version',
+          'sourceSha',
+          'controlSha',
+          'phase',
+          'projection',
+          'projectionSHA256',
+          'projectionBytes',
+        ]
+          .sort()
+          .join() ||
+      !p ||
+      Object.keys(p).sort().join() !== [...diagnosticFields].sort().join() ||
+      !['UNKNOWN', 'PARTIAL', 'COMPLETE'].includes(p.status) ||
+      !diagnosticReasons.includes(p.reason) ||
+      e.projectionSHA256 !== digest(JSON.stringify(p)) ||
+      e.projectionBytes !== Buffer.byteLength(JSON.stringify(p)) ||
+      (p.fixtureLine !== null &&
+        (!Number.isSafeInteger(p.fixtureLine) ||
+          p.fixtureLine < 1 ||
+          p.fixtureLine > 700)) ||
+      (p.sqlState !== null && !/^[0-9A-Z]{5}$/u.test(p.sqlState)) ||
+      (p.catalogSHA256 !== null && !/^[a-f0-9]{64}$/u.test(p.catalogSHA256)) ||
+      (p.row !== null && ![...setupIdentities.values()].includes(p.row))
+    )
+      throw new Error();
+    if (p.status === 'UNKNOWN') {
+      if (
+        p.schema !== null ||
+        p.table !== null ||
+        p.constraint !== null ||
+        p.row !== null ||
+        p.origin !== null ||
+        !['FORMAT_UNKNOWN', 'CATALOG_UNAVAILABLE', 'IDENTITY_UNKNOWN'].includes(
+          p.reason
+        )
+      )
+        throw new Error();
+    } else if (
+      !['auth', 'public', 'private'].includes(p.schema) ||
+      !identifier.test(p.table) ||
+      !identifier.test(p.constraint) ||
+      !['verbose-fields', 'standard-message'].includes(p.origin) ||
+      p.catalogSHA256 === null ||
+      (p.status === 'COMPLETE'
+        ? p.row === null || p.reason !== 'READABLE_CONSTRAINT_AND_ROW'
+        : p.row !== null || p.reason !== 'ROW_UNKNOWN')
+    )
+      throw new Error();
+    return { status: p.status };
+  } catch {
+    throw new Error('Diagnostic transport invalid');
+  }
+}
+
 export function retainNormalizationFailure(result, context) {
   const stdout = typeof result.stdout === 'string' ? result.stdout : '';
   const stderr = typeof result.stderr === 'string' ? result.stderr : '';

@@ -87,8 +87,17 @@ jobs:
         if: always()
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs --cleanup
+      - name: Validate selected safe diagnostic transport
+        id: diagnostic-transport
+        if: always() && inputs.normalization_only == true && inputs.structured_provenance != true
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { validateNormalizationDiagnosticArtifact } from './apps/database/scripts/employee-normalization-qualification.mjs';
+          validateNormalizationDiagnosticArtifact(readFileSync(`${process.env.RUNNER_TEMP}/employee-schema-receipts/qualification.json`));
+          NODE
       - uses: actions/upload-artifact@v7
-        if: always() && inputs.structured_provenance != true
+        if: always() && inputs.structured_provenance != true && (inputs.normalization_only != true || steps.diagnostic-transport.outcome == 'success')
         with:
           name: employee-schema-${{ inputs.source_sha }}-${{ github.run_id }}
           path: ${{ runner.temp }}/employee-schema-receipts/qualification.json

@@ -5,12 +5,16 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   mailboxCatalogSQL,
+  normalizationDiagnosticCatalogSQL,
+  normalizationDiagnosticEnvelope,
   normalizationMigration,
   normalizationPacket,
   normalizationReceipt,
   normalizationSQLFailure,
   prepareNormalizationTestDependency,
+  projectNormalizationDiagnostic,
   retainNormalizationFailure,
+  validateNormalizationDiagnosticArtifact,
   verifyMailboxCatalog,
   verifyNormalizationInputs,
 } from './employee-normalization-qualification.mjs';
@@ -186,6 +190,8 @@ mkdirSync(receiptDirectory, { recursive: true, mode: 0o700 });
 const packets = [];
 const catalog = {};
 let catalogVerified = false;
+let diagnosticCatalog = [];
+let diagnosticProjection = null;
 let testDependency = null;
 let testDependencyPhase = 'not-started';
 let cleanupSucceeded = false;
@@ -229,6 +235,10 @@ const bounded = (command, args, cwd, timeout) => {
             })
           : normalizationSQLFailure(result.stderr);
       Object.assign(failureDiagnostic, diagnostic);
+      diagnosticProjection = projectNormalizationDiagnostic(
+        result.stderr,
+        diagnosticCatalog
+      );
     }
     throw new Error('Bounded employee schema command failed');
   }
@@ -312,6 +322,15 @@ const runner = async (command, args, cwd) => {
           catalog.before,
           catalog.after,
           expectedBody
+        );
+        currentPhase = 'normalization-diagnostic-catalog';
+        diagnosticCatalog = JSON.parse(
+          bounded(
+            'docker',
+            [...sqlArgs, '-c', normalizationDiagnosticCatalogSQL],
+            cwd,
+            10000
+          )
         );
       }
       for (const [position, [file, count]] of selectedPackets.entries()) {
@@ -449,12 +468,30 @@ const receipt = normalizationOnly
       fixtureHashes,
     };
 if (failureDiagnostic) receipt.failureDiagnostic = failureDiagnostic;
+if (normalizationOnly && failureDiagnostic) {
+  receipt.diagnosticTransport = normalizationDiagnosticEnvelope(
+    diagnosticProjection ?? projectNormalizationDiagnostic('', []),
+    sourceSha,
+    process.env.EMPLOYEE_SCHEMA_CONTROL_SHA
+  );
+}
+const serializedReceipt = `${JSON.stringify(receipt, null, 2)}\n`;
+if (normalizationOnly)
+  validateNormalizationDiagnosticArtifact(serializedReceipt);
 
 writeFileSync(
   path.join(receiptDirectory, 'qualification.json'),
-  `${JSON.stringify(receipt, null, 2)}\n`,
+  serializedReceipt,
   { mode: 0o600 }
 );
+if (normalizationOnly) {
+  const stored = readFileSync(
+    path.join(receiptDirectory, 'qualification.json')
+  );
+  if (!stored.equals(Buffer.from(serializedReceipt)))
+    throw new Error('Safe artifact readback differs');
+  validateNormalizationDiagnosticArtifact(stored);
+}
 console.log(
   JSON.stringify({
     schemaQualified: receipt.schemaQualified,
