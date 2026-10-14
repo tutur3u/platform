@@ -376,6 +376,9 @@
     },
     "apps/coordination": {
       "name": "@tuturuuu/coordination",
+      "dependencies": {
+        "zod": "4.6.2",
+      },
       "devDependencies": {
         "@cloudflare/vite-plugin": "1.63.1",
         "typescript": "7.0.2",
