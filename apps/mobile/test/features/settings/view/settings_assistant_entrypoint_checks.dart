@@ -142,7 +142,7 @@ void registerSettingsAssistantEntrypointChecks() {
         await _settle(tester);
         expect(find.text('Routed Nova'), findsOneWidget);
         expect(settingsRepository.writes, 1);
-        await tester.tap(find.byType(ShellDockActionButton));
+        await tester.tap(find.byKey(const ValueKey('settings-route-back')));
         await _settle(tester);
         final memory = find.widgetWithText(
           ExpansionTile,
@@ -166,7 +166,7 @@ void registerSettingsAssistantEntrypointChecks() {
         await _settle(tester);
         expect(find.text('Routed memory'), findsOneWidget);
         expect(settingsRepository.edits, 1);
-        await tester.tap(find.byType(ShellDockActionButton));
+        await tester.tap(find.byKey(const ValueKey('settings-route-back')));
         await _settle(tester);
         expect(hub, findsNothing);
         expect(origin, findsOneWidget);

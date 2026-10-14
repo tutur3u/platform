@@ -37,6 +37,7 @@ class MailReader extends StatefulWidget {
     required this.canSend,
     required this.fromAddress,
     this.refreshOnOpen = false,
+    this.notificationEntry = false,
     this.onReadFailed,
     this.onOptimisticAction,
     this.onActionSettled,
@@ -52,6 +53,7 @@ class MailReader extends StatefulWidget {
   final String? signatureHtml;
   final Map<String, dynamic> detail;
   final bool refreshOnOpen;
+  final bool notificationEntry;
   final VoidCallback? onReadFailed;
   final void Function(String action, String id)? onOptimisticAction;
   final void Function({
@@ -70,7 +72,7 @@ class MailReader extends StatefulWidget {
 class _MailReaderState extends State<MailReader> {
   bool _accessRevoked = false;
   bool _busy = false;
-  bool _showImages = MailImagePreference.instance.value;
+  bool _showImages = false;
   bool _childRouteOpen = false;
   final Map<String, bool> _expandedMessages = {};
   late Map<String, dynamic> _detail = widget.detail;
@@ -89,6 +91,8 @@ class _MailReaderState extends State<MailReader> {
   @override
   void initState() {
     super.initState();
+    _showImages =
+        !widget.notificationEntry && MailImagePreference.instance.value;
     widget.repository.accessRevoked?.addListener(_onAccessRevoked);
     MailImagePreference.instance.addListener(_imagePreferenceChanged);
     MailPrimaryActionPreference.instance.addListener(_primaryActionChanged);
@@ -102,8 +106,16 @@ class _MailReaderState extends State<MailReader> {
   }
 
   void _imagePreferenceChanged() {
-    if (mounted) {
+    if (mounted && !widget.notificationEntry) {
       setState(() => _showImages = MailImagePreference.instance.value);
+    }
+  }
+
+  void _toggleReaderImages() {
+    if (widget.notificationEntry) {
+      setState(() => _showImages = !_showImages);
+    } else {
+      unawaited(MailImagePreference.instance.select(enabled: !_showImages));
     }
   }
 
@@ -415,7 +427,13 @@ class _MailReaderState extends State<MailReader> {
                               message: message,
                               threadId: _id,
                               showControls: !sharedShell,
-                              imagesVisible: sharedShell ? _showImages : null,
+                              imagesVisible:
+                                  sharedShell || widget.notificationEntry
+                                  ? _showImages
+                                  : null,
+                              onImagesChanged: widget.notificationEntry
+                                  ? (_) => _toggleReaderImages()
+                                  : null,
                             ),
                             for (final file in mailRows(message['attachments']))
                               ListTile(

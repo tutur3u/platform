@@ -1,3 +1,5 @@
+import { mailPushPreview } from './mail-push-preview';
+
 /** Human-readable notification copy shared by all mobile push producers. */
 export interface NotificationDisplayInput {
   type: string;
@@ -75,8 +77,12 @@ export function notificationDisplayCopy(input: NotificationDisplayInput): {
   body: string;
 } {
   const app = notificationAppName(input);
-  const rawTitle = nonEmpty(input.title) ?? app;
-  const rawBody = nonEmpty(input.description);
+  const mail = input.type === 'mail_received';
+  const rawTitle =
+    (mail ? mailPushPreview(input.title) : nonEmpty(input.title)) ?? app;
+  const rawBody = mail
+    ? mailPushPreview(input.description)
+    : nonEmpty(input.description);
   const taskName = app === 'Task' ? nonEmpty(input.data?.task_name) : null;
   const unprefixedTitle = rawTitle
     .toLowerCase()

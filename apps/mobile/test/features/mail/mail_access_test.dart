@@ -12,6 +12,25 @@ void main() {
       expect(canDiscoverMail(email), isTrue, reason: email);
     }
   });
+  test(
+    'Mail discovery admits DNS descendants only as an API-authorized hint',
+    () {
+      for (final email in [
+        'owner@team.tuturuuu.com',
+        'OWNER@NORTH.TEAM.TUTURUUU.COM',
+      ]) {
+        expect(canDiscoverMail(email), isTrue, reason: email);
+      }
+      for (final email in [
+        'owner@-team.tuturuuu.com',
+        'owner@team-.tuturuuu.com',
+        'owner@team..tuturuuu.com',
+        'owner@tuturuuu.com.evil.test',
+      ]) {
+        expect(canDiscoverMail(email), isFalse, reason: email);
+      }
+    },
+  );
   test('Mail discovery requires a reviewer tag on the routed domain', () {
     const reviewer = {
       'infrastructure_review_account': {'kind': 'review'},
@@ -38,7 +57,6 @@ void main() {
       '@tuturuuu.com',
       'a@gmail.com',
       'a@tuturuuu.com.example.com',
-      'a@sub.tuturuuu.com',
       'a@evil.com@tuturuuu.com',
     ]) {
       expect(canDiscoverMail(email), isFalse, reason: email);

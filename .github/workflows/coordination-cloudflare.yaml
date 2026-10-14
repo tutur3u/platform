@@ -53,6 +53,9 @@ jobs:
       - run: node --test apps/coordination/src/worker.test.mjs
       - run: bun run lint
         working-directory: apps/coordination
+      - name: Proactive contract tests
+        working-directory: apps/coordination
+        run: bun x --no-install vitest run --config vitest.config.ts src/proactive --maxWorkers=1
       - name: Build the Worker with scoped Turbo caching
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:

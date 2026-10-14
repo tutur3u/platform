@@ -123,18 +123,22 @@ class _DockActionTransitionState extends State<DockActionTransition>
           !_replacing &&
           _identity == widget.identity &&
           reveal == 1;
+      final displayed = _displayed;
+      final height = displayed is PreferredSizeWidget
+          ? displayed.preferredSize.height
+          : 52.0;
       return SizedBox(
         key: extent > 0 ? widget.slotKey : null,
         width: 60 * extent,
-        height: extent > 0 ? 52 : 0,
+        height: extent > 0 ? height : 0,
         // The control only paints after full space is reserved. No size clip
         // can cut its scale animation; reverse hides it before space shrinks.
         child: OverflowBox(
           alignment: AlignmentDirectional.bottomEnd,
           minWidth: 60,
           maxWidth: 60,
-          minHeight: 52,
-          maxHeight: 52,
+          minHeight: height,
+          maxHeight: height,
           child: Padding(
             padding: const EdgeInsetsDirectional.only(start: 8),
             child: ExcludeSemantics(

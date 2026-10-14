@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { z } from 'zod';
+import { validateOutcomeGraph } from '../operational-graph/domain';
 import { validateProjection } from './operational-domain';
 import { exclusiveFile, MAX_BYTES, safePath } from './operational-files';
 import { receiptSchema, validateReceipt } from './operational-receipts';
@@ -89,8 +90,11 @@ export function validateEnvelope(input: unknown): Envelope {
     )
   )
     fail('INVALID_HISTORY', 'projection differs from final event payload');
-  if (bundle.kind === 'backlog')
-    validateProjection(new Map(bundle.items.map((i) => [i.id, i])));
+  if (bundle.kind === 'backlog') {
+    const items = new Map(bundle.items.map((i) => [i.id, i]));
+    validateProjection(items);
+    validateOutcomeGraph(items);
+  }
   const ids = new Set<string>();
   for (const receipt of bundle.operations) {
     if (ids.has(receipt.operation_id))

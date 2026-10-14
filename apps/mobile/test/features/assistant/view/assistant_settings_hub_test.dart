@@ -7,7 +7,6 @@ import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dar
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
-import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mocktail/mocktail.dart';
@@ -57,7 +56,7 @@ void main() {
       expect(find.byType(AppBar), findsNothing);
       expect(find.byType(MobileSectionAppBar), findsOneWidget);
       expect(find.text('Assistant settings'), findsOneWidget);
-      expect(find.byType(ShellDockActionButton), findsOneWidget);
+      expect(find.byKey(const ValueKey('settings-route-back')), findsOneWidget);
       expect(find.byType(Image), findsWidgets);
       expect(
         tester.getTopLeft(find.byType(SwitchListTile)).dy,

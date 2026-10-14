@@ -106,6 +106,9 @@ jobs:
           release_sha="$(git rev-parse "origin/${RELEASE_BRANCH}")"
           trusted_scripts=$(mktemp -d)
           cp -R scripts "${trusted_scripts}/scripts"
+          mkdir -p "${trusted_scripts}/packages/utils/src"
+          cp packages/utils/src/release-note-policy-core.cjs packages/utils/src/release-note-policy.json \
+            "${trusted_scripts}/packages/utils/src/"
           git switch --detach "${release_sha}"
           trap 'git switch --detach origin/production >/dev/null; rm -rf -- "${trusted_scripts}"' EXIT
 

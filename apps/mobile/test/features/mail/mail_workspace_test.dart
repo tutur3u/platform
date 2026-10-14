@@ -220,47 +220,6 @@ void main() {
     );
   }
 
-  testWidgets('push waits for mailbox access before opening its thread', (
-    tester,
-  ) async {
-    final bootstrap = Completer<Map<String, dynamic>>();
-    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
-    respond((_) async => inbox('Inbox'));
-    when(
-      () => repository.detail('ws', 'box', 'target', thread: true),
-    ).thenAnswer(
-      (_) async => {
-        'thread': {'id': 'target', 'subject': 'Pushed message'},
-        'messages': <dynamic>[],
-      },
-    );
-    await tester.pumpApp(
-      MailWorkspace(
-        workspaceId: 'ws',
-        repository: repository,
-        destination: const MailPushDestination(
-          userId: 'user',
-          mailboxId: 'box',
-          threadId: 'target',
-          notificationId: 'push',
-        ),
-      ),
-    );
-    await tester.pump();
-    verifyNever(() => repository.detail('ws', 'box', 'target', thread: true));
-    bootstrap.complete({
-      'mailboxes': [
-        {'id': 'box', 'address': 'me@tuturuuu.com', 'status': 'active'},
-      ],
-    });
-    await tester.pumpAndSettle();
-    verify(
-      () => repository.detail('ws', 'box', 'target', thread: true),
-    ).called(1);
-    expect(find.byType(MailReader), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
   testWidgets(
     'push opens its thread while the inbox refresh is still pending',
     (tester) async {

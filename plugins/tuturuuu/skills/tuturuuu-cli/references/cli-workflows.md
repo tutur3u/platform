@@ -70,6 +70,36 @@ first-run, CI, and headless environments.
 
 ## Common Commands
 
+In a source preview, `bun ttr backlog search help --lang en|vi --json` and
+`bun ttr backlog search model-status --json` use the native offline entry before
+login. Status without `--runtime-dir` performs no model load/download. Lexical
+queries use an explicit `--db`. Indexing scans the full projection and rebuilds
+all lexical documents. It reuses vectors only for identical record IDs and
+versioned full-record content hashes under the same source UUID, projection
+version, and authenticated runtime fingerprint. Membership, provenance, content,
+or runtime changes invalidate affected vectors; deletion omits records and
+runtime absence or revocation removes semantic vectors. A newer cached revision
+or equal-revision snapshot drift denies reuse. An older content policy requires
+one rebuild. This is snapshot reconciliation, not an event delta feed.
+
+Read `reused`, `computed`, `removed`, and `invalidated` as this index command's
+counters. `embedded` counts committed vectors, bounded to eight documents.
+`incremental` means reuse eligibility; projection scans and lexical rebuilds stay
+full-snapshot. `modelLoaded` requires a successful non-injected embedding return
+in this command. Zero-compute reuse authenticates the runtime without loading
+the model. `embeddingAttemptsThisCommand` and
+`successfulEmbeddingsThisCommand` describe only this command. A later failure can
+commit zero vectors after an earlier model load;
+no partial semantic cache is published.
+
+Structural cache, projection, and source conflicts are errors. Only runtime
+embedding failures and capacity failures use lexical fallback. Publication
+rereads UUID, revision, snapshot, version, and cache permission. Queries require
+the current snapshot and exact document ID/content keys; an old content policy
+returns `stale-content-policy` with lexical fallback. Candidates never authorize
+closure or merge. Source qualification is separate from engine execution, npm
+packaging, and model-runtime admission. See `apps/docs/reference/packages/sdk.mdx`.
+
 ```bash
 ttr login
 ttr login --copy

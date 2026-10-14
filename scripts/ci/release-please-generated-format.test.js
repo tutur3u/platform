@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+const { execFileSync, spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const {
@@ -19,6 +21,60 @@ const releaseJob = readWorkflowJobBlock(
   'release-please.yaml',
   'release-please'
 );
+
+test('trusted formatting copy loads its policy without generated branch code', () => {
+  const copyStart = releaseJob.indexOf('cp -R scripts ');
+  const switchIndex = releaseJob.indexOf('git switch --detach');
+  assert.ok(copyStart >= 0 && switchIndex > copyStart);
+  const copyCommands = releaseJob.slice(copyStart, switchIndex).trim();
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'release-trusted-copy-')
+  );
+  const load = `
+    const assert = require('node:assert/strict');
+    const path = require('node:path');
+    const ci = path.join(process.argv[1], 'scripts/ci');
+    assert.equal(typeof require(path.join(ci, 'release-docs-inventory.js')).resolveProof, 'function');
+    assert.equal(typeof require(path.join(ci, 'release-workspace-lock.js')).validateWorkspaceLock, 'function');
+    const { normalizeReleaseNotes } = require(path.join(ci, 'normalize-release-notes.js'));
+    assert.equal(normalizeReleaseNotes('## [1.0.0]\\n* merge main into production\\n* add calendar view\\n', ''),
+      '## [1.0.0]\\n* add calendar view\\n');
+  `;
+  try {
+    // Control: the preserved scripts-only copy reproduces the real missing module.
+    fs.cpSync(path.join(repoRoot, 'scripts'), path.join(directory, 'scripts'), {
+      recursive: true,
+    });
+    const before = spawnSync(process.execPath, ['-e', load, directory], {
+      cwd: directory,
+      encoding: 'utf8',
+      env: {},
+    });
+    assert.notEqual(before.status, 0);
+    assert.match(before.stderr, /MODULE_NOT_FOUND/);
+    assert.match(
+      before.stderr,
+      /Cannot find module '..\/..\/packages\/utils\/src\/release-note-policy-core.cjs'/
+    );
+
+    fs.rmSync(path.join(directory, 'scripts'), { recursive: true });
+    // Execute only the trusted copy block, never the checkout or release commands.
+    execFileSync('bash', ['-euo', 'pipefail', '-c', copyCommands], {
+      cwd: repoRoot,
+      env: { PATH: process.env.PATH, trusted_scripts: directory },
+    });
+    assert.deepEqual(
+      fs.readdirSync(path.join(directory, 'packages/utils/src')).sort(),
+      ['release-note-policy-core.cjs', 'release-note-policy.json']
+    );
+    execFileSync(process.execPath, ['-e', load, directory], {
+      cwd: directory,
+      env: {},
+    });
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 test('Release Please normalizes generated files before approving the PR', () => {
   const createIndex = releaseJob.indexOf('Create or update release PR');

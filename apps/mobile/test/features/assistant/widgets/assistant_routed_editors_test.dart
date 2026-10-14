@@ -7,7 +7,6 @@ import 'package:mobile/features/assistant/widgets/assistant_personal_settings_se
 import 'package:mobile/features/assistant/widgets/assistant_personality_field_editor.dart';
 import 'package:mobile/features/settings/view/settings_route_frame.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
-import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import '../../../helpers/pump_app.dart';
 import '../assistant_personal_settings_harness.dart';
 
@@ -33,7 +32,7 @@ Future<void> openPersonality(
 void expectChrome() {
   expect(find.byType(SettingsRouteFrame), findsOneWidget);
   expect(find.byType(MobileSectionAppBar), findsOneWidget);
-  expect(find.byType(ShellDockActionButton), findsOneWidget);
+  expect(find.byKey(const ValueKey('settings-route-back')), findsOneWidget);
   expect(find.byType(AppBar), findsNothing);
 }
 
@@ -119,7 +118,7 @@ void main() {
           expectChrome();
         }
         expect(repository.writes, 5);
-        await tester.tap(find.byType(ShellDockActionButton));
+        await tester.tap(find.byKey(const ValueKey('settings-route-back')));
         await tester.pumpAndSettle();
         expect(find.text('Nova'), findsOneWidget);
         // Re-entry shows confirmed settings.
@@ -150,7 +149,7 @@ void main() {
             find.byKey(const ValueKey('assistant-personality-name')),
           );
         } else {
-          await tester.tap(find.byType(ShellDockActionButton));
+          await tester.tap(find.byKey(const ValueKey('settings-route-back')));
           await tester.pumpAndSettle();
           await tester.tap(find.text('Memory'));
           await tester.pumpAndSettle();
@@ -166,13 +165,15 @@ void main() {
         await tester.ensureVisible(save);
         await tester.pumpAndSettle();
         expectChrome();
-        final dock = tester.getRect(find.byType(ShellDockActionButton));
+        final dock = tester.getRect(
+          find.byKey(const ValueKey('settings-route-back')),
+        );
         expect(dock.bottom, lessThanOrEqualTo(400));
         expect(tester.getRect(save).bottom, lessThanOrEqualTo(dock.top));
         expect(save.hitTestable(), findsOneWidget);
         expect(tester.takeException(), isNull);
         if (back == 'dock') {
-          await tester.tap(find.byType(ShellDockActionButton));
+          await tester.tap(find.byKey(const ValueKey('settings-route-back')));
         } else {
           await tester.binding.handlePopRoute();
         }

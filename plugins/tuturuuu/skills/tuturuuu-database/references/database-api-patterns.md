@@ -92,3 +92,15 @@ review prove baseline equivalence. Existing migration history stays immutable.
   permit lookups. A name shared by a variable and a column can raise SQLSTATE
   `42702` before the intended admission error. Retain pgTAP assertions for the
   rejected mutation's exact error and unchanged state.
+
+## Bounded Mail admission fixtures
+
+- The Mail PGlite/pgTAP fixture applies actual notification migrations with a
+  synthetic schema, preference lookup and `pg_net` transport. Queue its runner
+  through `ttr resources`; never report it as full Supabase or provider proof.
+- Reconcile legacy receipts without alerts before claiming raw-event/user keys.
+  Preserve suppressed decisions, nullable duplicate history and unknown delivery
+  outcomes. Configured `mail_domains.verified_at` is not fresh DNS ownership.
+- Require authorized full-chain migration/type generation and exact-commit CI
+  before promotion; see
+  [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
