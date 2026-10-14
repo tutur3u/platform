@@ -8,6 +8,7 @@ import {
   normalizationMigration,
   normalizationPacket,
   normalizationReceipt,
+  normalizationSQLFailure,
   verifyMailboxCatalog,
   verifyNormalizationInputs,
 } from './employee-normalization-qualification.mjs';
@@ -203,6 +204,8 @@ const bounded = (command, args, cwd, timeout) => {
       packetOrdinal,
       result
     );
+    if (normalizationOnly)
+      Object.assign(failureDiagnostic, normalizationSQLFailure(result.stderr));
     throw new Error('Bounded employee schema command failed');
   }
   return result.stdout;
@@ -303,6 +306,7 @@ const runner = async (command, args, cwd) => {
             '-t',
             '-v',
             'ON_ERROR_STOP=1',
+            ...(normalizationOnly ? ['-v', 'VERBOSITY=sqlstate'] : []),
             '-U',
             'supabase_admin',
             '--dbname',

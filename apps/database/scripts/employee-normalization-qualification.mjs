@@ -13,6 +13,22 @@ export const normalizationPins = Object.freeze({
   fixture: '97149cfe92fbef535ef2c9d19a494cc77c4d096ded966db5213a456b4f3f1308',
 });
 
+// psql VERBOSITY=sqlstate suppresses values, messages, details and SQL context.
+export function normalizationSQLFailure(stderr) {
+  const unknown = { fixtureLine: null, sqlState: null };
+  if (typeof stderr !== 'string' || Buffer.byteLength(stderr, 'utf8') > 65536)
+    return unknown;
+  const matches = [
+    ...stderr.matchAll(
+      /^psql:\/tmp\/employee-schema-contract\.sql:(\d+): ERROR: +([0-9A-Z]{5})\s*$/gmu
+    ),
+  ];
+  if (matches.length !== 1) return unknown;
+  const line = Number(matches[0][1]);
+  if (!Number.isSafeInteger(line) || line < 1 || line > 700) return unknown;
+  return { fixtureLine: line, sqlState: matches[0][2] };
+}
+
 export function verifyNormalizationInputs(migration, fixture) {
   for (const [kind, bytes] of Object.entries({ migration, fixture })) {
     assert.equal(

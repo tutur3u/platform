@@ -4,9 +4,33 @@ import test from 'node:test';
 import {
   normalizationPacket,
   normalizationReceipt,
+  normalizationSQLFailure,
   verifyMailboxCatalog,
   verifyNormalizationInputs,
 } from './employee-normalization-qualification.mjs';
+
+test('SQL fixture failure preserves only exact source line and SQLSTATE', () => {
+  assert.deepEqual(
+    normalizationSQLFailure(
+      'psql:/tmp/employee-schema-contract.sql:27: ERROR:  23505\n'
+    ),
+    { fixtureLine: 27, sqlState: '23505' }
+  );
+  for (const value of [
+    undefined,
+    'private value',
+    'psql:/tmp/other.sql:27: ERROR:  23505\n',
+    'psql:/tmp/employee-schema-contract.sql:701: ERROR:  23505\n',
+    'psql:/tmp/employee-schema-contract.sql:27: ERROR:  private-token\n',
+    'psql:/tmp/employee-schema-contract.sql:27: ERROR:  23505\n'.repeat(2),
+  ]) {
+    assert.deepEqual(normalizationSQLFailure(value), {
+      fixtureLine: null,
+      sqlState: null,
+    });
+  }
+});
+
 import { assertPacketTap, foundationPackets } from './employee-schema-tap.mjs';
 
 const before = {
