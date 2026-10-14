@@ -400,6 +400,8 @@
       "name": "@tuturuuu/database",
       "version": "1.40.0",
       "devDependencies": {
+        "@electric-sql/pglite": "0.5.8",
+        "@electric-sql/pglite-pgtap": "0.0.9",
         "supabase": "2.117.0",
         "typescript": "7.0.2",
       },
@@ -3559,6 +3561,10 @@
     "@dqcai/vn-lunar": ["@dqcai/vn-lunar@1.0.1", "", {}, "sha512-JucGjy32oZvUnfzsx00niG4jc1szlvxV2inQECfQ1j83Y6YB0V4lFuj1piVbaCsWCe1B8FTktyGpgH8IgVg98w=="],
 
     "@ecies/ciphers": ["@ecies/ciphers@0.2.6", "", { "peerDependencies": { "@noble/ciphers": "^1.0.0" } }, "sha512-patgsRPKGkhhoBjETV4XxD0En4ui5fbX0hzayqI3M8tvNMGUoUvmyYAIWwlxBc1KX5cturfqByYdj5bYGRpN9g=="],
+
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.8", "", {}, "sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q=="],
+
+    "@electric-sql/pglite-pgtap": ["@electric-sql/pglite-pgtap@0.0.9", "", { "peerDependencies": { "@electric-sql/pglite": "0.5.8" } }, "sha512-VIyclfOawUN0IJROKiCnrVxsZQEG7tixgiC8c8nxp9TlBhI79MZqotoqlqvdPzGHmjWZlcgJ7tC8InOcy+2A/A=="],
 
     "@eloqnt/config": ["@eloqnt/config@0.1.0", "", {}, "sha512-SLR6ZSHxu6XdZtmOz3xRmC3gsY/sCzqtLMD1gxbW2I3XXPBbupwL5RZbkLU/NcZm74AKZrIUPfz3CtEJfxUKqQ=="],
 

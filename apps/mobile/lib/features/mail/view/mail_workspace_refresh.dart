@@ -66,7 +66,7 @@ extension _MailWorkspaceRefresh on _MailWorkspaceState {
       if (canOpenDestination) {
         unawaited(_load());
         _pushDestinationHandled = true;
-        await _open({'id': destination.threadId});
+        await _open({'id': destination.threadId}, notificationEntry: true);
       } else {
         await _load();
       }

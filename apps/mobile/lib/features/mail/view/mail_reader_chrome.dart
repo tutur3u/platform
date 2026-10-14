@@ -60,9 +60,7 @@ extension _MailReaderChrome on _MailReaderState {
                   : Icons.image_not_supported_outlined,
               label: l10n.mailLoadImages,
               callbackToken: _showImages,
-              onPressed: () => unawaited(
-                MailImagePreference.instance.select(enabled: !_showImages),
-              ),
+              onPressed: _toggleReaderImages,
             ),
             ShellMiniNavItemSpec(
               id: 'more',
