@@ -192,3 +192,229 @@ test('tamper identity or raw fields cannot pass artifact validation', () => {
     );
   }
 });
+
+const catalogEvidenceCases = [
+  {
+    id: 'null-array',
+    input: {
+      rows: null,
+    },
+    predicate: 'ARRAY_REQUIRED',
+    field: null,
+    index: null,
+  },
+  {
+    id: 'object-array',
+    input: {
+      rows: {},
+    },
+    predicate: 'ARRAY_REQUIRED',
+    field: null,
+    index: null,
+  },
+  {
+    id: 'count-limit',
+    input: {
+      rowsCount: 2049,
+    },
+    predicate: 'COUNT_LIMIT',
+    field: null,
+    index: null,
+  },
+  {
+    id: 'null-row',
+    input: {
+      rows: [null],
+    },
+    predicate: 'ROW_OBJECT_REQUIRED',
+    field: 'row',
+    index: 0,
+  },
+  {
+    id: 'schema',
+    input: {
+      rows: [
+        {
+          schema: 'outside',
+          table: 'users',
+          constraint: 'users_synthetic_check',
+        },
+      ],
+    },
+    predicate: 'SCHEMA_NOT_ALLOWED',
+    field: 'schema',
+    index: 0,
+  },
+  {
+    id: 'table-type',
+    input: {
+      rows: [
+        {
+          schema: 'auth',
+          table: 42,
+          constraint: 'users_synthetic_check',
+        },
+      ],
+    },
+    predicate: 'TABLE_IDENTIFIER_REJECTED',
+    field: 'table',
+    index: 0,
+    identifierClass: 'NON_STRING',
+  },
+  {
+    id: 'table-grammar',
+    input: {
+      rows: [
+        {
+          schema: 'auth',
+          table: 'Quoted-Name',
+          constraint: 'users_synthetic_check',
+        },
+      ],
+    },
+    predicate: 'TABLE_IDENTIFIER_REJECTED',
+    field: 'table',
+    index: 0,
+    identifierClass: 'GRAMMAR_REJECTED',
+  },
+  {
+    id: 'constraint-type',
+    input: {
+      rows: [
+        {
+          schema: 'auth',
+          table: 'users',
+          constraint: {},
+        },
+      ],
+    },
+    predicate: 'CONSTRAINT_IDENTIFIER_REJECTED',
+    field: 'constraint',
+    index: 0,
+    identifierClass: 'NON_STRING',
+  },
+  {
+    id: 'constraint-grammar',
+    input: {
+      rows: [
+        {
+          schema: 'auth',
+          table: 'users',
+          constraint: 'Bad-Value',
+        },
+      ],
+    },
+    predicate: 'CONSTRAINT_IDENTIFIER_REJECTED',
+    field: 'constraint',
+    index: 0,
+    identifierClass: 'GRAMMAR_REJECTED',
+  },
+  {
+    id: 'observed-actor',
+    input: {
+      rows: [
+        {
+          schema: 'auth',
+          table: 'users',
+          constraint: 'users_synthetic_check',
+        },
+      ],
+      actor: 'supabase_admin',
+      database: 'postgres',
+    },
+    predicate: 'VALID',
+    field: null,
+    index: null,
+    actor: 'supabase_admin',
+    actorObserved: true,
+  },
+  {
+    id: 'unknown-actor',
+    input: {
+      rows: [
+        {
+          schema: 'auth',
+          table: 'users',
+          constraint: 'users_synthetic_check',
+        },
+      ],
+      actor: 'unexpected_actor',
+      database: 'unexpected_database',
+    },
+    predicate: 'VALID',
+    field: null,
+    index: null,
+    actor: null,
+    actorObserved: true,
+  },
+  {
+    id: 'safe-roundtrip',
+    input: {
+      rows: [
+        {
+          schema: 'auth',
+          table: 'users',
+          constraint: 'users_synthetic_check',
+        },
+      ],
+      actor: 'supabase_admin',
+      database: 'postgres',
+    },
+    predicate: 'VALID',
+    field: null,
+    index: null,
+    transport: true,
+  },
+];
+for (const vector of catalogEvidenceCases) {
+  test(`catalog evidence new: ${vector.id}`, () => {
+    const input = vector.input.rowsCount
+      ? {
+          rows: Array.from({ length: vector.input.rowsCount }, () => ({
+            ...catalog[0],
+          })),
+        }
+      : vector.input;
+    const evidence = control.catalogValidationEvidence?.(input) ?? {
+      predicate: 'UNCLASSIFIED',
+    };
+    assert.equal(evidence.predicate, vector.predicate);
+    assert.equal(evidence.field, vector.field);
+    assert.equal(evidence.index, vector.index);
+    assert.equal(
+      evidence.count,
+      Array.isArray(input.rows) ? input.rows.length : null
+    );
+    if ('identifierClass' in vector)
+      assert.equal(evidence.identifierClass, vector.identifierClass);
+    if ('actor' in vector) assert.equal(evidence.actor, vector.actor);
+    if ('actorObserved' in vector)
+      assert.equal(evidence.actorObserved, vector.actorObserved);
+    assert.equal(
+      evidence.querySHA256,
+      digest(control.normalizationDiagnosticCatalogSQL)
+    );
+    assert.equal(JSON.stringify(evidence).includes('unexpected_actor'), false);
+    assert.equal(JSON.stringify(evidence).includes('Quoted-Name'), false);
+    assert.equal(JSON.stringify(evidence).includes('Bad-Value'), false);
+    if (vector.transport) {
+      const safe = { ...receipt(), catalogValidation: evidence };
+      assert.equal(
+        control.validateNormalizationDiagnosticArtifact(JSON.stringify(safe))
+          .status,
+        'PARTIAL'
+      );
+      const tampered = {
+        ...safe,
+        catalogValidation: { ...evidence, raw: 'synthetic-private' },
+      };
+      assert.throws(
+        () =>
+          control.validateNormalizationDiagnosticArtifact(
+            JSON.stringify(tampered)
+          ),
+        /Diagnostic transport invalid/
+      );
+    }
+  });
+}

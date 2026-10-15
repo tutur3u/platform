@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import {
+  catalogValidationEvidence,
   mailboxCatalogSQL,
   normalizationDiagnosticCatalogSQL,
   normalizationDiagnosticEnvelope,
@@ -191,6 +198,7 @@ const packets = [];
 const catalog = {};
 let catalogVerified = false;
 let diagnosticCatalog = [];
+let catalogValidation = catalogValidationEvidence(null);
 let diagnosticProjection = null;
 let testDependency = null;
 let testDependencyPhase = 'not-started';
@@ -324,14 +332,40 @@ const runner = async (command, args, cwd) => {
           expectedBody
         );
         currentPhase = 'normalization-diagnostic-catalog';
-        diagnosticCatalog = JSON.parse(
-          bounded(
-            'docker',
-            [...sqlArgs, '-c', normalizationDiagnosticCatalogSQL],
-            cwd,
-            10000
-          )
+        const catalogResponse = bounded(
+          'docker',
+          [...sqlArgs, '-c', normalizationDiagnosticCatalogSQL],
+          cwd,
+          10000
         );
+        const privateDirectory = path.join(
+          process.env.RUNNER_TEMP,
+          'employee-schema-private-' + metadata.projectId
+        );
+        mkdirSync(privateDirectory, { recursive: true, mode: 0o700 });
+        const owned = lstatSync(privateDirectory);
+        if (
+          !owned.isDirectory() ||
+          owned.isSymbolicLink() ||
+          (owned.mode & 0o777) !== 0o700 ||
+          owned.uid !== process.getuid()
+        )
+          throw new Error('Private catalog custody unavailable');
+        const privateCatalog = path.join(
+          privateDirectory,
+          'catalog-response.json'
+        );
+        writeFileSync(privateCatalog, catalogResponse, {
+          flag: 'wx',
+          mode: 0o600,
+        });
+        if (readFileSync(privateCatalog, 'utf8') !== catalogResponse)
+          throw new Error('Private catalog readback differs');
+        const observedCatalog = JSON.parse(catalogResponse);
+        catalogValidation = catalogValidationEvidence(observedCatalog);
+        diagnosticCatalog = Array.isArray(observedCatalog?.rows)
+          ? observedCatalog.rows
+          : null;
       }
       for (const [position, [file, count]] of selectedPackets.entries()) {
         packetOrdinal = position + 1;
@@ -467,6 +501,7 @@ const receipt = normalizationOnly
       ...schemaReceipt({ sourceSha, packets, lifecycleCode, cleanupSucceeded }),
       fixtureHashes,
     };
+if (normalizationOnly) receipt.catalogValidation = catalogValidation;
 if (failureDiagnostic) receipt.failureDiagnostic = failureDiagnostic;
 if (normalizationOnly && failureDiagnostic) {
   receipt.diagnosticTransport = normalizationDiagnosticEnvelope(

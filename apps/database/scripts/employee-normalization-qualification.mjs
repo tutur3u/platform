@@ -3,7 +3,6 @@ import { createHash } from 'node:crypto';
 import { lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { exactSourceSha } from './employee-schema-tap.mjs';
-
 export const normalizationPacket = Object.freeze([
   'employee-inbound-mailbox-normalization.sql',
   20,
@@ -14,7 +13,6 @@ export const normalizationPins = Object.freeze({
   migration: '9f7edf8ff87dc2e77ec5313961a8782261c4b93e4d073bed7bfa02e72492b142',
   fixture: '97149cfe92fbef535ef2c9d19a494cc77c4d096ded966db5213a456b4f3f1308',
 });
-
 const testAPIs = ['finish', 'is', 'plan'];
 export const pgTapBootstrapSQL =
   'create extension if not exists pgtap with schema extensions;';
@@ -46,7 +44,6 @@ case when to_regprocedure('extensions.plan(integer)') is null then false
  group by p.proname) a) as apis
 from (select 1) seed left join pg_extension e on e.extname='pgtap'
 left join pg_namespace n on n.oid=e.extnamespace) c;`;
-
 function verifyDependencyActor(value) {
   assert.ok(value && typeof value === 'object');
   assert.equal(value.actor, 'supabase_admin');
@@ -58,7 +55,6 @@ function verifyDependencyActor(value) {
   assert.ok(Array.isArray(value.available_versions));
   assert.ok(value.available_versions.includes(value.available_version));
 }
-
 function verifyInstalledDependency(value) {
   assert.ok(
     Number.isSafeInteger(value.extension_oid) && value.extension_oid > 0
@@ -87,20 +83,15 @@ function verifyInstalledDependency(value) {
     assert.equal(api.executable_count, api.function_count);
   }
 }
-
 function verifyDependencyBefore(value) {
   verifyDependencyActor(value);
   if (value.extension_oid !== null) {
     verifyInstalledDependency(value);
     return;
   }
-  for (const key of [
-    'namespace',
-    'installed_version',
-    'owner',
-    'plan_oid',
-    'visible_plan_oid',
-  ]) {
+  for (const key of 'namespace installed_version owner plan_oid visible_plan_oid'.split(
+    ' '
+  )) {
     assert.equal(value[key], null);
   }
   assert.equal(value.plan_member, false);
@@ -110,7 +101,6 @@ function verifyDependencyBefore(value) {
       (Array.isArray(value.apis) && value.apis.length === 0)
   );
 }
-
 export function verifyTestDependencyEvidence(evidence) {
   assert.ok(evidence && typeof evidence === 'object');
   verifyDependencyBefore(evidence.before);
@@ -130,19 +120,14 @@ export function verifyTestDependencyEvidence(evidence) {
       evidence.before.available_version
     );
   } else {
-    for (const key of [
-      'extension_oid',
-      'namespace',
-      'owner',
-      'installed_version',
-      'plan_oid',
-    ]) {
+    for (const key of 'extension_oid namespace owner installed_version plan_oid'.split(
+      ' '
+    )) {
       assert.equal(evidence.after[key], evidence.before[key]);
     }
   }
   return true;
 }
-
 export function prepareNormalizationTestDependency(
   executeSQL,
   recordEvidence = () => {}
@@ -161,14 +146,12 @@ export function prepareNormalizationTestDependency(
   verifyTestDependencyEvidence(evidence);
   return evidence;
 }
-
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 const identifier = /^[a-z_][a-z0-9_$]{0,62}$/u;
 const setupIdentities = new Map([
   ['00000000-0000-4000-8000-000000094501', 'setup-auth-row-1'],
   ['00000000-0000-4000-8000-000000094502', 'setup-auth-row-2'],
 ]);
-
 export function normalizationSQLFailure(stderr) {
   const unknown = { fixtureLine: null, sqlState: null };
   if (typeof stderr !== 'string' || Buffer.byteLength(stderr, 'utf8') > 65536)
@@ -233,35 +216,84 @@ export function normalizationSQLFailure(stderr) {
     },
   };
 }
-
 // Only identifiers from this owned isolated database can leave the raw boundary.
-export const normalizationDiagnosticCatalogSQL = `SELECT coalesce(json_agg(
-  json_build_object('schema', n.nspname, 'table', t.relname, 'constraint', c.conname)
-  ORDER BY n.nspname, t.relname, c.conname), '[]'::json)::text
+export const normalizationDiagnosticCatalogSQL = `SELECT json_build_object('actor', current_user, 'database', current_database(),
+  'rows', coalesce(json_agg(json_build_object('schema', n.nspname,
+  'table', t.relname, 'constraint', c.conname)
+  ORDER BY n.nspname, t.relname, c.conname), '[]'::json))::text
   FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
   JOIN pg_namespace n ON n.oid=t.relnamespace
   WHERE n.nspname IN ('auth','public','private');`;
-
-const diagnosticFields = [
-  'status',
-  'reason',
-  'fixtureLine',
-  'sqlState',
-  'schema',
-  'table',
-  'constraint',
-  'row',
-  'origin',
-  'catalogSHA256',
-];
-const diagnosticReasons = [
-  'READABLE_CONSTRAINT_AND_ROW',
-  'ROW_UNKNOWN',
-  'FORMAT_UNKNOWN',
-  'CATALOG_UNAVAILABLE',
-  'IDENTITY_UNKNOWN',
-];
-
+const catalogEvidenceFields =
+  'version shape count predicate index field identifierClass actor actorObserved database databaseObserved querySHA256 inputSHA256'.split(
+    ' '
+  );
+const catalogPredicates =
+  'VALID ARRAY_REQUIRED COUNT_LIMIT ROW_OBJECT_REQUIRED SCHEMA_NOT_ALLOWED TABLE_IDENTIFIER_REJECTED CONSTRAINT_IDENTIFIER_REJECTED'.split(
+    ' '
+  );
+export function catalogValidationEvidence(value) {
+  const rows = value?.rows;
+  const rejected = (row) =>
+    !row || typeof row !== 'object' || Array.isArray(row)
+      ? 'row'
+      : !['auth', 'public', 'private'].includes(row.schema)
+        ? 'schema'
+        : typeof row.table !== 'string' || !identifier.test(row.table)
+          ? 'table'
+          : typeof row.constraint !== 'string' ||
+              !identifier.test(row.constraint)
+            ? 'constraint'
+            : null;
+  let predicate = !Array.isArray(rows)
+    ? 'ARRAY_REQUIRED'
+    : rows.length > 2048
+      ? 'COUNT_LIMIT'
+      : 'VALID';
+  let index = null,
+    field = null;
+  if (predicate === 'VALID') {
+    const bad = rows.findIndex((row) => rejected(row) !== null);
+    if (bad >= 0) {
+      index = bad;
+      field = rejected(rows[bad]);
+      predicate = {
+        row: 'ROW_OBJECT_REQUIRED',
+        schema: 'SCHEMA_NOT_ALLOWED',
+        table: 'TABLE_IDENTIFIER_REJECTED',
+        constraint: 'CONSTRAINT_IDENTIFIER_REJECTED',
+      }[field];
+    }
+  }
+  const identifierClass = ['table', 'constraint'].includes(field)
+    ? typeof rows[index][field] === 'string'
+      ? 'GRAMMAR_REJECTED'
+      : 'NON_STRING'
+    : null;
+  return {
+    version: 1,
+    shape: rows === null ? 'null' : Array.isArray(rows) ? 'array' : typeof rows,
+    count: Array.isArray(rows) ? rows.length : null,
+    predicate,
+    index,
+    field,
+    identifierClass,
+    actor: value?.actor === 'supabase_admin' ? 'supabase_admin' : null,
+    actorObserved: typeof value?.actor === 'string',
+    database: value?.database === 'postgres' ? 'postgres' : null,
+    databaseObserved: typeof value?.database === 'string',
+    querySHA256: digest(normalizationDiagnosticCatalogSQL),
+    inputSHA256: digest(JSON.stringify(value ?? null)),
+  };
+}
+const diagnosticFields =
+  'status reason fixtureLine sqlState schema table constraint row origin catalogSHA256'.split(
+    ' '
+  );
+const diagnosticReasons =
+  'READABLE_CONSTRAINT_AND_ROW ROW_UNKNOWN FORMAT_UNKNOWN CATALOG_UNAVAILABLE IDENTITY_UNKNOWN'.split(
+    ' '
+  );
 export function projectNormalizationDiagnostic(stderr, catalog) {
   const result = {
     status: 'UNKNOWN',
@@ -296,17 +328,7 @@ export function projectNormalizationDiagnostic(stderr, catalog) {
     return result;
   result.fixtureLine = number;
   result.sqlState = state;
-  if (
-    !Array.isArray(catalog) ||
-    catalog.length > 2048 ||
-    catalog.some(
-      (x) =>
-        !x ||
-        !['auth', 'public', 'private'].includes(x.schema) ||
-        !identifier.test(x.table) ||
-        !identifier.test(x.constraint)
-    )
-  ) {
+  if (catalogValidationEvidence({ rows: catalog }).predicate !== 'VALID') {
     result.reason = 'CATALOG_UNAVAILABLE';
     return result;
   }
@@ -360,7 +382,6 @@ export function projectNormalizationDiagnostic(stderr, catalog) {
     result.row === null ? 'ROW_UNKNOWN' : 'READABLE_CONSTRAINT_AND_ROW';
   return result;
 }
-
 export function normalizationDiagnosticEnvelope(
   projection,
   sourceSha,
@@ -376,51 +397,21 @@ export function normalizationDiagnosticEnvelope(
     projectionBytes: Buffer.byteLength(JSON.stringify(projection)),
   };
 }
-
 export function validateNormalizationDiagnosticArtifact(bytes) {
   try {
     if (Buffer.byteLength(bytes) > 1024 * 1024) throw new Error();
     const receipt = JSON.parse(String(bytes));
-    const rootKeys = [
-      'version',
-      'sourceSha',
-      'controlSha',
-      'scope',
-      'normalizationQualified',
-      'schemaQualified',
-      'foundation172Qualified',
-      'assertions',
-      'packets',
-      'fixtureHashes',
-      'migrationSHA256',
-      'catalogVerified',
-      'catalog',
-      'testDependency',
-      'testDependencyPhase',
-      'testDependencyVerified',
-      'lifecycleCode',
-      'cleanupSucceeded',
-      'providerQualified',
-      'productionApplied',
-      'failureDiagnostic',
-      'diagnosticTransport',
-    ];
+    const rootKeys =
+      'version sourceSha controlSha scope normalizationQualified schemaQualified foundation172Qualified assertions packets fixtureHashes migrationSHA256 catalogVerified catalog testDependency testDependencyPhase testDependencyVerified lifecycleCode cleanupSucceeded providerQualified productionApplied failureDiagnostic diagnosticTransport catalogValidation'.split(
+        ' '
+      );
     if (Object.keys(receipt).some((key) => !rootKeys.includes(key)))
       throw new Error();
-    const forbidden = new Set([
-      'stdout',
-      'stderr',
-      'message',
-      'detail',
-      'context',
-      'raw',
-      'rawBody',
-      'rawMessage',
-      'rawDetail',
-      'rawContext',
-      'failingRow',
-      'error',
-    ]);
+    const forbidden = new Set(
+      'stdout stderr message detail context raw rawBody rawMessage rawDetail rawContext failingRow error'.split(
+        ' '
+      )
+    );
     const check = (value) => {
       if (!value || typeof value !== 'object') return;
       for (const [key, item] of Object.entries(value)) {
@@ -431,6 +422,58 @@ export function validateNormalizationDiagnosticArtifact(bytes) {
     check(receipt);
     exactSourceSha(receipt.sourceSha);
     exactSourceSha(receipt.controlSha);
+    const c = receipt.catalogValidation;
+    if (c !== undefined) {
+      if (
+        !c ||
+        Object.keys(c).sort().join() !==
+          [...catalogEvidenceFields].sort().join() ||
+        c.version !== 1 ||
+        (c.shape === 'array') !== (c.count !== null) ||
+        !catalogPredicates.includes(c.predicate) ||
+        !'array object null undefined string number boolean'
+          .split(' ')
+          .includes(c.shape) ||
+        (c.count !== null && (!Number.isSafeInteger(c.count) || c.count < 0)) ||
+        (c.index !== null &&
+          (!Number.isSafeInteger(c.index) ||
+            c.index < 0 ||
+            c.index >= c.count)) ||
+        ![null, 'row', 'schema', 'table', 'constraint'].includes(c.field) ||
+        ![null, 'NON_STRING', 'GRAMMAR_REJECTED'].includes(c.identifierClass) ||
+        ![null, 'supabase_admin'].includes(c.actor) ||
+        typeof c.actorObserved !== 'boolean' ||
+        ![null, 'postgres'].includes(c.database) ||
+        typeof c.databaseObserved !== 'boolean' ||
+        (c.actor !== null && !c.actorObserved) ||
+        (c.database !== null && !c.databaseObserved) ||
+        c.querySHA256 !== digest(normalizationDiagnosticCatalogSQL) ||
+        !/^[a-f0-9]{64}$/u.test(c.inputSHA256)
+      )
+        throw new Error();
+      const boundedArray = c.shape === 'array' && c.count <= 2048;
+      const noRow = c.index === null && c.field === null;
+      const fields = {
+        ROW_OBJECT_REQUIRED: 'row',
+        SCHEMA_NOT_ALLOWED: 'schema',
+        TABLE_IDENTIFIER_REJECTED: 'table',
+        CONSTRAINT_IDENTIFIER_REJECTED: 'constraint',
+      };
+      if (
+        (c.predicate === 'VALID' &&
+          (!boundedArray || !noRow || c.identifierClass !== null)) ||
+        (c.predicate === 'ARRAY_REQUIRED' && (c.shape === 'array' || !noRow)) ||
+        (c.predicate === 'COUNT_LIMIT' &&
+          (c.shape !== 'array' || c.count <= 2048 || !noRow)) ||
+        (fields[c.predicate] &&
+          (!boundedArray ||
+            c.index === null ||
+            c.field !== fields[c.predicate])) ||
+        ['table', 'constraint'].includes(c.field) !==
+          (c.identifierClass !== null)
+      )
+        throw new Error();
+    }
     if (receipt.normalizationQualified === true && !receipt.failureDiagnostic)
       return { status: 'NOT_REQUIRED' };
     const e = receipt.diagnosticTransport,
@@ -441,15 +484,8 @@ export function validateNormalizationDiagnosticArtifact(bytes) {
       e.controlSha !== receipt.controlSha ||
       e.phase !== 'packet-execution-diagnostic' ||
       Object.keys(e).sort().join() !==
-        [
-          'version',
-          'sourceSha',
-          'controlSha',
-          'phase',
-          'projection',
-          'projectionSHA256',
-          'projectionBytes',
-        ]
+        'version sourceSha controlSha phase projection projectionSHA256 projectionBytes'
+          .split(' ')
           .sort()
           .join() ||
       !p ||
@@ -495,7 +531,6 @@ export function validateNormalizationDiagnosticArtifact(bytes) {
     throw new Error('Diagnostic transport invalid');
   }
 }
-
 export function retainNormalizationFailure(result, context) {
   const stdout = typeof result.stdout === 'string' ? result.stdout : '';
   const stderr = typeof result.stderr === 'string' ? result.stderr : '';
@@ -561,7 +596,6 @@ export function retainNormalizationFailure(result, context) {
   }
   return safe();
 }
-
 export function verifyNormalizationInputs(migration, fixture) {
   for (const [kind, bytes] of Object.entries({ migration, fixture })) {
     assert.equal(
@@ -571,7 +605,6 @@ export function verifyNormalizationInputs(migration, fixture) {
   }
   return migration.toString('utf8').match(/as \$\$([\s\S]*?)\$\$;/u)[1];
 }
-
 export const mailboxCatalogSQL = `select row_to_json(c) from (
 select p.oid, pg_get_userbyid(p.proowner) as owner, p.proacl::text as acl,
 p.prosecdef as security_definer, p.proconfig as config, p.prosrc as body,
@@ -584,7 +617,6 @@ exists(select 1 from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
 where a.grantee=0 and a.privilege_type='EXECUTE') as public_execute
 from pg_proc p join pg_language l on l.oid=p.prolang
 where p.oid='private.employee_inbound_mailbox(text,uuid)'::regprocedure) c;`;
-
 export function verifyMailboxCatalog(before, after, expectedBody) {
   for (const value of [before, after]) {
     assert.equal(value.security_definer, true);
@@ -605,7 +637,6 @@ export function verifyMailboxCatalog(before, after, expectedBody) {
   assert.notEqual(before.body, after.body);
   return true;
 }
-
 export function normalizationReceipt({
   sourceSha,
   controlSha,
