@@ -21,6 +21,7 @@ import {
   prepareNormalizationTestDependency,
   projectNormalizationDiagnostic,
   retainNormalizationFailure,
+  selectorRejectionEvidence,
   validateNormalizationDiagnosticArtifact,
   verifyMailboxCatalog,
   verifyNormalizationInputs,
@@ -48,6 +49,7 @@ export function collectRelevantCatalog(stderr, execute) {
   const selection = {
     version: 1,
     reason: 'SELECTOR_UNAVAILABLE',
+    evidence: selectorRejectionEvidence(),
     total: null,
     returned: 0,
     complete: false,
@@ -80,20 +82,13 @@ export function collectRelevantCatalog(stderr, execute) {
     : standard
       ? { schema: null, table: standard[1], constraint: standard[2] }
       : null;
-  const safe = (v) =>
-    typeof v === 'string' && /^[a-z_][a-z0-9_$]{0,62}$/u.test(v);
-  if (
-    !selector ||
-    !safe(selector.table) ||
-    !safe(selector.constraint) ||
-    (verbose &&
-      (fields.some((v) => v.length !== 1) ||
-        !['auth', 'public', 'private'].includes(selector.schema) ||
-        (standard &&
-          (standard[1] !== selector.table ||
-            standard[2] !== selector.constraint))))
-  )
-    return result;
+  selection.evidence = selectorRejectionEvidence(
+    fields,
+    standard,
+    selector,
+    verbose
+  );
+  if (selection.evidence.predicate !== 'ELIGIBLE') return result;
   selection.selectorSHA256 = hash(JSON.stringify(selector));
   const predicate =
     `entry->>'table' = '${selector.table}' AND entry->>'constraint' = '${selector.constraint}'` +
@@ -113,7 +108,9 @@ export function collectRelevantCatalog(stderr, execute) {
   selection.querySHA256 = hash(sql);
   let failureReason = 'QUERY_ERROR';
   try {
+    selection.evidence.queryState = 'EXECUTED_ERROR';
     const text = execute(sql);
+    selection.evidence.queryState = 'INVALID_RESPONSE';
     failureReason = 'RESPONSE_INVALID';
     if (typeof text !== 'string' || Buffer.byteLength(text) > 1024 * 1024)
       throw new Error();
@@ -162,6 +159,7 @@ export function collectRelevantCatalog(stderr, execute) {
       return [row.schema, row.table, row.constraint].join('\0');
     });
     if (keys.some((key, i) => i > 0 && keys[i - 1] > key)) throw new Error();
+    selection.evidence.queryState = 'MATCHED';
     selection.reason = 'COMPLETE';
     selection.complete = true;
     selection.returned = rows.length;

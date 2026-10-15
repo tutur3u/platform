@@ -433,6 +433,7 @@ const collectRelevant = runInNewContext(
   '(' + relevantFunction[0].replace(/^export /u, '') + ')',
   {
     catalogValidationEvidence: control.catalogValidationEvidence,
+    selectorRejectionEvidence: control.selectorRejectionEvidence,
     projectNormalizationDiagnostic: control.projectNormalizationDiagnostic,
     normalizationDiagnosticCatalogSQL:
       control.normalizationDiagnosticCatalogSQL,
@@ -605,3 +606,74 @@ test('relevant selection new: receiver accepts typed selection and rejects false
     /Diagnostic transport invalid/u
   );
 });
+
+const verboseIdentity = (
+  schema = 'auth',
+  table = 'users',
+  constraint = 'users_synthetic_check'
+) =>
+  `${base}SCHEMA NAME: ${schema}\nTABLE NAME: ${table}\nCONSTRAINT NAME: ${constraint}\n`;
+const evidenceCases = [
+  ['header', 'missing', 'ok', 'HEADER_UNAVAILABLE', 'NOT_INVOKED'],
+  [
+    'identity',
+    base.replace(message, 'check failed'),
+    'ok',
+    'IDENTITY_MISSING',
+    'NOT_INVOKED',
+  ],
+  [
+    'duplicate',
+    verboseIdentity() + 'TABLE NAME: users\n',
+    'ok',
+    'IDENTITY_CARDINALITY',
+    'NOT_INVOKED',
+  ],
+  [
+    'unsafe',
+    verboseIdentity('auth', 'unsafe-name'),
+    'ok',
+    'IDENTITY_UNSAFE',
+    'NOT_INVOKED',
+  ],
+  ['schema', verboseIdentity('secret'), 'ok', 'SCHEMA_REJECTED', 'NOT_INVOKED'],
+  [
+    'mismatch',
+    verboseIdentity('auth', 'other'),
+    'ok',
+    'IDENTITY_MISMATCH',
+    'NOT_INVOKED',
+  ],
+  ['standard', base, 'ok', 'ELIGIBLE', 'MATCHED'],
+  ['verbose', verboseIdentity(), 'ok', 'ELIGIBLE', 'MATCHED'],
+  ['query-error', base, 'error', 'ELIGIBLE', 'EXECUTED_ERROR'],
+  ['invalid', base, 'invalid', 'ELIGIBLE', 'INVALID_RESPONSE'],
+  ['limit', base, 'limit', 'ELIGIBLE', 'INVALID_RESPONSE'],
+  ['duplicate-error', base + base, 'ok', 'HEADER_UNAVAILABLE', 'NOT_INVOKED'],
+];
+for (const [name, stderr, response, predicate, state] of evidenceCases) {
+  test(`selector evidence new: ${name}`, () => {
+    let calls = 0;
+    const selected = collectRelevant(stderr, () => {
+      calls++;
+      if (response === 'error') throw new Error('PRIVATE_SECRET');
+      return response === 'invalid'
+        ? '{}'
+        : relevantReply(catalog, response === 'limit' ? 2049 : 1);
+    });
+    assert.ok(selected.selection.evidence, 'SELECTOR_EVIDENCE_MISSING');
+    assert.equal(selected.selection.evidence.predicate, predicate);
+    assert.equal(selected.selection.evidence.queryState, state);
+    assert.equal(calls, state === 'NOT_INVOKED' ? 0 : 1);
+    assert.equal(
+      JSON.stringify(selected.selection.evidence).includes('users'),
+      false
+    );
+    if (!calls) assert.equal(selected.validation.predicate, 'ARRAY_REQUIRED');
+    const projected = project(stderr, selected.catalog);
+    assert.equal(
+      projected.sqlState,
+      name === 'header' || name === 'duplicate-error' ? null : '23514'
+    );
+  });
+}

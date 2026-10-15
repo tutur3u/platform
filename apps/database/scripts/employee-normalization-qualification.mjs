@@ -115,6 +115,44 @@ const catalogPredicates =
   'VALID ARRAY_REQUIRED COUNT_LIMIT ROW_OBJECT_REQUIRED SCHEMA_NOT_ALLOWED TABLE_IDENTIFIER_REJECTED CONSTRAINT_IDENTIFIER_REJECTED'.split(
     ' '
   );
+export function selectorRejectionEvidence(
+  fields = [],
+  standard = null,
+  selector = null,
+  verbose = false
+) {
+  const safe = (v) =>
+    typeof v === 'string' && /^[a-z_][a-z0-9_$]{0,62}$/u.test(v);
+  const counts = [0, 1, 2].map((i) => fields[i]?.length ?? 0);
+  const predicate =
+    fields.length !== 3
+      ? 'HEADER_UNAVAILABLE'
+      : !selector
+        ? 'IDENTITY_MISSING'
+        : !safe(selector.table) || !safe(selector.constraint)
+          ? 'IDENTITY_UNSAFE'
+          : verbose && counts.some((n) => n !== 1)
+            ? 'IDENTITY_CARDINALITY'
+            : verbose &&
+                !['auth', 'public', 'private'].includes(selector.schema)
+              ? 'SCHEMA_REJECTED'
+              : verbose &&
+                  standard &&
+                  (standard[1] !== selector.table ||
+                    standard[2] !== selector.constraint)
+                ? 'IDENTITY_MISMATCH'
+                : 'ELIGIBLE';
+  return {
+    version: 1,
+    predicate,
+    headerEligible: fields.length === 3,
+    fieldCounts: counts,
+    standardLineMatch: standard !== null,
+    tableType: selector === null ? 'absent' : typeof selector.table,
+    constraintType: selector === null ? 'absent' : typeof selector.constraint,
+    queryState: 'NOT_INVOKED',
+  };
+}
 export function catalogValidationEvidence(value) {
   const rows = value?.rows;
   const problem = (row) =>
@@ -302,11 +340,48 @@ export function validateNormalizationDiagnosticArtifact(bytes) {
       const { reason, total, returned, complete } = selection;
       assert.deepEqual(
         Object.keys(selection).sort(),
-        'version reason total returned complete selectorSHA256 querySHA256 rowsSHA256'
+        'version reason evidence total returned complete selectorSHA256 querySHA256 rowsSHA256'
           .split(' ')
           .sort()
       );
       assert.equal(selection.version, 1);
+      const e = selection.evidence;
+      assert.deepEqual(
+        Object.keys(e).sort(),
+        'version predicate headerEligible fieldCounts standardLineMatch tableType constraintType queryState'
+          .split(' ')
+          .sort()
+      );
+      assert.equal(e.version, 1);
+      assert(
+        'HEADER_UNAVAILABLE IDENTITY_MISSING IDENTITY_UNSAFE IDENTITY_CARDINALITY SCHEMA_REJECTED IDENTITY_MISMATCH ELIGIBLE'
+          .split(' ')
+          .includes(e.predicate)
+      );
+      assert.equal(typeof e.headerEligible, 'boolean');
+      assert.equal(typeof e.standardLineMatch, 'boolean');
+      assert(
+        Array.isArray(e.fieldCounts) &&
+          e.fieldCounts.length === 3 &&
+          e.fieldCounts.every((n) => boundedInteger(n, 0, 1000000))
+      );
+      assert(['absent', 'string', 'undefined'].includes(e.tableType));
+      assert(['absent', 'string', 'undefined'].includes(e.constraintType));
+      assert(
+        'NOT_INVOKED EXECUTED_ERROR INVALID_RESPONSE MATCHED'
+          .split(' ')
+          .includes(e.queryState)
+      );
+      assert.equal(
+        e.queryState === 'NOT_INVOKED',
+        reason === 'SELECTOR_UNAVAILABLE'
+      );
+      assert.equal(e.queryState === 'MATCHED', reason === 'COMPLETE');
+      assert.equal(
+        e.predicate === 'ELIGIBLE',
+        reason !== 'SELECTOR_UNAVAILABLE'
+      );
+
       assert(
         'SELECTOR_UNAVAILABLE QUERY_ERROR RESPONSE_INVALID COUNT_LIMIT COMPLETE'
           .split(' ')
