@@ -128,6 +128,77 @@ function checkFacts(f) {
     assert.ok(f.files.some((x) => re.test(x.path)));
   }
 }
+const sealingRecords = new WeakMap();
+const sealingPredicates = Object.freeze({
+  invocation: 'CLI_ARGUMENTS',
+  environment: 'CI_LINUX_REQUIRED',
+  'checkout-identities': 'EXACT_CHECKOUTS',
+  'config-inputs': 'CONFIGURED_EMISSION',
+  'output-membership': 'EXACT_OUTPUT_MEMBERSHIP',
+  'runtime-identities': 'RUNTIME_IDENTITIES',
+  'input-cleanliness': 'SOURCE_INPUTS_CLEAN',
+  'facts-validation': 'MANIFEST_FACTS_VALID',
+  'destination-create': 'EXCLUSIVE_DESTINATION',
+  'copy-readback': 'COPIED_BYTES_MATCH',
+  'provenance-write-readback': 'PROVENANCE_MATCH',
+  'manifest-write-readback': 'MANIFEST_BYTES_MATCH',
+  verification: 'RECEIVER_CONTRACT_VALID',
+});
+function sealingErrorClass(error) {
+  try {
+    for (const Type of [
+      assert.AssertionError,
+      TypeError,
+      RangeError,
+      SyntaxError,
+      Error,
+    ]) {
+      if (error instanceof Type) return Type.name;
+    }
+  } catch {}
+  return 'UNKNOWN';
+}
+function sealingRecord(stage, facts, error) {
+  const known = Object.hasOwn(sealingPredicates, stage);
+  const count = (value) =>
+    Number.isSafeInteger(value) && value >= 0 && value <= 10000000
+      ? value
+      : null;
+  const summary = {
+    outputShape: ['array', 'object', 'file-set'].includes(facts.outputShape)
+      ? facts.outputShape
+      : 'UNKNOWN',
+    expectedCount: count(facts.expectedCount),
+    observedCount: count(facts.observedCount),
+  };
+  return Object.freeze({
+    version: 1,
+    status: 'HOLD',
+    stage: known ? stage : 'UNKNOWN',
+    predicate: known ? sealingPredicates[stage] : 'UNKNOWN',
+    errorClass: sealingErrorClass(error),
+    ...summary,
+    safeFactsSHA256: digest(canonical(summary)),
+  });
+}
+function sealingDiagnostic(error) {
+  return sealingRecords.get(error) ?? sealingRecord('UNKNOWN', {}, error);
+}
+function diagnoseSealing(work) {
+  let stage = 'UNKNOWN',
+    facts = {};
+  try {
+    return work((next, summary = {}) => {
+      stage = next;
+      facts = summary;
+    });
+  } catch (cause) {
+    if (sealingRecords.has(cause)) throw cause;
+    const error = new Error('Types emission artifact HOLD');
+    sealingRecords.set(error, sealingRecord(stage, facts, cause));
+    throw error;
+  }
+}
 function hold(fn) {
   try {
     return fn();
@@ -251,133 +322,163 @@ function targets(exports) {
     : Object.values(exports).flatMap(targets);
 }
 function createArtifact(args) {
-  assert.equal(process.env.GITHUB_ACTIONS, 'true');
-  assert.equal(process.platform, 'linux');
-  const root = fs.realpathSync(args.source),
-    controlRoot = path.resolve(__dirname, '../..');
-  assert.notEqual(root, controlRoot);
-  const git = (dir) =>
-    execFileSync('git', ['-C', dir, 'rev-parse', 'HEAD'], {
+  return diagnoseSealing((mark) => {
+    mark('environment');
+    assert.equal(process.env.GITHUB_ACTIONS, 'true');
+    assert.equal(process.platform, 'linux');
+    const root = fs.realpathSync(args.source),
+      controlRoot = path.resolve(__dirname, '../..');
+    assert.notEqual(root, controlRoot);
+    const git = (dir) =>
+      execFileSync('git', ['-C', dir, 'rev-parse', 'HEAD'], {
+        encoding: 'utf8',
+        timeout: 10000,
+      }).trim();
+    mark('checkout-identities');
+    assert.equal(git(root), args['source-sha']);
+    assert.equal(git(controlRoot), args['control-sha']);
+    mark('config-inputs');
+    const req = createRequire(path.join(root, 'packages/types/package.json'));
+    const ts = req('typescript');
+    const config = configInputs(
+      root,
+      ts,
+      path.join(root, 'packages/types/tsconfig.build.json')
+    );
+    mark('output-membership');
+    assert.ok(config.expectedPaths.every(owned));
+    const actual = [
+      ...walk(root, path.join(root, 'packages/types/dist')),
+      config.configuredBuildInfo,
+    ].sort();
+    mark('output-membership', {
+      outputShape: 'file-set',
+      expectedCount: config.expectedPaths.length,
+      observedCount: actual.length,
+    });
+    assert.deepEqual(actual, config.expectedPaths);
+    mark('runtime-identities');
+    const bun = fs.realpathSync(process.env.BUN_BINARY);
+    const bunVersion = execFileSync(bun, ['--version'], {
       encoding: 'utf8',
       timeout: 10000,
+      maxBuffer: 1024,
     }).trim();
-  assert.equal(git(root), args['source-sha']);
-  assert.equal(git(controlRoot), args['control-sha']);
-  const req = createRequire(path.join(root, 'packages/types/package.json'));
-  const ts = req('typescript');
-  const config = configInputs(
-    root,
-    ts,
-    path.join(root, 'packages/types/tsconfig.build.json')
-  );
-  assert.ok(config.expectedPaths.every(owned));
-  const actual = [
-    ...walk(root, path.join(root, 'packages/types/dist')),
-    config.configuredBuildInfo,
-  ].sort();
-  assert.deepEqual(actual, config.expectedPaths);
-  const bun = fs.realpathSync(process.env.BUN_BINARY);
-  const bunVersion = execFileSync(bun, ['--version'], {
-    encoding: 'utf8',
-    timeout: 10000,
-    maxBuffer: 1024,
-  }).trim();
-  const packageBytes = fs.readFileSync(
-    path.join(root, 'packages/types/package.json')
-  );
-  const packageJSON = JSON.parse(packageBytes);
-  const {
-    configFiles,
-    sourceFiles,
-    configSha256: _oldConfigDigest,
-    ...emission
-  } = config;
-  const provenance = {
-    version: 1,
-    packageSha256: digest(packageBytes),
-    exportMapSha256: digest(canonical(packageJSON.exports)),
-    configFiles,
-    sourceFiles,
-  };
-  const dirtyInputs = execFileSync(
-    'git',
-    [
-      '-C',
-      root,
-      'status',
-      '--porcelain=v1',
-      '--',
-      'packages/types/src',
-      'packages/types/package.json',
-      'packages/types/tsconfig.json',
-      'packages/types/tsconfig.build.json',
-      'packages/typescript-config',
-      'bun.lock',
-    ],
-    { encoding: 'utf8', timeout: 10000 }
-  );
-  assert.equal(dirtyInputs, '');
-  const facts = {
-    sourceSha: args['source-sha'],
-    controlSha: args['control-sha'],
-    lockSha256: digest(fs.readFileSync(path.join(root, 'bun.lock'))),
-    ...emission,
-    configSha256: digest(canonical(provenance)),
-    nodeSha256: digest(fs.readFileSync(process.execPath)),
-    bunSha256: digest(fs.readFileSync(bun)),
-    compilerSha256: digest(fs.readFileSync(req.resolve('typescript'))),
-    nodeVersion: process.version,
-    bunVersion,
-    compilerVersion: ts.version,
-    exportTargets: targets(packageJSON.exports),
-    files: actual.map((p) => file(root, p)),
-    buildExit: 0,
-    membershipKnown: true,
-    runId: process.env.GITHUB_RUN_ID,
-    job: process.env.GITHUB_JOB,
-    attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
-  };
-  const manifest = createManifest(facts);
-  const destination = path.resolve(args.artifact);
-  fs.mkdirSync(destination, { mode: 0o700 });
-  for (const entry of manifest.files) {
-    const output = path.join(destination, entry.path);
-    fs.mkdirSync(path.dirname(output), { recursive: true, mode: 0o700 });
-    fs.copyFileSync(
-      path.join(root, entry.path),
-      output,
-      fs.constants.COPYFILE_EXCL
+    const packageBytes = fs.readFileSync(
+      path.join(root, 'packages/types/package.json')
     );
-    assert.equal(digest(fs.readFileSync(output)), entry.sha256);
-  }
-  const provenanceBytes = `${JSON.stringify(provenance, null, 2)}\n`;
-  assert.ok(Buffer.byteLength(provenanceBytes) <= 1024 * 1024);
-  fs.writeFileSync(path.join(destination, 'provenance.json'), provenanceBytes, {
-    flag: 'wx',
-    mode: 0o600,
+    const packageJSON = JSON.parse(packageBytes);
+    const {
+      configFiles,
+      sourceFiles,
+      configSha256: _oldConfigDigest,
+      ...emission
+    } = config;
+    const provenance = {
+      version: 1,
+      packageSha256: digest(packageBytes),
+      exportMapSha256: digest(canonical(packageJSON.exports)),
+      configFiles,
+      sourceFiles,
+    };
+    mark('input-cleanliness');
+    const dirtyInputs = execFileSync(
+      'git',
+      [
+        '-C',
+        root,
+        'status',
+        '--porcelain=v1',
+        '--',
+        'packages/types/src',
+        'packages/types/package.json',
+        'packages/types/tsconfig.json',
+        'packages/types/tsconfig.build.json',
+        'packages/typescript-config',
+        'bun.lock',
+      ],
+      { encoding: 'utf8', timeout: 10000 }
+    );
+    assert.equal(dirtyInputs, '');
+    const facts = {
+      sourceSha: args['source-sha'],
+      controlSha: args['control-sha'],
+      lockSha256: digest(fs.readFileSync(path.join(root, 'bun.lock'))),
+      ...emission,
+      configSha256: digest(canonical(provenance)),
+      nodeSha256: digest(fs.readFileSync(process.execPath)),
+      bunSha256: digest(fs.readFileSync(bun)),
+      compilerSha256: digest(fs.readFileSync(req.resolve('typescript'))),
+      nodeVersion: process.version,
+      bunVersion,
+      compilerVersion: ts.version,
+      exportTargets: targets(packageJSON.exports),
+      files: actual.map((p) => file(root, p)),
+      buildExit: 0,
+      membershipKnown: true,
+      runId: process.env.GITHUB_RUN_ID,
+      job: process.env.GITHUB_JOB,
+      attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+    };
+    mark('facts-validation', {
+      outputShape: 'file-set',
+      observedCount: actual.length,
+      expectedCount: config.expectedPaths.length,
+    });
+    const manifest = createManifest(facts);
+    mark('destination-create');
+    const destination = path.resolve(args.artifact);
+    fs.mkdirSync(destination, { mode: 0o700 });
+    mark('copy-readback', {
+      outputShape: 'file-set',
+      observedCount: manifest.files.length,
+    });
+    for (const entry of manifest.files) {
+      const output = path.join(destination, entry.path);
+      fs.mkdirSync(path.dirname(output), { recursive: true, mode: 0o700 });
+      fs.copyFileSync(
+        path.join(root, entry.path),
+        output,
+        fs.constants.COPYFILE_EXCL
+      );
+      assert.equal(digest(fs.readFileSync(output)), entry.sha256);
+    }
+    mark('provenance-write-readback');
+    const provenanceBytes = `${JSON.stringify(provenance, null, 2)}\n`;
+    assert.ok(Buffer.byteLength(provenanceBytes) <= 1024 * 1024);
+    fs.writeFileSync(
+      path.join(destination, 'provenance.json'),
+      provenanceBytes,
+      {
+        flag: 'wx',
+        mode: 0o600,
+      }
+    );
+    assert.equal(
+      digest(canonical(readJSON(path.join(destination, 'provenance.json')))),
+      manifest.configSha256
+    );
+    mark('manifest-write-readback');
+    const bytes = `${JSON.stringify(manifest, null, 2)}\n`;
+    fs.writeFileSync(path.join(destination, 'manifest.json'), bytes, {
+      flag: 'wx',
+      mode: 0o600,
+    });
+    assert.equal(
+      fs.readFileSync(path.join(destination, 'manifest.json'), 'utf8'),
+      bytes
+    );
+    console.log(
+      JSON.stringify({
+        producerManifestWritten: true,
+        files: manifest.files.length,
+        sourceSha: manifest.sourceSha,
+        controlSha: manifest.controlSha,
+      })
+    );
   });
-  assert.equal(
-    digest(canonical(readJSON(path.join(destination, 'provenance.json')))),
-    manifest.configSha256
-  );
-  const bytes = `${JSON.stringify(manifest, null, 2)}\n`;
-  fs.writeFileSync(path.join(destination, 'manifest.json'), bytes, {
-    flag: 'wx',
-    mode: 0o600,
-  });
-  assert.equal(
-    fs.readFileSync(path.join(destination, 'manifest.json'), 'utf8'),
-    bytes
-  );
-  console.log(
-    JSON.stringify({
-      producerManifestWritten: true,
-      files: manifest.files.length,
-      sourceSha: manifest.sourceSha,
-      controlSha: manifest.controlSha,
-    })
-  );
 }
+
 function verifyArtifact(args) {
   const root = fs.realpathSync(args.artifact),
     manifest = readJSON(path.join(root, 'manifest.json'));
@@ -412,7 +513,7 @@ function verifyArtifact(args) {
     JSON.stringify({ artifactValidated: true, files: manifest.files.length })
   );
 }
-function main(argv) {
+function main(argv, mark) {
   const [mode, ...rest] = argv;
   const args = {};
   assert.equal(rest.length % 2, 0);
@@ -430,15 +531,32 @@ function main(argv) {
   } else {
     assert.equal(mode, 'verify');
     assert.ok(sameKeys(args, ['artifact', 'contract']));
+    mark('verification');
     verifyArtifact(args);
   }
 }
-if (require.main === module) {
+function runCLI(argv) {
   try {
-    main(process.argv.slice(2));
-  } catch {
-    console.error('Types emission artifact HOLD');
+    diagnoseSealing((mark) => {
+      mark('invocation');
+      main(argv, mark);
+    });
+    return null;
+  } catch (error) {
+    return sealingDiagnostic(error);
+  }
+}
+if (require.main === module) {
+  const failure = runCLI(process.argv.slice(2));
+  if (failure) {
+    console.error(JSON.stringify(failure));
     process.exitCode = 1;
   }
 }
-module.exports = { createManifest, validateManifest };
+module.exports = {
+  createManifest,
+  validateManifest,
+  diagnoseSealing,
+  sealingDiagnostic,
+  runCLI,
+};

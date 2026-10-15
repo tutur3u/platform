@@ -183,3 +183,113 @@ test('workflow keeps nonpublishing opt-in source and control boundaries', () => 
   assert.match(text, /actions\/upload-artifact@v7/);
   assert.ok(!text.includes('npm publish'));
 });
+
+const sealingFailure = (stage, cause, facts) => {
+  try {
+    control.diagnoseSealing((mark) => {
+      mark(stage, facts);
+      throw cause;
+    });
+  } catch (error) {
+    return control.sealingDiagnostic(error);
+  }
+  assert.fail('diagnostic must retain failure');
+};
+test('types sealing diagnostic new: successful stage preserves return', () => {
+  assert.equal(
+    control.diagnoseSealing((mark) => {
+      mark('output-membership');
+      return 42;
+    }),
+    42
+  );
+});
+test('types sealing diagnostic new: assertion reports membership counts', () => {
+  const record = sealingFailure(
+    'output-membership',
+    new assert.AssertionError({ message: 'PRIVATE /customer/secret' }),
+    { outputShape: 'file-set', observedCount: 3, expectedCount: 4 }
+  );
+  assert.equal(record.stage, 'output-membership');
+  assert.equal(record.predicate, 'EXACT_OUTPUT_MEMBERSHIP');
+  assert.equal(record.errorClass, 'AssertionError');
+  assert.equal(record.observedCount, 3);
+  assert.equal(record.expectedCount, 4);
+  assert.equal(record.outputShape, 'file-set');
+  assert.equal(JSON.stringify(record).includes('PRIVATE'), false);
+});
+test('types sealing diagnostic new: error class without raw message', () => {
+  const record = sealingFailure(
+    'runtime-identities',
+    new TypeError('SECRET_VALUE')
+  );
+  assert.equal(record.errorClass, 'TypeError');
+  assert.equal(JSON.stringify(record).includes('SECRET_VALUE'), false);
+  assert.equal(Object.hasOwn(record, 'stack'), false);
+});
+test('types sealing diagnostic new: unknown stage and thrown object', () => {
+  const record = sealingFailure('/private/customer', {
+    name: 'SECRET',
+    detail: 'RAW',
+  });
+  assert.equal(record.stage, 'UNKNOWN');
+  assert.equal(record.predicate, 'UNKNOWN');
+  assert.equal(record.errorClass, 'UNKNOWN');
+});
+test('types sealing diagnostic new: invalid summaries remain private', () => {
+  const record = sealingFailure('copy-readback', new Error('RAW'), {
+    outputShape: '/secret/path',
+    observedCount: -1,
+    expectedCount: Infinity,
+  });
+  assert.equal(record.outputShape, 'UNKNOWN');
+  assert.equal(record.observedCount, null);
+  assert.equal(record.expectedCount, null);
+  assert.equal(Object.isFrozen(record), true);
+});
+test('types sealing diagnostic new: safe fact hash deterministic', () => {
+  const facts = { outputShape: 'array', observedCount: 2, expectedCount: 2 };
+  const a = sealingFailure(
+    'facts-validation',
+    new Error('FIRST_SECRET'),
+    facts
+  );
+  const b = sealingFailure(
+    'facts-validation',
+    new Error('SECOND_SECRET'),
+    facts
+  );
+  assert.equal(a.safeFactsSHA256, b.safeFactsSHA256);
+  assert.match(a.safeFactsSHA256, /^[a-f0-9]{64}$/u);
+});
+test('types sealing diagnostic new: actual CLI argument route', () => {
+  const record = control.runCLI(['PRIVATE_INVALID_MODE']);
+  assert.equal(record.status, 'HOLD');
+  assert.equal(record.stage, 'invocation');
+  assert.equal(record.predicate, 'CLI_ARGUMENTS');
+  assert.equal(JSON.stringify(record).includes('PRIVATE_INVALID_MODE'), false);
+});
+test('types sealing diagnostic new: unowned record cannot spoof', () => {
+  const cause = new Error('RAW');
+  cause.diagnostic = { stage: 'copy-readback', secret: 'SECRET' };
+  const record = control.sealingDiagnostic(cause);
+  assert.equal(record.stage, 'UNKNOWN');
+  assert.equal(JSON.stringify(record).includes('SECRET'), false);
+});
+test('types sealing diagnostic new: nested boundary retains failure', () => {
+  let record;
+  try {
+    control.diagnoseSealing((outer) => {
+      outer('invocation');
+      control.diagnoseSealing((inner) => {
+        inner('manifest-write-readback');
+        throw new RangeError('PRIVATE_PATH');
+      });
+    });
+  } catch (error) {
+    record = control.sealingDiagnostic(error);
+  }
+  assert.equal(record.stage, 'manifest-write-readback');
+  assert.equal(record.predicate, 'MANIFEST_BYTES_MATCH');
+  assert.equal(record.errorClass, 'RangeError');
+});
