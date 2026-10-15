@@ -2,7 +2,20 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import {
+  pgTapBootstrapSQL,
+  prepareNormalizationTestDependency,
+  testDependencyCatalogSQL,
+  verifyTestDependencyEvidence,
+} from './employee-normalization-test-dependency.mjs';
 import { exactSourceSha } from './employee-schema-tap.mjs';
+
+export {
+  pgTapBootstrapSQL,
+  prepareNormalizationTestDependency,
+  testDependencyCatalogSQL,
+  verifyTestDependencyEvidence,
+};
 export const normalizationPacket = Object.freeze([
   'employee-inbound-mailbox-normalization.sql',
   20,
@@ -13,140 +26,10 @@ export const normalizationPins = Object.freeze({
   migration: '9f7edf8ff87dc2e77ec5313961a8782261c4b93e4d073bed7bfa02e72492b142',
   fixture: '97149cfe92fbef535ef2c9d19a494cc77c4d096ded966db5213a456b4f3f1308',
 });
-const testAPIs = ['finish', 'is', 'plan'];
-export const pgTapBootstrapSQL =
-  'create extension if not exists pgtap with schema extensions;';
-export const testDependencyCatalogSQL = `select row_to_json(c) from (
-select current_user as actor, session_user as session_actor,
-current_schemas(false) as search_path,
-has_schema_privilege(current_user,'extensions','USAGE') as schema_usage,
-(select default_version from pg_available_extensions where name='pgtap') as available_version,
-(select array_agg(version order by version) from pg_available_extension_versions
- where name='pgtap') as available_versions,
-e.oid::bigint as extension_oid, n.nspname as namespace,
-e.extversion as installed_version, pg_get_userbyid(e.extowner) as owner,
-to_regprocedure('extensions.plan(integer)')::oid::bigint as plan_oid,
-to_regprocedure('plan(integer)')::oid::bigint as visible_plan_oid,
-exists(select 1 from pg_depend d
- where d.classid='pg_proc'::regclass and d.refclassid='pg_extension'::regclass
- and d.deptype='e' and d.refobjid=e.oid
- and d.objid=to_regprocedure('extensions.plan(integer)')::oid) as plan_member,
-case when to_regprocedure('extensions.plan(integer)') is null then false
- else has_function_privilege(current_user,to_regprocedure('extensions.plan(integer)')::oid,
- 'EXECUTE') end as plan_execute,
-(select json_agg(a order by a.name) from (
- select p.proname as name, count(*)::integer as function_count,
- count(*) filter (where has_function_privilege(current_user,p.oid,'EXECUTE'))::integer
- as executable_count from pg_proc p join pg_depend d on d.objid=p.oid
- and d.classid='pg_proc'::regclass and d.refclassid='pg_extension'::regclass
- and d.deptype='e' and d.refobjid=e.oid
- where p.pronamespace=e.extnamespace and p.proname in ('finish','is','plan')
- group by p.proname) a) as apis
-from (select 1) seed left join pg_extension e on e.extname='pgtap'
-left join pg_namespace n on n.oid=e.extnamespace) c;`;
-function verifyDependencyActor(value) {
-  assert.ok(value && typeof value === 'object');
-  assert.equal(value.actor, 'supabase_admin');
-  assert.equal(value.session_actor, 'supabase_admin');
-  assert.deepEqual(value.search_path, ['public', 'extensions']);
-  assert.equal(value.schema_usage, true);
-  assert.equal(typeof value.available_version, 'string');
-  assert.ok(value.available_version.length > 0);
-  assert.ok(Array.isArray(value.available_versions));
-  assert.ok(value.available_versions.includes(value.available_version));
-}
-function verifyInstalledDependency(value) {
-  assert.ok(
-    Number.isSafeInteger(value.extension_oid) && value.extension_oid > 0
-  );
-  assert.equal(value.namespace, 'extensions');
-  assert.equal(typeof value.owner, 'string');
-  assert.ok(value.owner.length > 0);
-  assert.equal(typeof value.installed_version, 'string');
-  assert.ok(value.available_versions.includes(value.installed_version));
-  assert.ok(Number.isSafeInteger(value.plan_oid) && value.plan_oid > 0);
-  assert.equal(value.visible_plan_oid, value.plan_oid);
-  assert.equal(value.plan_member, true);
-  assert.equal(value.plan_execute, true);
-  assert.ok(Array.isArray(value.apis));
-  for (const api of value.apis) {
-    assert.ok(api && typeof api === 'object');
-  }
-  assert.deepEqual(
-    value.apis.map((api) => api.name),
-    testAPIs
-  );
-  for (const api of value.apis) {
-    assert.ok(
-      Number.isSafeInteger(api.function_count) && api.function_count > 0
-    );
-    assert.equal(api.executable_count, api.function_count);
-  }
-}
-function verifyDependencyBefore(value) {
-  verifyDependencyActor(value);
-  if (value.extension_oid !== null) {
-    verifyInstalledDependency(value);
-    return;
-  }
-  for (const key of 'namespace installed_version owner plan_oid visible_plan_oid'.split(
-    ' '
-  )) {
-    assert.equal(value[key], null);
-  }
-  assert.equal(value.plan_member, false);
-  assert.equal(value.plan_execute, false);
-  assert.ok(
-    value.apis === null ||
-      (Array.isArray(value.apis) && value.apis.length === 0)
-  );
-}
-export function verifyTestDependencyEvidence(evidence) {
-  assert.ok(evidence && typeof evidence === 'object');
-  verifyDependencyBefore(evidence.before);
-  verifyDependencyActor(evidence.after);
-  verifyInstalledDependency(evidence.after);
-  assert.deepEqual(
-    evidence.after.available_versions,
-    evidence.before.available_versions
-  );
-  assert.equal(
-    evidence.after.available_version,
-    evidence.before.available_version
-  );
-  if (evidence.before.extension_oid === null) {
-    assert.equal(
-      evidence.after.installed_version,
-      evidence.before.available_version
-    );
-  } else {
-    for (const key of 'extension_oid namespace owner installed_version plan_oid'.split(
-      ' '
-    )) {
-      assert.equal(evidence.after[key], evidence.before[key]);
-    }
-  }
-  return true;
-}
-export function prepareNormalizationTestDependency(
-  executeSQL,
-  recordEvidence = () => {}
-) {
-  const before = JSON.parse(
-    executeSQL(testDependencyCatalogSQL, 'catalog-before')
-  );
-  recordEvidence({ before, after: null });
-  verifyDependencyBefore(before);
-  executeSQL(pgTapBootstrapSQL, 'bootstrap');
-  const after = JSON.parse(
-    executeSQL(testDependencyCatalogSQL, 'catalog-after')
-  );
-  const evidence = { before, after };
-  recordEvidence(evidence);
-  verifyTestDependencyEvidence(evidence);
-  return evidence;
-}
 const digest = (value) => createHash('sha256').update(value).digest('hex');
+const boundedInteger = (value, min, max = Number.MAX_SAFE_INTEGER) =>
+  Number.isSafeInteger(value) && value >= min && value <= max;
+const isSHA256 = (value) => /^[a-f0-9]{64}$/u.test(value);
 const identifier = /^[a-z_][a-z0-9_$]{0,62}$/u;
 const setupIdentities = new Map([
   ['00000000-0000-4000-8000-000000094501', 'setup-auth-row-1'],
@@ -234,7 +117,7 @@ const catalogPredicates =
   );
 export function catalogValidationEvidence(value) {
   const rows = value?.rows;
-  const rejected = (row) =>
+  const problem = (row) =>
     !row || typeof row !== 'object' || Array.isArray(row)
       ? 'row'
       : !['auth', 'public', 'private'].includes(row.schema)
@@ -245,39 +128,33 @@ export function catalogValidationEvidence(value) {
               !identifier.test(row.constraint)
             ? 'constraint'
             : null;
-  let predicate = !Array.isArray(rows)
+  const predicate = !Array.isArray(rows)
     ? 'ARRAY_REQUIRED'
     : rows.length > 2048
       ? 'COUNT_LIMIT'
       : 'VALID';
-  let index = null,
-    field = null;
-  if (predicate === 'VALID') {
-    const bad = rows.findIndex((row) => rejected(row) !== null);
-    if (bad >= 0) {
-      index = bad;
-      field = rejected(rows[bad]);
-      predicate = {
-        row: 'ROW_OBJECT_REQUIRED',
-        schema: 'SCHEMA_NOT_ALLOWED',
-        table: 'TABLE_IDENTIFIER_REJECTED',
-        constraint: 'CONSTRAINT_IDENTIFIER_REJECTED',
-      }[field];
-    }
-  }
-  const identifierClass = ['table', 'constraint'].includes(field)
-    ? typeof rows[index][field] === 'string'
-      ? 'GRAMMAR_REJECTED'
-      : 'NON_STRING'
-    : null;
+  const index =
+    predicate === 'VALID' ? rows.findIndex((row) => problem(row) !== null) : -1;
+  const field = index < 0 ? null : problem(rows[index]);
   return {
     version: 1,
     shape: rows === null ? 'null' : Array.isArray(rows) ? 'array' : typeof rows,
     count: Array.isArray(rows) ? rows.length : null,
-    predicate,
-    index,
+    predicate: field
+      ? {
+          row: 'ROW_OBJECT_REQUIRED',
+          schema: 'SCHEMA_NOT_ALLOWED',
+          table: 'TABLE_IDENTIFIER_REJECTED',
+          constraint: 'CONSTRAINT_IDENTIFIER_REJECTED',
+        }[field]
+      : predicate,
+    index: index < 0 ? null : index,
     field,
-    identifierClass,
+    identifierClass: ['table', 'constraint'].includes(field)
+      ? typeof rows[index][field] === 'string'
+        ? 'GRAMMAR_REJECTED'
+        : 'NON_STRING'
+      : null,
     actor: value?.actor === 'supabase_admin' ? 'supabase_admin' : null,
     actorObserved: typeof value?.actor === 'string',
     database: value?.database === 'postgres' ? 'postgres' : null,
@@ -420,26 +297,63 @@ export function validateNormalizationDiagnosticArtifact(bytes) {
       }
     };
     check(receipt);
+    const selection = receipt.failureDiagnostic?.catalogSelection;
+    if (selection !== undefined) {
+      const { reason, total, returned, complete } = selection;
+      assert.deepEqual(
+        Object.keys(selection).sort(),
+        'version reason total returned complete selectorSHA256 querySHA256 rowsSHA256'
+          .split(' ')
+          .sort()
+      );
+      assert.equal(selection.version, 1);
+      assert(
+        'SELECTOR_UNAVAILABLE QUERY_ERROR RESPONSE_INVALID COUNT_LIMIT COMPLETE'
+          .split(' ')
+          .includes(reason)
+      );
+      assert(
+        [total, returned].every(
+          (n) => n === null || boundedInteger(n, 0, 10000000)
+        )
+      );
+      assert(
+        [
+          selection.selectorSHA256,
+          selection.querySHA256,
+          selection.rowsSHA256,
+        ].every((s) => s === null || isSHA256(s))
+      );
+      assert.equal(complete, reason === 'COMPLETE');
+      assert(
+        complete
+          ? total !== null &&
+              total <= 2048 &&
+              returned === total &&
+              selection.rowsSHA256 !== null
+          : returned === 0 && selection.rowsSHA256 === null
+      );
+      assert(reason !== 'COUNT_LIMIT' || total > 2048);
+    }
+
     exactSourceSha(receipt.sourceSha);
     exactSourceSha(receipt.controlSha);
     const c = receipt.catalogValidation;
     if (c !== undefined) {
+      const { shape, count, index, field, predicate } = c;
       if (
         !c ||
         Object.keys(c).sort().join() !==
           [...catalogEvidenceFields].sort().join() ||
         c.version !== 1 ||
-        (c.shape === 'array') !== (c.count !== null) ||
-        !catalogPredicates.includes(c.predicate) ||
+        (shape === 'array') !== (count !== null) ||
+        !catalogPredicates.includes(predicate) ||
         !'array object null undefined string number boolean'
           .split(' ')
-          .includes(c.shape) ||
-        (c.count !== null && (!Number.isSafeInteger(c.count) || c.count < 0)) ||
-        (c.index !== null &&
-          (!Number.isSafeInteger(c.index) ||
-            c.index < 0 ||
-            c.index >= c.count)) ||
-        ![null, 'row', 'schema', 'table', 'constraint'].includes(c.field) ||
+          .includes(shape) ||
+        (count !== null && !boundedInteger(count, 0)) ||
+        (index !== null && !boundedInteger(index, 0, count - 1)) ||
+        ![null, 'row', 'schema', 'table', 'constraint'].includes(field) ||
         ![null, 'NON_STRING', 'GRAMMAR_REJECTED'].includes(c.identifierClass) ||
         ![null, 'supabase_admin'].includes(c.actor) ||
         typeof c.actorObserved !== 'boolean' ||
@@ -448,11 +362,11 @@ export function validateNormalizationDiagnosticArtifact(bytes) {
         (c.actor !== null && !c.actorObserved) ||
         (c.database !== null && !c.databaseObserved) ||
         c.querySHA256 !== digest(normalizationDiagnosticCatalogSQL) ||
-        !/^[a-f0-9]{64}$/u.test(c.inputSHA256)
+        !isSHA256(c.inputSHA256)
       )
         throw new Error();
-      const boundedArray = c.shape === 'array' && c.count <= 2048;
-      const noRow = c.index === null && c.field === null;
+      const boundedArray = shape === 'array' && count <= 2048;
+      const noRow = index === null && field === null;
       const fields = {
         ROW_OBJECT_REQUIRED: 'row',
         SCHEMA_NOT_ALLOWED: 'schema',
@@ -460,17 +374,14 @@ export function validateNormalizationDiagnosticArtifact(bytes) {
         CONSTRAINT_IDENTIFIER_REJECTED: 'constraint',
       };
       if (
-        (c.predicate === 'VALID' &&
+        (predicate === 'VALID' &&
           (!boundedArray || !noRow || c.identifierClass !== null)) ||
-        (c.predicate === 'ARRAY_REQUIRED' && (c.shape === 'array' || !noRow)) ||
-        (c.predicate === 'COUNT_LIMIT' &&
-          (c.shape !== 'array' || c.count <= 2048 || !noRow)) ||
-        (fields[c.predicate] &&
-          (!boundedArray ||
-            c.index === null ||
-            c.field !== fields[c.predicate])) ||
-        ['table', 'constraint'].includes(c.field) !==
-          (c.identifierClass !== null)
+        (predicate === 'ARRAY_REQUIRED' && (shape === 'array' || !noRow)) ||
+        (predicate === 'COUNT_LIMIT' &&
+          (shape !== 'array' || count <= 2048 || !noRow)) ||
+        (fields[predicate] &&
+          (!boundedArray || index === null || field !== fields[predicate])) ||
+        ['table', 'constraint'].includes(field) !== (c.identifierClass !== null)
       )
         throw new Error();
     }
@@ -494,22 +405,17 @@ export function validateNormalizationDiagnosticArtifact(bytes) {
       !diagnosticReasons.includes(p.reason) ||
       e.projectionSHA256 !== digest(JSON.stringify(p)) ||
       e.projectionBytes !== Buffer.byteLength(JSON.stringify(p)) ||
-      (p.fixtureLine !== null &&
-        (!Number.isSafeInteger(p.fixtureLine) ||
-          p.fixtureLine < 1 ||
-          p.fixtureLine > 700)) ||
+      (p.fixtureLine !== null && !boundedInteger(p.fixtureLine, 1, 700)) ||
       (p.sqlState !== null && !/^[0-9A-Z]{5}$/u.test(p.sqlState)) ||
-      (p.catalogSHA256 !== null && !/^[a-f0-9]{64}$/u.test(p.catalogSHA256)) ||
+      (p.catalogSHA256 !== null && !isSHA256(p.catalogSHA256)) ||
       (p.row !== null && ![...setupIdentities.values()].includes(p.row))
     )
       throw new Error();
     if (p.status === 'UNKNOWN') {
       if (
-        p.schema !== null ||
-        p.table !== null ||
-        p.constraint !== null ||
-        p.row !== null ||
-        p.origin !== null ||
+        ['schema', 'table', 'constraint', 'row', 'origin'].some(
+          (key) => p[key] !== null
+        ) ||
         !['FORMAT_UNKNOWN', 'CATALOG_UNAVAILABLE', 'IDENTITY_UNKNOWN'].includes(
           p.reason
         )

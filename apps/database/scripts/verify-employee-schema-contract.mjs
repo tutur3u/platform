@@ -1,13 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, lstatSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   catalogValidationEvidence,
@@ -43,6 +37,136 @@ import {
   runIsolatedLifecycle,
   stageDisposableProject,
 } from './run-supabase-isolated.js';
+
+export function collectRelevantCatalog(stderr, execute) {
+  const selection = {
+    version: 1,
+    reason: 'SELECTOR_UNAVAILABLE',
+    total: null,
+    returned: 0,
+    complete: false,
+    selectorSHA256: null,
+    querySHA256: null,
+    rowsSHA256: null,
+  };
+  const result = {
+    catalog: null,
+    validation: catalogValidationEvidence(null),
+    selection,
+  };
+  const hash = (text, algorithm = 'sha256') =>
+    createHash(algorithm).update(text).digest('hex');
+  const header = projectNormalizationDiagnostic(stderr, []);
+  if (header.fixtureLine === null) return result;
+  const fields = ['SCHEMA NAME', 'TABLE NAME', 'CONSTRAINT NAME'].map((label) =>
+    [
+      ...stderr.matchAll(
+        new RegExp(`^[ \\t]*${label}:[ \\t]*([^\\r\\n]*)\\r?$`, 'gmu')
+      ),
+    ].map((m) => m[1])
+  );
+  const standard = stderr.match(
+    /^psql:\/tmp\/employee-schema-contract\.sql:\d+: ERROR: +[0-9A-Z]{5}: new row for relation "([a-z_][a-z0-9_$]{0,62})" violates check constraint "([a-z_][a-z0-9_$]{0,62})"\r?$/mu
+  );
+  const verbose = fields.some((values) => values.length > 0);
+  const selector = verbose
+    ? { schema: fields[0][0], table: fields[1][0], constraint: fields[2][0] }
+    : standard
+      ? { schema: null, table: standard[1], constraint: standard[2] }
+      : null;
+  const safe = (v) =>
+    typeof v === 'string' && /^[a-z_][a-z0-9_$]{0,62}$/u.test(v);
+  if (
+    !selector ||
+    !safe(selector.table) ||
+    !safe(selector.constraint) ||
+    (verbose &&
+      (fields.some((v) => v.length !== 1) ||
+        !['auth', 'public', 'private'].includes(selector.schema) ||
+        (standard &&
+          (standard[1] !== selector.table ||
+            standard[2] !== selector.constraint))))
+  )
+    return result;
+  selection.selectorSHA256 = hash(JSON.stringify(selector));
+  const predicate =
+    `entry->>'table' = '${selector.table}' AND entry->>'constraint' = '${selector.constraint}'` +
+    (selector.schema === null
+      ? ''
+      : ` AND entry->>'schema' = '${selector.schema}'`);
+  const sql = `WITH universe(body) AS (${normalizationDiagnosticCatalogSQL.replace(/;$/u, '')}),
+    relevant AS MATERIALIZED (SELECT entry FROM universe CROSS JOIN LATERAL
+      json_array_elements(body::json->'rows') AS records(entry) WHERE ${predicate}),
+    counted AS (SELECT count(*) AS total FROM relevant),
+    encoded AS (SELECT total, CASE WHEN total <= 2048 THEN
+      (SELECT coalesce(json_agg(entry ORDER BY entry->>'schema' COLLATE "C",
+        entry->>'table' COLLATE "C", entry->>'constraint' COLLATE "C"), '[]'::json)::text FROM relevant)
+      ELSE NULL END AS rows_json FROM counted)
+    SELECT json_build_object('actor', current_user, 'database', current_database(),
+      'total', total, 'rowsJSON', rows_json, 'rowsMD5', md5(rows_json))::text FROM encoded;`;
+  selection.querySHA256 = hash(sql);
+  let failureReason = 'QUERY_ERROR';
+  try {
+    const text = execute(sql);
+    failureReason = 'RESPONSE_INVALID';
+    if (typeof text !== 'string' || Buffer.byteLength(text) > 1024 * 1024)
+      throw new Error();
+    const value = JSON.parse(text);
+    if (
+      !value ||
+      Object.keys(value).sort().join() !==
+        'actor,database,rowsJSON,rowsMD5,total' ||
+      !Number.isSafeInteger(value.total) ||
+      value.total < 0 ||
+      value.total > 10000000
+    )
+      throw new Error();
+    selection.total = value.total;
+    result.validation = catalogValidationEvidence({
+      actor: value.actor,
+      database: value.database,
+      rows: null,
+    });
+    if (value.total > 2048) {
+      if (value.rowsJSON !== null || value.rowsMD5 !== null) throw new Error();
+      selection.reason = 'COUNT_LIMIT';
+      return result;
+    }
+    if (
+      typeof value.rowsJSON !== 'string' ||
+      hash(value.rowsJSON, 'md5') !== value.rowsMD5
+    )
+      throw new Error();
+    const rows = JSON.parse(value.rowsJSON);
+    const validation = catalogValidationEvidence({
+      actor: value.actor,
+      database: value.database,
+      rows,
+    });
+    if (validation.predicate !== 'VALID' || rows.length !== value.total)
+      throw new Error();
+    const keys = rows.map((row) => {
+      if (
+        Object.keys(row).sort().join() !== 'constraint,schema,table' ||
+        row.table !== selector.table ||
+        row.constraint !== selector.constraint ||
+        (selector.schema !== null && row.schema !== selector.schema)
+      )
+        throw new Error();
+      return [row.schema, row.table, row.constraint].join('\0');
+    });
+    if (keys.some((key, i) => i > 0 && keys[i - 1] > key)) throw new Error();
+    selection.reason = 'COMPLETE';
+    selection.complete = true;
+    selection.returned = rows.length;
+    selection.rowsSHA256 = hash(JSON.stringify(rows));
+    result.catalog = rows;
+    result.validation = validation;
+  } catch {
+    selection.reason = failureReason;
+  }
+  return result;
+}
 
 const root = process.cwd();
 const normalizationOnly = process.env.EMPLOYEE_NORMALIZATION_ONLY === 'true';
@@ -198,6 +322,7 @@ const packets = [];
 const catalog = {};
 let catalogVerified = false;
 let diagnosticCatalog = [];
+let diagnosticLookup = null;
 let catalogValidation = catalogValidationEvidence(null);
 let diagnosticProjection = null;
 let testDependency = null;
@@ -243,6 +368,20 @@ const bounded = (command, args, cwd, timeout) => {
             })
           : normalizationSQLFailure(result.stderr);
       Object.assign(failureDiagnostic, diagnostic);
+      if (
+        currentPhase === 'packet-execution' &&
+        testDependencyPhase === 'verified' &&
+        args.includes('-f') &&
+        diagnosticLookup
+      ) {
+        const evidence = collectRelevantCatalog(
+          result.stderr,
+          diagnosticLookup
+        );
+        diagnosticCatalog = evidence.catalog;
+        catalogValidation = evidence.validation;
+        failureDiagnostic.catalogSelection = evidence.selection;
+      }
       diagnosticProjection = projectNormalizationDiagnostic(
         result.stderr,
         diagnosticCatalog
@@ -331,41 +470,46 @@ const runner = async (command, args, cwd) => {
           catalog.after,
           expectedBody
         );
-        currentPhase = 'normalization-diagnostic-catalog';
-        const catalogResponse = bounded(
-          'docker',
-          [...sqlArgs, '-c', normalizationDiagnosticCatalogSQL],
-          cwd,
-          10000
-        );
-        const privateDirectory = path.join(
-          process.env.RUNNER_TEMP,
-          'employee-schema-private-' + metadata.projectId
-        );
-        mkdirSync(privateDirectory, { recursive: true, mode: 0o700 });
-        const owned = lstatSync(privateDirectory);
-        if (
-          !owned.isDirectory() ||
-          owned.isSymbolicLink() ||
-          (owned.mode & 0o777) !== 0o700 ||
-          owned.uid !== process.getuid()
-        )
-          throw new Error('Private catalog custody unavailable');
-        const privateCatalog = path.join(
-          privateDirectory,
-          'catalog-response.json'
-        );
-        writeFileSync(privateCatalog, catalogResponse, {
-          flag: 'wx',
-          mode: 0o600,
-        });
-        if (readFileSync(privateCatalog, 'utf8') !== catalogResponse)
-          throw new Error('Private catalog readback differs');
-        const observedCatalog = JSON.parse(catalogResponse);
-        catalogValidation = catalogValidationEvidence(observedCatalog);
-        diagnosticCatalog = Array.isArray(observedCatalog?.rows)
-          ? observedCatalog.rows
-          : null;
+        diagnosticLookup = (sql) => {
+          const directory = path.join(
+            process.env.RUNNER_TEMP,
+            'employee-schema-private-' + metadata.projectId
+          );
+          const owned = lstatSync(directory);
+          if (
+            !owned.isDirectory() ||
+            owned.isSymbolicLink() ||
+            (owned.mode & 0o777) !== 0o700 ||
+            owned.uid !== process.getuid()
+          )
+            throw new Error('Private catalog custody unavailable');
+          const result = spawnSync('docker', [...sqlArgs, '-c', sql], {
+            cwd,
+            encoding: 'utf8',
+            timeout: 10000,
+            killSignal: 'SIGKILL',
+            maxBuffer: 1024 * 1024,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+          const body = JSON.stringify({
+            sql,
+            status: result.status,
+            signal: result.signal,
+            errorClass: result.error?.name ?? null,
+            stdout: result.stdout,
+            stderr: result.stderr,
+          });
+          const target = path.join(directory, 'relevant-catalog-result.json');
+          writeFileSync(target, body, { flag: 'wx', mode: 0o600 });
+          if (
+            readFileSync(target, 'utf8') !== body ||
+            result.error ||
+            result.signal ||
+            result.status !== 0
+          )
+            throw new Error('Relevant catalog unavailable');
+          return result.stdout;
+        };
       }
       for (const [position, [file, count]] of selectedPackets.entries()) {
         packetOrdinal = position + 1;

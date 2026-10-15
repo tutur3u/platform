@@ -10,7 +10,9 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { runInNewContext } from 'node:vm';
 import * as control from './employee-normalization-qualification.mjs';
+import * as dependencyControl from './employee-normalization-test-dependency.mjs';
 
 const sourceSha = '1887e137674f9a6216a9ee472b52cc1a72ee8741';
 const controlSha = '5651b32f5148a644c79e560a8af515964b228da4';
@@ -418,3 +420,188 @@ for (const vector of catalogEvidenceCases) {
     }
   });
 }
+
+const relevantRunnerSource = readFileSync(
+  new URL('./verify-employee-schema-contract.mjs', import.meta.url),
+  'utf8'
+);
+const relevantFunction = relevantRunnerSource.match(
+  /^export function collectRelevantCatalog\([\s\S]*?^\}/mu
+);
+assert(relevantFunction, 'actual runner pure collector must be present');
+const collectRelevant = runInNewContext(
+  '(' + relevantFunction[0].replace(/^export /u, '') + ')',
+  {
+    catalogValidationEvidence: control.catalogValidationEvidence,
+    projectNormalizationDiagnostic: control.projectNormalizationDiagnostic,
+    normalizationDiagnosticCatalogSQL:
+      control.normalizationDiagnosticCatalogSQL,
+    createHash,
+    Buffer,
+  }
+);
+const relevantReply = (rows, total = rows.length) => {
+  const rowsJSON = total > 2048 ? null : JSON.stringify(rows);
+  return JSON.stringify({
+    actor: 'supabase_admin',
+    database: 'postgres',
+    total,
+    rowsJSON,
+    rowsMD5:
+      rowsJSON === null
+        ? null
+        : createHash('md5').update(rowsJSON).digest('hex'),
+  });
+};
+test('relevant selection new: complete relevant row replaces overbroad count denial', () => {
+  for (const name of [
+    'pgTapBootstrapSQL',
+    'testDependencyCatalogSQL',
+    'verifyTestDependencyEvidence',
+    'prepareNormalizationTestDependency',
+  ]) {
+    assert.equal(control[name], dependencyControl[name]);
+  }
+  assert.throws(
+    () =>
+      dependencyControl.verifyTestDependencyEvidence({
+        before: { actor: 'intruder' },
+      }),
+    assert.AssertionError
+  );
+  assert.equal(
+    control.catalogValidationEvidence({ rows: Array(4594).fill(catalog[0]) })
+      .predicate,
+    'COUNT_LIMIT'
+  );
+  let calls = 0;
+  const selected = collectRelevant(base, (sql) => {
+    calls++;
+    assert(!/\bLIMIT\b/u.test(sql));
+    assert(sql.includes('total <= 2048'));
+    assert(sql.includes("entry->>'table' = 'users'"));
+    return relevantReply(catalog);
+  });
+  assert.equal(calls, 1);
+  assert.equal(selected.validation.predicate, 'VALID');
+  assert.equal(selected.selection.total, 1);
+  assert.equal(selected.selection.returned, 1);
+  assert.equal(selected.selection.complete, true);
+  assert.equal(
+    control.projectNormalizationDiagnostic(base, selected.catalog).constraint,
+    catalog[0].constraint
+  );
+});
+test('relevant selection new: complete ambiguity never chooses a schema', () => {
+  const rows = [catalog[0], { ...catalog[0], schema: 'public' }];
+  const selected = collectRelevant(base, () => relevantReply(rows));
+  assert.equal(selected.selection.complete, true);
+  assert.equal(selected.selection.total, 2);
+  assert.equal(
+    control.projectNormalizationDiagnostic(base, selected.catalog).reason,
+    'IDENTITY_UNKNOWN'
+  );
+});
+test('relevant selection new: verbose identity is complete across same owned universe', () => {
+  const stderr =
+    base +
+    'SCHEMA NAME: public\nTABLE NAME: users\nCONSTRAINT NAME: users_synthetic_check\n';
+  const selected = collectRelevant(stderr, (sql) => {
+    assert(sql.includes("entry->>'schema' = 'public'"));
+    return relevantReply([{ ...catalog[0], schema: 'public' }]);
+  });
+  assert.equal(selected.selection.complete, true);
+  assert.equal(selected.catalog[0].schema, 'public');
+});
+test('relevant selection new: partial verbose fields cannot fall back', () => {
+  let calls = 0;
+  const selected = collectRelevant(base + 'SCHEMA NAME: auth\n', () => {
+    calls++;
+    return relevantReply(catalog);
+  });
+  assert.equal(calls, 0);
+  assert.equal(selected.selection.reason, 'SELECTOR_UNAVAILABLE');
+  assert.equal(selected.catalog, null);
+});
+test('relevant selection new: overbound relevant count is explicit without truncated rows', () => {
+  const selected = collectRelevant(base, () => relevantReply([], 2049));
+  assert.equal(selected.selection.reason, 'COUNT_LIMIT');
+  assert.equal(selected.selection.total, 2049);
+  assert.equal(selected.selection.complete, false);
+  assert.equal(selected.catalog, null);
+});
+test('relevant selection new: exact 2048 boundary retains every duplicate match', () => {
+  const rows = Array(2048).fill(catalog[0]);
+  const selected = collectRelevant(base, () => relevantReply(rows));
+  assert.equal(selected.selection.complete, true);
+  assert.equal(selected.selection.returned, 2048);
+  assert.equal(selected.catalog.length, 2048);
+  assert.equal(
+    control.projectNormalizationDiagnostic(base, selected.catalog).reason,
+    'IDENTITY_UNKNOWN'
+  );
+});
+test('relevant selection new: count and returned body must agree', () => {
+  const selected = collectRelevant(base, () => relevantReply([], 1));
+  assert.equal(selected.selection.reason, 'RESPONSE_INVALID');
+  assert.equal(selected.selection.complete, false);
+  assert.equal(selected.catalog, null);
+});
+test('relevant selection new: snapshot digest mismatch is rejected', () => {
+  const value = JSON.parse(relevantReply(catalog));
+  value.rowsMD5 = '0'.repeat(32);
+  const selected = collectRelevant(base, () => JSON.stringify(value));
+  assert.equal(selected.selection.reason, 'RESPONSE_INVALID');
+  assert.equal(selected.catalog, null);
+});
+test('relevant selection new: complete ordering is checked without removing rows', () => {
+  const selected = collectRelevant(base, () =>
+    relevantReply([{ ...catalog[0], schema: 'public' }, catalog[0]])
+  );
+  assert.equal(selected.selection.reason, 'RESPONSE_INVALID');
+  assert.equal(selected.selection.complete, false);
+});
+test('relevant selection new: query failure returns unknown without a second callback', () => {
+  let calls = 0;
+  const selected = collectRelevant(base, () => {
+    calls++;
+    throw new Error('PRIVATE_SERVER_SECRET');
+  });
+  assert.equal(calls, 1);
+  assert.equal(selected.selection.reason, 'QUERY_ERROR');
+  assert.equal(selected.catalog, null);
+  assert.equal(
+    JSON.stringify(selected.selection).includes('PRIVATE_SERVER_SECRET'),
+    false
+  );
+});
+test('relevant selection new: multiple error records cannot create a selector', () => {
+  let calls = 0;
+  const selected = collectRelevant(base + base, () => {
+    calls++;
+    return relevantReply(catalog);
+  });
+  assert.equal(calls, 0);
+  assert.equal(selected.selection.reason, 'SELECTOR_UNAVAILABLE');
+});
+test('relevant selection new: receiver accepts typed selection and rejects false completeness', () => {
+  const selected = collectRelevant(base, () => relevantReply(catalog));
+  const value = receipt();
+  value.failureDiagnostic.catalogSelection = JSON.parse(
+    JSON.stringify(selected.selection)
+  );
+  assert.equal(
+    control.validateNormalizationDiagnosticArtifact(
+      Buffer.from(JSON.stringify(value))
+    ).status,
+    'PARTIAL'
+  );
+  value.failureDiagnostic.catalogSelection.total = 2049;
+  assert.throws(
+    () =>
+      control.validateNormalizationDiagnosticArtifact(
+        Buffer.from(JSON.stringify(value))
+      ),
+    /Diagnostic transport invalid/u
+  );
+});
