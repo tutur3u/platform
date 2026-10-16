@@ -1,3 +1,6 @@
+const {
+  installFailureDiagnostic,
+} = require('./qualify-sdk-package-diagnostics');
 const { runProcess, drainGroup } = require('./sdk-package-process');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
@@ -16,46 +19,6 @@ function fail(code, message) {
   const error = new Error(message);
   error.code = code;
   throw error;
-}
-function installFailureDiagnostic(result) {
-  const codes = {
-    ERESOLVE: 'dependency-resolution',
-    E404: 'registry-response',
-    E401: 'registry-response',
-    ETARGET: 'dependency-resolution',
-    EINTEGRITY: 'integrity',
-    ENOTFOUND: 'network',
-    ECONNRESET: 'network',
-    ETIMEDOUT: 'network',
-    EACCES: 'filesystem',
-  };
-  const streams = {};
-  let npmCode = null;
-  for (const name of ['stdout', 'stderr']) {
-    const bytes = Buffer.from(result[name]);
-    const prefix = bytes.subarray(0, 4096);
-    streams[name] = {
-      hashedBytes: bytes.length,
-      sha256: hash(bytes),
-      prefixHashedBytes: prefix.length,
-      prefixSha256: hash(prefix),
-    };
-    for (const match of prefix
-      .toString()
-      .matchAll(/^npm (?:error|ERR!) code ([A-Z0-9_]+)\s*$/gm))
-      if (Object.hasOwn(codes, match[1])) npmCode = match[1];
-  }
-  return {
-    exitStatus: Number.isSafeInteger(result.status) ? result.status : null,
-    signal: ['SIGABRT', 'SIGKILL', 'SIGTERM', 'SIGSEGV', 'SIGINT'].includes(
-      result.signal
-    )
-      ? result.signal
-      : null,
-    npmCode,
-    category: npmCode ? codes[npmCode] : 'unclassified',
-    ...streams,
-  };
 }
 function safeMember(value) {
   if (

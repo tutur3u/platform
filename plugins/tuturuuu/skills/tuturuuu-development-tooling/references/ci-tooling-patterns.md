@@ -127,6 +127,16 @@ See `apps/docs/build/devops/active-runtime.mdx`.
 - If `bun ff -- <files>` still triggers repo-wide Biome behavior, use exact-file Biome commands and keep fixes scoped to owned
   files; require the applicable lint workflow in exact-commit CI.
 
+## Packed SDK install diagnostics
+
+The qualification receipt preserves stream hashes/counts and a bounded, strictly
+parsed public npm E404 identity. Never upload raw npm output or the private cache.
+Run `node --test scripts/ci/qualify-sdk-package.test.js`, including its diagnostic
+suite, before updating the PR. Missing identities stay unknown; use a new exact-head
+receipt rather than infer a dependency fix from a hash. See the
+[CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx)
+for the allowlist, limits and cleanup behavior.
+
 ## Satellite build evidence
 
 Automatic platform builds do not establish satellite build compatibility.

@@ -649,3 +649,32 @@ test('serial build uses the cache wrapper with empty default credentials', () =>
   );
   assert.doesNotMatch(workflow, /(?:token|team|api|signature-key):|secrets\./);
 });
+
+test('E404 receipt retains public registry identity before private fixture cleanup', async (t) => {
+  const stderr = [
+    'npm error code E404',
+    'npm error 404 Not Found - GET https://registry.npmjs.org/@example%2fmissing - Not found',
+    "npm error 404 '@example/missing@1.2.3' is not in this registry.",
+    'npm error Authorization: Bearer synthetic-private-token',
+  ].join('\n');
+  const { receipt, root } = await injectedPipeline(t, {
+    installFailure: { status: 1, signal: null, stdout: '', stderr },
+  });
+  assert.deepEqual(receipt.installFailure.publicRegistryRequests, [
+    {
+      registry: 'https://registry.npmjs.org',
+      package: '@example/missing',
+      version: '1.2.3',
+    },
+  ]);
+  assert.equal(receipt.installFailure.npmCode, 'E404');
+  assert.equal(receipt.qualified, false);
+  assert.equal(receipt.temporaryFixtureDrained, true);
+  assert.equal(receipt.processGroupsDrained, true);
+  assert.doesNotMatch(
+    fs.readFileSync(path.join(root, 'output/receipt.json'), 'utf8'),
+    /Authorization|Bearer|synthetic-private-token/
+  );
+});
+
+require('./qualify-sdk-package-diagnostics.test');
