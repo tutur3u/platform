@@ -80,6 +80,29 @@ prototype retains its separate operator, connection and asset qualification
 requirements. RESTORE and legacy-domain migration remain separate runtime flows;
 successful CREATE qualification does not establish either behavior.
 
+### Managed employee inspection
+
+Web serves `GET /api/v1/infrastructure/internal-accounts/employees/:userId`
+for the native Infrastructure management client. It returns the retained
+restoration inspection contract, provider observation time and next action.
+It requires a current confirmed, active canonical-domain root `MEMBER` with
+`manage_internal_accounts`; it rechecks the same request actor before SQL and
+before disclosing private recovery details. Responses are private and uncached.
+
+The adapter reads the exact provider UUID and calls only
+`private.inspect_employee_management` in the same configured Supabase project.
+Missing schema, conflicting tuples, unavailable reads and changed authority fail
+closed. An unresolved restore operation remains `inspect`; it never relaunches
+provider work. Unmanaged legacy addresses remain an adoption/migration concern.
+The portable restoration boundary lives under
+`packages/utils/src/internal-accounts`, with Infrastructure compatibility exports.
+
+This GET path does not enable CREATE, RESTORE writes, legacy-address migration or
+an Infrastructure action dialog. No runtime flag is changed. Route and transport
+regressions live beside the Web implementation, while the existing Infrastructure
+restoration suites cover compatibility. Exact-source CI builds, deployed request
+authentication and target-project SQL qualification remain separate release gates.
+
 ### Fixed child-worker prototype
 
 The fixed child-worker transport remains unavailable until its protected SQL supplier and
