@@ -132,6 +132,9 @@ creates the email identity with the default false verification claim, then
 [confirms the user](https://github.com/supabase/auth/blob/v2.197.0/internal/models/user.go#L488-L507).
 Magic-link OTP uses recovery verification, which does not update that identity
 flag. The installed SDK forwards these fields; it does not repair the mismatch.
+The Utils transport regression owns an SDK devDependency at the existing locked
+version. Its strict isolated dependency layout must resolve that import directly;
+a hoisted root SDK can mask a missing package declaration during local checks.
 A confirmed timestamp plus correlated email alone therefore does not satisfy this
 migration's stricter verification contract. The guard remains unchanged.
 

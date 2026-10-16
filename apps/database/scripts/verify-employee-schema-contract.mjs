@@ -7,6 +7,7 @@ import {
   assertQualifiedHttp,
   httpQualificationReceipt,
   selectHttpRuntime,
+  selectRestoreRuntime,
 } from './employee-http-receipt.mjs';
 import {
   assertPacketTap,
@@ -33,6 +34,10 @@ const journal = process.env.EMPLOYEE_SCHEMA_INCLUDE_JOURNAL === 'true';
 const httpRuntime = selectHttpRuntime(
   process.env.EMPLOYEE_SCHEMA_INCLUDE_HTTP,
   journal
+);
+const restoreRuntime = selectRestoreRuntime(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_RESTORE,
+  httpRuntime
 );
 if (
   !['true', 'false', undefined].includes(
@@ -330,11 +335,12 @@ const runner = async (command, args, cwd) => {
             anonKey: status.ANON_KEY,
             projectId: metadata.projectId,
             basePort: metadata.basePort,
+            includeRestore: restoreRuntime,
           }),
           true
         );
         httpQualification = httpQualificationReceipt(output.stdout.trim());
-        assertQualifiedHttp(httpQualification, output.status);
+        assertQualifiedHttp(httpQualification, output.status, restoreRuntime);
       }
     } else {
       packetOrdinal = 0;
@@ -408,6 +414,11 @@ const receipt = {
     lifecycleCode === 0 &&
     cleanupSucceeded &&
     httpQualification?.qualified === true,
+  restoreTransportQualified:
+    restoreRuntime &&
+    lifecycleCode === 0 &&
+    cleanupSucceeded &&
+    httpQualification?.restoreQualification?.qualified === true,
   httpQualification,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };

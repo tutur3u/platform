@@ -11,6 +11,8 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/storage/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/upload-url/route.ts) |
+| `/api/v1/topic-announcement-verifications/[token]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/topic-announcement-verifications/%5Btoken%5D/route.ts) |
 | `/api/v1/user/onboarding-progress` | GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/user/onboarding-progress/route.ts) |
 | `/api/v1/user/profile` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/user/profile/route.ts) |
 | `/api/v1/users/chatgpt` | DELETE, GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/users/chatgpt/route.ts) |
@@ -189,7 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/inventory/merges` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/inventory/merges/route.ts) |
 | `/api/v1/workspaces/[wsId]/inventory/offline-mutations` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/inventory/offline-mutations/route.ts) |
 | `/api/v1/workspaces/[wsId]/inventory/sales-periods/merges` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/inventory/sales-periods/merges/route.ts) |
-| `/api/v1/workspaces/[wsId]/lettin/drive-copy/finalize-upload` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/lettin/drive-copy/finalize-upload/route.ts) |
-| `/api/v1/workspaces/[wsId]/lettin/drive-copy/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/lettin/drive-copy/upload-url/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

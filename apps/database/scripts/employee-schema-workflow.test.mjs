@@ -84,3 +84,27 @@ test('always cleanup uses the same source cwd and control script', () => {
     /^ {8}run: node \.\.\/apps\/database\/scripts\/verify-employee-schema-contract.mjs --cleanup$/mu
   );
 });
+
+test('migration and RESTORE selections retain separate inputs and environment bindings', () => {
+  const blocks = workflow.split(/(?=^ {6}[a-z_]+:\n)/mu);
+  for (const [input, variable] of [
+    ['include_journal', 'EMPLOYEE_SCHEMA_INCLUDE_JOURNAL'],
+    ['include_http', 'EMPLOYEE_SCHEMA_INCLUDE_HTTP'],
+    ['include_restore', 'EMPLOYEE_SCHEMA_INCLUDE_RESTORE'],
+    ['include_address_migration', 'EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION'],
+  ]) {
+    const selected = blocks.filter((block) =>
+      block.startsWith(`      ${input}:\n`)
+    );
+    assert.equal(selected.length, 1);
+    for (const line of ['required: false', 'default: false', 'type: boolean'])
+      assert.match(selected[0], new RegExp(`^ {8}${line}$`, 'mu'));
+    assert.equal(
+      workflow.split(`      ${variable}: \${{ inputs.${input} }}\n`).length - 1,
+      1
+    );
+  }
+  const step = namedStep('Type-check selected HTTP fixtures without builds');
+  assert.match(step, /^ {8}if: inputs.include_http == true$/mu);
+  assert.match(step, /tsconfig.employee-http.json --noEmit/u);
+});

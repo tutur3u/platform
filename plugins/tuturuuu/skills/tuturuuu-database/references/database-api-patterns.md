@@ -125,3 +125,14 @@ migration packet through the opt-in trusted-control schema selection; preserve
 foundation172, journal301, HTTP29 and separately admitted RESTORE66 receipts.
 See `apps/docs/build/development-tools/employee-address-migration.mdx` for the
 canonical fingerprint, lock scope, mail prerequisites and remaining runtime gates.
+
+## Employee RESTORE transport qualification
+
+Extend the canonical employee schema/HTTP runner for RESTORE rather than creating
+another database lifecycle. The optional RESTORE profile requires journal and HTTP
+selection; preserve the 301 SQL and 29 CREATE checks and require its separate fixed
+phase counts, real committed readbacks, zero child exit and owned cleanup. Inject
+lost acknowledgements after real PostgREST/GoTrue completion and retain operation
+and user UUIDs; reconciliation must never repeat the provider mutation. SQL ACL
+checks and real Auth transport remain separate from Web/satellite session proof.
+See [employee schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx).

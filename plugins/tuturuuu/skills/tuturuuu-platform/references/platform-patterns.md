@@ -1050,3 +1050,15 @@ SDK serializer behind a closed synthetic fetch boundary; response-route tests
 check private conflict propagation. These fixtures are not organizer receipt
 proof. Real-account acceptance requires an authorized dedicated calendar and
 separate organizer observation; keep production provider admission held.
+
+## Employee restoration transport
+
+RESTORE and reconciliation POST routes use the portable restoration helpers in
+`packages/utils/src/internal-accounts`; Infrastructure entries are compatibility
+exports. Keep the RESTORE runtime gate independent of CREATE and default off.
+Before provider unban, separately read back the exact reserved and attempted
+operation; before reporting restored, read back completed state and revision.
+Repeat the same request actor authorization before each RPC/provider boundary and
+before response disclosure. Never retry an unknown provider outcome or replace
+its operation UUID. See the Infrastructure application docs for real SQL/Auth
+qualification gates and the Web restoration transport/runtime regression suites.
