@@ -61,8 +61,8 @@ test('explicit profile retains foundation172 and requires journal48 plus repair6
       '20261011002107_employee_creation_identity.sql',
       '20261011002108_employee_creation_finalization.sql',
       '20261011002109_employee_restoration.sql',
-      '20261013030000_employee_creation_operations.sql',
-      '20261013061000_employee_creation_reserved_preflight.sql',
+      '20261016093001_employee_creation_operations.sql',
+      '20261016093002_employee_creation_reserved_preflight.sql',
     ]
   );
   assert.equal(Object.hasOwn(profile, 'sourceSha'), false);
@@ -102,7 +102,7 @@ test('frozen SQL and original packet hashes match actual receiver bytes', () => 
   const local = profile.sourceFiles.filter(
     ({ path }) =>
       path.includes('2026101100210') ||
-      path.includes('20261013061000') ||
+      path.includes('20261016093002') ||
       profile.packets
         .filter(({ group }) => group === 'foundation')
         .some(({ file }) => path.endsWith(`/${file}`)) ||

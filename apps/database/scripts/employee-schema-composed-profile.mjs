@@ -30,11 +30,11 @@ const sourceFiles = [
     '24d8df606b1f51093f532bea2c69b1da864f6172f8bfb05285936d6210cd7f90',
   ],
   [
-    'apps/database/supabase/migrations/20261013030000_employee_creation_operations.sql',
+    'apps/database/supabase/migrations/20261016093001_employee_creation_operations.sql',
     'dcf12e21c790dcb7e32f640fe0e7306ead029065c1f7f5a30599d43a48998b24',
   ],
   [
-    'apps/database/supabase/migrations/20261013061000_employee_creation_reserved_preflight.sql',
+    'apps/database/supabase/migrations/20261016093002_employee_creation_reserved_preflight.sql',
     'b9d31648abcb906509a685e02f86a1718ffaed96a6f3076f82781d9b3ce33618',
   ],
   [
@@ -187,8 +187,8 @@ const migrations = [
   '20261011002107_employee_creation_identity.sql',
   '20261011002108_employee_creation_finalization.sql',
   '20261011002109_employee_restoration.sql',
-  '20261013030000_employee_creation_operations.sql',
-  '20261013061000_employee_creation_reserved_preflight.sql',
+  '20261016093001_employee_creation_operations.sql',
+  '20261016093002_employee_creation_reserved_preflight.sql',
 ].map((file) => sourceFile(`apps/database/supabase/migrations/${file}`));
 const packets = [
   ['employee-signup-guards.sql', 25, 'foundation'],

@@ -25,6 +25,13 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: '@tuturuuu/supabase/auth-errors',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/auth-errors.ts'
+        ),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: /^@tuturuuu\/internal-api\/(.+)$/,

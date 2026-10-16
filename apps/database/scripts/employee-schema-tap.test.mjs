@@ -6,6 +6,7 @@ import {
   exactSourceSha,
   failedAssertionOrdinals,
   foundationPackets,
+  journalPackets,
   schemaFailureDiagnostic,
   schemaReceipt,
   signupCaughtDiagnostics,
@@ -36,6 +37,25 @@ test('accepts exactly all 172 closed assertions', () => {
     assert.equal(assertPacketTap(tap(count), count), count);
   assert.equal(receipt().assertions, 172);
   assert.equal(receipt().schemaQualified, true);
+});
+test('journal selection requires all 281 assertions and successful cleanup', () => {
+  const all = journalPackets.map(([file, assertions]) => ({
+    file,
+    assertions,
+  }));
+  assert.equal(receipt({ journal: true }).schemaQualified, false);
+  assert.equal(receipt({ packets: all }).schemaQualified, false);
+  assert.equal(receipt({ journal: true, packets: all }).schemaQualified, true);
+  assert.equal(receipt({ journal: true, packets: all }).assertions, 281);
+  assert.equal(
+    receipt({ journal: true, packets: all, cleanupSucceeded: false })
+      .schemaQualified,
+    false
+  );
+  assert.equal(
+    receipt({ journal: true, packets: all.slice(0, 6) }).schemaQualified,
+    false
+  );
 });
 test('rejects a different plan count', () =>
   assert.throws(() => assertPacketTap(tap(24), 25)));

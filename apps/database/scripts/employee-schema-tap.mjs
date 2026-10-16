@@ -7,6 +7,11 @@ export const foundationPackets = Object.freeze([
   ['employee-identity-contract.sql', 52],
   ['employee-restoration.sql', 41],
 ]);
+export const journalPackets = Object.freeze([
+  ...foundationPackets,
+  ['employee-creation-operations.sql', 48],
+  ['employee-creation-reserved-preflight.sql', 61],
+]);
 
 export function exactSourceSha(value) {
   if (!/^[a-f0-9]{40}$/u.test(value ?? '')) {
@@ -48,11 +53,14 @@ export function schemaReceipt({
   packets,
   lifecycleCode,
   cleanupSucceeded,
+  journal = false,
 }) {
-  const expected = foundationPackets.map(([file, assertions]) => ({
-    file,
-    assertions,
-  }));
+  const expected = (journal ? journalPackets : foundationPackets).map(
+    ([file, assertions]) => ({
+      file,
+      assertions,
+    })
+  );
   const passed =
     lifecycleCode === 0 &&
     cleanupSucceeded === true &&
@@ -60,7 +68,9 @@ export function schemaReceipt({
   return {
     version: 1,
     sourceSha: exactSourceSha(sourceSha),
-    scope: 'employee-creation-restoration',
+    scope: journal
+      ? 'employee-creation-restoration-journal'
+      : 'employee-creation-restoration',
     schemaQualified: passed,
     assertions: packets.reduce((sum, packet) => sum + packet.assertions, 0),
     packets,
