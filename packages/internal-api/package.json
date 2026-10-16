@@ -403,6 +403,7 @@
   "dependencies": {
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/types": "workspace:*"
+    "@tuturuuu/types": "workspace:*",
+    "zod": "4.6.2"
   }
 }

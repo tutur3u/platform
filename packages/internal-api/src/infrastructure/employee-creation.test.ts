@@ -21,6 +21,25 @@ const reply = {
   },
 };
 describe('strict employee client', () => {
+  it('returns a typed conflict from HTTP 409 without repeating creation', async () => {
+    const conflict = {
+      status: 'conflict',
+      operationId,
+      code: 'employee_operation_payload_conflict',
+      nextAction: 'inspect',
+    };
+    const transport = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json(conflict, { status: 409 }));
+    expect(
+      await createInternalEmployee(payload, {
+        operationId,
+        fetch: transport,
+        baseUrl: 'https://infra.test',
+      })
+    ).toEqual(conflict);
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
   it('sends one stable operation key without putting it or actor into password body', async () => {
     const transport = vi
       .fn<typeof fetch>()
@@ -36,6 +55,19 @@ describe('strict employee client', () => {
     const init = transport.mock.calls[0]?.[1];
     expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(operationId);
     expect(JSON.parse(String(init?.body))).toEqual(payload);
+  });
+  it.each([401, 403, 503])('preserves HTTP %s errors', async (status) => {
+    const transport = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ code: 'unavailable' }, { status }));
+    await expect(
+      createInternalEmployee(payload, {
+        operationId,
+        fetch: transport,
+        baseUrl: 'https://infra.test',
+      })
+    ).rejects.toMatchObject({ status });
+    expect(transport).toHaveBeenCalledTimes(1);
   });
   it.each([
     { ...reply, operationId: 'e0dfe613-9e8a-4fa4-8f52-fd881aa2e9f2' },
