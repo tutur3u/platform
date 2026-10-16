@@ -107,6 +107,28 @@ Check the package on npm:
 - <https://www.npmjs.com/package/tuturuuu>
 - Install and test: `npm install tuturuuu`
 
+## Portable public dependency boundary
+
+The SDK build stages its sources and an explicit closure of public HTTP client
+and task-description codec modules from `internal-api` and `utils`. It rewrites
+those imports before TypeScript compilation, so emitted JavaScript and declarations
+resolve the same local `dist/_portable` modules. The original source packages stay
+as development dependencies; consumers install the SDK's declared portable
+libraries rather than the entire server package dependency graph.
+
+`packages/sdk/scripts/portable-build.cjs` owns the reviewed entrypoint/file
+allowlists. New relative modules, private workspace imports, framework runtimes,
+and undeclared external libraries fail the build. Do not fix an install failure by
+publishing a private package or dropping a dependency still used by emitted code.
+`dist/portable-sources.json` records the canonical source paths included in a build.
+The build copies implementations without maintaining a second authored source tree.
+
+Run `bun --cwd packages/sdk test:packaging` for source-staging regressions. Require
+the exact-commit SDK package qualification workflow to compile, pack, install from
+the public registry in an isolated consumer, and exercise the compiled CLI. Source
+staging tests alone do not establish compilation, public installation, or runtime
+success. Do not run release builds locally; use CI.
+
 ## Automated Publishing (Recommended)
 
 ### Option 1: GitHub Actions (npm Trusted Publishing)

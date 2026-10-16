@@ -142,6 +142,13 @@ receipts; an observation is not permission to retry activation or migrate a
 legacy address. See the Infrastructure application guide's managed employee
 inspection section and the colocated Web route/transport regressions.
 
+The unbound legacy-address migration protocol is separate from RESTORE. Never
+wire its injected journal/provider ports from source tests alone: a concrete
+durable supplier, atomic one-time attempt claim, independent committed readbacks
+and real Auth identity/email qualification are missing activation gates. See
+`apps/docs/build/development-tools/employee-address-migration.mdx` for the
+protocol and its explicitly in-memory regression boundary.
+
 - Import Effect through `@tuturuuu/utils/effect`, not directly from `effect`,
   so Tuturuuu code uses one curated server/service orchestration entrypoint.
 - Prefer Effect for new or substantially edited TypeScript server/shared flows

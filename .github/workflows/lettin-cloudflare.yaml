@@ -89,6 +89,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run --cwd packages/types build
       - run: bun run --cwd packages/supabase build
+      - name: Verify installed Next cache-handler registration
+        run: node --test apps/lettin/scripts/opennext-health.node.mjs
       - run: bun run test
         working-directory: apps/lettin
       - name: Build the frontend for Workers

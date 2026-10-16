@@ -67,3 +67,33 @@ Regression coverage lives in `scripts/ci/critical-rollout-workflow.test.js`,
 `scripts/ci/verify-staged-critical-app.test.js`, and the existing release workflow
 suite. The dependency test exercises selected and unselected Web, failed and
 cancelled runs, missing promotion output, failed planning, and unselected apps.
+
+## Lettin Worker health and cache initialization
+
+Lettin uses the existing URL-pinned OpenNext adapter shared with Parley. Its cache
+registration patch installs the composable handlers and returns before the
+original Next `loadCustomCacheHandlers` loader. Replacing only minified declarations
+leaves references to removed aliases; after bundling those names can capture
+unrelated module locals and attempt to import `file:/.next/None`. This failure
+occurs before `/api/v1/lettin/health` reaches D1 or R2 and can return an empty 500.
+
+Run `node --test apps/lettin/scripts/opennext-health.node.mjs` after adapter or Next
+updates. The regression patches and executes the installed Next production route
+and page cache methods, registers the composable handlers, and rejects fallthrough
+to the original loader. Lettin CI runs it before the real Worker build. Keep the
+shared adapter patch and its exact URL dependency selected by the workflow matcher.
+
+To distinguish the boundary from a storage failure, replay a retained artifact
+privately with no outbound requests, local disposable D1 and R2, and a synthetic
+`worlds(id)` table. Preserve the original and record runtime/version, normalization
+and fixture changes. In the retained-artifact control, replacing only cache
+registration changes health from empty 500 to 200; removing `worlds` then reaches
+the health handler and returns its JSON `Request failed` 500. This proves the
+cache boundary defect without establishing production storage health. Missing
+retained WASM must be supplied from the matching installed Next package and
+recorded as a harness dependency, not represented as original artifact bytes.
+
+Require exact-commit CI, the emitted candidate Worker and hosted health verification
+with deployment identity before claiming recovery. Keep production D1 migration
+and authenticated workflow acceptance separate; an empty 500 alone does not
+authorize database repairs.

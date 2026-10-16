@@ -16,6 +16,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_personal_journal:
+        description: Qualify personal journal rollback assertions and generate private RPC types; excludes employee journal and HTTP profiles
+        required: false
+        default: false
+        type: boolean
       include_http:
         description: Also qualify real disposable PostgREST and GoTrue transport; requires include_journal
         required: false
@@ -54,6 +59,7 @@ jobs:
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
       EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
+      EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: ${{ inputs.include_personal_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
       EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: ${{ inputs.include_web_session }}
       EMPLOYEE_SCHEMA_INCLUDE_RESTORE: ${{ inputs.include_restore }}

@@ -2934,6 +2934,21 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class GET reports default-unavailable readiness and POST authenticates the registered infra actor with fresh root MEMBER/manage_internal_accounts authority and exact confirmed/unbanned root-domain identity. Strict request/operation/tuple acknowledgement boundary uses an injected persistent journal port; no journal, SQL or provider supplier is installed. Rust is not deployed; this default-denied boundary and later qualified runtime parity remain backlog."
+    },
+    "api:/api/v1/workspaces/:wsId/personal-journal:apps/web/src/app/api/v1/workspaces/[wsId]/personal-journal/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Active Next.js owner-only personal journal with original source, explicit self-reported mood, revision receipts and timezone timeline. Private typed storage provider awaits isolated applied-schema qualification. Paused Rust/TanStack runtimes remain inactive; this records ownership only."
+    },
+    "api:/api/v1/workspaces/:wsId/personal-journal/:entryId:apps/web/src/app/api/v1/workspaces/[wsId]/personal-journal/[entryId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Active Next.js owner-only personal journal with original source, explicit self-reported mood, revision receipts and timezone timeline. Private typed storage provider awaits isolated applied-schema qualification. Paused Rust/TanStack runtimes remain inactive; this records ownership only."
+    },
+    "page:/:locale/:wsId/personal-journal:apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/personal-journal/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Active Next.js owner-only personal journal with original source, explicit self-reported mood, revision receipts and timezone timeline. Private typed storage provider awaits isolated applied-schema qualification. Paused Rust/TanStack runtimes remain inactive; this records ownership only."
     }
   }
 }

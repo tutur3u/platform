@@ -8747,6 +8747,24 @@
     },
     "count": "{count, plural, one {# tài khoản nội bộ} other {# tài khoản nội bộ}}",
     "count_loading": "Đang tải số lượng tài khoản...",
+    "creation": {
+      "close": "Đóng",
+      "created": "Máy chủ đã xác nhận tạo tài khoản nhân viên. Làm mới danh bạ để kiểm tra.",
+      "denied": "Yêu cầu bị từ chối trước khi tạo tài khoản. Kiểm tra quyền truy cập và trạng thái khả dụng trước khi gửi lại.",
+      "description": "Tạo danh tính nhân viên được quản lý sau khi máy chủ xác nhận quyền truy cập và điều kiện sẵn sàng.",
+      "email": "Email nhân viên",
+      "email_help": "Sử dụng địa chỉ nhân viên chính xác @tuturuuu.com. Tên miền phụ trong danh bạ không cấp quyền nhân viên.",
+      "inspect": "Cần kiểm tra kết quả. Làm mới danh bạ và nhờ quản trị viên đối soát yêu cầu này. Không tạo lại tài khoản này.",
+      "name": "Họ và tên",
+      "open": "Tạo tài khoản nhân viên",
+      "password": "Mật khẩu tạm thời",
+      "password_help": "Sử dụng 12–72 ký tự. Mật khẩu chỉ được giữ trong biểu mẫu và sẽ bị xóa khi đóng.",
+      "refresh": "Làm mới danh bạ",
+      "submit": "Tạo tài khoản",
+      "submitting": "Đang gửi…",
+      "title": "Tạo tài khoản nhân viên",
+      "unavailable": "Chức năng tạo tài khoản nhân viên chưa khả dụng. Biểu mẫu này sẽ không tạo tài khoản."
+    },
     "dates": {
       "created": "Đã tạo {date}",
       "last_sign_in": "Đăng nhập gần nhất {date}",
@@ -8846,6 +8864,59 @@
       "username_help": "Không bắt buộc. Dùng chữ thường, số, dấu gạch ngang hoặc gạch dưới.",
       "username_invalid": "Bắt đầu và kết thúc bằng chữ hoặc số; chỉ dùng chữ thường, số, dấu gạch ngang hoặc gạch dưới."
     },
+    "restoration": {
+      "close": "Đóng",
+      "confirmation": "Xác nhận email tài khoản",
+      "confirmation_help": "Nhập chính xác {email} để xác nhận tài khoản này.",
+      "description": "Kiểm tra trạng thái truy cập đã lưu của {email} trước khi khôi phục hoặc đối soát.",
+      "inspect": "Đọc trạng thái hiện tại",
+      "migration_separate": "Di chuyển địa chỉ cũ và tiếp nhận tài khoản cần quy trình riêng. Hộp thoại này không đổi địa chỉ tài khoản.",
+      "next": {
+        "adoption_required": "Tài khoản này cần quy trình tiếp nhận hoặc di chuyển địa chỉ cũ riêng.",
+        "creation_reconciliation_required": "Cần đối soát việc tạo tài khoản qua quy trình phụ trách.",
+        "inspect": "Cần kiểm tra và đối soát thao tác đã lưu. Không bắt đầu lần khôi phục khác.",
+        "manual_review": "Tài khoản này cần được xem xét thủ công. Không có thao tác khôi phục khả dụng.",
+        "none": "Không cần khôi phục quyền truy cập.",
+        "restore": "Tài khoản được quản lý này đủ điều kiện khôi phục quyền truy cập."
+      },
+      "observed_at": "Thời điểm quan sát",
+      "open": "Kiểm tra quyền truy cập được quản lý",
+      "operation": "UUID thao tác",
+      "outcomes": {
+        "conflict": "Không thể xác minh trạng thái hiện tại hoặc trạng thái đã thay đổi. Đọc lại trước khi tiếp tục.",
+        "denied": "Không thể xác nhận quyền của bạn. Mở lại trang bằng phiên hiện có quyền truy cập.",
+        "pending": "Kết quả đang chờ hoặc chưa xác định. Đọc trạng thái đã lưu trước khi tiếp tục. Không tự động lặp lại thao tác với nhà cung cấp.",
+        "restored": "Đã xác nhận khôi phục bằng lần đọc độc lập trạng thái đã lưu.",
+        "unavailable": "Thao tác truy cập được quản lý hiện không khả dụng. Không suy đoán kết quả từ lỗi này. Vẫn có thể đọc trạng thái."
+      },
+      "phase": "Giai đoạn thao tác",
+      "phases": {
+        "attempted": "Đã ghi nhận lần thử",
+        "completed": "Hoàn tất",
+        "reserved": "Đã giữ chỗ",
+        "unknown": "Chưa xác định kết quả"
+      },
+      "provider": "Nhà cung cấp",
+      "provider_states": {
+        "confirmed_active": "Đã xác nhận hoạt động",
+        "confirmed_banned": "Đã xác nhận vô hiệu hóa",
+        "missing": "Đã xác nhận không tồn tại",
+        "unconfirmed": "Chưa xác nhận",
+        "unknown": "Chưa xác định"
+      },
+      "reconcile": "Đối soát thao tác đã lưu",
+      "registry": "Sổ đăng ký",
+      "registry_states": {
+        "absent": "Không quan sát thấy mục đăng ký",
+        "active": "Đang hoạt động",
+        "pending": "Đang chờ",
+        "provisioned": "Đã cấp phát"
+      },
+      "restore": "Khôi phục quyền truy cập được quản lý",
+      "retained_operation": "Thao tác đã lưu: {operationId}",
+      "title": "Quyền truy cập nhân viên được quản lý",
+      "working": "Đang kiểm tra quyền truy cập…"
+    },
     "review_accounts": {
       "apple_publish_error": "Không thể cập nhật quyền truy cập đánh giá trên Apple. Kiểm tra quyền kho bảo mật rồi thử lại.",
       "apple_published": "Đã cập nhật quyền truy cập đánh giá trên Apple",
@@ -8923,24 +8994,6 @@
     "toasts": {
       "update_failed": "Không thể cập nhật tài khoản nội bộ.",
       "updated": "Đã cập nhật tài khoản nội bộ."
-    },
-    "creation": {
-      "open": "Tạo tài khoản nhân viên",
-      "title": "Tạo tài khoản nhân viên",
-      "description": "Tạo danh tính nhân viên được quản lý sau khi máy chủ xác nhận quyền truy cập và điều kiện sẵn sàng.",
-      "unavailable": "Chức năng tạo tài khoản nhân viên chưa khả dụng. Biểu mẫu này sẽ không tạo tài khoản.",
-      "email": "Email nhân viên",
-      "email_help": "Sử dụng địa chỉ nhân viên chính xác @tuturuuu.com. Tên miền phụ trong danh bạ không cấp quyền nhân viên.",
-      "name": "Họ và tên",
-      "password": "Mật khẩu tạm thời",
-      "password_help": "Sử dụng 12–72 ký tự. Mật khẩu chỉ được giữ trong biểu mẫu và sẽ bị xóa khi đóng.",
-      "denied": "Yêu cầu bị từ chối trước khi tạo tài khoản. Kiểm tra quyền truy cập và trạng thái khả dụng trước khi gửi lại.",
-      "created": "Máy chủ đã xác nhận tạo tài khoản nhân viên. Làm mới danh bạ để kiểm tra.",
-      "inspect": "Cần kiểm tra kết quả. Làm mới danh bạ và nhờ quản trị viên đối soát yêu cầu này. Không tạo lại tài khoản này.",
-      "refresh": "Làm mới danh bạ",
-      "close": "Đóng",
-      "submitting": "Đang gửi…",
-      "submit": "Tạo tài khoản"
     }
   },
   "inventory": {

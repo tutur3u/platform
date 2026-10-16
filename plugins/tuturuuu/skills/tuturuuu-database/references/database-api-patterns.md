@@ -105,6 +105,19 @@ review prove baseline equivalence. Existing migration history stays immutable.
   before promotion; see
   [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
 
+## Personal journal qualification
+
+Use the existing disposable Linux schema workflow's `include_personal_journal`
+profile for the full selected migration snapshot, 172 foundation plus 24 journal
+rollback assertions and same-database private RPC type generation. Keep employee
+journal/HTTP/RESTORE profiles off for this selection. Require the exact-source
+receipt, fixture/type digests and positive cleanup; provider, explicit consent and runtime
+acceptance remain separate gates. See [schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx#personal-journal-schema-qualification).
+
+Correct chronology only for a new, unapplied PR migration, preserving its SQL
+bytes. Never rename an applied migration or reuse old-source SQL/type receipts
+after a snapshot identity change; requalify the new exact source.
+
 ## Employee RESTORE transport qualification
 
 Extend the canonical employee schema/HTTP runner for RESTORE rather than creating

@@ -183,11 +183,11 @@ const parleyCandidatePatch =
   require('../../package.json').patchedDependencies[
     `@opennextjs/cloudflare@${candidateSpec}`
   ];
-test('the pinned Parley candidate patch selects only its Cloudflare owner', () => {
+test('the pinned candidate patch selects its Lettin and Parley Cloudflare owners', () => {
   for (const app of consumers) {
     assert.equal(
       decide(`${app}-cloudflare.yaml`, [parleyCandidatePatch]).shouldRun,
-      app === 'parley'
+      ['lettin', 'parley'].includes(app)
     );
   }
   assert.equal(
