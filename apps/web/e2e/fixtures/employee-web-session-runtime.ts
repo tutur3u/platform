@@ -6,6 +6,10 @@ import { createServer } from 'node:net';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session-core';
 import { z } from 'zod';
 import {
+  type StartupDiagnostic,
+  waitForSessionReadiness,
+} from './employee-web-session-readiness';
+import {
   build,
   Config,
   command,
@@ -21,6 +25,7 @@ import {
   stop,
 } from './employee-web-session-support';
 
+let startupDiagnostic: StartupDiagnostic | null = null;
 let phase: SessionPhase = 'configuration';
 let failure: ReturnType<typeof sessionFailure> | null = null;
 let cleanup: Awaited<ReturnType<typeof sessionLifecycle>>['cleanup'] | null =
@@ -86,25 +91,8 @@ async function main() {
       env
     );
     const endpoint = `${origin}/api/v1/infrastructure/internal-accounts/employees`;
-    let ready = false;
-    for (let attempt = 0; attempt < 60; attempt++) {
-      if (child.exitCode !== null || child.signalCode !== null) break;
-      try {
-        const response = await fetch(endpoint, {
-          redirect: 'error',
-          signal: AbortSignal.timeout(1000),
-        });
-        await response.arrayBuffer();
-        if (response.status === 401) {
-          ready = true;
-          break;
-        }
-      } catch {
-        /* Startup has a finite deadline. */
-      }
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
-    check(ready);
+    startupDiagnostic = await waitForSessionReadiness(child, endpoint);
+    check(startupDiagnostic.outcome === 'ready');
     phase = 'cases';
     const { admin, anon } = fixtureClients(config);
     const password = randomBytes(24).toString('base64url');
@@ -476,6 +464,7 @@ try {
       serverStopped,
       failure,
       cleanup,
+      startupDiagnostic,
       productionProof: false,
       routeAuthorizationProof: true,
     })
@@ -492,6 +481,7 @@ try {
       serverStopped,
       failure,
       cleanup,
+      startupDiagnostic,
       productionProof: false,
       routeAuthorizationProof: false,
     })

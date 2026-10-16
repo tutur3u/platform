@@ -188,6 +188,17 @@ Bun source exports while Node/Next targets still require emitted workspace files
 the non-build export regression demonstrates that boundary without generating
 artifacts. Only hosted CI may execute this build pipeline.
 
+Startup readiness still requires exactly HTTP 401 from the anonymous employees
+GET. It makes at most 60 requests (one-second request timeout, 500 ms interval),
+never follows redirects, and discards response bodies without buffering them.
+The receipt retains only a fixed startup outcome and last observation, numeric
+status (0–599), attempt count, child exit/signal and deadline flag. Connection
+failure, request timeout, other request error, unexpected status and child exit
+remain distinct; an unexpected status does not identify an Auth or routing cause.
+No URL, headers, body, credentials or startup output is retained. Loopback controls
+exercise these distinctions with disposable children, including the pinned Bun
+runtime; they do not establish readiness of the hosted Web application.
+
 The fault proxy starts HTTP server closure before forcing connection closure.
 In Bun 1.4.1, forcing connections first stops listening and makes a later
 `close()` reject with `ERR_SERVER_NOT_RUNNING`. The finite actual-Bun control

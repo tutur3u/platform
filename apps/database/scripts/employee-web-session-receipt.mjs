@@ -132,6 +132,67 @@ function diagnosticFields(value) {
   };
 }
 
+export function projectStartupDiagnostic(value) {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    !['ready', 'child-exit', 'child-error', 'deadline'].includes(
+      value.outcome
+    ) ||
+    ![
+      'none',
+      'connection-failure',
+      'request-error',
+      'request-timeout',
+      'unexpected-status',
+      'ready',
+    ].includes(value.lastResult) ||
+    !(
+      value.status === null ||
+      (Number.isInteger(value.status) &&
+        value.status >= 0 &&
+        value.status <= 599)
+    ) ||
+    !Number.isInteger(value.attempts) ||
+    value.attempts < 0 ||
+    value.attempts > 60 ||
+    !(
+      value.exitCode === null ||
+      (Number.isInteger(value.exitCode) &&
+        value.exitCode >= 0 &&
+        value.exitCode <= 255)
+    ) ||
+    ![null, 'SIGTERM', 'SIGKILL', 'other'].includes(value.signal) ||
+    value.timedOut !== (value.outcome === 'deadline') ||
+    (value.outcome === 'ready' &&
+      (value.status !== 401 ||
+        value.lastResult !== 'ready' ||
+        value.attempts === 0 ||
+        value.exitCode !== null ||
+        value.signal !== null)) ||
+    (value.outcome === 'child-exit' &&
+      value.exitCode === null &&
+      value.signal === null) ||
+    (value.lastResult === 'none' &&
+      (value.attempts !== 0 || value.status !== null)) ||
+    (value.lastResult !== 'none' && value.attempts === 0) ||
+    (value.lastResult === 'unexpected-status' &&
+      (value.status === null || value.status === 401)) ||
+    (value.lastResult === 'ready' && value.status !== 401)
+  )
+    throw new Error('Web startup diagnostic invalid');
+  return {
+    outcome: value.outcome,
+    lastResult: value.lastResult,
+    status: value.status,
+    attempts: value.attempts,
+    exitCode: value.exitCode,
+    signal: value.signal,
+    timedOut: value.timedOut,
+  };
+}
+
 export function webSessionReceipt(text) {
   let value;
   let diagnostics;
@@ -165,6 +226,19 @@ export function webSessionReceipt(text) {
     )
       throw 0;
     diagnostics = diagnosticFields(value);
+    if (value.startupDiagnostic !== undefined) {
+      const startupDiagnostic =
+        value.startupDiagnostic === null
+          ? null
+          : projectStartupDiagnostic(value.startupDiagnostic);
+      if (
+        (value.qualified && startupDiagnostic?.outcome !== 'ready') ||
+        (startupDiagnostic !== null &&
+          ['configuration', 'build'].includes(value.phase))
+      )
+        throw 0;
+      diagnostics.startupDiagnostic = startupDiagnostic;
+    }
   } catch {
     throw new Error('Web session receipt invalid');
   }

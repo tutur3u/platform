@@ -164,3 +164,10 @@ owner. Leader exit, deadline, fixture hard kill and outer timeout must drain all
 owned groups, including TERM-resistant inherited-pipe descendants, before cleanup
 qualifies. Keep actual resolved runtimes in IPC tests; wrapper commands can drop
 extra descriptors. Retain fixed bounded compiler diagnostics and first exit status.
+
+For employee Web startup failures, inspect the strict startup diagnostic before
+changing routes or Auth. Readiness remains exactly HTTP 401; retain only fixed
+outcome/observation, bounded status and attempts, child exit/signal and timeout.
+Keep response bodies, headers, URLs and startup stdout/stderr out of receipts.
+Use finite loopback/pinned-runtime controls for classification; only the matching
+hosted source/control run can establish actual startup and Web24 acceptance.

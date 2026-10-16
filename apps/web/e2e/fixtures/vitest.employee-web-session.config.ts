@@ -2,7 +2,9 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['apps/web/e2e/fixtures/employee-web-session-support.test.ts'],
+    include: [
+      'apps/web/e2e/fixtures/employee-web-session-{support,readiness}.test.ts',
+    ],
     environment: 'node',
     maxWorkers: 1,
     fileParallelism: false,

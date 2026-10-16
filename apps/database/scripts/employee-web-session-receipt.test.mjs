@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   assertQualifiedWebSession,
+  projectStartupDiagnostic,
   selectWebSessionRuntime,
   sessionCases,
   webSessionReceipt,
@@ -236,4 +237,116 @@ test('build compiler and cleanup error diagnostics are projected and fail closed
     { ...value, cleanup: { ...cleanup, proxyError: 'raw-private-message' } },
   ])
     assert.throws(() => webSessionReceipt(JSON.stringify(candidate)));
+});
+
+const startup = {
+  outcome: 'deadline',
+  lastResult: 'unexpected-status',
+  status: 503,
+  attempts: 60,
+  exitCode: null,
+  signal: null,
+  timedOut: true,
+};
+test('startup receipt projects bounded enums and numbers without private payloads', () => {
+  const privateFields = Object.fromEntries(
+    [
+      'body',
+      'headers',
+      'cookie',
+      'token',
+      'env',
+      'url',
+      'stdout',
+      'stderr',
+      'stack',
+      'message',
+    ].map((key) => [key, 'injected-private-value'])
+  );
+  const failure = {
+    phase: 'start',
+    kind: 'assertion',
+    exitCode: null,
+    signal: null,
+    timedOut: false,
+  };
+  const value = {
+    ...complete,
+    qualified: false,
+    routeAuthorizationProof: false,
+    phase: 'start',
+    cases: [],
+    assertions: 3,
+    failure,
+    cleanup: { server: 'stopped', proxy: 'closed' },
+    startupDiagnostic: { ...startup, ...privateFields },
+  };
+  const receipt = webSessionReceipt(JSON.stringify(value));
+  assert.deepEqual(receipt.startupDiagnostic, startup);
+  assert.deepEqual(receipt.failure, failure);
+  assert.ok(!JSON.stringify(receipt).includes('injected-private'));
+  assert.ok(Buffer.byteLength(JSON.stringify(receipt.startupDiagnostic)) < 256);
+  for (const bad of [
+    { outcome: 'private-secret' },
+    { lastResult: 'private-secret' },
+    { status: -1 },
+    { status: 600 },
+    { status: '503' },
+    { attempts: 61 },
+    { attempts: -1 },
+    { attempts: 1.5 },
+    { exitCode: 256 },
+    { signal: 'private-secret' },
+    { timedOut: false },
+    { outcome: 'ready' },
+    { outcome: 'child-exit', timedOut: false },
+    { lastResult: 'none' },
+    { status: 401 },
+  ]) {
+    assert.throws(
+      () =>
+        webSessionReceipt(
+          JSON.stringify({
+            ...value,
+            startupDiagnostic: { ...startup, ...bad },
+          })
+        ),
+      { message: 'Web session receipt invalid' }
+    );
+  }
+  assert.throws(
+    () =>
+      webSessionReceipt(
+        JSON.stringify({ ...complete, startupDiagnostic: startup })
+      ),
+    { message: 'Web session receipt invalid' }
+  );
+  assert.throws(
+    () =>
+      webSessionReceipt(
+        JSON.stringify({
+          ...value,
+          phase: 'build',
+          failure: { ...failure, phase: 'build' },
+        })
+      ),
+    { message: 'Web session receipt invalid' }
+  );
+  assert.deepEqual(projectStartupDiagnostic({ ...startup, status: 0 }), {
+    ...startup,
+    status: 0,
+  });
+  assert.deepEqual(projectStartupDiagnostic({ ...startup, status: 599 }), {
+    ...startup,
+    status: 599,
+  });
+  assert.deepEqual(
+    projectStartupDiagnostic({
+      ...startup,
+      outcome: 'child-exit',
+      exitCode: 7,
+      timedOut: false,
+    }),
+    { ...startup, outcome: 'child-exit', exitCode: 7, timedOut: false }
+  );
 });
