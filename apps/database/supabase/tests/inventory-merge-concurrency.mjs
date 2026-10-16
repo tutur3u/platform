@@ -54,20 +54,56 @@ const apply = (sql, source = 50) =>
 // distinguish session-level from transaction-level advisory lock ownership.
 async function reportWriterLocks(sql, count) {
   const rows = await sql`
+    with keys as (
+      select hashtextextended('employee-address-reservations',0) employee_key,
+        private.inventory_identity_lock_key(${id(12)},'warehouse',${id(2500)}) inventory_key
+    )
     select pg_backend_pid() pid,
       pg_current_xact_id_if_assigned()::text transaction_id,
+      json_build_object(
+        'employee_admission_key',keys.employee_key::text,
+        'cascade_inventory_key',keys.inventory_key::text,
+        'retained_key_matches_employee',keys.employee_key=7763364621922586765::bigint,
+        'retained_key_matches_inventory',keys.inventory_key=7763364621922586765::bigint,
+        'profile_fk_set_default',exists(
+          select 1 from pg_constraint c join pg_attribute a
+            on a.attrelid=c.conrelid and a.attnum=c.conkey[1]
+          where c.conrelid='public.user_private_details'::regclass
+            and c.confrelid='public.workspaces'::regclass and c.contype='f'
+            and cardinality(c.conkey)=1 and a.attname='default_workspace_id'
+            and c.confdeltype='d' and c.convalidated
+        ),
+        'profile_statement_update_admission',exists(
+          select 1 from pg_trigger t
+          where t.tgrelid='public.user_private_details'::regclass
+            and t.tgname='admit_employee_address_profile'
+            and t.tgfoid=to_regprocedure('private.lock_employee_address_writers()')
+            and t.tgenabled in ('O','A') and (t.tgtype & 1)=0
+            and (t.tgtype & 2)=2 and (t.tgtype & 16)=16
+        ),
+        'employee_shared_admission_call',exists(
+          select 1 from pg_proc p
+          where p.oid=to_regprocedure('private.lock_employee_address_writers()')
+            and position('pg_advisory_xact_lock_shared(hashtextextended(''employee-address-reservations'',0))' in p.prosrc)>0
+        )
+      ) classification,
       coalesce((
         select json_agg(observed) from (
           select classid, objid, objsubid, mode, granted, virtualtransaction,
             ((classid::bigint << 32) | objid::bigint)::text key64,
             case when objsubid=1 and classid=0 and objid=900302020
-              then 'test-barrier' else 'other-advisory' end label
+              then 'test-barrier'
+              when objsubid=1 and ((classid::bigint << 32) | objid::bigint)=keys.employee_key
+              then 'employee-address-admission'
+              when objsubid=1 and ((classid::bigint << 32) | objid::bigint)=keys.inventory_key
+              then 'cascade-inventory-identity'
+              else 'other-advisory' end label
           from pg_locks
           where pid=pg_backend_pid() and locktype='advisory' and granted
           order by classid, objid, objsubid, mode limit 33
         ) observed
-      ), '[]'::json) locks`;
-  const [{ pid, transaction_id, locks }] = rows;
+      ), '[]'::json) locks from keys`;
+  const [{ pid, transaction_id, classification, locks }] = rows;
   console.log(
     '# inventory-writer-locks ' +
       JSON.stringify({
@@ -75,6 +111,7 @@ async function reportWriterLocks(sql, count) {
         observed_count: Number(count),
         pid,
         transaction_id,
+        classification,
         truncated: locks.length > 32,
         locks: locks.slice(0, 32),
       })

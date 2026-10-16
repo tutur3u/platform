@@ -162,3 +162,12 @@ evidence for a SQL repair. Compare exact source and installed runtime objects,
 obtain the failing lock tuple through exact-head Inventory contract CI, and verify
 owned cleanup. See the Inventory platform page's merge concurrency lock diagnostics
 for the observation fields and interpretation.
+
+
+Classify an unexplained advisory tuple with the disposable database's actual hash
+and domain-key functions before changing an invariant. The Inventory failure-only
+probe checks employee admission versus the cascade warehouse identity and bounded
+installed FK/trigger/function metadata. A profile FK `SET DEFAULT` action and a
+statement-level profile update trigger are a possible cascade path; validate the
+installed metadata and observed key rather than inferring the path from lock mode.
+Keep the original failing assertion while gathering that classification.
