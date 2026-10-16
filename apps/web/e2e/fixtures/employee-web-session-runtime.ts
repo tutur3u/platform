@@ -3,7 +3,6 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
-import path from 'node:path';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session-core';
 import { z } from 'zod';
 import {
@@ -12,6 +11,7 @@ import {
   command,
   faultProxy,
   fixtureClients,
+  resolveNextCli,
   rootId,
   sql,
   ssrSession,
@@ -69,7 +69,7 @@ async function main() {
     child = command(
       'node',
       [
-        path.resolve('node_modules/next/dist/bin/next'),
+        resolveNextCli(),
         'start',
         'apps/web',
         '--hostname',

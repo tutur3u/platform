@@ -7,6 +7,7 @@ import {
   assertQualifiedHttp,
   httpQualificationReceipt,
   selectHttpRuntime,
+  selectRestoreRuntime,
 } from './employee-http-receipt.mjs';
 import {
   assertPacketTap,
@@ -42,6 +43,10 @@ const httpRuntime = selectHttpRuntime(
 );
 const webSessionRuntime = selectWebSessionRuntime(
   process.env.EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION,
+  httpRuntime
+);
+const restoreRuntime = selectRestoreRuntime(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_RESTORE,
   httpRuntime
 );
 if (
@@ -332,11 +337,12 @@ const runner = async (command, args, cwd) => {
             anonKey: status.ANON_KEY,
             projectId: metadata.projectId,
             basePort: metadata.basePort,
+            includeRestore: restoreRuntime,
           }),
           true
         );
         httpQualification = httpQualificationReceipt(output.stdout.trim());
-        assertQualifiedHttp(httpQualification, output.status);
+        assertQualifiedHttp(httpQualification, output.status, restoreRuntime);
         if (webSessionRuntime) {
           // Keep the existing diagnostic phase; the child has its own bounded phases.
           const sessionOutput = await runOwnedSessionProcess(
@@ -444,6 +450,11 @@ const receipt = {
     lifecycleCode === 0 &&
     cleanupSucceeded &&
     httpQualification?.qualified === true,
+  restoreTransportQualified:
+    restoreRuntime &&
+    lifecycleCode === 0 &&
+    cleanupSucceeded &&
+    httpQualification?.restoreQualification?.qualified === true,
   httpQualification,
   webSessionQualified:
     webSessionRuntime &&

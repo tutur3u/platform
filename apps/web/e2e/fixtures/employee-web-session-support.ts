@@ -2,9 +2,16 @@ import assert from 'node:assert/strict';
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
+import { createRequire } from 'node:module';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+
+export function resolveNextCli(
+  packageJson: string | URL = new URL('../../package.json', import.meta.url)
+) {
+  return createRequire(packageJson).resolve('next/dist/bin/next');
+}
 
 export const Config = z.strictObject({
   url: z.url(),

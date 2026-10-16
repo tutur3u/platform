@@ -26,6 +26,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_restore:
+        description: Also qualify RESTORE SQL and Auth transport; requires include_http and include_journal
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -51,6 +56,7 @@ jobs:
       EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
       EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: ${{ inputs.include_web_session }}
+      EMPLOYEE_SCHEMA_INCLUDE_RESTORE: ${{ inputs.include_restore }}
     steps:
       - name: Require the enabled schema gate
         env:
@@ -80,6 +86,10 @@ jobs:
       - name: Install exact source dependencies
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Type-check selected HTTP fixtures without builds
+        if: inputs.include_http == true
+        working-directory: source
+        run: bun x tsc --project apps/web/e2e/fixtures/tsconfig.employee-http.json --noEmit
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify HTTP qualification receipt gates

@@ -1,8 +1,23 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { it as test } from 'vitest';
-import { command, faultProxy, stop } from './employee-web-session-support';
+import {
+  command,
+  faultProxy,
+  resolveNextCli,
+  stop,
+} from './employee-web-session-support';
 
 test('fault proxy forwards real loopback responses and drops exactly one successful update acknowledgement', async () => {
   let commits = 0;
@@ -64,4 +79,29 @@ test('owned child stops and drains before cleanup reports success', async () => 
   await stop(child);
   assert.ok(child.exitCode !== null || child.signalCode !== null);
   await stop(child);
+});
+
+test('Next CLI resolves from Web package context with no root Next dependency', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'employee-next-resolution-'));
+  try {
+    const web = path.join(root, 'apps/web');
+    const cli = path.join(web, 'node_modules/next/dist/bin/next');
+    mkdirSync(path.dirname(cli), { recursive: true });
+    writeFileSync(path.join(web, 'package.json'), '{}');
+    writeFileSync(cli, '');
+    assert.equal(
+      existsSync(path.join(root, 'node_modules/next/dist/bin/next')),
+      false
+    );
+    assert.equal(
+      resolveNextCli(path.join(web, 'package.json')),
+      realpathSync(cli)
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('default Next CLI lookup uses the installed Web workspace dependency', () => {
+  assert.equal(existsSync(resolveNextCli()), true);
 });
