@@ -150,24 +150,18 @@ and user UUIDs; reconciliation must never repeat the provider mutation. SQL ACL
 checks and real Auth transport remain separate from Web/satellite session proof.
 See [employee schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx).
 
-## Inventory concurrency diagnostics
+## Inventory concurrency lock boundaries
 
-For a zero-lock failure in `inventory-merge-concurrency.mjs`, retain the original
-count query and assertion. Only a nonzero count enables its bounded writer-backend
-TAP diagnostic; a later snapshot never replaces the original count. Preserve the
-passing path's query sequence and asynchronous waits. The fixture marks its
-session barrier key separately; `pg_locks` does not identify session versus
-transaction ownership. A passing instrumented run or a count alone is insufficient
-evidence for a SQL repair. Compare exact source and installed runtime objects,
-obtain the failing lock tuple through exact-head Inventory contract CI, and verify
-owned cleanup. See the Inventory platform page's merge concurrency lock diagnostics
-for the observation fields and interpretation.
+The cascade fixture rejects every granted advisory lock except the proven
+employee-admission bigint key in `ShareLock` mode with `objsubid=1`. Keep that
+predicate narrow: unknown keys, an exclusive mode, real inventory keys, and the
+same halves in the two-integer namespace must still fail. Explicitly account for
+permitted locks rather than allowing a generic count of one.
 
-
-Classify an unexplained advisory tuple with the disposable database's actual hash
-and domain-key functions before changing an invariant. The Inventory failure-only
-probe checks employee admission versus the cascade warehouse identity and bounded
-installed FK/trigger/function metadata. A profile FK `SET DEFAULT` action and a
-statement-level profile update trigger are a possible cascade path; validate the
-installed metadata and observed key rather than inferring the path from lock mode.
-Keep the original failing assertion while gathering that classification.
+The full-schema failure mapped shared employee admission through the profile FK
+`SET DEFAULT` update and its statement-level admission trigger. Preserve that
+admission. The 28-check Inventory fixture retains the original 22 cases and adds
+rollback controls for a zero-row profile update, mixed admission/inventory locks,
+unexpected key/mode/namespace, and cleanup. Require actual same-schema CI to run
+these controls; source and mock checks cannot qualify the repair. Keep bounded
+failure-only diagnostics, original tested counts and cleanup on failure.
