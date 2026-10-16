@@ -134,6 +134,14 @@ shared-package changes.
 
 ## Effect Orchestration
 
+Employee management inspection uses the Web `employees/[userId]` GET route and
+the portable restoration boundary in `packages/utils/src/internal-accounts`.
+Keep its RPC port inspection-only and recheck the same request actor before SQL
+and private disclosure. Preserve UUID/email binding and unresolved operation
+receipts; an observation is not permission to retry activation or migrate a
+legacy address. See the Infrastructure application guide's managed employee
+inspection section and the colocated Web route/transport regressions.
+
 - Import Effect through `@tuturuuu/utils/effect`, not directly from `effect`,
   so Tuturuuu code uses one curated server/service orchestration entrypoint.
 - Prefer Effect for new or substantially edited TypeScript server/shared flows
