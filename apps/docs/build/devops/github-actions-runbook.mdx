@@ -992,6 +992,17 @@ uses required-file behavior, one-day retention, and compression level 0 because
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
 
+The SDK build embeds only its reviewed portable HTTP-client and task-codec source
+closure from the broad `internal-api` and `utils` packages. Those packages remain
+development dependencies; emitted JavaScript and declarations share rewritten local
+`dist/_portable` imports. `dist/portable-sources.json` records included source paths.
+The build rejects unreviewed modules, private/runtime-specific imports, and
+undeclared external libraries. Extend the explicit allowlists only after reviewing
+the added closure. Keep the isolated public npm install and compiled CLI probes as
+the acceptance gate; source-staging tests do not establish package delivery.
+Run `node --test packages/sdk/scripts/portable-build.test.cjs` for the boundary
+regressions, and require exact-commit compilation and install qualification in CI.
+
 SDK packed-CLI qualification keeps install failure stream byte counts and SHA256
 commitments, without retaining stdout/stderr or the private npm cache. Its receipt
 also extracts at most eight package requests from strict npm E404 lines in the

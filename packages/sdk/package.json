@@ -84,7 +84,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
+    "build": "node scripts/portable-build.cjs",
     "dev": "tsc --project tsconfig.build.json --watch --incremental",
     "ttr": "bun src/cli/index.ts",
     "type-check": "tsc --project tsconfig.build.json",
@@ -92,18 +92,24 @@
     "prepack": "bun run clean && bun run build",
     "prepublishOnly": "bun run test",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:packaging": "node --test scripts/portable-build.test.cjs"
   },
   "dependencies": {
+    "@tiptap/core": "3.31.3",
+    "@tiptap/react": "3.31.3",
     "@tuturuuu/devbox": "workspace:*",
-    "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/utils": "workspace:*",
+    "prosemirror-model": "^1.25.11",
     "yaml": "^2.9.1",
+    "yjs": "^13.6.33",
     "zod": "^4.6.2"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.9",
+    "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
     "@types/node": "^26.5.1",
     "typescript": "7.0.2",
     "vitest": "^5.0.0"
