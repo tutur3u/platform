@@ -228,7 +228,7 @@ TERM/KILL cleanup even when a descendant retains stdout/stderr or ignores TERM.
 Fixture exit, hard kill, timeout and cancellation abort and drain every owned build
 job before `processGroupStopped` can qualify. Build output is classified at the
 owner; only the fixed bounded diagnostic returns over IPC, never raw output.
-Actual finite controls retain leader exit7, enforce an inner deadline, and verify
+Actual finite controls retain leader exit 7, enforce an inner deadline, and verify
 port/PID disappearance after hard fixture kill and outer timeout. They use the
 resolved runtime executable so local command shims cannot drop IPC descriptors.
 These synthetic process controls do not replace hosted compiler/start/session proof.
