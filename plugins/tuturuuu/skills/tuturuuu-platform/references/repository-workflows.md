@@ -149,3 +149,11 @@ reverse order stops listening before close registration and yields
 ERR_SERVER_NOT_RUNNING; do not ignore that error. Verify the pinned actual Bun
 control's close/port-refusal/repeated-close rejection, and keep real hosted
 Web-build/session qualification separate from this synthetic lifecycle proof.
+
+Employee Web-session qualification prepares emitted workspace dependencies via
+root `turbo:local run build --filter=@tuturuuu/web^... --concurrency=1` before the
+existing direct real Web build, sharing one18-minute deadline. Use actual export
+maps plus clean pinned-install Node/Bun resolver probes to diagnose missing emitted
+targets; a Bun source-condition resolution is not Node/Next artifact proof. Keep
+injected fixture configuration on the direct compiler and require new hosted
+acceptance. Do not generate fake dist modules or run either build locally.

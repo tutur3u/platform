@@ -11,6 +11,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { createServer } from 'node:http';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +26,7 @@ import {
   sessionFailure,
   sessionLifecycle,
   stop,
+  webSessionBuildCommands,
 } from './employee-web-session-support';
 
 test('fault proxy forwards real loopback responses and drops exactly one successful update acknowledgement', async () => {
@@ -385,4 +387,79 @@ try {
   assert.ok(!overflow && diagnostic, 'Proxy control diagnostic invalid');
   assert.equal(failed, false, JSON.stringify(diagnostic));
   assert.deepEqual(diagnostic, { phase: 'complete', error: 'none' });
+});
+
+test('session build selects canonical dependency graph before the uncached real Web compiler', () => {
+  const root = fileURLToPath(new URL('../../../..', import.meta.url));
+  const manifest = JSON.parse(
+    readFileSync(path.join(root, 'package.json'), 'utf8')
+  );
+  const turbo = JSON.parse(readFileSync(path.join(root, 'turbo.json'), 'utf8'));
+  const web = JSON.parse(
+    readFileSync(path.join(root, 'apps/web/package.json'), 'utf8')
+  );
+  const commands = webSessionBuildCommands();
+  assert.equal(
+    manifest.scripts['build:web'],
+    'bun turbo:local run build -F @tuturuuu/web'
+  );
+  assert.deepEqual(turbo.tasks.build.dependsOn, ['^build']);
+  assert.deepEqual(commands, [
+    [
+      'turbo:local',
+      'run',
+      'build',
+      '--filter=@tuturuuu/web^...',
+      '--concurrency=1',
+    ],
+    ['run', '--cwd', 'apps/web', 'build'],
+  ]);
+  assert.ok(web.scripts.build.includes('next build --turbopack'));
+  assert.equal(
+    commands.flat().some((arg) => /env-mode|dry|setup|alias/.test(arg)),
+    false
+  );
+});
+
+test('real workspace export manifest requires emitted Node target even when source exists', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'employee-workspace-export-'));
+  const sourceRoot = fileURLToPath(new URL('../../../..', import.meta.url));
+  try {
+    const fixturePackage = path.join(root, 'node_modules/@tuturuuu/supabase');
+    const actualPackage = path.join(sourceRoot, 'packages/supabase');
+    mkdirSync(path.join(fixturePackage, 'src/next'), { recursive: true });
+    copyFileSync(
+      path.join(actualPackage, 'package.json'),
+      path.join(fixturePackage, 'package.json')
+    );
+    copyFileSync(
+      path.join(actualPackage, 'src/next/server.ts'),
+      path.join(fixturePackage, 'src/next/server.ts')
+    );
+    const manifest = JSON.parse(
+      readFileSync(path.join(fixturePackage, 'package.json'), 'utf8')
+    );
+    assert.equal(
+      manifest.exports['./next/server'].default,
+      './dist/next/server.js'
+    );
+    assert.equal(manifest.exports['./next/server'].bun, './src/next/server.ts');
+    assert.equal(
+      existsSync(path.join(fixturePackage, 'src/next/server.ts')),
+      true
+    );
+    assert.equal(
+      existsSync(path.join(fixturePackage, 'dist/next/server.js')),
+      false
+    );
+    assert.throws(
+      () =>
+        createRequire(path.join(root, 'package.json')).resolve(
+          '@tuturuuu/supabase/next/server'
+        ),
+      { code: 'MODULE_NOT_FOUND' }
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

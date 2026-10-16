@@ -242,14 +242,30 @@ export function command(
   });
 }
 
-export async function build(env: NodeJS.ProcessEnv) {
-  const child = command(
-    'bun',
+export function webSessionBuildCommands() {
+  return [
+    [
+      'turbo:local',
+      'run',
+      'build',
+      '--filter=@tuturuuu/web^...',
+      '--concurrency=1',
+    ],
     ['run', '--cwd', 'apps/web', 'build'],
-    env,
-    true
-  );
-  await completeBuild(child);
+  ];
+}
+
+export async function build(env: NodeJS.ProcessEnv) {
+  const deadline = Date.now() + 18 * 60_000;
+  for (const args of webSessionBuildCommands()) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0)
+      throw new SessionProcessError(null, null, true, {
+        diagnostics: [],
+        truncated: false,
+      });
+    await completeBuild(command('bun', args, env, true), remaining);
+  }
 }
 
 export async function completeBuild(

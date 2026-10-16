@@ -177,6 +177,17 @@ for the next investigation, not permission to guess a dependency repair.
 Cleanup error categories separately distinguish not-running, type-error, timeout
 and unknown; a category never turns failed cleanup into success.
 
+The hosted fixture first runs the existing root Turbo dependency graph with
+`bun turbo:local run build --filter=@tuturuuu/web^... --concurrency=1`, then its
+unchanged `bun run --cwd apps/web build` real Next compiler. Both phases share
+one 18-minute deadline and run sequentially. Prerequisite errors stop the run.
+This follows Web's canonical `^build` dependency ordering without allowing an
+application cache hit to replace compiler acceptance or filtering the disposable
+Auth/runtime configuration out of the direct Web build. Clean installs can resolve
+Bun source exports while Node/Next targets still require emitted workspace files;
+the non-build export regression demonstrates that boundary without generating
+artifacts. Only hosted CI may execute this build pipeline.
+
 The fault proxy starts HTTP server closure before forcing connection closure.
 In Bun 1.4.1, forcing connections first stops listening and makes a later
 `close()` reject with `ERR_SERVER_NOT_RUNNING`. The finite actual-Bun control
