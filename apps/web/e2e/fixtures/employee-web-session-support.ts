@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { buildOutputCapture } from '../../../database/scripts/employee-web-session-build-diagnostic.mjs';
 
 export function resolveNextCli(
   packageJson: string | URL = new URL('../../package.json', import.meta.url)
@@ -116,7 +117,10 @@ class SessionProcessError extends Error {
   constructor(
     readonly exitCode: number | null,
     readonly signal: NodeJS.Signals | null,
-    readonly timedOut: boolean
+    readonly timedOut: boolean,
+    readonly buildDiagnostic: ReturnType<
+      ReturnType<typeof buildOutputCapture>['receipt']
+    >
   ) {
     super('Session process failed');
   }
@@ -125,6 +129,9 @@ class SessionProcessError extends Error {
 export function sessionFailure(error: unknown, phase: SessionPhase) {
   return {
     phase,
+    ...(error instanceof SessionProcessError
+      ? { buildDiagnostic: error.buildDiagnostic }
+      : {}),
     kind:
       error instanceof SessionProcessError
         ? 'process'
@@ -148,6 +155,20 @@ export function sessionFailure(error: unknown, phase: SessionPhase) {
   };
 }
 
+function cleanupError(
+  error: unknown
+): 'not-running' | 'type-error' | 'timeout' | 'unknown' | null {
+  if (
+    error instanceof Error &&
+    'code' in error &&
+    error.code === 'ERR_SERVER_NOT_RUNNING'
+  )
+    return 'not-running';
+  if (error instanceof TypeError) return 'type-error';
+  if (error instanceof Error && error.name === 'TimeoutError') return 'timeout';
+  return 'unknown';
+}
+
 export async function sessionLifecycle(
   run: () => Promise<void>,
   phase: () => SessionPhase,
@@ -160,16 +181,28 @@ export async function sessionLifecycle(
   } catch (error) {
     failure = sessionFailure(error, phase());
   }
-  const cleanup = { server: 'stopped', proxy: 'closed' };
+  const cleanup: {
+    server: string;
+    proxy: string;
+    serverError: ReturnType<typeof cleanupError>;
+    proxyError: ReturnType<typeof cleanupError>;
+  } = {
+    server: 'stopped',
+    proxy: 'closed',
+    serverError: null,
+    proxyError: null,
+  };
   try {
     await stopServer();
-  } catch {
+  } catch (error) {
     cleanup.server = 'failed';
+    cleanup.serverError = cleanupError(error);
   }
   try {
     await closeProxy();
-  } catch {
+  } catch (error) {
     cleanup.proxy = 'failed';
+    cleanup.proxyError = cleanupError(error);
   }
   if (!failure && (cleanup.server === 'failed' || cleanup.proxy === 'failed'))
     failure = sessionFailure(undefined, 'cleanup');
@@ -198,18 +231,24 @@ export async function stop(child: ChildProcess) {
 export function command(
   command: string,
   args: string[],
-  env: NodeJS.ProcessEnv
+  env: NodeJS.ProcessEnv,
+  capture = false
 ) {
   return spawn(command, args, {
     cwd: process.cwd(),
     env,
     detached: false,
-    stdio: 'ignore',
+    stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'ignore',
   });
 }
 
 export async function build(env: NodeJS.ProcessEnv) {
-  const child = command('bun', ['run', '--cwd', 'apps/web', 'build'], env);
+  const child = command(
+    'bun',
+    ['run', '--cwd', 'apps/web', 'build'],
+    env,
+    true
+  );
   await completeBuild(child);
 }
 
@@ -217,6 +256,9 @@ export async function completeBuild(
   child: ChildProcess,
   timeoutMs = 18 * 60_000
 ) {
+  const capture = buildOutputCapture();
+  child.stdout?.on('data', (chunk: Buffer) => capture.append('stdout', chunk));
+  child.stderr?.on('data', (chunk: Buffer) => capture.append('stderr', chunk));
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
@@ -226,12 +268,13 @@ export async function completeBuild(
   try {
     const [code, signal] = await once(child, 'close');
     if (code !== 0 || signal !== null || timedOut)
-      throw new SessionProcessError(code, signal, timedOut);
+      throw new SessionProcessError(code, signal, timedOut, capture.receipt());
   } catch (error) {
     failed = true;
     throw error;
   } finally {
     clearTimeout(timer);
+    capture.receipt();
     if (failed) await stop(child).catch(() => {});
     else await stop(child);
   }

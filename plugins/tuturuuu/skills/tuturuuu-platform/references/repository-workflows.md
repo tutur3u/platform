@@ -134,3 +134,11 @@ an auth defect. Preserve the first failure, attempt both cleanup steps, and reta
 only fixed phases/categories, bounded process exit/signal/deadline fields. Run the
 finite Web-session support suite and receipt/process tests before parent-owned
 exact-source hosted qualification; never infer full runtime proof from these tests.
+
+For build exit failures, retain only the existing bounded compiler projection:
+fixed categories/codes, exact tracked source paths and truncation status. Never
+publish raw child output, even on failure. Test synthetic secret-bearing output,
+stream bounds and the actual child exit before accepting instrumentation. Test
+proxy close separately in the actual Bun runtime; if it does not reproduce,
+retain its fixed cleanup error category without inventing a repair. Match source
+and control parser revisions for the next parent-owned hosted qualification.

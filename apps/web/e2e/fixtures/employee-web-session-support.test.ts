@@ -182,7 +182,12 @@ test('original failure survives both cleanup failures and both cleanup steps run
       signal: null,
       timedOut: false,
     },
-    cleanup: { server: 'failed', proxy: 'failed' },
+    cleanup: {
+      server: 'failed',
+      proxy: 'failed',
+      serverError: 'unknown',
+      proxyError: 'unknown',
+    },
   });
   assert.equal(JSON.stringify(result).includes('private'), false);
 });
@@ -197,7 +202,12 @@ test('cleanup-only failure retains cleanup phase and cannot qualify', async () =
     }
   );
   assert.equal(result.failure?.phase, 'cleanup');
-  assert.deepEqual(result.cleanup, { server: 'stopped', proxy: 'failed' });
+  assert.deepEqual(result.cleanup, {
+    server: 'stopped',
+    proxy: 'failed',
+    serverError: null,
+    proxyError: 'unknown',
+  });
 });
 
 test('successful lifecycle drains cleanup and reports no failure', async () => {
@@ -215,7 +225,12 @@ test('successful lifecycle drains cleanup and reports no failure', async () => {
   );
   assert.deepEqual(result, {
     failure: null,
-    cleanup: { server: 'stopped', proxy: 'closed' },
+    cleanup: {
+      server: 'stopped',
+      proxy: 'closed',
+      serverError: null,
+      proxyError: null,
+    },
   });
   assert.ok(child.signalCode !== null || child.exitCode !== null);
 });
@@ -234,6 +249,7 @@ test('actual failing process retains fixed build exit diagnostics without output
   );
   assert.deepEqual(result.failure, {
     phase: 'build',
+    buildDiagnostic: { diagnostics: [], truncated: false },
     kind: 'process',
     exitCode: 7,
     signal: null,
@@ -266,4 +282,48 @@ test('actual build-process deadline stops the owned child and retains timeout', 
     signal: null,
     timedOut: false,
   });
+});
+
+test('real build-boundary pipes retain only compiler classification and actual first exit', async () => {
+  const child = command(
+    'node',
+    [
+      '-e',
+      String.raw`process.stdout.write('./src/lib/public.ts:3:1\n');process.stderr.write('Module not found: Cannot find module private-token ERR_MODULE_NOT_FOUND\n');process.exit(9)`,
+    ],
+    process.env,
+    true
+  );
+  const result = await sessionLifecycle(
+    () => completeBuild(child),
+    () => 'build',
+    async () => {
+      throw new Error('private-cleanup');
+    },
+    async () => {}
+  );
+  assert.equal(result.failure?.exitCode, 9);
+  assert.deepEqual(result.failure?.buildDiagnostic, {
+    diagnostics: [
+      {
+        category: 'module-resolution',
+        code: 'ERR_MODULE_NOT_FOUND',
+        path: null,
+      },
+    ],
+    truncated: false,
+  });
+  assert.equal(JSON.stringify(result).includes('private'), false);
+});
+
+test('proxy close on the actual Bun runtime is a separate finite control', async () => {
+  const child = command(
+    'bun',
+    [
+      '-e',
+      `import {faultProxy} from './apps/web/e2e/fixtures/employee-web-session-support.ts'; const proxy=await faultProxy({url:'http://127.0.0.1:1',key:'unused',anonKey:'unused',projectId:'unused',basePort:12000,sourceSha:'a'.repeat(40)}); await proxy.close();`,
+    ],
+    process.env
+  );
+  await completeBuild(child, 5000);
 });

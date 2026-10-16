@@ -166,6 +166,17 @@ from server-stop and proxy-close outcomes. Both cleanup steps are attempted even
 when the first fails. Build-process diagnostics retain only exit code, a bounded
 signal category and deadline status; child output, messages and stacks remain
 discarded. Cleanup failure cannot replace an earlier failure or qualify a run.
+Compiler stdout/stderr are piped only into two bounded 64-KiB in-memory tails;
+they are never printed or written to an artifact. Failed build receipts project
+at most eight fixed compiler categories, fixed Node/TypeScript codes, and paths
+matched exactly against tracked Web/package source paths. Unknown messages,
+module names, identities, config keys and secret values are discarded. Tail
+truncation is explicit. Use a matching reviewed source/control revision so the
+strict control parser retains these diagnostics. This classification is evidence
+for the next investigation, not permission to guess a dependency repair.
+Cleanup error categories separately distinguish not-running, type-error, timeout
+and unknown; a category never turns failed cleanup into success.
+
 Historical receipts with only `phase=cleanup` cannot identify the earlier cause.
 The support suite exercises simultaneous runtime/cleanup failures, real child exit
 and deadline handling, and strict redacted receipt projection. These checks do not

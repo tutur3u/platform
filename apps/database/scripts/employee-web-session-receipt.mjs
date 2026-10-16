@@ -1,3 +1,4 @@
+import { projectBuildDiagnostic } from './employee-web-session-build-diagnostic.mjs';
 export const sessionCases = Object.freeze([
   'anonymous',
   'malformed-bearer',
@@ -42,6 +43,23 @@ const phases = [
   'cleanup',
   'complete',
 ];
+function cleanupDiagnostics(cleanup) {
+  if (cleanup.serverError === undefined && cleanup.proxyError === undefined)
+    return {};
+  for (const [status, error, success] of [
+    [cleanup.server, cleanup.serverError, 'stopped'],
+    [cleanup.proxy, cleanup.proxyError, 'closed'],
+  ]) {
+    if (
+      ![null, 'not-running', 'type-error', 'timeout', 'unknown'].includes(
+        error
+      ) ||
+      (status === success) !== (error === null)
+    )
+      throw 0;
+  }
+  return { serverError: cleanup.serverError, proxyError: cleanup.proxyError };
+}
 function diagnosticFields(value) {
   if (value.failure === undefined && value.cleanup === undefined) return {};
   const failure = value.failure;
@@ -90,6 +108,13 @@ function diagnosticFields(value) {
       failure === null
         ? null
         : {
+            ...(failure.buildDiagnostic === undefined
+              ? {}
+              : {
+                  buildDiagnostic: projectBuildDiagnostic(
+                    failure.buildDiagnostic
+                  ),
+                }),
             phase: failure.phase,
             kind: failure.kind,
             exitCode: failure.exitCode,
@@ -99,7 +124,11 @@ function diagnosticFields(value) {
     cleanup:
       cleanup === null
         ? null
-        : { server: cleanup.server, proxy: cleanup.proxy },
+        : {
+            server: cleanup.server,
+            proxy: cleanup.proxy,
+            ...cleanupDiagnostics(cleanup),
+          },
   };
 }
 

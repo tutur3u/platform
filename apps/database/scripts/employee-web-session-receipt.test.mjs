@@ -1,3 +1,4 @@
+import './employee-web-session-build-diagnostic.test.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -188,4 +189,51 @@ test('first failure and independent cleanup outcomes survive strict redacted pro
       cleanup: { server: 'stopped', proxy: 'closed' },
     }
   );
+});
+
+test('build compiler and cleanup error diagnostics are projected and fail closed', () => {
+  const failure = {
+    phase: 'build',
+    kind: 'process',
+    exitCode: 1,
+    signal: null,
+    timedOut: false,
+    buildDiagnostic: {
+      diagnostics: [{ category: 'type-error', code: 'TS2322', path: null }],
+      truncated: false,
+    },
+  };
+  const cleanup = {
+    server: 'stopped',
+    proxy: 'failed',
+    serverError: null,
+    proxyError: 'type-error',
+  };
+  const value = {
+    ...complete,
+    qualified: false,
+    routeAuthorizationProof: false,
+    phase: 'build',
+    cases: [],
+    assertions: 3,
+    serverStopped: false,
+    failure,
+    cleanup,
+  };
+  assert.deepEqual(webSessionReceipt(JSON.stringify(value)), value);
+  for (const candidate of [
+    {
+      ...value,
+      failure: {
+        ...failure,
+        buildDiagnostic: {
+          diagnostics: [{ category: 'private', code: null, path: null }],
+          truncated: false,
+        },
+      },
+    },
+    { ...value, cleanup: { ...cleanup, proxyError: null } },
+    { ...value, cleanup: { ...cleanup, proxyError: 'raw-private-message' } },
+  ])
+    assert.throws(() => webSessionReceipt(JSON.stringify(candidate)));
 });
