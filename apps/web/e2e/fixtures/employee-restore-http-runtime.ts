@@ -86,7 +86,7 @@ export async function qualifyEmployeeRestoreHttp(input: {
     actorId: string,
     value: Awaited<ReturnType<typeof target>>
   ) {
-    const response = await fetch(`${input.url}/rest/v1/rpc/${name}`, {
+    const response = await fetch(new URL(`/rest/v1/rpc/${name}`, input.url), {
       method: 'POST',
       redirect: 'error',
       signal: AbortSignal.timeout(8000),
