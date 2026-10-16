@@ -80,3 +80,107 @@ test('oversized receipt output fails closed and drains its owned process group',
   assert.equal(result.status, null);
   assert.equal(result.processGroupStopped, true);
 });
+
+const buildControlOptions = { timeout: 30000 };
+test(
+  'owned builds drain on exit, crash and timeout',
+  buildControlOptions,
+  async () => {
+    const fs = await import('node:fs');
+    const { mkdtempSync, readFileSync, existsSync, rmSync } = fs;
+    const { tmpdir } = await import('node:os');
+    const path = await import('node:path');
+    const { randomUUID } = await import('node:crypto');
+    const { createConnection } = await import('node:net');
+    const { execFileSync } = await import('node:child_process');
+    const bun = execFileSync(
+      'bun',
+      ['-e', 'process.stdout.write(process.execPath)'],
+      { encoding: 'utf8', timeout: 5000 }
+    ).trim();
+    const support = new URL(
+      '../../web/e2e/fixtures/employee-web-session-support.ts',
+      import.meta.url
+    ).href;
+    for (const mode of [
+      'leader-exit',
+      'inner-timeout',
+      'fixture-crash',
+      'outer-timeout',
+    ]) {
+      const directory = mkdtempSync(
+        path.join(tmpdir(), 'employee-owned-build-')
+      );
+      const marker = path.join(directory, 'ready.json'),
+        token = randomUUID();
+      const descendant = `process.on('SIGTERM',()=>{});const server=require('node:net').createServer();server.listen(0,'127.0.0.1',()=>require('node:fs').writeFileSync(${JSON.stringify(marker)},JSON.stringify({pid:process.pid,port:server.address().port,token:${JSON.stringify(token)}})));`;
+      const leader = `const c=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{stdio:['ignore',1,2]});c.unref();${mode === 'leader-exit' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(marker)})){clearInterval(timer);process.exit(7)}},10);` : "process.on('SIGTERM',()=>{});setInterval(()=>{},1000);"}`;
+      const worker = `import {completeBuild,sessionFailure} from ${JSON.stringify(support)};const job=completeBuild('node',['-e',${JSON.stringify(leader)}],{...process.env,PATH:${JSON.stringify(path.dirname(process.execPath))}+':'+process.env.PATH},${mode === 'inner-timeout' ? 300 : 10000});${mode === 'fixture-crash' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(marker)})){clearInterval(timer);process.kill(process.pid,'SIGKILL')}},10);` : ''}try{await job;console.log('unexpected-success')}catch(error){console.log(JSON.stringify({exitCode:sessionFailure(error,'build').exitCode,timedOut:sessionFailure(error,'build').timedOut}))}`;
+      try {
+        const started = Date.now();
+        const result = await runOwnedSessionProcess(bun, ['-e', worker], {
+          cwd: process.cwd(),
+          timeoutMs: mode === 'outer-timeout' ? 1000 : 10000,
+        });
+        assert.ok(existsSync(marker), JSON.stringify({ mode, ...result }));
+        const identity = JSON.parse(readFileSync(marker, 'utf8'));
+        assert.equal(identity.token, token);
+        assert.equal(
+          result.processGroupStopped,
+          true,
+          JSON.stringify({ mode, ...result })
+        );
+        assert.ok(Date.now() - started < 8000);
+        if (mode === 'leader-exit') {
+          assert.equal(result.status, 0);
+          assert.deepEqual(JSON.parse(result.stdout), {
+            exitCode: 7,
+            timedOut: false,
+          });
+        }
+        if (mode === 'fixture-crash') assert.equal(result.status, null);
+        if (mode === 'inner-timeout') {
+          assert.equal(result.status, 0);
+          assert.equal(JSON.parse(result.stdout).timedOut, true);
+        }
+        if (mode === 'outer-timeout') assert.equal(result.status, null);
+        await new Promise((resolve, reject) => {
+          const socket = createConnection({
+            host: '127.0.0.1',
+            port: identity.port,
+          });
+          socket.once('connect', () => {
+            socket.destroy();
+            reject(new Error('Owned descendant port remains'));
+          });
+          socket.once('error', (error) =>
+            error.code === 'ECONNREFUSED' ? resolve() : reject(error)
+          );
+        });
+        assert.throws(() => process.kill(identity.pid, 0), { code: 'ESRCH' });
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
+    }
+  }
+);
+
+test('a fixture without its IPC owner cannot launch a detached build', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const helper = new URL('./employee-web-session-process.mjs', import.meta.url)
+    .href;
+  const output = execFileSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import {runOwnedBuildProcess} from ${JSON.stringify(helper)};try{await runOwnedBuildProcess('node',['-e','process.exit(0)'],process.env,1000);console.log('unsafe')}catch{console.log('owner-required')}`,
+    ],
+    {
+      env: { ...process.env, EMPLOYEE_WEB_SESSION_PROCESS_GROUP: '1' },
+      encoding: 'utf8',
+      timeout: 3000,
+    }
+  );
+  assert.equal(output.trim(), 'owner-required');
+});

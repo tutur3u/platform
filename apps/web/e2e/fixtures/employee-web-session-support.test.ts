@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { transformWithOxc } from 'vite';
 import { it as test } from 'vitest';
 import { z } from 'zod';
+import { runOwnedSessionProcess } from '../../../database/scripts/employee-web-session-process.mjs';
 import {
   command,
   completeBuild,
@@ -239,13 +240,13 @@ test('successful lifecycle drains cleanup and reports no failure', async () => {
 });
 
 test('actual failing process retains fixed build exit diagnostics without output', async () => {
-  const child = command(
-    'node',
-    ['-e', "console.error('private-output');process.exit(7)"],
-    process.env
-  );
   const result = await sessionLifecycle(
-    () => completeBuild(child),
+    () =>
+      completeBuild(
+        'node',
+        ['-e', "console.error('private-output');process.exit(7)"],
+        process.env
+      ),
     () => 'build',
     async () => {},
     async () => {}
@@ -262,22 +263,23 @@ test('actual failing process retains fixed build exit diagnostics without output
 });
 
 test('actual build-process deadline stops the owned child and retains timeout', async () => {
-  const child = command(
-    'node',
-    ['-e', 'setInterval(() => {}, 1000)'],
-    process.env
-  );
   const result = await sessionLifecycle(
-    () => completeBuild(child, 50),
+    () =>
+      completeBuild(
+        'node',
+        ['-e', 'setInterval(() => {}, 1000)'],
+        process.env,
+        50
+      ),
     () => 'build',
     async () => {},
     async () => {}
   );
   assert.equal(result.failure?.kind, 'process');
   assert.equal(result.failure?.timedOut, true);
-  assert.equal(result.failure?.signal, child.signalCode);
-  assert.equal(result.failure?.exitCode, child.exitCode);
-  assert.ok(child.signalCode !== null || child.exitCode !== null);
+  assert.ok(
+    result.failure?.signal !== null || result.failure?.exitCode !== null
+  );
   assert.deepEqual(sessionFailure(new Error('private'), 'configuration'), {
     phase: 'configuration',
     kind: 'unknown',
@@ -288,17 +290,17 @@ test('actual build-process deadline stops the owned child and retains timeout', 
 });
 
 test('real build-boundary pipes retain only compiler classification and actual first exit', async () => {
-  const child = command(
-    'node',
-    [
-      '-e',
-      String.raw`process.stdout.write('./src/lib/public.ts:3:1\n');process.stderr.write('Module not found: Cannot find module private-token ERR_MODULE_NOT_FOUND\n');process.exit(9)`,
-    ],
-    process.env,
-    true
-  );
+  const launch = () =>
+    completeBuild(
+      'node',
+      [
+        '-e',
+        String.raw`process.stdout.write('./src/lib/public.ts:3:1\n');process.stderr.write('Module not found: Cannot find module private-token ERR_MODULE_NOT_FOUND\n');process.exit(9)`,
+      ],
+      process.env
+    );
   const result = await sessionLifecycle(
-    () => completeBuild(child),
+    launch,
     () => 'build',
     async () => {
       throw new Error('private-cleanup');
@@ -320,7 +322,7 @@ test('real build-boundary pipes retain only compiler classification and actual f
 });
 
 test('proxy close on the actual Bun runtime is a separate finite control', async () => {
-  const child = command(
+  const result = await runOwnedSessionProcess(
     'bun',
     [
       '-e',
@@ -347,8 +349,7 @@ try {
   process.exitCode=1;
 }`,
     ],
-    process.env,
-    true
+    { cwd: process.cwd(), timeoutMs: 5000, env: process.env }
   );
   const Control = z.strictObject({
     phase: z.enum([
@@ -366,18 +367,9 @@ try {
       'unknown',
     ]),
   });
-  let output = '';
-  let overflow = false;
-  child.stdout?.on('data', (chunk: Buffer) => {
-    if (Buffer.byteLength(output) + chunk.length > 1024) overflow = true;
-    else output += chunk.toString('utf8');
-  });
-  let failed = false;
-  try {
-    await completeBuild(child, 5000);
-  } catch {
-    failed = true;
-  }
+  const output = z.string().parse(result.stdout);
+  const overflow = Buffer.byteLength(output) > 1024;
+  const failed = result.status !== 0 || !result.processGroupStopped;
   let diagnostic: z.infer<typeof Control> | null = null;
   try {
     diagnostic = Control.parse(JSON.parse(output));

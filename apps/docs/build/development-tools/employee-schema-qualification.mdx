@@ -201,10 +201,17 @@ The support suite exercises simultaneous runtime/cleanup failures, real child ex
 and deadline handling, and strict redacted receipt projection. These checks do not
 replace hosted Web24 acceptance.
 
-The control runner owns one process group containing the fixture, build and Web
-server. It verifies that the whole group has drained after normal completion,
-failure or timeout; that independent check supplies `processGroupStopped` rather
-than trusting a child-reported cleanup flag.
+The control runner owns the fixture process group and launches each requested
+build group itself over a private IPC channel. The fixture cannot detach an
+unregistered build: missing owner IPC fails closed. Build exit triggers whole-group
+TERM/KILL cleanup even when a descendant retains stdout/stderr or ignores TERM.
+Fixture exit, hard kill, timeout and cancellation abort and drain every owned build
+job before `processGroupStopped` can qualify. Build output is classified at the
+owner; only the fixed bounded diagnostic returns over IPC, never raw output.
+Actual finite controls retain leader exit7, enforce an inner deadline, and verify
+port/PID disappearance after hard fixture kill and outer timeout. They use the
+resolved runtime executable so local command shims cannot drop IPC descriptors.
+These synthetic process controls do not replace hosted compiler/start/session proof.
 Build/server output, passwords, cookies, tokens, emails and raw provider/SQL
 errors are discarded. The stack's always-run cleanup removes fixture identities
 with the disposable database; no real account or deployed activation flag is

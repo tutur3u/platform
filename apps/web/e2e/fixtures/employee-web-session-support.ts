@@ -6,7 +6,11 @@ import { createRequire } from 'node:module';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { buildOutputCapture } from '../../../database/scripts/employee-web-session-build-diagnostic.mjs';
+import {
+  type buildOutputCapture,
+  projectBuildDiagnostic,
+} from '../../../database/scripts/employee-web-session-build-diagnostic.mjs';
+import { runOwnedBuildProcess } from '../../../database/scripts/employee-web-session-process.mjs';
 
 export function resolveNextCli(
   packageJson: string | URL = new URL('../../package.json', import.meta.url)
@@ -231,14 +235,13 @@ export async function stop(child: ChildProcess) {
 export function command(
   command: string,
   args: string[],
-  env: NodeJS.ProcessEnv,
-  capture = false
+  env: NodeJS.ProcessEnv
 ) {
   return spawn(command, args, {
     cwd: process.cwd(),
     env,
     detached: false,
-    stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'ignore',
+    stdio: 'ignore',
   });
 }
 
@@ -264,36 +267,59 @@ export async function build(env: NodeJS.ProcessEnv) {
         diagnostics: [],
         truncated: false,
       });
-    await completeBuild(command('bun', args, env, true), remaining);
+    await completeBuild('bun', args, env, remaining);
   }
 }
 
 export async function completeBuild(
-  child: ChildProcess,
+  executable: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
   timeoutMs = 18 * 60_000
 ) {
-  const capture = buildOutputCapture();
-  child.stdout?.on('data', (chunk: Buffer) => capture.append('stdout', chunk));
-  child.stderr?.on('data', (chunk: Buffer) => capture.append('stderr', chunk));
-  let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    void stop(child).catch(() => {});
-  }, timeoutMs);
-  let failed = false;
-  try {
-    const [code, signal] = await once(child, 'close');
-    if (code !== 0 || signal !== null || timedOut)
-      throw new SessionProcessError(code, signal, timedOut, capture.receipt());
-  } catch (error) {
-    failed = true;
-    throw error;
-  } finally {
-    clearTimeout(timer);
-    capture.receipt();
-    if (failed) await stop(child).catch(() => {});
-    else await stop(child);
-  }
+  const result = z
+    .object({
+      status: z.number().int().min(0).max(255).nullable(),
+      signal: z
+        .enum([
+          'SIGTERM',
+          'SIGKILL',
+          'SIGINT',
+          'SIGABRT',
+          'SIGSEGV',
+          'SIGPIPE',
+          'SIGHUP',
+          'SIGQUIT',
+          'SIGBUS',
+          'SIGILL',
+          'SIGTRAP',
+          'SIGFPE',
+          'SIGUSR1',
+          'SIGUSR2',
+          'SIGALRM',
+          'SIGXCPU',
+          'SIGXFSZ',
+          'SIGSYS',
+        ])
+        .nullable(),
+      timedOut: z.boolean(),
+      processGroupStopped: z.boolean(),
+      buildDiagnostic: z.unknown(),
+    })
+    .parse(await runOwnedBuildProcess(executable, args, env, timeoutMs));
+  const diagnostic = projectBuildDiagnostic(result.buildDiagnostic);
+  if (
+    result.status !== 0 ||
+    result.signal !== null ||
+    result.timedOut ||
+    !result.processGroupStopped
+  )
+    throw new SessionProcessError(
+      result.status,
+      result.signal,
+      result.timedOut,
+      diagnostic
+    );
 }
 
 // Forward every accepted request to the owned real GoTrue/PostgREST stack.
