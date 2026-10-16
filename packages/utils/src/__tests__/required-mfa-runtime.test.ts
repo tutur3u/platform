@@ -1,5 +1,4 @@
 // @vitest-environment node
-import { createAppSessionToken } from '@tuturuuu/auth/app-session-core';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppCoordinationToken } from '../app-coordination-token';
@@ -73,9 +72,10 @@ describe('connected required MFA request enforcement', () => {
       },
       error: null,
     });
-    const token = createAppSessionToken({
+    const token = createAppCoordinationToken({
       userId: 'actor',
       targetApp: 'infra',
+      scopes: ['internal-app:session'],
     }).token;
     const response = await enforceRequiredMfaRequest(
       request(
