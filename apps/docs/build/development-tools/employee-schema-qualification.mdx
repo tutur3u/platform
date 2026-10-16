@@ -38,6 +38,24 @@ assertion, lifecycle step or cleanup proof is missing. The default remains the
 172-assertion foundation profile. This SQL gate does not qualify the fixed worker,
 provider, production configuration, generated types or live account operations.
 
+The independent `include_address_migration=true` selection appends the separate
+10-assertion `employee-address-migration.sql` packet after the selected employee
+profile; combining it with the personal journal profile is rejected:
+182 assertions for foundation plus migration, or 311 for journal plus migration.
+Its receipt scope adds `-address-migration`. Missing, reordered, duplicated or
+miscounted packets cannot qualify; the original 172 and 301 profiles remain
+unchanged and cannot be substituted for one another. HTTP remains a separate
+29-assertion gate; RESTORE's separately admitted 66-assertion transport gate must
+remain intact when integrating this addition. Neither transport count is added
+to the SQL assertion total.
+
+The dispatch control checkout must contain the new workflow input, selector,
+strict receipt helper and tests, while `source_sha` must bind the exact supplier
+commit containing the packet and migrations. An older control checkout silently
+omits a new source packet; its green artifact cannot qualify address migration.
+Dispatch and artifact inspection remain with the integration owner. Do not rerun
+or replace an already queued run to infer missing coverage.
+
 After the selected journal packets pass, the workflow generates public, private
 and storage TypeScript definitions from that same isolated database before
 cleanup. Its artifact includes `generated-types.ts` and the receipt records the
@@ -147,14 +165,15 @@ reviewed source commit; a published fixture is not a successful qualification ru
 ## Personal journal schema qualification
 
 Select `include_personal_journal=true` with `include_journal=false`,
-`include_http=false` and `include_restore=false` on the same workflow. This optional
+`include_http=false`, `include_restore=false` and
+`include_address_migration=false` on the same workflow. This optional
 profile keeps the foundation's 172 assertions and adds the 24
 `personal-journal.sql` assertions.
 It requires the complete selected migration snapshot, all 196 assertions,
 transaction rollback and positive owned-project cleanup, then records the
 `personal-journal` scope. Mixed optional profiles fail closed. The default
 foundation and employee-operation profiles keep their existing counts. The
-workflow regression test exercises all 16 boolean profile combinations against the
+workflow regression test exercises all 32 boolean profile combinations against the
 guarded runner before hosted database setup.
 
 The same disposable database generates public, private and storage types before

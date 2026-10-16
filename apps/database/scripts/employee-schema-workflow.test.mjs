@@ -98,11 +98,12 @@ test('personal journal profile stays optional and is passed to the guarded runne
 });
 
 test('combined profiles reject incompatible selections before hosted database setup', () => {
-  for (let bits = 0; bits < 16; bits++) {
+  for (let bits = 0; bits < 32; bits++) {
     const journal = Boolean(bits & 1);
     const personal = Boolean(bits & 2);
     const http = Boolean(bits & 4);
     const restore = Boolean(bits & 8);
+    const addressMigration = Boolean(bits & 16);
     const result = spawnSync(
       process.execPath,
       [
@@ -121,6 +122,7 @@ test('combined profiles reject incompatible selections before hosted database se
           EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: String(personal),
           EMPLOYEE_SCHEMA_INCLUDE_HTTP: String(http),
           EMPLOYEE_SCHEMA_INCLUDE_RESTORE: String(restore),
+          EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: String(addressMigration),
           EMPLOYEE_SCHEMA_SOURCE_SHA: '1'.repeat(40),
         },
       }
@@ -132,9 +134,33 @@ test('combined profiles reject incompatible selections before hosted database se
         ? /HTTP qualification requires the journal qualification/u
         : restore && !http
           ? /RESTORE qualification requires HTTP qualification/u
-          : journal && personal
+          : personal && (journal || addressMigration)
             ? /Select one optional schema profile/u
             : /This gate requires a disposable hosted Linux runner/u;
     assert.match(result.stderr, expected, `profile bits ${bits}`);
   }
+});
+
+test('migration and RESTORE selections retain separate inputs and environment bindings', () => {
+  const blocks = workflow.split(/(?=^ {6}[a-z_]+:\n)/mu);
+  for (const [input, variable] of [
+    ['include_journal', 'EMPLOYEE_SCHEMA_INCLUDE_JOURNAL'],
+    ['include_http', 'EMPLOYEE_SCHEMA_INCLUDE_HTTP'],
+    ['include_restore', 'EMPLOYEE_SCHEMA_INCLUDE_RESTORE'],
+    ['include_address_migration', 'EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION'],
+  ]) {
+    const selected = blocks.filter((block) =>
+      block.startsWith(`      ${input}:\n`)
+    );
+    assert.equal(selected.length, 1);
+    for (const line of ['required: false', 'default: false', 'type: boolean'])
+      assert.match(selected[0], new RegExp(`^ {8}${line}$`, 'mu'));
+    assert.equal(
+      workflow.split(`      ${variable}: \${{ inputs.${input} }}\n`).length - 1,
+      1
+    );
+  }
+  const step = namedStep('Type-check selected HTTP fixtures without builds');
+  assert.match(step, /^ {8}if: inputs.include_http == true$/mu);
+  assert.match(step, /tsconfig.employee-http.json --noEmit/u);
 });

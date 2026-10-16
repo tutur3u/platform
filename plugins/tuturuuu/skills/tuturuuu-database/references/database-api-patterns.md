@@ -110,13 +110,34 @@ review prove baseline equivalence. Existing migration history stays immutable.
 Use the existing disposable Linux schema workflow's `include_personal_journal`
 profile for the full selected migration snapshot, 172 foundation plus 24 journal
 rollback assertions and same-database private RPC type generation. Keep employee
-journal/HTTP/RESTORE profiles off for this selection. Require the exact-source
+journal/HTTP/RESTORE/address-migration profiles off for this selection. Require the exact-source
 receipt, fixture/type digests and positive cleanup; provider, explicit consent and runtime
 acceptance remain separate gates. See [schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx#personal-journal-schema-qualification).
 
 Correct chronology only for a new, unapplied PR migration, preserving its SQL
 bytes. Never rename an applied migration or reuse old-source SQL/type receipts
 after a snapshot identity change; requalify the new exact source.
+
+### Legacy address migration suppliers
+
+The inactive migration supplier uses a separate protected journal; do not reuse
+CREATE/RESTORE receipts. Its PostgreSQL fixture runner verifies the new migration
+against reduced prerequisites, not the full schema or GoTrue. GoTrue `identity_id`
+is SQL `auth.identities.id`, while JSON `id` is provider-specific. Verify identity
+email state independently: admin `{email}` can leave `email_verified=false` despite
+a confirmed timestamp. Retain pending inspection; never supply `email_confirm`.
+Pinned GoTrue v2.197.0 admin confirmation and magic-link recovery do not set the
+email identity flag. For a disposable positive fixture, create an unconfirmed
+source and use supported signup link/OTP verification, which sets the matching
+identity flag. Preserve the existing strict guard; never manually set identity
+verification or infer it from the timestamp. This does not repair an already
+confirmed production source. The real-provider runner compares sessions and
+refresh tokens and simulates a lost PUT acknowledgement without replay; its mail
+table and journal are fixtures, not full-schema proof. Add the separate 10-assertion
+migration packet through the opt-in trusted-control schema selection; preserve
+foundation172, journal301, HTTP29 and separately admitted RESTORE66 receipts.
+See `apps/docs/build/development-tools/employee-address-migration.mdx` for the
+canonical fingerprint, lock scope, mail prerequisites and remaining runtime gates.
 
 ## Employee RESTORE transport qualification
 
