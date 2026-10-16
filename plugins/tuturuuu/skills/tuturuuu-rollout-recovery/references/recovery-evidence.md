@@ -134,3 +134,15 @@ E2E markers. Record exact SHA, attempt/job IDs, cleanup proof, and remaining gat
 
 These tests document the intended boundaries; their existence alone is not proof
 that a particular candidate passed CI, moved a live alias, or recovered a signed-in flow.
+
+## Lettin OpenNext health boundary
+
+An empty Lettin health 500 can precede D1/R2 execution. If retained-artifact replay
+shows `loadCustomCacheHandlers` importing `file:/.next/None`, compare a private complete cache
+method replacement against the retained baseline with valid synthetic local D1
+and R2 and outbound access denied. Then remove the synthetic `worlds` table: a
+JSON handler error is a separate storage boundary. Preserve original artifacts
+and disclose WASM, require, Host and runtime normalization. Use the installed-Next
+semantic regression and existing URL-pinned adapter; do not infer a migration
+repair or duplicate the shared patch. See
+[the Lettin recovery procedure](../../../../../apps/docs/build/devops/critical-app-rollout.mdx#lettin-worker-health-and-cache-initialization).
