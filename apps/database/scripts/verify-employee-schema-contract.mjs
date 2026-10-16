@@ -7,8 +7,9 @@ import {
   assertPacketTap,
   assertRollbackSource,
   exactSourceSha,
+  schemaFailureDiagnostic as foundationFailureDiagnostic,
   foundationPackets,
-  schemaFailureDiagnostic,
+  journalPackets,
   schemaReceipt,
 } from './employee-schema-tap.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
@@ -23,6 +24,16 @@ import {
 } from './run-supabase-isolated.js';
 
 const root = process.cwd();
+const journal = process.env.EMPLOYEE_SCHEMA_INCLUDE_JOURNAL === 'true';
+if (
+  !['true', 'false', undefined].includes(
+    process.env.EMPLOYEE_SCHEMA_INCLUDE_JOURNAL
+  )
+)
+  throw new Error('Invalid employee journal qualification selection');
+const selectedPackets = journal ? journalPackets : foundationPackets;
+const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
+  foundationFailureDiagnostic(phase, ordinal, result, journal);
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
   throw new Error('This gate requires a disposable hosted Linux runner');
@@ -123,7 +134,7 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
-const fixtureHashes = foundationPackets.map(([file]) => {
+const fixtureHashes = selectedPackets.map(([file]) => {
   const relative = `apps/database/supabase/tests/${file}`;
   if (!trackedFiles.includes(relative))
     throw new Error('Required employee packet absent');
@@ -185,7 +196,7 @@ const runner = async (command, args, cwd) => {
   try {
     if (args.includes('test')) {
       const container = `supabase_db_${metadata.projectId}`;
-      for (const [position, [file, count]] of foundationPackets.entries()) {
+      for (const [position, [file, count]] of selectedPackets.entries()) {
         packetOrdinal = position + 1;
         currentPhase = 'fixture-hash';
         const fixture = path.join(
@@ -302,7 +313,13 @@ try {
   lifecycleCode = 1;
 }
 const receipt = {
-  ...schemaReceipt({ sourceSha, packets, lifecycleCode, cleanupSucceeded }),
+  ...schemaReceipt({
+    sourceSha,
+    packets,
+    lifecycleCode,
+    cleanupSucceeded,
+    journal,
+  }),
   fixtureHashes,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };

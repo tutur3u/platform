@@ -11,6 +11,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_journal:
+        description: Include the 109 durable operation and reserved-preflight assertions
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -33,6 +38,7 @@ jobs:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
+      EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
     steps:
       - name: Require the enabled schema gate
         env:

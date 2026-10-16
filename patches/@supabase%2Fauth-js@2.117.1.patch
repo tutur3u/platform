@@ -1,0 +1,62 @@
+diff --git a/dist/main/lib/webauthn.dom.d.ts b/dist/main/lib/webauthn.dom.d.ts
+index 2b004e46b6a469572989fed4e10c644fff42fa3d..9fccf740bc99c6cd83a13ee74243764551b4304f 100644
+--- a/dist/main/lib/webauthn.dom.d.ts
++++ b/dist/main/lib/webauthn.dom.d.ts
+@@ -492,13 +492,13 @@ export interface PublicKeyCredentialRequestOptionsFuture extends StrictOmit<Publ
+  */
+ export type PublicKeyCredentialJSON = RegistrationResponseJSON | AuthenticationResponseJSON;
+ /**
+- * A super class of TypeScript's `PublicKeyCredential` that knows about upcoming WebAuthn features.
++ * A credential shape with native members and a separately typed JSON serializer.
+  * Includes WebAuthn Level 3 methods for JSON serialization and parsing.
+  *
+  * @see {@link https://w3c.github.io/webauthn/#publickeycredential W3C WebAuthn Spec - PublicKeyCredential}
+  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential MDN - PublicKeyCredential}
+  */
+-export interface PublicKeyCredentialFuture<T extends PublicKeyCredentialJSON = PublicKeyCredentialJSON> extends PublicKeyCredential {
++export interface PublicKeyCredentialFuture<T extends PublicKeyCredentialJSON = PublicKeyCredentialJSON> extends StrictOmit<PublicKeyCredential, 'toJSON'> {
+     /**
+      * The type of the credential (always "public-key").
+      * @see {@link https://w3c.github.io/webauthn/#dom-credential-type W3C - type}
+diff --git a/dist/module/lib/webauthn.dom.d.ts b/dist/module/lib/webauthn.dom.d.ts
+index 2b004e46b6a469572989fed4e10c644fff42fa3d..9fccf740bc99c6cd83a13ee74243764551b4304f 100644
+--- a/dist/module/lib/webauthn.dom.d.ts
++++ b/dist/module/lib/webauthn.dom.d.ts
+@@ -492,13 +492,13 @@ export interface PublicKeyCredentialRequestOptionsFuture extends StrictOmit<Publ
+  */
+ export type PublicKeyCredentialJSON = RegistrationResponseJSON | AuthenticationResponseJSON;
+ /**
+- * A super class of TypeScript's `PublicKeyCredential` that knows about upcoming WebAuthn features.
++ * A credential shape with native members and a separately typed JSON serializer.
+  * Includes WebAuthn Level 3 methods for JSON serialization and parsing.
+  *
+  * @see {@link https://w3c.github.io/webauthn/#publickeycredential W3C WebAuthn Spec - PublicKeyCredential}
+  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential MDN - PublicKeyCredential}
+  */
+-export interface PublicKeyCredentialFuture<T extends PublicKeyCredentialJSON = PublicKeyCredentialJSON> extends PublicKeyCredential {
++export interface PublicKeyCredentialFuture<T extends PublicKeyCredentialJSON = PublicKeyCredentialJSON> extends StrictOmit<PublicKeyCredential, 'toJSON'> {
+     /**
+      * The type of the credential (always "public-key").
+      * @see {@link https://w3c.github.io/webauthn/#dom-credential-type W3C - type}
+diff --git a/src/lib/webauthn.dom.ts b/src/lib/webauthn.dom.ts
+index 01f37fffe1784b4332a39b11e17cf04dfb007704..3c569302f6971e4ea392db1bc2dfe8407adb7d88 100644
+--- a/src/lib/webauthn.dom.ts
++++ b/src/lib/webauthn.dom.ts
+@@ -528,7 +528,7 @@ export interface PublicKeyCredentialRequestOptionsFuture
+ export type PublicKeyCredentialJSON = RegistrationResponseJSON | AuthenticationResponseJSON
+ 
+ /**
+- * A super class of TypeScript's `PublicKeyCredential` that knows about upcoming WebAuthn features.
++ * A credential shape with native members and a separately typed JSON serializer.
+  * Includes WebAuthn Level 3 methods for JSON serialization and parsing.
+  *
+  * @see {@link https://w3c.github.io/webauthn/#publickeycredential W3C WebAuthn Spec - PublicKeyCredential}
+@@ -536,7 +536,7 @@ export type PublicKeyCredentialJSON = RegistrationResponseJSON | AuthenticationR
+  */
+ export interface PublicKeyCredentialFuture<
+   T extends PublicKeyCredentialJSON = PublicKeyCredentialJSON,
+-> extends PublicKeyCredential {
++> extends StrictOmit<PublicKeyCredential, 'toJSON'> {
+   /**
+    * The type of the credential (always "public-key").
+    * @see {@link https://w3c.github.io/webauthn/#dom-credential-type W3C - type}
