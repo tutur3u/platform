@@ -4,10 +4,25 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { EmployeeCreationReplySchema } from '../../../../packages/internal-api/src/infrastructure/employee-creation';
 import { createEmployeeCreationJournal } from '../../src/lib/infrastructure/employee-creation-journal';
 import { createEmployeeCreationOperationStore } from '../../src/lib/infrastructure/employee-creation-operation-store';
 import { createEmployeeRuntimeRpc } from '../../src/lib/infrastructure/employee-creation-rpc';
 import { createEmployeeRpcPhaseProvider } from '../../src/lib/infrastructure/employee-creation-rpc-provider';
+import { qualifyEmployeeRestoreHttp } from './employee-restore-http-runtime';
+
+const JournalResultSchema = z.strictObject({
+  targetUserId: z.uuid(),
+  outcome: EmployeeCreationReplySchema,
+});
+async function claimAndRun(
+  journal: ReturnType<typeof createEmployeeCreationJournal>,
+  input: Parameters<
+    ReturnType<typeof createEmployeeCreationJournal>['claimAndRun']
+  >[0]
+) {
+  return JournalResultSchema.parse(await journal.claimAndRun(input));
+}
 
 // This fixture never consumes a deployed project's configuration or credentials.
 const Config = z.strictObject({
@@ -16,9 +31,13 @@ const Config = z.strictObject({
   anonKey: z.string().min(1),
   projectId: z.string().regex(/^[a-zA-Z0-9_-]+$/),
   basePort: z.number().int().min(12000).max(31999),
+  includeRestore: z.boolean().default(false),
 });
 let phase = 'configuration';
 let assertions = 0;
+let restoreQualification: Awaited<
+  ReturnType<typeof qualifyEmployeeRestoreHttp>
+> | null = null;
 function check(value: unknown) {
   assert.ok(value);
   assertions++;
@@ -156,7 +175,7 @@ commit;`,
       temporaryPassword: password,
     },
   };
-  const result = await journal.claimAndRun(input);
+  const result = await claimAndRun(journal, input);
   check(result.outcome.status === 'created');
   check(creates === 1 && activations === 1);
   phase = 'independent-state';
@@ -165,7 +184,7 @@ commit;`,
   check(observed.operation?.targetUserId === result.targetUserId);
   check(
     observed.account?.id === result.targetUserId &&
-      observed.account.email === input.payload.email
+      observed.account?.email === input.payload.email
   );
   const provider = await admin.auth.admin.getUserById(result.targetUserId);
   check(!provider.error && provider.data.user?.email === input.payload.email);
@@ -175,12 +194,12 @@ commit;`,
         Date.parse(provider.data.user.banned_until) <= Date.now())
   );
   phase = 'replay-and-conflict';
-  const replay = await journal.claimAndRun(input);
+  const replay = await claimAndRun(journal, input);
   check(
     replay.outcome.status === 'created' &&
       replay.targetUserId === result.targetUserId
   );
-  const conflict = await journal.claimAndRun({
+  const conflict = await claimAndRun(journal, {
     ...input,
     payload: { ...input.payload, displayName: 'Different Name' },
   });
@@ -229,7 +248,7 @@ commit;`,
   const reserved = await transport.inspect(actorId, lostInput.operationId);
   check(reserved.operation?.phase === 'reserved');
   check(creates === 1 && activations === 1);
-  const retained = await journal.claimAndRun(lostInput);
+  const retained = await claimAndRun(journal, lostInput);
   check(
     retained.outcome.status === 'pending' &&
       retained.targetUserId === reserved.operation?.targetUserId
@@ -260,7 +279,7 @@ commit;`,
       },
     }),
   });
-  const unknown = await unknownJournal.claimAndRun(providerInput);
+  const unknown = await claimAndRun(unknownJournal, providerInput);
   check(lostCreateSucceeded);
   check(unknown.outcome.status === 'pending');
   check(creates === 2 && activations === 1);
@@ -271,12 +290,37 @@ commit;`,
     !pendingProvider.error &&
       Date.parse(pendingProvider.data.user?.banned_until ?? '') > Date.now()
   );
-  const notRetried = await journal.claimAndRun(providerInput);
+  const notRetried = await claimAndRun(journal, providerInput);
   check(
     notRetried.outcome.status === 'pending' &&
       notRetried.targetUserId === unknown.targetUserId
   );
   check(creates === 2 && activations === 1);
+  if (config.includeRestore) {
+    phase = 'restore-runtime';
+    restoreQualification = await qualifyEmployeeRestoreHttp({
+      ...config,
+      admin,
+      actorUserId: actorId,
+      password,
+      authorize,
+      async createTarget() {
+        const email = `http-restore-${randomUUID()}@tuturuuu.com`;
+        const created = await claimAndRun(journal, {
+          actorUserId: actorId,
+          operationId: randomUUID(),
+          payload: {
+            email,
+            displayName: 'HTTP Restore Employee',
+            temporaryPassword: password,
+          },
+        });
+        assert.equal(created.outcome.status, 'created');
+        return { id: z.uuid().parse(created.targetUserId), email };
+      },
+    });
+    assert.ok(restoreQualification.qualified);
+  }
   phase = 'complete';
 }
 try {
@@ -289,6 +333,7 @@ try {
       scope: 'disposable-http-auth-transport',
       productionProof: false,
       routeAuthorizationProof: false,
+      ...(restoreQualification ? { restoreQualification } : {}),
     })
   );
 } catch {
@@ -300,6 +345,7 @@ try {
       assertions,
       productionProof: false,
       routeAuthorizationProof: false,
+      ...(restoreQualification ? { restoreQualification } : {}),
     })
   );
   process.exitCode = 1;
