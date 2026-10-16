@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getInternalApiClient, type InternalApiClientOptions } from '../client';
+import { parseInternalApiError } from '../internal-api-error';
 
 export const EmployeeCreationOperationSchema = z.uuid();
 export const EmployeeCreationPayloadSchema = z
@@ -86,7 +87,7 @@ export async function createInternalEmployee(
     options.operationId
   );
   const input = EmployeeCreationPayloadSchema.parse(payload);
-  const value = await getInternalApiClient(options).json<unknown>(endpoint, {
+  const response = await getInternalApiClient(options).fetch(endpoint, {
     method: 'POST',
     cache: 'no-store',
     headers: {
@@ -96,8 +97,13 @@ export async function createInternalEmployee(
     },
     body: JSON.stringify(input),
   });
+  if (!response.ok && response.status !== 409)
+    throw await parseInternalApiError(response);
+  const value: unknown = await response.json();
   const result = EmployeeCreationReplySchema.parse(value);
   if (
+    (response.status === 409 && result.status !== 'conflict') ||
+    (result.status === 'conflict' && response.status !== 409) ||
     result.operationId !== operationId ||
     (result.status === 'created' &&
       (result.account.email !== input.email ||

@@ -11,6 +11,16 @@ on:
         required: false
         default: false
         type: boolean
+      include_journal:
+        description: Include durable journal, reserved-preflight and runtime observation assertions
+        required: false
+        default: false
+        type: boolean
+      include_http:
+        description: Also qualify real disposable PostgREST and GoTrue transport; requires include_journal
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -33,6 +43,8 @@ jobs:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
+      EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
+      EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
     steps:
       - name: Require the enabled schema gate
         env:
@@ -64,9 +76,11 @@ jobs:
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
+      - name: Verify HTTP qualification receipt gates
+        run: node --test apps/database/scripts/employee-http-receipt.test.mjs
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
-      - name: Apply full isolated schema and qualify 172 rollback assertions
+      - name: Apply full isolated schema and qualify selected rollback assertions
         if: inputs.structured_provenance != true
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs
@@ -82,7 +96,9 @@ jobs:
         if: always() && inputs.structured_provenance != true
         with:
           name: employee-schema-${{ inputs.source_sha }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/employee-schema-receipts/qualification.json
+          path: |
+            ${{ runner.temp }}/employee-schema-receipts/qualification.json
+            ${{ runner.temp }}/employee-schema-receipts/generated-types.ts
           if-no-files-found: error
           retention-days: 3
       - uses: actions/upload-artifact@v7

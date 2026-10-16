@@ -66,7 +66,7 @@ test('strict receipt tests run from control root', () => {
 
 test('schema runner uses source cwd and control script', () => {
   const step = namedStep(
-    'Apply full isolated schema and qualify 172 rollback assertions'
+    'Apply full isolated schema and qualify selected rollback assertions'
   );
   assert.match(step, /^ {8}working-directory: source$/mu);
   assert.match(
