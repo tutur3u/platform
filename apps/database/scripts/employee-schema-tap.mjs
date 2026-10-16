@@ -247,6 +247,7 @@ export function schemaFailureDiagnostic(
     'packet-execution',
     'packet-tap',
     'typegen',
+    'http-runtime',
     'cleanup',
     'cleanup-proof',
   ];

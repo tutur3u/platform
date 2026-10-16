@@ -16,6 +16,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_http:
+        description: Also qualify real disposable PostgREST and GoTrue transport; requires include_journal
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -39,6 +44,7 @@ jobs:
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
       EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
+      EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
     steps:
       - name: Require the enabled schema gate
         env:
@@ -70,6 +76,8 @@ jobs:
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
+      - name: Verify HTTP qualification receipt gates
+        run: node --test apps/database/scripts/employee-http-receipt.test.mjs
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
       - name: Apply full isolated schema and qualify selected rollback assertions
