@@ -128,3 +128,14 @@ lost acknowledgements after real PostgREST/GoTrue completion and retain operatio
 and user UUIDs; reconciliation must never repeat the provider mutation. SQL ACL
 checks and real Auth transport remain separate from Web/satellite session proof.
 See [employee schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx).
+
+## Inventory concurrency diagnostics
+
+For a zero-lock failure in `inventory-merge-concurrency.mjs`, compare its bounded
+writer-backend TAP comments across barrier release, completed writer transactions
+and the workspace cascade. Keep the zero-lock assertion intact. The fixture marks
+its session barrier key separately; `pg_locks` does not identify session versus
+transaction ownership. A count alone is insufficient evidence for a SQL repair.
+Use the exact-head Inventory contract workflow for disposable runtime proof and
+verify its owned cleanup. See the Inventory platform page's merge concurrency
+lock diagnostics for the observation fields and interpretation.

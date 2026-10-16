@@ -50,6 +50,35 @@ const deadlineWait = async (query) => {
 };
 const apply = (sql, source = 50) =>
   sql`select private.apply_inventory_merge(${id(10)},'product',${id(source)},${id(51)},private.preview_inventory_merge(${id(10)},'product',${id(source)},${id(51)})->>'version','target','target',${id(1)}) result`;
+// Only this disposable fixture's writer backend is observed. pg_locks does not
+// distinguish session-level from transaction-level advisory lock ownership.
+async function reportWriterLocks(sql, phase) {
+  const rows = await sql`
+    select pg_backend_pid() pid,
+      pg_current_xact_id_if_assigned()::text transaction_id,
+      coalesce((
+        select json_agg(observed) from (
+          select classid, objid, objsubid, mode, granted, virtualtransaction,
+            ((classid::bigint << 32) | objid::bigint)::text key64,
+            case when objsubid=1 and classid=0 and objid=900302020
+              then 'test-barrier' else 'other-advisory' end label
+          from pg_locks
+          where pid=pg_backend_pid() and locktype='advisory' and granted
+          order by classid, objid, objsubid, mode limit 33
+        ) observed
+      ), '[]'::json) locks`;
+  const [{ pid, transaction_id, locks }] = rows;
+  console.log(
+    '# inventory-writer-locks ' +
+      JSON.stringify({
+        phase,
+        pid,
+        transaction_id,
+        truncated: locks.length > 32,
+        locks: locks.slice(0, 32),
+      })
+  );
+}
 console.log('1..22');
 try {
   await control.unsafe(
@@ -127,6 +156,7 @@ try {
   ok('failed advisory merge preserves caller timeout');
   await writer`select pg_advisory_unlock(900302020)`;
   barrierHeld = false;
+  await reportWriterLocks(writer, 'after-barrier-unlock');
   const mergeOutcome = await merging;
   if (mergeOutcome.error) throw mergeOutcome.error;
   assert.equal(mergeOutcome.result[0].result.merged, true);
@@ -182,6 +212,7 @@ try {
   } finally {
     release();
     await holder;
+    await reportWriterLocks(writer, 'after-row-holder-commit');
   }
   const gate2 = new Promise((r) => (release = r));
   const ready2 = new Promise((r) => (reached = r));
@@ -197,15 +228,18 @@ try {
   } finally {
     release();
     await editing;
+    await reportWriterLocks(writer, 'after-stock-writer-commit');
   }
   // Setup is committed by another transaction: this cascade cannot pass merely
   // because the deleting client already acquired all of its identity keys.
   await control`insert into public.workspaces(id,name,personal,creator_id) values(${id(12)},'Cascade namespace',false,${id(1)})`;
   await control`insert into private.inventory_warehouses(id,ws_id,name) values(${id(2500)},${id(12)},'Cascade warehouse')`;
   await writer.begin(async (sql) => {
+    await reportWriterLocks(sql, 'before-cascade-delete');
     await sql`delete from public.workspaces where id=${id(12)}`;
     const [{ count }] =
       await sql`select count(*) from pg_locks where pid=pg_backend_pid() and locktype='advisory' and granted`;
+    await reportWriterLocks(sql, 'before-zero-lock-assertion');
     assert.equal(Number(count), 0);
     ok('actual gone-workspace cascade acquires no identity namespace');
     assert.equal(
