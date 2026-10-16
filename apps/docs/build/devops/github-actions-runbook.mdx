@@ -630,8 +630,8 @@ Workflow contracts use Bun's built-in YAML parser via `workflow-yaml-test-helper
 not undeclared transitive YAML packages. The dependency-free snapshot checks ordering,
 identity and caching. Run `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
-Parley's candidate pins the official OpenNext `1.20.6` registry tarball as a
-Parley-only URL dependency. Its URL-keyed Bun patch backports the Cache Components
+Meet, Lettin and Parley pin the official OpenNext `1.20.6` registry tarball as a
+shared URL dependency. Its URL-keyed Bun patch backports the Cache Components
 scheduler and request-scoped module-loading changes from upstream PR 1318 at
 `6b783939aefa8f9a19d4f002f68bc57c62879098`. The older upstream preview rejects Node
 middleware; removing that guard does not supply a middleware bundler. Retain the
@@ -639,13 +639,27 @@ stable adapter's real `bundleNodeMiddleware` path and apply the Cache Components
 middleware patch after that bundle. Preserve component names, preview manifests,
 and Next 16.4's `CacheSignal(null)` constructor arguments.
 
-Keep the registry integrity in `bun.lock`; Meet and Lettin retain their separate
-stable-version patch. Bun's path-based patch command can select the package version
-instead of the URL: verify the generated `patchedDependencies` key and restore the
+Keep the registry integrity in `bun.lock`; `packages/meet-core` retains its
+separate stable-version adapter and patch. Verify installed package isolation
+against that independent consumer, not Lettin. Bun's path-based patch command can
+select the package version instead of the URL: verify the generated `patchedDependencies` key and restore the
 stable patch before installing. Set the URL-keyed entry through `bun pm pkg set`
 with JSON input, then verify a frozen install and installed package isolation.
 A prepared directory left by `bun patch` can shadow dependency symlinks; preserve
 that owned directory outside the resolver and reinstall before testing.
+
+Meet requires both compatibility fixes: the workerd scheduler prevents the
+anonymous login render from hanging, and cache-handler registration must return
+before Next's original dynamic loader accesses removed minified aliases. Otherwise
+even the local-metadata `/api/build-info` handler can fail before it executes.
+`node --test scripts/ci/meet-cloudflare-render.test.js` exercises the installed
+Next scheduler transformation, cache-handler method and React resume names.
+For retained-artifact diagnosis, preserve the original ZIP and hash; normalize
+only CI file imports and Wrangler's require shim in a private replay. Use the
+canonical URL and Host, local bindings, blocked outbound traffic and bounded
+requests. Isolate scheduler and cache-loader changes independently. Such a replay
+establishes a mechanism; exact-commit CI builds and hosted health remain separate
+delivery gates.
 
 When changing the candidate dependency, update both workflow path filters and
 `tuturuuu.ts` selection to its active patch. Selection regressions must derive the

@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
+const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 
@@ -20,6 +21,16 @@ function getWorkflowDecision(input) {
 const patch = 'patches/@opennextjs%2Fcloudflare@1.20.6.patch';
 const consumers = ['meet', 'lettin', 'parley'];
 const workers = ['cron-control', 'coordination', 'devbox-control'];
+const patchedDependencies = require('../../package.json').patchedDependencies;
+const activeAdapterPatch = (app) => {
+  const dependency = require(`../../apps/${app}/package.json`).devDependencies[
+    '@opennextjs/cloudflare'
+  ];
+  const adapterKey = `@opennextjs/cloudflare@${dependency.replace(/^\^/, '')}`;
+  const patch = patchedDependencies[adapterKey];
+  assert.ok(patch, `${app}'s installed adapter must have a registered patch`);
+  return patch;
+};
 // Every package-backed target has a real manifest shape. Missing manifests
 // would fail open and falsely make the patch-recognition positive tests pass.
 const workspaceManifests = [
@@ -41,6 +52,58 @@ function decide(workflowName, changedFiles = [patch], options = {}) {
     ...options,
   });
 }
+
+for (const app of ['meet', 'parley', 'lettin']) {
+  test(`${app}'s manifest-selected adapter patch selects its Worker validation`, () => {
+    const activePatch = activeAdapterPatch(app);
+    const decision = decide(`${app}-cloudflare.yaml`, [activePatch]);
+    assert.equal(decision.shouldRun, true);
+    assert.deepEqual(decision.matchedPaths, [activePatch]);
+  });
+}
+
+for (const app of consumers) {
+  test(`${app}'s event filters admit its manifest-selected adapter patch`, () => {
+    const activePatch = activeAdapterPatch(app);
+    const workflow = readWorkflow(`${app}-cloudflare.yaml`);
+    for (const event of ['pull_request', 'push']) {
+      assert.ok(
+        workflow.on[event].paths.some((pattern) =>
+          path.matchesGlob(activePatch, pattern)
+        ),
+        `${app} ${event} must start before the selector can validate its patch`
+      );
+    }
+  });
+}
+
+test('the shared adapter selects all URL consumers while native Workers stay isolated', () => {
+  const activePatch = activeAdapterPatch('meet');
+  for (const app of consumers) {
+    assert.equal(activePatch, activeAdapterPatch(app));
+    assert.equal(
+      decide(`${app}-cloudflare.yaml`, [activePatch]).shouldRun,
+      true
+    );
+  }
+  for (const app of workers) {
+    assert.equal(
+      decide(`${app}-cloudflare.yaml`, [activePatch]).shouldRun,
+      false
+    );
+  }
+});
+
+test('Meet core retains an independent stable-version adapter patch', () => {
+  const dependency = require('../../packages/meet-core/package.json')
+    .devDependencies['@opennextjs/cloudflare'];
+  const stablePatch =
+    patchedDependencies[
+      `@opennextjs/cloudflare@${dependency.replace(/^\^/, '')}`
+    ];
+  assert.equal(stablePatch, patch);
+  assert.notEqual(stablePatch, activeAdapterPatch('meet'));
+});
 
 for (const app of consumers) {
   test(`the exact OpenNext patch selects ${app}`, () => {
@@ -176,18 +239,12 @@ for (const workflow of [
   });
 }
 
-const candidateSpec = require('../../apps/parley/package.json').devDependencies[
-  '@opennextjs/cloudflare'
-];
-const parleyCandidatePatch =
-  require('../../package.json').patchedDependencies[
-    `@opennextjs/cloudflare@${candidateSpec}`
-  ];
-test('the pinned candidate patch selects its Lettin and Parley Cloudflare owners', () => {
+const parleyCandidatePatch = activeAdapterPatch('parley');
+test('the shared candidate patch selects its Meet, Lettin and Parley Cloudflare owners', () => {
   for (const app of consumers) {
     assert.equal(
       decide(`${app}-cloudflare.yaml`, [parleyCandidatePatch]).shouldRun,
-      ['lettin', 'parley'].includes(app)
+      true
     );
   }
   assert.equal(
