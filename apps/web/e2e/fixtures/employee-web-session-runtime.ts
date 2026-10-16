@@ -15,7 +15,6 @@ import {
   command,
   faultProxy,
   fixtureClients,
-  resolveNextCli,
   rootId,
   type SessionPhase,
   sessionFailure,
@@ -23,6 +22,7 @@ import {
   sql,
   ssrSession,
   stop,
+  webSessionStartCommand,
 } from './employee-web-session-support';
 
 let startupDiagnostic: StartupDiagnostic | null = null;
@@ -80,19 +80,8 @@ async function main() {
     phase = 'build';
     await build(env);
     phase = 'start';
-    child = command(
-      'node',
-      [
-        resolveNextCli(),
-        'start',
-        'apps/web',
-        '--hostname',
-        '127.0.0.1',
-        '--port',
-        String(port),
-      ],
-      env
-    );
+    const start = webSessionStartCommand(port);
+    child = command('node', start.args, env, start.cwd);
     const endpoint = `${origin}/api/v1/infrastructure/internal-accounts/employees`;
     startupDiagnostic = await waitForSessionReadiness(child, endpoint);
     check(startupDiagnostic.outcome === 'ready');

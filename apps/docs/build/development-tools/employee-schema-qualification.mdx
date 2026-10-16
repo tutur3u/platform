@@ -188,6 +188,17 @@ Bun source exports while Node/Next targets still require emitted workspace files
 the non-build export regression demonstrates that boundary without generating
 artifacts. Only hosted CI may execute this build pipeline.
 
+Start the resolved Next CLI with `cwd=apps/web` and no additional `apps/web`
+argument: `node <resolved-next-cli> start --hostname 127.0.0.1 --port <port>`.
+The TypeScript config loader must resolve config imports in the same app context
+as the build. A bounded Next 16 config-loader reproduction from the source-root
+cwd selected the SEO generator outside the installed source checkout and failed
+with a missing-module error; the app cwd selected the source copy and loaded.
+The disposable config regression exercises this boundary without an app build,
+server or outbound request. Do not repair shared dependencies or infer a hosted
+module identity from startup categories alone; matching hosted acceptance remains
+required after the launcher correction.
+
 Startup readiness still requires exactly HTTP 401 from the anonymous employees
 GET. It makes at most 60 requests (one-second request timeout, 500 ms interval),
 never follows redirects, and discards response bodies without buffering them.
@@ -195,7 +206,14 @@ The receipt retains only a fixed startup outcome and last observation, numeric
 status (0–599), attempt count, child exit/signal and deadline flag. Connection
 failure, request timeout, other request error, unexpected status and child exit
 remain distinct; an unexpected status does not identify an Auth or routing cause.
-No URL, headers, body, credentials or startup output is retained. Loopback controls
+Startup stdout/stderr are immediately drained into separate fixed 16-KiB
+in-memory prefixes. Only fixed allowlisted categories and a truncation boolean
+enter `startupOutput`; raw lines, module names, paths, URLs, headers, bodies and
+credentials are discarded. Classification scans each bounded prefix once.
+A descendant retaining a writer cannot hold cleanup open: 250 ms after the direct
+child exits, remaining capture readers close and truncation is recorded. The
+existing TERM/KILL and outer process-group cleanup still govern owned processes.
+Truncation or an empty category list cannot clear a possible cause. Loopback controls
 exercise these distinctions with disposable children, including the pinned Bun
 runtime; they do not establish readiness of the hosted Web application.
 

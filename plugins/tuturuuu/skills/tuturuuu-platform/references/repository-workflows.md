@@ -169,8 +169,17 @@ For employee Web startup failures, inspect the strict startup diagnostic before
 changing routes or Auth. Readiness remains exactly HTTP 401; retain only fixed
 outcome/observation, bounded status and attempts, child exit/signal and timeout.
 Keep response bodies, headers, URLs and startup stdout/stderr out of receipts.
-Use finite loopback/pinned-runtime controls for classification; only the matching
-hosted source/control run can establish actual startup and Web24 acceptance.
+Startup capture retains only two fixed 16-KiB prefixes and projects fixed categories
+plus truncation; raw output never enters receipts. Bound capture-reader closure
+from direct-child exit, so descendants retaining writers cannot block the existing
+server/proxy cleanup. Preserve the outer process-group owner and TERM/KILL fences.
+Launch the resolved Next CLI from the Web app cwd, without a second `apps/web`
+directory argument. A source-root launch can make Next's TypeScript config loader
+select imports outside the installed source checkout; use the disposable actual
+config-loader regression before changing shared dependencies. Category-only hosted
+receipts do not identify the missing module. Use finite loopback/pinned-runtime
+controls for classification; only the matching hosted source/control run can
+establish actual startup and Web24 acceptance.
 
 Employee schema receipt/process gates execute in the uninstalled control root,
 while dependency-bearing Web support tests execute in installed source. Process

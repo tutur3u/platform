@@ -3,6 +3,7 @@ import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
@@ -17,6 +18,20 @@ export function resolveNextCli(
   packageJson: string | URL = new URL('../../package.json', import.meta.url)
 ) {
   return createRequire(packageJson).resolve('next/dist/bin/next');
+}
+
+export function webSessionStartCommand(port: number) {
+  return {
+    cwd: fileURLToPath(new URL('../../', import.meta.url)),
+    args: [
+      resolveNextCli(),
+      'start',
+      '--hostname',
+      '127.0.0.1',
+      '--port',
+      String(port),
+    ],
+  };
 }
 
 export const Config = z.strictObject({
@@ -236,11 +251,12 @@ export async function stop(child: ChildProcess) {
 export function command(
   command: string,
   args: string[],
-  env: NodeJS.ProcessEnv
+  env: NodeJS.ProcessEnv,
+  cwd = process.cwd()
 ) {
   const startupOutput = startupOutputCapture();
   const child = spawn(command, args, {
-    cwd: process.cwd(),
+    cwd,
     env,
     detached: false,
     stdio: ['ignore', 'pipe', 'pipe'],
