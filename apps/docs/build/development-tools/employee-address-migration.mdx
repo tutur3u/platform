@@ -1,18 +1,17 @@
 ---
-title: 'Employee address migration protocol'
-description: 'Source-only stable identity address migration and missing supplier qualification.'
+title: 'Employee address migration suppliers'
+description: 'Inactive stable identity SQL, Auth and Web suppliers and their qualification boundaries.'
 ---
 
-The source protocol in
-`apps/infrastructure/src/lib/internal-accounts/employee-address-migration.ts`
-models a separate operation from CREATE and RESTORE. It has no installed Web
-route, SQL journal supplier, Auth supplier, environment flag, or UI consumer.
-Its default availability is therefore off. Passing its tests does not make
-legacy-address migration available to operators.
+The portable protocol and suppliers live in
+`packages/utils/src/internal-accounts/employee-address-migration*.ts`.
+Infrastructure retains compatible re-exports. The Web handler is a factory only;
+there is no installed route, runtime environment switch or UI consumer. Default
+availability remains off. Supplier tests do not authorize account execution.
 
 ## Address and identity policy
 
-The proposed operation changes a canonical lowercase managed-subdomain address
+The operation changes a canonical lowercase managed-subdomain address
 to the same localpart at exactly `tuturuuu.com`. It rejects external domains,
 root-address sources, a changed localpart, self-action, unknown ownership,
 conflicting reservations, stale revisions and unverified source identities.
@@ -70,10 +69,63 @@ drift, completed replay and inspection without relaunch.
 This fixture does **not** establish durable persistence, SQL lock/ACL behavior,
 real email change/verification, mailbox delivery, public profile convergence or
 UUID/membership/data preservation in a real project. Those remain supplier gates.
-No additive migration is included because this unit installs no SQL supplier.
-Before runtime binding, implement and apply that supplier in the approved isolated
-full-schema fixture, verify reservation/claim/readback concurrency and failure
-cases, verify real Auth identity/email semantics, generated types, authenticated
-Web permissions/origin handling and the exact app build in CI. Record a scoped
+The additive `20261017010000_employee_address_migrations.sql` supplier implements
+service-only journal transactions with direct table access revoked, durable
+unique target/address reservations and a one-time claim. Its scope is deliberately
+legacy accounts absent from CREATE/RESTORE registries, first revision zero to one.
+It requires existing active source and destination mailboxes and matching active
+domains, with both mailboxes owned exclusively by the target UUID. It does not
+provision mail, change addresses on mailboxes, set onboarding metadata or convert
+the account into the CREATE registry. The retained completed migration is its
+address registry; the existing Auth synchronization trigger owns the public email
+projection. A missing route or registry conflict fails closed.
+
+The immutable snapshot covers Auth password/metadata/ban/role/phone state, the
+public profile, private details except email projections, workspace memberships,
+workspace role assignments/definitions/permissions, platform grants, owned
+mailboxes, mailbox memberships and the two domains. It hashes these protected
+values without returning the snapshot. Saved application rows remain linked to
+the unchanged UUID; this is not an exhaustive snapshot of every application table.
+Migration transactions first take exclusive global address admission; guarded
+ordinary writers take shared admission before statement row locks. This avoids
+the destination-row/advisory inversion without serializing ordinary writers with
+each other. Both original and destination addresses remain reserved permanently.
+Both RPCs and guarded writers require READ COMMITTED isolation. The RPC uses
+NOWAIT for row and authorization-table locks after admission; contention aborts
+without issuing a claim, releasing admission for existing CREATE/RESTORE/provider
+transactions that already hold rows. There is no automatic retry. Authorization dependencies use
+short transaction SHARE locks to fence concurrent
+permission revocation and absent-row grant changes. Qualification must measure
+that lock scope before activation. Reservation triggers also fence Auth users and
+identities, public email profiles, mailboxes, reserved grants and CREATE intents.
+
+The identity fingerprint is lowercase SHA-256 of compact UTF-8 JSON tuples
+`[[identity_id, provider, user_id], ...]`, sorted by canonical UUID `identity_id`.
+GoTrue JSON `identity_id` maps to SQL `auth.identities.id`; JSON `id` is the
+provider-specific ID. SQL explicitly constructs compact JSON under C collation.
+Email fields are excluded so the original identity remains recognizable.
+
+The provider uses the installed supported `auth.admin.updateUserById(id, {email})`
+contract. Its independent verification requires the matching email identity's
+`email_verified=true`, the confirmed timestamp, no pending email and an active
+account. Upstream GoTrue's admin email-only path can set identity verification
+false while retaining the confirmed timestamp. That observation stays pending;
+there is no confirmation override or automatic retry. See the
+[GoTrue admin handler](https://github.com/supabase/auth/blob/master/internal/api/admin.go)
+and [supported JavaScript API](https://supabase.com/docs/reference/javascript/auth-admin-updateuserbyid).
+
+The disposable SQL qualification runner exercises the actual migration on an
+isolated PostgreSQL fixture with explicitly reduced prerequisite tables. It is
+not a full migration-history replay or a real GoTrue provider result. Run it via
+the canonical resource queue:
+
+```sh
+ttr resources run -- node apps/database/scripts/employee-address-migration-qualification.mjs
+```
+
+Before runtime binding, apply the full schema in the approved isolated fixture,
+verify generated types, real GoTrue and Web transport behavior, hosted mail routing,
+and the exact Web/Infrastructure builds in CI. Existing schema CI guards remain
+in force; a reduced fixture never replaces that gate. Record a scoped
 activation/rollback plan separately. CREATE or RESTORE receipts do not qualify
 this migration, and production/provider/SQL actions require separate authority.

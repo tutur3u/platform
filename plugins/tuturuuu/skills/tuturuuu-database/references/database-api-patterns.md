@@ -104,3 +104,14 @@ review prove baseline equivalence. Existing migration history stays immutable.
 - Require authorized full-chain migration/type generation and exact-commit CI
   before promotion; see
   [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
+
+### Legacy address migration suppliers
+
+The inactive migration supplier uses a separate protected journal; do not reuse
+CREATE/RESTORE receipts. Its PostgreSQL fixture runner verifies the new migration
+against reduced prerequisites, not the full schema or GoTrue. GoTrue `identity_id`
+is SQL `auth.identities.id`, while JSON `id` is provider-specific. Verify identity
+email state independently: admin `{email}` can leave `email_verified=false` despite
+a confirmed timestamp. Retain pending inspection; never supply `email_confirm`.
+See `apps/docs/build/development-tools/employee-address-migration.mdx` for the
+canonical fingerprint, lock scope, mail prerequisites and remaining runtime gates.
