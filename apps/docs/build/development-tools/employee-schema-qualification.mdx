@@ -161,6 +161,16 @@ assertion count, fixed phase, server-stop evidence and explicit production=false
 Only a complete ordered inventory, zero child exit, matching source, stopped
 server/proxy and successful schema lifecycle cleanup can set
 `webSessionQualified=true`. Failed or partial cases never establish route proof.
+Failed receipts preserve the first fixed runtime phase and error category separately
+from server-stop and proxy-close outcomes. Both cleanup steps are attempted even
+when the first fails. Build-process diagnostics retain only exit code, a bounded
+signal category and deadline status; child output, messages and stacks remain
+discarded. Cleanup failure cannot replace an earlier failure or qualify a run.
+Historical receipts with only `phase=cleanup` cannot identify the earlier cause.
+The support suite exercises simultaneous runtime/cleanup failures, real child exit
+and deadline handling, and strict redacted receipt projection. These checks do not
+replace hosted Web24 acceptance.
+
 The control runner owns one process group containing the fixture, build and Web
 server. It verifies that the whole group has drained after normal completion,
 failure or timeout; that independent check supplies `processGroupStopped` rather

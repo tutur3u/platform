@@ -121,3 +121,71 @@ test('workflow keeps optional runtime inside owned schema lifecycle and exact so
     /webSessionRuntime\s*&&\s*lifecycleCode === 0\s*&&\s*cleanupSucceeded/
   );
 });
+
+test('first failure and independent cleanup outcomes survive strict redacted projection', () => {
+  const failed = {
+    ...complete,
+    qualified: false,
+    routeAuthorizationProof: false,
+    phase: 'build',
+    cases: [],
+    assertions: 3,
+    serverStopped: false,
+    failure: {
+      phase: 'build',
+      kind: 'process',
+      exitCode: 1,
+      signal: null,
+      timedOut: false,
+    },
+    cleanup: { server: 'failed', proxy: 'closed' },
+  };
+  assert.deepEqual(
+    webSessionReceipt(
+      JSON.stringify({
+        ...failed,
+        failure: { ...failed.failure, message: 'secret' },
+        cleanup: { ...failed.cleanup, stack: 'secret' },
+      })
+    ),
+    failed
+  );
+  assert.throws(() => assertQualifiedWebSession(failed, 0, sourceSha, true));
+  for (const failure of [
+    { ...failed.failure, phase: 'cleanup' },
+    { ...failed.failure, kind: 'private body' },
+    { ...failed.failure, exitCode: 256 },
+    { ...failed.failure, signal: 'private token' },
+    { ...failed.failure, timedOut: 'false' },
+    null,
+  ])
+    assert.throws(() =>
+      webSessionReceipt(JSON.stringify({ ...failed, failure }))
+    );
+  assert.throws(() =>
+    webSessionReceipt(JSON.stringify({ ...failed, serverStopped: true }))
+  );
+  assert.throws(() =>
+    webSessionReceipt(
+      JSON.stringify({
+        ...complete,
+        failure: failed.failure,
+        cleanup: failed.cleanup,
+      })
+    )
+  );
+  assert.deepEqual(
+    webSessionReceipt(
+      JSON.stringify({
+        ...complete,
+        failure: null,
+        cleanup: { server: 'stopped', proxy: 'closed' },
+      })
+    ),
+    {
+      ...complete,
+      failure: null,
+      cleanup: { server: 'stopped', proxy: 'closed' },
+    }
+  );
+});

@@ -34,8 +34,78 @@ export function selectWebSessionRuntime(value, http) {
   return value === 'true';
 }
 
+const phases = [
+  'configuration',
+  'build',
+  'start',
+  'cases',
+  'cleanup',
+  'complete',
+];
+function diagnosticFields(value) {
+  if (value.failure === undefined && value.cleanup === undefined) return {};
+  const failure = value.failure;
+  const cleanup = value.cleanup;
+  if (
+    failure !== null &&
+    (!failure ||
+      typeof failure !== 'object' ||
+      Array.isArray(failure) ||
+      !phases.includes(failure.phase) ||
+      failure.phase === 'complete' ||
+      !['process', 'assertion', 'validation', 'timeout', 'unknown'].includes(
+        failure.kind
+      ) ||
+      !(
+        failure.exitCode === null ||
+        (Number.isInteger(failure.exitCode) &&
+          failure.exitCode >= 0 &&
+          failure.exitCode <= 255)
+      ) ||
+      ![null, 'SIGTERM', 'SIGKILL', 'other'].includes(failure.signal) ||
+      typeof failure.timedOut !== 'boolean' ||
+      failure.phase !== value.phase ||
+      value.qualified)
+  )
+    throw 0;
+  if (
+    cleanup !== null &&
+    (!cleanup ||
+      typeof cleanup !== 'object' ||
+      Array.isArray(cleanup) ||
+      !['stopped', 'failed'].includes(cleanup.server) ||
+      !['closed', 'failed'].includes(cleanup.proxy) ||
+      value.serverStopped !==
+        (cleanup.server === 'stopped' && cleanup.proxy === 'closed'))
+  )
+    throw 0;
+  if (
+    (value.qualified && (failure !== null || cleanup === null)) ||
+    (!value.qualified && failure === null) ||
+    (cleanup === null && value.serverStopped)
+  )
+    throw 0;
+  return {
+    failure:
+      failure === null
+        ? null
+        : {
+            phase: failure.phase,
+            kind: failure.kind,
+            exitCode: failure.exitCode,
+            signal: failure.signal,
+            timedOut: failure.timedOut,
+          },
+    cleanup:
+      cleanup === null
+        ? null
+        : { server: cleanup.server, proxy: cleanup.proxy },
+  };
+}
+
 export function webSessionReceipt(text) {
   let value;
+  let diagnostics;
   try {
     if (typeof text !== 'string' || Buffer.byteLength(text) > 8192) throw 0;
     value = JSON.parse(text);
@@ -65,10 +135,12 @@ export function webSessionReceipt(text) {
       !/^[a-f0-9]{40}$/.test(value.sourceSha)
     )
       throw 0;
+    diagnostics = diagnosticFields(value);
   } catch {
     throw new Error('Web session receipt invalid');
   }
   return {
+    ...diagnostics,
     qualified: value.qualified,
     phase: value.phase,
     sourceSha: value.sourceSha,

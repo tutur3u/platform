@@ -125,3 +125,12 @@ there can fail collection before any support test runs. Verify this boundary
 with the support suite's disposable-tree transform regression; do not add import
 aliases, unrelated dependencies, or weaken runtime assertions to mask it.
 Support-test success remains separate from hosted session qualification.
+
+
+For hosted employee Web-session qualification failures, inspect the strict receipt's
+first `failure` separately from `cleanup.server` and `cleanup.proxy`. A historical
+cleanup-only phase can mask an earlier runtime error; empty cases do not establish
+an auth defect. Preserve the first failure, attempt both cleanup steps, and retain
+only fixed phases/categories, bounded process exit/signal/deadline fields. Run the
+finite Web-session support suite and receipt/process tests before parent-owned
+exact-source hosted qualification; never infer full runtime proof from these tests.

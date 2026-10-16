@@ -104,6 +104,78 @@ export async function ssrSession(
   return [...cookies].map(([name, value]) => `${name}=${value}`).join('; ');
 }
 
+export type SessionPhase =
+  | 'configuration'
+  | 'build'
+  | 'start'
+  | 'cases'
+  | 'cleanup'
+  | 'complete';
+
+class SessionProcessError extends Error {
+  constructor(
+    readonly exitCode: number | null,
+    readonly signal: NodeJS.Signals | null,
+    readonly timedOut: boolean
+  ) {
+    super('Session process failed');
+  }
+}
+
+export function sessionFailure(error: unknown, phase: SessionPhase) {
+  return {
+    phase,
+    kind:
+      error instanceof SessionProcessError
+        ? 'process'
+        : error instanceof assert.AssertionError
+          ? 'assertion'
+          : error instanceof z.ZodError
+            ? 'validation'
+            : error instanceof Error && error.name === 'TimeoutError'
+              ? 'timeout'
+              : 'unknown',
+    exitCode: error instanceof SessionProcessError ? error.exitCode : null,
+    signal:
+      error instanceof SessionProcessError
+        ? error.signal === 'SIGTERM' || error.signal === 'SIGKILL'
+          ? error.signal
+          : error.signal === null
+            ? null
+            : 'other'
+        : null,
+    timedOut: error instanceof SessionProcessError && error.timedOut,
+  };
+}
+
+export async function sessionLifecycle(
+  run: () => Promise<void>,
+  phase: () => SessionPhase,
+  stopServer: () => Promise<void>,
+  closeProxy: () => Promise<void>
+) {
+  let failure: ReturnType<typeof sessionFailure> | null = null;
+  try {
+    await run();
+  } catch (error) {
+    failure = sessionFailure(error, phase());
+  }
+  const cleanup = { server: 'stopped', proxy: 'closed' };
+  try {
+    await stopServer();
+  } catch {
+    cleanup.server = 'failed';
+  }
+  try {
+    await closeProxy();
+  } catch {
+    cleanup.proxy = 'failed';
+  }
+  if (!failure && (cleanup.server === 'failed' || cleanup.proxy === 'failed'))
+    failure = sessionFailure(undefined, 'cleanup');
+  return { failure, cleanup };
+}
+
 export async function stop(child: ChildProcess) {
   if (child.exitCode !== null || child.signalCode !== null) return;
   assert.ok(child.pid);
@@ -138,16 +210,30 @@ export function command(
 
 export async function build(env: NodeJS.ProcessEnv) {
   const child = command('bun', ['run', '--cwd', 'apps/web', 'build'], env);
+  await completeBuild(child);
+}
+
+export async function completeBuild(
+  child: ChildProcess,
+  timeoutMs = 18 * 60_000
+) {
+  let timedOut = false;
   const timer = setTimeout(() => {
-    void stop(child);
-  }, 18 * 60_000);
+    timedOut = true;
+    void stop(child).catch(() => {});
+  }, timeoutMs);
+  let failed = false;
   try {
     const [code, signal] = await once(child, 'close');
-    assert.equal(code, 0);
-    assert.equal(signal, null);
+    if (code !== 0 || signal !== null || timedOut)
+      throw new SessionProcessError(code, signal, timedOut);
+  } catch (error) {
+    failed = true;
+    throw error;
   } finally {
     clearTimeout(timer);
-    await stop(child);
+    if (failed) await stop(child).catch(() => {});
+    else await stop(child);
   }
 }
 

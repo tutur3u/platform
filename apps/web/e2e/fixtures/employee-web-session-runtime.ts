@@ -13,12 +13,18 @@ import {
   fixtureClients,
   resolveNextCli,
   rootId,
+  type SessionPhase,
+  sessionFailure,
+  sessionLifecycle,
   sql,
   ssrSession,
   stop,
 } from './employee-web-session-support';
 
-let phase = 'configuration';
+let phase: SessionPhase = 'configuration';
+let failure: ReturnType<typeof sessionFailure> | null = null;
+let cleanup: Awaited<ReturnType<typeof sessionLifecycle>>['cleanup'] | null =
+  null;
 let sourceSha = '0'.repeat(40);
 let assertions = 0;
 let serverStopped = false;
@@ -39,7 +45,7 @@ async function main() {
   check(config.url === `http://127.0.0.1:${config.basePort + 1}`);
   const proxy = await faultProxy(config);
   let child: ReturnType<typeof command> | undefined;
-  try {
+  async function run() {
     const portServer = createServer();
     portServer.listen(0, '127.0.0.1');
     await once(portServer, 'listening');
@@ -115,7 +121,10 @@ async function main() {
     }
     async function session(email: string) {
       const client = anon();
-      const result = await client.auth.signInWithPassword({ email, password });
+      const result = await client.auth.signInWithPassword({
+        email,
+        password,
+      });
       check(!result.error && result.data.session);
       return {
         client,
@@ -275,7 +284,9 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
     );
     check(
       !(
-        await admin.auth.admin.updateUserById(actor.id, { ban_duration: '24h' })
+        await admin.auth.admin.updateUserById(actor.id, {
+          ban_duration: '24h',
+        })
       ).error
     );
     await denied('inactive-actor', satellite, 403, 'forbidden');
@@ -434,13 +445,21 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
         Date.parse(stillBanned.data.user.banned_until ?? '') > Date.now()
     );
     cases.push('revoked-before-provider');
-  } finally {
-    const priorPhase = phase;
-    phase = 'cleanup';
-    if (child) await stop(child);
-    await proxy.close();
-    serverStopped = true;
-    phase = priorPhase;
+  }
+  const result = await sessionLifecycle(
+    run,
+    () => phase,
+    async () => {
+      if (child) await stop(child);
+    },
+    () => proxy.close()
+  );
+  failure = result.failure;
+  cleanup = result.cleanup;
+  serverStopped = cleanup.server === 'stopped' && cleanup.proxy === 'closed';
+  if (failure) {
+    phase = failure.phase;
+    throw new Error('Session qualification failed');
   }
   phase = 'complete';
 }
@@ -455,11 +474,14 @@ try {
       assertions,
       cases,
       serverStopped,
+      failure,
+      cleanup,
       productionProof: false,
       routeAuthorizationProof: true,
     })
   );
-} catch {
+} catch (error) {
+  failure ??= sessionFailure(error, phase);
   console.log(
     JSON.stringify({
       qualified: false,
@@ -468,6 +490,8 @@ try {
       assertions,
       cases,
       serverStopped,
+      failure,
+      cleanup,
       productionProof: false,
       routeAuthorizationProof: false,
     })

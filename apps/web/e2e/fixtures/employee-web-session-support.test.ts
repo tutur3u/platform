@@ -18,8 +18,11 @@ import { transformWithOxc } from 'vite';
 import { it as test } from 'vitest';
 import {
   command,
+  completeBuild,
   faultProxy,
   resolveNextCli,
+  sessionFailure,
+  sessionLifecycle,
   stop,
 } from './employee-web-session-support';
 
@@ -152,4 +155,115 @@ test('fixture transforms do not resolve unrelated root project presets', async (
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('original failure survives both cleanup failures and both cleanup steps run', async () => {
+  const calls: string[] = [];
+  const result = await sessionLifecycle(
+    async () => {
+      assert.fail('private original assertion');
+    },
+    () => 'build',
+    async () => {
+      calls.push('server');
+      throw new Error('private server failure');
+    },
+    async () => {
+      calls.push('proxy');
+      throw new Error('private proxy failure');
+    }
+  );
+  assert.deepEqual(calls, ['server', 'proxy']);
+  assert.deepEqual(result, {
+    failure: {
+      phase: 'build',
+      kind: 'assertion',
+      exitCode: null,
+      signal: null,
+      timedOut: false,
+    },
+    cleanup: { server: 'failed', proxy: 'failed' },
+  });
+  assert.equal(JSON.stringify(result).includes('private'), false);
+});
+
+test('cleanup-only failure retains cleanup phase and cannot qualify', async () => {
+  const result = await sessionLifecycle(
+    async () => {},
+    () => 'cases',
+    async () => {},
+    async () => {
+      throw new Error('private proxy failure');
+    }
+  );
+  assert.equal(result.failure?.phase, 'cleanup');
+  assert.deepEqual(result.cleanup, { server: 'stopped', proxy: 'failed' });
+});
+
+test('successful lifecycle drains cleanup and reports no failure', async () => {
+  const child = command(
+    'node',
+    ['-e', 'setInterval(() => {}, 1000)'],
+    process.env
+  );
+  await once(child, 'spawn');
+  const result = await sessionLifecycle(
+    async () => {},
+    () => 'start',
+    () => stop(child),
+    async () => {}
+  );
+  assert.deepEqual(result, {
+    failure: null,
+    cleanup: { server: 'stopped', proxy: 'closed' },
+  });
+  assert.ok(child.signalCode !== null || child.exitCode !== null);
+});
+
+test('actual failing process retains fixed build exit diagnostics without output', async () => {
+  const child = command(
+    'node',
+    ['-e', "console.error('private-output');process.exit(7)"],
+    process.env
+  );
+  const result = await sessionLifecycle(
+    () => completeBuild(child),
+    () => 'build',
+    async () => {},
+    async () => {}
+  );
+  assert.deepEqual(result.failure, {
+    phase: 'build',
+    kind: 'process',
+    exitCode: 7,
+    signal: null,
+    timedOut: false,
+  });
+  assert.equal(JSON.stringify(result).includes('private'), false);
+});
+
+test('actual build-process deadline stops the owned child and retains timeout', async () => {
+  const child = command(
+    'node',
+    ['-e', 'setInterval(() => {}, 1000)'],
+    process.env
+  );
+  const result = await sessionLifecycle(
+    () => completeBuild(child, 50),
+    () => 'build',
+    async () => {},
+    async () => {}
+  );
+  assert.equal(result.failure?.kind, 'process');
+  assert.equal(result.failure?.timedOut, true);
+  assert.equal(result.failure?.signal, child.signalCode);
+  assert.equal(result.failure?.exitCode, child.exitCode);
+  assert.ok(child.signalCode !== null || child.exitCode !== null);
+  assert.deepEqual(sessionFailure(new Error('private'), 'configuration'), {
+    phase: 'configuration',
+    kind: 'unknown',
+    exitCode: null,
+    signal: null,
+    timedOut: false,
+  });
 });
