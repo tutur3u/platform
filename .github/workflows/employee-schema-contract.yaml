@@ -21,6 +21,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_web_session:
+        description: Build exact Next Web source and qualify real request/session auth; requires include_http
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -38,13 +43,14 @@ jobs:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 55
     env:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
       EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
+      EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: ${{ inputs.include_web_session }}
     steps:
       - name: Require the enabled schema gate
         env:
@@ -78,6 +84,16 @@ jobs:
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify HTTP qualification receipt gates
         run: node --test apps/database/scripts/employee-http-receipt.test.mjs
+      - name: Verify Web request session receipt gates
+        run: node --test apps/database/scripts/employee-web-session-receipt.test.mjs apps/database/scripts/employee-web-session-process.test.mjs
+      - name: Type check Web request session fixture
+        if: inputs.include_web_session == true
+        working-directory: source
+        run: bunx tsc --noEmit -p apps/web/e2e/fixtures/tsconfig.employee-web-session.json
+      - name: Test Web session fault proxy and owned process cleanup
+        if: inputs.include_web_session == true
+        working-directory: source
+        run: bunx vitest run --config apps/web/e2e/fixtures/vitest.employee-web-session.config.ts
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
       - name: Apply full isolated schema and qualify selected rollback assertions

@@ -1,0 +1,123 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+import {
+  assertQualifiedWebSession,
+  selectWebSessionRuntime,
+  sessionCases,
+  webSessionReceipt,
+} from './employee-web-session-receipt.mjs';
+
+const sourceSha = 'a'.repeat(40);
+const complete = {
+  qualified: true,
+  phase: 'complete',
+  sourceSha,
+  cases: [...sessionCases],
+  assertions: 100,
+  serverStopped: true,
+  productionProof: false,
+  routeAuthorizationProof: true,
+};
+test('session gate is opt-in and requires real HTTP full-schema admission', () => {
+  assert.equal(selectWebSessionRuntime(undefined, false), false);
+  assert.equal(selectWebSessionRuntime('false', true), false);
+  assert.equal(selectWebSessionRuntime('true', true), true);
+  for (const value of ['true', true, '', '1'])
+    assert.throws(() => selectWebSessionRuntime(value, false));
+});
+test('exact ordered boundary inventory, source, cleanup and child exit all gate acceptance', () => {
+  const receipt = webSessionReceipt(JSON.stringify(complete));
+  assert.doesNotThrow(() =>
+    assertQualifiedWebSession(receipt, 0, sourceSha, true)
+  );
+  for (const candidate of [
+    { ...complete, qualified: false, routeAuthorizationProof: false },
+    { ...complete, phase: 'build' },
+    { ...complete, serverStopped: false },
+    { ...complete, cases: sessionCases.slice(1) },
+    { ...complete, cases: [...sessionCases].reverse() },
+    { ...complete, assertions: 0 },
+  ])
+    assert.throws(() =>
+      assertQualifiedWebSession(
+        webSessionReceipt(JSON.stringify(candidate)),
+        0,
+        sourceSha,
+        true
+      )
+    );
+  for (const status of [1, null, undefined, '0'])
+    assert.throws(() =>
+      assertQualifiedWebSession(receipt, status, sourceSha, true)
+    );
+  assert.throws(() =>
+    assertQualifiedWebSession(receipt, 0, 'b'.repeat(40), true)
+  );
+  for (const stopped of [false, undefined, 'true'])
+    assert.throws(() =>
+      assertQualifiedWebSession(receipt, 0, sourceSha, stopped)
+    );
+});
+test('malformed, secret-bearing diagnostics are bounded and projected to fixed fields', () => {
+  for (const candidate of [
+    null,
+    [],
+    {},
+    { ...complete, phase: 'sensitive error' },
+    { ...complete, assertions: 501 },
+    { ...complete, sourceSha: 'main' },
+    { ...complete, productionProof: true },
+    { ...complete, routeAuthorizationProof: false },
+    { ...complete, cases: ['private identity'] },
+    { ...complete, cases: ['create', 'create'] },
+  ])
+    assert.throws(() => webSessionReceipt(JSON.stringify(candidate)));
+  assert.deepEqual(
+    webSessionReceipt(JSON.stringify({ ...complete, secret: 'not retained' })),
+    complete
+  );
+  assert.throws(() => webSessionReceipt('x'.repeat(8193)), {
+    message: 'Web session receipt invalid',
+  });
+  assert.throws(() => webSessionReceipt('private-invalid-json'), {
+    message: 'Web session receipt invalid',
+  });
+});
+test('failed runtime receipt retains observed boundary progress without claiming Web proof', () => {
+  const failed = {
+    ...complete,
+    qualified: false,
+    phase: 'cases',
+    cases: sessionCases.slice(0, 3),
+    routeAuthorizationProof: false,
+  };
+  assert.deepEqual(webSessionReceipt(JSON.stringify(failed)), failed);
+  assert.throws(() => assertQualifiedWebSession(failed, 1, sourceSha));
+});
+test('workflow keeps optional runtime inside owned schema lifecycle and exact source checkout', () => {
+  const workflow = readFileSync(
+    new URL(
+      '../../../.github/workflows/employee-schema-contract.yaml',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  assert.match(
+    workflow,
+    /EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: \$\{\{ inputs.include_web_session \}\}/
+  );
+  assert.match(workflow, /include_web_session:[\s\S]*?default: false/);
+  const runner = readFileSync(
+    new URL('./verify-employee-schema-contract.mjs', import.meta.url),
+    'utf8'
+  );
+  assert.match(
+    runner,
+    /assertQualifiedWebSession\(\s*webSessionQualification,\s*sessionOutput.status,\s*sourceSha,\s*sessionOutput.processGroupStopped\s*\)/
+  );
+  assert.match(
+    runner,
+    /webSessionRuntime\s*&&\s*lifecycleCode === 0\s*&&\s*cleanupSucceeded/
+  );
+});

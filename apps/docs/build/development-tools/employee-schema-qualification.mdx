@@ -113,3 +113,48 @@ qualify the live request authentication boundary, deployed project configuration
 RESTORE, or legacy-address migration. The runtime flag remains off until the
 remaining target and request-boundary checks pass. Source tests and a published
 workflow are not a successful HTTP qualification run.
+
+## Web request and session qualification
+
+`include_web_session=true` additionally requires both `include_http=true` and
+`include_journal=true`. This is an opt-in extension of the same owned disposable
+Supabase lifecycle. It builds the selected `apps/web` source on the hosted CI
+runner and starts the real Next server on loopback. It does not resume the
+retired Docker Web E2E workflow. A missing build prerequisite or failed proxy,
+session, SQL or provider check fails this mode; do not replace it with a mocked
+authorizer or a service-only receipt.
+
+The fixture sends HTTP requests through the real Web proxy and route handlers.
+Its 24 named cases cover absent/malformed credentials, a GoTrue password session
+bearer, Supabase SSR-generated cookies, signed infra app cookies, wrong app,
+expired and tampered app cookies, canonical actor domain, root membership and
+permission revocation, actor ban, GoTrue session sign-out, origin/fetch-site and
+action-header guards, self-action, CREATE, RESTORE and stable-operation replay.
+App cookies are signed by the production token helper using an ephemeral
+fixture secret; this does not qualify the browser login or satellite token
+exchange/refresh flow.
+
+A fixture-only loopback proxy forwards requests to the real owned GoTrue and
+PostgREST services. After a successful provider unban it can discard exactly one
+acknowledgement; Web must return pending/inspect and reconcile the original
+operation without another provider write. A second fault revokes root membership
+after the durable attempt acknowledgement and before provider dispatch. The
+fixture checks that the target remains banned and no provider update occurred.
+These are deliberate network faults around real effects, not mocked auth or RPC
+successes. Existing service-level SQL acknowledgement-loss cases remain separate.
+
+`webSessionQualification` records the selected source SHA, completed case names,
+assertion count, fixed phase, server-stop evidence and explicit production=false.
+Only a complete ordered inventory, zero child exit, matching source, stopped
+server/proxy and successful schema lifecycle cleanup can set
+`webSessionQualified=true`. Failed or partial cases never establish route proof.
+The control runner owns one process group containing the fixture, build and Web
+server. It verifies that the whole group has drained after normal completion,
+failure or timeout; that independent check supplies `processGroupStopped` rather
+than trusting a child-reported cleanup flag.
+Build/server output, passwords, cookies, tokens, emails and raw provider/SQL
+errors are discarded. The stack's always-run cleanup removes fixture identities
+with the disposable database; no real account or deployed activation flag is
+modified. Source receipt tests prove receipt rejection behavior only. Activation
+still requires the parent release owner's review of the actual exact-source CI
+artifact and all independent production gates.
