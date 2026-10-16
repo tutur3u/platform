@@ -90,3 +90,26 @@ staff email/name and employee staff email/name/lifecycle/recovery. The original
 schema identity is not inferred. SQLSTATE must be 23514; unknown pairs or altered
 text remain `other_redacted`; invalid caught evidence emits null. This diagnostic
 does not change SQL, the 25 assertions or the strict 172-assertion success gate.
+
+## Disposable HTTP and Auth qualification
+
+The optional `include_http=true` input requires `include_journal=true`. It keeps
+GoTrue, PostgREST and Kong in the same isolated stack, runs all 301 SQL assertions
+and type generation, then exercises the actual Web journal, RPC adapter and
+provider adapter through loopback HTTP. It creates synthetic identities only in
+that disposable project; the entire owned stack is stopped by the existing
+cleanup path. No production configuration or activation flag is changed.
+
+The 29 checks cover effective service/anonymous RPC access, successful CREATE,
+independent persisted state, stable-UUID replay, payload conflict, a committed
+claim with a lost acknowledgement and a successful Auth create with a lost
+acknowledgement. Neither unknown outcome may trigger a second provider create.
+Credentials enter the child over stdin and never enter its command line or
+artifact. Valid failed receipts retain only a fixed phase and completed check count; malformed child output retains only the parent `http-runtime` diagnostic.
+
+`httpTransportQualified` requires a zero child exit, the complete HTTP receipt, all SQL assertions
+and successful owned cleanup. It is separate from production proof and does not
+qualify the live request authentication boundary, deployed project configuration,
+RESTORE, or legacy-address migration. The runtime flag remains off until the
+remaining target and request-boundary checks pass. Source tests and a published
+workflow are not a successful HTTP qualification run.

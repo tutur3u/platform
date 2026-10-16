@@ -4,6 +4,11 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
+  assertQualifiedHttp,
+  httpQualificationReceipt,
+  selectHttpRuntime,
+} from './employee-http-receipt.mjs';
+import {
   assertPacketTap,
   assertRollbackSource,
   exactSourceSha,
@@ -25,6 +30,10 @@ import {
 
 const root = process.cwd();
 const journal = process.env.EMPLOYEE_SCHEMA_INCLUDE_JOURNAL === 'true';
+const httpRuntime = selectHttpRuntime(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_HTTP,
+  journal
+);
 if (
   !['true', 'false', undefined].includes(
     process.env.EMPLOYEE_SCHEMA_INCLUDE_JOURNAL
@@ -171,17 +180,19 @@ let currentPhase = 'full-schema-snapshot';
 let packetOrdinal = 0;
 let failureDiagnostic = null;
 let generatedTypesSha256 = null;
-const bounded = (command, args, cwd, timeout) => {
+let httpQualification = null;
+const bounded = (command, args, cwd, timeout, input, allowFailure = false) => {
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
     timeout,
     killSignal: 'SIGKILL',
     maxBuffer: currentPhase === 'typegen' ? 16 * 1024 * 1024 : 1024 * 1024,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
+    input,
   });
   // Never print SQL diagnostics, fixture identities, CLI tokens or credentials.
-  if (result.error || result.signal || result.status !== 0) {
+  if (result.error || result.signal || (result.status !== 0 && !allowFailure)) {
     failureDiagnostic ??= schemaFailureDiagnostic(
       currentPhase,
       packetOrdinal,
@@ -189,10 +200,13 @@ const bounded = (command, args, cwd, timeout) => {
     );
     throw new Error('Bounded employee schema command failed');
   }
-  return result.stdout;
+  return allowFailure
+    ? { stdout: result.stdout, status: result.status }
+    : result.stdout;
 };
 const excluded =
-  'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
+  (httpRuntime ? '' : 'gotrue,kong,postgrest,') +
+  'realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
 const runner = async (command, args, cwd) => {
   try {
     if (args.includes('test')) {
@@ -282,6 +296,37 @@ const runner = async (command, args, cwd) => {
           { mode: 0o600 }
         );
       }
+      if (httpRuntime) {
+        packetOrdinal = 0;
+        currentPhase = 'http-runtime';
+        const status = JSON.parse(
+          bounded(
+            binaryPath,
+            ['status', '-o', 'json'],
+            metadata.disposableRoot,
+            10000
+          )
+        );
+        const output = bounded(
+          'bun',
+          [
+            '--conditions=react-server',
+            'apps/web/e2e/fixtures/employee-http-runtime.ts',
+          ],
+          root,
+          180000,
+          JSON.stringify({
+            url: status.API_URL,
+            key: status.SERVICE_ROLE_KEY,
+            anonKey: status.ANON_KEY,
+            projectId: metadata.projectId,
+            basePort: metadata.basePort,
+          }),
+          true
+        );
+        httpQualification = httpQualificationReceipt(output.stdout.trim());
+        assertQualifiedHttp(httpQualification, output.status);
+      }
     } else {
       packetOrdinal = 0;
       currentPhase = args.includes('stop')
@@ -348,6 +393,12 @@ const receipt = {
   }),
   fixtureHashes,
   generatedTypesSha256,
+  httpTransportQualified:
+    httpRuntime &&
+    lifecycleCode === 0 &&
+    cleanupSucceeded &&
+    httpQualification?.qualified === true,
+  httpQualification,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
 writeFileSync(
