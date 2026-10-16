@@ -1,0 +1,72 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: Canvas;
+  color: CanvasText;
+}
+main {
+  width: min(72rem, calc(100% - 2rem));
+  margin: 3rem auto;
+}
+header {
+  max-width: 52rem;
+  margin-bottom: 2rem;
+}
+h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.15;
+}
+a {
+  color: LinkText;
+}
+nav {
+  margin-top: 1rem;
+}
+input,
+select {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin: 0.5rem 0 1rem;
+  font: inherit;
+}
+ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: 1rem;
+}
+li {
+  border: 1px solid CanvasText;
+  border-radius: 0.75rem;
+}
+li a {
+  display: block;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 1.25rem;
+  text-decoration: none;
+}
+li a:hover {
+  text-decoration: underline;
+}
+:focus-visible {
+  outline: 3px solid Highlight;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  li {
+    transition: opacity 150ms;
+  }
+}

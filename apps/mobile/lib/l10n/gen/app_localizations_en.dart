@@ -10667,4 +10667,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesLocalAiDiscard => 'Discard preview';
+
+  @override
+  String get assistantExpandPrompt => 'Expand prompt';
+
+  @override
+  String get assistantMinimizePrompt => 'Minimize prompt';
+
+  @override
+  String assistantSettingInfo(String setting) {
+    return 'About $setting';
+  }
+
+  @override
+  String get assistantPreviewPlay => 'Play preview';
+
+  @override
+  String get assistantPreviewPause => 'Pause preview';
 }

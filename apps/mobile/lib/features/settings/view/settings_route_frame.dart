@@ -1,7 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -12,10 +15,16 @@ class SettingsRouteFrame extends StatelessWidget {
   const SettingsRouteFrame({
     required this.title,
     required this.child,
+    this.customNavigation = false,
+    this.backIcon = Icons.chevron_left,
+    this.backLabel,
     super.key,
   });
   final String title;
   final Widget child;
+  final bool customNavigation;
+  final IconData backIcon;
+  final String? backLabel;
   @override
   Widget build(BuildContext context) => Material(
     color: shad.Theme.of(context).colorScheme.background,
@@ -36,16 +45,41 @@ class SettingsRouteFrame extends StatelessWidget {
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: ShellDockActionButton(
-                      primary: false,
-                      action: ShellActionSpec(
-                        id: 'settings-route-back',
-                        icon: Icons.chevron_left,
-                        tooltip: context.l10n.navBack,
-                        onPressed: () =>
-                            unawaited(Navigator.of(context).maybePop()),
-                      ),
-                    ),
+                    child: customNavigation
+                        ? SizedBox(
+                            width: 264,
+                            child: PersistentShellDock(
+                              content: CustomNavigationBar(
+                                compact: true,
+                                onSelected: (_) =>
+                                    unawaited(Navigator.of(context).maybePop()),
+                                children: [
+                                  shad.NavigationItem(
+                                    key: const ValueKey('settings-route-back'),
+                                    child: Semantics(
+                                      button: true,
+                                      label: backLabel ?? context.l10n.navBack,
+                                      child: Tooltip(
+                                        message:
+                                            backLabel ?? context.l10n.navBack,
+                                        child: Icon(backIcon),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : ShellDockActionButton(
+                            primary: false,
+                            action: ShellActionSpec(
+                              id: 'settings-route-back',
+                              icon: Icons.chevron_left,
+                              tooltip: context.l10n.navBack,
+                              onPressed: () =>
+                                  unawaited(Navigator.of(context).maybePop()),
+                            ),
+                          ),
                   ),
                 ),
               ],

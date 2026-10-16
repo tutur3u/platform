@@ -1,5 +1,9 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { execFileSync, spawnSync } = require('node:child_process');
 const { normalizeReleaseNotes } = require('./normalize-release-notes');
 
 const hash = 'a'.repeat(40);
@@ -115,4 +119,178 @@ test('keeps the proven mobile pair separate across sections and published histor
   const published = `## [1.0.0](https://example.test/old)\n${source}\n${merge}\n`;
   const input = `${header}${source}\n${published}`;
   assert.equal(normalizeReleaseNotes(input, published), input);
+});
+
+const script = path.join(__dirname, 'normalize-release-notes.js');
+const historyLimit = 8 * 1024 * 1024;
+const otherIssue = '([#43](https://github.com/tutur3u/platform/issues/43))';
+
+function historyBytes(size) {
+  const prefix = `# Changelog\n\n${old}* Published café\r\n`;
+  return Buffer.from(
+    `${prefix}${'x'.repeat(size - Buffer.byteLength(prefix) - 1)}\n`
+  );
+}
+
+function historyFixture(t, published) {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'release-history-'));
+  fs.chmodSync(cwd, 0o700);
+  t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+  const git = (...args) =>
+    execFileSync(
+      '/usr/bin/git',
+      [
+        '-c',
+        'user.name=Release history fixture',
+        '-c',
+        'user.email=release-history@example.test',
+        '-c',
+        'commit.gpgsign=false',
+        '-c',
+        'core.hooksPath=/dev/null',
+        '-c',
+        'core.autocrlf=false',
+        ...args,
+      ],
+      { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+  git('init', '--quiet');
+  fs.writeFileSync(path.join(cwd, 'fixture.txt'), 'Private test fixture\n');
+  if (published) fs.writeFileSync(path.join(cwd, 'CHANGELOG.md'), published);
+  git('add', '--', '.');
+  git('commit', '--quiet', '-m', 'Initial published history');
+  const base = git('rev-parse', 'HEAD').trim();
+  const additions = `${header}* Fix ${issue}\n* Fix ${otherIssue}\n\n`;
+  const generated = Buffer.concat([
+    Buffer.from(additions),
+    published || Buffer.alloc(0),
+  ]);
+  fs.writeFileSync(path.join(cwd, 'CHANGELOG.md'), generated);
+  git('add', '--', 'CHANGELOG.md');
+  git('commit', '--quiet', '-m', 'Generated release notes');
+  return { cwd, base, generated, published };
+}
+
+function runNormalizer(fixture, env = process.env) {
+  return spawnSync(process.execPath, [script, fixture.base], {
+    cwd: fixture.cwd,
+    env,
+    encoding: 'utf8',
+    timeout: 15_000,
+    maxBuffer: 64 * 1024,
+    killSignal: 'SIGKILL',
+  });
+}
+
+function assertNormalized(fixture, result) {
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Normalized 1 generated changelog files/);
+  const expected = Buffer.concat([
+    Buffer.from(`${header}* Fix ${issue} ${otherIssue}\n\n`),
+    fixture.published || Buffer.alloc(0),
+  ]);
+  const actual = fs.readFileSync(path.join(fixture.cwd, 'CHANGELOG.md'));
+  assert.deepEqual(actual, expected);
+  if (fixture.published) {
+    assert.deepEqual(
+      actual.subarray(-fixture.published.length),
+      fixture.published
+    );
+  }
+}
+
+function assertHistoryFailure(fixture, result) {
+  assert.ifError(result.error);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Cannot read published history: CHANGELOG.md/);
+  assert.deepEqual(
+    fs.readFileSync(path.join(fixture.cwd, 'CHANGELOG.md')),
+    fixture.generated
+  );
+  assert.doesNotMatch(result.stdout, /published history preserved/);
+}
+
+test('reads a real published Git blob above the old buffer and preserves every byte', (t) => {
+  const fixture = historyFixture(t, historyBytes(1_071_091));
+  assert.throws(
+    () =>
+      execFileSync('git', ['show', `${fixture.base}:CHANGELOG.md`], {
+        cwd: fixture.cwd,
+        encoding: 'utf8',
+      }),
+    (error) => {
+      t.diagnostic(
+        JSON.stringify({
+          code: error.code,
+          signal: error.signal,
+          status: error.status,
+          stdoutBytes: Buffer.byteLength(error.stdout),
+        })
+      );
+      return error.code === 'ENOBUFS' && error.stdout.length > 1024 * 1024;
+    }
+  );
+  assertNormalized(fixture, runNormalizer(fixture));
+});
+
+test('accepts the complete published history at the 8 MiB boundary', (t) => {
+  const fixture = historyFixture(t, historyBytes(historyLimit));
+  assertNormalized(fixture, runNormalizer(fixture));
+});
+
+test('fails closed without rewriting when published history exceeds 8 MiB', (t) => {
+  const fixture = historyFixture(t, historyBytes(historyLimit + 1));
+  assertHistoryFailure(fixture, runNormalizer(fixture));
+});
+
+test('allows an initial changelog only when it is absent from the base tree', (t) => {
+  const fixture = historyFixture(t);
+  assertNormalized(fixture, runNormalizer(fixture));
+});
+
+function controlledGit(fixture, mode) {
+  const bin = path.join(fixture.cwd, 'controlled-bin');
+  fs.mkdirSync(bin);
+  const attempts = path.join(bin, 'history-attempts');
+  const executable = path.join(bin, 'git');
+  fs.writeFileSync(
+    executable,
+    `#!${process.execPath}
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+const args = process.argv.slice(2);
+if (args[0] === 'show' && args[1] === ${JSON.stringify(`${fixture.base}:CHANGELOG.md`)}) {
+  fs.appendFileSync(${JSON.stringify(attempts)}, 'attempt\\n');
+  if (${JSON.stringify(mode)} === 'failure') process.exit(42);
+  process.on('SIGTERM', () => {});
+  setTimeout(() => process.exit(0), 60_000);
+} else {
+  const result = spawnSync('/usr/bin/git', args, { stdio: 'inherit' });
+  process.exit(result.status ?? 1);
+}
+`,
+    { mode: 0o700 }
+  );
+  return {
+    env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}` },
+    attempts,
+  };
+}
+
+test('keeps an existing published changelog fail-closed after a Git read failure without retry', (t) => {
+  const fixture = historyFixture(t, Buffer.from(old));
+  const control = controlledGit(fixture, 'failure');
+  assertHistoryFailure(fixture, runNormalizer(fixture, control.env));
+  assert.equal(fs.readFileSync(control.attempts, 'utf8'), 'attempt\n');
+});
+
+test('kills a stalled published-history read at its 10-second deadline without retry or rewrite', (t) => {
+  const fixture = historyFixture(t, Buffer.from(old));
+  const control = controlledGit(fixture, 'timeout');
+  const started = performance.now();
+  assertHistoryFailure(fixture, runNormalizer(fixture, control.env));
+  const elapsed = performance.now() - started;
+  assert.ok(elapsed >= 10_000 && elapsed < 14_000, `Elapsed ${elapsed} ms`);
+  assert.equal(fs.readFileSync(control.attempts, 'utf8'), 'attempt\n');
 });

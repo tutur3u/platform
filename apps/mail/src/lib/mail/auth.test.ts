@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
+  managedMailbox: vi.fn(),
   getWorkspace: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   resolveUser: vi.fn(),
@@ -26,6 +27,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: mocks.normalizeWorkspaceId,
   verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
 }));
+vi.mock('./mailbox-notification-access', () => ({
+  hasManagedMailMailbox: mocks.managedMailbox,
+}));
 vi.mock('./reviewer-access', () => ({ isManagedMailReviewer: mocks.reviewer }));
 
 import { resolveMailRouteContext } from './auth';
@@ -38,6 +42,7 @@ describe('Mail route reviewer boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createClient.mockResolvedValue({});
+    mocks.managedMailbox.mockResolvedValue(false);
     mocks.resolveUser.mockResolvedValue({
       authError: null,
       user: { id: 'reviewer-1', email: 'app-review-ios@tutur3u.com' },
@@ -76,5 +81,30 @@ describe('Mail route reviewer boundary', () => {
     const result = await resolveMailRouteContext(request, 'personal');
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.response.status).toBe(403);
+  });
+  it('allows only a persisted managed subdomain owner in their own workspace', async () => {
+    mocks.resolveUser.mockResolvedValue({
+      authError: null,
+      user: { id: 'subdomain-owner', email: 'owner@team.tuturuuu.com' },
+    });
+    mocks.reviewer.mockResolvedValue(false);
+    mocks.managedMailbox.mockResolvedValue(true);
+    const result = await resolveMailRouteContext(request, 'personal');
+    expect(result.ok).toBe(true);
+    expect(mocks.managedMailbox).toHaveBeenCalledWith({
+      id: 'subdomain-owner',
+      email: 'owner@team.tuturuuu.com',
+    });
+    mocks.getWorkspace.mockResolvedValue({ joined: true, personal: false });
+    const shared = await resolveMailRouteContext(request, 'shared');
+    expect(shared.ok).toBe(false);
+    if (!shared.ok) expect(shared.response.status).toBe(403);
+  });
+  it('fails closed when configured-domain authority is unavailable', async () => {
+    mocks.managedMailbox.mockRejectedValue(new Error('fixture DB unavailable'));
+    const result = await resolveMailRouteContext(request, 'personal');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(503);
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
   });
 });

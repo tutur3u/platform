@@ -1,6 +1,6 @@
 ---
-title: "Infrastructure"
-description: "Privileged operations, diagnostics, configuration, and hosted scheduler ownership."
+title: 'Infrastructure'
+description: 'Privileged operations, diagnostics, configuration, and hosted scheduler ownership.'
 updatedAt: '2026-10-08'
 ---
 
@@ -58,6 +58,17 @@ project readiness are independently qualified. The fixed transport prototype
 accepts only preflight, finalize and activation-confirm operations. Each request
 owns one terminable child and TLS connection; no shared pool, caller SQL,
 account password or inherited database configuration enters that boundary.
+
+The executor is shared through the server-only
+`@tuturuuu/inventory-core/infrastructure/employee-sql/process` leaf; only this
+leaf's dependency closure is framework-free. Original Infrastructure entry
+points remain compatibility entries, while the canonical raw worker and protocol
+are colocated under `packages/inventory-core/src/lib/infrastructure/employee-sql/`.
+Before binding the Web supplier, verify that the compiled route's `.nft.json`
+trace and resolved `fork()` target load the canonical worker, protocol, and
+runtime dependencies. Relocation requires qualification of the exact source and
+build with refreshed signed attestations, even when raw worker/protocol hashes
+are unchanged.
 
 The parent requires external Ed25519-signed project and execution attestations,
 including the exact worker and protocol hashes. Missing bindings deny before

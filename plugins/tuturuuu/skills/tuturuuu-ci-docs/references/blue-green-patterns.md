@@ -290,3 +290,18 @@ infrastructure dashboard changes.
   that lack stamp/color context.
 - Request explorers may group by normalized pathname, but should preserve raw
   URI/query context for investigation.
+
+## Inactive proactive admission and rollout
+
+The source-only MIRA due-job and plan-review slice in
+`apps/coordination/src/proactive/` has no production binding or ingress. Missing
+paid/consent/context authority denies admission; synthetic metadata plans and
+selected dry-run actions do not prove provider or native DO acceptance. Preserve
+the existing coordination lease cleanup alarm. Before enabling a separate
+namespace, qualify fresh personal ownership, consent/revocation/source versions,
+atomic cross-occurrence budgets, native state/alarm crash recovery and terminal
+stop fences. Require exact-commit CI, staging acceptance, bounded canary costs and
+a root-authorized promotion/rollback plan. Retain unknown acceptance outcomes
+instead of blindly replaying them. See
+`apps/docs/platform/personal-proactive-execution.mdx` for the source census,
+current official cost assumptions, finite checks and held activation gates.

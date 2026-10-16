@@ -535,12 +535,16 @@ void main() {
       expect(find.byIcon(Icons.mic_none_rounded), findsNothing);
       await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
       expect(sends, 1);
-      expect(find.text('Example.pdf'), findsNothing);
+      expect(find.text('Example.pdf'), findsOneWidget);
+      expect(
+        tester.getRect(find.text('Example.pdf')).bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(TextField)).top),
+      );
       await tester.tap(
         find.byKey(const ValueKey('assistant-composer-options')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Example.pdf'), findsOneWidget);
+      expect(find.text('Example.pdf'), findsNWidgets(2));
       final remove = find.widgetWithIcon(IconButton, Icons.close_rounded);
       expect(tester.getSize(remove).height, greaterThanOrEqualTo(44));
       await tester.tap(remove);

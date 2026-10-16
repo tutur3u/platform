@@ -12,11 +12,14 @@ must match its linked `private.mail_domains` row.
 
 ## Flutter Mail
 
-The mobile Apps hub exposes Mail to exact `@tuturuuu.com` accounts and tagged
+The mobile Apps hub exposes Mail to exact `@tuturuuu.com` accounts, genuine
+managed subdomain accounts, and tagged
 reviewer accounts on the routed `@tutur3u.com` domain. Discovery from mobile
 session metadata is only a hint: the Mail API checks the live administrator
 reviewer tag, active account, workspace membership, and personal workspace on
-every request. Reviewers cannot access shared or staff mailboxes. The review
+every request. Subdomain admission additionally requires current confirmed Auth
+and an existing active owned personal mailbox; discovery alone grants no access.
+Reviewers cannot access shared or staff mailboxes. The review
 domain has an active Mail domain row for personal mailbox bootstrap; the exact
 reviewer address is forwarded to the verified QA inbox for login codes. The
 Mail UI defaults to the reviewer's own personal workspace.
@@ -747,59 +750,10 @@ of long messages above that dock.
 
 ## Mobile incoming-mail notifications
 
-Incoming SES and Cloudflare messages create durable `mail_received` push notifications
-when their Inbox label is persisted. Each active mailbox member with an exact
-`@tuturuuu.com` account receives a separate personal notification, independent of
-the currently selected workspace. Shared and internally forwarded copies use the
-membership of the mailbox that actually contains the message. Google Takeout
-imports, outbound mail, quarantined messages, and initial deliveries older than five minutes
-do not enqueue pushes. No notification email is generated.
-
-The `20260923100000_mail_received_push.sql` migration must be applied by the
-operator before delivery is available. It records a durable message/recipient
-receipt even when push preferences suppress sending, so replaying or restoring an
-Inbox label cannot send the same notification again. User-scoped `mail_received`
-push preferences, the general account push switch, and quiet hours apply. The dispatcher rechecks current mailbox
-membership, internal identity, message availability, and preferences before sending.
-
-Delivery uses the existing immediate notification queue and Firebase device
-registry. Mobile push batches can reach registered recipients in every workspace;
-the dispatcher still checks current workspace membership before sending. The
-root-workspace rollout restriction remains for notification email batches. Dedicated
-batches preserve each message's mailbox/thread target. Stale immediate email and push claims recover with bounded retries. Before contacting a provider,
-the dispatcher persists a delivery-in-flight marker. A lost response or acknowledgement
-is flagged as `delivery_outcome_unknown` for operator reconciliation instead of being
-replayed automatically; confirm provider delivery evidence before any manual retry.
-Exhausted or expired batches terminate as failed. Status-write failures are reported,
-not counted as successful delivery. The native payload contains
-`openTarget: mail`, `mailboxId`, `threadId`, `messageId`, and `userId`; opening it
-requires the same signed-in recipient and fresh authorized mailbox access.
-
-To verify delivery, send a new external message to a test mailbox with a registered
-beta device. Check the private Mail receipt, notification delivery log, and immediate
-batch status, then tap the device notification and verify the correct mailbox and
-thread. Repeat a provider event to verify no duplicate, and remove mailbox membership
-before a queued delivery to verify suppression. A successful Firebase response
-alone does not prove device receipt or navigation.
-
-The five-minute recovery timer runs in Cloudflare Cron Control; the authenticated
-web cron endpoint remains available for manual recovery. Explicit immediate
-requests read at most 256 KiB in 4,096 chunks after authentication, with a
-ten-second total read deadline. Stalled/slow bodies return HTTP 408 before any
-database/provider work; chunks do not renew the deadline and cancellation cannot
-extend it. Exceeding byte/chunk bounds returns
-HTTP 413 before JSON parsing or database work. They accept at most
-100 batch IDs and reject oversized or overlong IDs rather
-than silently truncating them. Unrequested batches remain pending; the empty-body
-automatic processor retains complete queue selection to preserve rollout filtering.
-This shared email/push rule preserves complete delivery logs, recipient consent
-and ambiguous-send rules. See the [explicit selection budget](/build/devops/cloudflare-cron-control#explicit-immediate-selection-budget)
-and immediate-selection/request-budget regressions. The timer drains pending batches
-when a database webhook is missed, and recovers failed or abandoned Mail batches
-with at most three retries. A processing lease is considered abandoned after ten
-minutes. Every attempt repeats the same access and preference checks. A persisted
-`delivery_in_flight` marker makes ambiguous crash or provider outcomes terminal
-for manual reconciliation, with no automatic replay.
+See [Incoming Mail notifications](/platform/applications/mail-inbound-notifications)
+for event admission, configured domain authority, recipient preferences,
+physical-event deduplication, push-entry image privacy, recovery and held runtime
+verification gates.
 
 ## Snooze and mute
 
