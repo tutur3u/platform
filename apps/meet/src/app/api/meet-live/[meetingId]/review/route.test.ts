@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 vi.mock('server-only', () => ({}));
@@ -17,16 +17,6 @@ const f = vi.hoisted(() => ({
   fetch: vi.fn(),
   tools: vi.fn(),
   execute: vi.fn(),
-}));
-vi.mock('@opennextjs/cloudflare', () => ({
-  getCloudflareContext: async () => ({
-    env: {
-      MEET_LIVE: {
-        idFromName: (id: string) => id,
-        get: () => ({ fetch: f.fetch }),
-      },
-    },
-  }),
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   callRoomService: vi.fn(async () => ({})),
@@ -60,6 +50,15 @@ const invoke = (approved = true) =>
   );
 beforeEach(() => {
   vi.resetAllMocks();
+  // The Worker context crosses the app/core adapter package boundary.
+  vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
+    env: {
+      MEET_LIVE: {
+        idFromName: (id: string) => id,
+        get: () => ({ fetch: f.fetch }),
+      },
+    },
+  });
   f.fetch.mockImplementation(async (_url, options) => {
     const body = JSON.parse(options.body);
     return Response.json(
@@ -80,6 +79,16 @@ beforeEach(() => {
       execute: f.execute,
     },
   });
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+it('requires a runtime context before claiming or executing a review', async () => {
+  vi.stubGlobal(Symbol.for('__cloudflare-context__'), undefined);
+  await expect(invoke()).rejects.toThrow('getCloudflareContext');
+  expect(f.fetch).not.toHaveBeenCalled();
+  expect(f.tools).not.toHaveBeenCalled();
+  expect(f.execute).not.toHaveBeenCalled();
 });
 it('executes only the claimed arguments under the authenticated requester', async () => {
   await invoke();
