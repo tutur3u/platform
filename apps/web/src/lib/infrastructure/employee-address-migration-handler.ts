@@ -5,6 +5,8 @@ import {
 import {
   type AddressMigrationPorts,
   AddressMigrationRequest,
+  MigrationInspection,
+  MigrationProviderObservation,
 } from '@tuturuuu/utils/internal-accounts/employee-address-migration-contract';
 import { createEmployeeAddressMigrationProvider } from '@tuturuuu/utils/internal-accounts/employee-address-migration-provider';
 import { createEmployeeAddressMigrationJournal } from '@tuturuuu/utils/internal-accounts/employee-address-migration-rpc';
@@ -12,10 +14,11 @@ import { z } from 'zod';
 
 const Body = z
   .strictObject(AddressMigrationRequest.shape)
-  .omit({ actorId: true });
+  .omit({ actorId: true })
+  .refine((value) => value.sourceAddress.endsWith('@xwf.tuturuuu.com'));
 const headers = { 'Cache-Control': 'private, no-store, max-age=0' };
 
-/** Factory only: no route or environment switch is installed by this unit. */
+/** Request-scoped adapter; the runtime gate defaults off independently of CREATE/RESTORE. */
 export function createEmployeeAddressMigrationHandler(deps: {
   authorize(
     request: Request
@@ -40,6 +43,12 @@ export function createEmployeeAddressMigrationHandler(deps: {
     if (request.method !== 'POST')
       return result({ code: 'method_not_allowed' }, 405);
     const credential = request.headers.get('authorization');
+    const site = request.headers.get('sec-fetch-site');
+    if (
+      request.headers.get('x-tuturuuu-account-action') !== '1' ||
+      (site !== null && site !== 'same-origin')
+    )
+      return result({ code: 'forbidden' }, 403);
     if (
       (request.headers.get('origin') !== null &&
         request.headers.get('origin') !== deps.trustedOrigin) ||
@@ -48,7 +57,13 @@ export function createEmployeeAddressMigrationHandler(deps: {
       (credential !== null && !/^Bearer \S+$/i.test(credential))
     )
       return result({ code: 'forbidden' }, 403);
-    if (!request.headers.get('content-type')?.startsWith('application/json'))
+    if (
+      request.headers
+        .get('content-type')
+        ?.split(';')[0]
+        ?.trim()
+        .toLowerCase() !== 'application/json'
+    )
       return result({ code: 'invalid_input' }, 400);
     try {
       const actor = await deps.authorize(request);
@@ -113,6 +128,36 @@ export function createEmployeeAddressMigrationHandler(deps: {
         }),
         newAttemptId: deps.newAttemptId,
       };
+      if (action === 'inspect') {
+        const observed = MigrationInspection.parse(
+          await ports.journal.inspect(tuple)
+        );
+        if (!observed.authorized)
+          return result({ status: 'denied', code: 'forbidden' }, 403);
+        if (!observed.record) {
+          if (
+            observed.revision !== tuple.expectedRevision ||
+            !observed.sourceVerified ||
+            !['available', 'same_identity'].includes(observed.addressOwnership)
+          )
+            return result({ status: 'denied', code: 'not_ready' }, 409);
+          const source = MigrationProviderObservation.parse(
+            await ports.provider.read(tuple.userId)
+          );
+          if (!(await authorize(tuple.actorId)))
+            return result({ code: 'forbidden' }, 403);
+          if (
+            source.userId !== tuple.userId ||
+            source.email !== tuple.sourceAddress ||
+            !source.emailVerified ||
+            !source.active ||
+            source.providerIdentityFingerprint !==
+              observed.providerIdentityFingerprint
+          )
+            return result({ status: 'denied', code: 'not_ready' }, 409);
+          return result({ status: 'ready', ...parsed.data }, 200);
+        }
+      }
       const execute =
         action === 'migrate'
           ? migrateEmployeeAddress
