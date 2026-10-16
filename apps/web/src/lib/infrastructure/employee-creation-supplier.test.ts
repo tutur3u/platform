@@ -127,6 +127,44 @@ function fixture() {
   };
 }
 describe('journal phase supplier', () => {
+  it('denies effects when readiness cannot be read', async () => {
+    const f = fixture();
+    f.readiness.mockRejectedValue(new Error('unavailable'));
+    expect(await f.supplier.createOnce(operation, password)).toEqual({
+      kind: 'denied',
+    });
+    expect(f.consume).not.toHaveBeenCalled();
+    expect(f.create).not.toHaveBeenCalled();
+  });
+  it('retains unknown when provider inspection loses its response', async () => {
+    const f = fixture();
+    f.read.mockRejectedValue(new Error('connection lost'));
+    expect(await f.supplier.inspect(operation)).toEqual({
+      kind: 'provider_unknown',
+    });
+    expect(await f.supplier.finalize(operation)).toEqual({ kind: 'denied' });
+    expect(f.execute).not.toHaveBeenCalled();
+    expect(f.update).not.toHaveBeenCalled();
+  });
+  it('does not publish SQL confirmation after an ambiguous activation', async () => {
+    const f = fixture();
+    f.update.mockRejectedValue(new Error('activation response lost'));
+    expect(
+      await f.supplier.activate(operation, { operation, receipt })
+    ).toEqual({ kind: 'provider_unknown' });
+    expect(f.update).toHaveBeenCalledTimes(1);
+    expect(f.execute).not.toHaveBeenCalled();
+    expect(f.create).not.toHaveBeenCalled();
+  });
+  it('does not activate a provider identity with an invalid ban timestamp', async () => {
+    const f = fixture();
+    f.setUser({ ...banned, banned_until: 'invalid' });
+    expect(
+      await f.supplier.activate(operation, { operation, receipt })
+    ).toEqual({ kind: 'provider_unknown' });
+    expect(f.update).not.toHaveBeenCalled();
+    expect(f.execute).not.toHaveBeenCalled();
+  });
   it('maps exact provider conflicts; other provider errors remain unknown', async () => {
     for (const code of [
       'email_exists',
