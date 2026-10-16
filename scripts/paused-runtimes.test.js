@@ -87,6 +87,10 @@ test('local docs uses a pinned CLI, bounded ports, and no container command', ()
   const plan = command(['--port', '3333', '--print-command'], '24.19.0');
   assert.match(plan.args[1], /^mintlify@\d+\.\d+\.\d+$/);
   assert.deepEqual(plan.args.slice(2), ['dev', '--port', '3333']);
+  assert.equal(
+    plan.executable,
+    process.platform === 'win32' ? 'npx.cmd' : 'npx'
+  );
   assert.equal(plan.cwd, path.join(root, 'apps/docs'));
   assert.equal(command(['broken-links']).args.at(-1), 'broken-links');
   assert.deepEqual(command([], '25.0.0').args.slice(0, 4), [
@@ -130,37 +134,50 @@ test('Release Please does not write versions or changelogs to inactive apps', ()
   assert.equal(config.packages['apps/tanstack-web'], undefined);
 });
 
-test('docs launcher propagates failure and signals without retrying validation', () => {
-  const { tmpdir } = require('node:os');
-  const directory = fs.mkdtempSync(path.join(tmpdir(), 'docs-launcher-exit-'));
-  const marker = path.join(directory, 'attempts');
-  try {
-    for (const outcome of ['success', 'failure', 'signal']) {
-      fs.writeFileSync(
-        path.join(directory, 'npx'),
-        `#!${process.execPath}\nrequire('node:fs').appendFileSync(${JSON.stringify(marker)}, 'attempt\\n');${outcome === 'signal' ? "process.kill(process.pid,'SIGTERM');" : `process.exit(${outcome === 'success' ? 0 : 7});`}`,
-        { mode: 0o755 }
-      );
-      const result = spawnSync(
-        process.execPath,
-        [path.join(root, 'scripts/local-docs.js'), 'validate'],
-        {
-          env: {
-            ...process.env,
-            PATH: directory + path.delimiter + process.env.PATH,
-          },
-          encoding: 'utf8',
-          timeout: 5000,
-        }
-      );
-      assert.equal(
-        result.status,
-        outcome === 'success' ? 0 : outcome === 'failure' ? 7 : 1
-      );
-      assert.equal(fs.readFileSync(marker, 'utf8'), 'attempt\n');
-      fs.unlinkSync(marker);
+const docsProcessFixtureOptions = {
+  skip: ['linux', 'darwin'].includes(process.platform)
+    ? false
+    : 'Process fixture requires Linux/macOS shebang execution; command plans remain covered.',
+};
+test(
+  'Linux/macOS docs launcher propagates exits without network or retries',
+  docsProcessFixtureOptions,
+  () => {
+    assert.equal(command(['validate']).executable, 'npx');
+    const { tmpdir } = require('node:os');
+    const directory = fs.mkdtempSync(
+      path.join(tmpdir(), 'docs-launcher-exit-')
+    );
+    const marker = path.join(directory, 'attempts');
+    try {
+      for (const outcome of ['success', 'failure', 'signal']) {
+        fs.writeFileSync(
+          path.join(directory, 'npx'),
+          `#!${process.execPath}\nrequire('node:fs').appendFileSync(${JSON.stringify(marker)}, 'attempt\\n');${outcome === 'signal' ? "process.kill(process.pid,'SIGTERM');" : `process.exit(${outcome === 'success' ? 0 : 7});`}`,
+          { mode: 0o755 }
+        );
+        fs.accessSync(path.join(directory, 'npx'), fs.constants.X_OK);
+        const result = spawnSync(
+          process.execPath,
+          [path.join(root, 'scripts/local-docs.js'), 'validate'],
+          {
+            env: {
+              ...process.env,
+              PATH: directory + path.delimiter + process.env.PATH,
+            },
+            encoding: 'utf8',
+            timeout: 5000,
+          }
+        );
+        assert.equal(
+          result.status,
+          outcome === 'success' ? 0 : outcome === 'failure' ? 7 : 1
+        );
+        assert.equal(fs.readFileSync(marker, 'utf8'), 'attempt\n');
+        fs.unlinkSync(marker);
+      }
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
     }
-  } finally {
-    fs.rmSync(directory, { recursive: true, force: true });
   }
-});
+);
