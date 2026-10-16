@@ -87,7 +87,7 @@ test(
   buildControlOptions,
   async () => {
     const fs = await import('node:fs');
-    const { mkdtempSync, readFileSync, existsSync, rmSync } = fs;
+    const { copyFileSync, mkdtempSync, readFileSync, existsSync, rmSync } = fs;
     const { tmpdir } = await import('node:os');
     const path = await import('node:path');
     const { randomUUID } = await import('node:crypto');
@@ -95,13 +95,14 @@ test(
     const { execFileSync } = await import('node:child_process');
     const bun = execFileSync(
       'bun',
-      ['-e', 'process.stdout.write(process.execPath)'],
+      ['--no-install', '-e', 'process.stdout.write(process.execPath)'],
       { encoding: 'utf8', timeout: 5000 }
     ).trim();
-    const support = new URL(
-      '../../web/e2e/fixtures/employee-web-session-support.ts',
-      import.meta.url
-    ).href;
+    const moduleFiles = [
+      'employee-web-session-process.mjs',
+      'employee-web-session-build-diagnostic.mjs',
+    ];
+    const { pathToFileURL } = await import('node:url');
     for (const mode of [
       'leader-exit',
       'inner-timeout',
@@ -111,17 +112,34 @@ test(
       const directory = mkdtempSync(
         path.join(tmpdir(), 'employee-owned-build-')
       );
+      for (const file of moduleFiles) {
+        copyFileSync(
+          new URL(file, import.meta.url),
+          path.join(directory, file)
+        );
+        assert.ok(
+          readFileSync(path.join(directory, file)).equals(
+            readFileSync(new URL(file, import.meta.url))
+          )
+        );
+      }
+      assert.equal(existsSync(path.join(directory, 'node_modules')), false);
+      const helper = pathToFileURL(path.join(directory, moduleFiles[0])).href;
       const marker = path.join(directory, 'ready.json'),
         token = randomUUID();
       const descendant = `process.on('SIGTERM',()=>{});const server=require('node:net').createServer();server.listen(0,'127.0.0.1',()=>require('node:fs').writeFileSync(${JSON.stringify(marker)},JSON.stringify({pid:process.pid,port:server.address().port,token:${JSON.stringify(token)}})));`;
       const leader = `const c=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{stdio:['ignore',1,2]});c.unref();${mode === 'leader-exit' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(marker)})){clearInterval(timer);process.exit(7)}},10);` : "process.on('SIGTERM',()=>{});setInterval(()=>{},1000);"}`;
-      const worker = `import {completeBuild,sessionFailure} from ${JSON.stringify(support)};const job=completeBuild('node',['-e',${JSON.stringify(leader)}],{...process.env,PATH:${JSON.stringify(path.dirname(process.execPath))}+':'+process.env.PATH},${mode === 'inner-timeout' ? 300 : 10000});${mode === 'fixture-crash' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(marker)})){clearInterval(timer);process.kill(process.pid,'SIGKILL')}},10);` : ''}try{await job;console.log('unexpected-success')}catch(error){console.log(JSON.stringify({exitCode:sessionFailure(error,'build').exitCode,timedOut:sessionFailure(error,'build').timedOut}))}`;
+      const worker = `import {runOwnedBuildProcess} from ${JSON.stringify(helper)};const job=runOwnedBuildProcess('node',['-e',${JSON.stringify(leader)}],{...process.env,PATH:${JSON.stringify(path.dirname(process.execPath))}+':'+process.env.PATH},${mode === 'inner-timeout' ? 300 : 10000});${mode === 'fixture-crash' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(marker)})){clearInterval(timer);process.kill(process.pid,'SIGKILL')}},10);` : ''}try{const result=await job;console.log(JSON.stringify({exitCode:result.status,timedOut:result.timedOut}))}catch{console.log(JSON.stringify({controlFailure:'owned-build'}));process.exitCode=1}`;
       try {
         const started = Date.now();
-        const result = await runOwnedSessionProcess(bun, ['-e', worker], {
-          cwd: process.cwd(),
-          timeoutMs: mode === 'outer-timeout' ? 1000 : 10000,
-        });
+        const result = await runOwnedSessionProcess(
+          bun,
+          ['--no-install', '-e', worker],
+          {
+            cwd: directory,
+            timeoutMs: mode === 'outer-timeout' ? 1000 : 10000,
+          }
+        );
         assert.ok(existsSync(marker), JSON.stringify({ mode, ...result }));
         const identity = JSON.parse(readFileSync(marker, 'utf8'));
         assert.equal(identity.token, token);
@@ -158,6 +176,12 @@ test(
           );
         });
         assert.throws(() => process.kill(identity.pid, 0), { code: 'ESRCH' });
+        for (const file of moduleFiles)
+          assert.ok(
+            readFileSync(path.join(directory, file)).equals(
+              readFileSync(new URL(file, import.meta.url))
+            )
+          );
       } finally {
         rmSync(directory, { recursive: true, force: true });
       }

@@ -171,3 +171,10 @@ outcome/observation, bounded status and attempts, child exit/signal and timeout.
 Keep response bodies, headers, URLs and startup stdout/stderr out of receipts.
 Use finite loopback/pinned-runtime controls for classification; only the matching
 hosted source/control run can establish actual startup and Web24 acceptance.
+
+Employee schema receipt/process gates execute in the uninstalled control root,
+while dependency-bearing Web support tests execute in installed source. Process
+controls must import the canonical dependency-free owner directly, use byte-checked
+isolated copies and Bun --no-install, and retain actual marker/descendant cleanup
+assertions. Diagnose root/import boundaries before attributing a control timeout
+to IPC or Web startup; a missing later artifact is secondary when the gate failed.

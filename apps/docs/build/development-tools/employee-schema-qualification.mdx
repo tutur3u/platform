@@ -212,6 +212,15 @@ The support suite exercises simultaneous runtime/cleanup failures, real child ex
 and deadline handling, and strict redacted receipt projection. These checks do not
 replace hosted Web24 acceptance.
 
+Receipt/process gates run from the uninstalled immutable control checkout; only
+`source/` has workspace dependencies installed. Keep process controls on the
+canonical dependency-free `.mjs` owner rather than importing the Web TypeScript
+support module there. Dependency-bearing adapter tests run in the installed
+source checkout. Process controls copy byte-checked canonical modules into a
+fresh dependency-free directory, use Bun `--no-install`, and retain all marker,
+exit, port/PID and timeout assertions. A control import failure can precede every
+build/database/session stage; absent later artifacts do not identify a Web cause.
+
 The control runner owns the fixture process group and launches each requested
 build group itself over a private IPC channel. The fixture cannot detach an
 unregistered build: missing owner IPC fails closed. Build exit triggers whole-group
