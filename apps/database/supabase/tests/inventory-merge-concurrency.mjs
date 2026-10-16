@@ -50,6 +50,36 @@ const deadlineWait = async (query) => {
 };
 const apply = (sql, source = 50) =>
   sql`select private.apply_inventory_merge(${id(10)},'product',${id(source)},${id(51)},private.preview_inventory_merge(${id(10)},'product',${id(source)},${id(51)})->>'version','target','target',${id(1)}) result`;
+// Only this disposable fixture's writer backend is observed. pg_locks does not
+// distinguish session-level from transaction-level advisory lock ownership.
+async function reportWriterLocks(sql, count) {
+  const rows = await sql`
+    select pg_backend_pid() pid,
+      pg_current_xact_id_if_assigned()::text transaction_id,
+      coalesce((
+        select json_agg(observed) from (
+          select classid, objid, objsubid, mode, granted, virtualtransaction,
+            ((classid::bigint << 32) | objid::bigint)::text key64,
+            case when objsubid=1 and classid=0 and objid=900302020
+              then 'test-barrier' else 'other-advisory' end label
+          from pg_locks
+          where pid=pg_backend_pid() and locktype='advisory' and granted
+          order by classid, objid, objsubid, mode limit 33
+        ) observed
+      ), '[]'::json) locks`;
+  const [{ pid, transaction_id, locks }] = rows;
+  console.log(
+    '# inventory-writer-locks ' +
+      JSON.stringify({
+        phase: 'zero-lock-failure',
+        observed_count: Number(count),
+        pid,
+        transaction_id,
+        truncated: locks.length > 32,
+        locks: locks.slice(0, 32),
+      })
+  );
+}
 console.log('1..22');
 try {
   await control.unsafe(
@@ -206,7 +236,11 @@ try {
     await sql`delete from public.workspaces where id=${id(12)}`;
     const [{ count }] =
       await sql`select count(*) from pg_locks where pid=pg_backend_pid() and locktype='advisory' and granted`;
-    assert.equal(Number(count), 0);
+    try {
+      if (Number(count) !== 0) await reportWriterLocks(sql, count);
+    } finally {
+      assert.equal(Number(count), 0);
+    }
     ok('actual gone-workspace cascade acquires no identity namespace');
     assert.equal(
       (
