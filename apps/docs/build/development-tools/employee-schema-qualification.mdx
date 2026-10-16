@@ -113,3 +113,33 @@ qualify the live request authentication boundary, deployed project configuration
 RESTORE, or legacy-address migration. The runtime flag remains off until the
 remaining target and request-boundary checks pass. Source tests and a published
 workflow are not a successful HTTP qualification run.
+
+### RESTORE transport profile
+
+`include_restore=true` additionally requires both `include_http=true` and
+`include_journal=true`. It extends the same disposable project, exact-source
+checkout, bounded child and always-run cleanup. The default 301 SQL and 29 CREATE
+HTTP checks retain their counts. RESTORE adds 66 checks in seven fixed phases:
+RPC permissions (18), success/replay/conflict (11), lost committed reservation,
+attempt and completion acknowledgements (8 each), lost successful GoTrue unban
+acknowledgement (8), and revoked SQL actor (5). The receipt parser requires every
+phase count and a zero child exit before cleanup can qualify RESTORE transport.
+
+The fixture creates managed employees through the real CREATE journal, bans them
+through disposable GoTrue, and restores the same user UUID through the retained
+RESTORE orchestration and five-function PostgREST adapter. Separate HTTP reads
+verify committed operation phase, revision and provider identity. Anonymous and
+signed-in outsider credentials cannot execute any of the five RPCs; a service
+caller naming an outsider or freshly banned administrator is also denied by SQL.
+Lost-acknowledgement injection discards responses only after real commits. Pending
+RESTORE and reconciliation retain their operation UUID and never repeat an unban;
+completed reconciliation replays the receipt without advancing revision again.
+
+`restoreTransportQualified` is independent of `httpTransportQualified`. It requires
+the complete selected SQL/HTTP/RESTORE profile, successful lifecycle and owned
+cleanup. This profile calls the retained service orchestration directly; it does
+not qualify Web request authentication, satellite sessions, session revocation,
+production configuration, hosted races or legacy-address migration. Real GoTrue
+transport evidence is distinct from SQL fixture evidence. The RESTORE runtime
+flag remains OFF. Dispatch only from a reviewed control revision with the exact
+reviewed source commit; a published fixture is not a successful qualification run.
