@@ -6,6 +6,7 @@ export * from './infrastructure/auth-recovery';
 export * from './infrastructure/blocked-ips';
 export * from './infrastructure/cron';
 export * from './infrastructure/desktop';
+export * from './infrastructure/employee-address-migration';
 export type {
   CreateInternalEmployeePayload as CreateJournaledInternalEmployeePayload,
   CreateInternalEmployeeResponse as CreateJournaledInternalEmployeeResponse,
