@@ -149,7 +149,7 @@ void main() {
             ? selectedOffset - (390 - 52 - 3)
             : selectedOffset + dayWidth - 3,
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.text('Show more'), findsNothing);
       expect(_barHeight(tester), lessThan(30));
       expect(find.text('edge0'), findsNothing);
@@ -216,11 +216,11 @@ void main() {
     final offset = allDay.offset;
     final dayWidth = _card(tester, 'visible0').width + 8;
     allDay.jumpTo(offset + 2.5 * dayWidth);
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('buffer0'), findsOneWidget);
     final partialHeight = _barHeight(tester);
     allDay.jumpTo(offset + 2 * dayWidth);
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('buffer0'), findsNothing);
     expect(_barHeight(tester), lessThan(30));
     expect(find.text('Show less'), findsNothing);

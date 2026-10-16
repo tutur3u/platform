@@ -8923,6 +8923,24 @@
     "toasts": {
       "update_failed": "The internal account could not be updated.",
       "updated": "Internal account updated."
+    },
+    "creation": {
+      "open": "Create employee account",
+      "title": "Create an employee account",
+      "description": "Create a managed staff identity after server checks confirm access and readiness.",
+      "unavailable": "Employee account creation is not available yet. No account will be created from this form.",
+      "email": "Staff email",
+      "email_help": "Use an exact @tuturuuu.com staff address. Directory subdomains do not grant staff privileges.",
+      "name": "Full name",
+      "password": "Temporary password",
+      "password_help": "Use 12–72 characters. The password stays only in this form and is cleared when it closes.",
+      "denied": "The request was refused before creation. Verify access and availability before submitting again.",
+      "created": "The server confirmed the employee account was created. Refresh the directory to inspect it.",
+      "inspect": "The outcome needs inspection. Refresh the directory and ask an administrator to reconcile this request. Do not create this account again.",
+      "refresh": "Refresh directory",
+      "close": "Close",
+      "submitting": "Submitting…",
+      "submit": "Create account"
     }
   },
   "inventory": {
