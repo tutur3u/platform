@@ -99,11 +99,11 @@ jobs:
       - name: Type check Web request session fixture
         if: inputs.include_web_session == true
         working-directory: source
-        run: bunx tsc --noEmit -p apps/web/e2e/fixtures/tsconfig.employee-web-session.json
+        run: bun x tsc --noEmit -p apps/web/e2e/fixtures/tsconfig.employee-web-session.json
       - name: Test Web session fault proxy and owned process cleanup
         if: inputs.include_web_session == true
         working-directory: source
-        run: bunx vitest run --config apps/web/e2e/fixtures/vitest.employee-web-session.config.ts
+        run: bun x vitest run --config apps/web/e2e/fixtures/vitest.employee-web-session.config.ts
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
       - name: Apply full isolated schema and qualify selected rollback assertions
