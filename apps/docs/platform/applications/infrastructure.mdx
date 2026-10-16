@@ -97,8 +97,7 @@ provider work. Unmanaged legacy addresses remain an adoption/migration concern.
 The portable restoration boundary lives under
 `packages/utils/src/internal-accounts`, with Infrastructure compatibility exports.
 
-This GET path does not enable CREATE, RESTORE writes, legacy-address migration or
-an Infrastructure action dialog. No runtime flag is changed. Route and transport
+This GET path does not enable CREATE, RESTORE writes or legacy-address migration. No runtime flag is changed. Route and transport
 regressions live beside the Web implementation, while the existing Infrastructure
 restoration suites cover compatibility. Exact-source CI builds, deployed request
 authentication and target-project SQL qualification remain separate release gates.
@@ -108,8 +107,8 @@ authentication and target-project SQL qualification remain separate release gate
 Web owns `POST /api/v1/infrastructure/internal-accounts/employees/:userId/restore`
 and the sibling `/reconcile` route. `EMPLOYEE_RESTORATION_RUNTIME_ENABLED`
 defaults to disabled and is independent of the CREATE gate. Both routes remain
-unavailable while this gate is absent. No console restore action is enabled by
-this source change; legacy-domain address migration remains a separate flow.
+unavailable while this gate is absent. The Infrastructure console consumes this contract through the managed-access
+dialog below; legacy-domain address migration remains a separate flow.
 
 The routes reuse the portable restoration HTTP/orchestration helpers, with
 Infrastructure compatibility exports. The server supplies the actor and provider;
@@ -139,6 +138,48 @@ and actor revocation behavior with real Auth, and the exact-source Web and
 Infrastructure CI builds. Production migration completion and authorized
 activation remain release-owner gates; neither GET inspection nor CREATE
 qualification establishes RESTORE delivery.
+
+### Managed-access console
+
+The Infrastructure account directory exposes **Inspect managed access** for
+other accounts. The administrator explicitly reads current state; only an active,
+managed, mailbox-ready canonical account with a confirmed provider ban and a
+RESTORE next action offers restoration. Creation recovery, adoption, conflicting
+or unconfirmed provider state and legacy migration have explanatory states
+without a restore button. This dialog never renames an account or implements
+stable-UUID legacy-domain migration.
+
+Confirmation requires the exact inspected account email. Every submit performs
+another uncached inspection and compares revision and operation before dispatch.
+The portable consumer retains the original expected revision and server operation
+UUID across pending results and dialog close/reopen. A lost POST response blocks
+another RESTORE in that dialog lifetime, even if a subsequent read has no operation.
+Only the matching persisted operation can be reconciled; reconciliation never
+replays the provider mutation. No client-generated replacement UUID or automatic
+POST retry is used. State is private and ephemeral; a new page lifetime recovers
+operations from the authorized persisted inspection rather than browser storage.
+
+RESTORE remains disabled by default at the Web endpoint. Inspection does not
+advertise write availability. A capability-unavailable response therefore locks
+writes for the current dialog lifetime while preserving read-only inspection and
+any retained uncertain operation; it does not establish account absence. Session
+and permission denial retires actions until the page is reauthorized. Client
+actor lifetime checks surround each awaited stage, while the endpoint remains
+authoritative for current actor, root membership and permission.
+
+A successful POST alone is not displayed as restored. The console requires a
+separate GET showing the matching completed operation, original revision plus
+one, managed active registry, ready mailbox and confirmed active provider. Missing,
+malformed, mismatched or failed readbacks preserve uncertainty. Directory status
+and private management state remain separate observations.
+
+`employee-restoration-consumer.test.ts` covers revision/UUID fences, explicit
+reconciliation, unavailable capability, duplicate admission and revoked actors.
+`employee-restoration-dialog.test.tsx` covers rendered English/Vietnamese controls,
+exact confirmation, pending close/reopen, independent readback and actor replacement.
+These are synthetic source regressions. Exact-commit Infrastructure/internal-API
+CI and authenticated deployed session/provider/SQL acceptance remain separate;
+no runtime flags, account activation or migration are performed by the UI change.
 
 ### Fixed child-worker prototype
 
