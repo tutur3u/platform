@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
+import { AddressMigrationDialog } from './address-migration-dialog';
 import { InternalAccountsClient } from './internal-accounts-client';
 
 const MANAGE_INTERNAL_ACCOUNTS_PERMISSION =
@@ -62,6 +63,7 @@ export default async function InternalAccountsPage({ params }: Props) {
       </Alert>
 
       <Separator className="my-4" />
+      <AddressMigrationDialog actorId={user.id} workspaceId={wsId} />
       <InternalAccountsClient />
     </>
   );
