@@ -24,7 +24,7 @@ export const normalizationMigration =
   'apps/database/supabase/migrations/20261014001000_normalize_employee_inbound_mailbox.sql';
 export const normalizationPins = Object.freeze({
   migration: '9f7edf8ff87dc2e77ec5313961a8782261c4b93e4d073bed7bfa02e72492b142',
-  fixture: '97149cfe92fbef535ef2c9d19a494cc77c4d096ded966db5213a456b4f3f1308',
+  fixture: '3e5075be4b89b99fb1f53c6f49b3432d8f698c9123f9dbe400c5dc5a2b2bd39c',
 });
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 const boundedInteger = (value, min, max = Number.MAX_SAFE_INTEGER) =>
