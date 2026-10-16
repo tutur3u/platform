@@ -26,20 +26,21 @@ function command(argv = [], nodeVersion = process.versions.node) {
     } else throw new Error(`Unknown docs argument: ${arg}`);
   }
   // The local/CI toolchain pin is independent of retained Docker configuration.
-  const { version } = JSON.parse(
+  const { version, nodeVersion: docsNodeVersion } = JSON.parse(
     fs.readFileSync(path.join(ROOT, 'apps/docs/mintlify-version.json'), 'utf8')
   );
   if (!/^\d+\.\d+\.\d+$/.test(version ?? ''))
     throw new Error('Invalid Mintlify CLI version.');
-  if (!version) throw new Error('Missing pinned Mintlify CLI version.');
+  if (!/^24\.\d+\.\d+$/.test(docsNodeVersion ?? ''))
+    throw new Error('Invalid Mintlify Node 24 version.');
   return {
     executable: process.platform === 'win32' ? 'npx.cmd' : 'npx',
     args: [
-      ...(nodeVersion.split('.')[0] === '24'
+      ...(nodeVersion === docsNodeVersion
         ? ['--yes', `mintlify@${version}`]
         : [
             '--yes',
-            '--package=node@24',
+            `--package=node@${docsNodeVersion}`,
             `--package=mintlify@${version}`,
             'mintlify',
           ]),

@@ -203,7 +203,13 @@ When including code examples:
 - **Review documentation regularly** for accuracy
 - **Ask for feedback** from other developers
 
-The docs wrapper runs with Node 24. When the host uses another Node major,
-`npx` supplies an isolated Node 24 executable alongside the pinned Mintlify CLI;
-it does not replace the host Node installation. The initial download needs
-network access. CI installs Node 24 directly.
+### Mintlify runtime compatibility
+
+The docs wrapper pins Node 24.19.0 alongside Mintlify in
+`apps/docs/mintlify-version.json`. Other host versions use an isolated `npx`
+Node executable; the host installation is unchanged. Got 12.6.1, used by the
+pinned CLI's connectivity probe, can schedule a retry after rejection on Node
+24.20+ and crash before validation reports an MDX result. The compatibility pin
+preserves validation and failure exits; it does not retry or ignore errors.
+The initial tool download needs network access. Reassess the pin when the CLI's
+Got dependency contains the upstream connection-error fix.
