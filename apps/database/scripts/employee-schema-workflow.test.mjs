@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
@@ -83,4 +84,57 @@ test('always cleanup uses the same source cwd and control script', () => {
     step,
     /^ {8}run: node \.\.\/apps\/database\/scripts\/verify-employee-schema-contract.mjs --cleanup$/mu
   );
+});
+
+test('personal journal profile stays optional and is passed to the guarded runner', () => {
+  assert.match(
+    workflow,
+    /include_personal_journal:\n(?:[^\n]*\n)*? {8}default: false\n {8}type: boolean/u
+  );
+  assert.match(
+    workflow,
+    /EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: \$\{\{ inputs.include_personal_journal \}\}/u
+  );
+});
+
+test('combined profiles reject incompatible selections before hosted database setup', () => {
+  for (let bits = 0; bits < 16; bits++) {
+    const journal = Boolean(bits & 1);
+    const personal = Boolean(bits & 2);
+    const http = Boolean(bits & 4);
+    const restore = Boolean(bits & 8);
+    const result = spawnSync(
+      process.execPath,
+      [
+        new URL(
+          'apps/database/scripts/verify-employee-schema-contract.mjs',
+          root
+        ).pathname,
+      ],
+      {
+        encoding: 'utf8',
+        timeout: 10000,
+        env: {
+          ...process.env,
+          GITHUB_ACTIONS: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: String(journal),
+          EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: String(personal),
+          EMPLOYEE_SCHEMA_INCLUDE_HTTP: String(http),
+          EMPLOYEE_SCHEMA_INCLUDE_RESTORE: String(restore),
+          EMPLOYEE_SCHEMA_SOURCE_SHA: '1'.repeat(40),
+        },
+      }
+    );
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 1);
+    const expected =
+      http && !journal
+        ? /HTTP qualification requires the journal qualification/u
+        : restore && !http
+          ? /RESTORE qualification requires HTTP qualification/u
+          : journal && personal
+            ? /Select one optional schema profile/u
+            : /This gate requires a disposable hosted Linux runner/u;
+    assert.match(result.stderr, expected, `profile bits ${bits}`);
+  }
 });

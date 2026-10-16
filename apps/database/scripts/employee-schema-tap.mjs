@@ -15,6 +15,25 @@ export const journalPackets = Object.freeze([
   ['employee-runtime-observation.sql', 20],
 ]);
 
+export const personalJournalPackets = Object.freeze([
+  ...foundationPackets,
+  ['personal-journal.sql', 24],
+]);
+
+export function selectSchemaPackets(journal = false, personalJournal = false) {
+  if (
+    typeof journal !== 'boolean' ||
+    typeof personalJournal !== 'boolean' ||
+    (journal && personalJournal)
+  )
+    throw new Error('Select one optional schema profile');
+  return personalJournal
+    ? personalJournalPackets
+    : journal
+      ? journalPackets
+      : foundationPackets;
+}
+
 export function exactSourceSha(value) {
   if (!/^[a-f0-9]{40}$/u.test(value ?? '')) {
     throw new Error('An exact source commit is required');
@@ -56,8 +75,9 @@ export function schemaReceipt({
   lifecycleCode,
   cleanupSucceeded,
   journal = false,
+  personalJournal = false,
 }) {
-  const expected = (journal ? journalPackets : foundationPackets).map(
+  const expected = selectSchemaPackets(journal, personalJournal).map(
     ([file, assertions]) => ({
       file,
       assertions,
@@ -70,9 +90,11 @@ export function schemaReceipt({
   return {
     version: 1,
     sourceSha: exactSourceSha(sourceSha),
-    scope: journal
-      ? 'employee-creation-restoration-journal'
-      : 'employee-creation-restoration',
+    scope: personalJournal
+      ? 'personal-journal'
+      : journal
+        ? 'employee-creation-restoration-journal'
+        : 'employee-creation-restoration',
     schemaQualified: passed,
     assertions: packets.reduce((sum, packet) => sum + packet.assertions, 0),
     packets,
@@ -235,9 +257,10 @@ export function schemaFailureDiagnostic(
   phase,
   packetOrdinal,
   result = {},
-  journal = false
+  journal = false,
+  personalJournal = false
 ) {
-  const packets = journal ? journalPackets : foundationPackets;
+  const packets = selectSchemaPackets(journal, personalJournal);
   const phases = [
     'full-schema-snapshot',
     'start',

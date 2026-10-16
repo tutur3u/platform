@@ -143,3 +143,30 @@ production configuration, hosted races or legacy-address migration. Real GoTrue
 transport evidence is distinct from SQL fixture evidence. The RESTORE runtime
 flag remains OFF. Dispatch only from a reviewed control revision with the exact
 reviewed source commit; a published fixture is not a successful qualification run.
+
+## Personal journal schema qualification
+
+Select `include_personal_journal=true` with `include_journal=false`,
+`include_http=false` and `include_restore=false` on the same workflow. This optional
+profile keeps the foundation's 172 assertions and adds the 24
+`personal-journal.sql` assertions.
+It requires the complete selected migration snapshot, all 196 assertions,
+transaction rollback and positive owned-project cleanup, then records the
+`personal-journal` scope. Mixed optional profiles fail closed. The default
+foundation and employee-operation profiles keep their existing counts. The
+workflow regression test exercises all 16 boolean profile combinations against the
+guarded runner before hosted database setup.
+
+The same disposable database generates public, private and storage types before
+cleanup. Review the exact-source artifact and its digest before adopting generated
+types. This gate does not qualify a real journal provider, explicit consent,
+authenticated runtime behavior, memory ingestion or production activation.
+
+Before dispatch, keep new, unapplied PR migrations later than the current base
+migration tip. The pending personal-journal migration is
+`apps/database/supabase/migrations/20261017000000_personal_journal.sql`.
+Preserve SQL bytes when correcting only its chronological identity; never rename
+an applied migration. A path change changes the selected snapshot and source SHA,
+so earlier SQL/type artifacts remain historical and the new source requires fresh
+qualification. The isolated runner derives its full snapshot from tracked files,
+including the renamed migration, rather than a fixed migration-name manifest.

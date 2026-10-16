@@ -41,6 +41,7 @@
                 "pages": [
                   "platform/features/search-indexing",
                   "platform/features/command-center-dashboard",
+                  "platform/personal-journal",
                   "platform/features/assistant-live",
                   "platform/features/assistant-local-models",
                   "platform/personal-proactive-execution",
