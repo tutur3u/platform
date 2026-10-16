@@ -107,7 +107,12 @@ describe('internal account API helpers', () => {
 
 it('creates an employee with the existing action header and an unchanged password', async () => {
   const response = {
-    account: { id: 'staff', email: 'staff@tuturuuu.com', displayName: 'Staff' },
+    account: {
+      id: 'e0dfe613-9e8a-4fa4-8f52-fd881aa2e9f2',
+      email: 'staff@tuturuuu.com',
+      displayName: 'Staff',
+    },
+    operationId: '0da9bb8d-fd22-433b-97a0-d54a0cecf5b3',
     status: 'created',
   };
   const fetchMock = vi.fn().mockResolvedValue(jsonResponse(response, 201));
@@ -119,6 +124,7 @@ it('creates an employee with the existing action header and an unchanged passwor
   expect(
     await createInternalEmployee(payload, {
       baseUrl: 'https://infra.test',
+      operationId: '0da9bb8d-fd22-433b-97a0-d54a0cecf5b3',
       fetch: fetchMock as unknown as typeof fetch,
     })
   ).toEqual(response);
@@ -143,7 +149,8 @@ it.each([
     const response = {
       status: 'pending',
       code,
-      message: 'Provisioning is pending.',
+      operationId: '0da9bb8d-fd22-433b-97a0-d54a0cecf5b3',
+      nextAction: 'inspect',
     };
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(response, 202));
     const result = await createInternalEmployee(
@@ -154,6 +161,7 @@ it.each([
       },
       {
         baseUrl: 'https://infra.test',
+        operationId: '0da9bb8d-fd22-433b-97a0-d54a0cecf5b3',
         fetch: fetchMock as unknown as typeof fetch,
       }
     );

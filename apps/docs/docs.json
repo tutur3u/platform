@@ -43,6 +43,7 @@
                   "platform/features/command-center-dashboard",
                   "platform/features/assistant-live",
                   "platform/features/assistant-local-models",
+                  "platform/personal-proactive-execution",
                   "platform/features/mobile-timer",
                   "platform/features/task-reminder-delivery",
                   "platform/features/mobile-chat",
@@ -286,6 +287,7 @@
                   },
                   "platform/applications/storefront",
                   "platform/applications/mail",
+                  "platform/applications/mail-inbound-notifications",
                   "platform/applications/shiraoki",
                   "platform/applications/nova",
                   "platform/applications/qr",
@@ -323,6 +325,7 @@
                 "pages": [
                   "build/devops/overview",
                   "build/devops/active-runtime",
+                  "build/devops/apps-viteplus-cloudflare",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
                   "build/devops/tanstack-rust-local-deploy",

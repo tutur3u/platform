@@ -719,8 +719,13 @@ setting is stored in secure storage and uses the OS local authentication prompt
 with device PIN/passcode fallback allowed. When enabled, the app locks on an
 authenticated cold launch and after at least 30 seconds in the background.
 
-The locked surface uses the native splash background and logo without showing
-protected content to touch, keyboard focus, or accessibility. Recovery controls
+The locked surface centers the existing transparent logo at the generated native
+artwork size: 104 points on iOS and 80 dp on Android. Its light background is
+white and its dark background is `#09090B`, matching the native launch canvas.
+Entry stays centered. With text scaled above 1.5×, recovery moves the
+decorative logo to the top with 24 pixels
+of clearance after the system inset, keeping it above the instructions. It does
+not expose protected content to touch, keyboard focus, or accessibility. Recovery controls
 appear five seconds after entering the lock, including when authentication fails
 or remains pending; retrying does not restart that deadline. Unlocking still uses
 the OS biometric/device-passcode prompt, not a separately stored application PIN.
@@ -736,7 +741,15 @@ Regression coverage is in `app_lock_splash_timing_test.dart`,
 `app_lock_boundary_test.dart`, `app_lock_auth_lifetime_test.dart`, and
 `app_lock_review_races_test.dart`. Widget
 checks cover entry timing, compact English/Vietnamese recovery, large text and
-reduced motion; they do not prove native biometric or TestFlight behavior.
+reduced motion. `app_lock_splash_visual_test.dart` decodes native logo assets and
+compares rendered artwork bounds and canvas colors at matching viewports. Those
+source fixtures do not prove an installed launch, native biometric or TestFlight
+behavior. Android legacy and Android 12 logo inputs retain the canonical
+320-pixel RGBA artwork inside transparent 768/1152-pixel canvases. Regenerate
+Android only from `apps/mobile` with `dart run tool/generate_android_splash.dart`;
+it preserves the canonical logo and excludes iOS/web generation. Pixel tests
+verify transparent native padding and 80 dp artwork across all densities.
+Installed OS launch scaling and release artifact qualification remain separate.
 
 ### Device authenticators and trusted registrations
 
@@ -1708,23 +1721,23 @@ hit area into the next event. Genuine simultaneous/transitive overlap clusters
 retain readable minimum heights and physical conflict columns; a timestamp-
 disjoint successor can still share columns with that readable cluster.
 
-The expanded all-day bar reserves rows only for spans intersecting the current
-viewport using the same four-pixel chip inset as painting, including partially
-visible chips. An inset-only edge cannot reserve rows. Buffered offscreen events cannot
-reserve rows or expose an expand toggle. A zero-row strip keeps its horizontal
-controller attached while traversing the continuous date window. Stable event
-keys and label clamps remain. Before controller attachment, sizing and chip
-painting use the same selected-date offset. Horizontal pixel scrolling rebuilds
-only the all-day strip, rather than the buffered timed columns; actual date-window
-recenter/reset still updates the parent and coordinated positions. User week-start,
-date reselect and data scope are unchanged.
+Shared Day, Three-day and Week strips size spans intersecting the viewport.
+Chip insets and offscreen events reserve no rows or expand control.
+Row and control heights transition together over 180ms and retarget from their
+current geometry. Whole rows and controls appear only when they fit, preserving
+scaled text and viewport-clamped labels. The header stays fixed; the timed grid
+moves with the strip while keeping its minute offset. Reduced motion places
+geometry immediately, including interruptions. A scope change resets the
+transition. Data refreshes retain current authorized content and date anchors.
+The all-day scroller retains its identity and attaches at the grid offset.
+Recentring updates dates and horizontal offsets before paint; scoped civil-date
+keys retain day cells. Pixel scroll rebuilds only the strip. Initial time
+positioning, week-start and date reselect keep their existing behavior.
 
-Rendered regressions cover viewport growth/shrink/empty states, offscreen async
-updates without first-column height shifts, initial attachment and inset-only
-edges, unchanged timed-column model reads on pixel scroll, scaled/fractional/short overlap,
-back-to-back card widths and distinct tiny-card taps/accessibility. Device
-TestFlight0.23.4's reported flicker is not confirmed fixed by these widget tests;
-exact CI and recorded version/build/runtime verification remain required.
+`calendar_three_day_geometry_test.dart` and `calendar_all_day_transition_test.dart`
+cover painted drags, data updates, retargets, text scale, themes, taps and scopes.
+Existing overlap tests remain. CI and installed-device checks remain separate;
+widget geometry does not establish TestFlight identity or frame-time impact.
 ### Reading inbox notifications and the system tray
 
 Mobile reads capture a bounded snapshot of actual delivered notifications before

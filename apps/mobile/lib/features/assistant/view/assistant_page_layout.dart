@@ -425,6 +425,10 @@ extension _AssistantPageLayout on _AssistantPageState {
                                             : _isComposerVisible
                                             ? AssistantComposerPrimaryAction(
                                                 controller: _inputController,
+                                                attachments: chatState
+                                                    .composerAttachments,
+                                                onRemoveAttachment:
+                                                    removeComposerAttachment,
                                                 focusNode: _inputFocusNode,
                                                 onToggleNavigation:
                                                     _toggleComposerNavigation,

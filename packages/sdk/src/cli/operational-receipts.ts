@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  graphCommandSchema,
+  graphResultSchema,
+} from '../operational-graph/contracts';
+import { graphPlan } from '../operational-graph/domain';
 import { intakePlan, updatePlan } from './operational-domain';
 import {
   canonical,
@@ -19,6 +24,9 @@ const revision = z.number().int().nonnegative();
 const hash = z.string().regex(/^[0-9a-f]{64}$/);
 export const operationBodySchema = z.discriminatedUnion('command', [
   z
+    .object({ command: z.literal('graph'), change: graphCommandSchema })
+    .strict(),
+  z
     .object({
       command: z.literal('intake'),
       input: z.array(intakeItemSchema).min(1).max(10_000),
@@ -34,6 +42,7 @@ export const operationBodySchema = z.discriminatedUnion('command', [
 export const responseSchema = z
   .object({
     result: z.union([
+      graphResultSchema,
       itemSchema,
       noteSchema,
       z
@@ -164,7 +173,13 @@ export function validateReceipt(input: unknown, context: Context) {
   const before = recordsAt(context.events, proof.initialRevision, context.kind);
   const body = proof.body;
   let expected: z.infer<typeof responseSchema>['result'];
-  if (body.command === 'update') {
+  if (body.command === 'graph') {
+    if (context.kind !== 'backlog')
+      fail('STORE_KIND_MISMATCH', 'graph receipt belongs to backlog');
+    const plan = graphPlan(before.items, body.change, proof.operationId);
+    verifyChanges(interval, plan.events);
+    expected = plan.result;
+  } else if (body.command === 'update') {
     if (context.kind !== 'backlog')
       fail('STORE_KIND_MISMATCH', 'update receipt belongs to backlog');
     const plan = updatePlan(before.items, body.change);

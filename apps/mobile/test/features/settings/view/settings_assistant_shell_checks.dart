@@ -148,7 +148,9 @@ void registerSettingsAssistantShellChecks() {
               expect(find.text(l10n.assistantSettingsTitle), findsOneWidget);
             } else if (check == 'back') {
               expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-              await tester.tap(find.byType(ShellDockActionButton));
+              await tester.tap(
+                find.byKey(const ValueKey('settings-route-back')),
+              );
               await _settle(tester);
               expect(hub, findsNothing);
               expect(
@@ -159,7 +161,7 @@ void registerSettingsAssistantShellChecks() {
               final scrollable = find
                   .descendant(of: hub, matching: find.byType(Scrollable))
                   .first;
-              final back = find.byType(ShellDockActionButton);
+              final back = find.byKey(const ValueKey('settings-route-back'));
               expect(
                 tester.getBottomLeft(scrollable).dy,
                 lessThanOrEqualTo(tester.getTopLeft(back).dy),

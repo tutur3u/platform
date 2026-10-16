@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { checkEvidence } from './operational-evidence';
 import { readJsonFile } from './operational-files';
+import { executeGraphCli } from './operational-graph';
 import {
   fail,
   OperationalError,
@@ -15,6 +16,7 @@ import { exportStore, importStore, migrateStore } from './operational-transfer';
 
 const commands = {
   backlog: [
+    'graph',
     'snapshot',
     'history',
     'init',
@@ -103,6 +105,8 @@ function allowFlags(flags: Map<string, string>, allowed: string[]) {
       fail('INVALID_INPUT', `flag --${key} does not apply to this command`);
 }
 export function executeOperational(args: string[]): unknown {
+  if (args[0] === 'backlog' && args[1] === 'graph')
+    return executeGraphCli(args.slice(2));
   const kind = z.enum(['backlog', 'operational-memory']).parse(args[0]);
   const { flags, positional } = parseArgs(args.slice(1));
   const language = z.enum(['en', 'vi']).parse(flags.get('lang') ?? 'en');
@@ -233,7 +237,12 @@ export function executeOperational(args: string[]): unknown {
 }
 export async function runOperationalCli(args: string[]) {
   try {
-    const result = executeOperational(args);
+    const result =
+      args[0] === 'backlog' && args[1] === 'search'
+        ? await import('./operational-search.js').then(
+            ({ runOperationalSearch }) => runOperationalSearch(args.slice(2))
+          )
+        : executeOperational(args);
     process.stdout.write(`${JSON.stringify(result)}\n`);
     if (
       typeof result === 'object' &&

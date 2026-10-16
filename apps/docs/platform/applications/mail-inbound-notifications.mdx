@@ -1,0 +1,99 @@
+---
+title: Incoming Mail notifications
+updatedAt: '2026-10-12'
+description: Event admission, recipient privacy, deduplication, and verification boundaries for mobile Mail.
+---
+
+## Admission and defaults
+
+New SES and signed Cloudflare deliveries use the existing Inbox-label transaction
+to create personal `mail_received` notifications and dedicated immediate push
+batches. They do not wait for a periodic scan. There is no notification email.
+This describes source behavior; it does not establish a delivery latency bound.
+
+Recipients must be active persisted mailbox members with a current confirmed,
+non-banned Auth account on exact `tuturuuu.com` or a DNS-label-valid descendant.
+Both account and canonical mailbox domains require active configured
+`private.mail_domains` rows with `verified_at`. This stored status is configured
+authority, **not fresh DNS or provider ownership proof**: the management API can
+stamp it. The message's raw provider identity, observed ingress recipient, and
+canonical domain mapping must bind to the persisted mailbox. Cloudflare ingress
+must pass the existing signature check; SES uses the existing SNS verification.
+Production provider configuration remains a separate deployment prerequisite.
+
+Mobile launcher discovery accepts the same domain syntax as a hint. The Mail API
+admits a subdomain account only after rechecking current Auth and its existing
+active personal mailbox ownership and membership. It retains the personal-workspace
+restriction. This does not broaden the global staff predicate or reviewer rules.
+
+Google Takeout imports, historical imports, outbound mail, quarantined or failed
+spam/virus messages, and initial deliveries older than five minutes do not alert.
+Mail and general push preferences, quiet hours, thread mute and snooze still apply.
+These suppressions are recipient-specific. Current membership, configured domains,
+message availability, preferences, unread notification and recipient Mail state are checked again
+before sending. Existing notification read/dismiss handling remains in use.
+
+## Physical-event identity and recovery
+
+`20261012140000_mail_inbound_notification_admission.sql` adds a nullable receipt
+`event_key`, unique per user for non-null keys. New decisions use `raw_message_id`
+so original and internally forwarded copies sharing the same raw message notify a
+common owner once. Different owners each retain their own decision. Suppressed
+decisions also claim the event; enabling preferences or unmuting later does not
+replay it. Provider retries and Inbox relabeling cannot duplicate that claim.
+
+The migration reconciles existing accepted and suppressed receipts before new
+admission. It retains duplicate historical rows with null event keys and never
+backfills notifications. Only the reconciled canonical receipt can authorize a
+legacy pending send; duplicate history cannot. Historical messages without raw identity retain a
+message-based legacy key. It does not rewrite provider outcomes or forwarding.
+
+Delivery continues through the existing immediate queue and Firebase device
+registry. The recovery processor preserves its bounded retry and expiry limits.
+A persisted `delivery_in_flight` marker fences a lost provider response as
+`delivery_outcome_unknown`; it requires operator reconciliation, not automatic
+replay. See the [explicit selection budget](/build/devops/cloudflare-cron-control#explicit-immediate-selection-budget).
+No new scheduler or dispatch service is introduced.
+
+## Push previews and opening
+
+Mail push copy is bounded plain text. HTML, control characters and URL tokens are
+removed from sender/subject previews before constructing visible and data payloads.
+The payload retains UUID mailbox/thread/message/user identities; no remote image
+is supplied. This sanitization does not classify every possible secret in prose.
+
+A push tap requires the same signed-in recipient and fresh authorized mailbox
+bootstrap. Notification-opened readers suppress external images for that entry,
+even when the saved image preference is enabled. Explicit per-reader reveal is
+allowed and does not change the saved preference. A failed detail request retains
+this privacy intent for its visible Retry action. Ordinary inbox entry continues
+to use the saved preference. Reader CSP blocks remote images while suppressed.
+
+## Regression evidence and held gates
+
+Run the bounded SQL fixture through the normal resource queue:
+
+```sh
+ttr resources run -- bun apps/database/scripts/mail-inbound-notification-fixture.mjs
+```
+
+The fixture applies the actual legacy Mail migrations and new admission migration
+in PGlite with pgTAP. The schema, notification preference lookup and `pg_net`
+transport are synthetic scaffolds. Assertions cover receipt reconciliation,
+recipient/canonical binding, alias and forwarding deduplication, suppression,
+notification/Mail read, archive and trash before send, and revocation. This is **not** the full Supabase migration chain,
+RLS/Auth integration, actual `pg_net`, provider delivery, or concurrent hosted
+execution. Full migration application and generated-type verification remain
+required in an authorized database environment before promotion.
+
+Focused route tests cover managed mailbox authority and existing signed ingress.
+Preview tests exercise real push payload construction. Flutter
+`mail_notification_privacy_test.dart` covers access-before-open, local reveal,
+preference preservation and failed-open retry; existing push UUID and dismissal
+regressions remain required. Exact-commit CI must pass applicable lint, type,
+tests, web/Mail builds and mobile gates.
+
+Actual foreground/background notification arrival, permission behavior, system
+dismissal and tap timing require authorized fixtures and a device. A Firebase
+response alone does not prove device arrival. Source checks cannot establish
+production DNS/provider configuration or delivery.

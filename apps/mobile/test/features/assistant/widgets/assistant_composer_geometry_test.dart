@@ -133,12 +133,16 @@ void main() {
                 controller.text = prompt;
                 await tester.pumpAndSettle();
                 final composer = tester.getRect(
-                  find.byKey(const ValueKey('persistent-shell-dock-material')),
+                  find.byKey(const ValueKey('floating-dock-visible-group')),
                 );
                 final fab = tester.getRect(
                   find.byType(AssistantScrollToBottomFab),
                 );
                 expect(fab.bottom, lessThanOrEqualTo(composer.top - 16));
+                final expand = tester.getRect(
+                  find.byKey(const ValueKey('assistant-expand-prompt')),
+                );
+                expect(fab.bottom, lessThanOrEqualTo(expand.top - 16));
                 expect(
                   (keyboard ? 600 : 900) - composer.bottom,
                   (keyboard ? 0 : safeArea) + 8,

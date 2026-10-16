@@ -4536,5 +4536,17 @@
   "notesLocalAiStop": "Stop",
   "notesLocalAiGenerate": "Generate locally",
   "notesLocalAiAppend": "Append summary",
-  "notesLocalAiDiscard": "Discard preview"
+  "notesLocalAiDiscard": "Discard preview",
+  "assistantExpandPrompt": "Expand prompt",
+  "assistantMinimizePrompt": "Minimize prompt",
+  "assistantSettingInfo": "About {setting}",
+  "@assistantSettingInfo": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantPreviewPlay": "Play preview",
+  "assistantPreviewPause": "Pause preview"
 }

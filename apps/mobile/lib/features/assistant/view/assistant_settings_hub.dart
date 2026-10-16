@@ -54,6 +54,7 @@ class _AssistantSettingsHubState extends State<AssistantSettingsHub> {
 
   @override
   Widget build(BuildContext context) => SettingsRouteFrame(
+    customNavigation: true,
     title: context.l10n.assistantSettingsTitle,
     child: Stack(
       fit: StackFit.expand,

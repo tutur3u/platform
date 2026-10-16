@@ -123,6 +123,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   void _updateState(VoidCallback update) => setState(update);
   bool _childRouteOpen = false;
   bool _pushDestinationHandled = false;
+  final Set<(String, String)> _notificationEntries = {};
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _swipeFeedback;
 
   void _dismissSwipeFeedback() {
@@ -519,12 +520,17 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     }
   }
 
-  Future<void> _open(Map<String, dynamic> item) async {
+  Future<void> _open(
+    Map<String, dynamic> item, {
+    bool notificationEntry = false,
+  }) async {
     if (_openingId != null || _childRouteOpen) return;
     _dismissSwipeFeedback();
     setState(() => _openingId = item['id'] as String);
     final box = _mailboxId!;
     final openedFolder = _folder;
+    final entry = (box, item['id'] as String);
+    if (notificationEntry) _notificationEntries.add(entry);
     try {
       final cached = _threads && _accessVerified
           ? await _repository.cachedThread(
@@ -562,6 +568,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             mailboxId: box,
             detail: detail,
             refreshOnOpen: cached != null,
+            notificationEntry: _notificationEntries.contains(entry),
             onReadFailed: () {
               if (mounted && box == _mailboxId && openedFolder == _folder) {
                 setState(() => _items = beforeRead);
@@ -604,6 +611,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       );
       if (mounted) setState(() => _openingId = null);
       await navigation;
+      _notificationEntries.remove(entry);
       if (mounted && box == _mailboxId && openedFolder == _folder) {
         if (_pendingReaderIds.isEmpty) unawaited(_load());
       }

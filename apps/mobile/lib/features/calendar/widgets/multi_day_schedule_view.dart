@@ -59,10 +59,11 @@ class MultiDayScheduleView extends StatefulWidget {
 class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   final ScrollController _verticalController = ScrollController();
   final ScrollController _headerController = ScrollController();
-  final ScrollController _allDayController = ScrollController();
+  late final ScrollController _allDayController;
   final ScrollController _gridController = ScrollController();
 
   final GlobalKey _timelineViewportKey = GlobalKey();
+  final GlobalKey _allDayViewportKey = GlobalKey();
   bool Function() _zoomBlocked = () => false;
   bool _didAutoScroll = false;
   bool _syncingHorizontalScroll = false;
@@ -93,6 +94,13 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   @override
   void initState() {
     super.initState();
+    _allDayController = ScrollController(
+      onAttach: (position) => position.correctPixels(
+        _gridController.hasClients
+            ? _gridController.offset
+            : _bufferDays * _dayWidth,
+      ),
+    );
     _resetDateWindow();
     for (final controller in _horizontalControllers) {
       controller.addListener(() => _syncHorizontalScroll(controller));
@@ -319,6 +327,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                             SizedBox(width: gutterWidth),
                             for (final date in visibleDates)
                               SizedBox(
+                                key: ValueKey((widget.zoomScope, date)),
                                 width: dayColumnWidth,
                                 child: _MultiDayHeaderCell(
                                   date: date,
@@ -347,23 +356,23 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                   ],
                 ),
               ),
-              if (allDayLayout.spans.isNotEmpty)
-                _MultiDayAllDayBar(
-                  layout: allDayLayout,
-                  controller: _allDayController,
-                  scope: widget.zoomScope,
-                  gutterWidth: gutterWidth,
-                  dayColumnWidth: dayColumnWidth,
-                  contentWidth: dayAreaWidth,
-                  viewportWidth: viewportWidth,
-                  fallbackOffset: _bufferDays * dayColumnWidth,
-                  expanded: _allDayExpanded,
-                  onToggle: () =>
-                      setState(() => _allDayExpanded = !_allDayExpanded),
-                  onEventTap: (event) {
-                    if (!_zoomBlocked()) widget.onEventTap(event);
-                  },
-                ),
+              _MultiDayAllDayBar(
+                layout: allDayLayout,
+                controller: _allDayController,
+                viewportKey: _allDayViewportKey,
+                scope: widget.zoomScope,
+                gutterWidth: gutterWidth,
+                dayColumnWidth: dayColumnWidth,
+                contentWidth: dayAreaWidth,
+                viewportWidth: viewportWidth,
+                fallbackOffset: _bufferDays * dayColumnWidth,
+                expanded: _allDayExpanded,
+                onToggle: () =>
+                    setState(() => _allDayExpanded = !_allDayExpanded),
+                onEventTap: (event) {
+                  if (!_zoomBlocked()) widget.onEventTap(event);
+                },
+              ),
               Expanded(
                 child: SingleChildScrollView(
                   key: _timelineViewportKey,
@@ -387,6 +396,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                 SizedBox(width: gutterWidth),
                                 for (final date in visibleDates)
                                   SizedBox(
+                                    key: ValueKey((widget.zoomScope, date)),
                                     width: dayColumnWidth,
                                     child: _MultiDayTimelineColumn(
                                       date: date,
