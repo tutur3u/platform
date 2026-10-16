@@ -126,6 +126,36 @@ describe('inactive Web migration adapter', () => {
       'inspect'
     );
   });
+  it('rejects malformed JSON and invalid migration tuples without dispatch', async () => {
+    const { handler, fetcher } = setup();
+    const malformed = new Request('https://web.example.test/migration', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin: 'https://infra.example.test',
+      },
+      body: '{',
+    });
+    expect((await handler(malformed, 'migrate')).status).toBe(400);
+    const invalidUtf8 = new Request('https://web.example.test/migration', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin: 'https://infra.example.test',
+      },
+      body: new Uint8Array([0xff]),
+    });
+    expect((await handler(invalidUtf8, 'migrate')).status).toBe(400);
+    expect(
+      (
+        await handler(
+          request({ destinationAddress: 'different@tuturuuu.com' }),
+          'migrate'
+        )
+      ).status
+    ).toBe(400);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
   it('rejects oversized payload without transport dispatch', async () => {
     const { handler, fetcher } = setup();
     expect(

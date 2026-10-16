@@ -72,7 +72,8 @@ UUID/membership/data preservation in a real project. Those remain supplier gates
 The additive `20261017010000_employee_address_migrations.sql` supplier implements
 service-only journal transactions with direct table access revoked, durable
 unique target/address reservations and a one-time claim. Its scope is deliberately
-legacy accounts absent from CREATE/RESTORE registries, first revision zero to one.
+legacy accounts absent from CREATE/RESTORE registries with email-provider-only
+identities, first revision zero to one.
 It requires existing active source and destination mailboxes and matching active
 domains, with both mailboxes owned exclusively by the target UUID. It does not
 provision mail, change addresses on mailboxes, set onboarding metadata or convert
@@ -121,6 +122,19 @@ the canonical resource queue:
 
 ```sh
 ttr resources run -- node apps/database/scripts/employee-address-migration-qualification.mjs
+```
+
+A separate real-provider runner uses cached GoTrue `v2.197.0` and PostgreSQL
+`17.11.0.004` images on an internal Docker network without published ports. Its source fixture creation with
+confirmation enabled and an accepted magic-link OTP both left the identity's
+`email_verified` false. The actual supplier refused the email change, made zero
+admin-user PUTs, and retained the source snapshot. This is a passing negative
+qualification (`SOURCE_UNVERIFIED`), not a successful migration. The positive
+email-only mutation and preservation assertions remain unexercised until a
+supported verified-source precondition is established. Run through the same queue:
+
+```sh
+ttr resources run -- bun apps/database/scripts/employee-address-migration-gotrue-qualification.ts
 ```
 
 Before runtime binding, apply the full schema in the approved isolated fixture,

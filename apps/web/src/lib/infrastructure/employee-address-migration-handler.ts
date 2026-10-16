@@ -71,15 +71,25 @@ export function createEmployeeAddressMigrationHandler(deps: {
           }
           text += decoder.decode(part.value, { stream: true });
         }
+      } catch {
+        return result({ code: 'invalid_input' }, 400);
       } finally {
         reader.releaseLock();
       }
-      const parsed = Body.safeParse(JSON.parse(text + decoder.decode()));
+      let decoded: unknown;
+      try {
+        decoded = JSON.parse(text + decoder.decode());
+      } catch {
+        return result({ code: 'invalid_input' }, 400);
+      }
+      const parsed = Body.safeParse(decoded);
       if (!parsed.success) return result({ code: 'invalid_input' }, 400);
-      const tuple = AddressMigrationRequest.parse({
+      const validated = AddressMigrationRequest.safeParse({
         ...parsed.data,
         actorId: actorUserId,
       });
+      if (!validated.success) return result({ code: 'invalid_input' }, 400);
+      const tuple = validated.data;
       async function authorize(actorId: string) {
         if (!deps.enabled() || actorId !== actorUserId) return false;
         const current = await deps.authorize(request);
