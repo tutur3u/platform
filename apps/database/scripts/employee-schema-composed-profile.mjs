@@ -47,7 +47,7 @@ const sourceFiles = [
   ],
   [
     'apps/database/supabase/tests/employee-creation-reserved-preflight.sql',
-    'ab029d93a81e014190f8e691a4447425370aaba8eccb10fbabdbd571016b2d4b',
+    '5a9a6e9e216b4cf334d433a2b5417c4978d0cfd396bfec885ae6666afb80d019',
   ],
   [
     'apps/database/supabase/tests/employee-finalization.sql',

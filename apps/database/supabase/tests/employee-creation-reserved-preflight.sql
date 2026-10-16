@@ -1,6 +1,6 @@
 -- Rollback-only real-function packet; no COMMIT/transport/provider qualification.
 -- Requires canonical identity/finalization/restoration and the separately frozen
--- 20261013030000 journal migration in Root's isolated composed schema. No stubs.
+-- durable journal migration in the isolated composed schema. No stubs.
 begin;
 set local statement_timeout='15s';
 set local lock_timeout='3s';
@@ -138,7 +138,9 @@ select throws_ok($$select pg_temp.reserve(target=>'00000000-0000-4000-8000-00000
 insert into public.platform_email_roles(email,enabled) values('Preflight-reserved@tuturuuu.com',true);
 select throws_ok('select pg_temp.reserve()','23505','Employee account or reservation already exists','new case-insensitive grant reservation denies exact tuple');
 delete from public.platform_email_roles where email='Preflight-reserved@tuturuuu.com';
-insert into private.mail_mailboxes(address) values('preflight-reserved@tuturuuu.com');
+insert into private.mail_mailboxes(address,domain_id)
+values('preflight-reserved@tuturuuu.com',
+  (select id from private.mail_domains where domain='tuturuuu.com'));
 select throws_ok('select pg_temp.reserve()','23505','Employee account or reservation already exists','new logical mailbox denies exact tuple');
 delete from private.mail_mailboxes where address='preflight-reserved@tuturuuu.com';
 select results_eq('select user_id,to_jsonb(i),ctid::text from private.employee_creation_intents i order by user_id',

@@ -37,6 +37,12 @@ assertion, lifecycle step or cleanup proof is missing. The default remains the
 172-assertion foundation profile. This SQL gate does not qualify the fixed worker,
 provider, production configuration, generated types or live account operations.
 
+Conflict fixtures that insert a logical mailbox must link its `domain_id` to the
+matching `private.mail_domains` row. The current mailbox trigger rejects an
+address-only insert before employee preflight runs. Preserve that trigger and
+the intended conflict assertion; a fixture setup failure does not establish a
+failure in employee reservation logic.
+
 If the schema runner fails after its private receipt directory exists, the receipt
 includes a fixed `failureDiagnostic`: the first failing phase, packet ordinal,
 bounded exit status, timeout/signal indicators, and TAP failure flags/counts. It
