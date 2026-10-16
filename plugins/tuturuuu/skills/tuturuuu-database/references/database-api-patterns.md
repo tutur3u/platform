@@ -131,11 +131,13 @@ See [employee schema qualification](../../../../../apps/docs/build/development-t
 
 ## Inventory concurrency diagnostics
 
-For a zero-lock failure in `inventory-merge-concurrency.mjs`, compare its bounded
-writer-backend TAP comments across barrier release, completed writer transactions
-and the workspace cascade. Keep the zero-lock assertion intact. The fixture marks
-its session barrier key separately; `pg_locks` does not identify session versus
-transaction ownership. A count alone is insufficient evidence for a SQL repair.
-Use the exact-head Inventory contract workflow for disposable runtime proof and
-verify its owned cleanup. See the Inventory platform page's merge concurrency
-lock diagnostics for the observation fields and interpretation.
+For a zero-lock failure in `inventory-merge-concurrency.mjs`, retain the original
+count query and assertion. Only a nonzero count enables its bounded writer-backend
+TAP diagnostic; a later snapshot never replaces the original count. Preserve the
+passing path's query sequence and asynchronous waits. The fixture marks its
+session barrier key separately; `pg_locks` does not identify session versus
+transaction ownership. A passing instrumented run or a count alone is insufficient
+evidence for a SQL repair. Compare exact source and installed runtime objects,
+obtain the failing lock tuple through exact-head Inventory contract CI, and verify
+owned cleanup. See the Inventory platform page's merge concurrency lock diagnostics
+for the observation fields and interpretation.

@@ -647,19 +647,22 @@ second page. This does not imply every product has a current scheduled price.
 ### Diagnosing merge concurrency locks
 
 The Inventory contract's independent-client fixture keeps its zero-advisory-lock
-assertion for a deleted workspace's warehouse cascade. Its TAP comments report
-only the disposable writer backend's PID, assigned transaction ID, and at most
-32 granted advisory lock tuples. A truncation flag indicates additional locks.
-The `test-barrier` label identifies the fixture's session lock `900302020`;
-other tuples retain their key halves, key representation, mode and virtual
-transaction for comparison.
+assertion for a deleted workspace's warehouse cascade. It first runs the original
+lock count query. Only when that count is nonzero does it query and print lock
+details; the assertion still checks the original count, even if diagnostics fail.
+A passing count adds no diagnostic query or asynchronous wait.
 
-Compare the snapshots after barrier release and each completed writer transaction
-with the snapshots before the cascade DELETE and immediately before the zero-lock
-assertion. A new post-DELETE key points to the cascade path; a key present earlier
-requires checking its earlier acquisition and release. `pg_locks` alone does not
-distinguish session locks from transaction locks. These observations diagnose the
-failure without changing its expected result. Run the existing Inventory offline
-create database contract workflow against the exact candidate commit; require its
-schema, SQL packets, concurrent writers, type generation and owned cleanup to
-finish before claiming runtime acceptance.
+The failure TAP comment reports the original count, disposable writer PID,
+assigned transaction ID, and at most 32 granted advisory lock tuples. A truncation
+flag indicates additional locks. The `test-barrier` label identifies the fixture's
+session lock `900302020`; other tuples retain their key halves, key representation,
+mode and virtual transaction. A later diagnostic snapshot can differ from the
+original count. It does not replace that count or wait for locks to disappear.
+`pg_locks` alone does not distinguish session locks from transaction locks.
+
+Use a failing exact-head Inventory offline create database contract run to identify
+the observed key before considering a repair. A passing instrumented run does not
+explain a failure from another source or run. Compare the actual fixture,
+migrations and installed runtime objects, and verify owned cleanup. Require the
+workflow's schema, SQL packets, concurrent writers and type generation to finish
+before claiming runtime acceptance.
