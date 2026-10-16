@@ -13,9 +13,8 @@ import {
   assertRollbackSource,
   exactSourceSha,
   schemaFailureDiagnostic as foundationFailureDiagnostic,
-  foundationPackets,
-  journalPackets,
   schemaReceipt,
+  selectSchemaPackets,
 } from './employee-schema-tap.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
 import {
@@ -30,6 +29,14 @@ import {
 
 const root = process.cwd();
 const journal = process.env.EMPLOYEE_SCHEMA_INCLUDE_JOURNAL === 'true';
+const personalJournal =
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL === 'true';
+if (
+  !['true', 'false', undefined].includes(
+    process.env.EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL
+  )
+)
+  throw new Error('Invalid personal journal qualification selection');
 const httpRuntime = selectHttpRuntime(
   process.env.EMPLOYEE_SCHEMA_INCLUDE_HTTP,
   journal
@@ -40,9 +47,9 @@ if (
   )
 )
   throw new Error('Invalid employee journal qualification selection');
-const selectedPackets = journal ? journalPackets : foundationPackets;
+const selectedPackets = selectSchemaPackets(journal, personalJournal);
 const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
-  foundationFailureDiagnostic(phase, ordinal, result, journal);
+  foundationFailureDiagnostic(phase, ordinal, result, journal, personalJournal);
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
   throw new Error('This gate requires a disposable hosted Linux runner');
@@ -271,7 +278,7 @@ const runner = async (command, args, cwd) => {
           throw new Error('Employee packet TAP contract failed');
         }
       }
-      if (journal) {
+      if (journal || personalJournal) {
         packetOrdinal = 0;
         currentPhase = 'typegen';
         const types = bounded(
@@ -390,6 +397,7 @@ const receipt = {
     lifecycleCode,
     cleanupSucceeded,
     journal,
+    personalJournal,
   }),
   fixtureHashes,
   generatedTypesSha256,

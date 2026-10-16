@@ -113,3 +113,18 @@ qualify the live request authentication boundary, deployed project configuration
 RESTORE, or legacy-address migration. The runtime flag remains off until the
 remaining target and request-boundary checks pass. Source tests and a published
 workflow are not a successful HTTP qualification run.
+
+## Personal journal schema qualification
+
+Select `include_personal_journal=true` with `include_journal=false` and
+`include_http=false` on the same workflow. This optional profile keeps the
+foundation's 172 assertions and adds the 24 `personal-journal.sql` assertions.
+It requires the complete selected migration snapshot, all 196 assertions,
+transaction rollback and positive owned-project cleanup, then records the
+`personal-journal` scope. Mixed optional profiles fail closed. The default
+foundation and employee-operation profiles keep their existing counts.
+
+The same disposable database generates public, private and storage types before
+cleanup. Review the exact-source artifact and its digest before adopting generated
+types. This gate does not qualify a real journal provider, explicit consent,
+authenticated runtime behavior, memory ingestion or production activation.

@@ -541,3 +541,65 @@ test('invalid signup caught evidence keeps constraint classification null', () =
   );
   assert.equal(signupCaughtDiagnostics(tap, [22])[0].constraintCategory, null);
 });
+
+test('personal journal profile requires its exact rollback packet and cleanup', async () => {
+  const { personalJournalPackets, selectSchemaPackets } = await import(
+    './employee-schema-tap.mjs'
+  );
+  const packets = personalJournalPackets.map(([file, assertions]) => ({
+    file,
+    assertions,
+  }));
+  const options = {
+    sourceSha: 'a'.repeat(40),
+    packets,
+    lifecycleCode: 0,
+    cleanupSucceeded: true,
+    personalJournal: true,
+  };
+  assert.deepEqual(selectSchemaPackets(false, true).at(-1), [
+    'personal-journal.sql',
+    24,
+  ]);
+  assert.equal(schemaReceipt(options).scope, 'personal-journal');
+  assert.equal(schemaReceipt(options).schemaQualified, true);
+  assert.equal(schemaReceipt(options).assertions, 196);
+  assert.equal(
+    schemaReceipt({ ...options, packets: packets.slice(0, -1) })
+      .schemaQualified,
+    false
+  );
+  assert.equal(
+    schemaReceipt({
+      ...options,
+      packets: [
+        ...packets.slice(0, -1),
+        { file: 'personal-journal.sql', assertions: 23 },
+      ],
+    }).schemaQualified,
+    false
+  );
+  assert.equal(
+    schemaReceipt({ ...options, cleanupSucceeded: false }).schemaQualified,
+    false
+  );
+  assert.equal(
+    schemaReceipt({ ...options, lifecycleCode: 1 }).schemaQualified,
+    false
+  );
+  assert.throws(() => selectSchemaPackets(true, true));
+  assert.throws(() => selectSchemaPackets(false, 'true'));
+  assert.equal(
+    schemaFailureDiagnostic(
+      'packet-tap',
+      6,
+      { stdout: 'not ok 24 - redacted' },
+      false,
+      true
+    ).failedAssertionOrdinals[0],
+    24
+  );
+  assert.throws(() =>
+    schemaFailureDiagnostic('packet-tap', 7, {}, false, true)
+  );
+});

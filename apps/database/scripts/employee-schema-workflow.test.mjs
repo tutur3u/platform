@@ -84,3 +84,14 @@ test('always cleanup uses the same source cwd and control script', () => {
     /^ {8}run: node \.\.\/apps\/database\/scripts\/verify-employee-schema-contract.mjs --cleanup$/mu
   );
 });
+
+test('personal journal profile stays optional and is passed to the guarded runner', () => {
+  assert.match(
+    workflow,
+    /include_personal_journal:\n(?:[^\n]*\n)*? {8}default: false\n {8}type: boolean/u
+  );
+  assert.match(
+    workflow,
+    /EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: \$\{\{ inputs.include_personal_journal \}\}/u
+  );
+});
