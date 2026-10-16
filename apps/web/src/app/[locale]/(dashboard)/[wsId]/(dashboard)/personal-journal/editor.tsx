@@ -6,6 +6,7 @@ import {
   type JournalEntry,
   journalDocumentFromEntry,
   journalDocumentSchema,
+  journalMoodSchema,
   readPersonalJournal,
   updatePersonalJournal,
 } from '@tuturuuu/internal-api/personal-journal';
@@ -261,7 +262,7 @@ export default function JournalEditor({
               if (result.success) change('category', result.data);
             }}
           >
-            {['reflection', 'good', 'challenge', 'milestone'].map((value) => (
+            {journalDocumentSchema.shape.category.options.map((value) => (
               <option key={value} value={value}>
                 {t(value)}
               </option>
@@ -284,7 +285,7 @@ export default function JournalEditor({
           }}
         >
           <option value="">{t('no_mood')}</option>
-          {['very_low', 'low', 'neutral', 'good', 'great'].map((value) => (
+          {journalMoodSchema.options.map((value) => (
             <option key={value} value={value}>
               {t(`mood_${value}`)}
             </option>
