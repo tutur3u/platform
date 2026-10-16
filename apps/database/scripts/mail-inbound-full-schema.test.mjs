@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runIsolatedLifecycle } from './run-supabase-isolated.js';
@@ -15,8 +16,10 @@ import {
   assertSnapshot,
   boundedExecutor,
   executeFixture,
+  runMailFullSchema,
   snapshotSql,
   sourceSha,
+  sourceTree,
 } from './verify-mail-inbound-full-schema.mjs';
 
 const tap = (count = 40) =>
@@ -300,13 +303,15 @@ test('bounded argv execution never includes raw failure output or secret values'
 test('fixture safety control rejects a real broadened delete, commit, or pg_net replacement', () => {
   assertFixturePolicy(fixtureSql);
   for (const value of [
-    fixtureSql.replace('rollback;', 'commit;'),
+    fixtureSql.replace('select plan(40);', 'select plan(40);\ncommit;'),
     fixtureSql.replace(
       'delete from private.mail_mailbox_members where id=pg_temp.fixture_id(30);',
       'delete from private.mail_mailbox_members;'
     ),
-    fixtureSql +
-      '\ncreate function net.http_post() returns bigint language sql as $$select 1$$;',
+    fixtureSql.replace(
+      'select * from finish();',
+      'create function net.http_post() returns bigint language sql as $$select 1$$;\nselect * from finish();'
+    ),
     fixtureSql.replace(
       'select plan(40);',
       "select plan(40);\nselect ok(true,'unexpected');"
@@ -433,3 +438,31 @@ for (const fail of ['fixture', 'stop']) {
     assert.equal(calls.includes('remove'), fail !== 'stop');
   });
 }
+
+test('committed fixture identity check uses bounded redacted execution', async () => {
+  const calls = [];
+  await assert.rejects(
+    runMailFullSchema({
+      env: {
+        GITHUB_ACTIONS: 'true',
+        MAIL_FULL_SCHEMA_ADMISSION: `${sourceSha}:${createHash('sha256').update(fixtureSql).digest('hex')}`,
+        MAIL_FULL_SCHEMA_SOURCE_ROOT: process.cwd(),
+        MAIL_FULL_SCHEMA_NETWORK_ID: networkId,
+        RUNNER_TEMP: '/fixture-temp',
+      },
+      exec(binary, args, options) {
+        calls.push({ binary, args, options });
+        if (calls.length === 1) return sourceSha;
+        if (calls.length === 2) return sourceTree;
+        if (calls.length === 3) return '';
+        throw new Error('private command stderr and credential');
+      },
+    }),
+    (error) =>
+      error.message === 'Qualification subprocess failed; raw output withheld'
+  );
+  assert.equal(calls.length, 4);
+  assert.equal(calls[3].options.timeout, 60000);
+  assert.equal(calls[3].options.env.SUPABASE_NO_UPDATE_NOTIFIER, '1');
+  assert.deepEqual(calls[3].options.stdio, ['ignore', 'pipe', 'pipe']);
+});

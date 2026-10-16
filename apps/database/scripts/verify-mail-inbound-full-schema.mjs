@@ -345,11 +345,8 @@ export async function runMailFullSchema({
   )
     throw new Error('Frozen source checkout identity/cleanliness mismatch');
   if (
-    !readFileSync(path.join(controlRoot, fixturePath)).equals(
-      Buffer.from(
-        exec('git', ['show', `HEAD:${fixturePath}`], { cwd: controlRoot })
-      )
-    )
+    call('git', ['rev-parse', `HEAD:${fixturePath}`], controlRoot) !==
+    call('git', ['hash-object', '--no-filters', fixturePath], controlRoot)
   )
     throw new Error('Control fixture must be committed and byte-identical');
   const trackedFiles = call(
