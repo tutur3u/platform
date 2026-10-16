@@ -114,7 +114,38 @@ export function limitCommand(
   config: ResourceConfig
 ) {
   const { tool, tail, offset } = commandTool(basename(name), args);
-  if (tool !== 'turbo' || !isHeavyCommand(name, args)) return args;
+  if (!isHeavyCommand(name, args)) return args;
+  if (tool === 'vitest' || tool === 'cargo') {
+    const budget = tool === 'vitest' ? config.vitestWorkers : config.buildJobs;
+    const flags =
+      tool === 'vitest'
+        ? ['--maxWorkers', '--max-workers', '--minWorkers', '--min-workers']
+        : ['-j', '--jobs'];
+    const limited: string[] = [];
+    for (let i = 0; i < tail.length; i++) {
+      const arg = tail[i]!;
+      if (arg === '--') {
+        limited.push(...tail.slice(i));
+        break;
+      }
+      if (flags.includes(arg)) {
+        i++;
+        continue;
+      }
+      if (
+        flags.some((flag) => arg.startsWith(`${flag}=`)) ||
+        (tool === 'cargo' && /^-j\d/.test(arg))
+      )
+        continue;
+      limited.push(arg);
+    }
+    const divider = limited.indexOf('--');
+    const cap =
+      tool === 'vitest' ? `--maxWorkers=${budget}` : `--jobs=${budget}`;
+    limited.splice(divider < 0 ? limited.length : divider, 0, cap);
+    return [...args.slice(0, offset), ...limited];
+  }
+  if (tool !== 'turbo') return args;
   const divider = tail.indexOf('--');
   const before = divider < 0 ? tail : tail.slice(0, divider);
   const after = divider < 0 ? [] : tail.slice(divider);

@@ -15,11 +15,16 @@ import {
   atomicJson,
   canonical,
   defaultResourceConfig,
+  laneResourceConfig,
   type ResourceConfig,
   readResourceConfig,
   repositoryIdentity,
+  resourceLanes,
+  resourcePolicyKey,
+  type ValidationLanes,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
+import { withAdmission } from './resources-slots';
 
 const start = '# >>> ttr resources >>>';
 const end = '# <<< ttr resources <<<';
@@ -78,17 +83,31 @@ interface InstallManifest {
   shims: string[];
 }
 
-export async function setupResources(options: {
+interface SetupOptions {
   home: string;
   roots: string[];
   shell: string;
   workers?: number;
+  lanes?: ValidationLanes;
   dryRun?: boolean;
-}) {
+}
+export async function setupResources(options: SetupOptions) {
+  if (options.dryRun) return prepareResources(options);
+  return withAdmission(options.home, () => prepareResources(options));
+}
+async function prepareResources(options: SetupOptions) {
   if (!['darwin', 'linux'].includes(process.platform))
     throw new Error('Resource setup currently supports macOS and Linux.');
   const previous = await readResourceConfig(options.home);
-  const config: ResourceConfig = previous || defaultResourceConfig();
+  if (options.lanes !== undefined && options.lanes !== 1 && options.lanes !== 2)
+    throw new Error('--lanes must be 1 or 2.');
+  const config: ResourceConfig = previous
+    ? {
+        ...previous,
+        roots: [...previous.roots],
+        repositories: [...previous.repositories],
+      }
+    : defaultResourceConfig();
   config.enabled = true;
   for (const root of options.roots.length ? options.roots : [process.cwd()]) {
     const path = canonical(root);
@@ -110,6 +129,20 @@ export async function setupResources(options: {
     config.vitestWorkers = options.workers;
     config.buildJobs = options.workers;
   }
+  config.validationLanes = options.lanes ?? resourceLanes(config);
+  laneResourceConfig(config);
+  const assertIdle = async () => {
+    if (
+      resourcePolicyKey(previous || defaultResourceConfig()) ===
+      resourcePolicyKey(config)
+    )
+      return;
+    const state = await resourceQueueStatus(options.home);
+    if (state.occupied || state.waiting.length)
+      throw new Error(
+        'Wait for all resource owners and tickets to drain before changing lanes or worker budgets.'
+      );
+  };
   const shellFiles = resourceShellFiles(options.shell);
   const bin = join(options.home, 'bin');
   const entry = stableResourceEntry(
@@ -126,7 +159,11 @@ export async function setupResources(options: {
     runtime: process.execPath,
     entry,
   };
-  if (options.dryRun) return plan;
+  if (options.dryRun) {
+    await assertIdle();
+    return plan;
+  }
+  await assertIdle();
   const hook = `${start}\nexport PATH=${shellQuote(bin)}:"$PATH"\n${end}\n`;
   const edits = await Promise.all(
     shellFiles.map(async (path) => {
@@ -171,29 +208,34 @@ export async function setupResources(options: {
 }
 
 export async function uninstallResources(home: string) {
-  const config = await readResourceConfig(home);
-  if (config)
-    await atomicJson(join(home, 'config.json'), { ...config, enabled: false });
-  const state = await resourceQueueStatus(home);
-  if (state.owner || state.waiting.length)
-    throw new Error(
-      'Admission disabled for new commands. Wait for queued/running jobs to finish before uninstalling.'
-    );
-  const manifest = JSON.parse(
-    await readFile(join(home, 'install.json'), 'utf8').catch(() => '{}')
-  ) as Partial<InstallManifest>;
-  for (const file of manifest.shellFiles || []) {
-    const text = await readFile(file, 'utf8');
-    await writeFile(file, removeResourceHook(text));
-  }
-  for (const name of manifest.shims || resourceShims) {
-    if (!resourceShims.includes(name)) continue;
-    const path = join(home, 'bin', name);
-    const text = await readFile(path, 'utf8').catch(() => '');
-    if (text.includes('# Managed by ttr resources')) await rm(path);
-  }
-  await rm(join(home, 'install.json'), { force: true });
-  return { uninstalled: true, preserved: ['config.json', 'backups'] };
+  return withAdmission(home, async () => {
+    const config = await readResourceConfig(home);
+    if (config)
+      await atomicJson(join(home, 'config.json'), {
+        ...config,
+        enabled: false,
+      });
+    const state = await resourceQueueStatus(home);
+    if (state.occupied || state.waiting.length)
+      throw new Error(
+        'Admission disabled for new commands. Wait for queued/running jobs to finish before uninstalling.'
+      );
+    const manifest = JSON.parse(
+      await readFile(join(home, 'install.json'), 'utf8').catch(() => '{}')
+    ) as Partial<InstallManifest>;
+    for (const file of manifest.shellFiles || []) {
+      const text = await readFile(file, 'utf8');
+      await writeFile(file, removeResourceHook(text));
+    }
+    for (const name of manifest.shims || resourceShims) {
+      if (!resourceShims.includes(name)) continue;
+      const path = join(home, 'bin', name);
+      const text = await readFile(path, 'utf8').catch(() => '');
+      if (text.includes('# Managed by ttr resources')) await rm(path);
+    }
+    await rm(join(home, 'install.json'), { force: true });
+    return { uninstalled: true, preserved: ['config.json', 'backups'] };
+  });
 }
 
 export async function installResourceShims(
