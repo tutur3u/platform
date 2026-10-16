@@ -20,7 +20,12 @@ export function selectHttpRuntime(value, journal) {
 export function httpQualificationReceipt(text) {
   if (typeof text !== 'string' || Buffer.byteLength(text) > 4096)
     throw new Error('HTTP qualification receipt exceeds bound');
-  const candidate = JSON.parse(text);
+  let candidate;
+  try {
+    candidate = JSON.parse(text);
+  } catch {
+    throw new Error('HTTP qualification receipt shape invalid');
+  }
   if (
     !candidate ||
     typeof candidate !== 'object' ||
@@ -43,8 +48,9 @@ export function httpQualificationReceipt(text) {
     routeAuthorizationProof: false,
   };
 }
-export function assertQualifiedHttp(value) {
+export function assertQualifiedHttp(value, status) {
   if (
+    status !== 0 ||
     value.qualified !== true ||
     value.phase !== 'complete' ||
     value.assertions !== 29

@@ -200,7 +200,9 @@ const bounded = (command, args, cwd, timeout, input, allowFailure = false) => {
     );
     throw new Error('Bounded employee schema command failed');
   }
-  return result.stdout;
+  return allowFailure
+    ? { stdout: result.stdout, status: result.status }
+    : result.stdout;
 };
 const excluded =
   (httpRuntime ? '' : 'gotrue,kong,postgrest,') +
@@ -322,8 +324,8 @@ const runner = async (command, args, cwd) => {
           }),
           true
         );
-        httpQualification = httpQualificationReceipt(output.trim());
-        assertQualifiedHttp(httpQualification);
+        httpQualification = httpQualificationReceipt(output.stdout.trim());
+        assertQualifiedHttp(httpQualification, output.status);
       }
     } else {
       packetOrdinal = 0;

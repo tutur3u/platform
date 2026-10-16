@@ -244,6 +244,7 @@ commit;`,
       email: `http-lost-provider-${randomUUID()}@tuturuuu.com`,
     },
   };
+  let lostCreateSucceeded = false;
   const unknownJournal = createEmployeeCreationJournal({
     store,
     provider: createEmployeeRpcPhaseProvider({
@@ -253,13 +254,14 @@ commit;`,
         ...auth,
         async createUser(value) {
           const result = await auth.createUser(value);
-          check(!result.error);
+          lostCreateSucceeded = !result.error;
           throw new Error('Synthetic lost Auth acknowledgement');
         },
       },
     }),
   });
   const unknown = await unknownJournal.claimAndRun(providerInput);
+  check(lostCreateSucceeded);
   check(unknown.outcome.status === 'pending');
   check(creates === 2 && activations === 1);
   const pendingProvider = await admin.auth.admin.getUserById(

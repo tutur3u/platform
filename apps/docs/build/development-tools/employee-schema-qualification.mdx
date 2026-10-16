@@ -105,9 +105,9 @@ independent persisted state, stable-UUID replay, payload conflict, a committed
 claim with a lost acknowledgement and a successful Auth create with a lost
 acknowledgement. Neither unknown outcome may trigger a second provider create.
 Credentials enter the child over stdin and never enter its command line or
-artifact. Failed receipts retain only a fixed phase and completed check count.
+artifact. Valid failed receipts retain only a fixed phase and completed check count; malformed child output retains only the parent `http-runtime` diagnostic.
 
-`httpTransportQualified` requires the complete HTTP receipt, all SQL assertions
+`httpTransportQualified` requires a zero child exit, the complete HTTP receipt, all SQL assertions
 and successful owned cleanup. It is separate from production proof and does not
 qualify the live request authentication boundary, deployed project configuration,
 RESTORE, or legacy-address migration. The runtime flag remains off until the
