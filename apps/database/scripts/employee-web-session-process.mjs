@@ -47,10 +47,11 @@ export async function runOwnedSessionProcess(
   const killTimer = setTimeout(() => {
     if (child.pid) signalGroup(child.pid, 'SIGKILL');
   }, timeoutMs + 3000);
+  const closed = new Promise((resolve) => child.once('close', resolve));
   try {
     const status = await new Promise((resolve, reject) => {
       child.once('error', reject);
-      child.once('close', (code) => resolve(code));
+      child.once('exit', (code) => resolve(code));
     });
     if (!child.pid) throw new Error('Owned session process absent');
     // The leader may have exited while descendants still hold the same group.
@@ -60,6 +61,7 @@ export async function runOwnedSessionProcess(
     if (groupExists(child.pid)) signalGroup(child.pid, 'SIGKILL');
     for (let attempt = 0; attempt < 30 && groupExists(child.pid); attempt++)
       await delay(100);
+    await closed;
     return {
       stdout: overflow ? '' : output,
       status: timedOut || overflow ? null : status,

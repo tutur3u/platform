@@ -47,6 +47,25 @@ test('descendant surviving a successful leader is terminated before group cleanu
   assert.equal(result.status, 0);
   assert.equal(result.processGroupStopped, true);
 });
+test('leader exit triggers cleanup when a descendant keeps stdout open', async () => {
+  const started = Date.now();
+  const result = await runOwnedSessionProcess(
+    process.execPath,
+    [
+      '-e',
+      'require("node:child_process").spawn(process.execPath,["-e","setInterval(()=>{},1000)"],{stdio:["ignore",1,"ignore"]}).unref();process.stdout.write("receipt")',
+    ],
+    {
+      cwd: process.cwd(),
+      input: '',
+      timeoutMs: 5000,
+    }
+  );
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout, 'receipt');
+  assert.equal(result.processGroupStopped, true);
+  assert.ok(Date.now() - started < 3000);
+});
 test('oversized receipt output fails closed and drains its owned process group', async () => {
   const result = await runOwnedSessionProcess(
     process.execPath,
