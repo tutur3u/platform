@@ -24,6 +24,7 @@ export const ci = {
   'mail-calendar-tasks-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
+  'apps-cloudflare.yaml': true,
   'colab-cloudflare.yaml': true,
   'coordination-cloudflare.yaml': true,
   'codex-plugin.yaml': true,

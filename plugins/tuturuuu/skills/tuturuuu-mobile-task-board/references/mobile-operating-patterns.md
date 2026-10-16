@@ -123,7 +123,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 ## 5. Maintainability
 
 - **Module Boundaries**: When a file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
-- **Mira Composer Geometry**: Enter inserts a newline and only the side primary action sends typed text. Limit growth to five lines and report rendered composer height for transcript padding and scroll-to-bottom clearance. Validate the composer inside `PersistentShellDock` with wrapped drafts, text scale, IME, and safe-area variants; a fixed one-line estimate is insufficient.
+- **Mira Composer Geometry**: Enter inserts a newline and only the side primary action sends typed text. Focused input reserves three lines; full-screen draft editing returns the same controller value/selection and previous focus without sending. Place bounded media/audio previews above the prompt in both modes and retain current upload/removal callbacks. Limit dock growth to five lines and report rendered composer height for transcript padding and scroll-to-bottom clearance. Validate the composer inside `PersistentShellDock` with wrapped drafts, text scale, IME, and safe-area variants; a fixed one-line estimate is insufficient.
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 
@@ -204,7 +204,7 @@ provider/device operation or production delivery.
   failures at the active controls from current state so superseded operations
   cannot report a newer operation's failure.
 
-- **Assistant settings gutters**: Keep embedded live preferences and local-model sections aligned with personal settings at 16px horizontal padding. Preserve standalone sheet padding. Reuse SettingsRouteFrame for the existing branded title, physical safe area and floating Back boundary; do not add feature chrome. The settings layout matrix covers 320/390/430px and 1x/2x text plus final-control scroll clearance; widget geometry does not prove an authenticated installed artifact.
+- **Assistant settings gutters**: Keep embedded live preferences and local-model sections aligned with personal settings at 16px horizontal padding. Preserve standalone sheet padding. Reuse SettingsRouteFrame for the existing branded title and physical safe area; Assistant hub/field/prompt editors opt into its existing CustomNavigationBar/PersistentShellDock Back surface. Keep other consumers unchanged; do not add feature chrome. The settings layout matrix covers 320/390/430px and 1x/2x text plus final-control scroll clearance; widget geometry does not prove an authenticated installed artifact.
 
 ## Profile avatar removal
 
@@ -235,3 +235,5 @@ runtime tests through the canonical resource queue, then `bun check:mobile`.
 Tiny synthetic headers and injected native errors prove admission/recovery only.
 Real device installation/inference requires its own authorization and evidence;
 never use download completion or mock readiness to close that gate.
+
+- **Native Logo Parity**: Audit generated native PNG artwork bounds at each density rather than using padded generator image dimensions as visible logo size. App lock/loading share `AppSplashSurface`; preserve lock timers, controls and authentication boundaries when adjusting its visuals. Compare matching viewport/theme/text scale with `app_lock_splash_visual_test.dart`, and label reconstructed native canvases as source fixtures. Assert readable recovery text does not cross artwork at compact enlarged text; preserve entry centering and reserve top clearance when recovery needs the space. For Android assets run `dart run tool/generate_android_splash.dart` from `apps/mobile`: it directly copies canonical RGBA artwork into transparent padding and invokes Android-only splash generation without changing iOS or dependency files. Assert transparent corners, all canonical RGBA rows and 80dp artwork at every density for legacy/Android12. Inspect opaque padding separately; widget geometry and background checks do not prove full native raster parity or installed-device delivery.

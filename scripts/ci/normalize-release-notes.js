@@ -97,6 +97,15 @@ function normalizeReleaseNotes(
   return output.join('\n') + content.slice(boundary);
 }
 
+function readPublishedHistory(base, file) {
+  return execFileSync('git', ['show', `${base}:${file}`], {
+    encoding: 'utf8',
+    maxBuffer: 8 * 1024 * 1024,
+    timeout: 10_000,
+    killSignal: 'SIGKILL',
+  });
+}
+
 function main(base = 'origin/production') {
   const git = (...args) => execFileSync('git', args, { encoding: 'utf8' });
   const paths = git('diff', '--name-only', '-z', `${base}...HEAD`)
@@ -125,7 +134,7 @@ function main(base = 'origin/production') {
       throw new Error(`Generated changelog is not a regular file: ${file}`);
     let previous = '';
     try {
-      previous = git('show', `${base}:${file}`);
+      previous = readPublishedHistory(base, file);
     } catch {
       if (git('ls-tree', '--name-only', base, '--', file).trim())
         throw new Error(`Cannot read published history: ${file}`);

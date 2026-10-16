@@ -1,6 +1,6 @@
 ---
-title: "Infrastructure"
-description: "Privileged operations, diagnostics, configuration, and hosted scheduler ownership."
+title: 'Infrastructure'
+description: 'Privileged operations, diagnostics, configuration, and hosted scheduler ownership.'
 updatedAt: '2026-10-08'
 ---
 
@@ -50,3 +50,91 @@ separate boundaries.
 A configuration edit, deploy action, external registration, or production write
 requires its own authorized workflow. Reading a runbook or recalling a private
 record is not authority to execute it.
+
+## Employee SQL transport qualification
+
+### HTTP RPC runtime candidate
+
+The Web employee CREATE route can compose the durable operation journal with
+fixed service-only Supabase RPCs. `EMPLOYEE_CREATION_RUNTIME_ENABLED` defaults to
+disabled. Enable it only after the selected source passes isolated SQL,
+generated-type, HTTP/Auth and exact-build checks and its migrations are verified
+in the target project. Infrastructure consumes the same availability endpoint;
+its create control remains disabled while the runtime is unavailable.
+
+The adapter uses the configured server Supabase project for both Auth and SQL.
+The request still requires an eligible root administrator, current membership and
+permission, and the account-action origin/header checks. SQL repeats the actor
+assertion and denies expanded function ACLs. An original actor/operation key owns
+one target UUID. Durable attempted phases and single-use invocation capabilities
+precede provider effects; unknown responses retain that identity for inspection.
+
+Every RPC write acknowledgement is followed by a separate persisted-state
+observation. A function response from a transaction configured to roll back cannot
+authorize provider creation or publish account success. Lost responses, malformed
+state and readback disagreement fail closed without an automatic retry. Passwords
+remain transient Auth inputs and never enter the operation tables or RPC body.
+
+This adapter does not activate the fixed child-worker prototype below. That
+prototype retains its separate operator, connection and asset qualification
+requirements. RESTORE and legacy-domain migration remain separate runtime flows;
+successful CREATE qualification does not establish either behavior.
+
+### Managed employee inspection
+
+Web serves `GET /api/v1/infrastructure/internal-accounts/employees/:userId`
+for the native Infrastructure management client. It returns the retained
+restoration inspection contract, provider observation time and next action.
+It requires a current confirmed, active canonical-domain root `MEMBER` with
+`manage_internal_accounts`; it rechecks the same request actor before SQL and
+before disclosing private recovery details. Responses are private and uncached.
+
+The adapter reads the exact provider UUID and calls only
+`private.inspect_employee_management` in the same configured Supabase project.
+Missing schema, conflicting tuples, unavailable reads and changed authority fail
+closed. An unresolved restore operation remains `inspect`; it never relaunches
+provider work. Unmanaged legacy addresses remain an adoption/migration concern.
+The portable restoration boundary lives under
+`packages/utils/src/internal-accounts`, with Infrastructure compatibility exports.
+
+This GET path does not enable CREATE, RESTORE writes, legacy-address migration or
+an Infrastructure action dialog. No runtime flag is changed. Route and transport
+regressions live beside the Web implementation, while the existing Infrastructure
+restoration suites cover compatibility. Exact-source CI builds, deployed request
+authentication and target-project SQL qualification remain separate release gates.
+
+### Fixed child-worker prototype
+
+The fixed child-worker transport remains unavailable until its protected SQL supplier and
+project readiness are independently qualified. The fixed transport prototype
+accepts only preflight, finalize and activation-confirm operations. Each request
+owns one terminable child and TLS connection; no shared pool, caller SQL,
+account password or inherited database configuration enters that boundary.
+
+The executor is shared through the server-only
+`@tuturuuu/inventory-core/infrastructure/employee-sql/process` leaf; only this
+leaf's dependency closure is framework-free. Original Infrastructure entry
+points remain compatibility entries, while the canonical raw worker and protocol
+are colocated under `packages/inventory-core/src/lib/infrastructure/employee-sql/`.
+Before binding the Web supplier, verify that the compiled route's `.nft.json`
+trace and resolved `fork()` target load the canonical worker, protocol, and
+runtime dependencies. Relocation requires qualification of the exact source and
+build with refreshed signed attestations, even when raw worker/protocol hashes
+are unchanged.
+
+The parent requires external Ed25519-signed project and execution attestations,
+including the exact worker and protocol hashes. Missing bindings deny before
+spawning. Ordered, same-connection catalog checkpoints validate the role, cluster,
+ledger, function bodies and effective privileges before effects and COMMIT.
+The parent records an uncertain commit before authorizing COMMIT; lost commit
+acknowledgement never authorizes a blind retry or replacement account ID.
+
+The process requests cancellation at 13 seconds and kills only its owned child
+at 14.5 seconds, reserving cleanup time within the qualification profile's
+15-second budget. It waits for actual child closure. Client process/TCP drain
+controls do not establish server transaction rollback or row-lock release.
+Before wiring the supplier, qualify delayed connection/query/lock/COMMIT cases
+against disposable PostgreSQL, verify backend and lock drain, and verify the
+static worker/protocol assets in the exact hosted Next build and file trace.
+Source tests, schema assertions and signed synthetic fixtures cannot replace
+those gates or activate account creation.

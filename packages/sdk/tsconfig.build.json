@@ -15,6 +15,7 @@
     ".turbo",
     "**/*.test.ts",
     "**/*.spec.ts",
+    "src/cli/resources-test-fixtures.ts",
     "examples"
   ]
 }

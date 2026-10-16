@@ -1,4 +1,3 @@
-import { validateProjection } from '../cli/operational-domain';
 import {
   canonical,
   digest,
@@ -17,6 +16,8 @@ import {
   outcomeProjectionRequestSchema,
   outcomeSnapshotSchema,
 } from './contracts';
+import { validateOutcomeGraph } from './domain';
+import { canonicalId, groupMembers } from './duplicate';
 
 function freeze(value: unknown): void {
   if (value !== null && typeof value === 'object') {
@@ -70,7 +71,7 @@ export function buildOutcomeProjectionPage({
     )
   )
     fail('INVALID_HISTORY', 'projection differs from final event payload');
-  validateProjection(items);
+  validateOutcomeGraph(items);
 
   const snapshotHash = digest(snapshot);
   if (
@@ -83,38 +84,44 @@ export function buildOutcomeProjectionPage({
       'PROJECTION_REVISION_CONFLICT',
       'projection cursor belongs to a different snapshot'
     );
-  if (cursor && !items.has(cursor.afterId))
-    fail('INVALID_INPUT', 'projection cursor item is missing');
+  const cursorItem = cursor ? items.get(cursor.afterId) : undefined;
+  if (cursor && (!cursorItem || canonicalId(cursorItem) !== cursor.afterId))
+    fail(
+      'INVALID_INPUT',
+      'projection cursor must name an existing canonical record'
+    );
 
-  const ordered = [...items.values()].sort((a, b) =>
-    a.id < b.id ? -1 : a.id > b.id ? 1 : 0
-  );
+  const ordered = [...items.values()]
+    .filter((item) => canonicalId(item) === item.id)
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const start = cursor
     ? ordered.findIndex((item) => item.id === cursor.afterId) + 1
     : 0;
   const selected = ordered.slice(start, start + limit);
   const records = selected.map((item) => {
-    const events = provenance.get(item.id);
-    const first = events?.[0];
-    const last = events?.at(-1);
-    if (!events || !first || !last)
-      return fail('INVALID_HISTORY', 'projection item lacks provenance');
+    const contributors = groupMembers(items, item.id);
+    const members = contributors.map((member) => {
+      const events = provenance.get(member.id);
+      const first = events?.[0];
+      const last = events?.at(-1);
+      if (!events || !first || !last)
+        return fail('INVALID_HISTORY', 'projection item lacks provenance');
+      return {
+        item: member,
+        provenance: {
+          itemId: member.id,
+          source: member.source,
+          firstEventSeq: first.seq,
+          lastEventSeq: last.seq,
+          events,
+        },
+      };
+    });
     return {
       id: item.id,
       canonicalId: item.id,
-      contributingIds: [item.id],
-      members: [
-        {
-          item,
-          provenance: {
-            itemId: item.id,
-            source: item.source,
-            firstEventSeq: first.seq,
-            lastEventSeq: last.seq,
-            events,
-          },
-        },
-      ],
+      contributingIds: contributors.map((member) => member.id),
+      members,
     };
   });
   const last = selected.at(-1);

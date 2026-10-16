@@ -20,6 +20,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useCallback, useRef, useState } from 'react';
 import { AccountPasswordRecovery } from './account-password-recovery';
+import { EmployeeCreationDialog } from './employee-creation-dialog';
 import { InternalAccountRow } from './internal-account-row';
 import { InternalAccountsToolbar } from './internal-accounts-toolbar';
 import { ReviewAccountsPanel } from './review-accounts-panel';
@@ -102,6 +103,11 @@ export function InternalAccountsClient() {
 
   return (
     <div className="space-y-4">
+      <EmployeeCreationDialog
+        onDirectoryRefresh={() =>
+          queryClient.invalidateQueries({ queryKey: QUERY_KEY })
+        }
+      />
       <ReviewAccountsPanel />
       <AccountPasswordRecovery />
 

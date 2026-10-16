@@ -10540,4 +10540,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesLocalAiDiscard => 'Bỏ bản xem trước';
+
+  @override
+  String get assistantExpandPrompt => 'Mở rộng lời nhắc';
+
+  @override
+  String get assistantMinimizePrompt => 'Thu gọn lời nhắc';
+
+  @override
+  String assistantSettingInfo(String setting) {
+    return 'Thông tin về $setting';
+  }
+
+  @override
+  String get assistantPreviewPlay => 'Phát bản xem trước';
+
+  @override
+  String get assistantPreviewPause => 'Tạm dừng bản xem trước';
 }

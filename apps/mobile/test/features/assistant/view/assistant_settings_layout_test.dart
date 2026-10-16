@@ -5,7 +5,6 @@ import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dar
 import 'package:mobile/features/assistant/local/assistant_local_preferences.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
-import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,7 +65,9 @@ void main() {
         expect(setting.left, 16);
         expect(setting.right, width - 16);
 
-        final dock = tester.getRect(find.byType(ShellDockActionButton));
+        final dock = tester.getRect(
+          find.byKey(const ValueKey('settings-route-back')),
+        );
         expect(dock.bottom, lessThanOrEqualTo(844 - 34));
         final scroll = find.byType(ListView).first;
         await tester.scrollUntilVisible(find.text('On-device models'), 300);
@@ -94,14 +95,37 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('License'), findsNothing);
-        final finalControl = find.text(
-          tester
-              .element(find.byType(AssistantSettingsHub))
-              .l10n
-              .assistantLocalHistoryNotice,
+        final l = tester.element(find.byType(AssistantSettingsHub)).l10n;
+        // Remote is the last control in this unsupported-platform fixture.
+        final finalControl = find.widgetWithText(
+          ListTile,
+          l.assistantLocalRemote,
         );
         expect(finalControl, findsOneWidget);
         expect(tester.getRect(finalControl).bottom, lessThan(dock.top));
+        final info = find.byTooltip(
+          l.assistantSettingInfo(l.assistantLocalTitle),
+        );
+        final infoButton = find
+            .ancestor(of: info, matching: find.byType(IconButton))
+            .first;
+        await tester.ensureVisible(infoButton);
+        await tester.pumpAndSettle();
+        expect(infoButton.hitTestable(), findsOneWidget);
+        await tester.tap(infoButton);
+        await tester.pumpAndSettle();
+        expect(
+          find.textContaining(l.assistantLocalHistoryNotice),
+          findsOneWidget,
+        );
+        expect(find.textContaining(l.assistantLocalHelp), findsOneWidget);
+        expect(
+          find.textContaining(l.assistantLocalBudgetDescription),
+          findsOneWidget,
+        );
+        expect(find.textContaining(l.assistantLocalModeSwitch), findsOneWidget);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       });
     }

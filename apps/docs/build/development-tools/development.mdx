@@ -11,6 +11,44 @@ updatedAt: '2026-08-21'
 
 ## Installation
 
+### Supabase Auth declaration compatibility
+
+The repository pins a Bun patch for `@supabase/auth-js@2.117.1`. Its credential
+interface retains every native `PublicKeyCredential` member except `toJSON`,
+which the package declares separately with its existing response type. Native
+DOM JSON uses an encoded large-blob string; the package's existing extension
+output type uses `ArrayBuffer`. Treat these as distinct contracts.
+
+The patch changes declarations only. It does not encode extension data, alter
+authentication behavior, or qualify browser passkey delivery. Both shipped
+declaration formats and the package source carry the same correction. Keep
+`skipLibCheck` disabled when checking this compatibility boundary:
+
+```sh
+ttr resources run -- ./node_modules/.bin/tsgo --project packages/supabase/type-tests/auth-webauthn-compat.tsconfig.json
+ttr resources run -- bun packages/supabase/type-tests/auth-webauthn-compat.ts
+```
+
+Bun installs the patch through `patchedDependencies`; do not edit installed
+dependencies as a permanent fix. Before updating Auth JS or removing the patch,
+check the strict public verification types and the negative native-credential
+and encoded-blob controls against the installed replacement.
+
+The finite behavior controls call the installed ESM and CommonJS serialization
+functions with typed mocks. They check registration and authentication separately.
+The native `toJSON` branch returns its encoded extension output unchanged; the
+fallback returns raw extension buffers unchanged. Stringifying a fallback
+large-blob buffer produces `{}`, so this patch does not prove extension data can
+be transmitted correctly. Native registration JSON also requires fields that the
+existing fallback does not emit.
+
+The controls retain expected type errors for native DOM JSON and credentials
+without `toJSON`. The package's serializer signatures still require `toJSON` and
+advertise the package's raw-extension response type even though the implementation
+supports both branches. Those signature limitations remain separate from this
+inheritance correction. The mocks exercise pure serialization, not browser
+credential acquisition or server verification.
+
 Step 1. Install [bun](https://bun.sh/docs/installation) on your machine (if you don't already have it yet), by running the following command:
 
 **macOS/Linux:**

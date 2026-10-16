@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 557,
+        "legacyNext": 558,
         "migrated": 66,
-        "percentComplete": 12.28,
-        "remaining": 557,
+        "percentComplete": 12.26,
+        "remaining": 558,
         "terminal": 78,
-        "total": 635,
+        "total": 636,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 567,
+        "legacyNext": 568,
         "migrated": 71,
-        "percentComplete": 12.77,
-        "remaining": 567,
+        "percentComplete": 12.75,
+        "remaining": 568,
         "terminal": 83,
-        "total": 650,
+        "total": 651,
         "unknownStatus": 0
       },
       {
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 646,
+      "legacyNext": 647,
       "migrated": 219,
-      "percentComplete": 26.51,
-      "remaining": 646,
+      "percentComplete": 26.48,
+      "remaining": 647,
       "terminal": 233,
-      "total": 879,
+      "total": 880,
       "unknownStatus": 0
     }
   },
@@ -1968,6 +1968,18 @@
       ],
       "routePath": "/api/v1/external-ai/chat/completions",
       "sourceFile": "apps/web/src/app/api/v1/external-ai/chat/completions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/infrastructure/internal-accounts/employees:apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "routePath": "/api/v1/infrastructure/internal-accounts/employees",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9981,20 +9993,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 635,
+    "apiRoutes": 636,
     "cronRoutes": 10,
     "layouts": 68,
     "pages": 157,
-    "routeHandlers": 650,
+    "routeHandlers": 651,
     "methodCounts": {
-      "GET": 327,
+      "GET": 328,
       "HEAD": 20,
-      "POST": 322,
+      "POST": 323,
       "PUT": 60,
       "PATCH": 65,
       "DELETE": 102,
       "OPTIONS": 26
     },
-    "total": 879
+    "total": 880
   }
 }

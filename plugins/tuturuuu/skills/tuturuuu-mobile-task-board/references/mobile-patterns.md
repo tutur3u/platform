@@ -104,3 +104,14 @@ HTML content, and use the existing mobile link launcher URL policy. Calendar's
 widget regressions cover both raw `<p>` and Markdown source, malformed/mixed
 content, formatting, URL rejection and accessible enlarged text. A widget fixture
 is not installed-device or provider delivery evidence.
+
+## Mail notification entry privacy
+
+- Keep Mail push routing actor-bound and UUID-only, then verify mailbox bootstrap
+  before reading detail. Managed subdomain syntax is launcher discovery only.
+- Pass notification-entry image suppression through the owning Mail reader chain;
+  explicit reveal changes that reader, not the saved image preference. Preserve
+  the entry intent across failed-open Retry. Do not grow the generic push service.
+- Use `mail_notification_privacy_test.dart` and existing push/dismissal tests.
+  Device arrival and timing require separately authorized device fixtures; see
+  [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
