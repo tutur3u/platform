@@ -114,14 +114,16 @@ track is insufficient. The fixture neither tests hosted SFU nor replaces native
 WebView acceptance. See the runbook before installing/driving its exact-commit
 artifact. Use T3 Device so verification remains visible to the user.
 
-## Meet and Parley Cache Components acceptance
+## Meet, Lettin and Parley Cache Components acceptance
 
 Parley's isolated stable-tarball adapter candidate backports upstream PR 1318 and
 must retain the real Node middleware bundler alongside both the scheduler and
 request-scoped module-loading patches, plus the repository's PPR name and preview
 manifest fixes. Its static default/remote cache-handler registration returns
 before the compiled Next custom-handler loader can reuse removed minified aliases.
-Meet reuses this URL-keyed adapter; verify isolation from Lettin's stable adapter.
+Meet and Lettin reuse this URL-keyed adapter. Select all three apps for URL-patch
+changes; verify isolation from `packages/meet-core`'s stable-version adapter and
+keep native Worker selection independent.
 A preview that rejects Node middleware cannot be repaired by simply removing its guard.
 When changing the candidate dependency, update both workflow path filters and
 `tuturuuu.ts` selection to its active patch. Selection regressions must derive the

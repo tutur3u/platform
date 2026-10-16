@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
+const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 
@@ -61,14 +62,47 @@ for (const app of ['meet', 'parley', 'lettin']) {
   });
 }
 
-test('the shared Meet/Parley adapter patch preserves Lettin and native Worker isolation', () => {
+for (const app of consumers) {
+  test(`${app}'s event filters admit its manifest-selected adapter patch`, () => {
+    const activePatch = activeAdapterPatch(app);
+    const workflow = readWorkflow(`${app}-cloudflare.yaml`);
+    for (const event of ['pull_request', 'push']) {
+      assert.ok(
+        workflow.on[event].paths.some((pattern) =>
+          path.matchesGlob(activePatch, pattern)
+        ),
+        `${app} ${event} must start before the selector can validate its patch`
+      );
+    }
+  });
+}
+
+test('the shared adapter selects all URL consumers while native Workers stay isolated', () => {
   const activePatch = activeAdapterPatch('meet');
-  assert.equal(activePatch, activeAdapterPatch('parley'));
-  assert.notEqual(activePatch, activeAdapterPatch('lettin'));
-  for (const app of ['lettin', ...workers]) {
-    const decision = decide(`${app}-cloudflare.yaml`, [activePatch]);
-    assert.equal(decision.shouldRun, false);
+  for (const app of consumers) {
+    assert.equal(activePatch, activeAdapterPatch(app));
+    assert.equal(
+      decide(`${app}-cloudflare.yaml`, [activePatch]).shouldRun,
+      true
+    );
   }
+  for (const app of workers) {
+    assert.equal(
+      decide(`${app}-cloudflare.yaml`, [activePatch]).shouldRun,
+      false
+    );
+  }
+});
+
+test('Meet core retains an independent stable-version adapter patch', () => {
+  const dependency = require('../../packages/meet-core/package.json')
+    .devDependencies['@opennextjs/cloudflare'];
+  const stablePatch =
+    patchedDependencies[
+      `@opennextjs/cloudflare@${dependency.replace(/^\^/, '')}`
+    ];
+  assert.equal(stablePatch, patch);
+  assert.notEqual(stablePatch, activeAdapterPatch('meet'));
 });
 
 for (const app of consumers) {
@@ -206,11 +240,11 @@ for (const workflow of [
 }
 
 const parleyCandidatePatch = activeAdapterPatch('parley');
-test('the shared candidate patch selects its Meet and Parley Cloudflare owners', () => {
+test('the shared candidate patch selects its Meet, Lettin and Parley Cloudflare owners', () => {
   for (const app of consumers) {
     assert.equal(
       decide(`${app}-cloudflare.yaml`, [parleyCandidatePatch]).shouldRun,
-      ['meet', 'parley'].includes(app)
+      true
     );
   }
   assert.equal(

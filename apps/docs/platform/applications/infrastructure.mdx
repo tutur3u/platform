@@ -80,6 +80,107 @@ prototype retains its separate operator, connection and asset qualification
 requirements. RESTORE and legacy-domain migration remain separate runtime flows;
 successful CREATE qualification does not establish either behavior.
 
+### Managed employee inspection
+
+Web serves `GET /api/v1/infrastructure/internal-accounts/employees/:userId`
+for the native Infrastructure management client. It returns the retained
+restoration inspection contract, provider observation time and next action.
+It requires a current confirmed, active canonical-domain root `MEMBER` with
+`manage_internal_accounts`; it rechecks the same request actor before SQL and
+before disclosing private recovery details. Responses are private and uncached.
+
+The adapter reads the exact provider UUID and calls only
+`private.inspect_employee_management` in the same configured Supabase project.
+Missing schema, conflicting tuples, unavailable reads and changed authority fail
+closed. An unresolved restore operation remains `inspect`; it never relaunches
+provider work. Unmanaged legacy addresses remain an adoption/migration concern.
+The portable restoration boundary lives under
+`packages/utils/src/internal-accounts`, with Infrastructure compatibility exports.
+
+This GET path does not enable CREATE, RESTORE writes or legacy-address migration. No runtime flag is changed. Route and transport
+regressions live beside the Web implementation, while the existing Infrastructure
+restoration suites cover compatibility. Exact-source CI builds, deployed request
+authentication and target-project SQL qualification remain separate release gates.
+
+### RESTORE and reconciliation POST candidate
+
+Web owns `POST /api/v1/infrastructure/internal-accounts/employees/:userId/restore`
+and the sibling `/reconcile` route. `EMPLOYEE_RESTORATION_RUNTIME_ENABLED`
+defaults to disabled and is independent of the CREATE gate. Both routes remain
+unavailable while this gate is absent. The Infrastructure console consumes this contract through the managed-access
+dialog below; legacy-domain address migration remains a separate flow.
+
+The routes reuse the portable restoration HTTP/orchestration helpers, with
+Infrastructure compatibility exports. The server supplies the actor and provider;
+strict request input supplies only confirmation email, expected revision and,
+for reconciliation, the original operation UUID. Current request authentication,
+root membership/permission and active canonical-domain actor checks repeat before
+every RPC and provider call and before a successful or pending response is disclosed.
+
+The fixed five-function transport uses the same configured Supabase project for
+Auth and SQL. Separate `inspect_employee_management` requests must observe the
+matching reserved and attempted operation before the sole provider unban. SQL
+confirmation/reconciliation receipts must match independently observed completed
+state, revision and managed name. Rollback responses, missing or malformed
+readbacks and lost responses retain an unknown outcome without automatic retry.
+Reconciliation uses the original actor/target/revision/operation tuple and never
+begins an operation or dispatches another provider mutation.
+
+`employee-restoration-rpc.test.ts` and `employee-restoration-runtime.test.ts` in
+Web exercise actual loopback HTTP against a disposable synthetic SQL endpoint,
+including unpersisted replies, revocation and provider acknowledgement loss.
+The shipped route test proves default-off behavior independently of CREATE.
+The retained Infrastructure suites cover helper compatibility. These fixtures
+qualify source and HTTP serialization only: before activation, independently
+verify the five deployed function definitions and service-only ACLs, commit and
+rollback/readback behavior through real PostgREST/PostgreSQL, request-session
+and actor revocation behavior with real Auth, and the exact-source Web and
+Infrastructure CI builds. Production migration completion and authorized
+activation remain release-owner gates; neither GET inspection nor CREATE
+qualification establishes RESTORE delivery.
+
+### Managed-access console
+
+The Infrastructure account directory exposes **Inspect managed access** for
+other accounts. The administrator explicitly reads current state; only an active,
+managed, mailbox-ready canonical account with a confirmed provider ban and a
+RESTORE next action offers restoration. Creation recovery, adoption, conflicting
+or unconfirmed provider state and legacy migration have explanatory states
+without a restore button. This dialog never renames an account or implements
+stable-UUID legacy-domain migration.
+
+Confirmation requires the exact inspected account email. Every submit performs
+another uncached inspection and compares revision and operation before dispatch.
+The portable consumer retains the original expected revision and server operation
+UUID across pending results and dialog close/reopen. A lost POST response blocks
+another RESTORE in that dialog lifetime, even if a subsequent read has no operation.
+Only the matching persisted operation can be reconciled; reconciliation never
+replays the provider mutation. No client-generated replacement UUID or automatic
+POST retry is used. State is private and ephemeral; a new page lifetime recovers
+operations from the authorized persisted inspection rather than browser storage.
+
+RESTORE remains disabled by default at the Web endpoint. Inspection does not
+advertise write availability. A capability-unavailable response therefore locks
+writes for the current dialog lifetime while preserving read-only inspection and
+any retained uncertain operation; it does not establish account absence. Session
+and permission denial retires actions until the page is reauthorized. Client
+actor lifetime checks surround each awaited stage, while the endpoint remains
+authoritative for current actor, root membership and permission.
+
+A successful POST alone is not displayed as restored. The console requires a
+separate GET showing the matching completed operation, original revision plus
+one, managed active registry, ready mailbox and confirmed active provider. Missing,
+malformed, mismatched or failed readbacks preserve uncertainty. Directory status
+and private management state remain separate observations.
+
+`employee-restoration-consumer.test.ts` covers revision/UUID fences, explicit
+reconciliation, unavailable capability, duplicate admission and revoked actors.
+`employee-restoration-dialog.test.tsx` covers rendered English/Vietnamese controls,
+exact confirmation, pending close/reopen, independent readback and actor replacement.
+These are synthetic source regressions. Exact-commit Infrastructure/internal-API
+CI and authenticated deployed session/provider/SQL acceptance remain separate;
+no runtime flags, account activation or migration are performed by the UI change.
+
 ### Fixed child-worker prototype
 
 The fixed child-worker transport remains unavailable until its protected SQL supplier and

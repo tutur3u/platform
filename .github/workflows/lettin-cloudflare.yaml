@@ -8,6 +8,7 @@ on:
       - "package.json"
       - "turbo.json"
       - "bun.lock"
+      - "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch"
       - "tuturuuu.ts"
       - "tuturuuu.ci.ts"
       - ".github/workflows/ci-check.yml"
@@ -19,6 +20,7 @@ on:
       - "apps/lettin/**"
       - "packages/**"
       - "bun.lock"
+      - "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch"
       - "package.json"
       - "turbo.json"
       - "tuturuuu.ts"
@@ -89,6 +91,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run --cwd packages/types build
       - run: bun run --cwd packages/supabase build
+      - name: Verify installed Next cache-handler registration
+        run: node --test apps/lettin/scripts/opennext-health.node.mjs
       - run: bun run test
         working-directory: apps/lettin
       - name: Build the frontend for Workers

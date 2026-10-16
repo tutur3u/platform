@@ -630,7 +630,7 @@ Workflow contracts use Bun's built-in YAML parser via `workflow-yaml-test-helper
 not undeclared transitive YAML packages. The dependency-free snapshot checks ordering,
 identity and caching. Run `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
-Meet and Parley pin the official OpenNext `1.20.6` registry tarball as a
+Meet, Lettin and Parley pin the official OpenNext `1.20.6` registry tarball as a
 shared URL dependency. Its URL-keyed Bun patch backports the Cache Components
 scheduler and request-scoped module-loading changes from upstream PR 1318 at
 `6b783939aefa8f9a19d4f002f68bc57c62879098`. The older upstream preview rejects Node
@@ -639,9 +639,10 @@ stable adapter's real `bundleNodeMiddleware` path and apply the Cache Components
 middleware patch after that bundle. Preserve component names, preview manifests,
 and Next 16.4's `CacheSignal(null)` constructor arguments.
 
-Keep the registry integrity in `bun.lock`; Lettin retains its separate
-stable-version patch. Bun's path-based patch command can select the package version
-instead of the URL: verify the generated `patchedDependencies` key and restore the
+Keep the registry integrity in `bun.lock`; `packages/meet-core` retains its
+separate stable-version adapter and patch. Verify installed package isolation
+against that independent consumer, not Lettin. Bun's path-based patch command can
+select the package version instead of the URL: verify the generated `patchedDependencies` key and restore the
 stable patch before installing. Set the URL-keyed entry through `bun pm pkg set`
 with JSON input, then verify a frozen install and installed package isolation.
 A prepared directory left by `bun patch` can shadow dependency symlinks; preserve
@@ -1004,6 +1005,29 @@ uses required-file behavior, one-day retention, and compression level 0 because
 `.tgz` is already compressed. Preparation runs any package lifecycle build
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
+
+The SDK build embeds only its reviewed portable HTTP-client and task-codec source
+closure from the broad `internal-api` and `utils` packages. Those packages remain
+development dependencies; emitted JavaScript and declarations share rewritten local
+`dist/_portable` imports. `dist/portable-sources.json` records included source paths.
+The build rejects unreviewed modules, private/runtime-specific imports, and
+undeclared external libraries. Extend the explicit allowlists only after reviewing
+the added closure. Keep the isolated public npm install and compiled CLI probes as
+the acceptance gate; source-staging tests do not establish package delivery.
+Run `node --test packages/sdk/scripts/portable-build.test.cjs` for the boundary
+regressions, and require exact-commit compilation and install qualification in CI.
+
+SDK packed-CLI qualification keeps install failure stream byte counts and SHA256
+commitments, without retaining stdout/stderr or the private npm cache. Its receipt
+also extracts at most eight package requests from strict npm E404 lines in the
+first 4096 bytes of each stream. Only the HTTPS npm public registry origin and
+validated package names are allowed; an exact version is included only when a
+matching npm package/version line exists. Credentialed URLs, query strings,
+fragments, other registries and free-form errors are excluded. A missing identity
+or null version remains unknown; a request is not proof the package exists.
+Run `node --test scripts/ci/qualify-sdk-package.test.js` for the diagnostic and
+fixture-cleanup regressions. Use the exact-head qualification receipt for new
+failures; hashes from older receipts cannot recover discarded npm output.
 
 Test, Coverage, Biome, and Type Check preserve immutable protected concurrency
 groups for main, production, and all generated Release Please refs.

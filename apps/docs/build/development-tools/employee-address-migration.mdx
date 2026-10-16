@@ -1,0 +1,79 @@
+---
+title: 'Employee address migration protocol'
+description: 'Source-only stable identity address migration and missing supplier qualification.'
+---
+
+The source protocol in
+`apps/infrastructure/src/lib/internal-accounts/employee-address-migration.ts`
+models a separate operation from CREATE and RESTORE. It has no installed Web
+route, SQL journal supplier, Auth supplier, environment flag, or UI consumer.
+Its default availability is therefore off. Passing its tests does not make
+legacy-address migration available to operators.
+
+## Address and identity policy
+
+The proposed operation changes a canonical lowercase managed-subdomain address
+to the same localpart at exactly `tuturuuu.com`. It rejects external domains,
+root-address sources, a changed localpart, self-action, unknown ownership,
+conflicting reservations, stale revisions and unverified source identities.
+It never requests another Auth UUID, account creation/deletion, password,
+metadata, administrator grants, ban changes or an email-confirmation override.
+The provider port exposes only a read and an email update on the original UUID.
+
+A protected journal supplier must reauthorize the confirmed active root
+administrator and lock/revalidate the original actor, UUID, both addresses and
+all competing CREATE/RESTORE/migration reservations in every transaction. The
+supplier must independently observe real Auth/provider identity IDs, the public
+identity, workspace memberships, grants, saved data and mailbox routes. A caller
+supplied boolean or fingerprint is not administrator or preservation proof.
+Fingerprints must use documented canonical snapshots and must exclude only the
+specific email fields that this operation is allowed to change.
+
+## Persisted operation protocol
+
+An original operation UUID binds the actor, target UUID, source/destination,
+revision, immutable-state fingerprint and provider-identity fingerprint.
+Reservation must be durably idempotent on that whole binding, with unique
+unresolved target/address ownership. An atomic attempt claim returns true to
+exactly one invocation; every replay returns false. Neither lease expiry nor
+process restart may reissue that claim. Attempt IDs are server-generated UUIDs.
+
+The executor requires an independent committed read after reservation, attempt
+claim and completion. A claimed attempt also needs its one-time acknowledgement;
+a persisted attempted row alone cannot authorize another provider request.
+Crashes and lost responses retain the original operation for inspection. Even a
+reserved replay is inspection-only. No expiry, replacement operation, rollback,
+compensation or automatic provider retry is part of this contract.
+
+A provider email update must use the supported admin update on the original UUID
+with `{ email }` only. It must perform one request without transport retry and
+preserve existing provider identity IDs. Actual GoTrue behavior, verification
+challenges, secure-email-change settings and concurrent external administrators
+must be qualified before installing that supplier. An unverified destination or
+changed identity remains pending; the protocol never sets `email_confirm`.
+
+Inspection can complete a named attempted operation after observing the verified
+destination and unchanged identity. Completion must independently verify actual
+Auth state and preservation, then atomically update only approved registry/public
+email projections and mailbox routing with a revision increment. The final
+readback must match the original binding, completed phase and exact next revision.
+A completed replay returns that original receipt without another provider write.
+
+## Evidence and remaining gates
+
+`employee-address-migration.test.ts` exercises the real source executor with an
+explicitly in-memory journal/provider fixture. It covers concurrent callers,
+strict old/new tuples, lost reserve/claim/provider acknowledgements, false
+acknowledgements, source/destination verification, identity drift, immutable-state
+drift, completed replay and inspection without relaunch.
+
+This fixture does **not** establish durable persistence, SQL lock/ACL behavior,
+real email change/verification, mailbox delivery, public profile convergence or
+UUID/membership/data preservation in a real project. Those remain supplier gates.
+No additive migration is included because this unit installs no SQL supplier.
+Before runtime binding, implement and apply that supplier in the approved isolated
+full-schema fixture, verify reservation/claim/readback concurrency and failure
+cases, verify real Auth identity/email semantics, generated types, authenticated
+Web permissions/origin handling and the exact app build in CI. Record a scoped
+activation/rollback plan separately. CREATE or RESTORE receipts do not qualify
+this migration, and production/provider/SQL actions require separate authority.

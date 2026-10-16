@@ -171,7 +171,7 @@ test('candidate retains stable Node middleware bundling and isolates the backpor
   );
   assert.match(bundle, /import "\$\{cacheComponentsSchedulerModule\}"/);
   const rootRequire = createRequire(
-    new URL('../../lettin/package.json', import.meta.url)
+    new URL('../../../packages/meet-core/package.json', import.meta.url)
   );
   const stable = resolve(
     dirname(rootRequire.resolve('@opennextjs/cloudflare')),

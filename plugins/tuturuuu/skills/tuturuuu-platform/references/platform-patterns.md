@@ -134,6 +134,21 @@ shared-package changes.
 
 ## Effect Orchestration
 
+Employee management inspection uses the Web `employees/[userId]` GET route and
+the portable restoration boundary in `packages/utils/src/internal-accounts`.
+Keep its RPC port inspection-only and recheck the same request actor before SQL
+and private disclosure. Preserve UUID/email binding and unresolved operation
+receipts; an observation is not permission to retry activation or migrate a
+legacy address. See the Infrastructure application guide's managed employee
+inspection section and the colocated Web route/transport regressions.
+
+The unbound legacy-address migration protocol is separate from RESTORE. Never
+wire its injected journal/provider ports from source tests alone: a concrete
+durable supplier, atomic one-time attempt claim, independent committed readbacks
+and real Auth identity/email qualification are missing activation gates. See
+`apps/docs/build/development-tools/employee-address-migration.mdx` for the
+protocol and its explicitly in-memory regression boundary.
+
 - Import Effect through `@tuturuuu/utils/effect`, not directly from `effect`,
   so Tuturuuu code uses one curated server/service orchestration entrypoint.
 - Prefer Effect for new or substantially edited TypeScript server/shared flows
@@ -1035,3 +1050,15 @@ SDK serializer behind a closed synthetic fetch boundary; response-route tests
 check private conflict propagation. These fixtures are not organizer receipt
 proof. Real-account acceptance requires an authorized dedicated calendar and
 separate organizer observation; keep production provider admission held.
+
+## Employee restoration transport
+
+RESTORE and reconciliation POST routes use the portable restoration helpers in
+`packages/utils/src/internal-accounts`; Infrastructure entries are compatibility
+exports. Keep the RESTORE runtime gate independent of CREATE and default off.
+Before provider unban, separately read back the exact reserved and attempted
+operation; before reporting restored, read back completed state and revision.
+Repeat the same request actor authorization before each RPC/provider boundary and
+before response disclosure. Never retry an unknown provider outcome or replace
+its operation UUID. See the Infrastructure application docs for real SQL/Auth
+qualification gates and the Web restoration transport/runtime regression suites.
