@@ -1,4 +1,5 @@
 import { projectBuildDiagnostic } from './employee-web-session-build-diagnostic.mjs';
+import { projectCaseDiagnostic } from './employee-web-session-case-diagnostic.mjs';
 import { projectStartupOutput } from './employee-web-session-startup-diagnostic.mjs';
 export const sessionCases = Object.freeze([
   'anonymous',
@@ -227,6 +228,21 @@ export function webSessionReceipt(text) {
     )
       throw 0;
     diagnostics = diagnosticFields(value);
+    if (value.caseDiagnostic !== undefined) {
+      const diagnostic =
+        value.caseDiagnostic === null
+          ? null
+          : projectCaseDiagnostic(value.caseDiagnostic);
+      if (
+        diagnostic !== null &&
+        (value.qualified ||
+          value.phase !== 'cases' ||
+          value.cases.length !== sessionCases.indexOf('inactive-actor') ||
+          value.cases.some((entry, index) => entry !== sessionCases[index]))
+      )
+        throw 0;
+      diagnostics.caseDiagnostic = diagnostic;
+    }
     if (value.startupOutput !== undefined) {
       if (
         value.startupOutput !== null &&

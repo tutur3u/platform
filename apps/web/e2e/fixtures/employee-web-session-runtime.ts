@@ -6,6 +6,10 @@ import { createServer } from 'node:net';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session-core';
 import { z } from 'zod';
 import {
+  caseResponseDiagnostic,
+  type projectCaseDiagnostic,
+} from '../../../database/scripts/employee-web-session-case-diagnostic.mjs';
+import {
   type StartupDiagnostic,
   waitForSessionReadiness,
 } from './employee-web-session-readiness';
@@ -26,6 +30,7 @@ import {
 } from './employee-web-session-support';
 
 let startupDiagnostic: StartupDiagnostic | null = null;
+let caseDiagnostic: ReturnType<typeof projectCaseDiagnostic> | null = null;
 let startupOutput: Awaited<
   ReturnType<ReturnType<typeof command>['startupOutput']>
 > | null = null;
@@ -158,8 +163,22 @@ commit;`
         redirect: 'error',
         signal: AbortSignal.timeout(15000),
       });
+      if (caseDiagnostic?.check === 'request')
+        caseDiagnostic = {
+          ...caseDiagnostic,
+          check: 'json',
+          status: response.status,
+        };
       const value = ObjectReply.parse(await response.json());
-      check(response.headers.get('cache-control')?.includes('no-store'));
+      const noStore =
+        response.headers.get('cache-control')?.includes('no-store') === true;
+      if (caseDiagnostic?.check === 'json')
+        caseDiagnostic = caseResponseDiagnostic(
+          response.status,
+          value.code,
+          noStore
+        );
+      check(noStore);
       return { response, value };
     }
     async function denied(
@@ -169,8 +188,11 @@ commit;`
       code: string
     ) {
       const result = await request(`${endpoint}/${dummy}/restore`, headers, {});
+      if (name === 'inactive-actor' && caseDiagnostic?.check === 'no-store')
+        caseDiagnostic = { ...caseDiagnostic, check: 'status-code' };
       check(result.response.status === status && result.value.code === code);
       cases.push(name);
+      if (name === 'inactive-actor') caseDiagnostic = null;
     }
     async function allowed(name: string, headers: Record<string, string>) {
       const result = await request(endpoint, headers);
@@ -262,6 +284,13 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
       config,
       `insert into public.workspace_members(ws_id,user_id,type) values('${rootId}','${actor.id}','MEMBER');`
     );
+    caseDiagnostic = {
+      case: 'inactive-actor',
+      check: 'ban-update',
+      status: null,
+      code: null,
+      noStore: null,
+    };
     check(
       !(
         await admin.auth.admin.updateUserById(actor.id, {
@@ -269,6 +298,13 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
         })
       ).error
     );
+    caseDiagnostic = {
+      case: 'inactive-actor',
+      check: 'request',
+      status: null,
+      code: null,
+      noStore: null,
+    };
     await denied('inactive-actor', satellite, 403, 'forbidden');
     check(
       !(
@@ -459,6 +495,7 @@ try {
       cleanup,
       startupDiagnostic,
       startupOutput,
+      caseDiagnostic,
       productionProof: false,
       routeAuthorizationProof: true,
     })
@@ -477,6 +514,7 @@ try {
       cleanup,
       startupDiagnostic,
       startupOutput,
+      caseDiagnostic,
       productionProof: false,
       routeAuthorizationProof: false,
     })

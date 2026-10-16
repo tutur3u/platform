@@ -1,3 +1,4 @@
+import './employee-web-session-case-diagnostic.test.mjs';
 import './employee-web-session-startup-diagnostic.test.mjs';
 import './employee-web-session-build-diagnostic.test.mjs';
 import assert from 'node:assert/strict';
@@ -402,4 +403,61 @@ test('startup output projects fixed fields and rejects malformed diagnostics wit
     })
   );
   assert.throws(() => assertQualifiedWebSession(failed, 1, sourceSha, true));
+});
+
+test('inactive failure receipt preserves fixed response metadata without changing qualification', () => {
+  const diagnostic = {
+    case: 'inactive-actor',
+    check: 'status-code',
+    status: 401,
+    code: 'unauthorized',
+    noStore: true,
+  };
+  const failed = {
+    ...complete,
+    qualified: false,
+    routeAuthorizationProof: false,
+    phase: 'cases',
+    cases: sessionCases.slice(0, 12),
+    assertions: 38,
+  };
+  const receipt = webSessionReceipt(
+    JSON.stringify({
+      ...failed,
+      caseDiagnostic: {
+        ...diagnostic,
+        raw: 'private-token',
+        body: { email: 'private@example.test' },
+      },
+    })
+  );
+  assert.deepEqual(receipt.caseDiagnostic, diagnostic);
+  assert.ok(!JSON.stringify(receipt).includes('private'));
+  assert.throws(() => assertQualifiedWebSession(receipt, 1, sourceSha, true));
+  assert.equal(
+    webSessionReceipt(JSON.stringify(failed)).caseDiagnostic,
+    undefined
+  );
+  for (const candidate of [
+    { ...complete, caseDiagnostic: diagnostic },
+    { ...failed, phase: 'start', caseDiagnostic: diagnostic },
+    { ...failed, cases: sessionCases.slice(0, 11), caseDiagnostic: diagnostic },
+    {
+      ...failed,
+      cases: sessionCases.slice(0, 12).reverse(),
+      caseDiagnostic: diagnostic,
+    },
+    { ...failed, caseDiagnostic: { ...diagnostic, code: 'private' } },
+    { ...failed, caseDiagnostic: { ...diagnostic, status: 600 } },
+    { ...failed, caseDiagnostic: { ...diagnostic, noStore: false } },
+  ])
+    assert.throws(() => webSessionReceipt(JSON.stringify(candidate)));
+  assert.throws(() =>
+    webSessionReceipt(
+      JSON.stringify({
+        ...failed,
+        caseDiagnostic: { ...diagnostic, raw: 'x'.repeat(8192) },
+      })
+    )
+  );
 });
