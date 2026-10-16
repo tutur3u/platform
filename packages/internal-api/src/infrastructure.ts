@@ -14,6 +14,7 @@ export * from './infrastructure/employee-creation';
 export { createInternalEmployee as createJournaledInternalEmployee } from './infrastructure/employee-creation';
 export * from './infrastructure/employee-management';
 export * from './infrastructure/employee-restoration';
+export * from './infrastructure/employee-restoration-consumer';
 export * from './infrastructure/github-bot';
 export type {
   CreateInternalEmployeePayload,

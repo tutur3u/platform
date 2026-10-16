@@ -27,12 +27,14 @@ import {
 import { formatBytes } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { EmployeeRestorationDialog } from './employee-restoration-dialog';
 import { InternalAccountActionDialog } from './internal-account-action-dialog';
 import { InternalAccountEditDialog } from './internal-account-edit-dialog';
 
 interface InternalAccountRowProps {
   account: InternalAccount;
   isWorking: boolean;
+  onDirectoryRefresh: () => Promise<unknown>;
   onConfirm: (payload: UpdateInternalAccountPayload) => Promise<unknown>;
 }
 
@@ -40,6 +42,7 @@ export function InternalAccountRow({
   account,
   isWorking,
   onConfirm,
+  onDirectoryRefresh,
 }: InternalAccountRowProps) {
   const locale = useLocale();
   const t = useTranslations('internal-accounts');
@@ -48,6 +51,7 @@ export function InternalAccountRow({
     'update_profile'
   > | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [restorationOpen, setRestorationOpen] = useState(false);
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -177,6 +181,12 @@ export function InternalAccountRow({
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={account.isSelf}
+              onSelect={() => setRestorationOpen(true)}
+            >
+              {t('restoration.open')}
+            </DropdownMenuItem>
             {account.isDisabled ? (
               <DropdownMenuItem
                 data-testid={`enable-access-${account.email}`}
@@ -207,6 +217,14 @@ export function InternalAccountRow({
         onConfirm={onConfirm}
         onOpenChange={(open) => !open && setAction(null)}
         open={action !== null}
+      />
+      <EmployeeRestorationDialog
+        key={`${account.id}:${account.email}`}
+        userId={account.id}
+        email={account.email}
+        open={restorationOpen}
+        onOpenChange={setRestorationOpen}
+        onDirectoryRefresh={onDirectoryRefresh}
       />
       <InternalAccountEditDialog
         account={account}

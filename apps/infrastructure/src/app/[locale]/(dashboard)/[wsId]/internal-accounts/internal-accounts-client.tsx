@@ -176,6 +176,9 @@ export function InternalAccountsClient() {
                 accountMutation.variables?.userId === account.id
               }
               key={account.id}
+              onDirectoryRefresh={() =>
+                queryClient.invalidateQueries({ queryKey: QUERY_KEY })
+              }
               onConfirm={(payload) =>
                 accountMutation.mutateAsync({ payload, userId: account.id })
               }
