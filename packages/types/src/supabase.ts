@@ -4356,6 +4356,216 @@ export type Database = {
         };
         Relationships: [];
       };
+      employee_creation_intents: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          managed_name: string;
+          staff_email: string;
+          user_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          managed_name: string;
+          staff_email: string;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          managed_name?: string;
+          staff_email?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_creation_intents_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'employee_creation_intents_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      employee_creation_operation_history: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          event_id: string;
+          expected_version: number;
+          lease_id: string;
+          next_phase: string;
+          operation_id: string;
+          previous_phase: string;
+          receipt: Json | null;
+          resulting_version: number;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          event_id: string;
+          expected_version: number;
+          lease_id: string;
+          next_phase: string;
+          operation_id: string;
+          previous_phase: string;
+          receipt?: Json | null;
+          resulting_version: number;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          event_id?: string;
+          expected_version?: number;
+          lease_id?: string;
+          next_phase?: string;
+          operation_id?: string;
+          previous_phase?: string;
+          receipt?: Json | null;
+          resulting_version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_creation_operation_history_actor_id_operation_id_fkey';
+            columns: ['actor_id', 'operation_id'];
+            isOneToOne: false;
+            referencedRelation: 'employee_creation_operations';
+            referencedColumns: ['actor_id', 'operation_id'];
+          },
+        ];
+      };
+      employee_creation_operations: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          last_receipt: Json | null;
+          lease_expires_at: string;
+          lease_id: string;
+          managed_name: string;
+          operation_id: string;
+          phase: string;
+          revoked_at: string | null;
+          staff_email: string;
+          target_id: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          last_receipt?: Json | null;
+          lease_expires_at?: string;
+          lease_id?: string;
+          managed_name: string;
+          operation_id: string;
+          phase?: string;
+          revoked_at?: string | null;
+          staff_email: string;
+          target_id?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          last_receipt?: Json | null;
+          lease_expires_at?: string;
+          lease_id?: string;
+          managed_name?: string;
+          operation_id?: string;
+          phase?: string;
+          revoked_at?: string | null;
+          staff_email?: string;
+          target_id?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_creation_operations_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'employee_creation_operations_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      employee_restore_operations: {
+        Row: {
+          actor_id: string;
+          attempted_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          expected_revision: number;
+          operation_id: string;
+          phase: string;
+          safe_code: string | null;
+          staff_email: string;
+          user_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          attempted_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          expected_revision: number;
+          operation_id: string;
+          phase: string;
+          safe_code?: string | null;
+          staff_email: string;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          attempted_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          expected_revision?: number;
+          operation_id?: string;
+          phase?: string;
+          safe_code?: string | null;
+          staff_email?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_restore_operations_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'employee_restore_operations_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'employee_restore_operations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'infrastructure_employees';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       external_chat_binding_credentials: {
         Row: {
           configuration_revision: number;
@@ -6238,6 +6448,104 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [];
+      };
+      infrastructure_employees: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          lifecycle_state: string;
+          mailbox_id: string | null;
+          managed_name: string;
+          management_role_label: string | null;
+          recovery_email: string | null;
+          recovery_verified_at: string | null;
+          revision: number;
+          staff_email: string;
+          updated_at: string;
+          updated_by: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          lifecycle_state?: string;
+          mailbox_id?: string | null;
+          managed_name: string;
+          management_role_label?: string | null;
+          recovery_email?: string | null;
+          recovery_verified_at?: string | null;
+          revision?: number;
+          staff_email: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          lifecycle_state?: string;
+          mailbox_id?: string | null;
+          managed_name?: string;
+          management_role_label?: string | null;
+          recovery_email?: string | null;
+          recovery_verified_at?: string | null;
+          revision?: number;
+          staff_email?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'infrastructure_employees_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'infrastructure_employees_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'infrastructure_employees_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: true;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'infrastructure_employees_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'infrastructure_employees_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'infrastructure_employees_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'infrastructure_employees_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       infrastructure_stress_test_runs: {
         Row: {
@@ -11241,16 +11549,19 @@ export type Database = {
       };
       mail_notification_receipts: {
         Row: {
+          event_key: string | null;
           message_id: string;
           notification_id: string | null;
           user_id: string;
         };
         Insert: {
+          event_key?: string | null;
           message_id: string;
           notification_id?: string | null;
           user_id: string;
         };
         Update: {
+          event_key?: string | null;
           message_id?: string;
           notification_id?: string | null;
           user_id?: string;
@@ -14854,6 +15165,77 @@ export type Database = {
           },
         ];
       };
+      time_tracker_operation_receipts: {
+        Row: {
+          actor_id: string;
+          applied_revision: number;
+          command_id: string;
+          payload_hash: string;
+          result: Json;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          applied_revision: number;
+          command_id: string;
+          payload_hash: string;
+          result: Json;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          applied_revision?: number;
+          command_id?: string;
+          payload_hash?: string;
+          result?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracker_operation_receipts_ws_id_actor_id_fkey';
+            columns: ['ws_id', 'actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracker_operation_scopes';
+            referencedColumns: ['ws_id', 'actor_id'];
+          },
+        ];
+      };
+      time_tracker_operation_scopes: {
+        Row: {
+          actor_id: string;
+          revision: number;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          revision?: number;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          revision?: number;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracker_operation_scopes_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracker_operation_scopes_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       time_tracking_request_activity: {
         Row: {
           action_type: Database['public']['Enums']['time_tracking_request_activity_action'];
@@ -15416,6 +15798,73 @@ export type Database = {
           },
         ];
       };
+      topic_announcement_delivery_attempts: {
+        Row: {
+          actor_id: string;
+          announcement_id: string;
+          completed_at: string | null;
+          created_at: string;
+          dispatch_started_at: string;
+          email_audit_id: string | null;
+          id: string;
+          outcome: string;
+          outcome_reason: string | null;
+          provider_message_id: string | null;
+          snapshot: Json;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          announcement_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          dispatch_started_at?: string;
+          email_audit_id?: string | null;
+          id: string;
+          outcome?: string;
+          outcome_reason?: string | null;
+          provider_message_id?: string | null;
+          snapshot: Json;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          announcement_id?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          dispatch_started_at?: string;
+          email_audit_id?: string | null;
+          id?: string;
+          outcome?: string;
+          outcome_reason?: string | null;
+          provider_message_id?: string | null;
+          snapshot?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_delivery_attempts_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_delivery_attempts_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_delivery_parent_scope';
+            columns: ['announcement_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcements';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
       topic_announcement_recipients: {
         Row: {
           announcement_id: string;
@@ -15556,6 +16005,7 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           day_label: string | null;
+          delivery_revision: number;
           end_time: string | null;
           group_id: string | null;
           id: string;
@@ -15583,6 +16033,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
+          delivery_revision?: number;
           end_time?: string | null;
           group_id?: string | null;
           id?: string;
@@ -15610,6 +16061,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
+          delivery_revision?: number;
           end_time?: string | null;
           group_id?: string | null;
           id?: string;
@@ -15674,6 +16126,148 @@ export type Database = {
             referencedColumns: ['user_id'];
           },
         ];
+      };
+      tutoring_absence_commands: {
+        Row: {
+          actor_id: string;
+          command_id: string;
+          input: Json;
+          receipt: Json;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          command_id: string;
+          input: Json;
+          receipt: Json;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          command_id?: string;
+          input?: Json;
+          receipt?: Json;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      tutoring_absence_credits: {
+        Row: {
+          absence_date: string;
+          attendance_id: string | null;
+          class_session_id: string | null;
+          created_at: string;
+          created_by: string;
+          group_id: string;
+          history: Json;
+          id: string;
+          original_attendance_id: string;
+          original_class_session_id: string | null;
+          original_session_id: string;
+          revision: number;
+          session_id: string | null;
+          state: string;
+          student_user_id: string;
+          updated_at: string;
+          updated_by: string;
+          ws_id: string;
+        };
+        Insert: {
+          absence_date: string;
+          attendance_id?: string | null;
+          class_session_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          group_id: string;
+          history?: Json;
+          id?: string;
+          original_attendance_id: string;
+          original_class_session_id?: string | null;
+          original_session_id: string;
+          revision?: number;
+          session_id?: string | null;
+          state: string;
+          student_user_id: string;
+          updated_at?: string;
+          updated_by: string;
+          ws_id: string;
+        };
+        Update: {
+          absence_date?: string;
+          attendance_id?: string | null;
+          class_session_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          group_id?: string;
+          history?: Json;
+          id?: string;
+          original_attendance_id?: string;
+          original_class_session_id?: string | null;
+          original_session_id?: string;
+          revision?: number;
+          session_id?: string | null;
+          state?: string;
+          student_user_id?: string;
+          updated_at?: string;
+          updated_by?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tutoring_absence_credits_class_session_id_fkey';
+            columns: ['class_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tutoring_absence_credits_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'tutoring_absence_credits_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_tutoring_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tutoring_absence_write_permits: {
+        Row: {
+          backend_pid: number;
+          credit_id: string;
+          object_id: string;
+          object_kind: string;
+          operation: string;
+          projection: Json;
+          revision: number;
+          transaction_id: number;
+        };
+        Insert: {
+          backend_pid: number;
+          credit_id: string;
+          object_id: string;
+          object_kind: string;
+          operation: string;
+          projection: Json;
+          revision: number;
+          transaction_id: number;
+        };
+        Update: {
+          backend_pid?: number;
+          credit_id?: string;
+          object_id?: string;
+          object_kind?: string;
+          operation?: string;
+          projection?: Json;
+          revision?: number;
+          transaction_id?: number;
+        };
+        Relationships: [];
       };
       user_group_metric_categories: {
         Row: {
@@ -16986,6 +17580,156 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_tutoring_hours_anchors: {
+        Row: {
+          ws_id: string;
+        };
+        Insert: {
+          ws_id: string;
+        };
+        Update: {
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_tutoring_hours_defaults: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          revision: number;
+          time_zone: string;
+          updated_at: string;
+          updated_by: string;
+          week: Json;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          revision?: number;
+          time_zone: string;
+          updated_at?: string;
+          updated_by: string;
+          week: Json;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          revision?: number;
+          time_zone?: string;
+          updated_at?: string;
+          updated_by?: string;
+          week?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_tutoring_hours_defaults_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_hours_defaults_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_hours_defaults_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_hours_defaults_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_hours_defaults_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspace_tutoring_hours_anchors';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      workspace_tutoring_hours_overrides: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          revision: number;
+          teacher_id: string;
+          updated_at: string;
+          updated_by: string;
+          week: Json;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          revision?: number;
+          teacher_id: string;
+          updated_at?: string;
+          updated_by: string;
+          week: Json;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          revision?: number;
+          teacher_id?: string;
+          updated_at?: string;
+          updated_by?: string;
+          week?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_tutoring_hours_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_hours_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_hours_overrides_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_hours_overrides_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_hours_overrides_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_tutoring_hours_anchors';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
       workspace_tutoring_sessions: {
         Row: {
           attendance_status: string;
@@ -18258,8 +19002,20 @@ export type Database = {
         };
         Returns: Json;
       };
+      assert_employee_administrator: {
+        Args: { p_actor_id: string };
+        Returns: undefined;
+      };
       assert_finance_chart_date_range: {
         Args: { _end_date: string; _max_days: number; _start_date: string };
+        Returns: undefined;
+      };
+      assert_tutoring_absence_actor: {
+        Args: { p_actor: string; p_ws: string };
+        Returns: undefined;
+      };
+      assert_tutoring_hours_actor: {
+        Args: { p_actor: string; p_write: boolean; p_ws: string };
         Returns: undefined;
       };
       assign_workspace_user_referral: {
@@ -18274,6 +19030,17 @@ export type Database = {
           referral_promotion_id: string;
           status: string;
         }[];
+      };
+      audit_tutoring_hours_revision: {
+        Args: {
+          p_actor: string;
+          p_after: string;
+          p_before: string;
+          p_reset: boolean;
+          p_teacher: string;
+          p_ws: string;
+        };
+        Returns: undefined;
       };
       author_inventory_period_price: {
         Args: {
@@ -18335,6 +19102,16 @@ export type Database = {
           run_id: string;
           success: boolean;
         }[];
+      };
+      begin_employee_restore: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_expected_revision: number;
+          p_operation_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
       };
       begin_external_ai_studio_run: {
         Args: {
@@ -19047,6 +19824,20 @@ export type Database = {
         };
         Returns: Json;
       };
+      confirm_employee_activation: {
+        Args: { p_actor_id: string; p_email: string; p_user_id: string };
+        Returns: Json;
+      };
+      confirm_employee_restore: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_expected_revision: number;
+          p_operation_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       consolidate_user_group_manager_link: {
         Args: { p_workspace_user_id: string; p_ws_id: string };
         Returns: string;
@@ -19395,6 +20186,71 @@ export type Database = {
           p_workspace_user_id: string;
           p_ws_id: string;
         };
+        Returns: Json;
+      };
+      employee_access_preflight: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_require_active?: boolean;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
+      employee_creation_operation_advance: {
+        Args: {
+          p_actor_id: string;
+          p_event_id: string;
+          p_expected_version: number;
+          p_lease_id: string;
+          p_next_phase: string;
+          p_operation_id: string;
+          p_receipt: Json;
+        };
+        Returns: Json;
+      };
+      employee_creation_operation_claim: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_name: string;
+          p_operation_id: string;
+        };
+        Returns: Json;
+      };
+      employee_creation_operation_ready: {
+        Args: { p_actor_id: string };
+        Returns: Json;
+      };
+      employee_creation_operation_revoke: {
+        Args: { p_actor_id: string; p_operation_id: string };
+        Returns: Json;
+      };
+      employee_creation_operation_snapshot: {
+        Args: {
+          p: Database['private']['Tables']['employee_creation_operations']['Row'];
+        };
+        Returns: Json;
+      };
+      employee_creation_preflight: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_name: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
+      employee_creation_runtime_inspect: {
+        Args: { p_actor_id: string; p_operation_id: string };
+        Returns: Json;
+      };
+      employee_creation_runtime_ready: {
+        Args: { p_actor_id: string };
+        Returns: Json;
+      };
+      employee_inbound_mailbox: {
+        Args: { p_domain_id: string; p_email: string };
         Returns: Json;
       };
       enqueue_learn_coding_execution: {
@@ -19751,6 +20607,15 @@ export type Database = {
       };
       external_project_set_cms_site_template: {
         Args: { p_actor_user_id: string; p_template: Json; p_ws_id: string };
+        Returns: Json;
+      };
+      finalize_employee_creation: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_name: string;
+          p_user_id: string;
+        };
         Returns: Json;
       };
       finalize_workspace_invitation_membership: {
@@ -20744,6 +21609,10 @@ export type Database = {
         Args: { p_actor_id: string; p_key: string };
         Returns: boolean;
       };
+      inspect_employee_management: {
+        Args: { p_actor_id: string; p_email: string; p_user_id: string };
+        Returns: Json;
+      };
       inventory_bundle_category_components_json: {
         Args: {
           p_bundle_id: string;
@@ -21144,9 +22013,34 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      lock_employee_auth_pair: {
+        Args: { p_actor_id: string; p_user_id: string };
+        Returns: undefined;
+      };
+      lock_tutoring_hours_teacher: {
+        Args: { p_teacher: string; p_ws: string };
+        Returns: undefined;
+      };
+      mail_inbound_push_message_allowed: {
+        Args: { p_message_id: string };
+        Returns: boolean;
+      };
+      mail_push_recipient_allowed: {
+        Args: { p_mailbox_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       mail_thread_push_allowed: {
         Args: { p_message_id: string; p_user_id: string };
         Returns: boolean;
+      };
+      manage_tutoring_absence_credit: {
+        Args: {
+          p_actor: string;
+          p_command: string;
+          p_input: Json;
+          p_ws: string;
+        };
+        Returns: Json;
       };
       managed_cron_claim_due_jobs: {
         Args: {
@@ -21212,6 +22106,16 @@ export type Database = {
           p_status: string;
         };
         Returns: boolean;
+      };
+      mark_employee_restore_attempt: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_expected_revision: number;
+          p_operation_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
       };
       materialize_workspace_user_group_session_series: {
         Args: { p_series_id: string; p_until?: string };
@@ -21433,7 +22337,25 @@ export type Database = {
         Args: { p_actor_id: string; p_ws_id: string };
         Returns: Json;
       };
+      read_tutoring_absence_credits: {
+        Args: { p_actor: string; p_ws: string };
+        Returns: Json;
+      };
+      read_tutoring_teacher_hours: {
+        Args: { p_actor: string; p_teacher?: string; p_ws: string };
+        Returns: Json;
+      };
       reconcile_creator_handle_owners: { Args: never; Returns: undefined };
+      reconcile_employee_restore: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_expected_revision: number;
+          p_operation_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       reconcile_orphaned_approved_post_email_queue: {
         Args: {
           p_cutoff?: string;
@@ -21567,6 +22489,20 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      replace_running_time_tracker_session: {
+        Args: {
+          p_actor_id: string;
+          p_category_id: string;
+          p_command_id: string;
+          p_description: string;
+          p_expected_revision: number;
+          p_expected_running_session_id: string;
+          p_task_id: string;
+          p_title: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       report_email_reply_receiving_ready: { Args: never; Returns: boolean };
       report_review_delivery_ready: {
         Args: { p_report_id: string };
@@ -21623,6 +22559,29 @@ export type Database = {
           p_problem: Json;
           p_problem_id?: string;
           p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      save_tutoring_hours_default: {
+        Args: {
+          p_actor: string;
+          p_confirmed: boolean;
+          p_expected: string;
+          p_week: Json;
+          p_ws: string;
+          p_zone: string;
+        };
+        Returns: Json;
+      };
+      save_tutoring_hours_override: {
+        Args: {
+          p_actor: string;
+          p_expected_default: string;
+          p_expected_override: string;
+          p_reset?: boolean;
+          p_teacher: string;
+          p_week: Json;
+          p_ws: string;
         };
         Returns: Json;
       };
@@ -21851,6 +22810,7 @@ export type Database = {
         Args: { p_contact_id: string };
         Returns: boolean;
       };
+      topic_delivery_foundation_readiness: { Args: never; Returns: Json };
       transition_report_email_reply_identity: {
         Args: {
           p_identity_id: string;
@@ -21868,6 +22828,10 @@ export type Database = {
           allowed: boolean;
           retry_after: number;
         }[];
+      };
+      tutoring_absence_projection: {
+        Args: { p_kind: string; p_row: Json };
+        Returns: Json;
       };
       update_expired_sessions: { Args: never; Returns: undefined };
       update_inventory_scheduled_period: {
@@ -22178,6 +23142,15 @@ export type Database = {
         Args: { p_config: Json };
         Returns: boolean;
       };
+      valid_tutoring_hours_revision: {
+        Args: { p_revision: string };
+        Returns: boolean;
+      };
+      valid_tutoring_hours_timezone: {
+        Args: { p_zone: string };
+        Returns: boolean;
+      };
+      valid_tutoring_hours_week: { Args: { p_week: Json }; Returns: boolean };
       wallet_interest_calculation_result: {
         Args: {
           _config_id: string;

@@ -1,6 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const authorize = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/infrastructure/employee-creation-runtime', () => ({
+  createEmployeeRuntimeJournal: vi.fn(async () => undefined),
+}));
 vi.mock('@/lib/infrastructure/employee-creation-authorization', () => ({
   authorizeEmployeeCreation: authorize,
 }));

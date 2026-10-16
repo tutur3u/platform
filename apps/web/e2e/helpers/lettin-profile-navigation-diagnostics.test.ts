@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { Console } from 'node:console';
+import { EventEmitter } from 'node:events';
 import { Writable } from 'node:stream';
 import test from 'node:test';
 import type { Page, Response } from '@playwright/test';
@@ -53,10 +54,10 @@ test('navigation failure preserves the error, bounds hops and detaches its liste
   const page = {
     mainFrame: () => frame,
     on: (_event: string, callback: typeof listener) => {
-      listener = callback;
+      if (_event === 'response') listener = callback;
     },
     off: (_event: string, callback: typeof listener) => {
-      removed = callback === listener;
+      if (_event === 'response') removed = callback === listener;
     },
   } as unknown as Page;
   const response = {
@@ -84,6 +85,7 @@ test('navigation failure preserves the error, bounds hops and detaches its liste
       (error) => error === failure
     );
     assert.deepEqual(captured, {
+      lifecycle: { domContentLoaded: false, load: false },
       hops: Array.from({ length: 20 }, () => ({
         route: 'login',
         locale: 'unprefixed',
@@ -92,6 +94,7 @@ test('navigation failure preserves the error, bounds hops and detaches its liste
         samePath: null,
         sameOrigin: null,
         status: 307,
+        body: 'unavailable',
       })),
       truncated: true,
     });
@@ -148,10 +151,10 @@ test('failed navigation reads the redirect edge assigned after the response even
   const page = {
     mainFrame: () => frame,
     on: (_event: string, callback: typeof listener) => {
-      listener = callback;
+      if (_event === 'response') listener = callback;
     },
     off: (_event: string, callback: typeof listener) => {
-      removed = callback === listener;
+      if (_event === 'response') removed = callback === listener;
     },
   } as unknown as Page;
   const response = {
@@ -181,6 +184,7 @@ test('failed navigation reads the redirect edge assigned after the response even
       (error) => error === failure
     );
     assert.deepEqual(captured, {
+      lifecycle: { domContentLoaded: false, load: false },
       hops: [
         {
           route: 'profile',
@@ -190,6 +194,7 @@ test('failed navigation reads the redirect edge assigned after the response even
           samePath: false,
           sameOrigin: true,
           status: 307,
+          body: 'unavailable',
         },
       ],
       truncated: false,
@@ -250,7 +255,7 @@ test('real console output retains nested fixed producer categories without priva
   const page = {
     mainFrame: () => frame,
     on: (_event: string, callback: typeof listener) => {
-      listener = callback;
+      if (_event === 'response') listener = callback;
     },
     off: () => {},
   } as unknown as Page;
@@ -306,4 +311,82 @@ test('real console output retains nested fixed producer categories without priva
     console.warn = warn;
     stream.end();
   }
+});
+
+for (const body of ['pending', 'finished', 'failed'] as const) {
+  test(`navigation failure distinguishes ${body} document body from lifecycle events`, async () => {
+    const events = new EventEmitter();
+    const frame = {};
+    const page = Object.assign(events, {
+      mainFrame: () => frame,
+    }) as unknown as Page;
+    const response = {
+      request: () => ({
+        isNavigationRequest: () => true,
+        redirectedTo: () => null,
+      }),
+      frame: () => frame,
+      status: () => 200,
+      url: () =>
+        `${origin}/00000000-0000-0000-0000-000000000000/profile?token=private`,
+      finished: () =>
+        body === 'pending'
+          ? new Promise<null>(() => {})
+          : body === 'failed'
+            ? Promise.reject(new Error('private body failure'))
+            : Promise.resolve(null),
+    } as unknown as Response;
+    const failure = new Error('private navigation failure');
+    let captured: unknown;
+    const warn = console.warn;
+    console.warn = (_label, record) => {
+      captured = JSON.parse(record);
+    };
+    try {
+      await assert.rejects(
+        observeProfileNavigation(page, origin, async () => {
+          events.emit('response', response);
+          events.emit('domcontentloaded');
+          await Promise.resolve();
+          throw failure;
+        }),
+        (error) => error === failure
+      );
+      assert.deepEqual(captured, {
+        lifecycle: { domContentLoaded: true, load: false },
+        hops: [
+          {
+            route: 'profile',
+            locale: 'unprefixed',
+            targetRoute: 'unavailable',
+            targetLocale: 'unavailable',
+            samePath: null,
+            sameOrigin: null,
+            status: 200,
+            body,
+          },
+        ],
+        truncated: false,
+      });
+      assert.doesNotMatch(
+        JSON.stringify(captured),
+        /private|secret|00000000|127\.0\.0\.1/u
+      );
+      assert.equal(events.eventNames().length, 0);
+    } finally {
+      console.warn = warn;
+    }
+  });
+}
+
+test('successful navigation detaches every observer without waiting for body completion', async () => {
+  const events = new EventEmitter();
+  const page = events as unknown as Page;
+  const result = await observeProfileNavigation(page, origin, async () => {
+    events.emit('domcontentloaded');
+    events.emit('load');
+    return 'completed';
+  });
+  assert.equal(result, 'completed');
+  assert.equal(events.eventNames().length, 0);
 });

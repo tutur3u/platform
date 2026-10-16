@@ -95,7 +95,19 @@ export async function observeProfileNavigation<T>(
   origin: string | undefined,
   navigate: () => Promise<T>
 ): Promise<T> {
-  const responses: { item: Response; status: number }[] = [];
+  const responses: {
+    item: Response;
+    status: number;
+    body: 'pending' | 'finished' | 'failed' | 'unavailable';
+  }[] = [];
+  let domContentLoaded = false;
+  let load = false;
+  const onDomContentLoaded = () => {
+    domContentLoaded = true;
+  };
+  const onLoad = () => {
+    load = true;
+  };
   let truncated = false;
   const response = (item: Response) => {
     try {
@@ -110,17 +122,36 @@ export async function observeProfileNavigation<T>(
       }
       const status = item.status();
       if (!Number.isInteger(status) || status < 100 || status > 599) return;
-      responses.push({ item, status });
+      const observed: (typeof responses)[number] = {
+        item,
+        status,
+        body: 'unavailable',
+      };
+      responses.push(observed);
+      if (typeof item.finished === 'function') {
+        observed.body = 'pending';
+        void item.finished().then(
+          (error) => {
+            observed.body = error ? 'failed' : 'finished';
+          },
+          () => {
+            observed.body = 'failed';
+          }
+        );
+      }
     } catch {
       // Observation must never change navigation or authentication behavior.
     }
   };
   page.on('response', response);
+  page.on('domcontentloaded', onDomContentLoaded);
+  page.on('load', onLoad);
   try {
     return await navigate();
   } catch (error) {
     const diagnostics = {
-      hops: responses.map(({ item, status }) => {
+      lifecycle: { domContentLoaded, load },
+      hops: responses.map(({ item, status, body }) => {
         try {
           return {
             ...profileNavigationEdge(
@@ -130,6 +161,7 @@ export async function observeProfileNavigation<T>(
             ),
             ...responseProxyProvenance(item),
             status,
+            body,
           };
         } catch {
           return {
@@ -140,6 +172,7 @@ export async function observeProfileNavigation<T>(
             samePath: null,
             sameOrigin: null,
             status,
+            body,
           };
         }
       }),
@@ -153,5 +186,7 @@ export async function observeProfileNavigation<T>(
     throw error;
   } finally {
     page.off('response', response);
+    page.off('domcontentloaded', onDomContentLoaded);
+    page.off('load', onLoad);
   }
 }

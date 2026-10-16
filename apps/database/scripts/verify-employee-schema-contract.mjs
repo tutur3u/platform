@@ -170,13 +170,14 @@ let cleanupSucceeded = false;
 let currentPhase = 'full-schema-snapshot';
 let packetOrdinal = 0;
 let failureDiagnostic = null;
+let generatedTypesSha256 = null;
 const bounded = (command, args, cwd, timeout) => {
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
     timeout,
     killSignal: 'SIGKILL',
-    maxBuffer: 1024 * 1024,
+    maxBuffer: currentPhase === 'typegen' ? 16 * 1024 * 1024 : 1024 * 1024,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   // Never print SQL diagnostics, fixture identities, CLI tokens or credentials.
@@ -256,6 +257,31 @@ const runner = async (command, args, cwd) => {
           throw new Error('Employee packet TAP contract failed');
         }
       }
+      if (journal) {
+        packetOrdinal = 0;
+        currentPhase = 'typegen';
+        const types = bounded(
+          binaryPath,
+          [
+            'gen',
+            'types',
+            'typescript',
+            '--local',
+            '--schema',
+            'public,private,storage',
+          ],
+          metadata.disposableRoot,
+          120000
+        );
+        if (!types.includes('export type Database ='))
+          throw new Error('Generated database types absent');
+        generatedTypesSha256 = createHash('sha256').update(types).digest('hex');
+        writeFileSync(
+          path.join(receiptDirectory, 'generated-types.ts'),
+          types,
+          { mode: 0o600 }
+        );
+      }
     } else {
       packetOrdinal = 0;
       currentPhase = args.includes('stop')
@@ -321,6 +347,7 @@ const receipt = {
     journal,
   }),
   fixtureHashes,
+  generatedTypesSha256,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
 writeFileSync(
