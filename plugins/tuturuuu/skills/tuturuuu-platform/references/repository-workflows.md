@@ -142,3 +142,10 @@ stream bounds and the actual child exit before accepting instrumentation. Test
 proxy close separately in the actual Bun runtime; if it does not reproduce,
 retain its fixed cleanup error category without inventing a repair. Match source
 and control parser revisions for the next parent-owned hosted qualification.
+
+The employee fault proxy must call `server.close(callback)` before
+`server.closeAllConnections()`. Exact Bun1.4.1 finite reproduction shows the
+reverse order stops listening before close registration and yields
+ERR_SERVER_NOT_RUNNING; do not ignore that error. Verify the pinned actual Bun
+control's close/port-refusal/repeated-close rejection, and keep real hosted
+Web-build/session qualification separate from this synthetic lifecycle proof.

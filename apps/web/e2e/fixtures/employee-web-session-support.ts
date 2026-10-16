@@ -370,10 +370,10 @@ export async function faultProxy(config: SessionConfig) {
     },
     counts: () => ({ faults, updates }),
     async close() {
-      server.closeAllConnections();
-      await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve()))
-      );
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+        server.closeAllConnections();
+      });
     },
   };
 }

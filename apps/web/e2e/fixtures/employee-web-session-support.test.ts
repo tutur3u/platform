@@ -16,6 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transformWithOxc } from 'vite';
 import { it as test } from 'vitest';
+import { z } from 'zod';
 import {
   command,
   completeBuild,
@@ -321,9 +322,67 @@ test('proxy close on the actual Bun runtime is a separate finite control', async
     'bun',
     [
       '-e',
-      `import {faultProxy} from './apps/web/e2e/fixtures/employee-web-session-support.ts'; const proxy=await faultProxy({url:'http://127.0.0.1:1',key:'unused',anonKey:'unused',projectId:'unused',basePort:12000,sourceSha:'a'.repeat(40)}); await proxy.close();`,
+      `
+import assert from 'node:assert/strict';
+import {createConnection} from 'node:net';
+import {faultProxy} from './apps/web/e2e/fixtures/employee-web-session-support.ts';
+let phase='open';
+try {
+  const proxy=await faultProxy({url:'http://127.0.0.1:1',key:'unused',anonKey:'unused',projectId:'unused',basePort:12000,sourceSha:'a'.repeat(40)});
+  phase='close';
+  await proxy.close();
+  phase='port-refusal';
+  await new Promise((resolve,reject)=>{
+    const socket=createConnection({host:'127.0.0.1',port:Number(new URL(proxy.url).port)});
+    socket.once('connect',()=>{socket.destroy();reject(new Error('Port still open'));});
+    socket.once('error',error=>error.code==='ECONNREFUSED'?resolve():reject(error));
+  });
+  phase='repeated-close';
+  await assert.rejects(()=>proxy.close(),{code:'ERR_SERVER_NOT_RUNNING'});
+  console.log(JSON.stringify({phase:'complete',error:'none'}));
+} catch(error) {
+  console.log(JSON.stringify({phase,error:error?.code==='ERR_SERVER_NOT_RUNNING'?'not-running':error instanceof TypeError?'type-error':error?.code==='ERR_ASSERTION'?'assertion':'unknown'}));
+  process.exitCode=1;
+}`,
     ],
-    process.env
+    process.env,
+    true
   );
-  await completeBuild(child, 5000);
+  const Control = z.strictObject({
+    phase: z.enum([
+      'open',
+      'close',
+      'port-refusal',
+      'repeated-close',
+      'complete',
+    ]),
+    error: z.enum([
+      'none',
+      'not-running',
+      'type-error',
+      'assertion',
+      'unknown',
+    ]),
+  });
+  let output = '';
+  let overflow = false;
+  child.stdout?.on('data', (chunk: Buffer) => {
+    if (Buffer.byteLength(output) + chunk.length > 1024) overflow = true;
+    else output += chunk.toString('utf8');
+  });
+  let failed = false;
+  try {
+    await completeBuild(child, 5000);
+  } catch {
+    failed = true;
+  }
+  let diagnostic: z.infer<typeof Control> | null = null;
+  try {
+    diagnostic = Control.parse(JSON.parse(output));
+  } catch {
+    /* Fixed failure below. */
+  }
+  assert.ok(!overflow && diagnostic, 'Proxy control diagnostic invalid');
+  assert.equal(failed, false, JSON.stringify(diagnostic));
+  assert.deepEqual(diagnostic, { phase: 'complete', error: 'none' });
 });

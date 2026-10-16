@@ -177,6 +177,14 @@ for the next investigation, not permission to guess a dependency repair.
 Cleanup error categories separately distinguish not-running, type-error, timeout
 and unknown; a category never turns failed cleanup into success.
 
+The fault proxy starts HTTP server closure before forcing connection closure.
+In Bun 1.4.1, forcing connections first stops listening and makes a later
+`close()` reject with `ERR_SERVER_NOT_RUNNING`. The finite actual-Bun control
+requires successful close, refused connections on the released port, and a
+rejected repeated close. It emits only fixed phase/error categories on failure.
+Use the workflow's pinned Bun/Node versions when diagnosing runtime differences;
+newer local runtime success is not evidence for the pinned runtime.
+
 Historical receipts with only `phase=cleanup` cannot identify the earlier cause.
 The support suite exercises simultaneous runtime/cleanup failures, real child exit
 and deadline handling, and strict redacted receipt projection. These checks do not
