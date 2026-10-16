@@ -161,3 +161,12 @@ The same disposable database generates public, private and storage types before
 cleanup. Review the exact-source artifact and its digest before adopting generated
 types. This gate does not qualify a real journal provider, explicit consent,
 authenticated runtime behavior, memory ingestion or production activation.
+
+Before dispatch, keep new, unapplied PR migrations later than the current base
+migration tip. The pending personal-journal migration is
+`apps/database/supabase/migrations/20261017000000_personal_journal.sql`.
+Preserve SQL bytes when correcting only its chronological identity; never rename
+an applied migration. A path change changes the selected snapshot and source SHA,
+so earlier SQL/type artifacts remain historical and the new source requires fresh
+qualification. The isolated runner derives its full snapshot from tracked files,
+including the renamed migration, rather than a fixed migration-name manifest.

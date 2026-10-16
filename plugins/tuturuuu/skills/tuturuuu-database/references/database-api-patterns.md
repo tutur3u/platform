@@ -114,6 +114,10 @@ journal/HTTP/RESTORE profiles off for this selection. Require the exact-source
 receipt, fixture/type digests and positive cleanup; provider, explicit consent and runtime
 acceptance remain separate gates. See [schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx#personal-journal-schema-qualification).
 
+Correct chronology only for a new, unapplied PR migration, preserving its SQL
+bytes. Never rename an applied migration or reuse old-source SQL/type receipts
+after a snapshot identity change; requalify the new exact source.
+
 ## Employee RESTORE transport qualification
 
 Extend the canonical employee schema/HTTP runner for RESTORE rather than creating
