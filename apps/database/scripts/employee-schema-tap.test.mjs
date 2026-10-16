@@ -6,6 +6,7 @@ import {
   exactSourceSha,
   failedAssertionOrdinals,
   foundationPackets,
+  journalPackets,
   schemaFailureDiagnostic,
   schemaReceipt,
   signupCaughtDiagnostics,
@@ -36,6 +37,25 @@ test('accepts exactly all 172 closed assertions', () => {
     assert.equal(assertPacketTap(tap(count), count), count);
   assert.equal(receipt().assertions, 172);
   assert.equal(receipt().schemaQualified, true);
+});
+test('journal selection requires all 301 assertions and successful cleanup', () => {
+  const all = journalPackets.map(([file, assertions]) => ({
+    file,
+    assertions,
+  }));
+  assert.equal(receipt({ journal: true }).schemaQualified, false);
+  assert.equal(receipt({ packets: all }).schemaQualified, false);
+  assert.equal(receipt({ journal: true, packets: all }).schemaQualified, true);
+  assert.equal(receipt({ journal: true, packets: all }).assertions, 301);
+  assert.equal(
+    receipt({ journal: true, packets: all, cleanupSucceeded: false })
+      .schemaQualified,
+    false
+  );
+  assert.equal(
+    receipt({ journal: true, packets: all.slice(0, 6) }).schemaQualified,
+    false
+  );
 });
 test('rejects a different plan count', () =>
   assert.throws(() => assertPacketTap(tap(24), 25)));
@@ -137,6 +157,23 @@ test('schema failure diagnostic rejects untrusted phase or ordinal', () => {
   assert.throws(() => schemaFailureDiagnostic('secret', 1));
   assert.throws(() => schemaFailureDiagnostic('packet-tap', 6));
   assert.throws(() => schemaFailureDiagnostic('packet-tap', '1'));
+});
+test('journal diagnostics bind packets six and seven without exposing SQL text', () => {
+  const diagnostic = schemaFailureDiagnostic(
+    'packet-execution',
+    7,
+    {
+      stderr:
+        'psql:/tmp/employee-schema-contract.sql:42: ERROR:  PRIVATE VALUE\n',
+      stdout: 'not ok 61 - private assertion\n',
+    },
+    true
+  );
+  assert.equal(diagnostic.sqlSourceLine, 42);
+  assert.match(diagnostic.sqlErrorMessageSha256, /^[a-f0-9]{64}$/);
+  assert.deepEqual(diagnostic.failedAssertionOrdinals, [61]);
+  assert.equal(JSON.stringify(diagnostic).includes('PRIVATE VALUE'), false);
+  assert.throws(() => schemaFailureDiagnostic('packet-execution', 9, {}, true));
 });
 test('schema failure diagnostic sanitizes unknown exit statuses', () => {
   for (const status of ['secret', -1, 256]) {

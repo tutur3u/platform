@@ -53,7 +53,96 @@ record is not authority to execute it.
 
 ## Employee SQL transport qualification
 
-Employee creation remains unavailable until its protected SQL supplier and
+### HTTP RPC runtime candidate
+
+The Web employee CREATE route can compose the durable operation journal with
+fixed service-only Supabase RPCs. `EMPLOYEE_CREATION_RUNTIME_ENABLED` defaults to
+disabled. Enable it only after the selected source passes isolated SQL,
+generated-type, HTTP/Auth and exact-build checks and its migrations are verified
+in the target project. Infrastructure consumes the same availability endpoint;
+its create control remains disabled while the runtime is unavailable.
+
+The adapter uses the configured server Supabase project for both Auth and SQL.
+The request still requires an eligible root administrator, current membership and
+permission, and the account-action origin/header checks. SQL repeats the actor
+assertion and denies expanded function ACLs. An original actor/operation key owns
+one target UUID. Durable attempted phases and single-use invocation capabilities
+precede provider effects; unknown responses retain that identity for inspection.
+
+Every RPC write acknowledgement is followed by a separate persisted-state
+observation. A function response from a transaction configured to roll back cannot
+authorize provider creation or publish account success. Lost responses, malformed
+state and readback disagreement fail closed without an automatic retry. Passwords
+remain transient Auth inputs and never enter the operation tables or RPC body.
+
+This adapter does not activate the fixed child-worker prototype below. That
+prototype retains its separate operator, connection and asset qualification
+requirements. RESTORE and legacy-domain migration remain separate runtime flows;
+successful CREATE qualification does not establish either behavior.
+
+### Managed employee inspection
+
+Web serves `GET /api/v1/infrastructure/internal-accounts/employees/:userId`
+for the native Infrastructure management client. It returns the retained
+restoration inspection contract, provider observation time and next action.
+It requires a current confirmed, active canonical-domain root `MEMBER` with
+`manage_internal_accounts`; it rechecks the same request actor before SQL and
+before disclosing private recovery details. Responses are private and uncached.
+
+The adapter reads the exact provider UUID and calls only
+`private.inspect_employee_management` in the same configured Supabase project.
+Missing schema, conflicting tuples, unavailable reads and changed authority fail
+closed. An unresolved restore operation remains `inspect`; it never relaunches
+provider work. Unmanaged legacy addresses remain an adoption/migration concern.
+The portable restoration boundary lives under
+`packages/utils/src/internal-accounts`, with Infrastructure compatibility exports.
+
+This GET path does not enable CREATE, RESTORE writes, legacy-address migration or
+an Infrastructure action dialog. No runtime flag is changed. Route and transport
+regressions live beside the Web implementation, while the existing Infrastructure
+restoration suites cover compatibility. Exact-source CI builds, deployed request
+authentication and target-project SQL qualification remain separate release gates.
+
+### RESTORE and reconciliation POST candidate
+
+Web owns `POST /api/v1/infrastructure/internal-accounts/employees/:userId/restore`
+and the sibling `/reconcile` route. `EMPLOYEE_RESTORATION_RUNTIME_ENABLED`
+defaults to disabled and is independent of the CREATE gate. Both routes remain
+unavailable while this gate is absent. No console restore action is enabled by
+this source change; legacy-domain address migration remains a separate flow.
+
+The routes reuse the portable restoration HTTP/orchestration helpers, with
+Infrastructure compatibility exports. The server supplies the actor and provider;
+strict request input supplies only confirmation email, expected revision and,
+for reconciliation, the original operation UUID. Current request authentication,
+root membership/permission and active canonical-domain actor checks repeat before
+every RPC and provider call and before a successful or pending response is disclosed.
+
+The fixed five-function transport uses the same configured Supabase project for
+Auth and SQL. Separate `inspect_employee_management` requests must observe the
+matching reserved and attempted operation before the sole provider unban. SQL
+confirmation/reconciliation receipts must match independently observed completed
+state, revision and managed name. Rollback responses, missing or malformed
+readbacks and lost responses retain an unknown outcome without automatic retry.
+Reconciliation uses the original actor/target/revision/operation tuple and never
+begins an operation or dispatches another provider mutation.
+
+`employee-restoration-rpc.test.ts` and `employee-restoration-runtime.test.ts` in
+Web exercise actual loopback HTTP against a disposable synthetic SQL endpoint,
+including unpersisted replies, revocation and provider acknowledgement loss.
+The shipped route test proves default-off behavior independently of CREATE.
+The retained Infrastructure suites cover helper compatibility. These fixtures
+qualify source and HTTP serialization only: before activation, independently
+verify the five deployed function definitions and service-only ACLs, commit and
+rollback/readback behavior through real PostgREST/PostgreSQL, request-session
+and actor revocation behavior with real Auth, and the exact-source Web and
+Infrastructure CI builds. Production migration completion and authorized
+activation remain release-owner gates; neither GET inspection nor CREATE
+qualification establishes RESTORE delivery.
+
+### Fixed child-worker prototype
+
+The fixed child-worker transport remains unavailable until its protected SQL supplier and
 project readiness are independently qualified. The fixed transport prototype
 accepts only preflight, finalize and activation-confirm operations. Each request
 owns one terminable child and TLS connection; no shared pool, caller SQL,
