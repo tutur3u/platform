@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { assertStrictTap } from './programming-database-tap.mjs';
 
 export const foundationPackets = Object.freeze([
@@ -229,7 +230,13 @@ export function signupCaughtDiagnostics(tap, ordinals) {
     });
 }
 
-export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
+export function schemaFailureDiagnostic(
+  phase,
+  packetOrdinal,
+  result = {},
+  journal = false
+) {
+  const packets = journal ? journalPackets : foundationPackets;
   const phases = [
     'full-schema-snapshot',
     'start',
@@ -245,7 +252,7 @@ export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
     !phases.includes(phase) ||
     !Number.isInteger(packetOrdinal) ||
     packetOrdinal < 0 ||
-    packetOrdinal > foundationPackets.length
+    packetOrdinal > packets.length
   ) {
     throw new Error('Invalid schema diagnostic binding');
   }
@@ -270,7 +277,7 @@ export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
   try {
     failedOrdinals = failedAssertionOrdinals(
       result.stdout ?? '',
-      foundationPackets[packetOrdinal - 1]?.[1] ?? 0
+      packets[packetOrdinal - 1]?.[1] ?? 0
     );
     if (failedOrdinals.length !== failingAssertions) {
       throw new Error('Failed ordinal count differs');
@@ -283,6 +290,17 @@ export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
   if (phase === 'packet-tap' && packetOrdinal === 1 && assertionOrdinalsValid) {
     signupExceptions = signupCaughtDiagnostics(tap, failedOrdinals);
   }
+  const stderr =
+    typeof result.stderr === 'string' &&
+    Buffer.byteLength(result.stderr) <= 1048576
+      ? result.stderr
+      : '';
+  const errors = [
+    ...stderr.matchAll(
+      /^psql:\/tmp\/employee-schema-contract\.sql:([1-9]\d{0,3}): ERROR: {2}([^\r\n]{1,4096})$/gm
+    ),
+  ];
+  const error = errors.length === 1 ? errors[0] : null;
   return {
     phase,
     packetOrdinal,
@@ -294,6 +312,10 @@ export function schemaFailureDiagnostic(phase, packetOrdinal, result = {}) {
     failedAssertionOrdinals: failedOrdinals,
     assertionOrdinalsValid,
     signupExceptions,
+    sqlSourceLine: error ? Number(error[1]) : null,
+    sqlErrorMessageSha256: error
+      ? createHash('sha256').update(error[2]).digest('hex')
+      : null,
     bailout: /^Bail out!/mu.test(tap),
     skippedOrTodo: /#\s*(?:SKIP|TODO)\b/iu.test(tap),
   };

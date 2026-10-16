@@ -158,6 +158,23 @@ test('schema failure diagnostic rejects untrusted phase or ordinal', () => {
   assert.throws(() => schemaFailureDiagnostic('packet-tap', 6));
   assert.throws(() => schemaFailureDiagnostic('packet-tap', '1'));
 });
+test('journal diagnostics bind packets six and seven without exposing SQL text', () => {
+  const diagnostic = schemaFailureDiagnostic(
+    'packet-execution',
+    7,
+    {
+      stderr:
+        'psql:/tmp/employee-schema-contract.sql:42: ERROR:  PRIVATE VALUE\n',
+      stdout: 'not ok 61 - private assertion\n',
+    },
+    true
+  );
+  assert.equal(diagnostic.sqlSourceLine, 42);
+  assert.match(diagnostic.sqlErrorMessageSha256, /^[a-f0-9]{64}$/);
+  assert.deepEqual(diagnostic.failedAssertionOrdinals, [61]);
+  assert.equal(JSON.stringify(diagnostic).includes('PRIVATE VALUE'), false);
+  assert.throws(() => schemaFailureDiagnostic('packet-execution', 8, {}, true));
+});
 test('schema failure diagnostic sanitizes unknown exit statuses', () => {
   for (const status of ['secret', -1, 256]) {
     assert.equal(

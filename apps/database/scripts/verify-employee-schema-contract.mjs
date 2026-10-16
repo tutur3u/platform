@@ -7,9 +7,9 @@ import {
   assertPacketTap,
   assertRollbackSource,
   exactSourceSha,
+  schemaFailureDiagnostic as foundationFailureDiagnostic,
   foundationPackets,
   journalPackets,
-  schemaFailureDiagnostic,
   schemaReceipt,
 } from './employee-schema-tap.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
@@ -32,6 +32,8 @@ if (
 )
   throw new Error('Invalid employee journal qualification selection');
 const selectedPackets = journal ? journalPackets : foundationPackets;
+const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
+  foundationFailureDiagnostic(phase, ordinal, result, journal);
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
   throw new Error('This gate requires a disposable hosted Linux runner');
