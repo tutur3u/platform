@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -11,6 +13,8 @@ import {
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { transformWithOxc } from 'vite';
 import { it as test } from 'vitest';
 import {
   command,
@@ -104,4 +108,48 @@ test('Next CLI resolves from Web package context with no root Next dependency', 
 
 test('default Next CLI lookup uses the installed Web workspace dependency', () => {
   assert.equal(existsSync(resolveNextCli()), true);
+});
+
+test('fixture transforms do not resolve unrelated root project presets', async () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'employee-fixture-transform-'));
+  const fixtures = path.join(root, 'apps/web/e2e/fixtures');
+  const source = fileURLToPath(new URL('.', import.meta.url));
+  try {
+    mkdirSync(fixtures, { recursive: true });
+    mkdirSync(path.join(root, 'packages/unrelated'), { recursive: true });
+    writeFileSync(
+      path.join(root, 'tsconfig.json'),
+      JSON.stringify({
+        files: [],
+        references: [{ path: './packages/unrelated' }],
+      })
+    );
+    writeFileSync(
+      path.join(root, 'packages/unrelated/tsconfig.json'),
+      JSON.stringify({
+        extends: '@tuturuuu/typescript-config/react-library.json',
+      })
+    );
+    // Web excludes e2e; an unmatched fixture otherwise reaches root references.
+    writeFileSync(
+      path.join(root, 'apps/web/tsconfig.json'),
+      JSON.stringify({ include: ['src'] })
+    );
+    const config = path.join(source, 'tsconfig.json');
+    if (existsSync(config)) {
+      copyFileSync(config, path.join(fixtures, 'tsconfig.json'));
+    }
+    for (const name of [
+      'employee-web-session-support.test.ts',
+      'employee-web-session-support.ts',
+    ]) {
+      const code = readFileSync(path.join(source, name), 'utf8');
+      const filename = path.join(fixtures, name);
+      writeFileSync(filename, code);
+      const transformed = await transformWithOxc(code, filename);
+      assert.ok(transformed.code.length > 0);
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

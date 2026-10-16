@@ -126,6 +126,17 @@ retired Docker Web E2E workflow. A missing build prerequisite or failed proxy,
 session, SQL or provider check fails this mode; do not replace it with a mocked
 authorizer or a service-only receipt.
 
+The Node support-test transform uses the matching
+`apps/web/e2e/fixtures/tsconfig.json`, which inherits Web's compiler settings.
+Web's main config includes application source rather than these fixtures; without
+a matching config, Vite/Oxc can traverse root project references and fail on an
+unrelated package's unavailable TypeScript preset before collecting any tests.
+The support suite reproduces that failure boundary in a disposable nested tree
+and transforms both real fixture files without installing the unrelated preset.
+Run `bun x vitest run --config apps/web/e2e/fixtures/vitest.employee-web-session.config.ts`
+from the selected source checkout. Passing this finite support suite does not
+qualify the 24 hosted Web session cases or the SQL/HTTP/RESTORE profiles.
+
 The fixture sends HTTP requests through the real Web proxy and route handlers.
 Its 24 named cases cover absent/malformed credentials, a GoTrue password session
 bearer, Supabase SSR-generated cookies, signed infra app cookies, wrong app,

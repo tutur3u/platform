@@ -114,3 +114,14 @@ and commit operations only; it does not grant file ownership or permission to
 stage unrelated paths. Use `wait` to sleep until another agent releases the
 window and then atomically claim it. Keep claims short; the tool enforces a
 5-10 minute TTL so agents use the window only for focused commit work.
+
+## Node fixture transform configuration
+
+For the employee Web session support suite, keep a matching
+`apps/web/e2e/fixtures/tsconfig.json` that inherits Web settings and includes the
+fixture TypeScript files. Vite/Oxc skips a parent config whose include paths do
+not match, then can traverse unrelated root project references. A missing preset
+there can fail collection before any support test runs. Verify this boundary
+with the support suite's disposable-tree transform regression; do not add import
+aliases, unrelated dependencies, or weaken runtime assertions to mask it.
+Support-test success remains separate from hosted session qualification.
