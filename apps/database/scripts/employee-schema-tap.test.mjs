@@ -9,6 +9,8 @@ import {
   journalPackets,
   schemaFailureDiagnostic,
   schemaReceipt,
+  selectAddressMigration,
+  selectedSchemaPackets,
   signupCaughtDiagnostics,
 } from './employee-schema-tap.mjs';
 
@@ -540,4 +542,80 @@ test('invalid signup caught evidence keeps constraint classification null', () =
     'Failed test 23:'
   );
   assert.equal(signupCaughtDiagnostics(tap, [22])[0].constraintCategory, null);
+});
+
+test('migration packet is opt-in and strict in both incompatible profiles', () => {
+  for (const journal of [false, true]) {
+    const base = selectedSchemaPackets(journal);
+    const selected = selectedSchemaPackets(journal, true);
+    const all = selected.map(([file, assertions]) => ({ file, assertions }));
+    assert.deepEqual(selected.slice(0, -1), base);
+    assert.deepEqual(selected.at(-1), ['employee-address-migration.sql', 10]);
+    for (const [, count] of selected) assertPacketTap(tap(count), count);
+    const expected = journal ? 311 : 182;
+    const complete = receipt({ journal, addressMigration: true, packets: all });
+    assert.equal(complete.schemaQualified, true);
+    assert.equal(complete.assertions, expected);
+    assert.match(complete.scope, /-address-migration$/u);
+    assert.equal(receipt({ journal, packets: all }).schemaQualified, false);
+    assert.equal(
+      receipt({ journal, addressMigration: true }).schemaQualified,
+      false
+    );
+    assert.equal(
+      receipt({ journal: !journal, addressMigration: true, packets: all })
+        .schemaQualified,
+      false
+    );
+    for (const bad of [
+      all.slice(0, -1),
+      [...all, all.at(-1)],
+      [...all].reverse(),
+      [
+        ...all.slice(0, -1),
+        { file: 'employee-address-migration.sql', assertions: 9 },
+      ],
+    ]) {
+      assert.equal(
+        receipt({ journal, addressMigration: true, packets: bad })
+          .schemaQualified,
+        false
+      );
+    }
+    assert.equal(
+      receipt({
+        journal,
+        addressMigration: true,
+        packets: all,
+        cleanupSucceeded: false,
+      }).schemaQualified,
+      false
+    );
+    assert.equal(
+      receipt({
+        journal,
+        addressMigration: true,
+        packets: all,
+        lifecycleCode: 1,
+      }).schemaQualified,
+      false
+    );
+    const diagnostic = schemaFailureDiagnostic(
+      'packet-tap',
+      selected.length,
+      { status: 1, stdout: 'not ok 10 - private' },
+      journal,
+      true
+    );
+    assert.deepEqual(diagnostic.failedAssertionOrdinals, [10]);
+  }
+});
+
+test('migration selector rejects malformed inputs and leaves defaults unchanged', () => {
+  for (const value of [undefined, 'false'])
+    assert.equal(selectAddressMigration(value), false);
+  assert.equal(selectAddressMigration('true'), true);
+  for (const value of [true, false, '', 'TRUE', '1'])
+    assert.throws(() => selectAddressMigration(value));
+  assert.throws(() => selectedSchemaPackets(false, 'true'));
 });

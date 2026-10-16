@@ -13,9 +13,9 @@ import {
   assertRollbackSource,
   exactSourceSha,
   schemaFailureDiagnostic as foundationFailureDiagnostic,
-  foundationPackets,
-  journalPackets,
   schemaReceipt,
+  selectAddressMigration,
+  selectedSchemaPackets,
 } from './employee-schema-tap.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
 import {
@@ -40,9 +40,18 @@ if (
   )
 )
   throw new Error('Invalid employee journal qualification selection');
-const selectedPackets = journal ? journalPackets : foundationPackets;
+const addressMigration = selectAddressMigration(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION
+);
+const selectedPackets = selectedSchemaPackets(journal, addressMigration);
 const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
-  foundationFailureDiagnostic(phase, ordinal, result, journal);
+  foundationFailureDiagnostic(
+    phase,
+    ordinal,
+    result,
+    journal,
+    addressMigration
+  );
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
   throw new Error('This gate requires a disposable hosted Linux runner');
@@ -390,6 +399,7 @@ const receipt = {
     lifecycleCode,
     cleanupSucceeded,
     journal,
+    addressMigration,
   }),
   fixtureHashes,
   generatedTypesSha256,

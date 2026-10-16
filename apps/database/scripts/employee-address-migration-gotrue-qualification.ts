@@ -21,6 +21,10 @@ const label = `employee-gotrue-qualification=${suffix}`;
 const secret = randomBytes(48).toString('hex');
 const password = randomBytes(32).toString('hex');
 const dbPassword = randomBytes(32).toString('hex');
+const sourceFlow = process.argv[2] ?? '--source=signup';
+assert.ok(['--source=signup', '--source=magiclink'].includes(sourceFlow));
+assert.equal(process.argv.length <= 3, true);
+const positive = sourceFlow === '--source=signup';
 const sourceAddress = 'qualification@staff.tuturuuu.com';
 const destinationAddress = 'qualification@tuturuuu.com';
 const deadline = Date.now() + 5 * 60_000;
@@ -101,6 +105,9 @@ const SqlSnapshot = z.object({
   raw_user_meta_data: z.unknown(),
   banned_until: z.string().nullable(),
   email_confirmed_at: z.string().nullable(),
+  sessions: z.array(z.unknown()),
+  refresh_tokens: z.array(z.unknown()),
+  mail_data: z.array(z.unknown()),
   identities: z.array(
     z.object({
       id: z.string(),
@@ -119,6 +126,9 @@ async function snapshot(userId: string) {
     'id',u.id,'encrypted_password',u.encrypted_password,
     'raw_app_meta_data',u.raw_app_meta_data,'raw_user_meta_data',u.raw_user_meta_data,
     'banned_until',u.banned_until,'email_confirmed_at',u.email_confirmed_at,
+    'sessions',(select coalesce(json_agg(s order by s.id),'[]') from auth.sessions s where s.user_id=u.id),
+    'refresh_tokens',(select coalesce(json_agg(t order by t.id),'[]') from auth.refresh_tokens t where t.user_id=u.id::text),
+    'mail_data',(select coalesce(json_agg(m order by m.id),'[]') from qualification_mail_data m where m.user_id=u.id),
     'identities',(select json_agg(json_build_object('id',i.id,'provider_id',i.provider_id,
       'user_id',i.user_id,'provider',i.provider,
       'email_verified',(i.identity_data->>'email_verified')::boolean) order by i.id)
@@ -384,14 +394,16 @@ try {
     await client.auth.admin.createUser({
       email: sourceAddress,
       password,
-      email_confirm: true,
+      email_confirm: !positive,
       user_metadata: { qualification: 'preserve-user' },
       app_metadata: { qualification: 'preserve-app' },
     }),
-    'fixture_create_email_confirm_true'
+    'fixture_create'
   );
   assert.ok(created.user);
   const userId = created.user.id;
+  await sql(`create table qualification_mail_data(id uuid primary key,user_id uuid not null,body text not null);
+    insert into qualification_mail_data values ('${randomUUID()}','${userId}','retained-source-message');`);
   const createdSnapshot = await snapshot(userId);
   const calls: {
     keys: string[];
@@ -411,6 +423,8 @@ try {
           code: response.error?.code ?? null,
           status: response.error?.status ?? null,
         });
+        if (positive && !response.error)
+          throw new Error('simulated_lost_provider_acknowledgement');
         return response;
       },
     },
@@ -420,7 +434,7 @@ try {
   console.log(
     JSON.stringify({
       stage: 'created_source_precondition',
-      emailConfirm: true,
+      emailConfirm: !positive,
       emailVerified: createdBaseline.emailVerified,
       identityEmailVerified: createdSnapshot.identities.map(
         (i) => i.email_verified
@@ -428,46 +442,44 @@ try {
       preconditionMet: createdBaseline.emailVerified,
     })
   );
-  stage = 'source_magiclink_verification';
+  assert.equal(createdBaseline.emailVerified, false);
+  stage = 'source_supported_verification';
   const link = requireSdk(
-    await client.auth.admin.generateLink({
-      type: 'magiclink',
-      email: sourceAddress,
-    }),
-    'source_generate_magiclink'
+    await client.auth.admin.generateLink(
+      positive
+        ? { type: 'signup', email: sourceAddress, password }
+        : { type: 'magiclink', email: sourceAddress }
+    ),
+    'source_generate_verification'
   );
   assert.ok(link.properties.hashed_token);
   const verified = requireSdk(
     await client.auth.verifyOtp({
       token_hash: link.properties.hashed_token,
-      type: 'magiclink',
+      type: positive ? 'signup' : 'magiclink',
     }),
-    'source_verify_magiclink'
+    'source_verify_verification'
   );
   assert.equal(verified.user?.id, userId);
   const before = await snapshot(userId);
   const initial = await provider.read(userId);
   console.log(
     JSON.stringify({
-      fixtureCreate: { emailConfirm: true },
-      baseline: {
-        emailVerified: initial.emailVerified,
-        active: initial.active,
-        confirmedAt: before.email_confirmed_at,
-        identities: before.identities,
-        sdkIdentities: verified.user?.identities?.map((identity) => ({
-          id: identity.id,
-          identity_id: identity.identity_id,
-          provider: identity.provider,
-          user_id: identity.user_id,
-          email_verified: identity.identity_data?.email_verified,
-        })),
-      },
+      stage: 'verified_source_precondition',
+      sourceFlow,
+      sameUUID: true,
+      emailVerified: initial.emailVerified,
+      active: initial.active,
+      sqlIdentityVerified: before.identities.map((i) => i.email_verified),
+      sdkIdentityVerified: verified.user?.identities?.map(
+        (i) => i.identity_data?.email_verified
+      ),
       fullSchemaQualified: false,
     })
   );
   assert.equal(adminUserPuts, 0);
-  if (!initial.emailVerified) {
+  if (!positive) {
+    assert.equal(initial.emailVerified, false);
     stage = 'source_unverified_negative_qualification';
     await assert.rejects(provider.changeEmail(userId, destinationAddress));
     assert.equal(calls.length, 0);
@@ -504,37 +516,35 @@ try {
     let record: MigrationRecord | null = null;
     let completes = 0;
     stage = 'actual_email_only_migration';
-    const result = await migrateEmployeeAddress(
-      {
-        provider,
-        newAttemptId: randomUUID,
-        journal: {
-          async inspect() {
-            return {
-              authorized: true,
-              revision: 0,
-              immutableFingerprint: 'a'.repeat(64),
-              providerIdentityFingerprint: initial.providerIdentityFingerprint,
-              sourceVerified: true,
-              addressOwnership: 'same_identity',
-              record,
-            };
-          },
-          async reserve(binding) {
-            record = { binding, phase: 'reserved', attemptId: null };
-          },
-          async claimAttempt(binding, attemptId) {
-            record = { binding, phase: 'attempted', attemptId };
-            return true;
-          },
-          async complete() {
-            completes++;
-            throw new Error('unexpected_complete');
-          },
+    const dependencies: Parameters<typeof migrateEmployeeAddress>[0] = {
+      provider,
+      newAttemptId: randomUUID,
+      journal: {
+        async inspect() {
+          return {
+            authorized: true,
+            revision: 0,
+            immutableFingerprint: 'a'.repeat(64),
+            providerIdentityFingerprint: initial.providerIdentityFingerprint,
+            sourceVerified: true,
+            addressOwnership: 'same_identity',
+            record,
+          };
+        },
+        async reserve(binding) {
+          record = { binding, phase: 'reserved', attemptId: null };
+        },
+        async claimAttempt(binding, attemptId) {
+          record = { binding, phase: 'attempted', attemptId };
+          return true;
+        },
+        async complete() {
+          completes++;
+          throw new Error('unexpected_complete');
         },
       },
-      request
-    );
+    };
+    const result = await migrateEmployeeAddress(dependencies, request);
     const afterSdk = requireSdk(
       await client.auth.admin.getUserById(userId),
       'after_getUserById'
@@ -542,25 +552,6 @@ try {
     assert.ok(afterSdk.user);
     const after = await snapshot(userId);
     const observation = await provider.read(userId);
-    console.log(
-      JSON.stringify({
-        fixtureCreate: { emailConfirm: true },
-        migrationCalls: calls,
-        before: {
-          emailVerified: initial.emailVerified,
-          identities: before.identities,
-          confirmedAt: before.email_confirmed_at,
-        },
-        after: {
-          emailVerified: observation.emailVerified,
-          identities: after.identities,
-          confirmedAt: after.email_confirmed_at,
-        },
-        result,
-        journal: 'fixture-only',
-        fullSchemaQualified: false,
-      })
-    );
     stage = 'invariants';
     assert.equal(calls.length, 1);
     assert.equal(adminUserPuts, 1);
@@ -572,6 +563,12 @@ try {
     assert.deepEqual(after.raw_user_meta_data, before.raw_user_meta_data);
     assert.equal(after.banned_until, before.banned_until);
     assert.equal(after.email_confirmed_at, before.email_confirmed_at);
+    assert.ok(before.sessions.length > 0);
+    assert.ok(before.refresh_tokens.length > 0);
+    assert.ok(before.mail_data.length > 0);
+    assert.deepEqual(after.sessions, before.sessions);
+    assert.deepEqual(after.refresh_tokens, before.refresh_tokens);
+    assert.deepEqual(after.mail_data, before.mail_data);
     const keys = (value: z.infer<typeof SqlSnapshot>) =>
       value.identities.map(({ id, provider_id, user_id, provider }) => ({
         id,
@@ -592,8 +589,15 @@ try {
       nextAction: 'inspect',
     });
     assert.equal(completes, 0);
+    assert.deepEqual(
+      await migrateEmployeeAddress(dependencies, request),
+      result
+    );
+    assert.equal(completes, 0);
+    assert.equal(adminUserPuts, 1);
     await assert.rejects(provider.changeEmail(userId, destinationAddress));
     assert.equal(calls.length, 1);
+    assert.equal(adminUserPuts, 1);
     console.log(
       JSON.stringify({
         stage,
@@ -607,7 +611,11 @@ try {
           'metadata',
           'ban',
           'confirmedAt',
+          'sessions',
+          'refreshTokens',
+          'mailDataFixture',
         ],
+        lostAcknowledgement: 'UNKNOWN_INSPECT_NO_REPLAY',
         fullSchemaQualified: false,
       })
     );

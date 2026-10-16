@@ -112,7 +112,7 @@ contract. Its independent verification requires the matching email identity's
 account. Upstream GoTrue's admin email-only path can set identity verification
 false while retaining the confirmed timestamp. That observation stays pending;
 there is no confirmation override or automatic retry. See the
-[GoTrue admin handler](https://github.com/supabase/auth/blob/master/internal/api/admin.go)
+[GoTrue admin handler](https://github.com/supabase/auth/blob/v2.197.0/internal/api/admin.go#L235-L284)
 and [supported JavaScript API](https://supabase.com/docs/reference/javascript/auth-admin-updateuserbyid).
 
 The disposable SQL qualification runner exercises the actual migration on an
@@ -125,17 +125,52 @@ ttr resources run -- node apps/database/scripts/employee-address-migration-quali
 ```
 
 A separate real-provider runner uses cached GoTrue `v2.197.0` and PostgreSQL
-`17.11.0.004` images on an internal Docker network without published ports. Its source fixture creation with
-confirmation enabled and an accepted magic-link OTP both left the identity's
-`email_verified` false. The actual supplier refused the email change, made zero
-admin-user PUTs, and retained the source snapshot. This is a passing negative
-qualification (`SOURCE_UNVERIFIED`), not a successful migration. The positive
-email-only mutation and preservation assertions remain unexercised until a
-supported verified-source precondition is established. Run through the same queue:
+`17.11.0.004` images on an internal Docker network without published ports.
+GoTrue distinguishes user confirmation from identity verification:
+[admin creation](https://github.com/supabase/auth/blob/v2.197.0/internal/api/admin.go#L473-L528)
+creates the email identity with the default false verification claim, then
+[confirms the user](https://github.com/supabase/auth/blob/v2.197.0/internal/models/user.go#L488-L507).
+Magic-link OTP uses recovery verification, which does not update that identity
+flag. The installed SDK forwards these fields; it does not repair the mismatch.
+A confirmed timestamp plus correlated email alone therefore does not satisfy this
+migration's stricter verification contract. The guard remains unchanged.
+
+The positive fixture creates an unconfirmed disposable source and uses supported
+`generateLink({type: 'signup', ...})` followed by signup `verifyOtp`.
+[Signup verification](https://github.com/supabase/auth/blob/v2.197.0/internal/api/verify.go#L294-L375)
+sets the matching identity flag through GoTrue. This fixture path is not a repair
+procedure for already-confirmed legacy accounts; generating a signup link for
+an already-confirmed user is rejected by the pinned server.
+
+The real supplier then issues one email-only PUT on that UUID. The runner drops
+the successful response to exercise an unknown acknowledgement, reads back the
+actual destination, and proves protocol replay and a repeated supplier call do
+not issue another PUT. UUID, identity IDs, password hash, metadata, ban state,
+confirmation timestamp, sessions and refresh-token rows are compared privately.
+A separate fixture-owned mail table is also compared; that table does not prove
+preservation of the full product mail schema or hosted delivery. The journal is
+an explicit fixture. The destination identity becomes unverified, so the result
+remains `pending` for inspection; this is positive provider mutation and
+preservation qualification, not a completed address migration.
 
 ```sh
-ttr resources run -- bun apps/database/scripts/employee-address-migration-gotrue-qualification.ts
+ttr resources run -- bun apps/database/scripts/employee-address-migration-gotrue-qualification.ts --source=signup
 ```
+
+The retained negative mode creates the source with admin confirmation and uses
+magic-link OTP. It must remain unverified under the stricter contract, refuse the
+supplier change with zero PUTs, and preserve its original snapshot:
+
+```sh
+ttr resources run -- bun apps/database/scripts/employee-address-migration-gotrue-qualification.ts --source=magiclink
+```
+
+The full-schema workflow's separate `include_address_migration=true` selection
+adds `employee-address-migration.sql` with exactly 10 rollback assertions. It
+qualifies the legacy SQL path and existing profile trigger, without treating SQL
+simulation as real GoTrue verification. Foundation and journal receipts remain
+incompatible and keep their original defaults; see the
+[qualification profiles](./employee-schema-qualification).
 
 Before runtime binding, apply the full schema in the approved isolated fixture,
 verify generated types, real GoTrue and Web transport behavior, hosted mail routing,

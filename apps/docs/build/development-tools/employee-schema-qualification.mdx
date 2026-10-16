@@ -38,6 +38,23 @@ assertion, lifecycle step or cleanup proof is missing. The default remains the
 172-assertion foundation profile. This SQL gate does not qualify the fixed worker,
 provider, production configuration, generated types or live account operations.
 
+The independent `include_address_migration=true` selection appends the separate
+10-assertion `employee-address-migration.sql` packet after the selected profile:
+182 assertions for foundation plus migration, or 311 for journal plus migration.
+Its receipt scope adds `-address-migration`. Missing, reordered, duplicated or
+miscounted packets cannot qualify; the original 172 and 301 profiles remain
+unchanged and cannot be substituted for one another. HTTP remains a separate
+29-assertion gate; RESTORE's separately admitted 66-assertion transport gate must
+remain intact when integrating this addition. Neither transport count is added
+to the SQL assertion total.
+
+The dispatch control checkout must contain the new workflow input, selector,
+strict receipt helper and tests, while `source_sha` must bind the exact supplier
+commit containing the packet and migrations. An older control checkout silently
+omits a new source packet; its green artifact cannot qualify address migration.
+Dispatch and artifact inspection remain with the integration owner. Do not rerun
+or replace an already queued run to infer missing coverage.
+
 After the selected journal packets pass, the workflow generates public, private
 and storage TypeScript definitions from that same isolated database before
 cleanup. Its artifact includes `generated-types.ts` and the receipt records the

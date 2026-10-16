@@ -15,6 +15,24 @@ export const journalPackets = Object.freeze([
   ['employee-runtime-observation.sql', 20],
 ]);
 
+export function selectAddressMigration(value) {
+  if (![undefined, 'false', 'true'].includes(value))
+    throw new Error('Invalid address migration qualification selection');
+  return value === 'true';
+}
+
+export function selectedSchemaPackets(
+  journal = false,
+  addressMigration = false
+) {
+  if (typeof journal !== 'boolean' || typeof addressMigration !== 'boolean')
+    throw new Error('Invalid schema qualification profile');
+  return [
+    ...(journal ? journalPackets : foundationPackets),
+    ...(addressMigration ? [['employee-address-migration.sql', 10]] : []),
+  ];
+}
+
 export function exactSourceSha(value) {
   if (!/^[a-f0-9]{40}$/u.test(value ?? '')) {
     throw new Error('An exact source commit is required');
@@ -56,8 +74,9 @@ export function schemaReceipt({
   lifecycleCode,
   cleanupSucceeded,
   journal = false,
+  addressMigration = false,
 }) {
-  const expected = (journal ? journalPackets : foundationPackets).map(
+  const expected = selectedSchemaPackets(journal, addressMigration).map(
     ([file, assertions]) => ({
       file,
       assertions,
@@ -70,9 +89,7 @@ export function schemaReceipt({
   return {
     version: 1,
     sourceSha: exactSourceSha(sourceSha),
-    scope: journal
-      ? 'employee-creation-restoration-journal'
-      : 'employee-creation-restoration',
+    scope: `${journal ? 'employee-creation-restoration-journal' : 'employee-creation-restoration'}${addressMigration ? '-address-migration' : ''}`,
     schemaQualified: passed,
     assertions: packets.reduce((sum, packet) => sum + packet.assertions, 0),
     packets,
@@ -235,9 +252,10 @@ export function schemaFailureDiagnostic(
   phase,
   packetOrdinal,
   result = {},
-  journal = false
+  journal = false,
+  addressMigration = false
 ) {
-  const packets = journal ? journalPackets : foundationPackets;
+  const packets = selectedSchemaPackets(journal, addressMigration);
   const phases = [
     'full-schema-snapshot',
     'start',
