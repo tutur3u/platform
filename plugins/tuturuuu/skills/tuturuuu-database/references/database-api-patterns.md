@@ -104,3 +104,12 @@ review prove baseline equivalence. Existing migration history stays immutable.
 - Require authorized full-chain migration/type generation and exact-commit CI
   before promotion; see
   [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
+
+## Personal journal qualification
+
+Use the existing disposable Linux schema workflow's `include_personal_journal`
+profile for the full selected migration snapshot, 172 foundation plus 24 journal
+rollback assertions and same-database private RPC type generation. Keep employee
+journal/HTTP profiles off for this selection. Require the exact-source receipt,
+fixture/type digests and positive cleanup; provider, explicit consent and runtime
+acceptance remain separate gates. See [schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx#personal-journal-schema-qualification).
