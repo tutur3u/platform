@@ -47,6 +47,7 @@
     "zod": "^4.6.2"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "2.117.1",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/diff": "^8.0.0",

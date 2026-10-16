@@ -31,6 +31,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_address_migration:
+        description: Add the separate 10-assertion legacy address migration rollback packet
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -57,6 +62,7 @@ jobs:
       EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: ${{ inputs.include_personal_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
       EMPLOYEE_SCHEMA_INCLUDE_RESTORE: ${{ inputs.include_restore }}
+      EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: ${{ inputs.include_address_migration }}
     steps:
       - name: Require the enabled schema gate
         env:
