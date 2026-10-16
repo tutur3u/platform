@@ -110,6 +110,21 @@ review prove baseline equivalence. Existing migration history stays immutable.
 Use the existing disposable Linux schema workflow's `include_personal_journal`
 profile for the full selected migration snapshot, 172 foundation plus 24 journal
 rollback assertions and same-database private RPC type generation. Keep employee
-journal/HTTP profiles off for this selection. Require the exact-source receipt,
-fixture/type digests and positive cleanup; provider, explicit consent and runtime
+journal/HTTP/RESTORE profiles off for this selection. Require the exact-source
+receipt, fixture/type digests and positive cleanup; provider, explicit consent and runtime
 acceptance remain separate gates. See [schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx#personal-journal-schema-qualification).
+
+Correct chronology only for a new, unapplied PR migration, preserving its SQL
+bytes. Never rename an applied migration or reuse old-source SQL/type receipts
+after a snapshot identity change; requalify the new exact source.
+
+## Employee RESTORE transport qualification
+
+Extend the canonical employee schema/HTTP runner for RESTORE rather than creating
+another database lifecycle. The optional RESTORE profile requires journal and HTTP
+selection; preserve the 301 SQL and 29 CREATE checks and require its separate fixed
+phase counts, real committed readbacks, zero child exit and owned cleanup. Inject
+lost acknowledgements after real PostgREST/GoTrue completion and retain operation
+and user UUIDs; reconciliation must never repeat the provider mutation. SQL ACL
+checks and real Auth transport remain separate from Web/satellite session proof.
+See [employee schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx).
