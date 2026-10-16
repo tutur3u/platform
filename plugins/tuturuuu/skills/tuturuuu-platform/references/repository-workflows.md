@@ -181,6 +181,15 @@ receipts do not identify the missing module. Use finite loopback/pinned-runtime
 controls for classification; only the matching hosted source/control run can
 establish actual startup and Web24 acceptance.
 
+For employee inactive-actor failures, trace the proxy assurance layer before the
+route policy: a fresh provider ban behind a signed satellite cookie returns
+`401 / UNAUTHENTICATED / no-store` before the route's `403 / forbidden` check.
+Keep exact status/code assertions for both the ban and rejected-provider-bearer
+cases, and assert no provider update by either denied request. The focused
+required-MFA runtime tests inject provider responses; they do not prove hosted
+ban persistence or session invalidation after sign-out. Preserve the full case
+inventory and use the matching hosted qualification for those effects.
+
 Employee schema receipt/process gates execute in the uninstalled control root,
 while dependency-bearing Web support tests execute in installed source. Process
 controls must import the canonical dependency-free owner directly, use byte-checked

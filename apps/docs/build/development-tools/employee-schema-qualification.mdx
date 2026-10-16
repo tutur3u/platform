@@ -147,6 +147,23 @@ App cookies are signed by the production token helper using an ephemeral
 fixture secret; this does not qualify the browser login or satellite token
 exchange/refresh flow.
 
+The API proxy checks current account assurance before the employee route. A
+previously issued satellite cookie whose current provider user is banned is
+rejected there with exactly `401 / UNAUTHENTICATED`, before the route's later
+`403 / forbidden` actor-policy check. A provider bearer rejected by
+`auth.getUser(token)` uses the same exact proxy denial. The actor-ban and
+session-sign-out cases require this response, `Cache-Control: no-store`, and no
+provider update caused by the denied request; they do not accept interchangeable
+401/403 responses or arbitrary error codes. Focused required-MFA runtime tests
+exercise both credential paths with injected provider responses. Only the hosted
+fixture proves the disposable provider's actual ban and sign-out behavior.
+
+[Supabase getUser](https://supabase.com/docs/reference/javascript/auth-getuser)
+validates through the Auth server. Sign-out is not proof that an already-issued
+access JWT has expired; the fixture retains its bearer and requires the current
+provider session check to reject it. A successful source test does not establish
+that hosted session-revocation case or all 24 Web cases.
+
 A fixture-only loopback proxy forwards requests to the real owned GoTrue and
 PostgREST services. After a successful provider unban it can discard exactly one
 acknowledgement; Web must return pending/inspect and reconcile the original

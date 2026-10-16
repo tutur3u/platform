@@ -187,10 +187,13 @@ commit;`
       status: number,
       code: string
     ) {
+      const updatesBefore = proxy.counts().updates;
       const result = await request(`${endpoint}/${dummy}/restore`, headers, {});
       if (name === 'inactive-actor' && caseDiagnostic?.check === 'no-store')
         caseDiagnostic = { ...caseDiagnostic, check: 'status-code' };
       check(result.response.status === status && result.value.code === code);
+      if (name === 'inactive-actor' || name === 'session-revoked')
+        check(proxy.counts().updates === updatesBefore);
       cases.push(name);
       if (name === 'inactive-actor') caseDiagnostic = null;
     }
@@ -305,7 +308,7 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
       code: null,
       noStore: null,
     };
-    await denied('inactive-actor', satellite, 403, 'forbidden');
+    await denied('inactive-actor', satellite, 401, 'UNAUTHENTICATED');
     check(
       !(
         await admin.auth.admin.updateUserById(actor.id, {
@@ -314,7 +317,7 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
       ).error
     );
     check(!(await actorSession.client.auth.signOut({ scope: 'global' })).error);
-    await denied('session-revoked', bearer, 401, 'unauthorized');
+    await denied('session-revoked', bearer, 401, 'UNAUTHENTICATED');
     await denied(
       'origin',
       { ...satellite, origin: 'https://foreign.example.test' },
