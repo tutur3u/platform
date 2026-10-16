@@ -55,13 +55,12 @@ ancestor and inherit its caps. Cancellation releases only its own slot after the
 owned child group drains. Do not use separate
 `TTR_RESOURCES_HOME` values across projects: that creates independent queues.
 
-Elevated host memory pressure delays new admission. Keep the wait observable;
-continue lightweight editing while it clears. Do not kill an owner, delete a
+Elevated pressure delays new admission with cancellable backoff outside the
+mutex and a fresh pressure probe before launch. Continue lightweight editing. Do not kill an owner, delete a
 live lock, or routinely use `TTR_RESOURCES_BYPASS=1` / `--ignore-pressure` to
 avoid waiting. A bypass is a deliberate exception for a known small operation.
 
 ## Diagnose and recover
-
 `ttr resources monitor --seconds 60` emits bounded JSONL samples of memory
 pressure, T3 descendants, and top processes, without command arguments or env
 values. RSS differs from Activity Monitor's footprint. A snapshot does not prove
@@ -75,5 +74,7 @@ do not silently launch unrestricted parallel validation.
 serialize with admission and read the latest policy inside the mutex. `uninstall` requires an
 idle queue and removes only owned hooks/shims, preserving shell content and
 backups. Existing processes, absolute binary paths, and replaced PATH values can
-bypass automatic shims; explicitly wrap unrecognized commands. The queue is
-cooperative scheduling, not an OS-enforced memory limit.
+bypass automatic shims; explicitly wrap unrecognized commands. Admission caps apply only when enabled; disabled/out-of-scope/bypass commands
+retain argv/env. Invalid config errors omit field values. The queue is cooperative scheduling.
+
+Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read subprocess diagnostics after pipes close; use a separate exit barrier for surviving-descendant tests. Pass a custom script as the launcher target, keeping its working directory a directory. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.

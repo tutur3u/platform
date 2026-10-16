@@ -1,10 +1,18 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdir, open, readdir, readFile, rm, stat } from 'node:fs/promises';
+import {
+  link,
+  mkdir,
+  open,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { z } from 'zod';
-import { atomicJson } from './resources-config';
 
 const ownerSchema = z.object({
   scheduler: z.literal(2).optional(),
@@ -38,10 +46,15 @@ export function processAlive(pid?: number) {
     process.kill(pid, 0);
     return true;
   } catch (error) {
-    return errno(error, 'EPERM');
+    return !errno(error, 'ESRCH');
   }
 }
 export function processGroupAlive(pid: number) {
+  try {
+    process.kill(-pid, 0);
+  } catch (error) {
+    return !errno(error, 'ESRCH');
+  }
   try {
     return execFileSync('ps', ['-axo', 'pgid=,stat='], {
       encoding: 'utf8',
@@ -170,26 +183,71 @@ export async function withAdmission<T>(
   await mkdir(home, { recursive: true, mode: 0o700 });
   const path = join(home, 'admission');
   const owner = newOwner('admission');
-  for (;;) {
-    if (cancelled()) return undefined;
-    try {
-      await mkdir(path, { mode: 0o700 });
-      break;
-    } catch (error) {
-      if (!errno(error, 'EEXIST')) throw error;
-      await reclaimMutex(path).catch((error) => {
-        if (!errno(error, 'ENOENT')) throw error;
-      });
-      await sleep(25);
-    }
-  }
+  const staged = join(home, `admission.${owner.token}.tmp`);
+  await writeFile(staged, `${JSON.stringify(owner)}\n`, {
+    mode: 0o600,
+    flag: 'wx',
+  });
+  let acquired = false;
   try {
-    await atomicJson(join(path, 'owner.json'), owner);
+    while (!acquired) {
+      if (cancelled()) return undefined;
+      try {
+        await mkdir(path, { mode: 0o700 });
+      } catch (error) {
+        if (!errno(error, 'EEXIST')) throw error;
+        await reclaimMutex(path).catch((error) => {
+          if (!errno(error, 'ENOENT')) throw error;
+        });
+        await sleep(25);
+        continue;
+      }
+      // Hold the inode open; reuse the reclaim fence during owner publication.
+      // Reclaim cannot remove an initializing directory while this fence exists.
+      const directory = await open(path, 'r').catch((error) => {
+        if (errno(error, 'ENOENT')) return undefined;
+        throw error;
+      });
+      if (!directory) continue;
+      let fence: Awaited<ReturnType<typeof open>> | undefined;
+      try {
+        const identity = await directory.stat();
+        fence = await open(join(path, 'reclaim'), 'wx', 0o600);
+        const before = await stat(path);
+        if (identity.ino !== before.ino || identity.dev !== before.dev)
+          continue;
+        if ((await ownerState(join(path, 'owner.json'))).kind !== 'missing')
+          continue;
+        await link(staged, join(path, 'owner.json'));
+        const current = await stat(path);
+        const published = await readOwner(join(path, 'owner.json'));
+        acquired =
+          identity.ino === current.ino &&
+          identity.dev === current.dev &&
+          published?.token === owner.token;
+      } catch (error) {
+        if (!errno(error, 'ENOENT') && !errno(error, 'EEXIST')) throw error;
+      } finally {
+        if (fence) {
+          const held = await fence.stat();
+          const current = await stat(join(path, 'reclaim')).catch((error) => {
+            if (errno(error, 'ENOENT')) return undefined;
+            throw error;
+          });
+          if (current?.ino === held.ino && current.dev === held.dev)
+            await rm(join(path, 'reclaim'));
+          await fence.close();
+        }
+        await directory.close();
+      }
+    }
     return await action();
   } finally {
-    await releaseMutex(path, owner.token);
+    if (acquired) await releaseMutex(path, owner.token);
+    await rm(staged, { force: true });
   }
 }
+
 async function releaseMutex(path: string, token: string) {
   // Normal release uses the same exclusive removal marker as stale reclaim.
   // A stale observer cannot remove a newly initializing replacement directory.

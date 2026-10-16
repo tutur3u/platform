@@ -178,15 +178,19 @@ export async function queuedResourceCommand(
   let slot: string | undefined;
   let launchArgs = originalArgs;
   const signalCodes = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 };
+  const waiting = new AbortController();
   let cancelled: keyof typeof signalCodes | undefined;
   const cancelInt = () => {
     cancelled = 'SIGINT';
+    waiting.abort();
   };
   const cancelTerm = () => {
     cancelled = 'SIGTERM';
+    waiting.abort();
   };
   const cancelHup = () => {
     cancelled = 'SIGHUP';
+    waiting.abort();
   };
   process.on('SIGINT', cancelInt);
   process.on('SIGTERM', cancelTerm);
@@ -203,6 +207,8 @@ export async function queuedResourceCommand(
     let pressureReason: string | null = null;
     while (!slot) {
       if (cancelled) return signalCodes[cancelled];
+      let pressureBlocked = false;
+      pressureReason = null;
       slot = await withAdmission(
         home,
         async () => {
@@ -233,6 +239,7 @@ export async function queuedResourceCommand(
             ? { blocked: false, reason: null }
             : await pressureProbe();
           pressureReason = pressure.reason;
+          pressureBlocked = pressure.blocked;
           if (pressure.blocked || cancelled) return undefined;
           // Pressure probing is asynchronous. Recheck occupancy and policy before claim.
           const latest =
@@ -270,7 +277,13 @@ export async function queuedResourceCommand(
           );
           announced = Date.now();
         }
-        await sleep(50);
+        // Backoff never holds admission, and cancellation remains responsive.
+        await sleep(pressureBlocked ? 5_000 : 50, undefined, {
+          signal: waiting.signal,
+        }).catch((error: unknown) => {
+          if (!(error instanceof Error && error.name === 'AbortError'))
+            throw error;
+        });
       }
     }
     if (cancelled) return signalCodes[cancelled];

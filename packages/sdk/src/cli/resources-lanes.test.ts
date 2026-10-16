@@ -1,18 +1,14 @@
-import { type ChildProcess, spawn } from 'node:child_process';
 import {
   mkdir,
-  mkdtemp,
   readdir,
   readFile,
-  realpath,
   rm,
   utimes,
   writeFile,
 } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { delimiter, dirname, join, resolve } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
-import { limitCommand, realExecutable } from './resources-command';
+import { join, resolve } from 'node:path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { limitCommand } from './resources-command';
 import {
   atomicJson,
   defaultResourceConfig,
@@ -30,115 +26,30 @@ import {
   releaseSlot,
   withAdmission,
 } from './resources-slots';
+import {
+  bunRunSeparatorExpected,
+  entry,
+  exists,
+  privateFixtures,
+  until,
+} from './resources-test-fixtures';
 
-const bun = realExecutable('bun', '/nonexistent');
-const realNode = realExecutable('node', '/nonexistent');
-const fixturePath = [dirname(realNode), dirname(bun), '/usr/bin', '/bin'].join(
-  delimiter
-);
-const entry = resolve('src/cli/resources-entry.ts');
+const host = vi.hoisted(() => ({ memory: 24 * 1024 ** 3, cpus: 10 }));
+vi.mock('node:os', async (original) => ({
+  ...(await original<typeof import('node:os')>()),
+  totalmem: () => host.memory,
+  availableParallelism: () => host.cpus,
+}));
+const fixtures = privateFixtures();
 const queueModule = resolve('src/cli/resources-queue.ts');
-const dirs: string[] = [];
-const children: ChildProcess[] = [];
-const timeout = 15_000;
-async function until(check: () => Promise<boolean>) {
-  const end = Date.now() + timeout;
-  while (Date.now() < end) {
-    if (await check()) return;
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
-  throw new Error('Timed out at resource fixture barrier.');
-}
-const exists = (path: string) =>
-  readFile(path).then(
-    () => true,
-    () => false
-  );
-async function home(lanes = 2) {
-  const path = await realpath(await mkdtemp(join(tmpdir(), 'ttr-lanes-test-')));
-  dirs.push(path);
-  await atomicJson(join(path, 'config.json'), {
-    ...defaultResourceConfig(),
-    roots: [path],
-    validationLanes: lanes,
-    vitestWorkers: 2,
-    buildJobs: 2,
-  });
-  return path;
-}
-function launch(
-  path: string,
-  args: string[],
-  customEntry = entry,
-  env: NodeJS.ProcessEnv = {}
-) {
-  const child = spawn(bun, [customEntry, ...args], {
-    cwd: path,
-    env: {
-      ...process.env,
-      PATH: fixturePath,
-      ...env,
-      TTR_RESOURCES_HOME: path,
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  children.push(child);
-  let out = '';
-  let err = '';
-  child.stdout.on('data', (chunk) => {
-    out += chunk;
-  });
-  child.stderr.on('data', (chunk) => {
-    err += chunk;
-  });
-  const done = new Promise<{ code: number | null; out: string; err: string }>(
-    (resolve, reject) => {
-      child.once('error', reject);
-      child.once('exit', (code) => resolve({ code, out, err }));
-    }
-  );
-  return { child, done };
-}
-async function held(path: string, name: string, drain = false) {
-  const source = join(path, `${name}.cjs`);
-  await writeFile(
-    source,
-    `const fs=require('fs');const base=${JSON.stringify(join(path, name))};fs.writeFileSync(base+'.ready','');${drain ? "process.on('SIGTERM',()=>fs.writeFileSync(base+'.signal',''));" : ''}const timer=setInterval(()=>{if(fs.existsSync(base+'.release')){clearInterval(timer);process.exit(0)}},10);`
-  );
-  return source;
-}
+const { home, held, laneLaunch: launch, waiting, release } = fixtures;
 const run = (path: string, source: string) =>
   launch(path, ['run', '--ignore-pressure', '--', 'node', source]);
-async function waiting(path: string, count: number) {
-  await until(
-    async () => (await resourceQueueStatus(path, 2)).waiting.length === count
-  );
-}
-async function release(path: string, name: string) {
-  await writeFile(join(path, `${name}.release`), '');
-}
 afterEach(async () => {
-  // Release only this test's children before terminating its brokers. No live home.
-  for (const path of dirs) {
-    for (const name of await readdir(path)) {
-      if (name.endsWith('.cjs'))
-        await writeFile(join(path, `${name.slice(0, -4)}.release`), '');
-      if (name === 'receipt')
-        await writeFile(join(path, 'receipt.release'), '');
-      if (name.endsWith('.ready'))
-        await writeFile(join(path, name.replace('.ready', '.release')), '');
-    }
-  }
-  for (const child of children.splice(0))
-    if (child.exitCode === null && child.signalCode === null) {
-      child.kill('SIGTERM');
-      await new Promise((resolve) => child.once('exit', resolve));
-    }
-  await Promise.all(
-    dirs.splice(0).map((path) => rm(path, { recursive: true, force: true }))
-  );
+  await fixtures.cleanup();
+  host.memory = 24 * 1024 ** 3;
+  host.cpus = 10;
 });
-
 describe('lane policy', () => {
   it('preserves Bun run separators when clamping the underlying Turbo command', () => {
     expect(
@@ -147,15 +58,7 @@ describe('lane policy', () => {
         ['--no-install', 'run', 'turbo', '--', 'run', 'test'],
         defaultResourceConfig()
       )
-    ).toEqual([
-      '--no-install',
-      'run',
-      'turbo',
-      '--',
-      'run',
-      'test',
-      '--concurrency=1',
-    ]);
+    ).toEqual(bunRunSeparatorExpected);
   });
   it('reads legacy configs as one lane and rejects invalid counts', async () => {
     const path = await home();
@@ -168,8 +71,24 @@ describe('lane policy', () => {
         ...old,
         validationLanes: lanes,
       });
-      await expect(readResourceConfig(path)).rejects.toThrow();
+      await expect(readResourceConfig(path)).rejects.toThrow(
+        'Invalid resource configuration.'
+      );
     }
+    for (const raw of [
+      '{"private-sentinel":',
+      JSON.stringify({ ...old, validationLanes: 'private-sentinel' }),
+    ]) {
+      await writeFile(join(path, 'config.json'), raw);
+      const result = await launch(path, ['status', '--json']).done;
+      expect(result.code).toBe(1);
+      expect(result.err.trim()).toBe(
+        'Invalid resource configuration. Inspect config.json and correct its JSON and supported field values.'
+      );
+      expect(result.err).not.toContain('private-sentinel');
+    }
+    await rm(join(path, 'config.json'));
+    expect(await readResourceConfig(path)).toBeUndefined();
   });
   it('splits the aggregate worker budget and clamps explicit tool flags', () => {
     const config = {
@@ -259,7 +178,6 @@ describe('lane policy', () => {
       expect((await launch(path, args).done).code).toBe(1);
   });
 });
-
 describe('real cross-process lane admission', { timeout: 45_000 }, () => {
   it('overlaps two independent children, holds the third, and admits FIFO without exceeding two', async () => {
     const path = await home();
@@ -299,6 +217,18 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     await release(path, 'd');
     expect((await c.done).code).toBe(0);
     expect((await d.done).code).toBe(0);
+    expect([host.memory, host.cpus]).toEqual([24 * 1024 ** 3, 10]);
+    const identities = (
+      await readFile(join(path, 'fixture-host.jsonl'), 'utf8')
+    )
+      .trim()
+      .split('\n')
+      .map((row) => JSON.parse(row));
+    expect(
+      identities.filter((row) => [a.child.pid, b.child.pid].includes(row.pid))
+    ).toHaveLength(2);
+    for (const identity of identities)
+      expect([identity.memory, identity.cpus]).toEqual([24 * 1024 ** 3, 10]);
   });
   it('retains one-lane serialization', async () => {
     const path = await home(1);
@@ -325,7 +255,6 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     await waiting(path, 2);
     expect(await exists(join(path, 'a.ready'))).toBe(false);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
-    // Model a dead supervisor with its actual live child still retained.
     await atomicJson(join(path, 'lock', 'owner.json'), {
       ...metadata,
       pid: 2147483647,
@@ -358,6 +287,16 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     expect((await readFile(join(path, 'nested.result'), 'utf8')).trim()).toBe(
       '1:1'
     );
+    const nestedHosts = (
+      await readFile(join(path, 'fixture-host.jsonl'), 'utf8')
+    )
+      .trim()
+      .split('\n')
+      .map((row) => JSON.parse(row))
+      .filter((row) => row.shim);
+    expect(nestedHosts.length).toBeGreaterThan(0);
+    for (const identity of nestedHosts)
+      expect([identity.memory, identity.cpus]).toEqual([24 * 1024 ** 3, 10]);
     const c = run(path, await held(path, 'c'));
     await until(() => exists(join(path, 'c.ready')));
     const fake = launch(
@@ -379,21 +318,39 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     const a = run(path, await held(path, 'a'));
     await until(() => exists(join(path, 'a.ready')));
     const runner = join(path, 'pressure.ts');
-    const child = await held(path, 'b');
+    await held(path, 'b');
+    await held(path, 'c');
     await writeFile(
       runner,
-      `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {existsSync,writeFileSync} from 'node:fs';process.exitCode=await queuedResourceCommand(${JSON.stringify(path)},'node',[${JSON.stringify(child)}],{...process.env,VITEST_MAX_WORKERS:'1',CARGO_BUILD_JOBS:'1'},false,2,async()=>{writeFileSync(${JSON.stringify(join(path, 'checked'))},'');return {blocked:!existsSync(${JSON.stringify(join(path, 'pressure.release'))}),reason:'fixture pressure'};});`
+      `import {mock} from 'bun:test';import * as timers from 'node:timers/promises';import {existsSync,writeFileSync,appendFileSync} from 'node:fs';const base=${JSON.stringify(path)};const name=process.argv[2];const sleep=timers.setTimeout;mock.module('node:timers/promises',()=>({...timers,setTimeout:(ms,...args)=>{if(ms===5000)writeFileSync(base+'/'+name+'.backoff','');return sleep(ms,...args)}}));const {queuedResourceCommand}=await import(${JSON.stringify(queueModule)});process.exitCode=await queuedResourceCommand(base,'node',[base+'/'+name+'.cjs'],process.env,false,2,async()=>{appendFileSync(base+'/'+name+'.checked','probe\\n');return {blocked:!existsSync(base+'/pressure.release'),reason:'fixture pressure'}});`
     );
-    const b = launch(path, [], runner);
-    await until(() => exists(join(path, 'checked')));
+    const b = launch(path, ['b'], runner);
+    await until(() => exists(join(path, 'b.backoff')));
+    const c = launch(path, ['c'], runner);
+    await waiting(path, 2);
+    expect(await exists(join(path, 'c.checked'))).toBe(false);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
+    // Completing an imported transaction proves the blocked timer is outside admission.
+    await withAdmission(path, async () => {
+      expect(await readFile(join(path, 'b.checked'), 'utf8')).toBe('probe\n');
+      expect((await resourceQueueStatus(path, 2)).owners).toHaveLength(1);
+    });
+    b.child.kill('SIGTERM');
+    expect((await b.done).code).toBe(143);
+    await until(() => exists(join(path, 'c.backoff')));
+    expect(await exists(join(path, 'c.ready'))).toBe(false);
     expect((await resourceQueueStatus(path, 2)).owners).toHaveLength(1);
     await writeFile(join(path, 'pressure.release'), '');
-    await until(() => exists(join(path, 'b.ready')));
+    await until(() => exists(join(path, 'c.ready')));
+    expect(
+      (await readFile(join(path, 'c.checked'), 'utf8')).trim().split('\n')
+        .length
+    ).toBeGreaterThanOrEqual(2);
+    expect((await resourceQueueStatus(path, 2)).owners).toHaveLength(2);
     await release(path, 'a');
-    await release(path, 'b');
-    await a.done;
-    await b.done;
+    await release(path, 'c');
+    expect((await a.done).code).toBe(0);
+    expect((await c.done).code).toBe(0);
   });
   it('cancels only its own waiter and preserves FIFO siblings', async () => {
     const path = await home(1);
@@ -449,7 +406,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
       Boolean((await resourceQueueStatus(path)).owner?.childPid)
     );
     a.child.kill('SIGKILL');
-    await a.done;
+    await a.exited;
     const b = run(path, await held(path, 'b'));
     await waiting(path, 1);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
@@ -538,7 +495,6 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
         dryRun: true,
       })
     ).rejects.toThrow('drain');
-    // The fixture is the legacy waiter itself, completing its own ticket.
     await rm(ticket);
     await until(() => exists(join(path, 'a.ready')));
     await release(path, 'a');
@@ -558,7 +514,7 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
       Boolean((await resourceQueueStatus(path)).owner?.childPid)
     );
     a.child.kill('SIGKILL');
-    await a.done;
+    await a.exited;
     await release(path, 'parent');
     const b = run(path, await held(path, 'b'));
     await waiting(path, 1);
@@ -618,7 +574,6 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     );
     const broker = launch(path, [], brokerRunner);
     await until(() => exists(join(path, 'broker.ready')));
-    // An observable signal handler proves the broker reached its mutex wait.
     const runner = join(path, 'mutex-wait.ts');
     await writeFile(
       runner,
@@ -682,3 +637,63 @@ describe('real cross-process lane admission', { timeout: 45_000 }, () => {
     expect(entered).toBe(false);
   });
 });
+it('stalled admission publication cannot recreate a lost directory or overwrite a successor', async () => {
+  for (const mode of ['lost', 'successor', 'initializing']) {
+    const path = await home();
+    const runner = join(path, 'stalled.ts');
+    const slots = JSON.stringify(resolve('src/cli/resources-slots.ts'));
+    const base = JSON.stringify(path);
+    await writeFile(
+      runner,
+      `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const base=${base};const original=fs.open;const make=fs.mkdir;let paused=false;let count=0;mock.module('node:fs/promises',()=>({...fs,mkdir:async(path,...args)=>{if(String(path)===base+'/admission'&&!args[0]?.recursive)count++;return make(path,...args)},open:async(path,...args)=>{if(String(path)===base+'/admission/reclaim'&&!paused){paused=true;writeFileSync(base+'/stalled.ready','');while(!existsSync(base+'/stalled.release'))await setTimeout(10)}return original(path,...args)}}));const {withAdmission}=await import(${slots});await withAdmission(base,async()=>{writeFileSync(base+'/entered',String(count));while(!existsSync(base+'/action.release'))await setTimeout(10)},()=>{if(paused&&existsSync(base+'/stalled.release'))writeFileSync(base+'/retry.ready','');return false});`
+    );
+    const stalled = launch(path, [], runner);
+    await until(() => exists(join(path, 'stalled.ready')));
+    const old = new Date(0);
+    await utimes(join(path, 'admission'), old, old);
+    let successor: ReturnType<typeof launch> | undefined;
+    if (mode === 'lost') await rm(join(path, 'admission'), { recursive: true });
+    else {
+      const next = join(path, 'successor.ts');
+      await writeFile(
+        next,
+        `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const base=${base};const original=fs.link;mock.module('node:fs/promises',()=>({...fs,link:async(...args)=>{${mode === 'initializing' ? "writeFileSync(base+'/initializing.ready','');while(!existsSync(base+'/initializing.release'))await setTimeout(10);" : ''}return original(...args)}}));const {withAdmission}=await import(${slots});await withAdmission(base,async()=>{writeFileSync(base+'/successor.ready','');while(!existsSync(base+'/successor.release'))await setTimeout(10)});`
+      );
+      successor = launch(path, [], next);
+      await until(() =>
+        exists(
+          join(
+            path,
+            mode === 'initializing' ? 'initializing.ready' : 'successor.ready'
+          )
+        )
+      );
+    }
+    const owner = await readFile(
+      join(path, 'admission', 'owner.json'),
+      'utf8'
+    ).catch(() => undefined);
+    await writeFile(join(path, 'stalled.release'), '');
+    if (mode !== 'lost') {
+      await until(() => exists(join(path, 'retry.ready')));
+      expect(await exists(join(path, 'entered'))).toBe(false);
+      expect(
+        await readFile(join(path, 'admission', 'owner.json'), 'utf8').catch(
+          () => undefined
+        )
+      ).toBe(owner);
+      if (mode === 'initializing') {
+        await writeFile(join(path, 'initializing.release'), '');
+        await until(() => exists(join(path, 'successor.ready')));
+      }
+      await writeFile(join(path, 'successor.release'), '');
+      expect((await successor!.done).code).toBe(0);
+    }
+    await until(() => exists(join(path, 'entered')));
+    expect(
+      Number(await readFile(join(path, 'entered'), 'utf8'))
+    ).toBeGreaterThanOrEqual(2);
+    await writeFile(join(path, 'action.release'), '');
+    expect((await stalled.done).code).toBe(0);
+  }
+}, 45_000);

@@ -141,6 +141,10 @@ export async function readResourceConfig(
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
       return undefined;
+    if (error instanceof SyntaxError || error instanceof z.ZodError)
+      throw new Error(
+        'Invalid resource configuration. Inspect config.json and correct its JSON and supported field values.'
+      );
     throw error;
   }
 }

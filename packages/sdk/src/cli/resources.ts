@@ -115,7 +115,7 @@ export async function runResourcesCommand(argv: string[]) {
         (config?.enabled && resourceScope(config, commandCwd(command))) ||
         (shim && (await hasResourceOwner(home))));
     const total = config || defaultResourceConfig();
-    const caps = laneResourceConfig(total);
+    const caps = enabled ? laneResourceConfig(total) : total;
     const parent = enabled ? await nestedOwner(home) : undefined;
     const settings = parent?.limits ? { ...caps, ...parent.limits } : caps;
     const args = enabled

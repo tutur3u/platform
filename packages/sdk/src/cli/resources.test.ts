@@ -1,25 +1,12 @@
-import { type ChildProcess, spawn } from 'node:child_process';
-import {
-  chmod,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  symlink,
-  writeFile,
-} from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { delimiter, dirname, join, resolve } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
-import {
-  commandCwd,
-  isHeavyCommand,
-  limitCommand,
-  realExecutable,
-} from './resources-command';
+import { spawn } from 'node:child_process';
+import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { commandCwd, isHeavyCommand, limitCommand } from './resources-command';
 import {
   atomicJson,
   defaultResourceConfig,
+  laneResourceConfig,
   readResourceConfig,
   repositoryIdentity,
   resourceScope,
@@ -32,83 +19,31 @@ import {
   stableResourceEntry,
   uninstallResources,
 } from './resources-setup';
+import {
+  bun,
+  entry,
+  exists,
+  fixturePath,
+  privateFixtures,
+  processTimeout,
+  realNode,
+  until,
+  workerProbe,
+} from './resources-test-fixtures';
 
-const entry = resolve('src/cli/resources-entry.ts');
-const bun = realExecutable('bun', '/nonexistent-shim-dir');
-const realNode = realExecutable('node', '/nonexistent');
-const fixturePath = [dirname(realNode), dirname(bun), '/usr/bin', '/bin'].join(
-  delimiter
-);
-const children: ChildProcess[] = [];
-const dirs: string[] = [];
-// These integration tests start multiple runtimes and real process groups.
-// Hosted runners can spend several seconds scheduling each child under load.
-const processTimeout = 15_000;
-async function temporary() {
-  const path = await mkdtemp(join(tmpdir(), 'ttr-resources-'));
-  dirs.push(path);
-  return path;
-}
-function launch(
-  home: string,
-  args: string[],
-  cwd?: string,
-  executableEntry = entry
-) {
-  const cliArgs =
-    args[0] === 'run' ? ['run', '--ignore-pressure', ...args.slice(1)] : args;
-  const child = spawn(bun, [executableEntry, ...cliArgs], {
-    cwd,
-    env: { ...process.env, PATH: fixturePath, TTR_RESOURCES_HOME: home },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  children.push(child);
-  let out = '';
-  let err = '';
-  child.stdout?.on('data', (chunk) => {
-    out += chunk;
-  });
-  child.stderr?.on('data', (chunk) => {
-    err += chunk;
-  });
-  const done = new Promise<{ code: number | null; out: string; err: string }>(
-    (resolve, reject) => {
-      child.on('error', reject);
-      child.on('exit', (code) => resolve({ code, out, err }));
-    }
-  );
-  return { child, done };
-}
-async function until(check: () => Promise<boolean>) {
-  const deadline = Date.now() + processTimeout;
-  while (Date.now() < deadline) {
-    if (await check()) return;
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  }
-  throw new Error('Timed out waiting for resource fixture.');
-}
-const exists = (path: string) =>
-  readFile(path).then(
-    () => true,
-    () => false
-  );
-async function script(home: string, name: string, text: string) {
-  const path = join(home, `${name}.cjs`);
-  await writeFile(path, text);
-  return path;
-}
+const host = vi.hoisted(() => ({ memory: 24 * 1024 ** 3, cpus: 10 }));
+vi.mock('node:os', async (original) => ({
+  ...(await original<typeof import('node:os')>()),
+  totalmem: () => host.memory,
+  availableParallelism: () => host.cpus,
+}));
+const fixtures = privateFixtures(true);
+const { temporary, children, script, launch } = fixtures;
 afterEach(async () => {
-  for (const child of children.splice(0)) {
-    if (child.exitCode === null && child.signalCode === null) {
-      child.kill('SIGTERM');
-      await new Promise((resolve) => child.once('exit', resolve));
-    }
-  }
-  await Promise.all(
-    dirs.splice(0).map((path) => rm(path, { recursive: true, force: true }))
-  );
+  await fixtures.cleanup();
+  host.memory = 24 * 1024 ** 3;
+  host.cpus = 10;
 });
-
 describe('resource policy', () => {
   it('adapts worker counts and retains host headroom', () => {
     expect(defaultResourceConfig(24 * 1024 ** 3, 10).vitestWorkers).toBe(2);
@@ -250,7 +185,6 @@ describe('resource policy', () => {
     }
   );
 });
-
 describe('resource admission', { timeout: 45_000 }, () => {
   it('serializes jobs across checkouts and preserves their exit codes', async () => {
     const home = await temporary();
@@ -423,7 +357,7 @@ describe('resource admission', { timeout: 45_000 }, () => {
       )
     );
     first.child.kill('SIGKILL');
-    await first.done;
+    await first.exited;
     const next = launch(home, ['run', '--', 'node', '-e', 'console.log(2)']);
     await new Promise((resolve) => setTimeout(resolve, 200));
     expect(next.child.exitCode).toBeNull();
@@ -431,36 +365,9 @@ describe('resource admission', { timeout: 45_000 }, () => {
     expect((await next.done).code).toBe(0);
   });
 });
-
-// These probes are lightweight executables named for classified tools. They
-// inspect actual argv/env and durable owner caps without running those tools.
-async function workerProbe(
-  home: string,
-  tool: 'vitest' | 'cargo',
-  name = 'probe'
-) {
-  const path = join(home, tool);
-  await writeFile(
-    path,
-    `#!${realNode}
-const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(join(home, `${name}.json`))},JSON.stringify({args:process.argv.slice(2),vitest:process.env.VITEST_MAX_WORKERS,cargo:process.env.CARGO_BUILD_JOBS,turbo:process.env.TURBO_CONCURRENCY}));const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(home, `${name}.release`))})){clearInterval(timer)}},10);`
-  );
-  await chmod(path, 0o700);
-  return path;
-}
 const queueModule = resolve('src/cli/resources-queue.ts');
 const configModule = resolve('src/cli/resources-config.ts');
-async function workerHome() {
-  const home = await temporary();
-  await atomicJson(join(home, 'config.json'), {
-    ...defaultResourceConfig(),
-    roots: [home],
-    validationLanes: 1,
-    vitestWorkers: 2,
-    buildJobs: 2,
-  });
-  return home;
-}
+const workerHome = () => fixtures.home(1);
 describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
   it('rejects busy same-lane budget changes and binds actual argv/env to recorded caps', async () => {
     const home = await workerHome();
@@ -571,7 +478,6 @@ describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
     );
     const broker = launch(home, [], undefined, runner);
     await until(() => exists(join(home, 'pressure.ready')));
-    // Deliberately mutate only synthetic data to model an out-of-protocol writer.
     await atomicJson(join(home, 'config.json'), {
       ...(await readResourceConfig(home)),
       vitestWorkers: 1,
@@ -603,7 +509,6 @@ describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
     expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
   });
 });
-
 it.each(['enable', 'disable', 'uninstall'] as const)(
   'serializes %s config reads with setup and preserves admitted budgets',
   async (action) => {
@@ -691,3 +596,105 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
     expect((await b.done).code).toBe(0);
   }
 );
+it('retains subprocess diagnostics until inherited pipes close', async () => {
+  const path = await fixtures.home();
+  const runner = await script(
+    path,
+    'late-diagnostic',
+    `const {spawn}=require('node:child_process');spawn(${JSON.stringify(realNode)},['-e',"setTimeout(()=>process.stderr.write('fixture child diagnostic\\n'),100)"],{stdio:['ignore',process.stdout,process.stderr]}).unref();process.exit(7);`
+  );
+  const result = await launch(path, [], path, runner).done;
+  expect(result.code).toBe(7);
+  expect(result.err).toContain('fixture child diagnostic');
+});
+it('denies two lanes on a low-budget host without launching children', async () => {
+  const home = await fixtures.home();
+  host.memory = 8 * 1024 ** 3;
+  host.cpus = 2;
+  expect(defaultResourceConfig().vitestWorkers).toBe(1);
+  const config = (await readResourceConfig(home))!;
+  expect(() => laneResourceConfig(config)).toThrow('host budget');
+  const marker = join(home, 'workload');
+  const denied = await fixtures.launch(
+    home,
+    [
+      'run',
+      '--ignore-pressure',
+      '--',
+      'node',
+      '-e',
+      `require('fs').writeFileSync(${JSON.stringify(marker)},'')`,
+    ],
+    home,
+    entry,
+    {},
+    { memory: host.memory, cpus: host.cpus }
+  ).done;
+  expect(denied.code).toBe(1);
+  expect(denied.err).toContain('configured and host budget');
+  expect(await exists(marker)).toBe(false);
+  expect(await exists(join(home, 'slots'))).toBe(false);
+  expect((await resourceQueueStatus(home, 2)).waiting).toHaveLength(0);
+  const identity = JSON.parse(
+    (await readFile(join(home, 'fixture-host.jsonl'), 'utf8')).trim()
+  );
+  expect([identity.memory, identity.cpus]).toEqual([8 * 1024 ** 3, 2]);
+});
+it('disabled out-of-scope and bypass commands retain arguments under oversized policy', async () => {
+  const home = await fixtures.home();
+  const original = (await readResourceConfig(home))!;
+  const code =
+    'console.log(JSON.stringify([process.argv.slice(1),process.env.VITEST_MAX_WORKERS,process.env.CARGO_BUILD_JOBS]))';
+  for (const mode of ['disabled', 'outside', 'bypass', 'enabled']) {
+    await atomicJson(join(home, 'config.json'), {
+      ...original,
+      enabled: mode !== 'disabled',
+      roots: [mode === 'outside' ? join(home, 'other') : home],
+      vitestWorkers: 64,
+      buildJobs: 64,
+    });
+    const args = [
+      mode === 'bypass' ? 'run' : 'shim',
+      ...(mode === 'bypass' ? [] : ['node']),
+      '--',
+      ...(mode === 'bypass' ? ['node'] : []),
+      '-e',
+      code,
+      '--',
+      '--maxWorkers=16',
+    ];
+    const result = await fixtures.launch(home, args, home, entry, {
+      VITEST_MAX_WORKERS: 'original-vitest',
+      CARGO_BUILD_JOBS: 'original-cargo',
+      ...(mode === 'bypass' ? { TTR_RESOURCES_BYPASS: '1' } : {}),
+    }).done;
+    if (mode === 'enabled') {
+      expect(result.code).toBe(1);
+      expect(result.err).toContain('configured and host budget');
+    } else {
+      expect(result.code, result.err).toBe(0);
+      expect(JSON.parse(result.out)).toEqual([
+        ['--maxWorkers=16'],
+        'original-vitest',
+        'original-cargo',
+      ]);
+    }
+    const status = await resourceQueueStatus(home, 2);
+    expect([status.owners.length, status.waiting.length]).toEqual([0, 0]);
+  }
+});
+it('proves absent groups with ESRCH while permissions and unknown errors fail closed without ps', async () => {
+  const path = await fixtures.home();
+  const runner = join(path, 'group.ts');
+  await writeFile(
+    runner,
+    `import {mock} from 'bun:test';import * as cp from 'node:child_process';let error='ESRCH';let output;let ps=0;const calls=[];process.kill=(...args)=>{calls.push(args);if(error)throw Object.assign(new Error('fixture'),{code:error});return true};mock.module('node:child_process',()=>({...cp,execFileSync:()=>{ps++;if(output===undefined)throw new Error('ps unavailable');return output}}));const {processGroupAlive}=await import(${JSON.stringify(resolve('src/cli/resources-slots.ts'))});const results=[];for(error of ['ESRCH','EPERM','EIO',''])results.push(processGroupAlive(12345));output='12345 Z';results.push(processGroupAlive(12345));output='12345 S';results.push(processGroupAlive(12345));console.log(JSON.stringify({results,calls,ps}));`
+  );
+  const result = await launch(path, [], path, runner).done;
+  expect(result.code, result.err).toBe(0);
+  expect(JSON.parse(result.out)).toEqual({
+    results: [false, true, true, true, false, true],
+    calls: Array.from({ length: 6 }, () => [-12345, 0]),
+    ps: 3,
+  });
+});

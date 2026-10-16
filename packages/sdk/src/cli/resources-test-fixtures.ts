@@ -1,0 +1,208 @@
+import { type ChildProcess, spawn } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+import {
+  chmod,
+  mkdtemp,
+  readdir,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { delimiter, dirname, join, resolve } from 'node:path';
+import { realExecutable } from './resources-command';
+import { atomicJson, defaultResourceConfig } from './resources-config';
+
+export const bunRunSeparatorExpected = [
+  '--no-install',
+  'run',
+  'turbo',
+  '--',
+  'run',
+  'test',
+  '--concurrency=1',
+];
+export const bun = realExecutable('bun', '/nonexistent');
+export const realNode = realExecutable('node', '/nonexistent');
+export const fixturePath = [
+  dirname(realNode),
+  dirname(bun),
+  '/usr/bin',
+  '/bin',
+].join(delimiter);
+export const entry = resolve('src/cli/resources-entry.ts');
+export const processTimeout = 15_000;
+export const exists = (path: string) =>
+  readFile(path).then(
+    () => true,
+    () => false
+  );
+export async function until(check: () => Promise<boolean>) {
+  const end = Date.now() + processTimeout;
+  while (Date.now() < end) {
+    if (await check()) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error('Timed out at resource fixture barrier.');
+}
+
+export function privateFixtures(ignorePressure = false) {
+  const dirs: string[] = [];
+  const children: ChildProcess[] = [];
+  const completions: Promise<unknown>[] = [];
+  async function temporary() {
+    const path = await realpath(
+      await mkdtemp(join(tmpdir(), 'ttr-resources-test-'))
+    );
+    dirs.push(path);
+    return path;
+  }
+  async function home(lanes = 2) {
+    const path = await temporary();
+    await atomicJson(join(path, 'config.json'), {
+      ...defaultResourceConfig(),
+      roots: [path],
+      validationLanes: lanes,
+      vitestWorkers: 2,
+      buildJobs: 2,
+    });
+    return path;
+  }
+  async function script(home: string, name: string, text: string) {
+    const path = join(home, `${name}.cjs`);
+    await writeFile(path, text);
+    return path;
+  }
+  async function held(path: string, name: string, drain = false) {
+    return script(
+      path,
+      name,
+      `const fs=require('fs');const base=${JSON.stringify(join(path, name))};fs.writeFileSync(base+'.ready','');${drain ? "process.on('SIGTERM',()=>fs.writeFileSync(base+'.signal',''));" : ''}const timer=setInterval(()=>{if(fs.existsSync(base+'.release')){clearInterval(timer);process.exit(0)}},10);`
+    );
+  }
+  function launch(
+    home: string,
+    args: string[],
+    cwd = home,
+    target = entry,
+    env: NodeJS.ProcessEnv = {},
+    budget = { memory: 24 * 1024 ** 3, cpus: 10 }
+  ) {
+    const shimEntry = join(home, 'fixture-shim.ts');
+    const setup = resolve('src/cli/resources-setup.ts');
+    // Only disposable test loaders mock the host. No production env switch/API.
+    const prefix = `import {mock} from 'bun:test';import * as os from 'node:os';import {appendFileSync} from 'node:fs';mock.module('node:os',()=>({...os,totalmem:()=>${budget.memory},availableParallelism:()=>${budget.cpus}}));appendFileSync(${JSON.stringify(join(home, 'fixture-host.jsonl'))},JSON.stringify({pid:process.pid,memory:os.totalmem(),cpus:os.availableParallelism(),shim:process.argv[1]===${JSON.stringify(shimEntry)}})+'\\n');const actual=await import(${JSON.stringify(setup)});const install=actual.installResourceShims;const prepare=actual.setupResources;mock.module(${JSON.stringify(setup)},()=>({...actual,installResourceShims:(home)=>install(home,${JSON.stringify(shimEntry)}),setupResources:async(options)=>{const result=await prepare(options);if(!options.dryRun)await install(options.home,${JSON.stringify(shimEntry)});return result;}}));`;
+    writeFileSync(
+      shimEntry,
+      `${prefix}await import(${JSON.stringify(entry)});`,
+      { mode: 0o600 }
+    );
+    const loader = join(home, `fixture-launch-${children.length}.ts`);
+    writeFileSync(loader, `${prefix}await import(${JSON.stringify(target)});`, {
+      mode: 0o600,
+    });
+    const cliArgs =
+      ignorePressure && args[0] === 'run'
+        ? ['run', '--ignore-pressure', ...args.slice(1)]
+        : args;
+    const child = spawn(bun, [loader, ...cliArgs], {
+      cwd,
+      env: {
+        ...process.env,
+        PATH: fixturePath,
+        ...env,
+        TTR_RESOURCES_HOME: home,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    children.push(child);
+    let out = '';
+    let err = '';
+    child.stdout.on('data', (chunk) => {
+      out += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      err += chunk;
+    });
+    const finished = (event: 'exit' | 'close') =>
+      new Promise<{ code: number | null; out: string; err: string }>(
+        (resolve, reject) => {
+          child.once('error', reject);
+          child.once(event, (code) => resolve({ code, out, err }));
+        }
+      );
+    const exited = finished('exit');
+    void exited.catch(() => {});
+    const done = finished('close');
+    completions.push(done);
+    return { child, exited, done };
+  }
+  const laneLaunch = (
+    home: string,
+    args: string[],
+    target = entry,
+    env: NodeJS.ProcessEnv = {}
+  ) => launch(home, args, home, target, env);
+  async function waiting(home: string, count: number) {
+    const { resourceQueueStatus } = await import('./resources-queue.js');
+    await until(
+      async () => (await resourceQueueStatus(home, 2)).waiting.length === count
+    );
+  }
+  async function release(home: string, name: string) {
+    await writeFile(join(home, `${name}.release`), '');
+  }
+  async function cleanup() {
+    // Release only fixture-owned barriers and child groups, then their brokers.
+    for (const path of dirs) {
+      for (const name of await readdir(path)) {
+        if (name.endsWith('.cjs'))
+          await writeFile(join(path, `${name.slice(0, -4)}.release`), '');
+        if (name === 'receipt')
+          await writeFile(join(path, 'receipt.release'), '');
+        if (name.endsWith('.ready'))
+          await writeFile(join(path, name.replace('.ready', '.release')), '');
+      }
+    }
+    for (const child of children.splice(0)) {
+      if (child.exitCode === null && child.signalCode === null) {
+        child.kill('SIGTERM');
+        await new Promise((resolve) => child.once('exit', resolve));
+      }
+    }
+    await Promise.allSettled(completions.splice(0));
+    await Promise.all(
+      dirs.splice(0).map((path) => rm(path, { recursive: true, force: true }))
+    );
+  }
+  return {
+    temporary,
+    home,
+    script,
+    held,
+    launch,
+    laneLaunch,
+    waiting,
+    release,
+    cleanup,
+    children,
+  };
+}
+
+// These probes are lightweight executables named for classified tools. They
+// inspect actual argv/env and durable owner caps without running those tools.
+export async function workerProbe(
+  home: string,
+  tool: 'vitest' | 'cargo',
+  name = 'probe'
+) {
+  const path = join(home, tool);
+  await writeFile(
+    path,
+    `#!${realNode}
+const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(join(home, `${name}.json`))},JSON.stringify({args:process.argv.slice(2),vitest:process.env.VITEST_MAX_WORKERS,cargo:process.env.CARGO_BUILD_JOBS,turbo:process.env.TURBO_CONCURRENCY}));const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(home, `${name}.release`))})){clearInterval(timer)}},10);`
+  );
+  await chmod(path, 0o700);
+  return path;
+}
