@@ -1,3 +1,4 @@
+import './employee-web-session-startup-diagnostic.test.mjs';
 import './employee-web-session-build-diagnostic.test.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -349,4 +350,56 @@ test('startup receipt projects bounded enums and numbers without private payload
     }),
     { ...startup, outcome: 'child-exit', exitCode: 7, timedOut: false }
   );
+});
+
+test('startup output projects fixed fields and rejects malformed diagnostics without accepting failed sessions', () => {
+  const startupOutput = {
+    categories: ['missing-module'],
+    truncated: false,
+    raw: 'private-secret',
+    env: { TOKEN: 'secret' },
+  };
+  const receipt = webSessionReceipt(
+    JSON.stringify({ ...complete, startupOutput })
+  );
+  assert.deepEqual(receipt.startupOutput, {
+    categories: ['missing-module'],
+    truncated: false,
+  });
+  assert.ok(!JSON.stringify(receipt).includes('private-secret'));
+  for (const bad of [
+    { categories: ['private-path'], truncated: false },
+    { categories: [], truncated: 1 },
+    { categories: Array(100).fill('missing-module'), truncated: false },
+    { categories: ['missing-module', 'missing-module'], truncated: false },
+    [],
+    {},
+  ])
+    assert.throws(() =>
+      webSessionReceipt(JSON.stringify({ ...complete, startupOutput: bad }))
+    );
+  for (const phase of ['configuration', 'build'])
+    assert.throws(() =>
+      webSessionReceipt(
+        JSON.stringify({
+          ...complete,
+          qualified: false,
+          routeAuthorizationProof: false,
+          phase,
+          startupOutput,
+        })
+      )
+    );
+  const failed = webSessionReceipt(
+    JSON.stringify({
+      ...complete,
+      qualified: false,
+      routeAuthorizationProof: false,
+      phase: 'start',
+      cases: [],
+      assertions: 3,
+      startupOutput,
+    })
+  );
+  assert.throws(() => assertQualifiedWebSession(failed, 1, sourceSha, true));
 });

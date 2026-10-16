@@ -26,6 +26,9 @@ import {
 } from './employee-web-session-support';
 
 let startupDiagnostic: StartupDiagnostic | null = null;
+let startupOutput: Awaited<
+  ReturnType<ReturnType<typeof command>['startupOutput']>
+> | null = null;
 let phase: SessionPhase = 'configuration';
 let failure: ReturnType<typeof sessionFailure> | null = null;
 let cleanup: Awaited<ReturnType<typeof sessionLifecycle>>['cleanup'] | null =
@@ -442,6 +445,7 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
     },
     () => proxy.close()
   );
+  startupOutput = child ? await child.startupOutput() : null;
   failure = result.failure;
   cleanup = result.cleanup;
   serverStopped = cleanup.server === 'stopped' && cleanup.proxy === 'closed';
@@ -465,6 +469,7 @@ try {
       failure,
       cleanup,
       startupDiagnostic,
+      startupOutput,
       productionProof: false,
       routeAuthorizationProof: true,
     })
@@ -482,6 +487,7 @@ try {
       failure,
       cleanup,
       startupDiagnostic,
+      startupOutput,
       productionProof: false,
       routeAuthorizationProof: false,
     })

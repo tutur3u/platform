@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { once } from 'node:events';
 import {
   copyFileSync,
@@ -328,6 +329,7 @@ test('proxy close on the actual Bun runtime is a separate finite control', async
       '-e',
       `
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import {createConnection} from 'node:net';
 import {faultProxy} from './apps/web/e2e/fixtures/employee-web-session-support.ts';
 let phase='open';
@@ -453,5 +455,139 @@ test('real workspace export manifest requires emitted Node target even when sour
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('actual Next CLI startup errors use bounded capture without loading an app', async () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'employee-start-capture-'));
+  try {
+    for (const [args, category] of [
+      [
+        [
+          'start',
+          path.join(directory, 'absent'),
+          '--hostname',
+          '127.0.0.1',
+          '--port',
+          '49152',
+        ],
+        'missing-project-directory',
+      ],
+      [['start', '--employee-nonexistent-option'], 'unsupported-cli-option'],
+    ] as const) {
+      const child = command(process.execPath, [resolveNextCli(), ...args], {
+        PATH: process.env.PATH,
+        NODE_ENV: 'production',
+        NEXT_TELEMETRY_DISABLED: '1',
+      });
+      const timer = setTimeout(() => child.kill('SIGKILL'), 4000);
+      try {
+        await once(child, 'close');
+        assert.equal(child.exitCode, 1);
+        assert.equal(child.signalCode, null);
+        assert.deepEqual(await child.startupOutput(), {
+          categories: [category],
+          truncated: false,
+        });
+      } finally {
+        clearTimeout(timer);
+        await stop(child);
+      }
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('startup pipes drain simultaneous floods and strip synthetic secrets', async () => {
+  const child = command(
+    process.execPath,
+    [
+      '-e',
+      `
+    process.stderr.write('EADDR');
+    setTimeout(() => {
+      process.stderr.write('INUSE secret=https://private.invalid/token\\n');
+      process.stdout.write('SyntaxError: private-body\\n');
+      process.stdout.write(Buffer.alloc(2 * 1024 * 1024, 120));
+      process.stderr.write(Buffer.alloc(2 * 1024 * 1024, 120));
+    }, 5);
+  `,
+    ],
+    { PATH: process.env.PATH }
+  );
+  const timer = setTimeout(() => child.kill('SIGKILL'), 4000);
+  try {
+    await once(child, 'close');
+    assert.equal(child.exitCode, 0);
+    const output = await child.startupOutput();
+    assert.deepEqual(output, {
+      categories: ['address-in-use', 'runtime-syntax'],
+      truncated: true,
+    });
+    assert.ok(!JSON.stringify(output).includes('private'));
+    assert.ok(Buffer.byteLength(JSON.stringify(output)) < 512);
+  } finally {
+    clearTimeout(timer);
+    await stop(child);
+  }
+});
+
+test('inherited startup pipes cannot block server cleanup or the outer group owner', async () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'employee-start-pipes-'));
+  const bun = execFileSync(
+    'bun',
+    ['--no-install', '-e', 'process.stdout.write(process.execPath)'],
+    { encoding: 'utf8', timeout: 5000 }
+  ).trim();
+  try {
+    for (const mode of ['leader-exit', 'leader-stop']) {
+      const marker = path.join(directory, mode);
+      const descendant = `require('node:fs').writeFileSync(${JSON.stringify(marker)},String(process.pid));setInterval(()=>{},1000)`;
+      const leader = `require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{stdio:['ignore',1,2]});const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(marker)})){clearInterval(timer);console.log('EADDRINUSE');${mode === 'leader-exit' ? 'process.exit(7)' : 'setInterval(()=>{},1000)'}}},5)`;
+      const support = fileURLToPath(
+        new URL('./employee-web-session-support.ts', import.meta.url)
+      );
+      const worker = `
+        const {command,stop,sessionLifecycle}=await import(${JSON.stringify(support)});
+        const {once}=await import('node:events');
+        const child=command(${JSON.stringify(process.execPath)},['-e',${JSON.stringify(leader)}],{PATH:process.env.PATH});
+        await once(child.stdout,'data');
+        if(${JSON.stringify(mode)}==='leader-exit' && child.exitCode===null) await once(child,'exit');
+        const start=performance.now();let proxyClosed=false;
+        const result=await sessionLifecycle(async()=>{},()=> 'start',()=>stop(child),async()=>{proxyClosed=true});
+        const output=await child.startupOutput();
+        console.log(JSON.stringify({result,output,proxyClosed,bounded:performance.now()-start<2000,pipesClosed:child.stdout.destroyed&&child.stderr.destroyed}));
+      `;
+      const result = await runOwnedSessionProcess(
+        bun,
+        ['--no-install', '-e', worker],
+        {
+          cwd: process.cwd(),
+          timeoutMs: 7000,
+        }
+      );
+      assert.equal(result.status, 0);
+      assert.equal(result.processGroupStopped, true);
+      const receipt = JSON.parse(result.stdout);
+      assert.equal(receipt.result.failure, null);
+      assert.deepEqual(receipt.result.cleanup, {
+        server: 'stopped',
+        proxy: 'closed',
+        serverError: null,
+        proxyError: null,
+      });
+      assert.deepEqual(receipt.output, {
+        categories: ['address-in-use'],
+        truncated: true,
+      });
+      assert.equal(receipt.proxyClosed, true);
+      assert.equal(receipt.bounded, true);
+      assert.equal(receipt.pipesClosed, true);
+      const pid = Number(readFileSync(marker, 'utf8'));
+      assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
   }
 });

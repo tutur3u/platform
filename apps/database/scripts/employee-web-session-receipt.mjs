@@ -1,4 +1,5 @@
 import { projectBuildDiagnostic } from './employee-web-session-build-diagnostic.mjs';
+import { projectStartupOutput } from './employee-web-session-startup-diagnostic.mjs';
 export const sessionCases = Object.freeze([
   'anonymous',
   'malformed-bearer',
@@ -226,6 +227,17 @@ export function webSessionReceipt(text) {
     )
       throw 0;
     diagnostics = diagnosticFields(value);
+    if (value.startupOutput !== undefined) {
+      if (
+        value.startupOutput !== null &&
+        ['configuration', 'build'].includes(value.phase)
+      )
+        throw 0;
+      diagnostics.startupOutput =
+        value.startupOutput === null
+          ? null
+          : projectStartupOutput(value.startupOutput);
+    }
     if (value.startupDiagnostic !== undefined) {
       const startupDiagnostic =
         value.startupDiagnostic === null

@@ -11,6 +11,7 @@ import {
   projectBuildDiagnostic,
 } from '../../../database/scripts/employee-web-session-build-diagnostic.mjs';
 import { runOwnedBuildProcess } from '../../../database/scripts/employee-web-session-process.mjs';
+import { startupOutputCapture } from '../../../database/scripts/employee-web-session-startup-diagnostic.mjs';
 
 export function resolveNextCli(
   packageJson: string | URL = new URL('../../package.json', import.meta.url)
@@ -237,11 +238,47 @@ export function command(
   args: string[],
   env: NodeJS.ProcessEnv
 ) {
-  return spawn(command, args, {
+  const startupOutput = startupOutputCapture();
+  const child = spawn(command, args, {
     cwd: process.cwd(),
     env,
     detached: false,
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  child.stdout.on('data', (chunk: Buffer) =>
+    startupOutput.append('stdout', chunk)
+  );
+  child.stderr.on('data', (chunk: Buffer) =>
+    startupOutput.append('stderr', chunk)
+  );
+  let closed = false;
+  let drainTimer: ReturnType<typeof setTimeout> | undefined;
+  child.once('exit', () => {
+    // Descendants may retain the writers after the direct child has exited.
+    drainTimer = setTimeout(() => {
+      startupOutput.truncate();
+      child.stdout.destroy();
+      child.stderr.destroy();
+    }, 250);
+  });
+  child.once('close', () => {
+    closed = true;
+    clearTimeout(drainTimer);
+  });
+  return Object.assign(child, {
+    async startupOutput() {
+      if (!closed)
+        await new Promise<void>((resolve) => {
+          const done = () => {
+            clearTimeout(timer);
+            child.off('close', done);
+            resolve();
+          };
+          const timer = setTimeout(done, 250);
+          child.once('close', done);
+        });
+      return startupOutput.receipt();
+    },
   });
 }
 
