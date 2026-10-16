@@ -53,7 +53,36 @@ record is not authority to execute it.
 
 ## Employee SQL transport qualification
 
-Employee creation remains unavailable until its protected SQL supplier and
+### HTTP RPC runtime candidate
+
+The Web employee CREATE route can compose the durable operation journal with
+fixed service-only Supabase RPCs. `EMPLOYEE_CREATION_RUNTIME_ENABLED` defaults to
+disabled. Enable it only after the selected source passes isolated SQL,
+generated-type, HTTP/Auth and exact-build checks and its migrations are verified
+in the target project. Infrastructure consumes the same availability endpoint;
+its create control remains disabled while the runtime is unavailable.
+
+The adapter uses the configured server Supabase project for both Auth and SQL.
+The request still requires an eligible root administrator, current membership and
+permission, and the account-action origin/header checks. SQL repeats the actor
+assertion and denies expanded function ACLs. An original actor/operation key owns
+one target UUID. Durable attempted phases and single-use invocation capabilities
+precede provider effects; unknown responses retain that identity for inspection.
+
+Every RPC write acknowledgement is followed by a separate persisted-state
+observation. A function response from a transaction configured to roll back cannot
+authorize provider creation or publish account success. Lost responses, malformed
+state and readback disagreement fail closed without an automatic retry. Passwords
+remain transient Auth inputs and never enter the operation tables or RPC body.
+
+This adapter does not activate the fixed child-worker prototype below. That
+prototype retains its separate operator, connection and asset qualification
+requirements. RESTORE and legacy-domain migration remain separate runtime flows;
+successful CREATE qualification does not establish either behavior.
+
+### Fixed child-worker prototype
+
+The fixed child-worker transport remains unavailable until its protected SQL supplier and
 project readiness are independently qualified. The fixed transport prototype
 accepts only preflight, finalize and activation-confirm operations. Each request
 owns one terminable child and TLS connection; no shared pool, caller SQL,

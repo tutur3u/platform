@@ -12,6 +12,7 @@ export const journalPackets = Object.freeze([
   ...foundationPackets,
   ['employee-creation-operations.sql', 48],
   ['employee-creation-reserved-preflight.sql', 61],
+  ['employee-runtime-observation.sql', 20],
 ]);
 
 export function exactSourceSha(value) {
@@ -245,6 +246,7 @@ export function schemaFailureDiagnostic(
     'packet-copy',
     'packet-execution',
     'packet-tap',
+    'typegen',
     'cleanup',
     'cleanup-proof',
   ];

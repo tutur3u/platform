@@ -12,7 +12,7 @@ on:
         default: false
         type: boolean
       include_journal:
-        description: Include the 109 durable operation and reserved-preflight assertions
+        description: Include durable journal, reserved-preflight and runtime observation assertions
         required: false
         default: false
         type: boolean
@@ -72,7 +72,7 @@ jobs:
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify diagnostic-only provenance parser
         run: node --test apps/database/scripts/employee-failure-provenance.test.mjs
-      - name: Apply full isolated schema and qualify 172 rollback assertions
+      - name: Apply full isolated schema and qualify selected rollback assertions
         if: inputs.structured_provenance != true
         working-directory: source
         run: node ../apps/database/scripts/verify-employee-schema-contract.mjs
@@ -88,7 +88,9 @@ jobs:
         if: always() && inputs.structured_provenance != true
         with:
           name: employee-schema-${{ inputs.source_sha }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/employee-schema-receipts/qualification.json
+          path: |
+            ${{ runner.temp }}/employee-schema-receipts/qualification.json
+            ${{ runner.temp }}/employee-schema-receipts/generated-types.ts
           if-no-files-found: error
           retention-days: 3
       - uses: actions/upload-artifact@v7

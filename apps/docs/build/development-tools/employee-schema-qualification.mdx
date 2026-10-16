@@ -30,12 +30,19 @@ The feedback layer's 105 assertions remain a separate later stack qualification;
 they are not silently included or waived by this foundation job.
 
 Select `include_journal=true` on the employee schema workflow to apply the full
-selected database snapshot and run 281 rollback assertions: the original 172,
-48 durable-operation assertions and 61 reserved-preflight assertions. The receipt
+selected database snapshot and run 301 rollback assertions: the original 172,
+48 durable-operation assertions, 61 reserved-preflight assertions and 20 HTTP
+runtime-observation assertions. The receipt
 uses the `employee-creation-restoration-journal` scope and fails if any packet,
 assertion, lifecycle step or cleanup proof is missing. The default remains the
 172-assertion foundation profile. This SQL gate does not qualify the fixed worker,
 provider, production configuration, generated types or live account operations.
+
+After the selected journal packets pass, the workflow generates public, private
+and storage TypeScript definitions from that same isolated database before
+cleanup. Its artifact includes `generated-types.ts` and the receipt records the
+file digest. Review and format that artifact before updating canonical types;
+generating it alone does not prove that application consumers compile.
 
 Conflict fixtures that insert a logical mailbox must link its `domain_id` to the
 matching `private.mail_domains` row. The current mailbox trigger rejects an
