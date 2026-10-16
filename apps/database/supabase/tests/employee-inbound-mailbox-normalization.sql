@@ -6,11 +6,12 @@ set local lock_timeout = '3s';
 set local search_path = public, extensions;
 select plan(20);
 
--- Bind maintenance fixtures to the supported service context, including root grants.
+-- Provider inserts use a service identity without impersonating the administrator.
+-- Employee RPCs receive the independently provisioned administrator UUID below.
 select set_config('request.jwt.claim.role','service_role',true);
-select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000094501',true);
+select set_config('request.jwt.claim.sub','',true);
 select set_config('request.jwt.claims',
-  '{"role":"service_role","sub":"00000000-0000-4000-8000-000000094501"}',true);
+  '{"role":"service_role"}',true);
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000094501','inbound-admin-fixture@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000094502','inbound-foreign-fixture@example.com',now(),'{}','{}');
