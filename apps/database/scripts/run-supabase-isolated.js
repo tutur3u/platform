@@ -322,6 +322,8 @@ export async function stageDisposableProject({
   testPath = null,
   typegenOutput = null,
   trackedFiles = listTrackedSupabaseFiles(repositoryRoot),
+  removeStagedRoot = rm,
+  diagnostic = console.error,
 }) {
   const disposableRoot = await mkdtemp(
     path.join(path.resolve(temporaryRoot), DISPOSABLE_PREFIX)
@@ -365,7 +367,15 @@ export async function stageDisposableProject({
     await writeMetadata(ownedRoot, metadata);
     return metadata;
   } catch (error) {
-    await rm(ownedRoot, { force: true, recursive: true });
+    try {
+      await removeStagedRoot(ownedRoot, { force: true, recursive: true });
+    } catch {
+      try {
+        await diagnostic('Secondary staging cleanup failure.');
+      } catch {
+        // Diagnostic failures must not replace the original staging error.
+      }
+    }
     throw error;
   }
 }
