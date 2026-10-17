@@ -45,7 +45,7 @@ it('accepts the configured satellite origin with a real signed infra bearer', ()
   expect(employeeRequestOrigin(req)).toBe(infra);
   expect(hasEmployeeRequestOrigin(req, employeeRequestOrigin(req))).toBe(true);
 });
-it.each([
+const rejectedHeaders: Record<string, string>[] = [
   { origin: 'https://foreign.test' },
   { origin: 'null' },
   { origin: `${infra}/` },
@@ -57,10 +57,16 @@ it.each([
     'x-forwarded-host': 'infrastructure.tuturuuu.com',
     'x-forwarded-proto': 'https',
   },
-])('rejects foreign, malformed or spoofed browser requests: %j', (headers) => {
-  const req = request(headers);
-  expect(hasEmployeeRequestOrigin(req, employeeRequestOrigin(req))).toBe(false);
-});
+];
+it.each(rejectedHeaders)(
+  'rejects foreign, malformed or spoofed browser requests: %j',
+  (headers) => {
+    const req = request(headers);
+    expect(hasEmployeeRequestOrigin(req, employeeRequestOrigin(req))).toBe(
+      false
+    );
+  }
+);
 function bearerInvalid() {
   return 'Bearer ttr_app_invalid';
 }
