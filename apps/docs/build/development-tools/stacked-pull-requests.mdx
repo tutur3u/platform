@@ -1,7 +1,7 @@
 ---
 title: "Stacked Pull Requests"
 description: "Use native GitHub stacks for daily dependent PR work, cascading updates, and verified merges."
-updatedAt: "2026-10-03"
+updatedAt: "2026-10-17"
 ---
 
 ## Daily operating policy
@@ -259,11 +259,44 @@ gh stack merge <highest-verified-pr-number> --merge --yes
 Do not use a bare non-interactive `gh stack merge`: it can select the entire
 stack. Native merges support merge, squash, and rebase; `--merge` remains our
 normal choice. The extension checks only basic PR state before asking GitHub to
-merge, does not bypass requirements, and has no equivalent to
-`gh pr merge --match-head-commit`. Re-read all selected heads and gates just before
-invoking it; if any changed, repeat validation. Do not apply the ordinary admin
-merge fallback to native stacks. Custom API clients must use GitHub's asynchronous
-stack merge API, rather than the ordinary single-PR endpoint.
+merge and has no equivalent to `gh pr merge --match-head-commit`. Installed
+`gh stack` v0.2.1 also omits `bypass_rules`; its help's unsupported-bypass claim
+is a client limitation, not an API limitation. Re-read all selected heads and
+gates immediately before invoking it; changed pins require validation again.
+Do not apply the ordinary single-PR admin merge endpoint to native stacks.
+
+### Authorized native administrator merge
+
+For an explicitly user-authorized administrator merge blocked only by repository
+policy, prefer the supported [asynchronous REST merge API](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request-asynchronously)
+with boolean `bypass_rules: true` over dissolving native membership. Confirm the
+authenticated actor has permission to bypass the applicable rules. Authorization
+and actor permission are both required; this is not permission to bypass CI or
+change rulesets/security settings. Retain the complete prefix's scope, successful
+applicable exact-head CI, review resolution and required-review evidence, and
+quiet windows before proceeding.
+
+Immediately re-read native membership, every selected head/base, trunk SHA and
+all gates against the retained pins. The API's `sha` guards only the selected
+target head, not each lower head or the trunk; any movement requires reassessment.
+Use the highest verified PR number, which includes all open downstack PRs:
+
+```bash
+gh api --method PUT repos/tutur3u/platform/pulls/<highest-verified-pr>/merge-async \
+  -H 'Accept: application/vnd.github+json' \
+  -H 'X-GitHub-Api-Version: 2026-03-10' \
+  -f sha=<target-head-sha> -f merge_method=merge -f merge_action=direct_merge \
+  -F bypass_rules=true
+```
+
+`-F` sends a boolean; `-f bypass_rules=true` would send a string. Retain the
+response and operation UUID, then read that exact operation with
+`GET /repos/tutur3u/platform/pulls/<highest-verified-pr>/merge-async/<uuid>`.
+HTTP 202, pending or enqueued means acceptance, not completion. Record the actual
+terminal result, verify every selected PR merged and the resulting trunk SHA.
+On HTTP 409, inspect the retained existing UUID/options and actual server state;
+never blindly resubmit. Unknown or rejected outcomes remain unresolved. API
+schema support alone does not prove a successful merge.
 
 Merge queues may enqueue the selected group and split it across consecutive
 merge groups. Queued is not merged; wait for every selected PR's merged state and

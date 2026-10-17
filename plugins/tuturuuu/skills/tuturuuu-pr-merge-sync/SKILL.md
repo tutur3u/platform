@@ -18,7 +18,13 @@ before recovery or restructuring. Repository ownership and gates take precedence
 Verify native membership and the complete
 contiguous prefix selected for merge; run every gate for each included PR.
 Use `gh stack merge <highest-verified-pr> --merge --yes` for native stacks,
-rechecking all heads immediately beforehand. It has no head-match or admin bypass.
+rechecking all heads immediately beforehand. Installed v0.2.1 has no head-match
+or admin-bypass option; the native asynchronous REST API supports `sha` and
+boolean `bypass_rules`. For explicitly user-authorized administrator merges,
+prefer that API over unstacking, with actor bypass permission and all complete-prefix
+CI, review, quiet-window and head-pin gates intact. Follow the stack policy's
+“Authorized native administrator merge” procedure for UUID/result retention and
+409 handling; API support does not establish a successful merge.
 Manual base chains are a recorded fallback: merge parents individually with
 merge commits and verify child retargeting. A non-main base alone proves neither
 native membership nor a dependency. Follow the stack policy in `apps/docs` for
