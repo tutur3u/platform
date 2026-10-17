@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import { toast } from '@tuturuuu/ui/sonner';
 import { type ReactNode, useState } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePostDialog, useUpsertPostMutation } from './use-posts';
 
 vi.mock(
@@ -32,10 +32,10 @@ const initial = {
   content: '<p>Saved HTML</p>',
   notes: 'Original notes',
 };
-function useEditor(wsId = 'workspace-1') {
+function useEditor(wsId = 'workspace-1', groupId = 'group-1') {
   return {
-    ...usePostDialog(wsId, 'group-1'),
-    mutation: useUpsertPostMutation('group-1', wsId),
+    ...usePostDialog(wsId, groupId),
+    mutation: useUpsertPostMutation(groupId, wsId),
   };
 }
 describe('class-post dialog with source transport', () => {
@@ -69,7 +69,17 @@ describe('class-post dialog with source transport', () => {
     expect(stored.notes).toBe('Newer notes');
     expect(stored.content).toBe(initial.content);
   });
-  it.each(['', null])('sends an intentional notes clear %s', async (notes) => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+  it.each([
+    '',
+    null,
+    'Tiếng Việt 日本語 👩🏽‍🏫',
+    'line one\nline two\n',
+    'x'.repeat(1000),
+  ])('sends an intentional notes clear %s', async (notes) => {
     const { result } = renderHook(() => useEditor(), { wrapper: Wrapper });
     act(() => result.current.openDialog(initial));
     act(() => result.current.updateField('notes', notes));
@@ -94,6 +104,15 @@ describe('class-post dialog with source transport', () => {
     expect(toast.error).toHaveBeenCalledWith('ws-user-groups.post_save_failed');
     expect(result.current.post?.notes).toBe('Retry');
     expect(result.current.isOpen).toBe(true);
+    await act(async () => {
+      const saved = await result.current.mutation.mutateAsync(
+        result.current.post!
+      );
+      result.current.closeDialog(saved);
+    });
+    expect(writes).toEqual([{ notes: 'Retry' }]);
+    expect(stored.notes).toBe('Retry');
+    expect(result.current.isOpen).toBe(false);
   });
   it.each(['edit', 'scope', 'revert'])(
     'does not close a newer %s after acknowledgment',
@@ -224,4 +243,98 @@ describe('class-post dialog with source transport', () => {
     });
     expect(writes).toEqual([{ title: 'New', content: 'Body', notes: '' }]);
   });
+  it.each(['title', 'content'] as const)(
+    'a stale %s edit preserves concurrent notes and sends only its changed field',
+    async (field) => {
+      const { result } = renderHook(() => useEditor(), { wrapper: Wrapper });
+      act(() => result.current.openDialog(initial));
+      stored.notes = 'Concurrent notes';
+      act(() => result.current.updateField(field, 'Local edit'));
+      await act(async () => {
+        await result.current.mutation.mutateAsync(result.current.post!);
+      });
+      expect(writes).toEqual([{ [field]: 'Local edit' }]);
+      expect(stored.notes).toBe('Concurrent notes');
+    }
+  );
+  it('explicitly overwrites a concurrent same-field edit with the last local write', async () => {
+    const { result } = renderHook(() => useEditor(), { wrapper: Wrapper });
+    act(() => result.current.openDialog(initial));
+    stored.notes = 'Other writer';
+    act(() => result.current.updateField('notes', 'Last writer'));
+    await act(async () => {
+      await result.current.mutation.mutateAsync(result.current.post!);
+    });
+    expect(writes).toEqual([{ notes: 'Last writer' }]);
+    expect(stored.notes).toBe('Last writer');
+  });
+  it('does not write an unchanged existing draft', async () => {
+    const { result } = renderHook(() => useEditor(), { wrapper: Wrapper });
+    act(() => result.current.openDialog(initial));
+    await act(async () => {
+      await result.current.mutation.mutateAsync(result.current.post!);
+    });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it.each(['workspace', 'group'])(
+    'keeps same-post %s sessions independent and invalidates the submitted scope',
+    async (scope) => {
+      const client = new QueryClient({
+        defaultOptions: { mutations: { retry: false } },
+      });
+      const invalidate = vi.spyOn(client, 'invalidateQueries');
+      const { result, rerender } = renderHook(
+        ({ wsId, groupId }) => useEditor(wsId, groupId),
+        {
+          initialProps: { wsId: 'workspace-1', groupId: 'group-1' },
+          wrapper: ({ children }) => (
+            <QueryClientProvider client={client}>
+              {children}
+            </QueryClientProvider>
+          ),
+        }
+      );
+      act(() => result.current.openDialog(initial));
+      act(() => result.current.updateField('notes', 'Old scope write'));
+      const submitted = result.current.post!;
+      let finish!: () => void;
+      vi.mocked(fetch).mockImplementationOnce(async (_url, init) => {
+        writes.push(JSON.parse(String(init?.body)));
+        await new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+        return Response.json({ message: 'success' });
+      });
+      let saving!: ReturnType<typeof result.current.mutation.mutateAsync>;
+      act(() => {
+        saving = result.current.mutation.mutateAsync(submitted);
+      });
+      await vi.waitFor(() => expect(finish).toBeTypeOf('function'));
+      rerender({
+        wsId: scope === 'workspace' ? 'workspace-2' : 'workspace-1',
+        groupId: scope === 'group' ? 'group-2' : 'group-1',
+      });
+      expect(result.current.isOpen).toBe(false);
+      act(() =>
+        result.current.openDialog({ ...initial, notes: 'New scope notes' })
+      );
+      await act(async () => {
+        finish();
+        result.current.closeDialog(await saving);
+      });
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/workspaces/workspace-1/user-groups/group-1/posts/post-1',
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ notes: 'Old scope write' }),
+        })
+      );
+      expect(invalidate).toHaveBeenCalledExactlyOnceWith({
+        queryKey: ['group-posts', 'workspace-1', 'group-1'],
+      });
+      expect(result.current.isOpen).toBe(true);
+      expect(result.current.post?.notes).toBe('New scope notes');
+      client.clear();
+    }
+  );
 });
