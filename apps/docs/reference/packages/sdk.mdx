@@ -1487,3 +1487,24 @@ Invalid JSON or unsupported configuration fields produce a fixed corrective mess
 
 The bounded monitor emits JSONL memory-pressure, T3-tree resident-memory and top-process samples without arguments or environment values. RSS differs from Activity Monitor's footprint and can count shared pages multiple times.
 Offload full validation with `ttr box run --runner <remote-id> -- <command>` only after verifying a different machine and intended checkout. Same-machine runners/containers consume local RAM; resource setup does not configure runners, transmit credentials, or restart Docker.
+
+### Docker metadata lifecycle diagnostic
+
+The SDK metadata subprocess is silent by default. Disposable CI can opt in with
+`CI=true` and `TTR_DOCKER_METADATA_DIAGNOSTIC=1`. Each invocation emits one JSON
+record (`schema: ttr-docker-metadata-v1`) at its existing settlement boundary.
+It records a process-local ordinal, Node/Bun runtime versions, monotonic elapsed
+milliseconds, spawn/first stdout/error/exit/close times, first and total stdout
+byte counts, deadline time and callback lateness, kill return value, fixed spawn
+classification, numeric exit code and an allowlisted signal. Numeric counters
+saturate at 2,147,483,647; versions are validated and bounded; records stay below
+1024 bytes. No arguments, paths, environment values, Docker host/context, metadata,
+output or exception text are included.
+
+A null event time means it was not observed before settlement. In particular,
+settlement still follows error or exit and never waits for close. The stdout
+consumer continues draining with the existing 65,536-character retained cap;
+diagnostics add no timers, subprocesses, probes or retries. The 4000ms deadline
+and fail-closed capacity behavior remain unchanged. Focused pure mocks in
+`devbox-docker-metadata-diagnostic.test.ts` cover opt-in gating, bounded fields,
+event order, deadline/kill outcomes, errors, close timing, overflow and redaction.

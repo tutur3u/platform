@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { metadataDiagnostic } from './devbox-docker-metadata-diagnostic';
 
 type SpawnFailure = 'not-found' | 'permission-denied' | 'other';
 export interface DockerMetadata {
@@ -52,6 +53,7 @@ export async function dockerMetadata(
     spawnFailure: null,
     timeoutMs,
   };
+  const diagnostic = metadataDiagnostic();
   let child: ReturnType<typeof spawn>;
   try {
     child = spawn(
@@ -64,22 +66,36 @@ export async function dockerMetadata(
     );
   } catch (error) {
     result.spawnFailure = classifySpawn(error);
+    diagnostic?.error(result.spawnFailure);
+    diagnostic?.settle();
     return result;
   }
+  const onSpawn = () => diagnostic?.spawn();
+  const onClose = () => diagnostic?.close();
+  if (diagnostic) {
+    child.on('spawn', onSpawn);
+    child.on('close', onClose);
+  }
   child.stdout?.on('data', (chunk) => {
+    diagnostic?.stdout(chunk);
     result.output = (result.output + String(chunk)).slice(0, 65_536);
   });
+  diagnostic?.arm(timeoutMs);
   const timer = setTimeout(() => {
     result.timedOut = true;
-    child.kill('SIGKILL');
+    diagnostic?.deadline();
+    const killed = child.kill('SIGKILL');
+    diagnostic?.kill(killed);
   }, timeoutMs);
   try {
     await new Promise<void>((resolve) => {
       child.on('error', (error) => {
         result.spawnFailure = classifySpawn(error);
+        diagnostic?.error(result.spawnFailure);
         resolve();
       });
       child.on('exit', (code, signal) => {
+        diagnostic?.exit(code, signal);
         result.exitCode = code;
         result.signal = signal;
         result.code =
@@ -90,5 +106,8 @@ export async function dockerMetadata(
     return result;
   } finally {
     clearTimeout(timer);
+    child.removeListener('spawn', onSpawn);
+    child.removeListener('close', onClose);
+    diagnostic?.settle();
   }
 }

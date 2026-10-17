@@ -36,6 +36,7 @@ jobs:
     env:
       TUTURUUU_PLAYGROUND_POOL_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
       TTR_PLAYGROUND_ACCEPTANCE: 'true'
+      TTR_DOCKER_METADATA_DIAGNOSTIC: '1'
       TTR_HOST_CANARY: synthetic-host-only-canary
     steps:
       - uses: actions/checkout@v7
