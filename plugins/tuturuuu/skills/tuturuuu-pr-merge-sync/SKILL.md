@@ -21,10 +21,13 @@ Use `gh stack merge <highest-verified-pr> --merge --yes` for native stacks,
 rechecking all heads immediately beforehand. Installed v0.2.1 has no head-match
 or admin-bypass option; the native asynchronous REST API supports `sha` and
 boolean `bypass_rules`. For explicitly user-authorized administrator merges,
-prefer that API over unstacking, with actor bypass permission and all complete-prefix
-CI, review, quiet-window and head-pin gates intact. Follow the stack policy's
-“Authorized native administrator merge” procedure for UUID/result retention and
-409 handling; API support does not establish a successful merge.
+use that API only for the current bottom PR with its pinned SHA and actor bypass
+permission; normal atomic prefix merging remains the default. Preserve all
+complete-prefix CI, review, quiet-window and head-pin gates. After the bottom
+merges, re-read remaining native membership, heads/bases and those gates before
+each successor. Follow the stack policy's “Authorized native administrator merge”
+procedure: inspect HTTP 200 bodies and actual PR state, GET only when a UUID is
+present, and never blindly retry a 409 or unknown outcome.
 Manual base chains are a recorded fallback: merge parents individually with
 merge commits and verify child retargeting. A non-main base alone proves neither
 native membership nor a dependency. Follow the stack policy in `apps/docs` for

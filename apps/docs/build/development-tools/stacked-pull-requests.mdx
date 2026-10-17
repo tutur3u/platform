@@ -267,10 +267,14 @@ Do not apply the ordinary single-PR admin merge endpoint to native stacks.
 
 ### Authorized native administrator merge
 
-For an explicitly user-authorized administrator merge blocked only by repository
-policy, prefer the supported [asynchronous REST merge API](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request-asynchronously)
-with boolean `bypass_rules: true` over dissolving native membership. Confirm the
-authenticated actor has permission to bypass the applicable rules. Authorization
+Normal atomic merging of a verified prefix remains the default. For an explicitly
+user-authorized administrator merge blocked only by repository policy, prefer the
+supported [asynchronous REST merge API](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request-asynchronously)
+with boolean `bypass_rules: true` over dissolving native membership. GitHub's
+[stack merge requirements](https://docs.github.com/en/pull-requests/reference/stacked-pull-requests#merge-requirements)
+restrict bypass to the bottom PR; it cannot merge a higher prefix or whole stack.
+The OpenAPI's general downstack description does not remove this restriction.
+Confirm the authenticated actor has permission to bypass the applicable rules. Authorization
 and actor permission are both required; this is not permission to bypass CI or
 change rulesets/security settings. Retain the complete prefix's scope, successful
 applicable exact-head CI, review resolution and required-review evidence, and
@@ -279,24 +283,30 @@ quiet windows before proceeding.
 Immediately re-read native membership, every selected head/base, trunk SHA and
 all gates against the retained pins. The API's `sha` guards only the selected
 target head, not each lower head or the trunk; any movement requires reassessment.
-Use the highest verified PR number, which includes all open downstack PRs:
+Select only the current bottom unmerged PR with its pinned head:
 
 ```bash
-gh api --method PUT repos/tutur3u/platform/pulls/<highest-verified-pr>/merge-async \
+gh api --method PUT repos/tutur3u/platform/pulls/<bottom-pr>/merge-async \
   -H 'Accept: application/vnd.github+json' \
   -H 'X-GitHub-Api-Version: 2026-03-10' \
-  -f sha=<target-head-sha> -f merge_method=merge -f merge_action=direct_merge \
+  -f sha=<bottom-head-sha> -f merge_method=merge -f merge_action=direct_merge \
   -F bypass_rules=true
 ```
 
 `-F` sends a boolean; `-f bypass_rules=true` would send a string. Retain the
-response and operation UUID, then read that exact operation with
-`GET /repos/tutur3u/platform/pulls/<highest-verified-pr>/merge-async/<uuid>`.
+HTTP status/body and any operation UUID. HTTP 200 can mean already merged or
+already queued and may omit the UUID: inspect the body and actual PR state.
+Only when a UUID is present, read that exact operation with
+`GET /repos/tutur3u/platform/pulls/<bottom-pr>/merge-async/<uuid>`.
 HTTP 202, pending or enqueued means acceptance, not completion. Record the actual
-terminal result, verify every selected PR merged and the resulting trunk SHA.
-On HTTP 409, inspect the retained existing UUID/options and actual server state;
-never blindly resubmit. Unknown or rejected outcomes remain unresolved. API
-schema support alone does not prove a successful merge.
+terminal result, verify the bottom PR merged and record the resulting trunk SHA
+before advancing.
+Re-read the remaining native group, heads, bases, diffs, exact-head CI, reviews and
+quiet windows before each successor; automatic rebase/retargeting can change pins.
+Repeat bypass only for a newly verified bottom PR within explicit authorization.
+On HTTP 409, inspect the existing UUID/options and actual server state without
+blind retry. Unknown or rejected outcomes remain unresolved. API schema support
+alone does not prove a successful merge.
 
 Merge queues may enqueue the selected group and split it across consecutive
 merge groups. Queued is not merged; wait for every selected PR's merged state and

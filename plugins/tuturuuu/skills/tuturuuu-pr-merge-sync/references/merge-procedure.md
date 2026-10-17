@@ -31,12 +31,16 @@ does not authorize promotion.
    PR includes all unmerged layers below it. The command has no head-match or
    admin-bypass option in installed v0.2.1; this is a client limitation. For an
    explicitly user-authorized native administrator merge, prefer asynchronous
-   REST with `sha` and boolean `bypass_rules: true` over unstacking. Require actor
-   bypass permission and preserve every complete-prefix CI, review and quiet gate.
-   Re-read membership, all head/base pins and trunk immediately beforehand; `sha`
-   protects only the target head. Retain the UUID, GET its actual result, and
-   inspect an existing operation on 409 without blind retry. Follow the stack
-   policy's “Authorized native administrator merge” procedure; no CI bypass or
+   REST with the current bottom PR's pinned `sha` and boolean `bypass_rules: true`
+   over unstacking; bypass cannot merge higher prefixes. Normal atomic prefix
+   merging remains the default. Require actor bypass permission and preserve every
+   complete-prefix CI, review and quiet gate. Re-read membership, all head/base pins
+   and trunk immediately beforehand; `sha` protects only the target head. Verify
+   the bottom merged, then re-read remaining native membership, heads/bases, CI,
+   reviews and quiet windows before each successor. Retain the response; HTTP 200
+   may have no UUID, so inspect its body and actual PR state. GET only when a UUID
+   is present; inspect an existing operation on 409 without blind retry. Follow
+   the stack policy's “Authorized native administrator merge” procedure; no CI bypass or
    ruleset/security changes are authorized by this path.
    Never substitute the ordinary single-PR merge/admin path for a native stack.
    Queue acceptance is not merge completion: verify every selected PR merged.
