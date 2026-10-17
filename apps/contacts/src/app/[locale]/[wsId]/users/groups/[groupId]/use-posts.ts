@@ -265,18 +265,23 @@ export function usePostDialog(wsId = '', groupId?: string) {
         )
           return;
         if (currentDraft.current !== submitted) {
-          setPost((current) =>
-            current?.target === submitted.target && current.id === submitted.id
-              ? {
-                  ...current,
-                  original: {
-                    title: submitted.title,
-                    content: submitted.content,
-                    notes: submitted.notes,
-                  },
-                }
-              : current
-          );
+          setPost((current) => {
+            if (!current) return current;
+            if (
+              current.target !== submitted.target ||
+              current.id !== submitted.id
+            ) {
+              return current;
+            }
+            return {
+              ...current,
+              original: {
+                title: submitted.title,
+                content: submitted.content,
+                notes: submitted.notes,
+              },
+            };
+          });
           return;
         }
       }
