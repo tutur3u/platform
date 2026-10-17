@@ -371,7 +371,7 @@ export async function stageDisposableProject({
       await removeStagedRoot(ownedRoot, { force: true, recursive: true });
     } catch {
       try {
-        diagnostic('Secondary staging cleanup failure.');
+        await diagnostic('Secondary staging cleanup failure.');
       } catch {
         // Diagnostic failures must not replace the original staging error.
       }

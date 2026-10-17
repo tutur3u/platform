@@ -94,8 +94,8 @@ test('successful injected cleanup receives the owned root and emits no diagnosti
   });
 });
 
-for (const diagnosticThrows of [false, true]) {
-  test(`cleanup failure preserves the same staging error when diagnostic ${diagnosticThrows ? 'throws' : 'succeeds'}`, async () => {
+for (const diagnosticResult of ['succeeds', 'throws', 'rejects']) {
+  test(`cleanup failure preserves the same staging error when diagnostic ${diagnosticResult}`, async () => {
     await withFailedStaging(async ({ options, original, temporaryRoot }) => {
       const cleanupError = new Error('private cleanup path must not be logged');
       const diagnostics = [];
@@ -109,7 +109,12 @@ for (const diagnosticThrows of [false, true]) {
           },
           diagnostic: (message) => {
             diagnostics.push(message);
-            if (diagnosticThrows) throw new Error('private diagnostic failure');
+            if (diagnosticResult === 'throws')
+              throw new Error('private diagnostic failure');
+            if (diagnosticResult === 'rejects')
+              return Promise.reject(
+                new Error('private async diagnostic failure')
+              );
           },
         }),
         (error) => error === original
