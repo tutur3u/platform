@@ -98,11 +98,12 @@ test('personal journal profile stays optional and is passed to the guarded runne
 });
 
 test('combined profiles reject incompatible selections before hosted database setup', () => {
-  for (let bits = 0; bits < 16; bits++) {
+  for (let bits = 0; bits < 32; bits++) {
     const journal = Boolean(bits & 1);
     const personal = Boolean(bits & 2);
     const http = Boolean(bits & 4);
     const restore = Boolean(bits & 8);
+    const webSession = Boolean(bits & 16);
     const result = spawnSync(
       process.execPath,
       [
@@ -121,6 +122,7 @@ test('combined profiles reject incompatible selections before hosted database se
           EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: String(personal),
           EMPLOYEE_SCHEMA_INCLUDE_HTTP: String(http),
           EMPLOYEE_SCHEMA_INCLUDE_RESTORE: String(restore),
+          EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: String(webSession),
           EMPLOYEE_SCHEMA_SOURCE_SHA: '1'.repeat(40),
         },
       }
@@ -130,11 +132,13 @@ test('combined profiles reject incompatible selections before hosted database se
     const expected =
       http && !journal
         ? /HTTP qualification requires the journal qualification/u
-        : restore && !http
-          ? /RESTORE qualification requires HTTP qualification/u
-          : journal && personal
-            ? /Select one optional schema profile/u
-            : /This gate requires a disposable hosted Linux runner/u;
+        : webSession && !http
+          ? /Web session qualification requires HTTP qualification/u
+          : restore && !http
+            ? /RESTORE qualification requires HTTP qualification/u
+            : journal && personal
+              ? /Select one optional schema profile/u
+              : /This gate requires a disposable hosted Linux runner/u;
     assert.match(result.stderr, expected, `profile bits ${bits}`);
   }
 });

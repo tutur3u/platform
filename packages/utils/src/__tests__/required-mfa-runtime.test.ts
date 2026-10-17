@@ -9,6 +9,15 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
 }));
 const now = Math.floor(Date.now() / 1000);
+type TestUser = {
+  id: string;
+  app_metadata: Record<string, unknown>;
+  banned_until?: string;
+};
+type TestUserResult = {
+  data: { user: TestUser | null };
+  error: { code: string } | null;
+};
 function setup() {
   const user = {
     id: 'actor',
@@ -16,11 +25,15 @@ function setup() {
       tuturuuu_required_mfa: { required: true, verifiedAfter: now - 30 },
     },
   };
-  const getUserById = vi.fn(async (id: string) => ({
-    data: { user: id === 'actor' ? user : { id, app_metadata: {} } },
-    error: null,
-  }));
-  const getUser = vi.fn(async () => ({ data: { user }, error: null }));
+  const getUserById = vi.fn(async (id: string): Promise<TestUserResult> => {
+    return {
+      data: { user: id === 'actor' ? user : { id, app_metadata: {} } },
+      error: null,
+    };
+  });
+  const getUser = vi.fn(async (): Promise<TestUserResult> => {
+    return { data: { user }, error: null };
+  });
   const getClaims = vi.fn(async () => ({
     data: { claims: { sub: 'actor', aal: 'aal1' } },
     error: null,
@@ -46,6 +59,61 @@ describe('connected required MFA request enforcement', () => {
     );
     expect(response?.status).toBe(403);
     expect(await response?.json()).toMatchObject({ code: 'MFA_REQUIRED' });
+  });
+  it('rejects a previously issued satellite cookie after a fresh provider ban', async () => {
+    const { getUserById, getUser, getClaims } = setup();
+    getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'actor',
+          app_metadata: {},
+          banned_until: new Date(Date.now() + 60_000).toISOString(),
+        },
+      },
+      error: null,
+    });
+    const token = createAppCoordinationToken({
+      userId: 'actor',
+      targetApp: 'infra',
+      scopes: ['internal-app:session'],
+    }).token;
+    const response = await enforceRequiredMfaRequest(
+      request(
+        { cookie: `tuturuuu_app_session=${token}` },
+        '/api/v1/infrastructure/internal-accounts/employees/target/restore'
+      )
+    );
+    expect(response?.status).toBe(401);
+    expect(await response?.json()).toEqual({
+      code: 'UNAUTHENTICATED',
+      error: 'Authentication required',
+    });
+    expect(response?.headers.get('cache-control')).toBe('no-store');
+    expect(getUserById).toHaveBeenCalledExactlyOnceWith('actor');
+    expect(getUser).not.toHaveBeenCalled();
+    expect(getClaims).not.toHaveBeenCalled();
+  });
+  it('rejects a provider bearer whose current session no longer exists', async () => {
+    const { getUser, getUserById, getClaims } = setup();
+    getUser.mockResolvedValue({
+      data: { user: null },
+      error: { code: 'session_not_found' },
+    });
+    const response = await enforceRequiredMfaRequest(
+      request(
+        { authorization: 'Bearer eyJprovider' },
+        '/api/v1/infrastructure/internal-accounts/employees/target/restore'
+      )
+    );
+    expect(response?.status).toBe(401);
+    expect(await response?.json()).toEqual({
+      code: 'UNAUTHENTICATED',
+      error: 'Authentication required',
+    });
+    expect(response?.headers.get('cache-control')).toBe('no-store');
+    expect(getUser).toHaveBeenCalledExactlyOnceWith('eyJprovider');
+    expect(getUserById).not.toHaveBeenCalled();
+    expect(getClaims).not.toHaveBeenCalled();
   });
   it('does not borrow assurance from another cookie identity', async () => {
     setup();

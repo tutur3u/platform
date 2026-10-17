@@ -76,6 +76,23 @@ beforeEach(() => {
   });
 });
 describe('fresh root employee creation authority', () => {
+  it('restores creator authority with MEMBER membership while default grants remain absent', async () => {
+    const actual = await vi.importActual<
+      typeof import('@tuturuuu/utils/workspace-helper')
+    >('@tuturuuu/utils/workspace-helper');
+    mock.permissions.mockImplementation(actual.getPermissions);
+    mock.member.mockResolvedValue({ data: null, error: null });
+    expect(
+      await authorizeEmployeeCreation(new Request('https://web.test/employees'))
+    ).toEqual({ authorized: false, status: 403 });
+    mock.member.mockResolvedValue({ data: { type: 'MEMBER' }, error: null });
+    expect(
+      await authorizeEmployeeCreation(new Request('https://web.test/employees'))
+    ).toEqual({ authorized: true, actorUserId: user.id });
+    expect(mock.from).not.toHaveBeenCalledWith('workspace_default_permissions');
+    expect(mock.from).not.toHaveBeenCalledWith('workspace_role_members');
+  });
+
   it('uses the registered infra session and server actor', async () => {
     expect(
       await authorizeEmployeeCreation(new Request('https://web.test/employees'))

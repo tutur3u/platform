@@ -114,6 +114,189 @@ RESTORE, or legacy-address migration. The runtime flag remains off until the
 remaining target and request-boundary checks pass. Source tests and a published
 workflow are not a successful HTTP qualification run.
 
+## Web request and session qualification
+
+`include_web_session=true` additionally requires both `include_http=true` and
+`include_journal=true`. This is an opt-in extension of the same owned disposable
+Supabase lifecycle. It builds the selected `apps/web` source on the hosted CI
+runner and starts the real Next server on loopback. The fixture resolves the
+Next CLI from `apps/web/package.json` so isolated workspace installs do not
+require a root Next dependency; Web declares the fixture's Supabase SSR dependency. It does not resume the
+retired Docker Web E2E workflow. A missing build prerequisite or failed proxy,
+session, SQL or provider check fails this mode; do not replace it with a mocked
+authorizer or a service-only receipt.
+
+The Node support-test transform uses the matching
+`apps/web/e2e/fixtures/tsconfig.json`, which inherits Web's compiler settings.
+Web's main config includes application source rather than these fixtures; without
+a matching config, Vite/Oxc can traverse root project references and fail on an
+unrelated package's unavailable TypeScript preset before collecting any tests.
+The support suite reproduces that failure boundary in a disposable nested tree
+and transforms both real fixture files without installing the unrelated preset.
+Run `bun x vitest run --config apps/web/e2e/fixtures/vitest.employee-web-session.config.ts`
+from the selected source checkout. Passing this finite support suite does not
+qualify the 24 hosted Web session cases or the SQL/HTTP/RESTORE profiles.
+
+The fixture sends HTTP requests through the real Web proxy and route handlers.
+Its 24 named cases cover absent/malformed credentials, a GoTrue password session
+bearer, Supabase SSR-generated cookies, signed infra app cookies, wrong app,
+expired and tampered app cookies, canonical actor domain, root membership and
+permission revocation, actor ban, GoTrue session sign-out, origin/fetch-site and
+action-header guards, self-action, CREATE, RESTORE and stable-operation replay.
+App cookies are signed by the production token helper using an ephemeral
+fixture secret; this does not qualify the browser login or satellite token
+exchange/refresh flow.
+
+The API proxy checks current account assurance before the employee route. A
+previously issued satellite cookie whose current provider user is banned is
+rejected there with exactly `401 / UNAUTHENTICATED`, before the route's later
+`403 / forbidden` actor-policy check. A provider bearer rejected by
+`auth.getUser(token)` uses the same exact proxy denial. The actor-ban and
+session-sign-out cases require this response, `Cache-Control: no-store`, and no
+provider update caused by the denied request; they do not accept interchangeable
+401/403 responses or arbitrary error codes. Focused required-MFA runtime tests
+exercise both credential paths with injected provider responses. Only the hosted
+fixture proves the disposable provider's actual ban and sign-out behavior.
+
+[Supabase getUser](https://supabase.com/docs/reference/javascript/auth-getuser)
+validates through the Auth server. Sign-out is not proof that an already-issued
+access JWT has expired; the fixture retains its bearer and requires the current
+provider session check to reject it. A successful source test does not establish
+that hosted session-revocation case or all 24 Web cases.
+
+Failed self-action cases retain only the fixed case/stage, numeric HTTP status,
+no-store boolean, and an exact allowlisted error category. Unknown codes become
+`other`; bodies, identities, headers and tokens are discarded. The strict receipt
+accepts this metadata only with the exact completed prefix before self-action,
+never as qualification. The self-action expectation remains exactly
+`409 / employee_self_action`; the restoration handler regression verifies that
+self rejection precedes provider reads, updates and SQL transport. If a hosted
+response differs, inspect the fixed metadata before changing that contract.
+Passing the injected handler test does not identify an unretained hosted response
+or qualify the remaining CREATE/RESTORE cases.
+
+Use `http://localhost:<port>` consistently for the fixture's Web URL and Origin,
+while the server continues binding to `127.0.0.1`. Next 16 normalizes loopback IP
+request URLs to `localhost`; sending an IP Origin alongside that normalized URL
+fails the unchanged origin guard with `403 / forbidden` before self-action or
+CREATE. Actual NextRequest handler controls reproduce the mismatch and require
+409 for self-action and 201 for CREATE with the matching localhost Origin. A
+finite transport control verifies that the localhost URL reaches the IPv4-only
+listener. These controls use injected authorization/journal dependencies and do
+not replace matching hosted Web24 acceptance. Do not repair this origin mismatch
+by granting permissions: the fixture creator retains creator permissions once
+its actual MEMBER membership is restored, independently of default grants.
+
+A fixture-only loopback proxy forwards requests to the real owned GoTrue and
+PostgREST services. After a successful provider unban it can discard exactly one
+acknowledgement; Web must return pending/inspect and reconcile the original
+operation without another provider write. A second fault revokes root membership
+after the durable attempt acknowledgement and before provider dispatch. The
+fixture checks that the target remains banned and no provider update occurred.
+These are deliberate network faults around real effects, not mocked auth or RPC
+successes. Existing service-level SQL acknowledgement-loss cases remain separate.
+
+`webSessionQualification` records the selected source SHA, completed case names,
+assertion count, fixed phase, server-stop evidence and explicit production=false.
+Only a complete ordered inventory, zero child exit, matching source, stopped
+server/proxy and successful schema lifecycle cleanup can set
+`webSessionQualified=true`. Failed or partial cases never establish route proof.
+Failed receipts preserve the first fixed runtime phase and error category separately
+from server-stop and proxy-close outcomes. Both cleanup steps are attempted even
+when the first fails. Build-process diagnostics retain only exit code, a bounded
+signal category and deadline status; child output, messages and stacks remain
+discarded. Cleanup failure cannot replace an earlier failure or qualify a run.
+Compiler stdout/stderr are piped only into two bounded 64-KiB in-memory tails;
+they are never printed or written to an artifact. Failed build receipts project
+at most eight fixed compiler categories, fixed Node/TypeScript codes, and paths
+matched exactly against tracked Web/package source paths. Unknown messages,
+module names, identities, config keys and secret values are discarded. Tail
+truncation is explicit. Use a matching reviewed source/control revision so the
+strict control parser retains these diagnostics. This classification is evidence
+for the next investigation, not permission to guess a dependency repair.
+Cleanup error categories separately distinguish not-running, type-error, timeout
+and unknown; a category never turns failed cleanup into success.
+
+The hosted fixture first runs the existing root Turbo dependency graph with
+`bun turbo:local run build --filter=@tuturuuu/web^... --concurrency=1`, then its
+unchanged `bun run --cwd apps/web build` real Next compiler. Both phases share
+one 18-minute deadline and run sequentially. Prerequisite errors stop the run.
+This follows Web's canonical `^build` dependency ordering without allowing an
+application cache hit to replace compiler acceptance or filtering the disposable
+Auth/runtime configuration out of the direct Web build. Clean installs can resolve
+Bun source exports while Node/Next targets still require emitted workspace files;
+the non-build export regression demonstrates that boundary without generating
+artifacts. Only hosted CI may execute this build pipeline.
+
+Start the resolved Next CLI with `cwd=apps/web` and no additional `apps/web`
+argument: `node <resolved-next-cli> start --hostname 127.0.0.1 --port <port>`.
+The TypeScript config loader must resolve config imports in the same app context
+as the build. A bounded Next 16 config-loader reproduction from the source-root
+cwd selected the SEO generator outside the installed source checkout and failed
+with a missing-module error; the app cwd selected the source copy and loaded.
+The disposable config regression exercises this boundary without an app build,
+server or outbound request. Do not repair shared dependencies or infer a hosted
+module identity from startup categories alone; matching hosted acceptance remains
+required after the launcher correction.
+
+Startup readiness still requires exactly HTTP 401 from the anonymous employees
+GET. It makes at most 60 requests (one-second request timeout, 500 ms interval),
+never follows redirects, and discards response bodies without buffering them.
+The receipt retains only a fixed startup outcome and last observation, numeric
+status (0–599), attempt count, child exit/signal and deadline flag. Connection
+failure, request timeout, other request error, unexpected status and child exit
+remain distinct; an unexpected status does not identify an Auth or routing cause.
+Startup stdout/stderr are immediately drained into separate fixed 16-KiB
+in-memory prefixes. Only fixed allowlisted categories and a truncation boolean
+enter `startupOutput`; raw lines, module names, paths, URLs, headers, bodies and
+credentials are discarded. Classification scans each bounded prefix once.
+A descendant retaining a writer cannot hold cleanup open: 250 ms after the direct
+child exits, remaining capture readers close and truncation is recorded. The
+existing TERM/KILL and outer process-group cleanup still govern owned processes.
+Truncation or an empty category list cannot clear a possible cause. Loopback controls
+exercise these distinctions with disposable children, including the pinned Bun
+runtime; they do not establish readiness of the hosted Web application.
+
+The fault proxy starts HTTP server closure before forcing connection closure.
+In Bun 1.4.1, forcing connections first stops listening and makes a later
+`close()` reject with `ERR_SERVER_NOT_RUNNING`. The finite actual-Bun control
+requires successful close, refused connections on the released port, and a
+rejected repeated close. It emits only fixed phase/error categories on failure.
+Use the workflow's pinned Bun/Node versions when diagnosing runtime differences;
+newer local runtime success is not evidence for the pinned runtime.
+
+Historical receipts with only `phase=cleanup` cannot identify the earlier cause.
+The support suite exercises simultaneous runtime/cleanup failures, real child exit
+and deadline handling, and strict redacted receipt projection. These checks do not
+replace hosted Web24 acceptance.
+
+Receipt/process gates run from the uninstalled immutable control checkout; only
+`source/` has workspace dependencies installed. Keep process controls on the
+canonical dependency-free `.mjs` owner rather than importing the Web TypeScript
+support module there. Dependency-bearing adapter tests run in the installed
+source checkout. Process controls copy byte-checked canonical modules into a
+fresh dependency-free directory, use Bun `--no-install`, and retain all marker,
+exit, port/PID and timeout assertions. A control import failure can precede every
+build/database/session stage; absent later artifacts do not identify a Web cause.
+
+The control runner owns the fixture process group and launches each requested
+build group itself over a private IPC channel. The fixture cannot detach an
+unregistered build: missing owner IPC fails closed. Build exit triggers whole-group
+TERM/KILL cleanup even when a descendant retains stdout/stderr or ignores TERM.
+Fixture exit, hard kill, timeout and cancellation abort and drain every owned build
+job before `processGroupStopped` can qualify. Build output is classified at the
+owner; only the fixed bounded diagnostic returns over IPC, never raw output.
+Actual finite controls retain leader exit 7, enforce an inner deadline, and verify
+port/PID disappearance after hard fixture kill and outer timeout. They use the
+resolved runtime executable so local command shims cannot drop IPC descriptors.
+These synthetic process controls do not replace hosted compiler/start/session proof.
+Build/server output, passwords, cookies, tokens, emails and raw provider/SQL
+errors are discarded. The stack's always-run cleanup removes fixture identities
+with the disposable database; no real account or deployed activation flag is
+modified. Source receipt tests prove receipt rejection behavior only. Activation
+still requires the parent release owner's review of the actual exact-source CI
+artifact and all independent production gates.
+
 ### RESTORE transport profile
 
 `include_restore=true` additionally requires both `include_http=true` and
@@ -147,14 +330,14 @@ reviewed source commit; a published fixture is not a successful qualification ru
 ## Personal journal schema qualification
 
 Select `include_personal_journal=true` with `include_journal=false`,
-`include_http=false` and `include_restore=false` on the same workflow. This optional
-profile keeps the foundation's 172 assertions and adds the 24
+`include_http=false`, `include_web_session=false` and `include_restore=false` on
+the same workflow. This optional profile keeps the foundation's 172 assertions and adds the 24
 `personal-journal.sql` assertions.
 It requires the complete selected migration snapshot, all 196 assertions,
 transaction rollback and positive owned-project cleanup, then records the
 `personal-journal` scope. Mixed optional profiles fail closed. The default
 foundation and employee-operation profiles keep their existing counts. The
-workflow regression test exercises all 16 boolean profile combinations against the
+workflow regression test exercises all 32 boolean profile combinations against the
 guarded runner before hosted database setup.
 
 The same disposable database generates public, private and storage types before

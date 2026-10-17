@@ -17,6 +17,12 @@ import {
   schemaReceipt,
   selectSchemaPackets,
 } from './employee-schema-tap.mjs';
+import { runOwnedSessionProcess } from './employee-web-session-process.mjs';
+import {
+  assertQualifiedWebSession,
+  selectWebSessionRuntime,
+  webSessionReceipt,
+} from './employee-web-session-receipt.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
 import {
   chooseAvailablePortBlock,
@@ -41,6 +47,10 @@ if (
 const httpRuntime = selectHttpRuntime(
   process.env.EMPLOYEE_SCHEMA_INCLUDE_HTTP,
   journal
+);
+const webSessionRuntime = selectWebSessionRuntime(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION,
+  httpRuntime
 );
 const restoreRuntime = selectRestoreRuntime(
   process.env.EMPLOYEE_SCHEMA_INCLUDE_RESTORE,
@@ -193,6 +203,7 @@ let packetOrdinal = 0;
 let failureDiagnostic = null;
 let generatedTypesSha256 = null;
 let httpQualification = null;
+let webSessionQualification = null;
 const bounded = (command, args, cwd, timeout, input, allowFailure = false) => {
   const result = spawnSync(command, args, {
     cwd,
@@ -339,6 +350,41 @@ const runner = async (command, args, cwd) => {
         );
         httpQualification = httpQualificationReceipt(output.stdout.trim());
         assertQualifiedHttp(httpQualification, output.status, restoreRuntime);
+        if (webSessionRuntime) {
+          // Keep the existing diagnostic phase; the child has its own bounded phases.
+          const sessionOutput = await runOwnedSessionProcess(
+            'bun',
+            [
+              '--conditions=react-server',
+              'apps/web/e2e/fixtures/employee-web-session-runtime.ts',
+            ],
+            {
+              cwd: root,
+              timeoutMs: 1500000,
+              input: JSON.stringify({
+                url: status.API_URL,
+                key: status.SERVICE_ROLE_KEY,
+                anonKey: status.ANON_KEY,
+                projectId: metadata.projectId,
+                basePort: metadata.basePort,
+                sourceSha,
+              }),
+            }
+          );
+          if (!sessionOutput.processGroupStopped)
+            throw new Error('Owned Web session process group remains');
+          webSessionQualification = webSessionReceipt(
+            sessionOutput.stdout.trim()
+          );
+          webSessionQualification.processGroupStopped =
+            sessionOutput.processGroupStopped;
+          assertQualifiedWebSession(
+            webSessionQualification,
+            sessionOutput.status,
+            sourceSha,
+            sessionOutput.processGroupStopped
+          );
+        }
       }
     } else {
       packetOrdinal = 0;
@@ -418,6 +464,12 @@ const receipt = {
     cleanupSucceeded &&
     httpQualification?.restoreQualification?.qualified === true,
   httpQualification,
+  webSessionQualified:
+    webSessionRuntime &&
+    lifecycleCode === 0 &&
+    cleanupSucceeded &&
+    webSessionQualification?.qualified === true,
+  webSessionQualification,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
 writeFileSync(

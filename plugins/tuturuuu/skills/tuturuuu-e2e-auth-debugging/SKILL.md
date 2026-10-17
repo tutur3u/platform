@@ -90,3 +90,11 @@ bunx playwright test e2e/<focused-spec>.spec.ts --project=chromium
 Run the Playwright command from `apps/web` with the same local E2E environment as
 the native web server. If CI parity is required separately, run the Dockerized
 E2E command only after the native failure is understood or fixed.
+
+For employee CREATE/RESTORE request authorization, use the opt-in canonical
+`employee-schema-contract.yaml` Web session mode described in
+`apps/docs/build/development-tools/employee-schema-qualification.mdx`.
+It builds Web only on hosted CI and exercises real request cookies, app-session
+guards and disposable GoTrue/PostgREST. Keep its receipt separate from existing
+service transport receipts. A fixture-minted app cookie does not prove the
+satellite token exchange, and source tests do not prove the hosted run passed.

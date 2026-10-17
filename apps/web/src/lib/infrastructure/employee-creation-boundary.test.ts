@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEmployeeCreationBoundary } from './employee-creation-boundary';
 
@@ -28,6 +29,61 @@ const request = (
 const authorize = async () =>
   ({ authorized: true, actorUserId: userId }) as const;
 describe('employee source boundary', () => {
+  it.each([
+    ['127.0.0.1', 403],
+    ['localhost', 201],
+  ])(
+    'checks the normalized Next origin before creation for %s',
+    async (host, status) => {
+      const outcome = {
+        status: 'created',
+        operationId,
+        account: {
+          id: userId,
+          email: payload.email,
+          displayName: payload.displayName,
+        },
+      };
+      const claimAndRun = vi.fn(async () => ({
+        targetUserId: userId,
+        outcome,
+      }));
+      const handler = makeEmployeeCreationBoundary({
+        authorize,
+        journal: { available: async () => true, claimAndRun },
+      });
+      const origin = `http://${host}:1777`;
+      const incoming = new NextRequest(
+        `${origin}/api/v1/infrastructure/internal-accounts/employees`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-tuturuuu-account-action': '1',
+            'idempotency-key': operationId,
+            origin,
+            'sec-fetch-site': 'same-origin',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      const response = await handler(incoming);
+      expect(response.status).toBe(status);
+      expect(response.headers.get('cache-control')).toContain('no-store');
+      if (status === 403) {
+        expect(await response.json()).toEqual({ code: 'forbidden' });
+        expect(claimAndRun).not.toHaveBeenCalled();
+      } else {
+        expect(await response.json()).toEqual(outcome);
+        expect(claimAndRun).toHaveBeenCalledExactlyOnceWith({
+          actorUserId: userId,
+          operationId,
+          payload,
+        });
+      }
+    }
+  );
+
   it('reports unavailable and refuses creation with no installed journal', async () => {
     const handler = makeEmployeeCreationBoundary({ authorize });
     const get = await handler(new Request('https://web.test/employees'));
