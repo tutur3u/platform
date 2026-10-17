@@ -158,6 +158,12 @@ read-only permissions. Live provider consent/delivery remains a separate check.
 
 ## Root Scripts
 
+- Resolve app-owned packages in root Node tests with `createRequire` anchored to
+  the real owning app's `package.json`; keep relative helpers on the original
+  `require`. See the [CI runbook's resolution control](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence)
+  for a resolver-only fixture that excludes root links and `NODE_PATH`, followed
+  by focused behavior verification. Web owns the satellite cohort tests'
+  Playwright; Lettin owns its config-loader test's Next SWC.
 - Root script tests belong in `node --test scripts/*.test.js` and should be
   wired into `scripts/check.js` when a new utility needs CI coverage.
 - Translation automation should use `scripts/i18n-common.js` for app message
