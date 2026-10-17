@@ -327,6 +327,11 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
     name: 'tuturuuu',
     version: '0.0.0',
     files: ['dist'],
+    ...changes.manifest,
+  });
+  write(root, 'packages/unpublished/package.json', {
+    name: '@tuturuuu/unpublished',
+    version: '1.2.3',
   });
   const required = [
     'index.js',
@@ -374,6 +379,10 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
     }
     if (args[0] === '--version')
       return result(command === 'bun' ? '1.4.1' : 'v24.21.0');
+    if (command === 'npm' && args[0] === 'view')
+      return changes.registryTuple
+        ? result(changes.registryTuple)
+        : result('', 1);
     if (command === 'npm' && args[0] === 'pack') {
       stageSdk = options.cwd;
       archiveFiles = inventory(stageSdk).map((item) => ({
@@ -445,6 +454,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
           },
         },
       });
+      changes.afterInstall?.(consumer);
       return result({});
     }
     if (args.includes('-e')) {
@@ -482,6 +492,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
     root,
     output: path.join(root, 'output'),
     sourceSha,
+    phase: changes.phase,
     run,
   });
   return { receipt, commands, consumer, root };
@@ -678,3 +689,7 @@ test('E404 receipt retains public registry identity before private fixture clean
 });
 
 require('./qualify-sdk-package-diagnostics.test');
+
+require('./sdk-qualification-pipeline-controls').pipelineTests(
+  injectedPipeline
+);

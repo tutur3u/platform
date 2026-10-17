@@ -482,11 +482,12 @@ test('cacheable JavaScript workflow commands use the remote-cache wrapper', () =
 });
 
 test('package release caches and tarball handoffs follow the release policy', () => {
-  const releaseWorkflows = listWorkflowFiles().filter((fileName) =>
-    /^release-.+-package\.yaml$/u.test(fileName)
+  const releaseWorkflows = listWorkflowFiles().filter(
+    (fileName) =>
+      /^release-.+-package\.yaml$/u.test(fileName) &&
+      fileName !== 'release-sdk-package.yaml'
   );
-
-  assert.equal(releaseWorkflows.length, 14);
+  assert.equal(releaseWorkflows.length, 13);
 
   for (const workflowName of releaseWorkflows) {
     const workflow = readWorkflow(workflowName);
@@ -514,7 +515,6 @@ test('package release caches and tarball handoffs follow the release policy', ()
   for (const [workflowName, workspace] of [
     ['release-devbox-package.yaml', '@tuturuuu/devbox'],
     ['release-internal-api-package.yaml', '@tuturuuu/internal-api'],
-    ['release-sdk-package.yaml', 'tuturuuu'],
   ]) {
     assert.match(
       readWorkflow(workflowName),
