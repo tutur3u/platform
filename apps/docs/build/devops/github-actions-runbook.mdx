@@ -17,6 +17,17 @@ GitHub Actions is the primary automation plane for Tuturuuu.
 
 ## Validation and Delivery Evidence
 
+Root Node tests that consume an app-owned package must resolve it with
+`createRequire` anchored to that app's real `package.json`. The satellite cohort
+tests resolve Playwright from Web; the Lettin config-loader tests load Next SWC
+from Lettin. Keep repository-relative helpers on the test's original `require`
+and temporary fixtures separate from the owning app. Root links and job-wide
+`NODE_PATH` can mask this boundary, so verify resolution with `NODE_PATH` unset
+in a disposable fixture with only app-level dependency links and no root
+`node_modules`. Resolve entrypoints without loading package code for that control,
+then run the focused behavior tests separately. The Lettin SWC test transforms
+config source in memory; it does not run a Next release build.
+
 `mail-calendar-tasks-builds.yaml` builds Mail, Calendar and Tasks, including
 their shared dependencies, on relevant PRs and `main` commits. These hosted CI
 jobs check out the immutable PR head (or exact push SHA), use placeholder public

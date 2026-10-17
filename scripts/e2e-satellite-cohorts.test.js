@@ -3,6 +3,7 @@ const test = require('node:test');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { createRequire } = require('node:module');
 const { spawnSync } = require('node:child_process');
 const {
   planSatelliteCohorts,
@@ -11,6 +12,10 @@ const {
   isolationArgs,
   runSatelliteCohorts,
 } = require('./e2e-satellite-cohorts');
+
+const webRequire = createRequire(
+  path.resolve(__dirname, '../apps/web/package.json')
+);
 
 const lines = [
   '[setup] › e2e/auth.setup.ts:1:1 › authenticate',
@@ -163,8 +168,8 @@ test('partial startup and cleanup failures stop safely without starting another 
 
 test('public Playwright sharded manifest and isolated runs retain all selected cases and merged JSON', async (t) => {
   const webDir = root(t);
-  const api = require.resolve('@playwright/test');
-  const cli = require.resolve('@playwright/test/cli');
+  const api = webRequire.resolve('@playwright/test');
+  const cli = webRequire.resolve('@playwright/test/cli');
   const config = path.join(webDir, 'playwright.config.cjs');
   fs.writeFileSync(
     config,
@@ -270,8 +275,8 @@ test('finite invocation policies retain single execution and JSON reporter gains
 
 test('public project dependencies skip dependent bodies after failed setup while independent cohorts run and remain red', async (t) => {
   const webDir = root(t);
-  const api = require.resolve('@playwright/test');
-  const cli = require.resolve('@playwright/test/cli');
+  const api = webRequire.resolve('@playwright/test');
+  const cli = webRequire.resolve('@playwright/test/cli');
   const reporter = require.resolve('./e2e-config-reporter');
   const config = path.join(webDir, 'playwright.config.cjs');
   fs.writeFileSync(
@@ -415,8 +420,8 @@ test('same-count receipt substitution fails completeness instead of returning gr
 
 test('public config discovery preserves finite configured policies before choosing isolation', (t) => {
   const webDir = root(t);
-  const api = require.resolve('@playwright/test');
-  const cli = require.resolve('@playwright/test/cli');
+  const api = webRequire.resolve('@playwright/test');
+  const cli = webRequire.resolve('@playwright/test/cli');
   const reporter = require.resolve('./e2e-config-reporter');
   const config = path.join(webDir, 'playwright.config.cjs');
   fs.writeFileSync(
