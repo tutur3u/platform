@@ -257,6 +257,17 @@ of hard-coding `localhost` fallbacks in satellite app constants or proxies, so a
 browser session that starts on `tasks.tuturuuu.localhost` stays under the
 `tuturuuu.localhost` namespace through login and return URLs.
 
+When a satellite proxies a Web-owned API collection through an external rewrite,
+use an exact collection rule and a separate nonempty `:path+` descendant rule.
+A `:path*` destination can compile to a regex backreference whose empty value
+leaves a trailing slash. If Web strips that slash with a relative 308, the
+satellite can repeat the same request indefinitely. Infrastructure's employee
+collection regression exercises both installed Next runtime matching and the
+deployment rewrite converter in `apps/infrastructure/next.config.test.ts`.
+Preserve satellite session and API guards, and verify the emitted deployment
+route plus an authenticated request after the authorized rollout; passing source
+tests alone does not establish production availability.
+
 For a production-mode smoke test of `apps/web`, use the preview deployment
 built by CI for the PR's exact head commit. Do not create a local production
 build on this machine. Local development still uses the Portless hostname for
