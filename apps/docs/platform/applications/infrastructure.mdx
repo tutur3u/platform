@@ -51,6 +51,21 @@ A configuration edit, deploy action, external registration, or production write
 requires its own authorized workflow. Reading a runbook or recalling a private
 record is not authority to execute it.
 
+## Employee API routing
+
+Web owns `/api/v1/infrastructure/internal-accounts/employees` and its descendants,
+including CREATE readiness, employee inspection, restore, and reconcile.
+Infrastructure forwards that exact subtree in `beforeFiles`, including the base
+path with zero wildcard segments. A fallback-only rewrite lets the local
+`internal-accounts/[userId]` PATCH route capture `employees` and answer GET with
+an empty 405 before Web can handle it.
+
+The local internal-account list and legacy UUID PATCH remain in Infrastructure;
+address-migration endpoints retain their existing Web fallback. The installed
+Next matchers in `apps/infrastructure/next.config.test.ts` cover these boundaries.
+Routing checks do not establish downstream readiness: require the exact-commit
+Infrastructure CI build and an authorized production recheck after deployment.
+
 ## Employee SQL transport qualification
 
 ### HTTP RPC runtime candidate
