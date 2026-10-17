@@ -379,7 +379,10 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
     }
     if (args[0] === '--version')
       return result(command === 'bun' ? '1.4.1' : 'v24.21.0');
-    if (command === 'npm' && args[0] === 'view') return result('', 1);
+    if (command === 'npm' && args[0] === 'view')
+      return changes.registryTuple
+        ? result(changes.registryTuple)
+        : result('', 1);
     if (command === 'npm' && args[0] === 'pack') {
       stageSdk = options.cwd;
       archiveFiles = inventory(stageSdk).map((item) => ({
@@ -451,6 +454,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
           },
         },
       });
+      changes.afterInstall?.(consumer);
       return result({});
     }
     if (args.includes('-e')) {

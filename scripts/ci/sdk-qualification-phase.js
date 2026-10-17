@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
+const { createRequire } = require('node:module');
 
 function registryRewrites(rewrites) {
   return rewrites.filter(({ field }) =>
@@ -9,30 +10,70 @@ function registryRewrites(rewrites) {
 }
 
 function requireInstalledDependencies(manifest, consumer, lock) {
+  consumer = fs.realpathSync(consumer);
+  const resolver = createRequire(
+    path.join(consumer, 'node_modules/tuturuuu/package.json')
+  );
+  const dependencies = new Map();
   for (const field of [
     'dependencies',
     'peerDependencies',
     'optionalDependencies',
   ]) {
     for (const name of Object.keys(manifest[field] || {})) {
-      const entry = lock.packages?.[`node_modules/${name}`];
-      const directory = path.join(consumer, 'node_modules', name);
-      const installed = path.join(directory, 'package.json');
+      const missing = () => {
+        throw new Error(`INSTALLED_DEPENDENCY_MISSING: ${name}`);
+      };
+      if (!/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/i.test(name))
+        missing();
+      let installed;
+      let key;
+      for (const modules of resolver.resolve.paths(name) || []) {
+        const relative = path.relative(consumer, path.join(modules, name));
+        if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
+          continue;
+        let current = consumer;
+        let present = true;
+        const parts = [...relative.split(path.sep), 'package.json'];
+        for (const [index, part] of parts.entries()) {
+          const isManifest = index === parts.length - 1;
+          current = path.join(current, part);
+          let stat;
+          try {
+            stat = fs.lstatSync(current);
+          } catch (error) {
+            if (error.code !== 'ENOENT') throw error;
+            present = false;
+            // An existing package directory shadows any hoisted copy.
+            if (isManifest) missing();
+            break;
+          }
+          if (stat.isSymbolicLink()) missing();
+          if (isManifest ? !stat.isFile() : !stat.isDirectory()) missing();
+        }
+        if (present) {
+          installed = current;
+          key = relative.split(path.sep).join('/');
+          break;
+        }
+      }
+      const entry = lock.packages?.[key];
       if (
+        !installed ||
         !entry?.version ||
         entry.link ||
         !/^sha(?:512|1)-[A-Za-z0-9+/=]+$/.test(entry.integrity || '') ||
-        !entry.resolved?.startsWith('https://registry.npmjs.org/') ||
-        !fs.existsSync(installed) ||
-        fs.lstatSync(directory).isSymbolicLink()
+        !entry.resolved?.startsWith('https://registry.npmjs.org/')
       ) {
-        throw new Error(`INSTALLED_DEPENDENCY_MISSING: ${name}`);
+        missing();
       }
       const actual = JSON.parse(fs.readFileSync(installed, 'utf8'));
       if (actual.name !== name || actual.version !== entry.version)
         throw new Error(`INSTALLED_DEPENDENCY_MISMATCH: ${name}`);
+      dependencies.set(name, entry);
     }
   }
+  return dependencies;
 }
 
 function workflowPhase(env) {

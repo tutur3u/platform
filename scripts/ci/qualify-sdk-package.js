@@ -486,7 +486,7 @@ async function qualify({
         fail('INSTALLED_BYTES_CHANGED', 'Installed byte mismatch');
     }
     const lock = json(path.join(consumer, 'package-lock.json'));
-    requireInstalledDependencies(
+    const dependencies = requireInstalledDependencies(
       json(path.join(stageSdk, 'package.json')),
       consumer,
       lock
@@ -505,7 +505,7 @@ async function qualify({
     )
       fail('PACKAGE_IDENTITY_MISMATCH', 'Lock archive resolution mismatch');
     for (const tuple of receipt.registryTuples) {
-      const entry = lock.packages?.[`node_modules/${tuple.name}`];
+      const entry = dependencies.get(tuple.name);
       if (
         entry?.version !== tuple.version ||
         entry.integrity !== tuple.integrity ||

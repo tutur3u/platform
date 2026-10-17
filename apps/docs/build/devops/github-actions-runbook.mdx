@@ -1032,7 +1032,17 @@ public registry tuples, isolated npm consumer installation and compiled CLI/reso
 probes. Runtime, peer and optional workspace dependencies must be publicly available;
 embedded development-only dependencies are excluded from registry prerequisites.
 Missing dependencies fail closed, including optional dependencies that npm might
-otherwise omit. The preparation uploads the very tarball installed and probed,
+otherwise omit. Resolve physical dependency manifests from the installed SDK's
+Node module search paths inside the disposable consumer. npm may place a direct
+dependency under `node_modules/tuturuuu/node_modules` rather than hoist it to the
+consumer root. Match the lock entry for that exact physical directory; use the
+same verified entry for registry tuple comparison. Reject symlinks in every path
+component, missing packages, manifest identity/version mismatches, linked lock
+entries and missing or invalid public registry integrity. An invalid nested copy
+must not fall back to a valid hoisted copy. The focused
+`scripts/ci/sdk-installed-dependencies.test.js` suite covers these layouts and
+failure boundaries without installing packages or evaluating their code.
+The preparation uploads the very tarball installed and probed,
 along with its receipt. The OIDC job requires a successful PUBLIC receipt for the
 same SHA, package name/version and SHA256 bytes before publishing that tarball.
 No rebuild or second pack follows qualification. No receipt, a SOURCE receipt,

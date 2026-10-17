@@ -129,6 +129,16 @@ See `apps/docs/build/devops/active-runtime.mdx`.
 
 ## Packed SDK install diagnostics
 
+For installed dependency validation, inspect Node's package-relative module search
+directories inside the disposable consumer. Match each physical package to its
+exact root or SDK-nested lock key and reuse that verified entry for registry tuple
+comparison. A root-only lookup can falsely reject a legitimate npm nested layout.
+Keep absent packages, identity/version or integrity mismatches, links and symlink
+components as hard failures; never fall back past an invalid nested package.
+Run `node --test scripts/ci/sdk-installed-dependencies.test.js` for the focused
+physical-layout and rejection regressions. A synthetic layout test does not
+replace exact-artifact consumer evidence or public qualification.
+
 The qualification receipt preserves stream hashes/counts and a bounded, strictly
 parsed public npm E404 identity. Never upload raw npm output or the private cache.
 Run `node --test scripts/ci/qualify-sdk-package.test.js`, including its diagnostic
