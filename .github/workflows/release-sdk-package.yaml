@@ -58,7 +58,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.21.0
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
@@ -83,15 +83,15 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.21.0
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: timeout --kill-after=10s 300s bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Build SDK workspace dependencies
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --concurrency=4 --filter=tuturuuu --filter=@tuturuuu/devbox --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
+          command: timeout --kill-after=10s 900s bun turbo:local run build --concurrency=1 --filter=tuturuuu...
           token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
@@ -104,6 +104,7 @@ jobs:
 
   prepare-publish-npm:
     needs: [build]
+    timeout-minutes: 30
     if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
     outputs:
@@ -121,12 +122,12 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.21.0
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: timeout --kill-after=10s 300s bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check whether the version already exists on npm
         id: version-check
@@ -148,20 +149,19 @@ jobs:
         if: steps.version-check.outputs.should_publish == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --concurrency=4 --filter=tuturuuu --filter=@tuturuuu/devbox --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
+          command: timeout --kill-after=10s 900s bun turbo:local run build --concurrency=1 --filter=tuturuuu...
           token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
-      - name: Prepare npm package manifest
-        if: steps.version-check.outputs.should_publish == 'true'
-        run: node scripts/ci/prepare-npm-package-manifest.js packages/sdk
+      - name: Test qualification controls
+        run: timeout --kill-after=10s 30s node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/sdk-qualification-phase.test.js packages/sdk/scripts/portable-build.test.cjs
 
-      - name: Pack publish artifact
+      - name: Qualify public registry consumer and compiled CLI
         if: steps.version-check.outputs.should_publish == 'true'
-        working-directory: packages/sdk
-        run: |
-          mkdir -p "$RUNNER_TEMP/tuturuuu-sdk-package"
-          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/tuturuuu-sdk-package"
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          QUALIFICATION_OUTPUT: ${{ runner.temp }}/tuturuuu-sdk-package
+        run: timeout --kill-after=10s 600s node scripts/ci/qualify-sdk-package.js
 
       - name: Upload publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
@@ -169,7 +169,7 @@ jobs:
         with:
           if-no-files-found: error
           name: tuturuuu-sdk-npm-package
-          path: ${{ runner.temp }}/tuturuuu-sdk-package/*.tgz
+          path: ${{ runner.temp }}/tuturuuu-sdk-package/
           retention-days: 1
           compression-level: 0
 
@@ -192,7 +192,7 @@ jobs:
     steps:
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.21.0
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
@@ -231,40 +231,52 @@ jobs:
           EXPECTED_PACKAGE_NAME: "tuturuuu"
           EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
         run: |
-          PACKAGE_TARBALL=$(find sdk-package -maxdepth 1 -name '*.tgz' -type f | sort)
-          TARBALL_COUNT=$(printf '%s\n' "$PACKAGE_TARBALL" | sed '/^$/d' | wc -l | tr -d ' ')
-
-          if [ "$TARBALL_COUNT" != "1" ]; then
-            echo "Expected exactly one package tarball, found ${TARBALL_COUNT}." >&2
-            exit 1
-          fi
-
-          node - "$PACKAGE_TARBALL" <<'NODE'
-          const { execFileSync } = require('node:child_process');
-          const tarball = process.argv[2];
-          const manifest = JSON.parse(
-            execFileSync('tar', ['-xOf', tarball, 'package/package.json'], {
-              encoding: 'utf8',
-            })
-          );
-
-          if (manifest.name !== process.env.EXPECTED_PACKAGE_NAME) {
-            throw new Error(
-              `Artifact package name mismatch: expected ` +
-                `${process.env.EXPECTED_PACKAGE_NAME}, got ${manifest.name}`
+          PACKAGE_TARBALL=$(node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const { createHash } = require('node:crypto');
+          function verifyPublishReceipt({ directory, sourceSha, name, version }) {
+            const receipt = JSON.parse(
+              fs.readFileSync(path.join(directory, 'receipt.json'), 'utf8')
             );
+            const pkg = receipt.package;
+            const archives = fs
+              .readdirSync(directory)
+              .filter((file) => file.endsWith('.tgz'));
+            if (
+              !/^[a-f0-9]{40}$/.test(sourceSha || '') ||
+              receipt.version !== 2 ||
+              receipt.phase !== 'public' ||
+              receipt.sourceSha !== sourceSha ||
+              receipt.qualified !== true ||
+              receipt.blocker ||
+              receipt.processGroupsDrained !== true ||
+              receipt.temporaryFixtureDrained !== true ||
+              receipt.lifecycleScriptsExecuted !== false ||
+              receipt.modelActivity !== false ||
+              pkg?.name !== name ||
+              pkg?.version !== version ||
+              archives.length !== 1 ||
+              pkg.archive !== archives[0] ||
+              path.basename(pkg.archive) !== pkg.archive
+            ) {
+              throw new Error('PUBLIC_QUALIFICATION_RECEIPT_MISMATCH');
+            }
+            const archive = path.join(directory, pkg.archive);
+            const stat = fs.lstatSync(archive);
+            if (
+              !stat.isFile() ||
+              stat.isSymbolicLink() ||
+              createHash('sha256').update(fs.readFileSync(archive)).digest('hex') !==
+                pkg.sha256
+            ) {
+              throw new Error('PUBLIC_QUALIFICATION_ARTIFACT_MISMATCH');
+            }
+            return archive;
           }
-
-          if (manifest.version !== process.env.EXPECTED_PACKAGE_VERSION) {
-            throw new Error(
-              `Artifact package version mismatch: expected ` +
-                `${process.env.EXPECTED_PACKAGE_VERSION}, got ${manifest.version}`
-            );
-          }
-
-          console.log(`Verified ${manifest.name}@${manifest.version}.`);
+          console.log(verifyPublishReceipt({ directory: 'sdk-package', sourceSha: process.env.GITHUB_SHA, name: process.env.EXPECTED_PACKAGE_NAME, version: process.env.EXPECTED_PACKAGE_VERSION }));
           NODE
-
+          )
           echo "path=./${PACKAGE_TARBALL}" >> "$GITHUB_OUTPUT"
 
       # npm CLI auto-detects the GitHub Actions OIDC environment and
@@ -316,7 +328,7 @@ jobs:
     steps:
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.21.0
           package-manager-cache: false
 
       - name: Dispatch dependent package releases

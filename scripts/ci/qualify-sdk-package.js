@@ -11,6 +11,10 @@ const {
   preparePackageManifest,
   getWorkspaceVersions,
 } = require('./prepare-npm-package-manifest');
+const {
+  registryRewrites,
+  requireInstalledDependencies,
+} = require('./sdk-qualification-phase');
 const MAX_BYTES = 128 * 1024 * 1024;
 const MAX_FILES = 20000;
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -201,7 +205,15 @@ const {initStore,OperationalStore}=require(path.join(pkg,'dist/cli/operational-s
 initStore(db,'backlog');const store=new OperationalStore(db,'backlog',true);
 try { store.intake([{id:'synthetic-rsvp',title:'Calendar RSVP lịch họp',kind:'feature',source:'synthetic:package-qualification',acceptance:'Preserve RSVP',requiredEvidence:['focused']}],{expectedRevision:0,operationId:require('node:crypto').randomUUID()}); } finally {store.close();}
 console.log(JSON.stringify({exports:exports.map(x=>path.relative(pkg,x)),adapter:hash(resources.PYTHON_ADAPTER_CODE),runtime:resources.PYTHON_RUNTIME_MANIFEST_HASH,installation:resources.PYTHON_INSTALLATION_MANIFEST_HASH,runtimeObject:hash(JSON.stringify(resources.PYTHON_RUNTIME_MANIFEST)),installationObject:hash(JSON.stringify(resources.PYTHON_INSTALLATION_MANIFEST)),db}));`;
-async function qualify({ root, output, sourceSha, run = runProcess }) {
+async function qualify({
+  root,
+  output,
+  sourceSha,
+  phase = 'public',
+  run = runProcess,
+}) {
+  if (!['source', 'public'].includes(phase))
+    fail('INVALID_PHASE', 'Unknown qualification phase');
   if (!/^[a-f0-9]{40}$/.test(sourceSha || ''))
     fail('INVALID_SOURCE_SHA', 'an exact source SHA is required');
   root = fs.realpathSync(root);
@@ -234,7 +246,9 @@ async function qualify({ root, output, sourceSha, run = runProcess }) {
   );
   fs.chmodSync(scratch, 0o700);
   const receipt = {
-    version: 1,
+    version: 2,
+    phase,
+    sourceValidated: false,
     sourceSha,
     qualified: false,
     modelActivity: false,
@@ -321,7 +335,11 @@ async function qualify({ root, output, sourceSha, run = runProcess }) {
     if (rewrites.length > 50)
       fail('PACKAGE_LIMIT', 'Too many dependency rewrites');
     for (const name of [
-      ...new Set(rewrites.map((entry) => entry.name)),
+      ...new Set(
+        (phase === 'public' ? registryRewrites(rewrites) : []).map(
+          (entry) => entry.name
+        )
+      ),
     ].sort()) {
       const version = versions.get(name)?.version;
       if (!/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(version || ''))
@@ -413,6 +431,10 @@ async function qualify({ root, output, sourceSha, run = runProcess }) {
       files: pack.files,
       sourceFiles: stagedFiles,
     };
+    if (phase === 'source') {
+      receipt.sourceValidated = true;
+      return { receipt, error };
+    }
     const consumer = path.join(scratch, 'consumer');
     fs.mkdirSync(consumer, { mode: 0o700 });
     fs.writeFileSync(
@@ -464,6 +486,11 @@ async function qualify({ root, output, sourceSha, run = runProcess }) {
         fail('INSTALLED_BYTES_CHANGED', 'Installed byte mismatch');
     }
     const lock = json(path.join(consumer, 'package-lock.json'));
+    requireInstalledDependencies(
+      json(path.join(stageSdk, 'package.json')),
+      consumer,
+      lock
+    );
     const sdkLock = lock.packages?.['node_modules/tuturuuu'];
     receipt.identities.lock = checkIdentity(
       identity,
@@ -477,11 +504,7 @@ async function qualify({ root, output, sourceSha, run = runProcess }) {
       path.resolve(consumer, sdkLock.resolved.slice(5)) !== archive
     )
       fail('PACKAGE_IDENTITY_MISMATCH', 'Lock archive resolution mismatch');
-    for (const tuple of receipt.registryTuples.filter((tuple) =>
-      rewrites.some(
-        (entry) => entry.name === tuple.name && entry.field === 'dependencies'
-      )
-    )) {
+    for (const tuple of receipt.registryTuples) {
       const entry = lock.packages?.[`node_modules/${tuple.name}`];
       if (
         entry?.version !== tuple.version ||
@@ -602,6 +625,7 @@ async function qualify({ root, output, sourceSha, run = runProcess }) {
     const undrainedGroup = error?.undrainedGroup;
     if (!fs.readFileSync(beforePath).equals(before)) {
       receipt.qualified = false;
+      receipt.sourceValidated = false;
       receipt.blocker = {
         code: 'SOURCE_MANIFEST_CHANGED',
         message: 'Source manifest changed',
@@ -617,6 +641,10 @@ async function qualify({ root, output, sourceSha, run = runProcess }) {
         ownedProcessGroup: undrainedGroup,
       };
     receipt.temporaryFixtureDrained = !fs.existsSync(scratch);
+    if (!receipt.processGroupsDrained || !receipt.temporaryFixtureDrained) {
+      receipt.qualified = false;
+      receipt.sourceValidated = false;
+    }
     fs.writeFileSync(
       path.join(output, 'receipt.json'),
       `${JSON.stringify(receipt, null, 2)}\n`,
@@ -632,16 +660,25 @@ if (require.main === module) {
     output: process.env.QUALIFICATION_OUTPUT,
     // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone workflow input; this command is not Turbo-cached.
     sourceSha: process.env.SOURCE_SHA,
+    phase: require('./sdk-qualification-phase').workflowPhase(process.env),
   })
     .then(({ receipt }) => {
       console.log(
         JSON.stringify({
+          phase: receipt.phase,
+          sourceValidated: receipt.sourceValidated,
           qualified: receipt.qualified,
           sourceSha: receipt.sourceSha,
           blocker: receipt.blocker || null,
         })
       );
-      process.exitCode = receipt.qualified ? 0 : 1;
+      process.exitCode = (
+        receipt.phase === 'source'
+          ? receipt.sourceValidated
+          : receipt.qualified
+      )
+        ? 0
+        : 1;
     })
     .catch((error) => {
       console.error(error.code || 'QUALIFICATION_FAILED');

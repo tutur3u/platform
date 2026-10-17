@@ -674,3 +674,14 @@ reassess compatibility. Strict Mintlify validation compiles docs and remains
 CI-only; a connectivity cancellation stack is not an MDX error or a passing
 validation result. Remove the compatibility pin only with upstream dependency
 and equivalent error/retry evidence, then require exact-source CI acceptance.
+
+## SDK release qualification phases
+
+See the [SDK package release contract](../../../../../apps/docs/build/devops/github-actions-runbook.mdx)
+for SOURCE versus PUBLIC qualification. Generated production release PRs validate
+source and pack controls without claiming registry acceptance. Production SDK
+preparation must run the strict registry/install/compiled-CLI qualifier after
+upstream readiness, then publish only the exact SHA256-bound qualified tarball.
+Never accept a SOURCE receipt as public acceptance or rebuild after qualification.
+Run `node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/package-release-readiness.test.js packages/sdk/scripts/portable-build.test.cjs`
+for focused controls; builds and real consumer acceptance belong to exact-SHA CI.

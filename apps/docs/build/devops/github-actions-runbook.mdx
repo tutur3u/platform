@@ -1017,6 +1017,35 @@ the acceptance gate; source-staging tests do not establish package delivery.
 Run `node --test packages/sdk/scripts/portable-build.test.cjs` for the boundary
 regressions, and require exact-commit compilation and install qualification in CI.
 
+SDK qualification has two explicit phases. Only same-repository pull requests from
+`release-please--branches--production` into `production` select SOURCE. That phase
+keeps the serial exact-head compile, portable closure/resource controls, manifest
+rewrite and archive inventory/integrity checks. Its receipt has `phase: source`,
+`sourceValidated: true` and `qualified: false`: it is source readiness, never public
+package acceptance. Ordinary PRs and manual qualification retain the full PUBLIC
+phase. This avoids requiring unpublished generated dependency versions before the
+release can reach the production-only publishers.
+
+After the existing bounded upstream package readiness gate, SDK production
+preparation runs PUBLIC qualification against the exact production SHA: exact
+public registry tuples, isolated npm consumer installation and compiled CLI/resource
+probes. Runtime, peer and optional workspace dependencies must be publicly available;
+embedded development-only dependencies are excluded from registry prerequisites.
+Missing dependencies fail closed, including optional dependencies that npm might
+otherwise omit. The preparation uploads the very tarball installed and probed,
+along with its receipt. The OIDC job requires a successful PUBLIC receipt for the
+same SHA, package name/version and SHA256 bytes before publishing that tarball.
+No rebuild or second pack follows qualification. No receipt, a SOURCE receipt,
+failed cleanup, changed SHA or changed tarball blocks publication. The existing
+bounded publisher defer/dispatch protocol remains the resume mechanism for missing
+upstream versions; do not manually publish prospective release versions.
+
+Run `node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/package-release-readiness.test.js packages/sdk/scripts/portable-build.test.cjs`
+for phase, cycle, runtime dependency, artifact binding and portable closure controls.
+These injected non-build controls do not replace exact-SHA hosted compilation and
+public-consumer acceptance. Release integration and production promotion retain
+separate owner approval and exact-commit CI gates.
+
 SDK packed-CLI qualification keeps install failure stream byte counts and SHA256
 commitments, without retaining stdout/stderr or the private npm cache. Its receipt
 also extracts at most eight package requests from strict npm E404 lines in the

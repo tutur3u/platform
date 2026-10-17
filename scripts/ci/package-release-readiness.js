@@ -137,7 +137,9 @@ function getWorkspaceDependencies({ packageDir, repoRoot }) {
   const dependencies = [];
   const seen = new Set();
 
-  for (const field of dependencyFields) {
+  for (const field of dependencyFields.filter(
+    (field) => field !== 'devDependencies'
+  )) {
     const packageDependencies = packageJson[field] ?? {};
 
     for (const [dependencyName, dependencyRange] of Object.entries(

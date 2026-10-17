@@ -131,7 +131,7 @@ test('discovers publishable packages from release workflow package paths', () =>
   );
 });
 
-test('collects publishable workspace dependencies across manifest fields', () => {
+test('collects installed workspace prerequisites and ignores dev-only dependencies', () => {
   const rootDir = createFixtureRoot();
 
   assert.deepEqual(
@@ -148,11 +148,6 @@ test('collects publishable workspace dependencies across manifest fields', () =>
         field: 'dependencies',
         packageName: '@tuturuuu/types',
         packageVersion: '1.0.0',
-      },
-      {
-        field: 'devDependencies',
-        packageName: '@tuturuuu/typescript-config',
-        packageVersion: '^3.0.0',
       },
     ]
   );
