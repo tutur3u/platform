@@ -7,8 +7,7 @@
 
 * **contacts:** preserve group check notes and fit mobile details ([#6240](https://github.com/tutur3u/platform/issues/6240)) ([8b743cd](https://github.com/tutur3u/platform/commit/8b743cdc8f8d33694f99f375a8eb6e12baaa3f87))
 * **contacts:** preserve group check notes and mobile layout ([0e2805a](https://github.com/tutur3u/platform/commit/0e2805a4dcdb13f89b57f42757fba012930fe74e))
-* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434))
-* **release:** reconcile production history before Contacts rollout ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
 
 ## [0.11.0](https://github.com/tutur3u/platform/compare/users-core-v0.10.0...users-core-v0.11.0) (2026-10-09)
 

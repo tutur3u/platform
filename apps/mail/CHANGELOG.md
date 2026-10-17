@@ -6,16 +6,14 @@
 ### Features
 
 * **mail:** connect Gmail and Outlook as personal email clients ([#5997](https://github.com/tutur3u/platform/issues/5997)) ([5abbe32](https://github.com/tutur3u/platform/commit/5abbe328188804006d0b3351dd110f609d4b3f9f))
-* **mail:** notify managed mailbox owners on inbound delivery ([560de78](https://github.com/tutur3u/platform/commit/560de780e828c10aebfd402b35935ffa876c2e64))
-* **mail:** notify managed mailbox owners on inbound delivery ([#6255](https://github.com/tutur3u/platform/issues/6255)) ([ecd1af7](https://github.com/tutur3u/platform/commit/ecd1af725a16f3eda572d463add037ec5d5a8f8e))
+* **mail:** notify managed mailbox owners on inbound delivery ([560de78](https://github.com/tutur3u/platform/commit/560de780e828c10aebfd402b35935ffa876c2e64)) ([#6255](https://github.com/tutur3u/platform/issues/6255)) ([ecd1af7](https://github.com/tutur3u/platform/commit/ecd1af725a16f3eda572d463add037ec5d5a8f8e))
 
 
 ### Bug Fixes
 
 * **journal:** reconcile context branch with updated parent ([80cf437](https://github.com/tutur3u/platform/commit/80cf437c9d494e3c0fc4ce9bb6d2fe19c655e2a0))
 * **mail:** reject missing live mailbox email ([b06aef6](https://github.com/tutur3u/platform/commit/b06aef6987eb8272dd260c97b7e12b335aee025b))
-* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434))
-* **release:** reconcile production history before Contacts rollout ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
 * **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
 
 ## [0.29.0](https://github.com/tutur3u/platform/compare/mail-v0.28.0...mail-v0.29.0) (2026-10-09)

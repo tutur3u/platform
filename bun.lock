@@ -50,7 +50,7 @@
     },
     "apps/ai": {
       "name": "@tuturuuu/ai-studio",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@tanstack/react-query": "^5.102.8",
@@ -88,7 +88,7 @@
     },
     "apps/apps": {
       "name": "@tuturuuu/apps",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
@@ -122,7 +122,7 @@
     },
     "apps/calendar": {
       "name": "@tuturuuu/calendar",
-      "version": "0.34.0",
+      "version": "0.35.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -186,7 +186,7 @@
     },
     "apps/chat": {
       "name": "@tuturuuu/chat",
-      "version": "0.27.0",
+      "version": "0.27.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@tanstack/react-query": "^5.102.8",
@@ -229,7 +229,7 @@
     },
     "apps/cms": {
       "name": "@tuturuuu/cms",
-      "version": "0.37.0",
+      "version": "0.37.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -312,7 +312,7 @@
     },
     "apps/contacts": {
       "name": "@tuturuuu/contacts",
-      "version": "0.28.0",
+      "version": "0.28.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -398,7 +398,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.40.0",
+      "version": "1.41.0",
       "devDependencies": {
         "@electric-sql/pglite": "0.5.8",
         "@electric-sql/pglite-pgtap": "0.0.9",
@@ -418,7 +418,7 @@
     },
     "apps/drive": {
       "name": "@tuturuuu/drive",
-      "version": "0.32.0",
+      "version": "0.32.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -468,7 +468,7 @@
     },
     "apps/external": {
       "name": "@tuturuuu/external",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "dependencies": {
         "@tanstack/react-query": "^5.102.8",
         "@tuturuuu/ai": "workspace:*",
@@ -498,7 +498,7 @@
     },
     "apps/finance": {
       "name": "@tuturuuu/finance",
-      "version": "0.34.0",
+      "version": "0.34.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -555,7 +555,7 @@
     },
     "apps/forms": {
       "name": "@tuturuuu/forms",
-      "version": "0.19.0",
+      "version": "0.19.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -614,7 +614,7 @@
     },
     "apps/git": {
       "name": "@tuturuuu/git",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@octokit/auth-app": "^8.3.1",
@@ -661,7 +661,7 @@
     },
     "apps/hive": {
       "name": "@tuturuuu/hive",
-      "version": "0.26.0",
+      "version": "0.26.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@formatjs/intl-localematcher": "^0.9.0",
@@ -732,7 +732,7 @@
     },
     "apps/infrastructure": {
       "name": "@tuturuuu/infrastructure",
-      "version": "0.33.0",
+      "version": "0.34.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@aws-sdk/client-s3": "3.1131.0",
@@ -804,7 +804,7 @@
     },
     "apps/inventory": {
       "name": "@tuturuuu/inventory",
-      "version": "0.36.0",
+      "version": "0.36.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@tanstack/react-query": "^5.102.8",
@@ -857,7 +857,7 @@
     },
     "apps/learn": {
       "name": "@tuturuuu/learn",
-      "version": "0.31.0",
+      "version": "0.31.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@gsap/react": "^2.1.2",
@@ -910,7 +910,7 @@
     },
     "apps/lettin": {
       "name": "@tuturuuu/lettin",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@tanstack/react-query": "^5.102.8",
@@ -952,7 +952,7 @@
     },
     "apps/mail": {
       "name": "@tuturuuu/mail",
-      "version": "0.29.0",
+      "version": "0.30.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@aws-sdk/client-s3": "3.1131.0",
@@ -1013,7 +1013,7 @@
     },
     "apps/meet": {
       "name": "@tuturuuu/meet",
-      "version": "0.34.0",
+      "version": "0.34.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@google/genai": "^2.22.0",
@@ -1085,7 +1085,7 @@
     },
     "apps/mind": {
       "name": "@tuturuuu/mind",
-      "version": "0.25.0",
+      "version": "0.25.1",
       "dependencies": {
         "@json-render/core": "^0.20.0",
         "@json-render/react": "^0.20.0",
@@ -1143,7 +1143,7 @@
     },
     "apps/nova": {
       "name": "@tuturuuu/nova",
-      "version": "0.42.0",
+      "version": "0.42.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -1211,7 +1211,7 @@
     },
     "apps/parley": {
       "name": "@tuturuuu/parley",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@google/genai": "^2.22.0",
@@ -1272,7 +1272,7 @@
     },
     "apps/pay": {
       "name": "@tuturuuu/pay",
-      "version": "0.21.0",
+      "version": "0.21.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@tanstack/react-query": "^5.102.8",
@@ -1315,7 +1315,7 @@
     },
     "apps/playground": {
       "name": "@tuturuuu/playground",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@tuturuuu/ai": "workspace:*",
@@ -1351,7 +1351,7 @@
     },
     "apps/rewise": {
       "name": "@tuturuuu/rewise",
-      "version": "0.44.0",
+      "version": "0.44.1",
       "dependencies": {
         "@deepgram/sdk": "^5.10.1",
         "@emotion/react": "^11.14.0",
@@ -1423,7 +1423,7 @@
     },
     "apps/shortener": {
       "name": "@tuturuuu/shortener",
-      "version": "0.24.0",
+      "version": "0.24.1",
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
@@ -1463,7 +1463,7 @@
     },
     "apps/storefront": {
       "name": "@tuturuuu/storefront",
-      "version": "0.31.0",
+      "version": "0.31.1",
       "dependencies": {
         "@tanstack/react-query": "^5.102.8",
         "@tuturuuu/auth": "workspace:*",
@@ -1555,7 +1555,7 @@
     },
     "apps/tasks": {
       "name": "@tuturuuu/tasks",
-      "version": "0.38.0",
+      "version": "0.39.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@formatjs/intl-localematcher": "^0.9.0",
@@ -1614,7 +1614,7 @@
     },
     "apps/teach": {
       "name": "@tuturuuu/teach",
-      "version": "0.27.0",
+      "version": "0.27.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@dnd-kit/core": "^6.3.1",
@@ -1670,7 +1670,7 @@
     },
     "apps/tools": {
       "name": "@tuturuuu/tools",
-      "version": "0.22.0",
+      "version": "0.22.1",
       "dependencies": {
         "@tanstack/react-query": "^5.102.8",
         "@tuturuuu/icons": "workspace:*",
@@ -1702,7 +1702,7 @@
     },
     "apps/track": {
       "name": "@tuturuuu/track",
-      "version": "0.30.0",
+      "version": "0.30.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -1953,7 +1953,7 @@
     },
     "packages/ai": {
       "name": "@tuturuuu/ai",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^5.0.82",
         "@ai-sdk/anthropic": "^4.0.53",
@@ -2074,7 +2074,7 @@
     },
     "packages/auth": {
       "name": "@tuturuuu/auth",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -2154,7 +2154,7 @@
     },
     "packages/email-service": {
       "name": "@tuturuuu/email-service",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.1131.0",
         "@tuturuuu/supabase": "workspace:*",
@@ -2234,7 +2234,7 @@
     },
     "packages/hive-ui": {
       "name": "@tuturuuu/hive-ui",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "dependencies": {
         "@react-three/drei": "^10.7.8",
         "@react-three/fiber": "^9.7.0",
@@ -2303,7 +2303,7 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.50.0",
+      "version": "0.51.0",
       "dependencies": {
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
@@ -2319,7 +2319,7 @@
     },
     "packages/inventory-core": {
       "name": "@tuturuuu/inventory-core",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
@@ -2372,7 +2372,7 @@
     },
     "packages/meet-core": {
       "name": "@tuturuuu/meet-core",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@google/genai": "^2.22.0",
@@ -2567,7 +2567,7 @@
     },
     "packages/programming-ui": {
       "name": "@tuturuuu/programming-ui",
-      "version": "0.0.0",
+      "version": "1.0.0",
       "dependencies": {
         "@monaco-editor/react": "4.7.0",
         "@tanstack/react-query": "5.102.8",
@@ -2593,7 +2593,7 @@
     },
     "packages/realtime": {
       "name": "@tuturuuu/realtime",
-      "version": "0.10.1",
+      "version": "0.10.2",
       "dependencies": {
         "lib0": "^0.2.119",
         "mdast-util-from-markdown": "^2.0.3",
@@ -2613,7 +2613,7 @@
     },
     "packages/satellite": {
       "name": "@tuturuuu/satellite",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
         "@radix-ui/react-dialog": "^1.1.23",
         "@radix-ui/react-tooltip": "^1.2.16",
@@ -2649,7 +2649,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "bin": {
         "ttr": "./dist/cli/index.js",
         "tuturuuu": "./dist/cli/index.js",
@@ -2677,7 +2677,7 @@
     },
     "packages/storage-core": {
       "name": "@tuturuuu/storage-core",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "dependencies": {
         "@aws-sdk/client-s3": "3.1131.0",
         "@aws-sdk/s3-request-presigner": "^3.1131.0",
@@ -2696,7 +2696,7 @@
     },
     "packages/supabase": {
       "name": "@tuturuuu/supabase",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "dependencies": {
         "@supabase/ssr": "^0.12.7",
         "@supabase/supabase-js": "^2.116.0",
@@ -2744,7 +2744,7 @@
     },
     "packages/tasks-ui": {
       "name": "@tuturuuu/tasks-ui",
-      "version": "0.17.1",
+      "version": "0.17.2",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -2838,7 +2838,7 @@
     },
     "packages/types": {
       "name": "@tuturuuu/types",
-      "version": "0.34.0",
+      "version": "0.35.0",
       "dependencies": {
         "@tiptap/react": "3.31.3",
         "react": "^19.2.8",
@@ -2861,7 +2861,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.39.0",
+      "version": "0.39.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -3029,7 +3029,7 @@
     },
     "packages/users-core": {
       "name": "@tuturuuu/users-core",
-      "version": "0.11.0",
+      "version": "0.11.1",
       "dependencies": {
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
@@ -3058,7 +3058,7 @@
     },
     "packages/users-ui": {
       "name": "@tuturuuu/users-ui",
-      "version": "0.7.8",
+      "version": "0.7.9",
       "dependencies": {
         "@tanstack/react-query": "^5.102.8",
         "@tuturuuu/icons": "workspace:*",
@@ -3090,7 +3090,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.35.0",
+      "version": "0.36.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@js-temporal/polyfill": "^0.5.1",

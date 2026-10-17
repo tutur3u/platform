@@ -5,33 +5,25 @@
 
 ### Features
 
-* **mail:** notify managed mailbox owners on inbound delivery ([560de78](https://github.com/tutur3u/platform/commit/560de780e828c10aebfd402b35935ffa876c2e64))
-* **mail:** notify managed mailbox owners on inbound delivery ([#6255](https://github.com/tutur3u/platform/issues/6255)) ([ecd1af7](https://github.com/tutur3u/platform/commit/ecd1af725a16f3eda572d463add037ec5d5a8f8e))
+* **mail:** notify managed mailbox owners on inbound delivery ([560de78](https://github.com/tutur3u/platform/commit/560de780e828c10aebfd402b35935ffa876c2e64)) ([#6255](https://github.com/tutur3u/platform/issues/6255)) ([ecd1af7](https://github.com/tutur3u/platform/commit/ecd1af725a16f3eda572d463add037ec5d5a8f8e))
 
 
 ### Bug Fixes
 
-* **calendar:** render mobile descriptions and fence meeting replies ([1db8e25](https://github.com/tutur3u/platform/commit/1db8e25d2655cf12498527ecadc100aeca30f3b1))
-* **calendar:** render mobile descriptions and fence meeting replies ([#6248](https://github.com/tutur3u/platform/issues/6248)) ([377dc44](https://github.com/tutur3u/platform/commit/377dc44aecf8105ad5b42e8ef8aee916722eab95))
+* **calendar:** render mobile descriptions and fence meeting replies ([1db8e25](https://github.com/tutur3u/platform/commit/1db8e25d2655cf12498527ecadc100aeca30f3b1)) ([#6248](https://github.com/tutur3u/platform/issues/6248)) ([377dc44](https://github.com/tutur3u/platform/commit/377dc44aecf8105ad5b42e8ef8aee916722eab95))
 * **calendar:** retain literal multiline inline code ([a993325](https://github.com/tutur3u/platform/commit/a9933259d85c76db90dc7093e34e10b70054625f))
 * **journal:** reconcile context branch with updated parent ([80cf437](https://github.com/tutur3u/platform/commit/80cf437c9d494e3c0fc4ce9bb6d2fe19c655e2a0))
-* **mobile:** align lock and native splash branding ([21e1549](https://github.com/tutur3u/platform/commit/21e15494da26c932c1578e827ee45108a40f5b72))
-* **mobile:** align lock and native splash branding ([#6273](https://github.com/tutur3u/platform/issues/6273)) ([39fbee3](https://github.com/tutur3u/platform/commit/39fbee304687055e6bfdb8c5c7a5db440bb8f6e5))
-* **mobile:** improve Assistant settings and draft editing ([dcbf225](https://github.com/tutur3u/platform/commit/dcbf2254e9670a38a873215dea9caa075fc79bf6))
-* **mobile:** improve Assistant settings and draft editing ([#6266](https://github.com/tutur3u/platform/issues/6266)) ([2fa1d90](https://github.com/tutur3u/platform/commit/2fa1d90b49ea85a2ff1e90683f524b9a24caab32))
-* **mobile:** preserve calendar geometry during date transitions ([66fc1c0](https://github.com/tutur3u/platform/commit/66fc1c0ed5b1e3013328ab5684ea3059ab11f99b))
-* **mobile:** preserve calendar geometry during date transitions ([#6257](https://github.com/tutur3u/platform/issues/6257)) ([e436c12](https://github.com/tutur3u/platform/commit/e436c1257e81aebab50fb2a2ace570e7750a8a22))
-* **mobile:** validate local model preparation ([9b58153](https://github.com/tutur3u/platform/commit/9b58153e242c288695049f717760601c1de562d0))
-* **mobile:** validate local model preparation ([#6250](https://github.com/tutur3u/platform/issues/6250)) ([4c61e72](https://github.com/tutur3u/platform/commit/4c61e726de196da388f92ac0588f36c6867b72f7))
-* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434))
-* **release:** reconcile production history before Contacts rollout ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+* **mobile:** align lock and native splash branding ([21e1549](https://github.com/tutur3u/platform/commit/21e15494da26c932c1578e827ee45108a40f5b72)) ([#6273](https://github.com/tutur3u/platform/issues/6273)) ([39fbee3](https://github.com/tutur3u/platform/commit/39fbee304687055e6bfdb8c5c7a5db440bb8f6e5))
+* **mobile:** improve Assistant settings and draft editing ([dcbf225](https://github.com/tutur3u/platform/commit/dcbf2254e9670a38a873215dea9caa075fc79bf6)) ([#6266](https://github.com/tutur3u/platform/issues/6266)) ([2fa1d90](https://github.com/tutur3u/platform/commit/2fa1d90b49ea85a2ff1e90683f524b9a24caab32))
+* **mobile:** preserve calendar geometry during date transitions ([66fc1c0](https://github.com/tutur3u/platform/commit/66fc1c0ed5b1e3013328ab5684ea3059ab11f99b)) ([#6257](https://github.com/tutur3u/platform/issues/6257)) ([e436c12](https://github.com/tutur3u/platform/commit/e436c1257e81aebab50fb2a2ace570e7750a8a22))
+* **mobile:** validate local model preparation ([9b58153](https://github.com/tutur3u/platform/commit/9b58153e242c288695049f717760601c1de562d0)) ([#6250](https://github.com/tutur3u/platform/issues/6250)) ([4c61e72](https://github.com/tutur3u/platform/commit/4c61e726de196da388f92ac0588f36c6867b72f7))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
 * **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
 
 
 ### Performance Improvements
 
-* **mobile:** limit Settings workspace rebuilds ([fb492ad](https://github.com/tutur3u/platform/commit/fb492ade8ad77c3a3e4387dc47de320998fd9b4b))
-* **mobile:** limit Settings workspace rebuilds ([#6246](https://github.com/tutur3u/platform/issues/6246)) ([58a453a](https://github.com/tutur3u/platform/commit/58a453ae17c62ce3c39cb9c38b0e251fbf4cecfc))
+* **mobile:** limit Settings workspace rebuilds ([fb492ad](https://github.com/tutur3u/platform/commit/fb492ade8ad77c3a3e4387dc47de320998fd9b4b)) ([#6246](https://github.com/tutur3u/platform/issues/6246)) ([58a453a](https://github.com/tutur3u/platform/commit/58a453ae17c62ce3c39cb9c38b0e251fbf4cecfc))
 
 ## [0.24.0](https://github.com/tutur3u/platform/compare/mobile-v0.23.0...mobile-v0.24.0) (2026-10-09)
 
