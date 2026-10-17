@@ -1062,3 +1062,16 @@ Repeat the same request actor authorization before each RPC/provider boundary an
 before response disclosure. Never retry an unknown provider outcome or replace
 its operation UUID. See the Infrastructure application docs for real SQL/Auth
 qualification gates and the Web restoration transport/runtime regression suites.
+
+
+## Legacy employee address migration surface
+
+Web owns the default-off `address-migrations/{inspect,migrate}` POST endpoints;
+Infrastructure uses the typed internal-api consumer. Reuse the existing confirmed
+root-admin Infrastructure authorizer and browser action/origin/fetch-site fences.
+Never accept a client actor. Readiness needs independent journal/provider reads;
+retained operations stay inspection-only. Keep actor/workspace recovery tuples
+and consume the single client dispatch before awaiting it; independently inspect
+even a completed mutation reply. No provider retry or replacement UUID after an
+unknown outcome. See the employee address migration runbook and Infrastructure
+product decision for supplier/mailbox/activation gates and regression coverage.
