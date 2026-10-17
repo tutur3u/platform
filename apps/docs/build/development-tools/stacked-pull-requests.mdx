@@ -1,7 +1,7 @@
 ---
 title: "Stacked Pull Requests"
 description: "Use native GitHub stacks for daily dependent PR work, cascading updates, and verified merges."
-updatedAt: "2026-10-03"
+updatedAt: "2026-10-17"
 ---
 
 ## Daily operating policy
@@ -259,11 +259,54 @@ gh stack merge <highest-verified-pr-number> --merge --yes
 Do not use a bare non-interactive `gh stack merge`: it can select the entire
 stack. Native merges support merge, squash, and rebase; `--merge` remains our
 normal choice. The extension checks only basic PR state before asking GitHub to
-merge, does not bypass requirements, and has no equivalent to
-`gh pr merge --match-head-commit`. Re-read all selected heads and gates just before
-invoking it; if any changed, repeat validation. Do not apply the ordinary admin
-merge fallback to native stacks. Custom API clients must use GitHub's asynchronous
-stack merge API, rather than the ordinary single-PR endpoint.
+merge and has no equivalent to `gh pr merge --match-head-commit`. Installed
+`gh stack` v0.2.1 also omits `bypass_rules`; its help's unsupported-bypass claim
+is a client limitation, not an API limitation. Re-read all selected heads and
+gates immediately before invoking it; changed pins require validation again.
+Do not apply the ordinary single-PR admin merge endpoint to native stacks.
+
+### Authorized native administrator merge
+
+Normal atomic merging of a verified prefix remains the default. For an explicitly
+user-authorized administrator merge blocked only by repository policy, prefer the
+supported [asynchronous REST merge API](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request-asynchronously)
+with boolean `bypass_rules: true` over dissolving native membership. GitHub's
+[stack merge requirements](https://docs.github.com/en/pull-requests/reference/stacked-pull-requests#merge-requirements)
+restrict bypass to the bottom PR; it cannot merge a higher prefix or whole stack.
+The OpenAPI's general downstack description does not remove this restriction.
+Confirm the authenticated actor has permission to bypass the applicable rules. Authorization
+and actor permission are both required; this is not permission to bypass CI or
+change rulesets/security settings. Retain the complete prefix's scope, successful
+applicable exact-head CI, review resolution and required-review evidence, and
+quiet windows before proceeding.
+
+Immediately re-read native membership, every selected head/base, trunk SHA and
+all gates against the retained pins. The API's `sha` guards only the selected
+target head, not each lower head or the trunk; any movement requires reassessment.
+Select only the current bottom unmerged PR with its pinned head:
+
+```bash
+gh api --method PUT repos/tutur3u/platform/pulls/<bottom-pr>/merge-async \
+  -H 'Accept: application/vnd.github+json' \
+  -H 'X-GitHub-Api-Version: 2026-03-10' \
+  -f sha=<bottom-head-sha> -f merge_method=merge -f merge_action=direct_merge \
+  -F bypass_rules=true
+```
+
+`-F` sends a boolean; `-f bypass_rules=true` would send a string. Retain the
+HTTP status/body and any operation UUID. HTTP 200 can mean already merged or
+already queued and may omit the UUID: inspect the body and actual PR state.
+Only when a UUID is present, read that exact operation with
+`GET /repos/tutur3u/platform/pulls/<bottom-pr>/merge-async/<uuid>`.
+HTTP 202, pending or enqueued means acceptance, not completion. Record the actual
+terminal result, verify the bottom PR merged and record the resulting trunk SHA
+before advancing.
+Re-read the remaining native group, heads, bases, diffs, exact-head CI, reviews and
+quiet windows before each successor; automatic rebase/retargeting can change pins.
+Repeat bypass only for a newly verified bottom PR within explicit authorization.
+On HTTP 409, inspect the existing UUID/options and actual server state without
+blind retry. Unknown or rejected outcomes remain unresolved. API schema support
+alone does not prove a successful merge.
 
 Merge queues may enqueue the selected group and split it across consecutive
 merge groups. Queued is not merged; wait for every selected PR's merged state and
