@@ -176,10 +176,15 @@ commit;`
         caseDiagnostic = caseResponseDiagnostic(
           response.status,
           value.code,
-          noStore
+          noStore,
+          caseDiagnostic.case
         );
       check(noStore);
       return { response, value };
+    }
+    function markCaseStatusCheck() {
+      if (caseDiagnostic?.check === 'no-store')
+        caseDiagnostic = { ...caseDiagnostic, check: 'status-code' };
     }
     async function denied(
       name: string,
@@ -189,8 +194,7 @@ commit;`
     ) {
       const updatesBefore = proxy.counts().updates;
       const result = await request(`${endpoint}/${dummy}/restore`, headers, {});
-      if (name === 'inactive-actor' && caseDiagnostic?.check === 'no-store')
-        caseDiagnostic = { ...caseDiagnostic, check: 'status-code' };
+      if (name === 'inactive-actor') markCaseStatusCheck();
       check(result.response.status === status && result.value.code === code);
       if (name === 'inactive-actor' || name === 'session-revoked')
         check(proxy.counts().updates === updatesBefore);
@@ -336,14 +340,23 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
       403,
       'forbidden'
     );
+    caseDiagnostic = {
+      case: 'self-action',
+      check: 'request',
+      status: null,
+      code: null,
+      noStore: null,
+    };
     const self = await request(`${endpoint}/${actor.id}/restore`, satellite, {
       confirmationEmail: actor.email,
       expectedRevision: 0,
     });
+    markCaseStatusCheck();
     check(
       self.response.status === 409 && self.value.code === 'employee_self_action'
     );
     cases.push('self-action');
+    caseDiagnostic = null;
     async function createTarget() {
       const email = `web-target-${randomUUID()}@tuturuuu.com`;
       const result = await request(

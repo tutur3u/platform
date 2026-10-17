@@ -461,3 +461,50 @@ test('inactive failure receipt preserves fixed response metadata without changin
     )
   );
 });
+
+test('self-action diagnostic requires its exact incomplete prefix and bounded fixed projection', () => {
+  const diagnostic = {
+    case: 'self-action',
+    check: 'status-code',
+    status: 400,
+    code: 'invalid_request',
+    noStore: true,
+  };
+  const failed = {
+    ...complete,
+    qualified: false,
+    routeAuthorizationProof: false,
+    phase: 'cases',
+    cases: sessionCases.slice(0, 17),
+    assertions: 52,
+    caseDiagnostic: diagnostic,
+  };
+  const receipt = webSessionReceipt(
+    JSON.stringify({
+      ...failed,
+      caseDiagnostic: {
+        ...diagnostic,
+        body: { token: 'private-token' },
+        url: 'private-url',
+      },
+    })
+  );
+  assert.deepEqual(receipt.caseDiagnostic, diagnostic);
+  assert.ok(!JSON.stringify(receipt).includes('private'));
+  assert.throws(() => assertQualifiedWebSession(receipt, 1, sourceSha, true));
+  for (const extra of [
+    { ...complete, caseDiagnostic: diagnostic },
+    { ...failed, phase: 'start' },
+    { ...failed, cases: sessionCases.slice(0, 12) },
+    { ...failed, cases: sessionCases.slice(0, 18) },
+    { ...failed, cases: sessionCases.slice(0, 17).reverse() },
+    { ...failed, caseDiagnostic: { ...diagnostic, check: 'ban-update' } },
+    { ...failed, caseDiagnostic: { ...diagnostic, raw: 'x'.repeat(8192) } },
+  ])
+    assert.throws(() => webSessionReceipt(JSON.stringify(extra)));
+  assert.equal(
+    webSessionReceipt(JSON.stringify({ ...failed, caseDiagnostic: null }))
+      .caseDiagnostic,
+    null
+  );
+});

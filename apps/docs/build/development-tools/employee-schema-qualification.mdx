@@ -164,6 +164,17 @@ access JWT has expired; the fixture retains its bearer and requires the current
 provider session check to reject it. A successful source test does not establish
 that hosted session-revocation case or all 24 Web cases.
 
+Failed self-action cases retain only the fixed case/stage, numeric HTTP status,
+no-store boolean, and an exact allowlisted error category. Unknown codes become
+`other`; bodies, identities, headers and tokens are discarded. The strict receipt
+accepts this metadata only with the exact completed prefix before self-action,
+never as qualification. The self-action expectation remains exactly
+`409 / employee_self_action`; the restoration handler regression verifies that
+self rejection precedes provider reads, updates and SQL transport. If a hosted
+response differs, inspect the fixed metadata before changing that contract.
+Passing the injected handler test does not identify an unretained hosted response
+or qualify the remaining CREATE/RESTORE cases.
+
 A fixture-only loopback proxy forwards requests to the real owned GoTrue and
 PostgREST services. After a successful provider unban it can discard exactly one
 acknowledgement; Web must return pending/inspect and reconcile the original

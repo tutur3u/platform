@@ -237,7 +237,7 @@ export function webSessionReceipt(text) {
         diagnostic !== null &&
         (value.qualified ||
           value.phase !== 'cases' ||
-          value.cases.length !== sessionCases.indexOf('inactive-actor') ||
+          value.cases.length !== sessionCases.indexOf(diagnostic.case) ||
           value.cases.some((entry, index) => entry !== sessionCases[index]))
       )
         throw 0;

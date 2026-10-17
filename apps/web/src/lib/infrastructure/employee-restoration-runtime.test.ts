@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
+  actor,
   context,
   email,
   inspection,
@@ -106,6 +107,20 @@ it('denies invalid input and cross-origin writes without account effects', async
   expect((await handlers.restore(crossOrigin, context())).status).toBe(403);
   expect(fixture.calls).toEqual([]);
   expect(fixture.provider.getUserById).not.toHaveBeenCalled();
+});
+it('rejects self restoration before provider reads, updates or SQL transport', async () => {
+  const response = await createEmployeeRestorationRequestHandlers(
+    fixture.deps
+  ).restore(request({ confirmationEmail: email, expectedRevision: 0 }), {
+    params: Promise.resolve({ userId: actor }),
+  });
+  expect(response.status).toBe(409);
+  expect(await response.json()).toMatchObject({ code: 'employee_self_action' });
+  expect(response.headers.get('cache-control')).toContain('no-store');
+  expect(fixture.authorize).toHaveBeenCalledOnce();
+  expect(fixture.provider.getUserById).not.toHaveBeenCalled();
+  expect(fixture.provider.updateUserById).not.toHaveBeenCalled();
+  expect(fixture.calls).toEqual([]);
 });
 it('stops a revoked actor before attempt/provider dispatch', async () => {
   fixture.setRevokeAt('begin_employee_restore');

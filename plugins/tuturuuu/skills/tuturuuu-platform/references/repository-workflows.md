@@ -190,6 +190,14 @@ required-MFA runtime tests inject provider responses; they do not prove hosted
 ban persistence or session invalidation after sign-out. Preserve the full case
 inventory and use the matching hosted qualification for those effects.
 
+For a failed self-action boundary, reconstruct the exact assertion ledger first:
+the request's no-store assertion precedes its status/code assertion. Preserve the
+exact409/employee_self_action contract; use the case-bound fixed diagnostic when
+the actual response is absent. Strict receipts must bind metadata to the exact
+incomplete case prefix, discard private extras and retain the size bound. A local
+restoration-handler regression proves self rejection before provider/SQL effects,
+not which earlier layer produced an unknown hosted response.
+
 Employee schema receipt/process gates execute in the uninstalled control root,
 while dependency-bearing Web support tests execute in installed source. Process
 controls must import the canonical dependency-free owner directly, use byte-checked

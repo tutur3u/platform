@@ -140,3 +140,120 @@ test('real disposable loopback statuses retain only fixed metadata', async () =>
     );
   }
 });
+
+test('self-action metadata keeps only exact fixed codes and rejects foreign progress', () => {
+  for (const code of [
+    'employee_self_action',
+    'invalid_request',
+    'UNAUTHENTICATED',
+    'forbidden',
+    'unauthorized',
+  ]) {
+    assert.equal(
+      caseResponseDiagnostic(409, code, true, 'self-action').code,
+      code
+    );
+    assert.equal(
+      caseResponseDiagnostic(409, code, true).code,
+      ['forbidden', 'unauthorized'].includes(code) ? code : 'other'
+    );
+  }
+  for (const code of [
+    'EMPLOYEE_SELF_ACTION',
+    'employee_self_action private-token',
+    'private@example.test',
+    'absent',
+    {},
+    'x'.repeat(100_000),
+  ])
+    assert.equal(
+      caseResponseDiagnostic(409, code, true, 'self-action').code,
+      'other'
+    );
+  const value = {
+    case: 'self-action',
+    check: 'status-code',
+    status: 409,
+    code: 'employee_self_action',
+    noStore: true,
+  };
+  assert.deepEqual(
+    projectCaseDiagnostic({
+      ...value,
+      body: { token: 'private-token' },
+      raw: 'x'.repeat(100_000),
+    }),
+    value
+  );
+  assert.ok(Buffer.byteLength(JSON.stringify(value)) < 256);
+  for (const extra of [
+    { check: 'ban-update' },
+    { status: '409' },
+    { status: 600 },
+    { code: 'private-token' },
+    { noStore: false },
+    { check: 'request' },
+    { case: 'private-actor' },
+  ])
+    assert.throws(() => projectCaseDiagnostic({ ...value, ...extra }));
+});
+
+test('self-action real loopback responses expose only fixed status/code/no-store fields', async () => {
+  const replies = [
+    [409, 'employee_self_action'],
+    [400, 'invalid_request'],
+    [401, 'UNAUTHENTICATED'],
+    [429, undefined],
+    [503, 'private-secret'],
+  ];
+  const server = createServer((request, response) => {
+    const [status, code] = replies[Number(request.url.slice(1))];
+    response.writeHead(status, {
+      'content-type': 'application/json',
+      'cache-control': 'no-store',
+    });
+    response.end(
+      JSON.stringify({
+        code,
+        token: 'private-secret',
+        email: 'private@example.test',
+      })
+    );
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  try {
+    for (const [index, [status, code]] of replies.entries()) {
+      const response = await fetch(
+        `http://127.0.0.1:${address.port}/${index}`,
+        { signal: AbortSignal.timeout(2000) }
+      );
+      const body = await response.json();
+      const diagnostic = caseResponseDiagnostic(
+        response.status,
+        body.code,
+        response.headers.get('cache-control') === 'no-store',
+        'self-action'
+      );
+      assert.deepEqual(diagnostic, {
+        case: 'self-action',
+        check: 'no-store',
+        status,
+        code:
+          code === undefined
+            ? 'absent'
+            : code === 'private-secret'
+              ? 'other'
+              : code,
+        noStore: true,
+      });
+      assert.ok(!JSON.stringify(diagnostic).includes('private'));
+    }
+  } finally {
+    await new Promise((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve()))
+    );
+  }
+});
