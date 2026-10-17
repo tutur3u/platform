@@ -73,7 +73,7 @@ export default function UserGroupPosts({
     openDialog,
     closeDialog,
     updateField,
-  } = usePostDialog();
+  } = usePostDialog(wsId, groupId);
 
   const upsertPostMutation = useUpsertPostMutation(groupId, wsId);
   const deletePostMutation = useDeletePostMutation(groupId, wsId);

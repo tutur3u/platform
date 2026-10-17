@@ -129,3 +129,21 @@ ledger, and its service role receives read access only. Activation requires a
 separate reviewed atomic caller conversion, current feature and actor-permission
 admission, and an accepted/rejected/unknown provider-outcome contract. No uncertain
 attempt may be treated as a safe automatic retry or discarded history.
+
+## Class-post dialog updates
+
+Contacts class-post dialogs update only fields changed since that dialog opened.
+Saving a title or content edit leaves untouched class-post notes on the server,
+including notes saved by another editor. Explicit empty or null notes still clear
+the field. Creation sends the complete title, content and notes payload. Create fields are
+locked while submission is pending so later edits cannot create a duplicate post.
+
+Failed saves retain the draft. A completed save closes only its submitted draft;
+newer edits or a different workspace, group or post stay open. This protects local
+edits and untouched fields, but concurrent edits to the same field still use the
+server's last write. It does not apply to attendance or recipient check notes and
+does not recover previously lost content.
+
+Regression coverage: Contacts `use-posts.test.tsx` exercises the real dialog hooks
+and source API transport for stale snapshots, explicit clears, failed saves,
+newer edits, target changes and full creation payloads.

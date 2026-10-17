@@ -27,6 +27,8 @@ export type UserGroupPost = DBUserGroupPost & {
 // Form input type for creating/editing posts (only fields that can be edited)
 export interface UserGroupPostFormInput {
   id?: string;
+  original?: Pick<UserGroupPostFormInput, 'title' | 'content' | 'notes'>;
+  target?: { wsId: string; groupId: string | undefined };
   title: string | null;
   content: string | null;
   notes: string | null;
@@ -146,23 +148,42 @@ export function useUpsertPostMutation(
   return useMutation({
     mutationFn: async (post: UserGroupPostFormInput) => {
       if (!groupId) throw new Error('Missing groupId');
-      const payload = {
+      const target = post.target ?? { wsId, groupId };
+      if (!target.groupId) throw new Error('Missing groupId');
+      const fields = {
         title: post.title,
         content: post.content,
         notes: post.notes,
       };
-
-      if (post.id) {
-        await updateUserGroupPost(wsId, groupId, post.id, payload);
-        return { kind: 'update' as const, id: post.id };
+      const payload: Partial<typeof fields> = {};
+      for (const field of ['title', 'content', 'notes'] as const) {
+        if (!post.original || fields[field] !== post.original[field]) {
+          payload[field] = fields[field];
+        }
       }
 
-      await createUserGroupPost(wsId, groupId, payload);
-      return { kind: 'create' as const, id: post.id ?? '' };
+      if (post.id) {
+        if (Object.keys(payload).length > 0) {
+          await updateUserGroupPost(
+            target.wsId,
+            target.groupId,
+            post.id,
+            payload
+          );
+        }
+        return { kind: 'update' as const, id: post.id, draft: post };
+      }
+
+      await createUserGroupPost(target.wsId, target.groupId, fields);
+      return { kind: 'create' as const, id: post.id ?? '', draft: post };
     },
-    onSuccess: () => {
+    onSuccess: (_, post) => {
       queryClient.invalidateQueries({
-        queryKey: ['group-posts', wsId, groupId],
+        queryKey: [
+          'group-posts',
+          post.target?.wsId ?? wsId,
+          post.target?.groupId ?? groupId,
+        ],
       });
       toast.success(t('common.saved'));
     },
@@ -198,29 +219,76 @@ export function useDeletePostMutation(
 }
 
 // Hook for managing post dialog state with performance optimization
-export function usePostDialog() {
+export function usePostDialog(wsId = '', groupId?: string) {
   const [isOpen, setIsOpen] = useState(false);
   const [post, setPost] = useState<UserGroupPostFormInput | undefined>();
 
-  const openDialog = useCallback((postToEdit?: UserGroupPost) => {
-    setPost(
-      postToEdit || {
-        title: '',
-        content: '',
-        notes: '',
-      }
-    );
-    setIsOpen(true);
-  }, []);
+  const currentDraft = useRef(post);
+  currentDraft.current = post;
+  const scope = `${wsId}:${groupId ?? ''}`;
+  const currentScope = useRef(scope);
+  currentScope.current = scope;
 
-  const closeDialog = useCallback(() => {
+  useEffect(() => {
+    void scope;
     setPost(undefined);
     setIsOpen(false);
-  }, []);
+  }, [scope]);
+
+  const openDialog = useCallback(
+    (postToEdit?: UserGroupPostFormInput) => {
+      const fields = postToEdit
+        ? {
+            title: postToEdit.title,
+            content: postToEdit.content,
+            notes: postToEdit.notes,
+          }
+        : { title: '', content: '', notes: '' };
+      setPost({
+        ...fields,
+        id: postToEdit?.id,
+        original: postToEdit ? fields : undefined,
+        target: { wsId, groupId },
+      });
+      setIsOpen(true);
+    },
+    [wsId, groupId]
+  );
+
+  const closeDialog = useCallback(
+    (saved?: { draft: UserGroupPostFormInput }) => {
+      if (saved) {
+        const submitted = saved.draft;
+        if (
+          `${submitted.target?.wsId}:${submitted.target?.groupId ?? ''}` !==
+          currentScope.current
+        )
+          return;
+        if (currentDraft.current !== submitted) {
+          setPost((current) =>
+            current?.target === submitted.target && current.id === submitted.id
+              ? {
+                  ...current,
+                  original: {
+                    title: submitted.title,
+                    content: submitted.content,
+                    notes: submitted.notes,
+                  },
+                }
+              : current
+          );
+          return;
+        }
+      }
+      setPost(undefined);
+      setIsOpen(false);
+    },
+    []
+  );
 
   // Optimized input change handler using functional updates
   const updateField = useCallback(
-    (field: keyof UserGroupPostFormInput, value: string) => {
+    (field: 'title' | 'content' | 'notes', value: string | null) => {
       setPost((prev) => {
         if (!prev) return prev;
         // Only update if value actually changed
