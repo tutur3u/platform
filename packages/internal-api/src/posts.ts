@@ -113,7 +113,7 @@ export function updateUserGroupPost(
   workspaceId: string,
   groupId: string,
   postId: string,
-  payload: Pick<UserGroupPostRecord, 'content' | 'notes' | 'title'>,
+  payload: Partial<Pick<UserGroupPostRecord, 'content' | 'notes' | 'title'>>,
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<{ message: string }>(

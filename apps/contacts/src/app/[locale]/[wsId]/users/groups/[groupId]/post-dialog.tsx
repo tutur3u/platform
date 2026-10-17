@@ -24,7 +24,7 @@ interface PostDialogProps {
   isOpen: boolean;
   post: UserGroupPostFormInput | undefined;
   onClose: () => void;
-  onFieldChange: (field: keyof UserGroupPostFormInput, value: string) => void;
+  onFieldChange: (field: 'title' | 'content' | 'notes', value: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
 }
@@ -86,70 +86,77 @@ export function PostDialog({
               : t('ws-user-groups.add_post_description')}
           </DialogDescription>
         </DialogHeader>
-        <Tabs
-          defaultValue="content"
-          className="flex min-h-0 flex-1 flex-col border-y"
+        <fieldset
+          disabled={isSubmitting && !post?.id}
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <TabsList className="m-2 grid h-auto grid-cols-3 sm:mx-6 sm:mt-4">
-            <TabsTrigger value="content" className="h-full">
-              {t('reports-hub.post_dialog_content')}
-            </TabsTrigger>
-            <TabsTrigger value="review" className="h-full">
-              {t('reports-hub.post_dialog_review')}
-            </TabsTrigger>
-            <TabsTrigger value="notes" className="h-full">
-              {t('reports-hub.post_dialog_notes')}
-            </TabsTrigger>
-          </TabsList>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6">
-            <TabsContent value="content" className="mt-2 grid gap-4">
-              <PostInputField
-                id="title"
-                label={t('post-email-data-table.post_title')}
-                limitMessage={t('ws-user-groups.shorten_field')}
-                maxLength={MAX_NAME_LENGTH}
-                name="title"
-                onChange={handleTitleChange}
-                placeholder={t('post-email-data-table.post_title_placeholder')}
-                value={post?.title || ''}
-              />
-              <PostTextareaField
-                id="content"
-                label={t('post-email-data-table.post_content')}
-                limitMessage={t('ws-user-groups.shorten_field')}
-                maxLength={MAX_LONG_TEXT_LENGTH}
-                name="content"
-                onChange={handleContentChange}
-                placeholder={t(
-                  'post-email-data-table.post_content_placeholder'
-                )}
-                value={post?.content || ''}
-              />
-            </TabsContent>
-            <TabsContent value="review" className="mt-2">
-              <div className="rounded-lg border p-4">
-                <p className="font-medium">
-                  {t('reports-hub.post_dialog_review_title')}
-                </p>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {t('reports-hub.post_dialog_review_description')}
-                </p>
-              </div>
-            </TabsContent>
-            <TabsContent value="notes" className="mt-2">
-              <PostTextareaField
-                id="notes"
-                label={t('post-email-data-table.notes')}
-                limitMessage={t('ws-user-groups.shorten_field')}
-                maxLength={MAX_MEDIUM_TEXT_LENGTH}
-                name="notes"
-                onChange={handleNotesChange}
-                placeholder={t('post-email-data-table.notes_placeholder')}
-                value={post?.notes || ''}
-              />
-            </TabsContent>
-          </div>
-        </Tabs>
+          <Tabs
+            defaultValue="content"
+            className="flex min-h-0 flex-1 flex-col border-y"
+          >
+            <TabsList className="m-2 grid h-auto grid-cols-3 sm:mx-6 sm:mt-4">
+              <TabsTrigger value="content" className="h-full">
+                {t('reports-hub.post_dialog_content')}
+              </TabsTrigger>
+              <TabsTrigger value="review" className="h-full">
+                {t('reports-hub.post_dialog_review')}
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="h-full">
+                {t('reports-hub.post_dialog_notes')}
+              </TabsTrigger>
+            </TabsList>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6">
+              <TabsContent value="content" className="mt-2 grid gap-4">
+                <PostInputField
+                  id="title"
+                  label={t('post-email-data-table.post_title')}
+                  limitMessage={t('ws-user-groups.shorten_field')}
+                  maxLength={MAX_NAME_LENGTH}
+                  name="title"
+                  onChange={handleTitleChange}
+                  placeholder={t(
+                    'post-email-data-table.post_title_placeholder'
+                  )}
+                  value={post?.title || ''}
+                />
+                <PostTextareaField
+                  id="content"
+                  label={t('post-email-data-table.post_content')}
+                  limitMessage={t('ws-user-groups.shorten_field')}
+                  maxLength={MAX_LONG_TEXT_LENGTH}
+                  name="content"
+                  onChange={handleContentChange}
+                  placeholder={t(
+                    'post-email-data-table.post_content_placeholder'
+                  )}
+                  value={post?.content || ''}
+                />
+              </TabsContent>
+              <TabsContent value="review" className="mt-2">
+                <div className="rounded-lg border p-4">
+                  <p className="font-medium">
+                    {t('reports-hub.post_dialog_review_title')}
+                  </p>
+                  <p className="mt-1 text-muted-foreground text-sm">
+                    {t('reports-hub.post_dialog_review_description')}
+                  </p>
+                </div>
+              </TabsContent>
+              <TabsContent value="notes" className="mt-2">
+                <PostTextareaField
+                  id="notes"
+                  label={t('post-email-data-table.notes')}
+                  limitMessage={t('ws-user-groups.shorten_field')}
+                  maxLength={MAX_MEDIUM_TEXT_LENGTH}
+                  name="notes"
+                  onChange={handleNotesChange}
+                  placeholder={t('post-email-data-table.notes_placeholder')}
+                  value={post?.notes || ''}
+                />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </fieldset>
         <DialogFooter className="p-4 sm:px-6">
           <Button
             type="submit"

@@ -16,6 +16,24 @@ vi.mock('next-intl', () => ({
 const emptyPost = { content: '', notes: '', title: '' };
 
 describe('PostDialog', () => {
+  it.each([undefined, 'post-1'])(
+    'locks only create fields while saving %s',
+    (id) => {
+      render(
+        <PostDialog
+          isOpen
+          isSubmitting
+          onClose={vi.fn()}
+          onFieldChange={vi.fn()}
+          onSubmit={vi.fn()}
+          post={{ ...emptyPost, id }}
+        />
+      );
+      const title = screen.getByLabelText('post-email-data-table.post_title');
+      if (id) expect(title).toBeEnabled();
+      else expect(title).toBeDisabled();
+    }
+  );
   it('shows and enforces the same field limits as the post API', () => {
     const onSubmit = vi.fn();
 
