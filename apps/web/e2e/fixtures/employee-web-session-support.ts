@@ -20,6 +20,10 @@ export function resolveNextCli(
   return createRequire(packageJson).resolve('next/dist/bin/next');
 }
 
+export function webSessionOrigin(port: number) {
+  return `http://localhost:${port}`;
+}
+
 export function webSessionStartCommand(port: number) {
   return {
     cwd: fileURLToPath(new URL('../../', import.meta.url)),

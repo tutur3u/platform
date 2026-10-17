@@ -26,6 +26,7 @@ import {
   sql,
   ssrSession,
   stop,
+  webSessionOrigin,
   webSessionStartCommand,
 } from './employee-web-session-support';
 
@@ -66,7 +67,7 @@ async function main() {
     assert.ok(address && typeof address !== 'string');
     const port = address.port;
     await new Promise<void>((resolve) => portServer.close(() => resolve()));
-    const origin = `http://127.0.0.1:${port}`;
+    const origin = webSessionOrigin(port);
     const secret = randomBytes(48).toString('base64url');
     // Only this child receives activation flags and disposable credentials.
     const env = {

@@ -198,6 +198,14 @@ incomplete case prefix, discard private extras and retain the size bound. A loca
 restoration-handler regression proves self rejection before provider/SQL effects,
 not which earlier layer produced an unknown hosted response.
 
+Use the fixture's localhost HTTP origin even when the Next listener binds IPv4
+loopback. Next normalizes 127.0.0.1 request URLs to localhost; an IP Origin then
+fails the exact origin check before self-action/CREATE. Reproduce with actual
+NextRequest plus the handler, and verify finite localhost-to-IPv4 transport.
+Audit creator permission bypass before changing default grants: restored MEMBER
+membership can authorize the fixture creator without those grants. Keep exact
+self409/CREATE201 expectations and require hosted acceptance after source repair.
+
 Employee schema receipt/process gates execute in the uninstalled control root,
 while dependency-bearing Web support tests execute in installed source. Process
 controls must import the canonical dependency-free owner directly, use byte-checked

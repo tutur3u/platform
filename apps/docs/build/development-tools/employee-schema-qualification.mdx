@@ -175,6 +175,18 @@ response differs, inspect the fixed metadata before changing that contract.
 Passing the injected handler test does not identify an unretained hosted response
 or qualify the remaining CREATE/RESTORE cases.
 
+Use `http://localhost:<port>` consistently for the fixture's Web URL and Origin,
+while the server continues binding to `127.0.0.1`. Next 16 normalizes loopback IP
+request URLs to `localhost`; sending an IP Origin alongside that normalized URL
+fails the unchanged origin guard with `403 / forbidden` before self-action or
+CREATE. Actual NextRequest handler controls reproduce the mismatch and require
+409 for self-action and 201 for CREATE with the matching localhost Origin. A
+finite transport control verifies that the localhost URL reaches the IPv4-only
+listener. These controls use injected authorization/journal dependencies and do
+not replace matching hosted Web24 acceptance. Do not repair this origin mismatch
+by granting permissions: the fixture creator retains creator permissions once
+its actual MEMBER membership is restored, independently of default grants.
+
 A fixture-only loopback proxy forwards requests to the real owned GoTrue and
 PostgREST services. After a successful provider unban it can discard exactly one
 acknowledgement; Web must return pending/inspect and reconcile the original

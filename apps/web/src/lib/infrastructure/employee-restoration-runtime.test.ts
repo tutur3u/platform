@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   actor,
@@ -122,6 +123,36 @@ it('rejects self restoration before provider reads, updates or SQL transport', a
   expect(fixture.provider.updateUserById).not.toHaveBeenCalled();
   expect(fixture.calls).toEqual([]);
 });
+it.each([
+  ['127.0.0.1', 403, 'forbidden'],
+  ['localhost', 409, 'employee_self_action'],
+])(
+  'checks the normalized Next origin before self action for %s',
+  async (host, status, code) => {
+    const origin = `http://${host}:1777`;
+    const incoming = new NextRequest(`${origin}/api/restore`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-tuturuuu-account-action': '1',
+        origin,
+        'sec-fetch-site': 'same-origin',
+      },
+      body: JSON.stringify({ confirmationEmail: email, expectedRevision: 0 }),
+    });
+    expect(new URL(incoming.url).origin).toBe('http://localhost:1777');
+    const response = await createEmployeeRestorationRequestHandlers(
+      fixture.deps
+    ).restore(incoming, { params: Promise.resolve({ userId: actor }) });
+    expect(response.status).toBe(status);
+    expect(await response.json()).toMatchObject({ code });
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(fixture.authorize).toHaveBeenCalledOnce();
+    expect(fixture.provider.getUserById).not.toHaveBeenCalled();
+    expect(fixture.provider.updateUserById).not.toHaveBeenCalled();
+    expect(fixture.calls).toEqual([]);
+  }
+);
 it('stops a revoked actor before attempt/provider dispatch', async () => {
   fixture.setRevokeAt('begin_employee_restore');
   expect((await run()).status).toBe(403);

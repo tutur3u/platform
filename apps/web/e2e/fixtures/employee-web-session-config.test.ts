@@ -1,15 +1,18 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { NextRequest } from 'next/server';
 import { it as test } from 'vitest';
 import {
   command,
   resolveNextCli,
   stop,
+  webSessionOrigin,
   webSessionStartCommand,
 } from './employee-web-session-support';
 
@@ -27,6 +30,40 @@ test('Web start uses the app cwd without a second app directory argument', () =>
     '--port',
     '49152',
   ]);
+});
+
+test('fixture origin matches Next normalization and reaches its IPv4 loopback listener', async () => {
+  let seenOrigin: string | undefined;
+  let seenHost: string | undefined;
+  const server = createServer((request, response) => {
+    seenOrigin = request.headers.origin;
+    seenHost = request.headers.host;
+    response.writeHead(204).end();
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  try {
+    const origin = webSessionOrigin(address.port);
+    assert.equal(new URL(origin).hostname, 'localhost');
+    const incoming = new NextRequest(`${origin}/api/restore`, {
+      headers: { origin },
+    });
+    assert.equal(new URL(incoming.url).origin, origin);
+    const response = await fetch(origin, {
+      headers: { origin },
+      signal: AbortSignal.timeout(2000),
+    });
+    assert.equal(response.status, 204);
+    assert.equal(seenOrigin, origin);
+    assert.equal(seenHost, new URL(origin).host);
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+      server.closeAllConnections();
+    });
+  }
 });
 
 test('actual Next config loader selects source imports only with the app cwd', async () => {
