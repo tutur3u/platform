@@ -324,6 +324,13 @@ Rules:
   `/api/:path*` → web proxy — every proxied API call 404s with
   `workspaceId: 'v1'`. Put non-migrated-route redirects in `proxy.ts` middleware,
   which returns early for `/api` and therefore cannot shadow the proxy.
+- A local dynamic API route can also shadow a Web-owned static subtree and return
+  405 for unsupported methods before fallback rewrites. Route only the Web-owned
+  subtree through `beforeFiles`; verify its zero-segment base and descendants with
+  installed Next path matchers, while preserving local siblings. Infrastructure's
+  employee routing regression in `apps/infrastructure/next.config.test.ts` covers
+  this case. Keep session/API guards unchanged and verify the exact app build in
+  CI plus production routing after authorized deployment.
 - Route ownership is an explicit list (contacts: `CONTACTS_OWNED_ROUTE_PREFIXES`).
   Add an entry when you migrate a module, or the middleware bounces the new route
   straight back to web. Beware prefix-vs-exact: a bare `users` entry that
