@@ -3,6 +3,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   assertQualifiedHttp,
   httpQualificationReceipt,
@@ -16,6 +17,7 @@ import {
   schemaFailureDiagnostic as foundationFailureDiagnostic,
   schemaReceipt,
   selectAddressMigration,
+  selectFeedback,
   selectSchemaPackets,
 } from './employee-schema-tap.mjs';
 import { runOwnedSessionProcess } from './employee-web-session-process.mjs';
@@ -24,6 +26,17 @@ import {
   selectWebSessionRuntime,
   webSessionReceipt,
 } from './employee-web-session-receipt.mjs';
+import {
+  buildCausalInventory,
+  causalDeadline,
+  causalPins,
+  feedbackCausalReceipt,
+  selectFeedbackCausal,
+} from './product-feedback-causal-controls.mjs';
+import {
+  finishFeedbackCausalPhase,
+  runFeedbackCausalPhase,
+} from './product-feedback-causal-runner.mjs';
 import { ensureSupabaseBinary } from './run-supabase.js';
 import {
   chooseAvailablePortBlock,
@@ -66,10 +79,16 @@ if (
 const addressMigration = selectAddressMigration(
   process.env.EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION
 );
+const feedback = selectFeedback(process.env.EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK);
+const feedbackCausal = selectFeedbackCausal(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL,
+  feedback
+);
 const selectedPackets = selectSchemaPackets(
   journal,
   personalJournal,
-  addressMigration
+  addressMigration,
+  feedback
 );
 const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
   foundationFailureDiagnostic(
@@ -78,7 +97,8 @@ const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
     result,
     journal,
     personalJournal,
-    addressMigration
+    addressMigration,
+    feedback
   );
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
@@ -96,6 +116,30 @@ if (
   }).trim()
 )
   throw new Error('Tracked source differs from the selected commit');
+if (feedbackCausal) {
+  const controlRoot = fileURLToPath(new URL('../../../', import.meta.url));
+  const controlSha = process.env.EMPLOYEE_SCHEMA_CONTROL_SHA;
+  if (
+    !/^[a-f0-9]{40}$/u.test(controlSha ?? '') ||
+    controlSha === '0'.repeat(40) ||
+    execFileSync('git', ['-C', controlRoot, 'rev-parse', 'HEAD'], {
+      encoding: 'utf8',
+      timeout: 10000,
+    }).trim() !== controlSha ||
+    execFileSync(
+      'git',
+      ['-C', controlRoot, 'status', '--porcelain', '--untracked-files=no'],
+      { encoding: 'utf8', timeout: 10000 }
+    ).trim()
+  )
+    throw new Error('Feedback causal control checkout differs');
+}
+const causalInventory = feedbackCausal
+  ? buildCausalInventory(
+      readFileSync(path.join(root, causalPins.migration), 'utf8'),
+      readFileSync(path.join(root, causalPins.fixture), 'utf8')
+    )
+  : null;
 const identity = deriveIsolatedIdentity({
   headSha: head,
   repositoryPath: root,
@@ -219,7 +263,11 @@ let failureDiagnostic = null;
 let generatedTypesSha256 = null;
 let httpQualification = null;
 let webSessionQualification = null;
+let causalState = null;
+let causalRemaining = null;
 const bounded = (command, args, cwd, timeout, input, allowFailure = false) => {
+  if (causalRemaining && !['cleanup', 'cleanup-proof'].includes(currentPhase))
+    timeout = causalRemaining(timeout);
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
@@ -239,15 +287,48 @@ const bounded = (command, args, cwd, timeout, input, allowFailure = false) => {
     throw new Error('Bounded employee schema command failed');
   }
   return allowFailure
-    ? { stdout: result.stdout, status: result.status }
+    ? { stdout: result.stdout, stderr: result.stderr, status: result.status }
     : result.stdout;
 };
 const excluded =
   (httpRuntime ? '' : 'gotrue,kong,postgrest,') +
   'realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
+const causalRunSQL = (sql, timeout) =>
+  bounded(
+    'docker',
+    [
+      'exec',
+      '-i',
+      '--env',
+      'PGOPTIONS=-c statement_timeout=45000 -c lock_timeout=3000',
+      `supabase_db_${metadata.projectId}`,
+      'psql',
+      '-X',
+      '-A',
+      '-t',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-U',
+      'supabase_admin',
+      '--dbname',
+      'postgres',
+      '-f',
+      '-',
+    ],
+    metadata.disposableRoot,
+    timeout,
+    sql,
+    true
+  );
 const runner = async (command, args, cwd) => {
   try {
     if (args.includes('test')) {
+      if (feedbackCausal) {
+        currentPhase = 'feedback-causal';
+        causalState = { inventory: causalInventory, observations: [] };
+        causalRemaining = causalDeadline();
+        runFeedbackCausalPhase(causalState, causalRunSQL, causalRemaining);
+      }
       const container = `supabase_db_${metadata.projectId}`;
       for (const [position, [file, count]] of selectedPackets.entries()) {
         packetOrdinal = position + 1;
@@ -309,7 +390,12 @@ const runner = async (command, args, cwd) => {
           throw new Error('Employee packet TAP contract failed');
         }
       }
-      if (journal || personalJournal) {
+      if (feedbackCausal) {
+        currentPhase = 'feedback-causal';
+        packetOrdinal = 0;
+        finishFeedbackCausalPhase(causalState, causalRunSQL, causalRemaining);
+      }
+      if (journal || personalJournal || feedback) {
         packetOrdinal = 0;
         currentPhase = 'typegen';
         const types = bounded(
@@ -466,6 +552,7 @@ const receipt = {
     journal,
     personalJournal,
     addressMigration,
+    feedback,
   }),
   fixtureHashes,
   generatedTypesSha256,
@@ -488,6 +575,16 @@ const receipt = {
   webSessionQualification,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
+if (feedbackCausal)
+  receipt.feedbackCausal = feedbackCausalReceipt({
+    state: causalState,
+    sourceSha,
+    controlSha: process.env.EMPLOYEE_SCHEMA_CONTROL_SHA,
+    schemaQualified: receipt.schemaQualified,
+    generatedTypesSha256,
+    lifecycleCode,
+    cleanupSucceeded,
+  });
 writeFileSync(
   path.join(receiptDirectory, 'qualification.json'),
   `${JSON.stringify(receipt, null, 2)}\n`,
@@ -499,4 +596,8 @@ console.log(
     assertions: receipt.assertions,
   })
 );
-process.exitCode = receipt.schemaQualified ? 0 : 1;
+process.exitCode =
+  receipt.schemaQualified &&
+  (!feedbackCausal || receipt.feedbackCausal.causalQualified)
+    ? 0
+    : 1;

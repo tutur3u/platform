@@ -14632,6 +14632,74 @@ export type Database = {
           },
         ];
       };
+      product_feedback_receipts: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          id: string;
+          idempotency_key: string;
+          payload_hash: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          id: string;
+          idempotency_key: string;
+          payload_hash: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          id?: string;
+          idempotency_key?: string;
+          payload_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'product_feedback_receipts_id_fkey';
+            columns: ['id'];
+            isOneToOne: true;
+            referencedRelation: 'product_feedback_reports';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      product_feedback_reports: {
+        Row: {
+          actor_id: string;
+          archived_at: string | null;
+          body: string;
+          created_at: string;
+          id: string;
+          revision: number;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          archived_at?: string | null;
+          body: string;
+          created_at?: string;
+          id?: string;
+          revision?: number;
+          status?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          actor_id?: string;
+          archived_at?: string | null;
+          body?: string;
+          created_at?: string;
+          id?: string;
+          revision?: number;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profile_banner_operations: {
         Row: {
           created_at: string;
@@ -19008,6 +19076,10 @@ export type Database = {
       };
       assert_finance_chart_date_range: {
         Args: { _end_date: string; _max_days: number; _start_date: string };
+        Returns: undefined;
+      };
+      assert_product_feedback_staff: {
+        Args: { p_actor: string };
         Returns: undefined;
       };
       assert_tutoring_absence_actor: {
@@ -46075,6 +46147,10 @@ export type Database = {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: Json;
       };
+      check_product_feedback_staff_eligibility: {
+        Args: { p_actor: string };
+        Returns: Json;
+      };
       check_request: { Args: never; Returns: undefined };
       check_ws_creator:
         | { Args: { ws_id: string }; Returns: boolean }
@@ -47486,6 +47562,11 @@ export type Database = {
           username: string;
         }[];
       };
+      get_product_feedback_receipt: { Args: { p_key: string }; Returns: Json };
+      get_product_feedback_staff: {
+        Args: { p_actor: string; p_id: string };
+        Returns: Json;
+      };
       get_rate_limit_trust_decision: {
         Args: {
           p_api_key_id?: string;
@@ -48798,6 +48879,18 @@ export type Database = {
           notification_type: string;
         }[];
       };
+      list_product_feedback_staff: {
+        Args: {
+          p_actor: string;
+          p_before: string;
+          p_before_id: string;
+          p_limit: number;
+          p_query: string;
+          p_status: string;
+          p_view: string;
+        };
+        Returns: Json;
+      };
       list_trusted_subjects_for_cache: {
         Args: { p_min_multiplier?: number };
         Returns: {
@@ -49470,6 +49563,15 @@ export type Database = {
       strict_text_field_char_limit: {
         Args: { _column_name: string; _table_name: string };
         Returns: number;
+      };
+      submit_product_feedback: {
+        Args: {
+          p_actor: string;
+          p_body: string;
+          p_key: string;
+          p_title: string;
+        };
+        Returns: Json;
       };
       sum_quiz_scores: {
         Args: { p_set_id: string };
