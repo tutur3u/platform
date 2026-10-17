@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync } from 'node:fs';
+import { constants, existsSync } from 'node:fs';
 import {
+  access,
   chmod,
   mkdir,
+  open,
   readFile,
   rename,
   rm,
@@ -238,6 +240,57 @@ export async function uninstallResources(home: string) {
   });
 }
 
+function resourceLauncher(home: string, entry: string, name: string) {
+  return `#!/bin/sh\n# Managed by ttr resources\nTTR_RESOURCES_HOME=${shellQuote(home)} exec ${shellQuote(process.execPath)} ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
+}
+
+async function validResourceShim(path: string, expected: string) {
+  try {
+    const file = await open(
+      path,
+      constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW
+    );
+    try {
+      const stat = await file.stat();
+      if (
+        !stat.isFile() ||
+        stat.size !== Buffer.byteLength(expected) ||
+        (stat.mode & 0o111) === 0
+      )
+        return false;
+      await access(path, constants.X_OK);
+      return (await file.readFile('utf8')) === expected;
+    } finally {
+      await file.close();
+    }
+  } catch {
+    return false;
+  }
+}
+
+export async function installedResourceShims(
+  home: string,
+  entry = join(
+    __dirname,
+    __filename.endsWith('.ts') ? 'resources-entry.ts' : 'resources-entry.js'
+  )
+) {
+  entry = stableResourceEntry(entry);
+  const bin = join(home, 'bin');
+  for (const name of resourceShims) {
+    const path = join(bin, name);
+    const valid = await validResourceShim(
+      path,
+      resourceLauncher(home, entry, name)
+    );
+    if (!valid)
+      throw new Error(
+        'Resource shims are missing, stale, or malformed. Run ttr resources setup --shell none explicitly before retrying; inspect queue occupancy before updating an installation.'
+      );
+  }
+  return bin;
+}
+
 export async function installResourceShims(
   home: string,
   entry = join(
@@ -248,8 +301,6 @@ export async function installResourceShims(
   entry = stableResourceEntry(entry);
   const bin = join(home, 'bin');
   await mkdir(bin, { recursive: true, mode: 0o700 });
-  const launcher = (name: string) =>
-    `#!/bin/sh\n# Managed by ttr resources\nTTR_RESOURCES_HOME=${shellQuote(home)} exec ${shellQuote(process.execPath)} ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
   // Never overwrite a file that did not come from this installer.
   for (const name of resourceShims) {
     const path = join(bin, name);
@@ -263,7 +314,9 @@ export async function installResourceShims(
   for (const name of resourceShims) {
     const path = join(bin, name);
     const temporary = `${path}.${randomUUID()}.tmp`;
-    await writeFile(temporary, launcher(name), { mode: 0o700 });
+    await writeFile(temporary, resourceLauncher(home, entry, name), {
+      mode: 0o700,
+    });
     await chmod(temporary, 0o700);
     await rename(temporary, path);
   }

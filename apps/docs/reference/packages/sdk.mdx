@@ -122,6 +122,19 @@ execution, installed CLI availability, and hosted SDK packaging.
   </Card>
 </CardGroup>
 
+## Type-check and declaration output
+
+The SDK `type-check` command uses `tsconfig.typecheck.json`, which extends the
+public build configuration to retain its source files and semantic checking options.
+It disables emit, composite output and incremental state, so it owns no `dist`
+files even when the CI task graph also schedules the SDK build. The portable
+`build` remains responsible for JavaScript and public declarations; its configuration
+and staging are unchanged. `sdk-typecheck-boundary.test.ts` checks resolved compiler
+coverage/options and exercises a disposable type error and successful check without
+output files. Exact-head CI must verify both type-check and the real portable build.
+This structural boundary does not identify the writer behind a historical
+`ENOTEMPTY` failure.
+
 ## CLI
 
 For offline request ledgers and separate operational notes, see
@@ -1472,6 +1485,8 @@ ttr resources status
 ttr resources run -- bun run test
 ttr resources monitor --seconds 60 > resource-samples.jsonl
 ```
+
+Explicit `run` requires setup-provisioned executable shims matching the current runtime and resource entry. It only reads and validates those launchers; it never installs, rewrites, chmods, or activates them. Missing, stale, malformed, or nonexecutable shims fail before queue admission and workload launch, with an explicit `ttr resources setup --shell none` instruction. Inspect occupancy and obtain installation authority before setup; a source update does not authorize replacing an installed scheduler. Resource commands dispatch before general authenticated CLI imports. This avoids those eager imports but does not establish the cause or repair of any host-specific startup hang. Regression coverage lives in `resources-provisioning.test.ts` and `entry-dispatch.test.ts`; existing lane tests retain FIFO, pressure, and owned cancellation/drain coverage.
 
 Setup includes linked Git worktrees. One canonical per-user FIFO queue defaults to one lane; missing `validationLanes` in version-1 configurations means one. Optional `setup --lanes 2` admits two commands only when the configured and host worker budgets permit at least one worker per lane. `--workers` sets the aggregate Vitest/Cargo total, split across lanes with rounding down. Turbo runs one task per lane, and explicit Vitest/Cargo flags are capped. Nested commands verify a live ancestor among all owners and inherit its caps. `--dry-run` inspects changes without writing.
 

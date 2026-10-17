@@ -33,6 +33,8 @@ ttr resources setup --root <repo> --shell zsh
 ttr resources status --json
 ```
 
+Explicit `run` validates and reuses existing executable shims without provisioning. Missing, stale or malformed launchers fail before admission with an explicit setup instruction. Setup is the provisioning boundary; inspect occupancy and obtain installation authority before replacing an installed scheduler. An early lightweight resource dispatch avoids general CLI imports but source review does not prove a host startup repair.
+
 Repeat `--root` for other repositories. Linked Git worktrees inherit repository
 scope. Zsh/Bash hooks apply to new shells; `--shell none` avoids shell edits and
 supports explicit queue use. Installation backs up shell files. Setup does not

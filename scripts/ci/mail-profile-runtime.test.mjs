@@ -134,6 +134,18 @@ test('fresh hosted setup queues through the lightweight resources entry before S
     workflow,
     /bun packages\/sdk\/src\/cli\/resources-entry\.ts run -- node scripts\/ci\/mail-profile-runtime\.mjs "\$PROFILE_EXPECTED_HEAD"/u
   );
+  const provision =
+    'bun packages/sdk/src/cli/resources-entry.ts setup --root "$GITHUB_WORKSPACE" --shell none';
+  assert.equal(workflow.split(provision).length - 1, 1);
+  const provisionIndex = workflow.indexOf(provision);
+  const queueCalls = [
+    ...workflow.matchAll(
+      /bun packages\/sdk\/src\/cli\/resources-entry\.ts run --/gu
+    ),
+  ];
+  assert.equal(queueCalls.length, 2);
+  for (const call of queueCalls) assert.ok(provisionIndex < call.index);
+  assert.ok(workflow.indexOf('runs-on: ubuntu-latest') < provisionIndex);
   assert.doesNotMatch(workflow, /bun ttr resources/u);
   const entry = fs.readFileSync(
     new URL('../../packages/sdk/src/cli/resources-entry.ts', import.meta.url),

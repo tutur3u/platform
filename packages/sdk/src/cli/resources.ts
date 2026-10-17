@@ -26,7 +26,7 @@ import {
   spawnResourceCommand,
 } from './resources-queue';
 import {
-  installResourceShims,
+  installedResourceShims,
   setupResources,
   uninstallResources,
 } from './resources-setup';
@@ -39,7 +39,7 @@ Usage: ttr resources <setup|status|monitor|run|enable|disable|uninstall> [option
   setup --root <path>     opt in a project and its Git worktrees (repeat --root)
   status [--json]         show machine capacity, limits, owner and waiting jobs
   monitor --seconds 60   capture memory/process samples every 5 seconds (JSONL)
-  run -- COMMAND ARGS    queue any finite command; no login or setup required
+  run -- COMMAND ARGS    queue any finite command; explicit setup required
   enable | disable       toggle automatic admission for future commands
   uninstall              remove owned shell hooks/shims; preserve backups
 
@@ -123,7 +123,7 @@ export async function runResourcesCommand(argv: string[]) {
       : command;
     const env = enabled ? resourceEnvironment(settings) : { ...process.env };
     if (enabled && !shim) {
-      const bin = await installResourceShims(home);
+      const bin = await installedResourceShims(home);
       env.PATH = `${bin}:${env.PATH || ''}`;
     }
     process.exitCode =

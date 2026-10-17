@@ -79,6 +79,8 @@ jobs:
         run: /usr/bin/python3 scripts/ci/mail-profile-runtime-sandbox-install.test.py
       - name: Check fixture lifecycle contract
         run: node --test scripts/ci/mail-profile-runtime.test.mjs scripts/ci/mail-profile-runtime-setup.test.mjs scripts/ci/mail-profile-runtime-paths.test.mjs scripts/ci/mail-profile-startup-diagnostics.test.mjs scripts/ci/mail-profile-runtime-sandbox.test.mjs
+      - name: Provision resource launchers in the disposable hosted VM
+        run: bun packages/sdk/src/cli/resources-entry.ts setup --root "$GITHUB_WORKSPACE" --shell none
       - name: Normal setup through the shared resource queue
         run: |
           bun packages/sdk/src/cli/resources-entry.ts status --json
