@@ -134,3 +134,41 @@ it('rejects an executable FIFO without blocking on a content read', async () => 
   );
   expectNoShimWrites(home);
 });
+
+it('cold caller must explicitly setup before admission, and later run never provisions', async () => {
+  const home = await fs.mkdtemp(join(tmpdir(), 'resource-cold-start-'));
+  homes.push(home);
+  vi.stubEnv('TTR_RESOURCES_HOME', home);
+  vi.stubEnv('TTR_RESOURCES_BYPASS', '');
+  const marker = join(home, 'marker');
+  const command = [
+    'run',
+    '--',
+    process.execPath,
+    '-e',
+    `const fs=require('node:fs');const owner=JSON.parse(fs.readFileSync(${JSON.stringify(join(home, 'slots/0/owner.json'))}));if(!owner.childPid)process.exit(22);fs.writeFileSync(${JSON.stringify(marker)},'admitted');`,
+  ];
+  vi.clearAllMocks();
+  await expect(runResourcesCommand(command)).rejects.toThrow(
+    'ttr resources setup --shell none'
+  );
+  expect(await fs.readdir(home)).toEqual([]);
+  for (const operation of [fs.mkdir, fs.writeFile, fs.chmod, fs.rename])
+    expect(operation).not.toHaveBeenCalled();
+  const output = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
+  try {
+    await runResourcesCommand(['setup', '--root', home, '--shell', 'none']);
+  } finally {
+    output.mockRestore();
+  }
+  await expect(installedResourceShims(home)).resolves.toBe(join(home, 'bin'));
+  expect(
+    JSON.parse(await fs.readFile(join(home, 'config.json'), 'utf8')).enabled
+  ).toBe(true);
+  vi.clearAllMocks();
+  await runResourcesCommand(command);
+  expect(process.exitCode).toBe(0);
+  expect(await fs.readFile(marker, 'utf8')).toBe('admitted');
+  expect((await resourceQueueStatus(home)).occupied).toBe(0);
+  expectNoShimWrites(home);
+}, 30_000);

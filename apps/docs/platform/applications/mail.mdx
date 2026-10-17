@@ -555,6 +555,15 @@ and `VERCEL_MAIL_PROJECT_ID`. Keep production Supabase/SES values in the Vercel
 project. Do not put those values, `TURBO_TOKEN` or `TURBO_TEAM` into workflow env;
 use `vercel pull`. `apps/mail/vercel.json` disables Vercel Git integration.
 
+Fresh disposable hosted runners explicitly provision resource launchers with
+`bun packages/sdk/src/cli/resources-entry.ts setup --root "$GITHUB_WORKSPACE" --shell none`
+before the first queued setup workload. Both subsequent commands reuse that same
+installation and canonical queue. `run` never provisions missing launchers; a cold
+caller must complete explicit setup first. This hosted bootstrap does not authorize
+updating an installed developer or Studio scheduler. Workflow ordering is covered
+by `scripts/ci/mail-profile-runtime.test.mjs`; the cold reject → explicit setup →
+admitted run boundary is covered by `packages/sdk/src/cli/resources-provisioning.test.ts`.
+
 The exact-head `mail-profile-runtime-contract.yaml` follows resource CLI changes and uses
 frozen normal setup through the shared queue for Lettin profile upload/save/reload and
 independent Chromium session transport tests. Its exclusive disposable VM owns complete-schema
