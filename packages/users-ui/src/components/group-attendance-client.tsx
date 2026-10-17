@@ -358,7 +358,7 @@ export default function GroupAttendanceClient({
     await queryClient.invalidateQueries({ queryKey: attendanceKey });
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (pendingMap.size === 0) {
       toast.info(tAtt('no_changes'));
       return;
@@ -377,7 +377,7 @@ export default function GroupAttendanceClient({
       const finalNote = (pending.note ?? base.note ?? '') as string;
       payload.push({ user_id, status: finalStatus, note: finalNote });
     });
-    await saveAttendanceMutation.mutateAsync({
+    saveAttendanceMutation.mutate({
       payload,
       submitted: new Map(pendingMap),
       date: dateStr,

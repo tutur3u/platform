@@ -83,6 +83,44 @@ describe('user group post checks client', () => {
     );
   });
 
+  it.each([undefined, null, ''])(
+    'keeps omitted and explicitly cleared remarks distinct at the HTTP boundary (%s)',
+    async (notes) => {
+      const fetchMock = vi.fn().mockResolvedValue(response());
+      const payload =
+        notes === undefined
+          ? { is_completed: true, user_id: 'synthetic-student' }
+          : { is_completed: true, user_id: 'synthetic-student', notes };
+      await updateUserGroupPostChecks(WS_ID, GROUP_ID, POST_ID, payload, {
+        baseUrl: BASE_URL,
+        fetch: fetchMock,
+      });
+      const body = JSON.parse(fetchMock.mock.calls[0]?.[1].body);
+      expect(body).toEqual(payload);
+      expect(Object.hasOwn(body, 'notes')).toBe(notes !== undefined);
+      if (notes !== undefined) expect(body.notes).toBe(notes);
+    }
+  );
+
+  it('requests deletion of exactly one synthetic recipient when resetting individually', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response());
+    await clearUserGroupPostChecks(
+      WS_ID,
+      GROUP_ID,
+      POST_ID,
+      ['synthetic-student'],
+      {
+        baseUrl: BASE_URL,
+        fetch: fetchMock,
+      }
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      method: 'DELETE',
+      body: JSON.stringify({ user_ids: ['synthetic-student'] }),
+    });
+  });
+
   it('loads completion history through the Contacts-owned logs route', async () => {
     const fetchMock = vi.fn().mockResolvedValue(response({ logs: [] }));
 
