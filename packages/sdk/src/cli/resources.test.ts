@@ -256,7 +256,7 @@ describe('resource admission', { timeout: 45_000 }, () => {
     expect(await inspect(project)).toBe('2');
     expect(await inspect(outside)).toBe('unset');
   });
-  it('preserves worker limits through real Turbo strict env without prior setup', async () => {
+  it('preserves worker limits through real Turbo strict env with fixture-provisioned shims', async () => {
     const home = await temporary();
     const fixture = join(home, 'repo');
     const pkg = join(fixture, 'packages', 'probe');

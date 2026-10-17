@@ -92,16 +92,20 @@ export function privateFixtures(ignorePressure = false) {
     const shimEntry = join(home, 'fixture-shim.ts');
     const setup = resolve('src/cli/resources-setup.ts');
     // Only disposable test loaders mock the host. No production env switch/API.
-    const prefix = `import {mock} from 'bun:test';import * as os from 'node:os';import {appendFileSync} from 'node:fs';mock.module('node:os',()=>({...os,totalmem:()=>${budget.memory},availableParallelism:()=>${budget.cpus}}));appendFileSync(${JSON.stringify(join(home, 'fixture-host.jsonl'))},JSON.stringify({pid:process.pid,memory:os.totalmem(),cpus:os.availableParallelism(),shim:process.argv[1]===${JSON.stringify(shimEntry)}})+'\\n');const actual=await import(${JSON.stringify(setup)});const install=actual.installResourceShims;const prepare=actual.setupResources;mock.module(${JSON.stringify(setup)},()=>({...actual,installResourceShims:(home)=>install(home,${JSON.stringify(shimEntry)}),setupResources:async(options)=>{const result=await prepare(options);if(!options.dryRun)await install(options.home,${JSON.stringify(shimEntry)});return result;}}));`;
+    const prefix = `import {mock} from 'bun:test';import * as os from 'node:os';import {appendFileSync} from 'node:fs';mock.module('node:os',()=>({...os,totalmem:()=>${budget.memory},availableParallelism:()=>${budget.cpus}}));appendFileSync(${JSON.stringify(join(home, 'fixture-host.jsonl'))},JSON.stringify({pid:process.pid,memory:os.totalmem(),cpus:os.availableParallelism(),shim:process.argv[1]===${JSON.stringify(shimEntry)}})+'\\n');const actual=await import(${JSON.stringify(setup)});const install=actual.installResourceShims;const prepare=actual.setupResources;const validate=actual.installedResourceShims;mock.module(${JSON.stringify(setup)},()=>({...actual,installedResourceShims:(home)=>validate(home,${JSON.stringify(shimEntry)}),installResourceShims:(home)=>install(home,${JSON.stringify(shimEntry)}),setupResources:async(options)=>{const result=await prepare(options);if(!options.dryRun)await install(options.home,${JSON.stringify(shimEntry)});return result;}}));`;
     writeFileSync(
       shimEntry,
       `${prefix}await import(${JSON.stringify(entry)});`,
       { mode: 0o600 }
     );
     const loader = join(home, `fixture-launch-${children.length}.ts`);
-    writeFileSync(loader, `${prefix}await import(${JSON.stringify(target)});`, {
-      mode: 0o600,
-    });
+    writeFileSync(
+      loader,
+      `${prefix}if(process.argv[2]==='run')await install(${JSON.stringify(home)},${JSON.stringify(shimEntry)});await import(${JSON.stringify(target)});`,
+      {
+        mode: 0o600,
+      }
+    );
     const cliArgs =
       ignorePressure && args[0] === 'run'
         ? ['run', '--ignore-pressure', ...args.slice(1)]
