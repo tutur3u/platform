@@ -5,9 +5,12 @@ description: 'Inactive stable identity SQL, Auth and Web suppliers and their qua
 
 The portable protocol and suppliers live in
 `packages/utils/src/internal-accounts/employee-address-migration*.ts`.
-Infrastructure retains compatible re-exports. The Web handler is a factory only;
-there is no installed route, runtime environment switch or UI consumer. Default
-availability remains off. Supplier tests do not authorize account execution.
+Infrastructure retains compatible re-exports. Web owns POST endpoints under
+`/api/v1/infrastructure/internal-accounts/address-migrations/{inspect,migrate}`.
+The Infrastructure internal-accounts page exposes their operator dialog through
+`@tuturuuu/internal-api/infrastructure`. Runtime availability defaults off unless
+`EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED` is exactly `true`. Binding this
+surface does not authorize activation or account execution.
 
 ## Address and identity policy
 
@@ -48,7 +51,7 @@ A provider email update must use the supported admin update on the original UUID
 with `{ email }` only. It must perform one request without transport retry and
 preserve existing provider identity IDs. Actual GoTrue behavior, verification
 challenges, secure-email-change settings and concurrent external administrators
-must be qualified before installing that supplier. An unverified destination or
+must be qualified before activating that supplier. An unverified destination or
 changed identity remains pending; the protocol never sets `email_confirm`.
 
 Inspection can complete a named attempted operation after observing the verified
@@ -191,9 +194,49 @@ simulation as real GoTrue verification. Foundation and journal receipts remain
 incompatible and keep their original defaults; see the
 [qualification profiles](./employee-schema-qualification).
 
-Before runtime binding, apply the full schema in the approved isolated fixture,
+Before runtime activation, apply the full schema in the approved isolated fixture,
 verify generated types, real GoTrue and Web transport behavior, hosted mail routing,
 and the exact Web/Infrastructure builds in CI. Existing schema CI guards remain
 in force; a reduced fixture never replaces that gate. Record a scoped
 activation/rollback plan separately. CREATE or RESTORE receipts do not qualify
 this migration, and production/provider/SQL actions require separate authority.
+
+
+## Default-off Web and Infrastructure surface
+
+The surface currently admits only canonical `@xwf.tuturuuu.com` sources and the
+same localpart at `@tuturuuu.com`. Its initial expected revision is zero, matching
+the supplier's legacy-first scope. It cannot adopt CREATE/RESTORE registry rows,
+repair identity verification, provision mailboxes or bypass ownership readiness.
+Both approved active mailboxes must already belong to the original user.
+
+Every invocation uses the existing Infrastructure satellite/request-session
+root-admin authorizer, with a confirmed active exact root-domain actor and
+`manage_internal_accounts`. The client never supplies that actor. POSTs require
+the account-action header, same-origin browser origin/fetch-site checks and
+strict bounded JSON. Each RPC/provider boundary and successful disclosure
+rechecks the original actor. The default-off gate is independent of CREATE and
+RESTORE.
+
+Inspection returns readiness only after fresh committed SQL and verified active
+provider observations agree on the exact original tuple and fingerprints. It
+projects no fingerprint to the browser. The dialog requires both exact addresses,
+then repeats inspection before the single explicit migration invocation. That
+invocation still performs the supplier's own fresh admission checks. A successful
+mutation reply alone does not publish completion in the UI: a separate inspection
+must confirm the original operation, target UUID and destination.
+
+Before migration dispatch, the browser retains the original operation UUID,
+revision and tuple in actor/workspace-scoped session recovery. Closing/reopening
+or remounting keeps that recovery; switching actor/workspace retires in-flight
+callbacks and prevents disclosure or another dispatch from the old lifetime.
+Uncertain replies, unavailable readiness, pending verification and lost
+acknowledgements remain inspectable. No retry, replacement UUID, password/token
+entry, provider compensation or fabricated success is offered. Session recovery
+is local to that browser tab; the server journal remains authoritative.
+
+Focused regressions cover real Web adapter/provider/journal composition using
+synthetic transport observations, typed-client tuple validation and UI/controller
+lifetime/recovery behavior. They do not qualify hosted sessions, full schema,
+mail delivery, actual account preservation or production completion. Keep the
+supplier qualification gates and exact Web/Infrastructure CI builds separate.

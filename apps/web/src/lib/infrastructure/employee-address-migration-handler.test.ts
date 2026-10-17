@@ -61,6 +61,7 @@ function request(
     headers: {
       'content-type': 'application/json',
       origin: 'https://infra.example.test',
+      'x-tuturuuu-account-action': '1',
       ...headers,
     },
     body: JSON.stringify({ ...body, ...extra }),
@@ -120,7 +121,7 @@ describe('inactive Web migration adapter', () => {
     const req = request({}, { authorization: 'Bearer ttr_app_disposable' });
     req.headers.delete('origin');
     const response = await handler(req, 'inspect');
-    expect(response.status).toBe(202);
+    expect(response.status).toBe(409);
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)).p_action).toBe(
       'inspect'
@@ -133,6 +134,7 @@ describe('inactive Web migration adapter', () => {
       headers: {
         'content-type': 'application/json',
         origin: 'https://infra.example.test',
+        'x-tuturuuu-account-action': '1',
       },
       body: '{',
     });
@@ -142,6 +144,7 @@ describe('inactive Web migration adapter', () => {
       headers: {
         'content-type': 'application/json',
         origin: 'https://infra.example.test',
+        'x-tuturuuu-account-action': '1',
       },
       body: new Uint8Array([0xff]),
     });
