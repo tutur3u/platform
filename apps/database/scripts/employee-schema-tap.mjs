@@ -20,6 +20,18 @@ export const personalJournalPackets = Object.freeze([
   ['personal-journal.sql', 24],
 ]);
 
+export const feedbackPackets = Object.freeze([
+  Object.freeze(['product-feedback-intake.sql', 34]),
+  Object.freeze(['product-feedback-staff-inbox.sql', 41]),
+  Object.freeze(['product-feedback-staff-eligibility.sql', 31]),
+]);
+
+export function selectFeedback(value) {
+  if (![undefined, 'false', 'true'].includes(value))
+    throw new Error('Invalid feedback qualification selection');
+  return value === 'true';
+}
+
 export function selectAddressMigration(value) {
   if (![undefined, 'false', 'true'].includes(value))
     throw new Error('Invalid address migration qualification selection');
@@ -29,12 +41,15 @@ export function selectAddressMigration(value) {
 export function selectSchemaPackets(
   journal = false,
   personalJournal = false,
-  addressMigration = false
+  addressMigration = false,
+  feedback = false
 ) {
   if (
     typeof journal !== 'boolean' ||
     typeof personalJournal !== 'boolean' ||
     typeof addressMigration !== 'boolean' ||
+    typeof feedback !== 'boolean' ||
+    (feedback && (journal || personalJournal || addressMigration)) ||
     (personalJournal && (journal || addressMigration))
   )
     throw new Error('Select one optional schema profile');
@@ -45,6 +60,7 @@ export function selectSchemaPackets(
         ? journalPackets
         : foundationPackets),
     ...(addressMigration ? [['employee-address-migration.sql', 10]] : []),
+    ...(feedback ? feedbackPackets : []),
   ];
 }
 
@@ -91,11 +107,13 @@ export function schemaReceipt({
   journal = false,
   personalJournal = false,
   addressMigration = false,
+  feedback = false,
 }) {
   const expected = selectSchemaPackets(
     journal,
     personalJournal,
-    addressMigration
+    addressMigration,
+    feedback
   ).map(([file, assertions]) => ({
     file,
     assertions,
@@ -109,7 +127,7 @@ export function schemaReceipt({
     sourceSha: exactSourceSha(sourceSha),
     scope: personalJournal
       ? 'personal-journal'
-      : `${journal ? 'employee-creation-restoration-journal' : 'employee-creation-restoration'}${addressMigration ? '-address-migration' : ''}`,
+      : `${journal ? 'employee-creation-restoration-journal' : 'employee-creation-restoration'}${addressMigration ? '-address-migration' : ''}${feedback ? '-feedback' : ''}`,
     schemaQualified: passed,
     assertions: packets.reduce((sum, packet) => sum + packet.assertions, 0),
     packets,
@@ -274,17 +292,20 @@ export function schemaFailureDiagnostic(
   result = {},
   journal = false,
   personalJournal = false,
-  addressMigration = false
+  addressMigration = false,
+  feedback = false
 ) {
   const packets = selectSchemaPackets(
     journal,
     personalJournal,
-    addressMigration
+    addressMigration,
+    feedback
   );
   const phases = [
     'full-schema-snapshot',
     'start',
     'reset',
+    'feedback-causal',
     'fixture-hash',
     'packet-copy',
     'packet-execution',
