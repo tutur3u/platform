@@ -1,3 +1,4 @@
+import { employeeRequestOrigin } from './employee-request-origin';
 import 'server-only';
 import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -103,7 +104,7 @@ export function createEmployeeRestorationRequestHandlers(deps: {
             },
           },
         };
-      });
+      }, employeeRequestOrigin);
       const response = await handlers[kind](request, context);
       if (!response.ok || !actorUserId) return response;
       try {

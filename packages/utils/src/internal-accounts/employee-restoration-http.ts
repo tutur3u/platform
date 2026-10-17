@@ -1,3 +1,4 @@
+import { hasEmployeeRequestOrigin } from './employee-request-origin';
 import 'server-only';
 import { z } from 'zod';
 import {
@@ -200,7 +201,9 @@ function snapshotGrant(
 
 /** Root permission must be freshly checked by the required runtime authorizer. */
 export function makeEmployeeRestorationHandlers(
-  authorize: EmployeeRestorationAuthorizer
+  authorize: EmployeeRestorationAuthorizer,
+  requestOrigin: (request: Request) => string = (request) =>
+    new URL(request.url).origin
 ) {
   function handler(reconcile: boolean) {
     return async (
@@ -220,12 +223,7 @@ export function makeEmployeeRestorationHandlers(
         if (!grant) return denial(503);
         if (request.headers.get('x-tuturuuu-account-action') !== '1')
           return denial(403);
-        const origin = request.headers.get('origin');
-        const site = request.headers.get('sec-fetch-site');
-        if (
-          (origin !== null && origin !== new URL(request.url).origin) ||
-          (site !== null && site !== 'same-origin')
-        )
+        if (!hasEmployeeRequestOrigin(request, requestOrigin(request)))
           return denial(403);
         const media = request.headers
           .get('content-type')

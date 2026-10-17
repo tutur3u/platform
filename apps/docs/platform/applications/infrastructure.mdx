@@ -259,3 +259,20 @@ migration runtime tests and typed consumer tests cover these boundaries with
 fixtures. Activation, hosted mail ownership/delivery, full-schema qualification,
 exact-commit CI and the named real account's preservation remain separate gates.
 See the [migration runbook](/build/development-tools/employee-address-migration).
+
+### Employee POST origin boundary
+
+Web owns CREATE, RESTORE/reconcile and address-migration POST handlers behind
+Infrastructure's external rewrite. Next preserves the browser `Origin` while
+changing the destination Host, so the request URL alone cannot identify the
+browser's origin. A configured production Infrastructure origin is accepted only
+with a cryptographically verified app-session bearer targeted to `infra`.
+Forwarded host/protocol headers never grant this exception. Actor, root membership,
+permission and operation checks remain required independently.
+
+Foreign origins and cross-site fetch metadata remain denied. Direct Web requests
+retain their existing same-origin and non-browser bearer behavior. Migration
+continues to reject missing-origin cookie requests. No runtime flag is enabled by
+this boundary. `employee-request-origin.test.ts` covers signed tokens, wrong app
+and forged credentials, spoofed forwarding headers and all three active adapters;
+it does not certify production Auth, SQL or provider actions.

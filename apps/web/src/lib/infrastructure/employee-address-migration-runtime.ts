@@ -1,3 +1,4 @@
+import { employeeRequestOrigin } from './employee-request-origin';
 import 'server-only';
 import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -14,7 +15,7 @@ export function createEmployeeAddressMigrationRequestHandlers(
     return (request: Request) =>
       createEmployeeAddressMigrationHandler({
         ...deps,
-        trustedOrigin: new URL(request.url).origin,
+        trustedOrigin: employeeRequestOrigin(request),
       })(request, action);
   }
   return { inspect: handler('inspect'), migrate: handler('migrate') };
