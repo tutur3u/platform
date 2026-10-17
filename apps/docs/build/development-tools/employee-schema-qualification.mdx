@@ -33,7 +33,7 @@ commit and `include_feedback=true`; leave `structured_provenance`,
 `include_http`, `include_web_session` and `include_restore` false. The control
 checkout must also contain the feedback input, selector and runner wiring.
 This profile runs the original 172 employee assertions, then intake34, staff-inbox41
-and staff-eligibility30, for 277 total. Existing profiles retain their counts.
+and staff-eligibility31, for 278 total. Existing profiles retain their counts.
 Incompatible optional profile combinations fail before database setup.
 
 `include_feedback` selects tests, not migration application or feature activation.
@@ -67,7 +67,7 @@ identity inserts. It first locks `public.users` under the existing SQL lock time
 to prevent concurrent trigger-state changes, then requires the named trigger, canonical function and normal
 `O` enabled state; unexpected state aborts before suppression. The same block
 immediately restores `ENABLE TRIGGER` and verifies that exact state before all
-thirty behavioral assertions. A final non-TAP integrity fence checks the restored
+thirty-one behavioral assertions. A final non-TAP integrity fence checks the restored
 state before `finish()` and rollback. Setup/integrity exceptions fail the packet;
 these fences add no pgTAP assertions. Transaction rollback also restores trigger
 DDL if setup or later SQL fails; the hosted lifecycle must still prove owned cleanup.
@@ -76,11 +76,76 @@ No other trigger, production function, ACL, RLS or membership is changed/deleted
 This constructs an eligibility precondition, not proof that canonical employee
 signup lacks personal membership. Keep that observed signup behavior in the parent
 residual audit. Do not weaken staff eligibility, remove assertions or substitute a
-minimal registry. The fixture-only candidate preserves all105 feedback assertions;
+minimal registry. The candidate preserves the original105 assertions and adds one registry-correlation
+assertion, for106 feedback assertions;
 require a fresh exact-source hosted AFTER with foundation172, same-database type
 generation and positive cleanup. SQL causal controls remain separately admitted
 proof. Static fixture inspection and pure parser tests do not execute SQL or
 establish AFTER qualification. Feature activation and production remain separate.
+
+### Optional feedback causal qualification
+
+The retained hosted source with eligibility30 passed277 assertions and emitted
+types. The new correlation assertion31 and causal helper are a new source unit;
+that prior result does not qualify278 or the causal phase. Correlation coverage
+uses two existing synthetic Auth identities: temporarily give registry row A
+actor B's distinct valid corporate email, require B to remain denied, restore
+A's email and compare the complete registry row. No FK/unique/check constraint is
+bypassed; all original30 assertions remain exact and in order.
+
+`include_feedback_causal` defaults false and requires `include_feedback=true`;
+all other optional profiles must be false. The legacy matrix and feedback guard
+children explicitly clear the causal flag. Default GREEN parsing and old employee
+profiles retain their contracts. Source/fixture/migration pins are checked before
+DB setup. Causal execution also checks the actual control checkout HEAD against
+CONTROL_SHA and requires clean tracked control files; ordinary profiles retain
+their workflow-metadata control binding.
+
+In the existing hosted owned database, the optional phase records the actual
+function body/definition, owner, ACL, settings, identity, language and named trigger
+state before mutations. It admits exactly eight immutable single-removal variants:
+service-role, actor binding, email tuple, active lifecycle, confirmation, ban,
+Boolean onboarding marker and registry join correlation. Each private payload
+installs its one replacement definition inside the eligibility transaction and
+rolls it back. Source hashes bind payloads to the reviewed fixed inventory.
+
+A separate RED parser requires SQL exit0, complete ordered plan31, exactly the
+variant's expected failed ordinals, all other assertions successful, no skips,
+TODO, bailout, truncation or missing rollback. SQL/setup/permission/process errors
+are never expected RED. Each failed ordinal must have its immediately adjacent,
+unique pgTAP diagnostic block: matching fixed assertion description, `caught: no
+exception`, and wanted SQLSTATE42501 for the service-role assertion or PT403 for
+feedback denial. Canonical [pgTAP throws_ok](https://github.com/theory/pgtap/blob/v1.3.0/sql/pgtap.sql.in)
+emits only the wanted SQLSTATE in its no-exception branch; the expected message is
+bound through the hash-pinned fixture's description/code/message contract. Caught
+exceptions, missing/duplicate/malformed or incorrectly bound blocks fail closed.
+This format comes from canonical source, not a claimed live causal SQL observation.
+SQL definitions containing dollar quotes must be injected literally using a
+replacement callback or exact slicing, never a replacement string. Structural
+controls require the exact injected definition and reconstruct the original fixture
+byte-exact after removing that one span, including one plan and assertion sequence.
+Every post-rollback catalog snapshot must exactly match
+the actual baseline; there is no compensating restore or retry. First seven
+variants require unmodified eligibility31 GREEN and another catalog readback.
+The eighth restoration uses the full278 profile, then same-database typegen and
+positive owned cleanup. Expected RED observations are never reported as passes:
+248 expected-RED assertions,217 intermediate GREEN and278 terminal GREEN (743
+across23 executions). Causal receipt qualification additionally requires every
+ordered observation, final catalog equality, typegen and lifecycle/cleanup success.
+
+The phase has a monotonic20-minute deadline, zero retries, existing60s packet /
+45s statement /3s lock bounds,10s catalog reads and bounded output. Cleanup remains
+outside the phase deadline with its existing60s bound and always-cleanup ownership
+checks. An unexpected failure stops the phase and retains partial fixed metadata.
+Actual timeout/backend drain, catalog restoration and hosted cleanup require the
+real admitted run; injected unit ports and synthetic TAP prove only contracts.
+
+The domain regexp is structurally implied by the constrained canonical registry
+email plus exact lower(Auth email) matching; it is not a tested mutation or RED.
+ACL and missing-registry availability guards are not mutated and retain ordinary
+denial coverage. No private recipe, source implementation or positive artifact
+activates this optional phase; fresh independent review and parent exact-source /
+control hosted admission remain required. Feature activation is separate.
 
 Select `include_journal=true` on the employee schema workflow to apply the full
 selected database snapshot and run 301 rollback assertions: the original 172,

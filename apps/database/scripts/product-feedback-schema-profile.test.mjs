@@ -42,7 +42,7 @@ test('feedback selection defaults off and rejects malformed values', () => {
     assert.throws(() => selectFeedback(value));
 });
 
-test('feedback appends exactly 105 assertions after the original employee foundation', () => {
+test('feedback appends exactly 106 assertions after the original employee foundation', () => {
   assert.deepEqual(
     packets.slice(0, 5),
     foundationPackets.map(([file, assertions]) => ({ file, assertions }))
@@ -50,9 +50,9 @@ test('feedback appends exactly 105 assertions after the original employee founda
   assert.deepEqual(packets.slice(5), [
     { file: 'product-feedback-intake.sql', assertions: 34 },
     { file: 'product-feedback-staff-inbox.sql', assertions: 41 },
-    { file: 'product-feedback-staff-eligibility.sql', assertions: 30 },
+    { file: 'product-feedback-staff-eligibility.sql', assertions: 31 },
   ]);
-  assert.equal(receipt().assertions, 277);
+  assert.equal(receipt().assertions, 278);
   assert.equal(receipt().scope, 'employee-creation-restoration-feedback');
   assert.equal(receipt().schemaQualified, true);
   assert.equal(receipt().providerQualified, false);
@@ -123,7 +123,7 @@ test('synthetic TAP controls reject failures, skips, truncation and commit witho
   }
 });
 
-test('feedback failure diagnostic binds eligibility ordinal to its own 30 assertions', () => {
+test('feedback failure diagnostic binds eligibility ordinal to its own 31 assertions', () => {
   const diagnostic = (stdout) =>
     schemaFailureDiagnostic(
       'packet-tap',
@@ -139,7 +139,7 @@ test('feedback failure diagnostic binds eligibility ordinal to its own 30 assert
     [13]
   );
   assert.equal(
-    diagnostic('not ok 31 - synthetic\n').assertionOrdinalsValid,
+    diagnostic('not ok 32 - synthetic\n').assertionOrdinalsValid,
     false
   );
   assert.throws(() =>
@@ -163,6 +163,7 @@ test('runner rejects incompatible feedback profiles before hosted admission and 
           GITHUB_ACTIONS: 'false',
           EMPLOYEE_SCHEMA_SOURCE_SHA: 'a'.repeat(40),
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: 'true',
+          EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: String(Boolean(bits & 1)),
           EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: String(Boolean(bits & 2)),
           EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: String(Boolean(bits & 4)),

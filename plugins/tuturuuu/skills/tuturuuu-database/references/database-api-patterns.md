@@ -86,7 +86,7 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 - Feedback schema qualification uses the maintained hosted employee schema
   workflow's default-off `include_feedback` test profile: foundation172 plus
-  feedback105, with same-database type generation and owned cleanup. All profiles
+  feedback106, with same-database type generation and owned cleanup. All profiles
   still apply the full tracked migration snapshot; the flag does not gate SQL
   application or activate the feature. Isolate old matrix children from inherited
   feedback dispatch flags while keeping feedback controls explicit. Keep the
@@ -94,7 +94,7 @@ review prove baseline equivalence. Existing migration history stays immutable.
   a separately admitted eligibility fixture may suppress only the named personal
   workspace trigger around its two synthetic Auth inserts: require original normal
   enabled state, restore/verify it before all assertions, check it again before
-  rollback and fail closed on any unexpected state. Keep all30 behavioral assertions;
+  rollback and fail closed on any unexpected state. Keep the original30 behavioral assertions and correlation31;
   non-TAP integrity fences fail the packet without changing its count. This constructs
   an eligibility precondition, not canonical signup behavior. No membership deletion,
   broad trigger bypass or production alteration. Selector/static/parser checks are
@@ -197,3 +197,22 @@ fixture snapshots. Its exact daemon check is a fixture admission fence, not a
 portable Docker version requirement. Run only with a separately admitted disposable
 lifecycle; the composed 10-SQL packet is not concurrency proof. Source checks are
 static evidence until the actual PostgreSQL concurrency runner passes.
+
+### Feedback causal protocol
+
+Use only the reviewed default-OFF maintained hosted causal profile. Its immutable
+source/fixture-bound eight-variant inventory has a strict separate expected-RED
+parser: complete plan31, exact failed ordinal set, SQL exit0 and rollback, with
+all other assertions green. Bind each target ordinal to a complete unique adjacent
+pgTAP no-exception diagnostic and its fixed fixture denial contract; caught SQL
+exceptions or absent/malformed/duplicate diagnostics cannot qualify. Inject SQL
+with literal callback/slicing, since JavaScript replacement strings interpret dollar
+quotes and dollar-apostrophe. Require exact definition bytes and reconstruction of
+the original fixture after removing the one injected span. Never weaken the default
+GREEN parser. Record the actual function/body/owner/ACL/settings baseline and require
+exact post-rollback equality; no compensating restore/retry. Require restoration
+GREEN after each variant, terminal278/typegen and positive owned cleanup. Preserve
+zero retries/monotonic20-minute phase bound and existing individual deadlines.
+The domain-regexp implication is structural only; do not label it a tested mutation.
+Keep ACL/registry-availability ordinary coverage distinct. See the existing schema
+qualification runbook for target counts, control binding and unexecuted-proof limits.

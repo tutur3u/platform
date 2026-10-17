@@ -41,7 +41,7 @@ INSERT INTO private.infrastructure_employees(user_id,staff_email,managed_name,li
  VALUES ('91800000-0000-4000-8000-000000000001','eligibility-fixture@tuturuuu.com','Synthetic eligibility','active');
 UPDATE auth.users SET raw_app_meta_data='{"employee_onboarding":true}'::jsonb
  WHERE id IN ('91800000-0000-4000-8000-000000000001','91800000-0000-4000-8000-000000000002');
-SELECT plan(30);
+SELECT plan(31);
 SELECT ok(has_function_privilege('service_role','public.check_product_feedback_staff_eligibility(uuid)','EXECUTE'),'service wrapper grant');
 SELECT ok(NOT has_function_privilege('anon','public.check_product_feedback_staff_eligibility(uuid)','EXECUTE'),'anonymous wrapper closed');
 SELECT ok(NOT has_function_privilege('authenticated','public.check_product_feedback_staff_eligibility(uuid)','EXECUTE'),'authenticated wrapper closed');
@@ -97,7 +97,24 @@ SELECT throws_ok($$SELECT public.check_product_feedback_staff_eligibility('91800
 RESET ROLE;
 SELECT is((SELECT pg_catalog.md5(COALESCE(pg_catalog.jsonb_agg(pg_catalog.to_jsonb(r) ORDER BY r.id)::text,''))
  FROM private.product_feedback_reports r),(SELECT digest FROM eligibility_reports_before),'no report side effects');
--- Non-TAP integrity fence: behavioral assertions above remain exactly thirty.
+CREATE TEMP TABLE eligibility_registry_before AS
+ SELECT * FROM private.infrastructure_employees
+ WHERE user_id='91800000-0000-4000-8000-000000000001';
+UPDATE private.infrastructure_employees SET staff_email='eligibility-unregistered@tuturuuu.com'
+ WHERE user_id='91800000-0000-4000-8000-000000000001';
+SELECT throws_ok($$SELECT public.check_product_feedback_staff_eligibility('91800000-0000-4000-8000-000000000002')$$,'PT403','Feedback forbidden','matching email cannot substitute another registry identity');
+UPDATE private.infrastructure_employees SET staff_email=(SELECT staff_email FROM eligibility_registry_before)
+ WHERE user_id='91800000-0000-4000-8000-000000000001';
+DO $eligibility_registry_integrity$
+BEGIN
+  IF (SELECT pg_catalog.to_jsonb(e) FROM private.infrastructure_employees e
+      WHERE user_id='91800000-0000-4000-8000-000000000001') IS DISTINCT FROM
+     (SELECT pg_catalog.to_jsonb(b) FROM eligibility_registry_before b) THEN
+    RAISE EXCEPTION 'Eligibility fixture did not restore the exact registry row';
+  END IF;
+END;
+$eligibility_registry_integrity$;
+-- Non-TAP integrity fence: all original thirty assertions plus correlation31.
 DO $eligibility_trigger_integrity$
 BEGIN
   IF NOT EXISTS (

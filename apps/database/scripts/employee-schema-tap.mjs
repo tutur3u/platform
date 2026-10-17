@@ -23,7 +23,7 @@ export const personalJournalPackets = Object.freeze([
 export const feedbackPackets = Object.freeze([
   Object.freeze(['product-feedback-intake.sql', 34]),
   Object.freeze(['product-feedback-staff-inbox.sql', 41]),
-  Object.freeze(['product-feedback-staff-eligibility.sql', 30]),
+  Object.freeze(['product-feedback-staff-eligibility.sql', 31]),
 ]);
 
 export function selectFeedback(value) {
@@ -305,6 +305,7 @@ export function schemaFailureDiagnostic(
     'full-schema-snapshot',
     'start',
     'reset',
+    'feedback-causal',
     'fixture-hash',
     'packet-copy',
     'packet-execution',
