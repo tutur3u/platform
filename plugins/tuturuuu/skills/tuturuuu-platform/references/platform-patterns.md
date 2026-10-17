@@ -1075,3 +1075,10 @@ and consume the single client dispatch before awaiting it; independently inspect
 even a completed mutation reply. No provider retry or replacement UUID after an
 unknown outcome. See the employee address migration runbook and Infrastructure
 product decision for supplier/mailbox/activation gates and regression coverage.
+
+For employee POSTs behind Infrastructure external rewrites, use the shared
+employee origin predicate and Web's verified Infrastructure bearer resolver.
+Next's external proxy preserves Origin but changes Host; never infer trusted
+browser origin from forwarded headers. Keep origin acceptance separate from
+fresh actor/permission checks. See the Infrastructure application guide's
+"Employee POST origin boundary" and `employee-request-origin.test.ts`.

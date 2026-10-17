@@ -4,7 +4,9 @@ import {
   EmployeeCreationPayloadSchema,
   EmployeeCreationReplySchema,
 } from '@tuturuuu/internal-api/infrastructure';
+import { hasEmployeeRequestOrigin } from '@tuturuuu/utils/internal-accounts/employee-request-origin';
 import { z } from 'zod';
+import { employeeRequestOrigin } from './employee-request-origin';
 
 export type EmployeeCreationAuthorization =
   | { authorized: false; status: 401 | 403 | 503 }
@@ -83,12 +85,9 @@ export function makeEmployeeCreationBoundary({
     }
     if (request.method !== 'POST')
       return reply(405, { code: 'method_not_allowed' });
-    const origin = request.headers.get('origin');
-    const site = request.headers.get('sec-fetch-site');
     if (
       request.headers.get('x-tuturuuu-account-action') !== '1' ||
-      (origin !== null && origin !== new URL(request.url).origin) ||
-      (site !== null && site !== 'same-origin')
+      !hasEmployeeRequestOrigin(request, employeeRequestOrigin(request))
     )
       return reply(403, { code: 'forbidden' });
     if (
