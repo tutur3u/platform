@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/auth-v0.6.0...auth-v0.7.0) (2026-10-17)
+
+
+### Features
+
+* **cli:** register private feedback commands ([a1d9c87](https://github.com/tutur3u/platform/commit/a1d9c875ce918be676d184e036d7210c6785c46d))
+* **infrastructure:** add employee creation HTTP boundary ([688a0b2](https://github.com/tutur3u/platform/commit/688a0b261d55996c8d86ff27f76f539cf42a7109))
+* **infrastructure:** reconcile employee creation orchestration ([9356a36](https://github.com/tutur3u/platform/commit/9356a36872910c28552f494e75c3f89dc79cb543))
+* **infrastructure:** reconcile employee restoration HTTP boundary ([7bbcb3b](https://github.com/tutur3u/platform/commit/7bbcb3bc2feab4c8f652f808a6921da92cf7d4bd))
+* **infrastructure:** reconcile employee restoration orchestration ([862d22d](https://github.com/tutur3u/platform/commit/862d22dfbfb19c871bb3ecebcc2a4998902d1567))
+* **mail:** reconcile connected accounts with main ([3e2eae1](https://github.com/tutur3u/platform/commit/3e2eae1e93d8f03bf6425055f51453a1061aaada))
+* **reports:** reconcile feedback consumer with current main ([e6775b1](https://github.com/tutur3u/platform/commit/e6775b16698e08407a8de89984d1ab964ecea098))
+* **supabase:** support scoped server Auth construction ([eec9ea8](https://github.com/tutur3u/platform/commit/eec9ea87c3180c9a4b358705b0c8365e74a46a1a))
+
+
+### Bug Fixes
+
+* **cli:** require explicit private feedback content opt-in ([32165bd](https://github.com/tutur3u/platform/commit/32165bd7b59721ee7780933f035a61c7f43a88d6))
+* **feedback:** qualify bounded staff operation lifetimes ([5d338b1](https://github.com/tutur3u/platform/commit/5d338b1d0417df51870e37464581a06f6a57deb0))
+* **feedback:** qualify scoped staff auth transport ([1c5e796](https://github.com/tutur3u/platform/commit/1c5e79691e53eeab19279167f506d1e061e3f652))
+* **feedback:** qualify staff reads and contain flag faults ([fb7a4de](https://github.com/tutur3u/platform/commit/fb7a4de29233219f9ba8dbd38f99ac68ab413868))
+* **feedback:** require own eligibility key and reconcile main ([fe21bd4](https://github.com/tutur3u/platform/commit/fe21bd4bf290bbc5f2dc50383f07a1ad27d11419))
+* **internal-api:** reconcile employee clients with main ([ca3533c](https://github.com/tutur3u/platform/commit/ca3533c0d2918aa94574f0b9474d23e72b86d71d))
+* **internal-api:** reconcile shared feedback clients with main ([d49d9e9](https://github.com/tutur3u/platform/commit/d49d9e9b431beba6e13171881ec9dd706921b708))
+* reconcile external project storage analytics with main ([573f414](https://github.com/tutur3u/platform/commit/573f414522a1e77c657cb7b54a43331d1b06922b))
+* **reports:** reconcile feedback evidence foundation with main ([33c04b9](https://github.com/tutur3u/platform/commit/33c04b9e5e71196c5e9b4a56720578c9b564927a))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/auth-v0.5.0...auth-v0.6.0) (2026-09-25)
 
 

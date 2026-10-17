@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.28.1](https://github.com/tutur3u/platform/compare/contacts-v0.28.0...contacts-v0.28.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **contacts:** handle failed attendance saves without losing drafts ([a50024d](https://github.com/tutur3u/platform/commit/a50024d92a5ae0ba0230d5003d866f04d5f5c8f7)) ([#6335](https://github.com/tutur3u/platform/issues/6335)) ([7a95f9a](https://github.com/tutur3u/platform/commit/7a95f9af4d6298c009a48e049b31c688a5b6bed0))
+* **contacts:** narrow acknowledged post draft before rebasing ([7900fed](https://github.com/tutur3u/platform/commit/7900fed97a13fff44b1f439a936a3172b6433de9))
+* **contacts:** preserve attendance edits during saves ([49bad1e](https://github.com/tutur3u/platform/commit/49bad1e0e366d629f8f85e6bc5179a4798cfc5dd)) ([#6332](https://github.com/tutur3u/platform/issues/6332)) ([750eeaa](https://github.com/tutur3u/platform/commit/750eeaafb9f13fc7b8370e0e132db97ec5245cf7))
+* **contacts:** preserve group check notes and fit mobile details ([#6240](https://github.com/tutur3u/platform/issues/6240)) ([8b743cd](https://github.com/tutur3u/platform/commit/8b743cdc8f8d33694f99f375a8eb6e12baaa3f87))
+* **contacts:** preserve group check notes and mobile layout ([0e2805a](https://github.com/tutur3u/platform/commit/0e2805a4dcdb13f89b57f42757fba012930fe74e))
+* **contacts:** preserve untouched class post notes ([cc352e6](https://github.com/tutur3u/platform/commit/cc352e60183f2340c50e69577b373429f3e4d9ba)) ([#6333](https://github.com/tutur3u/platform/issues/6333)) ([aa7c2ec](https://github.com/tutur3u/platform/commit/aa7c2ece9ffbae5f0cb45122490b941fbd3e8972))
+* **contacts:** reconcile class notes with attendance main ([95d68c5](https://github.com/tutur3u/platform/commit/95d68c59b6d4c127f411244242bf491358e13cbe))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/contacts-v0.27.0...contacts-v0.28.0) (2026-10-09)
 
 

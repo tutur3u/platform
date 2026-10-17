@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.10.0...inventory-core-v0.11.0) (2026-10-17)
+
+
+### Features
+
+* **infrastructure:** compose reviewed employee qualification source ([794789f](https://github.com/tutur3u/platform/commit/794789f41e26d01e9029a3ff92bbbf4f1e738b25))
+
+
+### Bug Fixes
+
+* **journal:** reconcile context branch with updated parent ([80cf437](https://github.com/tutur3u/platform/commit/80cf437c9d494e3c0fc4ce9bb6d2fe19c655e2a0))
+* **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.9.0...inventory-core-v0.10.0) (2026-10-04)
 
 

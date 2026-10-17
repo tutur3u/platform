@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.51.0](https://github.com/tutur3u/platform/compare/internal-api-v0.50.0...internal-api-v0.51.0) (2026-10-17)
+
+
+### Features
+
+* **accounts:** compose address migration ui with qualified Web sessions ([caac1c4](https://github.com/tutur3u/platform/commit/caac1c4e507704aa7ceb2c27548c120d1d023f14))
+* **accounts:** compose migration UI above lint-corrected suppliers ([#6322](https://github.com/tutur3u/platform/issues/6322)) ([0c73caa](https://github.com/tutur3u/platform/commit/0c73caa5570fb6d68d370ffa8d3cb8eb8921d0bb))
+* **infrastructure:** add managed access restoration dialog ([f5642eb](https://github.com/tutur3u/platform/commit/f5642eb019b8aa6e878c3ef2aa9d590c3c6b9309)) ([#6301](https://github.com/tutur3u/platform/issues/6301)) ([11d42ec](https://github.com/tutur3u/platform/commit/11d42ecb1ca5631bee4b134acc581c7ced4d155f))
+* **infrastructure:** expose journaled employee creation contract ([68a47c8](https://github.com/tutur3u/platform/commit/68a47c83c4ecc40f422749a6dd288b82a75441d6)) ([#6282](https://github.com/tutur3u/platform/issues/6282)) ([4e3bfaa](https://github.com/tutur3u/platform/commit/4e3bfaa78fe1a8ccf59debc8fdb7ea689ea5bfcc))
+* **infrastructure:** prepare guarded employee creation flow ([b046d55](https://github.com/tutur3u/platform/commit/b046d558b9a8c87d565b4a547fcd88e20f97230f)) ([#6259](https://github.com/tutur3u/platform/issues/6259)) ([747ce8c](https://github.com/tutur3u/platform/commit/747ce8c1f36649ced0b8260f18cde68c598f1c06))
+* **journal:** prepare private journal and mood source slice ([bc6aff9](https://github.com/tutur3u/platform/commit/bc6aff9566fcc4e698299149e22e2f7f9bd9223b)) ([#6271](https://github.com/tutur3u/platform/issues/6271)) ([0a7d8fb](https://github.com/tutur3u/platform/commit/0a7d8fbcbddbbc6dc46977c708b174beb5e38531))
+* **mail:** connect Gmail and Outlook as personal email clients ([#5997](https://github.com/tutur3u/platform/issues/5997)) ([5abbe32](https://github.com/tutur3u/platform/commit/5abbe328188804006d0b3351dd110f609d4b3f9f))
+
+
+### Bug Fixes
+
+* **contacts:** handle failed attendance saves without losing drafts ([a50024d](https://github.com/tutur3u/platform/commit/a50024d92a5ae0ba0230d5003d866f04d5f5c8f7)) ([#6335](https://github.com/tutur3u/platform/issues/6335)) ([7a95f9a](https://github.com/tutur3u/platform/commit/7a95f9af4d6298c009a48e049b31c688a5b6bed0))
+* **contacts:** preserve untouched class post notes ([cc352e6](https://github.com/tutur3u/platform/commit/cc352e60183f2340c50e69577b373429f3e4d9ba)) ([#6333](https://github.com/tutur3u/platform/issues/6333)) ([aa7c2ec](https://github.com/tutur3u/platform/commit/aa7c2ece9ffbae5f0cb45122490b941fbd3e8972))
+* **infrastructure:** handle employee creation conflicts ([4e15bd6](https://github.com/tutur3u/platform/commit/4e15bd6a121ace7d33f31ef0d3298f489261cec7))
+* **internal-api:** declare employee creation zod dependency ([a6a6cfe](https://github.com/tutur3u/platform/commit/a6a6cfe0069cf2cd0ee395b657cb2e0571dd1430))
+* **meet:** reconcile landed Lettin adapter integration ([629cf21](https://github.com/tutur3u/platform/commit/629cf21338d7e4898cc3d512c93ea50447156306))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+* **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
+
 ## [0.50.0](https://github.com/tutur3u/platform/compare/internal-api-v0.49.0...internal-api-v0.50.0) (2026-10-09)
 
 

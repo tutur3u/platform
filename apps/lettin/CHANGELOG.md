@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0](https://github.com/tutur3u/platform/compare/lettin-v1.4.0...lettin-v1.5.0) (2026-10-17)
+
+
+### Features
+
+* **mail:** connect Gmail and Outlook as personal email clients ([#5997](https://github.com/tutur3u/platform/issues/5997)) ([5abbe32](https://github.com/tutur3u/platform/commit/5abbe328188804006d0b3351dd110f609d4b3f9f))
+
+
+### Bug Fixes
+
+* **lettin:** repair Worker cache initialization ([d782d4a](https://github.com/tutur3u/platform/commit/d782d4a2129a0cc80dad9dcf4a2feac60da06f8a)) ([#6299](https://github.com/tutur3u/platform/issues/6299)) ([579b70d](https://github.com/tutur3u/platform/commit/579b70dbf4601328d99a1e6d437fdf4cc1431592))
+* **meet:** reconcile landed Lettin adapter integration ([629cf21](https://github.com/tutur3u/platform/commit/629cf21338d7e4898cc3d512c93ea50447156306))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+
 ## [1.4.0](https://github.com/tutur3u/platform/compare/lettin-v1.3.0...lettin-v1.4.0) (2026-10-09)
 
 
