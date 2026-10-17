@@ -130,6 +130,21 @@ separate reviewed atomic caller conversion, current feature and actor-permission
 admission, and an accepted/rejected/unknown provider-outcome contract. No uncertain
 attempt may be treated as a safe automatic retry or discarded history.
 
+### Attendance edits during saving
+
+Contacts and shared group attendance rosters keep edits made while a save is in
+flight. Success acknowledges only the submitted draft entries in their original
+workspace, group, date, and session. Later edits remain visible and available for
+an explicit subsequent save, including an edit back to the original text. Drafts
+stay pending until saved or explicitly reset; changing attendance scope starts a
+new draft. The submitted transport still includes the complete status and note.
+
+The deferred-save component regressions in
+`apps/contacts/src/__tests__/attendance-note-save.test.tsx` cover later edits,
+reverting text during a save, and an older group save completing after navigation.
+This rule does not change explicit attendance clearing or post-check reset
+semantics, and does not recover historical notes.
+
 ## Class-post dialog updates
 
 Contacts class-post dialogs update only fields changed since that dialog opened.

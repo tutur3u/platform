@@ -22,15 +22,19 @@ export default defineConfig({
   resolve: {
     alias: [
       // Exercise report contracts directly without requiring local package builds.
-      ...['reports', 'reports-delivery-batch', 'client', 'posts'].map(
-        (entry) => ({
-          find: `@tuturuuu/internal-api/${entry}`,
-          replacement: resolve(
-            __dirname,
-            `../../packages/internal-api/src/${entry}.ts`
-          ),
-        })
-      ),
+      ...[
+        'reports',
+        'reports-delivery-batch',
+        'client',
+        'user-group-attendance',
+        'posts',
+      ].map((entry) => ({
+        find: `@tuturuuu/internal-api/${entry}`,
+        replacement: resolve(
+          __dirname,
+          `../../packages/internal-api/src/${entry}.ts`
+        ),
+      })),
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: '@tuturuuu/supabase/next/server',

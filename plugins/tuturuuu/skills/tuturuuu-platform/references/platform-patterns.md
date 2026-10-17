@@ -1093,3 +1093,9 @@ Next's external proxy preserves Origin but changes Host; never infer trusted
 browser origin from forwarded headers. Keep origin acceptance separate from
 fresh actor/permission checks. See the Infrastructure application guide's
 "Employee POST origin boundary" and `employee-request-origin.test.ts`.
+
+- Attendance save acknowledgements must retain later draft entries and invalidate
+  the submitted scope's query. Keep draft edits separate from the server cache;
+  comparing an optimistic cache against itself can discard unsaved work. Preserve
+  complete attendance note payloads: the current RPC treats omitted notes as empty.
+  See the Contacts modules attendance decision and its deferred-save regression.

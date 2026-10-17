@@ -151,6 +151,68 @@ describe('class-post dialog with source transport', () => {
       }
     }
   );
+  it('closes only the unchanged submitted draft after a successful save', async () => {
+    const { result } = renderHook(() => useEditor(), { wrapper: Wrapper });
+    act(() => result.current.openDialog(initial));
+    act(() => result.current.updateField('title', 'Saved title'));
+    await act(async () => {
+      const saved = await result.current.mutation.mutateAsync(
+        result.current.post!
+      );
+      result.current.closeDialog(saved);
+    });
+    expect(result.current.isOpen).toBe(false);
+    expect(result.current.post).toBeUndefined();
+    expect(stored.title).toBe('Saved title');
+  });
+  it.each(['reopened', 'closed'])(
+    'does not rebase a %s session after an older save',
+    async (action) => {
+      const { result } = renderHook(() => useEditor(), { wrapper: Wrapper });
+      act(() => result.current.openDialog(initial));
+      act(() => result.current.updateField('title', 'Old pending title'));
+      const submitted = result.current.post!;
+      let finish!: () => void;
+      vi.mocked(fetch).mockImplementationOnce(async () => {
+        await new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+        return Response.json({ message: 'success' });
+      });
+      let saving!: ReturnType<typeof result.current.mutation.mutateAsync>;
+      act(() => {
+        saving = result.current.mutation.mutateAsync(submitted);
+      });
+      await vi.waitFor(() => expect(finish).toBeTypeOf('function'));
+      act(() => result.current.closeDialog());
+      if (action === 'reopened') {
+        act(() =>
+          result.current.openDialog({
+            ...initial,
+            title: 'Refreshed title',
+            notes: 'Refreshed notes',
+          })
+        );
+        act(() => result.current.updateField('notes', 'New session edit'));
+      }
+      await act(async () => {
+        finish();
+        const saved = await saving;
+        result.current.closeDialog(saved);
+      });
+      if (action === 'closed') {
+        expect(result.current.isOpen).toBe(false);
+        expect(result.current.post).toBeUndefined();
+      } else {
+        expect(result.current.isOpen).toBe(true);
+        expect(result.current.post?.title).toBe('Refreshed title');
+        await act(async () => {
+          await result.current.mutation.mutateAsync(result.current.post!);
+        });
+        expect(writes).toEqual([{ notes: 'New session edit' }]);
+      }
+    }
+  );
   it('retains the full create contract', async () => {
     const { result } = renderHook(() => useEditor(), { wrapper: Wrapper });
     await act(async () => {
