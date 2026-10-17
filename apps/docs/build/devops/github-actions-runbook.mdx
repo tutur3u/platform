@@ -1722,3 +1722,20 @@ that mismatch rather than producing unreliable coverage. Shared CI forwards
 `--maxWorkers=2` and optionally `--coverage`: keep worker/pool defaults in the
 unit config, not a duplicate CLI flag in package scripts. Validate both forwarded
 commands under Node 24 in the owning workspace through `ttr resources`.
+
+### Playground metadata lifecycle evidence
+
+The disposable Playground acceptance job opts into the SDK's
+`TTR_DOCKER_METADATA_DIAGNOSTIC=1` diagnostic. See the
+[SDK diagnostic contract](/reference/packages/sdk#docker-metadata-lifecycle-diagnostic).
+Read each `ttr-docker-metadata-v1` record with its exact commit, job and invocation
+ordinal. Event times describe JavaScript observations on the same existing
+metadata subprocess; null close timing does not prove that the process failed to
+close later. Callback lateness measures delay relative to the scheduled deadline.
+There is no extra Docker probe, warmup, retry or deadline increase.
+
+An instrumented passing run provides observability only: it cannot explain a
+historical timeout. A timer callback proves deadline classification before
+settlement, not daemon failure or a Node/Bun adapter defect. Keep causal diagnosis
+UNKNOWN until same-invocation evidence distinguishes those hypotheses; source
+review and mock tests do not qualify hosted runtime acceptance.
