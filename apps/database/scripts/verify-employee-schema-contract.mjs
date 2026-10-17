@@ -15,6 +15,7 @@ import {
   exactSourceSha,
   schemaFailureDiagnostic as foundationFailureDiagnostic,
   schemaReceipt,
+  selectAddressMigration,
   selectSchemaPackets,
 } from './employee-schema-tap.mjs';
 import { runOwnedSessionProcess } from './employee-web-session-process.mjs';
@@ -62,9 +63,23 @@ if (
   )
 )
   throw new Error('Invalid employee journal qualification selection');
-const selectedPackets = selectSchemaPackets(journal, personalJournal);
+const addressMigration = selectAddressMigration(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION
+);
+const selectedPackets = selectSchemaPackets(
+  journal,
+  personalJournal,
+  addressMigration
+);
 const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
-  foundationFailureDiagnostic(phase, ordinal, result, journal, personalJournal);
+  foundationFailureDiagnostic(
+    phase,
+    ordinal,
+    result,
+    journal,
+    personalJournal,
+    addressMigration
+  );
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
   throw new Error('This gate requires a disposable hosted Linux runner');
@@ -450,6 +465,7 @@ const receipt = {
     cleanupSucceeded,
     journal,
     personalJournal,
+    addressMigration,
   }),
   fixtureHashes,
   generatedTypesSha256,
