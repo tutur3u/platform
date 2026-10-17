@@ -162,6 +162,7 @@ it('does not acknowledge a new group draft when the old group save completes', a
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+  const invalidate = vi.spyOn(client, 'invalidateQueries');
   const view = (groupId: string) => (
     <QueryClientProvider client={client}>
       <GroupAttendanceClient
@@ -198,6 +199,18 @@ it('does not acknowledge a new group draft when the old group save completes', a
     'value',
     'Second group draft'
   );
+  expect(invalidate).toHaveBeenCalledExactlyOnceWith({
+    queryKey: [
+      'workspaces',
+      'workspace',
+      'users',
+      'groups',
+      'first-group',
+      'attendance',
+      '2026-10-17',
+      'legacy',
+    ],
+  });
   fireEvent.click(screen.getByRole('button', { name: 'save' }));
   await waitFor(() => expect(api.save).toHaveBeenCalledTimes(2));
   expect(api.save.mock.calls[0]?.slice(0, 2)).toEqual([
