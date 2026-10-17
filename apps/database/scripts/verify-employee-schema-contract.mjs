@@ -16,6 +16,7 @@ import {
   schemaFailureDiagnostic as foundationFailureDiagnostic,
   schemaReceipt,
   selectAddressMigration,
+  selectFeedback,
   selectSchemaPackets,
 } from './employee-schema-tap.mjs';
 import { runOwnedSessionProcess } from './employee-web-session-process.mjs';
@@ -66,10 +67,12 @@ if (
 const addressMigration = selectAddressMigration(
   process.env.EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION
 );
+const feedback = selectFeedback(process.env.EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK);
 const selectedPackets = selectSchemaPackets(
   journal,
   personalJournal,
-  addressMigration
+  addressMigration,
+  feedback
 );
 const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
   foundationFailureDiagnostic(
@@ -78,7 +81,8 @@ const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
     result,
     journal,
     personalJournal,
-    addressMigration
+    addressMigration,
+    feedback
   );
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
@@ -309,7 +313,7 @@ const runner = async (command, args, cwd) => {
           throw new Error('Employee packet TAP contract failed');
         }
       }
-      if (journal || personalJournal) {
+      if (journal || personalJournal || feedback) {
         packetOrdinal = 0;
         currentPhase = 'typegen';
         const types = bounded(
@@ -466,6 +470,7 @@ const receipt = {
     journal,
     personalJournal,
     addressMigration,
+    feedback,
   }),
   fixtureHashes,
   generatedTypesSha256,

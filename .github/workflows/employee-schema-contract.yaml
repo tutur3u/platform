@@ -36,6 +36,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_feedback:
+        description: Add the separate 105 feedback rollback assertions to foundation; excludes optional employee profiles
+        required: false
+        default: false
+        type: boolean
       include_address_migration:
         description: Add the separate 10-assertion legacy address migration rollback packet
         required: false
@@ -68,6 +73,7 @@ jobs:
       EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
       EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: ${{ inputs.include_web_session }}
       EMPLOYEE_SCHEMA_INCLUDE_RESTORE: ${{ inputs.include_restore }}
+      EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: ${{ inputs.include_feedback }}
       EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: ${{ inputs.include_address_migration }}
     steps:
       - name: Require the enabled schema gate
@@ -104,6 +110,8 @@ jobs:
         run: bun x tsc --project apps/web/e2e/fixtures/tsconfig.employee-http.json --noEmit
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
+      - name: Verify feedback profile gates
+        run: node --test apps/database/scripts/product-feedback-schema-profile.test.mjs
       - name: Verify HTTP qualification receipt gates
         run: node --test apps/database/scripts/employee-http-receipt.test.mjs
       - name: Verify Web request session receipt gates

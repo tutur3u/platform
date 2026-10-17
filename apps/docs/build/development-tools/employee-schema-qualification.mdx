@@ -26,8 +26,45 @@ Verify the helper with
 `node --test apps/database/scripts/employee-schema-tap.test.mjs`.
 A green schema result is not native admission/lease/fence qualification, a GoTrue
 or provider transaction, employee activation, or production SQL application.
-The feedback layer's 105 assertions remain a separate later stack qualification;
-they are not silently included or waived by this foundation job.
+The feedback layer is a separate, default-off selection. In
+`employee-schema-contract.yaml`, set `source_sha` to the reviewed clean 40-character
+commit and `include_feedback=true`; leave `structured_provenance`,
+`include_journal`, `include_personal_journal`, `include_address_migration`,
+`include_http`, `include_web_session` and `include_restore` false. The control
+checkout must also contain the feedback input, selector and runner wiring.
+This profile runs the original 172 employee assertions, then intake34, staff-inbox41
+and staff-eligibility30, for 277 total. Existing profiles retain their counts.
+Incompatible optional profile combinations fail before database setup.
+
+`include_feedback` selects tests, not migration application or feature activation.
+Every profile still applies the complete tracked migration snapshot to its
+disposable database, including feedback migrations when present. An older
+profile's green receipt retains its original count and does not qualify feedback.
+The legacy profile matrix explicitly sets feedback false in each child; the
+feedback controls separately test true, including a parent dispatch environment
+with feedback enabled. Neither control changes the profile incompatibility guard.
+
+The maintained runner requires hosted Linux with `GITHUB_ACTIONS=true`, an exact
+HEAD matching `source_sha` and no tracked source modifications. It stages and
+byte-compares the complete tracked database snapshot, including all migration
+history, before applying it to its derived isolated project. Never simulate these
+hosted guards locally. Packet source hashes, strict sequential TAP, rollback,
+bounded command deadlines and cleanup of only the exact owned project remain
+mandatory. The always-run workflow cleanup step checks retained ownership before
+stopping an interrupted project. A successful feedback packet run generates types
+from that same database before cleanup; the receipt and artifact retain the digest.
+A failed packet does not establish type generation or SQL qualification.
+
+The original eligibility fixture intentionally remains the unexecuted BEFORE
+version: ordinary Auth insertion happens before the employee marker is set, while
+an assertion expects no workspace membership. The canonical bootstrap trigger can
+create personal membership during that insertion. Preserve the actual failing
+hosted receipt before changing only fixture setup. Do not weaken staff eligibility,
+remove assertions or replace the full schema with a minimal registry. After a
+separately reviewed setup correction, require a new exact-source hosted run of all
+105 feedback assertions plus the canonical foundation, disposable causal negative
+controls, type generation and positive cleanup. Pure selector/TAP parser tests do
+not execute SQL. Feedback activation and production application remain separate.
 
 Select `include_journal=true` on the employee schema workflow to apply the full
 selected database snapshot and run 301 rollback assertions: the original 172,

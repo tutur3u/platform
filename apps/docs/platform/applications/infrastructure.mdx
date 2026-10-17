@@ -276,3 +276,24 @@ continues to reject missing-origin cookie requests. No runtime flag is enabled b
 this boundary. `employee-request-origin.test.ts` covers signed tokens, wrong app
 and forged credentials, spoofed forwarding headers and all three active adapters;
 it does not certify production Auth, SQL or provider actions.
+
+
+### Feedback schema admission
+
+The feedback schema candidate reuses the canonical employee registry. Staff
+eligibility requires an active registry tuple matching the confirmed current
+corporate email, no current ban and a Boolean employee-onboarding marker; the
+service-only wrapper delegates to the same private assertion used by inbox reads.
+A domain match alone grants no access. Reports remain private; ordinary actors
+receive only their own content-free receipt, and staff reads grant no management
+capability. This schema scope does not change employee CREATE or RESTORE rules.
+
+Feedback availability remains off pending separate activation. The default-off
+hosted feedback profile retains all 105 original rollback assertions, including
+its known BEFORE fixture mismatch, and adds them after the canonical employee
+foundation. These are pending qualification requirements, not observed SQL passes.
+The profile flag selects test packets only; every disposable profile applies the
+full tracked migration snapshot. It does not activate feedback or prevent schema
+application in other profiles, whose results do not qualify feedback coverage.
+See the [schema qualification runbook](/build/development-tools/employee-schema-qualification)
+for the exact hosted profile, full-history requirement and remaining evidence.

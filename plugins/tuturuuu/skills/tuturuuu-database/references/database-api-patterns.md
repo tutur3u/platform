@@ -84,6 +84,17 @@ review prove baseline equivalence. Existing migration history stays immutable.
   assert that membership rather than inserting it again in later scenarios.
   Keep an explicit assertion when membership is part of permission admission.
 
+- Feedback schema qualification uses the maintained hosted employee schema
+  workflow's default-off `include_feedback` test profile: foundation172 plus
+  feedback105, with same-database type generation and owned cleanup. All profiles
+  still apply the full tracked migration snapshot; the flag does not gate SQL
+  application or activate the feature. Isolate old matrix children from inherited
+  feedback dispatch flags while keeping feedback controls explicit. Keep the
+  original eligibility BEFORE packet until its full-schema failure is executed;
+  selector/parser tests are not SQL qualification. See
+  `apps/docs/build/development-tools/employee-schema-qualification.mdx` for the
+  exact input combination and staged BEFORE/AFTER boundary.
+
 - Full-schema admission fixtures must assert membership in the target workspace.
   Auth bootstrap can independently create a personal workspace for a synthetic
   user; that membership does not admit them to another workspace.
