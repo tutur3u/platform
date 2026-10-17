@@ -216,3 +216,31 @@ against disposable PostgreSQL, verify backend and lock drain, and verify the
 static worker/protocol assets in the exact hosted Next build and file trace.
 Source tests, schema assertions and signed synthetic fixtures cannot replace
 those gates or activate account creation.
+
+
+### Legacy employee address migration
+
+The internal-accounts page has a separate legacy address migration dialog.
+Migration changes the original UUID's `@xwf.tuturuuu.com` address to the same
+localpart at `@tuturuuu.com`, preserving its identity and linked data; RESTORE
+instead re-enables a previously suspended managed employee at its existing
+address. Neither flow creates a replacement account. Migration does not repair
+verification or claim/provision somebody else's mailbox. It requires existing
+approved active source and destination mailboxes owned by the original UUID,
+email-provider readiness, revision zero and no CREATE/RESTORE registry ambiguity.
+
+Web migration availability defaults off with its own
+`EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED` gate. The operator inspects the
+exact UUID/address tuple, types both addresses, performs a fresh preflight and
+submits one migration. Unknown results retain the operation UUID/revision for
+inspection across dialog close/reopen and same-session remount; provider mutation
+is never replayed. A separate reconciliation must confirm completion. Changing
+actor/workspace retires the old workflow. No password or token is requested.
+
+This decision applies only to the Infrastructure operator surface and Web
+migration endpoints; CREATE/RESTORE keep their existing contracts. The
+`address-migration-session.test.ts`, `address-migration-dialog.test.tsx`, Web
+migration runtime tests and typed consumer tests cover these boundaries with
+fixtures. Activation, hosted mail ownership/delivery, full-schema qualification,
+exact-commit CI and the named real account's preservation remain separate gates.
+See the [migration runbook](/build/development-tools/employee-address-migration).

@@ -8745,6 +8745,26 @@
       "retry": "Try again",
       "search": "Search"
     },
+    "address_migration": {
+      "close": "Close",
+      "completed": "Independent reconciliation confirmed the destination address for the same user UUID. This does not verify end-to-end mail delivery.",
+      "confirm_destination": "Type the exact destination address",
+      "confirm_source": "Type the exact source address",
+      "denied": "Migration is unavailable, unauthorized or not ready. No success has been confirmed. Check mailbox approval, identity, revision and conflicting CREATE/RESTORE reservations before inspecting again.",
+      "description": "Change an existing @xwf.tuturuuu.com sign-in address to the same name at @tuturuuu.com while preserving its user UUID and data. Restore re-enables a suspended managed account at its existing address; it does not migrate the address.",
+      "destination": "Destination address",
+      "inspect": "Inspect / reconcile",
+      "mail_safeguard": "Both source and destination mailboxes must be approved, active and owned by this employee. Inspection checks the authoritative readiness and account reservations. This feature is unavailable until runtime activation is approved.",
+      "migrate": "Confirm and migrate once",
+      "open": "Inspect address migration",
+      "pending": "The outcome is unconfirmed. Keep this operation, UUID and revision. Use inspection only; do not start another migration. Closing and reopening retains the recovery receipt in this browser session.",
+      "ready": "Inspection is ready. Type both exact addresses to confirm. Migration performs a fresh authorization and readiness check before its single request.",
+      "receipt": "Operation: {operationId} · Expected revision: {revision}",
+      "source": "Exact legacy source address",
+      "title": "Migrate a legacy employee address",
+      "user_id": "Existing user UUID",
+      "working": "Checking the account and operation…"
+    },
     "count": "{count, plural, one {# internal account} other {# internal accounts}}",
     "count_loading": "Loading account count...",
     "creation": {
