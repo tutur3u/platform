@@ -90,8 +90,15 @@ review prove baseline equivalence. Existing migration history stays immutable.
   still apply the full tracked migration snapshot; the flag does not gate SQL
   application or activate the feature. Isolate old matrix children from inherited
   feedback dispatch flags while keeping feedback controls explicit. Keep the
-  original eligibility BEFORE packet until its full-schema failure is executed;
-  selector/parser tests are not SQL qualification. See
+  original eligibility BEFORE evidence. After its actual full-schema failure,
+  a separately admitted eligibility fixture may suppress only the named personal
+  workspace trigger around its two synthetic Auth inserts: require original normal
+  enabled state, restore/verify it before all assertions, check it again before
+  rollback and fail closed on any unexpected state. Keep all30 behavioral assertions;
+  non-TAP integrity fences fail the packet without changing its count. This constructs
+  an eligibility precondition, not canonical signup behavior. No membership deletion,
+  broad trigger bypass or production alteration. Selector/static/parser checks are
+  not SQL AFTER qualification. See
   `apps/docs/build/development-tools/employee-schema-qualification.mdx` for the
   exact input combination and staged BEFORE/AFTER boundary.
 

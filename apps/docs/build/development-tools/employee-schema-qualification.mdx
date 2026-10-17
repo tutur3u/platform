@@ -55,16 +55,32 @@ stopping an interrupted project. A successful feedback packet run generates type
 from that same database before cleanup; the receipt and artifact retain the digest.
 A failed packet does not establish type generation or SQL qualification.
 
-The original eligibility fixture intentionally remains the unexecuted BEFORE
-version: ordinary Auth insertion happens before the employee marker is set, while
-an assertion expects no workspace membership. The canonical bootstrap trigger can
-create personal membership during that insertion. Preserve the actual failing
-hosted receipt before changing only fixture setup. Do not weaken staff eligibility,
-remove assertions or replace the full schema with a minimal registry. After a
-separately reviewed setup correction, require a new exact-source hosted run of all
-105 feedback assertions plus the canonical foundation, disposable causal negative
-controls, type generation and positive cleanup. Pure selector/TAP parser tests do
-not execute SQL. Feedback activation and production application remain separate.
+Eligibility qualification must retain an exact-source hosted BEFORE failure and
+owned cleanup before changing fixture setup. The observed original fixture failed
+its no-membership assertion: ordinary Auth signup inserts a public profile and
+unconditionally bootstraps personal membership. Setting the employee marker earlier
+alone does not prevent that trigger and also requires a canonical creation intent.
+
+The eligibility fixture constructs a synthetic membership-free actor by suppressing
+only `auto_create_personal_workspace_tr` on `public.users` around its two Auth
+identity inserts. It first locks `public.users` under the existing SQL lock timeout
+to prevent concurrent trigger-state changes, then requires the named trigger, canonical function and normal
+`O` enabled state; unexpected state aborts before suppression. The same block
+immediately restores `ENABLE TRIGGER` and verifies that exact state before all
+thirty behavioral assertions. A final non-TAP integrity fence checks the restored
+state before `finish()` and rollback. Setup/integrity exceptions fail the packet;
+these fences add no pgTAP assertions. Transaction rollback also restores trigger
+DDL if setup or later SQL fails; the hosted lifecycle must still prove owned cleanup.
+No other trigger, production function, ACL, RLS or membership is changed/deleted.
+
+This constructs an eligibility precondition, not proof that canonical employee
+signup lacks personal membership. Keep that observed signup behavior in the parent
+residual audit. Do not weaken staff eligibility, remove assertions or substitute a
+minimal registry. The fixture-only candidate preserves all105 feedback assertions;
+require a fresh exact-source hosted AFTER with foundation172, same-database type
+generation and positive cleanup. SQL causal controls remain separately admitted
+proof. Static fixture inspection and pure parser tests do not execute SQL or
+establish AFTER qualification. Feature activation and production remain separate.
 
 Select `include_journal=true` on the employee schema workflow to apply the full
 selected database snapshot and run 301 rollback assertions: the original 172,
