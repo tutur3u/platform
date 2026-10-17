@@ -19,8 +19,12 @@ const nextConfig = createTuturuuuNextConfig({
       afterFiles: [],
       beforeFiles: [
         {
-          destination: `${WEB_APP_URL}/api/v1/infrastructure/internal-accounts/employees/:path*`,
-          source: '/api/v1/infrastructure/internal-accounts/employees/:path*',
+          destination: `${WEB_APP_URL}/api/v1/infrastructure/internal-accounts/employees`,
+          source: '/api/v1/infrastructure/internal-accounts/employees',
+        },
+        {
+          destination: `${WEB_APP_URL}/api/v1/infrastructure/internal-accounts/employees/:path+`,
+          source: '/api/v1/infrastructure/internal-accounts/employees/:path+',
         },
         ...createTuturuuuWebWorkspaceApiRewrites(WEB_APP_URL),
         {

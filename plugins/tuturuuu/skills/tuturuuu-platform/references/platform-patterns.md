@@ -329,7 +329,11 @@ Rules:
   subtree through `beforeFiles`; verify its zero-segment base and descendants with
   installed Next path matchers, while preserving local siblings. Infrastructure's
   employee routing regression in `apps/infrastructure/next.config.test.ts` covers
-  this case. Keep session/API guards unchanged and verify the exact app build in
+  this case. For external collection rewrites, use an exact collection rule plus
+  nonempty `:path+` descendants. Also test the deployment converter: an empty
+  `:path*` backreference can leave a trailing slash that produces a same-path
+  redirect loop when the upstream canonicalizes it. Next runtime interpolation
+  alone misses this case. Keep session/API guards unchanged and verify the exact app build in
   CI plus production routing after authorized deployment.
 - Route ownership is an explicit list (contacts: `CONTACTS_OWNED_ROUTE_PREFIXES`).
   Add an entry when you migrate a module, or the middleware bounces the new route
