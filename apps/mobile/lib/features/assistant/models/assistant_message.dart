@@ -7,6 +7,7 @@ class AssistantMessage extends Equatable {
     this.parts = const [],
     this.createdAt,
     this.liveTurnId,
+    this.clientRequestId,
   });
 
   factory AssistantMessage.fromJson(Map<String, dynamic> json) =>
@@ -19,6 +20,7 @@ class AssistantMessage extends Equatable {
             .toList(),
         createdAt: _parseDateTime(json['created_at']),
         liveTurnId: json['liveTurnId'] as String?,
+        clientRequestId: json['clientRequestId'] as String?,
       );
 
   final String id;
@@ -26,6 +28,7 @@ class AssistantMessage extends Equatable {
   final List<AssistantMessagePart> parts;
   final DateTime? createdAt;
   final String? liveTurnId;
+  final String? clientRequestId;
 
   AssistantMessage copyWith({
     String? id,
@@ -33,6 +36,7 @@ class AssistantMessage extends Equatable {
     List<AssistantMessagePart>? parts,
     DateTime? createdAt,
     String? liveTurnId,
+    String? clientRequestId,
   }) {
     return AssistantMessage(
       id: id ?? this.id,
@@ -40,6 +44,7 @@ class AssistantMessage extends Equatable {
       parts: parts ?? this.parts,
       createdAt: createdAt ?? this.createdAt,
       liveTurnId: liveTurnId ?? this.liveTurnId,
+      clientRequestId: clientRequestId ?? this.clientRequestId,
     );
   }
 
@@ -49,10 +54,18 @@ class AssistantMessage extends Equatable {
     'parts': parts.map((part) => part.toJson()).toList(),
     'created_at': createdAt?.toIso8601String(),
     if (liveTurnId != null) 'liveTurnId': liveTurnId,
+    if (clientRequestId != null) 'clientRequestId': clientRequestId,
   };
 
   @override
-  List<Object?> get props => [id, role, parts, createdAt, liveTurnId];
+  List<Object?> get props => [
+    id,
+    role,
+    parts,
+    createdAt,
+    liveTurnId,
+    clientRequestId,
+  ];
 }
 
 class AssistantMessagePart extends Equatable {

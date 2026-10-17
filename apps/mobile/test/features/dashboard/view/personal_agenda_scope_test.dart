@@ -4,7 +4,10 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -13,6 +16,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/dashboard/view/personal_agenda.dart';
+import 'package:mobile/features/dashboard/view/personal_agenda_scope.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -42,8 +46,59 @@ class _Zones extends Mock implements TimezoneSettingsRepository {
   }) => loadWorkspace(id);
 }
 
-// Advance real disk callbacks and fake-zone continuations until the actual
-// operation finishes. The bound is only a deadlock guard, not a settling delay.
+class _Write {
+  _Write(this.key);
+  final CacheKey key;
+  final gate = Completer<void>();
+  void acknowledge() => gate.complete();
+  void reject() => gate.completeError(StateError('Owned fixture rejection'));
+}
+
+// Controlled storage API acknowledgments only; no disk/durable commit proof.
+class _Storage extends Mock implements CacheStore {
+  final writes = <_Write>[];
+  int acknowledged = 0;
+  Completer<void>? waiting;
+  Future<void> waitForNextWrite() {
+    if (writes.length > acknowledged) return Future<void>.value();
+    return (waiting ??= Completer<void>()).future;
+  }
+
+  void acknowledgeNext() => writes[acknowledged++].acknowledge();
+  void rejectPending() {
+    for (final write in writes) {
+      if (!write.gate.isCompleted) write.reject();
+    }
+  }
+
+  @override
+  Future<CacheReadResult<T>> read<T>({
+    required CacheKey key,
+    required CacheJsonDecoder<T> decode,
+  }) async => CacheReadResult<T>(state: CacheEntryState.missing);
+  @override
+  Future<void> write({
+    required CacheKey key,
+    required CachePolicy policy,
+    required Object? payload,
+    String? etag,
+    List<String> tags = const [],
+    int? expectedRevision,
+    void Function()? checkScope,
+    bool requirePublication = false,
+  }) async {
+    checkScope?.call();
+    final write = _Write(key);
+    writes.add(write);
+    waiting?.complete();
+    waiting = null;
+    await write.gate.future;
+    checkScope?.call();
+  }
+}
+
+// Advance owned callbacks and fake-zone continuations until the actual
+// operation finishes. The bound is a deadlock guard, not a settling delay.
 Future<void> _pumpCompletion(
   WidgetTester tester,
   Future<void> operation,
@@ -81,82 +136,85 @@ Future<void> _pumpCompletion(
 void main() {
   setUpAll(() => registerFallbackValue(DateTime.utc(2026)));
 
-  testWidgets(
-    'authenticated Agenda keeps personal scope and reloads its timezone',
-    (tester) async {
-      CalendarCubit.clearCache();
-      await tester.runAsync(() async {
-        await CacheStore.instance.init();
-        await CacheStore.instance.clearScope();
-      });
-      final auth = _Auth();
-      final workspaces = _Workspaces();
-      when(() => workspaces.hasAuthenticatedActor).thenReturn(true);
-      final events = _Events();
-      final zones = _Zones();
-      const user = User(
-        id: 'synthetic-actor',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: '2026-01-01T00:00:00Z',
-      );
-      whenListen(
-        auth,
-        const Stream<AuthState>.empty(),
-        initialState: const AuthState.authenticated(user),
-      );
-      whenListen(
-        workspaces,
-        const Stream<WorkspaceState>.empty(),
-        initialState: const WorkspaceState(
-          currentWorkspace: Workspace(id: 'shared'),
-          workspaces: [
-            Workspace(id: 'shared'),
-            Workspace(id: 'personal', personal: true),
-          ],
-        ),
-      );
-      var personalZone = 'auto';
-      var workspaceZone = 'America/Los_Angeles';
-      when(zones.loadPersonal).thenAnswer((_) async => personalZone);
-      when(
-        () => zones.loadWorkspace('shared'),
-      ).thenAnswer((_) async => 'Asia/Tokyo');
-      when(
-        () => zones.loadWorkspace('personal'),
-      ).thenAnswer((_) async => workspaceZone);
-      final settings = TimezoneSettingsCubit(
-        repository: zones,
-        deviceLoader: () async => 'Europe/London',
-      );
-      await settings.load(userId: user.id, workspaceId: 'shared');
-      expect(settings.state.effective, 'Asia/Tokyo');
-      final now = DateTime.now().toUtc();
-      final midnight = DateTime.utc(now.year, now.month, now.day, 0, 30);
-      Completer<List<CalendarEvent>>? blockedRead;
-      final finalQuery = Completer<void>();
-      var observeFinalQuery = false;
-      final fixtureEvents = [
-        CalendarEvent(
-          id: 'synthetic-event',
-          title: 'Synthetic personal calendar row',
-          startAt: midnight,
-          endAt: midnight.add(const Duration(hours: 1)),
-        ),
-      ];
-      when(
-        () => events.getEvents(
-          'personal',
-          start: any(named: 'start'),
-          end: any(named: 'end'),
-        ),
-      ).thenAnswer((_) async {
-        final pending = blockedRead;
-        blockedRead = null;
-        if (observeFinalQuery && !finalQuery.isCompleted) finalQuery.complete();
-        return pending == null ? fixtureEvents : await pending.future;
-      });
+  testWidgets('authenticated Agenda keeps personal scope '
+      'and reloads its timezone', (tester) async {
+    CalendarCubit.clearCache();
+    final storage = _Storage();
+    final handle = PersonalAgendaRefreshHandle();
+    final receipts = <Future<void>>[];
+    final auth = _Auth();
+    final workspaces = _Workspaces();
+    when(() => workspaces.hasAuthenticatedActor).thenReturn(true);
+    final events = _Events();
+    final zones = _Zones();
+    const user = User(
+      id: '33333333-3333-4333-8333-333333333333',
+      appMetadata: {},
+      userMetadata: {},
+      aud: 'authenticated',
+      createdAt: '2026-01-01T00:00:00Z',
+    );
+    whenListen(
+      auth,
+      const Stream<AuthState>.empty(),
+      initialState: const AuthState.authenticated(user),
+    );
+    whenListen(
+      workspaces,
+      const Stream<WorkspaceState>.empty(),
+      initialState: const WorkspaceState(
+        currentWorkspace: Workspace(id: '66666666-6666-4666-8666-666666666666'),
+        workspaces: [
+          Workspace(id: '66666666-6666-4666-8666-666666666666'),
+          Workspace(id: '77777777-7777-4777-8777-777777777777', personal: true),
+        ],
+      ),
+    );
+    var personalZone = 'auto';
+    var workspaceZone = 'America/Los_Angeles';
+    when(zones.loadPersonal).thenAnswer((_) async => personalZone);
+    when(
+      () => zones.loadWorkspace('66666666-6666-4666-8666-666666666666'),
+    ).thenAnswer((_) async => 'Asia/Tokyo');
+    when(
+      () => zones.loadWorkspace('77777777-7777-4777-8777-777777777777'),
+    ).thenAnswer((_) async => workspaceZone);
+    final settings = TimezoneSettingsCubit(
+      repository: zones,
+      deviceLoader: () async => 'Europe/London',
+    );
+    await settings.load(
+      userId: user.id,
+      workspaceId: '66666666-6666-4666-8666-666666666666',
+    );
+    expect(settings.state.effective, 'Asia/Tokyo');
+    final now = DateTime.now().toUtc();
+    final midnight = DateTime.utc(now.year, now.month, now.day, 0, 30);
+    Completer<List<CalendarEvent>>? blockedRead;
+    Completer<List<CalendarEvent>>? heldRead;
+    final finalQuery = Completer<void>();
+    var observeFinalQuery = false;
+    final fixtureEvents = [
+      CalendarEvent(
+        id: 'synthetic-event',
+        title: 'Synthetic personal calendar row',
+        startAt: midnight,
+        endAt: midnight.add(const Duration(hours: 1)),
+      ),
+    ];
+    when(
+      () => events.getEvents(
+        '77777777-7777-4777-8777-777777777777',
+        start: any(named: 'start'),
+        end: any(named: 'end'),
+      ),
+    ).thenAnswer((_) async {
+      final pending = blockedRead;
+      blockedRead = null;
+      if (observeFinalQuery && !finalQuery.isCompleted) finalQuery.complete();
+      return pending == null ? fixtureEvents : await pending.future;
+    });
+    try {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
@@ -164,7 +222,12 @@ void main() {
             BlocProvider<WorkspaceCubit>.value(value: workspaces),
             BlocProvider<TimezoneSettingsCubit>.value(value: settings),
           ],
-          child: PersonalAgenda(repository: events, cacheUserId: () => user.id),
+          child: PersonalAgenda(
+            repository: events,
+            cacheUserId: () => user.id,
+            cacheStore: storage,
+            refreshHandle: handle,
+          ),
         ),
       );
       Future<void> settle() async {
@@ -190,29 +253,27 @@ void main() {
       );
       verify(
         () => events.getEvents(
-          'personal',
+          '77777777-7777-4777-8777-777777777777',
           start: any(named: 'start'),
           end: any(named: 'end'),
         ),
       ).called(1);
-      verify(() => zones.loadWorkspace('shared')).called(1);
-      expect(workspaces.state.currentWorkspace!.id, 'shared');
-
-      // Loaded UI precedes the durable cache commit. Agenda deliberately waits
-      // for that commit before changing its wall-clock query; wait on the store
-      // write barrier instead of assuming a fixed delay includes disk flushes.
-      await _pumpCompletion(
-        tester,
-        CacheStore.instance
-            .queryReplica(
-              namespace: 'calendar.events.utc.v2',
-              userId: user.id,
-              workspaceId: 'personal',
-            )
-            .then((_) {}),
+      verify(
+        () => zones.loadWorkspace('66666666-6666-4666-8666-666666666666'),
+      ).called(1);
+      expect(
+        workspaces.state.currentWorkspace!.id,
+        '66666666-6666-4666-8666-666666666666',
       );
 
+      // Acknowledge the observed owned write and await the exact Scope receipt.
+      final initial = handle.latest!.completion;
+      receipts.add(initial);
+      storage.acknowledgeNext();
+      await _pumpCompletion(tester, initial);
+
       final inFlight = Completer<List<CalendarEvent>>();
+      heldRead = inFlight;
       blockedRead = inFlight;
       personalZone = 'Asia/Ho_Chi_Minh';
       await settings.reload();
@@ -221,7 +282,7 @@ void main() {
       expect(calendar.state.displayEvents.single.startAt!.hour, 7);
       verify(
         () => events.getEvents(
-          'personal',
+          '77777777-7777-4777-8777-777777777777',
           start: any(named: 'start'),
           end: any(named: 'end'),
         ),
@@ -236,48 +297,64 @@ void main() {
       expect(calendar.state.timezone, 'Asia/Ho_Chi_Minh');
       verifyNever(
         () => events.getEvents(
-          'personal',
+          '77777777-7777-4777-8777-777777777777',
           start: any(named: 'start'),
           end: any(named: 'end'),
         ),
       );
       observeFinalQuery = true;
       inFlight.complete(fixtureEvents);
-      // The loaded state precedes durable publication. Waiting for the final
-      // repository query proves that the queued timezone transition ran after
-      // the previous cache write; ten fixed pumps cannot establish that.
+      // The loaded state precedes the owned fixture acknowledgment.
+      // Await the actual refresh lifecycle rather than a disk query proxy.
+      // The predecessor's owned write is admitted after its held query returns.
+      final latest = handle.latest!.completion;
+      receipts.add(latest);
+      await _pumpCompletion(tester, storage.waitForNextWrite());
+      storage.acknowledgeNext();
       await _pumpCompletion(tester, finalQuery.future);
-      await _pumpCompletion(
-        tester,
-        CacheStore.instance
-            .queryReplica(
-              namespace: 'calendar.events.utc.v2',
-              userId: user.id,
-              workspaceId: 'personal',
-            )
-            .then((_) {}),
-      );
+      await _pumpCompletion(tester, storage.waitForNextWrite());
+      storage.acknowledgeNext();
+      await _pumpCompletion(tester, latest);
       expect(calendar.state.timezone, 'Europe/London');
       verify(
         () => events.getEvents(
-          'personal',
+          '77777777-7777-4777-8777-777777777777',
           start: any(named: 'start'),
           end: any(named: 'end'),
         ),
       ).called(1);
       verifyNever(
         () => events.getEvents(
-          'shared',
+          '66666666-6666-4666-8666-666666666666',
           start: any(named: 'start'),
           end: any(named: 'end'),
         ),
       );
-      expect(workspaces.state.currentWorkspace!.id, 'shared');
+      expect(
+        workspaces.state.currentWorkspace!.id,
+        '66666666-6666-4666-8666-666666666666',
+      );
       expect(tester.takeException(), isNull);
+    } finally {
+      final last = handle.latest?.completion;
+      if (last != null && !receipts.contains(last)) {
+        receipts.add(last);
+      }
+      final drain = Future.wait(
+        receipts.map(
+          (receipt) => receipt.then<void>((_) {}, onError: (Object error) {}),
+        ),
+      ).then<void>((_) {});
       await tester.pumpWidget(const SizedBox.shrink());
+      final pending = heldRead;
+      if (pending != null && !pending.isCompleted) {
+        pending.complete(fixtureEvents);
+      }
+      storage.rejectPending();
+      await _pumpCompletion(tester, drain);
       await settings.close();
       await auth.close();
       await workspaces.close();
-    },
-  );
+    }
+  });
 }

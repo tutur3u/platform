@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:mobile/core/observability/operational_error_reporter.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -28,10 +29,11 @@ class _Repository extends AssistantRepository {
     required String wsId,
     required String chatId,
     bool forceRefresh = false,
-  }) async => const AssistantRestoredChat(
-    chat: AssistantChatRecord(id: 'chat'),
-    messages: [],
-    attachmentsByMessageId: {},
+    AssistantChatCacheOrigin? cacheOrigin,
+  }) async => AssistantRestoredChat(
+    chat: AssistantChatRecord(id: chatId),
+    messages: const [],
+    attachmentsByMessageId: const {},
   );
   @override
   Future<List<AssistantChatRecord>> fetchRecentChats({
@@ -54,24 +56,37 @@ void main() {
           '${failed ? 'explicit failure' : 'durable completion'}', () async {
         final api = _Api();
         when(
-          () => api.patchJson(
-            '/api/v1/workspaces/ws/chat/conversations/chat/ai-settings',
-            any(),
+          () => api.getJson(
+            '/api/v1/workspaces/ws/chat/conversations/11111111-1111-4111-8111'
+            '-111111111111/ai-settings',
           ),
-        ).thenAnswer((_) async => {});
+        ).thenAnswer(
+          (_) async => {
+            'settings': {
+              'conversationId': '11111111-1111-4111-8111-111111111111',
+              'modelId': 'model',
+              'creditSource': 'workspace',
+              'thinkingMode': 'thinking',
+            },
+          },
+        );
         final body = failed
             ? '{"type":"assistant_delta","delta":"Partial"}\n'
                   '{"type":"error","message":"Not saved"}\n'
                   '{"type":"error","message":"private@example.com token"}\n'
                   '{"type":"done"}\n'
             : '{"type":"assistant_delta","delta":"Saved answer"}\n'
-                  '{"type":"messages","messages":[{"id":"saved-reply",'
-                  '"conversationId":"chat","kind":"assistant",'
+                  '{"type":"messages","messages":[{"id":"22222222-2222-4222-8'
+                  '222-222222222222",'
+                  '"conversationId":"11111111-1111-4111-8111-111111111111","k'
+                  'ind":"assistant",'
+                  '"metadata":{},"createdAt":"2026-10-12T00:00:00Z",'
                   '"content":"Saved answer"}]}\n{"type":"done"}\nnot-json\n';
         when(
           () => api.sendJsonStream(
             'POST',
-            '/api/v1/workspaces/ws/chat/conversations/chat/messages',
+            '/api/v1/workspaces/ws/chat/conversations/11111111-1111-4111-8111'
+                '-111111111111/messages',
             any(),
             accept: 'application/x-ndjson',
           ),
@@ -86,7 +101,8 @@ void main() {
           when(
             () => api.sendJsonStream(
               'POST',
-              '/api/v1/workspaces/ws/chat/conversations/chat/messages',
+              '/api/v1/workspaces/ws/chat/conversations/11111111-1111-4111-81'
+                  '11-111111111111/messages',
               any(),
               accept: 'application/x-ndjson',
             ),
@@ -95,7 +111,8 @@ void main() {
               ? 'data: {"type":"error","errorText":"Not saved"}\n\n'
                     'data: {"type":"error","errorText":"private token"}\n\n'
                     'data: [DONE]\n\n'
-              : 'data: {"type":"start","messageId":"saved-reply"}\n\n'
+              : 'data: {"type":"start", '
+                    '"messageId":"22222222-2222-4222-8222-222222222222"}\n\n'
                     'data: {"type":"text-delta","delta":"Saved answer"}\n\n'
                     'data: [DONE]\n\n';
           when(
@@ -111,9 +128,11 @@ void main() {
           );
         }
         final preferences = _Preferences();
-        when(
-          () => preferences.loadChatId('ws'),
-        ).thenAnswer((_) async => 'chat');
+        when(() => preferences.loadChatId('ws')).thenAnswer(
+          (_) async => legacy
+              ? 'ai-chat-11111111-1111-4111-8111-111111111111'
+              : '11111111-1111-4111-8111-111111111111',
+        );
         final events = <OperationalErrorEvent>[];
         final cubit = AssistantChatCubit(
           operationalReporter: OperationalErrorReporter(
@@ -160,7 +179,10 @@ void main() {
           expect(settled.status, AssistantChatStatus.idle);
           expect(settled.error, isNull);
           expect(settled.diagnostics, isNull);
-          expect(settled.messages.last.id, 'saved-reply');
+          expect(
+            settled.messages.last.id,
+            '22222222-2222-4222-8222-222222222222',
+          );
           expect(events, isEmpty);
         }
       });

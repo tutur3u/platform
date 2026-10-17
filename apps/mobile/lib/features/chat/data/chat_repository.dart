@@ -13,6 +13,7 @@ import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -123,6 +124,24 @@ class ChatRepository {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }),
     );
+  }
+
+  /// Assistant creation requires an HTTP acknowledgement, not an offline row.
+  /// A failed or unknown request is never queued or automatically replayed.
+  Future<AcknowledgedChatConversation> createAcknowledgedConversation(
+    String wsId, {
+    required String title,
+    required String modelId,
+  }) async {
+    final response = await _apiClient
+        .postJson('/api/v1/workspaces/$wsId/chat/conversations', {
+          'type': 'ai',
+          'title': title,
+          'aiEnabled': true,
+          'autoReply': true,
+          'modelId': modelId,
+        });
+    return AcknowledgedChatConversation.fromResponse(response, wsId: wsId);
   }
 
   Future<ChatConversation> updateConversation(
@@ -333,18 +352,33 @@ class ChatRepository {
     if (!contentType.contains('application/x-ndjson')) {
       final body = await response.stream.bytesToString();
       final decoded = jsonDecode(body);
+      final nativeParser = ChatNdjsonStreamParser(
+        strictNativeReceipts: miraMode,
+      );
       if (decoded is Map<String, dynamic>) {
         final message = decoded['message'];
         if (message is Map<String, dynamic>) {
-          yield ChatStreamMessageEvent(ChatMessage.fromJson(message));
+          yield ChatStreamMessageEvent(nativeParser.decodeMessage(message));
         }
         final messages = decoded['messages'];
+        if (miraMode &&
+            decoded.containsKey('message') &&
+            message is! Map<String, dynamic>) {
+          nativeParser.decodeMessage(message);
+        }
+        if (miraMode && decoded.containsKey('messages') && messages is! List) {
+          throw const FormatException('Invalid native message batch');
+        }
         if (messages is List) {
           yield ChatStreamMessagesEvent(
-            messages
-                .whereType<Map<String, dynamic>>()
-                .map(ChatMessage.fromJson)
-                .toList(growable: false),
+            miraMode
+                ? messages
+                      .map(nativeParser.decodeMessage)
+                      .toList(growable: false)
+                : messages
+                      .whereType<Map<String, dynamic>>()
+                      .map(ChatMessage.fromJson)
+                      .toList(growable: false),
           );
         }
       }

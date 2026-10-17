@@ -1,11 +1,38 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
+
+/// An owned refresh lifecycle receipt, not a durable storage acknowledgment.
+final class PersonalAgendaRefreshReceipt {
+  const PersonalAgendaRefreshReceipt({
+    required this.revision,
+    required this.completion,
+  });
+
+  final int revision;
+  final Future<void> completion;
+}
+
+/// Passive test handle; publishing never invokes consumer code.
+final class PersonalAgendaRefreshHandle {
+  PersonalAgendaRefreshReceipt? _latest;
+  PersonalAgendaRefreshReceipt? get latest => _latest;
+}
+
+// Ordering settlement is not a storage acknowledgment. Retain the original
+// error for skipped successors; current explicit waves may proceed afterward.
+final class _RefreshTerminal {
+  const _RefreshTerminal({this.error, this.stackTrace});
+  final Object? error;
+  final StackTrace? stackTrace;
+}
 
 /// Resolve user → personal workspace → device, never the selected shared zone.
 class PersonalAgendaScope extends StatefulWidget {
@@ -15,6 +42,8 @@ class PersonalAgendaScope extends StatefulWidget {
     required this.settings,
     required this.child,
     this.repository,
+    this.cacheStore,
+    this.refreshHandle,
     super.key,
   });
 
@@ -22,6 +51,8 @@ class PersonalAgendaScope extends StatefulWidget {
   final String workspaceId;
   final TimezoneSettingsCubit settings;
   final CalendarRepository? repository;
+  final CacheStore? cacheStore;
+  final PersonalAgendaRefreshHandle? refreshHandle;
   final Widget child;
 
   @override
@@ -34,6 +65,9 @@ class _PersonalAgendaScopeState extends State<PersonalAgendaScope> {
   late final TimezoneSettingsCubit _timezone;
   StreamSubscription<TimezoneSettingsState>? _subscription;
   Future<void> _calendarRefresh = Future<void>.value();
+  Future<_RefreshTerminal> _refreshOrdering = Future<_RefreshTerminal>.value(
+    const _RefreshTerminal(),
+  );
   int _calendarRevision = 0;
 
   @override
@@ -42,6 +76,7 @@ class _PersonalAgendaScopeState extends State<PersonalAgendaScope> {
     _repository = widget.repository ?? CalendarRepository();
     _calendar = CalendarCubit(
       calendarRepository: _repository,
+      cacheStore: widget.cacheStore,
       initialState: CalendarCubit.seedStateForWorkspace(widget.workspaceId),
     );
     _timezone = TimezoneSettingsCubit(
@@ -53,11 +88,35 @@ class _PersonalAgendaScopeState extends State<PersonalAgendaScope> {
       final revision = ++_calendarRevision;
       // Finish the prior cache write before changing timezone/query range.
       // Intermediate settings changes are superseded by the latest resolution.
-      _calendarRefresh = _calendarRefresh.then((_) async {
-        if (!mounted || revision != _calendarRevision) return;
+      _calendarRefresh = _refreshOrdering.then((previous) async {
+        if (!mounted || revision != _calendarRevision) {
+          final error = previous.error;
+          if (error != null) {
+            Error.throwWithStackTrace(error, previous.stackTrace!);
+          }
+          return;
+        }
         _calendar.setTimezone(state.resolved ? state.effective : null);
         await _calendar.loadEvents(widget.workspaceId, forceRefresh: true);
       });
+      _refreshOrdering = _calendarRefresh.then<_RefreshTerminal>(
+        (_) => const _RefreshTerminal(),
+        onError: (Object error, StackTrace stack) {
+          try {
+            developer.log(
+              'Personal agenda refresh failed.',
+              name: 'PersonalAgendaScope',
+            );
+          } on Object {
+            // Logging failure must not create another unhandled future.
+          }
+          return _RefreshTerminal(error: error, stackTrace: stack);
+        },
+      );
+      widget.refreshHandle?._latest = PersonalAgendaRefreshReceipt(
+        revision: revision,
+        completion: _calendarRefresh,
+      );
       unawaited(_calendarRefresh);
     });
     unawaited(_reloadTimezone());

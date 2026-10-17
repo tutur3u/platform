@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -24,11 +25,15 @@ class PersonalAgenda extends StatelessWidget {
     this.replayToken = 0,
     this.repository,
     this.cacheUserId,
+    this.cacheStore,
+    this.refreshHandle,
     super.key,
   });
   final int replayToken;
   final CalendarRepository? repository;
   final String? Function()? cacheUserId;
+  final CacheStore? cacheStore;
+  final PersonalAgendaRefreshHandle? refreshHandle;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +56,8 @@ class PersonalAgenda extends StatelessWidget {
       workspaceId: workspace.id,
       settings: context.read<TimezoneSettingsCubit>(),
       repository: repository,
+      cacheStore: cacheStore,
+      refreshHandle: refreshHandle,
       child: PersonalAgendaView(
         workspaceId: workspace.id,
         replayToken: replayToken,

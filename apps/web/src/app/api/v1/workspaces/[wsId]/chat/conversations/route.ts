@@ -37,6 +37,37 @@ const createConversationSchema = z.object({
   type: z.enum(['direct', 'group', 'channel', 'ai']).default('channel'),
 });
 
+const createdConversationReceiptSchema = z
+  .object({
+    id: z.uuid(),
+    wsId: z.uuid(),
+    type: z.enum(['direct', 'group', 'channel', 'ai']),
+    createdAt: z.iso.datetime(),
+    createdBy: z.uuid().nullable(),
+    members: z.array(
+      z
+        .object({
+          archivedAt: z.string().nullable(),
+          conversationId: z.uuid(),
+          id: z.uuid(),
+          joinedAt: z.string(),
+          lastReadAt: z.string().nullable(),
+          mutedAt: z.string().nullable(),
+          pinnedAt: z.string().nullable(),
+          role: z.enum(['admin', 'assistant', 'member', 'owner']),
+          user: z.object({
+            avatarUrl: z.string().nullable(),
+            displayName: z.string(),
+            handle: z.string().nullable(),
+            id: z.uuid(),
+          }),
+          userId: z.uuid(),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+
 async function listNativeChatConversations({
   actorUserId,
   archived,
@@ -342,7 +373,10 @@ export const POST = withSessionAuth<RouteParams>(
       payload = await request.json();
     } catch {
       return NextResponse.json(
-        { message: 'Invalid request body' },
+        {
+          code: 'chat_create_invalid_request',
+          message: 'Invalid request body',
+        },
         { status: 400 }
       );
     }
@@ -350,13 +384,17 @@ export const POST = withSessionAuth<RouteParams>(
     const parsed = createConversationSchema.safeParse(payload);
     if (!parsed.success) {
       return NextResponse.json(
-        { message: 'Invalid request body', errors: parsed.error.issues },
+        {
+          code: 'chat_create_invalid_request',
+          message: 'Invalid request body',
+          errors: parsed.error.issues,
+        },
         { status: 400 }
       );
     }
 
     try {
-      const conversation = await callPrivateChatRpc<ChatConversation>(
+      const rawConversation = await callPrivateChatRpc<unknown>(
         'chat_create_conversation',
         {
           p_actor_user_id: auth.user.id,
@@ -365,14 +403,31 @@ export const POST = withSessionAuth<RouteParams>(
         }
       );
 
-      await publishChatRealtimeEvent({
-        actorUserId: auth.user.id,
-        audience: getChatRealtimeAudience(conversation),
-        conversation,
-        conversationId: conversation.id,
-        type: 'conversation.created',
-        wsId: context.context.normalizedWsId,
-      });
+      const conversation =
+        createdConversationReceiptSchema.parse(rawConversation);
+      if (
+        conversation.type !== parsed.data.type ||
+        (['ai', 'channel'].includes(conversation.type) &&
+          conversation.wsId !== context.context.normalizedWsId)
+      ) {
+        throw new Error('Invalid created conversation receipt');
+      }
+      try {
+        await publishChatRealtimeEvent({
+          actorUserId: auth.user.id,
+          audience: getChatRealtimeAudience(conversation),
+          conversation,
+          conversationId: conversation.id,
+          type: 'conversation.created',
+          wsId: context.context.normalizedWsId,
+        });
+      } catch {
+        // The private RPC already committed. Supplemental publication cannot
+        // turn its validated receipt into an unknown creation outcome.
+        console.warn('Created chat conversation but realtime publish failed', {
+          conversationId: conversation.id,
+        });
+      }
 
       return NextResponse.json({ conversation }, { status: 201 });
     } catch (error) {
