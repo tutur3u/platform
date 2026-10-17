@@ -1,5 +1,49 @@
 # Changelog
 
+## [1.41.0](https://github.com/tutur3u/platform/compare/database-v1.40.0...database-v1.41.0) (2026-10-17)
+
+
+### Features
+
+* **accounts:** compose address migration bottom with qualified Web sessions ([c7bdc16](https://github.com/tutur3u/platform/commit/c7bdc16e7ce1d9abaaeb999b6a787ecce7d78ade))
+* **accounts:** compose migration suppliers with fixture lint correction ([#6321](https://github.com/tutur3u/platform/issues/6321)) ([84ce8f4](https://github.com/tutur3u/platform/commit/84ce8f493e8a1fc8ef6c5cf24982b3771c0dbd59))
+* **infrastructure:** add durable employee creation journal ([#6286](https://github.com/tutur3u/platform/issues/6286)) ([c3d2fcc](https://github.com/tutur3u/platform/commit/c3d2fcc9fc7e9a358e95185967e44a02f1d1dce6))
+* **infrastructure:** compose reviewed employee qualification source ([794789f](https://github.com/tutur3u/platform/commit/794789f41e26d01e9029a3ff92bbbf4f1e738b25))
+* **infrastructure:** connect durable employee creation runtime ([#6291](https://github.com/tutur3u/platform/issues/6291)) ([f355eab](https://github.com/tutur3u/platform/commit/f355eabd0df4bbb80537b95718b25132e1c255af))
+* **infrastructure:** connect employee journal through fixed RPCs ([da3955c](https://github.com/tutur3u/platform/commit/da3955c29a52de6319c2e8a8cf48bf96f440ae2d))
+* **journal:** prepare private journal and mood source slice ([bc6aff9](https://github.com/tutur3u/platform/commit/bc6aff9566fcc4e698299149e22e2f7f9bd9223b))
+* **journal:** prepare private journal and mood source slice ([#6271](https://github.com/tutur3u/platform/issues/6271)) ([0a7d8fb](https://github.com/tutur3u/platform/commit/0a7d8fbcbddbbc6dc46977c708b174beb5e38531))
+* **mail:** connect Gmail and Outlook as personal email clients ([#5997](https://github.com/tutur3u/platform/issues/5997)) ([5abbe32](https://github.com/tutur3u/platform/commit/5abbe328188804006d0b3351dd110f609d4b3f9f))
+* **mail:** notify managed mailbox owners on inbound delivery ([560de78](https://github.com/tutur3u/platform/commit/560de780e828c10aebfd402b35935ffa876c2e64))
+* **mail:** notify managed mailbox owners on inbound delivery ([#6255](https://github.com/tutur3u/platform/issues/6255)) ([ecd1af7](https://github.com/tutur3u/platform/commit/ecd1af725a16f3eda572d463add037ec5d5a8f8e))
+
+
+### Bug Fixes
+
+* **ci:** bound Mail fixture identity checks ([447e0e7](https://github.com/tutur3u/platform/commit/447e0e715bd2886c2f896d0690fa6a5ff5c7e77a))
+* **ci:** reconcile journal and restore qualification ([b0e7cac](https://github.com/tutur3u/platform/commit/b0e7cacbc4a05334dd288816a6c5952e2be72e52))
+* **ci:** require successful employee HTTP fixture exit ([244be3e](https://github.com/tutur3u/platform/commit/244be3e9a4dd2db949d8c8e0d96a6058f814206a))
+* **database:** await staging cleanup diagnostics ([578814f](https://github.com/tutur3u/platform/commit/578814f4b1cbb5df72db994c599e0255d7fb13f8))
+* **database:** bind preflight fixture mailbox domain ([007e0bb](https://github.com/tutur3u/platform/commit/007e0bb35c460dbf5dd6d49685277427cc704ce6))
+* **database:** isolate employee fixture provider identity ([2bb368d](https://github.com/tutur3u/platform/commit/2bb368d52b917aa12ca5dd5c1ba35b78379e6955))
+* **database:** normalize employee mailbox routing ([1887e13](https://github.com/tutur3u/platform/commit/1887e137674f9a6216a9ee472b52cc1a72ee8741))
+* **database:** order pending journal migration after main ([dd1a62e](https://github.com/tutur3u/platform/commit/dd1a62e2e0d4ec2bf7de86e3851ed4e5764fe4b1))
+* **database:** preserve original isolated staging errors ([74057a4](https://github.com/tutur3u/platform/commit/74057a42dde1ee88ee992fd231fa097559d60af6))
+* **database:** preserve original isolated staging errors ([#6336](https://github.com/tutur3u/platform/issues/6336)) ([99442b5](https://github.com/tutur3u/platform/commit/99442b55dcae667225881f1a5cdb658f37a13dd8))
+* **database:** reconcile qualified employee schema on current main ([84ec8e0](https://github.com/tutur3u/platform/commit/84ec8e04c4a412c7dd1501f2bb7ce14c0dda01ea))
+* **database:** reconcile qualified employee schema on current main ([#6258](https://github.com/tutur3u/platform/issues/6258)) ([a0426d4](https://github.com/tutur3u/platform/commit/a0426d48105e26fd3e10701782b7592c1bc67eb3))
+* **database:** retain journal packet failure diagnostics ([ee59b43](https://github.com/tutur3u/platform/commit/ee59b437eca5ad0844079e6272f694cff2995efe))
+* **journal:** propagate reconciled parent into context read ([28602cd](https://github.com/tutur3u/platform/commit/28602cd0a252ac2a793711c8454a497f3521f386))
+* **journal:** reconcile context branch with updated parent ([80cf437](https://github.com/tutur3u/platform/commit/80cf437c9d494e3c0fc4ce9bb6d2fe19c655e2a0))
+* **meet:** reconcile landed Lettin adapter integration ([629cf21](https://github.com/tutur3u/platform/commit/629cf21338d7e4898cc3d512c93ea50447156306))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434))
+* **release:** reconcile production history before Contacts rollout ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+* **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
+* **web:** expose bounded session build diagnostics ([3b70c65](https://github.com/tutur3u/platform/commit/3b70c656a5a7155762fa74de8ab9a2d96fa20011))
+* **web:** preserve session qualification failure diagnostics ([c5f3eef](https://github.com/tutur3u/platform/commit/c5f3eef71dbd1c1862d38384705f81d380501f2f))
+* **web:** resolve employee session fixture dependencies ([090389b](https://github.com/tutur3u/platform/commit/090389b27304883ac64bcecc5c75aa6b8b2eb6cb))
+* **web:** retain outer ownership of build descendants ([f2872a7](https://github.com/tutur3u/platform/commit/f2872a70ca0d7d15b18631d9f940f647dd06b6b2))
+
 ## [1.40.0](https://github.com/tutur3u/platform/compare/database-v1.39.0...database-v1.40.0) (2026-10-09)
 
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.34.1](https://github.com/tutur3u/platform/compare/meet-v0.34.0...meet-v0.34.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **meet:** inject Worker context in review route tests ([aa1fe89](https://github.com/tutur3u/platform/commit/aa1fe89ab7eaefba3e3b4f908315948e319cedb1))
+* **meet:** repair Worker login and build-info initialization ([#6296](https://github.com/tutur3u/platform/issues/6296)) ([aca23da](https://github.com/tutur3u/platform/commit/aca23da2f266567a3473fa7906a679172fe44415))
+* **meet:** use workerd-compatible OpenNext runtime ([0fa685f](https://github.com/tutur3u/platform/commit/0fa685f2f57b4ed1963109ff44d425e992d04b24))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434))
+* **release:** reconcile production history before Contacts rollout ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/meet-v0.33.0...meet-v0.34.0) (2026-10-09)
 
 

@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/infra-v0.33.0...infra-v0.34.0) (2026-10-17)
+
+
+### Features
+
+* **accounts:** compose address migration bottom with qualified Web sessions ([c7bdc16](https://github.com/tutur3u/platform/commit/c7bdc16e7ce1d9abaaeb999b6a787ecce7d78ade))
+* **accounts:** compose address migration ui with qualified Web sessions ([caac1c4](https://github.com/tutur3u/platform/commit/caac1c4e507704aa7ceb2c27548c120d1d023f14))
+* **accounts:** compose migration suppliers with fixture lint correction ([#6321](https://github.com/tutur3u/platform/issues/6321)) ([84ce8f4](https://github.com/tutur3u/platform/commit/84ce8f493e8a1fc8ef6c5cf24982b3771c0dbd59))
+* **accounts:** compose migration UI above lint-corrected suppliers ([#6322](https://github.com/tutur3u/platform/issues/6322)) ([0c73caa](https://github.com/tutur3u/platform/commit/0c73caa5570fb6d68d370ffa8d3cb8eb8921d0bb))
+* **infrastructure:** add durable employee restoration POST adapter ([d86507d](https://github.com/tutur3u/platform/commit/d86507dddc8d37426c45a7e1f5a6c66b720e4dc5))
+* **infrastructure:** add durable employee restoration POST adapter ([#6294](https://github.com/tutur3u/platform/issues/6294)) ([b1ddeea](https://github.com/tutur3u/platform/commit/b1ddeea21ece0c9592be61f086ed63e0909941ae))
+* **infrastructure:** add inert employee SQL adapter foundation ([d32429a](https://github.com/tutur3u/platform/commit/d32429aa348394e861874e066f4be0fd3485047c))
+* **infrastructure:** add inert employee SQL adapter foundation ([#6254](https://github.com/tutur3u/platform/issues/6254)) ([156be2a](https://github.com/tutur3u/platform/commit/156be2aa06a47cdb8e592da21d0eadb93a6f2e28))
+* **infrastructure:** add inert fixed employee SQL transport ([1495920](https://github.com/tutur3u/platform/commit/1495920737bd8b68bc828a60701651d549795ff9))
+* **infrastructure:** add inert fixed employee SQL transport ([#6260](https://github.com/tutur3u/platform/issues/6260)) ([c8b9cfc](https://github.com/tutur3u/platform/commit/c8b9cfc248a16bf7d9f2ded6b2ad4d3b7a21a150))
+* **infrastructure:** add managed access restoration dialog ([f5642eb](https://github.com/tutur3u/platform/commit/f5642eb019b8aa6e878c3ef2aa9d590c3c6b9309))
+* **infrastructure:** add managed access restoration dialog ([#6301](https://github.com/tutur3u/platform/issues/6301)) ([11d42ec](https://github.com/tutur3u/platform/commit/11d42ecb1ca5631bee4b134acc581c7ced4d155f))
+* **infrastructure:** compose reviewed employee qualification source ([794789f](https://github.com/tutur3u/platform/commit/794789f41e26d01e9029a3ff92bbbf4f1e738b25))
+* **infrastructure:** define stable UUID address migration protocol ([24271fc](https://github.com/tutur3u/platform/commit/24271fcedc9bdcdb3bfcf0f42de5c1b9afb8fd76))
+* **infrastructure:** define unbound stable UUID address migration protocol ([#6300](https://github.com/tutur3u/platform/issues/6300)) ([31ae32f](https://github.com/tutur3u/platform/commit/31ae32f76b55448f7d6cd34a4c350ccc04991e52))
+* **infrastructure:** expose managed employee directory and conversion policy ([68c26c4](https://github.com/tutur3u/platform/commit/68c26c4cfc0a3bdeb570e34d659427b4607f342a))
+* **infrastructure:** expose managed employee directory and conversion policy ([#6244](https://github.com/tutur3u/platform/issues/6244)) ([8d65183](https://github.com/tutur3u/platform/commit/8d651836cb7c454a2d0598e78c2980ecfebdfe8b))
+* **infrastructure:** expose managed employee inspection ([71189ce](https://github.com/tutur3u/platform/commit/71189ce1f5efed123a8d624e2def365b68670eec))
+* **infrastructure:** expose managed employee inspection ([#6293](https://github.com/tutur3u/platform/issues/6293)) ([fc869bf](https://github.com/tutur3u/platform/commit/fc869bff1a8a890e39b9731717480cdf168772c7))
+* **infrastructure:** prepare guarded employee creation flow ([b046d55](https://github.com/tutur3u/platform/commit/b046d558b9a8c87d565b4a547fcd88e20f97230f))
+* **infrastructure:** prepare guarded employee creation flow ([#6259](https://github.com/tutur3u/platform/issues/6259)) ([747ce8c](https://github.com/tutur3u/platform/commit/747ce8c1f36649ced0b8260f18cde68c598f1c06))
+
+
+### Bug Fixes
+
+* **infrastructure:** define committed readiness marker locally ([9224768](https://github.com/tutur3u/platform/commit/9224768b9789c525e05b78f9e381949f91267a8f))
+* **infrastructure:** preserve acknowledged employee SQL commits ([2076fcf](https://github.com/tutur3u/platform/commit/2076fcfc530df758bb374f2e69413dcfe3c963b5))
+* **infrastructure:** prevent employee availability redirect loop ([9244795](https://github.com/tutur3u/platform/commit/9244795f730f2d935fd24cd2a98bcc67e1d03f83))
+* **infrastructure:** prevent employee availability redirect loop ([#6331](https://github.com/tutur3u/platform/issues/6331)) ([74c0a07](https://github.com/tutur3u/platform/commit/74c0a07a80432327ab224bcbf9b3a7e5a5c1c5eb))
+* **infrastructure:** route employee APIs before local dynamic handlers ([bb212dc](https://github.com/tutur3u/platform/commit/bb212dc718ab159bae6a0de5d89c1f1ef52b0e99))
+* **infrastructure:** route employee APIs before local dynamic handlers ([#6325](https://github.com/tutur3u/platform/issues/6325)) ([8125845](https://github.com/tutur3u/platform/commit/8125845a5cd4691e98e9bce6a380593a9e28b727))
+* **journal:** reconcile context branch with updated parent ([80cf437](https://github.com/tutur3u/platform/commit/80cf437c9d494e3c0fc4ce9bb6d2fe19c655e2a0))
+* **meet:** reconcile landed Lettin adapter integration ([629cf21](https://github.com/tutur3u/platform/commit/629cf21338d7e4898cc3d512c93ea50447156306))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434))
+* **release:** reconcile production history before Contacts rollout ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+* **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
+
 ## [0.33.0](https://github.com/tutur3u/platform/compare/infra-v0.32.0...infra-v0.33.0) (2026-10-09)
 
 

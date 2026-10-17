@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.9](https://github.com/tutur3u/platform/compare/users-ui-v0.7.8...users-ui-v0.7.9) (2026-10-17)
+
+
+### Bug Fixes
+
+* **contacts:** handle failed attendance saves without losing drafts ([a50024d](https://github.com/tutur3u/platform/commit/a50024d92a5ae0ba0230d5003d866f04d5f5c8f7))
+* **contacts:** handle failed attendance saves without losing drafts ([#6335](https://github.com/tutur3u/platform/issues/6335)) ([7a95f9a](https://github.com/tutur3u/platform/commit/7a95f9af4d6298c009a48e049b31c688a5b6bed0))
+* **contacts:** preserve attendance edits during saves ([49bad1e](https://github.com/tutur3u/platform/commit/49bad1e0e366d629f8f85e6bc5179a4798cfc5dd))
+* **contacts:** preserve attendance edits during saves ([#6332](https://github.com/tutur3u/platform/issues/6332)) ([750eeaa](https://github.com/tutur3u/platform/commit/750eeaafb9f13fc7b8370e0e132db97ec5245cf7))
+* **contacts:** reconcile class notes with attendance main ([95d68c5](https://github.com/tutur3u/platform/commit/95d68c59b6d4c127f411244242bf491358e13cbe))
+
 ## [0.7.8](https://github.com/tutur3u/platform/compare/users-ui-v0.7.7...users-ui-v0.7.8) (2026-09-26)
 
 
