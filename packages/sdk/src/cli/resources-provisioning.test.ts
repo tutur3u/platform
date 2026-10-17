@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -115,6 +116,19 @@ it.each(['missing', 'stale', 'malformed', 'nonexecutable', 'symlink'])(
 it('validates every installed shim, including the last one', async () => {
   const home = await fixture();
   await fs.rm(join(home, 'bin', resourceShims.at(-1)!));
+  await expect(installedResourceShims(home)).rejects.toThrow(
+    'missing, stale, or malformed'
+  );
+  expectNoShimWrites(home);
+});
+
+it('rejects an executable FIFO without blocking on a content read', async () => {
+  const home = await fixture();
+  const path = join(home, 'bin', resourceShims[0]!);
+  await fs.rm(path);
+  execFileSync('/usr/bin/mkfifo', [path]);
+  await fs.chmod(path, 0o700);
+  vi.clearAllMocks();
   await expect(installedResourceShims(home)).rejects.toThrow(
     'missing, stale, or malformed'
   );
