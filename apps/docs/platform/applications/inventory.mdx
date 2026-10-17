@@ -643,3 +643,35 @@ show an empty product result rather than disappearing from the picker. The
 mounted unloaded-category regression uses synthetic data outside the initial
 catalog page and verifies searchable choices, category-scoped requests, and the
 second page. This does not imply every product has a current scheduled price.
+
+### Merge concurrency lock boundary
+
+The independent-client cascade fixture requires zero unexpected advisory locks.
+It permits only the bigint key computed by
+`hashtextextended('employee-address-reservations', 0)` in `ShareLock` mode and
+`objsubid=1`. This shared employee-admission lock protects a separate boundary:
+workspace deletion invokes the profile default-workspace FK's `SET DEFAULT`
+update, whose statement-level admission trigger runs even for an empty update.
+The full-schema PostgreSQL failure classified that lock separately from the
+cascade warehouse's inventory identity key.
+
+The fixture explicitly accounts for the permitted lock. Every other key, mode,
+and two-integer namespace remains forbidden, including real inventory identity
+locks held alongside permitted admission. Its 28-check plan preserves the original
+22 cases and adds six disposable PostgreSQL controls: a zero-row profile update
+that takes shared admission, a real inventory lock beside it, an unexpected shared
+key, exclusive employee admission, the same key halves in the two-integer
+namespace, and rollback cleanup of all control locks. Controls roll back without
+changing profile rows or weakening employee admission.
+
+An unexpected lock retains a bounded failure-only TAP diagnostic: the tested
+unexpected count, disposable backend PID/assigned transaction ID, and at most
+32 granted advisory tuples with truncation and barrier/permitted/forbidden labels.
+A later snapshot never replaces the tested count; diagnostic errors cannot hide
+the boundary assertion. Passing the boundary adds no diagnostic query or wait.
+
+Require the exact candidate's Inventory offline create database contract workflow
+to pass all 28 checks plus season concurrency, strict SQL packets, generated types
+and owned cleanup. Local source and mock checks do not establish PostgreSQL
+acceptance. Compare the retained same-schema failing count with the new candidate
+before declaring the fixture repair verified.
