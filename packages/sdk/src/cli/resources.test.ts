@@ -317,7 +317,7 @@ describe('resource admission', { timeout: 45_000 }, () => {
     const source = await script(
       home,
       'nested',
-      `delete process.env.TTR_RESOURCE_OWNER;require('child_process').execFileSync(${JSON.stringify(bun)},[${JSON.stringify(entry)},'run','--','node','-e','console.log(42)'],{stdio:'inherit',timeout:${processTimeout}});`
+      `delete process.env.TTR_RESOURCE_OWNER;require('child_process').execFileSync(${JSON.stringify(bun)},[${JSON.stringify(join(home, 'fixture-shim.ts'))},'run','--','node','-e','console.log(42)'],{stdio:'inherit',timeout:${processTimeout}});`
     );
     const result = await launch(home, ['run', '--', 'node', source]).done;
     expect(result.code, result.err).toBe(0);
