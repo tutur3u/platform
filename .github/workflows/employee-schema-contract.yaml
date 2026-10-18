@@ -118,7 +118,7 @@ jobs:
           bun-version: 1.4.1
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.21.0
           package-manager-cache: false
       - name: Validate standalone chat profile
         if: inputs.include_chat_initial_settings == true || inputs.diagnose_chat_process == true

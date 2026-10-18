@@ -371,7 +371,7 @@ async function drive(fault, { cleanupError = null, processError = null } = {}) {
       envelopeSha256: sha256(readFileSync(env.CHAT_INITIAL_SETTINGS_ENVELOPE)),
       providerCalls: 0,
     };
-    if (command === 'bun') {
+    if (command === '/synthetic/node24') {
       writeFileSync(args.at(-1), JSON.stringify(webReport()));
       if (fault !== 'missing')
         writeFileSync(
@@ -417,6 +417,21 @@ async function drive(fault, { cleanupError = null, processError = null } = {}) {
       runSQL,
       state,
       runProcess,
+      processContext: () => ({
+        parentPid: 1000,
+        nodePath: '/synthetic/node24',
+        binPath: '/synthetic/vitest.mjs',
+        runtime: {
+          kind: 'node',
+          nodeVersion: '24.21.0',
+          runtimeVersion: '24.21.0',
+          executableSha256: '1'.repeat(64),
+          binSha256: '2'.repeat(64),
+          vitestVersion: '5.0.3',
+          nodeOptionsPresent: false,
+          nodeOptionsSha256: sha256(''),
+        },
+      }),
     });
     return { state, sqlCalls, children };
   } catch (error) {

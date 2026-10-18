@@ -97,7 +97,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   AssistantQueuedSubmission? _queuedSubmissionEntry;
   String? _activeSubmissionRequestId;
   Timer? _queueDebounce;
-  StreamSubscription<AssistantStreamEvent>? _streamSubscription;
+  _AssistantReplySubscription? _streamSubscription;
   ApiMutationAdmission? _streamAdmission;
   final _streamCancellations = <Future<void>>{};
   final List<AssistantQueuedSubmission> _queue = [];

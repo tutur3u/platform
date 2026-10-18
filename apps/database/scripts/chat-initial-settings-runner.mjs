@@ -347,8 +347,8 @@ export async function runChatInitialSettingsBridge({
   try {
     if (typeof diagnoseChatProcess !== 'boolean')
       throw new Error('Chat diagnostic selection invalid');
+    context = assertChatProcessContext(processContext(root));
     if (diagnoseChatProcess) {
-      context = assertChatProcessContext(processContext(root));
       state.processDiagnostic = {
         version: 1,
         selected: true,
@@ -385,10 +385,9 @@ export async function runChatInitialSettingsBridge({
     state.phase = 'web';
     state.processesStopped = false;
     const webProcess = await runProcess(
-      'bun',
+      context.nodePath,
       [
-        'x',
-        'vitest',
+        context.binPath,
         'run',
         '--config',
         'e2e/fixtures/vitest.chat-initial-settings.config.ts',

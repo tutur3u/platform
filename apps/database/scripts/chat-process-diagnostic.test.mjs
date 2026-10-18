@@ -4,7 +4,9 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,6 +19,7 @@ import {
   chatControlFiles,
   chatFiles,
   chatMigration,
+  chatProcessContext,
   chatQualificationReceipt,
   dartCaseNames,
   selectChatInitialSettings,
@@ -104,6 +107,8 @@ async function drive({
   original = 'abort',
   comparison = 'pass',
   cleanup = true,
+  invalidContext = false,
+  contextResolver,
 } = {}) {
   const root = mkdtempSync(path.join(tmpdir(), 'chat-process-unit-'));
   const binding = assertChatBinding({
@@ -138,7 +143,13 @@ async function drive({
   };
   const processContext = () => {
     contextCalls++;
-    return context;
+    if (contextResolver) {
+      Object.assign(context, contextResolver(root, context));
+      return context;
+    }
+    return invalidContext
+      ? { ...context, runtime: { ...runtime, nodeVersion: '22.1.0' } }
+      : context;
   };
   const runSQL = async (sql) => {
     const isProducer = sql === fixture;
@@ -174,13 +185,38 @@ async function drive({
         processGroupStopped: true,
       };
     }
-    const direct = command === context.nodePath;
+    assert.equal(command, context.nodePath);
+    assert.equal(args[0], context.binPath);
+    assert.deepEqual(args.slice(1, -1), [
+      'run',
+      '--config',
+      'e2e/fixtures/vitest.chat-initial-settings.config.ts',
+      '--reporter=json',
+      '--outputFile',
+    ]);
+    assert.equal(options.cwd, path.join(root, 'apps/web'));
+    assert.equal(
+      env.CHAT_INITIAL_SETTINGS_DART_RESULT,
+      path.join(root, 'chat-dart-result.json')
+    );
+    const direct = env.CHAT_PROCESS_DIAGNOSTIC_ARM === 'direct-node';
+    if (!direct) {
+      assert.equal(args.at(-1), path.join(root, 'chat-web-tests.json'));
+      assert.equal(
+        env.CHAT_INITIAL_SETTINGS_WEB_RESULT,
+        path.join(root, 'chat-web-result.json')
+      );
+      assert.equal(
+        env.CHAT_INITIAL_SETTINGS_ENVELOPE,
+        path.join(root, 'chat-sql-envelope.json')
+      );
+    }
     assert.equal(options.timeoutMs, 120000);
     assert.equal(options.buildOutput, true);
     if (direct) {
       assert.equal(launches.length, 2);
       assert.equal(args[0], context.binPath);
-      assert.deepEqual(args.slice(1, -1), launches[0].args.slice(2, -1));
+      assert.deepEqual(args.slice(1, -1), launches[0].args.slice(1, -1));
       assert.notEqual(args.at(-1), launches[0].args.at(-1));
       assert.notEqual(
         env.CHAT_INITIAL_SETTINGS_WEB_RESULT,
@@ -269,11 +305,15 @@ async function drive({
     error = caught;
   }
   try {
-    const diagnostic = selected
-      ? JSON.parse(
-          readFileSync(path.join(root, 'chat-process-diagnostic.json'), 'utf8')
-        )
-      : null;
+    const diagnostic =
+      selected && !invalidContext
+        ? JSON.parse(
+            readFileSync(
+              path.join(root, 'chat-process-diagnostic.json'),
+              'utf8'
+            )
+          )
+        : null;
     const serialized = JSON.stringify(diagnostic);
     assert.ok(
       !serialized.includes('SENSITIVE') && !serialized.includes('/synthetic/')
@@ -326,9 +366,10 @@ test('diagnostic selection is default-off and restricted to standalone chat', ()
       selectChatInitialSettings('true', { [option]: 'true' })
     );
 });
-test('default-off adds no identity work or retry; ordinary positive still reaches Dart', async () => {
+test('default-off keeps diagnostics disabled and one primary Web launch; positive reaches Dart', async () => {
   const ok = await drive({ selected: false, original: 'pass' });
-  assert.equal(ok.contextCalls, 0);
+  assert.equal(ok.contextCalls, 1);
+  assert.deepEqual(ok.launches[0].options.env, ok.launches[1].options.env);
   assert.equal(ok.launches.length, 2);
   assert.equal(ok.receipt.qualified, true);
   assert.equal(ok.diagnostic, null);
@@ -485,5 +526,115 @@ test('profile subprocess controls isolate the diagnostic dispatch environment', 
         ),
       `Profile control did not pass: ${name}`
     );
+  }
+});
+
+test('invalid primary Node context fails closed without a Web launch or fallback', async () => {
+  for (const selected of [false, true]) {
+    const value = await drive({ selected, invalidContext: true });
+    assert.equal(value.contextCalls, 1);
+    assert.equal(value.launches.length, 0);
+    assert.equal(value.producerCalls, 0);
+    assert.equal(value.cleanupCalls, 1);
+    assert.equal(value.receipt.qualified, false);
+    assert.equal(value.receipt.webCases, 0);
+    assert.equal(value.receipt.dartCases, 0);
+    assert.equal(value.state.fixtureCleanup, true);
+  }
+});
+
+function syntheticResolver(root, context, fault) {
+  const packageDir = path.join(root, 'node_modules/vitest');
+  mkdirSync(packageDir, { recursive: true });
+  writeFileSync(
+    path.join(root, 'package.json'),
+    JSON.stringify({
+      devDependencies: {
+        vitest: fault === 'declared-version' ? '5.0.2' : '5.0.3',
+      },
+    })
+  );
+  if (fault !== 'missing-package') {
+    writeFileSync(
+      path.join(packageDir, 'package.json'),
+      JSON.stringify({
+        name: 'vitest',
+        version: fault === 'package-version' ? '5.0.2' : '5.0.3',
+        bin: fault === 'declared-bin' ? 'other.mjs' : 'vitest.mjs',
+      })
+    );
+  }
+  const binPath = path.join(packageDir, 'vitest.mjs');
+  const bytes = '// Synthetic entry; never executed.\n';
+  if (fault === 'outside-bin') {
+    const outside = path.join(root, 'outside.mjs');
+    writeFileSync(outside, bytes);
+    symlinkSync(outside, binPath);
+  } else if (fault !== 'missing-bin') writeFileSync(binPath, bytes);
+  const resolved = chatProcessContext(root);
+  assert.equal(resolved.nodePath, process.execPath);
+  assert.equal(resolved.binPath, realpathSync(binPath));
+  assert.equal(
+    resolved.runtime.executableSha256,
+    sha256(readFileSync(process.execPath))
+  );
+  assert.equal(resolved.runtime.binSha256, sha256(bytes));
+  // Filesystem resolution is real; Node24 admission and child ports are synthetic.
+  const value = {
+    ...resolved,
+    parentPid: context.parentPid,
+    runtime: {
+      ...resolved.runtime,
+      nodeVersion: '24.21.0',
+      runtimeVersion: '24.21.0',
+    },
+  };
+  if (fault === 'node-kind') value.runtime.kind = 'bun';
+  if (fault === 'node-version') value.runtime.nodeVersion = '22.1.0';
+  if (fault === 'context') value.parentPid = 0;
+  if (fault === 'node-path') value.nodePath = null;
+  if (fault === 'bin-path') value.binPath = null;
+  return value;
+}
+
+test('real source-bin resolver guards run before producer and child dispatch', async () => {
+  const ok = await drive({
+    selected: false,
+    original: 'pass',
+    contextResolver: (root, context) => syntheticResolver(root, context),
+  });
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.receipt.qualified, true);
+  assert.equal(ok.producerCalls, 1);
+  assert.equal(ok.cleanupCalls, 1);
+  assert.equal(ok.launches.length, 2);
+  assert.equal(ok.launches[1].command, 'flutter');
+  for (const fault of [
+    'missing-package',
+    'declared-version',
+    'package-version',
+    'declared-bin',
+    'outside-bin',
+    'missing-bin',
+    'node-kind',
+    'node-version',
+    'context',
+    'node-path',
+    'bin-path',
+  ]) {
+    const value = await drive({
+      selected: false,
+      contextResolver: (root, context) =>
+        syntheticResolver(root, context, fault),
+    });
+    assert.ok(value.error, fault);
+    assert.equal(value.contextCalls, 1, fault);
+    assert.equal(value.producerCalls, 0, fault);
+    assert.equal(value.launches.length, 0, fault);
+    assert.equal(value.cleanupCalls, 1, fault);
+    assert.equal(value.state.fixtureCleanup, true, fault);
+    assert.equal(value.receipt.qualified, false, fault);
+    assert.equal(value.receipt.webCases, 0, fault);
+    assert.equal(value.receipt.dartCases, 0, fault);
   }
 });
