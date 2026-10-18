@@ -357,10 +357,10 @@ async function drive(fault, { cleanupError = null, processError = null } = {}) {
     if (sqlCalls === 2 && cleanupError) throw cleanupError;
     return {
       status: 0,
-      stdout: `BEGIN\nCOMMIT\n${JSON.stringify(sqlCalls === 1 ? sql : { fixtureClean: fault !== 'cleanup' })}\n`,
+      stdout: `BEGIN\nCOMMIT\n${JSON.stringify(sqlCalls === 1 ? sql : { fixtureClean: !['cleanup', 'dart-cleanup'].includes(fault) })}\n`,
     };
   };
-  const runProcess = async (command, args, { env }) => {
+  const runProcess = async (command, args, { env, dartTestOutput }) => {
     children++;
     if (processError) throw processError;
     const envelope = JSON.parse(
@@ -390,7 +390,21 @@ async function drive(fault, { cleanupError = null, processError = null } = {}) {
         env.CHAT_INITIAL_SETTINGS_DART_RESULT,
         JSON.stringify({ ...common, passed: dartCaseNames })
       );
-    const capture = buildOutputCapture(new Set());
+    const capture = buildOutputCapture(new Set(), { dartTestOutput });
+    if (command === 'flutter') {
+      assert.ok(args.includes('--reporter=json'));
+      assert.equal(dartTestOutput, true);
+      capture.append(
+        'stdout',
+        `${JSON.stringify({
+          type: 'error',
+          testID: 1,
+          isFailure: true,
+          error: 'synthetic-private',
+          stackTrace: 'synthetic-private',
+        })}\n`
+      );
+    }
     capture.append('stderr', 'thread panicked at synthetic-private-value');
     const buildDiagnostic = capture.receipt();
     if (fault === 'summary') {
@@ -399,11 +413,14 @@ async function drive(fault, { cleanupError = null, processError = null } = {}) {
     if (fault === 'no-summary') delete buildDiagnostic.processOutput;
     return {
       buildDiagnostic,
-      status: ['abort', 'null'].includes(fault)
-        ? null
-        : fault === 'nonzero'
-          ? 2
-          : 0,
+      status:
+        command === 'flutter' && fault?.startsWith('dart-')
+          ? 1
+          : ['abort', 'null'].includes(fault)
+            ? null
+            : fault === 'nonzero'
+              ? 2
+              : 0,
       processGroupStopped: fault !== 'group',
       timedOut: fault === 'timeout',
       signal: fault === 'abort' ? 'SIGABRT' : null,
@@ -446,6 +463,36 @@ test('runner requires phase artifacts and drains before same-owner finally clean
   assert.equal(ok.state.webPassed, true);
   assert.equal(ok.state.dartPassed, true);
   assert.equal(ok.sqlCalls, 2);
+  assert.equal(
+    chatQualificationReceipt({ ...complete(), ...ok.state }).qualified,
+    true
+  );
+  for (const fault of ['dart-failure', 'dart-cleanup']) {
+    const failed = await drive(fault);
+    assert.ok(failed.error);
+    assert.equal(failed.state.failurePhase, 'dart');
+    assert.equal(failed.state.webPassed, true);
+    assert.equal(failed.state.dartPassed, undefined);
+    assert.equal(failed.children, 2);
+    assert.equal(failed.sqlCalls, 2);
+    assert.equal(
+      failed.state.dartProcess.dartTestDiagnostic.errors[0].kind,
+      'assertion'
+    );
+    assert.equal(failed.state.dartProcess.outputDiagnosticValid, true);
+    const receipt = chatQualificationReceipt({
+      ...complete(),
+      ...failed.state,
+      dartPassed: false,
+    });
+    assert.equal(receipt.qualified, false);
+    assert.equal(receipt.dartCases, 0);
+    if (fault === 'dart-cleanup')
+      assert.equal(
+        failed.error.cause.message,
+        'Owned chat bridge child failed or remains'
+      );
+  }
   for (const fault of ['missing', 'group', 'cleanup']) {
     const result = await drive(fault);
     assert.ok(result.error);

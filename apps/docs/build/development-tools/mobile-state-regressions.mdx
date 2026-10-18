@@ -291,3 +291,25 @@ source remains unknown until separately proven. Require reviewed clean source
 and control pins and an independently admitted hosted attempt. The synthetic
 `chat-process-diagnostic.test.mjs` ports are orchestration regression coverage,
 not actual SQL, Vitest, runtime or provider qualification.
+
+
+### Diagnose the selected Dart bridge without exposing its output
+
+Only the opt-in chat bridge's single Flutter child uses the JSON test reporter and
+bounded event projection. The runner attaches its summary before checking the
+actual exit, including a failed exit. Native stream byte counts, hashes and
+truncation remain available. Other process callers retain their existing behavior.
+The projection retains the nine source-owned case labels, fixed assertion,
+non-assertion, compiler-diagnostic or load-diagnostic classifications only when
+observed in an error event, and bounded error/stack byte counts and digests. Raw
+errors, stacks, unknown test names, paths, prints, environment and SQL are omitted.
+A compiler/load label describes observed text, not a proven causal phase.
+
+Each stream tail is limited to 64 KiB; the projection accepts at most 256 events,
+32 test IDs, 4 suite IDs, 4 error digests and 8 KiB of serialized diagnostics. Unknown,
+malformed, overflow, truncated, late/interleaved and incomplete events retain
+explicit evidence limits. Missing/reordered events do not establish setup or
+teardown attribution. A passing JSON stream never replaces child exit zero,
+source/control/run/envelope binding, the actual exact-nine result or cleanup.
+Diagnostic capture is evidence repair; only a separately admitted exact-source
+hosted attempt can establish the Dart failure or strict 197/9/9 qualification.

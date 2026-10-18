@@ -74,6 +74,7 @@ export async function runOwnedSessionProcess(
     env = process.env,
     buildOutput = false,
     diagnosticIdentity = false,
+    dartTestOutput = false,
     signal = undefined,
   }
 ) {
@@ -105,7 +106,9 @@ export async function runOwnedSessionProcess(
     overflow = false,
     timedOut = false,
     closing = false;
-  const capture = buildOutput ? buildOutputCapture() : null;
+  const capture = buildOutput
+    ? buildOutputCapture(undefined, { dartTestOutput })
+    : null;
   const controllers = new Set(),
     jobs = [],
     requestIds = new Set();

@@ -19,7 +19,10 @@ import {
   webCaseNames,
   writeChatProcessDiagnostic,
 } from './chat-initial-settings-qualification.mjs';
-import { projectProcessOutput } from './employee-web-session-build-diagnostic.mjs';
+import {
+  projectDartTestDiagnostic,
+  projectProcessOutput,
+} from './employee-web-session-build-diagnostic.mjs';
 import { runOwnedSessionProcess } from './employee-web-session-process.mjs';
 
 function trackedBytes(root, file, commit) {
@@ -138,7 +141,7 @@ function boundedJson(file) {
     throw new Error('Chat artifact exceeds bound');
   return JSON.parse(readFileSync(file, 'utf8'));
 }
-function processReceipt(result, withOutput = false) {
+function processReceipt(result, withOutput = false, withDart = false) {
   const receipt = {
     status: Number.isInteger(result.status) ? result.status : null,
     signal: result.signal ?? null,
@@ -155,6 +158,18 @@ function processReceipt(result, withOutput = false) {
       receipt.outputDiagnosticValid = true;
     } catch {
       // Keep the actual exit/cleanup evidence; an invalid summary cannot qualify.
+    }
+  }
+  if (withDart) {
+    receipt.dartTestDiagnostic = null;
+    receipt.dartTestDiagnosticValid = false;
+    try {
+      receipt.dartTestDiagnostic = projectDartTestDiagnostic(
+        result.buildDiagnostic?.dartTest
+      );
+      receipt.dartTestDiagnosticValid = true;
+    } catch {
+      /* Preserve actual child failure even when diagnostics are invalid. */
     }
   }
   return receipt;
@@ -454,7 +469,7 @@ export async function runChatInitialSettingsBridge({
         'test',
         '--no-pub',
         '--concurrency=1',
-        '--reporter=expanded',
+        '--reporter=json',
         'tool/qualification/chat_initial_settings_bridge_test.dart',
       ],
       {
@@ -462,9 +477,10 @@ export async function runChatInitialSettingsBridge({
         env,
         timeoutMs: 180000,
         buildOutput: true,
+        dartTestOutput: true,
       }
     );
-    state.dartProcess = processReceipt(dartProcess);
+    state.dartProcess = processReceipt(dartProcess, true, true);
     state.processesStopped =
       webStopped && dartProcess.processGroupStopped === true;
     assertChild(dartProcess);
