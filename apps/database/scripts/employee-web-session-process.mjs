@@ -73,6 +73,7 @@ export async function runOwnedSessionProcess(
     timeoutMs,
     env = process.env,
     buildOutput = false,
+    diagnosticIdentity = false,
     signal = undefined,
   }
 ) {
@@ -224,6 +225,7 @@ export async function runOwnedSessionProcess(
         timedOut,
         processGroupStopped,
         buildDiagnostic: capture.receipt(),
+        ...(diagnosticIdentity ? { diagnosticProcessId: child.pid } : {}),
       };
     return {
       stdout: overflow ? '' : output,

@@ -1,4 +1,17 @@
 import { createHash } from 'node:crypto';
+import {
+  closeSync,
+  constants,
+  fstatSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 
 export const chatMigration =
@@ -18,6 +31,7 @@ export const chatFiles = Object.freeze([
   'apps/mobile/lib/features/chat/data/chat_repository.dart',
   'apps/mobile/lib/features/chat/models/chat_initial_ai_settings.dart',
   'apps/database/supabase/migrations/20260527181237_create_private_chat_platform.sql',
+  'apps/database/scripts/chat-initial-settings-qualification.mjs',
 ]);
 export const chatControlFiles = Object.freeze([
   '.github/workflows/employee-schema-contract.yaml',
@@ -218,6 +232,7 @@ export function chatQualificationReceipt({
   dartProcess = null,
   completed = false,
   failurePhase = null,
+  processDiagnostic,
 }) {
   assertChatBinding(binding);
   const processPassed = (result) =>
@@ -261,5 +276,284 @@ export function chatQualificationReceipt({
     messagesQualified: false,
     providerQualified: false,
     productionApplied: false,
+    ...(processDiagnostic ? { processDiagnostic } : {}),
   };
+}
+
+export function selectChatProcessDiagnostic(value, chatSelected) {
+  if (![undefined, 'false', 'true'].includes(value))
+    throw new Error('Invalid chat process diagnostic selection');
+  if (value === 'true' && chatSelected !== true)
+    throw new Error('Chat process diagnostic requires standalone chat');
+  return value === 'true';
+}
+
+function validRuntime(value) {
+  return (
+    value &&
+    isDeepStrictEqual(Object.keys(value).sort(), [
+      'binSha256',
+      'executableSha256',
+      'kind',
+      'nodeOptionsPresent',
+      'nodeOptionsSha256',
+      'nodeVersion',
+      'runtimeVersion',
+      'vitestVersion',
+    ]) &&
+    ['node', 'bun'].includes(value.kind) &&
+    /^[0-9]{1,3}\.[0-9]{1,4}\.[0-9]{1,6}$/.test(value.nodeVersion) &&
+    /^[0-9]{1,3}\.[0-9]{1,4}\.[0-9]{1,6}$/.test(value.runtimeVersion) &&
+    hash(value.executableSha256) &&
+    hash(value.binSha256) &&
+    value.vitestVersion === '5.0.3' &&
+    typeof value.nodeOptionsPresent === 'boolean' &&
+    hash(value.nodeOptionsSha256)
+  );
+}
+export function assertChatProcessContext(context) {
+  if (
+    !validRuntime(context?.runtime) ||
+    context.runtime.kind !== 'node' ||
+    !/^24\.[0-9]+\.[0-9]+$/.test(context.runtime.nodeVersion) ||
+    context.runtime.runtimeVersion !== context.runtime.nodeVersion ||
+    !Number.isSafeInteger(context.parentPid) ||
+    context.parentPid <= 0 ||
+    ![context.nodePath, context.binPath].every(
+      (value) => typeof value === 'string' && value.length <= 4096
+    )
+  )
+    throw new Error('Chat setup Node24 runtime differs');
+  return context;
+}
+
+function fileDigest(file, limit = 256 * 1024 * 1024) {
+  const stat = statSync(file);
+  if (!stat.isFile() || stat.size > limit)
+    throw new Error('Chat identity input exceeds bound');
+  const bytes = readFileSync(file);
+  if (bytes.length > limit)
+    throw new Error('Chat identity input exceeds bound');
+  return sha256(bytes);
+}
+
+export function chatProcessContext(root) {
+  const base = realpathSync(root);
+  const require = createRequire(path.join(base, 'package.json'));
+  const packagePath = require.resolve('vitest/package.json');
+  const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+  const declared = JSON.parse(
+    readFileSync(path.join(base, 'package.json'), 'utf8')
+  );
+  const binPath = realpathSync(
+    path.join(path.dirname(packagePath), 'vitest.mjs')
+  );
+  const bin = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.vitest;
+  if (
+    !['./vitest.mjs', 'vitest.mjs'].includes(bin) ||
+    pkg.version !== '5.0.3' ||
+    declared.devDependencies?.vitest !== pkg.version ||
+    !binPath.startsWith(path.join(base, 'node_modules') + path.sep)
+  )
+    throw new Error('Chat source-owned locked Vitest entry differs');
+  const nodeOptions = process.env.NODE_OPTIONS;
+  if (nodeOptions && Buffer.byteLength(nodeOptions) > 8192)
+    throw new Error('Chat runtime option exceeds bound');
+  const context = {
+    nodePath: process.execPath,
+    binPath,
+    parentPid: process.pid,
+    runtime: {
+      kind: process.versions.bun
+        ? 'bun'
+        : process.release.name === 'node'
+          ? 'node'
+          : 'unknown',
+      nodeVersion: process.versions.node,
+      runtimeVersion: process.versions.bun ?? process.versions.node,
+      executableSha256: fileDigest(process.execPath),
+      binSha256: fileDigest(binPath, 1024 * 1024),
+      vitestVersion: pkg.version,
+      nodeOptionsPresent: nodeOptions !== undefined,
+      nodeOptionsSha256: sha256(nodeOptions ?? ''),
+    },
+  };
+  if (!validRuntime(context.runtime))
+    throw new Error('Chat runtime version invalid');
+  return context;
+}
+
+function privateJson(file, value) {
+  const dir = lstatSync(path.dirname(file));
+  const bytes = JSON.stringify(value);
+  if (
+    !dir.isDirectory() ||
+    dir.isSymbolicLink() ||
+    dir.uid !== process.getuid() ||
+    (dir.mode & 0o777) !== 0o700 ||
+    Buffer.byteLength(bytes) > 8192
+  )
+    throw new Error('Chat private diagnostic output invalid');
+  writeFileSync(file, bytes, { flag: 'wx', mode: 0o600 });
+}
+
+function safeIdentityJson(file) {
+  const fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const stat = fstatSync(fd);
+    if (
+      !stat.isFile() ||
+      stat.nlink !== 1 ||
+      stat.uid !== process.getuid() ||
+      (stat.mode & 0o777) !== 0o600 ||
+      stat.size > 2048
+    )
+      throw new Error('Chat private identity invalid');
+    const bytes = readFileSync(fd);
+    if (bytes.length > 2048)
+      throw new Error('Chat private identity exceeds bound');
+    return JSON.parse(bytes.toString('utf8'));
+  } finally {
+    closeSync(fd);
+  }
+}
+
+export function writeChatProcessIdentity(role, root) {
+  const arm = process.env.CHAT_PROCESS_DIAGNOSTIC_ARM;
+  if (arm === undefined) return;
+  if (
+    !['config', 'fixture'].includes(role) ||
+    !['original', 'direct-node'].includes(arm)
+  )
+    throw new Error('Chat process identity role invalid');
+  const directory = process.env.CHAT_PROCESS_DIAGNOSTIC_DIRECTORY;
+  const envelopeBytes = readFileSync(
+    process.env.CHAT_INITIAL_SETTINGS_ENVELOPE
+  );
+  if (envelopeBytes.length > 1024 * 1024)
+    throw new Error('Chat identity envelope bound');
+  const binding = assertChatBinding(
+    JSON.parse(envelopeBytes.toString('utf8')).binding
+  );
+  const context = chatProcessContext(root);
+  const entry = realpathSync(process.argv[1]);
+  if (
+    !entry.startsWith(
+      path.join(realpathSync(root), 'node_modules') + path.sep
+    ) ||
+    (role === 'config' && entry !== context.binPath)
+  )
+    throw new Error('Chat actual source entry differs');
+  const entrySha256 = fileDigest(entry, 1024 * 1024);
+  const parentPid = Number(process.env.CHAT_PROCESS_PARENT_PID);
+  const ancestors = [];
+  const digests = new Map();
+  let pid = process.pid;
+  for (let i = 0; i < 8; i++) {
+    const status = readFileSync(`/proc/${pid}/status`, 'utf8');
+    if (Buffer.byteLength(status) > 8192)
+      throw new Error('Chat process status bound');
+    const ppid = Number(/^PPid:\s+(\d+)$/m.exec(status)?.[1]);
+    const executable = realpathSync(`/proc/${pid}/exe`);
+    if (!digests.has(executable))
+      digests.set(executable, fileDigest(executable));
+    ancestors.push({ pid, ppid, executableSha256: digests.get(executable) });
+    if (pid === parentPid) break;
+    if (!Number.isSafeInteger(ppid) || ppid <= 0)
+      throw new Error('Chat process parent missing');
+    pid = ppid;
+  }
+  const identity = {
+    version: 1,
+    arm,
+    role,
+    sourceSha: binding.sourceSha,
+    controlSha: binding.controlSha,
+    runId: binding.runId,
+    bindingSha256: sha256(JSON.stringify(binding)),
+    envelopeSha256: sha256(envelopeBytes),
+    runtime: context.runtime,
+    entrySha256,
+    ancestors,
+  };
+  if (Buffer.byteLength(JSON.stringify(identity)) > 2048)
+    throw new Error('Chat process identity exceeds bound');
+  privateJson(
+    path.join(directory, `chat-process-${arm}-${role}.json`),
+    identity
+  );
+}
+
+export function readChatArmIdentity({
+  directory,
+  arm,
+  binding,
+  envelopeSha256,
+  context,
+  processId,
+}) {
+  assertChatProcessContext(context);
+  if (
+    !['original', 'direct-node'].includes(arm) ||
+    !Number.isSafeInteger(processId) ||
+    processId <= 0
+  )
+    throw new Error('Chat Node24 runtime identity unavailable');
+  return Object.fromEntries(
+    ['config', 'fixture'].map((role) => {
+      const value = safeIdentityJson(
+        path.join(directory, `chat-process-${arm}-${role}.json`)
+      );
+      const expected = {
+        version: 1,
+        arm,
+        role,
+        sourceSha: binding.sourceSha,
+        controlSha: binding.controlSha,
+        runId: binding.runId,
+        bindingSha256: sha256(JSON.stringify(binding)),
+        envelopeSha256,
+        runtime: context.runtime,
+        entrySha256: value.entrySha256,
+        ancestors: value.ancestors,
+      };
+      if (
+        !isDeepStrictEqual(value, expected) ||
+        !hash(value.entrySha256) ||
+        (role === 'config' &&
+          value.entrySha256 !== context.runtime.binSha256) ||
+        !Array.isArray(value.ancestors) ||
+        value.ancestors.length < 1 ||
+        value.ancestors.length > 8 ||
+        new Set(value.ancestors.map((entry) => entry.pid)).size !==
+          value.ancestors.length ||
+        value.ancestors[0].executableSha256 !==
+          context.runtime.executableSha256 ||
+        !value.ancestors.every(
+          (entry, i) =>
+            isDeepStrictEqual(Object.keys(entry).sort(), [
+              'executableSha256',
+              'pid',
+              'ppid',
+            ]) &&
+            Number.isSafeInteger(entry.pid) &&
+            entry.pid > 0 &&
+            Number.isSafeInteger(entry.ppid) &&
+            entry.ppid >= 0 &&
+            hash(entry.executableSha256) &&
+            (i === 0 || value.ancestors[i - 1].ppid === entry.pid)
+        ) ||
+        !value.ancestors.some((entry) => entry.pid === processId) ||
+        value.ancestors.at(-1).pid !== context.parentPid ||
+        value.ancestors.at(-1).executableSha256 !==
+          context.runtime.executableSha256
+      )
+        throw new Error('Chat actual process identity differs');
+      return [role, value];
+    })
+  );
+}
+
+export function writeChatProcessDiagnostic(directory, value) {
+  privateJson(path.join(directory, 'chat-process-diagnostic.json'), value);
 }

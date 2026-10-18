@@ -1,8 +1,15 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import { afterAll, beforeEach, expect, test, vi } from 'vitest';
 import { z } from 'zod';
+import { writeChatProcessIdentity } from '../../../database/scripts/chat-initial-settings-qualification.mjs';
+
+writeChatProcessIdentity(
+  'fixture',
+  resolve(import.meta.dirname, '../../../..')
+);
 
 // Missing real-SQL envelope is a failure in this explicit target, never a skip.
 const inputPath = process.env.CHAT_INITIAL_SETTINGS_ENVELOPE;

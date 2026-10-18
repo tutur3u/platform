@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   chatQualificationReceipt,
   selectChatInitialSettings,
+  selectChatProcessDiagnostic,
 } from './chat-initial-settings-qualification.mjs';
 import {
   createChatBinding,
@@ -72,6 +73,10 @@ const chatInitialSettings = selectChatInitialSettings(
       'STRUCTURED_PROVENANCE',
     ].map((name) => [name, process.env[`EMPLOYEE_SCHEMA_INCLUDE_${name}`]])
   )
+);
+const diagnoseChatProcess = selectChatProcessDiagnostic(
+  process.env.EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS,
+  chatInitialSettings
 );
 const chatControlRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const chatBinding = chatInitialSettings
@@ -429,6 +434,7 @@ const runner = async (command, args, cwd) => {
           root,
           receiptDirectory,
           binding: chatBinding,
+          diagnoseChatProcess,
           runSQL: causalRunSQL,
           state: chatState,
         });

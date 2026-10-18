@@ -5,15 +5,19 @@ import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import {
   assertChatBinding,
+  assertChatProcessContext,
   assertPhaseResult,
   assertSqlEnvelope,
   assertVitestReport,
   chatControlFiles,
   chatFiles,
   chatMigration,
+  chatProcessContext,
   dartCaseNames,
+  readChatArmIdentity,
   sha256,
   webCaseNames,
+  writeChatProcessDiagnostic,
 } from './chat-initial-settings-qualification.mjs';
 import { projectProcessOutput } from './employee-web-session-build-diagnostic.mjs';
 import { runOwnedSessionProcess } from './employee-web-session-process.mjs';
@@ -165,6 +169,59 @@ function assertChild(result) {
     throw new Error('Owned chat bridge child failed or remains');
 }
 
+function webArtifacts(
+  reportPath,
+  resultPath,
+  envelopePath,
+  binding,
+  sql,
+  envelopeHash
+) {
+  if (sha256(readFileSync(envelopePath)) !== envelopeHash)
+    throw new Error('Chat immutable SQL envelope changed');
+  assertVitestReport(boundedJson(reportPath));
+  const result = boundedJson(resultPath);
+  assertPhaseResult(result, binding, webCaseNames, envelopeHash);
+  if (
+    !Array.isArray(result.cases) ||
+    result.cases.length !== 4 ||
+    !result.cases.every((item, i) =>
+      isDeepStrictEqual(
+        Object.fromEntries(
+          Object.entries(item).filter(([key]) => key !== 'response')
+        ),
+        sql.cases[i]
+      )
+    )
+  )
+    throw new Error('Web changed actual SQL envelope');
+  return {
+    reportSha256: sha256(readFileSync(reportPath)),
+    resultSha256: sha256(readFileSync(resultPath)),
+  };
+}
+function diagnosticProcess(result) {
+  const receipt = processReceipt(result, true);
+  if (
+    ![
+      'SIGABRT',
+      'SIGTERM',
+      'SIGKILL',
+      'SIGSEGV',
+      'SIGBUS',
+      'SIGILL',
+      'SIGFPE',
+      null,
+    ].includes(receipt.signal) ||
+    (receipt.status !== null &&
+      (!Number.isInteger(receipt.status) ||
+        receipt.status < 0 ||
+        receipt.status > 255))
+  )
+    throw new Error('Chat diagnostic process status invalid');
+  return receipt;
+}
+
 // The caller owns one already-running database and finally stops that exact owner.
 // Child stdout is bounded diagnostic capture; qualification uses actual files + exits.
 export async function runChatInitialSettingsBridge({
@@ -174,6 +231,8 @@ export async function runChatInitialSettingsBridge({
   runSQL,
   state,
   runProcess = runOwnedSessionProcess,
+  diagnoseChatProcess = false,
+  processContext = chatProcessContext,
 }) {
   assertChatBinding(binding);
   const marker = randomUUID();
@@ -187,8 +246,126 @@ export async function runChatInitialSettingsBridge({
     CHAT_INITIAL_SETTINGS_WEB_RESULT: webPath,
     CHAT_INITIAL_SETTINGS_DART_RESULT: dartPath,
   };
+  delete env.CHAT_PROCESS_DIAGNOSTIC_ARM;
+  delete env.CHAT_PROCESS_DIAGNOSTIC_DIRECTORY;
+  delete env.CHAT_PROCESS_PARENT_PID;
   const failures = [];
+  let context;
+  const identity = (arm, result) =>
+    readChatArmIdentity({
+      directory: receiptDirectory,
+      arm,
+      binding,
+      context,
+      envelopeSha256: state.envelopeSha256,
+      processId: result.diagnosticProcessId,
+    });
+  const armEnv = (arm) => ({
+    ...env,
+    CHAT_PROCESS_DIAGNOSTIC_ARM: arm,
+    CHAT_PROCESS_DIAGNOSTIC_DIRECTORY: receiptDirectory,
+    CHAT_PROCESS_PARENT_PID: String(context.parentPid),
+  });
+  async function comparison(original, sql) {
+    const diagnostic = state.processDiagnostic;
+    diagnostic.failureCode = 'original-evidence-invalid';
+    webArtifacts(
+      webReportPath,
+      webPath,
+      envelopePath,
+      binding,
+      sql,
+      state.envelopeSha256
+    );
+    if (!diagnostic.original.outputDiagnosticValid)
+      throw new Error('Chat original output invalid');
+    diagnostic.originalIdentity = identity('original', original);
+    diagnostic.attempted = true;
+    diagnostic.failureCode = 'comparison-launch-failed';
+    const report = path.join(
+      receiptDirectory,
+      'chat-comparison-web-tests.json'
+    );
+    const resultPath = path.join(
+      receiptDirectory,
+      'chat-comparison-web-result.json'
+    );
+    state.processesStopped = false;
+    const result = await runProcess(
+      context.nodePath,
+      [
+        context.binPath,
+        'run',
+        '--config',
+        'e2e/fixtures/vitest.chat-initial-settings.config.ts',
+        '--reporter=json',
+        '--outputFile',
+        report,
+      ],
+      {
+        cwd: path.join(root, 'apps/web'),
+        env: {
+          ...armEnv('direct-node'),
+          CHAT_INITIAL_SETTINGS_WEB_RESULT: resultPath,
+        },
+        timeoutMs: 120000,
+        buildOutput: true,
+        diagnosticIdentity: true,
+      }
+    );
+    state.processesStopped =
+      original.processGroupStopped === true &&
+      result.processGroupStopped === true;
+    diagnostic.comparison = diagnosticProcess(result);
+    diagnostic.failureCode = 'comparison-identity-invalid';
+    diagnostic.comparisonIdentity = identity('direct-node', result);
+    if (
+      ['config', 'fixture'].some(
+        (role) =>
+          diagnostic.originalIdentity[role].entrySha256 !==
+          diagnostic.comparisonIdentity[role].entrySha256
+      )
+    )
+      throw new Error('Chat actual entry identity changed between arms');
+    diagnostic.identityAgreement = true;
+    diagnostic.failureCode = 'comparison-child-failed';
+    assertChild(result);
+    if (!diagnostic.comparison.outputDiagnosticValid)
+      throw new Error('Chat comparison output invalid');
+    diagnostic.failureCode = 'comparison-artifacts-invalid';
+    diagnostic.comparisonArtifacts = webArtifacts(
+      report,
+      resultPath,
+      envelopePath,
+      binding,
+      sql,
+      state.envelopeSha256
+    );
+    diagnostic.validComparison = true;
+    diagnostic.failureCode = null;
+  }
   try {
+    if (typeof diagnoseChatProcess !== 'boolean')
+      throw new Error('Chat diagnostic selection invalid');
+    if (diagnoseChatProcess) {
+      context = assertChatProcessContext(processContext(root));
+      state.processDiagnostic = {
+        version: 1,
+        selected: true,
+        sourceSha: binding.sourceSha,
+        controlSha: binding.controlSha,
+        runId: binding.runId,
+        bindingSha256: sha256(JSON.stringify(binding)),
+        parentPid: context.parentPid,
+        parentRuntime: context.runtime,
+        attempted: false,
+        identityAgreement: false,
+        validComparison: false,
+        original: null,
+        comparison: null,
+        failureCode: null,
+      };
+    }
     state.phase = 'sql-producer';
     const sqlSource = readFileSync(path.join(root, chatFiles[2]), 'utf8');
     if (sha256(sqlSource) !== binding.fixtureHashes[2].sha256)
@@ -221,34 +398,53 @@ export async function runChatInitialSettingsBridge({
       ],
       {
         cwd: path.join(root, 'apps/web'),
-        env,
+        env: diagnoseChatProcess ? armEnv('original') : env,
+        ...(diagnoseChatProcess ? { diagnosticIdentity: true } : {}),
         timeoutMs: 120000,
         buildOutput: true,
       }
     );
     state.webProcess = processReceipt(webProcess, true);
     state.processesStopped = webProcess.processGroupStopped === true;
-    assertChild(webProcess);
+    try {
+      assertChild(webProcess);
+    } catch (primary) {
+      if (diagnoseChatProcess) {
+        state.processDiagnostic.failureCode = 'original-not-eligible';
+        try {
+          state.processDiagnostic.original = diagnosticProcess(webProcess);
+          if (
+            webProcess.status === null &&
+            webProcess.signal === 'SIGABRT' &&
+            webProcess.timedOut === false &&
+            webProcess.processGroupStopped === true
+          )
+            await comparison(webProcess, sql);
+        } catch {
+          /* Diagnostic failure cannot replace the authoritative original error. */
+        }
+      }
+      throw primary;
+    }
+    if (diagnoseChatProcess) {
+      state.processDiagnostic.original = diagnosticProcess(webProcess);
+      state.processDiagnostic.originalIdentity = identity(
+        'original',
+        webProcess
+      );
+    }
     if (!state.webProcess.outputDiagnosticValid)
       throw new Error('Chat process output summary unavailable');
-    assertVitestReport(boundedJson(webReportPath));
-    state.webTestReportSha256 = sha256(readFileSync(webReportPath));
-    const webResult = boundedJson(webPath);
-    assertPhaseResult(webResult, binding, webCaseNames, state.envelopeSha256);
-    if (
-      !Array.isArray(webResult.cases) ||
-      webResult.cases.length !== 4 ||
-      !webResult.cases.every((item, i) =>
-        isDeepStrictEqual(
-          Object.fromEntries(
-            Object.entries(item).filter(([key]) => key !== 'response')
-          ),
-          sql.cases[i]
-        )
-      )
-    )
-      throw new Error('Web changed actual SQL envelope');
-    state.webResultSha256 = sha256(readFileSync(webPath));
+    const artifacts = webArtifacts(
+      webReportPath,
+      webPath,
+      envelopePath,
+      binding,
+      sql,
+      state.envelopeSha256
+    );
+    state.webTestReportSha256 = artifacts.reportSha256;
+    state.webResultSha256 = artifacts.resultSha256;
     state.webPassed = true;
     state.phase = 'dart';
     const webStopped = state.processesStopped;
@@ -299,6 +495,22 @@ export async function runChatInitialSettingsBridge({
       failures.push(error);
     }
     if (!state.fixtureCleanup) state.failurePhase ??= 'fixture-cleanup';
+  }
+  if (diagnoseChatProcess && state.processDiagnostic) {
+    state.processDiagnostic.fixtureCleanup = state.fixtureCleanup === true;
+    state.processDiagnostic.processesStopped = state.processesStopped === true;
+    if (!state.fixtureCleanup || !state.processesStopped) {
+      state.processDiagnostic.validComparison = false;
+      state.processDiagnostic.failureCode ??= 'diagnostic-cleanup-incomplete';
+    }
+    try {
+      writeChatProcessDiagnostic(receiptDirectory, state.processDiagnostic);
+    } catch {
+      state.processDiagnostic.validComparison = false;
+      state.processDiagnostic.failureCode = 'diagnostic-receipt-failed';
+      state.failurePhase ??= 'process-diagnostic';
+      failures.push(new Error('Chat process diagnostic receipt unavailable'));
+    }
   }
   if (failures.length === 1) throw failures[0];
   if (failures.length > 1)

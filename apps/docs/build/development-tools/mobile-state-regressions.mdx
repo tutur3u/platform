@@ -259,3 +259,35 @@ Preserve source/control/run binding, all exit/cleanup gates and the independent
 SQL, Web and Dart phases. Do not substitute a passing report for exit zero, change
 runtimes or IPC, or retry qualification blindly. Require reviewed source and a
 separately admitted exact-source hosted attempt for actual process evidence.
+
+
+## Opt in to a chat process comparison without qualifying a retry
+
+`diagnose_chat_process` defaults to false and is accepted only with standalone
+`include_chat_initial_settings=true`, with all other optional profiles and
+structured provenance false. It does not change the authoritative Bunx attempt.
+Only a stopped, non-timeout original SIGABRT with nine valid passing Web controls,
+matching actual process identities and the unchanged SQL-produced envelope may
+launch one sequential direct setup-Node24 comparison of the locked source Vitest
+entry. Both arms retain the same config, controls, one-worker policy, owned
+process-group cleanup and 120-second bound. They use separate report/result and
+identity artifacts, with no second SQL producer or database lifecycle.
+
+Config and fixture code record actual runtime versions, executable and Vitest-bin
+digests, actual per-role entry digests, bounded process ancestry and only
+NODE_OPTIONS presence/digest. The config entry must be the source-owned Vitest
+bin, and each role’s entry digest must agree across arms. Identity
+records are owned 0600 regular nonlink files, source/control/run/envelope-bound,
+and bounded to 2 KiB each; the fixed diagnostic receipt is bounded to 8 KiB. No raw
+arguments, paths, environment, output, SQL or arbitrary errors are emitted.
+Missing or unequal identity, timeout, malformed artifacts or cleanup uncertainty
+makes the comparison invalid. Command spelling does not identify the interpreter.
+
+The original abort remains failed, with Web0/Dart0 and qualification false even
+if the comparison passes. No Dart follows the original failure, no comparison
+is a fallback or causal repair, and no further launch is allowed. A diagnostic
+result only narrows the launcher/interpreter/teardown hypothesis; the signal
+source remains unknown until separately proven. Require reviewed clean source
+and control pins and an independently admitted hosted attempt. The synthetic
+`chat-process-diagnostic.test.mjs` ports are orchestration regression coverage,
+not actual SQL, Vitest, runtime or provider qualification.

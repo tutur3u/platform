@@ -56,6 +56,11 @@ on:
         required: false
         default: false
         type: boolean
+      diagnose_chat_process:
+        description: Diagnostic-only one direct Node24 comparison after stopped Bunx SIGABRT with nine passing Web controls; never qualification fallback
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -87,6 +92,7 @@ jobs:
       EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: ${{ inputs.include_feedback }}
       EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: ${{ inputs.include_address_migration }}
       EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS: ${{ inputs.include_chat_initial_settings }}
+      EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS: ${{ inputs.diagnose_chat_process }}
       EMPLOYEE_SCHEMA_INCLUDE_STRUCTURED_PROVENANCE: ${{ inputs.structured_provenance }}
     steps:
       - name: Require the enabled schema gate
@@ -115,14 +121,15 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Validate standalone chat profile
-        if: inputs.include_chat_initial_settings == true
+        if: inputs.include_chat_initial_settings == true || inputs.diagnose_chat_process == true
         run: |
           node --input-type=module - <<'NODE'
-          import { selectChatInitialSettings } from './apps/database/scripts/chat-initial-settings-qualification.mjs';
-          selectChatInitialSettings(process.env.EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS,
+          import { selectChatInitialSettings, selectChatProcessDiagnostic } from './apps/database/scripts/chat-initial-settings-qualification.mjs';
+          const chat = selectChatInitialSettings(process.env.EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS,
             Object.fromEntries(['JOURNAL', 'PERSONAL_JOURNAL', 'HTTP', 'WEB_SESSION', 'RESTORE',
               'FEEDBACK_CAUSAL', 'FEEDBACK', 'ADDRESS_MIGRATION', 'STRUCTURED_PROVENANCE']
               .map(name => [name, process.env[`EMPLOYEE_SCHEMA_INCLUDE_${name}`]])));
+          selectChatProcessDiagnostic(process.env.EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS, chat);
           NODE
       - name: Install exact source dependencies
         working-directory: source
@@ -155,7 +162,7 @@ jobs:
         run: bun x tsc --project e2e/fixtures/tsconfig.chat-initial-settings.json --noEmit
       - name: Verify opt-in chat qualification contracts
         if: inputs.include_chat_initial_settings == true
-        run: node --test --test-concurrency=1 apps/database/scripts/chat-initial-settings-qualification.test.mjs
+        run: node --test --test-concurrency=1 apps/database/scripts/chat-initial-settings-qualification.test.mjs apps/database/scripts/chat-process-diagnostic.test.mjs
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify feedback profile gates
