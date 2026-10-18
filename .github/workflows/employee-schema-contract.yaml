@@ -51,6 +51,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_chat_initial_settings:
+        description: Standalone foundation172 plus chat25 and real SQL to Web to Dart creation receipts; excludes all optional profiles and structured provenance
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -81,6 +86,8 @@ jobs:
       EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: ${{ inputs.include_feedback_causal }}
       EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: ${{ inputs.include_feedback }}
       EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: ${{ inputs.include_address_migration }}
+      EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS: ${{ inputs.include_chat_initial_settings }}
+      EMPLOYEE_SCHEMA_INCLUDE_STRUCTURED_PROVENANCE: ${{ inputs.structured_provenance }}
     steps:
       - name: Require the enabled schema gate
         env:
@@ -89,7 +96,7 @@ jobs:
       - name: Validate exact source selection
         run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA)) process.exit(1)'
       - name: Validate structured diagnostic selection
-        if: inputs.structured_provenance == true
+        if: inputs.structured_provenance == true && inputs.include_chat_initial_settings != true
         run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/main" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5c7c08e23a3d410bdbdc066f5c4dd2776fbeabd7") process.exit(1)'
       - uses: actions/checkout@v7
         with:
@@ -107,6 +114,16 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - name: Validate standalone chat profile
+        if: inputs.include_chat_initial_settings == true
+        run: |
+          node --input-type=module - <<'NODE'
+          import { selectChatInitialSettings } from './apps/database/scripts/chat-initial-settings-qualification.mjs';
+          selectChatInitialSettings(process.env.EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS,
+            Object.fromEntries(['JOURNAL', 'PERSONAL_JOURNAL', 'HTTP', 'WEB_SESSION', 'RESTORE',
+              'FEEDBACK_CAUSAL', 'FEEDBACK', 'ADDRESS_MIGRATION', 'STRUCTURED_PROVENANCE']
+              .map(name => [name, process.env[`EMPLOYEE_SCHEMA_INCLUDE_${name}`]])));
+          NODE
       - name: Install exact source dependencies
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -114,6 +131,26 @@ jobs:
         if: inputs.include_http == true
         working-directory: source
         run: bun x tsc --project apps/web/e2e/fixtures/tsconfig.employee-http.json --noEmit
+      - uses: subosito/flutter-action@v2
+        if: inputs.include_chat_initial_settings == true
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+          cache: true
+      - name: Restore locked chat mobile dependencies
+        if: inputs.include_chat_initial_settings == true
+        working-directory: source/apps/mobile
+        run: |
+          flutter pub get --help | grep -- --enforce-lockfile
+          flutter pub get --enforce-lockfile
+          git diff --exit-code -- pubspec.yaml pubspec.lock
+      - name: Type check explicit chat bridge adapter
+        if: inputs.include_chat_initial_settings == true
+        working-directory: source/apps/web
+        run: bun x tsc --project e2e/fixtures/tsconfig.chat-initial-settings.json --noEmit
+      - name: Verify opt-in chat qualification contracts
+        if: inputs.include_chat_initial_settings == true
+        run: node --test --test-concurrency=1 apps/database/scripts/chat-initial-settings-qualification.test.mjs
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify feedback profile gates
@@ -153,6 +190,7 @@ jobs:
           path: |
             ${{ runner.temp }}/employee-schema-receipts/qualification.json
             ${{ runner.temp }}/employee-schema-receipts/generated-types.ts
+            ${{ runner.temp }}/employee-schema-receipts/chat-*.json
           if-no-files-found: error
           retention-days: 3
       - uses: actions/upload-artifact@v7

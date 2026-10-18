@@ -8,19 +8,23 @@ insert into public.users(id) values
  ('b6277000-0000-4000-8000-000000000001'),
  ('b6277000-0000-4000-8000-000000000002');
 insert into public.workspaces(id,name,personal,creator_id) values
- ('b6277000-0000-4000-8000-000000000011','Initial settings fixture',false,'b6277000-0000-4000-8000-000000000001'),
- ('b6277000-0000-4000-8000-000000000012','Personal settings fixture',true,'b6277000-0000-4000-8000-000000000002');
+ ('b6277000-0000-4000-8000-000000000011','Initial settings fixture',false,'b6277000-0000-4000-8000-000000000001');
+create function pg_temp.fixture_personal_ws_id() returns uuid language sql stable as $$
+ select id from public.workspaces
+ where creator_id='b6277000-0000-4000-8000-000000000002' and personal=true
+$$;
 insert into public.workspace_members(ws_id,user_id,type) values
  ('b6277000-0000-4000-8000-000000000011','b6277000-0000-4000-8000-000000000002','MEMBER');
-insert into public.workspace_default_permissions(ws_id,permission,enabled) values
- ('b6277000-0000-4000-8000-000000000011','view_chat',true),
- ('b6277000-0000-4000-8000-000000000011','create_chat',true),
- ('b6277000-0000-4000-8000-000000000011','manage_chat',false)
-on conflict(ws_id,permission) do update set enabled=excluded.enabled;
+insert into public.workspace_default_permissions(ws_id,permission,member_type,enabled) values
+ ('b6277000-0000-4000-8000-000000000011','view_chat','MEMBER',true),
+ ('b6277000-0000-4000-8000-000000000011','create_chat','MEMBER',true),
+ ('b6277000-0000-4000-8000-000000000011','manage_chat','MEMBER',false),
+ ('b6277000-0000-4000-8000-000000000011','admin','MEMBER',false)
+on conflict(ws_id,permission,member_type) do update set enabled=excluded.enabled;
 
 select ok(public.has_workspace_permission('b6277000-0000-4000-8000-000000000011','b6277000-0000-4000-8000-000000000002','create_chat'), 'fixture actor has create_chat');
 select ok(not public.has_workspace_permission('b6277000-0000-4000-8000-000000000011','b6277000-0000-4000-8000-000000000002','manage_chat'), 'fixture actor has no manage_chat');
-select ok(exists(select 1 from public.workspace_members where ws_id='b6277000-0000-4000-8000-000000000012' and user_id='b6277000-0000-4000-8000-000000000002'), 'personal creator membership comes from bootstrap');
+select ok(exists(select 1 from public.workspace_members where ws_id=pg_temp.fixture_personal_ws_id() and user_id='b6277000-0000-4000-8000-000000000002'), 'personal creator membership comes from bootstrap');
 
 create function pg_temp.create_initial(p_initial jsonb, p_type text default 'ai') returns jsonb language sql as $$
  select private.chat_create_conversation(
@@ -31,7 +35,7 @@ $$;
 create temporary table initial_results(kind text primary key, receipt jsonb);
 insert into initial_results values
  ('workspace',pg_temp.create_initial('{"modelId":"google/test","creditSource":"workspace","creditWsId":"b6277000-0000-4000-8000-000000000011","thinkingMode":"thinking"}')),
- ('personal',pg_temp.create_initial('{"modelId":"google/test","creditSource":"personal","creditWsId":"b6277000-0000-4000-8000-000000000012","thinkingMode":"fast"}')),
+ ('personal',pg_temp.create_initial(jsonb_build_object('modelId','google/test','creditSource','personal','creditWsId',pg_temp.fixture_personal_ws_id(),'thinkingMode','fast'))),
  ('null',pg_temp.create_initial('{"modelId":"google/test","creditSource":"workspace","creditWsId":null,"thinkingMode":"fast"}')),
  ('legacy',pg_temp.create_initial(null)),
  ('channel',pg_temp.create_initial(null,'channel'));
@@ -56,7 +60,7 @@ select ok(not exists(
 select is((select count(*)::integer from private.chat_conversation_members m join initial_results r on m.conversation_id=(r.receipt->>'id')::uuid where m.user_id='b6277000-0000-4000-8000-000000000002' and m.role='owner'),5,'creation retains owner membership');
 
 create temporary table before_invalid as select count(*) as n from private.chat_conversations;
-select throws_ok($$select pg_temp.create_initial('{"modelId":"google/test","creditSource":"workspace","creditWsId":"b6277000-0000-4000-8000-000000000012","thinkingMode":"fast"}')$$,'42501','chat_invalid_credit_workspace','workspace credits cannot target personal or arbitrary workspace');
+select throws_ok($$select pg_temp.create_initial(jsonb_build_object('modelId','google/test','creditSource','workspace','creditWsId',pg_temp.fixture_personal_ws_id(),'thinkingMode','fast'))$$,'42501','chat_invalid_credit_workspace','workspace credits cannot target personal or arbitrary workspace');
 select throws_ok($$select pg_temp.create_initial('{"modelId":"google/test","creditSource":"personal","creditWsId":"b6277000-0000-4000-8000-000000000011","thinkingMode":"fast"}')$$,'42501','chat_invalid_credit_workspace','personal credits cannot target active workspace');
 select throws_ok($$select pg_temp.create_initial('{"modelId":"google/test","creditSource":"workspace","creditWsId":null,"thinkingMode":"unknown"}')$$,'22023','chat_invalid_initial_ai_settings','invalid thinking mode fails before writes');
 select throws_ok($$select pg_temp.create_initial('{"modelId":"google/test","creditSource":"workspace","thinkingMode":"fast"}')$$,'22023','chat_invalid_initial_ai_settings','missing nullable field is not defaulted');
@@ -76,7 +80,7 @@ select throws_ok($$select pg_temp.create_initial('{"modelId":"google/test","cred
 drop trigger initial_fixture_audit_failure on private.chat_audit_events;
 select is((select count(*) from private.chat_conversations),(select n from before_invalid),'late transaction failure leaves no conversation');
 select is((select count(*)::integer from private.chat_conversation_ai_settings a join private.chat_conversations c on c.id=a.conversation_id where c.ws_id='b6277000-0000-4000-8000-000000000011'),5,'late transaction failure leaves no additional settings row');
-update public.workspace_default_permissions set enabled=false where ws_id='b6277000-0000-4000-8000-000000000011' and permission='create_chat';
+update public.workspace_default_permissions set enabled=false where ws_id='b6277000-0000-4000-8000-000000000011' and permission='create_chat' and member_type='MEMBER';
 select throws_ok($$select pg_temp.create_initial(null)$$,'42501','chat_permission_required:create_chat','initialization does not weaken create admission');
 select ok(not has_function_privilege('authenticated','private.chat_create_conversation(uuid,uuid,jsonb)','execute'),'authenticated direct RPC remains revoked');
 select ok(not has_function_privilege('anon','private.chat_create_conversation(uuid,uuid,jsonb)','execute'),'anonymous direct RPC remains revoked');

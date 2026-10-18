@@ -161,6 +161,7 @@ test('runner rejects incompatible feedback profiles before hosted admission and 
         env: {
           ...process.env,
           GITHUB_ACTIONS: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS: 'false',
           EMPLOYEE_SCHEMA_SOURCE_SHA: 'a'.repeat(40),
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: 'true',
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: 'false',

@@ -216,3 +216,28 @@ zero retries/monotonic20-minute phase bound and existing individual deadlines.
 The domain-regexp implication is structural only; do not label it a tested mutation.
 Keep ACL/registry-availability ordinary coverage distinct. See the existing schema
 qualification runbook for target counts, control binding and unexecuted-proof limits.
+
+
+### Chat initial-settings qualification
+
+Use the existing employee schema lifecycle's default-off
+`include_chat_initial_settings` profile for foundation172 + chat25 = 197, never
+append chat to every historical profile. Reject other optional profiles and
+structured provenance together with chat. Require the same-database committed
+synthetic RPC/readback → actual Web POST → strict Dart repository bridge, exact
+source/control/run/migration/fixture hashes, nine Web and nine Dart controls,
+stopped child groups, marker-owned fixture cleanup and exact database absence.
+Reuse trigger-created personal workspace UUIDs and memberships rather than
+inserting a second personal workspace. Bind those UUIDs through credit inputs,
+SQL envelope validation and marker/creator-guarded cleanup of both actors'
+bootstrap rows. Shared synthetic permission fixtures use the three-column
+`(ws_id, permission, member_type)` key and explicit `MEMBER` scope; disable only
+that shared MEMBER admin default before testing explicit manage/create denial.
+The rollback pgTAP packet alone is not committed receipt proof. A phase file or
+GREEN employee HTTP flag cannot substitute for this profile's qualified receipt.
+Creation-only coverage does not certify native message timestamps or provider,
+device, upgrade or production behavior. Keep explicit bridge targets outside
+ordinary suite discovery and fail when their actual envelope is absent.
+See [schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx#opt-in-chat-initial-settings-qualification)
+for inputs, phase boundaries and evidence. Preserve CI-only dependency setup and
+existing local cold-restore/resource holds.
