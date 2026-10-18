@@ -418,8 +418,13 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
   }
 
   Future<void> openComposer(WidgetTester tester) async {
-    if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
-      await tester.tap(find.byType(AssistantComposerFab));
+    final launcher = find.byType(AssistantComposerFab);
+    if (launcher.evaluate().isNotEmpty) {
+      expect(launcher.hitTestable(), findsOneWidget);
+      await tester.tap(launcher);
+      expect(chrome.state.composerVisible, isTrue);
+      await tester.pump();
+      expect(dock.slot?.composing, isTrue);
       await tester.pump();
     }
     expect(find.byType(AssistantComposerDock), findsOneWidget);
