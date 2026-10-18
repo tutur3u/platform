@@ -355,14 +355,14 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
   final OfflineMutationQueue queue;
   final CacheStore store;
   final Directory directory;
+  void Function(String stage)? disposeProgress;
   static Future<NativeDispatchHarness> create() async {
     final port = NativeDispatchPort();
     final directory = await Directory.systemTemp.createTemp('pr6277-v116-');
     final storage = _Storage();
     final secrets = <String, String>{};
-    when(
-      () => storage.read(key: any(named: 'key')),
-    ).thenAnswer((i) async => secrets[i.namedArguments[#key] as String]);
+    when(() => storage.read(key: any(named: 'key')))
+        .thenAnswer((i) async => secrets[i.namedArguments[#key] as String]);
     when(
       () => storage.write(
         key: any(named: 'key'),
@@ -438,11 +438,23 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
   );
   @override
   Future<void> dispose(WidgetTester tester) async {
+    disposeProgress?.call('release-before');
     port.release();
+    disposeProgress?.call('release-after');
+    disposeProgress?.call('widgets-before');
     await super.dispose(tester);
+    disposeProgress?.call('widgets-after');
+    disposeProgress?.call('queue-before');
     await queue.dispose();
+    disposeProgress?.call('queue-after');
+    disposeProgress?.call('store-before');
     await store.closeForTesting();
+    disposeProgress?.call('store-after');
+    disposeProgress?.call('api-before');
     port.api.dispose();
+    disposeProgress?.call('api-after');
+    disposeProgress?.call('directory-before');
     await directory.delete(recursive: true);
+    disposeProgress?.call('directory-after');
   }
 }

@@ -1,6 +1,7 @@
 // UNEXECUTED: this exercises actual page Retry and real native transport.
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
@@ -109,19 +110,39 @@ void main() {
   testWidgets(
     'durable queue handoff retains original reservation without HTTP',
     (tester) async {
+      void stage(String name) =>
+          debugPrintSynchronously('PR6277_DURABLE_QUEUE:$name');
+      stage('create-before');
       final h = (await tester.runAsync(NativeDispatchHarness.create))!;
-      addTearDown(() => h.dispose(tester));
+      stage('create-after');
+      h.disposeProgress = stage;
+      addTearDown(() async {
+        stage('teardown-before');
+        await h.dispose(tester);
+        stage('teardown-after');
+      });
+      stage('open-before');
       await h.open(tester);
+      stage('open-after');
       h.port.offline = true;
+      stage('send-original-before');
       await h.pageSend(tester, 'Queued original');
+      stage('send-original-after');
+      stage('pending-first-before');
       final pending = await tester.runAsync(h.queue.listPending);
+      stage('pending-first-after');
       expect(pending, isNotEmpty);
       expect(h.port.posts, isEmpty);
+      stage('send-changed-before');
       await h.pageSend(tester, 'Changed queued draft');
+      stage('send-changed-after');
       expect(h.port.posts, isEmpty);
       expect(h.draft(tester).text, 'Changed queued draft');
+      stage('pending-second-before');
       final after = await tester.runAsync(h.queue.listPending);
+      stage('pending-second-after');
       expect(after!.map((r) => r.id), pending!.map((r) => r.id));
+      stage('body-complete');
     },
   );
   testWidgets('foreign old unsent proof cannot release a fresh reservation', (
