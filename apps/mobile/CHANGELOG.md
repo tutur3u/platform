@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.25.1](https://github.com/tutur3u/platform/compare/mobile-v0.25.0...mobile-v0.25.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **ci:** bind chat transforms to owning configuration ([f132487](https://github.com/tutur3u/platform/commit/f132487e937ead548c41b965626f01ce4508b6c0))
+* **ci:** isolate chat profile tests and retain formatter output ([3af3ae8](https://github.com/tutur3u/platform/commit/3af3ae813cf401fa5cc506e11befb7eb388d942a))
+* **database:** add opt-in chat settings qualification ([48e7c9a](https://github.com/tutur3u/platform/commit/48e7c9a75a04133cdd7a1b4801320ac9618840b8))
+* **mobile:** brace assistant stream completion guard ([8cafc99](https://github.com/tutur3u/platform/commit/8cafc992d43ab950f49c510fd6c81e89bd3ad3ed))
+* **mobile:** guard assistant persistence and mutation receipts ([58969ee](https://github.com/tutur3u/platform/commit/58969eef9d89bbc20d27510030dbd35f00927e9b))
+* **mobile:** own assistant reply cancellation lifecycles ([d93b4d5](https://github.com/tutur3u/platform/commit/d93b4d5ebc9bb9dd7478af95c30b30bbd5ba7ac1))
+* **mobile:** preserve Assistant conversation persistence ([#6277](https://github.com/tutur3u/platform/issues/6277)) ([a0ac863](https://github.com/tutur3u/platform/commit/a0ac863894cb3918234351d38019d7e15875c358))
+* **mobile:** repair analyzer and bridge declaration setup ([db1c1a0](https://github.com/tutur3u/platform/commit/db1c1a02a4e1948e024e21efa624b98b96add8d9))
+* **mobile:** run chat bridge guards inside test scaffold ([fe4b458](https://github.com/tutur3u/platform/commit/fe4b458fb6b86bc8687252d1190bbda91e0a128e))
+* own assistant streams and launch chat qualification with Node ([813a871](https://github.com/tutur3u/platform/commit/813a87100f3cf3ce823b60375882ff57bce7c11f))
+* preserve assistant cancellation ownership and isolate schema fixtures ([577f48c](https://github.com/tutur3u/platform/commit/577f48c45f02db141121cddde0316bde5360e251))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/mobile-v0.24.0...mobile-v0.25.0) (2026-10-17)
 
 

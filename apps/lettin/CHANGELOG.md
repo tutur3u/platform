@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/tutur3u/platform/compare/lettin-v1.5.0...lettin-v1.5.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **mobile:** preserve Assistant conversation persistence ([#6277](https://github.com/tutur3u/platform/issues/6277)) ([a0ac863](https://github.com/tutur3u/platform/commit/a0ac863894cb3918234351d38019d7e15875c358))
+
 ## [1.5.0](https://github.com/tutur3u/platform/compare/lettin-v1.4.0...lettin-v1.5.0) (2026-10-17)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.2](https://github.com/tutur3u/platform/compare/ai-v0.18.1...ai-v0.18.2) (2026-10-18)
+
+
+### Bug Fixes
+
+* **mobile:** guard assistant persistence and mutation receipts ([58969ee](https://github.com/tutur3u/platform/commit/58969eef9d89bbc20d27510030dbd35f00927e9b))
+* **mobile:** preserve Assistant conversation persistence ([#6277](https://github.com/tutur3u/platform/issues/6277)) ([a0ac863](https://github.com/tutur3u/platform/commit/a0ac863894cb3918234351d38019d7e15875c358))
+
 ## [0.18.1](https://github.com/tutur3u/platform/compare/ai-v0.18.0...ai-v0.18.1) (2026-10-17)
 
 
