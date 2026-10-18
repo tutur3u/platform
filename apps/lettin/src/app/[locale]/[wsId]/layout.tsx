@@ -77,9 +77,11 @@ async function WorkspaceLayout({ children, params }: LayoutProps) {
           actorId={user.id}
           workspace={workspace}
           workspaces={workspaces}
-          links={await traceLettinRead('layout navigation', () =>
-            getNavigationLinks(workspace.id, user.id)
-          )}
+          links={
+            await traceLettinRead('layout navigation', () =>
+              getNavigationLinks(workspace.id, user.id)
+            )
+          }
           defaultCollapsed={getSidebarCollapsedState(cookieStore, behavior)}
           actions={
             <>
