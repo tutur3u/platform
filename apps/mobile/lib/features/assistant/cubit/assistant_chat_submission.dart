@@ -594,8 +594,9 @@ extension _AssistantChatSubmission on AssistantChatCubit {
                 _streamSubscription = null;
                 _streamAdmission = null;
                 _finalizeToolParts();
-                if (isClosed || state.status == AssistantChatStatus.error)
+                if (isClosed || state.status == AssistantChatStatus.error) {
                   return;
+                }
                 _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
                 _persistAssistantChatCache();
               },
