@@ -449,7 +449,7 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     await queue.dispose();
     disposeProgress?.call('queue-after');
     disposeProgress?.call('store-before');
-    await store.closeForTesting();
+    await store.closeForTesting(onStage: disposeProgress);
     disposeProgress?.call('store-after');
     disposeProgress?.call('api-before');
     port.api.dispose();
