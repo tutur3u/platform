@@ -417,6 +417,14 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     return NativeDispatchHarness._(port, queue, store, directory);
   }
 
+  Future<void> openComposer(WidgetTester tester) async {
+    if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
+      await tester.tap(find.byType(AssistantComposerFab));
+      await tester.pump();
+    }
+    expect(find.byType(AssistantComposerDock), findsOneWidget);
+  }
+
   TextEditingController draft(WidgetTester tester) => tester
       .widget<AssistantComposerDock>(find.byType(AssistantComposerDock))
       .controller;

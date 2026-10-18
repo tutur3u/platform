@@ -357,6 +357,7 @@ void main() {
     stage('attach-before');
     await h.attach(tester, 'changed-first-draft.txt');
     stage('attach-after');
+    await h.openComposer(tester);
     h.draft(tester).text = 'Edited while credentials held';
     final changedAttachments = h.chat.state.composerAttachments;
     final local = h.pageContext.read<AssistantLocalChatCubit>();
@@ -419,10 +420,10 @@ void main() {
         'metadata': {'clientRequestId': request},
         'attachments': [
           {
-            'path': 'chats/$repairChat/restored.txt',
-            'name': 'restored.txt',
-            'type': 'text/plain',
-            'size': 3,
+            'storagePath': 'chats/$repairChat/restored.txt',
+            'filename': 'restored.txt',
+            'contentType': 'text/plain',
+            'sizeBytes': 3,
           },
         ],
       };
@@ -440,6 +441,7 @@ void main() {
       final restoredAttachments = h.chat.state.attachmentsByMessageId[request];
       expect(restoredAttachments!.single.name, 'restored.txt');
       await h.attach(tester, 'current-draft.txt');
+      await h.openComposer(tester);
       h.draft(tester).text = 'Current changed draft';
       final changedAttachments = h.chat.state.composerAttachments;
       h.port.release();
