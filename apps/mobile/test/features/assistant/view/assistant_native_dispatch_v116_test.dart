@@ -126,44 +126,42 @@ void main() {
     });
   }
 
-  testWidgets('pending unexpected cleanup error remains observable to joiners', (
-    tester,
-  ) async {
-    final repository = _HeldReplyCleanup();
-    final h = BackgroundReplyHarness(repository: repository);
-    addTearDown(() async {
-      repository.release();
-      await h.dispose(tester);
-    });
-    await h.mount(tester);
-    await h.chat.openChatById(repairWorkspace, repairChat);
-    final sent = h.chat.submitAcknowledged(
-      wsId: repairWorkspace,
-      message: 'Unexpected cleanup control',
-      modelId: 'synthetic/model-a',
-      thinkingMode: AssistantThinkingMode.fast,
-      creditSource: AssistantCreditSource.workspace,
-      workspaceContextId: repairWorkspace,
-      timezone: 'UTC',
-    );
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pump();
-    expect((await sent).acknowledged, isTrue);
-    final failure = StateError('Synthetic cleanup failure');
-    final first = expectLater(
-      h.chat.stopStreaming(),
-      throwsA(same(failure)),
-    );
-    final second = expectLater(
-      h.chat.stopStreaming(),
-      throwsA(same(failure)),
-    );
-    expect(repository.cancelledA.isCompleted, isTrue);
-    expect(repository.cancelledB.isCompleted, isFalse);
-    repository.releaseA.completeError(failure);
-    await tester.runAsync(() => Future.wait([first, second]));
-    expect(repository.starts, 1);
-  });
+  testWidgets(
+    'pending unexpected cleanup error remains observable to joiners',
+    (tester) async {
+      final repository = _HeldReplyCleanup();
+      final h = BackgroundReplyHarness(repository: repository);
+      addTearDown(() async {
+        repository.release();
+        await h.dispose(tester);
+      });
+      await h.mount(tester);
+      await h.chat.openChatById(repairWorkspace, repairChat);
+      final sent = h.chat.submitAcknowledged(
+        wsId: repairWorkspace,
+        message: 'Unexpected cleanup control',
+        modelId: 'synthetic/model-a',
+        thinkingMode: AssistantThinkingMode.fast,
+        creditSource: AssistantCreditSource.workspace,
+        workspaceContextId: repairWorkspace,
+        timezone: 'UTC',
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      expect((await sent).acknowledged, isTrue);
+      final failure = StateError('Synthetic cleanup failure');
+      final first = expectLater(h.chat.stopStreaming(), throwsA(same(failure)));
+      final second = expectLater(
+        h.chat.stopStreaming(),
+        throwsA(same(failure)),
+      );
+      expect(repository.cancelledA.isCompleted, isTrue);
+      expect(repository.cancelledB.isCompleted, isFalse);
+      repository.releaseA.completeError(failure);
+      await tester.runAsync(() => Future.wait([first, second]));
+      expect(repository.starts, 1);
+    },
+  );
 
   for (final retirement in [
     'actor B',
@@ -286,43 +284,39 @@ void main() {
       );
     },
   );
-  testWidgets(
-    'concurrent cancellation awaits one trusted unsent cleanup',
-    (tester) async {
-      final h = (await tester.runAsync(NativeDispatchHarness.create))!;
-      addTearDown(() => h.dispose(tester));
-      await h.open(tester);
-      h.port.holdHeaders();
-      await h.pageSend(tester, 'Cancelled before dispatch');
-      await tester.runAsync(() => h.port.credentialsEntered.future);
-      var stopped = false;
-      var stoppedAgain = false;
-      final stopping = h.chat.stopStreaming(discardQueued: true).then((_) {
-        stopped = true;
-      });
-      final stoppingAgain = h.chat.stopStreaming(discardQueued: true).then((_) {
-        stoppedAgain = true;
-      });
-      await tester.pump();
-      expect(stopped, isFalse);
-      expect(stoppedAgain, isFalse);
-      expect(h.port.posts, isEmpty);
-      h.port.release();
-      await tester.runAsync(() => Future.wait([stopping, stoppingAgain]));
-      expect(stopped, isTrue);
-      expect(stoppedAgain, isTrue);
-      await h.settle(tester);
-      expect(h.port.posts, isEmpty);
-      expect(h.draft(tester).text, 'Cancelled before dispatch');
-      await h.pageSend(tester, 'Changed after cancellation');
-      expect(h.port.posts, hasLength(1));
-      expect(h.port.posts.single['content'], 'Changed after cancellation');
-      expect(
-        h.chat.state.messages.where((m) => m.role == 'user'),
-        hasLength(1),
-      );
-    },
-  );
+  testWidgets('concurrent cancellation awaits one trusted unsent cleanup', (
+    tester,
+  ) async {
+    final h = (await tester.runAsync(NativeDispatchHarness.create))!;
+    addTearDown(() => h.dispose(tester));
+    await h.open(tester);
+    h.port.holdHeaders();
+    await h.pageSend(tester, 'Cancelled before dispatch');
+    await tester.runAsync(() => h.port.credentialsEntered.future);
+    var stopped = false;
+    var stoppedAgain = false;
+    final stopping = h.chat.stopStreaming(discardQueued: true).then((_) {
+      stopped = true;
+    });
+    final stoppingAgain = h.chat.stopStreaming(discardQueued: true).then((_) {
+      stoppedAgain = true;
+    });
+    await tester.pump();
+    expect(stopped, isFalse);
+    expect(stoppedAgain, isFalse);
+    expect(h.port.posts, isEmpty);
+    h.port.release();
+    await tester.runAsync(() => Future.wait([stopping, stoppingAgain]));
+    expect(stopped, isTrue);
+    expect(stoppedAgain, isTrue);
+    await h.settle(tester);
+    expect(h.port.posts, isEmpty);
+    expect(h.draft(tester).text, 'Cancelled before dispatch');
+    await h.pageSend(tester, 'Changed after cancellation');
+    expect(h.port.posts, hasLength(1));
+    expect(h.port.posts.single['content'], 'Changed after cancellation');
+    expect(h.chat.state.messages.where((m) => m.role == 'user'), hasLength(1));
+  });
   testWidgets('first created turn known unsent removes its exact primed USER', (
     tester,
   ) async {

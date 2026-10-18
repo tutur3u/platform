@@ -120,6 +120,7 @@ test('combined profiles reject incompatible selections before hosted database se
           ...process.env,
           GITHUB_ACTIONS: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS: 'false',
+          EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: String(journal),
