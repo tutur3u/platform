@@ -1,5 +1,5 @@
 {
-  ".": "0.68.0",
+  ".": "0.68.1",
   "apps/ai": "0.18.1",
   "apps/apps": "0.25.0",
   "apps/calendar": "0.35.0",
@@ -29,7 +29,7 @@
   "apps/tasks": "0.39.0",
   "apps/teach": "0.27.1",
   "apps/pay": "0.21.1",
-  "apps/contacts": "0.28.1",
+  "apps/contacts": "0.28.2",
   "apps/forms": "0.19.1",
   "apps/git": "0.14.1",
   "apps/track": "0.30.1",

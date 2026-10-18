@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.28.2](https://github.com/tutur3u/platform/compare/contacts-v0.28.1...contacts-v0.28.2) (2026-10-18)
+
+
+### Bug Fixes
+
+* **contacts:** persist recipient remarks when marking completion ([#6339](https://github.com/tutur3u/platform/issues/6339)) ([ebb7bb1](https://github.com/tutur3u/platform/commit/ebb7bb169a1ca0d4030c158b38d23d3ff6c353cd))
+* **contacts:** save edited recipient remarks with completion ([74476e7](https://github.com/tutur3u/platform/commit/74476e7c847a2e2ebb27d2ab4f950cba6baa6f2b))
+
 ## [0.28.1](https://github.com/tutur3u/platform/compare/contacts-v0.28.0...contacts-v0.28.1) (2026-10-17)
 
 
