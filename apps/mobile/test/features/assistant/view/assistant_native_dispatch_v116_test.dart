@@ -336,6 +336,7 @@ void main() {
     stage('mount-before');
     await h.mount(tester);
     stage('mount-after');
+    await h.acknowledgeNewConversation(tester);
     expect(h.chat.state.storedChatId, isNull);
     expect(h.chat.state.messages, isEmpty);
     h.port.holdHeaders();
@@ -399,6 +400,7 @@ void main() {
       final h = (await tester.runAsync(NativeDispatchHarness.create))!;
       addTearDown(() => h.dispose(tester));
       await h.mount(tester);
+      await h.acknowledgeNewConversation(tester);
       h.port.holdHeaders();
       await h.pageSend(tester, 'First primed text');
       await tester.runAsync(() => h.port.credentialsEntered.future);

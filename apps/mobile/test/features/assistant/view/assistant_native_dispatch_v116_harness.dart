@@ -18,6 +18,7 @@ import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
@@ -40,7 +41,7 @@ class _Session extends Mock implements Session {}
 class _Storage extends Mock implements FlutterSecureStorage {}
 
 class NativeDispatchPort {
-  NativeDispatchPort() {
+  NativeDispatchPort() : _credentialZone = Zone.current {
     when(() => client.auth).thenReturn(auth);
     when(() => auth.currentUser).thenAnswer((_) => user);
     when(() => auth.currentSession).thenReturn(session);
@@ -65,6 +66,7 @@ class NativeDispatchPort {
       httpClient: MockClient(handle),
     );
   }
+  final Zone _credentialZone;
   final client = _AuthClient();
   final auth = _Auth();
   final session = _Session();
@@ -235,8 +237,8 @@ class NativeDispatchPort {
 
   void holdHeaders() {
     armCredentials = true;
-    credentialsEntered = Completer<void>();
-    credentialsRelease = Completer<void>();
+    credentialsEntered = _credentialZone.run(() => Completer<void>());
+    credentialsRelease = _credentialZone.run(() => Completer<void>());
   }
 
   void release() {
@@ -431,6 +433,31 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     await mount(tester);
     await tester.runAsync(() => chat.openChatById(repairWorkspace, repairChat));
     await tester.pumpAndSettle();
+  }
+
+  Future<void> acknowledgeNewConversation(WidgetTester tester) async {
+    final actor = port.actor;
+    final reset = AssistantResetPreferences(
+      actorId: actor,
+      workspaceId: repairWorkspace,
+      isCurrent: () =>
+          port.actor == actor && chat.state.workspaceId == repairWorkspace,
+    );
+    expect(await tester.runAsync(reset.hasUnknownCreation), isTrue);
+    actions.state
+        .resolveForLocation('/assistant')
+        .singleWhere((action) => action.id == 'assistant-more')
+        .onPressed!();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Recent chats'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('New conversation'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Start a new chat'));
+    await tester.pumpAndSettle();
+    expect(await tester.runAsync(reset.hasUnknownCreation), isFalse);
+    expect(port.creates, isEmpty);
+    expect(port.posts, isEmpty);
   }
 
   Future<void> pageSend(WidgetTester tester, String text) async {
