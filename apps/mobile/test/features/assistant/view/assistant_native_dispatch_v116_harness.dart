@@ -237,8 +237,8 @@ class NativeDispatchPort {
 
   void holdHeaders() {
     armCredentials = true;
-    credentialsEntered = _credentialZone.run(() => Completer<void>());
-    credentialsRelease = _credentialZone.run(() => Completer<void>());
+    credentialsEntered = _credentialZone.run(Completer<void>.new);
+    credentialsRelease = _credentialZone.run(Completer<void>.new);
   }
 
   void release() {
