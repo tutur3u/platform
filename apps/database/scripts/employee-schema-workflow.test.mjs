@@ -174,3 +174,38 @@ test('migration and RESTORE selections retain separate inputs and environment bi
   assert.match(step, /^ {8}if: inputs.include_http == true$/mu);
   assert.match(step, /tsconfig.employee-http.json --noEmit/u);
 });
+
+test('employee public consumer proof stays default-off and uses the maintained qualification gate', () => {
+  assert.match(
+    workflow,
+    /include_public_consumer:\n(?:[^\n]*\n)*? {8}default: false\n {8}type: boolean/u
+  );
+  assert.match(
+    workflow,
+    /EMPLOYEE_SCHEMA_INCLUDE_PUBLIC_CONSUMER: \$\{\{ inputs.include_public_consumer \}\}/u
+  );
+  const preflight = namedStep('Validate employee public consumer selection');
+  assert.match(preflight, /if: inputs.include_public_consumer == true/u);
+  assert.ok(
+    workflow.indexOf(preflight) <
+      workflow.indexOf(namedStep('Install exact source dependencies'))
+  );
+  const step = namedStep('Verify employee public consumer proof gates');
+  assert.doesNotMatch(step, /working-directory:/u);
+  assert.match(
+    step,
+    /node --test scripts\/employee-public-consumer-qualification.test.mjs/u
+  );
+  const runner = readFileSync(
+    new URL('apps/database/scripts/verify-employee-schema-contract.mjs', root),
+    'utf8'
+  );
+  assert.ok(
+    runner.indexOf('generatedTypesSha256 = generateEmployeeTypes(') <
+      runner.indexOf('publicConsumerState = await runEmployeePublicConsumer(')
+  );
+  assert.match(
+    runner,
+    /!publicConsumer \|\| receipt.employeePublicConsumer.sourceCompilerQualified/u
+  );
+});

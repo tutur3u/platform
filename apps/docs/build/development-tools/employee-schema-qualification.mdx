@@ -14,6 +14,48 @@ full-migration Supabase project using the same isolated runner as the Tutoring
 contract gates. Startup/reset and each fixture are bounded; an always-run cleanup
 step stops only the owned project, without retaining a database backup.
 
+## Employee public-consumer proof
+
+The employee schema workflow's `include_public_consumer` option defaults off and
+excludes standalone chat and diagnostic provenance. It preserves the selected SQL
+packets and counts while generating types from that owned database, even on the
+foundation profile. Before cleanup, the maintained adapter records private employee
+function definitions, table columns/RLS and the complete applied migration ledger
+as digests before generation, rechecks them after generation, then compiles the current CREATE aliases and RESTORE public imports
+against the same artifact. It checks source/control commits, tracked source digests,
+repository/run/attempt, isolated project, artifact hash and catalog identity again
+after compilation. No SQL or compiler diagnostic values enter the receipt.
+
+The compiler uses `noEmit` with `noCheck: false`, inherits strict repository flags, derives source entries
+from actual public package export targets and replaces only the generated schema
+inside a disposable Types source copy with the owning dependency links. Its fixture
+requires operation identity through both creation names and exercises missing/wrong
+UUID, revision, private RPC and private table controls. UUID string syntax remains
+owned by runtime validation; TypeScript checks its string representation.
+`employeePublicConsumer.sourceCompilerQualified` in `qualification.json` requires
+successful generation, compilation, unchanged bindings, SQL qualification, compiler
+scratch cleanup and owned database cleanup. Failure, timeout or a skipped compiler
+stays false; `emittedPublicPackageQualified` stays false. This source proof does not
+replace exact-commit real builds or emitted public package/release acceptance.
+Focused regressions live in `scripts/employee-public-consumer-qualification.test.mjs`
+and the maintained workflow test. SQL/catalog and same-run generated-schema acceptance
+require a separately admitted hosted run; checked-in-schema compiler smoke is only
+fixture validation.
+
+The compiler state remains provisional through all optional HTTP/Web runtime work.
+Immediately before the existing owned database stop, a lifecycle adapter rechecks
+live catalog identity, current source/control binding and the generated artifact
+against the original compiler state. A failed check still allows the existing
+stop and cleanup proof to run once. After cleanup returns, the adapter rechecks
+only the filesystem artifact and source/control binding; it never queries the
+destroyed database. Both final fences, SQL/lifecycle success and positive owned
+cleanup are required before sourceCompilerQualified can be true. Primary final-check
+and cleanup failures remain available together; no unknown operation is retried.
+
+Late-runtime artifact/catalog drift and source/control changes during cleanup are
+covered by the root proof regression file. The lifecycle check does not change
+packet selection/counts, optional defaults or the existing cleanup ownership rule.
+
 The foundation gate requires all five packets: signup guards (25), administrator
 (20), finalization (34), identity contract (52), and restoration (41). Each packet
 must emit one complete, sequential, non-skipped pgTAP plan and close its synthetic

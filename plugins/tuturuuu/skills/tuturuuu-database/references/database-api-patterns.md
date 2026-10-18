@@ -184,7 +184,6 @@ unexpected key/mode/namespace, and cleanup. Require actual same-schema CI to run
 these controls; source and mock checks cannot qualify the repair. Keep bounded
 failure-only diagnostics, original tested counts and cleanup on failure.
 
-
 ## Address migration admission contention
 
 Migration RPCs must try exclusive `employee-address-reservations` admission and
@@ -217,7 +216,6 @@ The domain-regexp implication is structural only; do not label it a tested mutat
 Keep ACL/registry-availability ordinary coverage distinct. See the existing schema
 qualification runbook for target counts, control binding and unexecuted-proof limits.
 
-
 ### Chat initial-settings qualification
 
 Use the existing employee schema lifecycle's default-off
@@ -241,3 +239,26 @@ ordinary suite discovery and fail when their actual envelope is absent.
 See [schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx#opt-in-chat-initial-settings-qualification)
 for inputs, phase boundaries and evidence. Preserve CI-only dependency setup and
 existing local cold-restore/resource holds.
+
+### Employee generated-schema public consumer proof
+
+Use the maintained schema workflow's default-off `include_public_consumer` only
+within an admitted disposable schema run. It leaves packet selections/counts
+unchanged and excludes chat/diagnostic profiles. The adapter binds actual generated
+types to source/control, repository/run/attempt/project, required applied private
+function/table digests and complete migration versions/statements digests, rechecking
+them after generation and after the public source compiler. Recheck live catalog,
+artifact and source/control state again after optional runtimes immediately before
+owned database stop. Always preserve cleanup on a failed check; after cleanup,
+recheck filesystem artifact/source/control without querying the destroyed database.
+Both final fences must pass before the receipt qualifies. It derives source entries from package exports,
+uses a disposable Types copy with that generated schema and owning dependencies,
+and requires both CREATE names' operation identity plus RESTORE revision and private
+schema negative controls. Do not alias a private implementation or fabricate RPC types.
+
+Compiler skip/error/signal/timeout, artifact or catalog drift, failed scratch cleanup,
+SQL failure or failed database cleanup cannot produce sourceCompilerQualified.
+Emitted public-package acceptance remains false/separate. Checked-in-schema compiler
+smoke validates the fixture only; it is not same-database generation/catalog evidence.
+See [delivery evidence](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence)
+and the root-discovered `scripts/employee-public-consumer-qualification.test.mjs`.

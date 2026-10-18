@@ -20,6 +20,14 @@ import {
   selectRestoreRuntime,
 } from './employee-http-receipt.mjs';
 import {
+  assertEmployeeSchemaSnapshot,
+  employeePublicConsumerReceipt,
+  generateEmployeeTypes,
+  runEmployeePublicConsumer,
+  runEmployeePublicConsumerLifecycle,
+  selectEmployeePublicConsumer,
+} from './employee-public-consumer-qualification.mjs';
+import {
   assertPacketTap,
   assertRollbackSource,
   exactSourceSha,
@@ -73,6 +81,14 @@ const chatInitialSettings = selectChatInitialSettings(
       'STRUCTURED_PROVENANCE',
     ].map((name) => [name, process.env[`EMPLOYEE_SCHEMA_INCLUDE_${name}`]])
   )
+);
+const publicConsumer = selectEmployeePublicConsumer(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_PUBLIC_CONSUMER,
+  {
+    chatInitialSettings,
+    structuredProvenance:
+      process.env.EMPLOYEE_SCHEMA_INCLUDE_STRUCTURED_PROVENANCE === 'true',
+  }
 );
 const diagnoseChatProcess = selectChatProcessDiagnostic(
   process.env.EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS,
@@ -298,6 +314,8 @@ let currentPhase = 'full-schema-snapshot';
 let packetOrdinal = 0;
 let failureDiagnostic = null;
 let generatedTypesSha256 = null;
+let publicConsumerState = null;
+let publicConsumerFinalization = null;
 let httpQualification = null;
 let webSessionQualification = null;
 let causalState = null;
@@ -447,30 +465,27 @@ const runner = async (command, args, cwd) => {
         packetOrdinal = 0;
         finishFeedbackCausalPhase(causalState, causalRunSQL, causalRemaining);
       }
-      if (journal || personalJournal || feedback) {
+      if (journal || personalJournal || feedback || publicConsumer) {
         packetOrdinal = 0;
         currentPhase = 'typegen';
-        const types = bounded(
-          binaryPath,
-          [
-            'gen',
-            'types',
-            'typescript',
-            '--local',
-            '--schema',
-            'public,private,storage',
-          ],
-          metadata.disposableRoot,
-          120000
-        );
-        if (!types.includes('export type Database ='))
-          throw new Error('Generated database types absent');
-        generatedTypesSha256 = createHash('sha256').update(types).digest('hex');
-        writeFileSync(
-          path.join(receiptDirectory, 'generated-types.ts'),
-          types,
-          { mode: 0o600 }
-        );
+        const generate = () => {
+          generatedTypesSha256 = generateEmployeeTypes({
+            binaryPath,
+            metadata,
+            receiptDirectory,
+            bounded,
+          });
+          return generatedTypesSha256;
+        };
+        if (publicConsumer)
+          publicConsumerState = await runEmployeePublicConsumer({
+            root,
+            metadata,
+            receiptDirectory,
+            generate,
+            runSQL: causalRunSQL,
+          });
+        else generate();
       }
       if (httpRuntime) {
         packetOrdinal = 0;
@@ -576,20 +591,25 @@ const runner = async (command, args, cwd) => {
 };
 let lifecycleCode = 1;
 try {
-  // Verify complete tracked database snapshot, including every migration, not only fixtures.
-  for (const file of trackedFiles.filter(
-    (file) => !file.endsWith('/supabase/config.toml')
-  )) {
-    if (
-      !readFileSync(path.join(root, file)).equals(
-        readFileSync(
-          path.join(metadata.disposableRoot, file.replace('apps/database/', ''))
-        )
-      )
-    )
-      throw new Error('Full schema snapshot differs');
-  }
-  lifecycleCode = await runIsolatedLifecycle({ binaryPath, metadata, runner });
+  assertEmployeeSchemaSnapshot(root, metadata, trackedFiles);
+  const result = await runEmployeePublicConsumerLifecycle({
+    selected: publicConsumer,
+    state: () => publicConsumerState,
+    root,
+    metadata,
+    receiptDirectory,
+    runSQL: causalRunSQL,
+    runner,
+    runLifecycle: (guardedRunner) =>
+      runIsolatedLifecycle({
+        binaryPath,
+        metadata,
+        runner: guardedRunner,
+      }),
+  });
+  lifecycleCode = result.lifecycleCode;
+  publicConsumerFinalization = result.finalization;
+  if (result.failure) throw result.failure;
 } catch {
   // No raw exception text can expose SQL values or private CLI output.
   failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
@@ -603,21 +623,31 @@ const chatQualification = chatInitialSettings
       lifecycleCode,
     })
   : null;
+const baseReceipt = schemaReceipt({
+  sourceSha,
+  packets,
+  lifecycleCode,
+  cleanupSucceeded,
+  journal,
+  personalJournal,
+  addressMigration,
+  feedback,
+  chatInitialSettings,
+  chatInitialSettingsQualified: chatQualification?.qualified === true,
+});
 const receipt = {
-  ...schemaReceipt({
-    sourceSha,
-    packets,
-    lifecycleCode,
-    cleanupSucceeded,
-    journal,
-    personalJournal,
-    addressMigration,
-    feedback,
-    chatInitialSettings,
-    chatInitialSettingsQualified: chatQualification?.qualified === true,
-  }),
+  ...baseReceipt,
   fixtureHashes,
   generatedTypesSha256,
+  employeePublicConsumer: employeePublicConsumerReceipt({
+    state: publicConsumerState,
+    selected: publicConsumer,
+    finalization: publicConsumerFinalization,
+    schemaQualified: baseReceipt.schemaQualified,
+    generatedTypesSha256,
+    lifecycleCode,
+    cleanupSucceeded,
+  }),
   httpTransportQualified:
     httpRuntime &&
     lifecycleCode === 0 &&
@@ -664,6 +694,7 @@ console.log(
 );
 process.exitCode =
   receipt.schemaQualified &&
+  (!publicConsumer || receipt.employeePublicConsumer.sourceCompilerQualified) &&
   (!feedbackCausal || receipt.feedbackCausal.causalQualified)
     ? 0
     : 1;
