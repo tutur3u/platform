@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.41.2](https://github.com/tutur3u/platform/compare/database-v1.41.1...database-v1.41.2) (2026-10-18)
+
+
+### Bug Fixes
+
+* **database:** qualify employee public consumers through cleanup ([83f5a4c](https://github.com/tutur3u/platform/commit/83f5a4cc801fed116938884363bc928493410059)) ([#6342](https://github.com/tutur3u/platform/issues/6342)) ([8391603](https://github.com/tutur3u/platform/commit/8391603d5df194db3d1ed5c152a27106d0a725af))
+
 ## [1.41.1](https://github.com/tutur3u/platform/compare/database-v1.41.0...database-v1.41.1) (2026-10-18)
 
 

@@ -1,11 +1,11 @@
 {
-  ".": "0.68.2",
+  ".": "0.68.3",
   "apps/ai": "0.18.1",
   "apps/apps": "0.25.0",
   "apps/calendar": "0.35.0",
   "apps/chat": "0.27.1",
   "apps/cms": "0.37.1",
-  "apps/database": "1.41.1",
+  "apps/database": "1.41.2",
   "apps/drive": "0.32.1",
   "apps/external": "0.6.1",
   "apps/finance": "0.34.1",

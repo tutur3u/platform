@@ -398,7 +398,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.41.1",
+      "version": "1.41.2",
       "devDependencies": {
         "@electric-sql/pglite": "0.5.8",
         "@electric-sql/pglite-pgtap": "0.0.9",
