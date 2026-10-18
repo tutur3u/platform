@@ -179,7 +179,8 @@ class ReplyRepository extends AssistantRepository {
                 'chatId': chatId,
                 'requestId': requestId,
                 'messageId':
-                    'bbbbbbbb-bbbb-4bbb-8bbb-${ids.toString().padLeft(12, '0')}',
+                    'bbbbbbbb-bbbb-4bbb-8bbb-'
+                    '${ids.toString().padLeft(12, '0')}',
                 'text': text,
                 'attachments': attachments
                     .map(
