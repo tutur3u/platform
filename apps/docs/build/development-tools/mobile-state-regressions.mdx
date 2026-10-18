@@ -142,7 +142,13 @@ These fixtures do not establish authenticated native-device behavior.
 ## Recover a hosted Dart formatting failure
 
 The existing Mobile Analysis job runs the configured hosted Flutter SDK after
-its normal dependency step. A failed `dart format --set-exit-if-changed lib test`
+its app-root `flutter pub get --enforce-lockfile` dependency step. The app's lock
+and path overrides resolve vendor libraries; quality does not independently run
+pub-get inside vendor packages or their examples. Standalone vendor resolution
+can change a tracked vendor lock before formatting, invalidating preimages.
+A lock mismatch must fail dependency installation; do not restore changed locks,
+ignore dirty paths or relax capture guards. Other mobile jobs keep their own
+install/validation contracts. A failed `dart format --set-exit-if-changed lib test`
 still fails quality and prevents analysis. Its three-day `mobile-format` failure
 artifact contains only a bounded tracked-Dart patch and a digest/version receipt;
 it does not contain raw package configuration, environment or authentication data.
