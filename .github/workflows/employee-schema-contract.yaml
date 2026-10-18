@@ -144,6 +144,10 @@ jobs:
           flutter pub get --help | grep -- --enforce-lockfile
           flutter pub get --enforce-lockfile
           git diff --exit-code -- pubspec.yaml pubspec.lock
+      - name: Build chat bridge workspace declarations
+        if: inputs.include_chat_initial_settings == true
+        working-directory: source
+        run: bun turbo:local run build --concurrency=1 --filter=@tuturuuu/types --filter=@tuturuuu/supabase
       - name: Type check explicit chat bridge adapter
         if: inputs.include_chat_initial_settings == true
         working-directory: source/apps/web

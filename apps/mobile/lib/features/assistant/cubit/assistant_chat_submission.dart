@@ -434,7 +434,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             state.attachmentsByMessageId,
           );
 
-      AssistantMessage? optimisticUserMessage = primedOptimisticMessage;
+      var optimisticUserMessage = primedOptimisticMessage;
       if (shouldAppendUserMessage) {
         final userMessage = AssistantMessage(
           id: clientRequestId ?? _repository.generateUuid(),

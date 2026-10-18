@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:mobile/data/sources/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
-import 'package:mobile/data/sources/api_exception.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';

@@ -189,3 +189,18 @@ resolved analysis includes and actual tool identities, never their raw contents.
 Keep a local formatter result separate when its SDK/package context differs.
 After separately reviewed application, require clean exact-head format and
 analysis CI; retain independent compiler, behavior, SQL and delivery gates.
+
+## Prepare chat qualification declarations
+
+The opt-in chat SQL-to-Web-to-Dart qualification compiles the actual Web route
+and its transitive imports. In CI, the selected source builds the existing
+`@tuturuuu/types` and `@tuturuuu/supabase` workspace declarations before the
+unchanged explicit bridge `tsc --noEmit` step. The maintained Turbo build graph
+orders dependencies with `^build`; the chat-only step uses one worker and emits
+normal ignored `dist` outputs. Other profiles keep their existing setup.
+
+Missing public declaration artifacts are a setup failure before SQL, not SQL
+qualification. Build success still requires the full compiler gate; remaining
+type errors must be diagnosed independently. Do not replace exports with source
+aliases or declaration stubs, weaken compiler checks, or treat absent phase
+artifacts or an empty cleanup as a completed database qualification.

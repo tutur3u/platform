@@ -13,6 +13,7 @@ import 'package:http/testing.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
@@ -51,7 +52,7 @@ class NativeDispatchPort {
                     .millisecondsSinceEpoch ~/
                 1000,
     );
-    when(() => auth.refreshSession()).thenAnswer((_) async {
+    when(auth.refreshSession).thenAnswer((_) async {
       if (!credentialsEntered.isCompleted) credentialsEntered.complete();
       await credentialsRelease.future;
       expired = false;
@@ -74,10 +75,10 @@ class NativeDispatchPort {
   bool offline = false;
   bool loseFirstReceipt = false;
   bool foreignRetry = false;
-  Object? postFailure;
+  Error? postFailure;
   int responseStatus = 201;
-  var credentialsEntered = Completer<void>();
-  var credentialsRelease = Completer<void>();
+  Completer<void> credentialsEntered = Completer<void>();
+  Completer<void> credentialsRelease = Completer<void>();
   final connectivityEntered = Completer<void>();
   final connectivityRelease = Completer<void>();
   Completer<void>? responseGate;
@@ -102,7 +103,9 @@ class NativeDispatchPort {
       if (!connectivityEntered.isCompleted) connectivityEntered.complete();
       await connectivityRelease.future;
     }
-    return [offline ? ConnectivityResult.none : ConnectivityResult.wifi];
+    return [
+      if (offline) ConnectivityResult.none else ConnectivityResult.wifi,
+    ];
   }
 
   Future<http.Response> handle(http.Request request) async {
@@ -214,16 +217,16 @@ class NativeDispatchPort {
         'metadata': <String, dynamic>{},
         'attachments': <dynamic>[],
       };
+      final events = [
+        {'type': 'message', 'message': receipt},
+        {
+          'type': 'messages',
+          'messages': [assistant],
+        },
+        {'type': 'done'},
+      ];
       return http.Response(
-        [
-              {'type': 'message', 'message': receipt},
-              {
-                'type': 'messages',
-                'messages': [assistant],
-              },
-              {'type': 'done'},
-            ].map(jsonEncode).join('\n') +
-            '\n',
+        '${events.map(jsonEncode).join('\n')}\n',
         201,
         headers: {'content-type': 'application/x-ndjson'},
       );

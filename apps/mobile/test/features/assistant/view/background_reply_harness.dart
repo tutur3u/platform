@@ -170,7 +170,8 @@ class ReplyRepository extends AssistantRepository {
               'type': 'saved-user-message',
               'clientRequestId': requestId,
               'messageId':
-                  'bbbbbbbb-bbbb-4bbb-8bbb-${ids.toString().padLeft(12, '0')}',
+                  'bbbbbbbb-bbbb-4bbb-8bbb-'
+                  '${ids.toString().padLeft(12, '0')}',
               'text': text,
               'nativeReceipt': {
                 'actorId': currentActorId,
