@@ -42,6 +42,10 @@ class ResetHost extends InMemorySharedPreferencesStore {
   int? holdAt;
   final entered = Completer<void>();
   final release = Completer<void>();
+  Future<void> replaceRecord(Map<String, dynamic> record) async {
+    await super.setValue('String', 'flutter.$envelopeKey', jsonEncode(record));
+  }
+
   @override
   Future<bool> setValue(String type, String key, Object value) async {
     writes++;
@@ -79,12 +83,17 @@ void main() {
       jsonDecode((await host.getAll())['flutter.$envelopeKey']! as String)
           as Map<String, dynamic>;
 
+  Future<AssistantResetOutcome> resetWithConsent() async => await store.reset(
+    operation,
+    informed: true,
+    consentTarget: await store.inspectResetConsentTarget(),
+  );
   for (final throws in [false, true]) {
     test('intent ${throws ? 'throw' : 'false'} has no final effect', () async {
       host
         ..faultAt = 1
         ..throws = throws;
-      final result = await store.reset(operation, informed: true);
+      final result = await resetWithConsent();
       expect(result.disposition, AssistantResetDisposition.uncertain);
       expect(host.writes, 1);
       expect((await raw())['selectedChatId'], chat);
@@ -102,7 +111,7 @@ void main() {
         host
           ..faultAt = 2
           ..throws = throws;
-        final result = await store.reset(operation, informed: true);
+        final result = await resetWithConsent();
         expect(result.disposition, AssistantResetDisposition.uncertain);
         final observed = await raw();
         expect(observed['selectedChatId'], chat);
@@ -128,7 +137,7 @@ void main() {
         ..faultAt = 2
         ..acceptButFalse = true;
       expect(
-        (await store.reset(operation, informed: true)).disposition,
+        (await resetWithConsent()).disposition,
         AssistantResetDisposition.uncertain,
       );
       expect((await raw())['selectedChatId'], null);
@@ -140,10 +149,7 @@ void main() {
   test(
     'known final consent authorizes exactly one next unknown attempt',
     () async {
-      expect(
-        (await store.reset(operation, informed: true)).committedCurrent,
-        true,
-      );
+      expect((await resetWithConsent()).committedCurrent, true);
       expect(await store.hasUnknownCreation(), false);
       final began = await store.beginCreation(attempt);
       expect(began.attemptId, attempt);
@@ -171,11 +177,11 @@ void main() {
   test(
     'final consent is not a restart or revised-record creation grant',
     () async {
-      await store.reset(operation, informed: true);
+      await resetWithConsent();
       AssistantResetPreferences.revokeConsent(envelopeKey);
       SharedPreferences.resetStatic();
       expect(await store.hasUnknownCreation(), true);
-      await store.reset(operation, informed: true);
+      await resetWithConsent();
       final prefs = AssistantPreferences(currentUserId: () => actor);
       await prefs.saveWorkspaceContextId(ws, 'changed');
       expect(await store.hasUnknownCreation(), true);
@@ -186,7 +192,7 @@ void main() {
       'admitted stale boundary $boundary never qualifies reset/create',
       () async {
         host.holdAt = boundary;
-        final work = store.reset(operation, informed: true);
+        final work = resetWithConsent();
         await host.entered.future;
         current = false;
         host.release.complete();
@@ -212,17 +218,17 @@ void main() {
     );
   }
   test('the same reset operation cannot be replayed as a new grant', () async {
-    await store.reset(operation, informed: true);
+    await resetWithConsent();
     AssistantResetPreferences.revokeConsent(envelopeKey);
     expect(
-      (await store.reset(operation, informed: true)).disposition,
+      (await resetWithConsent()).disposition,
       AssistantResetDisposition.deniedBeforeEffect,
     );
     expect(host.writes, 2);
     expect(await store.hasUnknownCreation(), true);
   });
   test('all owning selected/context wrappers preserve creation hold', () async {
-    await store.reset(operation, informed: true);
+    await resetWithConsent();
     final began = await store.beginCreation(attempt);
     final prefs = AssistantPreferences(currentUserId: () => actor);
     await prefs.saveChatId(ws, chat);
@@ -244,7 +250,7 @@ void main() {
     'pending intent denies ordinary mutation and retains beforeimage',
     () async {
       host.faultAt = 2;
-      await store.reset(operation, informed: true);
+      await resetWithConsent();
       final prefs = AssistantPreferences(currentUserId: () => actor);
       await expectLater(prefs.saveChatId(ws, operation), throwsFormatException);
       expect(
@@ -316,8 +322,8 @@ void main() {
         final prefs = AssistantPreferences(currentUserId: () => actor);
         await expectLater(prefs.loadChatId(ws), throwsFormatException);
         expect(
-          (await store.reset(operation, informed: true)).disposition,
-          AssistantResetDisposition.uncertain,
+          (await resetWithConsent()).disposition,
+          AssistantResetDisposition.deniedBeforeEffect,
         );
         expect(host.writes, 0);
       },

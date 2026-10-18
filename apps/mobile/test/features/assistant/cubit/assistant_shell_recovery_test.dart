@@ -150,11 +150,16 @@ void main() {
             isCurrent: () => true,
           );
           if (pending) {
+            final consentTarget = await store.inspectResetConsentTarget();
             host
               ..faultAt = 2
               ..throws = throws;
             expect(
-              (await store.reset(reset.operation, informed: true)).disposition,
+              (await store.reset(
+                reset.operation,
+                informed: true,
+                consentTarget: consentTarget,
+              )).disposition,
               AssistantResetDisposition.uncertain,
             );
             host.faultAt = null;
@@ -235,8 +240,13 @@ void main() {
         workspaceId: reset.ws,
         isCurrent: () => true,
       );
+      final consentTarget = await store.inspectResetConsentTarget();
       expect(
-        (await store.reset(reset.operation, informed: true)).committedCurrent,
+        (await store.reset(
+          reset.operation,
+          informed: true,
+          consentTarget: consentTarget,
+        )).committedCurrent,
         true,
       );
       final preferences = AssistantPreferences(

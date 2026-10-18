@@ -18,6 +18,12 @@ const ws = '11111111-1111-4111-8111-111111111111';
 const chat = '44444444-4444-4444-8444-444444444444';
 AssistantRestoredChat snapshot(String text) => AssistantRestoredChat(
   chat: const AssistantChatRecord(id: chat),
+  settings: const AssistantConversationSettings(
+    modelId: 'model',
+    creditSource: AssistantCreditSource.workspace,
+    creditWsId: null,
+    thinkingMode: AssistantThinkingMode.thinking,
+  ),
   messages: [
     AssistantMessage(
       id: '99999999-9999-4999-8999-999999999999',
@@ -285,6 +291,53 @@ void main() {
       expect(repository.chatCacheDiagnostics, isNull);
       expect(await read(scope), 'authorized');
       expect(await read(origin()), isNull);
+    },
+  );
+  test(
+    'old native cache without tuple revalidates before restore admission',
+    () async {
+      final api = _Api();
+      final entered = Completer<void>();
+      final response = Completer<Map<String, dynamic>>();
+      when(
+        () => api.getJson(
+          '/api/v1/workspaces/$ws/chat/conversations/$chat/ai-settings',
+        ),
+      ).thenAnswer((_) {
+        entered.complete();
+        return response.future;
+      });
+      repository = AssistantRepository(
+        apiClient: api,
+        chatCacheStore: disk.store,
+        currentUserId: () => currentActor,
+      );
+      final scope = origin();
+      final currentSnapshot = snapshot('old authorized');
+      await repository.publishAssistantChatSnapshot(
+        origin: scope,
+        restored: AssistantRestoredChat(
+          chat: currentSnapshot.chat,
+          messages: currentSnapshot.messages,
+          attachmentsByMessageId: const {},
+        ),
+      );
+      var completed = false;
+      final restoring = repository
+          .restoreChat(wsId: ws, chatId: chat, cacheOrigin: scope)
+          .whenComplete(() => completed = true);
+      final observed = expectLater(
+        restoring,
+        throwsA(isA<AssistantChatCacheCancellation>()),
+      );
+      await entered.future;
+      expect(completed, false);
+      currentActor = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+      response.complete({
+        'settings': {'conversationId': chat},
+      });
+      await observed;
+      expect(await read(scope), 'old authorized');
     },
   );
   for (final olderFails in [false, true]) {

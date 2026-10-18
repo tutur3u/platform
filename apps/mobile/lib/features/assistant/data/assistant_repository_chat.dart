@@ -44,7 +44,11 @@ mixin _AssistantChatRepository {
         decode: AssistantRepository._decodeRestoredCache,
       );
       origin.checkScope();
-      if (cached.hasValue && cached.data != null && !cached.isExpired) {
+      if (cached.hasValue &&
+          cached.data != null &&
+          !cached.isExpired &&
+          (route.kind != AssistantChatRouteKind.native ||
+              cached.data!.settings != null)) {
         _trackChatCache(
           restoreChat(
             wsId: wsId,
@@ -194,6 +198,7 @@ mixin _AssistantChatRepository {
     required String message,
     required String timezone,
     required bool Function() isCurrentCreation,
+    ChatInitialAiSettings? initialSettings,
   }) async {
     final key = _creationScopeKey(wsId);
     bool current() => key == _creationScopeKey(wsId) && isCurrentCreation();
@@ -221,6 +226,8 @@ mixin _AssistantChatRepository {
       modelId,
       store,
       attempt,
+      current,
+      initialSettings,
     );
     if (!current()) {
       store.hold();
@@ -253,10 +260,13 @@ mixin _AssistantChatRepository {
     required String timezone,
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
+    ApiMutationAdmission? admission,
   }) async* {
     final route = AssistantChatRoute.parse(chatId);
     if (route.kind == AssistantChatRouteKind.legacy) {
-      yield* _streamLegacyChat(
+      yield* _streamAssistantLegacyChat(
+        api: _apiClient,
+        currentActor: _currentUserId,
         chatId: route.storageId,
         wsId: wsId,
         workspaceContextId: workspaceContextId,
@@ -269,173 +279,136 @@ mixin _AssistantChatRepository {
       );
       return;
     }
-    final settings = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/chat/conversations/$chatId/ai-settings',
-    );
-    requireAssistantSendSettings(
-      settings,
-      chatId: chatId,
-      modelId: modelId,
-      creditSource: creditSource.name,
-      creditWsId: creditWsId,
-      thinkingMode: thinkingMode.name,
-    );
-    {
-      var assistantStarted = false;
-      final nativeAttachments = _chatAttachmentDrafts(chatId, attachments);
-      final requestId =
-          messages.reversed
-              .where((message) => message.role == 'user')
-              .firstOrNull
-              ?.clientRequestId ??
-          messages.reversed
-              .where((message) => message.role == 'user')
-              .firstOrNull
-              ?.id;
-      AssistantJsonStreamEvent userReceipt(ChatMessage saved) {
-        requireAssistantMessageReceipts([saved], conversationId: chatId);
-        final original = assistantClientRequestId(saved.metadata);
-        if (requestId == null ||
-            original != requestId ||
-            saved.content != _latestUserText(messages)) {
-          throw const FormatException(
-            'Assistant user receipt differs from submitted request',
-          );
-        }
-        return AssistantJsonStreamEvent({
-          'type': 'saved-user-message',
-          'messageId': saved.id,
-          'clientRequestId': original,
-          'text': saved.content,
+    try {
+      admission?.check();
+      final settings = await _apiClient.getJson(
+        '/api/v1/workspaces/$wsId/chat/conversations/$chatId/ai-settings',
+      );
+      admission?.check();
+      requireAssistantSendSettings(
+        settings,
+        chatId: chatId,
+        modelId: modelId,
+        creditSource: creditSource.name,
+        creditWsId: creditWsId,
+        thinkingMode: thinkingMode.name,
+      );
+      {
+        var assistantStarted = false;
+        final nativeAttachments = _chatAttachmentDrafts(chatId, attachments);
+        final requestId =
+            messages.reversed
+                .where((message) => message.role == 'user')
+                .firstOrNull
+                ?.clientRequestId ??
+            messages.reversed
+                .where((message) => message.role == 'user')
+                .firstOrNull
+                ?.id;
+        AssistantJsonStreamEvent userReceipt(ChatMessage saved) =>
+            _nativeUserReceiptEvent(
+              saved,
+              chatId: chatId,
+              wsId: wsId,
+              requestId: requestId,
+              text: _latestUserText(messages),
+              attachments: attachments,
+              admission: admission,
+            );
+
+        yield const AssistantJsonStreamEvent({
+          'type': 'native-dispatch-admitted',
         });
-      }
-
-      await for (final event in _chatRepository.sendMessageStream(
-        wsId,
-        chatId,
-        content: _latestUserText(messages),
-        attachments: nativeAttachments,
-        clientRequestId: requestId,
-        miraMode: true,
-      )) {
-        if (event is ChatStreamMessageEvent &&
-            event.message.kind == ChatMessageKind.user) {
-          yield userReceipt(event.message);
-          continue;
-        }
-        if (event is ChatStreamAssistantDeltaEvent) {
-          if (!assistantStarted) {
-            assistantStarted = true;
-            yield AssistantJsonStreamEvent({
-              'type': 'start',
-              'messageId': generateUuid(),
-            });
+        admission?.check();
+        await for (final event in _chatRepository.sendMessageStream(
+          wsId,
+          chatId,
+          content: _latestUserText(messages),
+          attachments: nativeAttachments,
+          clientRequestId: requestId,
+          miraMode: true,
+          admission: admission,
+        )) {
+          if (event is ChatStreamMessageEvent &&
+              event.message.kind == ChatMessageKind.user) {
+            yield userReceipt(event.message);
+            continue;
           }
-          yield AssistantJsonStreamEvent({
-            'type': 'text-delta',
-            'delta': event.delta,
-          });
-          continue;
-        }
-
-        if (event is ChatStreamAssistantPartEvent) {
-          if (!assistantStarted) {
-            assistantStarted = true;
-            yield AssistantJsonStreamEvent({
-              'type': 'start',
-              'messageId': generateUuid(),
-            });
-          }
-          yield _assistantEventFromChatPart(event.part);
-          continue;
-        }
-        if (event is ChatStreamMessagesEvent) {
-          requireAssistantMessageReceipts(
-            event.messages,
-            conversationId: chatId,
-          );
-          for (final user in event.messages.where(
-            (message) => message.kind == ChatMessageKind.user,
-          )) {
-            yield userReceipt(user);
-          }
-          final assistantMessages = event.messages.where(
-            (message) => message.kind == ChatMessageKind.assistant,
-          );
-          for (final message in assistantMessages) {
+          if (event is ChatStreamAssistantDeltaEvent) {
             if (!assistantStarted) {
+              assistantStarted = true;
               yield AssistantJsonStreamEvent({
                 'type': 'start',
-                'messageId': message.id,
+                'messageId': generateUuid(),
               });
-              assistantStarted = true;
             }
             yield AssistantJsonStreamEvent({
-              'type': 'saved-message',
-              'messageId': message.id,
-              'text': message.content,
+              'type': 'text-delta',
+              'delta': event.delta,
             });
+            continue;
           }
-          continue;
-        }
 
-        if (event is ChatStreamErrorEvent) {
-          yield AssistantJsonStreamEvent({
-            'type': 'error',
-            'errorText': event.message,
-          });
-          continue;
-        }
+          if (event is ChatStreamAssistantPartEvent) {
+            if (!assistantStarted) {
+              assistantStarted = true;
+              yield AssistantJsonStreamEvent({
+                'type': 'start',
+                'messageId': generateUuid(),
+              });
+            }
+            yield _assistantEventFromChatPart(event.part);
+            continue;
+          }
+          if (event is ChatStreamMessagesEvent) {
+            requireAssistantMessageReceipts(
+              event.messages,
+              conversationId: chatId,
+            );
+            for (final user in event.messages.where(
+              (message) => message.kind == ChatMessageKind.user,
+            )) {
+              yield userReceipt(user);
+            }
+            final assistantMessages = event.messages.where(
+              (message) => message.kind == ChatMessageKind.assistant,
+            );
+            for (final message in assistantMessages) {
+              if (!assistantStarted) {
+                yield AssistantJsonStreamEvent({
+                  'type': 'start',
+                  'messageId': message.id,
+                });
+                assistantStarted = true;
+              }
+              yield AssistantJsonStreamEvent({
+                'type': 'saved-message',
+                'messageId': message.id,
+                'text': message.content,
+              });
+            }
+            continue;
+          }
 
-        if (event is ChatStreamDoneEvent) {
-          yield const AssistantDoneStreamEvent();
+          if (event is ChatStreamErrorEvent) {
+            yield AssistantJsonStreamEvent({
+              'type': 'error',
+              'errorText': event.message,
+            });
+            continue;
+          }
+
+          if (event is ChatStreamDoneEvent) {
+            yield const AssistantDoneStreamEvent();
+          }
         }
+        return;
       }
-      return;
-    }
-  }
-
-  Stream<AssistantStreamEvent> _streamLegacyChat({
-    required String chatId,
-    required String wsId,
-    required String? workspaceContextId,
-    required String modelId,
-    required List<AssistantMessage> messages,
-    required AssistantThinkingMode thinkingMode,
-    required AssistantCreditSource creditSource,
-    required String timezone,
-    String? creditWsId,
-  }) async* {
-    final response = await _apiClient.sendJsonStream('POST', '/api/ai/chat', {
-      'id': chatId,
-      'wsId': wsId,
-      'workspaceContextId': workspaceContextId,
-      'model': modelId,
-      'messages': messages.map((message) => message.toJson()).toList(),
-      'isMiraMode': true,
-      'timezone': timezone,
-      'thinkingMode': AssistantThinkingMode.thinking.name,
-      'creditSource': creditSource.name,
-      if (creditWsId != null) 'creditWsId': creditWsId,
-    }, accept: 'text/event-stream');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final body = await response.stream.bytesToString();
-      throw ApiException(
-        message: body.isEmpty ? 'Failed to stream chat' : body,
-        statusCode: response.statusCode,
+    } on Object catch (error, stack) {
+      Error.throwWithStackTrace(
+        admission?.preparationFailure(error) ?? error,
+        stack,
       );
-    }
-
-    final parser = AssistantSseParser();
-    await for (final chunk in response.stream) {
-      final events = parser.addChunk(chunk);
-      for (final event in events) {
-        yield event;
-      }
-    }
-
-    for (final event in parser.close()) {
-      yield event;
     }
   }
 
@@ -447,18 +420,23 @@ mixin _AssistantChatRepository {
     cacheOrigin?.checkScope();
     final route = AssistantChatRoute.parse(chatId);
     try {
+      AssistantConversationSettings? settings;
       if (route.kind == AssistantChatRouteKind.native) {
         final payload = await _apiClient.getJson(
           '/api/v1/workspaces/$wsId/chat/conversations/$chatId/ai-settings',
         );
         cacheOrigin?.checkScope();
         requireAssistantSettingsReceipt(payload, chatId: chatId);
+        settings = AssistantConversationSettings.fromJson(
+          payload['settings'] as Map<String, dynamic>,
+        );
       }
       final messages = await _chatRepository.listMessages(wsId, chatId);
       cacheOrigin?.checkScope();
       requireAssistantMessageReceipts(messages, conversationId: chatId);
       return AssistantRestoredChat(
-        chat: AssistantChatRecord(id: chatId),
+        chat: AssistantChatRecord(id: chatId, model: settings?.modelId),
+        settings: settings,
         messages: messages.map(_assistantMessageFromChatMessage).toList(),
         attachmentsByMessageId: _assistantAttachmentsFromChatMessages(messages),
       );
@@ -658,12 +636,17 @@ mixin _AssistantChatRepository {
     String modelId,
     AssistantResetPreferences store,
     AssistantResetEnvelope attempt,
+    bool Function() current,
+    ChatInitialAiSettings? initialSettings,
   ) async {
     try {
       return await _chatRepository.createAcknowledgedConversation(
         wsId,
         title: _titleFromPrompt(message),
         modelId: modelId,
+        actorId: store.actorId,
+        isCurrent: current,
+        initialSettings: initialSettings,
       );
     } on ApiException catch (error) {
       if (error.statusCode == 400 &&

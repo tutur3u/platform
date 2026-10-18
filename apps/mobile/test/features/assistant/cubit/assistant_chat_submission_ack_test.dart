@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
@@ -8,6 +10,7 @@ import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/local/assistant_remote_chat_actions.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 
 const ws = '11111111-1111-4111-8111-111111111111';
 const saved = '22222222-2222-4222-8222-222222222222';
@@ -42,6 +45,8 @@ class _Repository extends AssistantRepository {
     required String modelId,
     required String message,
     required String timezone,
+    ChatInitialAiSettings? initialSettings,
+    bool Function()? isCurrent,
   }) async {
     creates++;
     throw StateError('Unexpected creation');
@@ -59,6 +64,7 @@ class _Repository extends AssistantRepository {
     required String timezone,
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
+    ApiMutationAdmission? admission,
   }) {
     final user = messages.lastWhere((message) => message.role == 'user');
     request = user.clientRequestId!;
@@ -92,6 +98,8 @@ class _PreStreamFailureRepository extends _Repository {
     required String modelId,
     required String message,
     required String timezone,
+    ChatInitialAiSettings? initialSettings,
+    bool Function()? isCurrent,
   }) async {
     if (failure == 'create') throw StateError('Synthetic creation error');
     return const AssistantChatRecord(id: saved);
@@ -115,6 +123,7 @@ class _PreStreamFailureRepository extends _Repository {
     required String timezone,
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
+    ApiMutationAdmission? admission,
   }) {
     throw StateError('Synthetic stream setup error');
   }

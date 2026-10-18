@@ -52,6 +52,16 @@ void main() {
           addTearDown(() => h.dispose(tester));
           await h.mount(tester, actualNavbar: true, locale: Locale(locale));
           final chat = h.pageContext(tester).read<AssistantChatCubit>();
+          // This control exercises tool/title receipts on a known conversation.
+          repository.restored = const AssistantRestoredChat(
+            chat: AssistantChatRecord(id: ToolReceiptRepository.nativeChatId),
+            messages: [],
+            attachmentsByMessageId: {},
+          );
+          await chat.openChatById(
+            ToolReceiptRepository.nativeWorkspaceId,
+            ToolReceiptRepository.nativeChatId,
+          );
           await tester.runAsync(() async {
             final completed = chat.stream.firstWhere(
               (state) =>

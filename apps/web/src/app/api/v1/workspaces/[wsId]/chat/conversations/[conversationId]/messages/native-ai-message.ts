@@ -9,6 +9,7 @@ import {
   type NativeChatAiSettings,
   serializeChatAiSettingsDbError,
 } from '@/lib/chat/ai-settings';
+import { normalizeChatMessageTimestamp } from '@/lib/chat/chat-timestamp';
 import {
   type ChatConversation,
   type ChatMessage,
@@ -163,7 +164,10 @@ export async function sendNativeAiConversationMessages({
     );
   });
   if (replayedMessages.length > 0) {
-    return { messages: replayedMessages, replayed: true };
+    return {
+      messages: replayedMessages.map(normalizeChatMessageTimestamp),
+      replayed: true,
+    };
   }
 
   const shadowChatId = userMessage.id;
@@ -303,7 +307,10 @@ export async function sendNativeAiConversationMessages({
     console.warn('Saved native Chat AI reply but shadow cleanup failed');
   }
 
-  return persistence;
+  return {
+    ...persistence,
+    messages: persistence.messages.map(normalizeChatMessageTimestamp),
+  };
 }
 
 function getPersistableAssistantContent(

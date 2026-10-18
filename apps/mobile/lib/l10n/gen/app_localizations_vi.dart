@@ -10540,4 +10540,37 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesLocalAiDiscard => 'Bỏ bản xem trước';
+
+  @override
+  String get assistantNewChatConfirmationTitle => 'Kiểm tra lịch sử trò chuyện';
+
+  @override
+  String get assistantNewChatConfirmationDescription => 'Cuộc trò chuyện trước có thể đã được lưu, nhưng ứng dụng chưa thể xác nhận. Hãy kiểm tra lịch sử trò chuyện trước khi bắt đầu cuộc trò chuyện mới. Việc bắt đầu cuộc trò chuyện mới không gửi lại yêu cầu trước và có thể tạo một cuộc trò chuyện riêng.';
+
+  @override
+  String get assistantNewChatInspectHistory => 'Xem lịch sử';
+
+  @override
+  String get assistantNewChatConfirmCreation => 'Bắt đầu cuộc trò chuyện mới';
+
+  @override
+  String get assistantNewChatResetDenied => 'Chưa bắt đầu cuộc trò chuyện mới. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện trước khi chọn thao tác khác.';
+
+  @override
+  String get assistantNewChatResetUncertain => 'Chưa thể xác nhận việc đặt lại. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện; ứng dụng sẽ không tự động thử lại.';
+
+  @override
+  String get assistantNewChatResetStale => 'Cuộc trò chuyện hoặc bản nháp đã thay đổi. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện trước khi bắt đầu cuộc trò chuyện khác.';
+
+  @override
+  String get assistantNewChatResetCleanupFailed => 'Việc đặt lại cuộc trò chuyện mới đã được lưu, nhưng chưa thể hoàn tất màn hình này. Hãy kiểm tra lịch sử trò chuyện; ứng dụng sẽ không tự động đặt lại lần nữa.';
+
+  @override
+  String get assistantNewChatResetCommittedStale => 'Việc đặt lại đã được lưu cho ngữ cảnh trước, nhưng màn hình này đã thay đổi. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện; ứng dụng sẽ không tự động thử lại.';
+
+  @override
+  String get assistantSettingsSelectionDenied => 'Bạn không thể thay đổi cài đặt cuộc trò chuyện này. Cài đặt trước đó và bản nháp được giữ lại.';
+
+  @override
+  String get assistantSettingsSelectionUnconfirmed => 'Không thể xác nhận cài đặt cuộc trò chuyện. Bản nháp được giữ lại. Hãy kiểm tra cài đặt cuộc trò chuyện trước khi chọn lại.';
 }

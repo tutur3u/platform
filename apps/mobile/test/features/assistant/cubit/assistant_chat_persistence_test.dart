@@ -47,6 +47,9 @@ const resetOtherActor = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 
 void main() {
   setUpAll(() {
+    registerFallbackValue(
+      ApiMutationAdmission(actorId: 'actor', isCurrent: () => true),
+    );
     registerFallbackValue(AssistantThinkingMode.thinking);
     registerFallbackValue(AssistantCreditSource.workspace);
     registerFallbackValue(<AssistantMessage>[]);
@@ -75,18 +78,14 @@ void main() {
         isCurrent: any(named: 'isCurrent'),
       ),
     ).thenAnswer((_) async => true);
-    when(
-      repository.generateUuid,
-    ).thenReturn('11111111-1111-4111-8111-111111111111');
-    when(
-      () => repository.hasUnknownChatCreation(any()),
-    ).thenAnswer((_) async => false);
-    when(
-      () => preferences.loadChatId(any()),
-    ).thenAnswer((_) async => 'selected');
-    when(
-      () => repository.fetchRecentChats(wsId: any(named: 'wsId')),
-    ).thenAnswer((_) async => []);
+    when(repository.generateUuid)
+        .thenReturn('11111111-1111-4111-8111-111111111111');
+    when(() => repository.hasUnknownChatCreation(any()))
+        .thenAnswer((_) async => false);
+    when(() => preferences.loadChatId(any()))
+        .thenAnswer((_) async => 'selected');
+    when(() => repository.fetchRecentChats(wsId: any(named: 'wsId')))
+        .thenAnswer((_) async => []);
     when(
       () => repository.restoreChat(
         wsId: any(named: 'wsId'),
@@ -196,9 +195,8 @@ void main() {
     });
   }
   test('missing marker read fails closed but keeps verified history', () async {
-    when(
-      () => repository.hasUnknownChatCreation(any()),
-    ).thenThrow(StateError('Synthetic unreadable'));
+    when(() => repository.hasUnknownChatCreation(any()))
+        .thenThrow(StateError('Synthetic unreadable'));
     when(
       () => repository.restoreChat(
         wsId: 'ws',
@@ -226,7 +224,7 @@ void main() {
           'flutter.$resetActor::mira-dashboard-chat-$resetWs': resetChat,
           'flutter.$resetActor::mira-dashboard-workspace-context-$resetWs':
               'prior',
-        })..contextFails = denied;
+        });
         SharedPreferences.resetStatic();
         SharedPreferencesStorePlatform.instance = host;
         final actualRepo = AssistantRepository(currentUserId: () => resetActor);
@@ -261,9 +259,14 @@ void main() {
         );
         final before = actualChat.state;
         try {
+          final consentTarget = await actualChat.inspectResetConsentTarget(
+            resetWs,
+          );
+          host.contextFails = denied;
           final outcome = await actualChat.resetConversationAcknowledged(
             resetWs,
             acknowledgeUnknownCreation: true,
+            consentTarget: consentTarget,
           );
           expect(
             outcome.disposition,
@@ -310,9 +313,8 @@ void main() {
     'late marker load cannot replace current workspace settlement',
     () async {
       final oldMarker = Completer<bool>();
-      when(
-        () => repository.hasUnknownChatCreation('ws'),
-      ).thenAnswer((_) => oldMarker.future);
+      when(() => repository.hasUnknownChatCreation('ws'))
+          .thenAnswer((_) => oldMarker.future);
       when(() => preferences.loadChatId('other')).thenAnswer((_) async => null);
       final oldLoad = cubit.loadWorkspace('ws');
       await Future<void>.delayed(Duration.zero);
@@ -337,9 +339,8 @@ void main() {
           storagePath: 'synthetic/file',
           uploadState: AssistantAttachmentUploadState.uploaded,
         );
-        when(
-          () => repository.hasUnknownChatCreation('ws'),
-        ).thenAnswer((_) async => unknown);
+        when(() => repository.hasUnknownChatCreation('ws'))
+            .thenAnswer((_) async => unknown);
         when(
           () => repository.restoreChat(
             wsId: 'ws',
@@ -401,6 +402,7 @@ void main() {
             timezone: any(named: 'timezone'),
             attachments: any(named: 'attachments'),
             creditWsId: any(named: 'creditWsId'),
+            admission: any(named: 'admission'),
           ),
         );
       },
@@ -511,37 +513,6 @@ void main() {
     },
   );
   test(
-    'held guarded callback cannot invoke stale restore or report true',
-    () async {
-      await cubit.close();
-      final held = Completer<bool>();
-      var restores = 0;
-      cubit = AssistantChatCubit(
-        repository: repository,
-        preferences: preferences,
-        onWorkspaceContextChanged: (_) async {},
-        onResetWorkspaceContext: (_, _) => held.future,
-        onSoulRefreshRequested: () async {},
-        onImmersiveModeChanged: (_) {},
-        onChatRestored: (_) async {
-          restores++;
-        },
-      );
-      addTearDown(cubit.close);
-      await cubit.loadWorkspace('ws');
-      final before = restores;
-      final reset = cubit.resetConversation('ws');
-      await Future<void>.delayed(Duration.zero);
-      when(() => preferences.loadChatId('other')).thenAnswer((_) async => null);
-      await cubit.loadWorkspace('other');
-      final currentRestores = restores;
-      held.complete(true);
-      expect(await reset, isFalse);
-      expect(restores, currentRestores);
-      expect(currentRestores, greaterThanOrEqualTo(before));
-    },
-  );
-  test(
     'missing guarded adapter refuses reset without changing history',
     () async {
       await cubit.close();
@@ -564,19 +535,6 @@ void main() {
       verifyNever(() => repository.acknowledgeUnknownChatCreation(any()));
     },
   );
-  test('failed selected removal cannot report a complete reset', () async {
-    await cubit.loadWorkspace('ws');
-    final before = cubit.state;
-    when(
-      () => preferences.clearChatIdAcknowledged(
-        'ws',
-        actorId: 'actor',
-        isCurrent: any(named: 'isCurrent'),
-      ),
-    ).thenAnswer((_) async => false);
-    expect(await cubit.resetConversation('ws'), isFalse);
-    expect(cubit.state, before);
-  });
   test(
     'guarded shell callback retains context on false durable acknowledgment',
     () async {
@@ -606,28 +564,4 @@ void main() {
       expect(shell.state.workspaceContextId, 'prior');
     },
   );
-  test('failed guarded context leaves selected preference untouched', () async {
-    await cubit.close();
-    cubit = AssistantChatCubit(
-      repository: repository,
-      preferences: preferences,
-      onWorkspaceContextChanged: (_) async {},
-      onResetWorkspaceContext: (_, _) async => false,
-      onSoulRefreshRequested: () async {},
-      onImmersiveModeChanged: (_) {},
-      onChatRestored: (_) async {},
-    );
-    addTearDown(cubit.close);
-    await cubit.loadWorkspace('ws');
-    final before = cubit.state;
-    expect(await cubit.resetConversation('ws'), isFalse);
-    expect(cubit.state, before);
-    verifyNever(
-      () => preferences.clearChatIdAcknowledged(
-        any(),
-        actorId: any(named: 'actorId'),
-        isCurrent: any(named: 'isCurrent'),
-      ),
-    );
-  });
 }

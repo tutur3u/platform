@@ -18,6 +18,7 @@ class AssistantShellState extends Equatable {
     this.activeCredits = const AssistantCredits(),
     this.availableModels = const [],
     this.selectedModel = _defaultAssistantModel,
+    this.conversationSettings,
     this.thinkingMode = AssistantThinkingMode.thinking,
     this.creditSource = AssistantCreditSource.workspace,
     this.workspaceContextId = 'personal',
@@ -40,6 +41,12 @@ class AssistantShellState extends Equatable {
   final AssistantCredits activeCredits;
   final List<AssistantGatewayModel> availableModels;
   final AssistantGatewayModel selectedModel;
+  final AssistantConversationSettings? conversationSettings;
+  String? sendCreditWorkspace(String wsId) => conversationSettings != null
+      ? conversationSettings!.creditWsId
+      : creditSource == AssistantCreditSource.personal
+      ? personalWorkspaceId
+      : wsId;
   final AssistantThinkingMode thinkingMode;
   final AssistantCreditSource creditSource;
   final String workspaceContextId;
@@ -64,6 +71,7 @@ class AssistantShellState extends Equatable {
     AssistantCredits? activeCredits,
     List<AssistantGatewayModel>? availableModels,
     AssistantGatewayModel? selectedModel,
+    Object? conversationSettings = _assistantShellSentinel,
     AssistantThinkingMode? thinkingMode,
     AssistantCreditSource? creditSource,
     String? workspaceContextId,
@@ -91,6 +99,9 @@ class AssistantShellState extends Equatable {
       activeCredits: activeCredits ?? this.activeCredits,
       availableModels: availableModels ?? this.availableModels,
       selectedModel: selectedModel ?? this.selectedModel,
+      conversationSettings: conversationSettings == _assistantShellSentinel
+          ? this.conversationSettings
+          : conversationSettings as AssistantConversationSettings?,
       thinkingMode: thinkingMode ?? this.thinkingMode,
       creditSource: creditSource ?? this.creditSource,
       workspaceContextId: workspaceContextId ?? this.workspaceContextId,
@@ -122,6 +133,7 @@ class AssistantShellState extends Equatable {
     activeCredits,
     availableModels,
     selectedModel,
+    conversationSettings,
     thinkingMode,
     creditSource,
     workspaceContextId,

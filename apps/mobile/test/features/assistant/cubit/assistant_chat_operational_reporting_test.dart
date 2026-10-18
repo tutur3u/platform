@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
 import 'package:mobile/data/sources/api_exception.dart';
@@ -8,6 +9,7 @@ import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 
 class _Preferences extends AssistantPreferences {
   Exception? error;
@@ -45,6 +47,8 @@ class _Repository extends AssistantRepository {
     required String modelId,
     required String message,
     required String timezone,
+    ChatInitialAiSettings? initialSettings,
+    bool Function()? isCurrent,
   }) async {
     if (!started.isCompleted) started.complete();
     if (pendingCreate != null) return await pendingCreate!.future;
@@ -64,6 +68,7 @@ class _Repository extends AssistantRepository {
     required String timezone,
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
+    ApiMutationAdmission? admission,
   }) => stream.stream;
 }
 

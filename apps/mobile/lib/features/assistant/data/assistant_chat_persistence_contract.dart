@@ -146,7 +146,7 @@ void requireAssistantSendSettings(
   if (settings['modelId'] != modelId ||
       settings['creditSource'] != creditSource ||
       settings['thinkingMode'] != thinkingMode ||
-      (creditWsId != null && settings['creditWsId'] != creditWsId)) {
+      settings['creditWsId'] != creditWsId) {
     throw const FormatException(
       'Selected assistant request settings are not stored for this '
       'conversation',

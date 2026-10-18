@@ -11,10 +11,12 @@ import 'package:mobile/data/models/workspace.dart';
 import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
 import '../data/assistant_reset_preferences.dart';
+import '../data/assistant_settings_selection.dart';
 import '../models/assistant_models.dart';
 import '../models/assistant_soul_snapshot.dart';
 
 part 'assistant_shell_state.dart';
+part 'assistant_shell_settings.dart';
 
 const _defaultAssistantModel = AssistantGatewayModel(
   value: 'google/gemini-3.1-flash-lite',
@@ -27,16 +29,31 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     required AssistantRepository repository,
     required AssistantPreferences preferences,
     Object? Function()? currentScopeToken,
+    AssistantSettingsSelector? selectSettings,
+    Object? Function()? currentSettingsToken,
+    void Function(AssistantSettingsDisposition)? onSettingsSelectionFailure,
   }) : _repository = repository,
        _preferences = preferences,
        _currentScopeToken = currentScopeToken,
+       _selectSettings = selectSettings,
+       _currentSettingsToken = currentSettingsToken,
+       _onSettingsSelectionFailure = onSettingsSelectionFailure,
        super(const AssistantShellState());
 
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;
   final Object? Function()? _currentScopeToken;
+  final AssistantSettingsSelector? _selectSettings;
+  final Object? Function()? _currentSettingsToken;
+  final void Function(AssistantSettingsDisposition)?
+  _onSettingsSelectionFailure;
+  int _settingsRequestVersion = 0;
+  bool _settingsSelectionPending = false;
+  int get settingsRevision => _settingsRequestVersion;
+  bool get settingsSelectionPending => _settingsSelectionPending;
   int _soulRefreshGeneration = 0;
   int _requestVersion = 0;
+  int _publicContextRequestEpoch = 0;
   int _insightsRequestVersion = 0;
 
   void _emitIfOpen(AssistantShellState nextState) {
@@ -141,6 +158,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           availableModels: models,
           selectedModel: selectedModel,
           thinkingMode: storedThinkingMode,
+          conversationSettings: null,
           creditSource: activeCreditSource,
           workspaceContextId: storedWorkspaceContext,
           workspaceCreditLocked: workspaceCreditLocked,
@@ -203,14 +221,42 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     emit(state.copyWith(soul: soul));
   }
 
-  Future<void> setSelectedModel(AssistantGatewayModel model) async {
-    final workspace = state.workspace;
-    if (workspace == null) return;
-    emit(state.copyWith(selectedModel: model));
-    await _preferences.saveModel(workspace.id, model);
+  Future<bool> setSelectedModel(AssistantGatewayModel model) =>
+      _selectModel(model);
+
+  void restoreConversationSettings(AssistantConversationSettings? settings) {
+    _settingsRequestVersion++;
+    if (isClosed) return;
+    if (settings == null) {
+      emit(state.copyWith(conversationSettings: null));
+      return;
+    }
+    final model =
+        state.availableModels
+            .where((m) => m.value == settings.modelId)
+            .firstOrNull ??
+        AssistantGatewayModel(
+          value: settings.modelId,
+          label: settings.modelId,
+          provider: settings.modelId.split('/').first,
+        );
+    emit(
+      state.copyWith(
+        selectedModel: model,
+        creditSource: settings.creditSource,
+        thinkingMode: settings.thinkingMode,
+        conversationSettings: settings,
+      ),
+    );
+  }
+
+  void restoreSelectedModel(AssistantGatewayModel model) {
+    _settingsRequestVersion++;
+    if (!isClosed) emit(state.copyWith(selectedModel: model));
   }
 
   Future<void> setThinkingMode(AssistantThinkingMode mode) async {
+    _settingsRequestVersion++;
     final workspace = state.workspace;
     if (workspace == null) return;
     emit(state.copyWith(thinkingMode: AssistantThinkingMode.thinking));
@@ -220,66 +266,8 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     );
   }
 
-  Future<bool> setCreditSource(AssistantCreditSource source) async {
-    final workspace = state.workspace;
-    if (workspace == null) return false;
-
-    final effectiveSource = state.workspaceCreditLocked
-        ? AssistantCreditSource.personal
-        : source;
-    final creditWorkspaceId = effectiveSource == AssistantCreditSource.personal
-        ? state.personalWorkspaceId
-        : workspace.id;
-    if (creditWorkspaceId == null) return false;
-
-    final version = _requestVersion;
-    emit(
-      state.copyWith(status: AssistantShellStatus.loading, clearError: true),
-    );
-    try {
-      final activeCredits = await _repository.fetchCredits(creditWorkspaceId);
-      if (isClosed || version != _requestVersion) return false;
-      final nextPersonalCredits =
-          effectiveSource == AssistantCreditSource.personal
-          ? activeCredits
-          : state.personalCredits;
-      final nextWorkspaceCredits =
-          effectiveSource == AssistantCreditSource.workspace
-          ? activeCredits
-          : state.workspaceCredits;
-      final selectedModel = _resolveSelectedModel(
-        state.availableModels,
-        state.selectedModel,
-        activeCredits.defaultLanguageModel ?? _defaultAssistantModel.value,
-        activeCredits,
-      );
-
-      emit(
-        state.copyWith(
-          status: AssistantShellStatus.loaded,
-          creditSource: effectiveSource,
-          workspaceCredits: nextWorkspaceCredits,
-          personalCredits: nextPersonalCredits,
-          activeCredits: activeCredits,
-          selectedModel: selectedModel,
-        ),
-      );
-
-      await _preferences.saveCreditSource(workspace.id, effectiveSource);
-      await _preferences.saveModel(workspace.id, selectedModel);
-      return true;
-    } on Exception catch (error) {
-      if (!isClosed && version == _requestVersion) {
-        emit(
-          state.copyWith(
-            status: AssistantShellStatus.error,
-            error: error.toString(),
-          ),
-        );
-      }
-      return false;
-    }
-  }
+  Future<bool> setCreditSource(AssistantCreditSource source) =>
+      _selectCreditSource(source);
 
   AssistantPreparedResetContext? prepareResetWorkspaceContext(
     String contextId,
@@ -288,6 +276,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     final actor = _repository.currentActorId;
     final workspace = state.workspace;
     final version = _requestVersion;
+    final contextRequestEpoch = _publicContextRequestEpoch;
     final scope = _currentScopeToken?.call();
     bool current() =>
         !isClosed &&
@@ -296,6 +285,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         _repository.currentActorId == actor &&
         _preferences.matchesResetActor(actor) &&
         _requestVersion == version &&
+        _publicContextRequestEpoch == contextRequestEpoch &&
         state.workspace?.id == workspace.id &&
         _currentScopeToken?.call() == scope &&
         isCurrent();
@@ -320,7 +310,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     final workspace = state.workspace;
     final version = _requestVersion;
     final scope = _currentScopeToken?.call();
-    bool current() =>
+    bool scopeCurrent() =>
         !isClosed &&
         actor != null &&
         workspace != null &&
@@ -330,7 +320,10 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         state.workspace?.id == workspace.id &&
         _currentScopeToken?.call() == scope &&
         isCurrent();
-    if (!current()) return false;
+    if (!scopeCurrent()) return false;
+    final contextRequestEpoch = ++_publicContextRequestEpoch;
+    bool current() =>
+        _publicContextRequestEpoch == contextRequestEpoch && scopeCurrent();
     if (!await _preferences.saveWorkspaceContextIdAcknowledged(
           workspace!.id,
           contextId,
@@ -347,6 +340,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   Future<void> setWorkspaceContextId(String contextId) async {
     final workspace = state.workspace;
     if (workspace == null) return;
+    _publicContextRequestEpoch++;
     emit(state.copyWith(workspaceContextId: contextId));
     await _preferences.saveWorkspaceContextId(workspace.id, contextId);
   }

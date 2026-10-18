@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
@@ -46,6 +47,9 @@ class _Chat extends AssistantChatCubit {
 
 void main() {
   setUpAll(() {
+    registerFallbackValue(
+      ApiMutationAdmission(actorId: 'actor', isCurrent: () => true),
+    );
     registerFallbackValue(AssistantThinkingMode.fast);
     registerFallbackValue(AssistantCreditSource.workspace);
   });
@@ -57,9 +61,9 @@ void main() {
         '$action fences admission after deferred timezone: $change',
         () async {
           final repository = _Repository();
-          when(
-            repository.generateUuid,
-          ).thenReturn('22222222-2222-4222-8222-222222222222');
+          when(() => repository.currentActorId).thenReturn('actor');
+          when(repository.generateUuid)
+              .thenReturn('22222222-2222-4222-8222-222222222222');
           final chat = _Chat(repository);
           addTearDown(chat.close);
           var scope = Object();
@@ -125,9 +129,9 @@ void main() {
   }
   test('changing model lanes discards pending remote submissions', () async {
     final repository = _Repository();
-    when(
-      repository.generateUuid,
-    ).thenReturn('22222222-2222-4222-8222-222222222222');
+    when(() => repository.currentActorId).thenReturn('actor');
+    when(repository.generateUuid)
+        .thenReturn('22222222-2222-4222-8222-222222222222');
     final chat = _Chat(repository);
     addTearDown(chat.close);
     final pending = submitAssistantRemoteChat(
@@ -161,6 +165,7 @@ void main() {
         timezone: any(named: 'timezone'),
         attachments: any(named: 'attachments'),
         creditWsId: any(named: 'creditWsId'),
+        admission: any(named: 'admission'),
       ),
     );
   });
@@ -169,9 +174,9 @@ void main() {
     test('busy ${retry ? 'retry' : 'submit'} rejects late admission after '
         'subscription cancellation and mode ABA', () async {
       final repository = _Repository();
-      when(
-        repository.generateUuid,
-      ).thenReturn('22222222-2222-4222-8222-222222222222');
+      when(() => repository.currentActorId).thenReturn('actor');
+      when(repository.generateUuid)
+          .thenReturn('22222222-2222-4222-8222-222222222222');
       final listening = Completer<void>();
       final cancelling = Completer<void>();
       final releaseCancellation = Completer<void>();
@@ -195,8 +200,12 @@ void main() {
           timezone: any(named: 'timezone'),
           attachments: any(named: 'attachments'),
           creditWsId: any(named: 'creditWsId'),
+          admission: any(named: 'admission'),
         ),
-      ).thenAnswer((_) => stream.stream);
+      ).thenAnswer((call) {
+        (call.namedArguments[#admission] as ApiMutationAdmission).check();
+        return stream.stream;
+      });
       final chat = _Chat(repository);
       addTearDown(chat.close);
       addTearDown(stream.close);
@@ -249,6 +258,7 @@ void main() {
           timezone: any(named: 'timezone'),
           attachments: any(named: 'attachments'),
           creditWsId: any(named: 'creditWsId'),
+          admission: any(named: 'admission'),
         ),
       ).called(1);
     });

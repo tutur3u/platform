@@ -21,7 +21,18 @@ const saved = '22222222-2222-4222-8222-222222222222';
 const otherActor = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 const key = '$actorId::mira-conversation-envelope::v1::$ws';
 
-class _Api extends Mock implements ApiClient {}
+class _Api extends Mock implements ApiClient {
+  @override
+  Future<Map<String, dynamic>> postJsonAcknowledged(
+    String path,
+    Map<String, dynamic> body, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) {
+    if (!isCurrent()) throw StateError('Synthetic retired create');
+    return postJson(path, body);
+  }
+}
 
 class _Host extends InMemorySharedPreferencesStore {
   _Host()
@@ -45,6 +56,13 @@ class _Host extends InMemorySharedPreferencesStore {
   bool throws = false;
   final entered = Completer<void>();
   final release = Completer<void>();
+  Future<void> replaceSelection(String selected) async {
+    final raw = (await super.getAll())['flutter.$key']! as String;
+    final record = jsonDecode(raw) as Map<String, dynamic>;
+    record['selectedChatId'] = selected;
+    await super.setValue('String', 'flutter.$key', jsonEncode(record));
+  }
+
   @override
   Future<bool> setValue(String type, String key, Object value) async {
     writes++;
@@ -145,6 +163,78 @@ void main() {
     await shell.close();
   });
 
+  Future<AssistantResetOutcome> resetWithConsent() async =>
+      await chat.resetConversationAcknowledged(
+        ws,
+        consentTarget: await chat.inspectResetConsentTarget(ws),
+      );
+
+  test('bare true cannot authorize an unknown-held reset', () async {
+    final before = chat.state;
+    final result = await chat.resetConversationAcknowledged(
+      ws,
+      acknowledgeUnknownCreation: true,
+    );
+    expect(result.disposition, AssistantResetDisposition.deniedBeforeEffect);
+    expect(host.writes, 0);
+    expect(chat.state, before);
+    expect(shell.state.workspaceContextId, 'prior');
+    expect(callbacks, 0);
+    verifyNever(() => api.postJson(any(), any()));
+  });
+
+  test(
+    'capture and cancel leave shell, live state and host untouched',
+    () async {
+      final before = chat.state;
+      final target = await chat.inspectResetConsentTarget(ws);
+      expect(target, isNotNull);
+      expect(target!.requiresConsent, true);
+      expect(host.writes, 0);
+      expect(chat.state, before);
+      expect(shell.state.workspaceContextId, 'prior');
+      expect(callbacks, 0);
+      verifyNever(() => api.postJson(any(), any()));
+    },
+  );
+
+  test(
+    'same-workspace replacement denies before intent or visible effects',
+    () async {
+      final target = await chat.inspectResetConsentTarget(ws);
+      final before = chat.state;
+      await host.replaceSelection(otherActor);
+      final result = await chat.resetConversationAcknowledged(
+        ws,
+        consentTarget: target,
+      );
+      expect(result.disposition, AssistantResetDisposition.deniedBeforeEffect);
+      expect(host.writes, 0);
+      expect(chat.state, before);
+      expect(shell.state.workspaceContextId, 'prior');
+      expect(callbacks, 0);
+      verifyNever(() => api.postJson(any(), any()));
+    },
+  );
+
+  test('captured shell lifecycle ABA cannot authorize a reset', () async {
+    final target = await chat.inspectResetConsentTarget(ws);
+    final before = chat.state;
+    actor = otherActor;
+    scope++;
+    actor = actorId;
+    scope++;
+    final result = await chat.resetConversationAcknowledged(
+      ws,
+      consentTarget: target,
+    );
+    expect(result.disposition, AssistantResetDisposition.deniedBeforeEffect);
+    expect(host.writes, 0);
+    expect(chat.state, before);
+    expect(shell.state.workspaceContextId, 'prior');
+    expect(callbacks, 0);
+  });
+
   test(
     'prepare is pure and unknown reset requires explicit informed action',
     () async {
@@ -170,10 +260,7 @@ void main() {
             ..faultAt = boundary
             ..throws = throws;
           final before = chat.state;
-          final result = await chat.resetConversationAcknowledged(
-            ws,
-            acknowledgeUnknownCreation: true,
-          );
+          final result = await resetWithConsent();
           expect(result.disposition, AssistantResetDisposition.uncertain);
           expect(chat.state.chat, before.chat);
           expect(chat.state.storedChatId, before.storedChatId);
@@ -195,10 +282,7 @@ void main() {
       () async {
         host.holdAt = boundary;
         final before = chat.state;
-        final work = chat.resetConversationAcknowledged(
-          ws,
-          acknowledgeUnknownCreation: true,
-        );
+        final work = resetWithConsent();
         await host.entered.future;
         actor = otherActor;
         scope++;
@@ -224,10 +308,7 @@ void main() {
     'known whole-tuple commit publishes once and notification cannot veto',
     () async {
       throwNotification = true;
-      final result = await chat.resetConversationAcknowledged(
-        ws,
-        acknowledgeUnknownCreation: true,
-      );
+      final result = await resetWithConsent();
       expect(result.committedCurrent, true);
       expect(shell.state.workspaceContextId, 'personal');
       expect(chat.state.chat, null);
@@ -249,10 +330,7 @@ void main() {
         expect(await repository.hasUnknownChatCreation(ws), true);
         throw const ApiException(message: 'Synthetic unknown', statusCode: 503);
       });
-      expect(
-        await chat.resetConversation(ws, acknowledgeUnknownCreation: true),
-        true,
-      );
+      expect((await resetWithConsent()).committedCurrent, true);
       final original = chat.state.fallbackChatId;
       Future<AssistantChatRecord> create() => repository.createChat(
         id: original,
@@ -277,14 +355,15 @@ void main() {
     'overlapping informed actions cannot admit another reset intent',
     () async {
       host.holdAt = 1;
+      final target = await chat.inspectResetConsentTarget(ws);
       final first = chat.resetConversationAcknowledged(
         ws,
-        acknowledgeUnknownCreation: true,
+        consentTarget: target,
       );
       await host.entered.future;
       final duplicate = await chat.resetConversationAcknowledged(
         ws,
-        acknowledgeUnknownCreation: true,
+        consentTarget: target,
       );
       expect(
         duplicate.disposition,
@@ -313,10 +392,7 @@ void main() {
         },
       );
       chat.emit(chat.state.copyWith(workspaceId: ws));
-      expect(
-        await chat.resetConversation(ws, acknowledgeUnknownCreation: true),
-        false,
-      );
+      expect((await resetWithConsent()).committedCurrent, false);
       expect(host.writes, 0);
       expect(shell.state.workspaceContextId, 'prior');
       expect(callbacks, 0);
@@ -326,10 +402,7 @@ void main() {
     'postcommit notification is observed by close without delaying receipt',
     () async {
       holdNotification = true;
-      expect(
-        await chat.resetConversation(ws, acknowledgeUnknownCreation: true),
-        true,
-      );
+      expect((await resetWithConsent()).committedCurrent, true);
       var closed = false;
       final closing = chat.close().then((_) {
         closed = true;

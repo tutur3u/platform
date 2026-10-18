@@ -19,6 +19,7 @@ import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
+import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../models/assistant_models.dart';
@@ -28,12 +29,17 @@ import 'assistant_chat_persistence_contract.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
 import 'assistant_reset_preferences.dart';
+import 'assistant_settings_selection.dart';
 import 'assistant_soul_name_writer.dart';
 import 'assistant_soul_reader.dart';
 import 'assistant_stream_parser.dart';
 
 part 'assistant_repository_cache.dart';
+part 'assistant_repository_settings.dart';
 part 'assistant_repository_chat.dart';
+part 'assistant_repository_native_receipt.dart';
+part 'assistant_repository_creation.dart';
+part 'assistant_repository_legacy_stream.dart';
 part 'assistant_repository_preferences.dart';
 part 'assistant_repository_soul.dart';
 
@@ -126,6 +132,7 @@ class AssistantRepository
     String fallbackId,
     int version,
     Future<AssistantChatRecord> result,
+    String? settingsKey,
   })?
   _generationCreation;
 
@@ -146,51 +153,17 @@ class AssistantRepository
     required String modelId,
     required String message,
     required String timezone,
-  }) async {
-    final scope = _creationScopeKey(wsId);
-    var pending = _generationCreation;
-    if (pending != null &&
-        (pending.scope != scope ||
-            pending.fallbackId != id ||
-            pending.version != _creationGenerationVersion)) {
-      invalidateChatCreation();
-      pending = null;
-    }
-    final version = _creationGenerationVersion;
-    bool current() =>
-        version == _creationGenerationVersion &&
-        scope == _creationScopeKey(wsId);
-    final result =
-        pending?.result ??
-        _createChat(
-          id: id,
-          wsId: wsId,
-          modelId: modelId,
-          message: message,
-          timezone: timezone,
-          isCurrentCreation: current,
-        );
-    _generationCreation = (
-      scope: scope,
-      fallbackId: id,
-      version: version,
-      result: result,
-    );
-    try {
-      final acknowledged = await result;
-      if (!current()) {
-        throw const AssistantCreationUncertainException(
-          'Assistant creation generation changed',
-        );
-      }
-      return acknowledged;
-    } on Object {
-      if (identical(_generationCreation?.result, result)) {
-        _generationCreation = null;
-      }
-      rethrow;
-    }
-  }
+    ChatInitialAiSettings? initialSettings,
+    bool Function()? isCurrent,
+  }) => _createBoundChat(
+    id: id,
+    wsId: wsId,
+    modelId: modelId,
+    message: message,
+    timezone: timezone,
+    initialSettings: initialSettings,
+    isCurrent: isCurrent,
+  );
 
   static final Random _random = Random.secure();
 

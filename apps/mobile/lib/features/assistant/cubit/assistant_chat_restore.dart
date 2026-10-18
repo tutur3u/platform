@@ -3,6 +3,7 @@ part of 'assistant_chat_cubit.dart';
 extension _AssistantChatRestore on AssistantChatCubit {
   Future<void> _loadWorkspace(String wsId) async {
     _repository.invalidateChatCreation();
+    _restoredSettings = null;
     final workspaceVersion = ++_workspaceVersion;
     final actor = _repository.currentActorId;
     bool current() =>
@@ -61,6 +62,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
             storedChatId: null,
           ),
         );
+        _publishRestoredSettings(null);
         await _onChatRestored(null);
         return;
       }
@@ -87,10 +89,13 @@ extension _AssistantChatRestore on AssistantChatCubit {
             attachmentsByMessageId: const {},
           ),
         );
+        _publishRestoredSettings(null);
         await _onChatRestored(null);
         return;
       }
 
+      _publishRestoredSettings(restored.settings);
+      if (!current()) return;
       _emitIfOpen(
         state.copyWith(
           status: AssistantChatStatus.idle,
@@ -129,6 +134,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
     bool forceRefresh = false,
   }) async {
     _repository.invalidateChatCreation();
+    _restoredSettings = null;
     final actor = _repository.currentActorId;
     final version = ++_workspaceVersion;
     bool current() =>
@@ -166,6 +172,8 @@ extension _AssistantChatRestore on AssistantChatCubit {
         );
         return;
       }
+      _publishRestoredSettings(restored.settings);
+      if (!current()) return;
       _emitIfOpen(
         state.copyWith(
           status: AssistantChatStatus.idle,
@@ -210,5 +218,66 @@ extension _AssistantChatRestore on AssistantChatCubit {
     } on Exception {
       // History is secondary; preserve the conversation and retry on next open.
     }
+  }
+
+  AssistantChatCacheOrigin? _captureChatCacheOrigin(
+    String wsId,
+    String chatId,
+  ) {
+    final version = _workspaceVersion;
+    final actor = _repository.currentActorId;
+    final origin = _repository.captureChatCacheOrigin(
+      wsId: wsId,
+      chatId: chatId,
+      isCurrent: () =>
+          !isClosed &&
+          version == _workspaceVersion &&
+          _repository.currentActorId == actor &&
+          state.workspaceId == wsId,
+    );
+    if (origin != null) {
+      _hasChatCacheOrigin = true;
+    }
+    return origin;
+  }
+
+  void _persistAssistantChatCache() {
+    final wsId = state.workspaceId;
+    final chatId = state.chat?.id ?? state.storedChatId;
+    if (wsId == null || chatId == null) return;
+    final origin = _captureChatCacheOrigin(wsId, chatId);
+    if (origin == null) return;
+    final restored = AssistantRestoredChat(
+      chat: state.chat,
+      settings: _restoredSettings,
+      messages: state.messages,
+      attachmentsByMessageId: state.attachmentsByMessageId,
+    );
+    late Future<void> observed;
+    observed =
+        Future.sync(
+              () => _repository.publishAssistantChatSnapshot(
+                origin: origin,
+                restored: restored,
+              ),
+            )
+            .then<void>(
+              (result) {
+                if (origin.isCurrent() &&
+                    result.status == AssistantChatCacheStatus.failed) {
+                  _emitIfOpen(state.copyWith(diagnostics: result.diagnostics));
+                }
+              },
+              onError: (Object error, StackTrace stack) {
+                if (origin.isCurrent()) {
+                  _operationalReporter.report(
+                    OperationalPhase.assistantReply,
+                    error,
+                  );
+                }
+              },
+            )
+            .whenComplete(() => _chatCacheObservers.remove(observed));
+    _chatCacheObservers.add(observed);
   }
 }

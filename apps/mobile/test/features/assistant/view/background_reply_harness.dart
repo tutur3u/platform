@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
@@ -17,6 +18,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
@@ -67,6 +69,10 @@ class ReplyWorkspace extends Cubit<WorkspaceState> implements WorkspaceCubit {
 }
 
 class ReplyRepository extends AssistantRepository {
+  ReplyRepository({ApiClient? apiClient})
+    : super(apiClient: apiClient ?? _ReplySettingsApi());
+  @override
+  String? get currentActorId => '33333333-3333-4333-8333-333333333333';
   // This synthetic repository models an explicitly acknowledged creation scope.
   @override
   Future<bool> hasUnknownChatCreation(String wsId) async => false;
@@ -129,6 +135,8 @@ class ReplyRepository extends AssistantRepository {
     required String modelId,
     required String message,
     required String timezone,
+    ChatInitialAiSettings? initialSettings,
+    bool Function()? isCurrent,
   }) async => AssistantChatRecord(id: id, model: modelId);
   @override
   Stream<AssistantStreamEvent> streamChat({
@@ -142,6 +150,7 @@ class ReplyRepository extends AssistantRepository {
     required String timezone,
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
+    ApiMutationAdmission? admission,
   }) {
     final target = starts++ == 0 ? stream : replacement;
     final user = messages.lastWhere((message) => message.role == 'user');
@@ -163,6 +172,25 @@ class ReplyRepository extends AssistantRepository {
               'messageId':
                   'bbbbbbbb-bbbb-4bbb-8bbb-${ids.toString().padLeft(12, '0')}',
               'text': text,
+              'nativeReceipt': {
+                'actorId': currentActorId,
+                'workspaceId': wsId,
+                'chatId': chatId,
+                'requestId': requestId,
+                'messageId':
+                    'bbbbbbbb-bbbb-4bbb-8bbb-${ids.toString().padLeft(12, '0')}',
+                'text': text,
+                'attachments': attachments
+                    .map(
+                      (a) => {
+                        'path': a.storagePath,
+                        'name': a.name,
+                        'type': a.type,
+                        'size': a.size,
+                      },
+                    )
+                    .toList(),
+              },
             }),
           );
         }
@@ -191,9 +219,11 @@ class ReplyRepository extends AssistantRepository {
 }
 
 class BackgroundReplyHarness {
+  BackgroundReplyHarness({ReplyRepository? repository})
+    : repository = repository ?? ReplyRepository();
   final auth = ReplyAuth();
   final workspace = ReplyWorkspace();
-  final repository = ReplyRepository();
+  final ReplyRepository repository;
   final chrome = AssistantChromeCubit();
   final actions = ShellChromeActionsCubit();
   final dock = ShellDockSlotController();
@@ -310,5 +340,22 @@ class BackgroundReplyHarness {
     await chrome.close();
     await actions.close();
     dock.dispose();
+  }
+}
+
+// Synthetic server receipt for tests whose subject is page reply lifecycle.
+class _ReplySettingsApi extends ApiClient {
+  @override
+  Future<Map<String, dynamic>> patchJsonAcknowledged(
+    String path,
+    Map<String, dynamic> body, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) async {
+    if (!isCurrent()) throw StateError('Synthetic departed settings selection');
+    final segments = Uri.parse(path).pathSegments;
+    return {
+      'settings': {'conversationId': segments[segments.length - 2], ...body},
+    };
   }
 }

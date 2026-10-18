@@ -10667,4 +10667,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesLocalAiDiscard => 'Discard preview';
+
+  @override
+  String get assistantNewChatConfirmationTitle => 'Check your chat history';
+
+  @override
+  String get assistantNewChatConfirmationDescription => 'The earlier conversation may already have been saved, but this app could not confirm it. Check your chat history before starting a new chat. Starting a new chat does not retry the earlier request and may create a separate conversation.';
+
+  @override
+  String get assistantNewChatInspectHistory => 'Check history';
+
+  @override
+  String get assistantNewChatConfirmCreation => 'Start a new chat';
+
+  @override
+  String get assistantNewChatResetDenied => 'A new chat was not started. Your draft is retained. Check your chat history before choosing another action.';
+
+  @override
+  String get assistantNewChatResetUncertain => 'The reset could not be confirmed. Your draft is retained. Check your chat history; the app will not retry automatically.';
+
+  @override
+  String get assistantNewChatResetStale => 'The conversation or draft changed. Your draft is retained. Check your chat history before starting another chat.';
+
+  @override
+  String get assistantNewChatResetCleanupFailed => 'The new chat reset was saved, but finishing this screen failed. Check your chat history; the reset will not be retried automatically.';
+
+  @override
+  String get assistantNewChatResetCommittedStale => 'The reset was saved for the earlier context, but this screen changed. Your draft is retained. Check your chat history; the app will not retry automatically.';
+
+  @override
+  String get assistantSettingsSelectionDenied => 'You cannot change these chat settings. Your previous settings and draft are retained.';
+
+  @override
+  String get assistantSettingsSelectionUnconfirmed => 'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.';
 }

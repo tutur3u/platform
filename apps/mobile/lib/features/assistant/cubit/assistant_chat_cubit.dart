@@ -9,6 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 
@@ -16,6 +17,7 @@ import '../data/assistant_chat_persistence_contract.dart';
 import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
 import '../data/assistant_reset_preferences.dart';
+import '../data/assistant_settings_selection.dart';
 import '../data/assistant_stream_parser.dart';
 import '../models/assistant_models.dart';
 import 'assistant_tool_output.dart';
@@ -26,6 +28,7 @@ part 'assistant_chat_reset.dart';
 part 'assistant_chat_state.dart';
 part 'assistant_chat_stream_reconcile.dart';
 part 'assistant_chat_submission.dart';
+part 'assistant_chat_pending_submission.dart';
 part 'assistant_chat_tool_effects.dart';
 
 class AssistantChatCubit extends Cubit<AssistantChatState> {
@@ -37,6 +40,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required Future<void> Function() onSoulRefreshRequested,
     required void Function(bool isImmersive) onImmersiveModeChanged,
     required Future<void> Function(String? modelId) onChatRestored,
+    this.onSettingsRestored,
+    AssistantCreationSettingsPlan? Function(String, String, bool Function())?
+    prepareCreationSettings,
     // Retained for existing constructors; an effectful callback cannot prepare.
     // ignore: avoid_unused_constructor_parameters
     Future<bool> Function(String contextId, bool Function() isCurrent)?
@@ -51,6 +57,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
            operationalReporter ??
            MobileObservability.instance.operationalReporter,
        _prepareResetWorkspaceContext = prepareResetWorkspaceContext,
+       _prepareCreationSettings = prepareCreationSettings,
        _onThemeRequested = onThemeRequested,
        _repository = repository,
        _preferences = preferences,
@@ -76,6 +83,14 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final void Function(SafeErrorDiagnostics diagnostics)? _onSoulRefreshFailed;
   final void Function(bool isImmersive) _onImmersiveModeChanged;
   final Future<void> Function(String? modelId) _onChatRestored;
+  final void Function(AssistantConversationSettings? settings)?
+  onSettingsRestored;
+  final AssistantCreationSettingsPlan? Function(
+    String,
+    String,
+    bool Function(),
+  )?
+  _prepareCreationSettings;
   bool _hasChatCacheOrigin = false;
   final _chatCacheObservers = <Future<void>>{};
   String? _queuedSubmissionRequestId;
@@ -85,6 +100,12 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   StreamSubscription<AssistantStreamEvent>? _streamSubscription;
   final List<AssistantQueuedSubmission> _queue = [];
   int _workspaceVersion = 0;
+  AssistantConversationSettings? _restoredSettings;
+  void _publishRestoredSettings(AssistantConversationSettings? settings) {
+    _restoredSettings = settings;
+    onSettingsRestored?.call(settings);
+  }
+
   int _historyVersion = 0;
   int _toolOperationVersion = 0;
   String? _activeAssistantMessageId;
@@ -127,6 +148,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     return uploaded;
   }
 
+  final _nativePending =
+      <(String?, String, String?), _NativePendingSubmission>{};
+  bool _nativeReconciliationActive = false;
   final _submissionObserverCleanups = <Future<void>>{};
   final _submissionAcks =
       <
@@ -595,66 +619,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     emit(
       state.copyWith(messages: updated, status: AssistantChatStatus.streaming),
     );
-  }
-
-  AssistantChatCacheOrigin? _captureChatCacheOrigin(
-    String wsId,
-    String chatId,
-  ) {
-    final version = _workspaceVersion;
-    final actor = _repository.currentActorId;
-    final origin = _repository.captureChatCacheOrigin(
-      wsId: wsId,
-      chatId: chatId,
-      isCurrent: () =>
-          !isClosed &&
-          version == _workspaceVersion &&
-          _repository.currentActorId == actor &&
-          state.workspaceId == wsId,
-    );
-    if (origin != null) {
-      _hasChatCacheOrigin = true;
-    }
-    return origin;
-  }
-
-  void _persistAssistantChatCache() {
-    final wsId = state.workspaceId;
-    final chatId = state.chat?.id ?? state.storedChatId;
-    if (wsId == null || chatId == null) return;
-    final origin = _captureChatCacheOrigin(wsId, chatId);
-    if (origin == null) return;
-    final restored = AssistantRestoredChat(
-      chat: state.chat,
-      messages: state.messages,
-      attachmentsByMessageId: state.attachmentsByMessageId,
-    );
-    late Future<void> observed;
-    observed =
-        Future.sync(
-              () => _repository.publishAssistantChatSnapshot(
-                origin: origin,
-                restored: restored,
-              ),
-            )
-            .then<void>(
-              (result) {
-                if (origin.isCurrent() &&
-                    result.status == AssistantChatCacheStatus.failed) {
-                  _emitIfOpen(state.copyWith(diagnostics: result.diagnostics));
-                }
-              },
-              onError: (Object error, StackTrace stack) {
-                if (origin.isCurrent()) {
-                  _operationalReporter.report(
-                    OperationalPhase.assistantReply,
-                    error,
-                  );
-                }
-              },
-            )
-            .whenComplete(() => _chatCacheObservers.remove(observed));
-    _chatCacheObservers.add(observed);
   }
 
   void _finalizeToolParts() {

@@ -30,7 +30,9 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_settings_refresh.dart';
+import 'package:mobile/features/assistant/data/assistant_settings_selection.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_state.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
@@ -60,11 +62,13 @@ import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart'
 import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_local_status_sheet.dart';
+import 'package:mobile/features/assistant/widgets/assistant_new_chat_confirmation.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -78,6 +82,8 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'assistant_page_new_chat.dart';
+part 'assistant_page_settings.dart';
 part 'assistant_page_live_actions.dart';
 part 'assistant_page_layout.dart';
 part 'assistant_page_workspace.dart';
@@ -94,12 +100,14 @@ class AssistantPage extends StatefulWidget {
     this.repository,
     this.preferences,
     this.currentActor,
+    this.liveRepository,
   });
 
   final int replayToken;
   final AssistantRepository? repository;
   final AssistantPreferences? preferences;
   final String? Function()? currentActor;
+  final AssistantLiveRepository? liveRepository;
 
   @override
   State<AssistantPage> createState() => _AssistantPageState();
@@ -112,7 +120,8 @@ class _AssistantPageState extends State<AssistantPage>
   late final AssistantPreferences _preferences =
       widget.preferences ?? AssistantPreferences();
   String? _currentActor() => (widget.currentActor ?? currentCacheUserId)();
-  final _liveRepository = AssistantLiveRepository();
+  late final AssistantLiveRepository _liveRepository =
+      widget.liveRepository ?? AssistantLiveRepository();
   final _voiceCapture = AssistantVoiceCaptureCubit();
   String? _voiceWorkspaceId;
   String? _voiceActorId;
@@ -123,6 +132,9 @@ class _AssistantPageState extends State<AssistantPage>
   List<ShellActionSpec>? _chromeActions;
   final _inputController = TextEditingController();
   double? _composerHeight;
+  bool _settingsWritePending = false;
+  bool _newConversationPending = false;
+  bool Function()? _newConversationCurrent;
   final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();
   static const _assistantScrollPhysics = AlwaysScrollableScrollPhysics(
@@ -135,12 +147,27 @@ class _AssistantPageState extends State<AssistantPage>
     repository: _repository,
     preferences: _preferences,
     currentScopeToken: () => _voiceActorScopeEpoch,
+    selectSettings: _selectRemoteSettings,
+    currentSettingsToken: () => (
+      _localScope(),
+      _chatCubit.attachmentScopeVersion,
+      _chatCubit.state.storedChatId,
+      _localCubit.selectionVersion,
+    ),
+    onSettingsSelectionFailure: _settingsSelectionFailed,
   );
   late final AssistantChatCubit _chatCubit = AssistantChatCubit(
     repository: _repository,
     preferences: _preferences,
+    prepareCreationSettings: _prepareCreationSettings,
     onWorkspaceContextChanged: (workspaceContextId) =>
         _shellCubit.setWorkspaceContextId(workspaceContextId),
+    prepareResetWorkspaceContext: (contextId, isCurrent) {
+      final lease = _newConversationCurrent;
+      bool current() => mounted && (lease?.call() ?? false) && isCurrent();
+      if (!current()) return null;
+      return _shellCubit.prepareResetWorkspaceContext(contextId, current);
+    },
     onSoulRefreshRequested: _shellCubit.refreshSoul,
     onThemeRequested: (theme, isCurrent) async {
       if (!mounted || !isCurrent()) return;
@@ -163,6 +190,13 @@ class _AssistantPageState extends State<AssistantPage>
       );
     },
     onImmersiveModeChanged: _shellCubit.setImmersiveMode,
+    onSettingsRestored: (settings) {
+      if (mounted &&
+          _loadedWorkspaceId == _chatCubit.state.workspaceId &&
+          _currentActor() == _repository.currentActorId) {
+        _shellCubit.restoreConversationSettings(settings);
+      }
+    },
     onChatRestored: (modelId) async {
       if (modelId == null || assistantLiveModelMatches(modelId)) {
         return;
@@ -171,7 +205,7 @@ class _AssistantPageState extends State<AssistantPage>
         (model) => model.value == modelId || model.value.endsWith('/$modelId'),
       );
       if (current.isNotEmpty) {
-        await _shellCubit.setSelectedModel(current.first);
+        _shellCubit.restoreSelectedModel(current.first);
       }
     },
   );
@@ -522,37 +556,6 @@ class _AssistantPageState extends State<AssistantPage>
       }
       _inputFocusNode.requestFocus();
     });
-  }
-
-  Future<void> _startNewConversation(
-    String wsId,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) async {
-    _dismissKeyboard();
-    _inputController.clear();
-    if (_localCubit.state.local || _localCubit.state.blocked) {
-      await _localCubit.clearConversation();
-      if (mounted) _scheduleScrollToTop();
-      return;
-    }
-
-    final scope = _localScope();
-    final version = _localCubit.scopeVersion;
-    if (_isVisibleLiveSession(chatState, liveState)) {
-      await _liveCubit.disconnect(clearSession: true);
-    }
-    if (!mounted ||
-        scope != _localScope() ||
-        version != _localCubit.scopeVersion) {
-      return;
-    }
-
-    await _chatCubit.resetConversation(wsId);
-    if (!mounted) {
-      return;
-    }
-    _scheduleScrollToTop();
   }
 
   void _showInlineNotice(String message) {

@@ -125,23 +125,36 @@ extension AssistantChatAttachments on AssistantChatCubit {
     required String timezone,
   }) async {
     final workspaceVersion = _workspaceVersion;
+    bool current() =>
+        !isClosed &&
+        workspaceVersion == _workspaceVersion &&
+        state.workspaceId == wsId;
+    final settingsPlan = _prepareCreationSettings?.call(wsId, modelId, current);
+    if (_prepareCreationSettings != null && settingsPlan == null) {
+      throw const FormatException('Assistant creation settings are stale');
+    }
     final chat = await _repository.createChat(
       id: state.fallbackChatId,
       wsId: wsId,
       modelId: modelId,
       message: 'New chat',
       timezone: timezone,
+      initialSettings: settingsPlan?.take(),
+      isCurrent: settingsPlan?.isCurrent,
     );
     if (isClosed ||
         workspaceVersion != _workspaceVersion ||
         state.workspaceId != wsId) {
       throw Exception('Assistant workspace changed during upload');
     }
-    await _preferences.saveChatId(wsId, chat.id);
+    await _preferences.saveChatId(wsId, chat.id, shouldWrite: current);
     if (isClosed || workspaceVersion != _workspaceVersion) {
       throw Exception('Assistant workspace changed during upload');
     }
     _emitIfOpen(state.copyWith(chat: chat, storedChatId: chat.id));
+    if (!current()) {
+      throw const FormatException('Assistant creation settings are stale');
+    }
     return chat.id;
   }
 

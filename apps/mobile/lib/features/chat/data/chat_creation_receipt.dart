@@ -1,4 +1,5 @@
 import 'package:mobile/core/validation/uuid.dart';
+import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 /// Constructed only from the body of a successful direct creation response.
@@ -8,6 +9,8 @@ final class AcknowledgedChatConversation {
   factory AcknowledgedChatConversation.fromResponse(
     Object? response, {
     required String wsId,
+    ChatInitialAiSettings? initialSettings,
+    String? actorId,
   }) {
     if (response is! Map<String, dynamic>) {
       throw const FormatException('Invalid chat creation response');
@@ -46,6 +49,17 @@ final class AcknowledgedChatConversation {
         wallClock.toIso8601String().substring(0, 19) !=
             createdAt.substring(0, 19)) {
       throw const FormatException('Invalid chat creation timestamp');
+    }
+    if (initialSettings != null) {
+      if (actorId == null || raw['createdBy'] != actorId) {
+        throw const FormatException('Invalid initial settings actor');
+      }
+      initialSettings.validateReceipt(
+        raw['initialAiSettings'],
+        actorId: actorId,
+        wsId: wsId,
+        chatId: id,
+      );
     }
     try {
       return AcknowledgedChatConversation._(ChatConversation.fromJson(raw));

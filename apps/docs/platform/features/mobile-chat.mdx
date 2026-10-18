@@ -213,6 +213,81 @@ The migration backend owns GET only; POST remains tracked Next.js backlog until
 mutation parity is implemented. Live native build and save/reopen verification
 remain separate delivery requirements.
 
+## Explicit mobile Assistant model and credit settings
+
+Native Chat-backed Assistant model and credit-source choices use the authenticated
+conversation settings PATCH, with its `manage_chat` permission check. The client
+admits one request after credential preparation, bound to the current actor,
+workspace, conversation, selection revision and page lifetime. It validates the
+returned conversation ID and complete model, credit source, credit workspace and
+thinking-mode tuple before publishing the choice or its local preferences.
+Concurrent choices are denied while one is pending. Native history restoration
+hydrates the complete validated model, credit source, nullable credit workspace
+and thinking mode before admitting Send. It is a read-side operation under the
+current actor/workspace/chat generation; opening history never PATCHes settings
+and needs no manage permission. Old native snapshots without a complete tuple
+must revalidate it. Server-default nullable credit scope and fast mode remain
+exact values, rather than being replaced by workspace preferences.
+
+Permission denial, malformed receipts, uncertain transport and stale completion
+retain the prior local settings and draft. A stale or missing response can still
+follow a physical server write; the client does not compensate or retry it.
+Localized notices direct the user to inspect settings before another explicit
+choice. This is a client lifecycle fence, not cross-client compare-and-swap.
+
+With no selected conversation, a choice is a local intent. First native creation
+captures a one-use model/credit/thinking tuple and includes it in the existing
+creation request. The route retains `view_chat`; the canonical creation transaction
+retains `create_chat` for AI conversations and writes the complete initial settings
+with the conversation and owner membership. It returns the stored tuple bound to
+the actor, workspace and new chat. There is no automatic post-creation settings
+PATCH and no new `manage_chat` requirement for otherwise authorized first use.
+Explicit later settings edits still require `manage_chat`.
+
+Workspace credits may target only the active workspace; personal credits resolve
+to the actor's personal workspace. An explicit null scope is retained while billing
+resolves the corresponding authorized workspace. An unavailable selected model is
+rejected rather than silently replaced by a plan default. No-tuple creation clients
+retain existing defaults; DM/group/channel creation cannot provide the new AI tuple.
+Malformed, mismatched, unknown or retired creation receipts retain the draft and
+creation hold, without a replacement creation or blind retry. Creation POST checks
+the captured actor/generation after awaited credential preparation and before its
+single HTTP dispatch;401 or challenge responses are not replayed. Ordinary
+follow-up sends only read and validate stored settings; they never PATCH them.
+The optional creation tuple requires the atomic database migration before activation;
+a route-only rollout cannot acknowledge an old RPC response missing that tuple.
+Regression coverage includes `assistant_first_create_v100_test.dart`, the actual
+creation route's `initial-settings.test.ts`, and `chat-initial-ai-settings.sql`.
+Route/page fixtures do not certify migration execution; isolated SQL qualification
+and exact-commit CI remain delivery gates.
+The strict saved-message and request-identity checks remain in force. Legacy
+prefixed AI conversations cannot provide this complete stored-settings receipt,
+so this control denies their stored model/credit edits before PATCH; their
+AI SDK SSE protocol remains supported. A legacy turn binds a top-level
+`persistenceRequestId` to its original user request. Authenticated owner-filtered
+history readback must confirm one durable USER row with that request identity,
+source and original submitted text before the composer clears. The server derives `requestText` metadata from the normalized UI input,
+separately from prepared attachment content; rendered
+file/image markers in stored content are not stripped or guessed by the client.
+Historical text-only receipts without that metadata retain exact-content checks. Text, stream completion and
+`[DONE]` are not receipts. An unknown result keeps the draft and attachments;
+an explicit repeat retains the original identity and checks durable history
+before another dispatch. A confirmed USER receipt precedes any reply failure:
+the composer consumes the saved draft while the model/transport failure remains
+visible. One deferred stream error is retained while checking the receipt. Existing server request leases and request-scoped user
+persistence provide idempotency. No automatic retry or new identity is used for
+an unknown turn. Local on-device conversations and
+explicit Live sessions retain their separate flows.
+
+Regression coverage: `assistant_repair_regression_test.dart`,
+`assistant_settings_selection_test.dart`, `assistant_settings_receipt_test.dart`,
+`api_client_acknowledged_patch_test.dart`, `assistant_restore_send_v87_test.dart`,
+and `assistant_creation_admission_v87_test.dart` cover actual page hooks and first
+Send, raw receipt mismatches, permission/uncertainty, overlapping choices,
+actor/workspace/chat ABA, disposal, and one-dispatch HTTP admission. These use
+synthetic auth and HTTP dependencies; hosted permission behavior, provider/device
+sessions and the original Hive incident remain separate delivery evidence.
+
 ## Handled Assistant operational failures
 
 Mobile Mira reports active handled failures through an injectable typed boundary.
@@ -306,6 +381,28 @@ request they cancel. A canceled attempt retains its draft and attachments; idle
 status is never an acknowledgment. Pre-stream failures, including decoder errors,
 settle the owning request without bypassing uncertainty holds.
 
+For an unresolved native request, ordinary repeated Send reads the original saved
+USER receipt through the authorized messages endpoint; it does not issue another
+POST or allocate a new request identity. The pending turn retains immutable text,
+attachments and actor/workspace/chat identity for the current Assistant session,
+including selection retirement during settings preparation. Known pre-dispatch
+preparation failures release that tentative hold.
+Changed draft or attachments remain held until that original turn is resolved.
+Missing, denied or malformed readback remains unknown; no timer retries generation.
+A stale actor/selection generation cannot consume the current draft. A validated
+original USER receipt resolves persistence even if the model failed afterward;
+it does not claim an assistant response succeeded. Once acknowledged, an equal-text
+follow-up is a new turn. Explicit model Retry keeps its existing request identity.
+
+The active creation and native message API boundaries validate PostgreSQL receipt
+timestamps and return UTC ISO text before strict mobile decoding. SQL space
+separators, microseconds and numeric offsets normalize without dropping fractional
+precision; invalid calendars, offsets or fractions fail closed after persistence.
+This response adaptation does not change global SQL serializers or prove migration
+execution. Regression fixtures cover SQL-shaped creation with and without an initial
+tuple, native JSON/NDJSON/history receipts, invalid dates and retained-draft identity
+in `assistant_native_identity_v108_test.dart` and the active route tests.
+
 Native stream and JSON receipts validate raw UUIDs, canonical message kinds,
 string content, explicit ISO timestamps and metadata before generic model
 coercion. User receipts also require the original request UUID. Malformed batch
@@ -365,8 +462,20 @@ Postcommit notifications are observed and cannot veto a known commit.
 `committedCurrent`. False, thrown, or stale host writes can have physical effects;
 callers must retain drafts/history and show honest uncertainty rather than promise
 that persistence stayed unchanged. An absent prepared adapter denies before effect.
-The former effectful guarded callback cannot qualify this protocol. Wiring the
-localized informed action remains a separate owning-page delivery gate.
+The former effectful guarded callback cannot qualify this protocol. The owning
+page now prepares the pure shell capability and consumes the typed outcome.
+An uncertain or absent creation envelope offers localized Cancel, Check history,
+and Start a new chat choices. Consent is an opaque, one-use process capability
+bound to the observed actor, workspace, selection, context, and hold beforeimage;
+a changed hold or an observed departure cannot reuse it. Cancel, denial, stale
+completion, and uncertainty retain the current draft and attachments. Only a
+current committed reset clears its still-owned draft. History stays open until
+that reset completes; Live cleanup failures remain explicit after a known reset.
+These defaults apply to remote Assistant Chat; local conversations retain their
+separate reset flow. Regression coverage is in `assistant_new_chat_reset_test.dart`,
+`assistant_new_chat_confirmation_test.dart`, and
+`assistant_reset_consent_target_test.dart`; device/provider behavior remains a
+separate delivery gate.
 
 A known selected chat denies new creation before any hold write or POST; its clear
 status remains truthful and its history remains usable. Empty selection is required

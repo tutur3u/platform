@@ -16,7 +16,7 @@ import 'package:shared_preferences_platform_interface/shared_preferences_platfor
 import '../cubit/assistant_chat_creation_harness.dart' as creation;
 import 'assistant_reset_commit_test.dart' as reset;
 
-class _Api extends Mock implements ApiClient {}
+class _Api extends creation.CreationApi {}
 
 class _Chats extends Mock implements ChatRepository {}
 
@@ -95,11 +95,22 @@ Future<void> informedReset(
   String workspace,
 ) async {
   final actor = repository.currentActorId!;
-  final result = await AssistantResetPreferences(
+  final resetStore = AssistantResetPreferences(
     actorId: actor,
     workspaceId: workspace,
     isCurrent: () => repository.currentActorId == actor,
-  ).reset(repository.generateUuid(), informed: true);
+  );
+  final consentTarget = await resetStore.inspectResetConsentTarget();
+  if (consentTarget == null) {
+    throw const AssistantCreationUncertainException(
+      'Synthetic reset inspection failed',
+    );
+  }
+  final result = await resetStore.reset(
+    repository.generateUuid(),
+    informed: true,
+    consentTarget: consentTarget,
+  );
   if (!result.committedCurrent) {
     throw const AssistantCreationUncertainException(
       'Synthetic reset incomplete',
@@ -108,6 +119,7 @@ Future<void> informedReset(
 }
 
 void main() {
+  setUpAll(() => registerFallbackValue(() => true));
   late _Api api;
   late _Chats chats;
   late AssistantRepository repository;
@@ -145,6 +157,8 @@ void main() {
         any(),
         title: any(named: 'title'),
         modelId: any(named: 'modelId'),
+        actorId: any(named: 'actorId'),
+        isCurrent: any(named: 'isCurrent'),
       ),
     );
     await expectLater(
@@ -266,6 +280,8 @@ void main() {
           any(),
           title: any(named: 'title'),
           modelId: any(named: 'modelId'),
+          actorId: any(named: 'actorId'),
+          isCurrent: any(named: 'isCurrent'),
         ),
       );
       store.delayedClear!.complete(false);

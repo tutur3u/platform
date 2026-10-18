@@ -13,13 +13,25 @@ import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class _Api extends Mock implements ApiClient {}
+class _Api extends Mock implements ApiClient {
+  @override
+  Future<Map<String, dynamic>> postJsonAcknowledged(
+    String path,
+    Map<String, dynamic> body, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) {
+    if (!isCurrent()) throw StateError('Synthetic retired creation');
+    return postJson(path, body);
+  }
+}
 
 class _Chats extends Mock implements ChatRepository {}
 
 const ws = '11111111-1111-4111-8111-111111111111';
 const chat = '22222222-2222-4222-8222-222222222222';
 void main() {
+  setUpAll(() => registerFallbackValue(() => true));
   late _Api api;
   late _Chats chats;
   late AssistantRepository repository;
@@ -40,11 +52,17 @@ void main() {
       }),
     });
     // Each fixture uses the actual informed protocol, never legacy adoption.
-    final reset = await AssistantResetPreferences(
+    final resetStore = AssistantResetPreferences(
       actorId: '33333333-3333-4333-8333-333333333333',
       workspaceId: ws,
       isCurrent: () => true,
-    ).reset('77777777-7777-4777-8777-777777777777', informed: true);
+    );
+    final consentTarget = await resetStore.inspectResetConsentTarget();
+    final reset = await resetStore.reset(
+      '77777777-7777-4777-8777-777777777777',
+      informed: true,
+      consentTarget: consentTarget,
+    );
     if (!reset.committedCurrent) {
       throw StateError('Synthetic reset not confirmed');
     }

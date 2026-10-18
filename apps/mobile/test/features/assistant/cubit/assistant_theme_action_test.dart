@@ -95,6 +95,7 @@ void main() {
       creditSource: AssistantCreditSource.workspace,
       workspaceContextId: '22222222-2222-4222-8222-222222222222',
       timezone: 'UTC',
+      creditWsId: ToolReceiptRepository.nativeWorkspaceId,
       isCurrent: () => capturedEpoch == epoch,
     );
     await repository.started.future.timeout(const Duration(seconds: 2));

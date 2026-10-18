@@ -53,6 +53,7 @@ import { performCreditPreflight } from './route-credits';
 import {
   extractLatestUserMessageContent,
   mergeSystemInstructions,
+  originalUserText,
   persistLatestUserMessage,
   persistRequestScopedUserMessage,
   prepareProcessedMessages,
@@ -443,11 +444,12 @@ export function createPOST(
             return persistRequestScopedUserMessage({
               chatId,
               content: args.message,
+              originalText: originalUserText(normalizedMessages),
               creatorId: user.id,
               findExistingMessage: async () => {
                 const { data, error } = await sbAdmin
                   .from('ai_chat_messages')
-                  .select('content,creator_id')
+                  .select('content,creator_id,metadata')
                   .eq('chat_id', chatId)
                   .eq('role', 'USER')
                   .contains('metadata', {
@@ -457,17 +459,14 @@ export function createPOST(
                   .maybeSingle();
                 return { data, error };
               },
-              insertMessage: async () => {
+              insertMessage: async (metadata) => {
                 const { error } = await sbAdmin
                   .from('ai_chat_messages')
                   .insert({
                     chat_id: chatId,
                     content: args.message,
                     creator_id: user.id,
-                    metadata: {
-                      requestId: persistenceRequestId,
-                      source: args.source,
-                    },
+                    metadata,
                     role: 'USER',
                   });
                 return { error };

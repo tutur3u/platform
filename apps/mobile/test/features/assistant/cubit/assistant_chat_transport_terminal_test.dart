@@ -13,7 +13,23 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _Api extends Mock implements ApiClient {}
+class _Api extends Mock implements ApiClient {
+  String? nativeActor;
+  int nativeCalls = 0;
+  @override
+  Future<http.StreamedResponse> sendJsonStreamAcknowledged(
+    String method,
+    String path,
+    Object? body, {
+    required ApiMutationAdmission admission,
+    String accept = 'application/octet-stream',
+  }) {
+    admission.recordDispatchPossible();
+    nativeActor = admission.actorId;
+    nativeCalls++;
+    return sendJsonStream(method, path, body, accept: accept);
+  }
+}
 
 class _Preferences extends Mock implements AssistantPreferences {}
 
@@ -23,6 +39,7 @@ class _Repository extends AssistantRepository {
         apiClient: api,
         tasksApiClient: api,
         chatRepository: ChatRepository(apiClient: api),
+        currentUserId: () => '33333333-3333-4333-8333-333333333333',
       );
   @override
   Future<AssistantRestoredChat?> restoreChat({
@@ -55,6 +72,26 @@ void main() {
       test('real ${legacy ? 'legacy SSE' : 'native chat'} transport: '
           '${failed ? 'explicit failure' : 'durable completion'}', () async {
         final api = _Api();
+        String? legacyRequestId;
+        when(() => api.postJson('/api/ai/chat/restore', any())).thenAnswer(
+          (_) async => {
+            'chat': {'id': '11111111-1111-4111-8111-111111111111'},
+            'messages': legacyRequestId == null
+                ? <dynamic>[]
+                : [
+                    {
+                      'id': '33333333-3333-4333-8333-333333333333',
+                      'role': 'USER',
+                      'content': 'Synthetic prompt',
+                      'metadata': {
+                        'requestId': legacyRequestId,
+                        'source': 'Mira',
+                        'requestText': 'Synthetic prompt',
+                      },
+                    },
+                  ],
+          },
+        );
         when(
           () => api.getJson(
             '/api/v1/workspaces/ws/chat/conversations/11111111-1111-4111-8111'
@@ -90,13 +127,27 @@ void main() {
             any(),
             accept: 'application/x-ndjson',
           ),
-        ).thenAnswer(
-          (_) async => http.StreamedResponse(
-            Stream.value(utf8.encode(body)),
+        ).thenAnswer((call) async {
+          final request = call.positionalArguments[2] as Map<String, dynamic>;
+          final user = jsonEncode({
+            'type': 'message',
+            'message': {
+              'id': '44444444-4444-4444-8444-444444444444',
+              'conversationId': '11111111-1111-4111-8111-111111111111',
+              'senderId': api.nativeActor,
+              'kind': 'user',
+              'content': request['content'],
+              'attachments': request['attachments'],
+              'metadata': {'clientRequestId': request['clientRequestId']},
+              'createdAt': '2026-10-12T00:00:00Z',
+            },
+          });
+          return http.StreamedResponse(
+            Stream.value(utf8.encode(failed ? body : '$user\n$body')),
             201,
             headers: {'content-type': 'application/x-ndjson'},
-          ),
-        );
+          );
+        });
         if (legacy) {
           when(
             () => api.sendJsonStream(
@@ -122,10 +173,12 @@ void main() {
               any(),
               accept: 'text/event-stream',
             ),
-          ).thenAnswer(
-            (_) async =>
-                http.StreamedResponse(Stream.value(utf8.encode(sse)), 200),
-          );
+          ).thenAnswer((invocation) async {
+            final body =
+                invocation.positionalArguments[2] as Map<String, dynamic>;
+            legacyRequestId = body['persistenceRequestId'] as String;
+            return http.StreamedResponse(Stream.value(utf8.encode(sse)), 200);
+          });
         }
         final preferences = _Preferences();
         when(() => preferences.loadChatId('ws')).thenAnswer(
@@ -166,6 +219,7 @@ void main() {
                       state.messages.any((m) => m.role == 'assistant')),
             )
             .timeout(const Duration(seconds: 2));
+        expect(api.nativeCalls, legacy ? 0 : 1);
         if (failed) {
           expect(settled.status, AssistantChatStatus.error);
           expect(settled.diagnostics?.kind, 'stream');

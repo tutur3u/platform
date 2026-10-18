@@ -7,9 +7,38 @@ extension AssistantChatResetOperations on AssistantChatCubit {
         acknowledgeUnknownCreation: informed,
       )).committedCurrent;
 
+  Future<AssistantResetConsentTarget?> inspectResetConsentTarget(
+    String wsId,
+  ) async {
+    final actor = _repository.currentActorId;
+    final version = _workspaceVersion;
+    bool current() =>
+        !_closing &&
+        !isClosed &&
+        actor != null &&
+        _repository.currentActorId == actor &&
+        _preferences.matchesResetActor(actor) &&
+        version == _workspaceVersion &&
+        state.workspaceId == wsId;
+    if (!current()) return null;
+    final plan = _prepareResetWorkspaceContext?.call('personal', current);
+    if (plan == null ||
+        plan.actorId != actor ||
+        plan.workspaceId != wsId ||
+        !plan.isCurrent()) {
+      return null;
+    }
+    bool qualified() => current() && plan.isCurrent();
+    final target = await _preferences
+        .resetStore(wsId, actorId: actor, isCurrent: qualified)
+        .inspectResetConsentTarget();
+    return qualified() ? target : null;
+  }
+
   Future<AssistantResetOutcome> resetConversationAcknowledged(
     String wsId, {
     bool acknowledgeUnknownCreation = false,
+    AssistantResetConsentTarget? consentTarget,
   }) {
     if (_resetOperations.isNotEmpty) {
       return Future.value(
@@ -21,6 +50,7 @@ extension AssistantChatResetOperations on AssistantChatCubit {
     final work = _resetConversation(
       wsId,
       acknowledgeUnknownCreation: acknowledgeUnknownCreation,
+      consentTarget: consentTarget,
     );
     _resetOperations.add(work);
     unawaited(
@@ -41,6 +71,7 @@ extension AssistantChatResetOperations on AssistantChatCubit {
   Future<AssistantResetOutcome> _resetConversation(
     String wsId, {
     required bool acknowledgeUnknownCreation,
+    required AssistantResetConsentTarget? consentTarget,
   }) async {
     const denied = AssistantResetOutcome(
       AssistantResetDisposition.deniedBeforeEffect,
@@ -58,16 +89,6 @@ extension AssistantChatResetOperations on AssistantChatCubit {
         version == _workspaceVersion &&
         state.workspaceId == wsId;
     if (!current()) return denied;
-    try {
-      final held = await _repository.hasUnknownChatCreation(wsId);
-      if (!current() ||
-          ((held || state.creationOutcomeUnknown) &&
-              !acknowledgeUnknownCreation)) {
-        return denied;
-      }
-    } on Object {
-      if (!current() || !acknowledgeUnknownCreation) return denied;
-    }
     final plan = prepare('personal', current);
     if (plan == null ||
         plan.actorId != actor ||
@@ -85,6 +106,7 @@ extension AssistantChatResetOperations on AssistantChatCubit {
     final outcome = await store.reset(
       operationId,
       informed: acknowledgeUnknownCreation,
+      consentTarget: consentTarget,
     );
     if (!outcome.committedCurrent) {
       if (qualified() &&
@@ -144,9 +166,10 @@ extension AssistantChatResetOperations on AssistantChatCubit {
 
     // These futures are observed and included in close's owned cleanup drain.
     late Future<void> notification;
-    notification = observe(
-      () => _onChatRestored(null),
-    ).whenComplete(() => _submissionObserverCleanups.remove(notification));
+    notification = observe(() async {
+      _publishRestoredSettings(null);
+      await _onChatRestored(null);
+    }).whenComplete(() => _submissionObserverCleanups.remove(notification));
     _submissionObserverCleanups.add(notification);
     if (subscription != null) {
       late Future<void> cleanup;

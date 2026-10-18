@@ -197,11 +197,18 @@ class AssistantPreferences {
     }
   }
 
-  Future<void> saveModel(String wsId, AssistantGatewayModel model) async {
+  Future<void> saveModel(
+    String wsId,
+    AssistantGatewayModel model, {
+    bool Function()? shouldWrite,
+  }) async {
     final key = _key(assistantModelStorageKeyPrefix, wsId);
     if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantModelStorageKeyPrefix, wsId)) return;
+    if (key != _key(assistantModelStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
     await prefs.setString(key, jsonEncode(model.toJson()));
   }
 
@@ -243,12 +250,16 @@ class AssistantPreferences {
 
   Future<void> saveCreditSource(
     String wsId,
-    AssistantCreditSource source,
-  ) async {
+    AssistantCreditSource source, {
+    bool Function()? shouldWrite,
+  }) async {
     final key = _key(assistantCreditSourceStorageKeyPrefix, wsId);
     if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantCreditSourceStorageKeyPrefix, wsId)) return;
+    if (key != _key(assistantCreditSourceStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
     await prefs.setString(key, source.name);
   }
 

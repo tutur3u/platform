@@ -32,8 +32,9 @@ part 'offline_mutation_dispatch.dart';
 part 'offline_mutation_dependencies.dart';
 part 'offline_inventory_replay.dart';
 
-typedef OfflineMutationDispatcher =
-    Future<void> Function(PendingMutationRecord record);
+typedef OfflineMutationDispatcher = Future<void> Function(
+  PendingMutationRecord record,
+);
 
 String newLocalMutationId({bool timeOrdered = false}) {
   final random = Random.secure();
@@ -242,6 +243,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     bool replaySafe = false,
     String? expectedUserId,
     void Function()? checkScope,
+    void Function()? beforeEnqueue,
   }) async {
     checkScope?.call();
     await init();
@@ -279,6 +281,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       throw StateError('Profile actor changed');
     }
     checkScope?.call();
+    beforeEnqueue?.call();
     await enqueue(
       PendingMutationRecord(
         id: newLocalMutationId(),

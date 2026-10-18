@@ -8,6 +8,12 @@ import {
   listAiChatConversations,
   listRootAiAgentDiscoveryConversations,
 } from '@/lib/chat/agent-discovery';
+import { normalizeChatTimestamp } from '@/lib/chat/chat-timestamp';
+import {
+  admitInitialAiSettings,
+  initialAiSettingsSchema,
+  validateInitialAiSettingsReceipt,
+} from '@/lib/chat/initial-ai-settings';
 import {
   type ChatConversation,
   callPrivateChatRpc,
@@ -30,6 +36,7 @@ const createConversationSchema = z.object({
   autoReply: z.boolean().optional(),
   description: z.string().trim().max(2000).nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  initialAiSettings: initialAiSettingsSchema.optional(),
   modelId: z.string().trim().max(255).nullable().optional(),
   participantUserIds: z.array(z.string().uuid()).max(50).optional(),
   systemPrompt: z.string().trim().max(10000).nullable().optional(),
@@ -42,7 +49,7 @@ const createdConversationReceiptSchema = z
     id: z.uuid(),
     wsId: z.uuid(),
     type: z.enum(['direct', 'group', 'channel', 'ai']),
-    createdAt: z.iso.datetime(),
+    createdAt: z.preprocess(normalizeChatTimestamp, z.iso.datetime()),
     createdBy: z.uuid().nullable(),
     members: z.array(
       z
@@ -393,12 +400,41 @@ export const POST = withSessionAuth<RouteParams>(
       );
     }
 
+    if (
+      parsed.data.initialAiSettings &&
+      (parsed.data.type !== 'ai' ||
+        (parsed.data.modelId != null &&
+          parsed.data.modelId !== parsed.data.initialAiSettings.modelId))
+    ) {
+      return NextResponse.json(
+        {
+          code: 'chat_create_invalid_request',
+          message: 'Invalid initial AI settings',
+        },
+        { status: 400 }
+      );
+    }
     try {
+      const input = parsed.data;
+      if (input.initialAiSettings) {
+        const admission = await admitInitialAiSettings({
+          actorUserId: auth.user.id,
+          input: input.initialAiSettings,
+          wsId: context.context.normalizedWsId,
+        });
+        if (!admission.ok)
+          return NextResponse.json(
+            { message: admission.message },
+            { status: admission.status }
+          );
+        input.initialAiSettings = admission.settings;
+        input.modelId = admission.settings.modelId;
+      }
       const rawConversation = await callPrivateChatRpc<unknown>(
         'chat_create_conversation',
         {
           p_actor_user_id: auth.user.id,
-          p_input: parsed.data,
+          p_input: input,
           p_ws_id: context.context.normalizedWsId,
         }
       );
@@ -411,6 +447,17 @@ export const POST = withSessionAuth<RouteParams>(
           conversation.wsId !== context.context.normalizedWsId)
       ) {
         throw new Error('Invalid created conversation receipt');
+      }
+      if (input.initialAiSettings) {
+        if (conversation.createdBy !== auth.user.id)
+          throw new Error('Invalid initial settings creator');
+        validateInitialAiSettingsReceipt({
+          actorUserId: auth.user.id,
+          conversationId: conversation.id,
+          raw: conversation.initialAiSettings,
+          requested: input.initialAiSettings,
+          wsId: context.context.normalizedWsId,
+        });
       }
       try {
         await publishChatRealtimeEvent({

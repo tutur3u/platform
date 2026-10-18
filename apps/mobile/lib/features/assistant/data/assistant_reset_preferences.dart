@@ -7,6 +7,8 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+part 'assistant_reset_consent_target.dart';
+
 enum AssistantResetDisposition {
   deniedBeforeEffect,
   committedCurrent,
@@ -240,7 +242,10 @@ final class AssistantResetPreferences {
   static final _holds = <String>{};
   static final _tickets =
       <String, ({String operationId, int generation, int revision})>{};
-  static void revokeConsent(String key) => _tickets.remove(key);
+  static void revokeConsent(String key) {
+    _tickets.remove(key);
+    AssistantResetConsentTarget._issued.remove(key);
+  }
 
   static Future<T> serialized<T>(String key, Future<T> Function() work) async {
     final previous = _locks[key];
@@ -262,6 +267,7 @@ final class AssistantResetPreferences {
   }
 
   void hold() {
+    AssistantResetConsentTarget._issued.remove(key);
     _holds.add(key);
     _tickets.remove(key);
   }
@@ -269,10 +275,16 @@ final class AssistantResetPreferences {
   Future<AssistantResetEnvelope?> _read(SharedPreferences prefs) async {
     await prefs.reload();
     _check();
-    if (!prefs.containsKey(key)) return null;
-    final raw = prefs.getString(key);
-    if (raw == null) throw const FormatException('Unreadable Assistant record');
-    return AssistantResetEnvelope.decode(raw, actorId, workspaceId);
+    AssistantResetEnvelope? value;
+    if (prefs.containsKey(key)) {
+      final raw = prefs.getString(key);
+      if (raw == null) {
+        throw const FormatException('Unreadable Assistant record');
+      }
+      value = AssistantResetEnvelope.decode(raw, actorId, workspaceId);
+    }
+    _observeConsentAuthority(prefs, value);
+    return value;
   }
 
   AssistantResetEnvelope _legacy(SharedPreferences prefs) {
@@ -308,6 +320,7 @@ final class AssistantResetPreferences {
     AssistantResetEnvelope next,
   ) async {
     _check();
+    AssistantResetConsentTarget._issued.remove(key);
     var accepted = false;
     var matches = false;
     try {
@@ -420,7 +433,9 @@ final class AssistantResetPreferences {
   Future<AssistantResetOutcome> reset(
     String operationId, {
     required bool informed,
+    AssistantResetConsentTarget? consentTarget,
   }) => serialized(key, () async {
+    var effectsStarted = false;
     try {
       _check();
       AssistantResetEnvelope._uuid(operationId);
@@ -428,6 +443,31 @@ final class AssistantResetPreferences {
       _check();
       final old = await _read(prefs);
       final value = old ?? _legacy(prefs);
+      final requiresConsent = !_canCreate(value);
+      if (consentTarget != null) {
+        if (!consentTarget._isCurrent() ||
+            !identical(
+              AssistantResetConsentTarget._issued[key],
+              consentTarget,
+            ) ||
+            consentTarget.actorId != actorId ||
+            consentTarget.workspaceId != workspaceId ||
+            consentTarget._identity != _consentIdentity(prefs, old, value)) {
+          if (identical(
+            AssistantResetConsentTarget._issued[key],
+            consentTarget,
+          )) {
+            AssistantResetConsentTarget._issued.remove(key);
+          }
+          return const AssistantResetOutcome(
+            AssistantResetDisposition.deniedBeforeEffect,
+          );
+        }
+      } else if (requiresConsent) {
+        return const AssistantResetOutcome(
+          AssistantResetDisposition.deniedBeforeEffect,
+        );
+      }
       final previousConsent = value._value['resetConsent'];
       final previousIntent = value._value['resetIntent'];
       if ((previousConsent is Map &&
@@ -438,7 +478,7 @@ final class AssistantResetPreferences {
           AssistantResetDisposition.deniedBeforeEffect,
         );
       }
-      if ((!_canCreate(value) && !informed) || value.pending && !informed) {
+      if (value.pending && consentTarget == null) {
         return const AssistantResetOutcome(
           AssistantResetDisposition.deniedBeforeEffect,
         );
@@ -447,21 +487,7 @@ final class AssistantResetPreferences {
         'status': value.held ? 'unknown' : 'clear',
         'attemptId': value.attemptId,
         'generation': old?.generation,
-        'legacyDigest': old == null
-            ? sha256
-                  .convert(
-                    utf8.encode(
-                      jsonEncode([
-                        value.selectedChatId,
-                        value.contextId,
-                        prefs.getString(
-                          '$actorId::mira-chat-creation::$workspaceId',
-                        ),
-                      ]),
-                    ),
-                  )
-                  .toString()
-            : null,
+        'legacyDigest': old == null ? _legacyDigest(prefs) : null,
       };
       final intent = {
         'operationId': operationId,
@@ -473,6 +499,9 @@ final class AssistantResetPreferences {
         'priorConsent': value._value['resetConsent'],
         'status': 'pending',
       };
+      // Consume only the winning capability under the same process lock.
+      AssistantResetConsentTarget._issued.remove(key);
+      effectsStarted = true;
       hold();
       final pending = old == null
           ? _decode({
@@ -518,6 +547,12 @@ final class AssistantResetPreferences {
       }
       return AssistantResetOutcome(outcome);
     } on Object {
+      if (!effectsStarted) {
+        AssistantResetConsentTarget._issued.remove(key);
+        return const AssistantResetOutcome(
+          AssistantResetDisposition.deniedBeforeEffect,
+        );
+      }
       hold();
       return const AssistantResetOutcome(AssistantResetDisposition.uncertain);
     }

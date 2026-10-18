@@ -20,7 +20,23 @@ const workspace = '11111111-1111-4111-8111-111111111111';
 const saved = '22222222-2222-4222-8222-222222222222';
 const envelopeKey = '$actor::mira-conversation-envelope::v1::$workspace';
 
-class _Api extends Mock implements ApiClient {}
+class _Api extends Mock implements ApiClient {
+  String? nativeActor;
+  int nativeCalls = 0;
+  @override
+  Future<http.StreamedResponse> sendJsonStreamAcknowledged(
+    String method,
+    String path,
+    Object? body, {
+    required ApiMutationAdmission admission,
+    String accept = 'application/octet-stream',
+  }) {
+    admission.recordDispatchPossible();
+    nativeActor = admission.actorId;
+    nativeCalls++;
+    return sendJsonStream(method, path, body, accept: accept);
+  }
+}
 
 class _Host extends InMemorySharedPreferencesStore {
   _Host()
@@ -123,6 +139,7 @@ void main() {
           ),
         ).thenAnswer((call) async {
           final request = call.positionalArguments[2] as Map<String, dynamic>;
+          final sender = api.nativeActor ?? actor;
           body.onListen = () {
             listened = true;
             body.add(
@@ -133,6 +150,8 @@ void main() {
                     'id': '44444444-4444-4444-8444-444444444444',
                     'conversationId': saved,
                     'kind': 'user',
+                    'senderId': sender,
+                    'attachments': request['attachments'],
                     'content': request['content'],
                     'createdAt': '2026-10-12T00:00:00Z',
                     'metadata': {'clientRequestId': request['clientRequestId']},
@@ -166,13 +185,17 @@ void main() {
             timezone: 'UTC',
           );
           expect(userAck.acknowledged, true);
+          expect(api.nativeCalls, 1);
+          expect(listened, isTrue);
           final before = chat.state;
+          final consentTarget = await chat.inspectResetConsentTarget(workspace);
           host
             ..writes = 0
             ..heldBoundary = boundary;
           final reset = chat.resetConversationAcknowledged(
             workspace,
             acknowledgeUnknownCreation: true,
+            consentTarget: consentTarget,
           );
           await host.entered.future;
           closing = chat.close();

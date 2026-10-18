@@ -22,7 +22,34 @@ const actorId = '33333333-3333-4333-8333-333333333333';
 const otherActor = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 const saved = '44444444-4444-4444-8444-444444444444';
 
-class CreationApi extends Mock implements ApiClient {}
+class CreationApi extends Mock implements ApiClient {
+  String? nativeActor;
+  int nativeCalls = 0;
+  @override
+  Future<http.StreamedResponse> sendJsonStreamAcknowledged(
+    String method,
+    String path,
+    Object? body, {
+    required ApiMutationAdmission admission,
+    String accept = 'application/octet-stream',
+  }) {
+    admission.recordDispatchPossible();
+    nativeActor = admission.actorId;
+    nativeCalls++;
+    return sendJsonStream(method, path, body, accept: accept);
+  }
+
+  @override
+  Future<Map<String, dynamic>> postJsonAcknowledged(
+    String path,
+    Map<String, dynamic> body, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) {
+    if (!isCurrent()) throw StateError('Synthetic retired creation');
+    return postJson(path, body);
+  }
+}
 
 class CreationActor {
   String _id = actorId;
@@ -199,6 +226,7 @@ class CreationHarness {
           'modelId': 'model',
           'thinkingMode': 'thinking',
           'creditSource': 'workspace',
+          'creditWsId': null,
         },
       };
     });
@@ -213,12 +241,15 @@ class CreationHarness {
       final path = invocation.positionalArguments[1] as String;
       final body = invocation.positionalArguments[2] as Map<String, dynamic>;
       final conversation = path.split('/').reversed.skip(1).first;
+      final sender = api.nativeActor ?? actorId;
       sends.add({...body, 'conversationId': conversation});
       final suffix = sends.length.toString().padLeft(12, '0');
       final user = {
         'id': 'cccccccc-cccc-4ccc-8ccc-$suffix',
         'conversationId': conversation,
         'kind': 'user',
+        'senderId': sender,
+        'attachments': body['attachments'],
         'content': body['content'],
         'createdAt': '2026-10-12T00:00:00Z',
         'metadata': {'clientRequestId': body['clientRequestId']},
@@ -263,7 +294,13 @@ class CreationHarness {
     if (await repository.hasUnknownChatCreation(ws)) {
       // A prior negative control in this isolate can hold this synthetic scope.
       // Only the complete informed reset protocol releases that process hold.
-      if (!await chat.resetConversation(ws, acknowledgeUnknownCreation: true)) {
+      final consentTarget = await chat.inspectResetConsentTarget(ws);
+      final outcome = await chat.resetConversationAcknowledged(
+        ws,
+        acknowledgeUnknownCreation: true,
+        consentTarget: consentTarget,
+      );
+      if (!outcome.committedCurrent) {
         throw StateError('Synthetic reset fixture was not acknowledged');
       }
     }
@@ -272,13 +309,17 @@ class CreationHarness {
   Future<bool> resetDuringPendingRestore() async {
     final history = Completer<void>();
     historyGate = history.future;
-    await AssistantPreferences(
-      currentUserId: () => actor.id,
-    ).saveChatId(ws, saved);
+    await AssistantPreferences(currentUserId: () => actor.id)
+        .saveChatId(ws, saved);
     final loading = chat.loadWorkspace(ws);
     await historyEntered.future;
     try {
-      return await chat.resetConversation(ws, acknowledgeUnknownCreation: true);
+      final consentTarget = await chat.inspectResetConsentTarget(ws);
+      return (await chat.resetConversationAcknowledged(
+        ws,
+        acknowledgeUnknownCreation: true,
+        consentTarget: consentTarget,
+      )).committedCurrent;
     } finally {
       history.complete();
       await loading;

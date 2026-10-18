@@ -34,84 +34,6 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         (attachments.isNotEmpty || _queue.isNotEmpty);
   }
 
-  Future<AssistantSubmissionOutcome> _submitAcknowledged({
-    required String wsId,
-    required String message,
-    required String modelId,
-    required AssistantThinkingMode thinkingMode,
-    required AssistantCreditSource creditSource,
-    required String workspaceContextId,
-    required String timezone,
-    String? creditWsId,
-    bool Function()? isCurrent,
-  }) async {
-    final version = _workspaceVersion;
-    bool current() =>
-        !isClosed &&
-        version == _workspaceVersion &&
-        state.workspaceId == wsId &&
-        (isCurrent?.call() ?? true);
-    if (!current() ||
-        _queue.isNotEmpty ||
-        _submissionAcks.isNotEmpty ||
-        state.status == AssistantChatStatus.restoring) {
-      return const AssistantSubmissionOutcome.denied();
-    }
-    final requestId = assistantClientRequestId({
-      'clientRequestId': _repository.generateUuid(),
-    })!;
-    final completion = Completer<AssistantSubmissionOutcome>();
-    final text = message.trim().isEmpty
-        ? 'Please analyze the attached file(s).'
-        : message.trim();
-    _submissionAcks[requestId] = (
-      result: completion,
-      text: text,
-      attachments: state.composerAttachments,
-    );
-    void finish(AssistantSubmissionOutcome outcome) {
-      if (!completion.isCompleted) completion.complete(outcome);
-    }
-
-    final observer = stream.listen((next) {
-      if (!current()) {
-        _staleSubmission(requestId);
-        return;
-      }
-    }, onDone: () => _staleSubmission(requestId));
-    try {
-      final admitted = await _submit(
-        wsId: wsId,
-        message: message,
-        modelId: modelId,
-        thinkingMode: thinkingMode,
-        creditSource: creditSource,
-        workspaceContextId: workspaceContextId,
-        timezone: timezone,
-        creditWsId: creditWsId,
-        isCurrent: current,
-        clientRequestId: requestId,
-      );
-      if (!admitted) finish(const AssistantSubmissionOutcome.denied());
-      return await completion.future;
-    } finally {
-      _submissionAcks.remove(requestId);
-      late Future<void> cleanup;
-      cleanup = Future<void>.sync(observer.cancel)
-          .catchError((Object error) {
-            if (current()) {
-              _operationalReporter.report(
-                OperationalPhase.assistantReply,
-                error,
-              );
-            }
-          })
-          .whenComplete(() => _submissionObserverCleanups.remove(cleanup));
-      _submissionObserverCleanups.add(cleanup);
-      unawaited(cleanup);
-    }
-  }
-
   Future<void> _stopStreaming({required bool discardQueued}) async {
     final version = ++_toolOperationVersion;
     final queued = _queuedSubmissionRequestId;
@@ -173,6 +95,26 @@ extension _AssistantChatSubmission on AssistantChatCubit {
     required bool matched,
   }) {
     final requestId = payload['clientRequestId'];
+    if (matched) {
+      _nativePending.removeWhere(
+        (_, turn) =>
+            turn.actor == _repository.currentActorId &&
+            turn.workspace == state.workspaceId &&
+            turn.chat == state.storedChatId &&
+            turn.requestId == requestId &&
+            turn.text == payload['text'] &&
+            matchesAssistantNativeUserAcknowledgment(
+              payload['nativeReceipt'],
+              actorId: turn.actor,
+              wsId: turn.workspace,
+              chatId: turn.chat,
+              requestId: turn.requestId,
+              messageId: payload['messageId'],
+              text: turn.text,
+              attachments: turn.attachments,
+            ),
+      );
+    }
     final pending = _submissionAcks[requestId];
     if (pending == null || pending.result.isCompleted) return;
     if (!matched || payload['text'] != pending.text) {
@@ -278,6 +220,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         .map((item) => item.message)
         .toList(growable: false);
 
+    AssistantMessage? primedOptimisticMessage;
     if (shouldPrimeUi) {
       final optimisticMessage = AssistantMessage(
         id: clientRequestId ?? _repository.generateUuid(),
@@ -292,6 +235,10 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         nextAttachments[optimisticMessage.id] = uploadedAttachments;
       }
 
+      final primedUserMessage = optimisticMessage.copyWith(
+        clientRequestId: optimisticMessage.id,
+      );
+      primedOptimisticMessage = primedUserMessage;
       _emitIfOpen(
         state.copyWith(
           queuedMessages: queuedMessages,
@@ -300,10 +247,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             model: modelId,
             createdAt: DateTime.now(),
           ),
-          messages: [
-            ...state.messages,
-            optimisticMessage.copyWith(clientRequestId: optimisticMessage.id),
-          ],
+          messages: [...state.messages, primedUserMessage],
           attachmentsByMessageId: nextAttachments,
           composerAttachments: clientRequestId == null
               ? const []
@@ -349,6 +293,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
           creditWsId: creditWsId,
           retryMessageId: retryMessageId,
           clientRequestId: clientRequestId,
+          primedOptimisticMessage: primedOptimisticMessage,
           isCurrent: current,
         ),
       );
@@ -366,6 +311,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
     String? creditWsId,
     String? retryMessageId,
     String? clientRequestId,
+    AssistantMessage? primedOptimisticMessage,
     bool Function()? isCurrent,
   }) async {
     final workspaceVersion = _workspaceVersion;
@@ -415,6 +361,16 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       );
 
       if (chat == null || state.storedChatId == null) {
+        final settingsPlan = _prepareCreationSettings?.call(
+          wsId,
+          modelId,
+          current,
+        );
+        if (_prepareCreationSettings != null && settingsPlan == null) {
+          _unknownSubmission(clientRequestId, denied: true);
+          _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
+          return;
+        }
         _emitIfOpen(state.copyWith(creationOutcomeUnknown: true));
         final created = await _repository.createChat(
           id: chatId,
@@ -422,6 +378,8 @@ extension _AssistantChatSubmission on AssistantChatCubit {
           modelId: modelId,
           message: combined,
           timezone: timezone,
+          initialSettings: settingsPlan?.take(),
+          isCurrent: settingsPlan?.isCurrent,
         );
         if (!current()) {
           _staleSubmission(clientRequestId);
@@ -442,6 +400,10 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             creationOutcomeUnknown: false,
           ),
         );
+        if (!current()) {
+          _staleSubmission(clientRequestId);
+          return;
+        }
         // History is secondary to the first response. Refresh it without
         // delaying the stream after a conversation is created.
         unawaited(refreshHistory());
@@ -449,6 +411,12 @@ extension _AssistantChatSubmission on AssistantChatCubit {
 
       final shouldAppendUserMessage =
           retryMessageId == null &&
+          !state.messages.any(
+            (m) =>
+                m.role == 'user' &&
+                clientRequestId != null &&
+                m.clientRequestId == clientRequestId,
+          ) &&
           (!_matchesLatestQueuedMessage(state, combined, attachments) ||
               (clientRequestId != null &&
                   state.messages
@@ -466,6 +434,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             state.attachmentsByMessageId,
           );
 
+      AssistantMessage? optimisticUserMessage = primedOptimisticMessage;
       if (shouldAppendUserMessage) {
         final userMessage = AssistantMessage(
           id: clientRequestId ?? _repository.generateUuid(),
@@ -478,10 +447,10 @@ extension _AssistantChatSubmission on AssistantChatCubit {
           attachmentsByMessageId[userMessage.id] = attachments;
         }
 
-        nextMessages = [
-          ...state.messages,
-          userMessage.copyWith(clientRequestId: userMessage.id),
-        ];
+        optimisticUserMessage = userMessage.copyWith(
+          clientRequestId: userMessage.id,
+        );
+        nextMessages = [...state.messages, optimisticUserMessage];
         _emitIfOpen(
           state.copyWith(
             messages: nextMessages,
@@ -501,6 +470,27 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         _staleSubmission(clientRequestId);
         return;
       }
+      final nativePending = _retainNativePending(
+        wsId,
+        chatId,
+        clientRequestId,
+        combined,
+        attachments,
+        optimisticMessage: optimisticUserMessage,
+      );
+      final actor = _repository.currentActorId;
+      late final ApiMutationAdmission admission;
+      admission = ApiMutationAdmission(
+        actorId: actor ?? '',
+        isCurrent: () =>
+            actor != null && _repository.currentActorId == actor && current(),
+        onNotDispatched: (failure) => _releaseDefinitelyUnsentNativePending(
+          nativePending,
+          admission,
+          failure,
+        ),
+      );
+      nativePending?.attempts.add(admission);
       phase = OperationalPhase.assistantReply;
       _streamSubscription = _repository
           .streamChat(
@@ -514,9 +504,14 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             timezone: timezone,
             attachments: attachments,
             creditWsId: creditWsId,
+            admission: admission,
           )
           .listen(
             (event) {
+              if (event is AssistantJsonStreamEvent &&
+                  event.payload['type'] == 'native-dispatch-admitted') {
+                nativePending?.admitted = true;
+              }
               if (!current()) {
                 _staleSubmission(clientRequestId);
                 return;
@@ -554,6 +549,12 @@ extension _AssistantChatSubmission on AssistantChatCubit {
               }
             },
             onError: (Object error, StackTrace stackTrace) {
+              _releaseDefinitelyUnsentNativePending(
+                nativePending,
+                admission,
+                error,
+              );
+              _forgetUnsentNativePending(nativePending);
               if (!current()) {
                 _staleSubmission(clientRequestId);
                 return;
@@ -576,6 +577,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
               );
             },
             onDone: () async {
+              _forgetUnsentNativePending(nativePending);
               if (!current()) {
                 _staleSubmission(clientRequestId);
                 return;

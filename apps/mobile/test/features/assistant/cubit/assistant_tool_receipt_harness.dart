@@ -34,20 +34,19 @@ class ToolReceiptRepository extends ReplyRepository {
         },
       },
     );
-    when(
-      () => api.sendJsonStream(
-        'POST',
-        any(),
-        any(),
-        accept: 'application/x-ndjson',
-      ),
-    ).thenAnswer((invocation) async {
+    Future<http.StreamedResponse> respond(Invocation invocation) async {
+      final admission =
+          invocation.namedArguments[#admission] as ApiMutationAdmission?;
+      admission?.recordDispatchPossible();
+      final sender = admission?.actorId ?? currentActorId;
       final request = invocation.positionalArguments[2] as Map<String, dynamic>;
       final userReceipt = {
         'type': 'message',
         'message': {
           'id': '44444444-4444-4444-8444-444444444444',
           'conversationId': nativeChatId,
+          'senderId': sender,
+          'attachments': request['attachments'],
           'kind': 'user',
           'createdAt': '2026-10-12T00:00:00Z',
           'content': request['content'],
@@ -67,7 +66,28 @@ class ToolReceiptRepository extends ReplyRepository {
         201,
         headers: {'content-type': 'application/x-ndjson'},
       );
-    });
+    }
+
+    registerFallbackValue(
+      ApiMutationAdmission(actorId: currentActorId!, isCurrent: () => true),
+    );
+    when(
+      () => api.sendJsonStream(
+        'POST',
+        any(),
+        any(),
+        accept: 'application/x-ndjson',
+      ),
+    ).thenAnswer(respond);
+    when(
+      () => api.sendJsonStreamAcknowledged(
+        'POST',
+        any(),
+        any(),
+        admission: any(named: 'admission'),
+        accept: 'application/x-ndjson',
+      ),
+    ).thenAnswer(respond);
   }
 
   static const nativeChatId = '11111111-1111-4111-8111-111111111111';
@@ -113,6 +133,7 @@ class ToolReceiptRepository extends ReplyRepository {
       thinkingMode: AssistantThinkingMode.thinking,
       creditSource: AssistantCreditSource.workspace,
       timezone: 'UTC',
+      creditWsId: nativeWorkspaceId,
     ).toList();
   }
 
@@ -139,6 +160,7 @@ class ToolReceiptRepository extends ReplyRepository {
     required String timezone,
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
+    ApiMutationAdmission? admission,
   }) {
     starts++;
     return prepared == null
@@ -153,6 +175,7 @@ class ToolReceiptRepository extends ReplyRepository {
             timezone: timezone,
             attachments: attachments,
             creditWsId: creditWsId,
+            admission: admission,
           )
         : Stream.fromIterable(prepared!);
   }
@@ -168,6 +191,7 @@ class ToolReceiptRepository extends ReplyRepository {
     required String timezone,
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
+    ApiMutationAdmission? admission,
   }) => transport.streamChat(
     chatId: nativeChatId,
     wsId: nativeWorkspaceId,
@@ -179,6 +203,7 @@ class ToolReceiptRepository extends ReplyRepository {
     timezone: timezone,
     attachments: attachments,
     creditWsId: creditWsId == null ? null : nativeWorkspaceId,
+    admission: admission,
   );
 
   void part(Map<String, dynamic> part) =>

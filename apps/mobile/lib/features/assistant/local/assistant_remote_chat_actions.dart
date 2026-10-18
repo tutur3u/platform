@@ -34,9 +34,7 @@ Future<bool> submitAssistantRemoteChat(
     workspaceContextId: shell.workspaceContextId,
     timezone: timezone,
     isCurrent: isOperationCurrent ?? isCurrent,
-    creditWsId: shell.creditSource == AssistantCreditSource.personal
-        ? shell.personalWorkspaceId
-        : wsId,
+    creditWsId: shell.sendCreditWorkspace(wsId),
   );
   return outcome.acknowledged && accepted();
 }
@@ -65,8 +63,6 @@ Future<void> retryAssistantChat(
     workspaceContextId: shell.workspaceContextId,
     timezone: timezone,
     isCurrent: isOperationCurrent ?? isCurrent,
-    creditWsId: shell.creditSource == AssistantCreditSource.personal
-        ? shell.personalWorkspaceId
-        : wsId,
+    creditWsId: shell.sendCreditWorkspace(wsId),
   );
 }

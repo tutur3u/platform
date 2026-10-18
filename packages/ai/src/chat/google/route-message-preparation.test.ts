@@ -1,8 +1,10 @@
-import type { ModelMessage } from 'ai';
+import type { ModelMessage, UIMessage } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 import {
   attachYoutubeVideoInputToLatestUserMessage,
+  extractLatestUserMessageContent,
   normalizeYoutubeVideoUrlForGemini,
+  originalUserText,
   persistLatestUserMessage,
   persistRequestScopedUserMessage,
 } from './route-message-preparation';
@@ -130,5 +132,98 @@ describe('request-scoped user-message persistence', () => {
     });
 
     expect(result.error?.code).toBe('23505');
+  });
+});
+
+describe('durable original-user receipt text', () => {
+  it('binds original UI text while file preparation changes stored content', async () => {
+    const messages: UIMessage[] = [
+      {
+        id: 'user',
+        role: 'user',
+        parts: [
+          { type: 'text', text: 'Read attachment' },
+          {
+            type: 'file',
+            mediaType: 'application/pdf',
+            url: 'https://example.test/file.pdf',
+          },
+        ],
+      },
+    ];
+    const originalText = originalUserText(messages);
+    const content = extractLatestUserMessageContent([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: originalText },
+          {
+            type: 'file',
+            mediaType: 'application/pdf',
+            data: new Uint8Array([1]),
+          },
+        ],
+      },
+    ]);
+    expect(content).toBe('Read attachment\n[File: attached]');
+    const insertMessage = vi.fn().mockResolvedValue({ error: null });
+    await expect(
+      persistRequestScopedUserMessage({
+        chatId: 'chat',
+        creatorId: 'actor',
+        content,
+        originalText,
+        requestId: '11111111-1111-4111-8111-111111111111',
+        source: 'Mira',
+        insertMessage,
+        findExistingMessage: vi.fn(),
+      })
+    ).resolves.toEqual({ error: null });
+    expect(insertMessage).toHaveBeenCalledExactlyOnceWith({
+      requestId: '11111111-1111-4111-8111-111111111111',
+      source: 'Mira',
+      requestText: 'Read attachment',
+    });
+  });
+  it('rejects a unique-key receipt with conflicting original text', async () => {
+    const result = await persistRequestScopedUserMessage({
+      chatId: 'chat',
+      content: 'Prepared prompt',
+      originalText: 'Original',
+      creatorId: 'actor',
+      requestId: '11111111-1111-4111-8111-111111111111',
+      source: 'Mira',
+      insertMessage: vi
+        .fn()
+        .mockResolvedValue({ error: { code: '23505', message: 'duplicate' } }),
+      findExistingMessage: vi.fn().mockResolvedValue({
+        data: {
+          content: 'Prepared prompt',
+          creator_id: 'actor',
+          metadata: { requestText: 'Other' },
+        },
+        error: null,
+      }),
+    });
+    expect(result.error?.code).toBe('23505');
+  });
+  it('retains exact-content idempotency for historical rows without requestText', async () => {
+    const row = { content: 'Original', creator_id: 'actor' };
+    const findExistingMessage = vi
+      .fn()
+      .mockResolvedValue({ data: row, error: null });
+    const result = await persistRequestScopedUserMessage({
+      chatId: 'chat',
+      content: 'Original',
+      originalText: 'Original',
+      creatorId: 'actor',
+      requestId: '11111111-1111-4111-8111-111111111111',
+      source: 'Mira',
+      insertMessage: vi
+        .fn()
+        .mockResolvedValue({ error: { code: '23505', message: 'duplicate' } }),
+      findExistingMessage,
+    });
+    expect(result.error).toBeNull();
   });
 });
