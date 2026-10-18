@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
-import 'package:mobile/data/sources/api_exception.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 
 class _Preferences extends AssistantPreferences {
   Exception? error;
@@ -24,6 +25,10 @@ class _Preferences extends AssistantPreferences {
 }
 
 class _Repository extends AssistantRepository {
+  // This synthetic repository models an explicitly acknowledged creation scope.
+  @override
+  Future<bool> hasUnknownChatCreation(String wsId) async => false;
+
   Exception? createError;
   Completer<AssistantChatRecord>? pendingCreate;
   final started = Completer<void>();
@@ -41,6 +46,8 @@ class _Repository extends AssistantRepository {
     required String modelId,
     required String message,
     required String timezone,
+    ChatInitialAiSettings? initialSettings,
+    bool Function()? isCurrent,
   }) async {
     if (!started.isCompleted) started.complete();
     if (pendingCreate != null) return await pendingCreate!.future;
@@ -60,6 +67,7 @@ class _Repository extends AssistantRepository {
     required String timezone,
     List<AssistantAttachment> attachments = const [],
     String? creditWsId,
+    ApiMutationAdmission? admission,
   }) => stream.stream;
 }
 
@@ -143,7 +151,8 @@ void main() {
     failSink = true;
     repository.createError = const ApiException(
       message: 'private',
-      statusCode: 503,
+      statusCode: 400,
+      code: 'chat_create_invalid_request',
     );
     final failed = cubit.stream.firstWhere(
       (state) => state.status == AssistantChatStatus.error,
@@ -154,7 +163,7 @@ void main() {
     expect(cubit.state.status, AssistantChatStatus.error);
     repository.createError = null;
     await _submit(cubit);
-    // The real debounce and create path must recover despite failed telemetry.
+    // A coded pre-effect rejection permits recovery despite failed telemetry.
     await cubit.stream
         .firstWhere((state) => state.status == AssistantChatStatus.submitting)
         .timeout(const Duration(seconds: 2));

@@ -5,6 +5,7 @@ import { publicWorlds } from '@/lib/public-worlds';
 import { bindings } from '@/server/bindings';
 import { isCreator } from '@/server/context';
 import { resolveActor } from '@/server/identity';
+import { traceLettinRead } from '@/server/read-diagnostics';
 import Loading from '../wiki/loading';
 
 type PageProps = {
@@ -22,12 +23,26 @@ export default function Page(props: PageProps) {
 async function ProfilePage({ params }: PageProps) {
   await connection();
   const { wsId } = await params;
-  const actor = await resolveActor(wsId);
+  const actor = await traceLettinRead('profile actor', () =>
+    resolveActor(wsId)
+  );
   const canEditAbout =
-    actor.canManage && (await isCreator((await bindings()).db, actor));
+    actor.canManage &&
+    (await traceLettinRead('profile creator', async () =>
+      isCreator(
+        (
+          await traceLettinRead('profile bindings', () => bindings())
+        ).db,
+        actor
+      )
+    ));
   const hasPublishedWorlds =
     !!actor &&
-    (await publicWorlds(undefined, { creatorId: actor.id })).length > 0;
+    (
+      await traceLettinRead('profile worlds', () =>
+        publicWorlds(undefined, { creatorId: actor.id })
+      )
+    ).length > 0;
   return (
     <CreatorProfileEditor
       wsId={wsId}

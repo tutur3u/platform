@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
@@ -34,6 +35,7 @@ class _Chat extends AssistantChatCubit {
         messages: const [
           AssistantMessage(
             id: 'prior-user',
+            clientRequestId: '11111111-1111-4111-8111-111111111111',
             role: 'user',
             parts: [AssistantMessagePart(type: 'text', text: 'private draft')],
           ),
@@ -45,6 +47,9 @@ class _Chat extends AssistantChatCubit {
 
 void main() {
   setUpAll(() {
+    registerFallbackValue(
+      ApiMutationAdmission(actorId: 'actor', isCurrent: () => true),
+    );
     registerFallbackValue(AssistantThinkingMode.fast);
     registerFallbackValue(AssistantCreditSource.workspace);
   });
@@ -56,7 +61,10 @@ void main() {
         '$action fences admission after deferred timezone: $change',
         () async {
           final repository = _Repository();
-          when(repository.generateUuid).thenReturn('synthetic-id');
+          when(() => repository.currentActorId).thenReturn('actor');
+          when(
+            repository.generateUuid,
+          ).thenReturn('22222222-2222-4222-8222-222222222222');
           final chat = _Chat(repository);
           addTearDown(chat.close);
           var scope = Object();
@@ -102,7 +110,11 @@ void main() {
               break;
           }
           timezone.complete('UTC');
-          await pending;
+          var settled = false;
+          final observed = pending.then((_) => settled = true);
+          await Future<void>.delayed(Duration.zero);
+          if (change != 'unchanged' || retry) await observed;
+          if (change == 'unchanged' && !retry) expect(settled, isFalse);
           // Real submit/retry primes the actual cubit's queue synchronously;
           // a stale request must never reach that admission boundary.
           expect(
@@ -110,17 +122,21 @@ void main() {
             change == 'unchanged' ? ['private draft'] : isEmpty,
           );
           expect(chat.state.messages.first.parts.single.text, 'private draft');
-          await chat.stopStreaming();
+          await chat.stopStreaming(discardQueued: true);
+          await observed;
         },
       );
     }
   }
   test('changing model lanes discards pending remote submissions', () async {
     final repository = _Repository();
-    when(repository.generateUuid).thenReturn('synthetic-id');
+    when(() => repository.currentActorId).thenReturn('actor');
+    when(
+      repository.generateUuid,
+    ).thenReturn('22222222-2222-4222-8222-222222222222');
     final chat = _Chat(repository);
     addTearDown(chat.close);
-    await submitAssistantRemoteChat(
+    final pending = submitAssistantRemoteChat(
       chat,
       shell,
       wsId: 'ws',
@@ -128,8 +144,16 @@ void main() {
       isCurrent: () => true,
       resolveTimezone: () async => 'UTC',
     );
+    var settled = false;
+    final observed = pending.then((accepted) {
+      settled = true;
+      return accepted;
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(settled, isFalse);
     expect(chat.state.queuedMessages, ['unsent remote draft']);
     await chat.stopStreaming(discardQueued: true);
+    expect(await observed, isFalse);
     expect(chat.state.queuedMessages, isEmpty);
     verifyNever(
       () => repository.streamChat(
@@ -143,6 +167,7 @@ void main() {
         timezone: any(named: 'timezone'),
         attachments: any(named: 'attachments'),
         creditWsId: any(named: 'creditWsId'),
+        admission: any(named: 'admission'),
       ),
     );
   });
@@ -151,7 +176,10 @@ void main() {
     test('busy ${retry ? 'retry' : 'submit'} rejects late admission after '
         'subscription cancellation and mode ABA', () async {
       final repository = _Repository();
-      when(repository.generateUuid).thenReturn('synthetic-id');
+      when(() => repository.currentActorId).thenReturn('actor');
+      when(
+        repository.generateUuid,
+      ).thenReturn('22222222-2222-4222-8222-222222222222');
       final listening = Completer<void>();
       final cancelling = Completer<void>();
       final releaseCancellation = Completer<void>();
@@ -175,8 +203,12 @@ void main() {
           timezone: any(named: 'timezone'),
           attachments: any(named: 'attachments'),
           creditWsId: any(named: 'creditWsId'),
+          admission: any(named: 'admission'),
         ),
-      ).thenAnswer((_) => stream.stream);
+      ).thenAnswer((call) {
+        (call.namedArguments[#admission] as ApiMutationAdmission).check();
+        return stream.stream;
+      });
       final chat = _Chat(repository);
       addTearDown(chat.close);
       addTearDown(stream.close);
@@ -229,6 +261,7 @@ void main() {
           timezone: any(named: 'timezone'),
           attachments: any(named: 'attachments'),
           creditWsId: any(named: 'creditWsId'),
+          admission: any(named: 'admission'),
         ),
       ).called(1);
     });

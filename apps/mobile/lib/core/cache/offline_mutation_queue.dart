@@ -242,6 +242,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     bool replaySafe = false,
     String? expectedUserId,
     void Function()? checkScope,
+    void Function()? beforeEnqueue,
   }) async {
     checkScope?.call();
     await init();
@@ -279,6 +280,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       throw StateError('Profile actor changed');
     }
     checkScope?.call();
+    beforeEnqueue?.call();
     await enqueue(
       PendingMutationRecord(
         id: newLocalMutationId(),

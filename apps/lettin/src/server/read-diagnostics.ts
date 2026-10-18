@@ -1,4 +1,13 @@
 type ReadStage =
+  | 'profile actor'
+  | 'profile bindings'
+  | 'profile creator'
+  | 'profile worlds'
+  | 'layout session'
+  | 'layout workspace'
+  | 'layout invitation'
+  | 'layout workspaces'
+  | 'layout navigation'
   | 'resolve actor'
   | 'resolve bindings'
   | 'read world'

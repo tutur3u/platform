@@ -62,12 +62,290 @@ jobs:
           cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
 
       - name: 📦 Install Dependencies
-        run: |
-          dart pub global activate very_good_cli 1.1.0
-          very_good packages get --recursive --ignore="!*"
+        run: flutter pub get --enforce-lockfile
 
       - name: ✨ Check Formatting
-        run: dart format --set-exit-if-changed lib test
+        id: format
+        env:
+          FORMAT_EVENT_SHA: ${{ github.sha }}
+          FORMAT_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import selectors
+          import signal
+          import shutil
+          import subprocess
+          import sys
+          import tempfile
+          import time
+          from urllib.parse import unquote, urljoin, urlparse
+
+          root = Path(os.environ['GITHUB_WORKSPACE']).resolve()
+          out = Path(tempfile.mkdtemp(prefix='mobile-format-', dir=os.environ['RUNNER_TEMP']))
+          sha = lambda data: hashlib.sha256(data).hexdigest()
+
+          def run(args, seconds=15, limit=1048576, echo=False):
+              started = time.monotonic()
+              proc = subprocess.Popen(args, cwd=root / 'apps/mobile', stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT, start_new_session=True)
+              data = bytearray()
+              reason = None
+              selector = selectors.DefaultSelector()
+              selector.register(proc.stdout, selectors.EVENT_READ)
+              try:
+                  while selector.get_map():
+                      if time.monotonic() - started > seconds:
+                          reason = 'timeout'
+                          break
+                      for key, _ in selector.select(0.2):
+                          chunk = os.read(key.fd, 8192)
+                          if not chunk:
+                              selector.unregister(key.fileobj)
+                              continue
+                          if len(data) + len(chunk) > limit:
+                              reason = 'output-limit'
+                              break
+                          data.extend(chunk)
+                          if echo:
+                              sys.stdout.buffer.write(chunk)
+                              sys.stdout.buffer.flush()
+                      if reason:
+                          break
+                  if reason is None:
+                      proc.wait(timeout=max(0.1, seconds - (time.monotonic() - started)))
+              except subprocess.TimeoutExpired:
+                  reason = 'timeout'
+              finally:
+                  try:
+                      os.killpg(proc.pid, signal.SIGKILL)
+                  except ProcessLookupError:
+                      pass
+                  proc.wait(timeout=5)
+                  selector.close()
+                  proc.stdout.close()
+              try:
+                  os.killpg(proc.pid, 0)
+                  stopped = False
+              except ProcessLookupError:
+                  stopped = True
+              return bytes(data), {'exit': proc.returncode, 'boundFailure': reason,
+                  'processGroupStopped': stopped, 'bytes': len(data), 'sha256': sha(data)}
+
+          def git(*args, limit=1048576):
+              data, result = run(['git', '-C', str(root), *args], limit=limit)
+              if result['exit'] or result['boundFailure'] or not result['processGroupStopped']:
+                  raise ValueError('git-capture-failed')
+              return data
+
+          def digest(file, limit=2097152):
+              if file.is_symlink() or not file.is_file() or file.stat().st_size > limit:
+                  raise ValueError('context-not-bounded-regular-file')
+              return sha(file.read_bytes())
+
+          def allowed(name):
+              return bool(re.fullmatch(r'apps/mobile/(lib|test)/[A-Za-z0-9_./-]+\.dart', name)) and '..' not in Path(name).parts
+
+          def file_record(name, mode):
+              file = root / name
+              digest(file)
+              data = file.read_bytes()
+              data.decode('utf-8')
+              if b'\0' in data or bool(file.stat().st_mode & 0o111) != (mode == '100755'):
+                  raise ValueError('dart-mode-or-content-invalid')
+              return {'sha256': sha(data), 'bytes': len(data), 'mode': mode,
+                      'blob': hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()}
+
+          def context():
+              mobile = root / 'apps/mobile'
+              names = ['pubspec.yaml', 'pubspec.lock', 'analysis_options.yaml', '.dart_tool/package_config.json']
+              result = {name: digest(mobile / name) for name in names}
+              ancestors = {parent for name in before for parent in (root / name).parents
+                           if parent.is_relative_to(mobile)}
+              result['ancestorContext'] = {str((parent / name).relative_to(root)): digest(parent / name)
+                  for parent in ancestors for name in ['analysis_options.yaml', 'pubspec.yaml']
+                  if (parent / name).is_file()}
+              for parent in ancestors:
+                  options = parent / 'analysis_options.yaml'
+                  if options.is_file():
+                      includes = re.findall(r'^include:\s*(.+)$', options.read_text(), re.MULTILINE)
+                      if includes and includes != ['package:very_good_analysis/analysis_options.yaml']:
+                          raise ValueError('unsupported-analysis-include')
+              result['workflow'] = digest(root / '.github/workflows/mobile.yaml')
+              config = json.loads((mobile / '.dart_tool/package_config.json').read_text())
+              packages = [item for item in config['packages'] if item['name'] == 'very_good_analysis']
+              if len(packages) != 1:
+                  raise ValueError('analysis-include-unresolved')
+              package_root = urlparse(urljoin((mobile / '.dart_tool/package_config.json').as_uri(), packages[0]['rootUri']))
+              if package_root.scheme != 'file' or package_root.netloc.lower() not in ['', 'localhost'] or package_root.query or package_root.fragment:
+                  raise ValueError('analysis-root-not-local')
+              if not package_root.path.endswith('/'):
+                  package_root = package_root._replace(path=package_root.path + '/')
+              package_uri = packages[0].get('packageUri', '')
+              if not isinstance(package_uri, str):
+                  raise ValueError('analysis-package-uri-invalid')
+              uri = urlparse(urljoin(package_root.geturl(), package_uri))
+              if uri.scheme != 'file' or uri.netloc.lower() not in ['', 'localhost'] or uri.query or uri.fragment:
+                  raise ValueError('analysis-include-not-local')
+              package = Path(unquote(uri.path))
+              options = sorted(package.glob('analysis_options*.yaml'))
+              if not options or len(options) > 32:
+                  raise ValueError('analysis-include-unbounded')
+              result['analysisIncludeHashes'] = {file.name: digest(file) for file in options}
+              for tool in ['dart', 'flutter']:
+                  launcher = Path(shutil.which(tool)).resolve()
+                  if not launcher.is_relative_to(Path(os.environ['FLUTTER_ROOT']).resolve()):
+                      raise ValueError('tool-outside-selected-flutter')
+                  result[tool + 'Launcher'] = digest(launcher, 134217728)
+              result['dartExecutable'] = digest(Path(os.environ['FLUTTER_ROOT']) / 'bin/cache/dart-sdk/bin/dart', 134217728)
+              return result
+
+          def dirty_snapshot(raw):
+              result = {'count': 0, 'pathSha256': [], 'complete': False}
+              if type(raw) is not bytes or len(raw) > 1048576:
+                  return dict(result, reason='path-byte-limit-or-type')
+              if not raw:
+                  return dict(result, complete=True)
+              if not raw.endswith(b'\0'):
+                  return dict(result, reason='path-framing-invalid')
+              names = raw[:-1].split(b'\0')
+              result['count'] = min(len(names), 256)
+              if len(names) > 256:
+                  return dict(result, reason='path-count-limit', countTruncated=True)
+              if any(not name or name.startswith(b'/') or
+                     any(part in [b'', b'.', b'..'] for part in name.split(b'/')) for name in names):
+                  return dict(result, reason='path-relative-invalid')
+              return dict(result, complete=True, pathSha256=[sha(name) for name in names])
+
+          CAPTURE_ERROR_CODES = frozenset({
+              'analysis-include-not-local',
+              'analysis-include-unbounded',
+              'analysis-include-unresolved',
+              'analysis-package-uri-invalid',
+              'analysis-root-not-local',
+              'changed-path-scope-invalid',
+              'checkout-or-preimage-dirty',
+              'context-not-bounded-regular-file',
+              'dart-mode-or-content-invalid',
+              'formatter-context-changed',
+              'git-capture-failed',
+              'invalid-commit-identity',
+              'invalid-run-identity',
+              'patch-not-text',
+              'preformat-source-changed',
+              'preimage-blob-mismatch',
+              'source-byte-limit',
+              'tool-outside-selected-flutter',
+              'tracked-dart-scope-invalid',
+              'unsupported-analysis-include',
+              'version-capture-failed',
+          })
+
+          def capture_error(receipt, error, phase):
+              receipt['captureErrors'].append(type(error).__name__ + ':' + phase)
+              if type(error) is ValueError and len(error.args) == 1:
+                  code = error.args[0]
+                  if type(code) is str and code in CAPTURE_ERROR_CODES:
+                      receipt.setdefault('captureErrorCodes', []).append({'phase': phase, 'code': code})
+
+          receipt = {'version': 1, 'producerValid': False, 'captureErrors': []}
+          before = {}
+          source_bytes = 0
+          try:
+              for key in ['GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']:
+                  if not re.fullmatch(r'[1-9][0-9]{0,19}', os.environ[key]):
+                      raise ValueError('invalid-run-identity')
+              receipt.update(runId=os.environ['GITHUB_RUN_ID'], runAttempt=os.environ['GITHUB_RUN_ATTEMPT'])
+              for key, env in [('eventCommit', 'FORMAT_EVENT_SHA'), ('prHeadCommit', 'FORMAT_PR_HEAD_SHA')]:
+                  value = os.environ.get(env, '')
+                  if value and not re.fullmatch(r'[a-f0-9]{40}', value):
+                      raise ValueError('invalid-commit-identity')
+                  receipt[key] = value or None
+              receipt['testedCommit'] = git('rev-parse', 'HEAD').decode().strip()
+              receipt['preformatIdentityMatches'] = receipt['eventCommit'] == receipt['testedCommit']
+              if not receipt['preformatIdentityMatches']:
+                  raise ValueError('checkout-or-preimage-dirty')
+              dirty = git('diff', '--name-only', '-z', 'HEAD')
+              receipt['preformatTrackedChanges'] = dirty_snapshot(dirty)
+              if dirty or not receipt['preformatTrackedChanges']['complete']:
+                  raise ValueError('checkout-or-preimage-dirty')
+              tree = git('ls-tree', '-rz', 'HEAD', '--', 'apps/mobile/lib', 'apps/mobile/test')
+              for entry in tree.split(b'\0'):
+                  if not entry:
+                      continue
+                  header, raw = entry.split(b'\t', 1)
+                  mode, kind, blob = header.decode().split()
+                  name = raw.decode()
+                  if not name.endswith('.dart'):
+                      continue
+                  if not allowed(name) or kind != 'blob' or mode not in ['100644', '100755'] or len(before) >= 4096:
+                      raise ValueError('tracked-dart-scope-invalid')
+                  before[name] = file_record(name, mode)
+                  source_bytes += before[name]['bytes']
+                  if source_bytes > 33554432:
+                      raise ValueError('source-byte-limit')
+                  if before[name]['blob'] != blob:
+                      raise ValueError('preimage-blob-mismatch')
+              receipt['context'] = context()
+              receipt['sourceManifestSha256'] = sha(json.dumps(before, sort_keys=True).encode())
+              dart, dart_result = run(['dart', '--version'], limit=65536)
+              flutter, flutter_result = run(['flutter', '--version', '--machine'], seconds=30, limit=65536)
+              if any(item['exit'] or item['boundFailure'] or not item['processGroupStopped'] for item in [dart_result, flutter_result]):
+                  raise ValueError('version-capture-failed')
+              version = json.loads(flutter)
+              receipt['tools'] = {key: version.get(key) for key in ['frameworkVersion', 'frameworkRevision', 'engineRevision', 'dartSdkVersion', 'channel']}
+              receipt['tools']['dartVersion'] = dart.decode().strip()
+              if git('diff', '--name-only', 'HEAD').strip():
+                  raise ValueError('preformat-source-changed')
+          except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
+              capture_error(receipt, error, 'preparation')
+
+          # This remains the original quality command; capture never converts its failure to success.
+          _, result = run(['dart', 'format', '--set-exit-if-changed', 'lib', 'test'], seconds=180, echo=True)
+          receipt['formatter'] = result
+          status = 124 if result['boundFailure'] == 'timeout' else 125 if result['boundFailure'] else result['exit']
+          if status < 0:
+              status = 128 - status
+          try:
+              if status != 0:
+                  names = [name.decode() for name in git('diff', '--name-only', '-z', 'HEAD').split(b'\0') if name]
+                  if not names or len(names) > 256 or any(not allowed(name) or name not in before for name in names):
+                      raise ValueError('changed-path-scope-invalid')
+                  if receipt.get('context') != context():
+                      raise ValueError('formatter-context-changed')
+                  receipt['files'] = [{'path': name, 'before': before[name],
+                                       'after': file_record(name, before[name]['mode'])} for name in names]
+                  patch = git('diff', '--full-index', '--binary', '--no-ext-diff', '--no-textconv',
+                              '--no-renames', 'HEAD', '--', *names, limit=4194304)
+                  if not patch or b'GIT binary patch' in patch:
+                      raise ValueError('patch-not-text')
+                  (out / 'format.patch').write_bytes(patch)
+                  receipt['patch'] = {'name': 'format.patch', 'bytes': len(patch), 'sha256': sha(patch)}
+                  receipt['producerValid'] = not receipt['captureErrors'] and result['exit'] == 1 and not result['boundFailure'] and result['processGroupStopped']
+          except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
+              capture_error(receipt, error, 'patch')
+          finally:
+              encoded = json.dumps(receipt, sort_keys=True, indent=2).encode()
+              if len(encoded) > 1048576:
+                  raise SystemExit(status or 1)
+              (out / 'receipt.json').write_bytes(encoded)
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+                  output.write(f'artifact_dir={out}\nexit_code={status}\n')
+          sys.exit(status)
+          PY
+
+      - name: Retain hosted formatting patch on failure
+        if: failure() && steps.format.outcome == 'failure'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mobile-format-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.format.outputs.artifact_dir }}
+          if-no-files-found: error
+          retention-days: 3
 
       - name: 🕵️ Analyze
         run: flutter analyze lib test

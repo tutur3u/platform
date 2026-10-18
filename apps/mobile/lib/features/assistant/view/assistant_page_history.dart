@@ -24,16 +24,28 @@ extension _AssistantPageHistory on _AssistantPageState {
         activeChatId: _chatCubit.state.chat?.id,
         onClose: () => dismissAdaptiveDrawerOverlay(drawerContext),
         onNewConversation: () async {
-          if (!await guard.run(
-                () => dismissAdaptiveDrawerOverlay(drawerContext),
-              ) ||
+          if (!guard.current) return;
+          final reset = await _startNewConversation(
+            wsId,
+            _chatCubit.state,
+            _liveCubit.state,
+            historyContext: drawerContext,
+          );
+          if (reset != _AssistantNewChatResult.committed ||
+              !guard.current ||
               !mounted) {
             return;
           }
-          if (this.context.read<AssistantChromeCubit>().state.isLiveMode) {
-            if (!await guard.run(_exitLiveMode) || !mounted) return;
+          try {
+            await guard.run(() => dismissAdaptiveDrawerOverlay(drawerContext));
+          } on Object {
+            if (guard.current && mounted) {
+              await _showNewChatResetNotice(
+                this.context.l10n.assistantNewChatResetCleanupFailed,
+                historyContext: drawerContext.mounted ? drawerContext : null,
+              );
+            }
           }
-          await _startNewConversation(wsId, _chatCubit.state, _liveCubit.state);
         },
         onSelectChat: (chat) async {
           if (!await guard.run(

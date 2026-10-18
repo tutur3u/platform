@@ -7,6 +7,7 @@ import { safeFixtureFailure } from './mail-profile-runtime.mjs';
 import {
   observeFixtureFailure,
   privateStartupDiagnostics,
+  readStageObservations,
   startupCategories,
 } from './mail-profile-startup-diagnostics.mjs';
 
@@ -45,6 +46,7 @@ test('private collection is bounded and rejects symlink log sources', async () =
     assert.deepEqual(records[0].categories, ['missing-module']);
     assert.equal(records[0].causeProven, false);
     assert.equal(records[1].logRead, 'private-read-failed');
+    assert.equal(records[1].readStages, undefined);
     assert.equal(JSON.stringify(records).includes('private-value'), false);
   } finally {
     await fs.rm(reports, { recursive: true });
@@ -160,6 +162,99 @@ test('new private startup families remain bounded enums with cause unproved', as
       ),
       []
     );
+  } finally {
+    await fs.rm(reports, { recursive: true });
+  }
+});
+
+test('read stages retain fixed observations without private log text', () => {
+  const output = readStageObservations(
+    [
+      '[lettin-read] profile actor started',
+      '[lettin-read] profile actor completed { elapsedMs: 2 }',
+      '[lettin-read] layout workspace failed { elapsedMs: 3 }',
+      '[lettin-read] private token started',
+      '[lettin-read] profile actor failed token=private-value /secret/path',
+      'private-value https://private.invalid/secret',
+    ].join('\n')
+  );
+  assert.equal(output.events, 3);
+  assert.equal(output.truncated, false);
+  assert.equal(output.requestAttribution, 'unavailable');
+  assert.deepEqual(output.stages, [
+    {
+      stage: 'profile actor',
+      started: 1,
+      completed: 1,
+      failed: 0,
+      lastStatus: 'completed',
+    },
+    {
+      stage: 'layout workspace',
+      started: 0,
+      completed: 0,
+      failed: 1,
+      lastStatus: 'failed',
+    },
+  ]);
+  for (const secret of ['private-value', '/secret/path', 'private.invalid']) {
+    assert.equal(JSON.stringify(output).includes(secret), false);
+  }
+});
+
+test('read counts cap events and retain incomplete evidence', () => {
+  const overflow = readStageObservations(
+    Array(257).fill('[lettin-read] profile worlds started').join('\n')
+  );
+  assert.equal(overflow.events, 256);
+  assert.equal(overflow.stages[0].started, 256);
+  assert.equal(overflow.eventsTruncated, true);
+  assert.equal(overflow.truncated, true);
+  const tail = readStageObservations(
+    [
+      '[lettin-read] profile actor started',
+      '[lettin-read] layout session started',
+      '[lettin-read] layout session started',
+      '[lettin-read] layout session completed { elapsedMs: 1 }',
+    ].join('\n'),
+    true
+  );
+  assert.equal(tail.tailTruncated, true);
+  assert.equal(tail.events, 3);
+  assert.equal(tail.stages.length, 1);
+  assert.equal(tail.stages[0].started, 2);
+  assert.equal(tail.stages[0].completed, 1);
+  assert.equal(tail.requestAttribution, 'unavailable');
+  const clipped = readStageObservations(
+    `${'x'.repeat(150000)}\n[lettin-read] profile actor started`
+  );
+  assert.equal(clipped.tailTruncated, true);
+  assert.equal(clipped.events, 1);
+  assert.deepEqual(readStageObservations('unrelated secret').stages, []);
+});
+
+test('owned Lettin log projects only safe stage counts', async () => {
+  const reports = await fs.mkdtemp(path.join(os.tmpdir(), 'read-stages-test-'));
+  try {
+    await fs.writeFile(
+      path.join(reports, 'lettin-private.log'),
+      [
+        '[lettin-read] profile bindings started',
+        '[lettin-read] profile bindings failed { elapsedMs: 1 }',
+        'Error: token=private-value /secret/path',
+      ].join('\n'),
+      { mode: 0o600 }
+    );
+    const records = await privateStartupDiagnostics(reports, [
+      { profileApp: 'lettin', exitCode: 0, signalCode: null },
+    ]);
+    assert.equal(records[1].logRead, 'bounded-private-tail');
+    assert.equal(records[1].readStages.events, 2);
+    assert.equal(records[1].readStages.stages[0].lastStatus, 'failed');
+    assert.equal(records[1].readStages.truncated, false);
+    assert.equal(records[1].causeProven, false);
+    assert.equal(JSON.stringify(records).includes('private-value'), false);
+    assert.equal(JSON.stringify(records).includes('/secret/path'), false);
   } finally {
     await fs.rm(reports, { recursive: true });
   }

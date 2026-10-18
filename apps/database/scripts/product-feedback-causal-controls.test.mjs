@@ -501,6 +501,9 @@ test('real runner validates causal selection before hosted setup without spoofin
         env: {
           ...process.env,
           GITHUB_ACTIONS: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS: 'false',
+          EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_STRUCTURED_PROVENANCE: 'false',
           EMPLOYEE_SCHEMA_SOURCE_SHA: 'a'.repeat(40),
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: feedback,
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: causal,

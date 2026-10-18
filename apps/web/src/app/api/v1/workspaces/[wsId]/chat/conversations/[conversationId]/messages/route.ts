@@ -12,6 +12,7 @@ import {
   isAiChatConversationId,
   listAiChatMessages,
 } from '@/lib/chat/agent-discovery';
+import { normalizeChatMessageTimestamp } from '@/lib/chat/chat-timestamp';
 import { notifyChatMessageRecipients } from '@/lib/chat/notifications';
 import {
   type ChatConversation,
@@ -141,7 +142,9 @@ export const GET = withSessionAuth<RouteParams>(
         }
       );
 
-      return NextResponse.json({ messages: messages ?? [] });
+      return NextResponse.json({
+        messages: (messages ?? []).map(normalizeChatMessageTimestamp),
+      });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load chat messages');
     }
@@ -412,7 +415,10 @@ export const POST = withSessionAuth<RouteParams>(
               ),
               replayed: false,
             };
-      const { message, replayed } = persistence;
+      const { message: rawMessage, replayed } = persistence;
+      const message = rawMessage
+        ? normalizeChatMessageTimestamp(rawMessage)
+        : null;
       if (!message) {
         return NextResponse.json(
           { message: 'Chat conversation not found' },

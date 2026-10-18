@@ -237,3 +237,35 @@ Real device installation/inference requires its own authorization and evidence;
 never use download completion or mock readiness to close that gate.
 
 - **Native Logo Parity**: Audit generated native PNG artwork bounds at each density rather than using padded generator image dimensions as visible logo size. App lock/loading share `AppSplashSurface`; preserve lock timers, controls and authentication boundaries when adjusting its visuals. Compare matching viewport/theme/text scale with `app_lock_splash_visual_test.dart`, and label reconstructed native canvases as source fixtures. Assert readable recovery text does not cross artwork at compact enlarged text; preserve entry centering and reserve top clearance when recovery needs the space. For Android assets run `dart run tool/generate_android_splash.dart` from `apps/mobile`: it directly copies canonical RGBA artwork into transparent padding and invokes Android-only splash generation without changing iOS or dependency files. Assert transparent corners, all canonical RGBA rows and 80dp artwork at every density for legacy/Android12. Inspect opaque padding separately; widget geometry and background checks do not prove full native raster parity or installed-device delivery.
+
+### Assistant first-use settings and creation admission
+
+Capture initial model, credit source, explicit nullable credit workspace and thinking
+mode in one lifecycle-bound creation plan. Use the existing native creation
+transaction and its bound full-tuple receipt; never initialize with an automatic
+settings PATCH after creating the chat. Keep route view_chat and RPC create_chat
+admission and manage_chat for later explicit edits. Credit scope must follow the
+existing actor-personal/active-workspace billing rules, not arbitrary client IDs.
+Do not substitute model defaults for a rejected explicit selection.
+
+A source fixture passing is not atomic SQL proof: retain migration execution under
+an admitted isolated exact-commit workflow as a separate gate. Malformed/stale or
+unknown sent outcomes retain the original creation hold and draft. Regression
+coverage and product scope live in apps/docs/platform/features/mobile-chat.mdx.
+
+### Native Assistant uncertain-send reconciliation
+
+Capture an immutable pending native turn by actor/workspace/chat before awaited
+settings preparation, separate from its temporary completion waiter. Retain it
+across late dispatch admission even when the selection has retired; release only
+known pre-admission failures. Repeated Send of its
+retained draft performs a fresh authorized receipt read, never a replacement POST
+or generation retry. Validate request identity, sender, text and attachments; check
+the captured generation before publishing. Missing/denied/malformed readback and
+changed payloads remain held. A saved USER receipt does not certify model success.
+After acknowledgment, equal-text follow-ups remain separate turns.
+
+Normalize validated PostgreSQL timestamptz receipts at active API boundaries before
+strict mobile parsers. Preserve microseconds separately from Date milliseconds and
+validate calendar/offset/fraction before conversion. Cover actual creation and
+message handlers plus JSON/NDJSON adapters, not only hand-authored ISO fixtures.

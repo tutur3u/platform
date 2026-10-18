@@ -108,3 +108,24 @@ Focused Forms metadata/loader tests resolve their mocked Supabase server boundar
 from source via `apps/forms/vitest.config.ts`, so they do not require a shared
 package build or a Docker database. They cover author noindex settings and
 anonymous/protected snapshots; they do not prove live database access.
+
+## Hosted profile await diagnostics
+
+The disposable hosted Lettin profile fixture retains fixed server read-stage
+counts in its existing terminal receipt. Profile actor, bindings, creator and
+public-world reads, and workspace layout session, workspace, invitation, list
+and navigation reads use the existing CI/explicit-diagnostic gate. Wrappers
+preserve results and rethrow the original error; they add no queries, retries,
+permission changes or navigation time.
+
+The collector uses its existing owned private log checks and 128-KiB tail. Only
+allowlisted stage names, capped started/completed/failed counts and last status
+leave the collector, with at most 256 events and explicit tail/event truncation.
+No raw log lines, paths, request IDs, user data or error messages are retained.
+Concurrent reads are not request-correlated: unmatched counts or last status
+cannot identify a stalled request, particularly after truncation. Missing stage
+observations are inconclusive, and `causeProven` remains false. HTTP 200 with an
+unfinished body is not navigation success. Use the bound receipt to narrow the
+next investigation; preserve the actual profile assertions, cleanup and exact-head
+runtime gate. These diagnostics alone establish neither a causal repair nor
+provider or production acceptance.

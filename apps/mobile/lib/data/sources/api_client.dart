@@ -21,6 +21,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 export 'api_exception.dart';
 export 'api_multipart_file.dart';
 
+part 'api_client_mutations.dart';
+
 /// Lightweight HTTP client for calling mobile API endpoints.
 ///
 /// Ported from apps/native/lib/api/client.ts.
@@ -302,6 +304,13 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  Future<Map<String, dynamic>> postJsonAcknowledged(
+    String path,
+    Map<String, dynamic> body, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) => _mutateJsonAcknowledged('POST', path, body, actorId, isCurrent);
+
   /// PATCH JSON to [path] (relative to [_baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].
@@ -309,25 +318,14 @@ class ApiClient {
     String path,
     Map<String, dynamic> body, {
     bool requiresAuth = true,
-  }) async {
-    final url = _url(path);
+  }) => _patchJson(path, body, requiresAuth: requiresAuth);
 
-    final response = await _performRequest(
-      () async => await _client
-          .patch(
-            url,
-            headers: await _getHeaders(
-              contentType: 'application/json',
-              requiresAuth: requiresAuth,
-            ),
-            body: jsonEncode(body),
-          )
-          .timeout(_requestTimeout),
-      requiresAuth: requiresAuth,
-    );
-
-    return _handleResponse(response);
-  }
+  Future<Map<String, dynamic>> patchJsonAcknowledged(
+    String path,
+    Map<String, dynamic> body, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) => _mutateJsonAcknowledged('PATCH', path, body, actorId, isCurrent);
 
   /// DELETE [path] (relative to [_baseUrl]).
   ///
@@ -336,25 +334,7 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
     bool requiresAuth = true,
-  }) async {
-    final url = _url(path);
-
-    final response = await _performRequest(
-      () async => await _client
-          .delete(
-            url,
-            headers: await _getHeaders(
-              contentType: body == null ? null : 'application/json',
-              requiresAuth: requiresAuth,
-            ),
-            body: body == null ? null : jsonEncode(body),
-          )
-          .timeout(_requestTimeout),
-      requiresAuth: requiresAuth,
-    );
-
-    return _handleResponse(response);
-  }
+  }) => _deleteJson(path, body: body, requiresAuth: requiresAuth);
 
   /// PUT JSON to [path] (relative to [_baseUrl]).
   ///
@@ -406,6 +386,14 @@ class ApiClient {
       );
     }, requiresAuth: requiresAuth);
   }
+
+  Future<http.StreamedResponse> sendJsonStreamAcknowledged(
+    String method,
+    String path,
+    Object? body, {
+    required ApiMutationAdmission admission,
+    String accept = 'application/octet-stream',
+  }) => _sendJsonStreamAcknowledged(method, path, body, admission, accept);
 
   Future<http.StreamedResponse> sendJsonStream(
     String method,

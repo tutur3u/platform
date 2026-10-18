@@ -490,3 +490,75 @@ an applied migration. A path change changes the selected snapshot and source SHA
 so earlier SQL/type artifacts remain historical and the new source requires fresh
 qualification. The isolated runner derives its full snapshot from tracked files,
 including the renamed migration, rather than a fixed migration-name manifest.
+
+
+## Opt-in chat initial-settings qualification
+
+`include_chat_initial_settings` is a default-false, standalone profile on the
+existing `employee-schema-contract.yaml` workflow. It selects the unchanged
+172 foundation assertions plus exactly 25 assertions from
+`chat-initial-ai-settings.sql`: 197 total. Existing foundation, journal, personal
+journal, address, feedback, HTTP, restore and structured-provenance defaults and
+counts are unchanged. Chat mode rejects every other optional profile, including
+structured provenance; it never silently skips a missing chat packet.
+
+The workflow input maps to `EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS`.
+The same disposable database applies all source migrations once. The chat packet
+is rollback-only. A separate bounded bridge intentionally commits four synthetic
+AI conversations under the actual `private.chat_create_conversation(uuid,uuid,jsonb)`
+admission: workspace credits, personal credits, explicit-null credit scope and
+legacy no-tuple creation. Its actor has create/view permission and lacks manage
+permission. Readback after COMMIT must match each original RPC receipt exactly;
+a denied create must leave zero added rows. This does not modify the production
+RPC, its ACL, settings-edit permissions or SQL serializers.
+
+Both chat fixtures reuse the personal workspace and creator membership produced
+by each synthetic user's normal signup trigger. Personal-credit inputs and the
+SQL envelope carry that actual UUID. The committed bridge marks all three owned
+workspaces (shared plus both bootstrap personal workspaces); cleanup checks their
+creator identities and shape, deletes only that marked set, and proves its absence.
+Shared-workspace permission defaults explicitly target `MEMBER` using the
+`(ws_id, permission, member_type)` key. Only that synthetic shared MEMBER admin
+default is disabled, so explicit view/create grants, manage denial and subsequent
+create revocation exercise the real permission evaluator without an admin bypass.
+
+The explicit Web qualification target consumes those unchanged SQL-produced
+receipts through the actual conversation POST handler. Only external auth,
+model admission, realtime and SQL transport ports are synthetic. It records nine
+successful controls, including malformed-calendar, workspace/tuple mismatch,
+SQL denial and route denial, with at most one creation transport call and zero
+provider calls. The actual Web response then enters the public Dart
+`ChatRepository.createAcknowledgedConversation` path and strict receipt parser.
+Nine Dart controls cover four successes, malformed-calendar/workspace/actor/tuple
+rejection and rejection of raw PostgreSQL timestamps without Web normalization.
+No hand-written JSON artifact can substitute for the SQL-producing phase.
+Message timestamp transport is **not** qualified by this creation-only bridge.
+
+Web fixtures remain under `apps/web/e2e/fixtures` and use the explicit
+`vitest.chat-initial-settings.config.ts`. Mobile uses the explicit
+`tool/qualification/chat_initial_settings_bridge_test.dart` target outside
+ordinary test discovery. Missing SQL/Web envelope environment is a failure,
+not a skip. CI alone installs the existing Flutter 3.47.x toolchain and restores
+locked mobile dependencies for this opt-in mode; it never builds a mobile app.
+Ordinary Web/mobile suites and real app builds remain separate exact-source gates.
+
+Before dispatch, the delivery owner must approve a clean published source SHA and
+reviewed control ref. Retain the resolved run control SHA, never infer it from a
+moving ref. Source/control checkouts, run ID, migration identity, source fixture
+hashes and control helper hashes bind the private envelope and phase results.
+Qualification requires strict 197 TAP, successful actual Web/Dart processes and
+phase files with exact expected cases/hashes, stopped child process groups,
+exact-marker committed-fixture cleanup, and finally successful owned database
+stop plus container absence. Missing phase, ambiguous cleanup, wrong pin or
+artifact existence alone is HOLD. `chatInitialSettingsQualified` and
+`schemaQualified` stay false on any failure. Employee HTTP, native backend,
+provider and production flags cannot be inferred from this profile.
+
+The private three-day artifact includes `qualification.json` and bounded
+`chat-*.json` SQL/Web/Dart envelopes and runner result files. They contain only
+synthetic fixture identities; keep them out of public PR descriptions. Never
+reuse this receipt as an upgrade/production-application or provider/device proof.
+Pure contract regressions are in
+`apps/database/scripts/chat-initial-settings-qualification.test.mjs`; run them
+through admitted resource control before claiming execution. Source preparation
+and static syntax checks do not qualify SQL, Web or Dart behavior.

@@ -8,6 +8,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/assistant_models.dart';
+import 'assistant_reset_preferences.dart';
 
 const assistantChatStorageKeyPrefix = 'mira-dashboard-chat-';
 const assistantModelStorageKeyPrefix = 'mira-dashboard-model-';
@@ -29,6 +30,72 @@ class AssistantPreferences {
     : _currentUserId = currentUserId ?? currentCacheUserId;
 
   final String? Function() _currentUserId;
+
+  AssistantResetPreferences resetStore(
+    String wsId, {
+    String? actorId,
+    bool Function()? isCurrent,
+  }) {
+    final actor = actorId ?? _currentUserId();
+    if (actor == null) {
+      throw const FormatException('Assistant actor is unavailable');
+    }
+    return AssistantResetPreferences(
+      actorId: actor,
+      workspaceId: wsId,
+      isCurrent: () => _currentUserId() == actor && (isCurrent?.call() ?? true),
+    );
+  }
+
+  static Future<T> serializeChatSelection<T>(
+    String actorId,
+    String wsId,
+    Future<T> Function() work,
+  ) => AssistantResetPreferences.serialized(
+    '$actorId::mira-conversation-envelope::v1::$wsId',
+    work,
+  );
+
+  Future<String?> _readResetPreference(String prefix, String wsId) async {
+    if (_currentUserId() == null) return null;
+    try {
+      final value = await resetStore(wsId).readSelection();
+      return prefix == assistantChatStorageKeyPrefix
+          ? value.selectedChatId
+          : value.contextId;
+    } on Object {
+      throw const FormatException('Assistant selection storage is unreadable');
+    }
+  }
+
+  bool matchesResetActor(String actorId) => _currentUserId() == actorId;
+
+  Future<bool> clearChatIdAcknowledged(
+    String wsId, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) async {
+    if (!matchesResetActor(actorId) || !isCurrent()) return false;
+    return await resetStore(
+      wsId,
+      actorId: actorId,
+      isCurrent: isCurrent,
+    ).update(changeSelected: true);
+  }
+
+  Future<bool> saveWorkspaceContextIdAcknowledged(
+    String wsId,
+    String contextId, {
+    required String actorId,
+    required bool Function() isCurrent,
+  }) async {
+    if (!matchesResetActor(actorId) || !isCurrent()) return false;
+    return await resetStore(
+      wsId,
+      actorId: actorId,
+      isCurrent: isCurrent,
+    ).update(changeContext: true, contextId: contextId);
+  }
 
   String? _key(String prefix, String wsId) {
     final userId = _currentUserId();
@@ -60,38 +127,36 @@ class AssistantPreferences {
     await prefs.setBool(key, value);
   }
 
-  Future<String?> loadChatId(String wsId) async {
-    final key = _key(assistantChatStorageKeyPrefix, wsId);
-    if (key == null) return null;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantChatStorageKeyPrefix, wsId)) return null;
-    return prefs.getString(key);
-  }
+  Future<String?> loadChatId(String wsId) =>
+      _readResetPreference(assistantChatStorageKeyPrefix, wsId);
 
   Future<void> saveChatId(
     String wsId,
     String chatId, {
     bool Function()? shouldWrite,
-  }) async {
-    final key = _key(assistantChatStorageKeyPrefix, wsId);
-    if (key == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantChatStorageKeyPrefix, wsId) ||
-        shouldWrite?.call() == false) {
-      return;
-    }
-    await prefs.setString(key, chatId);
-  }
+  }) => _writeSelectedChat(wsId, chatId, shouldWrite);
 
-  Future<void> clearChatId(String wsId, {bool Function()? shouldWrite}) async {
-    final key = _key(assistantChatStorageKeyPrefix, wsId);
-    if (key == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantChatStorageKeyPrefix, wsId) ||
-        shouldWrite?.call() == false) {
-      return;
+  Future<void> clearChatId(String wsId, {bool Function()? shouldWrite}) =>
+      _writeSelectedChat(wsId, null, shouldWrite);
+
+  Future<void> _writeSelectedChat(
+    String wsId,
+    String? chatId,
+    bool Function()? shouldWrite,
+  ) async {
+    final actor = _currentUserId();
+    if (actor == null) return;
+    bool current() => shouldWrite?.call() ?? true;
+    final acknowledged = await resetStore(
+      wsId,
+      actorId: actor,
+      isCurrent: current,
+    ).update(changeSelected: true, selectedChatId: chatId);
+    if (!acknowledged && matchesResetActor(actor) && current()) {
+      throw const FormatException(
+        'Assistant selected identity was not confirmed',
+      );
     }
-    await prefs.remove(key);
   }
 
   Future<AssistantGatewayModel?> loadModel(String wsId) async {
@@ -132,11 +197,18 @@ class AssistantPreferences {
     }
   }
 
-  Future<void> saveModel(String wsId, AssistantGatewayModel model) async {
+  Future<void> saveModel(
+    String wsId,
+    AssistantGatewayModel model, {
+    bool Function()? shouldWrite,
+  }) async {
     final key = _key(assistantModelStorageKeyPrefix, wsId);
     if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantModelStorageKeyPrefix, wsId)) return;
+    if (key != _key(assistantModelStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
     await prefs.setString(key, jsonEncode(model.toJson()));
   }
 
@@ -178,45 +250,46 @@ class AssistantPreferences {
 
   Future<void> saveCreditSource(
     String wsId,
-    AssistantCreditSource source,
-  ) async {
+    AssistantCreditSource source, {
+    bool Function()? shouldWrite,
+  }) async {
     final key = _key(assistantCreditSourceStorageKeyPrefix, wsId);
     if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantCreditSourceStorageKeyPrefix, wsId)) return;
+    if (key != _key(assistantCreditSourceStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
     await prefs.setString(key, source.name);
   }
 
-  Future<String?> loadWorkspaceContextId(String wsId) async {
-    final key = _key(assistantWorkspaceContextStorageKeyPrefix, wsId);
-    if (key == null) return null;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId)) {
-      return null;
-    }
-    return prefs.getString(key);
-  }
+  Future<String?> loadWorkspaceContextId(String wsId) =>
+      _readResetPreference(assistantWorkspaceContextStorageKeyPrefix, wsId);
 
   Future<void> saveWorkspaceContextId(
     String wsId,
     String contextId, {
     bool Function()? shouldWrite,
   }) async {
-    final key = _key(assistantWorkspaceContextStorageKeyPrefix, wsId);
-    if (key == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId) ||
-        shouldWrite?.call() == false) {
-      return;
+    final actor = _currentUserId();
+    if (actor == null) return;
+    bool current() => matchesResetActor(actor) && (shouldWrite?.call() ?? true);
+    if (!await resetStore(
+          wsId,
+          actorId: actor,
+          isCurrent: current,
+        ).update(changeContext: true, contextId: contextId) &&
+        current()) {
+      throw const FormatException('Assistant context was not confirmed');
     }
-    await prefs.setString(key, contextId);
   }
 
   Future<void> clearWorkspaceContextId(String wsId) async {
-    final key = _key(assistantWorkspaceContextStorageKeyPrefix, wsId);
-    if (key == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId)) return;
-    await prefs.remove(key);
+    if (_currentUserId() == null) return;
+    if (!await resetStore(wsId).update(changeContext: true)) {
+      throw const FormatException(
+        'Assistant context removal was not confirmed',
+      );
+    }
   }
 }

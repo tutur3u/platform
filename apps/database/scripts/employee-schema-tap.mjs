@@ -42,13 +42,17 @@ export function selectSchemaPackets(
   journal = false,
   personalJournal = false,
   addressMigration = false,
-  feedback = false
+  feedback = false,
+  chatInitialSettings = false
 ) {
   if (
     typeof journal !== 'boolean' ||
     typeof personalJournal !== 'boolean' ||
     typeof addressMigration !== 'boolean' ||
     typeof feedback !== 'boolean' ||
+    typeof chatInitialSettings !== 'boolean' ||
+    (chatInitialSettings &&
+      (journal || personalJournal || addressMigration || feedback)) ||
     (feedback && (journal || personalJournal || addressMigration)) ||
     (personalJournal && (journal || addressMigration))
   )
@@ -61,6 +65,7 @@ export function selectSchemaPackets(
         : foundationPackets),
     ...(addressMigration ? [['employee-address-migration.sql', 10]] : []),
     ...(feedback ? feedbackPackets : []),
+    ...(chatInitialSettings ? [['chat-initial-ai-settings.sql', 25]] : []),
   ];
 }
 
@@ -108,12 +113,15 @@ export function schemaReceipt({
   personalJournal = false,
   addressMigration = false,
   feedback = false,
+  chatInitialSettings = false,
+  chatInitialSettingsQualified = false,
 }) {
   const expected = selectSchemaPackets(
     journal,
     personalJournal,
     addressMigration,
-    feedback
+    feedback,
+    chatInitialSettings
   ).map(([file, assertions]) => ({
     file,
     assertions,
@@ -121,13 +129,16 @@ export function schemaReceipt({
   const passed =
     lifecycleCode === 0 &&
     cleanupSucceeded === true &&
+    (!chatInitialSettings || chatInitialSettingsQualified === true) &&
     JSON.stringify(packets) === JSON.stringify(expected);
   return {
     version: 1,
     sourceSha: exactSourceSha(sourceSha),
-    scope: personalJournal
-      ? 'personal-journal'
-      : `${journal ? 'employee-creation-restoration-journal' : 'employee-creation-restoration'}${addressMigration ? '-address-migration' : ''}${feedback ? '-feedback' : ''}`,
+    scope: chatInitialSettings
+      ? 'chat-initial-settings'
+      : personalJournal
+        ? 'personal-journal'
+        : `${journal ? 'employee-creation-restoration-journal' : 'employee-creation-restoration'}${addressMigration ? '-address-migration' : ''}${feedback ? '-feedback' : ''}`,
     schemaQualified: passed,
     assertions: packets.reduce((sum, packet) => sum + packet.assertions, 0),
     packets,
@@ -293,13 +304,15 @@ export function schemaFailureDiagnostic(
   journal = false,
   personalJournal = false,
   addressMigration = false,
-  feedback = false
+  feedback = false,
+  chatInitialSettings = false
 ) {
   const packets = selectSchemaPackets(
     journal,
     personalJournal,
     addressMigration,
-    feedback
+    feedback,
+    chatInitialSettings
   );
   const phases = [
     'full-schema-snapshot',
@@ -312,6 +325,7 @@ export function schemaFailureDiagnostic(
     'packet-tap',
     'typegen',
     'http-runtime',
+    'chat-bridge',
     'cleanup',
     'cleanup-proof',
   ];

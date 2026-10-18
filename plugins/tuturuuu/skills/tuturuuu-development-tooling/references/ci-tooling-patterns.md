@@ -109,23 +109,14 @@ See `apps/docs/build/devops/active-runtime.mdx`.
 
 ## Commands And Formatting
 
-- Focused non-build tests needed to validate authorized work may run. Builds
-  and setup-triggered builds run in CI only.
-  Start long-lived development servers only when requested or needed for
-  explicitly requested runtime verification. Deployment authority stays separate.
+- Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.
 - For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun check`.
 - Use focused package-local tests, then applicable exact-commit CI checks.
-- Normally run the applicable check, lint, test, and build workflows in CI for
-  the exact authored commit, then inspect their terminal results. A demonstrably
-  stuck queue can defer this proof; record pending jobs and local evidence, and
-  finish exact-commit CI before calling the change release-ready.
-- For single-package validation, prefer package-local commands such as
-  `bun --cwd packages/ai vitest run ...` instead of root commands that fan out
-  through Turbo.
-- Run `bun ff` for touched frontend/TS files when required, but do not format
-  unrelated dirty files.
-- If `bun ff -- <files>` still triggers repo-wide Biome behavior, use exact-file Biome commands and keep fixes scoped to owned
-  files; require the applicable lint workflow in exact-commit CI.
+- Standalone chat qualification uses verified Node 24.21.0 plus the source Vitest entry directly. Preserve original exit/signal/timeout/group and report gates; passing Web reports or an optional diagnostic comparison never override failure. Require fresh exact-source SQL197/Web9/Dart9 with fixture/database cleanup; see the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx).
+- Normally run the applicable check, lint, test, and build workflows in CI for the exact authored commit, then inspect their terminal results. A demonstrably stuck queue can defer this proof; record pending jobs and local evidence, and finish exact-commit CI before calling the change release-ready.
+- For single-package validation, prefer package-local commands such as `bun --cwd packages/ai vitest run ...` instead of root commands that fan out through Turbo.
+- Run `bun ff` for touched frontend/TS files when required, but do not format unrelated dirty files.
+- If `bun ff -- <files>` still triggers repo-wide Biome behavior, use exact-file Biome commands and keep fixes scoped to owned files; require the applicable lint workflow in exact-commit CI.
 
 ## Packed SDK install diagnostics
 

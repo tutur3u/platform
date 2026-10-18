@@ -38,6 +38,60 @@ export function startupCategories(text) {
     .map(([name]) => name);
 }
 
+const readStages = new Set([
+  'profile actor',
+  'profile bindings',
+  'profile creator',
+  'profile worlds',
+  'layout session',
+  'layout workspace',
+  'layout invitation',
+  'layout workspaces',
+  'layout navigation',
+]);
+const eventLimit = 256;
+
+// Aggregate observations only: concurrent reads have no request correlation.
+export function readStageObservations(text, tailTruncated = false) {
+  const inputTruncated = tailTruncated || text.length > limit;
+  const lines = text.slice(-limit).split(/\r?\n/u);
+  if (inputTruncated) lines.shift();
+  const stages = new Map();
+  let events = 0;
+  let eventsTruncated = false;
+  for (const line of lines) {
+    const match = line.match(
+      /^\[lettin-read\] ([a-z ]+) (started|completed|failed)(?: \{ elapsedMs: \d{1,12} \})?$/u
+    );
+    if (!match || !readStages.has(match[1])) continue;
+    if (events === eventLimit) {
+      eventsTruncated = true;
+      break;
+    }
+    const [, stage, status] = match;
+    const counts = stages.get(stage) ?? {
+      stage,
+      started: 0,
+      completed: 0,
+      failed: 0,
+      lastStatus: status,
+    };
+    counts[status] += 1;
+    counts.lastStatus = status;
+    stages.set(stage, counts);
+    events += 1;
+  }
+  return {
+    events,
+    eventLimit,
+    tailTruncated: inputTruncated,
+    eventsTruncated,
+    truncated: inputTruncated || eventsTruncated,
+    requestAttribution: 'unavailable',
+    stages: [...stages.values()],
+  };
+}
+
 export async function privateStartupDiagnostics(reports, children) {
   const records = [];
   for (const app of ['web', 'lettin']) {
@@ -76,9 +130,11 @@ export async function privateStartupDiagnostics(reports, children) {
         record.logBytes = stat.size;
         record.inspectedBytes = bytesRead;
         record.truncated = stat.size > bytesRead;
-        record.categories = startupCategories(
-          buffer.subarray(0, bytesRead).toString('utf8')
-        );
+        const text = buffer.subarray(0, bytesRead).toString('utf8');
+        record.categories = startupCategories(text);
+        if (app === 'lettin') {
+          record.readStages = readStageObservations(text, record.truncated);
+        }
         record.causeProven = false;
       }
     } catch (error) {

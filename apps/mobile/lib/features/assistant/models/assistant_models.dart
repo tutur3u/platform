@@ -6,9 +6,11 @@ import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/features/assistant/models/assistant_file_mime.dart';
 
 part 'assistant_message.dart';
+part 'assistant_conversation_settings.dart';
 part 'assistant_soul.dart';
 
 enum AssistantCreditSource { workspace, personal }
@@ -548,11 +550,17 @@ class AssistantRestoredChat extends Equatable {
     required this.chat,
     required this.messages,
     required this.attachmentsByMessageId,
+    this.settings,
   });
 
   factory AssistantRestoredChat.fromJson(Map<String, dynamic> json) {
     final chatRaw = json['chat'];
     return AssistantRestoredChat(
+      settings: json['settings'] is Map<String, dynamic>
+          ? AssistantConversationSettings.fromJson(
+              json['settings'] as Map<String, dynamic>,
+            )
+          : null,
       chat: chatRaw is Map<String, dynamic>
           ? AssistantChatRecord.fromJson(chatRaw)
           : null,
@@ -567,11 +575,13 @@ class AssistantRestoredChat extends Equatable {
   }
 
   final AssistantChatRecord? chat;
+  final AssistantConversationSettings? settings;
   final List<AssistantMessage> messages;
   final Map<String, List<AssistantAttachment>> attachmentsByMessageId;
 
   Map<String, dynamic> toJson() => {
     'chat': chat?.toJson(),
+    if (settings != null) 'settings': settings!.toJson(),
     'messages': messages.map((m) => m.toJson()).toList(),
     'attachmentsByMessageId': {
       for (final e in attachmentsByMessageId.entries)
@@ -580,7 +590,7 @@ class AssistantRestoredChat extends Equatable {
   };
 
   @override
-  List<Object?> get props => [chat, messages, attachmentsByMessageId];
+  List<Object?> get props => [chat, settings, messages, attachmentsByMessageId];
 }
 
 Map<String, List<AssistantAttachment>> _assistantAttachmentsByMessageIdFromJson(

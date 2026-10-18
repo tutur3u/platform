@@ -73,6 +73,8 @@ export async function runOwnedSessionProcess(
     timeoutMs,
     env = process.env,
     buildOutput = false,
+    diagnosticIdentity = false,
+    dartTestOutput = false,
     signal = undefined,
   }
 ) {
@@ -104,7 +106,9 @@ export async function runOwnedSessionProcess(
     overflow = false,
     timedOut = false,
     closing = false;
-  const capture = buildOutput ? buildOutputCapture() : null;
+  const capture = buildOutput
+    ? buildOutputCapture(undefined, { dartTestOutput })
+    : null;
   const controllers = new Set(),
     jobs = [],
     requestIds = new Set();
@@ -224,6 +228,7 @@ export async function runOwnedSessionProcess(
         timedOut,
         processGroupStopped,
         buildDiagnostic: capture.receipt(),
+        ...(diagnosticIdentity ? { diagnosticProcessId: child.pid } : {}),
       };
     return {
       stdout: overflow ? '' : output,

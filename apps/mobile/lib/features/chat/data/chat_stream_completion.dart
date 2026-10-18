@@ -9,7 +9,7 @@ Stream<ChatMessageStreamEvent> readChatMessageStream(
   Stream<List<int>> body, {
   bool requireAssistant = false,
 }) async* {
-  final parser = ChatNdjsonStreamParser();
+  final parser = ChatNdjsonStreamParser(strictNativeReceipts: requireAssistant);
   var acknowledged = false;
   var failed = false;
   bool accept(ChatMessageStreamEvent event) {

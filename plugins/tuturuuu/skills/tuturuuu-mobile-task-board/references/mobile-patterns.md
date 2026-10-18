@@ -93,6 +93,12 @@ localization changes.
   native Chat `type="ai"` conversations and send text through the chat message
   stream. Live mode remains an explicit Assistant Live entry.
 
+- For real Assistant host fixtures, use the canonical
+  [mobile state and lifecycle guide](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-asynchronous-assistant-fixtures-in-their-owning-zone).
+  It covers scheduling ownership, creation admission, native attachment wire
+  shapes, shell publication and subscription handshakes. Fixture success does
+  not establish installed-device, provider or customer delivery.
+
 ### Calendar description display
 
 Calendar descriptions are arbitrary provider HTML, Markdown or plain text, not

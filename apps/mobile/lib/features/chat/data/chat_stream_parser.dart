@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 sealed class ChatMessageStreamEvent extends Equatable {
@@ -60,6 +61,45 @@ class ChatStreamErrorEvent extends ChatMessageStreamEvent {
 }
 
 class ChatNdjsonStreamParser {
+  ChatNdjsonStreamParser({this.strictNativeReceipts = false});
+
+  final bool strictNativeReceipts;
+
+  /// Validate server receipts before the generic model can coerce raw fields.
+  ChatMessage decodeMessage(Object? raw) {
+    if (raw is! Map<String, dynamic>) {
+      throw const FormatException('Invalid native message receipt');
+    }
+    if (strictNativeReceipts) {
+      bool uuid(Object? value) =>
+          value is String && value.trim() == value && isUuid(value);
+      final timestamp = raw['createdAt'];
+      final metadata = raw['metadata'];
+      if (!uuid(raw['id']) ||
+          !uuid(raw['conversationId']) ||
+          !const {'user', 'assistant', 'system'}.contains(raw['kind']) ||
+          raw['content'] is! String ||
+          timestamp is! String ||
+          !RegExp(
+            r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$',
+          ).hasMatch(timestamp) ||
+          DateTime.tryParse(timestamp) == null ||
+          metadata is! Map<String, dynamic> ||
+          (raw['kind'] == 'user' && !uuid(metadata['clientRequestId']))) {
+        throw const FormatException('Invalid native message receipt');
+      }
+      final wallClock = DateTime.tryParse(
+        timestamp.replaceFirst(RegExp(r'(Z|[+-]\d{2}:\d{2})$'), ''),
+      );
+      if (wallClock == null ||
+          wallClock.toIso8601String().substring(0, 19) !=
+              timestamp.substring(0, 19)) {
+        throw const FormatException('Invalid native message timestamp');
+      }
+    }
+    return ChatMessage.fromJson(raw);
+  }
+
   String _carry = '';
   final _decoded = StringBuffer();
   late final ByteConversionSink _decoder = utf8.decoder.startChunkedConversion(
@@ -123,12 +163,23 @@ class ChatNdjsonStreamParser {
       case 'message':
         final message = decoded['message'];
         if (message is Map<String, dynamic>) {
-          return ChatStreamMessageEvent(ChatMessage.fromJson(message));
+          return ChatStreamMessageEvent(decodeMessage(message));
         }
+        if (strictNativeReceipts) decodeMessage(message);
         return null;
       case 'messages':
         final messages = decoded['messages'];
-        if (messages is! List) return const ChatStreamMessagesEvent([]);
+        if (messages is! List) {
+          if (strictNativeReceipts) {
+            throw const FormatException('Invalid native message batch');
+          }
+          return const ChatStreamMessagesEvent([]);
+        }
+        if (strictNativeReceipts) {
+          return ChatStreamMessagesEvent(
+            messages.map(decodeMessage).toList(growable: false),
+          );
+        }
         return ChatStreamMessagesEvent(
           messages
               .whereType<Map<String, dynamic>>()

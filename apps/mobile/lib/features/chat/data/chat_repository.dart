@@ -13,8 +13,10 @@ import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
+import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 part 'chat_repository_panels.dart';
@@ -24,13 +26,16 @@ class ChatRepository {
     ApiClient? apiClient,
     http.Client? httpClient,
     bool ownsApiClient = false,
+    OfflineMutationQueue? mutationQueue,
   }) : _apiClient = apiClient ?? ApiClient(),
        _httpClient = httpClient ?? http.Client(),
-       _ownsApiClient = ownsApiClient || apiClient == null;
+       _ownsApiClient = ownsApiClient || apiClient == null,
+       _messageMutationQueue = mutationQueue ?? OfflineMutationQueue.instance;
 
   final ApiClient _apiClient;
   final http.Client _httpClient;
   final bool _ownsApiClient;
+  final OfflineMutationQueue _messageMutationQueue;
 
   Future<Map<String, dynamic>> _read(
     String wsId,
@@ -125,6 +130,48 @@ class ChatRepository {
     );
   }
 
+  /// Assistant creation requires an HTTP acknowledgement, not an offline row.
+  /// A failed or unknown request is never queued or automatically replayed.
+  Future<AcknowledgedChatConversation> createAcknowledgedConversation(
+    String wsId, {
+    required String title,
+    required String modelId,
+    String? actorId,
+    bool Function()? isCurrent,
+    ChatInitialAiSettings? initialSettings,
+  }) async {
+    final payload = <String, dynamic>{
+      'type': 'ai',
+      'title': title,
+      'aiEnabled': true,
+      'autoReply': true,
+      'modelId': modelId,
+      if (initialSettings != null)
+        'initialAiSettings': initialSettings.toJson(),
+    };
+    if (initialSettings != null &&
+        (actorId == null ||
+            isCurrent == null ||
+            modelId != initialSettings.modelId)) {
+      throw const FormatException('Initial settings require bound creation');
+    }
+    final path = '/api/v1/workspaces/$wsId/chat/conversations';
+    final response = actorId != null && isCurrent != null
+        ? await _apiClient.postJsonAcknowledged(
+            path,
+            payload,
+            actorId: actorId,
+            isCurrent: isCurrent,
+          )
+        : await _apiClient.postJson(path, payload);
+    return AcknowledgedChatConversation.fromResponse(
+      response,
+      wsId: wsId,
+      initialSettings: initialSettings,
+      actorId: actorId,
+    );
+  }
+
   Future<ChatConversation> updateConversation(
     String wsId,
     String conversationId, {
@@ -195,7 +242,7 @@ class ChatRepository {
       source: (response['messages'] as List<dynamic>? ?? const <dynamic>[])
           .whereType<Map<String, dynamic>>()
           .toList(growable: false),
-      pending: (await OfflineMutationQueue.instance.listPending())
+      pending: (await _messageMutationQueue.listPending())
           .where((item) => item.path == path || item.path.startsWith('$path/'))
           .toList(growable: false),
       normalizeCreate: (payload) => {
@@ -235,7 +282,9 @@ class ChatRepository {
     String? replyToMessageId,
     String? clientRequestId,
     bool miraMode = false,
+    ApiMutationAdmission? admission,
   }) async* {
+    admission?.check();
     final path = '${_conversationPath(wsId, conversationId)}/messages';
     final requestId = clientRequestId ?? newLocalMutationId();
     final localId = newLocalMutationId();
@@ -255,7 +304,8 @@ class ChatRepository {
       'conversation_id': conversationId,
       'created_at': DateTime.now().toUtc().toIso8601String(),
     });
-    final pendingUploads = await OfflineMutationQueue.instance.listPending();
+    final pendingUploads = await _messageMutationQueue.listPending();
+    admission?.check();
     if (attachments.any(
       (attachment) => pendingUploads.any(
         (record) =>
@@ -264,7 +314,8 @@ class ChatRepository {
             record.entityId == attachment.path,
       ),
     )) {
-      await OfflineMutationQueue.instance.enqueue(
+      admission?.recordDispatchPossible();
+      await _messageMutationQueue.enqueue(
         PendingMutationRecord(
           id: newLocalMutationId(),
           feature: 'chat',
@@ -282,7 +333,7 @@ class ChatRepository {
       yield const ChatStreamDoneEvent();
       return;
     }
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    final queuedOffline = await _messageMutationQueue.enqueueIfOffline(
       feature: 'chat',
       method: 'POST',
       path: path,
@@ -290,21 +341,37 @@ class ChatRepository {
       payload: payload,
       entityId: localId,
       replaySafe: kind == ChatMessageKind.user && !miraMode,
-    )) {
+      checkScope: admission?.check,
+      beforeEnqueue: admission?.recordDispatchPossible,
+    );
+    admission?.check();
+    if (queuedOffline) {
       yield ChatStreamMessageEvent(pendingMessage());
       yield const ChatStreamDoneEvent();
       return;
     }
     late final http.StreamedResponse response;
     try {
-      response = await _apiClient.sendJsonStream(
-        'POST',
-        path,
-        payload,
-        accept: 'application/x-ndjson',
-      );
+      admission?.check();
+      response = admission == null
+          ? await _apiClient.sendJsonStream(
+              'POST',
+              path,
+              payload,
+              accept: 'application/x-ndjson',
+            )
+          : await _apiClient.sendJsonStreamAcknowledged(
+              'POST',
+              path,
+              payload,
+              accept: 'application/x-ndjson',
+              admission: admission,
+            );
+      admission?.check();
     } on ApiException catch (error) {
-      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (error is ApiMutationNotDispatched) rethrow;
+      admission?.check();
+      if (!await _messageMutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'chat',
         method: 'POST',
@@ -333,18 +400,33 @@ class ChatRepository {
     if (!contentType.contains('application/x-ndjson')) {
       final body = await response.stream.bytesToString();
       final decoded = jsonDecode(body);
+      final nativeParser = ChatNdjsonStreamParser(
+        strictNativeReceipts: miraMode,
+      );
       if (decoded is Map<String, dynamic>) {
         final message = decoded['message'];
         if (message is Map<String, dynamic>) {
-          yield ChatStreamMessageEvent(ChatMessage.fromJson(message));
+          yield ChatStreamMessageEvent(nativeParser.decodeMessage(message));
         }
         final messages = decoded['messages'];
+        if (miraMode &&
+            decoded.containsKey('message') &&
+            message is! Map<String, dynamic>) {
+          nativeParser.decodeMessage(message);
+        }
+        if (miraMode && decoded.containsKey('messages') && messages is! List) {
+          throw const FormatException('Invalid native message batch');
+        }
         if (messages is List) {
           yield ChatStreamMessagesEvent(
-            messages
-                .whereType<Map<String, dynamic>>()
-                .map(ChatMessage.fromJson)
-                .toList(growable: false),
+            miraMode
+                ? messages
+                      .map(nativeParser.decodeMessage)
+                      .toList(growable: false)
+                : messages
+                      .whereType<Map<String, dynamic>>()
+                      .map(ChatMessage.fromJson)
+                      .toList(growable: false),
           );
         }
       }

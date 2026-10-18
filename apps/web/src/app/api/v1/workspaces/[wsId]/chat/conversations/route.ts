@@ -8,6 +8,12 @@ import {
   listAiChatConversations,
   listRootAiAgentDiscoveryConversations,
 } from '@/lib/chat/agent-discovery';
+import { normalizeChatTimestamp } from '@/lib/chat/chat-timestamp';
+import {
+  admitInitialAiSettings,
+  initialAiSettingsSchema,
+  validateInitialAiSettingsReceipt,
+} from '@/lib/chat/initial-ai-settings';
 import {
   type ChatConversation,
   callPrivateChatRpc,
@@ -30,12 +36,44 @@ const createConversationSchema = z.object({
   autoReply: z.boolean().optional(),
   description: z.string().trim().max(2000).nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  initialAiSettings: initialAiSettingsSchema.optional(),
   modelId: z.string().trim().max(255).nullable().optional(),
   participantUserIds: z.array(z.string().uuid()).max(50).optional(),
   systemPrompt: z.string().trim().max(10000).nullable().optional(),
   title: z.string().trim().max(255).nullable().optional(),
   type: z.enum(['direct', 'group', 'channel', 'ai']).default('channel'),
 });
+
+const createdConversationReceiptSchema = z
+  .object({
+    id: z.uuid(),
+    wsId: z.uuid(),
+    type: z.enum(['direct', 'group', 'channel', 'ai']),
+    createdAt: z.preprocess(normalizeChatTimestamp, z.iso.datetime()),
+    createdBy: z.uuid().nullable(),
+    members: z.array(
+      z
+        .object({
+          archivedAt: z.string().nullable(),
+          conversationId: z.uuid(),
+          id: z.uuid(),
+          joinedAt: z.string(),
+          lastReadAt: z.string().nullable(),
+          mutedAt: z.string().nullable(),
+          pinnedAt: z.string().nullable(),
+          role: z.enum(['admin', 'assistant', 'member', 'owner']),
+          user: z.object({
+            avatarUrl: z.string().nullable(),
+            displayName: z.string(),
+            handle: z.string().nullable(),
+            id: z.uuid(),
+          }),
+          userId: z.uuid(),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
 
 async function listNativeChatConversations({
   actorUserId,
@@ -342,7 +380,10 @@ export const POST = withSessionAuth<RouteParams>(
       payload = await request.json();
     } catch {
       return NextResponse.json(
-        { message: 'Invalid request body' },
+        {
+          code: 'chat_create_invalid_request',
+          message: 'Invalid request body',
+        },
         { status: 400 }
       );
     }
@@ -350,29 +391,90 @@ export const POST = withSessionAuth<RouteParams>(
     const parsed = createConversationSchema.safeParse(payload);
     if (!parsed.success) {
       return NextResponse.json(
-        { message: 'Invalid request body', errors: parsed.error.issues },
+        {
+          code: 'chat_create_invalid_request',
+          message: 'Invalid request body',
+          errors: parsed.error.issues,
+        },
         { status: 400 }
       );
     }
 
+    if (
+      parsed.data.initialAiSettings &&
+      (parsed.data.type !== 'ai' ||
+        (parsed.data.modelId != null &&
+          parsed.data.modelId !== parsed.data.initialAiSettings.modelId))
+    ) {
+      return NextResponse.json(
+        {
+          code: 'chat_create_invalid_request',
+          message: 'Invalid initial AI settings',
+        },
+        { status: 400 }
+      );
+    }
     try {
-      const conversation = await callPrivateChatRpc<ChatConversation>(
+      const input = parsed.data;
+      if (input.initialAiSettings) {
+        const admission = await admitInitialAiSettings({
+          actorUserId: auth.user.id,
+          input: input.initialAiSettings,
+          wsId: context.context.normalizedWsId,
+        });
+        if (!admission.ok)
+          return NextResponse.json(
+            { message: admission.message },
+            { status: admission.status }
+          );
+        input.initialAiSettings = admission.settings;
+        input.modelId = admission.settings.modelId;
+      }
+      const rawConversation = await callPrivateChatRpc<unknown>(
         'chat_create_conversation',
         {
           p_actor_user_id: auth.user.id,
-          p_input: parsed.data,
+          p_input: input,
           p_ws_id: context.context.normalizedWsId,
         }
       );
 
-      await publishChatRealtimeEvent({
-        actorUserId: auth.user.id,
-        audience: getChatRealtimeAudience(conversation),
-        conversation,
-        conversationId: conversation.id,
-        type: 'conversation.created',
-        wsId: context.context.normalizedWsId,
-      });
+      const conversation =
+        createdConversationReceiptSchema.parse(rawConversation);
+      if (
+        conversation.type !== parsed.data.type ||
+        (['ai', 'channel'].includes(conversation.type) &&
+          conversation.wsId !== context.context.normalizedWsId)
+      ) {
+        throw new Error('Invalid created conversation receipt');
+      }
+      if (input.initialAiSettings) {
+        if (conversation.createdBy !== auth.user.id)
+          throw new Error('Invalid initial settings creator');
+        validateInitialAiSettingsReceipt({
+          actorUserId: auth.user.id,
+          conversationId: conversation.id,
+          raw: conversation.initialAiSettings,
+          requested: input.initialAiSettings,
+          wsId: context.context.normalizedWsId,
+        });
+      }
+      try {
+        await publishChatRealtimeEvent({
+          actorUserId: auth.user.id,
+          audience: getChatRealtimeAudience(conversation),
+          conversation,
+          conversationId: conversation.id,
+          type: 'conversation.created',
+          wsId: context.context.normalizedWsId,
+        });
+      } catch {
+        // The private RPC already committed. Supplemental publication cannot
+        // turn its validated receipt into an unknown creation outcome.
+        console.warn('Created chat conversation but realtime publish failed', {
+          conversationId: conversation.id,
+        });
+      }
 
       return NextResponse.json({ conversation }, { status: 201 });
     } catch (error) {

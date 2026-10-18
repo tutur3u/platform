@@ -52,7 +52,9 @@ void main() {
     workspaceChanges = [];
     immersiveChanges = [];
     repository = ToolReceiptRepository();
-    final preferences = AssistantPreferences(currentUserId: () => 'actor-a');
+    final preferences = AssistantPreferences(
+      currentUserId: () => '33333333-3333-4333-8333-333333333333',
+    );
     shell = AssistantShellCubit(
       repository: repository,
       preferences: preferences,
@@ -67,7 +69,7 @@ void main() {
       onImmersiveModeChanged: immersiveChanges.add,
       onChatRestored: (_) async {},
     );
-    await chat.loadWorkspace('synthetic-ws');
+    await chat.loadWorkspace('22222222-2222-4222-8222-222222222222');
   });
   tearDown(() async {
     await chat.close();
@@ -77,13 +79,14 @@ void main() {
   Future<void> start() async {
     final capturedEpoch = epoch;
     await chat.submit(
-      wsId: 'synthetic-ws',
+      wsId: '22222222-2222-4222-8222-222222222222',
       message: 'Synthetic rename',
       modelId: 'model',
       thinkingMode: AssistantThinkingMode.thinking,
       creditSource: AssistantCreditSource.workspace,
-      workspaceContextId: 'synthetic-ws',
+      workspaceContextId: '22222222-2222-4222-8222-222222222222',
       timezone: 'UTC',
+      creditWsId: ToolReceiptRepository.nativeWorkspaceId,
       isCurrent: () => capturedEpoch == epoch,
     );
     await repository.started.future.timeout(const Duration(seconds: 2));
@@ -92,13 +95,19 @@ void main() {
   Future<void> finish() async {
     final settled = chat.stream.firstWhere(
       (state) =>
-          state.messages.lastOrNull?.id == 'saved-reply' &&
+          state.messages.lastOrNull?.id ==
+              '33333333-3333-4333-'
+                  '8333-333333333333' &&
           state.status == AssistantChatStatus.idle,
     );
     repository.done();
     await settled.timeout(const Duration(seconds: 2));
     expect(chat.state.error, isNull);
-    expect(chat.state.messages.last.id, 'saved-reply');
+    expect(
+      chat.state.messages.last.id,
+      '33333333-3333-4333-'
+      '8333-333333333333',
+    );
   }
 
   test(
@@ -177,7 +186,7 @@ void main() {
     'restored successful calls neither replay nor admit an unmatched call',
     () async {
       repository.restored = const AssistantRestoredChat(
-        chat: AssistantChatRecord(id: 'chat'),
+        chat: AssistantChatRecord(id: '11111111-1111-4111-8111-111111111111'),
         messages: [
           AssistantMessage(
             id: 'historical-reply',
@@ -196,9 +205,14 @@ void main() {
         ],
         attachmentsByMessageId: {},
       );
-      final preferences = AssistantPreferences(currentUserId: () => 'actor-a');
-      await preferences.saveChatId('synthetic-ws', 'chat');
-      await chat.loadWorkspace('synthetic-ws');
+      final preferences = AssistantPreferences(
+        currentUserId: () => '33333333-3333-4333-8333-333333333333',
+      );
+      await preferences.saveChatId(
+        '22222222-2222-4222-8222-222222222222',
+        '11111111-1111-4111-8111-111111111111',
+      );
+      await chat.loadWorkspace('22222222-2222-4222-8222-222222222222');
       expect(repository.soulReads, 0);
       await start();
       repository.output();
@@ -208,6 +222,7 @@ void main() {
   );
   test('actor ABA before tool receipt prevents refresh admission', () async {
     await start();
+    await repository.bodySubscribed.future.timeout(const Duration(seconds: 2));
     epoch += 2;
     repository
       ..input()
@@ -279,8 +294,8 @@ void main() {
       if (departure == 'actor') {
         epoch += 2;
       } else {
-        await chat.loadWorkspace('other-ws');
-        await chat.loadWorkspace('synthetic-ws');
+        await chat.loadWorkspace('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+        await chat.loadWorkspace('22222222-2222-4222-8222-222222222222');
         // Keep actor epoch unchanged: only the workspace-version guard rejects.
       }
       repository.heldSoul!.completeError(StateError('Synthetic late failure'));

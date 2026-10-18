@@ -396,3 +396,76 @@ describe('workspace chat conversations route', () => {
     );
   });
 });
+
+const durableWsId = '11111111-1111-4111-8111-111111111111';
+const durableConversation = {
+  ...virtualAgentConversation(false),
+  id: '22222222-2222-4222-8222-222222222222',
+  wsId: durableWsId,
+  metadata: {},
+};
+async function callPost() {
+  const { POST } = await import('./route');
+  return POST(
+    new Request(
+      `http://localhost/api/v1/workspaces/${durableWsId}/chat/conversations`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'ai',
+          title: 'Synthetic persistence control',
+        }),
+      }
+    ) as never,
+    { params: Promise.resolve({ wsId: durableWsId }) }
+  );
+}
+describe('durable conversation creation', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockRouteContext(durableWsId);
+    mocks.callPrivateChatRpc.mockResolvedValue(durableConversation);
+  });
+  it('retains a committed receipt when supplemental realtime fails', async () => {
+    mocks.publishChatRealtimeEvent.mockRejectedValue(
+      new Error('synthetic publication failure')
+    );
+    const response = await callPost();
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({
+      conversation: durableConversation,
+    });
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledTimes(1);
+  });
+  it('returns the normal durable receipt', async () => {
+    expect((await callPost()).status).toBe(201);
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledTimes(1);
+  });
+  it('does not turn RPC failure into acknowledged creation', async () => {
+    mocks.callPrivateChatRpc.mockRejectedValue(
+      new Error('synthetic RPC failure')
+    );
+    expect((await callPost()).status).toBe(500);
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+  });
+  it.each([401, 403])('retains authorization denial %s', async (status) => {
+    mocks.resolveChatRouteContext.mockResolvedValue({
+      ok: false,
+      response: Response.json({}, { status }),
+    });
+    expect((await callPost()).status).toBe(status);
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
+  });
+  it.each([
+    null,
+    {},
+    { ...durableConversation, id: '' },
+    { ...durableConversation, wsId: ROOT_WORKSPACE_ID },
+    { ...durableConversation, type: 'channel' },
+  ])('rejects malformed or foreign committed receipts', async (receipt) => {
+    mocks.callPrivateChatRpc.mockResolvedValue(receipt);
+    expect((await callPost()).status).toBe(500);
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+  });
+});

@@ -62,6 +62,7 @@ class _Queue extends Fake implements OfflineMutationQueue {
     bool replaySafe = false,
     String? expectedUserId,
     void Function()? checkScope,
+    void Function()? beforeEnqueue,
   }) async {
     checkScope?.call();
     return false;

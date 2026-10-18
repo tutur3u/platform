@@ -20221,6 +20221,72 @@ abstract class AppLocalizations {
   /// **'Discard preview'**
   String get notesLocalAiDiscard;
 
+  /// No description provided for @assistantNewChatConfirmationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your chat history'**
+  String get assistantNewChatConfirmationTitle;
+
+  /// No description provided for @assistantNewChatConfirmationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The earlier conversation may already have been saved, but this app could not confirm it. Check your chat history before starting a new chat. Starting a new chat does not retry the earlier request and may create a separate conversation.'**
+  String get assistantNewChatConfirmationDescription;
+
+  /// No description provided for @assistantNewChatInspectHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Check history'**
+  String get assistantNewChatInspectHistory;
+
+  /// No description provided for @assistantNewChatConfirmCreation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new chat'**
+  String get assistantNewChatConfirmCreation;
+
+  /// No description provided for @assistantNewChatResetDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'A new chat was not started. Your draft is retained. Check your chat history before choosing another action.'**
+  String get assistantNewChatResetDenied;
+
+  /// No description provided for @assistantNewChatResetUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'The reset could not be confirmed. Your draft is retained. Check your chat history; the app will not retry automatically.'**
+  String get assistantNewChatResetUncertain;
+
+  /// No description provided for @assistantNewChatResetStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The conversation or draft changed. Your draft is retained. Check your chat history before starting another chat.'**
+  String get assistantNewChatResetStale;
+
+  /// No description provided for @assistantNewChatResetCleanupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The new chat reset was saved, but finishing this screen failed. Check your chat history; the reset will not be retried automatically.'**
+  String get assistantNewChatResetCleanupFailed;
+
+  /// No description provided for @assistantNewChatResetCommittedStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The reset was saved for the earlier context, but this screen changed. Your draft is retained. Check your chat history; the app will not retry automatically.'**
+  String get assistantNewChatResetCommittedStale;
+
+  /// No description provided for @assistantSettingsSelectionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot change these chat settings. Your previous settings and draft are retained.'**
+  String get assistantSettingsSelectionDenied;
+
+  /// No description provided for @assistantSettingsSelectionUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat settings could not be confirmed. Your draft is retained. Check the conversation settings before choosing again.'**
+  String get assistantSettingsSelectionUnconfirmed;
+
   /// No description provided for @assistantExpandPrompt.
   ///
   /// In en, this message translates to:

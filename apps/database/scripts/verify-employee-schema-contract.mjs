@@ -5,6 +5,15 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  chatQualificationReceipt,
+  selectChatInitialSettings,
+  selectChatProcessDiagnostic,
+} from './chat-initial-settings-qualification.mjs';
+import {
+  createChatBinding,
+  runChatInitialSettingsBridge,
+} from './chat-initial-settings-runner.mjs';
+import {
   assertQualifiedHttp,
   httpQualificationReceipt,
   selectHttpRuntime,
@@ -49,6 +58,32 @@ import {
 } from './run-supabase-isolated.js';
 
 const root = process.cwd();
+const chatInitialSettings = selectChatInitialSettings(
+  process.env.EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS,
+  Object.fromEntries(
+    [
+      'JOURNAL',
+      'PERSONAL_JOURNAL',
+      'HTTP',
+      'WEB_SESSION',
+      'RESTORE',
+      'FEEDBACK_CAUSAL',
+      'FEEDBACK',
+      'ADDRESS_MIGRATION',
+      'STRUCTURED_PROVENANCE',
+    ].map((name) => [name, process.env[`EMPLOYEE_SCHEMA_INCLUDE_${name}`]])
+  )
+);
+const diagnoseChatProcess = selectChatProcessDiagnostic(
+  process.env.EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS,
+  chatInitialSettings
+);
+const chatControlRoot = fileURLToPath(new URL('../../../', import.meta.url));
+const chatBinding = chatInitialSettings
+  ? createChatBinding(root, chatControlRoot)
+  : null;
+const chatState = {};
+
 const journal = process.env.EMPLOYEE_SCHEMA_INCLUDE_JOURNAL === 'true';
 const personalJournal =
   process.env.EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL === 'true';
@@ -88,7 +123,8 @@ const selectedPackets = selectSchemaPackets(
   journal,
   personalJournal,
   addressMigration,
-  feedback
+  feedback,
+  chatInitialSettings
 );
 const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
   foundationFailureDiagnostic(
@@ -98,7 +134,8 @@ const schemaFailureDiagnostic = (phase, ordinal, result = {}) =>
     journal,
     personalJournal,
     addressMigration,
-    feedback
+    feedback,
+    chatInitialSettings
   );
 const sourceSha = exactSourceSha(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
 if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
@@ -390,6 +427,21 @@ const runner = async (command, args, cwd) => {
           throw new Error('Employee packet TAP contract failed');
         }
       }
+      if (chatInitialSettings) {
+        currentPhase = 'chat-bridge';
+        packetOrdinal = 0;
+        await runChatInitialSettingsBridge({
+          root,
+          receiptDirectory,
+          binding: chatBinding,
+          diagnoseChatProcess,
+          runSQL: causalRunSQL,
+          state: chatState,
+        });
+        const after = createChatBinding(root, chatControlRoot);
+        if (JSON.stringify(after) !== JSON.stringify(chatBinding))
+          throw new Error('Chat source/control changed during bridge');
+      }
       if (feedbackCausal) {
         currentPhase = 'feedback-causal';
         packetOrdinal = 0;
@@ -543,6 +595,14 @@ try {
   failureDiagnostic ??= schemaFailureDiagnostic(currentPhase, packetOrdinal);
   lifecycleCode = 1;
 }
+const chatQualification = chatInitialSettings
+  ? chatQualificationReceipt({
+      binding: chatBinding,
+      ...chatState,
+      databaseCleanup: cleanupSucceeded,
+      lifecycleCode,
+    })
+  : null;
 const receipt = {
   ...schemaReceipt({
     sourceSha,
@@ -553,6 +613,8 @@ const receipt = {
     personalJournal,
     addressMigration,
     feedback,
+    chatInitialSettings,
+    chatInitialSettingsQualified: chatQualification?.qualified === true,
   }),
   fixtureHashes,
   generatedTypesSha256,
@@ -575,6 +637,10 @@ const receipt = {
   webSessionQualification,
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
+if (chatInitialSettings) {
+  receipt.chatInitialSettingsQualification = chatQualification;
+  receipt.chatInitialSettingsQualified = receipt.schemaQualified;
+}
 if (feedbackCausal)
   receipt.feedbackCausal = feedbackCausalReceipt({
     state: causalState,

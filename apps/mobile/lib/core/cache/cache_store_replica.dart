@@ -437,12 +437,20 @@ extension CacheStoreReplica on CacheStore {
   }
 
   @visibleForTesting
-  Future<void> closeForTesting() async {
+  Future<void> closeForTesting({void Function(String)? onStage}) async {
     if (!_initialized) return;
+    onStage?.call('store-migration-before');
     await _replicaMigration;
+    onStage?.call('store-migration-after');
+    onStage?.call('store-resource-before');
     await _resourceBox.close();
+    onStage?.call('store-resource-after');
+    onStage?.call('store-mutation-before');
     await _mutationBox.close();
+    onStage?.call('store-mutation-after');
+    onStage?.call('store-entity-before');
     await _entityBox.close();
+    onStage?.call('store-entity-after');
     _memory.clear();
     _refreshTasks.clear();
     _resourceBytes = 0;

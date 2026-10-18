@@ -101,6 +101,7 @@ test(
     const moduleFiles = [
       'employee-web-session-process.mjs',
       'employee-web-session-build-diagnostic.mjs',
+      'chat-initial-settings-qualification.mjs',
     ];
     const { pathToFileURL } = await import('node:url');
     for (const mode of [

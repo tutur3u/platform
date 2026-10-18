@@ -51,6 +51,12 @@ can explain the result, while Save stays disabled and no analysis is replayed.
 `notes_voice_widgets_test.dart` covers the review widget itself. Both are useful,
 but the latter alone does not establish reachability.
 
+For Assistant first-turn fixtures, establish new-conversation authority through
+the real history/New conversation confirmation path. A repository mock's outer
+creation flag does not acknowledge the page adapter's persisted unknown-creation
+hold. Keep setup free of creation POSTs and preserve actor/workspace admission;
+then exercise the actual page send and authoritative creation receipt.
+
 ## Cached display data is not a fresh authorization result
 
 A read-through repository can return a previously authorized snapshot while its
@@ -120,6 +126,61 @@ closure. A new queue remains able to synchronize the current actor's resources.
 ABA, disposal before/during initialization, replacement queues, and admitted
 ordinary and inventory acknowledgments using a real scoped temporary cache.
 
+## Await owned Assistant stream cancellation
+
+Workspace retirement, explicit Stop and Cubit closure must capture and detach
+the intended current subscription and admission before awaiting any cleanup.
+Track pending cleanup per operation: joining an older reply's cancellation does
+not cancel a replacement reply. A caller joins only the operations captured at
+its entry; it must not rescan after an await and cancel a later replacement.
+Concurrent callers without a replacement still join the same pending cleanup.
+A pre-dispatch rejection can surface through the cancellation future rather than
+its detached listener. Handle only a typed definitely-not-dispatched failure
+whose admission is identical to that subscription's captured admission; retain
+unexpected failures and ambiguous dispatched outcomes. Cancellation does not
+supply a saved-USER acknowledgment or authorize a replacement request.
+
+`assistant_native_dispatch_v116_test.dart` covers held credentials across actor
+retirement and concurrent Stop calls, zero retired POSTs and a fresh next turn.
+Its public-history replacement controls hold A cleanup, restore and start B,
+then verify Stop/close owns B cleanup while the older A caller cannot cancel B
+or wait for B's later cleanup. Those cleanup ports are synthetic streams, not
+live HTTP cancellation proof.
+Selection fixtures must use uploaded attachment paths owned by the selected
+chat. `assistant_chat_creation_selection_test.dart` checks the actual outbound
+attachment tuple and saved-USER proof before clearing the retained composer.
+Native history attachments use the Chat wire response keys `storagePath`,
+`filename`, `contentType` and `sizeBytes`. Do not substitute the Assistant stored-file
+`path`/`name`/`type`/`size` shape: native restore reads `filename` and otherwise uses
+its fallback label. Keep the original filename, storage path and tuple assertions.
+These controls require actual mobile CI execution; source preparation alone is
+not a passing test result.
+
+## Keep asynchronous Assistant fixtures in their owning zone
+
+Widget callbacks run in fake async, while a fixture may use real Hive/file I/O.
+Locate the actual blocked await before changing scheduling. When real queue writes
+must progress independently of fake microtasks, capture `Zone.current` eagerly
+inside the existing `tester.runAsync` creation scope and admit those writes there.
+Keep this fixture-only and opt-in, delegating the same record, scope callback and
+real queue implementation. Preserve close/disposal waits and all persistence
+assertions; wrapping only the later close does not drain an earlier fake-owned write.
+A reduced Hive/zone control establishes a possible mechanism, not the hosted
+writer's identity or complete widget acceptance.
+
+Capture scheduling ownership before entering fake callbacks; a lazy zone initializer
+can capture the wrong zone on its first read. Awaiting an already-completed
+fake-owned Future from `runAsync` does not necessarily advance its source-zone
+continuations. A reduced cross-zone probe must attach its caller-owned completion
+bridge while the source is still pending and record explicit final completion;
+an empty exit-zero process is not proof that its awaited work finished.
+
+Actor-ABA stream controls must establish that the actual response body is subscribed
+before retiring the actor/epoch. Complete an explicit handshake inside the existing
+`onListen`, after its prior callback, and await it before the actor change. Request
+creation alone does not prove subscription. Keep the original request tuple,
+receipt/body assertions, zero forbidden effects and cleanup after retirement.
+
 ## Measure the Mira composer after layout
 
 Mira text entry grows from one to five lines. Enter inserts a newline; the side
@@ -132,9 +193,167 @@ surface border. A one-line text estimate cannot cover wrapped drafts or enlarged
 text inside the published shell slot. Keep the system safe area separate from
 an IME inset already consumed by the shell Scaffold.
 
+The page publishes its dock slot after its frame; the shell consumes that slot in
+a subsequent build. Reopening a collapsed composer through the real FAB therefore
+has separate tap, page-visibility, slot-publication and mounted-dock boundaries.
+Assert that the launcher is hit-testable, observe the public composer state, then
+observe the published composing slot before driving its consumer frame and requiring
+exactly one dock. Derive frames from those boundaries, not arbitrary delays or a
+pump-until loop. A failed boundary needs evidence, not more pumping. Preserve the
+held request, draft controller and attachments; do not reach unmounted input State.
+
 Run `assistant_composer_multiline_test.dart` and
 `assistant_composer_geometry_test.dart` under
 `apps/mobile/test/features/assistant/widgets` before `bun check:mobile`. The
 geometry regression renders the real composer in `PersistentShellDock` and
 checks multiline growth, large text, keyboard and physical safe-area variants.
 These fixtures do not establish authenticated native-device behavior.
+
+## Recover a hosted Dart formatting failure
+
+The existing Mobile Analysis job runs the configured hosted Flutter SDK after
+its app-root `flutter pub get --enforce-lockfile` dependency step. The app's lock
+and path overrides resolve vendor libraries; quality does not independently run
+pub-get inside vendor packages or their examples. Standalone vendor resolution
+can change a tracked vendor lock before formatting, invalidating preimages.
+A lock mismatch must fail dependency installation; do not restore changed locks,
+ignore dirty paths or relax capture guards. Other mobile jobs keep their own
+install/validation contracts. A failed `dart format --set-exit-if-changed lib test`
+still fails quality and prevents analysis. Its three-day `mobile-format` failure
+artifact contains only a bounded tracked-Dart patch and a digest/version receipt;
+it does not contain raw package configuration, environment or authentication data.
+No patch is committed or applied automatically, and artifact existence is not a
+format, analyzer, test or runtime pass.
+
+Before using a patch, verify its GitHub run/job and reviewed workflow identity,
+then require `producerValid=true`, an ordinary formatter exit1 with no bound
+failure, stopped owned processes and the expected source/context identities.
+The tested checkout commit may be a synthetic PR merge: compare `testedCommit`,
+`eventCommit` and the separate `prHeadCommit` with the actual run metadata rather
+than treating them as interchangeable. A missing/invalid receipt is a hold.
+Schema1 retains class/phase `captureErrors`; optional `captureErrorCodes` adds
+only exact allowlisted producer constants with their phase. Unknown exceptions
+retain class/phase only. Use a captured safe code to diagnose a failure; never
+bypass validation or infer its cause from a generic class alone.
+`preformatIdentityMatches` separates checkout identity from dirty-source evidence.
+`preformatTrackedChanges` contains only a capped count and SHA256 hashes of raw
+NUL-delimited relative tracked path bytes, never names or diffs. Match hashes
+offline against the public tested Git tree. Incomplete/invalid snapshots remain
+a hold; `countTruncated=true` means more than 256 paths and no hashes are emitted.
+
+Check patch byte length/SHA256, every changed path and full old/new blob IDs.
+Only existing tracked regular `.dart` files under `apps/mobile/lib` or
+`apps/mobile/test` are allowed. Compare each old SHA256/blob/mode with the actual
+application target before any separately authorized `git apply --check`; reject
+wrong-source, tampered, out-of-scope, new/deleted/renamed or mode-changing input.
+A matching PR number or commit title does not establish preimage equality.
+The receipt's digest is not an independent signature: retrieve it through the
+trusted exact run and verify the producer workflow/context, not only its claims.
+
+The producer bounds input to 4096 tracked Dart files / 32 MiB (2 MiB per file), changed
+paths to 256, patch to 4 MiB, receipt/output captures to 1 MiB, and the actual formatter
+to 180 seconds. Bounds or capture failures retain the original formatting failure
+and cannot qualify a patch; missing capture/upload requires another admitted
+source-bound run. Context records hashes of source/lock/analysis/package context,
+resolved analysis includes and actual tool identities, never their raw contents.
+Keep a local formatter result separate when its SDK/package context differs.
+After separately reviewed application, require clean exact-head format and
+analysis CI; retain independent compiler, behavior, SQL and delivery gates.
+
+## Prepare chat qualification declarations
+
+The opt-in chat SQL-to-Web-to-Dart qualification compiles the actual Web route
+and its transitive imports. In CI, the selected source builds the existing
+`@tuturuuu/types` and `@tuturuuu/supabase` workspace declarations before the
+unchanged explicit bridge `tsc --noEmit` step. The maintained Turbo build graph
+orders dependencies with `^build`; the chat-only step uses one worker and emits
+normal ignored `dist` outputs. Other profiles keep their existing setup.
+
+Missing public declaration artifacts are a setup failure before SQL, not SQL
+qualification. Build success still requires the full compiler gate; remaining
+type errors must be diagnosed independently. Do not replace exports with source
+aliases or declaration stubs, weaken compiler checks, or treat absent phase
+artifacts or an empty cleanup as a completed database qualification.
+
+The Web bridge selects its existing `tsconfig.chat-initial-settings.json`
+explicitly through Vite’s top-level `tsconfig` option. This keeps transforms
+under the same owning configuration as the explicit compiler, including when
+the installed source checkout sits beneath a separate control checkout. A
+missing-config transform error before test collection is a Web setup failure;
+it does not qualify SQL or either consumer. Preserve the actual route imports,
+full compiler checks, and all nine Web and nine Dart cases, and require the
+source-bound hosted qualification after correcting configuration ownership.
+
+## Web bridge process failures after passing tests
+
+A successful nine-test JSON report does not qualify a child that aborts or fails
+to stop cleanly. The bridge records the actual status, signal, timeout and group
+cleanup before enforcing its existing exit gate. Its separate process-output
+summary contains only fixed panic, assertion, memory, fatal or unknown indicators,
+per-stream byte counts and SHA256 digests, with 64-KiB tails and explicit truncation.
+Counts saturate at 1 GiB per stream; a saturation flag preserves that limit while
+streaming hashes cover the received bytes. No stdout, stderr, paths, environment,
+SQL payloads or arbitrary exception text are retained. Existing build diagnostics
+keep their prior category/code/path projection.
+
+The bridge validates the summary before accepting a successful Web phase. Missing
+or malformed summary cannot qualify. Fixed indicators are evidence hints, not
+causal attribution; an unknown signal remains unknown without further evidence.
+Preserve source/control/run binding, all exit/cleanup gates and the independent
+SQL, Web and Dart phases. Do not substitute a passing report for exit zero, change
+runtimes or IPC, or retry qualification blindly. Require reviewed source and a
+separately admitted exact-source hosted attempt for actual process evidence.
+
+
+## Opt in to a chat process comparison without qualifying a retry
+
+`diagnose_chat_process` defaults to false and is accepted only with standalone
+`include_chat_initial_settings=true`, with all other optional profiles and
+structured provenance false. It does not change the authoritative Bunx attempt.
+Only a stopped, non-timeout original SIGABRT with nine valid passing Web controls,
+matching actual process identities and the unchanged SQL-produced envelope may
+launch one sequential direct setup-Node24 comparison of the locked source Vitest
+entry. Both arms retain the same config, controls, one-worker policy, owned
+process-group cleanup and 120-second bound. They use separate report/result and
+identity artifacts, with no second SQL producer or database lifecycle.
+
+Config and fixture code record actual runtime versions, executable and Vitest-bin
+digests, actual per-role entry digests, bounded process ancestry and only
+NODE_OPTIONS presence/digest. The config entry must be the source-owned Vitest
+bin, and each role’s entry digest must agree across arms. Identity
+records are owned 0600 regular nonlink files, source/control/run/envelope-bound,
+and bounded to 2 KiB each; the fixed diagnostic receipt is bounded to 8 KiB. No raw
+arguments, paths, environment, output, SQL or arbitrary errors are emitted.
+Missing or unequal identity, timeout, malformed artifacts or cleanup uncertainty
+makes the comparison invalid. Command spelling does not identify the interpreter.
+
+The original abort remains failed, with Web0/Dart0 and qualification false even
+if the comparison passes. No Dart follows the original failure, no comparison
+is a fallback or causal repair, and no further launch is allowed. A diagnostic
+result only narrows the launcher/interpreter/teardown hypothesis; the signal
+source remains unknown until separately proven. Require reviewed clean source
+and control pins and an independently admitted hosted attempt. The synthetic
+`chat-process-diagnostic.test.mjs` ports are orchestration regression coverage,
+not actual SQL, Vitest, runtime or provider qualification.
+
+
+### Diagnose the selected Dart bridge without exposing its output
+
+Only the opt-in chat bridge's single Flutter child uses the JSON test reporter and
+bounded event projection. The runner attaches its summary before checking the
+actual exit, including a failed exit. Native stream byte counts, hashes and
+truncation remain available. Other process callers retain their existing behavior.
+The projection retains the nine source-owned case labels, fixed assertion,
+non-assertion, compiler-diagnostic or load-diagnostic classifications only when
+observed in an error event, and bounded error/stack byte counts and digests. Raw
+errors, stacks, unknown test names, paths, prints, environment and SQL are omitted.
+A compiler/load label describes observed text, not a proven causal phase.
+
+Each stream tail is limited to 64 KiB; the projection accepts at most 256 events,
+32 test IDs, 4 suite IDs, 4 error digests and 8 KiB of serialized diagnostics. Unknown,
+malformed, overflow, truncated, late/interleaved and incomplete events retain
+explicit evidence limits. Missing/reordered events do not establish setup or
+teardown attribution. A passing JSON stream never replaces child exit zero,
+source/control/run/envelope binding, the actual exact-nine result or cleanup.
+Diagnostic capture is evidence repair; only a separately admitted exact-source
+hosted attempt can establish the Dart failure or strict 197/9/9 qualification.

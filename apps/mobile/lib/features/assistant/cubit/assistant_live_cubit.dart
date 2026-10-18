@@ -34,6 +34,14 @@ part 'assistant_live_tools.dart';
 part 'assistant_live_persistence.dart';
 part 'assistant_live_disposal.dart';
 
+/// Session-handle cleanup failed after local disconnect teardown completed.
+final class AssistantLiveSessionCleanupException implements Exception {
+  const AssistantLiveSessionCleanupException();
+
+  @override
+  String toString() => 'Assistant live session cleanup failed.';
+}
+
 class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   AssistantLiveCubit({
     required AssistantLiveRepository repository,
@@ -328,6 +336,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   Future<void> disconnect({
     bool clearSession = false,
     bool finishTurn = false,
+    bool reportSessionCleanupFailure = false,
   }) async {
     final endingVersion = _requestVersion;
     if (finishTurn) {
@@ -371,6 +380,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     if (finishTurn) await _pendingPersistence;
     if (superseded()) return;
 
+    AssistantLiveSessionCleanupException? sessionCleanupFailure;
     final wsId = state.workspaceId;
     final scopeKey = state.scopeKey;
     if (clearSession && wsId != null && scopeKey != null) {
@@ -385,7 +395,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         }
         if (superseded()) return;
       } on Exception {
-        // Ignore cleanup failures on manual disconnect.
+        if (reportSessionCleanupFailure) {
+          sessionCleanupFailure = const AssistantLiveSessionCleanupException();
+        }
       }
     }
 
@@ -402,6 +414,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         clearError: !finishTurn,
       ),
     );
+    if (sessionCleanupFailure != null) throw sessionCleanupFailure;
   }
 
   Future<void> startNewConversation(String wsId) async {

@@ -312,6 +312,25 @@ type RequestScopedPersistenceError = {
   message: string;
 };
 
+export function originalUserText(messages: readonly UIMessage[]): string {
+  return (messages.findLast((message) => message.role === 'user')?.parts ?? [])
+    .filter((part) => part.type === 'text')
+    .map((part) => part.text)
+    .join('\n\n')
+    .trim();
+}
+
+function requestTextMatches(metadata: unknown, text: string | undefined) {
+  if (
+    text === undefined ||
+    typeof metadata !== 'object' ||
+    metadata === null ||
+    !('requestText' in metadata)
+  )
+    return true;
+  return metadata.requestText === text;
+}
+
 export async function persistRequestScopedUserMessage({
   chatId,
   content,
@@ -319,22 +338,36 @@ export async function persistRequestScopedUserMessage({
   findExistingMessage,
   insertMessage,
   requestId,
+  originalText,
   source,
 }: {
   chatId: string;
   content: string;
   creatorId: string;
   findExistingMessage: () => PromiseLike<{
-    data: { content: string | null; creator_id: string | null } | null;
+    data: {
+      content: string | null;
+      creator_id: string | null;
+      metadata?: unknown;
+    } | null;
     error: RequestScopedPersistenceError | null;
   }>;
-  insertMessage: () => PromiseLike<{
+  insertMessage: (metadata: {
+    requestId: string;
+    source: 'Mira' | 'Rewise';
+    requestText?: string;
+  }) => PromiseLike<{
     error: RequestScopedPersistenceError | null;
   }>;
   requestId: string;
+  originalText?: string;
   source: 'Mira' | 'Rewise';
 }): Promise<{ error: RequestScopedPersistenceError | null }> {
-  const inserted = await insertMessage();
+  const inserted = await insertMessage({
+    requestId,
+    source,
+    ...(originalText !== undefined ? { requestText: originalText } : {}),
+  });
   if (!inserted.error) return inserted;
   if (inserted.error.code !== '23505') return inserted;
 
@@ -342,7 +375,8 @@ export async function persistRequestScopedUserMessage({
   if (existing.error) return { error: existing.error };
   if (
     existing.data?.content === content &&
-    existing.data.creator_id === creatorId
+    existing.data.creator_id === creatorId &&
+    requestTextMatches(existing.data.metadata, originalText)
   ) {
     return { error: null };
   }

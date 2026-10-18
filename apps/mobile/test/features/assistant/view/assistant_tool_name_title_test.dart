@@ -52,19 +52,31 @@ void main() {
           addTearDown(() => h.dispose(tester));
           await h.mount(tester, actualNavbar: true, locale: Locale(locale));
           final chat = h.pageContext(tester).read<AssistantChatCubit>();
+          // This control exercises tool/title receipts on a known conversation.
+          repository.restored = const AssistantRestoredChat(
+            chat: AssistantChatRecord(id: ToolReceiptRepository.nativeChatId),
+            messages: [],
+            attachmentsByMessageId: {},
+          );
+          await chat.openChatById(
+            ToolReceiptRepository.nativeWorkspaceId,
+            ToolReceiptRepository.nativeChatId,
+          );
           await tester.runAsync(() async {
             final completed = chat.stream.firstWhere(
               (state) =>
-                  state.messages.lastOrNull?.id == 'saved-reply' &&
+                  state.messages.lastOrNull?.id ==
+                      '33333333-3333-4333-'
+                          '8333-333333333333' &&
                   state.status == AssistantChatStatus.idle,
             );
             await chat.submit(
-              wsId: 'synthetic-ws',
+              wsId: '22222222-2222-4222-8222-222222222222',
               message: 'Synthetic rename request',
               modelId: 'model',
               thinkingMode: AssistantThinkingMode.thinking,
               creditSource: AssistantCreditSource.workspace,
-              workspaceContextId: 'synthetic-ws',
+              workspaceContextId: '22222222-2222-4222-8222-222222222222',
               timezone: 'UTC',
             );
             await completed.timeout(const Duration(seconds: 2));
@@ -78,7 +90,11 @@ void main() {
             ),
             findsOneWidget,
           );
-          expect(chat.state.messages.last.id, 'saved-reply');
+          expect(
+            chat.state.messages.last.id,
+            '33333333-3333-4333-'
+            '8333-333333333333',
+          );
           expect(chat.state.error, isNull);
           if (fails) {
             expect(
