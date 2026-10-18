@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.41.1](https://github.com/tutur3u/platform/compare/database-v1.41.0...database-v1.41.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **ci:** isolate chat profile tests and retain formatter output ([3af3ae8](https://github.com/tutur3u/platform/commit/3af3ae813cf401fa5cc506e11befb7eb388d942a))
+* **ci:** preserve mobile format evidence and cleanup errors ([c717b89](https://github.com/tutur3u/platform/commit/c717b89ccae9f13daba4d24eea64ae001a3ef8bc))
+* **ci:** retain bounded Dart bridge failure evidence ([aedcd02](https://github.com/tutur3u/platform/commit/aedcd0287ba12783861f42d4dead95a868122fda))
+* **database:** add opt-in chat settings qualification ([48e7c9a](https://github.com/tutur3u/platform/commit/48e7c9a75a04133cdd7a1b4801320ac9618840b8))
+* **mobile:** guard assistant persistence and mutation receipts ([58969ee](https://github.com/tutur3u/platform/commit/58969eef9d89bbc20d27510030dbd35f00927e9b))
+* **mobile:** preserve Assistant conversation persistence ([#6277](https://github.com/tutur3u/platform/issues/6277)) ([a0ac863](https://github.com/tutur3u/platform/commit/a0ac863894cb3918234351d38019d7e15875c358))
+* own assistant streams and launch chat qualification with Node ([813a871](https://github.com/tutur3u/platform/commit/813a87100f3cf3ce823b60375882ff57bce7c11f))
+* preserve assistant cancellation ownership and isolate schema fixtures ([577f48c](https://github.com/tutur3u/platform/commit/577f48c45f02db141121cddde0316bde5360e251))
+
 ## [1.41.0](https://github.com/tutur3u/platform/compare/database-v1.40.0...database-v1.41.0) (2026-10-17)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.68.2](https://github.com/tutur3u/platform/compare/platform-v0.68.1...platform-v0.68.2) (2026-10-18)
+
+
+### Bug Fixes
+
+* **mobile:** preserve Assistant conversation persistence ([#6277](https://github.com/tutur3u/platform/issues/6277)) ([a0ac863](https://github.com/tutur3u/platform/commit/a0ac863894cb3918234351d38019d7e15875c358))
+
 ## [0.68.1](https://github.com/tutur3u/platform/compare/platform-v0.68.0...platform-v0.68.1) (2026-10-18)
 
 
