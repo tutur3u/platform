@@ -103,9 +103,7 @@ class NativeDispatchPort {
       if (!connectivityEntered.isCompleted) connectivityEntered.complete();
       await connectivityRelease.future;
     }
-    return [
-      if (offline) ConnectivityResult.none else ConnectivityResult.wifi,
-    ];
+    return [if (offline) ConnectivityResult.none else ConnectivityResult.wifi];
   }
 
   Future<http.Response> handle(http.Request request) async {
