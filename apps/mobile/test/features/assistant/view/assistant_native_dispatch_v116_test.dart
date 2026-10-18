@@ -1,4 +1,3 @@
-// UNEXECUTED regression specification: dependencies/admission are held.
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

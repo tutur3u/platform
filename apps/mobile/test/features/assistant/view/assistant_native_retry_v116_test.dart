@@ -1,4 +1,3 @@
-// UNEXECUTED: this exercises actual page Retry and real native transport.
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

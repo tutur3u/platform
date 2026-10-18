@@ -51,6 +51,12 @@ can explain the result, while Save stays disabled and no analysis is replayed.
 `notes_voice_widgets_test.dart` covers the review widget itself. Both are useful,
 but the latter alone does not establish reachability.
 
+For Assistant first-turn fixtures, establish new-conversation authority through
+the real history/New conversation confirmation path. A repository mock's outer
+creation flag does not acknowledge the page adapter's persisted unknown-creation
+hold. Keep setup free of creation POSTs and preserve actor/workspace admission;
+then exercise the actual page send and authoritative creation receipt.
+
 ## Cached display data is not a fresh authorization result
 
 A read-through repository can return a previously authorized snapshot while its
@@ -143,8 +149,37 @@ live HTTP cancellation proof.
 Selection fixtures must use uploaded attachment paths owned by the selected
 chat. `assistant_chat_creation_selection_test.dart` checks the actual outbound
 attachment tuple and saved-USER proof before clearing the retained composer.
+Native history attachments use the Chat wire response keys `storagePath`,
+`filename`, `contentType` and `sizeBytes`. Do not substitute the Assistant stored-file
+`path`/`name`/`type`/`size` shape: native restore reads `filename` and otherwise uses
+its fallback label. Keep the original filename, storage path and tuple assertions.
 These controls require actual mobile CI execution; source preparation alone is
 not a passing test result.
+
+## Keep asynchronous Assistant fixtures in their owning zone
+
+Widget callbacks run in fake async, while a fixture may use real Hive/file I/O.
+Locate the actual blocked await before changing scheduling. When real queue writes
+must progress independently of fake microtasks, capture `Zone.current` eagerly
+inside the existing `tester.runAsync` creation scope and admit those writes there.
+Keep this fixture-only and opt-in, delegating the same record, scope callback and
+real queue implementation. Preserve close/disposal waits and all persistence
+assertions; wrapping only the later close does not drain an earlier fake-owned write.
+A reduced Hive/zone control establishes a possible mechanism, not the hosted
+writer's identity or complete widget acceptance.
+
+Capture scheduling ownership before entering fake callbacks; a lazy zone initializer
+can capture the wrong zone on its first read. Awaiting an already-completed
+fake-owned Future from `runAsync` does not necessarily advance its source-zone
+continuations. A reduced cross-zone probe must attach its caller-owned completion
+bridge while the source is still pending and record explicit final completion;
+an empty exit-zero process is not proof that its awaited work finished.
+
+Actor-ABA stream controls must establish that the actual response body is subscribed
+before retiring the actor/epoch. Complete an explicit handshake inside the existing
+`onListen`, after its prior callback, and await it before the actor change. Request
+creation alone does not prove subscription. Keep the original request tuple,
+receipt/body assertions, zero forbidden effects and cleanup after retirement.
 
 ## Measure the Mira composer after layout
 
@@ -157,6 +192,15 @@ for transcript padding and scroll-to-bottom clearance, including the shell
 surface border. A one-line text estimate cannot cover wrapped drafts or enlarged
 text inside the published shell slot. Keep the system safe area separate from
 an IME inset already consumed by the shell Scaffold.
+
+The page publishes its dock slot after its frame; the shell consumes that slot in
+a subsequent build. Reopening a collapsed composer through the real FAB therefore
+has separate tap, page-visibility, slot-publication and mounted-dock boundaries.
+Assert that the launcher is hit-testable, observe the public composer state, then
+observe the published composing slot before driving its consumer frame and requiring
+exactly one dock. Derive frames from those boundaries, not arbitrary delays or a
+pump-until loop. A failed boundary needs evidence, not more pumping. Preserve the
+held request, draft controller and attachments; do not reach unmounted input State.
 
 Run `assistant_composer_multiline_test.dart` and
 `assistant_composer_geometry_test.dart` under
