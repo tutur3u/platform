@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import {
   mkdirSync,
   mkdtempSync,
@@ -9,6 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import {
   assertChatBinding,
   chatCaseNames,
@@ -431,4 +433,57 @@ test('missing original proof never authorizes a comparison and cleanup failure p
   assert.equal(value.state.fixtureCleanup, false);
   assert.equal(value.producerCalls, 1);
   assert.equal(value.cleanupCalls, 1);
+});
+
+// Exercise real profile subprocess boundaries without admitting hosted setup.
+test('profile subprocess controls isolate the diagnostic dispatch environment', () => {
+  const env = { ...process.env, GITHUB_ACTIONS: 'false' };
+  for (const name of [
+    'JOURNAL',
+    'PERSONAL_JOURNAL',
+    'HTTP',
+    'WEB_SESSION',
+    'RESTORE',
+    'FEEDBACK_CAUSAL',
+    'FEEDBACK',
+    'ADDRESS_MIGRATION',
+    'STRUCTURED_PROVENANCE',
+  ])
+    env[`EMPLOYEE_SCHEMA_INCLUDE_${name}`] = 'false';
+  env.EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS = 'true';
+  env.EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS = 'true';
+  delete env.NODE_TEST_CONTEXT;
+  const names = [
+    'combined profiles reject incompatible selections before hosted database setup',
+    'runner rejects incompatible feedback profiles before hosted admission and retains the hosted guard',
+    'real runner validates causal selection before hosted setup without spoofing identity',
+  ];
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--test',
+      '--test-concurrency=1',
+      '--test-reporter=tap',
+      `--test-name-pattern=^(?:${names.join('|')})$`,
+      ...[
+        'employee-schema-workflow.test.mjs',
+        'product-feedback-schema-profile.test.mjs',
+        'product-feedback-causal-controls.test.mjs',
+      ].map((file) => fileURLToPath(new URL(file, import.meta.url))),
+    ],
+    { env, encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024 }
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.signal, null);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  for (const name of names) {
+    assert.ok(
+      result.stdout
+        .split('\n')
+        .some(
+          (line) => /^ok \d+ - /u.test(line) && line.endsWith(` - ${name}`)
+        ),
+      `Profile control did not pass: ${name}`
+    );
+  }
 });

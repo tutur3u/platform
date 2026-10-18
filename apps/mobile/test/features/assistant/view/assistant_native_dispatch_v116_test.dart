@@ -13,7 +13,8 @@ import 'assistant_native_dispatch_v116_harness.dart';
 import 'assistant_settings_repair_harness.dart';
 import 'background_reply_harness.dart';
 
-// Synthetic transport cleanup gates; public Cubit and saved-USER checks stay real.
+// Synthetic transport cleanup gates; public Cubit and saved-USER checks
+// stay real.
 class _HeldReplyCleanup extends ReplyRepository {
   _HeldReplyCleanup() {
     stream.onCancel = () {

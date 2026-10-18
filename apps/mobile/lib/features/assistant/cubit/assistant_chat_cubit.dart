@@ -650,6 +650,39 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     emit(state.copyWith(messages: updated));
   }
 
+  Future<void> _cancelReplyStream() async {
+    final cancelSubscription = _streamSubscription?.cancel;
+    final admission = _streamAdmission;
+    _streamSubscription = null;
+    _streamAdmission = null;
+    final cancellations = _streamCancellations.toList();
+    final Future<void>? operation;
+    if (cancelSubscription == null) {
+      operation = null;
+    } else {
+      Future<void> cancel() async {
+        try {
+          await cancelSubscription();
+        } on ApiMutationNotDispatched catch (error) {
+          if (admission == null ||
+              !identical(error.admission, admission) ||
+              !admission.definitelyNotDispatched) {
+            rethrow;
+          }
+        }
+      }
+
+      operation = cancel();
+      _streamCancellations.add(operation);
+      cancellations.add(operation);
+    }
+    try {
+      await Future.wait(cancellations);
+    } finally {
+      if (operation != null) _streamCancellations.remove(operation);
+    }
+  }
+
   @override
   Future<void> close() async {
     _closing = true;

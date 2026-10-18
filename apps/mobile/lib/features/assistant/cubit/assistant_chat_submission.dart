@@ -34,39 +34,6 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         (attachments.isNotEmpty || _queue.isNotEmpty);
   }
 
-  Future<void> _cancelReplyStream() async {
-    final subscription = _streamSubscription;
-    final admission = _streamAdmission;
-    _streamSubscription = null;
-    _streamAdmission = null;
-    final cancellations = _streamCancellations.toList();
-    final Future<void>? operation;
-    if (subscription == null) {
-      operation = null;
-    } else {
-      Future<void> cancel() async {
-        try {
-          await subscription.cancel();
-        } on ApiMutationNotDispatched catch (error) {
-          if (admission == null ||
-              !identical(error.admission, admission) ||
-              !admission.definitelyNotDispatched) {
-            rethrow;
-          }
-        }
-      }
-
-      operation = cancel();
-      _streamCancellations.add(operation);
-      cancellations.add(operation);
-    }
-    try {
-      await Future.wait(cancellations);
-    } finally {
-      if (operation != null) _streamCancellations.remove(operation);
-    }
-  }
-
   Future<void> _stopStreaming({required bool discardQueued}) async {
     final version = ++_toolOperationVersion;
     final queued = _queuedSubmissionRequestId;
