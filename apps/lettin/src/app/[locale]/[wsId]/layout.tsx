@@ -20,6 +20,7 @@ import { type ReactNode, Suspense } from 'react';
 import { AppUserNav } from '@/components/app-user-nav';
 import { Brand } from '@/components/brand';
 import { WorkspaceInvitation } from '@/components/workspace-invitation';
+import { traceLettinRead } from '@/server/read-diagnostics';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
 import Loading from './wiki/loading';
@@ -40,13 +41,16 @@ export default function Layout(props: LayoutProps) {
 async function WorkspaceLayout({ children, params }: LayoutProps) {
   await connection();
   const { wsId } = await params;
-  const user = await getSatelliteAppSessionUser('lettin');
+  const user = await traceLettinRead('layout session', () =>
+    getSatelliteAppSessionUser('lettin')
+  );
   if (!user) redirect('/login');
-  const workspace = await getWorkspace(wsId, { useAdmin: true, user });
+  const workspace = await traceLettinRead('layout workspace', () =>
+    getWorkspace(wsId, { useAdmin: true, user })
+  );
   if (!workspace?.joined) {
-    const invitation = await getPendingWorkspaceInvitation(
-      wsId,
-      await headers()
+    const invitation = await traceLettinRead('layout invitation', async () =>
+      getPendingWorkspaceInvitation(wsId, await headers())
     );
     if (invitation)
       return (
@@ -57,8 +61,8 @@ async function WorkspaceLayout({ children, params }: LayoutProps) {
       );
     redirect('/dashboard');
   }
-  const workspaces = await listWorkspaces(
-    withForwardedInternalApiAuth(await headers())
+  const workspaces = await traceLettinRead('layout workspaces', async () =>
+    listWorkspaces(withForwardedInternalApiAuth(await headers()))
   );
   const cookieStore = await cookies();
   const behavior = parseSidebarBehavior(cookieStore);
@@ -73,7 +77,9 @@ async function WorkspaceLayout({ children, params }: LayoutProps) {
           actorId={user.id}
           workspace={workspace}
           workspaces={workspaces}
-          links={await getNavigationLinks(workspace.id, user.id)}
+          links={await traceLettinRead('layout navigation', () =>
+            getNavigationLinks(workspace.id, user.id)
+          )}
           defaultCollapsed={getSidebarCollapsedState(cookieStore, behavior)}
           actions={
             <>
