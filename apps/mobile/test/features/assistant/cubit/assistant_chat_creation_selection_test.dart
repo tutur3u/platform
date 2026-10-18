@@ -84,6 +84,10 @@ void main() {
     test(
       'selection retires only pre-debounce typed request ($order)',
       () async {
+        final selected = order == 'rapid' ? saved : known;
+        final currentAttachment = draftAttachment.copyWith(
+          storagePath: 'chats/$selected/fixture.txt',
+        );
         await h.chat.close();
         final repository = _QueueRepository(h.api, h.actor);
         h.repository = repository;
@@ -115,7 +119,7 @@ void main() {
         }
         await h.chat.openChatById(ws, saved);
         h.chat.emit(
-          h.chat.state.copyWith(composerAttachments: const [draftAttachment]),
+          h.chat.state.copyWith(composerAttachments: [currentAttachment]),
         );
         final queued = h.chat.stream.firstWhere(
           (s) => s.queuedMessages.isNotEmpty,
@@ -126,7 +130,7 @@ void main() {
         if (order != 'elapsed') h.historyGate = gate.future;
         final opening = h.chat.openChatById(ws, known);
         expect((await old).disposition, AssistantSubmissionDisposition.stale);
-        expect(h.chat.state.composerAttachments, const [draftAttachment]);
+        expect(h.chat.state.composerAttachments, [currentAttachment]);
         expect(h.sends, isEmpty);
         if (order != 'elapsed') {
           await h.historyEntered.future;
@@ -137,14 +141,13 @@ void main() {
           gate.complete();
         }
         await opening;
-        final selected = order == 'rapid' ? saved : known;
         if (order == 'elapsed') {
           await Future<void>.delayed(const Duration(milliseconds: 300));
         }
         expect(h.chat.state.queuedMessages, isEmpty);
         expect(h.chat.state.storedChatId, selected);
         expect(h.chat.state.messages.single.parts.single.text, 'Known history');
-        expect(h.chat.state.composerAttachments, const [draftAttachment]);
+        expect(h.chat.state.composerAttachments, [currentAttachment]);
         expect(h.sends, isEmpty);
         const shell = AssistantShellState(
           selectedModel: AssistantGatewayModel(
@@ -169,11 +172,21 @@ void main() {
         expect(h.sends, hasLength(1));
         expect(h.sends.single['conversationId'], selected);
         expect(h.sends.single['content'], 'Current draft');
+        expect(h.sends.single['attachments'], [
+          {
+            'filename': 'fixture.txt',
+            'path': 'chats/$selected/fixture.txt',
+            'contentType': 'text/plain',
+            'fullPath': null,
+            'sizeBytes': 1,
+            'storageWsId': null,
+          },
+        ]);
         final user = h.chat.state.messages.singleWhere((m) => m.role == 'user');
         expect(user.clientRequestId, h.sends.single['clientRequestId']);
         expect(h.chat.state.composerAttachments, isEmpty);
-        expect(h.chat.state.attachmentsByMessageId[user.id], const [
-          draftAttachment,
+        expect(h.chat.state.attachmentsByMessageId[user.id], [
+          currentAttachment,
         ]);
         expect(
           await AssistantPreferences(

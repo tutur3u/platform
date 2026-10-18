@@ -11,7 +11,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
         workspaceVersion == _workspaceVersion &&
         _repository.currentActorId == actor;
     final preserveState = state.workspaceId == wsId && state.hasLoadedOnce;
-    await _streamSubscription?.cancel();
+    await _cancelReplyStream();
     if (!current()) return;
     _queueDebounce?.cancel();
     _queue.clear();

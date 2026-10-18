@@ -98,6 +98,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   String? _activeSubmissionRequestId;
   Timer? _queueDebounce;
   StreamSubscription<AssistantStreamEvent>? _streamSubscription;
+  ApiMutationAdmission? _streamAdmission;
+  final _streamCancellations = <Future<void>>{};
   final List<AssistantQueuedSubmission> _queue = [];
   int _workspaceVersion = 0;
   AssistantConversationSettings? _restoredSettings;
@@ -654,7 +656,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     _workspaceVersion++;
     _repository.invalidateChatCreation();
     _queueDebounce?.cancel();
-    await _streamSubscription?.cancel();
+    await _cancelReplyStream();
     await super.close();
     await Future.wait(_resetOperations.toList());
     await Future.wait(_submissionObserverCleanups.toList());

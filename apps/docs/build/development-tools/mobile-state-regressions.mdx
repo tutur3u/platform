@@ -120,6 +120,32 @@ closure. A new queue remains able to synchronize the current actor's resources.
 ABA, disposal before/during initialization, replacement queues, and admitted
 ordinary and inventory acknowledgments using a real scoped temporary cache.
 
+## Await owned Assistant stream cancellation
+
+Workspace retirement, explicit Stop and Cubit closure must capture and detach
+the intended current subscription and admission before awaiting any cleanup.
+Track pending cleanup per operation: joining an older reply's cancellation does
+not cancel a replacement reply. A caller joins only the operations captured at
+its entry; it must not rescan after an await and cancel a later replacement.
+Concurrent callers without a replacement still join the same pending cleanup.
+A pre-dispatch rejection can surface through the cancellation future rather than
+its detached listener. Handle only a typed definitely-not-dispatched failure
+whose admission is identical to that subscription's captured admission; retain
+unexpected failures and ambiguous dispatched outcomes. Cancellation does not
+supply a saved-USER acknowledgment or authorize a replacement request.
+
+`assistant_native_dispatch_v116_test.dart` covers held credentials across actor
+retirement and concurrent Stop calls, zero retired POSTs and a fresh next turn.
+Its public-history replacement controls hold A cleanup, restore and start B,
+then verify Stop/close owns B cleanup while the older A caller cannot cancel B
+or wait for B's later cleanup. Those cleanup ports are synthetic streams, not
+live HTTP cancellation proof.
+Selection fixtures must use uploaded attachment paths owned by the selected
+chat. `assistant_chat_creation_selection_test.dart` checks the actual outbound
+attachment tuple and saved-USER proof before clearing the retained composer.
+These controls require actual mobile CI execution; source preparation alone is
+not a passing test result.
+
 ## Measure the Mira composer after layout
 
 Mira text entry grows from one to five lines. Enter inserts a newline; the side

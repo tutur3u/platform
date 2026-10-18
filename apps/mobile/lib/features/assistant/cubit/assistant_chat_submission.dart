@@ -34,6 +34,39 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         (attachments.isNotEmpty || _queue.isNotEmpty);
   }
 
+  Future<void> _cancelReplyStream() async {
+    final subscription = _streamSubscription;
+    final admission = _streamAdmission;
+    _streamSubscription = null;
+    _streamAdmission = null;
+    final cancellations = _streamCancellations.toList();
+    final Future<void>? operation;
+    if (subscription == null) {
+      operation = null;
+    } else {
+      Future<void> cancel() async {
+        try {
+          await subscription.cancel();
+        } on ApiMutationNotDispatched catch (error) {
+          if (admission == null ||
+              !identical(error.admission, admission) ||
+              !admission.definitelyNotDispatched) {
+            rethrow;
+          }
+        }
+      }
+
+      operation = cancel();
+      _streamCancellations.add(operation);
+      cancellations.add(operation);
+    }
+    try {
+      await Future.wait(cancellations);
+    } finally {
+      if (operation != null) _streamCancellations.remove(operation);
+    }
+  }
+
   Future<void> _stopStreaming({required bool discardQueued}) async {
     final version = ++_toolOperationVersion;
     final queued = _queuedSubmissionRequestId;
@@ -52,9 +85,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         _unknownSubmission(request, denied: true);
       }
     }
-    final subscription = _streamSubscription;
-    _streamSubscription = null;
-    await subscription?.cancel();
+    await _cancelReplyStream();
     if (!isClosed && version == _toolOperationVersion) {
       _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
     }
@@ -492,6 +523,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       );
       nativePending?.attempts.add(admission);
       phase = OperationalPhase.assistantReply;
+      _streamAdmission = admission;
       _streamSubscription = _repository
           .streamChat(
             chatId: chatId,
@@ -584,6 +616,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
               }
               _unknownSubmission(clientRequestId);
               _streamSubscription = null;
+              _streamAdmission = null;
               _finalizeToolParts();
               if (isClosed || state.status == AssistantChatStatus.error) return;
               _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
