@@ -1094,8 +1094,8 @@ browser origin from forwarded headers. Keep origin acceptance separate from
 fresh actor/permission checks. See the Infrastructure application guide's
 "Employee POST origin boundary" and `employee-request-origin.test.ts`.
 
-- Attendance save acknowledgements must retain later draft entries and invalidate
-  the submitted scope's query. Keep draft edits separate from the server cache;
-  comparing an optimistic cache against itself can discard unsaved work. Preserve
-  complete attendance note payloads: the current RPC treats omitted notes as empty.
-  See the Contacts modules attendance decision and its deferred-save regression.
+- Attendance acknowledgements retain later drafts and invalidate the submitted scope;
+  keep drafts outside server cache and send complete notes while RPC omission clears.
+  Contacts recipient completion saves current dirty remarks with their revision;
+  omit pristine snapshots. Prove persistence with real cards/transport and remounts
+  from stored rows. See Contacts modules decisions and deferred/remount regressions.
