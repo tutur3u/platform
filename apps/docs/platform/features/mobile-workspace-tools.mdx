@@ -719,8 +719,13 @@ setting is stored in secure storage and uses the OS local authentication prompt
 with device PIN/passcode fallback allowed. When enabled, the app locks on an
 authenticated cold launch and after at least 30 seconds in the background.
 
-The locked surface uses the native splash background and logo without showing
-protected content to touch, keyboard focus, or accessibility. Recovery controls
+The locked surface centers the existing transparent logo at the generated native
+artwork size: 104 points on iOS and 80 dp on Android. Its light background is
+white and its dark background is `#09090B`, matching the native launch canvas.
+Entry stays centered. With text scaled above 1.5×, recovery moves the
+decorative logo to the top with 24 pixels
+of clearance after the system inset, keeping it above the instructions. It does
+not expose protected content to touch, keyboard focus, or accessibility. Recovery controls
 appear five seconds after entering the lock, including when authentication fails
 or remains pending; retrying does not restart that deadline. Unlocking still uses
 the OS biometric/device-passcode prompt, not a separately stored application PIN.
@@ -736,7 +741,15 @@ Regression coverage is in `app_lock_splash_timing_test.dart`,
 `app_lock_boundary_test.dart`, `app_lock_auth_lifetime_test.dart`, and
 `app_lock_review_races_test.dart`. Widget
 checks cover entry timing, compact English/Vietnamese recovery, large text and
-reduced motion; they do not prove native biometric or TestFlight behavior.
+reduced motion. `app_lock_splash_visual_test.dart` decodes native logo assets and
+compares rendered artwork bounds and canvas colors at matching viewports. Those
+source fixtures do not prove an installed launch, native biometric or TestFlight
+behavior. Android legacy and Android 12 logo inputs retain the canonical
+320-pixel RGBA artwork inside transparent 768/1152-pixel canvases. Regenerate
+Android only from `apps/mobile` with `dart run tool/generate_android_splash.dart`;
+it preserves the canonical logo and excludes iOS/web generation. Pixel tests
+verify transparent native padding and 80 dp artwork across all densities.
+Installed OS launch scaling and release artifact qualification remain separate.
 
 ### Device authenticators and trusted registrations
 

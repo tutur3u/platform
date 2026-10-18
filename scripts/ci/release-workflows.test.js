@@ -1,3 +1,6 @@
+const {
+  assertPackagePreparation,
+} = require('./sdk-qualification-workflow-controls');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -1837,23 +1840,12 @@ test('package publish workflows release from production version bumps', () => {
       prepareJob,
       /npm view "\$\{PACKAGE_NAME\}@\$\{PACKAGE_VERSION\}" version/
     );
-    assert.match(prepareJob, /npm pack --ignore-scripts --pack-destination/);
-    const prepareManifestIndex = prepareJob.indexOf(
-      `node scripts/ci/prepare-npm-package-manifest.js ${packagePath}`
-    );
-    const packIndex = prepareJob.indexOf(
-      'npm pack --ignore-scripts --pack-destination'
-    );
-
-    assert.notEqual(
-      prepareManifestIndex,
-      -1,
-      `${workflowName} must prepare npm package manifests before packing`
-    );
-    assert.ok(
-      prepareManifestIndex < packIndex,
-      `${workflowName} must rewrite workspace protocol dependencies before npm pack`
-    );
+    assertPackagePreparation({
+      workflowName,
+      packagePath,
+      prepareJob,
+      publishJob,
+    });
     assert.match(prepareJob, /actions\/upload-artifact@/);
     assert.doesNotMatch(prepareJob, /id-token:\s*write/);
     assert.match(
@@ -1910,7 +1902,10 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
         buildJob,
         /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/
       );
-      assert.match(buildJob, /--concurrency=4/);
+      assert.match(
+        buildJob,
+        packagePath === 'packages/sdk' ? /--concurrency=1/ : /--concurrency=4/
+      );
       assert.match(
         buildJob,
         new RegExp(`--filter=${packageName.replace('/', '\\/')}`)
@@ -1934,7 +1929,12 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
       /should_publish: \$\{\{ steps\.version-check\.outputs\.should_publish \}\}/
     );
     assert.match(prepareJob, new RegExp(`name: ${artifactName}`));
-    assert.match(prepareJob, /path: \$\{\{ runner\.temp \}\}\/.+\/\*\.tgz/);
+    assert.match(
+      prepareJob,
+      packagePath === 'packages/sdk'
+        ? /path: \$\{\{ runner\.temp \}\}\/tuturuuu-sdk-package\/\s/
+        : /path: \$\{\{ runner\.temp \}\}\/.+\/\*\.tgz/
+    );
     assert.match(
       prepareJob,
       /steps\.version-check\.outputs\.should_publish == 'true'/

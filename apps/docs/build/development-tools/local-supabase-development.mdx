@@ -195,6 +195,15 @@ both before starting. It copies only Git-tracked files from
 temporary config receives the isolated project id and ports; the tracked
 `supabase/config.toml` is never edited.
 
+If staging fails before startup, the runner attempts to remove only its partial
+temporary project and rethrows the original staging error. A secondary cleanup
+failure emits only `Secondary staging cleanup failure.`; cleanup or diagnostic
+errors cannot replace the original error. The secondary diagnostic excludes
+paths and exception details. Run the focused regression with
+`node --test scripts/run-supabase-isolated-staging-cleanup.test.mjs`.
+It checks error identity, retained partial files and successful scoped removal
+without starting Supabase or Docker.
+
 The isolated lifecycle starts that project, resets it from the copied exact-base
 migrations, runs the full or focused pgTAP suite, and stops that project with
 `--no-backup` in cleanup. It never invokes `supabase stop --all` or the default

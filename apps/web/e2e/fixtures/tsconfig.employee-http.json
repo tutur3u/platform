@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "paths": {
+      "@tuturuuu/internal-api": [
+        "../../../../packages/internal-api/src/index.ts"
+      ],
+      "@tuturuuu/internal-api/*": ["../../../../packages/internal-api/src/*"],
+      "@tuturuuu/types": ["../../../../packages/types/src/index.ts"],
+      "@tuturuuu/types/*": ["../../../../packages/types/src/*"],
+      "@tuturuuu/supabase/types": ["../../../../packages/supabase/src/types.ts"]
+    }
+  },
+  "include": ["employee-http-runtime.ts", "employee-restore-http-runtime.ts"],
+  "exclude": []
+}

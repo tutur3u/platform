@@ -1,9 +1,13 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const { createRequire } = require('node:module');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
-const { loadBindings, transform } = require('next/dist/build/swc');
+const lettinRequire = createRequire(
+  path.resolve(__dirname, '../../apps/lettin/package.json')
+);
+const { loadBindings, transform } = lettinRequire('next/dist/build/swc');
 
 const configPath = path.resolve(__dirname, '../../apps/lettin/next.config.ts');
 async function compile(source) {

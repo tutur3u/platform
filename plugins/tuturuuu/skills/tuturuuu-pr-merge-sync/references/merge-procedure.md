@@ -29,7 +29,19 @@ does not authorize promotion.
    rebase/sync; recheck changed heads, diffs, checks, and quiet windows.
    Use `gh stack merge <highest-verified-pr> --merge --yes`; selecting a higher
    PR includes all unmerged layers below it. The command has no head-match or
-   admin-bypass option, so re-read every selected head immediately beforehand.
+   admin-bypass option in installed v0.2.1; this is a client limitation. For an
+   explicitly user-authorized native administrator merge, prefer asynchronous
+   REST with the current bottom PR's pinned `sha` and boolean `bypass_rules: true`
+   over unstacking; bypass cannot merge higher prefixes. Normal atomic prefix
+   merging remains the default. Require actor bypass permission and preserve every
+   complete-prefix CI, review and quiet gate. Re-read membership, all head/base pins
+   and trunk immediately beforehand; `sha` protects only the target head. Verify
+   the bottom merged, then re-read remaining native membership, heads/bases, CI,
+   reviews and quiet windows before each successor. Retain the response; HTTP 200
+   may have no UUID, so inspect its body and actual PR state. GET only when a UUID
+   is present; inspect an existing operation on 409 without blind retry. Follow
+   the stack policy's “Authorized native administrator merge” procedure; no CI bypass or
+   ruleset/security changes are authorized by this path.
    Never substitute the ordinary single-PR merge/admin path for a native stack.
    Queue acceptance is not merge completion: verify every selected PR merged.
 
@@ -148,7 +160,9 @@ set status to `handoff`, and never stage the note.
 For a native stack, verify all selected layers as described in gate 0 and use
 `gh stack merge <highest-verified-pr> --merge --yes`. After completion, record
 all merged PRs and the resulting trunk SHA, inspect remaining retargeting/heads,
-and verify exact-main CI. Stack requirements cannot be bypassed.
+and verify exact-main CI. For explicitly authorized administrator merges, use
+[the native REST procedure](../../../../../apps/docs/build/development-tools/stacked-pull-requests.mdx#authorized-native-administrator-merge)
+instead; preserve the same complete-prefix verification gates.
 
 For an ordinary PR or manual chain, after the PR watcher exits cleanly:
 

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/internal-api",
-  "version": "0.50.0",
+  "version": "0.51.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -217,6 +217,11 @@
       "import": "./dist/notes.js",
       "require": "./dist/notes.js"
     },
+    "./personal-journal": {
+      "types": "./dist/personal-journal.d.ts",
+      "import": "./dist/personal-journal.js",
+      "require": "./dist/personal-journal.js"
+    },
     "./onboarding": {
       "types": "./dist/onboarding.d.ts",
       "import": "./dist/onboarding.js",
@@ -403,6 +408,7 @@
   "dependencies": {
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/types": "workspace:*"
+    "@tuturuuu/types": "workspace:*",
+    "zod": "4.6.2"
   }
 }

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/calendar-v0.34.0...calendar-v0.35.0) (2026-10-17)
+
+
+### Features
+
+* **mail:** connect Gmail and Outlook as personal email clients ([#5997](https://github.com/tutur3u/platform/issues/5997)) ([5abbe32](https://github.com/tutur3u/platform/commit/5abbe328188804006d0b3351dd110f609d4b3f9f))
+
+
+### Bug Fixes
+
+* **calendar:** render mobile descriptions and fence meeting replies ([1db8e25](https://github.com/tutur3u/platform/commit/1db8e25d2655cf12498527ecadc100aeca30f3b1)) ([#6248](https://github.com/tutur3u/platform/issues/6248)) ([377dc44](https://github.com/tutur3u/platform/commit/377dc44aecf8105ad5b42e8ef8aee916722eab95))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/calendar-v0.33.0...calendar-v0.34.0) (2026-10-09)
 
 

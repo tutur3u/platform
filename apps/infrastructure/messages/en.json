@@ -8745,8 +8745,46 @@
       "retry": "Try again",
       "search": "Search"
     },
+    "address_migration": {
+      "close": "Close",
+      "completed": "Independent reconciliation confirmed the destination address for the same user UUID. This does not verify end-to-end mail delivery.",
+      "confirm_destination": "Type the exact destination address",
+      "confirm_source": "Type the exact source address",
+      "denied": "Migration is unavailable, unauthorized or not ready. No success has been confirmed. Check mailbox approval, identity, revision and conflicting CREATE/RESTORE reservations before inspecting again.",
+      "description": "Change an existing @xwf.tuturuuu.com sign-in address to the same name at @tuturuuu.com while preserving its user UUID and data. Restore re-enables a suspended managed account at its existing address; it does not migrate the address.",
+      "destination": "Destination address",
+      "inspect": "Inspect / reconcile",
+      "mail_safeguard": "Both source and destination mailboxes must be approved, active and owned by this employee. Inspection checks the authoritative readiness and account reservations. This feature is unavailable until runtime activation is approved.",
+      "migrate": "Confirm and migrate once",
+      "open": "Inspect address migration",
+      "pending": "The outcome is unconfirmed. Keep this operation, UUID and revision. Use inspection only; do not start another migration. Closing and reopening retains the recovery receipt in this browser session.",
+      "ready": "Inspection is ready. Type both exact addresses to confirm. Migration performs a fresh authorization and readiness check before its single request.",
+      "receipt": "Operation: {operationId} · Expected revision: {revision}",
+      "source": "Exact legacy source address",
+      "title": "Migrate a legacy employee address",
+      "user_id": "Existing user UUID",
+      "working": "Checking the account and operation…"
+    },
     "count": "{count, plural, one {# internal account} other {# internal accounts}}",
     "count_loading": "Loading account count...",
+    "creation": {
+      "close": "Close",
+      "created": "The server confirmed the employee account was created. Refresh the directory to inspect it.",
+      "denied": "The request was refused before creation. Verify access and availability before submitting again.",
+      "description": "Create a managed staff identity after server checks confirm access and readiness.",
+      "email": "Staff email",
+      "email_help": "Use an exact @tuturuuu.com staff address. Directory subdomains do not grant staff privileges.",
+      "inspect": "The outcome needs inspection. Refresh the directory and ask an administrator to reconcile this request. Do not create this account again.",
+      "name": "Full name",
+      "open": "Create employee account",
+      "password": "Temporary password",
+      "password_help": "Use 12–72 characters. The password stays only in this form and is cleared when it closes.",
+      "refresh": "Refresh directory",
+      "submit": "Create account",
+      "submitting": "Submitting…",
+      "title": "Create an employee account",
+      "unavailable": "Employee account creation is not available yet. No account will be created from this form."
+    },
     "dates": {
       "created": "Created {date}",
       "last_sign_in": "Last sign-in {date}",
@@ -8845,6 +8883,59 @@
       "username": "Username",
       "username_help": "Optional. Use lowercase letters, numbers, hyphens, or underscores.",
       "username_invalid": "Start and end with a letter or number; use only lowercase letters, numbers, hyphens, or underscores."
+    },
+    "restoration": {
+      "close": "Close",
+      "confirmation": "Confirm account email",
+      "confirmation_help": "Type {email} exactly to confirm this account.",
+      "description": "Inspect retained access state for {email} before restoring or reconciling.",
+      "inspect": "Read current state",
+      "migration_separate": "Legacy address migration and account adoption require a separate workflow. This dialog does not rename an account.",
+      "next": {
+        "adoption_required": "This account requires the separate adoption or legacy migration workflow.",
+        "creation_reconciliation_required": "Account creation needs reconciliation through its owning workflow.",
+        "inspect": "A retained operation needs inspection and reconciliation. Do not start another restoration.",
+        "manual_review": "This account needs manual review. No restoration action is available.",
+        "none": "No access restoration is required.",
+        "restore": "This managed account is eligible for access restoration."
+      },
+      "observed_at": "Observed at",
+      "open": "Inspect managed access",
+      "operation": "Operation UUID",
+      "outcomes": {
+        "conflict": "Current state could not be verified or changed. Read it again before proceeding.",
+        "denied": "Your authorization could not be confirmed. Reopen this page with a currently authorized session.",
+        "pending": "The outcome is pending or unknown. Read the retained state before taking another action. No provider action is automatically repeated.",
+        "restored": "Restoration is confirmed by an independent persisted readback.",
+        "unavailable": "Managed access actions are unavailable. The outcome has not been inferred from this failure. Read-only inspection remains available."
+      },
+      "phase": "Operation phase",
+      "phases": {
+        "attempted": "Attempt recorded",
+        "completed": "Completed",
+        "reserved": "Reserved",
+        "unknown": "Outcome unknown"
+      },
+      "provider": "Provider",
+      "provider_states": {
+        "confirmed_active": "Confirmed active",
+        "confirmed_banned": "Confirmed disabled",
+        "missing": "Confirmed missing",
+        "unconfirmed": "Unconfirmed",
+        "unknown": "Unknown"
+      },
+      "reconcile": "Reconcile retained operation",
+      "registry": "Registry",
+      "registry_states": {
+        "absent": "No registry entry observed",
+        "active": "Active",
+        "pending": "Pending",
+        "provisioned": "Provisioned"
+      },
+      "restore": "Restore managed access",
+      "retained_operation": "Retained operation: {operationId}",
+      "title": "Managed employee access",
+      "working": "Checking access…"
     },
     "review_accounts": {
       "apple_publish_error": "Apple review access could not be updated. Check vault access and retry.",

@@ -11,6 +11,7 @@ import 'package:mobile/features/assistant/local/assistant_local_model_store.dart
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
 import 'package:mobile/features/assistant/local/widgets/assistant_local_model_tile.dart';
+import 'package:mobile/features/assistant/widgets/assistant_settings_info.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantLocalModelsSection extends StatefulWidget {
@@ -118,18 +119,27 @@ class _AssistantLocalModelsSectionState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.assistantLocalTitle,
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.assistantLocalTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                AssistantSettingsInfo(
+                  title: l10n.assistantLocalTitle,
+                  description: [
+                    l10n.assistantLocalHelp,
+                    l10n.assistantLocalBudgetDescription,
+                    if (_models.supportsBackgroundDownloads)
+                      l10n.assistantDownloadBackgroundNotice,
+                    l10n.assistantLocalModeSwitch,
+                    l10n.assistantLocalHistoryNotice,
+                  ].join('\n\n'),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(l10n.assistantLocalHelp),
-            const SizedBox(height: 8),
-            Text(l10n.assistantLocalBudgetDescription),
-            if (_models.supportsBackgroundDownloads) ...[
-              const SizedBox(height: 8),
-              Text(l10n.assistantDownloadBackgroundNotice),
-            ],
             if (state.loaded && !state.supported) ...[
               const SizedBox(height: 12),
               Text(l10n.assistantLocalHardware),
@@ -236,10 +246,6 @@ class _AssistantLocalModelsSectionState
                   child: Text(l10n.commonRetry),
                 ),
             ],
-            const SizedBox(height: 12),
-            Text(l10n.assistantLocalModeSwitch),
-            const SizedBox(height: 8),
-            Text(l10n.assistantLocalHistoryNotice),
           ],
         ),
       );

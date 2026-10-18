@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/utils-v0.35.0...utils-v0.36.0) (2026-10-17)
+
+
+### Features
+
+* **accounts:** compose address migration bottom with qualified Web sessions ([c7bdc16](https://github.com/tutur3u/platform/commit/c7bdc16e7ce1d9abaaeb999b6a787ecce7d78ade))
+* **accounts:** compose migration suppliers with fixture lint correction ([#6321](https://github.com/tutur3u/platform/issues/6321)) ([84ce8f4](https://github.com/tutur3u/platform/commit/84ce8f493e8a1fc8ef6c5cf24982b3771c0dbd59))
+* **infrastructure:** add durable employee restoration POST adapter ([d86507d](https://github.com/tutur3u/platform/commit/d86507dddc8d37426c45a7e1f5a6c66b720e4dc5)) ([#6294](https://github.com/tutur3u/platform/issues/6294)) ([b1ddeea](https://github.com/tutur3u/platform/commit/b1ddeea21ece0c9592be61f086ed63e0909941ae))
+* **infrastructure:** expose managed employee inspection ([71189ce](https://github.com/tutur3u/platform/commit/71189ce1f5efed123a8d624e2def365b68670eec)) ([#6293](https://github.com/tutur3u/platform/issues/6293)) ([fc869bf](https://github.com/tutur3u/platform/commit/fc869bff1a8a890e39b9731717480cdf168772c7))
+* **mail:** connect Gmail and Outlook as personal email clients ([#5997](https://github.com/tutur3u/platform/issues/5997)) ([5abbe32](https://github.com/tutur3u/platform/commit/5abbe328188804006d0b3351dd110f609d4b3f9f))
+
+
+### Bug Fixes
+
+* **infrastructure:** verify satellite employee request origins ([e45fba2](https://github.com/tutur3u/platform/commit/e45fba2cb757d26d872fbdad47037d6f2ae9cfcf)) ([#6326](https://github.com/tutur3u/platform/issues/6326)) ([26f289b](https://github.com/tutur3u/platform/commit/26f289b5b80ae13912922f7fdeb6d9545a5f1ede))
+* **meet:** reconcile landed Lettin adapter integration ([629cf21](https://github.com/tutur3u/platform/commit/629cf21338d7e4898cc3d512c93ea50447156306))
+* **notifications:** suppress invalidated deadline reminders ([a56602c](https://github.com/tutur3u/platform/commit/a56602c5b5aa43376588f96c2951cd65229abb98)) ([#6247](https://github.com/tutur3u/platform/issues/6247)) ([9546535](https://github.com/tutur3u/platform/commit/95465355df707b46eb1e08460f55ac00a3e339d0))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+* **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/utils-v0.34.0...utils-v0.35.0) (2026-10-09)
 
 

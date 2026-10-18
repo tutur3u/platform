@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import test from 'node:test';
+import { pathToFileURL } from 'node:url';
 import { runInNewContext } from 'node:vm';
 
 const require = createRequire(
@@ -119,4 +120,86 @@ test('Meet Worker bundling preserves names needed to resume React prerenders', a
   const fixed = await bundleComponent(keepNames);
   assert.equal(fixed.name, 'id');
   assert.deepEqual(await resumeErrors(fixed), []);
+});
+
+test('Meet patches the installed Next scheduler instead of using atomic Node timers', async () => {
+  const { patchCacheComponentsScheduler } = await import(
+    pathToFileURL(
+      resolve(adapter, 'dist/cli/build/patches/plugins/cache-components.js')
+    )
+  );
+  const runtimeModule =
+    'next/dist/compiled/next-server/app-page-turbo.runtime.prod.js';
+  const runtime = require.resolve(runtimeModule);
+  const patched = patchCacheComponentsScheduler(
+    readFileSync(runtime, 'utf8'),
+    runtime
+  );
+  assert.match(patched, /__opennext_cache_components_scheduler/);
+  assert.doesNotMatch(
+    patched,
+    /Cannot schedule more timers into a group that already executed/
+  );
+  assert.throws(
+    () => patchCacheComponentsScheduler('function moved() {}', 'moved.js'),
+    /Failed to patch/
+  );
+  assert.match(
+    bundler,
+    /import "\$\{cacheComponentsSchedulerModule\}"/,
+    'install the scheduler before React captures setImmediate'
+  );
+});
+
+test('Meet cache registration cannot fall through to removed minified aliases', async () => {
+  const { patchCode } = await import(
+    pathToFileURL(
+      adapterRequire.resolve('@opennextjs/aws/build/patch/astCodePatcher.js')
+    )
+  );
+  const { createComposableCacheHandlersRule } = await import(
+    pathToFileURL(
+      resolve(adapter, 'dist/cli/build/patches/plugins/next-server.js')
+    )
+  );
+  for (const runtime of ['app-route-turbo', 'app-page-turbo']) {
+    const source = readFileSync(
+      require.resolve(
+        `next/dist/compiled/next-server/${runtime}.runtime.prod.js`
+      ),
+      'utf8'
+    );
+    const start = source.indexOf('async loadCustomCacheHandlers(');
+    const end = source.indexOf('async getIncrementalCache(', start);
+    assert.ok(start >= 0 && end > start);
+    const patched = patchCode(
+      `class Runtime { ${source.slice(start, end)} }`,
+      createComposableCacheHandlersRule('/fixture/composable-cache.cjs')
+    );
+    const handler = {};
+    const sandbox = {
+      Symbol,
+      Map,
+      Set,
+      require(path) {
+        assert.equal(path, '/fixture/composable-cache.cjs');
+        return { default: handler };
+      },
+    };
+    runInNewContext(`${patched}; globalThis.runtime = new Runtime();`, sandbox);
+    // Unbound minified aliases and dynamic imports must never be reached.
+    await sandbox.runtime.loadCustomCacheHandlers(
+      {},
+      {
+        cacheMaxMemorySize: 0,
+        cacheHandlers: { default: 'None', remote: 'None' },
+      }
+    );
+    const handlers = runInNewContext(
+      "globalThis[Symbol.for('@next/cache-handlers-map')]",
+      sandbox
+    );
+    assert.equal(handlers.get('default'), handler);
+    assert.equal(handlers.get('remote'), handler);
+  }
 });

@@ -17,6 +17,17 @@ GitHub Actions is the primary automation plane for Tuturuuu.
 
 ## Validation and Delivery Evidence
 
+Root Node tests that consume an app-owned package must resolve it with
+`createRequire` anchored to that app's real `package.json`. The satellite cohort
+tests resolve Playwright from Web; the Lettin config-loader tests load Next SWC
+from Lettin. Keep repository-relative helpers on the test's original `require`
+and temporary fixtures separate from the owning app. Root links and job-wide
+`NODE_PATH` can mask this boundary, so verify resolution with `NODE_PATH` unset
+in a disposable fixture with only app-level dependency links and no root
+`node_modules`. Resolve entrypoints without loading package code for that control,
+then run the focused behavior tests separately. The Lettin SWC test transforms
+config source in memory; it does not run a Next release build.
+
 `mail-calendar-tasks-builds.yaml` builds Mail, Calendar and Tasks, including
 their shared dependencies, on relevant PRs and `main` commits. These hosted CI
 jobs check out the immutable PR head (or exact push SHA), use placeholder public
@@ -630,8 +641,8 @@ Workflow contracts use Bun's built-in YAML parser via `workflow-yaml-test-helper
 not undeclared transitive YAML packages. The dependency-free snapshot checks ordering,
 identity and caching. Run `node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js`.
 
-Parley's candidate pins the official OpenNext `1.20.6` registry tarball as a
-Parley-only URL dependency. Its URL-keyed Bun patch backports the Cache Components
+Meet, Lettin and Parley pin the official OpenNext `1.20.6` registry tarball as a
+shared URL dependency. Its URL-keyed Bun patch backports the Cache Components
 scheduler and request-scoped module-loading changes from upstream PR 1318 at
 `6b783939aefa8f9a19d4f002f68bc57c62879098`. The older upstream preview rejects Node
 middleware; removing that guard does not supply a middleware bundler. Retain the
@@ -639,13 +650,27 @@ stable adapter's real `bundleNodeMiddleware` path and apply the Cache Components
 middleware patch after that bundle. Preserve component names, preview manifests,
 and Next 16.4's `CacheSignal(null)` constructor arguments.
 
-Keep the registry integrity in `bun.lock`; Meet and Lettin retain their separate
-stable-version patch. Bun's path-based patch command can select the package version
-instead of the URL: verify the generated `patchedDependencies` key and restore the
+Keep the registry integrity in `bun.lock`; `packages/meet-core` retains its
+separate stable-version adapter and patch. Verify installed package isolation
+against that independent consumer, not Lettin. Bun's path-based patch command can
+select the package version instead of the URL: verify the generated `patchedDependencies` key and restore the
 stable patch before installing. Set the URL-keyed entry through `bun pm pkg set`
 with JSON input, then verify a frozen install and installed package isolation.
 A prepared directory left by `bun patch` can shadow dependency symlinks; preserve
 that owned directory outside the resolver and reinstall before testing.
+
+Meet requires both compatibility fixes: the workerd scheduler prevents the
+anonymous login render from hanging, and cache-handler registration must return
+before Next's original dynamic loader accesses removed minified aliases. Otherwise
+even the local-metadata `/api/build-info` handler can fail before it executes.
+`node --test scripts/ci/meet-cloudflare-render.test.js` exercises the installed
+Next scheduler transformation, cache-handler method and React resume names.
+For retained-artifact diagnosis, preserve the original ZIP and hash; normalize
+only CI file imports and Wrangler's require shim in a private replay. Use the
+canonical URL and Host, local bindings, blocked outbound traffic and bounded
+requests. Isolate scheduler and cache-loader changes independently. Such a replay
+establishes a mechanism; exact-commit CI builds and hosted health remain separate
+delivery gates.
 
 When changing the candidate dependency, update both workflow path filters and
 `tuturuuu.ts` selection to its active patch. Selection regressions must derive the
@@ -991,6 +1016,68 @@ uses required-file behavior, one-day retention, and compression level 0 because
 `.tgz` is already compressed. Preparation runs any package lifecycle build
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
+
+The SDK build embeds only its reviewed portable HTTP-client and task-codec source
+closure from the broad `internal-api` and `utils` packages. Those packages remain
+development dependencies; emitted JavaScript and declarations share rewritten local
+`dist/_portable` imports. `dist/portable-sources.json` records included source paths.
+The build rejects unreviewed modules, private/runtime-specific imports, and
+undeclared external libraries. Extend the explicit allowlists only after reviewing
+the added closure. Keep the isolated public npm install and compiled CLI probes as
+the acceptance gate; source-staging tests do not establish package delivery.
+Run `node --test packages/sdk/scripts/portable-build.test.cjs` for the boundary
+regressions, and require exact-commit compilation and install qualification in CI.
+
+SDK qualification has two explicit phases. Only same-repository pull requests from
+`release-please--branches--production` into `production` select SOURCE. That phase
+keeps the serial exact-head compile, portable closure/resource controls, manifest
+rewrite and archive inventory/integrity checks. Its receipt has `phase: source`,
+`sourceValidated: true` and `qualified: false`: it is source readiness, never public
+package acceptance. Ordinary PRs and manual qualification retain the full PUBLIC
+phase. This avoids requiring unpublished generated dependency versions before the
+release can reach the production-only publishers.
+
+After the existing bounded upstream package readiness gate, SDK production
+preparation runs PUBLIC qualification against the exact production SHA: exact
+public registry tuples, isolated npm consumer installation and compiled CLI/resource
+probes. Runtime, peer and optional workspace dependencies must be publicly available;
+embedded development-only dependencies are excluded from registry prerequisites.
+Missing dependencies fail closed, including optional dependencies that npm might
+otherwise omit. Resolve physical dependency manifests from the installed SDK's
+Node module search paths inside the disposable consumer. npm may place a direct
+dependency under `node_modules/tuturuuu/node_modules` rather than hoist it to the
+consumer root. Match the lock entry for that exact physical directory; use the
+same verified entry for registry tuple comparison. Reject symlinks in every path
+component, missing packages, manifest identity/version mismatches, linked lock
+entries and missing or invalid public registry integrity. An invalid nested copy
+must not fall back to a valid hoisted copy. The focused
+`scripts/ci/sdk-installed-dependencies.test.js` suite covers these layouts and
+failure boundaries without installing packages or evaluating their code.
+The preparation uploads the very tarball installed and probed,
+along with its receipt. The OIDC job requires a successful PUBLIC receipt for the
+same SHA, package name/version and SHA256 bytes before publishing that tarball.
+No rebuild or second pack follows qualification. No receipt, a SOURCE receipt,
+failed cleanup, changed SHA or changed tarball blocks publication. The existing
+bounded publisher defer/dispatch protocol remains the resume mechanism for missing
+upstream versions; do not manually publish prospective release versions.
+
+Run `node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/package-release-readiness.test.js packages/sdk/scripts/portable-build.test.cjs`
+for phase, cycle, runtime dependency, artifact binding and portable closure controls.
+These injected non-build controls do not replace exact-SHA hosted compilation and
+public-consumer acceptance. Release integration and production promotion retain
+separate owner approval and exact-commit CI gates.
+
+SDK packed-CLI qualification keeps install failure stream byte counts and SHA256
+commitments, without retaining stdout/stderr or the private npm cache. Its receipt
+also extracts at most eight package requests from strict npm E404 lines in the
+first 4096 bytes of each stream. Only the HTTPS npm public registry origin and
+validated package names are allowed; an exact version is included only when a
+matching npm package/version line exists. Credentialed URLs, query strings,
+fragments, other registries and free-form errors are excluded. A missing identity
+or null version remains unknown; a request is not proof the package exists.
+Run `node --test scripts/ci/qualify-sdk-package.test.js` for the diagnostic and
+fixture-cleanup regressions. Use the exact-head qualification receipt for new
+failures; hashes from older receipts cannot recover discarded npm output.
 
 Test, Coverage, Biome, and Type Check preserve immutable protected concurrency
 groups for main, production, and all generated Release Please refs.
@@ -1685,3 +1772,20 @@ that mismatch rather than producing unreliable coverage. Shared CI forwards
 `--maxWorkers=2` and optionally `--coverage`: keep worker/pool defaults in the
 unit config, not a duplicate CLI flag in package scripts. Validate both forwarded
 commands under Node 24 in the owning workspace through `ttr resources`.
+
+### Playground metadata lifecycle evidence
+
+The disposable Playground acceptance job opts into the SDK's
+`TTR_DOCKER_METADATA_DIAGNOSTIC=1` diagnostic. See the
+[SDK diagnostic contract](/reference/packages/sdk#docker-metadata-lifecycle-diagnostic).
+Read each `ttr-docker-metadata-v1` record with its exact commit, job and invocation
+ordinal. Event times describe JavaScript observations on the same existing
+metadata subprocess; null close timing does not prove that the process failed to
+close later. Callback lateness measures delay relative to the scheduled deadline.
+There is no extra Docker probe, warmup, retry or deadline increase.
+
+An instrumented passing run provides observability only: it cannot explain a
+historical timeout. A timer callback proves deadline classification before
+settlement, not daemon failure or a Node/Bun adapter defect. Keep causal diagnosis
+UNKNOWN until same-invocation evidence distinguishes those hypotheses; source
+review and mock tests do not qualify hosted runtime acceptance.

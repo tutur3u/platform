@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/programming-ui",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "exports": {
     ".": "./src/index.ts",

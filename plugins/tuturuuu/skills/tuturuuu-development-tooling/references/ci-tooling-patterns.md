@@ -127,6 +127,26 @@ See `apps/docs/build/devops/active-runtime.mdx`.
 - If `bun ff -- <files>` still triggers repo-wide Biome behavior, use exact-file Biome commands and keep fixes scoped to owned
   files; require the applicable lint workflow in exact-commit CI.
 
+## Packed SDK install diagnostics
+
+For installed dependency validation, inspect Node's package-relative module search
+directories inside the disposable consumer. Match each physical package to its
+exact root or SDK-nested lock key and reuse that verified entry for registry tuple
+comparison. A root-only lookup can falsely reject a legitimate npm nested layout.
+Keep absent packages, identity/version or integrity mismatches, links and symlink
+components as hard failures; never fall back past an invalid nested package.
+Run `node --test scripts/ci/sdk-installed-dependencies.test.js` for the focused
+physical-layout and rejection regressions. A synthetic layout test does not
+replace exact-artifact consumer evidence or public qualification.
+
+The qualification receipt preserves stream hashes/counts and a bounded, strictly
+parsed public npm E404 identity. Never upload raw npm output or the private cache.
+Run `node --test scripts/ci/qualify-sdk-package.test.js`, including its diagnostic
+suite, before updating the PR. Missing identities stay unknown; use a new exact-head
+receipt rather than infer a dependency fix from a hash. See the
+[CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx)
+for the allowlist, limits and cleanup behavior.
+
 ## Satellite build evidence
 
 Automatic platform builds do not establish satellite build compatibility.
@@ -138,6 +158,12 @@ read-only permissions. Live provider consent/delivery remains a separate check.
 
 ## Root Scripts
 
+- Resolve app-owned packages in root Node tests with `createRequire` anchored to
+  the real owning app's `package.json`; keep relative helpers on the original
+  `require`. See the [CI runbook's resolution control](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence)
+  for a resolver-only fixture that excludes root links and `NODE_PATH`, followed
+  by focused behavior verification. Web owns the satellite cohort tests'
+  Playwright; Lettin owns its config-loader test's Next SWC.
 - Root script tests belong in `node --test scripts/*.test.js` and should be
   wired into `scripts/check.js` when a new utility needs CI coverage.
 - Translation automation should use `scripts/i18n-common.js` for app message
@@ -652,3 +678,26 @@ release racing an outstanding reschedule. Local SQLite with mocked alarms can
 expose residual wake behavior but cannot certify hosted alarm retry/clock behavior
 or authenticated emergency-stop fencing. Preserve meeting fingerprint retention
 and owner/lease checks; finite per-row retention is not an ingress/account cap.
+
+## Mintlify connectivity cancellation
+
+The canonical local-docs launcher pins CLI and Node patch versions in
+apps/docs/mintlify-version.json. Its isolated Node 24.19.0 avoids the pinned
+is-online/Got 12.6.1 [retry-after-rejection defect](https://github.com/sindresorhus/got/issues/2469) on Node 24.20+; retain validation
+and nonzero exits rather than swallowing errors or adding validation retries.
+Use finite loopback refusal controls against the actual transitive package to
+reassess compatibility. Strict Mintlify validation compiles docs and remains
+CI-only; a connectivity cancellation stack is not an MDX error or a passing
+validation result. Remove the compatibility pin only with upstream dependency
+and equivalent error/retry evidence, then require exact-source CI acceptance.
+
+## SDK release qualification phases
+
+See the [SDK package release contract](../../../../../apps/docs/build/devops/github-actions-runbook.mdx)
+for SOURCE versus PUBLIC qualification. Generated production release PRs validate
+source and pack controls without claiming registry acceptance. Production SDK
+preparation must run the strict registry/install/compiled-CLI qualifier after
+upstream readiness, then publish only the exact SHA256-bound qualified tarball.
+Never accept a SOURCE receipt as public acceptance or rebuild after qualification.
+Run `node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/package-release-readiness.test.js packages/sdk/scripts/portable-build.test.cjs`
+for focused controls; builds and real consumer acceptance belong to exact-SHA CI.

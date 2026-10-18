@@ -59,6 +59,44 @@ const doc = await client.documents.create({
 
 ## Features
 
+Source previews support native `ttr backlog search help --lang en|vi --json`
+and `ttr backlog search model-status --json` before login. Lexical queries require
+an explicit `--db`.
+Model status without `--runtime-dir` loads or downloads no model. These source
+commands do not establish published npm availability or model admission. See
+[local operational state](/reference/packages/cli-operational-state).
+
+Search indexing reads the full current projection and rebuilds every lexical
+document with complete member content and provenance. Under the same source UUID,
+projection version, and authenticated runtime fingerprint, it can reuse a vector
+for an identical record ID and versioned full-record content hash. Canonical
+membership, provenance, content, or runtime recipe changes invalidate affected
+vectors. Deleted records are omitted. An absent or revoked runtime removes all
+semantic vectors. An older content policy requires one rebuild.
+
+Index output reports `strategy: snapshot-reconciled-vector-reuse-v1`,
+`reuseEligible`, `reused`, `computed`, `removed`, and `invalidated`. `embedded`
+counts committed vectors, with a maximum corpus of eight documents. `incremental`
+means reuse eligibility. `projectionScan` and `lexicalRebuild` remain full-snapshot
+operations; indexing does not consume an event delta feed. A newer cached revision
+or equal-revision snapshot drift denies reuse.
+
+`modelLoaded` reports a successful non-injected embedding return in this command.
+A command that computes no new vectors authenticates the runtime without loading
+the model. `embeddingAttemptsThisCommand` and
+`successfulEmbeddingsThisCommand` also describe this command. A later
+embedding failure can leave `modelLoaded: true` while the committed lexical
+fallback has zero vectors. Partial semantic caches are never published.
+
+Structural cache, projection, and source conflicts propagate as errors. Runtime
+embedding failures and capacity failures use lexical fallback. Before publication,
+the index rereads source UUID, revision, snapshot, version, and cache permission.
+Queries require the current snapshot and exact document IDs and content keys.
+An older content policy produces `stale-content-policy` and lexical fallback.
+Similarity candidates remain uncertain and never authorize closure or merge.
+Source tests and review qualify this reuse behavior separately from real engine
+execution, installed CLI availability, and hosted SDK packaging.
+
 <CardGroup cols={2}>
   <Card title="Bun CLI" icon="terminal">
     Use `ttr` for browser login, workspace discovery, and task workflows
@@ -83,6 +121,19 @@ const doc = await client.documents.create({
     Track storage usage, file counts, and limits
   </Card>
 </CardGroup>
+
+## Type-check and declaration output
+
+The SDK `type-check` command uses `tsconfig.typecheck.json`, which extends the
+public build configuration to retain its source files and semantic checking options.
+It disables emit, composite output and incremental state, so it owns no `dist`
+files even when the CI task graph also schedules the SDK build. The portable
+`build` remains responsible for JavaScript and public declarations; its configuration
+and staging are unchanged. `sdk-typecheck-boundary.test.ts` checks resolved compiler
+coverage/options and exercises a disposable type error and successful check without
+output files. Exact-head CI must verify both type-check and the real portable build.
+This structural boundary does not identify the writer behind a historical
+`ENOTEMPTY` failure.
 
 ## CLI
 
@@ -1426,9 +1477,7 @@ MIT
 
 ## Local resource control
 
-Use `ttr resources` to keep multiple coding sessions responsive while serializing
-heavy validation on the same machine. This opt-in feature supports macOS and
-Linux, works without login, and does not start a background daemon.
+Use `ttr resources` to keep coding sessions responsive with bounded validation on the same machine. This opt-in feature supports macOS/Linux without login or a background daemon.
 
 ```bash
 ttr resources setup --root ~/code/project-a --root ~/code/project-b --shell zsh
@@ -1437,32 +1486,40 @@ ttr resources run -- bun run test
 ttr resources monitor --seconds 60 > resource-samples.jsonl
 ```
 
-Setup includes linked Git worktrees automatically. A shared per-user queue admits
-one finite validation command at a time; nested commands reuse its slot. Turbo
-runs one task and Vitest/Cargo workers adapt to RAM and CPU capacity. Use
-`--workers 2` to override workers and `--dry-run` to inspect planned changes.
-New admission waits for elevated memory pressure to clear. Existing jobs keep
-running; there is no automatic process killing or hard memory cap.
+Explicit `run` requires setup-provisioned executable shims matching the current runtime and resource entry. It only reads and validates those launchers; it never installs, rewrites, chmods, or activates them. Missing, stale, malformed, or nonexecutable shims fail before queue admission and workload launch, with an explicit `ttr resources setup --shell none` instruction. Inspect occupancy and obtain installation authority before setup; a source update does not authorize replacing an installed scheduler. Resource commands dispatch before general authenticated CLI imports. This avoids those eager imports but does not establish the cause or repair of any host-specific startup hang. Regression coverage lives in `resources-provisioning.test.ts` and `entry-dispatch.test.ts`; existing lane tests retain FIFO, pressure, and owned cancellation/drain coverage.
 
-Shell setup backs up existing files and adds a marked block to Zsh or Bash
-startup files. Open a new shell to activate it. Use `--shell none` for explicit
-`resources run` usage without shell changes. Absolute executable paths, custom
-PATH replacement and already-running processes can bypass the shims. Wrap
-unrecognized scripts explicitly. Custom scripts can still run parallel child
-jobs within a slot; sequence lint, tests and browser QA when memory is limited.
+Setup includes linked Git worktrees. One canonical per-user FIFO queue defaults to one lane; missing `validationLanes` in version-1 configurations means one. Optional `setup --lanes 2` admits two commands only when the configured and host worker budgets permit at least one worker per lane. `--workers` sets the aggregate Vitest/Cargo total, split across lanes with rounding down. Turbo runs one task per lane, and explicit Vitest/Cargo flags are capped. Nested commands verify a live ancestor among all owners and inherit its caps. `--dry-run` inspects changes without writing.
 
-Use `ttr resources disable` or `enable` to toggle future automatic admission.
-`TTR_RESOURCES_BYPASS=1` deliberately bypasses one command. Once the queue is idle,
-`ttr resources uninstall` removes owned hooks and shims while preserving other
-shell content, configuration and backups. Keep the default `TTR_RESOURCES_HOME`
-across projects so they share one queue.
+Changing lanes or aggregate worker budgets requires idle owners and zero waiters. Before replacing the installed scheduler or enabling two lanes, verify the canonical home is idle, all old FIFO waiters have drained, and old brokers/shim processes have exited. Keep configuration at one during drain; never rewrite tickets, remove live locks, or run mixed versions. Source tests/review do not authorize installation or activation. Reconcile every legacy `status.owner` consumer first; `owners` lists all live owners and `laneCount` reports configured lanes. The compatibility `owner` stays populated whenever any owner exists; initializing occupancy is reported separately.
 
-The monitor emits bounded-duration JSONL samples with memory pressure, T3 process
-tree resident memory, and the largest processes. It omits command arguments and
-environment values. RSS totals are not the same as Activity Monitor's memory
-footprint and can count shared pages more than once.
+Admission publishes complete owner metadata exclusively and serializes pressure checks, FIFO selection, and atomic slot claims, re-caps the original arguments to the admitted policy, and rejects policy changes during pressure probing. A live legacy owner, surviving child group, or old waiter excludes all slots. Malformed/unknown state fails closed. Initialization has a 30-second grace followed by a state recheck; time never expires a live owner. An abandoned mutex removal marker requires operator recovery review. Cancellation removes only its own ticket/slot after its owned child group drains. Workload execution waits for a durable child-PID receipt.
 
-Offload full validation with `ttr box run --runner <remote-id> -- <command>` only
-after verifying that the runner is on another machine with the intended checkout.
-A same-machine CI runner or Docker container still uses local RAM. Resource setup
-does not configure runners, transmit code or credentials, or restart Docker.
+Elevated memory pressure holds new admission while existing jobs continue. Blocked waiters back off outside admission, remain cancellable, and probe pressure afresh before launch. This is cooperative scheduling; scripts can still fan out within a slot. Sequence lint, tests and browser QA when memory is limited.
+
+Shell setup preserves existing content and original backups through marked Zsh/Bash blocks. Open a new shell to activate hooks, or use `--shell none` for explicit queue usage. Absolute paths, custom PATH replacement and existing processes can bypass shims; wrap unrecognized scripts explicitly.
+
+Invalid JSON or unsupported configuration fields produce a fixed corrective message without disclosing field values. `disable`/`enable` toggle future automatic admission. All configuration mutations, including uninstall, serialize with admission and read the latest policy inside the mutex. Disabled, out-of-scope and deliberate bypass commands retain their arguments/environment without admission-cap validation. `TTR_RESOURCES_BYPASS=1` is a deliberate one-command bypass. Once owners and waiters drain, `uninstall` removes owned hooks/shims and preserves shell content, configuration and backups. Keep the default `TTR_RESOURCES_HOME` across projects; private temporary homes are for lightweight synthetic tests, not parallel heavy work. Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read exit diagnostics after subprocess pipes close; use a separate exit barrier when testing surviving descendants. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.
+
+The bounded monitor emits JSONL memory-pressure, T3-tree resident-memory and top-process samples without arguments or environment values. RSS differs from Activity Monitor's footprint and can count shared pages multiple times.
+Offload full validation with `ttr box run --runner <remote-id> -- <command>` only after verifying a different machine and intended checkout. Same-machine runners/containers consume local RAM; resource setup does not configure runners, transmit credentials, or restart Docker.
+
+### Docker metadata lifecycle diagnostic
+
+The SDK metadata subprocess is silent by default. Disposable CI can opt in with
+`CI=true` and `TTR_DOCKER_METADATA_DIAGNOSTIC=1`. Each invocation emits one JSON
+record (`schema: ttr-docker-metadata-v1`) at its existing settlement boundary.
+It records a process-local ordinal, Node/Bun runtime versions, monotonic elapsed
+milliseconds, spawn/first stdout/error/exit/close times, first and total stdout
+byte counts, deadline time and callback lateness, kill return value, fixed spawn
+classification, numeric exit code and an allowlisted signal. Numeric counters
+saturate at 2,147,483,647; versions are validated and bounded; records stay below
+1024 bytes. No arguments, paths, environment values, Docker host/context, metadata,
+output or exception text are included.
+
+A null event time means it was not observed before settlement. In particular,
+settlement still follows error or exit and never waits for close. The stdout
+consumer continues draining with the existing 65,536-character retained cap;
+diagnostics add no timers, subprocesses, probes or retries. The 4000ms deadline
+and fail-closed capacity behavior remain unchanged. Focused pure mocks in
+`devbox-docker-metadata-diagnostic.test.ts` cover opt-in gating, bounded fields,
+event order, deadline/kill outcomes, errors, close timing, overflow and redaction.

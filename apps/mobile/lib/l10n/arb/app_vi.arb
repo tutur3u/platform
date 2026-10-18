@@ -4550,5 +4550,17 @@
   "assistantNewChatResetCleanupFailed": "Việc đặt lại cuộc trò chuyện mới đã được lưu, nhưng chưa thể hoàn tất màn hình này. Hãy kiểm tra lịch sử trò chuyện; ứng dụng sẽ không tự động đặt lại lần nữa.",
   "assistantNewChatResetCommittedStale": "Việc đặt lại đã được lưu cho ngữ cảnh trước, nhưng màn hình này đã thay đổi. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện; ứng dụng sẽ không tự động thử lại.",
   "assistantSettingsSelectionDenied": "Bạn không thể thay đổi cài đặt cuộc trò chuyện này. Cài đặt trước đó và bản nháp được giữ lại.",
-  "assistantSettingsSelectionUnconfirmed": "Không thể xác nhận cài đặt cuộc trò chuyện. Bản nháp được giữ lại. Hãy kiểm tra cài đặt cuộc trò chuyện trước khi chọn lại."
+  "assistantSettingsSelectionUnconfirmed": "Không thể xác nhận cài đặt cuộc trò chuyện. Bản nháp được giữ lại. Hãy kiểm tra cài đặt cuộc trò chuyện trước khi chọn lại.",
+  "assistantExpandPrompt": "Mở rộng lời nhắc",
+  "assistantMinimizePrompt": "Thu gọn lời nhắc",
+  "assistantSettingInfo": "Thông tin về {setting}",
+  "@assistantSettingInfo": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantPreviewPlay": "Phát bản xem trước",
+  "assistantPreviewPause": "Tạm dừng bản xem trước"
 }

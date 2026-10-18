@@ -50,7 +50,76 @@ const deadlineWait = async (query) => {
 };
 const apply = (sql, source = 50) =>
   sql`select private.apply_inventory_merge(${id(10)},'product',${id(source)},${id(51)},private.preview_inventory_merge(${id(10)},'product',${id(source)},${id(51)})->>'version','target','target',${id(1)}) result`;
-console.log('1..22');
+// Shared employee admission is a separate, proven workspace-cascade boundary.
+// Every other granted advisory key, mode and two-integer namespace stays forbidden.
+const readWriterBoundary = (sql) => sql`
+  select count(*) filter (where not (
+      objsubid=1 and mode='ShareLock'
+      and ((classid::bigint << 32) | objid::bigint)=
+        hashtextextended('employee-address-reservations',0)
+    )) count,
+    count(*) filter (where objsubid=1 and mode='ShareLock'
+      and ((classid::bigint << 32) | objid::bigint)=
+        hashtextextended('employee-address-reservations',0)) permitted_count,
+    count(*) total_count
+  from pg_locks where pid=pg_backend_pid() and locktype='advisory' and granted`;
+const assertWriterBoundary = ({ count, permitted_count, total_count }) => {
+  assert.equal(Number(count), 0);
+  assert.equal(Number(total_count), Number(count) + Number(permitted_count));
+  assert(Number(permitted_count) >= 0 && Number(permitted_count) <= 1);
+};
+const rollbackControl = async (exercise) => {
+  const rollback = new Error('Rollback inventory boundary control');
+  await assert.rejects(
+    writer.begin(async (sql) => {
+      await exercise(sql);
+      throw rollback;
+    }),
+    (error) => error === rollback
+  );
+};
+const rejectsBoundary = (snapshot) =>
+  assert.throws(
+    () => assertWriterBoundary(snapshot),
+    (error) =>
+      error.code === 'ERR_ASSERTION' &&
+      error.actual === 1 &&
+      error.expected === 0
+  );
+// Failure-only bounded output; the snapshot never replaces the tested count.
+async function reportWriterLocks(sql, count) {
+  const rows = await sql`
+    select pg_backend_pid() pid,
+      pg_current_xact_id_if_assigned()::text transaction_id,
+      coalesce((
+        select json_agg(observed) from (
+          select classid, objid, objsubid, mode, granted, virtualtransaction,
+            ((classid::bigint << 32) | objid::bigint)::text key64,
+            case when objsubid=1 and classid=0 and objid=900302020
+              then 'test-barrier'
+              when objsubid=1 and mode='ShareLock' and
+                ((classid::bigint << 32) | objid::bigint)=hashtextextended('employee-address-reservations',0)
+              then 'permitted-employee-admission'
+              else 'forbidden-advisory' end label
+          from pg_locks
+          where pid=pg_backend_pid() and locktype='advisory' and granted
+          order by classid, objid, objsubid, mode limit 33
+        ) observed
+      ), '[]'::json) locks`;
+  const [{ pid, transaction_id, locks }] = rows;
+  console.log(
+    '# inventory-writer-locks ' +
+      JSON.stringify({
+        phase: 'cascade-boundary-failure',
+        forbidden_count: Number(count),
+        pid,
+        transaction_id,
+        truncated: locks.length > 32,
+        locks: locks.slice(0, 32),
+      })
+  );
+}
+console.log('1..28');
 try {
   await control.unsafe(
     'begin;' +
@@ -198,15 +267,66 @@ try {
     release();
     await editing;
   }
+  await rollbackControl(async (sql) => {
+    await sql`update public.user_private_details set default_workspace_id=default_workspace_id where false`;
+    const [snapshot] = await readWriterBoundary(sql);
+    assert.equal(Number(snapshot.total_count), 1);
+    assert.equal(Number(snapshot.permitted_count), 1);
+    assertWriterBoundary(snapshot);
+  });
+  ok('zero-row profile admission is a proven non-inventory counterexample');
+  await rollbackControl(async (sql) => {
+    await sql`update public.user_private_details set default_workspace_id=default_workspace_id where false`;
+    await sql`select pg_advisory_xact_lock_shared(private.inventory_identity_lock_key(${id(12)},'warehouse',${id(2500)}))`;
+    const [snapshot] = await readWriterBoundary(sql);
+    assert.equal(Number(snapshot.total_count), 2);
+    assert.equal(Number(snapshot.permitted_count), 1);
+    rejectsBoundary(snapshot);
+  });
+  ok('real inventory identity lock still fails beside permitted admission');
+  await rollbackControl(async (sql) => {
+    await sql`select pg_advisory_xact_lock_shared(900302021::bigint)`;
+    const [snapshot] = await readWriterBoundary(sql);
+    assert.equal(Number(snapshot.total_count), 1);
+    assert.equal(Number(snapshot.permitted_count), 0);
+    rejectsBoundary(snapshot);
+  });
+  ok('unexpected shared advisory key remains forbidden');
+  await rollbackControl(async (sql) => {
+    await sql`select pg_advisory_xact_lock(hashtextextended('employee-address-reservations',0))`;
+    const [snapshot] = await readWriterBoundary(sql);
+    assert.equal(Number(snapshot.total_count), 1);
+    assert.equal(Number(snapshot.permitted_count), 0);
+    rejectsBoundary(snapshot);
+  });
+  ok('exclusive employee key is not permitted shared admission');
+  await rollbackControl(async (sql) => {
+    await sql`select pg_advisory_xact_lock_shared(
+      (hashtextextended('employee-address-reservations',0) >> 32)::integer,
+      ((hashtextextended('employee-address-reservations',0) << 32) >> 32)::integer)`;
+    const [snapshot] = await readWriterBoundary(sql);
+    assert.equal(Number(snapshot.total_count), 1);
+    assert.equal(Number(snapshot.permitted_count), 0);
+    rejectsBoundary(snapshot);
+  });
+  ok('two-integer namespace with the same key halves remains forbidden');
+  const [{ count: remaining }] = await writer`
+    select count(*) from pg_locks where pid=pg_backend_pid() and locktype='advisory' and granted`;
+  assert.equal(Number(remaining), 0);
+  ok('all boundary controls roll back their advisory locks');
   // Setup is committed by another transaction: this cascade cannot pass merely
   // because the deleting client already acquired all of its identity keys.
   await control`insert into public.workspaces(id,name,personal,creator_id) values(${id(12)},'Cascade namespace',false,${id(1)})`;
   await control`insert into private.inventory_warehouses(id,ws_id,name) values(${id(2500)},${id(12)},'Cascade warehouse')`;
   await writer.begin(async (sql) => {
     await sql`delete from public.workspaces where id=${id(12)}`;
-    const [{ count }] =
-      await sql`select count(*) from pg_locks where pid=pg_backend_pid() and locktype='advisory' and granted`;
-    assert.equal(Number(count), 0);
+    const [snapshot] = await readWriterBoundary(sql);
+    try {
+      if (Number(snapshot.count) !== 0)
+        await reportWriterLocks(sql, snapshot.count);
+    } finally {
+      assertWriterBoundary(snapshot);
+    }
     ok('actual gone-workspace cascade acquires no identity namespace');
     assert.equal(
       (
@@ -221,7 +341,7 @@ try {
     (e) => e.code === '23514'
   );
   ok('ordinary live-workspace deletion retains merged identity guard');
-  assert.equal(checks, 22);
+  assert.equal(checks, 28);
 } finally {
   // Always release the test-only barrier, including assertion failures.
   if (barrierHeld) await writer`select pg_advisory_unlock(900302020)`;

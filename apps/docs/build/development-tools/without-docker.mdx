@@ -98,10 +98,11 @@ See [Remote devboxes](/build/development-tools/remote-devboxes),
 for optional isolated fixtures, and the
 [active runtime map](/build/devops/active-runtime) for current ownership.
 
-The docs wrapper runs with Node 24. When the host uses another Node major,
-`npx` supplies an isolated Node 24 executable alongside the pinned Mintlify CLI;
-it does not replace the host Node installation. The initial download needs
-network access. CI installs Node 24 directly.
+The docs wrapper uses the Node patch pin in `apps/docs/mintlify-version.json`.
+Other host versions use an isolated `npx` runtime without changing the host
+installation. See [Mintlify runtime compatibility](documenting#mintlify-runtime-compatibility)
+for the cancellation mechanism, validation guarantees and pin removal criteria.
+
 
 Focused Forms metadata/loader tests resolve their mocked Supabase server boundary
 from source via `apps/forms/vitest.config.ts`, so they do not require a shared

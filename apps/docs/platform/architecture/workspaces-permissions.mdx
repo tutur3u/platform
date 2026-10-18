@@ -450,3 +450,31 @@ For a new SDK/API-key route:
 - `workspace_users` is not the access-control table.
 - Browser URLs prefer `personal` and `internal`, but DB queries should use canonical UUIDs.
 - New privileged routes should reuse the shared helpers instead of reimplementing role/default joins.
+
+## Employee creation preparation
+
+Infrastructure uses the registered satellite session id `infra`. Employee creation
+requires a fresh root-workspace `MEMBER`, `manage_internal_accounts`, and a current
+confirmed, unbanned administrator with an exact `@tuturuuu.com` identity. Directory
+subdomains do not grant staff mutation privileges.
+
+The first-class web `/api/v1/infrastructure/internal-accounts/employees` boundary
+currently reports `available: false` and refuses authenticated creation with503.
+The UI exposes a disabled preparation form. No journal, provider or SQL connector
+is installed by this source change. The shared client strictly validates the
+request and acknowledgement, binds an operation key, and never retries creation.
+
+A durable journal is a separate prerequisite: atomically bind the administrator,
+operation key and canonical payload fingerprint to one server-allocated target
+UUID; preserve that UUID and exact email/name tuple across re-entry. A conflicting
+payload or known pending/unknown result requires inspection. A caller header,
+in-memory map or the existing per-invocation UUID orchestration is not this journal.
+Temporary passwords must remain transient and must not enter journal payloads,
+logs, browser storage or receipts.
+
+Actual172-assertion disposable-schema qualification is distinct from current-main
+schema composition, correct-project applied ledger/catalog/ACL proofs, real
+provider ownership and runtime qualification. Keep creation unavailable until the
+durable journal and bounded transport satisfy those gates. No blind provider
+create retry, compensation deletion, mailbox change or named-account creation is
+authorized by the preparation form.

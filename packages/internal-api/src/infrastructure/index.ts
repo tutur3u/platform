@@ -5,6 +5,7 @@ export * from './auth-recovery';
 export * from './blocked-ips';
 export * from './cron';
 export * from './desktop';
+export * from './employee-address-migration';
 export * from './employee-management';
 export * from './employee-restoration';
 export * from './github-bot';

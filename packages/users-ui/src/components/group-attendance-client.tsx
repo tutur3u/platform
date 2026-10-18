@@ -208,7 +208,7 @@ export default function GroupAttendanceClient({
     return filterWorkspaceUserGroupAttendanceMembers(allMembers, showManagers);
   }, [allMembers, showManagers]);
 
-  // Attendance state is local (front-end only for now), managed via React Query cache
+  // Server attendance is cached independently from pending edits.
   const attendanceKey = [
     'workspaces',
     wsId,
@@ -254,8 +254,8 @@ export default function GroupAttendanceClient({
     new Map()
   );
 
-  // Reset pending changes when date changes
-  const attendanceScope = `${dateStr}:${activeSessionId ?? 'legacy'}`;
+  // Reset pending changes when the attendance scope changes
+  const attendanceScope = `${wsId}:${groupId}:${dateStr}:${activeSessionId ?? 'legacy'}`;
   useEffect(() => {
     void attendanceScope;
     setPendingMap(new Map());
@@ -283,23 +283,6 @@ export default function GroupAttendanceClient({
     userId: string,
     update: { status?: AttendanceStatus; note?: string | null }
   ) => {
-    // Update optimistic cache for immediate UI feedback
-    const previous =
-      queryClient.getQueryData<Record<string, AttendanceEntry>>(
-        attendanceKey
-      ) || {};
-    const next: Record<string, AttendanceEntry> = { ...previous };
-    const curr = next[userId] || {
-      status: 'NONE' as AttendanceStatus,
-      note: '',
-    };
-    next[userId] = {
-      status: update.status ?? curr.status,
-      note: (update.note ?? curr.note) || '',
-    };
-    queryClient.setQueryData(attendanceKey, next);
-
-    // Track pending change
     setPendingMap((prev) => {
       const draft = new Map(prev);
       const existing = draft.get(userId) || { user_id: userId };
@@ -307,23 +290,7 @@ export default function GroupAttendanceClient({
       if (update.status !== undefined) merged.status = update.status;
       if (update.note !== undefined) merged.note = update.note ?? '';
 
-      // If merged state equals current server state, remove from pending; else set
-      const effectiveAfter = {
-        status: merged.status ?? attendance[userId]?.status ?? 'NONE',
-        note: merged.note ?? attendance[userId]?.note ?? '',
-      };
-      const serverState = {
-        status: attendance[userId]?.status ?? 'NONE',
-        note: attendance[userId]?.note ?? '',
-      };
-      const isSame =
-        effectiveAfter.status === serverState.status &&
-        (effectiveAfter.note || '') === (serverState.note || '');
-      if (isSame) {
-        draft.delete(userId);
-      } else {
-        draft.set(userId, { ...merged, user_id: userId });
-      }
+      draft.set(userId, { ...merged, user_id: userId });
       return draft;
     });
   };
@@ -334,30 +301,50 @@ export default function GroupAttendanceClient({
     setLocalAttendance(userId, { status: newStatus });
   };
 
-  // Batch save mutation using Supabase
+  // Acknowledge only the submitted snapshot after the transport succeeds.
   const saveAttendanceMutation = useMutation({
-    mutationFn: async (
+    mutationFn: async ({
+      payload,
+      date,
+      sessionId: savedSessionId,
+      workspaceId,
+      savedGroupId,
+    }: {
       payload: Array<{
         user_id: string;
         status: AttendanceStatus;
         note: string;
-      }>
-    ) => {
+      }>;
+      submitted: Map<string, PendingAttendance>;
+      date: string;
+      sessionId: string | null;
+      queryKey: typeof attendanceKey;
+      scope: string;
+      workspaceId: string;
+      savedGroupId: string;
+    }) => {
       await saveWorkspaceUserGroupAttendance(
-        wsId,
-        groupId,
+        workspaceId,
+        savedGroupId,
         payload.map((entry) => ({
           user_id: entry.user_id,
           status: entry.status,
-          date: format(currentDate, 'yyyy-MM-dd'),
+          date,
           notes: entry.note,
-          session_id: activeSessionId,
+          session_id: savedSessionId,
         }))
       );
     },
-    onSuccess: async () => {
-      setPendingMap(new Map());
-      await queryClient.invalidateQueries({ queryKey: attendanceKey });
+    onSuccess: async (_, { submitted, queryKey, scope }) => {
+      if (scope === attendanceScope)
+        setPendingMap((current) => {
+          const remaining = new Map(current);
+          for (const [userId, entry] of submitted) {
+            if (remaining.get(userId) === entry) remaining.delete(userId);
+          }
+          return remaining;
+        });
+      await queryClient.invalidateQueries({ queryKey });
       toast.success(tAtt('save_success'));
     },
     onError: (e) => {
@@ -371,7 +358,7 @@ export default function GroupAttendanceClient({
     await queryClient.invalidateQueries({ queryKey: attendanceKey });
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (pendingMap.size === 0) {
       toast.info(tAtt('no_changes'));
       return;
@@ -390,7 +377,16 @@ export default function GroupAttendanceClient({
       const finalNote = (pending.note ?? base.note ?? '') as string;
       payload.push({ user_id, status: finalStatus, note: finalNote });
     });
-    await saveAttendanceMutation.mutateAsync(payload);
+    saveAttendanceMutation.mutate({
+      payload,
+      submitted: new Map(pendingMap),
+      date: dateStr,
+      sessionId: activeSessionId,
+      queryKey: attendanceKey,
+      scope: attendanceScope,
+      workspaceId: wsId,
+      savedGroupId: groupId,
+    });
   };
 
   // Calendar helpers (mimic schedule.tsx)

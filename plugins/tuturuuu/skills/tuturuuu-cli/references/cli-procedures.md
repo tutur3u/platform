@@ -45,6 +45,23 @@ types.
 
 ## Verification
 
+For native graph projection checks, use the focused
+`src/operational-graph/projection.test.ts` and `reader.test.ts` suites. The reader
+validates its request before opening or reading SQLite and forwards only parsed
+fields; caller extras must never replace the authoritative snapshot. Use disposable
+synthetic fixtures. For Bun 1.4.1 concurrency fixtures, populate WAL through the
+fixture writer before opening a read-only connection: that runtime cannot read a
+freshly switched WAL database without sidecars. Do not make the reader repair it
+through writes. See `apps/docs/reference/packages/cli-operational-state.mdx`.
+
+Native graph commands use the existing store writer transaction and original
+request/event receipt replay. Keep graph disposition separate from delivery
+verification, retain complete canonical members, and reject canonical dependency
+collapse instead of dropping an edge. Reopen/unmerge must preserve later fields
+and historical evidence; an unmerge requires its current merge-operation identity.
+Run `src/operational-graph/store.test.ts` and `src/cli/operational-graph.test.ts`
+with the foundational receipt/state tests before freezing a graph change.
+
 For CLI changes, run focused checks first:
 
 ```bash
@@ -76,4 +93,14 @@ If browser login pages changed, also run the focused web auth test:
 bun --cwd apps/web test src/app/api/cli/auth/start/route.test.ts
 ```
 
-Finish TypeScript or package changes with `bun ff` and `bun check`.
+For SDK packaging, run `bun --cwd packages/sdk test:packaging`. The build stages
+only the explicit portable source closure from `internal-api` and `utils`, then
+compiles local imports for both JavaScript and declarations. Keep their broad
+packages in development dependencies; add actual portable external libraries to
+SDK dependencies with the package manager. Review new closure entries before
+extending `packages/sdk/scripts/portable-build.cjs` allowlists. Require the
+exact-commit SDK package qualification workflow's compile, isolated public install,
+and compiled CLI probes. See `packages/sdk/PUBLISHING.md`.
+
+Run focused non-build tests locally and require applicable exact-commit CI test,
+type-check, lint, and build results. Do not run local `bun check` or builds.

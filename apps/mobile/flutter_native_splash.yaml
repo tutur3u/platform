@@ -6,12 +6,12 @@ flutter_native_splash:
   color_dark: "#09090B"
   image: ../web/public/media/logos/light.png
   image_dark: ../web/public/media/logos/dark.png
-  image_android: assets/logos/light_android.png
-  image_dark_android: assets/logos/dark_android.png
+  image_android: assets/logos/transparent_android_splash.png
+  image_dark_android: assets/logos/transparent_android_splash.png
   ios_content_mode: center
   android_gravity: center
   android_12:
     color: "#FFFFFF"
     color_dark: "#09090B"
-    image: assets/logos/light_android12.png
-    image_dark: assets/logos/dark_android12.png
+    image: assets/logos/transparent_android12_splash.png
+    image_dark: assets/logos/transparent_android12_splash.png

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +10,7 @@ import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.da
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_attachments.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
@@ -104,20 +106,23 @@ class AssistantComposerDock extends StatelessWidget {
           onDismissKeyboard: focusNode.unfocus,
         ),
         Expanded(
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            style: const TextStyle(fontSize: 16, height: 1.25),
-            minLines: 1,
-            maxLines: 5,
-            keyboardType: TextInputType.multiline,
-            textInputAction: TextInputAction.newline,
-            onTapOutside: (_) => focusNode.unfocus(),
-            decoration: InputDecoration(
-              hintText: context.l10n.assistantAskPlaceholder,
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          child: ListenableBuilder(
+            listenable: focusNode,
+            builder: (context, _) => TextField(
+              controller: controller,
+              focusNode: focusNode,
+              style: const TextStyle(fontSize: 16, height: 1.25),
+              minLines: focusNode.hasFocus ? 3 : 1,
+              maxLines: 5,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              onTapOutside: (_) => focusNode.unfocus(),
+              decoration: InputDecoration(
+                hintText: context.l10n.assistantAskPlaceholder,
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
           ),
         ),
@@ -181,14 +186,27 @@ class AssistantComposerDock extends StatelessWidget {
           );
     final sizedComposer = ConstrainedBox(
       constraints: BoxConstraints(minHeight: assistantComposerHeight(context)),
-      child: composer,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!localOnly && chatState.composerAttachments.isNotEmpty)
+            AssistantComposerAttachments(
+              attachments: chatState.composerAttachments,
+              onRemove: onRemoveAttachment,
+            ),
+          composer,
+        ],
+      ),
     );
     if (embedded) {
       return AssistantComposerSizeReporter(
-        // ShellDockSurface adds a one-pixel border above and below content.
+        // Include the border and side controls in occupied clearance.
         onHeightChanged: onHeightChanged == null
             ? null
-            : (height) => onHeightChanged!(height + 2),
+            : (height) => onHeightChanged!(
+                math.max(height + 2, AssistantComposerPrimaryAction.dockHeight),
+              ),
         child: sizedComposer,
       );
     }
@@ -212,6 +230,8 @@ class AssistantComposerDock extends StatelessWidget {
   Widget navigationToggle(BuildContext context) =>
       AssistantComposerPrimaryAction(
         controller: controller,
+        attachments: chatState.composerAttachments,
+        onRemoveAttachment: onRemoveAttachment,
         focusNode: focusNode,
         onToggleNavigation: onToggleNavigation,
         onSend: onSend,

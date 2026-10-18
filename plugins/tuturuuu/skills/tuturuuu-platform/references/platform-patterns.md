@@ -134,6 +134,21 @@ shared-package changes.
 
 ## Effect Orchestration
 
+Employee management inspection uses the Web `employees/[userId]` GET route and
+the portable restoration boundary in `packages/utils/src/internal-accounts`.
+Keep its RPC port inspection-only and recheck the same request actor before SQL
+and private disclosure. Preserve UUID/email binding and unresolved operation
+receipts; an observation is not permission to retry activation or migrate a
+legacy address. See the Infrastructure application guide's managed employee
+inspection section and the colocated Web route/transport regressions.
+
+The unbound legacy-address migration protocol is separate from RESTORE. Never
+wire its injected journal/provider ports from source tests alone: a concrete
+durable supplier, atomic one-time attempt claim, independent committed readbacks
+and real Auth identity/email qualification are missing activation gates. See
+`apps/docs/build/development-tools/employee-address-migration.mdx` for the
+protocol and its explicitly in-memory regression boundary.
+
 - Import Effect through `@tuturuuu/utils/effect`, not directly from `effect`,
   so Tuturuuu code uses one curated server/service orchestration entrypoint.
 - Prefer Effect for new or substantially edited TypeScript server/shared flows
@@ -309,6 +324,17 @@ Rules:
   `/api/:path*` → web proxy — every proxied API call 404s with
   `workspaceId: 'v1'`. Put non-migrated-route redirects in `proxy.ts` middleware,
   which returns early for `/api` and therefore cannot shadow the proxy.
+- A local dynamic API route can also shadow a Web-owned static subtree and return
+  405 for unsupported methods before fallback rewrites. Route only the Web-owned
+  subtree through `beforeFiles`; verify its zero-segment base and descendants with
+  installed Next path matchers, while preserving local siblings. Infrastructure's
+  employee routing regression in `apps/infrastructure/next.config.test.ts` covers
+  this case. For external collection rewrites, use an exact collection rule plus
+  nonempty `:path+` descendants. Also test the deployment converter: an empty
+  `:path*` backreference can leave a trailing slash that produces a same-path
+  redirect loop when the upstream canonicalizes it. Next runtime interpolation
+  alone misses this case. Keep session/API guards unchanged and verify the exact app build in
+  CI plus production routing after authorized deployment.
 - Route ownership is an explicit list (contacts: `CONTACTS_OWNED_ROUTE_PREFIXES`).
   Add an entry when you migrate a module, or the middleware bounces the new route
   straight back to web. Beware prefix-vs-exact: a bare `users` entry that
@@ -1035,3 +1061,41 @@ SDK serializer behind a closed synthetic fetch boundary; response-route tests
 check private conflict propagation. These fixtures are not organizer receipt
 proof. Real-account acceptance requires an authorized dedicated calendar and
 separate organizer observation; keep production provider admission held.
+
+## Employee restoration transport
+
+RESTORE and reconciliation POST routes use the portable restoration helpers in
+`packages/utils/src/internal-accounts`; Infrastructure entries are compatibility
+exports. Keep the RESTORE runtime gate independent of CREATE and default off.
+Before provider unban, separately read back the exact reserved and attempted
+operation; before reporting restored, read back completed state and revision.
+Repeat the same request actor authorization before each RPC/provider boundary and
+before response disclosure. Never retry an unknown provider outcome or replace
+its operation UUID. See the Infrastructure application docs for real SQL/Auth
+qualification gates and the Web restoration transport/runtime regression suites.
+
+
+## Legacy employee address migration surface
+
+Web owns the default-off `address-migrations/{inspect,migrate}` POST endpoints;
+Infrastructure uses the typed internal-api consumer. Reuse the existing confirmed
+root-admin Infrastructure authorizer and browser action/origin/fetch-site fences.
+Never accept a client actor. Readiness needs independent journal/provider reads;
+retained operations stay inspection-only. Keep actor/workspace recovery tuples
+and consume the single client dispatch before awaiting it; independently inspect
+even a completed mutation reply. No provider retry or replacement UUID after an
+unknown outcome. See the employee address migration runbook and Infrastructure
+product decision for supplier/mailbox/activation gates and regression coverage.
+
+For employee POSTs behind Infrastructure external rewrites, use the shared
+employee origin predicate and Web's verified Infrastructure bearer resolver.
+Next's external proxy preserves Origin but changes Host; never infer trusted
+browser origin from forwarded headers. Keep origin acceptance separate from
+fresh actor/permission checks. See the Infrastructure application guide's
+"Employee POST origin boundary" and `employee-request-origin.test.ts`.
+
+- Attendance save acknowledgements must retain later draft entries and invalidate
+  the submitted scope's query. Keep draft edits separate from the server cache;
+  comparing an optimistic cache against itself can discard unsaved work. Preserve
+  complete attendance note payloads: the current RPC treats omitted notes as empty.
+  See the Contacts modules attendance decision and its deferred-save regression.

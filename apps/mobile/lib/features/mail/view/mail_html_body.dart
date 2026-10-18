@@ -21,12 +21,14 @@ class MailHtmlBody extends StatefulWidget {
     this.embedded = true,
     this.onViewOriginal,
     this.imagesVisible,
+    this.onImagesChanged,
     this.showControls = true,
     super.key,
   });
 
   final String html;
   final bool? imagesVisible;
+  final ValueChanged<bool>? onImagesChanged;
   final bool showControls;
   final Map<String, String> inlineImages;
   final String fallbackText;
@@ -248,9 +250,11 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
               ),
               IconButton(
                 tooltip: context.l10n.mailLoadImages,
-                onPressed: () => unawaited(
-                  MailImagePreference.instance.select(enabled: !_images),
-                ),
+                onPressed: widget.onImagesChanged != null
+                    ? () => widget.onImagesChanged!(!_images)
+                    : () => unawaited(
+                        MailImagePreference.instance.select(enabled: !_images),
+                      ),
                 icon: Icon(
                   _images ? Icons.image : Icons.image_not_supported_outlined,
                 ),

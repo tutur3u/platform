@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/storage-core",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "exports": {
     "./*": "./src/lib/*.ts"

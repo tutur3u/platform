@@ -11,6 +11,7 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/ai/meetings/summary` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/meetings/summary/route.ts) |
 | `/api/ai/meetings/transcription` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/meetings/transcription/route.ts) |
 | `/api/ai/objects/year-plan` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/objects/year-plan/route.ts) |
 | `/api/ai/temp-auth/revoke` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/temp-auth/revoke/route.ts) |
@@ -122,6 +123,12 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/exchange-rates` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/exchange-rates/route.ts) |
 | `/api/v1/external-ai/audio/speech` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/external-ai/audio/speech/route.ts) |
 | `/api/v1/external-ai/chat/completions` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/external-ai/chat/completions/route.ts) |
+| `/api/v1/infrastructure/internal-accounts/address-migrations/inspect` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/infrastructure/internal-accounts/address-migrations/inspect/route.ts) |
+| `/api/v1/infrastructure/internal-accounts/address-migrations/migrate` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/infrastructure/internal-accounts/address-migrations/migrate/route.ts) |
+| `/api/v1/infrastructure/internal-accounts/employees/[userId]/reconcile` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/%5BuserId%5D/reconcile/route.ts) |
+| `/api/v1/infrastructure/internal-accounts/employees/[userId]/restore` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/%5BuserId%5D/restore/route.ts) |
+| `/api/v1/infrastructure/internal-accounts/employees/[userId]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/%5BuserId%5D/route.ts) |
+| `/api/v1/infrastructure/internal-accounts/employees` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/route.ts) |
 | `/api/v1/inquiries/[id]/media-urls` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/inquiries/%5Bid%5D/media-urls/route.ts) |
 | `/api/v1/inquiries/[id]` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/inquiries/%5Bid%5D/route.ts) |
 | `/api/v1/inquiries` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/inquiries/route.ts) |
@@ -184,12 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/storage/folders` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/folders/route.ts) |
 | `/api/v1/storage/guarded-download/[token]` | GET, HEAD, OPTIONS | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/guarded-download/%5Btoken%5D/route.ts) |
 | `/api/v1/storage/list` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/list/route.ts) |
-| `/api/v1/storage/share` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/share/route.ts) |
-| `/api/v1/storage/share-batch` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/share-batch/route.ts) |
-| `/api/v1/storage/upload` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/upload/route.ts) |
-| `/api/v1/storage/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/upload-url/route.ts) |
-| `/api/v1/topic-announcement-verifications/[token]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/topic-announcement-verifications/%5Btoken%5D/route.ts) |
-| `/api/v1/user/onboarding-progress` | GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/user/onboarding-progress/route.ts) |
-| `/api/v1/user/profile` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/user/profile/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

@@ -1,6 +1,6 @@
 ---
-title: "Infrastructure"
-description: "Privileged operations, diagnostics, configuration, and hosted scheduler ownership."
+title: 'Infrastructure'
+description: 'Privileged operations, diagnostics, configuration, and hosted scheduler ownership.'
 updatedAt: '2026-10-08'
 ---
 
@@ -50,3 +50,260 @@ separate boundaries.
 A configuration edit, deploy action, external registration, or production write
 requires its own authorized workflow. Reading a runbook or recalling a private
 record is not authority to execute it.
+
+## Employee API routing
+
+Web owns `/api/v1/infrastructure/internal-accounts/employees` and its descendants,
+including CREATE readiness, employee inspection, restore, and reconcile.
+Infrastructure forwards that exact subtree in `beforeFiles`, including the base
+path with zero wildcard segments. A fallback-only rewrite lets the local
+`internal-accounts/[userId]` PATCH route capture `employees` and answer GET with
+an empty 405 before Web can handle it.
+
+The local internal-account list and legacy UUID PATCH remain in Infrastructure;
+address-migration endpoints retain their existing Web fallback. The installed
+Next matchers in `apps/infrastructure/next.config.test.ts` cover these boundaries.
+Routing checks do not establish downstream readiness: require the exact-commit
+Infrastructure CI build and an authorized production recheck after deployment.
+
+## Employee SQL transport qualification
+
+### HTTP RPC runtime candidate
+
+The Web employee CREATE route can compose the durable operation journal with
+fixed service-only Supabase RPCs. `EMPLOYEE_CREATION_RUNTIME_ENABLED` defaults to
+disabled. Enable it only after the selected source passes isolated SQL,
+generated-type, HTTP/Auth and exact-build checks and its migrations are verified
+in the target project. Infrastructure consumes the same availability endpoint;
+its create control remains disabled while the runtime is unavailable.
+
+The adapter uses the configured server Supabase project for both Auth and SQL.
+The request still requires an eligible root administrator, current membership and
+permission, and the account-action origin/header checks. SQL repeats the actor
+assertion and denies expanded function ACLs. An original actor/operation key owns
+one target UUID. Durable attempted phases and single-use invocation capabilities
+precede provider effects; unknown responses retain that identity for inspection.
+
+Every RPC write acknowledgement is followed by a separate persisted-state
+observation. A function response from a transaction configured to roll back cannot
+authorize provider creation or publish account success. Lost responses, malformed
+state and readback disagreement fail closed without an automatic retry. Passwords
+remain transient Auth inputs and never enter the operation tables or RPC body.
+
+This adapter does not activate the fixed child-worker prototype below. That
+prototype retains its separate operator, connection and asset qualification
+requirements. RESTORE and legacy-domain migration remain separate runtime flows;
+successful CREATE qualification does not establish either behavior.
+
+### Managed employee inspection
+
+Web serves `GET /api/v1/infrastructure/internal-accounts/employees/:userId`
+for the native Infrastructure management client. It returns the retained
+restoration inspection contract, provider observation time and next action.
+It requires a current confirmed, active canonical-domain root `MEMBER` with
+`manage_internal_accounts`; it rechecks the same request actor before SQL and
+before disclosing private recovery details. Responses are private and uncached.
+
+The adapter reads the exact provider UUID and calls only
+`private.inspect_employee_management` in the same configured Supabase project.
+Missing schema, conflicting tuples, unavailable reads and changed authority fail
+closed. An unresolved restore operation remains `inspect`; it never relaunches
+provider work. Unmanaged legacy addresses remain an adoption/migration concern.
+The portable restoration boundary lives under
+`packages/utils/src/internal-accounts`, with Infrastructure compatibility exports.
+
+This GET path does not enable CREATE, RESTORE writes or legacy-address migration. No runtime flag is changed. Route and transport
+regressions live beside the Web implementation, while the existing Infrastructure
+restoration suites cover compatibility. Exact-source CI builds, deployed request
+authentication and target-project SQL qualification remain separate release gates.
+
+### RESTORE and reconciliation POST candidate
+
+Web owns `POST /api/v1/infrastructure/internal-accounts/employees/:userId/restore`
+and the sibling `/reconcile` route. `EMPLOYEE_RESTORATION_RUNTIME_ENABLED`
+defaults to disabled and is independent of the CREATE gate. Both routes remain
+unavailable while this gate is absent. The Infrastructure console consumes this contract through the managed-access
+dialog below; legacy-domain address migration remains a separate flow.
+
+The routes reuse the portable restoration HTTP/orchestration helpers, with
+Infrastructure compatibility exports. The server supplies the actor and provider;
+strict request input supplies only confirmation email, expected revision and,
+for reconciliation, the original operation UUID. Current request authentication,
+root membership/permission and active canonical-domain actor checks repeat before
+every RPC and provider call and before a successful or pending response is disclosed.
+
+The fixed five-function transport uses the same configured Supabase project for
+Auth and SQL. Separate `inspect_employee_management` requests must observe the
+matching reserved and attempted operation before the sole provider unban. SQL
+confirmation/reconciliation receipts must match independently observed completed
+state, revision and managed name. Rollback responses, missing or malformed
+readbacks and lost responses retain an unknown outcome without automatic retry.
+Reconciliation uses the original actor/target/revision/operation tuple and never
+begins an operation or dispatches another provider mutation.
+
+`employee-restoration-rpc.test.ts` and `employee-restoration-runtime.test.ts` in
+Web exercise actual loopback HTTP against a disposable synthetic SQL endpoint,
+including unpersisted replies, revocation and provider acknowledgement loss.
+The shipped route test proves default-off behavior independently of CREATE.
+The retained Infrastructure suites cover helper compatibility. These fixtures
+qualify source and HTTP serialization only: before activation, independently
+verify the five deployed function definitions and service-only ACLs, commit and
+rollback/readback behavior through real PostgREST/PostgreSQL, request-session
+and actor revocation behavior with real Auth, and the exact-source Web and
+Infrastructure CI builds. Production migration completion and authorized
+activation remain release-owner gates; neither GET inspection nor CREATE
+qualification establishes RESTORE delivery.
+
+### Managed-access console
+
+The Infrastructure account directory exposes **Inspect managed access** for
+other accounts. The administrator explicitly reads current state; only an active,
+managed, mailbox-ready canonical account with a confirmed provider ban and a
+RESTORE next action offers restoration. Creation recovery, adoption, conflicting
+or unconfirmed provider state and legacy migration have explanatory states
+without a restore button. This dialog never renames an account or implements
+stable-UUID legacy-domain migration.
+
+Confirmation requires the exact inspected account email. Every submit performs
+another uncached inspection and compares revision and operation before dispatch.
+The portable consumer retains the original expected revision and server operation
+UUID across pending results and dialog close/reopen. A lost POST response blocks
+another RESTORE in that dialog lifetime, even if a subsequent read has no operation.
+Only the matching persisted operation can be reconciled; reconciliation never
+replays the provider mutation. No client-generated replacement UUID or automatic
+POST retry is used. State is private and ephemeral; a new page lifetime recovers
+operations from the authorized persisted inspection rather than browser storage.
+
+RESTORE remains disabled by default at the Web endpoint. Inspection does not
+advertise write availability. A capability-unavailable response therefore locks
+writes for the current dialog lifetime while preserving read-only inspection and
+any retained uncertain operation; it does not establish account absence. Session
+and permission denial retires actions until the page is reauthorized. Client
+actor lifetime checks surround each awaited stage, while the endpoint remains
+authoritative for current actor, root membership and permission.
+
+A successful POST alone is not displayed as restored. The console requires a
+separate GET showing the matching completed operation, original revision plus
+one, managed active registry, ready mailbox and confirmed active provider. Missing,
+malformed, mismatched or failed readbacks preserve uncertainty. Directory status
+and private management state remain separate observations.
+
+`employee-restoration-consumer.test.ts` covers revision/UUID fences, explicit
+reconciliation, unavailable capability, duplicate admission and revoked actors.
+`employee-restoration-dialog.test.tsx` covers rendered English/Vietnamese controls,
+exact confirmation, pending close/reopen, independent readback and actor replacement.
+These are synthetic source regressions. Exact-commit Infrastructure/internal-API
+CI and authenticated deployed session/provider/SQL acceptance remain separate;
+no runtime flags, account activation or migration are performed by the UI change.
+
+### Fixed child-worker prototype
+
+The fixed child-worker transport remains unavailable until its protected SQL supplier and
+project readiness are independently qualified. The fixed transport prototype
+accepts only preflight, finalize and activation-confirm operations. Each request
+owns one terminable child and TLS connection; no shared pool, caller SQL,
+account password or inherited database configuration enters that boundary.
+
+The executor is shared through the server-only
+`@tuturuuu/inventory-core/infrastructure/employee-sql/process` leaf; only this
+leaf's dependency closure is framework-free. Original Infrastructure entry
+points remain compatibility entries, while the canonical raw worker and protocol
+are colocated under `packages/inventory-core/src/lib/infrastructure/employee-sql/`.
+Before binding the Web supplier, verify that the compiled route's `.nft.json`
+trace and resolved `fork()` target load the canonical worker, protocol, and
+runtime dependencies. Relocation requires qualification of the exact source and
+build with refreshed signed attestations, even when raw worker/protocol hashes
+are unchanged.
+
+The parent requires external Ed25519-signed project and execution attestations,
+including the exact worker and protocol hashes. Missing bindings deny before
+spawning. Ordered, same-connection catalog checkpoints validate the role, cluster,
+ledger, function bodies and effective privileges before effects and COMMIT.
+The parent records an uncertain commit before authorizing COMMIT; lost commit
+acknowledgement never authorizes a blind retry or replacement account ID.
+
+The process requests cancellation at 13 seconds and kills only its owned child
+at 14.5 seconds, reserving cleanup time within the qualification profile's
+15-second budget. It waits for actual child closure. Client process/TCP drain
+controls do not establish server transaction rollback or row-lock release.
+Before wiring the supplier, qualify delayed connection/query/lock/COMMIT cases
+against disposable PostgreSQL, verify backend and lock drain, and verify the
+static worker/protocol assets in the exact hosted Next build and file trace.
+Source tests, schema assertions and signed synthetic fixtures cannot replace
+those gates or activate account creation.
+
+
+### Legacy employee address migration
+
+The internal-accounts page has a separate legacy address migration dialog.
+Migration changes the original UUID's `@xwf.tuturuuu.com` address to the same
+localpart at `@tuturuuu.com`, preserving its identity and linked data; RESTORE
+instead re-enables a previously suspended managed employee at its existing
+address. Neither flow creates a replacement account. Migration does not repair
+verification or claim/provision somebody else's mailbox. It requires existing
+approved active source and destination mailboxes owned by the original UUID,
+email-provider readiness, revision zero and no CREATE/RESTORE registry ambiguity.
+
+Web migration availability defaults off with its own
+`EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED` gate. The operator inspects the
+exact UUID/address tuple, types both addresses, performs a fresh preflight and
+submits one migration. Unknown results retain the operation UUID/revision for
+inspection across dialog close/reopen and same-session remount; provider mutation
+is never replayed. A separate reconciliation must confirm completion. Changing
+actor/workspace retires the old workflow. No password or token is requested.
+
+This decision applies only to the Infrastructure operator surface and Web
+migration endpoints; CREATE/RESTORE keep their existing contracts. The
+`address-migration-session.test.ts`, `address-migration-dialog.test.tsx`, Web
+migration runtime tests and typed consumer tests cover these boundaries with
+fixtures. Activation, hosted mail ownership/delivery, full-schema qualification,
+exact-commit CI and the named real account's preservation remain separate gates.
+See the [migration runbook](/build/development-tools/employee-address-migration).
+
+### Employee POST origin boundary
+
+Web owns CREATE, RESTORE/reconcile and address-migration POST handlers behind
+Infrastructure's external rewrite. Next preserves the browser `Origin` while
+changing the destination Host, so the request URL alone cannot identify the
+browser's origin. A configured production Infrastructure origin is accepted only
+with a cryptographically verified app-session bearer targeted to `infra`.
+Forwarded host/protocol headers never grant this exception. Actor, root membership,
+permission and operation checks remain required independently.
+
+Foreign origins and cross-site fetch metadata remain denied. Direct Web requests
+retain their existing same-origin and non-browser bearer behavior. Migration
+continues to reject missing-origin cookie requests. No runtime flag is enabled by
+this boundary. `employee-request-origin.test.ts` covers signed tokens, wrong app
+and forged credentials, spoofed forwarding headers and all three active adapters;
+it does not certify production Auth, SQL or provider actions.
+
+
+### Feedback schema admission
+
+The feedback schema candidate reuses the canonical employee registry. Staff
+eligibility requires an active registry tuple matching the confirmed current
+corporate email, no current ban and a Boolean employee-onboarding marker; the
+service-only wrapper delegates to the same private assertion used by inbox reads.
+A domain match alone grants no access. Reports remain private; ordinary actors
+receive only their own content-free receipt, and staff reads grant no management
+capability. This schema scope does not change employee CREATE or RESTORE rules.
+
+Feedback availability remains off pending separate activation. The default-off
+hosted feedback profile retains the original105 rollback assertions plus correlation31, for106 after the canonical
+employee foundation. Its eligibility fixture constructs synthetic identities without
+personal membership by temporarily suppressing only the named personal-workspace
+bootstrap trigger, then requiring its exact normal state restored before assertions.
+This does not prove canonical employee signup lacks membership; that behavior remains
+a separate parent audit item. The retained older277 result does not qualify this new278 profile or causal phase.
+The profile flag selects test packets only; every disposable profile applies the
+full tracked migration snapshot. It does not activate feedback or prevent schema
+application in other profiles, whose results do not qualify feedback coverage.
+See the [schema qualification runbook](/build/development-tools/employee-schema-qualification)
+for the exact hosted profile, full-history requirement and remaining evidence.
+
+The optional default-OFF feedback causal profile tests eight single-removal
+counterfactuals only in the owned hosted database, requiring exact targeted RED,
+transaction rollback/catalog equality and restoration GREEN. Synthetic tests and
+source hashes are not SQL proof. The domain-regexp check has a structural redundancy
+disposition, not observed mutation coverage; ACL/registry availability remain ordinary
+denial coverage. No production staff predicate or feature flag is changed.

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_hub.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/view/mail_settings_hub.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
@@ -32,15 +33,22 @@ class ProductSettingsEntry {
   final Future<void> Function(BuildContext) open;
 }
 
+bool _assistantSettingsReady(BuildContext context) {
+  final auth = context.read<AuthCubit>().state;
+  return auth.status == AuthStatus.authenticated &&
+      !auth.isLoading &&
+      auth.user != null &&
+      context.read<WorkspaceCubit>().state.currentWorkspace != null;
+}
+
 final productSettingsRegistry = <ProductSettingsEntry>[
   ProductSettingsEntry(
     id: 'assistant',
     icon: Icons.auto_awesome_outlined,
     title: (context) => context.l10n.navAssistant,
-    visible: (context) =>
-        context.read<AuthCubit>().state.user != null &&
-        context.read<WorkspaceCubit>().state.currentWorkspace != null,
+    visible: _assistantSettingsReady,
     open: (context) async {
+      if (!_assistantSettingsReady(context)) return;
       final workspaceId = context
           .read<WorkspaceCubit>()
           .state

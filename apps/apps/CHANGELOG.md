@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/apps-v0.24.0...apps-v0.25.0) (2026-10-17)
+
+
+### Features
+
+* **apps:** add bounded Vite Cloudflare gateway slice ([95c0f11](https://github.com/tutur3u/platform/commit/95c0f1172cf3d6e19bdafa894090adf06ebc9a71)) ([#6275](https://github.com/tutur3u/platform/issues/6275)) ([2f7e5cc](https://github.com/tutur3u/platform/commit/2f7e5cca1c9ff438344ef6668f9f42c920da6fcd))
+
+
+### Bug Fixes
+
+* **apps:** load Cloudflare Vite config as ESM ([aca9eb9](https://github.com/tutur3u/platform/commit/aca9eb924f7ee18dfa71da283ddfa02eafc7ae39))
+* **journal:** reconcile context branch with updated parent ([80cf437](https://github.com/tutur3u/platform/commit/80cf437c9d494e3c0fc4ce9bb6d2fe19c655e2a0))
+* **release:** reconcile production history before Contacts rollout ([dc017a2](https://github.com/tutur3u/platform/commit/dc017a227de6f284268b34690198972c06c52434)) ([#6241](https://github.com/tutur3u/platform/issues/6241)) ([66654a5](https://github.com/tutur3u/platform/commit/66654a5d7ad441a93070d1502f267d6d4e08a6cd))
+* **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/apps-v0.23.0...apps-v0.24.0) (2026-10-09)
 
 

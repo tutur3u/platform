@@ -18,6 +18,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { hasManagedMailMailbox } from './mailbox-notification-access';
 import { isManagedMailReviewer } from './reviewer-access';
 import type { MailRouteContext } from './types';
 
@@ -87,9 +88,24 @@ export async function resolveMailRouteContext(
   }
 
   const isStaff = isExactTuturuuuDotComEmail(auth.user.email);
+  let managedMailbox = false;
+  if (!connectedAccount && !isStaff) {
+    try {
+      managedMailbox = await hasManagedMailMailbox(auth.user);
+    } catch {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: 'Mail access unavailable' },
+          { status: 503 }
+        ),
+      };
+    }
+  }
   if (
     !connectedAccount &&
     !isStaff &&
+    !managedMailbox &&
     !(await isManagedMailReviewer(auth.user))
   ) {
     return {

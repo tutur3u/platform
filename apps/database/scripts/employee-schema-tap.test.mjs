@@ -6,8 +6,12 @@ import {
   exactSourceSha,
   failedAssertionOrdinals,
   foundationPackets,
+  journalPackets,
+  personalJournalPackets,
   schemaFailureDiagnostic,
   schemaReceipt,
+  selectAddressMigration,
+  selectSchemaPackets,
   signupCaughtDiagnostics,
 } from './employee-schema-tap.mjs';
 
@@ -36,6 +40,25 @@ test('accepts exactly all 172 closed assertions', () => {
     assert.equal(assertPacketTap(tap(count), count), count);
   assert.equal(receipt().assertions, 172);
   assert.equal(receipt().schemaQualified, true);
+});
+test('journal selection requires all 301 assertions and successful cleanup', () => {
+  const all = journalPackets.map(([file, assertions]) => ({
+    file,
+    assertions,
+  }));
+  assert.equal(receipt({ journal: true }).schemaQualified, false);
+  assert.equal(receipt({ packets: all }).schemaQualified, false);
+  assert.equal(receipt({ journal: true, packets: all }).schemaQualified, true);
+  assert.equal(receipt({ journal: true, packets: all }).assertions, 301);
+  assert.equal(
+    receipt({ journal: true, packets: all, cleanupSucceeded: false })
+      .schemaQualified,
+    false
+  );
+  assert.equal(
+    receipt({ journal: true, packets: all.slice(0, 6) }).schemaQualified,
+    false
+  );
 });
 test('rejects a different plan count', () =>
   assert.throws(() => assertPacketTap(tap(24), 25)));
@@ -137,6 +160,23 @@ test('schema failure diagnostic rejects untrusted phase or ordinal', () => {
   assert.throws(() => schemaFailureDiagnostic('secret', 1));
   assert.throws(() => schemaFailureDiagnostic('packet-tap', 6));
   assert.throws(() => schemaFailureDiagnostic('packet-tap', '1'));
+});
+test('journal diagnostics bind packets six and seven without exposing SQL text', () => {
+  const diagnostic = schemaFailureDiagnostic(
+    'packet-execution',
+    7,
+    {
+      stderr:
+        'psql:/tmp/employee-schema-contract.sql:42: ERROR:  PRIVATE VALUE\n',
+      stdout: 'not ok 61 - private assertion\n',
+    },
+    true
+  );
+  assert.equal(diagnostic.sqlSourceLine, 42);
+  assert.match(diagnostic.sqlErrorMessageSha256, /^[a-f0-9]{64}$/);
+  assert.deepEqual(diagnostic.failedAssertionOrdinals, [61]);
+  assert.equal(JSON.stringify(diagnostic).includes('PRIVATE VALUE'), false);
+  assert.throws(() => schemaFailureDiagnostic('packet-execution', 9, {}, true));
 });
 test('schema failure diagnostic sanitizes unknown exit statuses', () => {
   for (const status of ['secret', -1, 256]) {
@@ -503,4 +543,141 @@ test('invalid signup caught evidence keeps constraint classification null', () =
     'Failed test 23:'
   );
   assert.equal(signupCaughtDiagnostics(tap, [22])[0].constraintCategory, null);
+});
+
+test('personal journal profile requires its exact rollback packet and cleanup', () => {
+  const packets = personalJournalPackets.map(([file, assertions]) => ({
+    file,
+    assertions,
+  }));
+  const options = {
+    sourceSha: 'a'.repeat(40),
+    packets,
+    lifecycleCode: 0,
+    cleanupSucceeded: true,
+    personalJournal: true,
+  };
+  assert.deepEqual(selectSchemaPackets(false, true).at(-1), [
+    'personal-journal.sql',
+    24,
+  ]);
+  assert.equal(schemaReceipt(options).scope, 'personal-journal');
+  assert.equal(schemaReceipt(options).schemaQualified, true);
+  assert.equal(schemaReceipt(options).assertions, 196);
+  assert.equal(
+    schemaReceipt({ ...options, packets: packets.slice(0, -1) })
+      .schemaQualified,
+    false
+  );
+  assert.equal(
+    schemaReceipt({
+      ...options,
+      packets: [
+        ...packets.slice(0, -1),
+        { file: 'personal-journal.sql', assertions: 23 },
+      ],
+    }).schemaQualified,
+    false
+  );
+  assert.equal(
+    schemaReceipt({ ...options, cleanupSucceeded: false }).schemaQualified,
+    false
+  );
+  assert.equal(
+    schemaReceipt({ ...options, lifecycleCode: 1 }).schemaQualified,
+    false
+  );
+  assert.throws(() => selectSchemaPackets(true, true));
+  assert.throws(() => selectSchemaPackets(false, true, true));
+  assert.throws(() => selectSchemaPackets(false, 'true'));
+  assert.equal(
+    schemaFailureDiagnostic(
+      'packet-tap',
+      6,
+      { stdout: 'not ok 24 - redacted' },
+      false,
+      true
+    ).failedAssertionOrdinals[0],
+    24
+  );
+  assert.throws(() =>
+    schemaFailureDiagnostic('packet-tap', 7, {}, false, true)
+  );
+});
+
+test('migration packet is opt-in and strict in both incompatible profiles', () => {
+  for (const journal of [false, true]) {
+    const base = selectSchemaPackets(journal);
+    const selected = selectSchemaPackets(journal, false, true);
+    const all = selected.map(([file, assertions]) => ({ file, assertions }));
+    assert.deepEqual(selected.slice(0, -1), base);
+    assert.deepEqual(selected.at(-1), ['employee-address-migration.sql', 10]);
+    for (const [, count] of selected) assertPacketTap(tap(count), count);
+    const expected = journal ? 311 : 182;
+    const complete = receipt({ journal, addressMigration: true, packets: all });
+    assert.equal(complete.schemaQualified, true);
+    assert.equal(complete.assertions, expected);
+    assert.match(complete.scope, /-address-migration$/u);
+    assert.equal(receipt({ journal, packets: all }).schemaQualified, false);
+    assert.equal(
+      receipt({ journal, addressMigration: true }).schemaQualified,
+      false
+    );
+    assert.equal(
+      receipt({ journal: !journal, addressMigration: true, packets: all })
+        .schemaQualified,
+      false
+    );
+    for (const bad of [
+      all.slice(0, -1),
+      [...all, all.at(-1)],
+      [...all].reverse(),
+      [
+        ...all.slice(0, -1),
+        { file: 'employee-address-migration.sql', assertions: 9 },
+      ],
+    ]) {
+      assert.equal(
+        receipt({ journal, addressMigration: true, packets: bad })
+          .schemaQualified,
+        false
+      );
+    }
+    assert.equal(
+      receipt({
+        journal,
+        addressMigration: true,
+        packets: all,
+        cleanupSucceeded: false,
+      }).schemaQualified,
+      false
+    );
+    assert.equal(
+      receipt({
+        journal,
+        addressMigration: true,
+        packets: all,
+        lifecycleCode: 1,
+      }).schemaQualified,
+      false
+    );
+    const diagnostic = schemaFailureDiagnostic(
+      'packet-tap',
+      selected.length,
+      { status: 1, stdout: 'not ok 10 - private' },
+      journal,
+      false,
+      true
+    );
+    assert.deepEqual(diagnostic.failedAssertionOrdinals, [10]);
+  }
+});
+
+test('migration selector rejects malformed inputs and leaves defaults unchanged', () => {
+  for (const value of [undefined, 'false'])
+    assert.equal(selectAddressMigration(value), false);
+  assert.equal(selectAddressMigration('true'), true);
+  for (const value of [true, false, '', 'TRUE', '1'])
+    assert.throws(() => selectAddressMigration(value));
+  assert.throws(() => selectSchemaPackets(false, false, 'true'));
 });

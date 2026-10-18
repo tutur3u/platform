@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/types-v0.34.0...types-v0.35.0) (2026-10-17)
+
+
+### Features
+
+* **cli:** register private feedback commands ([a1d9c87](https://github.com/tutur3u/platform/commit/a1d9c875ce918be676d184e036d7210c6785c46d))
+* **infrastructure:** add employee creation HTTP boundary ([688a0b2](https://github.com/tutur3u/platform/commit/688a0b261d55996c8d86ff27f76f539cf42a7109))
+* **infrastructure:** connect durable employee creation runtime ([#6291](https://github.com/tutur3u/platform/issues/6291)) ([f355eab](https://github.com/tutur3u/platform/commit/f355eabd0df4bbb80537b95718b25132e1c255af))
+* **infrastructure:** reconcile employee creation orchestration ([9356a36](https://github.com/tutur3u/platform/commit/9356a36872910c28552f494e75c3f89dc79cb543))
+* **infrastructure:** reconcile employee restoration HTTP boundary ([7bbcb3b](https://github.com/tutur3u/platform/commit/7bbcb3bc2feab4c8f652f808a6921da92cf7d4bd))
+* **infrastructure:** reconcile employee restoration orchestration ([862d22d](https://github.com/tutur3u/platform/commit/862d22dfbfb19c871bb3ecebcc2a4998902d1567))
+* **lettin:** reconcile private note discard review with current main ([8b19f09](https://github.com/tutur3u/platform/commit/8b19f099af02e65bdf522766f32d44146d843349))
+* **lettin:** reconcile private studio artwork filtering with current main ([e01d4ae](https://github.com/tutur3u/platform/commit/e01d4ae0b933ccf4f6f62ad7bd294225003f10ae))
+* **lettin:** reconcile private studio membership filters with main ([bab74a5](https://github.com/tutur3u/platform/commit/bab74a54460659e1b0f64bc42dfc5b1bd58aed6b))
+* **lettin:** reconcile private Studio ordering with main ([61feb60](https://github.com/tutur3u/platform/commit/61feb600942de9087ca2f43744c3dcf2b6c3ff64))
+* **lettin:** reconcile private studio tag filters with current main ([90b136c](https://github.com/tutur3u/platform/commit/90b136cf39d3ae1eed6fc0e7f4362e485e404cfb))
+* **lettin:** reconcile reviewed import browsing with current main ([cd37cc8](https://github.com/tutur3u/platform/commit/cd37cc8c32138874349be82a807fe57ae4f4e91c))
+* **mail:** connect Gmail and Outlook as personal email clients ([#5997](https://github.com/tutur3u/platform/issues/5997)) ([5abbe32](https://github.com/tutur3u/platform/commit/5abbe328188804006d0b3351dd110f609d4b3f9f))
+* **mail:** reconcile connected accounts with main ([3e2eae1](https://github.com/tutur3u/platform/commit/3e2eae1e93d8f03bf6425055f51453a1061aaada))
+* reconcile local reader preferences with main ([fd3837a](https://github.com/tutur3u/platform/commit/fd3837a80309507e4eaf2029ca922977411e03a3))
+* reconcile published reading statistics with main ([81d7aa3](https://github.com/tutur3u/platform/commit/81d7aa3e4efbad63c84952ef78984d27b84ba1d8))
+* **reports:** reconcile feedback consumer with current main ([e6775b1](https://github.com/tutur3u/platform/commit/e6775b16698e08407a8de89984d1ab964ecea098))
+* **supabase:** support scoped server Auth construction ([eec9ea8](https://github.com/tutur3u/platform/commit/eec9ea87c3180c9a4b358705b0c8365e74a46a1a))
+
+
+### Bug Fixes
+
+* **cli:** require explicit private feedback content opt-in ([32165bd](https://github.com/tutur3u/platform/commit/32165bd7b59721ee7780933f035a61c7f43a88d6))
+* **database:** reconcile absence credit contract with main ([591821e](https://github.com/tutur3u/platform/commit/591821e16c0e86122441aee4ada4f99806493c17))
+* **feedback:** qualify bounded staff operation lifetimes ([5d338b1](https://github.com/tutur3u/platform/commit/5d338b1d0417df51870e37464581a06f6a57deb0))
+* **feedback:** qualify scoped staff auth transport ([1c5e796](https://github.com/tutur3u/platform/commit/1c5e79691e53eeab19279167f506d1e061e3f652))
+* **feedback:** qualify staff reads and contain flag faults ([fb7a4de](https://github.com/tutur3u/platform/commit/fb7a4de29233219f9ba8dbd38f99ac68ab413868))
+* **feedback:** require own eligibility key and reconcile main ([fe21bd4](https://github.com/tutur3u/platform/commit/fe21bd4bf290bbc5f2dc50383f07a1ad27d11419))
+* **internal-api:** reconcile employee clients with main ([ca3533c](https://github.com/tutur3u/platform/commit/ca3533c0d2918aa94574f0b9474d23e72b86d71d))
+* **internal-api:** reconcile shared feedback clients with main ([d49d9e9](https://github.com/tutur3u/platform/commit/d49d9e9b431beba6e13171881ec9dd706921b708))
+* **lettin:** reconcile reviewed private notebook copy with main ([b91bbc8](https://github.com/tutur3u/platform/commit/b91bbc8d580aab48f5f8b74a3575f446939d8fb2))
+* reconcile external project storage analytics with main ([573f414](https://github.com/tutur3u/platform/commit/573f414522a1e77c657cb7b54a43331d1b06922b))
+* **reports:** reconcile feedback evidence foundation with main ([33c04b9](https://github.com/tutur3u/platform/commit/33c04b9e5e71196c5e9b4a56720578c9b564927a))
+* **sdk:** reconcile package qualification with main ([0bd74e7](https://github.com/tutur3u/platform/commit/0bd74e7f2a16bd46465e1514eb17269c25e9431d))
+
+
+### Performance Improvements
+
+* **cms:** cache project storage analytics in Postgres ([#6008](https://github.com/tutur3u/platform/issues/6008)) ([90e5724](https://github.com/tutur3u/platform/commit/90e57246c46d0c0ac48917bc29566d1e12fca7a5))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/types-v0.33.1...types-v0.34.0) (2026-10-04)
 
 

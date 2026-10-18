@@ -6,24 +6,24 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 557,
+        "legacyNext": 560,
         "migrated": 66,
-        "percentComplete": 12.28,
-        "remaining": 557,
+        "percentComplete": 12.23,
+        "remaining": 560,
         "terminal": 78,
-        "total": 635,
+        "total": 638,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 56,
+        "legacyNext": 57,
         "migrated": 99,
-        "percentComplete": 64.33,
-        "remaining": 56,
+        "percentComplete": 63.92,
+        "remaining": 57,
         "terminal": 101,
-        "total": 157,
+        "total": 158,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 567,
+        "legacyNext": 570,
         "migrated": 71,
-        "percentComplete": 12.77,
-        "remaining": 567,
+        "percentComplete": 12.71,
+        "remaining": 570,
         "terminal": 83,
-        "total": 650,
+        "total": 653,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 79,
+        "legacyNext": 80,
         "migrated": 148,
-        "percentComplete": 65.5,
-        "remaining": 79,
+        "percentComplete": 65.22,
+        "remaining": 80,
         "terminal": 150,
-        "total": 229,
+        "total": 230,
         "unknownStatus": 0
       }
     ],
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 646,
+      "legacyNext": 650,
       "migrated": 219,
-      "percentComplete": 26.51,
-      "remaining": 646,
+      "percentComplete": 26.39,
+      "remaining": 650,
       "terminal": 233,
-      "total": 879,
+      "total": 883,
       "unknownStatus": 0
     }
   },
@@ -1968,6 +1968,18 @@
       ],
       "routePath": "/api/v1/external-ai/chat/completions",
       "sourceFile": "apps/web/src/app/api/v1/external-ai/chat/completions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/infrastructure/internal-accounts/employees:apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "routePath": "/api/v1/infrastructure/internal-accounts/employees",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/internal-accounts/employees/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5287,6 +5299,30 @@
       ],
       "routePath": "/api/v1/workspaces/:wsId/notes/voice-jobs/:jobId",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/[jobId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/personal-journal:apps/web/src/app/api/v1/workspaces/[wsId]/personal-journal/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/personal-journal",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/personal-journal/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/personal-journal/:entryId:apps/web/src/app/api/v1/workspaces/[wsId]/personal-journal/[entryId]/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "routePath": "/api/v1/workspaces/:wsId/personal-journal/:entryId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/personal-journal/[entryId]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -8977,6 +9013,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/personal-journal:apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/personal-journal/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/personal-journal",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/personal-journal/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/:wsId/pipelines:apps/web/src/app/[locale]/(dashboard)/[wsId]/(ai)/pipelines/(default)/page.tsx",
       "kind": "page",
       "methods": [],
@@ -9981,20 +10026,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 635,
+    "apiRoutes": 638,
     "cronRoutes": 10,
     "layouts": 68,
-    "pages": 157,
-    "routeHandlers": 650,
+    "pages": 158,
+    "routeHandlers": 653,
     "methodCounts": {
-      "GET": 327,
+      "GET": 330,
       "HEAD": 20,
-      "POST": 322,
-      "PUT": 60,
+      "POST": 324,
+      "PUT": 61,
       "PATCH": 65,
       "DELETE": 102,
       "OPTIONS": 26
     },
-    "total": 879
+    "total": 883
   }
 }

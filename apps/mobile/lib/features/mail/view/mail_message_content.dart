@@ -15,6 +15,7 @@ class MailMessageContent extends StatefulWidget {
     required this.message,
     required this.threadId,
     this.imagesVisible,
+    this.onImagesChanged,
     this.showControls = true,
     super.key,
   });
@@ -25,6 +26,7 @@ class MailMessageContent extends StatefulWidget {
   final Map<String, dynamic> message;
   final String threadId;
   final bool? imagesVisible;
+  final ValueChanged<bool>? onImagesChanged;
   final bool showControls;
 
   @override
@@ -122,6 +124,7 @@ class _MailMessageContentState extends State<MailMessageContent> {
             inlineImages: _images,
             fallbackText: text,
             imagesVisible: widget.imagesVisible,
+            onImagesChanged: widget.onImagesChanged,
             showControls: widget.showControls,
           );
     return Column(

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
@@ -66,7 +67,7 @@ test('strict receipt tests run from control root', () => {
 
 test('schema runner uses source cwd and control script', () => {
   const step = namedStep(
-    'Apply full isolated schema and qualify 172 rollback assertions'
+    'Apply full isolated schema and qualify selected rollback assertions'
   );
   assert.match(step, /^ {8}working-directory: source$/mu);
   assert.match(
@@ -83,4 +84,90 @@ test('always cleanup uses the same source cwd and control script', () => {
     step,
     /^ {8}run: node \.\.\/apps\/database\/scripts\/verify-employee-schema-contract.mjs --cleanup$/mu
   );
+});
+
+test('personal journal profile stays optional and is passed to the guarded runner', () => {
+  assert.match(
+    workflow,
+    /include_personal_journal:\n(?:[^\n]*\n)*? {8}default: false\n {8}type: boolean/u
+  );
+  assert.match(
+    workflow,
+    /EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: \$\{\{ inputs.include_personal_journal \}\}/u
+  );
+});
+
+test('combined profiles reject incompatible selections before hosted database setup', () => {
+  for (let bits = 0; bits < 64; bits++) {
+    const journal = Boolean(bits & 1);
+    const personal = Boolean(bits & 2);
+    const http = Boolean(bits & 4);
+    const restore = Boolean(bits & 8);
+    const webSession = Boolean(bits & 16);
+    const addressMigration = Boolean(bits & 32);
+    const result = spawnSync(
+      process.execPath,
+      [
+        new URL(
+          'apps/database/scripts/verify-employee-schema-contract.mjs',
+          root
+        ).pathname,
+      ],
+      {
+        encoding: 'utf8',
+        timeout: 10000,
+        env: {
+          ...process.env,
+          GITHUB_ACTIONS: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: String(journal),
+          EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: String(personal),
+          EMPLOYEE_SCHEMA_INCLUDE_HTTP: String(http),
+          EMPLOYEE_SCHEMA_INCLUDE_RESTORE: String(restore),
+          EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: String(webSession),
+          EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: String(addressMigration),
+          EMPLOYEE_SCHEMA_SOURCE_SHA: '1'.repeat(40),
+        },
+      }
+    );
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 1);
+    const expected =
+      http && !journal
+        ? /HTTP qualification requires the journal qualification/u
+        : webSession && !http
+          ? /Web session qualification requires HTTP qualification/u
+          : restore && !http
+            ? /RESTORE qualification requires HTTP qualification/u
+            : personal && (journal || addressMigration)
+              ? /Select one optional schema profile/u
+              : /This gate requires a disposable hosted Linux runner/u;
+    assert.match(result.stderr, expected, `profile bits ${bits}`);
+  }
+});
+
+test('migration and RESTORE selections retain separate inputs and environment bindings', () => {
+  const blocks = workflow.split(/(?=^ {6}[a-z_]+:\n)/mu);
+  for (const [input, variable] of [
+    ['include_journal', 'EMPLOYEE_SCHEMA_INCLUDE_JOURNAL'],
+    ['include_http', 'EMPLOYEE_SCHEMA_INCLUDE_HTTP'],
+    ['include_restore', 'EMPLOYEE_SCHEMA_INCLUDE_RESTORE'],
+    ['include_web_session', 'EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION'],
+    ['include_address_migration', 'EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION'],
+  ]) {
+    const selected = blocks.filter((block) =>
+      block.startsWith(`      ${input}:\n`)
+    );
+    assert.equal(selected.length, 1);
+    for (const line of ['required: false', 'default: false', 'type: boolean'])
+      assert.match(selected[0], new RegExp(`^ {8}${line}$`, 'mu'));
+    assert.equal(
+      workflow.split(`      ${variable}: \${{ inputs.${input} }}\n`).length - 1,
+      1
+    );
+  }
+  const step = namedStep('Type-check selected HTTP fixtures without builds');
+  assert.match(step, /^ {8}if: inputs.include_http == true$/mu);
+  assert.match(step, /tsconfig.employee-http.json --noEmit/u);
 });

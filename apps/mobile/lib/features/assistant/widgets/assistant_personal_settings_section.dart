@@ -9,6 +9,7 @@ import 'package:mobile/features/assistant/data/assistant_personal_settings_repos
 import 'package:mobile/features/assistant/view/assistant_settings_editor_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_memory_editor.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
+import 'package:mobile/features/assistant/widgets/assistant_settings_info.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
@@ -122,7 +123,11 @@ class _AssistantPersonalSettingsSectionState
               ListTile(
                 leading: const Icon(Icons.auto_awesome_outlined),
                 title: Text(l.assistantPersonalityTitle),
-                subtitle: Text(snapshot.soul.name),
+                subtitle: Text(
+                  snapshot.soul.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 enabled: !state.busy,
                 onTap: () => pushScopedSettingsPage(
@@ -145,8 +150,15 @@ class _AssistantPersonalSettingsSectionState
                   if (snapshot.memoryEnabled != null)
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(l.assistantMemoryCollection),
-                      subtitle: Text(l.assistantMemoryWorkspaceScope),
+                      title: Row(
+                        children: [
+                          Expanded(child: Text(l.assistantMemoryCollection)),
+                          AssistantSettingsInfo(
+                            title: l.assistantMemoryTitle,
+                            description: l.assistantMemoryWorkspaceScope,
+                          ),
+                        ],
+                      ),
                       value: snapshot.memoryEnabled!,
                       onChanged: state.busy
                           ? null

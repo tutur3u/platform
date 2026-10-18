@@ -1,8 +1,11 @@
 {
   "name": "@tuturuuu/inventory-core",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "exports": {
+    "./infrastructure/employee-sql/process": "./src/lib/infrastructure/employee-sql/employee-fixed-sql-process.ts",
+    "./infrastructure/employee-sql/catalog": "./src/lib/infrastructure/employee-sql/employee-sql-catalog-readiness.ts",
+    "./infrastructure/employee-sql/database-readiness": "./src/lib/infrastructure/employee-sql/employee-creation-database-readiness.ts",
     "./commerce/square": "./src/lib/inventory/commerce/square/index.ts",
     "./infrastructure/log-drain": "./src/lib/infrastructure/log-drain.ts",
     "./*": "./src/lib/inventory/*.ts"

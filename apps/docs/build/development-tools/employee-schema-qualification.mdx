@@ -26,8 +26,165 @@ Verify the helper with
 `node --test apps/database/scripts/employee-schema-tap.test.mjs`.
 A green schema result is not native admission/lease/fence qualification, a GoTrue
 or provider transaction, employee activation, or production SQL application.
-The feedback layer's 105 assertions remain a separate later stack qualification;
-they are not silently included or waived by this foundation job.
+The feedback layer is a separate, default-off selection. In
+`employee-schema-contract.yaml`, set `source_sha` to the reviewed clean 40-character
+commit and `include_feedback=true`; leave `structured_provenance`,
+`include_journal`, `include_personal_journal`, `include_address_migration`,
+`include_http`, `include_web_session` and `include_restore` false. The control
+checkout must also contain the feedback input, selector and runner wiring.
+This profile runs the original 172 employee assertions, then intake34, staff-inbox41
+and staff-eligibility31, for 278 total. Existing profiles retain their counts.
+Incompatible optional profile combinations fail before database setup.
+
+`include_feedback` selects tests, not migration application or feature activation.
+Every profile still applies the complete tracked migration snapshot to its
+disposable database, including feedback migrations when present. An older
+profile's green receipt retains its original count and does not qualify feedback.
+The legacy profile matrix explicitly sets feedback false in each child; the
+feedback controls separately test true, including a parent dispatch environment
+with feedback enabled. Neither control changes the profile incompatibility guard.
+
+The maintained runner requires hosted Linux with `GITHUB_ACTIONS=true`, an exact
+HEAD matching `source_sha` and no tracked source modifications. It stages and
+byte-compares the complete tracked database snapshot, including all migration
+history, before applying it to its derived isolated project. Never simulate these
+hosted guards locally. Packet source hashes, strict sequential TAP, rollback,
+bounded command deadlines and cleanup of only the exact owned project remain
+mandatory. The always-run workflow cleanup step checks retained ownership before
+stopping an interrupted project. A successful feedback packet run generates types
+from that same database before cleanup; the receipt and artifact retain the digest.
+A failed packet does not establish type generation or SQL qualification.
+
+Eligibility qualification must retain an exact-source hosted BEFORE failure and
+owned cleanup before changing fixture setup. The observed original fixture failed
+its no-membership assertion: ordinary Auth signup inserts a public profile and
+unconditionally bootstraps personal membership. Setting the employee marker earlier
+alone does not prevent that trigger and also requires a canonical creation intent.
+
+The eligibility fixture constructs a synthetic membership-free actor by suppressing
+only `auto_create_personal_workspace_tr` on `public.users` around its two Auth
+identity inserts. It first locks `public.users` under the existing SQL lock timeout
+to prevent concurrent trigger-state changes, then requires the named trigger, canonical function and normal
+`O` enabled state; unexpected state aborts before suppression. The same block
+immediately restores `ENABLE TRIGGER` and verifies that exact state before all
+thirty-one behavioral assertions. A final non-TAP integrity fence checks the restored
+state before `finish()` and rollback. Setup/integrity exceptions fail the packet;
+these fences add no pgTAP assertions. Transaction rollback also restores trigger
+DDL if setup or later SQL fails; the hosted lifecycle must still prove owned cleanup.
+No other trigger, production function, ACL, RLS or membership is changed/deleted.
+
+This constructs an eligibility precondition, not proof that canonical employee
+signup lacks personal membership. Keep that observed signup behavior in the parent
+residual audit. Do not weaken staff eligibility, remove assertions or substitute a
+minimal registry. The candidate preserves the original105 assertions and adds one registry-correlation
+assertion, for106 feedback assertions;
+require a fresh exact-source hosted AFTER with foundation172, same-database type
+generation and positive cleanup. SQL causal controls remain separately admitted
+proof. Static fixture inspection and pure parser tests do not execute SQL or
+establish AFTER qualification. Feature activation and production remain separate.
+
+### Optional feedback causal qualification
+
+The retained hosted source with eligibility30 passed277 assertions and emitted
+types. The new correlation assertion31 and causal helper are a new source unit;
+that prior result does not qualify278 or the causal phase. Correlation coverage
+uses two existing synthetic Auth identities: temporarily give registry row A
+actor B's distinct valid corporate email, require B to remain denied, restore
+A's email and compare the complete registry row. No FK/unique/check constraint is
+bypassed; all original30 assertions remain exact and in order.
+
+`include_feedback_causal` defaults false and requires `include_feedback=true`;
+all other optional profiles must be false. The legacy matrix and feedback guard
+children explicitly clear the causal flag. Default GREEN parsing and old employee
+profiles retain their contracts. Source/fixture/migration pins are checked before
+DB setup. Causal execution also checks the actual control checkout HEAD against
+CONTROL_SHA and requires clean tracked control files; ordinary profiles retain
+their workflow-metadata control binding.
+
+In the existing hosted owned database, the optional phase records the actual
+function body/definition, owner, ACL, settings, identity, language and named trigger
+state before mutations. It admits exactly eight immutable single-removal variants:
+service-role, actor binding, email tuple, active lifecycle, confirmation, ban,
+Boolean onboarding marker and registry join correlation. Each private payload
+installs its one replacement definition inside the eligibility transaction and
+rolls it back. Source hashes bind payloads to the reviewed fixed inventory.
+
+A separate RED parser requires SQL exit0, complete ordered plan31, exactly the
+variant's expected failed ordinals, all other assertions successful, no skips,
+TODO, bailout, truncation or missing rollback. SQL/setup/permission/process errors
+are never expected RED. Each failed ordinal must have its immediately adjacent,
+unique pgTAP diagnostic block: matching fixed assertion description, `caught: no
+exception`, and wanted SQLSTATE42501 for the service-role assertion or PT403 for
+feedback denial. Canonical [pgTAP throws_ok](https://github.com/theory/pgtap/blob/v1.3.0/sql/pgtap.sql.in)
+emits only the wanted SQLSTATE in its no-exception branch; the expected message is
+bound through the hash-pinned fixture's description/code/message contract. Caught
+exceptions, missing/duplicate/malformed or incorrectly bound blocks fail closed.
+This format comes from canonical source, not a claimed live causal SQL observation.
+SQL definitions containing dollar quotes must be injected literally using a
+replacement callback or exact slicing, never a replacement string. Structural
+controls require the exact injected definition and reconstruct the original fixture
+byte-exact after removing that one span, including one plan and assertion sequence.
+Every post-rollback catalog snapshot must exactly match
+the actual baseline; there is no compensating restore or retry. First seven
+variants require unmodified eligibility31 GREEN and another catalog readback.
+The eighth restoration uses the full278 profile, then same-database typegen and
+positive owned cleanup. Expected RED observations are never reported as passes:
+248 expected-RED assertions,217 intermediate GREEN and278 terminal GREEN (743
+across23 executions). Causal receipt qualification additionally requires every
+ordered observation, final catalog equality, typegen and lifecycle/cleanup success.
+
+The phase has a monotonic20-minute deadline, zero retries, existing60s packet /
+45s statement /3s lock bounds,10s catalog reads and bounded output. Cleanup remains
+outside the phase deadline with its existing60s bound and always-cleanup ownership
+checks. An unexpected failure stops the phase and retains partial fixed metadata.
+Actual timeout/backend drain, catalog restoration and hosted cleanup require the
+real admitted run; injected unit ports and synthetic TAP prove only contracts.
+
+The domain regexp is structurally implied by the constrained canonical registry
+email plus exact lower(Auth email) matching; it is not a tested mutation or RED.
+ACL and missing-registry availability guards are not mutated and retain ordinary
+denial coverage. No private recipe, source implementation or positive artifact
+activates this optional phase; fresh independent review and parent exact-source /
+control hosted admission remain required. Feature activation is separate.
+
+Select `include_journal=true` on the employee schema workflow to apply the full
+selected database snapshot and run 301 rollback assertions: the original 172,
+48 durable-operation assertions, 61 reserved-preflight assertions and 20 HTTP
+runtime-observation assertions. The receipt
+uses the `employee-creation-restoration-journal` scope and fails if any packet,
+assertion, lifecycle step or cleanup proof is missing. The default remains the
+172-assertion foundation profile. This SQL gate does not qualify the fixed worker,
+provider, production configuration, generated types or live account operations.
+
+The independent `include_address_migration=true` selection appends the separate
+10-assertion `employee-address-migration.sql` packet after the selected employee
+profile; combining it with the personal journal profile is rejected:
+182 assertions for foundation plus migration, or 311 for journal plus migration.
+Its receipt scope adds `-address-migration`. Missing, reordered, duplicated or
+miscounted packets cannot qualify; the original 172 and 301 profiles remain
+unchanged and cannot be substituted for one another. HTTP remains a separate
+29-assertion gate; RESTORE's separately admitted 66-assertion transport gate must
+remain intact when integrating this addition. Neither transport count is added
+to the SQL assertion total.
+
+The dispatch control checkout must contain the new workflow input, selector,
+strict receipt helper and tests, while `source_sha` must bind the exact supplier
+commit containing the packet and migrations. An older control checkout silently
+omits a new source packet; its green artifact cannot qualify address migration.
+Dispatch and artifact inspection remain with the integration owner. Do not rerun
+or replace an already queued run to infer missing coverage.
+
+After the selected journal packets pass, the workflow generates public, private
+and storage TypeScript definitions from that same isolated database before
+cleanup. Its artifact includes `generated-types.ts` and the receipt records the
+file digest. Review and format that artifact before updating canonical types;
+generating it alone does not prove that application consumers compile.
+
+Conflict fixtures that insert a logical mailbox must link its `domain_id` to the
+matching `private.mail_domains` row. The current mailbox trigger rejects an
+address-only insert before employee preflight runs. Preserve that trigger and
+the intended conflict assertion; a fixture setup failure does not establish a
+failure in employee reservation logic.
 
 If the schema runner fails after its private receipt directory exists, the receipt
 includes a fixed `failureDiagnostic`: the first failing phase, packet ordinal,
@@ -69,3 +226,267 @@ staff email/name and employee staff email/name/lifecycle/recovery. The original
 schema identity is not inferred. SQLSTATE must be 23514; unknown pairs or altered
 text remain `other_redacted`; invalid caught evidence emits null. This diagnostic
 does not change SQL, the 25 assertions or the strict 172-assertion success gate.
+
+## Disposable HTTP and Auth qualification
+
+The optional `include_http=true` input requires `include_journal=true`. It keeps
+GoTrue, PostgREST and Kong in the same isolated stack, runs all 301 SQL assertions
+and type generation, then exercises the actual Web journal, RPC adapter and
+provider adapter through loopback HTTP. It creates synthetic identities only in
+that disposable project; the entire owned stack is stopped by the existing
+cleanup path. No production configuration or activation flag is changed.
+
+The 29 checks cover effective service/anonymous RPC access, successful CREATE,
+independent persisted state, stable-UUID replay, payload conflict, a committed
+claim with a lost acknowledgement and a successful Auth create with a lost
+acknowledgement. Neither unknown outcome may trigger a second provider create.
+Credentials enter the child over stdin and never enter its command line or
+artifact. Valid failed receipts retain only a fixed phase and completed check count; malformed child output retains only the parent `http-runtime` diagnostic.
+
+`httpTransportQualified` requires a zero child exit, the complete HTTP receipt, all SQL assertions
+and successful owned cleanup. It is separate from production proof and does not
+qualify the live request authentication boundary, deployed project configuration,
+RESTORE, or legacy-address migration. The runtime flag remains off until the
+remaining target and request-boundary checks pass. Source tests and a published
+workflow are not a successful HTTP qualification run.
+
+## Web request and session qualification
+
+`include_web_session=true` additionally requires both `include_http=true` and
+`include_journal=true`. This is an opt-in extension of the same owned disposable
+Supabase lifecycle. It builds the selected `apps/web` source on the hosted CI
+runner and starts the real Next server on loopback. The fixture resolves the
+Next CLI from `apps/web/package.json` so isolated workspace installs do not
+require a root Next dependency; Web declares the fixture's Supabase SSR dependency. It does not resume the
+retired Docker Web E2E workflow. A missing build prerequisite or failed proxy,
+session, SQL or provider check fails this mode; do not replace it with a mocked
+authorizer or a service-only receipt.
+
+The Node support-test transform uses the matching
+`apps/web/e2e/fixtures/tsconfig.json`, which inherits Web's compiler settings.
+Web's main config includes application source rather than these fixtures; without
+a matching config, Vite/Oxc can traverse root project references and fail on an
+unrelated package's unavailable TypeScript preset before collecting any tests.
+The support suite reproduces that failure boundary in a disposable nested tree
+and transforms both real fixture files without installing the unrelated preset.
+Run `bun x vitest run --config apps/web/e2e/fixtures/vitest.employee-web-session.config.ts`
+from the selected source checkout. Passing this finite support suite does not
+qualify the 24 hosted Web session cases or the SQL/HTTP/RESTORE profiles.
+
+The fixture sends HTTP requests through the real Web proxy and route handlers.
+Its 24 named cases cover absent/malformed credentials, a GoTrue password session
+bearer, Supabase SSR-generated cookies, signed infra app cookies, wrong app,
+expired and tampered app cookies, canonical actor domain, root membership and
+permission revocation, actor ban, GoTrue session sign-out, origin/fetch-site and
+action-header guards, self-action, CREATE, RESTORE and stable-operation replay.
+App cookies are signed by the production token helper using an ephemeral
+fixture secret; this does not qualify the browser login or satellite token
+exchange/refresh flow.
+
+The API proxy checks current account assurance before the employee route. A
+previously issued satellite cookie whose current provider user is banned is
+rejected there with exactly `401 / UNAUTHENTICATED`, before the route's later
+`403 / forbidden` actor-policy check. A provider bearer rejected by
+`auth.getUser(token)` uses the same exact proxy denial. The actor-ban and
+session-sign-out cases require this response, `Cache-Control: no-store`, and no
+provider update caused by the denied request; they do not accept interchangeable
+401/403 responses or arbitrary error codes. Focused required-MFA runtime tests
+exercise both credential paths with injected provider responses. Only the hosted
+fixture proves the disposable provider's actual ban and sign-out behavior.
+
+[Supabase getUser](https://supabase.com/docs/reference/javascript/auth-getuser)
+validates through the Auth server. Sign-out is not proof that an already-issued
+access JWT has expired; the fixture retains its bearer and requires the current
+provider session check to reject it. A successful source test does not establish
+that hosted session-revocation case or all 24 Web cases.
+
+Failed self-action cases retain only the fixed case/stage, numeric HTTP status,
+no-store boolean, and an exact allowlisted error category. Unknown codes become
+`other`; bodies, identities, headers and tokens are discarded. The strict receipt
+accepts this metadata only with the exact completed prefix before self-action,
+never as qualification. The self-action expectation remains exactly
+`409 / employee_self_action`; the restoration handler regression verifies that
+self rejection precedes provider reads, updates and SQL transport. If a hosted
+response differs, inspect the fixed metadata before changing that contract.
+Passing the injected handler test does not identify an unretained hosted response
+or qualify the remaining CREATE/RESTORE cases.
+
+Use `http://localhost:<port>` consistently for the fixture's Web URL and Origin,
+while the server continues binding to `127.0.0.1`. Next 16 normalizes loopback IP
+request URLs to `localhost`; sending an IP Origin alongside that normalized URL
+fails the unchanged origin guard with `403 / forbidden` before self-action or
+CREATE. Actual NextRequest handler controls reproduce the mismatch and require
+409 for self-action and 201 for CREATE with the matching localhost Origin. A
+finite transport control verifies that the localhost URL reaches the IPv4-only
+listener. These controls use injected authorization/journal dependencies and do
+not replace matching hosted Web24 acceptance. Do not repair this origin mismatch
+by granting permissions: the fixture creator retains creator permissions once
+its actual MEMBER membership is restored, independently of default grants.
+
+A fixture-only loopback proxy forwards requests to the real owned GoTrue and
+PostgREST services. After a successful provider unban it can discard exactly one
+acknowledgement; Web must return pending/inspect and reconcile the original
+operation without another provider write. A second fault revokes root membership
+after the durable attempt acknowledgement and before provider dispatch. The
+fixture checks that the target remains banned and no provider update occurred.
+These are deliberate network faults around real effects, not mocked auth or RPC
+successes. Existing service-level SQL acknowledgement-loss cases remain separate.
+
+`webSessionQualification` records the selected source SHA, completed case names,
+assertion count, fixed phase, server-stop evidence and explicit production=false.
+Only a complete ordered inventory, zero child exit, matching source, stopped
+server/proxy and successful schema lifecycle cleanup can set
+`webSessionQualified=true`. Failed or partial cases never establish route proof.
+Failed receipts preserve the first fixed runtime phase and error category separately
+from server-stop and proxy-close outcomes. Both cleanup steps are attempted even
+when the first fails. Build-process diagnostics retain only exit code, a bounded
+signal category and deadline status; child output, messages and stacks remain
+discarded. Cleanup failure cannot replace an earlier failure or qualify a run.
+Compiler stdout/stderr are piped only into two bounded 64-KiB in-memory tails;
+they are never printed or written to an artifact. Failed build receipts project
+at most eight fixed compiler categories, fixed Node/TypeScript codes, and paths
+matched exactly against tracked Web/package source paths. Unknown messages,
+module names, identities, config keys and secret values are discarded. Tail
+truncation is explicit. Use a matching reviewed source/control revision so the
+strict control parser retains these diagnostics. This classification is evidence
+for the next investigation, not permission to guess a dependency repair.
+Cleanup error categories separately distinguish not-running, type-error, timeout
+and unknown; a category never turns failed cleanup into success.
+
+The hosted fixture first runs the existing root Turbo dependency graph with
+`bun turbo:local run build --filter=@tuturuuu/web^... --concurrency=1`, then its
+unchanged `bun run --cwd apps/web build` real Next compiler. Both phases share
+one 18-minute deadline and run sequentially. Prerequisite errors stop the run.
+This follows Web's canonical `^build` dependency ordering without allowing an
+application cache hit to replace compiler acceptance or filtering the disposable
+Auth/runtime configuration out of the direct Web build. Clean installs can resolve
+Bun source exports while Node/Next targets still require emitted workspace files;
+the non-build export regression demonstrates that boundary without generating
+artifacts. Only hosted CI may execute this build pipeline.
+
+Start the resolved Next CLI with `cwd=apps/web` and no additional `apps/web`
+argument: `node <resolved-next-cli> start --hostname 127.0.0.1 --port <port>`.
+The TypeScript config loader must resolve config imports in the same app context
+as the build. A bounded Next 16 config-loader reproduction from the source-root
+cwd selected the SEO generator outside the installed source checkout and failed
+with a missing-module error; the app cwd selected the source copy and loaded.
+The disposable config regression exercises this boundary without an app build,
+server or outbound request. Do not repair shared dependencies or infer a hosted
+module identity from startup categories alone; matching hosted acceptance remains
+required after the launcher correction.
+
+Startup readiness still requires exactly HTTP 401 from the anonymous employees
+GET. It makes at most 60 requests (one-second request timeout, 500 ms interval),
+never follows redirects, and discards response bodies without buffering them.
+The receipt retains only a fixed startup outcome and last observation, numeric
+status (0–599), attempt count, child exit/signal and deadline flag. Connection
+failure, request timeout, other request error, unexpected status and child exit
+remain distinct; an unexpected status does not identify an Auth or routing cause.
+Startup stdout/stderr are immediately drained into separate fixed 16-KiB
+in-memory prefixes. Only fixed allowlisted categories and a truncation boolean
+enter `startupOutput`; raw lines, module names, paths, URLs, headers, bodies and
+credentials are discarded. Classification scans each bounded prefix once.
+A descendant retaining a writer cannot hold cleanup open: 250 ms after the direct
+child exits, remaining capture readers close and truncation is recorded. The
+existing TERM/KILL and outer process-group cleanup still govern owned processes.
+Truncation or an empty category list cannot clear a possible cause. Loopback controls
+exercise these distinctions with disposable children, including the pinned Bun
+runtime; they do not establish readiness of the hosted Web application.
+
+The fault proxy starts HTTP server closure before forcing connection closure.
+In Bun 1.4.1, forcing connections first stops listening and makes a later
+`close()` reject with `ERR_SERVER_NOT_RUNNING`. The finite actual-Bun control
+requires successful close, refused connections on the released port, and a
+rejected repeated close. It emits only fixed phase/error categories on failure.
+Use the workflow's pinned Bun/Node versions when diagnosing runtime differences;
+newer local runtime success is not evidence for the pinned runtime.
+
+Historical receipts with only `phase=cleanup` cannot identify the earlier cause.
+The support suite exercises simultaneous runtime/cleanup failures, real child exit
+and deadline handling, and strict redacted receipt projection. These checks do not
+replace hosted Web24 acceptance.
+
+Receipt/process gates run from the uninstalled immutable control checkout; only
+`source/` has workspace dependencies installed. Keep process controls on the
+canonical dependency-free `.mjs` owner rather than importing the Web TypeScript
+support module there. Dependency-bearing adapter tests run in the installed
+source checkout. Process controls copy byte-checked canonical modules into a
+fresh dependency-free directory, use Bun `--no-install`, and retain all marker,
+exit, port/PID and timeout assertions. A control import failure can precede every
+build/database/session stage; absent later artifacts do not identify a Web cause.
+
+The control runner owns the fixture process group and launches each requested
+build group itself over a private IPC channel. The fixture cannot detach an
+unregistered build: missing owner IPC fails closed. Build exit triggers whole-group
+TERM/KILL cleanup even when a descendant retains stdout/stderr or ignores TERM.
+Fixture exit, hard kill, timeout and cancellation abort and drain every owned build
+job before `processGroupStopped` can qualify. Build output is classified at the
+owner; only the fixed bounded diagnostic returns over IPC, never raw output.
+Actual finite controls retain leader exit 7, enforce an inner deadline, and verify
+port/PID disappearance after hard fixture kill and outer timeout. They use the
+resolved runtime executable so local command shims cannot drop IPC descriptors.
+These synthetic process controls do not replace hosted compiler/start/session proof.
+Build/server output, passwords, cookies, tokens, emails and raw provider/SQL
+errors are discarded. The stack's always-run cleanup removes fixture identities
+with the disposable database; no real account or deployed activation flag is
+modified. Source receipt tests prove receipt rejection behavior only. Activation
+still requires the parent release owner's review of the actual exact-source CI
+artifact and all independent production gates.
+
+### RESTORE transport profile
+
+`include_restore=true` additionally requires both `include_http=true` and
+`include_journal=true`. It extends the same disposable project, exact-source
+checkout, bounded child and always-run cleanup. The default 301 SQL and 29 CREATE
+HTTP checks retain their counts. RESTORE adds 66 checks in seven fixed phases:
+RPC permissions (18), success/replay/conflict (11), lost committed reservation,
+attempt and completion acknowledgements (8 each), lost successful GoTrue unban
+acknowledgement (8), and revoked SQL actor (5). The receipt parser requires every
+phase count and a zero child exit before cleanup can qualify RESTORE transport.
+
+The fixture creates managed employees through the real CREATE journal, bans them
+through disposable GoTrue, and restores the same user UUID through the retained
+RESTORE orchestration and five-function PostgREST adapter. Separate HTTP reads
+verify committed operation phase, revision and provider identity. Anonymous and
+signed-in outsider credentials cannot execute any of the five RPCs; a service
+caller naming an outsider or freshly banned administrator is also denied by SQL.
+Lost-acknowledgement injection discards responses only after real commits. Pending
+RESTORE and reconciliation retain their operation UUID and never repeat an unban;
+completed reconciliation replays the receipt without advancing revision again.
+
+`restoreTransportQualified` is independent of `httpTransportQualified`. It requires
+the complete selected SQL/HTTP/RESTORE profile, successful lifecycle and owned
+cleanup. This profile calls the retained service orchestration directly; it does
+not qualify Web request authentication, satellite sessions, session revocation,
+production configuration, hosted races or legacy-address migration. Real GoTrue
+transport evidence is distinct from SQL fixture evidence. The RESTORE runtime
+flag remains OFF. Dispatch only from a reviewed control revision with the exact
+reviewed source commit; a published fixture is not a successful qualification run.
+
+## Personal journal schema qualification
+
+Select `include_personal_journal=true` with `include_journal=false`,
+`include_http=false`, `include_web_session=false`, `include_restore=false` and
+`include_address_migration=false` on the same workflow. This optional
+profile keeps the foundation's 172 assertions and adds the 24
+`personal-journal.sql` assertions.
+It requires the complete selected migration snapshot, all 196 assertions,
+transaction rollback and positive owned-project cleanup, then records the
+`personal-journal` scope. Mixed optional profiles fail closed. The default
+foundation and employee-operation profiles keep their existing counts. The
+workflow regression test exercises all 64 boolean profile combinations against the
+guarded runner before hosted database setup.
+
+The same disposable database generates public, private and storage types before
+cleanup. Review the exact-source artifact and its digest before adopting generated
+types. This gate does not qualify a real journal provider, explicit consent,
+authenticated runtime behavior, memory ingestion or production activation.
+
+Before dispatch, keep new, unapplied PR migrations later than the current base
+migration tip. The pending personal-journal migration is
+`apps/database/supabase/migrations/20261017000000_personal_journal.sql`.
+Preserve SQL bytes when correcting only its chronological identity; never rename
+an applied migration. A path change changes the selected snapshot and source SHA,
+so earlier SQL/type artifacts remain historical and the new source requires fresh
+qualification. The isolated runner derives its full snapshot from tracked files,
+including the renamed migration, rather than a fixed migration-name manifest.

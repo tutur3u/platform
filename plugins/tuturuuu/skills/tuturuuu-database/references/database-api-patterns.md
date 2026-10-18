@@ -84,6 +84,24 @@ review prove baseline equivalence. Existing migration history stays immutable.
   assert that membership rather than inserting it again in later scenarios.
   Keep an explicit assertion when membership is part of permission admission.
 
+- Feedback schema qualification uses the maintained hosted employee schema
+  workflow's default-off `include_feedback` test profile: foundation172 plus
+  feedback106, with same-database type generation and owned cleanup. All profiles
+  still apply the full tracked migration snapshot; the flag does not gate SQL
+  application or activate the feature. Isolate old matrix children from inherited
+  feedback dispatch flags while keeping feedback controls explicit. Keep the
+  original eligibility BEFORE evidence. After its actual full-schema failure,
+  a separately admitted eligibility fixture may suppress only the named personal
+  workspace trigger around its two synthetic Auth inserts: require original normal
+  enabled state, restore/verify it before all assertions, check it again before
+  rollback and fail closed on any unexpected state. Keep the original30 behavioral assertions and correlation31;
+  non-TAP integrity fences fail the packet without changing its count. This constructs
+  an eligibility precondition, not canonical signup behavior. No membership deletion,
+  broad trigger bypass or production alteration. Selector/static/parser checks are
+  not SQL AFTER qualification. See
+  `apps/docs/build/development-tools/employee-schema-qualification.mdx` for the
+  exact input combination and staged BEFORE/AFTER boundary.
+
 - Full-schema admission fixtures must assert membership in the target workspace.
   Auth bootstrap can independently create a personal workspace for a synthetic
   user; that membership does not admit them to another workspace.
@@ -92,3 +110,109 @@ review prove baseline equivalence. Existing migration history stays immutable.
   permit lookups. A name shared by a variable and a column can raise SQLSTATE
   `42702` before the intended admission error. Retain pgTAP assertions for the
   rejected mutation's exact error and unchanged state.
+
+## Bounded Mail admission fixtures
+
+- The Mail PGlite/pgTAP fixture applies actual notification migrations with a
+  synthetic schema, preference lookup and `pg_net` transport. Queue its runner
+  through `ttr resources`; never report it as full Supabase or provider proof.
+- Reconcile legacy receipts without alerts before claiming raw-event/user keys.
+  Preserve suppressed decisions, nullable duplicate history and unknown delivery
+  outcomes. Configured `mail_domains.verified_at` is not fresh DNS ownership.
+- Require authorized full-chain migration/type generation and exact-commit CI
+  before promotion; see
+  [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
+
+## Personal journal qualification
+
+Use the existing disposable Linux schema workflow's `include_personal_journal`
+profile for the full selected migration snapshot, 172 foundation plus 24 journal
+rollback assertions and same-database private RPC type generation. Keep employee
+journal/HTTP/RESTORE/address-migration profiles off for this selection. Require the exact-source
+receipt, fixture/type digests and positive cleanup; provider, explicit consent and runtime
+acceptance remain separate gates. See [schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx#personal-journal-schema-qualification).
+
+Correct chronology only for a new, unapplied PR migration, preserving its SQL
+bytes. Never rename an applied migration or reuse old-source SQL/type receipts
+after a snapshot identity change; requalify the new exact source.
+
+### Legacy address migration suppliers
+
+The inactive migration supplier uses a separate protected journal; do not reuse
+CREATE/RESTORE receipts. Its PostgreSQL fixture runner verifies the new migration
+against reduced prerequisites, not the full schema or GoTrue. GoTrue `identity_id`
+is SQL `auth.identities.id`, while JSON `id` is provider-specific. Verify identity
+email state independently: admin `{email}` can leave `email_verified=false` despite
+a confirmed timestamp. Retain pending inspection; never supply `email_confirm`.
+Pinned GoTrue v2.197.0 admin confirmation and magic-link recovery do not set the
+email identity flag. For a disposable positive fixture, create an unconfirmed
+source and use supported signup link/OTP verification, which sets the matching
+identity flag. Preserve the existing strict guard; never manually set identity
+verification or infer it from the timestamp. This does not repair an already
+confirmed production source. The real-provider runner compares sessions and
+refresh tokens and simulates a lost PUT acknowledgement without replay; its mail
+table and journal are fixtures, not full-schema proof. Add the separate 10-assertion
+migration packet through the opt-in trusted-control schema selection; preserve
+foundation172, journal301, HTTP29 and separately admitted RESTORE66 receipts.
+See `apps/docs/build/development-tools/employee-address-migration.mdx` for the
+canonical fingerprint, lock scope, mail prerequisites and remaining runtime gates.
+
+## Employee RESTORE transport qualification
+
+Extend the canonical employee schema/HTTP runner for RESTORE rather than creating
+another database lifecycle. The optional RESTORE profile requires journal and HTTP
+selection; preserve the 301 SQL and 29 CREATE checks and require its separate fixed
+phase counts, real committed readbacks, zero child exit and owned cleanup. Inject
+lost acknowledgements after real PostgREST/GoTrue completion and retain operation
+and user UUIDs; reconciliation must never repeat the provider mutation. SQL ACL
+checks and real Auth transport remain separate from Web/satellite session proof.
+See [employee schema qualification](../../../../../apps/docs/build/development-tools/employee-schema-qualification.mdx).
+
+## Inventory concurrency lock boundaries
+
+The cascade fixture rejects every granted advisory lock except the proven
+employee-admission bigint key in `ShareLock` mode with `objsubid=1`. Keep that
+predicate narrow: unknown keys, an exclusive mode, real inventory keys, and the
+same halves in the two-integer namespace must still fail. Explicitly account for
+permitted locks rather than allowing a generic count of one.
+
+The full-schema failure mapped shared employee admission through the profile FK
+`SET DEFAULT` update and its statement-level admission trigger. Preserve that
+admission. The 28-check Inventory fixture retains the original 22 cases and adds
+rollback controls for a zero-row profile update, mixed admission/inventory locks,
+unexpected key/mode/namespace, and cleanup. Require actual same-schema CI to run
+these controls; source and mock checks cannot qualify the repair. Keep bounded
+failure-only diagnostics, original tested counts and cleanup on failure.
+
+
+## Address migration admission contention
+
+Migration RPCs must try exclusive `employee-address-reservations` admission and
+raise `55P03` on contention before row locks or durable state changes. A blocking
+exclusive waiter can queue later shared Auth/profile/mail writers behind it.
+Retain ordinary shared admission and every subsequent row/table NOWAIT fence.
+The minimal qualification runner owns a three-session blocking-exclusive control
+and four RPC contention cases with unrelated Auth-writer progress and unchanged
+fixture snapshots. Its exact daemon check is a fixture admission fence, not a
+portable Docker version requirement. Run only with a separately admitted disposable
+lifecycle; the composed 10-SQL packet is not concurrency proof. Source checks are
+static evidence until the actual PostgreSQL concurrency runner passes.
+
+### Feedback causal protocol
+
+Use only the reviewed default-OFF maintained hosted causal profile. Its immutable
+source/fixture-bound eight-variant inventory has a strict separate expected-RED
+parser: complete plan31, exact failed ordinal set, SQL exit0 and rollback, with
+all other assertions green. Bind each target ordinal to a complete unique adjacent
+pgTAP no-exception diagnostic and its fixed fixture denial contract; caught SQL
+exceptions or absent/malformed/duplicate diagnostics cannot qualify. Inject SQL
+with literal callback/slicing, since JavaScript replacement strings interpret dollar
+quotes and dollar-apostrophe. Require exact definition bytes and reconstruction of
+the original fixture after removing the one injected span. Never weaken the default
+GREEN parser. Record the actual function/body/owner/ACL/settings baseline and require
+exact post-rollback equality; no compensating restore/retry. Require restoration
+GREEN after each variant, terminal278/typegen and positive owned cleanup. Preserve
+zero retries/monotonic20-minute phase bound and existing individual deadlines.
+The domain-regexp implication is structural only; do not label it a tested mutation.
+Keep ACL/registry-availability ordinary coverage distinct. See the existing schema
+qualification runbook for target counts, control binding and unexecuted-proof limits.

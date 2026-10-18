@@ -114,19 +114,28 @@ track is insufficient. The fixture neither tests hosted SFU nor replaces native
 WebView acceptance. See the runbook before installing/driving its exact-commit
 artifact. Use T3 Device so verification remains visible to the user.
 
-## Parley Cache Components candidate acceptance
+## Meet, Lettin and Parley Cache Components acceptance
 
 Parley's isolated stable-tarball adapter candidate backports upstream PR 1318 and
 must retain the real Node middleware bundler alongside both the scheduler and
 request-scoped module-loading patches, plus the repository's PPR name and preview
 manifest fixes. Its static default/remote cache-handler registration returns
 before the compiled Next custom-handler loader can reuse removed minified aliases.
-Verify URL-keyed Bun patch isolation from Meet/Lettin; a preview
-that rejects Node middleware cannot be repaired by simply removing its guard.
+Meet and Lettin reuse this URL-keyed adapter. Select all three apps for URL-patch
+changes; verify isolation from `packages/meet-core`'s stable-version adapter and
+keep native Worker selection independent.
+A preview that rejects Node middleware cannot be repaired by simply removing its guard.
 When changing the candidate dependency, update both workflow path filters and
 `tuturuuu.ts` selection to its active patch. Selection regressions must derive the
 patch from the app manifest and root patchedDependencies rather than an obsolete
 filename copied into the test.
+
+For Meet, run `scripts/ci/meet-cloudflare-render.test.js` against its installed
+adapter. A retained-artifact local replay can distinguish the login scheduler
+hang from the cache-handler alias failure in `/api/build-info`; keep canonical
+Host, local bindings and blocked outbound fetch. Preserve artifact provenance and
+require exact-commit CI and hosted health after this causal check. See the linked
+runbook for replay boundaries.
 
 Run the actual installed Next AST compatibility tests before the
 CI build; moved source shapes must fail closed. After CI builds, use the isolated

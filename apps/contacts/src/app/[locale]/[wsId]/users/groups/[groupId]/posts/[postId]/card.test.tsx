@@ -379,4 +379,93 @@ describe('daily report recipient marker state', () => {
       'Local edit'
     );
   });
+  it('preserves stored and unsaved notes when a reset fails', async () => {
+    api.clear.mockRejectedValueOnce(new Error('Synthetic reset rejection'));
+    renderCard(
+      recipient({
+        has_check: true,
+        is_completed: true,
+        notes: 'Stored comment',
+      })
+    );
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'Unsaved comment' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'ws_post_details.reset_check' })
+    );
+    await waitFor(() => expect(api.clear).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(screen.getByRole('textbox').hasAttribute('disabled')).toBe(false)
+    );
+    expect(screen.getByRole('textbox')).toHaveProperty(
+      'value',
+      'Unsaved comment'
+    );
+    expect(refresh).not.toHaveBeenCalled();
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() => expect(api.update).toHaveBeenCalledOnce());
+    expect(api.update.mock.calls[0]?.[3]).toEqual({
+      user_id: recipient().user_id,
+      is_completed: true,
+      notes: 'Unsaved comment',
+    });
+  });
+
+  it('honors explicit empty remarks and reloads the cleared value', async () => {
+    const value = recipient({
+      has_check: true,
+      is_completed: true,
+      notes: 'Stored comment',
+    });
+    const rendered = renderCard(value);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } });
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    expect(api.update.mock.calls[0]?.[3]).toEqual({
+      user_id: value.user_id,
+      is_completed: true,
+      notes: '',
+    });
+    expect(screen.getByRole('textbox')).toHaveProperty('value', '');
+    rendered.unmount();
+    renderCard({ ...value, notes: '' });
+    expect(screen.getByRole('textbox')).toHaveProperty('value', '');
+  });
+
+  it('keeps a later remark typed while an earlier submission is in flight', async () => {
+    let finishSave: (() => void) | undefined;
+    api.update.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSave = resolve;
+        })
+    );
+    renderCard(
+      recipient({
+        has_check: true,
+        is_completed: true,
+        notes: 'Stored comment',
+      })
+    );
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'First submitted remark' },
+    });
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() => expect(api.update).toHaveBeenCalledOnce());
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'Later unsaved remark' },
+    });
+    await act(async () => finishSave?.());
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    expect(screen.getByRole('textbox')).toHaveProperty(
+      'value',
+      'Later unsaved remark'
+    );
+    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
+    expect(api.update.mock.calls[1]?.[3]).toMatchObject({
+      notes: 'Later unsaved remark',
+    });
+  });
 });
