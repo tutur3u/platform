@@ -40,14 +40,16 @@ void main() {
   final cases = casesValue.map(object).toList(growable: false);
   final names = ['workspace', 'personal', 'null', 'legacy'];
   final passed = <String>[];
-  expect(cases.map((item) => item['name']).toList(), names);
-  expect(binding['sourceSha'], env['EMPLOYEE_SCHEMA_SOURCE_SHA']);
-  expect(binding['controlSha'], env['EMPLOYEE_SCHEMA_CONTROL_SHA']);
-  expect(binding['runId'], env['GITHUB_RUN_ID']);
   final envelopeHash = sha256
       .convert(File(sqlPath).readAsBytesSync())
       .toString();
-  expect(web['envelopeSha256'], envelopeHash);
+  setUpAll(() {
+    expect(cases.map((item) => item['name']).toList(), names);
+    expect(binding['sourceSha'], env['EMPLOYEE_SCHEMA_SOURCE_SHA']);
+    expect(binding['controlSha'], env['EMPLOYEE_SCHEMA_CONTROL_SHA']);
+    expect(binding['runId'], env['GITHUB_RUN_ID']);
+    expect(web['envelopeSha256'], envelopeHash);
+  });
 
   Future<AcknowledgedChatConversation> create(
     Map<String, dynamic> item,
