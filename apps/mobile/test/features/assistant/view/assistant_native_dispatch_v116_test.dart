@@ -1,6 +1,7 @@
 // UNEXECUTED regression specification: dependencies/admission are held.
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
@@ -321,14 +322,29 @@ void main() {
   testWidgets('first created turn known unsent removes its exact primed USER', (
     tester,
   ) async {
+    void stage(String token) =>
+        debugPrintSynchronously('PR6277_FIRST_TURN:$token');
+    stage('create-before');
     final h = (await tester.runAsync(NativeDispatchHarness.create))!;
-    addTearDown(() => h.dispose(tester));
+    stage('create-after');
+    h.disposeProgress = stage;
+    addTearDown(() async {
+      stage('teardown-before');
+      await h.dispose(tester);
+      stage('teardown-after');
+    });
+    stage('mount-before');
     await h.mount(tester);
+    stage('mount-after');
     expect(h.chat.state.storedChatId, isNull);
     expect(h.chat.state.messages, isEmpty);
     h.port.holdHeaders();
+    stage('first-send-before');
     await h.pageSend(tester, 'First new conversation turn');
+    stage('first-send-after');
+    stage('credentials-entered-before');
     await tester.runAsync(() => h.port.credentialsEntered.future);
+    stage('credentials-entered-after');
     expect(h.port.creates, hasLength(1));
     expect(h.port.creates.single['initialAiSettings'], isNotNull);
     expect(h.port.settingsReads.last, repairActor);
@@ -337,21 +353,31 @@ void main() {
     final original = primed.clientRequestId;
     expect(original, isNotNull);
     expect(h.port.posts, isEmpty);
+    stage('attach-before');
     await h.attach(tester, 'changed-first-draft.txt');
+    stage('attach-after');
     h.draft(tester).text = 'Edited while credentials held';
     final changedAttachments = h.chat.state.composerAttachments;
     final local = h.pageContext.read<AssistantLocalChatCubit>();
     final a = local.select(assistantLocalModels.first.id);
     final b = local.select(null);
+    stage('mode-selection-before');
     await tester.runAsync(() => Future.wait([a, b]));
+    stage('mode-selection-after');
+    stage('release-before');
     h.port.release();
+    stage('release-after');
+    stage('release-settle-before');
     await h.settle(tester);
+    stage('release-settle-after');
     expect(h.port.posts, isEmpty);
     expect(h.chat.state.messages.where((m) => identical(m, primed)), isEmpty);
     expect(h.chat.state.messages.where((m) => m.id == original), isEmpty);
     expect(h.draft(tester).text, 'Edited while credentials held');
     expect(h.chat.state.composerAttachments, changedAttachments);
+    stage('changed-send-before');
     await h.pageSend(tester, 'Edited while credentials held');
+    stage('changed-send-after');
     expect(h.port.creates, hasLength(1));
     expect(h.port.posts, hasLength(1));
     expect(h.port.posts.single['clientRequestId'], isNot(original));
@@ -365,6 +391,7 @@ void main() {
     expect(confirmed.id, h.port.saved.values.single['id']);
     expect(confirmed.clientRequestId, h.port.posts.single['clientRequestId']);
     expect(h.draft(tester).text, isEmpty);
+    stage('body-complete');
   });
   testWidgets(
     'first-turn proof preserves a restored replacement with matching IDs',

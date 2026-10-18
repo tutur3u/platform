@@ -222,6 +222,7 @@ void main() {
   );
   test('actor ABA before tool receipt prevents refresh admission', () async {
     await start();
+    await repository.bodySubscribed.future.timeout(const Duration(seconds: 2));
     epoch += 2;
     repository
       ..input()

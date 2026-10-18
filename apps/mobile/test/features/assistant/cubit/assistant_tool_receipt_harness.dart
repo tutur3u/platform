@@ -56,6 +56,7 @@ class ToolReceiptRepository extends ReplyRepository {
       final priorListen = body.onListen;
       body.onListen = () {
         priorListen?.call();
+        bodySubscribed.complete();
         scheduleMicrotask(() {
           if (!body.isClosed) send(userReceipt);
         });
@@ -96,6 +97,7 @@ class ToolReceiptRepository extends ReplyRepository {
   late final AssistantRepository transport;
   final body = StreamController<List<int>>();
   final started = Completer<void>();
+  final bodySubscribed = Completer<void>();
   int soulReads = 0;
   bool settingsPatched = false;
   Object? soulFailure;
