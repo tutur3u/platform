@@ -113,7 +113,9 @@ void main() {
       void stage(String name) =>
           debugPrintSynchronously('PR6277_DURABLE_QUEUE:$name');
       stage('create-before');
-      final h = (await tester.runAsync(NativeDispatchHarness.create))!;
+      final h = (await tester.runAsync(
+        () => NativeDispatchHarness.create(realAsyncQueuedWrites: true),
+      ))!;
       stage('create-after');
       h.disposeProgress = stage;
       addTearDown(() async {

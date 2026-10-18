@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
@@ -348,6 +349,27 @@ class NativeDispatchRepository extends ReplyRepository {
   );
 }
 
+class _RealAsyncNativeQueue extends OfflineMutationQueue {
+  _RealAsyncNativeQueue(NativeDispatchPort port, CacheStore store)
+    : _ioZone = Zone.current,
+      super.forTesting(
+        store: store,
+        userId: () => port.actor,
+        checkConnectivity: port.connectivity,
+        connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
+        authChanges: const Stream<AuthState>.empty(),
+        apiFactory: (_) => port.api,
+      );
+
+  final Zone _ioZone;
+
+  @override
+  Future<void> enqueue(
+    PendingMutationRecord record, {
+    void Function()? checkScope,
+  }) => _ioZone.run(() => super.enqueue(record, checkScope: checkScope));
+}
+
 class NativeDispatchHarness extends BackgroundReplyHarness {
   NativeDispatchHarness._(this.port, this.queue, this.store, this.directory)
     : super(repository: NativeDispatchRepository(port, queue, store));
@@ -356,7 +378,9 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
   final CacheStore store;
   final Directory directory;
   void Function(String stage)? disposeProgress;
-  static Future<NativeDispatchHarness> create() async {
+  static Future<NativeDispatchHarness> create({
+    bool realAsyncQueuedWrites = false,
+  }) async {
     final port = NativeDispatchPort();
     final directory = await Directory.systemTemp.createTemp('pr6277-v116-');
     final storage = _Storage();
@@ -377,14 +401,16 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
       secureStorage: storage,
       directoryResolver: () async => directory,
     );
-    final queue = OfflineMutationQueue.forTesting(
-      store: store,
-      userId: () => port.actor,
-      checkConnectivity: port.connectivity,
-      connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
-      authChanges: const Stream<AuthState>.empty(),
-      apiFactory: (_) => port.api,
-    );
+    final queue = realAsyncQueuedWrites
+        ? _RealAsyncNativeQueue(port, store)
+        : OfflineMutationQueue.forTesting(
+            store: store,
+            userId: () => port.actor,
+            checkConnectivity: port.connectivity,
+            connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
+            authChanges: const Stream<AuthState>.empty(),
+            apiFactory: (_) => port.api,
+          );
     await queue.init();
     return NativeDispatchHarness._(port, queue, store, directory);
   }
