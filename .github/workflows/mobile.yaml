@@ -206,6 +206,37 @@ jobs:
               result['dartExecutable'] = digest(Path(os.environ['FLUTTER_ROOT']) / 'bin/cache/dart-sdk/bin/dart', 134217728)
               return result
 
+          CAPTURE_ERROR_CODES = frozenset({
+              'analysis-include-not-local',
+              'analysis-include-unbounded',
+              'analysis-include-unresolved',
+              'analysis-package-uri-invalid',
+              'analysis-root-not-local',
+              'changed-path-scope-invalid',
+              'checkout-or-preimage-dirty',
+              'context-not-bounded-regular-file',
+              'dart-mode-or-content-invalid',
+              'formatter-context-changed',
+              'git-capture-failed',
+              'invalid-commit-identity',
+              'invalid-run-identity',
+              'patch-not-text',
+              'preformat-source-changed',
+              'preimage-blob-mismatch',
+              'source-byte-limit',
+              'tool-outside-selected-flutter',
+              'tracked-dart-scope-invalid',
+              'unsupported-analysis-include',
+              'version-capture-failed',
+          })
+
+          def capture_error(receipt, error, phase):
+              receipt['captureErrors'].append(type(error).__name__ + ':' + phase)
+              if type(error) is ValueError and len(error.args) == 1:
+                  code = error.args[0]
+                  if type(code) is str and code in CAPTURE_ERROR_CODES:
+                      receipt.setdefault('captureErrorCodes', []).append({'phase': phase, 'code': code})
+
           receipt = {'version': 1, 'producerValid': False, 'captureErrors': []}
           before = {}
           source_bytes = 0
@@ -251,7 +282,7 @@ jobs:
               if git('diff', '--name-only', 'HEAD').strip():
                   raise ValueError('preformat-source-changed')
           except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
-              receipt['captureErrors'].append(type(error).__name__ + ':preparation')
+              capture_error(receipt, error, 'preparation')
 
           # This remains the original quality command; capture never converts its failure to success.
           _, result = run(['dart', 'format', '--set-exit-if-changed', 'lib', 'test'], seconds=180, echo=True)
@@ -276,7 +307,7 @@ jobs:
                   receipt['patch'] = {'name': 'format.patch', 'bytes': len(patch), 'sha256': sha(patch)}
                   receipt['producerValid'] = not receipt['captureErrors'] and result['exit'] == 1 and not result['boundFailure'] and result['processGroupStopped']
           except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
-              receipt['captureErrors'].append(type(error).__name__ + ':patch')
+              capture_error(receipt, error, 'patch')
           finally:
               encoded = json.dumps(receipt, sort_keys=True, indent=2).encode()
               if len(encoded) > 1048576:

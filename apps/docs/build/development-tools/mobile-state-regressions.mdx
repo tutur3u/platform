@@ -155,6 +155,10 @@ failure, stopped owned processes and the expected source/context identities.
 The tested checkout commit may be a synthetic PR merge: compare `testedCommit`,
 `eventCommit` and the separate `prHeadCommit` with the actual run metadata rather
 than treating them as interchangeable. A missing/invalid receipt is a hold.
+Schema1 retains class/phase `captureErrors`; optional `captureErrorCodes` adds
+only exact allowlisted producer constants with their phase. Unknown exceptions
+retain class/phase only. Use a captured safe code to diagnose a failure; never
+bypass validation or infer its cause from a generic class alone.
 
 Check patch byte length/SHA256, every changed path and full old/new blob IDs.
 Only existing tracked regular `.dart` files under `apps/mobile/lib` or
