@@ -11,6 +11,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_public_consumer:
+        description: Compile current public employee CREATE and RESTORE imports against this run's generated schema; excludes chat and diagnostics
+        required: false
+        default: false
+        type: boolean
       include_journal:
         description: Include durable journal, reserved-preflight and runtime observation assertions
         required: false
@@ -83,6 +88,7 @@ jobs:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
+      EMPLOYEE_SCHEMA_INCLUDE_PUBLIC_CONSUMER: ${{ inputs.include_public_consumer }}
       EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: ${{ inputs.include_personal_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
@@ -131,6 +137,16 @@ jobs:
               .map(name => [name, process.env[`EMPLOYEE_SCHEMA_INCLUDE_${name}`]])));
           selectChatProcessDiagnostic(process.env.EMPLOYEE_SCHEMA_DIAGNOSE_CHAT_PROCESS, chat);
           NODE
+      - name: Validate employee public consumer selection
+        if: inputs.include_public_consumer == true
+        run: |
+          node --input-type=module - <<'NODE'
+          import { selectEmployeePublicConsumer } from './apps/database/scripts/employee-public-consumer-qualification.mjs';
+          selectEmployeePublicConsumer(process.env.EMPLOYEE_SCHEMA_INCLUDE_PUBLIC_CONSUMER, {
+            chatInitialSettings: process.env.EMPLOYEE_SCHEMA_INCLUDE_CHAT_INITIAL_SETTINGS === 'true',
+            structuredProvenance: process.env.EMPLOYEE_SCHEMA_INCLUDE_STRUCTURED_PROVENANCE === 'true',
+          });
+          NODE
       - name: Install exact source dependencies
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -141,7 +157,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         if: inputs.include_chat_initial_settings == true
         with:
-          flutter-version: "3.47.x"
+          flutter-version: '3.47.x'
           channel: stable
           cache: true
       - name: Restore locked chat mobile dependencies
@@ -165,6 +181,8 @@ jobs:
         run: node --test --test-concurrency=1 apps/database/scripts/chat-initial-settings-qualification.test.mjs apps/database/scripts/chat-process-diagnostic.test.mjs
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
+      - name: Verify employee public consumer proof gates
+        run: node --test scripts/employee-public-consumer-qualification.test.mjs
       - name: Verify feedback profile gates
         run: node --test apps/database/scripts/product-feedback-schema-profile.test.mjs
       - name: Verify feedback causal protocol gates
