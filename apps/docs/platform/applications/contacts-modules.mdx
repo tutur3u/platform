@@ -166,3 +166,23 @@ does not recover previously lost content.
 Regression coverage: Contacts `use-posts.test.tsx` exercises the real dialog hooks
 and source API transport for stale snapshots, explicit clears, failed saves,
 newer edits, target changes and full creation payloads.
+
+## Recipient remarks with completion changes
+
+On Contacts class-post recipient cards, Complete and Incomplete save the current
+remark together with the completion state when that card has local remark edits.
+An untouched remark is omitted so a stale card cannot overwrite a newer server
+remark. Explicit empty text clears the remark. The separate Save action remains
+available; typing alone does not save or create a navigation-safe draft.
+
+A successful request acknowledges only its submitted remark revision. Later edits,
+including a revert while saving, remain pending for the next action. Rejected
+saves retain the draft for an explicit retry. Each card writes only its recipient;
+existing approval and delivery behavior and explicit Reset remain unchanged.
+This rule does not recover previously lost remarks.
+
+Regression coverage: `recipient-note-completion.test.tsx` mounts real cards with
+source API serialization and persistent synthetic HTTP storage, then remounts from
+stored rows. It covers multiple recipients, completion and explicit Save, pristine
+concurrent server updates, later edits/reverts, rejected saves/retries and explicit
+clearing. The synthetic store does not certify deployed database triggers.
