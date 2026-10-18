@@ -138,3 +138,39 @@ Run `assistant_composer_multiline_test.dart` and
 geometry regression renders the real composer in `PersistentShellDock` and
 checks multiline growth, large text, keyboard and physical safe-area variants.
 These fixtures do not establish authenticated native-device behavior.
+
+## Recover a hosted Dart formatting failure
+
+The existing Mobile Analysis job runs the configured hosted Flutter SDK after
+its normal dependency step. A failed `dart format --set-exit-if-changed lib test`
+still fails quality and prevents analysis. Its three-day `mobile-format` failure
+artifact contains only a bounded tracked-Dart patch and a digest/version receipt;
+it does not contain raw package configuration, environment or authentication data.
+No patch is committed or applied automatically, and artifact existence is not a
+format, analyzer, test or runtime pass.
+
+Before using a patch, verify its GitHub run/job and reviewed workflow identity,
+then require `producerValid=true`, an ordinary formatter exit1 with no bound
+failure, stopped owned processes and the expected source/context identities.
+The tested checkout commit may be a synthetic PR merge: compare `testedCommit`,
+`eventCommit` and the separate `prHeadCommit` with the actual run metadata rather
+than treating them as interchangeable. A missing/invalid receipt is a hold.
+
+Check patch byte length/SHA256, every changed path and full old/new blob IDs.
+Only existing tracked regular `.dart` files under `apps/mobile/lib` or
+`apps/mobile/test` are allowed. Compare each old SHA256/blob/mode with the actual
+application target before any separately authorized `git apply --check`; reject
+wrong-source, tampered, out-of-scope, new/deleted/renamed or mode-changing input.
+A matching PR number or commit title does not establish preimage equality.
+The receipt's digest is not an independent signature: retrieve it through the
+trusted exact run and verify the producer workflow/context, not only its claims.
+
+The producer bounds input to 4096 tracked Dart files / 32 MiB (2 MiB per file), changed
+paths to 256, patch to 4 MiB, receipt/output captures to 1 MiB, and the actual formatter
+to 180 seconds. Bounds or capture failures retain the original formatting failure
+and cannot qualify a patch; missing capture/upload requires another admitted
+source-bound run. Context records hashes of source/lock/analysis/package context,
+resolved analysis includes and actual tool identities, never their raw contents.
+Keep a local formatter result separate when its SDK/package context differs.
+After separately reviewed application, require clean exact-head format and
+analysis CI; retain independent compiler, behavior, SQL and delivery gates.

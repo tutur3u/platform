@@ -49,7 +49,8 @@ export const dartCaseNames = Object.freeze([
   'wrong_tuple',
   'raw_sql_requires_web',
 ]);
-export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+export const sha256 = (bytes) =>
+  createHash('sha256').update(bytes).digest('hex');
 const sha = (value) =>
   typeof value === 'string' &&
   /^[a-f0-9]{40}$/.test(value) &&
@@ -75,8 +76,7 @@ export function selectChatInitialSettings(value, options = {}) {
 
 export function assertChatBinding(binding, expected = binding) {
   if (
-    !binding ||
-    binding.version !== 1 ||
+    binding?.version !== 1 ||
     !sha(binding.sourceSha) ||
     !sha(binding.controlSha) ||
     !/^[1-9][0-9]{0,19}$/.test(binding.runId ?? '') ||
@@ -101,26 +101,45 @@ export function assertChatBinding(binding, expected = binding) {
 }
 
 function fixturePersonalWorkspace(envelope) {
-  const actors = ['b6277131-0000-4000-8000-000000000001',
-    'b6277131-0000-4000-8000-000000000002'];
+  const actors = [
+    'b6277131-0000-4000-8000-000000000001',
+    'b6277131-0000-4000-8000-000000000002',
+  ];
   const shared = 'b6277131-0000-4000-8000-000000000011';
   const workspaces = envelope?.fixtureWorkspaces;
-  if (!Array.isArray(workspaces) || workspaces.length !== 3 ||
+  if (
+    !Array.isArray(workspaces) ||
+    workspaces.length !== 3 ||
     new Set(workspaces.map((item) => item?.id)).size !== 3 ||
-    !workspaces.every((item) => item &&
-      /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(item.id ?? '') &&
-      (item.personal === true && item.creatorMember === true && actors.includes(item.creatorId) ||
-       item.personal === false && item.id === shared && item.creatorId === actors[0])) ||
-    !actors.every((actor) => workspaces.filter((item) => item.personal && item.creatorId === actor).length === 1))
+    !workspaces.every(
+      (item) =>
+        item &&
+        /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
+          item.id ?? ''
+        ) &&
+        ((item.personal === true &&
+          item.creatorMember === true &&
+          actors.includes(item.creatorId)) ||
+          (item.personal === false &&
+            item.id === shared &&
+            item.creatorId === actors[0]))
+    ) ||
+    !actors.every(
+      (actor) =>
+        workspaces.filter((item) => item.personal && item.creatorId === actor)
+          .length === 1
+    )
+  )
     throw new Error('SQL trigger-created workspace ownership differs');
-  return workspaces.find((item) => item.personal && item.creatorId === actors[1]).id;
+  return workspaces.find(
+    (item) => item.personal && item.creatorId === actors[1]
+  ).id;
 }
 
 export function assertSqlEnvelope(envelope) {
   const personalWsId = fixturePersonalWorkspace(envelope);
   if (
-    !envelope ||
-    envelope.version !== 1 ||
+    envelope?.version !== 1 ||
     envelope.committedReadback !== true ||
     envelope.migrationVersion !== '20261018020000' ||
     envelope.createAllowed !== true ||
@@ -135,7 +154,8 @@ export function assertSqlEnvelope(envelope) {
         item.actorId === 'b6277131-0000-4000-8000-000000000002' &&
         item.wsId === 'b6277131-0000-4000-8000-000000000011' &&
         item.personalWsId === personalWsId &&
-        (item.name !== 'personal' || item.input?.initialAiSettings?.creditWsId === personalWsId) &&
+        (item.name !== 'personal' ||
+          item.input?.initialAiSettings?.creditWsId === personalWsId) &&
         isDeepStrictEqual(item.receipt, item.readback)
     )
   )

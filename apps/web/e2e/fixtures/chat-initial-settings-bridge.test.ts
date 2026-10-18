@@ -38,7 +38,9 @@ const envelope = z
 const names = ['workspace', 'personal', 'null', 'legacy'];
 expect(envelope.sql.cases.map((item) => item.name)).toEqual(names);
 expect(envelope.binding.sourceSha).toBe(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA);
-expect(envelope.binding.controlSha).toBe(process.env.EMPLOYEE_SCHEMA_CONTROL_SHA);
+expect(envelope.binding.controlSha).toBe(
+  process.env.EMPLOYEE_SCHEMA_CONTROL_SHA
+);
 expect(envelope.binding.runId).toBe(process.env.GITHUB_RUN_ID);
 const envelopeSha256 = createHash('sha256').update(bytes).digest('hex');
 const mocks = vi.hoisted(() => ({
@@ -120,13 +122,20 @@ beforeEach(() => {
       context: {
         normalizedWsId: first.wsId,
         permissions: {
-          withoutPermission: (permission: string) => permission === 'manage_chat',
+          withoutPermission: (permission: string) =>
+            permission === 'manage_chat',
         },
       },
     };
   });
-  mocks.model.mockResolvedValue({ modelId: 'google/test', source: 'requested' });
-  mocks.personal.mockResolvedValue({ data: { id: first.personalWsId }, error: null });
+  mocks.model.mockResolvedValue({
+    modelId: 'google/test',
+    source: 'requested',
+  });
+  mocks.personal.mockResolvedValue({
+    data: { id: first.personalWsId },
+    error: null,
+  });
 });
 async function invoke(item: z.infer<typeof itemSchema>) {
   const { POST } = await import(
@@ -160,13 +169,14 @@ for (const item of envelope.sql.cases) {
       .parse(await response.json());
     const rawTimestamp = z.string().parse(item.receipt.createdAt);
     expect(rawTimestamp).toMatch(/^\d{4}-\d{2}-\d{2} /);
-    const expectedTimestamp =
-      rawTimestamp
-        .replace(' ', 'T')
-        .replace(/\+00$/, '')
-        .replace(/(?<=:\d{2})$/, '.000') + 'Z';
+    const expectedTimestamp = `${rawTimestamp
+      .replace(' ', 'T')
+      .replace(/\+00$/, '')
+      .replace(/(?<=:\d{2})$/, '.000')}Z`;
     expect(body.conversation.createdAt).toBe(expectedTimestamp);
-    expect({ ...body.conversation, createdAt: rawTimestamp }).toEqual(item.receipt);
+    expect({ ...body.conversation, createdAt: rawTimestamp }).toEqual(
+      item.receipt
+    );
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
     if (item.name === 'legacy') expect(mocks.model).not.toHaveBeenCalled();
     else {
