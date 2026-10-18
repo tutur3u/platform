@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.68.3](https://github.com/tutur3u/platform/compare/platform-v0.68.2...platform-v0.68.3) (2026-10-18)
+
+
+### Bug Fixes
+
+* **ci:** preserve canonical Flutter pin quoting ([10d4d0c](https://github.com/tutur3u/platform/commit/10d4d0ce67225ab2465ce8ee6c40c68c8bb2729b))
+* **database:** qualify employee public consumers through cleanup ([83f5a4c](https://github.com/tutur3u/platform/commit/83f5a4cc801fed116938884363bc928493410059)) ([#6342](https://github.com/tutur3u/platform/issues/6342)) ([8391603](https://github.com/tutur3u/platform/commit/8391603d5df194db3d1ed5c152a27106d0a725af))
+
 ## [0.68.2](https://github.com/tutur3u/platform/compare/platform-v0.68.1...platform-v0.68.2) (2026-10-18)
 
 
