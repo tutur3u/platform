@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { stripVTControlCharacters } from 'node:util';
 
 export const buildCategories = Object.freeze([
@@ -47,15 +48,108 @@ export function buildSourcePaths() {
   }
 }
 
+const streamLimit = 65536;
+const byteCountLimit = 1024 ** 3;
+const processIndicators = [
+  ['native-panic', /panicked at|non-unwinding panic|\bpanic:/iu],
+  ['native-assertion', /assertion[^\r\n]*failed/iu],
+  ['out-of-memory', /heap out of memory|\bENOMEM\b/iu],
+  ['runtime-fatal', /fatal (?:error|runtime error):/iu],
+];
+const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const exactKeys = (value, keys) =>
+  value !== null &&
+  typeof value === 'object' &&
+  !Array.isArray(value) &&
+  Object.keys(value).length === keys.length &&
+  keys.every((key) => Object.hasOwn(value, key));
+
+export function projectProcessOutput(value) {
+  if (
+    !exactKeys(value, ['version', 'indicators', 'streams', 'truncated']) ||
+    value.version !== 1 ||
+    typeof value.truncated !== 'boolean' ||
+    !Array.isArray(value.indicators) ||
+    value.indicators.length < 1 ||
+    value.indicators.length > 4 ||
+    new Set(value.indicators).size !== value.indicators.length ||
+    value.indicators.some(
+      (entry) =>
+        !['unknown', ...processIndicators.map(([name]) => name)].includes(entry)
+    ) ||
+    (value.indicators.includes('unknown') && value.indicators.length !== 1) ||
+    !Array.isArray(value.streams) ||
+    value.streams.length !== 2
+  )
+    throw new Error('Invalid process output summary');
+  const streams = value.streams.map((entry, index) => {
+    if (
+      !exactKeys(entry, [
+        'stream',
+        'totalBytes',
+        'tailBytes',
+        'totalSha256',
+        'tailSha256',
+        'countTruncated',
+        'truncated',
+      ]) ||
+      entry.stream !== ['stdout', 'stderr'][index] ||
+      !Number.isSafeInteger(entry.totalBytes) ||
+      entry.totalBytes < 0 ||
+      entry.totalBytes > byteCountLimit ||
+      !Number.isSafeInteger(entry.tailBytes) ||
+      entry.tailBytes < 0 ||
+      entry.tailBytes > streamLimit ||
+      entry.tailBytes !== Math.min(entry.totalBytes, streamLimit) ||
+      ![entry.totalSha256, entry.tailSha256].every(
+        (hash) => typeof hash === 'string' && /^[a-f0-9]{64}$/u.test(hash)
+      ) ||
+      typeof entry.countTruncated !== 'boolean' ||
+      (entry.countTruncated && entry.totalBytes !== byteCountLimit) ||
+      entry.truncated !==
+        (entry.countTruncated || entry.totalBytes > entry.tailBytes)
+    )
+      throw new Error('Invalid process stream summary');
+    return {
+      stream: entry.stream,
+      totalBytes: entry.totalBytes,
+      tailBytes: entry.tailBytes,
+      totalSha256: entry.totalSha256,
+      tailSha256: entry.tailSha256,
+      countTruncated: entry.countTruncated,
+      truncated: entry.truncated,
+    };
+  });
+  if (value.truncated !== streams.some((entry) => entry.truncated))
+    throw new Error('Invalid process truncation summary');
+  return {
+    version: 1,
+    indicators: [...value.indicators],
+    streams,
+    truncated: value.truncated,
+  };
+}
+
 // Raw bytes exist only in these bounded in-memory stream tails, never in receipts.
 export function buildOutputCapture(paths = buildSourcePaths()) {
-  const limit = 65536;
+  const limit = streamLimit;
   const streams = new Map();
+  const totals = new Map();
   let truncated = false;
   return {
     append(stream, chunk) {
       if (!['stdout', 'stderr'].includes(stream)) return;
       const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      const total = totals.get(stream) ?? {
+        bytes: 0,
+        countTruncated: false,
+        hash: createHash('sha256'),
+      };
+      const nextBytes = total.bytes + bytes.length;
+      total.countTruncated ||= nextBytes > byteCountLimit;
+      total.bytes = Math.min(nextBytes, byteCountLimit);
+      total.hash.update(bytes);
+      totals.set(stream, total);
       const previous = streams.get(stream) ?? Buffer.alloc(0);
       if (previous.length + bytes.length > limit) truncated = true;
       streams.set(
@@ -129,8 +223,37 @@ export function buildOutputCapture(paths = buildSourcePaths()) {
           }
         }
       }
+      const indicators = processIndicators
+        .filter(([, pattern]) =>
+          [...streams.values()].some((bytes) =>
+            pattern.test(stripVTControlCharacters(bytes.toString('utf8')))
+          )
+        )
+        .map(([name]) => name);
+      const processStreams = ['stdout', 'stderr'].map((stream) => {
+        const tail = streams.get(stream) ?? Buffer.alloc(0);
+        const total = totals.get(stream);
+        const totalBytes = total?.bytes ?? 0;
+        const countTruncated = total?.countTruncated ?? false;
+        return {
+          stream,
+          totalBytes,
+          tailBytes: tail.length,
+          totalSha256: total ? total.hash.digest('hex') : digest(tail),
+          tailSha256: digest(tail),
+          countTruncated,
+          truncated: countTruncated || totalBytes > tail.length,
+        };
+      });
+      const processOutput = {
+        version: 1,
+        indicators: indicators.length ? indicators : ['unknown'],
+        streams: processStreams,
+        truncated: processStreams.some((entry) => entry.truncated),
+      };
       streams.clear();
-      return { diagnostics, truncated };
+      totals.clear();
+      return { diagnostics, truncated, processOutput };
     },
   };
 }

@@ -15,6 +15,7 @@ import {
   sha256,
   webCaseNames,
 } from './chat-initial-settings-qualification.mjs';
+import { projectProcessOutput } from './employee-web-session-build-diagnostic.mjs';
 import { runOwnedSessionProcess } from './employee-web-session-process.mjs';
 
 function trackedBytes(root, file, commit) {
@@ -133,13 +134,26 @@ function boundedJson(file) {
     throw new Error('Chat artifact exceeds bound');
   return JSON.parse(readFileSync(file, 'utf8'));
 }
-function processReceipt(result) {
-  return {
+function processReceipt(result, withOutput = false) {
+  const receipt = {
     status: Number.isInteger(result.status) ? result.status : null,
     signal: result.signal ?? null,
     timedOut: result.timedOut === true,
     processGroupStopped: result.processGroupStopped === true,
   };
+  if (withOutput) {
+    receipt.outputDiagnostic = null;
+    receipt.outputDiagnosticValid = false;
+    try {
+      receipt.outputDiagnostic = projectProcessOutput(
+        result.buildDiagnostic?.processOutput
+      );
+      receipt.outputDiagnosticValid = true;
+    } catch {
+      // Keep the actual exit/cleanup evidence; an invalid summary cannot qualify.
+    }
+  }
+  return receipt;
 }
 function assertChild(result) {
   if (
@@ -212,9 +226,11 @@ export async function runChatInitialSettingsBridge({
         buildOutput: true,
       }
     );
-    state.webProcess = processReceipt(webProcess);
+    state.webProcess = processReceipt(webProcess, true);
     state.processesStopped = webProcess.processGroupStopped === true;
     assertChild(webProcess);
+    if (!state.webProcess.outputDiagnosticValid)
+      throw new Error('Chat process output summary unavailable');
     assertVitestReport(boundedJson(webReportPath));
     state.webTestReportSha256 = sha256(readFileSync(webReportPath));
     const webResult = boundedJson(webPath);

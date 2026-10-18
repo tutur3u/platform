@@ -1,20 +1,14 @@
 import assert from 'node:assert/strict';
 import {
-  mkdtempSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
-  writeFileSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import {
-  assertPacketTap,
-  foundationPackets,
-  schemaReceipt,
-  selectSchemaPackets,
-} from './employee-schema-tap.mjs';
 import {
   assertChatBinding,
   assertPhaseResult,
@@ -35,6 +29,13 @@ import {
   runChatInitialSettingsBridge,
   sqlJson,
 } from './chat-initial-settings-runner.mjs';
+import {
+  assertPacketTap,
+  foundationPackets,
+  schemaReceipt,
+  selectSchemaPackets,
+} from './employee-schema-tap.mjs';
+import { buildOutputCapture } from './employee-web-session-build-diagnostic.mjs';
 
 // These synthetic ports test orchestration failures, never actual SQL qualification.
 const fixture = 'begin; commit; select 1;';
@@ -389,11 +390,23 @@ async function drive(fault, { cleanupError = null, processError = null } = {}) {
         env.CHAT_INITIAL_SETTINGS_DART_RESULT,
         JSON.stringify({ ...common, passed: dartCaseNames })
       );
+    const capture = buildOutputCapture(new Set());
+    capture.append('stderr', 'thread panicked at synthetic-private-value');
+    const buildDiagnostic = capture.receipt();
+    if (fault === 'summary') {
+      buildDiagnostic.processOutput.indicators = ['secret'];
+    }
+    if (fault === 'no-summary') delete buildDiagnostic.processOutput;
     return {
-      status: 0,
+      buildDiagnostic,
+      status: ['abort', 'null'].includes(fault)
+        ? null
+        : fault === 'nonzero'
+          ? 2
+          : 0,
       processGroupStopped: fault !== 'group',
-      timedOut: false,
-      signal: null,
+      timedOut: fault === 'timeout',
+      signal: fault === 'abort' ? 'SIGABRT' : null,
     };
   };
   try {
@@ -570,4 +583,53 @@ test('primary bridge failure survives successful cleanup and aggregates failed c
     cleanupError,
   });
   assert.equal(failed.error.errors[1], cleanupError);
+});
+
+test('successful report cannot override abort timeout or invalid summary', async () => {
+  for (const fault of [
+    'abort',
+    'timeout',
+    'summary',
+    'no-summary',
+    'null',
+    'nonzero',
+  ]) {
+    const result = await drive(fault);
+    assert.ok(result.error);
+    assert.equal(result.children, 1);
+    assert.equal(result.sqlCalls, 2);
+    assert.equal(result.state.fixtureCleanup, true);
+    assert.equal(result.state.webPassed, undefined);
+    assert.equal(result.state.dartPassed, undefined);
+    assert.equal(result.state.failurePhase, 'web');
+    assert.equal(result.state.webProcess.processGroupStopped, true);
+    if (fault === 'abort') {
+      assert.equal(result.state.webProcess.status, null);
+      assert.equal(result.state.webProcess.signal, 'SIGABRT');
+      assert.deepEqual(result.state.webProcess.outputDiagnostic.indicators, [
+        'native-panic',
+      ]);
+    }
+    if (['summary', 'no-summary'].includes(fault)) {
+      assert.equal(result.state.webProcess.outputDiagnosticValid, false);
+      assert.equal(result.state.webProcess.outputDiagnostic, null);
+    }
+    const receipt = chatQualificationReceipt({
+      ...complete(),
+      ...result.state,
+      webPassed: result.state.webPassed,
+      dartPassed: result.state.dartPassed,
+      completed: false,
+      lifecycleCode: 1,
+    });
+    assert.equal(receipt.webCases, 0);
+    assert.equal(receipt.dartCases, 0);
+    assert.equal(receipt.qualified, false);
+    assert.equal(JSON.stringify(receipt).includes('synthetic-private'), false);
+  }
+  const ok = await drive();
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.state.webProcess.outputDiagnosticValid, true);
+  assert.equal(ok.state.webPassed, true);
+  assert.equal(ok.state.dartPassed, true);
 });

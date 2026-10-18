@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 import {
   buildOutputCapture,
   projectBuildDiagnostic,
+  projectProcessOutput,
 } from './employee-web-session-build-diagnostic.mjs';
 
+const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const paths = new Set(['apps/web/src/public.ts', 'apps/web/next.config.ts']);
 test('compiler diagnostics retain only allowlisted categories codes and tracked paths', () => {
   const capture = buildOutputCapture(paths);
@@ -15,7 +18,7 @@ test('compiler diagnostics retain only allowlisted categories codes and tracked 
     )
   );
   const value = capture.receipt();
-  assert.deepEqual(value, {
+  assert.deepEqual(projectBuildDiagnostic(value, paths), {
     diagnostics: [
       {
         category: 'type-error',
@@ -37,7 +40,7 @@ test('compiler diagnostics retain only allowlisted categories codes and tracked 
       },
       paths
     ),
-    value
+    projectBuildDiagnostic(value, paths)
   );
 });
 test('all injected config keys, env secrets, credentials and token forms are discarded', () => {
@@ -156,4 +159,64 @@ test('diagnostic inventory overflow is explicit even without stream-byte truncat
   const value = capture.receipt();
   assert.equal(value.diagnostics.length, 8);
   assert.equal(value.truncated, true);
+});
+
+test('process summary hashes chunked output without private text', () => {
+  const capture = buildOutputCapture(paths);
+  const stdout = Buffer.from('synthetic private stdout');
+  const stderr = Buffer.from('thread panicked at private-path token=secret');
+  capture.append('stdout', stdout);
+  capture.append('stderr', stderr.subarray(0, 12));
+  capture.append('stderr', stderr.subarray(12));
+  const output = projectProcessOutput(capture.receipt().processOutput);
+  assert.deepEqual(output.indicators, ['native-panic']);
+  for (const [index, bytes] of [stdout, stderr].entries()) {
+    assert.equal(output.streams[index].totalBytes, bytes.length);
+    assert.equal(output.streams[index].tailBytes, bytes.length);
+    assert.equal(output.streams[index].totalSha256, digest(bytes));
+    assert.equal(output.streams[index].tailSha256, digest(bytes));
+  }
+  assert.equal(output.truncated, false);
+  for (const secret of ['private', 'token', 'secret', 'stdout token'])
+    assert.equal(JSON.stringify(output).includes(secret), false);
+});
+
+test('process output tails are bounded with explicit unknown evidence', () => {
+  const capture = buildOutputCapture(paths);
+  const bytes = Buffer.alloc(100000, 65);
+  capture.append('stderr', bytes);
+  const output = projectProcessOutput(capture.receipt().processOutput);
+  assert.deepEqual(output.indicators, ['unknown']);
+  assert.equal(output.streams[1].totalBytes, bytes.length);
+  assert.equal(output.streams[1].tailBytes, 65536);
+  assert.equal(output.streams[1].totalSha256, digest(bytes));
+  assert.equal(output.streams[1].tailSha256, digest(bytes.subarray(-65536)));
+  assert.equal(output.truncated, true);
+  assert.equal(JSON.stringify(output).length < 1024, true);
+});
+
+test('process summary indicators are fixed and reject malformed projection', () => {
+  const capture = buildOutputCapture(paths);
+  capture.append(
+    'stderr',
+    'Assertion failed private\nENOMEM\nFatal error: secret'
+  );
+  const value = capture.receipt().processOutput;
+  assert.deepEqual(value.indicators, [
+    'native-assertion',
+    'out-of-memory',
+    'runtime-fatal',
+  ]);
+  assert.deepEqual(projectProcessOutput(value), value);
+  for (const invalid of [
+    { ...value, raw: 'secret' },
+    { ...value, indicators: ['secret'] },
+    { ...value, truncated: true },
+    { ...value, streams: [] },
+    {
+      ...value,
+      streams: value.streams.map((entry) => ({ ...entry, tailBytes: 70000 })),
+    },
+  ])
+    assert.throws(() => projectProcessOutput(invalid));
 });

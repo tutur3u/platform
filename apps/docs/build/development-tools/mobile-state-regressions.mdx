@@ -213,3 +213,23 @@ missing-config transform error before test collection is a Web setup failure;
 it does not qualify SQL or either consumer. Preserve the actual route imports,
 full compiler checks, and all nine Web and nine Dart cases, and require the
 source-bound hosted qualification after correcting configuration ownership.
+
+## Web bridge process failures after passing tests
+
+A successful nine-test JSON report does not qualify a child that aborts or fails
+to stop cleanly. The bridge records the actual status, signal, timeout and group
+cleanup before enforcing its existing exit gate. Its separate process-output
+summary contains only fixed panic, assertion, memory, fatal or unknown indicators,
+per-stream byte counts and SHA256 digests, with 64-KiB tails and explicit truncation.
+Counts saturate at 1 GiB per stream; a saturation flag preserves that limit while
+streaming hashes cover the received bytes. No stdout, stderr, paths, environment,
+SQL payloads or arbitrary exception text are retained. Existing build diagnostics
+keep their prior category/code/path projection.
+
+The bridge validates the summary before accepting a successful Web phase. Missing
+or malformed summary cannot qualify. Fixed indicators are evidence hints, not
+causal attribution; an unknown signal remains unknown without further evidence.
+Preserve source/control/run binding, all exit/cleanup gates and the independent
+SQL, Web and Dart phases. Do not substitute a passing report for exit zero, change
+runtimes or IPC, or retry qualification blindly. Require reviewed source and a
+separately admitted exact-source hosted attempt for actual process evidence.
