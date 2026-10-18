@@ -206,6 +206,23 @@ jobs:
               result['dartExecutable'] = digest(Path(os.environ['FLUTTER_ROOT']) / 'bin/cache/dart-sdk/bin/dart', 134217728)
               return result
 
+          def dirty_snapshot(raw):
+              result = {'count': 0, 'pathSha256': [], 'complete': False}
+              if type(raw) is not bytes or len(raw) > 1048576:
+                  return dict(result, reason='path-byte-limit-or-type')
+              if not raw:
+                  return dict(result, complete=True)
+              if not raw.endswith(b'\0'):
+                  return dict(result, reason='path-framing-invalid')
+              names = raw[:-1].split(b'\0')
+              result['count'] = min(len(names), 256)
+              if len(names) > 256:
+                  return dict(result, reason='path-count-limit', countTruncated=True)
+              if any(not name or name.startswith(b'/') or
+                     any(part in [b'', b'.', b'..'] for part in name.split(b'/')) for name in names):
+                  return dict(result, reason='path-relative-invalid')
+              return dict(result, complete=True, pathSha256=[sha(name) for name in names])
+
           CAPTURE_ERROR_CODES = frozenset({
               'analysis-include-not-local',
               'analysis-include-unbounded',
@@ -251,7 +268,12 @@ jobs:
                       raise ValueError('invalid-commit-identity')
                   receipt[key] = value or None
               receipt['testedCommit'] = git('rev-parse', 'HEAD').decode().strip()
-              if receipt['eventCommit'] != receipt['testedCommit'] or git('diff', '--name-only', 'HEAD').strip():
+              receipt['preformatIdentityMatches'] = receipt['eventCommit'] == receipt['testedCommit']
+              if not receipt['preformatIdentityMatches']:
+                  raise ValueError('checkout-or-preimage-dirty')
+              dirty = git('diff', '--name-only', '-z', 'HEAD')
+              receipt['preformatTrackedChanges'] = dirty_snapshot(dirty)
+              if dirty or not receipt['preformatTrackedChanges']['complete']:
                   raise ValueError('checkout-or-preimage-dirty')
               tree = git('ls-tree', '-rz', 'HEAD', '--', 'apps/mobile/lib', 'apps/mobile/test')
               for entry in tree.split(b'\0'):

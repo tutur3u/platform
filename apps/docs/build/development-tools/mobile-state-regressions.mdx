@@ -159,6 +159,11 @@ Schema1 retains class/phase `captureErrors`; optional `captureErrorCodes` adds
 only exact allowlisted producer constants with their phase. Unknown exceptions
 retain class/phase only. Use a captured safe code to diagnose a failure; never
 bypass validation or infer its cause from a generic class alone.
+`preformatIdentityMatches` separates checkout identity from dirty-source evidence.
+`preformatTrackedChanges` contains only a capped count and SHA256 hashes of raw
+NUL-delimited relative tracked path bytes, never names or diffs. Match hashes
+offline against the public tested Git tree. Incomplete/invalid snapshots remain
+a hold; `countTruncated=true` means more than 256 paths and no hashes are emitted.
 
 Check patch byte length/SHA256, every changed path and full old/new blob IDs.
 Only existing tracked regular `.dart` files under `apps/mobile/lib` or
