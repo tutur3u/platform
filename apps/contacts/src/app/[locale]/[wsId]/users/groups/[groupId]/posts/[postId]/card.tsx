@@ -226,6 +226,17 @@ function UserCardEditor({
     }
   };
 
+  const handleSaveCompletion = (isCompleted: boolean) => {
+    const hasUnsavedNotes =
+      notesEditRevision.current !== acknowledgedNotesRevision.current;
+    handleSaveStatus({
+      isCompleted,
+      ...(hasUnsavedNotes
+        ? { notes: notesDraft, notesRevision: notesEditRevision.current }
+        : {}),
+    });
+  };
+
   return (
     <Card className="w-full rounded-lg border-border/60 p-4 shadow-sm">
       <div className="mb-4 flex items-start gap-3">
@@ -352,11 +363,7 @@ function UserCardEditor({
           <Button
             size="sm"
             className="bg-dynamic-green text-background hover:bg-dynamic-green/90"
-            onClick={() =>
-              handleSaveStatus({
-                isCompleted: true,
-              })
-            }
+            onClick={() => handleSaveCompletion(true)}
             disabled={isSavingStatus || isClearing}
           >
             {isSavingStatus ? (
@@ -369,11 +376,7 @@ function UserCardEditor({
           <Button
             size="sm"
             variant="destructive"
-            onClick={() =>
-              handleSaveStatus({
-                isCompleted: false,
-              })
-            }
+            onClick={() => handleSaveCompletion(false)}
             disabled={isSavingStatus || isClearing}
           >
             {isSavingStatus ? (

@@ -110,8 +110,16 @@ describe('daily report recipient marker state', () => {
       screen.getByRole('button', { name: 'ws_post_details.reset_check' })
     ).toBeDefined();
 
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'Remark after creating the check' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'common.incomplete' }));
     await waitFor(() => expect(api.update).toHaveBeenCalledOnce());
+    expect(api.update.mock.calls[0]?.[3]).toEqual({
+      user_id: recipient().user_id,
+      is_completed: false,
+      notes: 'Remark after creating the check',
+    });
   });
 
   it('removes the local check marker after reset', async () => {
@@ -184,7 +192,7 @@ describe('daily report recipient marker state', () => {
     );
   });
 
-  it('keeps a rejected note draft and never resends notes with status changes', async () => {
+  it('retries a rejected current note draft with the next completion action', async () => {
     api.update.mockRejectedValueOnce(new Error('Invalid payload'));
     renderCard(
       recipient({
@@ -214,6 +222,7 @@ describe('daily report recipient marker state', () => {
     expect(api.update.mock.calls[1]?.[3]).toEqual({
       user_id: recipient().user_id,
       is_completed: true,
+      notes: 'Unsaved comment',
     });
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
       'Unsaved comment'
