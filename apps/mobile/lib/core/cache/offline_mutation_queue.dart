@@ -32,9 +32,8 @@ part 'offline_mutation_dispatch.dart';
 part 'offline_mutation_dependencies.dart';
 part 'offline_inventory_replay.dart';
 
-typedef OfflineMutationDispatcher = Future<void> Function(
-  PendingMutationRecord record,
-);
+typedef OfflineMutationDispatcher =
+    Future<void> Function(PendingMutationRecord record);
 
 String newLocalMutationId({bool timeOrdered = false}) {
   final random = Random.secure();

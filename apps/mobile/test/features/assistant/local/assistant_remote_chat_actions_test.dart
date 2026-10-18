@@ -62,8 +62,9 @@ void main() {
         () async {
           final repository = _Repository();
           when(() => repository.currentActorId).thenReturn('actor');
-          when(repository.generateUuid)
-              .thenReturn('22222222-2222-4222-8222-222222222222');
+          when(
+            repository.generateUuid,
+          ).thenReturn('22222222-2222-4222-8222-222222222222');
           final chat = _Chat(repository);
           addTearDown(chat.close);
           var scope = Object();
@@ -130,8 +131,9 @@ void main() {
   test('changing model lanes discards pending remote submissions', () async {
     final repository = _Repository();
     when(() => repository.currentActorId).thenReturn('actor');
-    when(repository.generateUuid)
-        .thenReturn('22222222-2222-4222-8222-222222222222');
+    when(
+      repository.generateUuid,
+    ).thenReturn('22222222-2222-4222-8222-222222222222');
     final chat = _Chat(repository);
     addTearDown(chat.close);
     final pending = submitAssistantRemoteChat(
@@ -175,8 +177,9 @@ void main() {
         'subscription cancellation and mode ABA', () async {
       final repository = _Repository();
       when(() => repository.currentActorId).thenReturn('actor');
-      when(repository.generateUuid)
-          .thenReturn('22222222-2222-4222-8222-222222222222');
+      when(
+        repository.generateUuid,
+      ).thenReturn('22222222-2222-4222-8222-222222222222');
       final listening = Completer<void>();
       final cancelling = Completer<void>();
       final releaseCancellation = Completer<void>();

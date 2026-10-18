@@ -309,8 +309,9 @@ class CreationHarness {
   Future<bool> resetDuringPendingRestore() async {
     final history = Completer<void>();
     historyGate = history.future;
-    await AssistantPreferences(currentUserId: () => actor.id)
-        .saveChatId(ws, saved);
+    await AssistantPreferences(
+      currentUserId: () => actor.id,
+    ).saveChatId(ws, saved);
     final loading = chat.loadWorkspace(ws);
     await historyEntered.future;
     try {

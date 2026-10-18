@@ -78,14 +78,18 @@ void main() {
         isCurrent: any(named: 'isCurrent'),
       ),
     ).thenAnswer((_) async => true);
-    when(repository.generateUuid)
-        .thenReturn('11111111-1111-4111-8111-111111111111');
-    when(() => repository.hasUnknownChatCreation(any()))
-        .thenAnswer((_) async => false);
-    when(() => preferences.loadChatId(any()))
-        .thenAnswer((_) async => 'selected');
-    when(() => repository.fetchRecentChats(wsId: any(named: 'wsId')))
-        .thenAnswer((_) async => []);
+    when(
+      repository.generateUuid,
+    ).thenReturn('11111111-1111-4111-8111-111111111111');
+    when(
+      () => repository.hasUnknownChatCreation(any()),
+    ).thenAnswer((_) async => false);
+    when(
+      () => preferences.loadChatId(any()),
+    ).thenAnswer((_) async => 'selected');
+    when(
+      () => repository.fetchRecentChats(wsId: any(named: 'wsId')),
+    ).thenAnswer((_) async => []);
     when(
       () => repository.restoreChat(
         wsId: any(named: 'wsId'),
@@ -195,8 +199,9 @@ void main() {
     });
   }
   test('missing marker read fails closed but keeps verified history', () async {
-    when(() => repository.hasUnknownChatCreation(any()))
-        .thenThrow(StateError('Synthetic unreadable'));
+    when(
+      () => repository.hasUnknownChatCreation(any()),
+    ).thenThrow(StateError('Synthetic unreadable'));
     when(
       () => repository.restoreChat(
         wsId: 'ws',
@@ -313,8 +318,9 @@ void main() {
     'late marker load cannot replace current workspace settlement',
     () async {
       final oldMarker = Completer<bool>();
-      when(() => repository.hasUnknownChatCreation('ws'))
-          .thenAnswer((_) => oldMarker.future);
+      when(
+        () => repository.hasUnknownChatCreation('ws'),
+      ).thenAnswer((_) => oldMarker.future);
       when(() => preferences.loadChatId('other')).thenAnswer((_) async => null);
       final oldLoad = cubit.loadWorkspace('ws');
       await Future<void>.delayed(Duration.zero);
@@ -339,8 +345,9 @@ void main() {
           storagePath: 'synthetic/file',
           uploadState: AssistantAttachmentUploadState.uploaded,
         );
-        when(() => repository.hasUnknownChatCreation('ws'))
-            .thenAnswer((_) async => unknown);
+        when(
+          () => repository.hasUnknownChatCreation('ws'),
+        ).thenAnswer((_) async => unknown);
         when(
           () => repository.restoreChat(
             wsId: 'ws',

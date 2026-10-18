@@ -237,10 +237,7 @@ void main() {
       // Public restore retires the old workspace operation lease.
       h.port.expired = false;
       await tester.runAsync(
-        () => h.chat.openChatById(
-          repairWorkspace,
-          repairChat,
-        ),
+        () => h.chat.openChatById(repairWorkspace, repairChat),
       );
       await h.settle(tester);
       final replacement = h.chat.state.messages.single;

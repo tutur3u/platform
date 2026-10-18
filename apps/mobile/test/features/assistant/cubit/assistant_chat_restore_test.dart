@@ -77,8 +77,9 @@ void main() {
   });
   setUp(() {
     repository = _Repository();
-    when(() => repository.hasUnknownChatCreation(any()))
-        .thenAnswer((_) async => false);
+    when(
+      () => repository.hasUnknownChatCreation(any()),
+    ).thenAnswer((_) async => false);
     preferences = _Preferences();
     when(() => repository.currentActorId).thenReturn('actor');
     when(() => preferences.matchesResetActor('actor')).thenReturn(true);
@@ -112,10 +113,12 @@ void main() {
         shouldWrite: any(named: 'shouldWrite'),
       ),
     ).thenAnswer((_) async {});
-    when(() => restoreWithScope(any(named: 'wsId'), any(named: 'chatId')))
-        .thenAnswer((_) async => restored);
-    when(() => repository.fetchRecentChats(wsId: any(named: 'wsId')))
-        .thenAnswer((_) async => []);
+    when(
+      () => restoreWithScope(any(named: 'wsId'), any(named: 'chatId')),
+    ).thenAnswer((_) async => restored);
+    when(
+      () => repository.fetchRecentChats(wsId: any(named: 'wsId')),
+    ).thenAnswer((_) async => []);
     cubit = AssistantChatCubit(
       repository: repository,
       preferences: preferences,
@@ -354,8 +357,9 @@ void main() {
     () async {
       await cubit.loadWorkspace('ws');
       final fresh = Completer<AssistantRestoredChat?>();
-      when(() => restoreWithScope('ws', 'cached', forceRefresh: true))
-          .thenAnswer((_) => fresh.future);
+      when(
+        () => restoreWithScope('ws', 'cached', forceRefresh: true),
+      ).thenAnswer((_) => fresh.future);
       final loading = cubit.openChatById('ws', 'cached');
       expect(cubit.state.status, AssistantChatStatus.idle);
       fresh.complete(
@@ -590,8 +594,9 @@ void main() {
   });
   test('cached conversation renders before delayed history', () async {
     final history = Completer<List<AssistantChatRecord>>();
-    when(() => repository.fetchRecentChats(wsId: 'ws'))
-        .thenAnswer((_) => history.future);
+    when(
+      () => repository.fetchRecentChats(wsId: 'ws'),
+    ).thenAnswer((_) => history.future);
     await cubit.loadWorkspace('ws');
     expect(cubit.state.status, AssistantChatStatus.idle);
     expect(cubit.state.chat?.id, 'cached');
@@ -601,8 +606,9 @@ void main() {
     expect(cubit.state.history.single.id, 'history');
   });
   test('history failure does not hide a restored conversation', () async {
-    when(() => repository.fetchRecentChats(wsId: 'ws'))
-        .thenThrow(Exception('offline'));
+    when(
+      () => repository.fetchRecentChats(wsId: 'ws'),
+    ).thenThrow(Exception('offline'));
     await cubit.loadWorkspace('ws');
     expect(cubit.state.chat?.id, 'cached');
     expect(cubit.state.status, AssistantChatStatus.idle);
@@ -611,10 +617,12 @@ void main() {
   test('a new workspace rejects delayed restore and history', () async {
     final restore = Completer<AssistantRestoredChat?>();
     final history = Completer<List<AssistantChatRecord>>();
-    when(() => restoreWithScope('old', 'cached'))
-        .thenAnswer((_) => restore.future);
-    when(() => repository.fetchRecentChats(wsId: 'old'))
-        .thenAnswer((_) => history.future);
+    when(
+      () => restoreWithScope('old', 'cached'),
+    ).thenAnswer((_) => restore.future);
+    when(
+      () => repository.fetchRecentChats(wsId: 'old'),
+    ).thenAnswer((_) => history.future);
     final loading = cubit.loadWorkspace('old');
     await Future<void>.delayed(Duration.zero);
     await cubit.loadWorkspace('new');
@@ -662,8 +670,9 @@ void main() {
     () async {
       await cubit.loadWorkspace('ws');
       final pending = Completer<AssistantRestoredChat?>();
-      when(() => restoreWithScope('ws', 'next', forceRefresh: true))
-          .thenAnswer((_) => pending.future);
+      when(
+        () => restoreWithScope('ws', 'next', forceRefresh: true),
+      ).thenAnswer((_) => pending.future);
       final opening = cubit.openChatById('ws', 'next');
       await cubit.submit(
         wsId: 'ws',
