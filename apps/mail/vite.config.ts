@@ -15,7 +15,13 @@ export default defineConfig(({ command }) => ({
     voidPlugin(),
     tanstackStart({
       serverFns: { base: MAIL_FUNCTION_BASE },
-      router: { enableRouteGeneration: false },
+      router: {
+        enableRouteGeneration: true,
+        routesDirectory: 'routes',
+        generatedRouteTree: 'routeTree.gen.ts',
+        routeTreeFileHeader: [],
+        disableTypes: false,
+      },
       rsc: { enabled: false },
       importProtection: {
         behavior: 'error',
