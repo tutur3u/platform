@@ -1086,6 +1086,9 @@
     },
     "apps/meet-realtime": {
       "name": "@tuturuuu/meet-realtime",
+      "dependencies": {
+        "@tuturuuu/realtime": "workspace:*",
+      },
       "devDependencies": {
         "@cloudflare/vite-plugin": "1.63.1",
         "typescript": "7.0.2",

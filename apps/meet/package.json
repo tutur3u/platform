@@ -3,7 +3,7 @@
   "version": "0.34.1",
   "private": true,
   "scripts": {
-    "type-check": "node ../../scripts/run-tsc-build.js --build",
+    "type-check": "node scripts/type-check.cjs",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- vp dev --port ${PORT:-7807}",
     "devx": "bun sb:stop && bun sb:start && bun dev",
@@ -27,7 +27,7 @@
     "build:cloudflare": "vp build",
     "preview:cloudflare": "vp preview",
     "deploy:cloudflare": "wrangler deploy --config dist/ssr/wrangler.json",
-    "cf:typecheck": "node ../../scripts/run-tsc-build.js --build",
+    "cf:typecheck": "node scripts/type-check.cjs",
     "cf:typegen": "wrangler types --config dist/ssr/wrangler.json --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts"
   },
   "dependencies": {

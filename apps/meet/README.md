@@ -84,14 +84,23 @@ Both projects remain composite and emit declarations only. The native request
 port passes the actual environment object unchanged without loading Worker
 globals into the browser project.
 
-`type-check` and `cf:typecheck` use the existing cache-invalidation wrapper with
-`--build`; CI alone executes this declaration build. The app-local Turbo config
-adds `.turbo/types/**` to inherited outputs. Project build info remains at
-`.turbo/tsconfig.tsbuildinfo` and `dist/tsconfig.tsbuildinfo`, which the existing
-wrapper clears when its dependency fingerprint changes. Leaf project configs
-are Turbo inputs and TypeScript project inputs; they are not additional wrapper
-fingerprint inputs. Cold compilation, restored declarations, changed leaf
-configs, and missing declarations with retained build info require CI proof.
+`type-check` and `cf:typecheck` run the app-local `scripts/type-check.cjs`,
+which invokes the existing cache-invalidation wrapper once with `--build`.
+CI alone executes this declaration build. After success, the helper records
+all emitted declarations/maps in `.turbo/types/outputs.json`. A missing or
+invalid receipt clears only the two owned project build-info files. Missing app
+outputs clear app and dependent Worker build info; missing Worker outputs clear
+only Worker build info. Failed or interrupted compilation leaves no receipt.
+It does not delete declarations or use `--force`. Symlinked cache paths fail
+closed before metadata deletion.
+
+The app-local Turbo config adds `.turbo/types/**`, including the receipt, to
+inherited outputs. Project build info remains at `.turbo/tsconfig.tsbuildinfo`
+and `dist/tsconfig.tsbuildinfo`; the existing wrapper retains its dependency
+fingerprint invalidation. Leaf configs and sources remain Turbo/TypeScript inputs,
+not additional wrapper fingerprint inputs. TypeScript alone did not regenerate
+missing declarations with retained build info in CI; the recovery helper and
+cold/restored/source/config regression require new exact-commit CI proof.
 
 Focused bridge, routing, native function, tuple, and authorization regressions
 live under `src/runtime/*.test.ts`. Authored tests are not runtime proof.

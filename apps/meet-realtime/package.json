@@ -17,5 +17,8 @@
     "test:runtime": "node --test scripts/verify-worker-runtime.mjs",
     "type-check": "tsc --project tsconfig.json",
     "test:protocol": "node --test src/check-endpoint.test.ts src/check-socket.test.ts src/turn-credentials.test.ts"
+  },
+  "dependencies": {
+    "@tuturuuu/realtime": "workspace:*"
   }
 }

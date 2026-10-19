@@ -36,6 +36,7 @@ import { loadMeetingCalendarEvent } from '../app/[locale]/[wsId]/meetings/[meeti
 import { getMeetWorkspaceContext } from '../app/[locale]/[wsId]/workspace-context';
 import { getLocale, getTranslations } from './intl-server';
 import type { MeetPageMeta } from './page-head';
+import { meetPlanPolls } from './plan-polls';
 import {
   cookies,
   headers,
@@ -284,7 +285,7 @@ async function loadResolvedPageModel(url: URL) {
     return {
       ...common,
       kind: 'plan' as const,
-      snapshot,
+      snapshot: { ...snapshot, polls: meetPlanPolls.parse(snapshot.polls) },
       profile,
       meta: {
         ...common.meta,
