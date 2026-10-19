@@ -10,6 +10,7 @@ export default defineConfig(({ command }) => ({
   plugins: [
     voidPlugin(),
     tanstackStart({
+      start: { entry: './start.ts' },
       router: {
         enableRouteGeneration: true,
         routesDirectory: 'routes',
