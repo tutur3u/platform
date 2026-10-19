@@ -250,6 +250,17 @@ jobs:
       - name: Discover and verify native Void Start output
         id: meet-output
         run: node scripts/ci/verify-meet-start-output.js config apps/meet
+      - name: Record bounded meet native emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/meet "${{ github.sha }}" "$RUNNER_TEMP/native-emitted-config-meet.json"
+      - name: Retain meet diagnostic config receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meet-native-config-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-emitted-config-meet.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Generate emitted Worker binding types
         working-directory: apps/meet
         run: bun x --no-install wrangler types --config "${{ steps.meet-output.outputs.config }}" --env-interface CloudflareEnv --include-runtime=false cloudflare-env.d.ts
