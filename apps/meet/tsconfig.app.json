@@ -17,6 +17,8 @@
   "include": [
     "src/runtime",
     "src/router.tsx",
+    "src/routes",
+    "src/routeTree.gen.ts",
     "src/proxy.ts",
     "src/features",
     "src/hooks",

@@ -177,7 +177,17 @@ jobs:
           command: bun turbo:local run build --filter='@tuturuuu/meet-core^...' --concurrency=2 && bun turbo:local run test --filter=@tuturuuu/meet-core --filter=@tuturuuu/meet --concurrency=2
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Record Meet route tree presence before frontend build
+        id: meet-route-tree-before
+        run: |
+          route_tree=apps/meet/src/routeTree.gen.ts
+          if [ -e "$route_tree" ] || [ -L "$route_tree" ]; then
+            echo 'state=present' >> "$GITHUB_OUTPUT"
+          else
+            echo 'state=absent' >> "$GITHUB_OUTPUT"
+          fi
       - name: Build the frontend for Workers
+        id: meet-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
@@ -188,6 +198,55 @@ jobs:
           command: cd apps/meet && bun run build:cloudflare
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Capture generated Meet route tree evidence
+        if: always()
+        env:
+          MEET_ROUTE_TREE_BEFORE: ${{ steps.meet-route-tree-before.outputs.state || 'unknown' }}
+          MEET_FRONTEND_BUILD_OUTCOME: ${{ steps.meet-frontend-build.outcome || 'unknown' }}
+        run: |
+          route_tree=apps/meet/src/routeTree.gen.ts
+          if [ ! -f "$route_tree" ]; then
+            echo '::notice::Meet route tree is absent; no generated evidence captured'
+            exit 0
+          fi
+          head_tracked=false
+          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
+            head_tracked=true
+          fi
+          source_origin=unproven
+          if [ "$MEET_ROUTE_TREE_BEFORE" = absent ] && [ "$head_tracked" = false ]; then
+            case "$MEET_FRONTEND_BUILD_OUTCOME" in
+              success|failure) source_origin=fresh-bootstrap ;;
+            esac
+          fi
+          evidence="$RUNNER_TEMP/meet-route-tree-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$evidence"
+          cp "$route_tree" "$evidence/routeTree.gen.ts"
+          {
+            printf 'source_head=%s\n' "$(git rev-parse HEAD)"
+            printf 'github_sha=%s\n' "$GITHUB_SHA"
+            printf 'prebuild_state=%s\n' "$MEET_ROUTE_TREE_BEFORE"
+            printf 'head_tracked=%s\n' "$head_tracked"
+            printf 'build_outcome=%s\n' "$MEET_FRONTEND_BUILD_OUTCOME"
+            printf 'source_origin=%s\n' "$source_origin"
+            printf 'bun_lock_sha256=%s\n' "$(sha256sum bun.lock | cut -d ' ' -f 1)"
+            printf 'route_tree_sha256=%s\n' "$(sha256sum "$evidence/routeTree.gen.ts" | cut -d ' ' -f 1)"
+          } > "$evidence/source-receipt.txt"
+      - name: Retain generated Meet route tree evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meet-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/meet-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Reject tracked Meet route tree drift
+        if: always()
+        run: |
+          route_tree=apps/meet/src/routeTree.gen.ts
+          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
+            git diff --exit-code HEAD -- "$route_tree"
+          fi
       - name: Discover and verify native Void Start output
         id: meet-output
         run: node scripts/ci/verify-meet-start-output.js config apps/meet

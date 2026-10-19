@@ -109,8 +109,10 @@ test('Meet qualifies the native artifact and restored runtime before publication
   const seal = validate.findIndex((step) =>
     step.run?.includes('verify-meet-start-output.js seal')
   );
-  const upload = validate.findIndex((step) =>
-    step.uses?.startsWith('actions/upload-artifact@')
+  const upload = validate.findIndex(
+    (step) =>
+      step.uses?.startsWith('actions/upload-artifact@') &&
+      step.with?.path === '${{ runner.temp }}/meet-worker.tar.gz'
   );
   assert.ok(
     build >= 0 &&

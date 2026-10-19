@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
@@ -6,6 +7,8 @@ import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
 import { MEET_FUNCTION_BASE } from './src/runtime/native-function-config';
 
+const meetRequire = createRequire(import.meta.url);
+
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig(({ command }) => ({
@@ -13,7 +16,13 @@ export default defineConfig(({ command }) => ({
     voidPlugin(),
     tanstackStart({
       serverFns: { base: MEET_FUNCTION_BASE },
-      router: { enableRouteGeneration: false },
+      router: {
+        enableRouteGeneration: true,
+        routesDirectory: 'routes',
+        generatedRouteTree: 'routeTree.gen.ts',
+        routeTreeFileHeader: [],
+        disableTypes: false,
+      },
       rsc: { enabled: false },
       importProtection: {
         behavior: 'error',
@@ -67,7 +76,9 @@ export default defineConfig(({ command }) => ({
       },
       {
         find: /^next\/og$/u,
-        replacement: '@cloudflare/pages-plugin-vercel-og/api',
+        replacement: meetRequire.resolve(
+          '@cloudflare/pages-plugin-vercel-og/api'
+        ),
       },
       {
         find: /^next-intl\/server$/u,

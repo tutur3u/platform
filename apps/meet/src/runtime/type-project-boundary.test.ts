@@ -86,7 +86,12 @@ describe('native app and Worker type boundaries', () => {
       'node',
     ]);
     expect(project('tsconfig.app.json').include).toEqual(
-      expect.arrayContaining(['messages/en.json', 'messages/vi.json'])
+      expect.arrayContaining([
+        'messages/en.json',
+        'messages/vi.json',
+        'src/routes',
+        'src/routeTree.gen.ts',
+      ])
     );
     const pkg = z
       .object({ scripts: z.record(z.string(), z.string()) })
