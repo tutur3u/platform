@@ -54,16 +54,25 @@ register each PR with the T3 thread when linking tools are available. Manual cha
 are a documented fallback for concrete limitations. A main-only merge request
 ends after main verification; production sync still needs production authorization.
 
-Treat running CI as an asynchronous pause point by default. Finish other work
-that does not depend on its result, then stop active watchers and record the PR
-URL, exact head or merge SHA, run IDs, pending gates, last review activity, and
-worktree ownership in `tmp/agent-coordination/`. Send one concise status update
-and pause until the user's reminder. Use the full coordination-note format in
-`tuturuuu-platform/references/repository-workflows.md`, set its status to
-`handoff`, and never stage it. Do not poll, merge, or sync production while
-paused. Continue through CI in the same turn only when the user explicitly asks
-for that follow-through. On resumption, fetch current refs and review state
-again; earlier green checks do not replace exact-SHA verification.
+For authorized parallel work, follow the [autonomy contract](https://github.com/tutur3u/platform/blob/main/plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits).
+Use useful subagents for independent ready backlog while PR/CI or resource gates
+run. Arrange child work before arming a native PR watch, then end the turn as the
+tool requires; native result/watch events resume delivery without a user reminder.
+Relay the policy, project instructions, current custody overrides and remaining
+child budget in each brief. The shared contract permits up to five useful children
+when supported; lower runtime/provider/resource caps still apply.
+
+After observed delays or unnecessary handovers, use a bounded child workflow
+audit at a safe checkpoint. Apply accepted improvements to maintained source,
+then refresh the plugin through its installer and compare the resolved cache
+content. Already-running agents need the update in their next substantive brief;
+new files do not retroactively change a live session. Preserve permissions,
+exact-head verification, paused predecessors and urgent release priority.
+
+Finished repository work includes scoped commits and a normal push without a
+separate user reminder. Follow the [completion contract](https://github.com/tutur3u/platform/blob/main/plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#completion-and-publication)
+for branch/review gates, shared-index ownership and blocked-publication receipts.
+A push does not certify CI, merge or production delivery.
 
 A plugin validator proves structural validity, not better model behavior. Review
 representative read, mutation, implementation, and delivery requests for correct

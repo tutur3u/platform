@@ -10,7 +10,7 @@ merge, and exact-SHA main CI. Run `bun git-sync` and production verification onl
 when production delivery is authorized. Keep open PR work in an isolated `.worktrees/` checkout with immediate `bun install`.
 Use exact-head CI for builds; do not run builds or build-triggering setup locally.
 
-Read `references/merge-procedure.md` for Required Gates, watcher commands, and
+Read `references/merge-procedure.md` for Required Gates, native asynchronous continuation, and
 failure recovery when preparing a merge or sync. Native GitHub stacks are the
 standard for dependent PR work. Load `.agents/skills/gh-stack/SKILL.md` for
 upstream command mechanics; read the stack policy's repository corrections

@@ -116,44 +116,34 @@ See the diagnostic steps in
 “Recover unexpected replay after a parent merge”. Record exact old/new heads and any
 partial failure privately in the coordination handoff rather than public docs.
 
-## Watcher Scripts
+## Native asynchronous continuation
 
-Prefer the bundled scripts for long waits. They print only changed summaries,
-use two-minute polling by default, and exit nonzero on failed checks or active
-review threads.
+Use the [autonomy contract](../../tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits).
+Before a wait, drain ready results and arrange useful independent child/backlog
+work. Prefer the host's native PR watch when available, register the PR, then end
+the turn immediately after arming it. Resume on child/watch events without a user
+reminder; inspect fresh heads, review clocks, unresolved threads and exact checks
+before any merge. A watch event is news, not merge approval. Unwatch at actual
+user handback as the tool requires, not merely because a run is pending.
 
-```bash
-node <skill-dir>/scripts/watch_pr_ready.mjs \
-  --repo tutur3u/platform \
-  --pr 123 \
-  --quiet-minutes 5
-```
+For post-merge workflow or deployment waits, use an existing supported native
+completion subscription if available. Otherwise retain the exact SHA/run/attempt,
+pending gates and resume event in the current owner's private note; inspect once
+on a real event, authorized audit or user wake. State when no automatic workflow
+subscription exists. Do not claim a PR watch covers merged-branch runs.
+Do not create a timer/controller, custom watcher or polling loop to fill that gap.
 
-```bash
-node <skill-dir>/scripts/watch_branch_runs.mjs \
-  --repo tutur3u/platform \
-  --branch main \
-  --commit <merge-sha>
-```
+Bundled watch scripts are legacy opt-in transports for environments with separate
+explicit polling authorization. They are not the default T3 path and cannot
+override a no-polling instruction. Their success does not prove every review
+clock: independently enforce the requested quiet period from PR creation/latest
+push and inline activity, even when there are no comments.
 
-The current PR watcher measures comments and submitted reviews only; without
-comments it reports an infinite quiet period. Independently enforce the minimum
-from PR creation or the latest push, and inspect inline comment updates before
-merging. A successful watcher exit alone does not prove those additional clocks.
-
-Use the branch watcher again for `production` after `bun git-sync`.
-
-When CI is running, finish independent work that does not need its result, then
-stop active watcher processes and leave the PR, worktree, and task branch
-intact. Record the exact SHA, run IDs, pending gates, review activity, and
-promotion state in the coordination note, then pause without polling. Continue
-through CI in the same turn only when the user explicitly asks for it. Resume
-after the user's reminder and recheck all gates against current refs before
-merging or syncing.
-
-Use the full coordination-note format in
-`plugins/tuturuuu/skills/tuturuuu-platform/references/repository-workflows.md`,
-set status to `handoff`, and never stage the note.
+Preserve the PR, worktree and branch while gates remain open. Record the exact
+SHA, run IDs, review state, owner, blockers and resume event using the private
+coordination-note format in
+`plugins/tuturuuu/skills/tuturuuu-platform/references/repository-workflows.md`;
+never stage the note. Continue independent authorized work under current custody.
 
 ## Merge And Sync Flow
 
@@ -164,7 +154,7 @@ and verify exact-main CI. For explicitly authorized administrator merges, use
 [the native REST procedure](../../../../../apps/docs/build/development-tools/stacked-pull-requests.mdx#authorized-native-administrator-merge)
 instead; preserve the same complete-prefix verification gates.
 
-For an ordinary PR or manual chain, after the PR watcher exits cleanly:
+For an ordinary PR or manual chain, after fresh exact-head gates and review clocks are verified:
 
 ```bash
 gh pr merge <pr> --repo tutur3u/platform --match-head-commit <head-sha> --merge
@@ -184,15 +174,13 @@ checkout; the following branch-switch commands are conditional on that ownership
 git fetch origin
 git switch main
 git merge --ff-only origin/main
-node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch main --commit <merge-sha>
 ```
 
-Only when production delivery is authorized and main is green:
+Verify every required exact-main workflow through the native/event-driven continuation above. Only when production delivery is authorized and main is green:
 
 ```bash
 bun git-sync
 git rev-parse HEAD main production origin/main origin/production
-node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch production --commit <merge-sha>
 ```
 
 ## Failure Handling
@@ -204,8 +192,8 @@ node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch 
   blocker first.
 - If production fails after `bun git-sync`, inspect production workflow logs and
   fix or report the blocker.
-- Keep temporary watcher files under `tmp/` if custom one-off scripts are
-  needed; never stage coordination notes or scratch watchers.
+- Keep private coordination receipts under `tmp/`; never stage them or add
+  custom polling watchers as an autonomous-continuation substitute.
 - Keep the PR worktree and local task branch when the PR remains open, a required
   gate is blocked, the merge is absent from `main`, main is not fully green,
   or an authorized production sync/verification remains unresolved. Main-only

@@ -23,7 +23,7 @@ Commit window. Use statuses `working`, `blocked`, `handoff`, or `done`; never st
 For multi-lane work spanning PR/CI/delivery wakes, use
 `references/program-orchestration.md`: own the program board and acceptance,
 relay complete briefs, drain completed handoffs, and reconcile exact-head proof.
-Do not spawn additional agents without applicable delegation authority.
+Use its [autonomy contract](references/program-orchestration.md#autonomy-and-asynchronous-waits) for useful child work during asynchronous waits, inherited briefs and bounded workflow audits. Standing user delegation instructions apply within task authority and actual runtime/resource limits.
 For assigned ongoing idea/bug/feature intake, read `references/request-backlog.md`:
 capture each outcome before dispatch, recover durable requests on every wake, and
 keep implemented work distinct from verified delivery.
