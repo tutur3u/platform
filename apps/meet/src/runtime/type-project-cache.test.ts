@@ -16,109 +16,142 @@ import { expect, it } from 'vitest';
 import { z } from 'zod';
 import { runWithDeclarationCache } from '../../scripts/type-check.cjs';
 
-// This test invokes only the CI compiler and emits declarations in a disposable
-// fixture. The local compiler/build HOLD also applies to this regression.
-it.runIf(process.env.CI === 'true')(
-  'rebuilds missing declarations despite restored build info and tracks leaf config/source changes',
-  () => {
-    const root = mkdtempSync(join(tmpdir(), 'meet-type-cache-'));
-    const compiler = fileURLToPath(
-      new URL('../../../../node_modules/.bin/tsc', import.meta.url)
-    );
-    const config = (name: string) => ({
-      compilerOptions: {
-        composite: true,
-        declaration: true,
-        emitDeclarationOnly: true,
-        target: 'ES2022',
-        module: 'ESNext',
-        moduleResolution: 'Bundler',
-        types: [],
-        rootDir: '.',
-        outDir: `../types/${name}`,
-        tsBuildInfoFile: `../${name}.tsbuildinfo`,
-        disableSourceOfProjectReferenceRedirect: true,
-      },
-      files: name === 'app' ? ['index.ts', 'companion.ts'] : ['index.ts'],
-      references: name === 'worker' ? [{ path: '../app' }] : [],
+// Every compiler case owns its cold fixture; CI alone executes native tsc.
+function projectFixture(root: string) {
+  const compiler = fileURLToPath(
+    new URL('../../../../node_modules/.bin/tsc', import.meta.url)
+  );
+  const config = (name: string) => ({
+    compilerOptions: {
+      composite: true,
+      declaration: true,
+      emitDeclarationOnly: true,
+      target: 'ES2022',
+      module: 'ESNext',
+      moduleResolution: 'Bundler',
+      types: [],
+      rootDir: '.',
+      outDir: `../types/${name}`,
+      tsBuildInfoFile: `../${name}.tsbuildinfo`,
+      disableSourceOfProjectReferenceRedirect: true,
+    },
+    files: name === 'app' ? ['index.ts', 'companion.ts'] : ['index.ts'],
+    references: name === 'worker' ? [{ path: '../app' }] : [],
+  });
+  const writeConfig = (name: string, value: unknown) =>
+    writeFileSync(join(root, name, 'tsconfig.json'), JSON.stringify(value));
+  const projects = ['app', 'worker'].map((name) => ({
+    output: `types/${name}`,
+    info: `${name}.tsbuildinfo`,
+  }));
+  const compile = () =>
+    spawnSync(compiler, ['--build', join(root, 'tsconfig.json')], {
+      encoding: 'utf8',
     });
-    const writeConfig = (name: string, value: unknown) =>
-      writeFileSync(join(root, name, 'tsconfig.json'), JSON.stringify(value));
-    const projects = ['app', 'worker'].map((name) => ({
-      output: `types/${name}`,
-      info: `${name}.tsbuildinfo`,
-    }));
-    let rawInfos: Buffer[] = [];
-    const compile = () =>
-      spawnSync(compiler, ['--build', join(root, 'tsconfig.json')], {
-        encoding: 'utf8',
-      });
-    const build = (metadataPresent?: boolean[]) => {
-      expect(
-        runWithDeclarationCache({
-          cwd: root,
-          projects,
-          manifest: 'types/outputs.json',
-          compile: () => {
-            if (metadataPresent)
-              expect(
-                projects.map(({ info }) => existsSync(join(root, info)))
-              ).toEqual(metadataPresent);
-            const result = compile();
-            expect(result.error).toBeUndefined();
-            expect({
-              status: result.status,
-              output: result.stdout + result.stderr,
-            }).toEqual({ status: 0, output: '' });
-            if (result.status === 0)
-              rawInfos = projects.map(({ info }) =>
-                readFileSync(join(root, info))
-              );
-            return result.status ?? 1;
-          },
-        })
-      ).toBe(0);
-    };
-    try {
-      for (const name of ['app', 'worker']) {
-        mkdirSync(join(root, name));
-        writeConfig(name, config(name));
-      }
-      writeFileSync(
-        join(root, 'tsconfig.json'),
-        JSON.stringify({
-          files: [],
-          references: [{ path: './app' }, { path: './worker' }],
-        })
-      );
-      const source = join(root, 'app/index.ts');
-      writeFileSync(source, 'export const value = "first";\n');
-      writeFileSync(
-        join(root, 'app/companion.ts'),
-        'export const companion = true;\n'
-      );
-      writeFileSync(
-        join(root, 'worker/index.ts'),
-        'export { value } from "../app/index";\n'
-      );
-      build([false, false]);
-      build([true, true]);
-      const declaration = join(root, 'types/app/index.d.ts');
-      const initial = readFileSync(declaration, 'utf8');
-      const [appInfo, workerInfo] = rawInfos;
-      if (!appInfo || !workerInfo)
-        throw new Error('Missing actual compiler producer metadata');
-      expect(readFileSync(join(root, 'app.tsbuildinfo'))).toEqual(appInfo);
-      expect(readFileSync(join(root, 'worker.tsbuildinfo'))).toEqual(
-        workerInfo
-      );
+  const build = (metadataPresent: boolean[]) => {
+    let calls = 0;
+    let nativeInfos: Buffer[] = [];
+    expect(
+      runWithDeclarationCache({
+        cwd: root,
+        projects,
+        manifest: 'types/outputs.json',
+        compile: () => {
+          calls++;
+          expect(
+            projects.map(({ info }) => existsSync(join(root, info)))
+          ).toEqual(metadataPresent);
+          const result = compile();
+          expect(result.error).toBeUndefined();
+          expect({
+            status: result.status,
+            output: result.stdout + result.stderr,
+          }).toEqual({ status: 0, output: '' });
+          nativeInfos = projects.map(({ info }) =>
+            readFileSync(join(root, info))
+          );
+          return result.status ?? 1;
+        },
+      })
+    ).toBe(0);
+    expect(calls).toBe(1);
+    projects.forEach(({ info }, index) => {
+      expect(readFileSync(join(root, info))).toEqual(nativeInfos[index]);
+    });
+  };
+  for (const name of ['app', 'worker']) {
+    mkdirSync(join(root, name));
+    writeConfig(name, config(name));
+  }
+  writeFileSync(
+    join(root, 'tsconfig.json'),
+    JSON.stringify({
+      files: [],
+      references: [{ path: './app' }, { path: './worker' }],
+    })
+  );
+  const source = join(root, 'app/index.ts');
+  const declaration = join(root, 'types/app/index.d.ts');
+  writeFileSync(source, 'export const value = "first";\n');
+  writeFileSync(
+    join(root, 'app/companion.ts'),
+    'export const companion = true;\n'
+  );
+  writeFileSync(
+    join(root, 'worker/index.ts'),
+    'export { value } from "../app/index";\n'
+  );
+  return {
+    root,
+    source,
+    declaration,
+    build,
+    compile,
+    config,
+    writeConfig,
+    receiptPath: join(root, 'types/outputs.json'),
+    producerPath: join(root, 'types/producers.json'),
+  };
+}
 
-      // Simulate a cache that restored build info without its declaration tree.
+function withProjectFixture(
+  assertions: (fixture: ReturnType<typeof projectFixture>) => void
+) {
+  const root = mkdtempSync(join(tmpdir(), 'meet-type-cache-'));
+  try {
+    const fixture = projectFixture(root);
+    fixture.build([false, false]);
+    assertions(fixture);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+const compilerCase = it.runIf(process.env.CI === 'true');
+
+compilerCase(
+  'preserves healthy warm metadata and native compiler bytes',
+  () => {
+    withProjectFixture(({ root, declaration, build }) => {
+      const initial = readFileSync(declaration, 'utf8');
+      const appInfo = readFileSync(join(root, 'app.tsbuildinfo'));
+      build([true, true]);
+      expect(readFileSync(declaration, 'utf8')).toBe(initial);
+      expect(readFileSync(join(root, 'app.tsbuildinfo'))).toEqual(appInfo);
+    });
+  }
+);
+
+compilerCase(
+  'recovers missing declarations with retained info after bare tsc reproduces TS6305',
+  () => {
+    withProjectFixture(({ root, declaration, build, compile }) => {
+      const initial = readFileSync(declaration, 'utf8');
+      const appInfo = readFileSync(join(root, 'app.tsbuildinfo'));
+      const workerInfo = readFileSync(join(root, 'worker.tsbuildinfo'));
       rmSync(join(root, 'types'), { recursive: true });
-      writeFileSync(join(root, 'app.tsbuildinfo'), appInfo);
-      writeFileSync(join(root, 'worker.tsbuildinfo'), workerInfo);
-      // Negative control: bare incremental tsc reproduces the actual CI defect.
       const broken = compile();
+      expect(broken.error).toBeUndefined();
       expect(broken.status).toBe(2);
       expect(broken.stdout + broken.stderr).toContain('TS6305');
       writeFileSync(join(root, 'app.tsbuildinfo'), appInfo);
@@ -126,10 +159,15 @@ it.runIf(process.env.CI === 'true')(
       build([false, false]);
       expect(readFileSync(declaration, 'utf8')).toBe(initial);
       expect(existsSync(join(root, 'types/worker/index.d.ts'))).toBe(true);
+    });
+  }
+);
 
-      // V362 counterexample: omit the lost declaration from an otherwise valid,
-      // nonempty receipt; the independent successful producer still requires it.
-      const receiptPath = join(root, 'types/outputs.json');
+compilerCase(
+  'rejects a nonempty receipt omitting its missing declaration',
+  () => {
+    withProjectFixture(({ declaration, receiptPath, build }) => {
+      const initial = readFileSync(declaration, 'utf8');
       const receipts = z
         .array(
           z.object({
@@ -149,49 +187,90 @@ it.runIf(process.env.CI === 'true')(
       rmSync(declaration);
       build([false, false]);
       expect(readFileSync(declaration, 'utf8')).toBe(initial);
+    });
+  }
+);
 
-      // A receipt must detect partial losses, and only dependents are invalidated.
+compilerCase(
+  'recovers a missing app output with an intact producer and receipt',
+  () => {
+    withProjectFixture(({ declaration, build }) => {
+      const initial = readFileSync(declaration, 'utf8');
       rmSync(declaration);
       build([false, false]);
-      rmSync(join(root, 'types/worker/index.d.ts'));
+      expect(readFileSync(declaration, 'utf8')).toBe(initial);
+    });
+  }
+);
+
+compilerCase(
+  'recovers Worker-only loss while preserving warm app metadata',
+  () => {
+    withProjectFixture(({ root, build }) => {
+      const appInfo = readFileSync(join(root, 'app.tsbuildinfo'));
+      const workerDeclaration = join(root, 'types/worker/index.d.ts');
+      const initial = readFileSync(workerDeclaration, 'utf8');
+      rmSync(workerDeclaration);
       build([true, false]);
+      expect(readFileSync(join(root, 'app.tsbuildinfo'))).toEqual(appInfo);
+      expect(readFileSync(workerDeclaration, 'utf8')).toBe(initial);
+    });
+  }
+);
+
+compilerCase(
+  'rejects malformed qualification without deleting foreign metadata',
+  () => {
+    withProjectFixture(({ root, receiptPath, build }) => {
       writeFileSync(join(root, 'foreign.tsbuildinfo'), 'foreign');
-      writeFileSync(join(root, 'types/outputs.json'), '{invalid');
+      writeFileSync(receiptPath, '{invalid');
       build([false, false]);
       expect(readFileSync(join(root, 'foreign.tsbuildinfo'), 'utf8')).toBe(
         'foreign'
       );
+    });
+  }
+);
 
-      const oldProducerReceipt = readFileSync(receiptPath);
-      const producerPath = join(root, 'types/producers.json');
-      const oldProducerState = readFileSync(producerPath);
-      const oldNativeInfo = readFileSync(join(root, 'app.tsbuildinfo'));
-      writeFileSync(source, 'export const value = "second";\n');
-      const nextTime = new Date(Date.now() + 1000);
-      utimesSync(source, nextTime, nextTime);
-      build();
-      expect(readFileSync(declaration, 'utf8')).toContain('"second"');
-      expect(readFileSync(join(root, 'app.tsbuildinfo'))).not.toEqual(
-        oldNativeInfo
-      );
-      // Both old receipt and old producer still agree with each other, but not
-      // with the genuine newer raw metadata produced by the preceding build.
-      writeFileSync(receiptPath, oldProducerReceipt);
-      writeFileSync(producerPath, oldProducerState);
-      build([false, false]);
-      expect(readFileSync(declaration, 'utf8')).toContain('"second"');
+compilerCase(
+  'tracks source changes and rejects an old agreeing producer pair against newer native metadata',
+  () => {
+    withProjectFixture(
+      ({ root, source, declaration, receiptPath, producerPath, build }) => {
+        const oldReceipt = readFileSync(receiptPath);
+        const oldProducer = readFileSync(producerPath);
+        const oldInfo = readFileSync(join(root, 'app.tsbuildinfo'));
+        writeFileSync(source, 'export const value = "second";\n');
+        const nextTime = new Date(Date.now() + 1000);
+        utimesSync(source, nextTime, nextTime);
+        build([true, true]);
+        expect(readFileSync(declaration, 'utf8')).toContain('"second"');
+        expect(readFileSync(join(root, 'app.tsbuildinfo'))).not.toEqual(
+          oldInfo
+        );
+        writeFileSync(receiptPath, oldReceipt);
+        writeFileSync(producerPath, oldProducer);
+        build([false, false]);
+        expect(readFileSync(declaration, 'utf8')).toContain('"second"');
+      }
+    );
+  }
+);
 
+compilerCase(
+  'tracks leaf config changes with healthy retained metadata',
+  () => {
+    withProjectFixture(({ root, declaration, config, writeConfig, build }) => {
       const changed = config('app');
       writeConfig('app', {
         ...changed,
         compilerOptions: { ...changed.compilerOptions, declarationMap: true },
       });
+      const nextTime = new Date(Date.now() + 1000);
       utimesSync(join(root, 'app/tsconfig.json'), nextTime, nextTime);
       build([true, true]);
       expect(existsSync(`${declaration}.map`)).toBe(true);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
+    });
   }
 );
 

@@ -20,15 +20,23 @@ import { PageView } from './runtime/page-view';
 import './app/[locale]/meet.css';
 import './runtime/typography.css';
 
+type DocumentLocale = 'en' | 'vi';
+
+function selectDocumentLocale(
+  matches: readonly { loaderData?: unknown }[]
+): DocumentLocale | undefined {
+  const data = matches.at(-1)?.loaderData;
+  if (typeof data !== 'object' || data === null || !('locale' in data)) return;
+  return data.locale === 'en' || data.locale === 'vi' ? data.locale : undefined;
+}
+
 function Document(): ReactElement {
   const pathname = useLocation({ select: (location) => location.pathname });
-  const model = useMatches({ select: (matches) => matches.at(-1)?.loaderData });
-  const locale =
-    model && typeof model === 'object' && 'locale' in model
-      ? model.locale
-      : pathname.startsWith('/vi')
-        ? 'vi'
-        : 'en';
+  const matchedLocale = useMatches<
+    ReturnType<typeof getRouter>,
+    DocumentLocale | undefined
+  >({ select: selectDocumentLocale });
+  const locale = matchedLocale ?? (pathname.startsWith('/vi') ? 'vi' : 'en');
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
