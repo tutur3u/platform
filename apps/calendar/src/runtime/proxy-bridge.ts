@@ -4,6 +4,7 @@ import {
   type CalendarRequestContext,
   withCalendarRequest,
 } from './request-context';
+import { requestInit } from './request-init';
 
 type Proxy = (request: NextRequest) => Promise<NextResponse>;
 type Dispatch = (request: NextRequest) => Promise<Response>;
@@ -75,7 +76,7 @@ export async function dispatchThroughCalendarProxy({
         throw new Error('Unexpected external Calendar middleware rewrite');
       const next = new NextRequest(
         destination,
-        new Request(initial, { headers: forwarded })
+        requestInit(initial, forwarded)
       );
       const result = await withCalendarRequest(
         { request: next, responseHeaders, waitUntil, cloudflare, telemetry },

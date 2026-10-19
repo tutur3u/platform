@@ -47,4 +47,60 @@ describe('Calendar native owner routing', () => {
     expect(forwarded.redirect).toBe('manual');
     expect(forwarded.headers.get('x-forwarded-host')).toBe('calendar.test');
   });
+  it.each(['POST', 'PUT', 'PATCH', 'DELETE'])(
+    'transfers %s streaming bytes once with the original abort signal',
+    async (method) => {
+      const failure = new Error('request stream failed');
+      const controller = new AbortController();
+      const body = new ReadableStream<Uint8Array>({
+        start(stream) {
+          stream.enqueue(new TextEncoder().encode('raw=one&raw=two'));
+          stream.close();
+        },
+      });
+      const init = {
+        method,
+        body,
+        signal: controller.signal,
+        duplex: 'half',
+        headers: {
+          cookie: 'app=one',
+          'content-type': 'application/octet-stream',
+        },
+      } satisfies RequestInit & { duplex: 'half' };
+      const input = new Request(
+        'https://calendar.test/api/v1/workspaces/ws/tasks?x=%2B&x=2',
+        init
+      );
+      const forwarded = forwardToOwner(input, 'https://tasks.test');
+      expect(forwarded.method).toBe(method);
+      expect(forwarded.url).toBe(
+        'https://tasks.test/api/v1/workspaces/ws/tasks?x=%2B&x=2'
+      );
+      expect(forwarded.headers.get('cookie')).toBe('app=one');
+      expect(await forwarded.text()).toBe('raw=one&raw=two');
+      await expect(forwarded.text()).rejects.toThrow();
+      controller.abort(failure);
+      expect(forwarded.signal.aborted).toBe(true);
+      expect(forwarded.signal.reason).toBe(failure);
+    }
+  );
+  it('does not convert a failing body stream into an empty mutation', async () => {
+    const failure = new Error('unreadable original body');
+    const body = new ReadableStream<Uint8Array>({
+      start(stream) {
+        stream.error(failure);
+      },
+    });
+    const init = {
+      method: 'PATCH',
+      body,
+      duplex: 'half',
+    } satisfies RequestInit & { duplex: 'half' };
+    const forwarded = forwardToOwner(
+      new Request('https://calendar.test/api/v1/workspaces/ws/tasks', init),
+      'https://tasks.test'
+    );
+    await expect(forwarded.text()).rejects.toBe(failure);
+  });
 });

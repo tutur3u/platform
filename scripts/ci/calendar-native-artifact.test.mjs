@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import {
   cpSync,
   mkdirSync,
@@ -191,7 +192,7 @@ test('source-only discovery excludes mandatory artifact runtime suites', async (
   assert.equal(
     (
       workflow.match(
-        /node --test scripts\/ci\/calendar-native-worker\.runtime\.mjs/g
+        /node scripts\/ci\/calendar-native-worker\.runtime\.mjs "\$SOURCE_SHA"/g
       ) ?? []
     ).length,
     2
@@ -315,14 +316,85 @@ test('both native workflow triggers select Web-only changes and keep Web consume
     step.run?.includes('bun run --cwd apps/web test')
   );
   const webTypes = steps.find((step) =>
-    step.run?.includes(
+    step.with?.command?.includes(
       'type-check --filter=@tuturuuu/calendar --filter=@tuturuuu/web'
     )
   );
   assert.ok(webTests, 'owning Web tests must remain required');
   assert.ok(webTypes, 'affected Web consumer types must remain required');
+  assert.equal(webTypes.uses, './.github/actions/run-with-turbo-remote-cache');
   for (const step of [webTests, webTypes]) {
     assert.equal(step.if, undefined);
     assert.equal(step['continue-on-error'], undefined);
+  }
+});
+
+function artifactCli(args) {
+  return spawnSync(
+    process.execPath,
+    [
+      new URL('./calendar-native-artifact.mjs', import.meta.url).pathname,
+      ...args,
+    ],
+    { encoding: 'utf8', timeout: 10000 }
+  );
+}
+test('actual CLI seals and verifies only the explicitly supplied exact source SHA', () =>
+  fixture(({ app }) => {
+    const receipt = resolve(app, 'receipt.json');
+    const sealed = artifactCli(['seal', app, sha, receipt]);
+    assert.equal(sealed.status, 0, sealed.stderr);
+    assert.equal(JSON.parse(readFileSync(receipt, 'utf8')).sha, sha);
+    const verified = artifactCli(['verify', app, sha, receipt]);
+    assert.equal(verified.status, 0, verified.stderr);
+    const mismatch = artifactCli(['verify', app, 'b'.repeat(40), receipt]);
+    assert.equal(mismatch.signal, null);
+    assert.equal(mismatch.status, 1);
+    assert.match(mismatch.stderr, /artifact identity or bytes changed/);
+  }));
+for (const supplied of [undefined, 'short', 'A'.repeat(40), 'g'.repeat(40)]) {
+  test(`actual CLI rejects missing or invalid exact SHA: ${supplied}`, () =>
+    fixture(({ app }) => {
+      for (const mode of ['seal', 'verify', 'config']) {
+        const args =
+          supplied === undefined ? [mode, app] : [mode, app, supplied];
+        const result = artifactCli(args);
+        assert.equal(result.signal, null);
+        assert.equal(result.status, 1);
+        assert.match(result.stderr, /exact source SHA required/);
+      }
+    }));
+}
+test('actual Worker-suite CLI rejects a missing SHA before artifact or runtime setup', () => {
+  const result = spawnSync(
+    process.execPath,
+    [new URL('./calendar-native-worker.runtime.mjs', import.meta.url).pathname],
+    { encoding: 'utf8', timeout: 10000 }
+  );
+  assert.equal(result.signal, null);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /exact source SHA required/);
+});
+test('all actual artifact and Worker workflow calls carry the selected SHA argument', async () => {
+  const { createRequire } = await import('node:module');
+  const { readWorkflow } = createRequire(import.meta.url)(
+    './workflow-yaml-test-helper.js'
+  );
+  const { jobs } = readWorkflow('mail-calendar-tasks-builds.yaml');
+  for (const name of ['calendar-native', 'calendar-artifact-restore']) {
+    const job = jobs[name];
+    assert.match(
+      job.env.SOURCE_SHA,
+      /^\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}$/
+    );
+    const commands = job.steps.flatMap((step) => (step.run ?? '').split('\n'));
+    const calls = commands.filter((line) =>
+      /node scripts\/ci\/calendar-native-(artifact|worker)/.test(line)
+    );
+    assert.equal(calls.length, 4);
+    for (const command of calls) assert.match(command, /"\$SOURCE_SHA"/);
+    assert.ok(
+      commands.includes('test "$(git rev-parse HEAD)" = "$SOURCE_SHA"')
+    );
   }
 });

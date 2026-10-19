@@ -10,17 +10,27 @@
     },
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "types": ["vite/client", "@cloudflare/workers-types", "node"],
-    "noEmit": true
+    "types": ["vite/client", "node"],
+    "noEmit": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false
   },
   "include": [
     "src",
-    "cloudflare",
-    "cloudflare-env.d.ts",
     "vite.config.ts",
     "void.config.ts",
     "global.d.ts",
     "messages"
   ],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".turbo",
+    ".typecheck",
+    "src/app/sw.ts",
+    "src/runtime/offline-worker.ts"
+  ]
 }

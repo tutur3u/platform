@@ -4,9 +4,14 @@ import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { validateOutput, verify } from './calendar-native-artifact.mjs';
+import {
+  requireSourceSha,
+  validateOutput,
+  verify,
+} from './calendar-native-artifact.mjs';
 
 // Artifact-dependent: intentionally outside root source-only .test.* discovery.
+const sourceSha = requireSourceSha(process.argv[2]);
 const app = fileURLToPath(new URL('../../apps/calendar', import.meta.url));
 const require = createRequire(resolve(app, 'package.json'));
 const { unstable_getMiniflareWorkerOptions } = require('wrangler');
@@ -19,7 +24,7 @@ const { configPath, main } = validateOutput(app);
 verify(
   app,
   JSON.parse(readFileSync(resolve(app, 'calendar-artifact.json'), 'utf8')),
-  process.env.SOURCE_SHA
+  sourceSha
 );
 const { workerOptions, externalWorkers } =
   unstable_getMiniflareWorkerOptions(configPath);

@@ -45,8 +45,8 @@ describe('Calendar locale selection for documents and native functions', () => {
     }
   );
   it.each([
-    { cookie: 'NEXT_LOCALE=vi' },
-    { 'accept-language': 'vi-VN,en;q=0.5' },
+    new Headers({ cookie: 'NEXT_LOCALE=vi' }),
+    new Headers({ 'accept-language': 'vi-VN,en;q=0.5' }),
   ])(
     'keeps Vietnamese for the document, RPC navigation and refresh with %j',
     async (headers) => {

@@ -9,6 +9,7 @@ import {
 import { loadTaskBoardPageModel } from '@tuturuuu/tasks-ui/tu-do/boards/boardId/task-board-page-model';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from './next-navigation';
+import { boardsTransportState } from './page-transport';
 import { headers } from './request-context';
 
 export async function taskPageModel({
@@ -81,7 +82,7 @@ export async function taskPageModel({
     kind: 'boards' as const,
     wsId,
     openWhenEmpty: q.trim() === '' && initialBoards.count === 0,
-    state: dehydrate(client),
+    state: boardsTransportState(dehydrate(client)),
   };
 }
 export type TaskPageModel = Awaited<ReturnType<typeof taskPageModel>>;

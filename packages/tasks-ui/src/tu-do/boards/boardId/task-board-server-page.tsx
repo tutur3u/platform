@@ -77,7 +77,11 @@ export default async function TaskBoardServerPage({
       getWorkspace(wsId, { useAdmin: true, user: actor }),
   });
   if (!model) notFound();
-  const { board, workspace } = model;
+  const { board } = model;
+  const workspace =
+    model.access === 'guest'
+      ? { ...model.workspace, joined: false }
+      : model.workspace;
 
   return (
     <BoardClient

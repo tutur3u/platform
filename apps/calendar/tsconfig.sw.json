@@ -1,0 +1,17 @@
+{
+  "extends": "@tuturuuu/typescript-config/base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "noEmitOnError": true,
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "lib": ["ESNext", "WebWorker"],
+    "types": ["node"]
+  },
+  "exclude": ["node_modules", "dist", ".turbo", ".typecheck"],
+  "include": ["src/app/sw.ts", "src/runtime/offline-worker.ts"]
+}

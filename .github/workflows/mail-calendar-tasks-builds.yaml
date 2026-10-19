@@ -116,7 +116,11 @@ jobs:
       - name: Test artifact boundary regressions
         run: node --test scripts/ci/calendar-native-artifact.test.mjs
       - name: Build shared dependencies without a legacy Calendar build
-        run: bun turbo:local run build --filter='@tuturuuu/calendar^...' --concurrency=2
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/calendar^...' --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Run owning Calendar, Web and shared Tasks tests
         run: |
           bun run --cwd apps/calendar test
@@ -126,26 +130,30 @@ jobs:
         run: bun run --cwd apps/calendar build
       - name: Discover and qualify emitted Worker config
         id: output
-        run: node scripts/ci/calendar-native-artifact.mjs config apps/calendar
+        run: node scripts/ci/calendar-native-artifact.mjs config apps/calendar "$SOURCE_SHA"
       - name: Generate bindings from the actual emitted config
         working-directory: apps/calendar
         run: bun x --no-install wrangler types --config "${{ steps.output.outputs.config }}" --env-interface CloudflareEnv --include-runtime=false cloudflare-env.d.ts
       - name: Check Calendar native Worker and affected Web Tasks consumers
-        run: bun turbo:local run type-check --filter=@tuturuuu/calendar --filter=@tuturuuu/web --filter=@tuturuuu/tasks --filter=@tuturuuu/tasks-ui --concurrency=2
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run type-check --filter=@tuturuuu/calendar --filter=@tuturuuu/web --filter=@tuturuuu/tasks --filter=@tuturuuu/tasks-ui --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Validate actual Worker bundle without publication
         working-directory: apps/calendar
         run: bun x --no-install wrangler deploy --dry-run --config "${{ steps.output.outputs.config }}" --outdir "$RUNNER_TEMP/calendar-dry-run"
       - name: Seal source and emitted artifact identity
-        run: node scripts/ci/calendar-native-artifact.mjs seal apps/calendar apps/calendar/calendar-artifact.json
+        run: node scripts/ci/calendar-native-artifact.mjs seal apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
       - name: Exercise exact emitted Worker public routes
         timeout-minutes: 3
-        run: node --test scripts/ci/calendar-native-worker.runtime.mjs
+        run: node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"
       - name: Exercise exact emitted offline asset
         working-directory: apps/calendar
         run: node --test src/runtime/offline-artifact.runtime.mjs
       - name: Verify runtime checks left the sealed artifact unchanged
         run: |
-          node scripts/ci/calendar-native-artifact.mjs verify apps/calendar apps/calendar/calendar-artifact.json
+          node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
           tar -czf "$RUNNER_TEMP/calendar-worker.tar.gz" -C apps/calendar dist .wrangler/deploy/config.json cloudflare-env.d.ts calendar-artifact.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -185,18 +193,18 @@ jobs:
       - name: Restore same-run immutable artifact without rebuilding
         run: tar -xzf "$RUNNER_TEMP/calendar-restore/calendar-worker.tar.gz" -C apps/calendar
       - name: Verify exact source seal after relocation
-        run: node scripts/ci/calendar-native-artifact.mjs verify apps/calendar apps/calendar/calendar-artifact.json
+        run: node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
       - name: Discover restored config
         id: output
-        run: node scripts/ci/calendar-native-artifact.mjs config apps/calendar
+        run: node scripts/ci/calendar-native-artifact.mjs config apps/calendar "$SOURCE_SHA"
       - name: Validate restored Worker without publication
         working-directory: apps/calendar
         run: bun x --no-install wrangler deploy --dry-run --config "${{ steps.output.outputs.config }}" --outdir "$RUNNER_TEMP/calendar-restored-dry-run"
       - name: Recheck actual restored Worker public routes
         timeout-minutes: 3
-        run: node --test scripts/ci/calendar-native-worker.runtime.mjs
+        run: node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"
       - name: Recheck restored offline asset behavior
         working-directory: apps/calendar
         run: node --test src/runtime/offline-artifact.runtime.mjs
       - name: Verify final restored artifact seal
-        run: node scripts/ci/calendar-native-artifact.mjs verify apps/calendar apps/calendar/calendar-artifact.json
+        run: node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json

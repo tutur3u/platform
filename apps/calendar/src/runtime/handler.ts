@@ -9,18 +9,23 @@ import { CALENDAR_FUNCTION_BASE } from './native-function-config';
 import { nativeFunctionProxy } from './native-function-proxy';
 import { dispatchThroughCalendarProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
+import { requestInit } from './request-init';
 import {
   type CalendarTelemetryPort,
   createCalendarTelemetryPort,
 } from './request-telemetry.server';
 import { applyCalendarResponsePolicy } from './response-policy';
+import type {
+  CalendarExecutionContext,
+  CalendarWorkerEnvironment,
+} from './worker-contract';
 
 export async function handleCalendarRequest(
   request: Request,
-  env: CloudflareEnv,
-  ctx: ExecutionContext,
+  env: CalendarWorkerEnvironment,
+  ctx: CalendarExecutionContext,
   telemetry?: CalendarTelemetryPort
-) {
+): Promise<Response> {
   return applyCalendarResponsePolicy(
     request,
     await dispatchCalendarRequest(request, env, ctx, telemetry)
@@ -29,10 +34,10 @@ export async function handleCalendarRequest(
 
 async function dispatchCalendarRequest(
   request: Request,
-  env: CloudflareEnv,
-  ctx: ExecutionContext,
+  env: CalendarWorkerEnvironment,
+  ctx: CalendarExecutionContext,
   telemetry?: CalendarTelemetryPort
-) {
+): Promise<Response> {
   const path = new URL(request.url).pathname;
   if (
     (request.method === 'GET' || request.method === 'HEAD') &&
@@ -87,7 +92,7 @@ async function dispatchCalendarRequest(
       if (endpoint) return endpoint;
       if (forwarded.nextUrl.pathname.startsWith('/api/'))
         return fetch(forwardToOwner(forwarded, resolveTuturuuuWebAppUrl()));
-      return start.fetch(new Request(request.url, forwarded));
+      return start.fetch(new Request(request.url, requestInit(forwarded)));
     },
   });
 }

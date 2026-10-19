@@ -18,9 +18,6 @@ vi.mock('./app-providers', () => ({
   }) => <section data-provider-locale={locale}>{children}</section>,
 }));
 vi.mock('./page-view', () => ({ PageView: () => <div>Calendar view</div> }));
-vi.mock('@tuturuuu/ui/custom/app-error-boundary', () => ({
-  AppErrorBoundary: () => <div>Calendar error</div>,
-}));
 
 import { getRouter } from '../router';
 
@@ -34,9 +31,12 @@ beforeEach(() => {
     showVersionBadge: false,
   });
 });
-async function routerAt(path: string) {
+async function routerAt(path: string, isServer = false) {
   const router = getRouter();
-  router.update({ history: createMemoryHistory({ initialEntries: [path] }) });
+  router.update({
+    isServer,
+    history: createMemoryHistory({ initialEntries: [path] }),
+  });
   await router.load();
   return router;
 }
@@ -52,7 +52,7 @@ describe('root resolved locale context', () => {
   });
   it('retains resolved locale across native navigation and refresh/invalidation', async () => {
     const router = await routerAt('/personal');
-    await router.navigate({ to: '/personal/tasks' });
+    await router.navigate({ to: '/$', params: { _splat: 'personal/tasks' } });
     await router.invalidate();
     const markup = renderToString(<RouterProvider router={router} />);
     expect(markup).toContain('lang="vi"');
@@ -64,11 +64,20 @@ describe('root resolved locale context', () => {
   });
   it('uses the root resolved locale when child data loading fails', async () => {
     transport.page.mockRejectedValue(new Error('page unavailable'));
-    const router = await routerAt('/personal');
+    const router = await routerAt('/personal', true);
     const markup = renderToString(<RouterProvider router={router} />);
     expect(markup).toContain('lang="vi"');
     expect(markup).toContain('data-provider-locale="vi"');
-    expect(markup).toContain('Calendar error');
+    expect(markup).toContain('Không thể tải giao diện này');
+  });
+  it('renders the same child-loader error contract in resolved English on the server', async () => {
+    transport.locale.mockResolvedValue('en');
+    transport.page.mockRejectedValue(new Error('page unavailable'));
+    const router = await routerAt('/personal', true);
+    const markup = renderToString(<RouterProvider router={router} />);
+    expect(markup).toContain('lang="en"');
+    expect(markup).toContain('data-provider-locale="en"');
+    expect(markup).toContain('This view could not load');
   });
   it('does not force Vietnamese when the resolved preference is English', async () => {
     transport.locale.mockResolvedValue('en');

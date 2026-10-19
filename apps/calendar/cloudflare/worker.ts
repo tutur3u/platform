@@ -1,4 +1,4 @@
-import { handleCalendarRequest } from '../src/runtime/handler';
+import { handleCalendarRequest } from '#calendar-handler';
 
 export default {
   fetch: handleCalendarRequest,

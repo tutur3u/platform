@@ -1,5 +1,6 @@
 import { createTuturuuuWebWorkspaceApiRewrites } from '@tuturuuu/utils/next-config';
 import { createTaskApiRewrites } from '../lib/task-api-rewrites';
+import { requestInit } from './request-init';
 
 function matches(source: string, pathname: string) {
   const pattern = source
@@ -29,8 +30,5 @@ export function forwardToOwner(request: Request, origin: string) {
   headers.delete('host');
   headers.set('x-forwarded-host', source.host);
   headers.set('x-forwarded-proto', source.protocol.replace(':', ''));
-  return new Request(
-    destination,
-    new Request(request, { headers, redirect: 'manual' })
-  );
+  return new Request(destination, requestInit(request, headers, 'manual'));
 }

@@ -84,24 +84,29 @@ describe('Calendar request bridge', () => {
 
   it('preserves POST bodies and handler errors instead of replaying', async () => {
     let calls = 0;
+    const failure = new Error('unconfirmed write');
     await expect(
       dispatchThroughCalendarProxy({
         request: new Request(
-          'https://calendar.tuturuuu.com/api/meet-live/memory',
+          'https://calendar.tuturuuu.com/api/meet-live/memory?cursor=a%2Bb&x=1&x=2',
           {
             method: 'POST',
             body: '{"consent":true}',
+            headers: { cookie: 'app=one; refresh=two' },
           }
         ),
         waitUntil,
         proxy: async () => NextResponse.next(),
         dispatch: async (request) => {
           calls++;
-          expect(await request.json()).toEqual({ consent: true });
-          throw new Error('unconfirmed write');
+          expect(request.method).toBe('POST');
+          expect(request.nextUrl.search).toBe('?cursor=a%2Bb&x=1&x=2');
+          expect(request.headers.get('cookie')).toBe('app=one; refresh=two');
+          expect(await request.text()).toBe('{"consent":true}');
+          throw failure;
         },
       })
-    ).rejects.toThrow('unconfirmed write');
+    ).rejects.toBe(failure);
     expect(calls).toBe(1);
   });
 

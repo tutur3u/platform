@@ -2,6 +2,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  type ErrorComponentProps,
   HeadContent,
   Outlet,
   Scripts,
@@ -38,20 +39,30 @@ function Document({ children }: { children: ReactNode }): ReactElement {
     </html>
   );
 }
+function CalendarError({ error, reset }: ErrorComponentProps): ReactElement {
+  const locale = useResolvedLocale();
+  return (
+    <AppProviders locale={locale} params={{}} showVersionBadge={false}>
+      <AppErrorBoundary
+        appName="Calendar"
+        locale={locale}
+        error={
+          error instanceof Error
+            ? error
+            : new Error('Calendar page failed', { cause: error })
+        }
+        reset={reset}
+      />
+    </AppProviders>
+  );
+}
 const root = createRootRoute({
   beforeLoad: async ({ location }) => ({
     locale: await loadCalendarLocale({ data: { path: location.href } }),
   }),
   shellComponent: Document,
   component: Outlet,
-  errorComponent: function CalendarError({ error, reset }): ReactElement {
-    const locale = useResolvedLocale();
-    return (
-      <AppProviders locale={locale} params={{}} showVersionBadge={false}>
-        <AppErrorBoundary appName="Calendar" error={error} reset={reset} />
-      </AppProviders>
-    );
-  },
+  errorComponent: CalendarError,
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -113,6 +124,7 @@ const page = createRoute({
 export function getRouter() {
   return createRouter({
     routeTree: root.addChildren([index, page]),
+    defaultErrorComponent: CalendarError,
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultStaleTime: 0,

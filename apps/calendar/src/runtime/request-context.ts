@@ -5,13 +5,20 @@ import {
 } from 'next/dist/compiled/@edge-runtime/cookies';
 
 import type { CalendarTelemetryPort } from './request-telemetry.server';
+import type {
+  CalendarExecutionContext,
+  CalendarWorkerEnvironment,
+} from './worker-contract';
 
 export interface CalendarRequestContext {
   telemetry?: CalendarTelemetryPort;
   request: Request;
   responseHeaders: Headers;
   waitUntil: (work: Promise<unknown>) => void;
-  cloudflare?: { env: CloudflareEnv; ctx: ExecutionContext };
+  cloudflare?: {
+    env: CalendarWorkerEnvironment;
+    ctx: CalendarExecutionContext;
+  };
 }
 
 const requests = new AsyncLocalStorage<CalendarRequestContext>();

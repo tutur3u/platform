@@ -158,8 +158,12 @@ function hashes(app) {
   visit(resolve(app, 'cloudflare-env.d.ts'));
   return files;
 }
-export function manifest(directory, sha) {
+export function requireSourceSha(sha) {
   assert.match(sha ?? '', /^[a-f0-9]{40}$/, 'exact source SHA required');
+  return sha;
+}
+export function manifest(directory, sha) {
+  requireSourceSha(sha);
   const { app, configPath, main } = validateOutput(directory);
   return {
     schema: 1,
@@ -182,14 +186,11 @@ if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  const [mode, app, receipt] = process.argv.slice(2);
+  const [mode, app, expectedSha, receipt] = process.argv.slice(2);
+  const sha = requireSourceSha(expectedSha);
   if (mode === 'seal')
-    writeFileSync(
-      receipt,
-      `${JSON.stringify(manifest(app, process.env.SOURCE_SHA), null, 2)}\n`
-    );
-  else if (mode === 'verify')
-    verify(app, json(receipt), process.env.SOURCE_SHA);
+    writeFileSync(receipt, `${JSON.stringify(manifest(app, sha), null, 2)}\n`);
+  else if (mode === 'verify') verify(app, json(receipt), sha);
   else if (mode === 'config') {
     const { configPath } = validateOutput(app);
     assert.ok(process.env.GITHUB_OUTPUT, 'GITHUB_OUTPUT required');
