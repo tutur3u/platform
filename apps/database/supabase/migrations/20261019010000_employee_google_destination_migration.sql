@@ -213,7 +213,7 @@ begin
           values(operation,target,source,destination,bound,'reserved',current_state,case when oauth then 'google_destination' else 'email_v1' end) returning * into op;
       elsif op.binding<>bound then raise exception using errcode='23514',message='Migration binding conflict'; end if;
     else
-      if op.operation_id is null or op.binding<>case when transition is not null then p_request else bound end then
+      if op.operation_id is null or op.binding<>(case when transition is not null then p_request else bound end) then
         raise exception using errcode='23514',message='Migration receipt missing';
       end if;
       if p_action='claim' then
