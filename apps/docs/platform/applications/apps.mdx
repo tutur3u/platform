@@ -90,3 +90,10 @@ bytes. Commit the recovered output, then require fresh clean generation-drift,
 compiler, behavior and Worker artifact checks. Do not hand-edit generated imports
 or relax unused-code checks to make a bootstrap artifact pass. Source acceptance
 and a successful build do not establish canonical traffic or hosted acceptance.
+
+The native workflow retains `native-emitted-config-apps.json` even when emitted
+configuration qualification fails. The diagnostic records source HEAD separately
+from the event SHA, hashes and redacted field shapes. It contains no raw config,
+resource identifiers or secret values and grants no artifact acceptance. Review
+the actual receipt before changing a strict configuration predicate; retain the
+source, resource, archive, restore and deployment gates.
