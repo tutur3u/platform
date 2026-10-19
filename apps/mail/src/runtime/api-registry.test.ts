@@ -365,7 +365,8 @@ describe('every original Mail API registration', () => {
         expect(handler).toHaveBeenCalledTimes(1);
         const args = handler.mock.calls[0];
         if (!args) throw new Error('Missing handler call');
-        if (fixture.zeroMethods.includes(method)) {
+        const zeroArgumentMethods: readonly string[] = fixture.zeroMethods;
+        if (zeroArgumentMethods.includes(method)) {
           expect(args).toEqual([]);
           return;
         }

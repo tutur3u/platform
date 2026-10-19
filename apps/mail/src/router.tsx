@@ -9,7 +9,10 @@ import {
   useLocation,
   useMatches,
 } from '@tanstack/react-router';
-import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
+import {
+  AppErrorBoundary,
+  type BoundaryError,
+} from '@tuturuuu/ui/custom/app-error-boundary';
 import type { ReactElement } from 'react';
 import { mailPageHead } from './runtime/page-head';
 import { loadMailPage } from './runtime/page-loader';
@@ -18,15 +21,43 @@ import { AppProviders } from './runtime/providers';
 import '@tuturuuu/ui/globals.css';
 import './runtime/typography.css';
 
+type DocumentLocale = 'en' | 'vi';
+
+function selectDocumentLocale(
+  matches: readonly { loaderData?: unknown }[]
+): DocumentLocale | undefined {
+  const data = matches.at(-1)?.loaderData;
+  if (typeof data !== 'object' || data === null || !('locale' in data)) return;
+  return data.locale === 'en' || data.locale === 'vi' ? data.locale : undefined;
+}
+
+function normalizeBoundaryError(error: unknown): BoundaryError {
+  if (error instanceof Error) return error;
+  const message =
+    typeof error === 'string'
+      ? error
+      : typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ? error.message
+        : 'Unknown error';
+  const normalized = new Error(message, { cause: error });
+  return typeof error === 'object' &&
+    error !== null &&
+    'digest' in error &&
+    typeof error.digest === 'string'
+    ? Object.assign(normalized, { digest: error.digest })
+    : normalized;
+}
+
 function Document(): ReactElement {
   const pathname = useLocation({ select: (location) => location.pathname });
-  const model = useMatches({ select: (matches) => matches.at(-1)?.loaderData });
-  const locale =
-    model && typeof model === 'object' && 'locale' in model
-      ? model.locale
-      : pathname.startsWith('/vi')
-        ? 'vi'
-        : 'en';
+  const matchedLocale = useMatches<
+    ReturnType<typeof getRouter>,
+    DocumentLocale | undefined
+  >({ select: selectDocumentLocale });
+  const locale = matchedLocale ?? (pathname.startsWith('/vi') ? 'vi' : 'en');
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
@@ -48,7 +79,11 @@ function ErrorPage({ error, reset }: ErrorComponentProps) {
       showVersionBadge={false}
       params={{}}
     >
-      <AppErrorBoundary appName="Mail" error={error} reset={reset} />
+      <AppErrorBoundary
+        appName="Mail"
+        error={normalizeBoundaryError(error)}
+        reset={reset}
+      />
     </AppProviders>
   );
 }
