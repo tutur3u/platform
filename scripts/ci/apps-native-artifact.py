@@ -39,6 +39,8 @@ NORMALIZED_DEFAULTS = {
     "rules": [{"type": "ESModule", "globs": ["**/*.js", "**/*.mjs"]}],
 }
 REDIRECT = ".wrangler/deploy/config.json"
+SAVED_REDIRECT = ".void/preview-deploy-config.json"
+REDIRECTS = (REDIRECT, SAVED_REDIRECT)
 RECEIPT = "apps-native-artifact.json"
 PUBLIC_FILES = ("robots.txt", "sitemap.xml")
 MAX_FILES = 50000
@@ -81,16 +83,36 @@ def emitted_path(dist, parent, value):
     return contained(dist, path)
 
 
+def redirect_parents(app):
+    for name in REDIRECTS:
+        for ancestor in (app / name).parents:
+            if ancestor == app:
+                break
+            require(not ancestor.is_symlink(), "redirect ancestor symlink forbidden")
+            require(not ancestor.exists() or ancestor.is_dir(), "redirect ancestor must be a directory")
+
+
+def selected_redirect(app):
+    redirect_parents(app)
+    # lexists counts dangling links as candidates; neither links nor duplicates win.
+    candidates = [app / name for name in REDIRECTS if os.path.lexists(app / name)]
+    require(len(candidates) == 1, "exactly one native/saved deploy pointer required")
+    pointer = contained(app, candidates[0])
+    require(pointer.is_file() and not pointer.is_symlink(), "deploy pointer must be a regular file")
+    return pointer
+
+
 def validate_output(directory, source=None):
     app = Path(directory).resolve()
     source = Path(source).resolve() if source else app
     dist = contained(app, app / "dist")
     require(dist.is_dir(), "missing dist")
-    pointer = contained(app, app / REDIRECT)
+    pointer = selected_redirect(app)
     redirect = read_json(pointer)
     require(isinstance(redirect, dict) and set(redirect) == {"configPath", "auxiliaryWorkers"}, "unexpected deploy metadata")
     require(redirect["auxiliaryWorkers"] == [] and isinstance(redirect["auxiliaryWorkers"], list), "auxiliaryWorkers must be present and empty")
-    config_path = emitted_path(dist, pointer.parent, redirect["configPath"])
+    # Void saves unchanged pointer bytes; relative paths retain the native base.
+    config_path = emitted_path(dist, (app / REDIRECT).parent, redirect["configPath"])
     config = read_json(config_path)
     require(isinstance(config, dict), "invalid config object")
     expected = {**IDENTITY, **NORMALIZED_DEFAULTS}
@@ -130,7 +152,7 @@ def file_hashes(directory):
             paths.append(path)
 
     visit(app / "dist")
-    visit(app / REDIRECT)
+    visit(selected_redirect(app))
     require(all(p.stat().st_size <= 128 * 1024 * 1024 for p in paths) and len(paths) <= MAX_FILES and sum(p.stat().st_size for p in paths) <= MAX_BYTES, "artifact exceeds bounded archive budget")
     return {p.relative_to(app).as_posix(): sha256(p.read_bytes()) for p in paths}
 
@@ -164,9 +186,8 @@ def pack(directory, receipt_path, archive_path, sha):
 
 def restore(directory, archive_path, receipt_path, sha):
     app = Path(directory).resolve()
-    require(app.is_dir() and not (app / "dist").exists() and not (app / "dist").is_symlink() and not (app / REDIRECT).exists(), "restore requires a fresh output tree")
-    for ancestor in (app / ".wrangler", app / ".wrangler/deploy"):
-        require(not ancestor.is_symlink(), "redirect ancestor symlink forbidden")
+    require(app.is_dir() and not (app / "dist").exists() and not (app / "dist").is_symlink() and not any(os.path.lexists(app / name) for name in REDIRECTS), "restore requires a fresh output tree")
+    redirect_parents(app)
     with tempfile.TemporaryDirectory(prefix="apps-artifact-") as temporary:
         stage = Path(temporary).resolve()
         with tarfile.open(archive_path, "r:gz") as archive:
@@ -187,20 +208,23 @@ def restore(directory, archive_path, receipt_path, sha):
                 name = member.name
                 if name == RECEIPT:
                     continue
-                require(name.startswith("dist/") or name == REDIRECT, "archive may only restore owned output")
+                require(name.startswith("dist/") or name in REDIRECTS, "archive may only restore owned output")
                 payload = archive.extractfile(member).read()
                 require(sha256(payload) == receipt["files"][name], "archive member hash mismatch")
                 target = stage / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(payload)
         verify(stage, receipt, sha, app)
-        # No archive-controlled source/index/config path is restored outside dist/redirect.
+        pointer = selected_redirect(stage).relative_to(stage)
+        redirect_parents(app)
+        require(not any(os.path.lexists(app / name) for name in REDIRECTS), "restore pointer appeared")
+        # Restore only dist and the exact sealed native/saved pointer bytes.
         shutil.move(str(stage / "dist"), app / "dist")
-        target = app / REDIRECT
-        for ancestor in (app / ".wrangler", app / ".wrangler/deploy"):
-            require(not ancestor.is_symlink(), "redirect ancestor symlink forbidden")
+        target = app / pointer
+        redirect_parents(app)
+        require(not any(os.path.lexists(app / name) for name in REDIRECTS), "restore pointer appeared")
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(stage / REDIRECT), target)
+        shutil.move(str(stage / pointer), target)
         verify(app, receipt, sha)
         Path(receipt_path).write_text(json.dumps(receipt, indent=2) + "\n")
 

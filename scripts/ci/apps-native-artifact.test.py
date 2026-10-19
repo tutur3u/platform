@@ -7,6 +7,7 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from unittest import mock
 
 spec = importlib.util.spec_from_file_location("apps_artifact", Path(__file__).with_name("apps-native-artifact.py"))
 artifact = importlib.util.module_from_spec(spec)
@@ -74,6 +75,214 @@ class ArtifactTest(unittest.TestCase):
         artifact.verify(target, receipt, SHA)
         self.assertEqual(json.loads((target / "dist/native/wrangler.json").read_text())["configPath"], str(app / ".void-wrangler.jsonc"))
         self.assertEqual((target / "dist/native/index.js").read_bytes(), (app / "dist/native/index.js").read_bytes())
+
+    def use_saved_pointer(self, app):
+        native = app / artifact.REDIRECT
+        saved = app / artifact.SAVED_REDIRECT
+        saved.parent.mkdir(exist_ok=True)
+        saved.write_bytes(native.read_bytes())
+        native.unlink()
+        return saved
+
+    def test_saved_pointer_native_base_and_exact_bytes_survive_restore(self):
+        app, _, _ = self.fixture()
+        saved = self.use_saved_pointer(app)
+        payload = b" \n" + saved.read_bytes() + b"\n"
+        saved.write_bytes(payload)
+        receipt = artifact.artifact(app, SHA)
+        self.assertEqual(receipt["configPath"], "dist/native/wrangler.json")
+        self.assertEqual(receipt["files"][artifact.SAVED_REDIRECT], hashlib.sha256(payload).hexdigest())
+        self.assertNotIn(artifact.REDIRECT, receipt["files"])
+        receipt_path, archive = app / "receipt.json", app / "artifact.tar.gz"
+        receipt_path.write_text(json.dumps(receipt))
+        artifact.pack(app, receipt_path, archive, SHA)
+        with tarfile.open(archive) as packed:
+            self.assertEqual(packed.extractfile(artifact.SAVED_REDIRECT).read(), payload)
+            self.assertNotIn(artifact.REDIRECT, packed.getnames())
+        target = app / "fresh"
+        target.mkdir()
+        (target / "public").mkdir()
+        for name in artifact.PUBLIC_FILES:
+            (target / "public" / name).write_bytes((app / "public" / name).read_bytes())
+        artifact.restore(target, archive, app / "restored.json", SHA)
+        artifact.verify(target, receipt, SHA)
+        self.assertEqual((target / artifact.SAVED_REDIRECT).read_bytes(), payload)
+        self.assertFalse((target / artifact.REDIRECT).exists())
+        (target / artifact.SAVED_REDIRECT).write_bytes(payload + b" ")
+        with self.assertRaises(ValueError):
+            artifact.verify(target, receipt, SHA)
+
+    def test_pointer_candidate_count_includes_dangling_links(self):
+        for mode in ("missing", "both", "dangling-other", "dangling-only", "directory", "file-link"):
+            with self.subTest(mode=mode):
+                app, _, _ = self.fixture()
+                native, saved = app / artifact.REDIRECT, app / artifact.SAVED_REDIRECT
+                saved.parent.mkdir()
+                if mode == "both":
+                    saved.write_bytes(native.read_bytes())
+                elif mode == "dangling-other":
+                    saved.symlink_to(app / "absent")
+                elif mode == "file-link":
+                    payload = app / "pointer-payload.json"
+                    payload.write_bytes(native.read_bytes())
+                    saved.symlink_to(payload)
+                    native.unlink()
+                    self.assertTrue(payload.is_file())
+                    self.assertFalse(payload.is_symlink())
+                    self.assertTrue(saved.is_symlink())
+                    self.assertFalse(native.exists())
+                else:
+                    native.unlink()
+                    if mode == "dangling-only":
+                        saved.symlink_to(app / "absent")
+                    elif mode == "directory":
+                        saved.mkdir()
+                expected = {
+                    "missing": "exactly one native/saved deploy pointer required",
+                    "both": "exactly one native/saved deploy pointer required",
+                    "dangling-other": "exactly one native/saved deploy pointer required",
+                    "dangling-only": "artifact symlink forbidden",
+                    "directory": "deploy pointer must be a regular file",
+                    "file-link": "artifact symlink forbidden",
+                }[mode]
+                with self.assertRaisesRegex(ValueError, "^" + expected + "$"):
+                    artifact.artifact(app, SHA)
+
+    def test_saved_pointer_ancestors_and_regular_target_required(self):
+        for name in (".void", ".wrangler", ".wrangler/deploy"):
+            for mode in ("symlink", "file"):
+                with self.subTest(name=name, mode=mode):
+                    app, _, _ = self.fixture()
+                    self.use_saved_pointer(app)
+                    path = app / name
+                    if path.name == ".void":
+                        (path / "preview-deploy-config.json").unlink()
+                    if path.name == ".wrangler":
+                        (path / "deploy").rmdir()
+                    path.rmdir()
+                    if mode == "symlink":
+                        path.symlink_to(app / "missing-directory", target_is_directory=True)
+                    else:
+                        path.write_text("not a directory")
+                    with self.assertRaises(ValueError):
+                        artifact.artifact(app, SHA)
+        app, _, _ = self.fixture()
+        saved = self.use_saved_pointer(app)
+        saved.unlink()
+        import os
+        os.mkfifo(saved)
+        with self.assertRaises(ValueError):
+            artifact.artifact(app, SHA)
+
+    def test_saved_pointer_retains_metadata_and_containment_guards(self):
+        cases = ({"extra": True}, {"auxiliaryWorkers": ["extra"]},
+                 {"configPath": "../../../outside.json"},
+                 {"configPath": "/tmp/outside.json"},
+                 {"configPath": "../dist/native/wrangler.json"})
+        for change in cases:
+            with self.subTest(change=change):
+                app, _, _ = self.fixture()
+                saved = self.use_saved_pointer(app)
+                value = json.loads(saved.read_text())
+                value.update(change)
+                saved.write_text(json.dumps(value))
+                with self.assertRaises(ValueError):
+                    artifact.artifact(app, SHA)
+
+    def test_restore_rechecks_ancestors_after_dist_move(self):
+        for saved in (False, True):
+            for ancestor in (".void", ".wrangler", ".wrangler/deploy"):
+                with self.subTest(saved=saved, ancestor=ancestor):
+                    app, _, _ = self.fixture()
+                    if saved:
+                        self.use_saved_pointer(app)
+                    receipt = artifact.artifact(app, SHA)
+                    receipt_path, archive = app / "receipt.json", app / "artifact.tar.gz"
+                    receipt_path.write_text(json.dumps(receipt))
+                    artifact.pack(app, receipt_path, archive, SHA)
+                    expected_dist = {
+                        path.relative_to(app / "dist"): path.read_bytes()
+                        for path in (app / "dist").rglob("*") if path.is_file()
+                    }
+                    with tempfile.TemporaryDirectory() as destination, tempfile.TemporaryDirectory() as outside:
+                        target, external = Path(destination), Path(outside)
+                        restored_receipt = target / "receipt.json"
+                        original_move = artifact.shutil.move
+                        moved_dist = []
+
+                        def move_then_replace_ancestor(source, destination):
+                            result = original_move(source, destination)
+                            if Path(destination) == target / "dist":
+                                moved_dist.append(True)
+                                link = target / ancestor
+                                link.parent.mkdir(parents=True, exist_ok=True)
+                                link.symlink_to(external, target_is_directory=True)
+                            return result
+
+                        (target / "public").mkdir(parents=True, exist_ok=True)
+                        for name in artifact.PUBLIC_FILES:
+                            (target / "public" / name).write_bytes((app / "public" / name).read_bytes())
+
+                        with mock.patch.object(artifact.shutil, "move", side_effect=move_then_replace_ancestor):
+                            with self.assertRaisesRegex(ValueError, "^redirect ancestor symlink forbidden$"):
+                                artifact.restore(target, archive, restored_receipt, SHA)
+                        self.assertEqual(moved_dist, [True])
+                        self.assertTrue((target / ancestor).is_symlink())
+                        self.assertEqual(list(external.iterdir()), [])
+                        self.assertTrue(all(not (target / name).exists() for name in artifact.REDIRECTS))
+                        self.assertFalse(restored_receipt.exists())
+                        # Rejection leaves the moved dist intact; no rollback is promised.
+                        self.assertEqual({
+                            path.relative_to(target / "dist"): path.read_bytes()
+                            for path in (target / "dist").rglob("*") if path.is_file()
+                        }, expected_dist)
+
+    def test_saved_restore_rejects_existing_candidates_and_ancestor_links(self):
+        app, _, _ = self.fixture()
+        self.use_saved_pointer(app)
+        receipt = artifact.artifact(app, SHA)
+        receipt_path, archive = app / "receipt.json", app / "artifact.tar.gz"
+        receipt_path.write_text(json.dumps(receipt))
+        artifact.pack(app, receipt_path, archive, SHA)
+        for name in artifact.REDIRECTS + (".void", ".wrangler", ".wrangler/deploy"):
+            with self.subTest(name=name):
+                with tempfile.TemporaryDirectory() as temporary:
+                    target = Path(temporary)
+                    path = target / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.symlink_to(target / "absent")
+                    with self.assertRaises(ValueError):
+                        artifact.restore(target, archive, app / "restored.json", SHA)
+                    self.assertFalse((target / "dist").exists())
+                    self.assertTrue(path.is_symlink())
+
+    def test_restore_rejects_self_consistent_archive_with_both_pointers(self):
+        app, _, _ = self.fixture()
+        self.use_saved_pointer(app)
+        receipt = artifact.artifact(app, SHA)
+        payload = (app / artifact.SAVED_REDIRECT).read_bytes()
+        receipt["files"][artifact.REDIRECT] = hashlib.sha256(payload).hexdigest()
+        archive = app / "dual.tar.gz"
+        with tarfile.open(archive, "w:gz") as packed:
+            for name in list(receipt["files"]) + [artifact.RECEIPT]:
+                if name == artifact.RECEIPT:
+                    data = json.dumps(receipt).encode()
+                elif name == artifact.REDIRECT:
+                    data = payload
+                else:
+                    data = (app / name).read_bytes()
+                info = tarfile.TarInfo(name)
+                info.size = len(data)
+                packed.addfile(info, io.BytesIO(data))
+        target = app / "fresh"
+        target.mkdir()
+        (target / "public").mkdir()
+        for name in artifact.PUBLIC_FILES:
+            (target / "public" / name).write_bytes((app / "public" / name).read_bytes())
+        with self.assertRaises(ValueError):
+            artifact.restore(target, archive, app / "restored.json", SHA)
+        self.assertFalse((target / "dist").exists())
+        self.assertFalse(any((target / name).exists() for name in artifact.REDIRECTS))
 
     def test_required_empty_auxiliary_workers(self):
         for value in (None, {}, "", ["extra-worker"]):
