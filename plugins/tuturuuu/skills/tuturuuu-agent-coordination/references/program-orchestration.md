@@ -112,6 +112,79 @@ Use canonical worktree paths; distinct strings are not filesystem isolation proo
 Freshly inspect actual sources, remote runs and artifact/runtime receipts before
 recording PASS. A green workflow whose upload/migration job skipped is not delivery.
 
+## Bounded contrastive experiments
+
+When changing harness guidance for an observed task failure, propose a small
+candidate, probe baseline and candidate on the same closed cases, then compose a
+scoped lesson from their behavioral differences. Use the existing board's optional
+`experiments` list; boards without it retain their existing checker output.
+This records evidence for review; it does not execute probes, adopt guidance,
+change model weights or authorize runtime work.
+
+An experiment has these fields:
+
+| Field | Recorded contract |
+| --- | --- |
+| `id`, `unit`, `head`, `task` | Unique experiment namespace, existing unit, its current full SHA, and task identity. |
+| `controls` | SHA256 content pins named `input`, `context`, `constraints`, `model`, `executor`, `improver`, `judge`, `webAccess`. |
+| `variants` | Distinct SHA256 guidance/content pins named `baseline` and `candidate`. |
+| `cases` | Closed nonempty list of objects with unique `id`, `kind` from the unit's required evidence, and SHA256 `input` pin. |
+| `budget` | Positive integer `limit` and `used` counts of individual probe executions/observations, with `used` ≤ `limit`. Each baseline/candidate pair consumes two units; `used` must match every observation, including failed/unknown executions. |
+| `observations` | Exactly one baseline and one candidate observation per declared case. |
+| `decision` | `probe`, `reject` or `adopt`; adoption has additional gates below. |
+
+Every observation carries `variant`, `case`, `head`, `task`, `controls`, `content`,
+`input`, `kind`, `outcome` and a nonempty behavior `receipt` locator. Head, task,
+controls, variant content and case input/kind must match the manifest. Use `pass`
+or `fail` for evaluated task behavior, `error` for failed execution/evaluation,
+and `unknown` for missing or inconclusive judgment. Report all four outcome
+counts separately; errors are unscored, never converted into task failures or
+omitted from the census. A compiler observation cannot fill a runtime case.
+
+The constraints pin identifies the unchanged canonical authorization, consent,
+sandbox/network, resource, CI and production-policy snapshot. Inspect that
+snapshot and the real observations independently: matching digests check recorded
+identity, not semantic preservation or actual enforcement. Pin source through the
+unit head and fixed input/context content through `controls`. Keep executor,
+improver, judge, model configuration/weights identity and web access fixed.
+
+Adoption requires at least one paired `fail` to `pass`, no worsening, no candidate
+failures and no unknown/error outcomes. It also requires `comparison` with
+nonempty `summary` and `receipt`, `lesson` with nonempty `scope` and `text`, and
+`regression` with current `head`, candidate `content`, matching `controls`,
+`result: "pass"` and a nonempty `receipt`. The regression receipt is a separately
+admitted focused check, not an extra paired probe. A self-report of “better” cannot
+replace paired observations. Experiment acceptance never supplies missing unit
+CI, artifact, ability, runtime or production evidence.
+
+Create a distinct namespace and rerun the complete fixed cases when budget,
+mode, task selection, model or other control pins change; do not splice receipts
+from incompatible runs. Use only earlier reviewed evidence when forming a later
+candidate. Persist an accepted lesson through the normal reviewed edit of the
+narrowest existing reference and docs, retaining its receipt provenance. Do not
+write managed memory or automatically change permissions or production policy.
+
+Rerun the offline example and negative controls with:
+
+```bash
+python3 -m unittest discover -s plugins/tuturuuu/scripts -p 'test_program_state.py'
+```
+
+`experiment_board()` in that suite calls the real checker on a compiler-only
+ledger and a ledger that requires missing runtime proof, then records their
+behavioral contrast. The fixtures exercise this data contract without network,
+model calls or live effects. They demonstrate mechanical receipt validation,
+not improved agent quality, benchmark scores or production availability. Receipt
+locators remain assertions until their content is independently reviewed.
+
+The method adapts [Harness²'s README](https://github.com/google-research/harness2)
+and [experiment guide](https://github.com/google-research/harness2/blob/main/docs/EXPERIMENTS.md),
+linked by [Akshay Pachaar's post](https://x.com/akshay_pachaar/status/2111753928031531232).
+The upstream eight editable components are not permission to edit every component
+here. Keep the canonical T3 workflow and fixed boundaries; do not install or run
+upstream's unrestricted-network, sandbox-disabled executor. Public benchmark
+rubric access can contaminate comparisons; this fixture is entirely offline.
+
 ## Causal failures and scope control
 
 After two failed repairs based on the same assumption, state that assumption and

@@ -360,6 +360,17 @@ store upload cannot establish new-source availability. Each requested delivery
 stage needs current-source evidence; new heads invalidate prior head receipts.
 Use native PR wakes and an explicitly authorized cadence instead of polling.
 
+For a task-specific harness change, the board may also record bounded baseline and
+candidate experiments. The checker requires fixed input/context/control pins, a
+closed paired case census, explicit probe usage, and separate failure/unknown/error
+outcomes. Adoption requires observed improvement without regressions, a comparison,
+a scoped lesson and a current candidate regression receipt. See the coordination
+skill's `references/program-orchestration.md` for the contract and offline example.
+This adapts [Harness²'s contrastive method](https://github.com/google-research/harness2)
+without its executor or model calls. Matching pins and unit tests establish
+record consistency, not semantic guardrail preservation or improved agent quality.
+Experiment acceptance never replaces a unit's delivery evidence or changes authority.
+
 This workflow adapts [pstack's upstream orchestration playbook](https://github.com/cursor/plugins/blob/df581122cde17e6e27686b5a448bde23e4ad4318/pstack/skills/poteto-mode/playbooks/orchestrate.md)
 to T3's actual child-task tools and Tuturuuu's ownership, resource and production
 boundaries. It does not require Cursor, Graphite, cloud agents or a new plugin

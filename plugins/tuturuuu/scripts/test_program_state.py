@@ -24,6 +24,158 @@ def board():
     }]}
 
 
+def experiment_board():
+    """Offline contrast: a compiler-only ledger falsely used for production readiness."""
+    state = board()
+    controls = {key: "1" * 64 for key in
+                ["input", "context", "constraints", "model", "executor", "improver",
+                 "judge", "webAccess"]}
+    experiment = {
+        "id": "offline-production-receipt-v1", "unit": "repair", "head": HEAD,
+        "task": "report-production-readiness", "controls": controls,
+        "variants": {"baseline": "2" * 64, "candidate": "3" * 64},
+        "cases": [{"id": "compiler-is-not-runtime", "kind": "runtime", "input": "4" * 64}],
+        "budget": {"limit": 2, "used": 2}, "decision": "adopt",
+        "comparison": {"summary": "Candidate reports absent runtime evidence.",
+                       "receipt": "synthetic/paired-reports"},
+        "lesson": {"scope": "production readiness ledgers",
+                   "text": "Require runtime evidence before reporting production readiness."},
+        "regression": {"head": HEAD, "content": "3" * 64, "controls": controls,
+                       "result": "pass", "receipt": "synthetic/regression"},
+        "observations": [],
+    }
+    for variant in ["baseline", "candidate"]:
+        probe = board()
+        unit = probe["units"][0]
+        unit["requiredEvidence"] = ["focused"] if variant == "baseline" else ["focused", "runtime"]
+        unit["evidence"] = unit["evidence"][:1]
+        report = check_program(probe)
+        # Evaluate actual ledger behavior against the declared missing-runtime case.
+        correct = not report["recordedEvidenceComplete"] and "runtime" in report["units"][0]["missing"]
+        experiment["observations"].append({
+            "variant": variant, "case": "compiler-is-not-runtime", "head": HEAD,
+            "task": experiment["task"], "controls": copy.deepcopy(controls),
+            "content": experiment["variants"][variant], "input": "4" * 64,
+            "kind": "runtime", "outcome": "pass" if correct else "fail",
+            "receipt": "synthetic/" + variant + "/checker-report",
+        })
+    state["experiments"] = [experiment]
+    return state
+
+
+class ExperimentTests(unittest.TestCase):
+    def test_offline_paired_checker_behavior_and_backwards_compatibility(self):
+        self.assertNotIn("experiments", check_program(board()))
+        result = check_program(experiment_board())
+        self.assertFalse(result["liveVerificationPerformed"])
+        experiment = result["experiments"][0]
+        self.assertEqual(experiment["improved"], ["compiler-is-not-runtime"])
+        self.assertEqual(experiment["outcomes"]["baseline"]["fail"], 1)
+        self.assertEqual(experiment["outcomes"]["candidate"]["pass"], 1)
+
+    def test_self_reported_better_without_paired_proof_is_rejected(self):
+        state = experiment_board()
+        experiment = state["experiments"][0]
+        experiment["comparison"]["summary"] = "better"
+        experiment["observations"] = []
+        with self.assertRaisesRegex(ValueError, "census"):
+            check_program(state)
+
+    def test_old_sha_compiler_receipt_and_changed_controls_are_incomparable(self):
+        for field, value in [("head", OLD), ("task", "other-task"),
+                             ("input", "5" * 64), ("kind", "focused"),
+                             ("content", "2" * 64)]:
+            with self.subTest(field=field):
+                state = experiment_board()
+                state["experiments"][0]["observations"][1][field] = value
+                with self.assertRaisesRegex(ValueError, "incomparable"):
+                    check_program(state)
+        for control in ["constraints", "model", "executor", "improver", "judge", "webAccess", "context"]:
+            with self.subTest(control=control):
+                state = experiment_board()
+                state["experiments"][0]["observations"][1]["controls"][control] = "5" * 64
+                with self.assertRaisesRegex(ValueError, "incomparable"):
+                    check_program(state)
+
+    def test_overbudget_and_incomplete_case_census_are_rejected(self):
+        state = experiment_board()
+        state["experiments"][0]["budget"]["limit"] = 1
+        with self.assertRaisesRegex(ValueError, "bounded probe budget"):
+            check_program(state)
+        state = experiment_board()
+        state["experiments"][0]["observations"].pop()
+        state["experiments"][0]["budget"]["used"] = 1
+        with self.assertRaisesRegex(ValueError, "both variant outcomes"):
+            check_program(state)
+
+    def test_worsening_ties_failure_and_unknowns_cannot_be_adopted(self):
+        for baseline, candidate in [("pass", "fail"), ("pass", "pass"),
+                                    ("fail", "fail"), ("unknown", "pass"),
+                                    ("error", "pass"), ("fail", "unknown")]:
+            with self.subTest(baseline=baseline, candidate=candidate):
+                state = experiment_board()
+                experiment = state["experiments"][0]
+                for observation, outcome in zip(experiment["observations"], [baseline, candidate]):
+                    observation["outcome"] = outcome
+                with self.assertRaisesRegex(ValueError, "adoption requires improvement"):
+                    check_program(state)
+                experiment["decision"] = "reject"
+                report = check_program(state)["experiments"][0]
+                self.assertEqual(report["outcomes"]["baseline"][baseline], 1)
+                self.assertEqual(report["outcomes"]["candidate"][candidate], 1)
+
+    def test_one_improvement_cannot_hide_a_regression_in_another_case(self):
+        state = experiment_board()
+        experiment = state["experiments"][0]
+        case = copy.deepcopy(experiment["cases"][0])
+        case["id"] = "existing-success"
+        experiment["cases"].append(case)
+        for observation, outcome in zip(copy.deepcopy(experiment["observations"]), ["pass", "fail"]):
+            observation.update(case="existing-success", outcome=outcome)
+            experiment["observations"].append(observation)
+        experiment["budget"] = {"limit": 4, "used": 4}
+        with self.assertRaisesRegex(ValueError, "without worsening"):
+            check_program(state)
+        experiment["decision"] = "reject"
+        report = check_program(state)["experiments"][0]
+        self.assertEqual(report["improved"], ["compiler-is-not-runtime"])
+        self.assertEqual(report["worsened"], ["existing-success"])
+
+    def test_adoption_requires_comparison_scoped_lesson_and_regression(self):
+        for field in ["comparison", "lesson", "regression"]:
+            state = experiment_board()
+            del state["experiments"][0][field]
+            with self.assertRaises(ValueError):
+                check_program(state)
+        for field, value in [("head", OLD), ("content", "2" * 64),
+                             ("result", "skipped"), ("receipt", "")]:
+            state = experiment_board()
+            state["experiments"][0]["regression"][field] = value
+            with self.assertRaisesRegex(ValueError, "regression PASS"):
+                check_program(state)
+
+    def test_experiment_does_not_supply_delivery_proof(self):
+        state = experiment_board()
+        state["units"][0]["evidence"].pop()
+        self.assertFalse(check_program(state)["recordedEvidenceComplete"])
+        state["units"][0]["state"] = "delivered"
+        with self.assertRaisesRegex(ValueError, "delivered claim lacks"):
+            check_program(state)
+
+    def test_malformed_and_duplicate_experiments_are_rejected(self):
+        for field, value in [("controls", {}), ("variants", {}), ("cases", []),
+                             ("budget", {"limit": True, "used": 2}),
+                             ("observations", {}), ("unit", []), ("head", OLD)]:
+            state = experiment_board()
+            state["experiments"][0][field] = value
+            with self.assertRaises(ValueError):
+                check_program(state)
+        state = experiment_board()
+        state["experiments"].append(copy.deepcopy(state["experiments"][0]))
+        with self.assertRaisesRegex(ValueError, "unique namespace"):
+            check_program(state)
+
+
 class ProgramStateTests(unittest.TestCase):
     def test_cli_exit_codes_and_machine_readable_status(self):
         with tempfile.TemporaryDirectory() as directory:
