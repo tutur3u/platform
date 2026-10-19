@@ -213,7 +213,7 @@ test('employee public consumer proof stays default-off and uses the maintained q
 test('Google destination source packet count is checked only for the selected migration profile', () => {
   const step = namedStep('Verify Google destination packet source');
   assert.match(step, /if: inputs.include_address_migration == true/u);
-  assert.doesNotMatch(step, /working-directory:/u);
+  assert.match(step, /^ {8}working-directory: source$/mu);
   assert.match(
     step,
     /run: node --test apps\/database\/scripts\/employee-google-destination-fixture.test.mjs/u
@@ -274,4 +274,122 @@ test('Google provider stays separately default-off with bound prepare, execution
     /if: always\(\) && inputs.include_google_destination_provider == true/u
   );
   assert.match(workflow, /employee-schema-receipts\/google-provider.json/u);
+});
+
+const dependencyContracts = [
+  [
+    'Verify optional Google provider receipt gates',
+    'include_google_destination_provider',
+    'apps/database/scripts/employee-google-provider-ci.test.mjs',
+  ],
+  [
+    'Verify Google destination packet source',
+    'include_address_migration',
+    'apps/database/scripts/employee-google-destination-fixture.test.mjs',
+  ],
+];
+function assertInstalledContracts(text, profile) {
+  const blocks = text.split(/(?=^ {6}- )/mu);
+  const install = blocks.findIndex((step) =>
+    step.startsWith('      - name: Install exact source dependencies\n')
+  );
+  assert.ok(install >= 0);
+  for (const [name, flag, file] of dependencyContracts) {
+    if (!profile[flag]) continue;
+    const matches = blocks.filter((step) =>
+      step.startsWith(`      - name: ${name}\n`)
+    );
+    assert.equal(matches.length, 1);
+    const step = matches[0];
+    assert.ok(
+      blocks.indexOf(step) > install,
+      `${name} requires installed source`
+    );
+    assert.match(step, /^ {8}working-directory: source$/mu);
+    assert.ok(step.includes(`        if: inputs.${flag} == true\n`));
+    assert.ok(step.includes(`        run: node --test ${file}\n`));
+  }
+}
+for (const provider of [false, true]) {
+  test(`all selected dependency-bearing contracts use installed source (address=true/provider=${provider})`, () => {
+    assertInstalledContracts(workflow, {
+      include_address_migration: true,
+      include_google_destination_provider: provider,
+    });
+  });
+}
+for (const [name] of dependencyContracts) {
+  test(`${name} cannot silently fall back to control checkout or precede install`, () => {
+    const step = namedStep(name);
+    const profile = {
+      include_address_migration: true,
+      include_google_destination_provider: true,
+    };
+    assert.throws(() =>
+      assertInstalledContracts(
+        workflow.replace(
+          step,
+          step.replace('        working-directory: source\n', '')
+        ),
+        profile
+      )
+    );
+    const install = namedStep('Install exact source dependencies');
+    assert.throws(() =>
+      assertInstalledContracts(
+        workflow.replace(step, '').replace(install, step + install),
+        profile
+      )
+    );
+  });
+}
+test('qualification Node test census keeps builtin controls separate from the two installed-source closures', () => {
+  const tests = steps.filter((step) =>
+    /^ {8}run: node --test(?: |$)/mu.test(step)
+  );
+  const names = tests.map((step) => /^ {6}- name: (.+)$/mu.exec(step)?.[1]);
+  assert.deepEqual(
+    names.sort(),
+    [
+      ...dependencyContracts.map(([name]) => name),
+      'Verify opt-in chat qualification contracts',
+      'Verify strict TAP and receipt gates',
+      'Verify employee public consumer proof gates',
+      'Verify feedback profile gates',
+      'Verify feedback causal protocol gates',
+      'Verify HTTP qualification receipt gates',
+      'Verify Web request session receipt gates',
+      'Verify diagnostic-only provenance parser',
+    ].sort()
+  );
+  for (const step of tests) {
+    if (
+      dependencyContracts.some(([name]) =>
+        step.startsWith(`      - name: ${name}\n`)
+      )
+    )
+      continue;
+    assert.doesNotMatch(step, /working-directory:/u);
+  }
+});
+test('address-only and provider profiles require source and control to be the same published H', () => {
+  const step = namedStep('Validate exact source selection');
+  const script = /^ {8}run: node -e '(.+)'$/mu.exec(step)?.[1];
+  assert.ok(script);
+  const source = 'a'.repeat(40);
+  const control = 'b'.repeat(40);
+  for (const provider of ['false', 'true']) {
+    for (const matching of [false, true]) {
+      const result = spawnSync(process.execPath, ['-e', script], {
+        env: {
+          ...process.env,
+          EMPLOYEE_SCHEMA_SOURCE_SHA: source,
+          EMPLOYEE_SCHEMA_CONTROL_SHA: matching ? source : control,
+          EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: 'true',
+          EMPLOYEE_SCHEMA_INCLUDE_GOOGLE_DESTINATION_PROVIDER: provider,
+        },
+      });
+      assert.equal(result.status, matching ? 0 : 1);
+    }
+  }
 });

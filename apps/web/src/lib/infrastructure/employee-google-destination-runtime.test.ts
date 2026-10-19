@@ -38,7 +38,9 @@ function request() {
     body: JSON.stringify(tuple),
   });
 }
-async function fixture() {
+async function fixture(
+  completionFault?: 'malformed' | 'mismatched-post' | 'revision'
+) {
   // Explicit transport/journal fixture. SQL ownership locks and GoTrue itself
   // are qualified separately; these observations drive the real Web protocol.
   const google = {
@@ -143,7 +145,16 @@ async function fixture() {
         phase: 'completed',
         ...(discardReceipt ? {} : { transition }),
       };
-      revision = 1;
+      revision = completionFault === 'revision' ? 2 : 1;
+      if (completionFault === 'mismatched-post' && record.transition) {
+        record = {
+          ...record,
+          transition: {
+            ...record.transition,
+            afterImmutableFingerprint: 'c'.repeat(64),
+          },
+        };
+      }
     }
     return Response.json({
       authorized,
@@ -152,7 +163,10 @@ async function fixture() {
       providerIdentityFingerprint: afterIdentity,
       sourceVerified: prepared && !drift,
       addressOwnership: prepared ? 'same_identity' : 'conflict',
-      record,
+      record:
+        completionFault === 'malformed' && record?.phase === 'completed'
+          ? { ...record, transition: { kind: 'google_destination' } }
+          : record,
       ...(transition ? { transition } : {}),
     });
   });
@@ -258,4 +272,49 @@ describe('verified Google destination and explicit mailbox preparation', () => {
     expect(f.admin.getUserById).not.toHaveBeenCalled();
     expect(f.admin.updateUserById).not.toHaveBeenCalled();
   });
+  it.each<'malformed' | 'mismatched-post' | 'revision'>([
+    'malformed',
+    'mismatched-post',
+    'revision',
+  ])(
+    'retains %s completion evidence without publishing success or replaying the PUT',
+    async (fault) => {
+      const f = await fixture(fault);
+      const prepared = await f.handlers.prepare(request());
+      expect(prepared.status).toBe(200);
+      const migrated = await f.handlers.migrate(request());
+      expect(migrated.status).toBe(202);
+      expect(await migrated.json()).toEqual({
+        status: 'pending',
+        operationId,
+        nextAction: 'inspect',
+      });
+      const inspected = await f.handlers.inspect(request());
+      if (fault === 'malformed') {
+        expect(inspected.status).toBe(503);
+        expect(await inspected.json()).toEqual({ code: 'unavailable' });
+      } else {
+        expect(inspected.status).toBe(202);
+        expect(await inspected.json()).toEqual({
+          status: 'pending',
+          operationId,
+          nextAction: 'inspect',
+        });
+      }
+      const replayed = await f.handlers.migrate(request());
+      expect(replayed.status).toBe(202);
+      expect(await replayed.json()).toEqual({
+        status: 'pending',
+        operationId,
+        nextAction: 'inspect',
+      });
+      expect(f.actions.filter((action) => action === 'claim')).toEqual([
+        'claim',
+      ]);
+      expect(f.admin.updateUserById).toHaveBeenCalledExactlyOnceWith(userId, {
+        email: tuple.destinationAddress,
+        email_confirm: true,
+      });
+    }
+  );
 });

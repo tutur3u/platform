@@ -167,4 +167,104 @@ describe('permission-authorized Web migration adapter', () => {
     ).toBe(400);
     expect(fetcher).not.toHaveBeenCalled();
   });
+  it.each(['wrong-user', 'revoked-after-ack', 'revoked-after-readback'])(
+    'withholds preparation acknowledgement for %s',
+    async (mode) => {
+      const { deps, fetcher, admin } = setup();
+      let authorized = true;
+      fetcher.mockImplementation(async (_url, init) => {
+        const action = JSON.parse(String(init?.body)).p_action;
+        if (action === 'prepare') {
+          if (mode === 'revoked-after-ack') authorized = false;
+          return Response.json({
+            prepared: true,
+            userId: mode === 'wrong-user' ? actorId : userId,
+            destinationAddress: body.destinationAddress,
+          });
+        }
+        authorized = false;
+        return Response.json({
+          authorized: true,
+          revision: 0,
+          immutableFingerprint: 'a'.repeat(64),
+          providerIdentityFingerprint: 'b'.repeat(64),
+          sourceVerified: true,
+          addressOwnership: 'same_identity',
+          record: null,
+        });
+      });
+      const handler = createEmployeeAddressMigrationHandler({
+        ...deps,
+        authorize: async () =>
+          authorized
+            ? { authorized: true, actorUserId: actorId }
+            : { authorized: false, status: 403 },
+      });
+      const response = await handler(request(), 'prepare');
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ code: 'forbidden' });
+      expect(fetcher).toHaveBeenCalledTimes(
+        mode === 'revoked-after-readback' ? 2 : 1
+      );
+      expect(admin).not.toHaveBeenCalled();
+    }
+  );
+  it.each([
+    { authorized: false },
+    { revision: 1 },
+    { sourceVerified: false },
+    { addressOwnership: 'conflict' },
+    {
+      record: {
+        binding: {
+          ...body,
+          actorId,
+          immutableFingerprint: 'a'.repeat(64),
+          providerIdentityFingerprint: 'b'.repeat(64),
+        },
+        phase: 'reserved',
+        attemptId: null,
+      },
+    },
+  ])('requires committed preparation readiness: %j', async (change) => {
+    const { handler, fetcher, admin } = setup();
+    fetcher
+      .mockResolvedValueOnce(
+        Response.json({
+          prepared: true,
+          userId,
+          destinationAddress: body.destinationAddress,
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          authorized: true,
+          revision: 0,
+          immutableFingerprint: 'a'.repeat(64),
+          providerIdentityFingerprint: 'b'.repeat(64),
+          sourceVerified: true,
+          addressOwnership: 'same_identity',
+          record: null,
+          ...change,
+        })
+      );
+    const response = await handler(request(), 'prepare');
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ code: 'unavailable' });
+    expect(
+      fetcher.mock.calls.map(([, init]) => JSON.parse(String(init?.body)))
+    ).toEqual([
+      {
+        p_action: 'prepare',
+        p_request: { ...body, actorId },
+        p_attempt_id: null,
+      },
+      {
+        p_action: 'inspect',
+        p_request: { ...body, actorId },
+        p_attempt_id: null,
+      },
+    ]);
+    expect(admin).not.toHaveBeenCalled();
+  });
 });

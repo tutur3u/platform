@@ -112,7 +112,7 @@ jobs:
           CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
         run: test "$CONTRACT_ENABLED" = true
       - name: Validate exact source selection
-        run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA)) process.exit(1)'
+        run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA) || (process.env.EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION === "true" && process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== process.env.EMPLOYEE_SCHEMA_CONTROL_SHA)) process.exit(1)'
       - name: Validate structured diagnostic selection
         if: inputs.structured_provenance == true && inputs.include_chat_initial_settings != true
         run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/main" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5c7c08e23a3d410bdbdc066f5c4dd2776fbeabd7") process.exit(1)'
@@ -205,6 +205,7 @@ jobs:
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify Google destination packet source
         if: inputs.include_address_migration == true
+        working-directory: source
         run: node --test apps/database/scripts/employee-google-destination-fixture.test.mjs
       - name: Verify employee public consumer proof gates
         run: node --test scripts/employee-public-consumer-qualification.test.mjs
