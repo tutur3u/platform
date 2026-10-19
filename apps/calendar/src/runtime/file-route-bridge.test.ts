@@ -18,7 +18,7 @@ describe('Calendar public Start route producer', () => {
     expect(source('src/router.tsx')).not.toContain('addChildren');
   });
   it('keeps the public root, index and splat topology and existing loader transports', () => {
-    const root = source('src/routes/__root__.tsx');
+    const root = source('src/routes/__root.tsx');
     const index = source('src/routes/index.tsx');
     const splat = source('src/routes/$.tsx');
     expect(root).toContain('createRootRoute(');
