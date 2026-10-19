@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.69.0](https://github.com/tutur3u/platform/compare/platform-v0.68.3...platform-v0.69.0) (2026-10-19)
+
+
+### Features
+
+* **infrastructure:** expose explicit mailbox preparation and recovery ([e83762d](https://github.com/tutur3u/platform/commit/e83762dff5565b5b260d1a6f5cca184360a19a2e))
+* **infrastructure:** prepare mailboxes and recover migration operations ([#6349](https://github.com/tutur3u/platform/issues/6349)) ([f8e7c99](https://github.com/tutur3u/platform/commit/f8e7c9921f48298e8e07a5776545299e8feaf002))
+* **tooling:** validate bounded harness experiments ([00f01e7](https://github.com/tutur3u/platform/commit/00f01e75bf9974104159ae3c759e337a0b2b02ce)) ([#6344](https://github.com/tutur3u/platform/issues/6344)) ([6353a26](https://github.com/tutur3u/platform/commit/6353a264d265668a01d88d664ab0dc30dc86b73f))
+
+
+### Bug Fixes
+
+* **auth:** repair verified Google employee address migration ([d65df55](https://github.com/tutur3u/platform/commit/d65df557ee7a3217570aeb8982181b302a9d8b2e)) ([#6348](https://github.com/tutur3u/platform/issues/6348)) ([066114d](https://github.com/tutur3u/platform/commit/066114d2cfed401f08b55165f904681912a2a902))
+* **database:** bind qualification checks to installed source ([e054bb3](https://github.com/tutur3u/platform/commit/e054bb31dfa343c7387e3f9bbe17437450a13ef0))
+* **database:** repair cold migration qualification ([a885aef](https://github.com/tutur3u/platform/commit/a885aef776965bf92ff6827b2cffd4929ee10661))
+* **infrastructure:** canonicalize recovered migration UUIDs ([5999dff](https://github.com/tutur3u/platform/commit/5999dff9563fe5771b2402b4c685e5fe67fe8c3f))
+* **infrastructure:** enable authorized employee create and restore ([3d93721](https://github.com/tutur3u/platform/commit/3d937217459a294e396b89dc7bc3b4c16c34c853)) ([#6345](https://github.com/tutur3u/platform/issues/6345)) ([080eb05](https://github.com/tutur3u/platform/commit/080eb05d6c4bb523ac1d51e004b37432ed8859ea))
+* **infrastructure:** preserve submitted account password handoffs ([380637b](https://github.com/tutur3u/platform/commit/380637b39958e088ef955182dcb0dedd9801b87e))
+* **infrastructure:** preserve submitted passwords in admin reset handoffs ([#6346](https://github.com/tutur3u/platform/issues/6346)) ([d34013a](https://github.com/tutur3u/platform/commit/d34013abee5eb535c7ea0f8ec7b62240c8a56451))
+
 ## [0.68.3](https://github.com/tutur3u/platform/compare/platform-v0.68.2...platform-v0.68.3) (2026-10-18)
 
 

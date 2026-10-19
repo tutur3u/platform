@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.52.0](https://github.com/tutur3u/platform/compare/internal-api-v0.51.0...internal-api-v0.52.0) (2026-10-19)
+
+
+### Features
+
+* **infrastructure:** expose explicit mailbox preparation and recovery ([e83762d](https://github.com/tutur3u/platform/commit/e83762dff5565b5b260d1a6f5cca184360a19a2e))
+* **infrastructure:** prepare mailboxes and recover migration operations ([#6349](https://github.com/tutur3u/platform/issues/6349)) ([f8e7c99](https://github.com/tutur3u/platform/commit/f8e7c9921f48298e8e07a5776545299e8feaf002))
+
 ## [0.51.0](https://github.com/tutur3u/platform/compare/internal-api-v0.50.0...internal-api-v0.51.0) (2026-10-17)
 
 
