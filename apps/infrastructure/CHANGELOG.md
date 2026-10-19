@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/infra-v0.34.0...infra-v0.35.0) (2026-10-19)
+
+
+### Features
+
+* **infrastructure:** expose explicit mailbox preparation and recovery ([e83762d](https://github.com/tutur3u/platform/commit/e83762dff5565b5b260d1a6f5cca184360a19a2e))
+* **infrastructure:** prepare mailboxes and recover migration operations ([#6349](https://github.com/tutur3u/platform/issues/6349)) ([f8e7c99](https://github.com/tutur3u/platform/commit/f8e7c9921f48298e8e07a5776545299e8feaf002))
+
+
+### Bug Fixes
+
+* **auth:** repair verified Google employee address migration ([d65df55](https://github.com/tutur3u/platform/commit/d65df557ee7a3217570aeb8982181b302a9d8b2e)) ([#6348](https://github.com/tutur3u/platform/issues/6348)) ([066114d](https://github.com/tutur3u/platform/commit/066114d2cfed401f08b55165f904681912a2a902))
+* **infrastructure:** canonicalize recovered migration UUIDs ([5999dff](https://github.com/tutur3u/platform/commit/5999dff9563fe5771b2402b4c685e5fe67fe8c3f))
+* **infrastructure:** preserve submitted account password handoffs ([380637b](https://github.com/tutur3u/platform/commit/380637b39958e088ef955182dcb0dedd9801b87e))
+* **infrastructure:** preserve submitted passwords in admin reset handoffs ([#6346](https://github.com/tutur3u/platform/issues/6346)) ([d34013a](https://github.com/tutur3u/platform/commit/d34013abee5eb535c7ea0f8ec7b62240c8a56451))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/infra-v0.33.0...infra-v0.34.0) (2026-10-17)
 
 

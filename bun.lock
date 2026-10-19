@@ -398,7 +398,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.41.2",
+      "version": "1.41.3",
       "devDependencies": {
         "@electric-sql/pglite": "0.5.8",
         "@electric-sql/pglite-pgtap": "0.0.9",
@@ -734,7 +734,7 @@
     },
     "apps/infrastructure": {
       "name": "@tuturuuu/infrastructure",
-      "version": "0.34.0",
+      "version": "0.35.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@aws-sdk/client-s3": "3.1131.0",
@@ -2305,7 +2305,7 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.51.0",
+      "version": "0.52.0",
       "dependencies": {
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
@@ -3092,7 +3092,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.36.0",
+      "version": "0.36.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@js-temporal/polyfill": "^0.5.1",

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.41.3](https://github.com/tutur3u/platform/compare/database-v1.41.2...database-v1.41.3) (2026-10-19)
+
+
+### Bug Fixes
+
+* **auth:** repair verified Google employee address migration ([d65df55](https://github.com/tutur3u/platform/commit/d65df557ee7a3217570aeb8982181b302a9d8b2e)) ([#6348](https://github.com/tutur3u/platform/issues/6348)) ([066114d](https://github.com/tutur3u/platform/commit/066114d2cfed401f08b55165f904681912a2a902))
+* **database:** bind qualification checks to installed source ([e054bb3](https://github.com/tutur3u/platform/commit/e054bb31dfa343c7387e3f9bbe17437450a13ef0))
+* **database:** repair cold migration qualification ([a885aef](https://github.com/tutur3u/platform/commit/a885aef776965bf92ff6827b2cffd4929ee10661))
+
 ## [1.41.2](https://github.com/tutur3u/platform/compare/database-v1.41.1...database-v1.41.2) (2026-10-18)
 
 

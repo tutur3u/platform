@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.36.1](https://github.com/tutur3u/platform/compare/utils-v0.36.0...utils-v0.36.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **auth:** repair verified Google employee address migration ([d65df55](https://github.com/tutur3u/platform/commit/d65df557ee7a3217570aeb8982181b302a9d8b2e)) ([#6348](https://github.com/tutur3u/platform/issues/6348)) ([066114d](https://github.com/tutur3u/platform/commit/066114d2cfed401f08b55165f904681912a2a902))
+* **database:** bind qualification checks to installed source ([e054bb3](https://github.com/tutur3u/platform/commit/e054bb31dfa343c7387e3f9bbe17437450a13ef0))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/utils-v0.35.0...utils-v0.36.0) (2026-10-17)
 
 
