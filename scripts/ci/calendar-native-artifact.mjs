@@ -12,7 +12,27 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 
+import {
+  captureNormalization,
+  checkNormalization,
+  NORMALIZATION_KEYS,
+} from './calendar-emitted-defaults.mjs';
+
 export const PRIVATE_CANARY = 'calendar_ci_private_canary_never_ship_349';
+const EMPTY_RESOURCES = {
+  ...Object.fromEntries(
+    `workflows migrations kv_namespaces send_email connect
+    r2_buckets d1_databases vectorize ai_search_namespaces ai_search agent_memory
+    hyperdrive services analytics_engine_datasets dispatch_namespaces
+    mtls_certificates pipelines k2 secrets_store_secrets artifacts unsafe_hello_world
+    flagship worker_loaders ratelimits vpc_services vpc_networks`
+      .split(/\s+/)
+      .map((key) => [key, []])
+  ),
+  triggers: {},
+  exports: {},
+  cloudchamber: {},
+};
 const empty = (v) =>
   v === undefined ||
   (Array.isArray(v)
@@ -60,7 +80,22 @@ function deployPointer(app) {
   // Void saves unchanged bytes; configPath retains the native directory base.
   return { path, base: dirname(native) };
 }
-export function validateOutput(directory) {
+export function validateOutput(directory, expectedSha) {
+  const app = realpathSync(directory);
+  const sealPath = resolve(app, 'calendar-artifact.json');
+  try {
+    lstatSync(sealPath);
+  } catch (error) {
+    if (error.code === 'ENOENT') return validateArtifact(app);
+    throw error;
+  }
+  assert.equal(realpathSync(sealPath), sealPath, 'seal symlink forbidden');
+  assert.ok(lstatSync(sealPath).isFile(), 'seal must be a regular file');
+  const receipt = json(sealPath);
+  verify(app, receipt, expectedSha ?? receipt.sha);
+  return validateArtifact(app, receipt.normalization);
+}
+function validateArtifact(directory, sealedNormalization) {
   const app = realpathSync(directory),
     dist = resolve(app, 'dist');
   const { path: pointer, base: pointerBase } = deployPointer(app);
@@ -76,6 +111,17 @@ export function validateOutput(directory) {
   );
   const configPath = local(dist, pointerBase, redirect.configPath),
     config = json(configPath);
+  const hasNormalization = NORMALIZATION_KEYS.some((key) =>
+    Object.hasOwn(config, key)
+  );
+  const normalization = hasNormalization
+    ? (sealedNormalization ?? captureNormalization(app, config))
+    : undefined;
+  assert.ok(
+    hasNormalization || sealedNormalization === undefined,
+    'unexpected normalization provenance'
+  );
+  if (normalization) checkNormalization(config, normalization);
   // Proposed source identity only. This does not establish an account or hosted Worker.
   assert.equal(config.name, 'tuturuuu-calendar');
   assert.equal(config.compatibility_date, '2026-10-19');
@@ -108,12 +154,18 @@ export function validateOutput(directory) {
     'env',
     'send_metrics',
     '$schema',
+    ...NORMALIZATION_KEYS,
+    ...Object.keys(EMPTY_RESOURCES),
   ]);
-  for (const [key, value] of Object.entries(config))
-    assert.ok(
-      allowed.has(key) || empty(value),
-      `unqualified config field: ${key}`
-    );
+  for (const key of Object.keys(config))
+    assert.ok(allowed.has(key), `unqualified config field: ${key}`);
+  for (const [key, expected] of Object.entries(EMPTY_RESOURCES))
+    if (Object.hasOwn(config, key))
+      assert.deepEqual(
+        config[key],
+        expected,
+        `resource registration forbidden: ${key}`
+      );
   assert.ok(empty(config.env), 'named environments forbidden');
   assert.ok(empty(config.vars), 'emitted vars require explicit review');
   assert.deepEqual(Object.keys(config.assets).sort(), [
@@ -144,7 +196,7 @@ export function validateOutput(directory) {
     lstatSync(resolve(assets, 'serwist/sw.js')).isFile(),
     'exact offline URL asset missing'
   );
-  return { app, configPath, config, main, assets };
+  return { app, configPath, config, main, assets, normalization };
 }
 function hashes(app) {
   const files = {};
@@ -180,11 +232,15 @@ export function requireSourceSha(sha) {
   assert.match(sha ?? '', /^[a-f0-9]{40}$/, 'exact source SHA required');
   return sha;
 }
-export function manifest(directory, sha) {
+function createManifest(directory, sha, sealedNormalization) {
   requireSourceSha(sha);
-  const { app, configPath, main } = validateOutput(directory);
+  const { app, configPath, main, normalization } = validateArtifact(
+    directory,
+    sealedNormalization
+  );
   return {
     schema: 1,
+    ...(normalization ? { normalization } : {}),
     app: 'calendar',
     sha,
     bun: '1.4.3',
@@ -194,9 +250,15 @@ export function manifest(directory, sha) {
     files: hashes(app),
   };
 }
+export function manifest(directory, sha) {
+  return createManifest(directory, sha);
+}
 export function verify(directory, receipt, sha) {
   assert.ok(
-    isDeepStrictEqual(manifest(directory, sha), receipt),
+    isDeepStrictEqual(
+      createManifest(directory, sha, receipt.normalization),
+      receipt
+    ),
     'artifact identity or bytes changed'
   );
 }
@@ -210,7 +272,7 @@ if (
     writeFileSync(receipt, `${JSON.stringify(manifest(app, sha), null, 2)}\n`);
   else if (mode === 'verify') verify(app, json(receipt), sha);
   else if (mode === 'config') {
-    const { configPath } = validateOutput(app);
+    const { configPath } = validateOutput(app, sha);
     assert.ok(process.env.GITHUB_OUTPUT, 'GITHUB_OUTPUT required');
     appendFileSync(process.env.GITHUB_OUTPUT, `config=${configPath}\n`);
   } else throw new Error('Expected seal, verify or config');

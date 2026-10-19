@@ -12,6 +12,7 @@ on:
       - 'package.json'
       - 'patches/**'
       - 'scripts/ci/calendar-native-*'
+      - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
@@ -29,6 +30,7 @@ on:
       - 'package.json'
       - 'patches/**'
       - 'scripts/ci/calendar-native-*'
+      - 'scripts/ci/calendar-emitted-defaults*'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
       - 'tuturuuu.ci.ts'
@@ -114,7 +116,7 @@ jobs:
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test artifact boundary regressions
-        run: node --test scripts/ci/calendar-native-artifact.test.mjs
+        run: node --test scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs
       - name: Build shared dependencies without a legacy Calendar build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:

@@ -38,18 +38,18 @@ and type-check Calendar plus affected Web/Tasks consumers. The Tasks app current
 has no owning test script; shared Tasks tests do not establish a Tasks app suite.
 Root lint and the existing affected-app workflows remain required exact-head gates.
 
-The Calendar pointer must contain `configPath` and an empty `auxiliaryWorkers`
-array. `scripts/ci/calendar-native-artifact.mjs` rejects escaping/symlink paths,
-legacy Next/OpenNext entries, unexpected hosting/resources/build hooks, private
-environment files and a private build canary in client output. It seals the exact
-SHA, emitted main/config, all `dist` bytes, pointer and generated declarations.
-The second job restores the same-run artifact without rebuilding and verifies
-that seal before and after dry-run/runtime checks. Both jobs unconditionally run
-`node --test scripts/ci/calendar-native-worker.runtime.mjs` and, from Calendar,
-`node --test src/runtime/offline-artifact.runtime.mjs`. Artifact suites remain
-outside source-only discovery; boundary regressions are in
-`scripts/ci/calendar-native-artifact.test.mjs`. No artifact or runtime step may
-be skipped or continued on error and reported as acceptance.
+The Calendar pointer requires `configPath` and empty `auxiliaryWorkers`. `scripts/ci/calendar-native-artifact.mjs`
+rejects escaping/symlink paths, legacy output, unexpected resources/hooks, private environment files and client
+canaries. Live qualification checks exact defaults and materialized input against pinned supplier/parser profiles. The
+seal retains that input relationship as historical metadata; restore never opens or rebases the old absolute path.
+Retained-state provenance stays unknown; raw config bytes stay unchanged.
+
+The seal binds SHA, emitted main/config, all `dist` bytes, pointer and generated declarations. The second job restores
+without rebuilding and checks the seal before/after dry-run/runtime. Both jobs run `node --test
+scripts/ci/calendar-native-worker.runtime.mjs` and, from Calendar, `node --test
+src/runtime/offline-artifact.runtime.mjs`. Artifact suites stay outside source-only discovery. Boundary regressions:
+`scripts/ci/calendar-native-artifact.test.mjs` and `scripts/ci/calendar-emitted-defaults.test.mjs`. Skips and
+continued-on-error steps never count as acceptance.
 
 The local Worker suite resolves Wrangler/Miniflare from Calendar's own dependency
 links, uses the discovered emitted main/config and denies outbound network calls.
