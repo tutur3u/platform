@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import * as publicApi from './index';
@@ -31,7 +32,7 @@ function closureErrors(injected?: string) {
     )
       errors.push(`host global: ${fileURLToPath(file)}`);
   }
-  visit(new URL('./server.ts', import.meta.url));
+  visit(pathToFileURL(resolve(__dirname, 'server.ts')));
   return errors;
 }
 
@@ -44,7 +45,10 @@ describe('portable collaboration server entry', () => {
       .object({ exports: z.record(z.string(), z.string()) })
       .parse(
         JSON.parse(
-          readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
+          readFileSync(
+            pathToFileURL(resolve(__dirname, '../../package.json')),
+            'utf8'
+          )
         )
       );
     expect(pkg.exports['./collaboration/server']).toBe(
@@ -55,7 +59,7 @@ describe('portable collaboration server entry', () => {
   it('keeps the complete local server import closure free of browser/framework hosts', () => {
     expect(closureErrors()).toEqual([]);
     const source = readFileSync(
-      new URL('./server.ts', import.meta.url),
+      pathToFileURL(resolve(__dirname, 'server.ts')),
       'utf8'
     );
     expect(
