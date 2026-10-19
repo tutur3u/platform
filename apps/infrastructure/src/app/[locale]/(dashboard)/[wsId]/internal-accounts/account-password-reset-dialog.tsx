@@ -39,6 +39,7 @@ export function AccountPasswordResetDialog({ onOpenChange, open }: Props) {
   const canSubmit =
     normalizedEmail.includes('@') &&
     newPassword.length >= MIN_PASSWORD_LENGTH &&
+    newPassword.length <= 72 &&
     !isSubmitting;
 
   function handleOpenChange(nextOpen: boolean) {
@@ -74,7 +75,12 @@ export function AccountPasswordResetDialog({ onOpenChange, open }: Props) {
   });
 
   return (
-    <Dialog onOpenChange={handleOpenChange} open={open}>
+    <Dialog
+      onOpenChange={(nextOpen) => {
+        if (!isSubmitting) handleOpenChange(nextOpen);
+      }}
+      open={open}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('password_recovery.dialog_title')}</DialogTitle>
@@ -107,7 +113,7 @@ export function AccountPasswordResetDialog({ onOpenChange, open }: Props) {
             </div>
           </div>
         ) : (
-          <div className="space-y-4 py-2">
+          <fieldset className="space-y-4 py-2" disabled={isSubmitting}>
             <div className="space-y-2">
               <Label htmlFor="platform-account-email">
                 {t('password_recovery.email_label')}
@@ -130,7 +136,7 @@ export function AccountPasswordResetDialog({ onOpenChange, open }: Props) {
               onChange={setNewPassword}
               value={newPassword}
             />
-          </div>
+          </fieldset>
         )}
 
         <DialogFooter>

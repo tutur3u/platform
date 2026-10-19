@@ -43,7 +43,10 @@ export function InternalAccountActionDialog({
   const t = useTranslations('internal-accounts');
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [passwordResetComplete, setPasswordResetComplete] = useState(false);
+  const [passwordResetHandoff, setPasswordResetHandoff] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { copyToClipboard, isCopied } = useCopyToClipboard({ timeout: 2000 });
 
@@ -62,7 +65,7 @@ export function InternalAccountActionDialog({
     if (!nextOpen) {
       setConfirmationEmail('');
       setNewPassword('');
-      setPasswordResetComplete(false);
+      setPasswordResetHandoff(null);
     }
     onOpenChange(nextOpen);
   }
@@ -70,6 +73,7 @@ export function InternalAccountActionDialog({
   async function submit() {
     if (!canSubmit) return;
     setIsSubmitting(true);
+    const submittedHandoff = { email: account.email, password: newPassword };
 
     try {
       await onConfirm(
@@ -77,12 +81,12 @@ export function InternalAccountActionDialog({
           ? {
               action: selectedAction,
               confirmationEmail,
-              newPassword,
+              newPassword: submittedHandoff.password,
             }
           : { action: selectedAction, confirmationEmail }
       );
       if (selectedAction === 'reset_password') {
-        setPasswordResetComplete(true);
+        setPasswordResetHandoff(submittedHandoff);
       } else {
         handleOpenChange(false);
       }
@@ -93,10 +97,9 @@ export function InternalAccountActionDialog({
     }
   }
 
-  const handoffMessage = t('dialog.reset_password.handoff_message', {
-    email: account.email,
-    password: newPassword,
-  });
+  const handoffMessage = passwordResetHandoff
+    ? t('dialog.reset_password.handoff_message', passwordResetHandoff)
+    : '';
 
   return (
     <Dialog
@@ -115,7 +118,7 @@ export function InternalAccountActionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {passwordResetComplete ? (
+        {passwordResetHandoff ? (
           <div className="space-y-4 py-2">
             <div className="rounded-lg border bg-muted/40 p-4">
               <p className="font-medium text-sm">
@@ -138,7 +141,7 @@ export function InternalAccountActionDialog({
             </div>
           </div>
         ) : (
-          <div className="space-y-4 py-2">
+          <fieldset className="space-y-4 py-2" disabled={isSubmitting}>
             {selectedAction === 'reset_password' ? (
               <TemporaryPasswordField
                 id="internal-account-new-password"
@@ -164,11 +167,11 @@ export function InternalAccountActionDialog({
                 {t('dialog.confirmation_help', { email: account.email })}
               </p>
             </div>
-          </div>
+          </fieldset>
         )}
 
         <DialogFooter>
-          {passwordResetComplete ? (
+          {passwordResetHandoff ? (
             <>
               <Button
                 onClick={() => void copyToClipboard(handoffMessage)}

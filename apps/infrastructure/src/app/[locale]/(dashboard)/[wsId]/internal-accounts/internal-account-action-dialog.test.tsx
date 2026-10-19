@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { InternalAccountActionDialog } from './internal-account-action-dialog';
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations:
+    () => (key: string, values?: { email: string; password: string }) =>
+      key === 'dialog.reset_password.handoff_message' && values
+        ? `${values.email}:${values.password}`
+        : key,
 }));
 
 const account: InternalAccount = {
@@ -84,4 +88,60 @@ describe('authenticator reset confirmation', () => {
     await waitFor(() => expect(submit).not.toBeDisabled());
     expect(onOpenChange).not.toHaveBeenCalled();
   });
+
+  it.each(['type', 'generate'] as const)(
+    'hands off the actual submitted credential after pending %s attempts',
+    async (attempt) => {
+      const submittedPassword = 'Synthetic-password-A!';
+      let finish: () => void = () => {
+        throw new Error('Request not pending');
+      };
+      const onConfirm = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve;
+          })
+      );
+      render(
+        <InternalAccountActionDialog
+          account={account}
+          action="reset_password"
+          open
+          onConfirm={onConfirm}
+          onOpenChange={vi.fn()}
+        />
+      );
+      const confirmation = screen.getByLabelText('dialog.confirmation_label');
+      const password = screen.getByLabelText('new_password');
+      const generate = screen.getByRole('button', {
+        name: 'generate_password',
+      });
+      fireEvent.change(confirmation, { target: { value: account.email } });
+      fireEvent.change(password, { target: { value: submittedPassword } });
+      fireEvent.click(screen.getByTestId('internal-account-confirm-action'));
+      expect(onConfirm).toHaveBeenCalledExactlyOnceWith({
+        action: 'reset_password',
+        confirmationEmail: account.email,
+        newPassword: submittedPassword,
+      });
+      const fieldsWereDisabled = [confirmation, password, generate].map(
+        (control) => control.matches(':disabled')
+      );
+      if (attempt === 'type') {
+        fireEvent.change(password, {
+          target: { value: 'Synthetic-password-B!' },
+        });
+      } else {
+        fireEvent.click(generate);
+      }
+      finish();
+      await waitFor(() =>
+        expect(
+          screen.getByLabelText('dialog.reset_password.handoff_label')
+        ).toHaveValue(`${account.email}:${submittedPassword}`)
+      );
+      expect(fieldsWereDisabled).toEqual([true, true, true]);
+      expect(onConfirm).toHaveBeenCalledTimes(1);
+    }
+  );
 });
