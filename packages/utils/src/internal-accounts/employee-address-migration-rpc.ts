@@ -37,7 +37,9 @@ export function createEmployeeAddressMigrationJournal(input: {
   request: AddressMigrationRequest;
   authorize(actorId: string): Promise<boolean>;
   fetch?: typeof fetch;
-}): AddressMigrationJournal {
+}): AddressMigrationJournal & {
+  prepare(request: AddressMigrationRequest): Promise<unknown>;
+} {
   const request = AddressMigrationRequest.parse(input.request);
   const origin = new URL(input.url);
   if (
@@ -68,11 +70,11 @@ export function createEmployeeAddressMigrationJournal(input: {
     return parsed;
   }
   async function call(
-    action: 'inspect' | 'reserve' | 'claim' | 'complete',
+    action: 'inspect' | 'prepare' | 'reserve' | 'claim' | 'complete',
     value: unknown,
     attemptId?: string
   ) {
-    const parsed = bound(value, action !== 'inspect');
+    const parsed = bound(value, action !== 'inspect' && action !== 'prepare');
     if (!(await input.authorize(request.actorId)))
       throw new Error('Migration forbidden');
     const response = await fetcher(
@@ -105,6 +107,7 @@ export function createEmployeeAddressMigrationJournal(input: {
     return json(response);
   }
   return {
+    prepare: (value) => call('prepare', value),
     async inspect(value) {
       const observed = MigrationInspection.parse(await call('inspect', value));
       if (

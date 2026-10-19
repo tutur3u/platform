@@ -15,7 +15,9 @@ const Identity = IdentityKey.extend({
     .object({
       email: z.string().optional(),
       email_verified: z.boolean().optional(),
+      sub: z.string().optional(),
     })
+    .catchall(z.unknown())
     .optional(),
 });
 const Identities = z
@@ -57,7 +59,7 @@ export type EmployeeAddressMigrationAuthAdmin = {
   getUserById(userId: string): Promise<unknown>;
   updateUserById(
     userId: string,
-    attributes: { email: string }
+    attributes: { email: string; email_confirm?: true }
   ): Promise<unknown>;
 };
 
@@ -116,6 +118,7 @@ export function createEmployeeAddressMigrationProvider(options: {
   const authorize = options.authorize;
   let mutationEntered = false;
   let initialFingerprint: string | undefined;
+  let initialGoogleIdentity: string | undefined;
 
   async function requireAuthorization(action: 'read' | 'changeEmail') {
     if ((await authorize(Object.freeze({ ...binding, action }))) !== true)
@@ -142,6 +145,23 @@ export function createEmployeeAddressMigrationProvider(options: {
     const emailIdentities = user.identities.filter(
       (identity) => identity.provider === 'email'
     );
+    const google = user.identities.find(
+      (identity) => identity.provider === 'google'
+    );
+    const verifiedGoogleDestination =
+      google !== undefined &&
+      google.identity_data?.email === binding.destinationAddress &&
+      google.identity_data.email_verified === true &&
+      google.identity_data.sub === google.id;
+    const googleSource =
+      user.email === binding.sourceAddress &&
+      user.identities.length === 1 &&
+      verifiedGoogleDestination;
+    if (googleSource && google) {
+      const snapshot = JSON.stringify(google);
+      initialGoogleIdentity ??= snapshot;
+      if (initialGoogleIdentity !== snapshot) notReady();
+    }
     // GoTrue admin {email} can preserve email_confirmed_at while writing the
     // identity's email_verified=false. That timestamp alone is insufficient.
     const confirmedAt = user.email_confirmed_at
@@ -150,13 +170,14 @@ export function createEmployeeAddressMigrationProvider(options: {
     const emailVerified =
       confirmedAt <= Date.now() &&
       !user.new_email &&
-      emailIdentities.length === 1 &&
-      emailIdentities.every(
-        (identity) =>
-          identity.id === user.id &&
-          identity.identity_data?.email === user.email &&
-          identity.identity_data.email_verified === true
-      );
+      (googleSource ||
+        (emailIdentities.length === 1 &&
+          emailIdentities.every(
+            (identity) =>
+              identity.id === user.id &&
+              identity.identity_data?.email === user.email &&
+              identity.identity_data.email_verified === true
+          )));
     const active =
       !user.deleted_at &&
       !user.is_anonymous &&
@@ -196,6 +217,7 @@ export function createEmployeeAddressMigrationProvider(options: {
       WriteResponse.parse(
         await admin.updateUserById(userId, {
           email: binding.destinationAddress,
+          ...(initialGoogleIdentity ? { email_confirm: true as const } : {}),
         })
       );
     },

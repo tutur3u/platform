@@ -610,10 +610,14 @@ test('migration packet is opt-in and strict in both incompatible profiles', () =
     const base = selectSchemaPackets(journal);
     const selected = selectSchemaPackets(journal, false, true);
     const all = selected.map(([file, assertions]) => ({ file, assertions }));
-    assert.deepEqual(selected.slice(0, -1), base);
+    assert.deepEqual(selected.slice(0, -2), base);
+    assert.deepEqual(selected.at(-2), [
+      'employee-google-destination-migration.sql',
+      30,
+    ]);
     assert.deepEqual(selected.at(-1), ['employee-address-migration.sql', 10]);
     for (const [, count] of selected) assertPacketTap(tap(count), count);
-    const expected = journal ? 311 : 182;
+    const expected = journal ? 341 : 212;
     const complete = receipt({ journal, addressMigration: true, packets: all });
     assert.equal(complete.schemaQualified, true);
     assert.equal(complete.assertions, expected);

@@ -11,14 +11,18 @@ export function createEmployeeAddressMigrationRequestHandlers(
     'trustedOrigin'
   >
 ) {
-  function handler(action: 'inspect' | 'migrate') {
+  function handler(action: 'inspect' | 'migrate' | 'prepare') {
     return (request: Request) =>
       createEmployeeAddressMigrationHandler({
         ...deps,
         trustedOrigin: employeeRequestOrigin(request),
       })(request, action);
   }
-  return { inspect: handler('inspect'), migrate: handler('migrate') };
+  return {
+    inspect: handler('inspect'),
+    migrate: handler('migrate'),
+    prepare: handler('prepare'),
+  };
 }
 
 export const employeeAddressMigrationHandlers =
@@ -29,6 +33,4 @@ export const employeeAddressMigrationHandlers =
       return (await createAdminClient({ noCookie: true })).auth.admin;
     },
     newAttemptId: () => crypto.randomUUID(),
-    enabled: () =>
-      process.env.EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED === 'true',
   });

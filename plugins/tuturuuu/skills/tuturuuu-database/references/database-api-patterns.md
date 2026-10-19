@@ -138,12 +138,13 @@ after a snapshot identity change; requalify the new exact source.
 
 ### Legacy address migration suppliers
 
-The inactive migration supplier uses a separate protected journal; do not reuse
+The migration supplier uses a separate protected journal; do not reuse
 CREATE/RESTORE receipts. Its PostgreSQL fixture runner verifies the new migration
 against reduced prerequisites, not the full schema or GoTrue. GoTrue `identity_id`
 is SQL `auth.identities.id`, while JSON `id` is provider-specific. Verify identity
 email state independently: admin `{email}` can leave `email_verified=false` despite
-a confirmed timestamp. Retain pending inspection; never supply `email_confirm`.
+a confirmed timestamp. Retain pending inspection; the email-v1 path never supplies
+`email_confirm`.
 Pinned GoTrue v2.197.0 admin confirmation and magic-link recovery do not set the
 email identity flag. For a disposable positive fixture, create an unconfirmed
 source and use supported signup link/OTP verification, which sets the matching
@@ -156,6 +157,17 @@ migration packet through the opt-in trusted-control schema selection; preserve
 foundation172, journal301, HTTP29 and separately admitted RESTORE66 receipts.
 See `apps/docs/build/development-tools/employee-address-migration.mdx` for the
 canonical fingerprint, lock scope, mail prerequisites and remaining runtime gates.
+The bounded Google-destination path is a separate contract: exactly one original
+Google identity already verifies the exact canonical destination and stable
+provider ID/subject. Its explicit mailbox preparation cannot adopt owned,
+quarantined, archived, populated or shared rows, reset any operation, or mutate
+Auth. Snapshot only after committed ownership readback. One admin
+`{ email: destination, email_confirm: true }` update, backed only by the exact
+verified Google destination claim, may add one verified email identity while
+preserving the complete Google identity; retain distinct actual before/after hashes
+and a durable transition receipt. Timestamp fallback or treating those hashes as equal is not
+qualification. Its separate 30-case rollback packet and SQL-seeded real-GoTrue
+mode do not replace full schema, external Google or hosted mailbox evidence.
 
 ## Employee RESTORE transport qualification
 
@@ -262,3 +274,16 @@ Emitted public-package acceptance remains false/separate. Checked-in-schema comp
 smoke validates the fixture only; it is not same-database generation/catalog evidence.
 See [delivery evidence](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence)
 and the root-discovered `scripts/employee-public-consumer-qualification.test.mjs`.
+
+
+For the Google-destination provider qualification, require a valid disposable
+sign-in and nonempty persisted session/refresh-token baselines. Compare complete
+rows and run deletion/mutation controls through the actual preservation assertion;
+empty-array equality proves no session preservation. The separately opt-in
+Google CI hook requires the same published source/control H and address-migration
+selection, a real Linux Docker daemon, bounded pinned-image pulls, one provider
+process, and durable run-bound primary/cleanup results. Qualification inputs are
+CI controls, not runtime activation gates: the migration API uses current root
+permission/configuration/readiness with no optional environment flag. The selected
+30-case packet fences a real FK-writer table lock on a separate disposable database
+connection and verifies unchanged state and cleanup; it does not access production.

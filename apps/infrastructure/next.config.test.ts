@@ -163,7 +163,7 @@ describe('employee routing with installed Next matchers', () => {
     );
   });
 
-  it.each(['inspect', 'migrate'])(
+  it.each(['inspect', 'migrate', 'prepare'])(
     'preserves the address migration %s fallback',
     async (action) => {
       const pathname = `${accountsPath}/address-migrations/${action}`;

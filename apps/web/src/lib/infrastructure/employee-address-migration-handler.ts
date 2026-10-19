@@ -18,7 +18,7 @@ const Body = z
   .refine((value) => value.sourceAddress.endsWith('@xwf.tuturuuu.com'));
 const headers = { 'Cache-Control': 'private, no-store, max-age=0' };
 
-/** Request-scoped adapter; the runtime gate defaults off independently of CREATE/RESTORE. */
+/** Request-scoped adapter with fresh root administrator authorization. */
 export function createEmployeeAddressMigrationHandler(deps: {
   authorize(
     request: Request
@@ -26,7 +26,6 @@ export function createEmployeeAddressMigrationHandler(deps: {
     | { authorized: true; actorUserId: string }
     | { authorized: false; status: 401 | 403 | 503 }
   >;
-  enabled(): boolean;
   trustedOrigin: string;
   configuration(): { url: string; key: string };
   admin(): Promise<
@@ -35,11 +34,13 @@ export function createEmployeeAddressMigrationHandler(deps: {
   newAttemptId(): string;
   fetch?: typeof fetch;
 }) {
-  return async (request: Request, action: 'migrate' | 'inspect') => {
+  return async (
+    request: Request,
+    action: 'migrate' | 'inspect' | 'prepare'
+  ) => {
     function result(body: object, status: number) {
       return Response.json(body, { status, headers });
     }
-    if (!deps.enabled()) return result({ code: 'unavailable' }, 503);
     if (request.method !== 'POST')
       return result({ code: 'method_not_allowed' }, 405);
     const credential = request.headers.get('authorization');
@@ -106,17 +107,47 @@ export function createEmployeeAddressMigrationHandler(deps: {
       if (!validated.success) return result({ code: 'invalid_input' }, 400);
       const tuple = validated.data;
       async function authorize(actorId: string) {
-        if (!deps.enabled() || actorId !== actorUserId) return false;
+        if (actorId !== actorUserId) return false;
         const current = await deps.authorize(request);
         return current.authorized && current.actorUserId === actorUserId;
       }
+      const journal = createEmployeeAddressMigrationJournal({
+        ...deps.configuration(),
+        request: tuple,
+        authorize,
+        fetch: deps.fetch,
+      });
+      if (action === 'prepare') {
+        const receipt = z
+          .strictObject({
+            prepared: z.literal(true),
+            userId: AddressMigrationRequest.shape.userId,
+            destinationAddress: z.literal(tuple.destinationAddress),
+          })
+          .parse(await journal.prepare(tuple));
+        if (
+          receipt.userId !== tuple.userId ||
+          !(await authorize(tuple.actorId))
+        )
+          return result({ code: 'forbidden' }, 403);
+        // A preparation acknowledgement never substitutes for committed readback.
+        const observation = MigrationInspection.parse(
+          await journal.inspect(tuple)
+        );
+        if (
+          !observation.authorized ||
+          observation.revision !== tuple.expectedRevision ||
+          !observation.sourceVerified ||
+          observation.record !== null ||
+          !['available', 'same_identity'].includes(observation.addressOwnership)
+        )
+          return result({ code: 'unavailable' }, 503);
+        if (!(await authorize(tuple.actorId)))
+          return result({ code: 'forbidden' }, 403);
+        return result(receipt, 200);
+      }
       const ports: AddressMigrationPorts = {
-        journal: createEmployeeAddressMigrationJournal({
-          ...deps.configuration(),
-          request: tuple,
-          authorize,
-          fetch: deps.fetch,
-        }),
+        journal,
         provider: createEmployeeAddressMigrationProvider({
           admin: await deps.admin(),
           binding: {

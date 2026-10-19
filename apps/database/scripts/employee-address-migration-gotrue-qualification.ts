@@ -8,12 +8,16 @@ import { z } from 'zod';
 import { migrateEmployeeAddress } from '../../../packages/utils/src/internal-accounts/employee-address-migration';
 import type { MigrationRecord } from '../../../packages/utils/src/internal-accounts/employee-address-migration-contract';
 import { createEmployeeAddressMigrationProvider } from '../../../packages/utils/src/internal-accounts/employee-address-migration-provider';
+import { qualifyGoogleDestination } from './fixtures/employee-address-migration/google-provider-qualification';
+import { cleanupGoogleProvider } from './fixtures/employee-address-migration/provider-cleanup';
 
 // Invoke via the canonical resources-entry.ts run -- bun <this-file>.
 // Real GoTrue/Auth only: the journal below is an explicit orchestration fixture,
 // not qualification of the repository schema, triggers, ACLs or SQL journal.
 const exec = promisify(execFile);
-const suffix = randomUUID();
+const suffix = z
+  .uuid()
+  .parse(process.env.EMPLOYEE_GOOGLE_PROVIDER_FIXTURE_ID ?? randomUUID());
 const network = `employee-gotrue-${suffix}`;
 const database = `${network}-db`;
 const auth = `${network}-auth`;
@@ -22,7 +26,13 @@ const secret = randomBytes(48).toString('hex');
 const password = randomBytes(32).toString('hex');
 const dbPassword = randomBytes(32).toString('hex');
 const sourceFlow = process.argv[2] ?? '--source=signup';
-assert.ok(['--source=signup', '--source=magiclink'].includes(sourceFlow));
+assert.ok(
+  [
+    '--source=signup',
+    '--source=magiclink',
+    '--source=google-destination',
+  ].includes(sourceFlow)
+);
 assert.equal(process.argv.length <= 3, true);
 const positive = sourceFlow === '--source=signup';
 const sourceAddress = 'qualification@staff.tuturuuu.com';
@@ -155,111 +165,13 @@ function requireSdk<T>(
   }
   return response.data;
 }
-async function inspectResource(
-  kind: 'container' | 'network' | 'volume',
-  name: string
-) {
-  try {
-    const result = await exec('docker', [kind, 'inspect', name], {
-      timeout: 30_000,
-      maxBuffer: 256 * 1024,
-    });
-    return z
-      .array(z.record(z.string(), z.unknown()))
-      .length(1)
-      .parse(JSON.parse(result.stdout))[0];
-  } catch (error) {
-    if (
-      error &&
-      typeof error === 'object' &&
-      'stderr' in error &&
-      'code' in error
-    ) {
-      const diagnostic = String(error.stderr).trim();
-      if (
-        error.code === 1 &&
-        [
-          `Error: No such ${kind}: ${name}`,
-          `Error response from daemon: No such ${kind}: ${name}`,
-          ...(kind === 'network'
-            ? [`Error response from daemon: network ${name} not found`]
-            : []),
-          `Error response from daemon: get ${name}: no such volume`,
-        ].some(
-          (message) =>
-            diagnostic === message &&
-            (kind === 'volume' || !message.endsWith('no such volume'))
-        )
-      )
-        return null;
-    }
-    throw new Error('cleanup_inspect_unknown');
-  }
-}
-const ResourceIdentity = z.object({
-  Id: z.string().min(1),
-  Labels: z.record(z.string(), z.string()).nullable(),
-});
-const ContainerIdentity = z.object({
-  Id: z.string().min(1),
-  Name: z.string(),
-  Config: z.object({ Labels: z.record(z.string(), z.string()).nullable() }),
-  Mounts: z.array(z.object({ Type: z.string(), Name: z.string().optional() })),
-});
 async function cleanup() {
-  const volumes = new Set<string>();
-  let verified = true;
-  for (const name of [auth, database]) {
-    try {
-      const inspected = await inspectResource('container', name);
-      if (inspected === null) continue;
-      const container = ContainerIdentity.parse(inspected);
-      assert.equal(container.Name, `/${name}`);
-      assert.equal(
-        container.Config.Labels?.['employee-gotrue-qualification'],
-        suffix
-      );
-      for (const mount of container.Mounts) {
-        if (mount.Type === 'volume') {
-          assert.ok(mount.Name);
-          volumes.add(mount.Name);
-        }
-      }
-      await docker(['rm', '-f', '-v', container.Id]);
-      assert.equal(await inspectResource('container', name), null);
-    } catch {
-      verified = false;
-    }
-  }
-  try {
-    const inspected = await inspectResource('network', network);
-    if (inspected !== null) {
-      const resource = ResourceIdentity.parse(inspected);
-      assert.equal(resource.Labels?.['employee-gotrue-qualification'], suffix);
-      await docker(['network', 'rm', resource.Id]);
-    }
-    assert.equal(await inspectResource('network', network), null);
-  } catch {
-    verified = false;
-  }
-  for (const volume of volumes) {
-    try {
-      assert.equal(await inspectResource('volume', volume), null);
-    } catch {
-      verified = false;
-    }
-  }
-  console.log(
-    JSON.stringify({
-      cleanup: {
-        containers: [auth, database],
-        network,
-        volumes: [...volumes],
-        absent: verified,
-      },
-    })
+  const result = await cleanupGoogleProvider(
+    (args) => exec('docker', args, { timeout: 30000, maxBuffer: 256 * 1024 }),
+    suffix
   );
-  if (!verified) failing = true;
+  console.log(JSON.stringify({ cleanup: result }));
+  if (!result.absent) failing = true;
 }
 
 try {
@@ -404,221 +316,238 @@ try {
   const userId = created.user.id;
   await sql(`create table qualification_mail_data(id uuid primary key,user_id uuid not null,body text not null);
     insert into qualification_mail_data values ('${randomUUID()}','${userId}','retained-source-message');`);
-  const createdSnapshot = await snapshot(userId);
-  const calls: {
-    keys: string[];
-    code: string | null;
-    status: number | null;
-  }[] = [];
-  const provider = createEmployeeAddressMigrationProvider({
-    binding: { userId, sourceAddress, destinationAddress },
-    authorize: async () => true,
-    admin: {
-      getUserById: (id) => client.auth.admin.getUserById(id),
-      async updateUserById(id, attributes) {
-        assert.deepEqual(Object.keys(attributes), ['email']);
-        const response = await client.auth.admin.updateUserById(id, attributes);
-        calls.push({
-          keys: Object.keys(attributes),
-          code: response.error?.code ?? null,
-          status: response.error?.status ?? null,
-        });
-        if (positive && !response.error)
-          throw new Error('simulated_lost_provider_acknowledgement');
-        return response;
-      },
-    },
-  });
-  stage = 'provider_baseline';
-  const createdBaseline = await provider.read(userId);
-  console.log(
-    JSON.stringify({
-      stage: 'created_source_precondition',
-      emailConfirm: !positive,
-      emailVerified: createdBaseline.emailVerified,
-      identityEmailVerified: createdSnapshot.identities.map(
-        (i) => i.email_verified
-      ),
-      preconditionMet: createdBaseline.emailVerified,
-    })
-  );
-  assert.equal(createdBaseline.emailVerified, false);
-  stage = 'source_supported_verification';
-  const link = requireSdk(
-    await client.auth.admin.generateLink(
-      positive
-        ? { type: 'signup', email: sourceAddress, password }
-        : { type: 'magiclink', email: sourceAddress }
-    ),
-    'source_generate_verification'
-  );
-  assert.ok(link.properties.hashed_token);
-  const verified = requireSdk(
-    await client.auth.verifyOtp({
-      token_hash: link.properties.hashed_token,
-      type: positive ? 'signup' : 'magiclink',
-    }),
-    'source_verify_verification'
-  );
-  assert.equal(verified.user?.id, userId);
-  const before = await snapshot(userId);
-  const initial = await provider.read(userId);
-  console.log(
-    JSON.stringify({
-      stage: 'verified_source_precondition',
-      sourceFlow,
-      sameUUID: true,
-      emailVerified: initial.emailVerified,
-      active: initial.active,
-      sqlIdentityVerified: before.identities.map((i) => i.email_verified),
-      sdkIdentityVerified: verified.user?.identities?.map(
-        (i) => i.identity_data?.email_verified
-      ),
-      fullSchemaQualified: false,
-    })
-  );
-  assert.equal(adminUserPuts, 0);
-  if (!positive) {
-    assert.equal(initial.emailVerified, false);
-    stage = 'source_unverified_negative_qualification';
-    await assert.rejects(provider.changeEmail(userId, destinationAddress));
-    assert.equal(calls.length, 0);
-    assert.equal(adminUserPuts, 0);
-    assert.deepEqual(await snapshot(userId), before);
-    const unchanged = requireSdk(
-      await client.auth.admin.getUserById(userId),
-      'negative_readback'
-    );
-    assert.equal(unchanged.user.email, sourceAddress);
-    console.log(
-      JSON.stringify({
-        stage,
-        qualification: 'PASS',
-        outcome: 'SOURCE_UNVERIFIED',
-        supportedVerification: 'magiclink_otp_accepted',
-        migrationInvoked: false,
-        migrationPuts: adminUserPuts,
-        supplierRefused: true,
-        fullSchemaQualified: false,
-      })
-    );
-  } else {
-    assert.equal(initial.emailVerified, true);
-    assert.equal(initial.active, true);
-    const request = {
+  if (sourceFlow === '--source=google-destination') {
+    stage = 'google_destination_provider';
+    await qualifyGoogleDestination({
+      client,
+      sql,
       userId,
       sourceAddress,
       destinationAddress,
-      actorId: randomUUID(),
-      operationId: randomUUID(),
-      expectedRevision: 0,
-    };
-    let record: MigrationRecord | null = null;
-    let completes = 0;
-    stage = 'actual_email_only_migration';
-    const dependencies: Parameters<typeof migrateEmployeeAddress>[0] = {
-      provider,
-      newAttemptId: randomUUID,
-      journal: {
-        async inspect() {
-          return {
-            authorized: true,
-            revision: 0,
-            immutableFingerprint: 'a'.repeat(64),
-            providerIdentityFingerprint: initial.providerIdentityFingerprint,
-            sourceVerified: true,
-            addressOwnership: 'same_identity',
-            record,
-          };
-        },
-        async reserve(binding) {
-          record = { binding, phase: 'reserved', attemptId: null };
-        },
-        async claimAttempt(binding, attemptId) {
-          record = { binding, phase: 'attempted', attemptId };
-          return true;
-        },
-        async complete() {
-          completes++;
-          throw new Error('unexpected_complete');
+      puts: () => adminUserPuts,
+      password,
+      fixtureId: suffix,
+    });
+  } else {
+    const createdSnapshot = await snapshot(userId);
+    const calls: {
+      keys: string[];
+      code: string | null;
+      status: number | null;
+    }[] = [];
+    const provider = createEmployeeAddressMigrationProvider({
+      binding: { userId, sourceAddress, destinationAddress },
+      authorize: async () => true,
+      admin: {
+        getUserById: (id) => client.auth.admin.getUserById(id),
+        async updateUserById(id, attributes) {
+          assert.deepEqual(Object.keys(attributes), ['email']);
+          const response = await client.auth.admin.updateUserById(
+            id,
+            attributes
+          );
+          calls.push({
+            keys: Object.keys(attributes),
+            code: response.error?.code ?? null,
+            status: response.error?.status ?? null,
+          });
+          if (positive && !response.error)
+            throw new Error('simulated_lost_provider_acknowledgement');
+          return response;
         },
       },
-    };
-    const result = await migrateEmployeeAddress(dependencies, request);
-    const afterSdk = requireSdk(
-      await client.auth.admin.getUserById(userId),
-      'after_getUserById'
-    );
-    assert.ok(afterSdk.user);
-    const after = await snapshot(userId);
-    const observation = await provider.read(userId);
-    stage = 'invariants';
-    assert.equal(calls.length, 1);
-    assert.equal(adminUserPuts, 1);
-    assert.deepEqual(calls[0], { keys: ['email'], code: null, status: null });
-    assert.equal(afterSdk.user.email, destinationAddress);
-    assert.equal(after.id, before.id);
-    assert.equal(after.encrypted_password, before.encrypted_password);
-    assert.deepEqual(after.raw_app_meta_data, before.raw_app_meta_data);
-    assert.deepEqual(after.raw_user_meta_data, before.raw_user_meta_data);
-    assert.equal(after.banned_until, before.banned_until);
-    assert.equal(after.email_confirmed_at, before.email_confirmed_at);
-    assert.ok(before.sessions.length > 0);
-    assert.ok(before.refresh_tokens.length > 0);
-    assert.ok(before.mail_data.length > 0);
-    assert.deepEqual(after.sessions, before.sessions);
-    assert.deepEqual(after.refresh_tokens, before.refresh_tokens);
-    assert.deepEqual(after.mail_data, before.mail_data);
-    const keys = (value: z.infer<typeof SqlSnapshot>) =>
-      value.identities.map(({ id, provider_id, user_id, provider }) => ({
-        id,
-        provider_id,
-        user_id,
-        provider,
-      }));
-    assert.deepEqual(keys(after), keys(before));
-    assert.equal(
-      observation.providerIdentityFingerprint,
-      initial.providerIdentityFingerprint
-    );
-    assert.equal(observation.emailVerified, false);
-    assert.equal(after.identities[0]?.email_verified, false);
-    assert.deepEqual(result, {
-      status: 'pending',
-      operationId: request.operationId,
-      nextAction: 'inspect',
     });
-    assert.equal(completes, 0);
-    assert.deepEqual(
-      await migrateEmployeeAddress(dependencies, request),
-      result
-    );
-    assert.equal(completes, 0);
-    assert.equal(adminUserPuts, 1);
-    await assert.rejects(provider.changeEmail(userId, destinationAddress));
-    assert.equal(calls.length, 1);
-    assert.equal(adminUserPuts, 1);
+    stage = 'provider_baseline';
+    const createdBaseline = await provider.read(userId);
     console.log(
       JSON.stringify({
-        stage,
-        qualification: 'PASS',
-        outcome: 'DESTINATION_UNVERIFIED_PENDING',
-        migrationPuts: adminUserPuts,
-        preserved: [
-          'uuid',
-          'identities',
-          'password',
-          'metadata',
-          'ban',
-          'confirmedAt',
-          'sessions',
-          'refreshTokens',
-          'mailDataFixture',
-        ],
-        lostAcknowledgement: 'UNKNOWN_INSPECT_NO_REPLAY',
+        stage: 'created_source_precondition',
+        emailConfirm: !positive,
+        emailVerified: createdBaseline.emailVerified,
+        identityEmailVerified: createdSnapshot.identities.map(
+          (i) => i.email_verified
+        ),
+        preconditionMet: createdBaseline.emailVerified,
+      })
+    );
+    assert.equal(createdBaseline.emailVerified, false);
+    stage = 'source_supported_verification';
+    const link = requireSdk(
+      await client.auth.admin.generateLink(
+        positive
+          ? { type: 'signup', email: sourceAddress, password }
+          : { type: 'magiclink', email: sourceAddress }
+      ),
+      'source_generate_verification'
+    );
+    assert.ok(link.properties.hashed_token);
+    const verified = requireSdk(
+      await client.auth.verifyOtp({
+        token_hash: link.properties.hashed_token,
+        type: positive ? 'signup' : 'magiclink',
+      }),
+      'source_verify_verification'
+    );
+    assert.equal(verified.user?.id, userId);
+    const before = await snapshot(userId);
+    const initial = await provider.read(userId);
+    console.log(
+      JSON.stringify({
+        stage: 'verified_source_precondition',
+        sourceFlow,
+        sameUUID: true,
+        emailVerified: initial.emailVerified,
+        active: initial.active,
+        sqlIdentityVerified: before.identities.map((i) => i.email_verified),
+        sdkIdentityVerified: verified.user?.identities?.map(
+          (i) => i.identity_data?.email_verified
+        ),
         fullSchemaQualified: false,
       })
     );
+    assert.equal(adminUserPuts, 0);
+    if (!positive) {
+      assert.equal(initial.emailVerified, false);
+      stage = 'source_unverified_negative_qualification';
+      await assert.rejects(provider.changeEmail(userId, destinationAddress));
+      assert.equal(calls.length, 0);
+      assert.equal(adminUserPuts, 0);
+      assert.deepEqual(await snapshot(userId), before);
+      const unchanged = requireSdk(
+        await client.auth.admin.getUserById(userId),
+        'negative_readback'
+      );
+      assert.equal(unchanged.user.email, sourceAddress);
+      console.log(
+        JSON.stringify({
+          stage,
+          qualification: 'PASS',
+          outcome: 'SOURCE_UNVERIFIED',
+          supportedVerification: 'magiclink_otp_accepted',
+          migrationInvoked: false,
+          migrationPuts: adminUserPuts,
+          supplierRefused: true,
+          fullSchemaQualified: false,
+        })
+      );
+    } else {
+      assert.equal(initial.emailVerified, true);
+      assert.equal(initial.active, true);
+      const request = {
+        userId,
+        sourceAddress,
+        destinationAddress,
+        actorId: randomUUID(),
+        operationId: randomUUID(),
+        expectedRevision: 0,
+      };
+      let record: MigrationRecord | null = null;
+      let completes = 0;
+      stage = 'actual_email_only_migration';
+      const dependencies: Parameters<typeof migrateEmployeeAddress>[0] = {
+        provider,
+        newAttemptId: randomUUID,
+        journal: {
+          async inspect() {
+            return {
+              authorized: true,
+              revision: 0,
+              immutableFingerprint: 'a'.repeat(64),
+              providerIdentityFingerprint: initial.providerIdentityFingerprint,
+              sourceVerified: true,
+              addressOwnership: 'same_identity',
+              record,
+            };
+          },
+          async reserve(binding) {
+            record = { binding, phase: 'reserved', attemptId: null };
+          },
+          async claimAttempt(binding, attemptId) {
+            record = { binding, phase: 'attempted', attemptId };
+            return true;
+          },
+          async complete() {
+            completes++;
+            throw new Error('unexpected_complete');
+          },
+        },
+      };
+      const result = await migrateEmployeeAddress(dependencies, request);
+      const afterSdk = requireSdk(
+        await client.auth.admin.getUserById(userId),
+        'after_getUserById'
+      );
+      assert.ok(afterSdk.user);
+      const after = await snapshot(userId);
+      const observation = await provider.read(userId);
+      stage = 'invariants';
+      assert.equal(calls.length, 1);
+      assert.equal(adminUserPuts, 1);
+      assert.deepEqual(calls[0], { keys: ['email'], code: null, status: null });
+      assert.equal(afterSdk.user.email, destinationAddress);
+      assert.equal(after.id, before.id);
+      assert.equal(after.encrypted_password, before.encrypted_password);
+      assert.deepEqual(after.raw_app_meta_data, before.raw_app_meta_data);
+      assert.deepEqual(after.raw_user_meta_data, before.raw_user_meta_data);
+      assert.equal(after.banned_until, before.banned_until);
+      assert.equal(after.email_confirmed_at, before.email_confirmed_at);
+      assert.ok(before.sessions.length > 0);
+      assert.ok(before.refresh_tokens.length > 0);
+      assert.ok(before.mail_data.length > 0);
+      assert.deepEqual(after.sessions, before.sessions);
+      assert.deepEqual(after.refresh_tokens, before.refresh_tokens);
+      assert.deepEqual(after.mail_data, before.mail_data);
+      const keys = (value: z.infer<typeof SqlSnapshot>) =>
+        value.identities.map(({ id, provider_id, user_id, provider }) => ({
+          id,
+          provider_id,
+          user_id,
+          provider,
+        }));
+      assert.deepEqual(keys(after), keys(before));
+      assert.equal(
+        observation.providerIdentityFingerprint,
+        initial.providerIdentityFingerprint
+      );
+      assert.equal(observation.emailVerified, false);
+      assert.equal(after.identities[0]?.email_verified, false);
+      assert.deepEqual(result, {
+        status: 'pending',
+        operationId: request.operationId,
+        nextAction: 'inspect',
+      });
+      assert.equal(completes, 0);
+      assert.deepEqual(
+        await migrateEmployeeAddress(dependencies, request),
+        result
+      );
+      assert.equal(completes, 0);
+      assert.equal(adminUserPuts, 1);
+      await assert.rejects(provider.changeEmail(userId, destinationAddress));
+      assert.equal(calls.length, 1);
+      assert.equal(adminUserPuts, 1);
+      console.log(
+        JSON.stringify({
+          stage,
+          qualification: 'PASS',
+          outcome: 'DESTINATION_UNVERIFIED_PENDING',
+          migrationPuts: adminUserPuts,
+          preserved: [
+            'uuid',
+            'identities',
+            'password',
+            'metadata',
+            'ban',
+            'confirmedAt',
+            'sessions',
+            'refreshTokens',
+            'mailDataFixture',
+          ],
+          lostAcknowledgement: 'UNKNOWN_INSPECT_NO_REPLAY',
+          fullSchemaQualified: false,
+        })
+      );
+    }
   }
 } catch (error) {
   failing = true;

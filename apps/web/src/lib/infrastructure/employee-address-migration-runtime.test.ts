@@ -11,7 +11,9 @@ vi.mock('./employee-creation-authorization', () => ({
 
 import { POST as inspectRoute } from '@/app/api/v1/infrastructure/internal-accounts/address-migrations/inspect/route';
 import { POST as migrateRoute } from '@/app/api/v1/infrastructure/internal-accounts/address-migrations/migrate/route';
+import { POST as prepareRoute } from '@/app/api/v1/infrastructure/internal-accounts/address-migrations/prepare/route';
 import { createEmployeeAddressMigrationRequestHandlers } from './employee-address-migration-runtime';
+import { authorizeEmployeeCreation } from './employee-creation-authorization';
 
 vi.mock('next/server', () => ({ connection: vi.fn() }));
 
@@ -120,7 +122,6 @@ async function fixture() {
   const deps = {
     authorize,
     admin: vi.fn(async () => admin),
-    enabled: () => true,
     configuration: () => ({
       url: 'http://127.0.0.1:54321',
       key: 'disposable-key',
@@ -150,16 +151,29 @@ async function fixture() {
 
 afterEach(() => vi.unstubAllEnvs());
 describe('address migration runtime binding', () => {
-  it.each([inspectRoute, migrateRoute])(
-    'ships disabled independently of CREATE and RESTORE',
+  it.each([inspectRoute, migrateRoute, prepareRoute])(
+    'reaches authorization regardless of the retired optional env flag',
     async (route) => {
-      vi.stubEnv('EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED', undefined);
-      vi.stubEnv('EMPLOYEE_CREATION_RUNTIME_ENABLED', 'true');
-      vi.stubEnv('EMPLOYEE_RESTORATION_RUNTIME_ENABLED', 'true');
-      const response = await route(request());
-      expect(response.status).toBe(503);
-      expect(await response.json()).toEqual({ code: 'unavailable' });
-      expect(response.headers.get('cache-control')).toContain('no-store');
+      for (const flag of [undefined, 'false']) {
+        vi.stubEnv('EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED', flag);
+        vi.mocked(authorizeEmployeeCreation).mockResolvedValue({
+          authorized: false,
+          status: 401,
+        });
+        const response = await route(request());
+        expect(response.status).toBe(401);
+        expect(await response.json()).toEqual({ code: 'forbidden' });
+        expect(response.headers.get('cache-control')).toContain('no-store');
+      }
+    }
+  );
+  it.each([undefined, 'false'])(
+    'allows an authorized ready source with retired flag %s',
+    async (flag) => {
+      vi.stubEnv('EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED', flag);
+      const f = await fixture();
+      expect((await f.handlers.inspect(request())).status).toBe(200);
+      expect(f.admin.updateUserById).not.toHaveBeenCalled();
     }
   );
   it('inspection qualifies the original revision without reserve or provider mutation', async () => {

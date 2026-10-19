@@ -114,4 +114,87 @@ describe('address migration RPC supplier', () => {
       createEmployeeAddressMigrationJournal({ ...input, url })
     ).toThrow();
   });
+  it('prepares the original tuple once without treating acknowledgement as inspection', async () => {
+    const { journal, fetcher } = setup();
+    const receipt = {
+      prepared: true,
+      userId: request.userId,
+      destinationAddress: request.destinationAddress,
+    };
+    fetcher.mockResolvedValue(Response.json(receipt));
+    expect(await journal.prepare(request)).toEqual(receipt);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const call = fetcher.mock.calls[0];
+    if (!call) throw new Error('Missing preparation transaction');
+    expect(JSON.parse(String(call[1]?.body))).toEqual({
+      p_action: 'prepare',
+      p_request: request,
+      p_attempt_id: null,
+    });
+  });
+  it.each([{ operationId: request.actorId }, { expectedRevision: 1 }])(
+    'rejects a valid-shaped substituted request and committed receipt: %j',
+    async (change) => {
+      const { journal, fetcher } = setup();
+      await expect(journal.prepare({ ...request, ...change })).rejects.toThrow(
+        'Migration tuple changed'
+      );
+      expect(fetcher).not.toHaveBeenCalled();
+      fetcher.mockResolvedValue(
+        Response.json({
+          authorized: true,
+          revision: 0,
+          immutableFingerprint: binding.immutableFingerprint,
+          providerIdentityFingerprint: binding.providerIdentityFingerprint,
+          sourceVerified: true,
+          addressOwnership: 'same_identity',
+          record: {
+            binding: { ...binding, ...change },
+            phase: 'reserved',
+            attemptId: null,
+          },
+        })
+      );
+      await expect(journal.inspect(request)).rejects.toThrow(
+        'Migration receipt changed'
+      );
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    }
+  );
+  it.each(['reserved', 'attempted', 'completed'])(
+    'accepts a post-transition record only at completion, not %s',
+    async (phase) => {
+      const { journal, fetcher } = setup();
+      const transition = {
+        kind: 'google_destination',
+        beforeImmutableFingerprint: binding.immutableFingerprint,
+        beforeProviderIdentityFingerprint: binding.providerIdentityFingerprint,
+        afterImmutableFingerprint: 'c'.repeat(64),
+        afterProviderIdentityFingerprint: 'd'.repeat(64),
+      };
+      const receipt = {
+        authorized: true,
+        revision: phase === 'completed' ? 1 : 0,
+        immutableFingerprint: 'c'.repeat(64),
+        providerIdentityFingerprint: 'd'.repeat(64),
+        sourceVerified: true,
+        addressOwnership: 'same_identity',
+        transition,
+        record: {
+          binding,
+          phase,
+          attemptId: phase === 'reserved' ? null : request.operationId,
+          transition,
+        },
+      };
+      fetcher.mockResolvedValue(Response.json(receipt));
+      if (phase === 'completed')
+        await expect(journal.inspect(request)).resolves.toEqual(receipt);
+      else
+        await expect(journal.inspect(request)).rejects.toThrow(
+          'Transition receipt requires completion'
+        );
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    }
+  );
 });

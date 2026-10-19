@@ -37,15 +37,30 @@ export const MigrationBinding = z.strictObject({
   providerIdentityFingerprint: Fingerprint,
 });
 export type MigrationBinding = z.infer<typeof MigrationBinding>;
+export const MigrationTransition = z.strictObject({
+  kind: z.literal('google_destination'),
+  beforeImmutableFingerprint: Fingerprint,
+  beforeProviderIdentityFingerprint: Fingerprint,
+  afterImmutableFingerprint: Fingerprint,
+  afterProviderIdentityFingerprint: Fingerprint,
+});
+export type MigrationTransition = z.infer<typeof MigrationTransition>;
 export const MigrationRecord = z
   .strictObject({
     binding: MigrationBinding,
     phase: z.enum(['reserved', 'attempted', 'completed']),
     attemptId: CanonicalUuid.nullable(),
+    transition: MigrationTransition.optional(),
   })
   .superRefine((value, context) => {
     if ((value.phase === 'reserved') !== (value.attemptId === null)) {
       context.addIssue({ code: 'custom', message: 'Invalid attempt marker' });
+    }
+    if (value.transition && value.phase !== 'completed') {
+      context.addIssue({
+        code: 'custom',
+        message: 'Transition receipt requires completion',
+      });
     }
   });
 export type MigrationRecord = z.infer<typeof MigrationRecord>;
@@ -63,6 +78,7 @@ export const MigrationInspection = z.strictObject({
     'unknown',
   ]),
   record: MigrationRecord.nullable(),
+  transition: MigrationTransition.optional(),
 });
 export type MigrationInspection = z.infer<typeof MigrationInspection>;
 export const MigrationProviderObservation = z.strictObject({
@@ -93,8 +109,9 @@ export type AddressMigrationJournal = {
 };
 export type AddressMigrationProvider = {
   read(userId: string): Promise<unknown>;
-  // Must make one supported updateUserById call with { email } only. Never set
-  // email_confirm, metadata, passwords, grants, ban state, or identity IDs.
+  // One supported email update. email_confirm=true is allowed only for the
+  // exact independently verified Google destination transition. Never change
+  // metadata, passwords, grants, ban state, or existing provider identity IDs.
   changeEmail(userId: string, destinationAddress: string): Promise<void>;
 };
 export type AddressMigrationPorts = {

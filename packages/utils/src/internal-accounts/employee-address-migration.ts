@@ -16,25 +16,36 @@ function pending(operationId: string): AddressMigrationResult {
 function boundObservation(
   observation: ProviderObservation,
   binding: MigrationBinding,
-  address: string
+  address: string,
+  identityFingerprint = binding.providerIdentityFingerprint
 ) {
   return (
     observation.userId === binding.userId &&
     observation.email === address &&
     observation.emailVerified &&
     observation.active &&
-    observation.providerIdentityFingerprint ===
-      binding.providerIdentityFingerprint
+    observation.providerIdentityFingerprint === identityFingerprint
   );
 }
 function boundInspection(inspection: Inspection, binding: MigrationBinding) {
+  const transition = inspection.transition;
+  const preserved = transition
+    ? transition.beforeImmutableFingerprint === binding.immutableFingerprint &&
+      transition.beforeProviderIdentityFingerprint ===
+        binding.providerIdentityFingerprint &&
+      transition.afterImmutableFingerprint ===
+        inspection.immutableFingerprint &&
+      transition.afterProviderIdentityFingerprint ===
+        inspection.providerIdentityFingerprint &&
+      inspection.record?.phase !== 'reserved'
+    : inspection.immutableFingerprint === binding.immutableFingerprint &&
+      inspection.providerIdentityFingerprint ===
+        binding.providerIdentityFingerprint;
   return (
     inspection.authorized &&
     inspection.sourceVerified &&
     ['available', 'same_identity'].includes(inspection.addressOwnership) &&
-    inspection.immutableFingerprint === binding.immutableFingerprint &&
-    inspection.providerIdentityFingerprint ===
-      binding.providerIdentityFingerprint &&
+    preserved &&
     inspection.record !== null &&
     sameMigrationBinding(inspection.record.binding, binding) &&
     inspection.revision ===
@@ -75,7 +86,8 @@ async function confirm(
     !boundObservation(
       await provider(ports, binding),
       binding,
-      binding.destinationAddress
+      binding.destinationAddress,
+      current.providerIdentityFingerprint
     )
   ) {
     return pending(binding.operationId);
@@ -87,10 +99,14 @@ async function confirm(
   if (
     !boundInspection(persisted, binding) ||
     persisted.record?.phase !== 'completed' ||
+    (persisted.transition !== undefined &&
+      JSON.stringify(persisted.record.transition) !==
+        JSON.stringify(persisted.transition)) ||
     !boundObservation(
       await provider(ports, binding),
       binding,
-      binding.destinationAddress
+      binding.destinationAddress,
+      persisted.providerIdentityFingerprint
     )
   ) {
     return pending(binding.operationId);
