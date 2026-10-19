@@ -33,6 +33,7 @@ Every new assignment or substantive continuation contains:
 - Authority for commits/publication and forbidden operations.
 - Bounded investigation/time budget, plus report fields: status, head, paths,
   commands/results, causal evidence, PR, remaining blockers and next action.
+- Accessible autonomy/project guidance, latest custody overrides and remaining child budget.
 - Applicable standing orders, especially no local builds, preserved dirty files,
   credentials and production boundaries. Relay changes on every continuation.
 
@@ -66,6 +67,48 @@ idle agent starts work: never resume merely to request status. Resume only with 
 concrete next assignment. A queued validation is not a pass; never duplicate it
 or edit its frozen source. One bounded remote snapshot per wake replaces polling.
 Native PR watches and the authorized schedule provide the next wake.
+
+## Autonomy and asynchronous waits
+
+Use [the shared T3 autonomy contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
+when available. Its useful-delegation, five-child ceiling and inheritance rules
+apply within the current task's authority, not as permission to restart retired
+controllers or broaden release access. Give every child the accessible policy,
+project instructions, latest custody override and remaining task-tree budget;
+relay permitted pinned bytes when paths are unavailable across machines/providers.
+
+Portable fallback: use useful children whenever separable ready work exists,
+within the smaller of five concurrent children and actual runtime/resource limits.
+Assign disjoint paths and keep one integration writer. Drain results and admit
+independent real backlog before arming a native PR watch; then end the turn as
+required. A queued heavy gate still allows independent reading, diagnosis,
+review or docs. Native result/watch events resume authorized delivery. When no
+admitted work remains ready, record the exact blocker, owner and resume event.
+Do not invent work, poll or stop a watch just to wait for a user reminder.
+
+For observed slow admission, repeated handovers or two fixes failing on one
+premise, assign a bounded workflow audit at a safe checkpoint. Read actual
+actor/lifecycle and gate receipts, identify the causal bottleneck, and return one
+supported improvement or no-change disposition. Coalesce existing work; create
+no recurring audit schedule. Protect urgent delivery. Put accepted reusable
+lessons in the narrowest maintained docs/skill/helper and verify source-to-plugin
+propagation; keep exact source and pending commitments in the private owner store.
+
+## Completion and publication
+
+Finished repository work includes an owned, verified commit and a normal push to
+main or the appropriate authorized branch without another user prompt. Preserve
+explicit publication holds, branch protection and review/release gates; use a
+review branch when direct main publication is not admitted. Follow
+[$tuturuuu-commit](../../tuturuuu-commit/SKILL.md) for exact staging and checks.
+Verify the remote SHA and report commit, push and remaining CI/release status
+separately. Children hand accepted changes to the sole integration writer in a
+shared checkout; that owner completes publication before closing the task.
+
+If blocked, preserve the exact patch/worktree, owner, checks, blocker and resume
+event in the existing ledger. Never hide unfinished work, include foreign/private
+files, or retire recovery data just to report a clean tree. Worktree retirement
+still requires the existing cleanup authority.
 
 ## Evidence ledger
 

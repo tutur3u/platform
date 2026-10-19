@@ -33,6 +33,7 @@ probe implementation rather than copying a second deployment recipe here.
   exact gates, bounded runtime evidence, and remaining business verification.
   Use a dedicated authorized QA account; do not disclose credentials or customer records.
 
-For integration and delivery, return to `$tuturuuu-pr-merge-sync`. For a paused
-handoff, preserve the worktree and resource ownership in
-`tmp/agent-coordination/`; stop active watchers unless continued watching is requested.
+For integration and delivery, return to `$tuturuuu-pr-merge-sync`. For an actual user handback, preserve the worktree and resource ownership in
+`tmp/agent-coordination/` and unwatch as the native tool requires. During an
+authorized asynchronous wait, preserve native event continuation and advance
+independent ready work under the [autonomy contract](../tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits); do not stop a watch merely because CI is pending.

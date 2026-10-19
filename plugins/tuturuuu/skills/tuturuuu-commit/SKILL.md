@@ -8,7 +8,9 @@ description: "Create scoped Tuturuuu commits and perform user-authorized pushes.
 ## Core Workflow
 
 Use this skill when the user explicitly asks for commits, scoped commits,
-atomic commits, commit-and-push follow-through, or commit reporting.
+atomic commits, commit-and-push follow-through, or commit reporting. Also use it
+to close finished authorized repository work without a separate commit prompt,
+under the [completion contract](../tuturuuu-agent-coordination/references/program-orchestration.md#completion-and-publication).
 
 Read `references/commit-workflow.md` for examples of scope grouping, staging,
 and failure handling before creating commits.
@@ -33,7 +35,10 @@ and failure handling before creating commits.
   revertible operational policy.
 - Use Conventional Commit subjects that match repo rules.
 - Never include secrets, local-only scratch files, or unrelated formatting churn.
-- Do not push unless the user explicitly asks for push.
+- Finished authorized work is committed and pushed to main or the appropriate
+  authorized branch under the completion contract. Honor explicit publication
+  holds, branch protection and review/release gates; never infer merge or
+  production permission from push authorization.
 - Let commit hooks run by default. Use `git commit --no-verify` only when the
   current agent has proof-gated no-verify evidence for its exact staged paths.
   Do not use no-verify to bypass failures caused by unrelated worker files unless
@@ -86,4 +91,4 @@ After committing, report:
 - commit hashes and subjects
 - validation that ran, including hook results
 - whether the worktree is clean or what remains dirty
-- push status when the user requested a push
+- push status and verified remote SHA, or exact blocker/owner/resume event

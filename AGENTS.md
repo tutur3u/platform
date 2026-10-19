@@ -16,11 +16,13 @@ Use `plugins/tuturuuu/skills/` for Tuturuuu-specific workflows. In particular:
 `$tuturuuu-pr-merge-sync` owns authorized integration and production sync.
 
 Continue authorized work through implementation, relevant verification, fixes,
-and any requested commit or delivery. Do not pause for review after a first draft
+and scoped commit/push publication under the [completion contract](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#completion-and-publication). Do not pause for review after a first draft
 unless review was requested or a concrete decision, permission, or access is missing.
 A skill does not authorize unrelated external actions or expand release scope.
 Define completion from the request: implementation and required checks, plus PR,
 merge, or production evidence only when that delivery is authorized.
+
+For autonomous multi-lane execution, use the [shared T3 contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution) and the portable [program guidance](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits). Relay these and current custody overrides in child briefs.
 
 ## 2. Hard Prohibitions
 
@@ -138,14 +140,12 @@ merge, or production evidence only when that delivery is authorized.
   follow-through. Only then remove the completed worktree and delete its local
   task branch. Never remove dirty, blocked, unmerged, user-owned, or
   other-agent-owned worktrees or branches.
-- Treat running CI as an asynchronous pause point by default. Finish independent
-  work that does not depend on the CI result, then record the exact SHA, run IDs,
-  pending gates, and worktree state in a coordination note, stop active watchers,
-  and pause until the user reminds you. Use the coordination-note format in
-  `$tuturuuu-platform` with `handoff` status; never stage the note. Do not poll
-  CI while paused. Continue through CI in the same turn only when the user
-  explicitly asks for that follow-through; recheck current refs and gates
-  before acting on a result.
+- While PR/CI runs, advance independent authorized backlog with useful subagents
+  under the autonomy contract above. Arrange that work before arming a native PR
+  watch, then end the turn as the tool requires. Native result/watch events resume
+  authorized follow-through; do not stop watches or wait for a user reminder merely
+  because CI started. If no admitted work is ready, record the exact blocker,
+  owner and resume event. Preserve current-head gates, permissions and frozen work.
 - Keep Rust build storage bounded with `bun rust-cache report` and the
   repository-owned `prune`/`auto` commands. Inspect the owning worktree first,
   use an explicit size/age bound, and prune only rebuildable
