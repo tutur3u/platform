@@ -243,9 +243,24 @@ address. Neither flow creates a replacement account. Migration does not repair
 verification or claim/provision somebody else's mailbox. It requires existing
 approved active source and destination mailboxes owned by the original UUID,
 email-provider readiness, revision zero and no CREATE/RESTORE registry ambiguity.
+A separate bounded exception supports a confirmed legacy account whose sole
+Google identity already verifies the exact canonical destination with matching
+provider ID/subject. The explicit Web `address-migrations/prepare` endpoint may
+first adopt an empty, unowned, disabled canonical personal mailbox, then requires
+committed ownership readback before a fresh migration binding. Quarantined,
+archived, populated, shared or owned mailboxes remain unavailable. This path
+needs no source mailbox and permits only GoTrue's one verified email identity
+addition while preserving the original Google identity/data exactly. Completion
+stores distinct actual before/after fingerprints. See the [supplier contract and
+qualification](../../build/development-tools/employee-address-migration). The
+Google provider and Web state-flow regressions plus the separate 30-assertion SQL
+packet cover this exception with the stated fixture boundaries.
 
-Web migration availability defaults off with its own
-`EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED` gate. The operator inspects the
+Web migration availability follows current root administrator permission,
+configuration and fresh SQL/provider readiness. Neither composition nor
+reauthorization consults an optional activation environment flag; unset or false
+legacy migration flag values do not block an otherwise authorized operation.
+The operator inspects the
 exact UUID/address tuple, types both addresses, performs a fresh preflight and
 submits one migration. Unknown results retain the operation UUID/revision for
 inspection across dialog close/reopen and same-session remount; provider mutation
@@ -256,7 +271,7 @@ This decision applies only to the Infrastructure operator surface and Web
 migration endpoints; CREATE/RESTORE keep their existing contracts. The
 `address-migration-session.test.ts`, `address-migration-dialog.test.tsx`, Web
 migration runtime tests and typed consumer tests cover these boundaries with
-fixtures. Activation, hosted mail ownership/delivery, full-schema qualification,
+fixtures. Hosted mail ownership/delivery, full-schema qualification,
 exact-commit CI and the named real account's preservation remain separate gates.
 See the [migration runbook](/build/development-tools/employee-address-migration).
 

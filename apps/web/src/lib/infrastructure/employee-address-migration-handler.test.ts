@@ -35,7 +35,6 @@ function setup() {
   const deps = {
     authorize,
     admin,
-    enabled: () => true,
     trustedOrigin: 'https://infra.example.test',
     configuration: () => ({
       url: 'http://127.0.0.1:54321',
@@ -67,15 +66,17 @@ function request(
     body: JSON.stringify({ ...body, ...extra }),
   });
 }
-describe('inactive Web migration adapter', () => {
-  it('does nothing when disabled', async () => {
-    const { deps, authorize, admin } = setup();
+describe('permission-authorized Web migration adapter', () => {
+  it('denies missing root authority before configuration or provider access', async () => {
+    const { deps, admin } = setup();
+    const configuration = vi.fn(deps.configuration);
     const response = await createEmployeeAddressMigrationHandler({
       ...deps,
-      enabled: () => false,
+      configuration,
+      authorize: async () => ({ authorized: false, status: 401 }),
     })(request(), 'migrate');
-    expect(response.status).toBe(503);
-    expect(authorize).not.toHaveBeenCalled();
+    expect(response.status).toBe(401);
+    expect(configuration).not.toHaveBeenCalled();
     expect(admin).not.toHaveBeenCalled();
   });
   it('rejects browser cross-origin and missing-origin cookie requests', async () => {

@@ -209,3 +209,69 @@ test('employee public consumer proof stays default-off and uses the maintained q
     /!publicConsumer \|\| receipt.employeePublicConsumer.sourceCompilerQualified/u
   );
 });
+
+test('Google destination source packet count is checked only for the selected migration profile', () => {
+  const step = namedStep('Verify Google destination packet source');
+  assert.match(step, /if: inputs.include_address_migration == true/u);
+  assert.doesNotMatch(step, /working-directory:/u);
+  assert.match(
+    step,
+    /run: node --test apps\/database\/scripts\/employee-google-destination-fixture.test.mjs/u
+  );
+});
+
+test('Google provider stays separately default-off with bound prepare, execution, finalization and artifact', () => {
+  assert.ok(
+    /include_google_destination_provider:\n.*\n {8}required: false\n {8}default: false\n {8}type: boolean/u.test(
+      workflow
+    ),
+    'Google provider input must remain optional and default false'
+  );
+  const fixtureTypes = namedStep(
+    'Type check Google provider fixtures without builds'
+  );
+  assert.match(
+    fixtureTypes,
+    /if: inputs.include_google_destination_provider == true/u
+  );
+  assert.match(fixtureTypes, /tsconfig.provider.json --noEmit/u);
+  const fixtureUnit = namedStep(
+    'Verify Google provider preservation and cleanup assertions'
+  );
+  assert.match(
+    fixtureUnit,
+    /if: inputs.include_google_destination_provider == true/u
+  );
+  assert.match(fixtureUnit, /working-directory: source/u);
+  assert.match(
+    fixtureUnit,
+    /vitest.provider.config.mts --maxWorkers=1 --no-file-parallelism/u
+  );
+  const gates = namedStep('Verify optional Google provider receipt gates');
+  assert.match(
+    gates,
+    /if: inputs.include_google_destination_provider == true/u
+  );
+  assert.match(
+    gates,
+    /node --test apps\/database\/scripts\/employee-google-provider-ci.test.mjs/u
+  );
+  for (const [name, suffix] of [
+    ['Bind optional Google provider qualification', ' --prepare'],
+    ['Qualify optional Google destination provider', ''],
+    ['Finalize optional Google provider receipt', ' --finalize'],
+  ]) {
+    const step = namedStep(name);
+    assert.match(step, /working-directory: source/u);
+    assert.ok(
+      step.includes(
+        `run: node --experimental-strip-types ../apps/database/scripts/employee-google-provider-ci.mjs${suffix}\n`
+      )
+    );
+  }
+  assert.match(
+    namedStep('Finalize optional Google provider receipt'),
+    /if: always\(\) && inputs.include_google_destination_provider == true/u
+  );
+  assert.match(workflow, /employee-schema-receipts\/google-provider.json/u);
+});

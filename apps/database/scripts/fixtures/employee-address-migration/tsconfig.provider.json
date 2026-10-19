@@ -1,0 +1,24 @@
+{
+  "extends": "../../../../../packages/typescript-config/base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "rootDir": "../../../../..",
+    "types": ["node"],
+    "typeRoots": ["../../../../../node_modules/@types"]
+  },
+  "include": [
+    "../../employee-address-migration-gotrue-qualification.ts",
+    "google-provider-qualification.ts",
+    "google-preservation.ts",
+    "google-preservation.test.ts",
+    "provider-cleanup.ts",
+    "provider-cleanup.test.ts",
+    "vitest.provider.config.mts"
+  ]
+}

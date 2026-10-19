@@ -63,7 +63,12 @@ export function selectSchemaPackets(
       : journal
         ? journalPackets
         : foundationPackets),
-    ...(addressMigration ? [['employee-address-migration.sql', 10]] : []),
+    ...(addressMigration
+      ? [
+          ['employee-google-destination-migration.sql', 30],
+          ['employee-address-migration.sql', 10],
+        ]
+      : []),
     ...(feedback ? feedbackPackets : []),
     ...(chatInitialSettings ? [['chat-initial-ai-settings.sql', 25]] : []),
   ];

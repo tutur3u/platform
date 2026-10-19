@@ -1,6 +1,6 @@
 ---
 title: 'Employee address migration suppliers'
-description: 'Inactive stable identity SQL, Auth and Web suppliers and their qualification boundaries.'
+description: 'Stable identity SQL, Auth and Web suppliers and their qualification boundaries.'
 ---
 
 The portable protocol and suppliers live in
@@ -8,9 +8,13 @@ The portable protocol and suppliers live in
 Infrastructure retains compatible re-exports. Web owns POST endpoints under
 `/api/v1/infrastructure/internal-accounts/address-migrations/{inspect,migrate}`.
 The Infrastructure internal-accounts page exposes their operator dialog through
-`@tuturuuu/internal-api/infrastructure`. Runtime availability defaults off unless
-`EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED` is exactly `true`. Binding this
-surface does not authorize activation or account execution.
+`@tuturuuu/internal-api/infrastructure`. Runtime availability follows current root
+administrator permission, valid server configuration and fresh SQL/provider
+readiness. No optional migration activation environment variable is consulted;
+an absent or false `EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED` does not disable
+an otherwise authorized operation. CI qualification selections below remain
+independently opt-in test controls. Account execution still needs the operator's
+authorized exact tuple and the operation's one-attempt protocol.
 
 ## Address and identity policy
 
@@ -19,7 +23,8 @@ to the same localpart at exactly `tuturuuu.com`. It rejects external domains,
 root-address sources, a changed localpart, self-action, unknown ownership,
 conflicting reservations, stale revisions and unverified source identities.
 It never requests another Auth UUID, account creation/deletion, password,
-metadata, administrator grants, ban changes or an email-confirmation override.
+metadata, administrator grants or ban changes. The bounded Google destination
+transition below is the sole exception to the email-only confirmation policy.
 The provider port exposes only a read and an email update on the original UUID.
 
 A protected journal supplier must reauthorize the confirmed active root
@@ -48,11 +53,12 @@ reserved replay is inspection-only. No expiry, replacement operation, rollback,
 compensation or automatic provider retry is part of this contract.
 
 A provider email update must use the supported admin update on the original UUID
-with `{ email }` only. It must perform one request without transport retry and
+with `{ email }` for the original email-provider path. It must perform one request without transport retry and
 preserve existing provider identity IDs. Actual GoTrue behavior, verification
 challenges, secure-email-change settings and concurrent external administrators
 must be qualified before activating that supplier. An unverified destination or
-changed identity remains pending; the protocol never sets `email_confirm`.
+changed identity remains pending. Only the separately qualified Google destination
+transition may request `email_confirm: true`, backed by the exact verified claim.
 
 Inspection can complete a named attempted operation after observing the verified
 destination and unchanged identity. Completion must independently verify actual
@@ -77,7 +83,7 @@ service-only journal transactions with direct table access revoked, durable
 unique target/address reservations and a one-time claim. Its scope is deliberately
 legacy accounts absent from CREATE/RESTORE registries with email-provider-only
 identities, first revision zero to one.
-It requires existing active source and destination mailboxes and matching active
+The original email-v1 path requires existing active source and destination mailboxes and matching active
 domains, with both mailboxes owned exclusively by the target UUID. It does not
 provision mail, change addresses on mailboxes, set onboarding metadata or convert
 the account into the CREATE registry. The retained completed migration is its
@@ -111,7 +117,7 @@ GoTrue JSON `identity_id` maps to SQL `auth.identities.id`; JSON `id` is the
 provider-specific ID. SQL explicitly constructs compact JSON under C collation.
 Email fields are excluded so the original identity remains recognizable.
 
-The provider uses the installed supported `auth.admin.updateUserById(id, {email})`
+The original email-v1 provider uses the installed supported `auth.admin.updateUserById(id, {email})`
 contract. Its independent verification requires the matching email identity's
 `email_verified=true`, the confirmed timestamp, no pending email and an active
 account. Upstream GoTrue's admin email-only path can set identity verification
@@ -194,29 +200,29 @@ simulation as real GoTrue verification. Foundation and journal receipts remain
 incompatible and keep their original defaults; see the
 [qualification profiles](./employee-schema-qualification).
 
-Before runtime activation, apply the full schema in the approved isolated fixture,
+Before release, apply the full schema in the approved isolated fixture,
 verify generated types, real GoTrue and Web transport behavior, hosted mail routing,
 and the exact Web/Infrastructure builds in CI. Existing schema CI guards remain
 in force; a reduced fixture never replaces that gate. Record a scoped
-activation/rollback plan separately. CREATE or RESTORE receipts do not qualify
+promotion/rollback plan separately. CREATE or RESTORE receipts do not qualify
 this migration, and production/provider/SQL actions require separate authority.
 
 
-## Default-off Web and Infrastructure surface
+## Permission-authorized Web and Infrastructure surface
 
 The surface currently admits only canonical `@xwf.tuturuuu.com` sources and the
 same localpart at `@tuturuuu.com`. Its initial expected revision is zero, matching
 the supplier's legacy-first scope. It cannot adopt CREATE/RESTORE registry rows,
 repair identity verification, provision mailboxes or bypass ownership readiness.
-Both approved active mailboxes must already belong to the original user.
+For the original email-v1 path, both approved active mailboxes must already belong to the original user. The separately bounded Google-destination exception is described below.
 
 Every invocation uses the existing Infrastructure satellite/request-session
 root-admin authorizer, with a confirmed active exact root-domain actor and
 `manage_internal_accounts`. The client never supplies that actor. POSTs require
 the account-action header, same-origin browser origin/fetch-site checks and
 strict bounded JSON. Each RPC/provider boundary and successful disclosure
-rechecks the original actor. The default-off gate is independent of CREATE and
-RESTORE.
+rechecks the original actor. Composition and reauthorization have no optional
+migration activation flag; current permissions remain authoritative.
 
 Inspection returns readiness only after fresh committed SQL and verified active
 provider observations agree on the exact original tuple and fingerprints. It
@@ -240,3 +246,120 @@ synthetic transport observations, typed-client tuple validation and UI/controlle
 lifetime/recovery behavior. They do not qualify hosted sessions, full schema,
 mail delivery, actual account preservation or production completion. Keep the
 supplier qualification gates and exact Web/Infrastructure CI builds separate.
+
+## Verified Google destination and explicit mailbox preparation
+
+The forward migration `20261019010000_employee_google_destination_migration.sql`
+adds a narrow legacy compatibility path. The source must be a confirmed, active,
+nonanonymous UUID with exactly one Google identity whose provider ID equals its
+nonempty subject, whose email is the exact canonical destination, and whose
+`email_verified` claim is exactly true. The legacy Auth/public email may still be
+at the source. A verified source-address Google claim does not qualify this path.
+No upstream Google account change, identity rewrite or manufactured claim occurs.
+
+The administrator first explicitly POSTs the original operation/UUID/address/
+revision tuple to `/api/v1/infrastructure/internal-accounts/address-migrations/prepare`,
+with the same request authentication, origin and account-action header used by
+migration. This is an administrative mutation, not an inspection operation.
+It can adopt only an existing canonical personal mailbox that has NULL creator,
+`disabled` status, no archive timestamp, an active canonical domain and zero
+members or foreign-key-referenced data/configuration. Quarantined, archived,
+shared, owned, populated or conflicting mailboxes fail closed. It creates no
+legacy route and changes no Auth or Google state. NOWAIT admission, actor/target
+locks, membership-table and referencing-table locks fence concurrent changes;
+contention is a failure, never an automatic retry. Every existing migration
+record for the target/address prevents preparation, including another operation
+UUID. The endpoint requires a separate committed inspection before acknowledging
+preparation. Unknown preparation outcomes require inspection, not blind retry.
+
+After preparation, independently inspect the same original tuple. Only then may
+migration reserve a fresh persisted snapshot and claim its single attempt.
+Inspection remains unavailable while the mailbox is inactive or unowned.
+For this exact Google shape, the provider makes one supported admin request
+`{ email: destination, email_confirm: true }`. The confirmation comes from the
+already verified exact Google destination claim, with fresh authorization and
+source readback; timestamps alone cannot authorize it. The original Google
+identity ID, provider ID, subject and complete identity data remain fixed.
+GoTrue may add exactly one verified email identity for the same UUID/destination;
+no other provider/identity addition, removal or change is accepted.
+
+The original binding and snapshot stay immutable. The journal independently
+observes the actual post identity and state hashes, verifies that removing only
+that new email identity reconstructs the protected original snapshot, and stores
+a distinct before/after transition receipt in its completion transaction. The
+executor independently compares the provider's actual post hash and requires the
+persisted receipt on final readback. It never treats the original and new hashes
+as equal. Unknown provider outcomes retain the original attempt for inspection;
+inspection and replay cannot issue another provider request.
+
+The separate rollback packet `employee-google-destination-migration.sql` has
+exactly 30 assertions and is selected by the existing default-off address-migration
+qualification profile. The original 10-assertion packet and default foundation172/
+journal301 profiles remain intact; opting into both address packets yields 212
+or 341 assertions respectively. The real-provider runner has a separate mode:
+
+```sh
+ttr resources run -- bun apps/database/scripts/employee-address-migration-gotrue-qualification.ts --source=google-destination
+```
+
+That mode seeds synthetic Google claims in a disposable database and exercises
+real pinned GoTrue admin behavior with a lost acknowledgement. It does not prove
+external Google sign-in, hosted mailbox delivery or the application SQL journal.
+The Web state-flow fixture also uses synthetic SQL observations. Require the
+new packet on the full isolated schema, real-provider mode, generated types,
+exact-commit Web/Infrastructure builds, and independent source review before
+release. This source candidate does not authorize production preparation or Auth
+writes. Mail delivery and actual customer account preservation remain separate
+post-release checks owned by the authorized operator.
+
+
+### Real-provider preservation and the optional CI hook
+
+The Google provider mode first signs in the disposable confirmed password source
+and independently reads its authenticated user, then seeds the synthetic Google
+claim. Its baseline requires nonempty persisted sessions and refresh tokens,
+including an unrevoked token, before the single admin email update. Every column
+of those persisted rows is compared afterward alongside the original Google row,
+UUID, password, metadata and mail fixture. Four controls delete or mutate observed
+session/token rows and require the same preservation assertion to fail; they do
+not modify the fixture database. Empty baselines cannot qualify preservation.
+
+The existing `employee-schema-contract.yaml` workflow has a separately default-off
+`include_google_destination_provider` selection. It requires address migration
+selection and identical reviewed, published source/control commits. The smallest
+combined admission uses `source_sha=H`, `include_address_migration=true`,
+`include_public_consumer=true`, `include_google_destination_provider=true`, with
+all other optional inputs false. The workflow ref must resolve to that reviewed H;
+source SHA alone does not select the updated trusted control workflow.
+
+This keeps the selected212 assertions (or341 when journal is explicitly selected)
+and generates the full isolated schema once. The existing public compiler fixture
+covers CREATE/RESTORE imports; it does not replace migration-specific Web/Utils
+compiler and build gates. The Google hook then uses a separate disposable
+GoTrue/PostgreSQL fixture on the hosted Linux Docker daemon. It verifies actual
+Linux process/daemon context, pulls only the two pinned version images with fixed
+time bounds, records their actual IDs, runs one owned process group, and checks
+run-bound nonempty preservation/negative-control receipts. The child receives only
+needed local tool/Docker environment values; no service/project credentials or
+GitHub token are forwarded.
+
+Provider results are recorded in `google-provider.json` in the existing private
+schema artifact. The receipt binds source/control H, repository/run/attempt,
+fixture UUID, actual image identities, one PUT, preservation counts, process-group
+stop and independently observed owned cleanup. Primary or cleanup failure,
+unknown inspect outcomes, mismatched output, missing baseline or an upstream
+failure leaves a durable unqualified receipt. Finalization cannot turn a prepared
+or partially executed receipt into success. No automatic provider retry exists.
+The helper removes only exact UUID/name/label-owned resources and verifies absent
+containers, network and their volumes. No unrelated Docker cache/resources are
+removed. This provider receipt remains distinct from SQL/compiler qualification,
+external Google login and hosted/customer outcomes.
+
+The 30-assertion SQL packet also uses an independent local database connection to
+hold the precise FK-writer table lock. Preparation must fail NOWAIT with SQLSTATE
+55P03, preserve exact mailbox/journal/Auth state, and succeed after that owned
+connection is drained. Post-preparation readback verifies the table SHARE fence.
+Related ownership/readiness fields remain exact in a grouped JSON assertion;
+foundation172, journal301, Google30 and legacy10 counts are unchanged. This uses
+`dblink` in the disposable full schema, not a production connection. Executable
+source alone is not a passed contention or provider result.

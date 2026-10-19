@@ -402,8 +402,10 @@
       "devDependencies": {
         "@electric-sql/pglite": "0.5.8",
         "@electric-sql/pglite-pgtap": "0.0.9",
+        "@supabase/supabase-js": "2.117.1",
         "supabase": "2.117.0",
         "typescript": "7.0.2",
+        "zod": "4.6.2",
       },
     },
     "apps/devbox-control": {

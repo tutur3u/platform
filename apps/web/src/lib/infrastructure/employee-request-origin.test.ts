@@ -126,7 +126,6 @@ describe('all active employee adapters', () => {
     });
     const handlers = createEmployeeAddressMigrationRequestHandlers({
       authorize,
-      enabled: () => true,
       configuration: unused,
       admin: unused,
       newAttemptId: unused,
