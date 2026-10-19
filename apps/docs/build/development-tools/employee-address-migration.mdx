@@ -6,7 +6,7 @@ description: 'Stable identity SQL, Auth and Web suppliers and their qualificatio
 The portable protocol and suppliers live in
 `packages/utils/src/internal-accounts/employee-address-migration*.ts`.
 Infrastructure retains compatible re-exports. Web owns POST endpoints under
-`/api/v1/infrastructure/internal-accounts/address-migrations/{inspect,migrate}`.
+`/api/v1/infrastructure/internal-accounts/address-migrations/{inspect,prepare,migrate}`.
 The Infrastructure internal-accounts page exposes their operator dialog through
 `@tuturuuu/internal-api/infrastructure`. Runtime availability follows current root
 administrator permission, valid server configuration and fresh SQL/provider
@@ -15,6 +15,48 @@ an absent or false `EMPLOYEE_ADDRESS_MIGRATION_RUNTIME_ENABLED` does not disable
 an otherwise authorized operation. CI qualification selections below remain
 independently opt-in test controls. Account execution still needs the operator's
 authorized exact tuple and the operation's one-attempt protocol.
+
+## Explicit operator preparation and recovery
+
+In Infrastructure's internal-accounts dialog, enter the target UUID and exact
+legacy source address. For an existing intent, also enter its original operation
+UUID **before the first action**. Leave the operation field blank only for a new
+intent. The first inspect or preparation persists and freezes the operation UUID,
+target, both addresses and revision zero. Denial does not unlock or discard them.
+The original operation remains available through close/reopen and remount within
+the same actor/workspace browser session. Unavailable or malformed recovery
+storage fails closed; do not replace an uncertain operation to bypass recovery.
+A new session with no stored receipt starts in editing state.
+
+Use **Confirm and prepare mailbox once** only as a separately authorized action.
+Retype the exact target UUID and both addresses. This uses the typed existing
+prepare POST with the account-action header and unchanged server authorization,
+origin and permission checks. A preparation receipt means mailbox preparation
+was acknowledged, never that account migration completed. Inspect the same
+operation afterwards. Retype both addresses for migration; the session performs
+another fresh inspection before its sole migration request.
+
+Version 2 browser receipts record the exact tuple and an unattempted, prepared,
+uncertain-inspection, uncertain-preparation or migration-dispatched phase.
+Legacy bare tuples remain compatible and conservatively inspect-only. An unknown
+preparation outcome cannot be replayed, including after denied, forbidden or
+invalid inspections. Only exact authoritative readiness may unlock migration;
+preparation never becomes eligible again. Before any preparation, a known
+not-ready/conflict inspection may allow explicit preparation, while a pre-read
+forbidden/invalid response retains the unknown-inspection fence. A dispatched
+migration can only be inspected, regardless of later ready/denied replies. Transport errors and malformed acknowledgements do
+not establish readiness or completion. The UI does not retry either write.
+
+Focused coverage lives in Infrastructure's `address-migration-session.test.ts`
+and `address-migration-dialog.test.tsx`, and internal-api's
+`employee-address-migration.test.ts`. They cover exact preparation confirmation,
+known-operation recovery, denied/remounted tuple retention, legacy receipts,
+unknown outcomes, actor retirement, receipt validation and fresh migration
+preflight. Synthetic tests do not establish production mailbox delivery or
+customer identity/data preservation. Run them from their owning app/package using
+the currently admitted resource route; do not activate or rewrite shared shims to
+obtain local admission. Exact-commit CI and authorized customer acceptance remain
+separate evidence.
 
 ## Address and identity policy
 

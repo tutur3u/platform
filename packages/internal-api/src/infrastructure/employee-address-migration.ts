@@ -87,3 +87,35 @@ export function migrateInternalEmployeeAddress(
 ) {
   return call('migrate', payload, options);
 }
+
+const Preparation = z.strictObject({
+  prepared: z.literal(true),
+  userId: Uuid,
+  destinationAddress: z.email(),
+});
+
+export async function prepareInternalEmployeeAddressMigration(
+  payload: InternalEmployeeAddressMigrationPayload,
+  options?: InternalApiClientOptions
+) {
+  const tuple = Tuple.parse(payload);
+  const response = await getInternalApiClient(options).json<unknown>(
+    '/api/v1/infrastructure/internal-accounts/address-migrations/prepare',
+    {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-tuturuuu-account-action': '1',
+      },
+      body: JSON.stringify(tuple),
+    }
+  );
+  const receipt = Preparation.parse(response);
+  if (
+    receipt.userId !== tuple.userId ||
+    receipt.destinationAddress !== tuple.destinationAddress
+  )
+    throw new Error('Mailbox preparation receipt does not match the target');
+  return receipt;
+}

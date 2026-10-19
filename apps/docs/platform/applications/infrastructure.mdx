@@ -295,12 +295,27 @@ Web migration availability follows current root administrator permission,
 configuration and fresh SQL/provider readiness. Neither composition nor
 reauthorization consults an optional activation environment flag; unset or false
 legacy migration flag values do not block an otherwise authorized operation.
-The operator inspects the
-exact UUID/address tuple, types both addresses, performs a fresh preflight and
-submits one migration. Unknown results retain the operation UUID/revision for
-inspection across dialog close/reopen and same-session remount; provider mutation
-is never replayed. A separate reconciliation must confirm completion. Changing
-actor/workspace retires the old workflow. No password or token is requested.
+The operator can supply the existing operation UUID before the first action;
+leaving it blank creates a new operation only for a new intent. The first inspect
+or explicit preparation freezes and retains the exact operation UUID, target UUID,
+source, destination and revision, including after denial, dialog reopening and
+same-session remount. The locked fields cannot mint a replacement operation.
+
+Mailbox preparation is an explicit, separate administrator action. It requires
+retyping the exact target UUID and both addresses and calls only the existing
+`address-migrations/prepare` endpoint. Neither inspect nor migrate silently
+prepares a mailbox. Preparation acknowledgement is shown separately and requires
+inspection before migration. Migration requires both exact address confirmations
+again and a fresh authorization/readiness inspection before its single request.
+
+Recovery distinguishes unattempted, prepared, uncertain inspection/preparation
+and dispatched migration receipts. Unknown preparation stays inspect-only until inspection
+positively observes readiness or denial. A dispatched migration, including an old
+bare recovery tuple, never regains dispatch permission, even after a ready or
+denied inspection. Unknown reads cannot remove either write fence. Independently
+observed completion is required. Recovery storage is scoped to actor/workspace
+and this browser session; changing actor/workspace retires the old workflow.
+No password or token is requested.
 
 This decision applies only to the Infrastructure operator surface and Web
 migration endpoints; CREATE/RESTORE keep their existing contracts. The
