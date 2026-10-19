@@ -75,14 +75,17 @@ jobs:
           fi
       - name: Build native Start SSR with the official Void SDK
         id: apps-frontend-build
-        working-directory: apps/apps
+        uses: ./.github/actions/run-with-turbo-remote-cache
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://apps-ci.supabase.invalid
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_apps_ci_placeholder
           NEXT_PUBLIC_APP_URL: https://apps.tuturuuu.com
           NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
           TUTURUUU_NOINDEX: '1'
-        run: bun run build:cloudflare
+        with:
+          command: cd apps/apps && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Capture generated Apps route tree evidence
         if: always()
         shell: bash
@@ -176,7 +179,11 @@ jobs:
         env:
           CI: 'true'
           APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
-        run: node --test scripts/ci/apps-native-browser.runtime.mjs
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test:apps-native-browser --concurrency=1
+          token: ''
+          team: ''
       - name: Recheck output and pack only qualified bytes
         run: |
           python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
@@ -235,6 +242,10 @@ jobs:
         env:
           CI: 'true'
           APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
-        run: node --test scripts/ci/apps-native-browser.runtime.mjs
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test:apps-native-browser --concurrency=1
+          token: ''
+          team: ''
       - name: Confirm qualification did not mutate the restored artifact
         run: python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"

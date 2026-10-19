@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GATEWAY_APPS } from '../lib/apps-registry';
 import { canonicalLocaleRedirect, requestLocale } from './locale';
@@ -49,6 +51,9 @@ describe('Apps native route parity', () => {
       result.kind === 'redirect' &&
         new URL(result.href).searchParams.get('source')
     ).toBe('sidebar');
+    expect(result.kind === 'redirect' && new URL(result.href).origin).toBe(
+      'https://meet.tuturuuu.com'
+    );
   });
   it('keeps interleaved entries, string-shaped JSON and prototype-shaped query names', () => {
     vi.stubEnv('NODE_ENV', 'production');
@@ -69,12 +74,12 @@ describe('Apps native route parity', () => {
     'canonicalizes %s while preserving raw query and encoded path',
     (locale) => {
       const request = new Request(
-        `https://apps.tuturuuu.com/${locale}/meet/a%2Fb?tag=1&tag=2`
+        `https://apps.tuturuuu.com/${locale}/meet/a%2Fb?tag=1&__proto__=keep&tag=2&json=%5B1%2C2%5D&space=a%20b&plus=%2B`
       );
       const result = canonicalLocaleRedirect(request);
       expect(result?.status).toBe(307);
       expect(result?.headers.get('Location')).toBe(
-        'https://apps.tuturuuu.com/meet/a%2Fb?tag=1&tag=2'
+        'https://apps.tuturuuu.com/meet/a%2Fb?tag=1&__proto__=keep&tag=2&json=%5B1%2C2%5D&space=a%20b&plus=%2B'
       );
       expect(result?.headers.get('Set-Cookie')).toContain(
         `NEXT_LOCALE=${locale};`
