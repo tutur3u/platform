@@ -7,6 +7,7 @@ import {
   assertRollbackSource,
   feedbackPackets,
   foundationPackets,
+  journalPackets,
   schemaFailureDiagnostic,
   schemaReceipt,
   selectFeedback,
@@ -83,11 +84,17 @@ test('feedback selection is separate from every existing optional profile', () =
     [false, false, false, 172],
     [true, false, false, 301],
     [false, true, false, 196],
-    [false, false, true, 182],
-    [true, false, true, 311],
+    [false, false, true, 212],
+    [true, false, true, 341],
   ]) {
     const selected = selectSchemaPackets(journal, personal, address, false);
     assert.deepEqual(selected, selectSchemaPackets(journal, personal, address));
+    if (address)
+      assert.deepEqual(selected, [
+        ...(journal ? journalPackets : foundationPackets),
+        ['employee-google-destination-migration.sql', 30],
+        ['employee-address-migration.sql', 10],
+      ]);
     assert.equal(
       selected.reduce((n, [, assertions]) => n + assertions, 0),
       count
