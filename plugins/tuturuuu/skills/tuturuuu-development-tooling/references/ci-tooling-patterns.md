@@ -616,6 +616,12 @@ dry-run and authorized deployment consume that same emitted target. Preserve
 bindings, migrations, routes, secret names and active identity/protocol policies.
 Assert each service's source compatibility flags rather than copying another
 Worker's flags; Devbox Control intentionally has none.
+
+For scoped Bun changes, frozen restoration alone does not prove the effective
+provider or alias identity. Follow the [scoped lockfile guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx#move-one-workspace-at-a-time)
+for complete dependency closures, installed app/CLI/plugin resolution checks and
+exact-commit CI build evidence.
+
 Devbox Control's runtime script demonstrates disposable-credential denial tests;
 those do not prove hosted Supabase, runner or WebSocket success. Follow the owning
 runbook for commands and remaining acceptance, and keep local validation serialized.
