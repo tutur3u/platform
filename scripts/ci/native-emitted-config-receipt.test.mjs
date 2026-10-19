@@ -16,6 +16,8 @@ import { dirname, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { bounded } from './native-emitted-config-receipt.mjs';
+
 const helper = fileURLToPath(
   new URL('./native-emitted-config-receipt.mjs', import.meta.url)
 );
@@ -288,6 +290,69 @@ for (const saved of [false, true]) {
   }
 }
 
+test('empty inventory objects derive zero child keys; changed objects retain full shape', (t) => {
+  const config = {
+    vars: {},
+    [canary]: {},
+    changed: { [canary]: true, other: {} },
+  };
+  const { receipt, result, raw } = fixture(t, { config }).invoke();
+  assert.equal(result.status, 0);
+  assert.deepEqual(receipt.inventory, [
+    { name: 'vars', type: 'object', empty: true },
+    { unknownNameHash: hash(canary), type: 'object', empty: true },
+    {
+      unknownNameHash: hash('changed'),
+      type: 'object',
+      empty: false,
+      keyCount: 2,
+      keyHashes: [hash(canary), hash('other')].sort(),
+    },
+  ]);
+  for (const row of receipt.inventory.filter((item) => item.empty)) {
+    const name = row.name ?? canary;
+    assert.equal(Object.keys(config[name]).length, 0);
+    assert.equal(row.type, 'object');
+    assert.equal(Object.hasOwn(row, 'keyCount'), false);
+    assert.equal(Object.hasOwn(row, 'keyHashes'), false);
+  }
+  assert.equal(receipt.inventoryHash, hash(JSON.stringify(receipt.inventory)));
+  assert.ok(!raw.includes(canary));
+});
+
+test('exact receipt byte boundary preserves full inventory or fails closed', () => {
+  const receipt = {
+    schema: 1,
+    diagnosticOnly: true,
+    status: 'recorded',
+    keyCount: 1,
+    configHash: hash('config'),
+    pointerHash: hash('pointer'),
+    inventoryHash: hash('inventory'),
+    inventory: [{ unknownNameHash: hash(canary), type: 'object', empty: true }],
+    padding: '',
+  };
+  receipt.padding = 'x'.repeat(
+    16 * 1024 - Buffer.byteLength(`${JSON.stringify(receipt)}\n`)
+  );
+  const full = bounded(receipt);
+  assert.equal(Buffer.byteLength(full), 16 * 1024);
+  assert.deepEqual(JSON.parse(full), receipt);
+  receipt.padding += 'x';
+  const overflow = bounded(receipt);
+  assert.deepEqual(JSON.parse(overflow), {
+    schema: 1,
+    diagnosticOnly: true,
+    status: 'unavailable',
+    reason: 'overflow',
+    keyCount: 1,
+    configHash: receipt.configHash,
+    pointerHash: receipt.pointerHash,
+    inventoryHash: receipt.inventoryHash,
+  });
+  assert.ok(!overflow.includes(canary));
+});
+
 test('overflow retains hashes/counts, fails and never presents a partial inventory', (t) => {
   const config = Object.fromEntries(
     Array.from({ length: 400 }, (_, i) => [`${canary}${i}`, {}])
@@ -319,8 +384,30 @@ test('78-field inventory fits without an artificial 1100-byte receipt cap', (t) 
     Array.from({ length: 78 }, (_, i) => [`field${i}`, {}])
   );
   const { receipt, result, raw } = fixture(t, { config }).invoke();
-  assert.equal(result.status, 0);
+  assert.equal(
+    result.status,
+    0,
+    JSON.stringify({
+      status: result.status,
+      reason: receipt.reason ?? null,
+      keyCount: receipt.keyCount ?? null,
+      inventoryLength: receipt.inventory?.length ?? null,
+      defaultProbePresent: Object.hasOwn(receipt, 'defaultProbe'),
+      serializedByteCount: Buffer.byteLength(raw),
+    })
+  );
+  assert.equal(receipt.keyCount, 78);
   assert.equal(receipt.inventory.length, 78);
+  assert.deepEqual(
+    receipt.inventory,
+    Object.keys(config).map((name) => ({
+      unknownNameHash: hash(name),
+      type: 'object',
+      empty: true,
+    }))
+  );
+  assert.equal(receipt.defaultProbe.fields.length, 11);
+  assert.equal(receipt.inventoryHash, hash(JSON.stringify(receipt.inventory)));
   assert.ok(Buffer.byteLength(raw) > 1100);
 });
 

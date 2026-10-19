@@ -252,7 +252,9 @@ export function collect({ root, appDirectory, eventSha }) {
   if (!object(config)) reject('config_shape');
   const inventory = Object.entries(config).map(([name, value]) => ({
     ...(PUBLIC_KEYS.has(name) ? { name } : { unknownNameHash: hash(name) }),
-    ...shape(value),
+    ...(object(value) && empty(value)
+      ? { type: 'object', empty: true }
+      : shape(value)),
   }));
   const receipt = {
     schema: 1,
