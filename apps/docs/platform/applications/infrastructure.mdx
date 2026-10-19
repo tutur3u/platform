@@ -309,8 +309,10 @@ inspection before migration. Migration requires both exact address confirmations
 again and a fresh authorization/readiness inspection before its single request.
 
 Recovery distinguishes unattempted, prepared, uncertain inspection/preparation
-and dispatched migration receipts. Unknown preparation stays inspect-only until inspection
-positively observes readiness or denial. A dispatched migration, including an old
+and dispatched migration receipts. Unknown preparation stays inspect-only until
+inspection positively observes exact readiness, which may unlock migration only.
+Denied, forbidden or invalid inspections never clear the preparation fence or
+allow another preparation. A dispatched migration, including an old
 bare recovery tuple, never regains dispatch permission, even after a ready or
 denied inspection. Unknown reads cannot remove either write fence. Independently
 observed completion is required. Recovery storage is scoped to actor/workspace

@@ -73,8 +73,8 @@ export function createMigrationTuple(
   operationId: string = crypto.randomUUID()
 ) {
   return Tuple.safeParse({
-    operationId,
-    userId,
+    operationId: operationId.toLowerCase(),
+    userId: userId.toLowerCase(),
     sourceAddress,
     destinationAddress: sourceAddress.replace(
       '@xwf.tuturuuu.com',
@@ -300,7 +300,7 @@ export class AddressMigrationSession {
   ) {
     if (
       !this.canPrepare() ||
-      target !== tuple.userId ||
+      target.toLowerCase() !== tuple.userId ||
       source !== tuple.sourceAddress ||
       destination !== tuple.destinationAddress ||
       !this.freeze(tuple)

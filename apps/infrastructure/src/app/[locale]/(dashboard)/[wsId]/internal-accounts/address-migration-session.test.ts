@@ -1,4 +1,9 @@
 import { InternalApiError } from '@tuturuuu/internal-api/client';
+import {
+  inspectInternalEmployeeAddressMigration,
+  prepareInternalEmployeeAddressMigration,
+} from '@tuturuuu/internal-api/infrastructure';
+import { AddressMigrationRequest } from '@tuturuuu/utils/internal-accounts/employee-address-migration-contract';
 import { describe, expect, it, vi } from 'vitest';
 import {
   AddressMigrationSession,
@@ -229,6 +234,86 @@ describe('address migration operator session', () => {
     ).toEqual({ success: true, data: tuple });
     expect(uuid).not.toHaveBeenCalled();
     uuid.mockRestore();
+  });
+  it('canonicalizes supplied UUIDs through the real inspection and preparation transports', async () => {
+    const canonical = {
+      ...tuple,
+      operationId: 'abcdefab-cdef-4abc-8def-abcdefabcdef',
+      userId: 'bcdefabc-defa-4bcd-8efa-bcdefabcdefa',
+    };
+    const actorId = 'cdefabcd-efab-4cde-8fab-cdefabcdefab';
+    for (const noncanonical of [
+      { ...canonical, operationId: canonical.operationId.toUpperCase() },
+      { ...canonical, userId: canonical.userId.toUpperCase() },
+    ]) {
+      expect(
+        AddressMigrationRequest.safeParse({ ...noncanonical, actorId }).success
+      ).toBe(false);
+    }
+    const uuid = vi.spyOn(crypto, 'randomUUID');
+    try {
+      const result = createMigrationTuple(
+        canonical.userId.toUpperCase(),
+        canonical.sourceAddress,
+        canonical.operationId.toUpperCase()
+      );
+      expect(result).toEqual({ success: true, data: canonical });
+      if (!result.success) throw new Error('Invalid canonical tuple');
+      const fetcher = vi.fn<typeof fetch>(async (url, init) => {
+        const body: unknown = JSON.parse(String(init?.body));
+        const request = AddressMigrationRequest.parse(
+          Object.assign({}, body, { actorId })
+        );
+        return String(url).endsWith('/inspect')
+          ? Response.json(
+              { status: 'denied', code: 'not_ready' },
+              { status: 409 }
+            )
+          : Response.json({
+              prepared: true,
+              userId: request.userId,
+              destinationAddress: request.destinationAddress,
+            });
+      });
+      const options = { baseUrl: 'https://infra.test', fetch: fetcher };
+      const { session, ports } = fixture();
+      ports.inspect.mockImplementation((payload) =>
+        inspectInternalEmployeeAddressMigration(payload, options)
+      );
+      ports.prepare.mockImplementation((payload) =>
+        prepareInternalEmployeeAddressMigration(payload, options)
+      );
+      await session.inspect(result.data);
+      expect(session.view).toEqual({ kind: 'denied', tuple: canonical });
+      await session.prepare(
+        result.data,
+        canonical.userId.toUpperCase(),
+        canonical.sourceAddress,
+        canonical.destinationAddress
+      );
+      expect(session.view).toEqual({ kind: 'prepared', tuple: canonical });
+      const reopened = new AddressMigrationSession(ports);
+      reopened.recover();
+      expect(reopened.view).toEqual({ kind: 'prepared', tuple: canonical });
+      await reopened.prepare(
+        result.data,
+        canonical.userId,
+        canonical.sourceAddress,
+        canonical.destinationAddress
+      );
+      expect(ports.prepare).toHaveBeenCalledExactlyOnceWith(canonical);
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      expect(fetcher.mock.calls.map(([url]) => url)).toEqual([
+        'https://infra.test/api/v1/infrastructure/internal-accounts/address-migrations/inspect',
+        'https://infra.test/api/v1/infrastructure/internal-accounts/address-migrations/prepare',
+      ]);
+      expect(
+        fetcher.mock.calls.map(([, init]) => JSON.parse(String(init?.body)))
+      ).toEqual([canonical, canonical]);
+      expect(uuid).not.toHaveBeenCalled();
+    } finally {
+      uuid.mockRestore();
+    }
   });
   it('requires exact target and both confirmations for explicit preparation', async () => {
     const { session, ports } = fixture();
@@ -495,6 +580,10 @@ describe('address migration operator session', () => {
       tuple.destinationAddress
     );
     expect(session.view).toEqual({ kind: 'denied', tuple });
+    session.recover();
+    expect(session.view).toEqual({ kind: 'denied', tuple });
+    expect(ports.inspect).not.toHaveBeenCalled();
+    expect(ports.migrate).not.toHaveBeenCalled();
     expect(ports.prepare).not.toHaveBeenCalled();
   });
   it('rejects mismatched preparation acknowledgement without rearming', async () => {
