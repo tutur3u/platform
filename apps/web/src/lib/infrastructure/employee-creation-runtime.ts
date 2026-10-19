@@ -8,12 +8,9 @@ import { createEmployeeCreationOperationStore } from './employee-creation-operat
 import { createEmployeeRuntimeRpc } from './employee-creation-rpc';
 import { createEmployeeRpcPhaseProvider } from './employee-creation-rpc-provider';
 
-/** Roll out only after HTTP/Auth qualification and the observation migration. */
 export async function createEmployeeRuntimeJournal(
   request: Request
 ): Promise<EmployeeCreationJournal | undefined> {
-  if (process.env.EMPLOYEE_CREATION_RUNTIME_ENABLED !== 'true')
-    return undefined;
   try {
     const config = checkEnvVariables({ useSecretKey: true });
     const transport = createEmployeeRuntimeRpc(config);

@@ -71,11 +71,13 @@ Infrastructure CI build and an authorized production recheck after deployment.
 ### HTTP RPC runtime candidate
 
 The Web employee CREATE route can compose the durable operation journal with
-fixed service-only Supabase RPCs. `EMPLOYEE_CREATION_RUNTIME_ENABLED` defaults to
-disabled. Enable it only after the selected source passes isolated SQL,
-generated-type, HTTP/Auth and exact-build checks and its migrations are verified
-in the target project. Infrastructure consumes the same availability endpoint;
-its create control remains disabled while the runtime is unavailable.
+fixed service-only Supabase RPCs. CREATE is available by default to all authorized
+root administrators with `manage_internal_accounts`; no administrator activation
+exception or `EMPLOYEE_CREATION_RUNTIME_ENABLED` opt-in applies. Server
+configuration and SQL/provider readiness still determine availability.
+Infrastructure consumes the same availability endpoint; its create control
+remains disabled while the runtime is unavailable. Isolated SQL, generated-type,
+HTTP/Auth, target-project migrations and exact-build checks remain release evidence.
 
 The adapter uses the configured server Supabase project for both Auth and SQL.
 The request still requires an eligible root administrator, current membership and
@@ -120,10 +122,12 @@ authentication and target-project SQL qualification remain separate release gate
 ### RESTORE and reconciliation POST candidate
 
 Web owns `POST /api/v1/infrastructure/internal-accounts/employees/:userId/restore`
-and the sibling `/reconcile` route. `EMPLOYEE_RESTORATION_RUNTIME_ENABLED`
-defaults to disabled and is independent of the CREATE gate. Both routes remain
-unavailable while this gate is absent. The Infrastructure console consumes this contract through the managed-access
-dialog below; legacy-domain address migration remains a separate flow.
+and the sibling `/reconcile` route. Both are available by default to all authorized
+root administrators with `manage_internal_accounts`; no administrator activation
+exception or `EMPLOYEE_RESTORATION_RUNTIME_ENABLED` opt-in applies. Configuration,
+request authorization and lifecycle/SQL/provider guards remain mandatory. The
+Infrastructure console consumes this contract through the managed-access dialog
+below; legacy-domain address migration remains a separate flow.
 
 The routes reuse the portable restoration HTTP/orchestration helpers, with
 Infrastructure compatibility exports. The server supplies the actor and provider;
@@ -144,14 +148,17 @@ begins an operation or dispatches another provider mutation.
 `employee-restoration-rpc.test.ts` and `employee-restoration-runtime.test.ts` in
 Web exercise actual loopback HTTP against a disposable synthetic SQL endpoint,
 including unpersisted replies, revocation and provider acknowledgement loss.
-The shipped route test proves default-off behavior independently of CREATE.
+The shipped route test proves RESTORE and reconciliation work with unset or false
+activation flags independently of CREATE, while nonadmins and unavailable server
+configuration remain denied. `employee-creation-runtime.test.ts` covers the same
+production-composition policy for CREATE and retains SQL-readiness failures.
 The retained Infrastructure suites cover helper compatibility. These fixtures
-qualify source and HTTP serialization only: before activation, independently
+qualify source and HTTP serialization only: before release, independently
 verify the five deployed function definitions and service-only ACLs, commit and
 rollback/readback behavior through real PostgREST/PostgreSQL, request-session
 and actor revocation behavior with real Auth, and the exact-source Web and
 Infrastructure CI builds. Production migration completion and authorized
-activation remain release-owner gates; neither GET inspection nor CREATE
+delivery remain release-owner gates; neither GET inspection nor CREATE
 qualification establishes RESTORE delivery.
 
 ### Managed-access console
@@ -174,7 +181,7 @@ replays the provider mutation. No client-generated replacement UUID or automatic
 POST retry is used. State is private and ephemeral; a new page lifetime recovers
 operations from the authorized persisted inspection rather than browser storage.
 
-RESTORE remains disabled by default at the Web endpoint. Inspection does not
+RESTORE is enabled by default for authorized root administrators at the Web endpoint. Inspection does not
 advertise write availability. A capability-unavailable response therefore locks
 writes for the current dialog lifetime while preserving read-only inspection and
 any retained uncertain operation; it does not establish account absence. Session
