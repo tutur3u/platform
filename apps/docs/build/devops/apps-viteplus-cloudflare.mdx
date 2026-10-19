@@ -1,54 +1,112 @@
 ---
-title: "Apps gateway on Vite+ and Cloudflare"
-description: "Validate the additive public Apps gateway without changing canonical traffic."
+title: "Apps native Start on Vite+ and Cloudflare"
+description: "Qualify native Apps SSR and its exact emitted artifact before staging or canonical promotion."
 ---
 
-The staging gateway is a separate public catalogue and redirect entry. It does not
-replace the existing Next Apps app, authenticated launcher, workspace controls or
-account-assurance flow. Those continue on `https://apps.tuturuuu.com`.
+Apps has a native Start SSR candidate with the production catalogue, existing
+satellite providers, English/Vietnamese locale behavior, build-info and guarded
+central API forwarding. Registered public redirects run at the Worker Request
+URL boundary; the Router does not serialize their query strings. Cards and the
+native navigation adapter use document navigation. The retained portable gateway
+is predecessor source and cannot substitute for native acceptance.
 
-## Build and validation
+## Owning validation
 
-Run the owning `test:cloudflare` script for route, cookie, header and catalogue
-controls. Require `build:cloudflare` and a built Worker runtime check in exact-commit
-CI. Existing Next scripts stay unchanged and their build remains required. Vite+
-builds the separate portable catalogue and Worker entry; it does not port Next APIs.
+`.github/workflows/apps-cloudflare.yaml` uses Bun1.4.3 and Node24.22.0. After the
+parent reconciles the frozen candidate and shared tooling, the owning job builds
+active dependencies, generates the exact checkout's build metadata, runs native
+unit/types/lint and invokes `build:cloudflare` once for the frontend. The official
+Void SDK supplies the Cloudflare adapter; no separate adapter or RSC mode is added.
+No local release build is implied by this runbook.
 
-The staging config names `tuturuuu-apps-vite-staging` with no production custom
-domain, database, scheduler, secret or durable-state binding. Local preview must
-keep remote bindings disabled. Source configuration does not prove a deployed app.
+The artifact helper discovers the actual config through
+`.wrangler/deploy/config.json`. Both `configPath` and an explicitly empty
+`auxiliaryWorkers` array are required. The config, Worker main and assets must
+stay within the output tree; ASSETS must use `dist/client`, Worker-first routing
+and no SPA fallback. Static robots/sitemap bytes must match the checked-out public
+sources. Added resources, routes, accounts, environments, secret declarations,
+unknown config fields and symlinks fail closed. A new adapter field needs review
+against its actual emitter; do not relax the contract to get a green job.
+Void1.1.12's owning Cloudflare Vite plugin1.64.0 unconditionally emits
+`no_bundle: true` and one ESModule rule with exactly `**/*.js` and `**/*.mjs`.
+The source-derived fixture includes those fields and the exact serialized empty
+normalizer defaults. Producer `configPath`/`userConfigPath` metadata points to the
+original `.void-wrangler.jsonc`; it is sealed information, never dereferenced on
+restore. The deploy pointer and emitted main/assets paths have independent
+containment checks. The fixture is not observed build output or runtime evidence.
 
-## Public and authenticated behavior
+The checked name `tuturuuu-apps-vite-staging` is the candidate's source-declared
+sandbox name. This check does not establish an existing hosted Worker, account,
+route, binding, credential, rollback version or provisioning authority. Staging
+keeps `TUTURUUU_NOINDEX=1` and the canonical host remains503 unless the separately
+admitted canonical-host flag is enabled. This lane has no no-staging override.
 
-App aliases and redirect destinations come from the existing shared catalogue.
-Unknown app/API routes return 404, mutations return 405, and destinations cannot
-be chosen by a query parameter. Encoded path segments and repeated query values
-are preserved, including the existing default `source=apps` marker.
+Generated Worker binding declarations and their compatibility harness live in
+runner temporary storage. They must not overwrite the75-file frozen app source.
+The owning `type-check` and applicable exact-source shared CI gates remain required.
 
-Explicit English/Vietnamese prefixes redirect to the prefix-free route and set
-a host-only `NEXT_LOCALE` cookie. The host-only scope is intentional for isolated
-staging; any production shared-domain cookie treatment needs its own qualification.
-The catalogue reads that cookie and the language header, renders meaningful HTML
-before hydration, and keeps theme selection from the browser's existing `theme`
-value without writing a preference. Native controls remain keyboard accessible.
+## Actual emitted acceptance
 
-Entries with app-session/Supabase cookies or any explicit Authorization header
-return to the original Apps origin for its existing authentication and assurance
-checks. This fallback does not validate credentials or grant access. The public
-Worker never proxies authenticated APIs. Replies are private/no-store and vary
-with cookie, authorization and language. Staging is noindex; the Worker rejects
-requests addressed to the canonical production host. Full font/design/authenticated
-provider and production SEO parity are still separate acceptance gates.
+`cloudflare/native-built-worker.test.mjs` runs the emitted Worker with disposable
+local auth/API fixtures through the owning Wrangler/Miniflare emitted-module
+adapter. Every runtime Worker has an outbound deny service permitting only those
+exact fixture endpoints. A second instance of the same compiled Worker exercises
+its real API handler against an unadmitted origin and must receive599 without
+fixture forwarding; the primary HTTP/SSR/RPC suite must record zero unexpected
+requests. No runtime commit-hash override is supplied. It covers bilingual
+signed/anonymous SSR, the real
+compiled loader RPC, build identity, all30 registered redirects, guard/central
+status/method/body/cookie behavior and multiple response cookies. It includes120
+query assertions: duplicate/interleaved/numeric names, `__proto__`, literal JSON,
+`next`, tracking, empty/repeated `source`, encoded slash, spaces and literal plus.
+The default `source=apps` is appended only when the name is absent.
 
-## Staging and rollback
+`scripts/ci/apps-native-browser.runtime.mjs` opens the emitted configuration in
+local workerd through the official Wrangler/Miniflare adapter and invokes the
+frozen `verifyNativeBrowserNavigation` helper. The helper loads the real catalogue,
+attaches each regression query to an actual card anchor and clicks it, checking
+Worker307 Location and final browser URL for all30 destinations. Only external
+destination HTML is fulfilled with a disposable fixture. Other browser/provider
+egress is denied. Existing Web Playwright owns the browser driver; this does not
+add an Apps dependency or change the lock. Its availability and Chromium setup
+must pass in the exact source job. Both new and restored artifacts run this gate.
 
-No deployment command is part of this slice. Before a staging deployment, verify
-the account, isolated target, emitted Worker/assets, source SHA, required provider
-authority and rollback plan. Build-info reports only a supplied source SHA; absence
-is not success. The source field is not a substitute for artifact provenance.
+The runtime filename is intentionally outside generic source-only test discovery;
+no artifact-dependent suite may silently run or skip in a job that never builds
+or restores the artifact. The Python artifact suite is source-only and explicitly
+selected by the owning workflow.
 
-Preserve the original Next/Vercel artifact and route until the full app meets
-parity and an explicit scoped traffic switch is authorized. Rollback restores
-the prior route/artifact; this public slice never changes customer data or durable
-state. Do not run a global Vite+ migrator or refresh paused Rust/TanStack runtimes
-to complete this app-local port.
+## Seal and restore
+
+`scripts/ci/apps-native-artifact.py` hashes the complete dist tree and deploy
+redirect under the exact checkout SHA. Runtime acceptance and Wrangler dry-run
+must leave those bytes unchanged. Packing copies only checked member bytes and
+its receipt; it does not invoke a build or deploy.
+
+A fresh restore job checks the same source SHA and frozen dependencies, downloads
+the single archive and rejects duplicates, traversal, symlinks, nonregular files,
+extra/missing paths, hash mismatches and archive size/count excess before admitting
+output. It restores only dist and the deploy redirect into clean owned output.
+The restored configuration, Wrangler dry-run, emitted HTTP/RPC suite and ordinary
+browser-anchor suite must pass again, followed by a final full hash comparison.
+A missing or skipped native/runtime/browser gate is not acceptance.
+
+## Delivery remains separate
+
+This workflow validates and retains artifacts; it has no publish job, provider
+credential or automatic traffic switch. Preserve the current canonical Vercel
+artifact and route. Before any staging write, the integration owner must obtain
+current hosted account/Worker/domain/routes/bindings/secret-name and deployment
+mapping, confirm the proposed sandbox is admitted, capture rollback artifacts and
+approve the scoped staging plan. No new Worker/resource/provider is provisioned
+by this preparation.
+
+After exact-commit CI and staging acceptance, the owner must complete synthetic
+SSO/session-refresh/MFA, workspace permission/visibility, bilingual hydration,
+command launcher, theme, static font/design and telemetry/consent acceptance.
+The ordinary-anchor helper does not certify all of those behaviors. Canonical
+promotion requires its own target admission, rollback qualification and existing
+release gates. Publish only the already qualified restored artifact through the
+existing Wrangler path after one final hash check; ordinary Void CLI deployment
+rebuilds/preflights and cannot stand in for exact-artifact publication. Do not
+borrow Meet's no-staging exception or another SHA's success.
