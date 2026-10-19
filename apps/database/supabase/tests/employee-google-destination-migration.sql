@@ -70,6 +70,16 @@ do $control$ begin
   perform dblink_disconnect('google_migration_fk_fixture');
 end; $control$;
 select ok(not coalesce('google_migration_fk_fixture'=any(dblink_get_connections()),false),'owned blocking connection is drained before successful preparation');
+select throws_ok($test$do $probe$
+declare fixture jsonb;
+begin
+  select request into fixture from google_migration_fixture;
+  insert into private.employee_address_migrations(operation_id,user_id,source_address,destination_address,binding,phase,attempt_id,original_state,transition_kind)
+  values((fixture->>'operationId')::uuid,(fixture->>'userId')::uuid,fixture->>'sourceAddress',fixture->>'destinationAddress',fixture,'attempted',
+    '00000000-0000-4000-8000-000000009975',private.employee_address_google_state((fixture->>'userId')::uuid,fixture->>'sourceAddress',fixture->>'destinationAddress',false),'google_destination');
+  perform private.employee_address_migration('prepare',jsonb_set(fixture,'{operationId}','"00000000-0000-4000-8000-000000009979"'));
+  raise exception using errcode='P0001',message='Replacement UUID unexpectedly prepared';
+end; $probe$;$test$,'23514','Mailbox preparation conflict','a replacement UUID cannot bypass an existing attempt');
 select is(private.employee_address_migration('prepare',request)->>'prepared','true','explicit preparation commits no Auth changes') from google_migration_fixture;
 select is(jsonb_build_object(
   'ownedActive',(select created_by='00000000-0000-4000-8000-000000009971' and status='active' from private.mail_mailboxes where id='00000000-0000-4000-8000-000000009973'),
@@ -86,7 +96,6 @@ from (select private.employee_address_migration('inspect',request) o) s);
 select is(private.employee_address_migration('reserve',binding),'true'::jsonb,'fresh prepared binding reserved') from google_migration_fixture;
 select is(private.employee_address_migration('claim',binding,'00000000-0000-4000-8000-000000009975'),'true'::jsonb,'one provider attempt') from google_migration_fixture;
 select throws_ok($$select private.employee_address_migration('prepare',request) from google_migration_fixture$$,'23514','Mailbox preparation unavailable','attempt cannot be reset by preparation');
-select throws_ok($$select private.employee_address_migration('prepare',jsonb_set(request,'{operationId}','"00000000-0000-4000-8000-000000009979"')) from google_migration_fixture$$,'23514','Mailbox preparation unavailable','a replacement UUID cannot bypass an existing attempt');
 -- GoTrue admin {email,email_confirm:true}: one new verified email identity,
 -- unchanged Google identity, same Auth UUID. This SQL simulation is not a PUT.
 update auth.users set email='google-migration-target@tuturuuu.com' where id='00000000-0000-4000-8000-000000009971';
