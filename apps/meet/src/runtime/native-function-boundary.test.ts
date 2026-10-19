@@ -118,7 +118,7 @@ describe('native function boundary', () => {
           {
             request: request('POST', headers),
             pathname: '/_meet/functions/fixture',
-            context: {},
+            context: undefined,
             handlerType: 'serverFn',
             next: dispatch,
           }

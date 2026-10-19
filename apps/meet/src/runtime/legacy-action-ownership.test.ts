@@ -17,7 +17,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: database.revalidate }));
 
-import { togglePlanLock } from '../../../../packages/apis/src/meet/actions/plans';
+import { togglePlanLock } from '@tuturuuu/apis/meet/actions/plans';
 
 describe('canonical plan owner authorization through the native port supplier', () => {
   beforeEach(() => {

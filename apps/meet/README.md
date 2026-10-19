@@ -47,6 +47,11 @@ those emitted modules alongside the Worker and client assets.
 
 ## Commands and artifacts
 
+`env.example` is the tracked placeholder template. For local development, copy
+`env.example` to `.env` and fill the required values privately. Keep `.env` out
+of Git. Void supports one local `.env` file and rejects `.env.example` and other
+dotenv variants; the non-dot template is not loaded as configuration.
+
 The package manager is Bun 1.4.3. CI uses Node 24.22.0, satisfying Void's
 Node >=24.21 requirement. `bun run build:cloudflare` invokes `vp build`.
 The development command uses loopback port 7807; central web API development
@@ -69,6 +74,24 @@ rollback contract. No deployment or resource provisioning is part of this source
 handoff.
 
 ## Verification and rollback limits
+
+`tsconfig.json` is a project-reference solution. `tsconfig.app.json` checks native
+SSR and browser sources with DOM types and emits declarations under
+`.turbo/types/app`. `tsconfig.cloudflare.json` consumes those declarations and
+checks the custom Worker, Live/provider roots, generated bindings, and existing
+realtime backend roots against Workers types, emitting `.turbo/types/worker`.
+Both projects remain composite and emit declarations only. The native request
+port passes the actual environment object unchanged without loading Worker
+globals into the browser project.
+
+`type-check` and `cf:typecheck` use the existing cache-invalidation wrapper with
+`--build`; CI alone executes this declaration build. The app-local Turbo config
+adds `.turbo/types/**` to inherited outputs. Project build info remains at
+`.turbo/tsconfig.tsbuildinfo` and `dist/tsconfig.tsbuildinfo`, which the existing
+wrapper clears when its dependency fingerprint changes. Leaf project configs
+are Turbo inputs and TypeScript project inputs; they are not additional wrapper
+fingerprint inputs. Cold compilation, restored declarations, changed leaf
+configs, and missing declarations with retained build info require CI proof.
 
 Focused bridge, routing, native function, tuple, and authorization regressions
 live under `src/runtime/*.test.ts`. Authored tests are not runtime proof.

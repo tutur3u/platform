@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
 export const loadMeetPage = createServerFn({ method: 'GET' })
-  .inputValidator(
+  .validator(
     z.object({
       path: z
         .string()

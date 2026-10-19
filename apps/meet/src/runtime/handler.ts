@@ -6,18 +6,21 @@ import { MEET_FUNCTION_BASE } from './native-function-config';
 import { nativeFunctionProxy } from './native-function-proxy';
 import { dispatchThroughMeetProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
+import type { MeetExecutionContext, MeetRuntimeBindings } from './worker-port';
 
 export function handleMeetRequest(
   request: Request,
-  env: CloudflareEnv,
-  ctx: ExecutionContext
+  env: MeetRuntimeBindings,
+  ctx: MeetExecutionContext
 ) {
   const path = new URL(request.url).pathname;
   if (
     (request.method === 'GET' || request.method === 'HEAD') &&
     (path.startsWith('/assets/') || publicAssets.has(path))
-  )
+  ) {
+    if (!env.ASSETS) throw new Error('Meet assets binding is unavailable');
     return env.ASSETS.fetch(request);
+  }
   return dispatchThroughMeetProxy({
     request,
     proxy:

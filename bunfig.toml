@@ -13,6 +13,14 @@ globalStore = false
 # Require npm releases to be at least 1 day old before Bun can install them
 minimumReleaseAge = 86400
 minimumReleaseAgeExcludes = [
+  "@cloudflare/build-output-utils",
+  "@cloudflare/codemods",
+  "@cloudflare/config",
+  "@cloudflare/pages-plugin-vercel-og",
+  "@cloudflare/runtime-types",
+  "@cloudflare/sandbox",
+  "@cloudflare/workers-auth",
+  "@cloudflare/workers-utils",
   # Vercel maintains Next.js and publishes its framework packages together.
   # Bun currently matches exact package names here, so keep this list aligned
   # with every @next package present in bun.lock.

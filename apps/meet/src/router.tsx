@@ -80,7 +80,15 @@ function ErrorPage({ error, reset }: ErrorComponentProps) {
       showVersionBadge={false}
       params={{}}
     >
-      <AppErrorBoundary appName="Meet" error={error} reset={reset} />
+      <AppErrorBoundary
+        appName="Meet"
+        error={
+          error instanceof Error
+            ? error
+            : new Error(String(error), { cause: error })
+        }
+        reset={reset}
+      />
     </AppProviders>
   );
 }

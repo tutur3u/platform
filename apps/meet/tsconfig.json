@@ -1,31 +1,16 @@
 {
-  "extends": "@tuturuuu/typescript-config/react-library.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.cloudflare.json"
+    }
+  ],
   "compilerOptions": {
-    "module": "ESNext",
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "Bundler",
-    "types": ["vite/client", "node", "@cloudflare/workers-types"]
-  },
-  "include": [
-    "src/runtime",
-    "src/router.tsx",
-    "src/proxy.ts",
-    "src/features",
-    "src/hooks",
-    "src/lib",
-    "src/utils",
-    "src/constants",
-    "src/declarations.d.ts",
-    "cloudflare-env.d.ts",
-    "global.d.ts",
-    "messages",
-    "vite.config.ts",
-    "void.config.ts",
-    "src/start.ts"
-  ],
-  "exclude": ["node_modules", "dist", ".turbo"]
+    }
+  }
 }

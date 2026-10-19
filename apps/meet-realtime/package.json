@@ -2,8 +2,8 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.63.1",
     "typescript": "7.0.2",
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.1.0",
-    "vite-plus": "1.1.0",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+    "vite-plus": "1.3.0",
     "wrangler": "4.149.0"
   },
   "name": "@tuturuuu/meet-realtime",

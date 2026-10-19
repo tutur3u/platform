@@ -1,4 +1,5 @@
 import { createServerFn, getRouterInstance } from '@tanstack/react-start';
+import { legacyActionSchemas } from './legacy-action-contracts';
 import type { LegacyActionSupplier } from './legacy-action-ports';
 import { refreshConfirmedAction } from './legacy-action-refresh';
 
@@ -10,7 +11,7 @@ async function visibleResult<T>(result: Promise<T>) {
 }
 
 const guestLoginTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.guestLogin)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'
@@ -25,7 +26,7 @@ export function guestLogin(
 }
 
 const togglePlanLockTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.togglePlanLock)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'
@@ -40,7 +41,7 @@ export function togglePlanLock(
 }
 
 const removeUserFromPlanTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.removeUserFromPlan)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'
@@ -55,7 +56,7 @@ export function removeUserFromPlan(
 }
 
 const createPollTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.createPoll)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'
@@ -70,7 +71,7 @@ export function createPoll(
 }
 
 const deletePollTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.deletePoll)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'
@@ -85,7 +86,7 @@ export function deletePoll(
 }
 
 const addPollOptionTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.addPollOption)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'
@@ -100,7 +101,7 @@ export function addPollOption(
 }
 
 const deletePollOptionTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.deletePollOption)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'
@@ -115,7 +116,7 @@ export function deletePollOption(
 }
 
 const submitVoteTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.submitVote)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'
@@ -130,7 +131,7 @@ export function submitVote(
 }
 
 const toggleWherePollTransport = createServerFn({ method: 'POST' })
-  .inputValidator((value: unknown) => value)
+  .validator(legacyActionSchemas.toggleWherePoll)
   .handler(async ({ data }) => {
     const { getLegacyActionPorts } = await import(
       './legacy-action-runtime.server'

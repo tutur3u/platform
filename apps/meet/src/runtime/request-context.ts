@@ -3,12 +3,13 @@ import {
   RequestCookies,
   ResponseCookies,
 } from 'next/dist/compiled/@edge-runtime/cookies';
+import type { MeetExecutionContext, MeetRuntimeBindings } from './worker-port';
 
 export interface MeetRequestContext {
   request: Request;
   responseHeaders: Headers;
   waitUntil: (work: Promise<unknown>) => void;
-  cloudflare?: { env: CloudflareEnv; ctx: ExecutionContext };
+  cloudflare?: { env: MeetRuntimeBindings; ctx: MeetExecutionContext };
 }
 
 const requests = new AsyncLocalStorage<MeetRequestContext>();

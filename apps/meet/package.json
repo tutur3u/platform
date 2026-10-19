@@ -27,7 +27,7 @@
     "build:cloudflare": "vp build",
     "preview:cloudflare": "vp preview",
     "deploy:cloudflare": "wrangler deploy --config dist/ssr/wrangler.json",
-    "cf:typecheck": "tsc --noEmit -p tsconfig.cloudflare.json",
+    "cf:typecheck": "node ../../scripts/run-tsc-build.js --build",
     "cf:typegen": "wrangler types --config dist/ssr/wrangler.json --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts"
   },
   "dependencies": {
@@ -85,7 +85,6 @@
     "@types/node": "^26.5.1",
     "@types/react": "~19.2.18",
     "@types/react-dom": "~19.2.7",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitejs/plugin-react": "6.1.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.0.1",
