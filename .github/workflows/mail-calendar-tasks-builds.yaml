@@ -213,7 +213,11 @@ jobs:
       - name: Verify runtime checks left the sealed artifact unchanged
         run: |
           node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
-          tar -czf "$RUNNER_TEMP/calendar-worker.tar.gz" -C apps/calendar dist .wrangler/deploy/config.json cloudflare-env.d.ts calendar-artifact.json
+          pointer=.wrangler/deploy/config.json
+          if [ -f apps/calendar/.void/preview-deploy-config.json ]; then
+            pointer=.void/preview-deploy-config.json
+          fi
+          tar -czf "$RUNNER_TEMP/calendar-worker.tar.gz" -C apps/calendar dist "$pointer" cloudflare-env.d.ts calendar-artifact.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}

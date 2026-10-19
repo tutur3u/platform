@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  renameSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -398,3 +399,301 @@ test('all actual artifact and Worker workflow calls carry the selected SHA argum
     );
   }
 });
+function savePointer(app) {
+  mkdirSync(resolve(app, '.void'));
+  renameSync(
+    resolve(app, '.wrangler/deploy/config.json'),
+    resolve(app, '.void/preview-deploy-config.json')
+  );
+}
+test('saved Void bytes use the native base and survive selected-file relocation', () =>
+  fixture(({ app, put }) => {
+    const bytes = readFileSync(resolve(app, '.wrangler/deploy/config.json'));
+    savePointer(app);
+    assert.deepEqual(
+      readFileSync(resolve(app, '.void/preview-deploy-config.json')),
+      bytes
+    );
+    assert.equal(
+      validateOutput(app).configPath,
+      resolve(app, 'dist/server/wrangler.json')
+    );
+    const receipt = manifest(app, sha);
+    assert.ok(receipt.files['.void/preview-deploy-config.json']);
+    assert.equal(receipt.files['.wrangler/deploy/config.json'], undefined);
+    const restored = mkdtempSync(resolve(tmpdir(), 'calendar-saved-restored-'));
+    try {
+      for (const path of [
+        'dist',
+        '.void/preview-deploy-config.json',
+        'cloudflare-env.d.ts',
+      ]) {
+        const target = resolve(restored, path);
+        mkdirSync(dirname(target), { recursive: true });
+        cpSync(resolve(app, path), target, { recursive: true });
+      }
+      verify(restored, receipt, sha);
+      assert.throws(() => verify(restored, receipt, 'b'.repeat(40)));
+      writeFileSync(resolve(restored, 'dist/server/worker.js'), 'changed');
+      assert.throws(() => verify(restored, receipt, sha));
+    } finally {
+      rmSync(restored, { recursive: true, force: true });
+    }
+    put('.void/preview-deploy-config.json', `${bytes.toString()}\n`);
+    assert.throws(() => verify(app, receipt, sha));
+  }));
+test('a seal binds pointer location even when bytes stay identical', () =>
+  fixture(({ app }) => {
+    const receipt = manifest(app, sha);
+    savePointer(app);
+    validateOutput(app);
+    assert.throws(() => verify(app, receipt, sha));
+  }));
+for (const kind of [
+  'absent',
+  'dual',
+  'dangling dual',
+  'saved symlink',
+  'dangling saved',
+  'ancestor symlink',
+  'directory',
+]) {
+  test(`saved pointer rejects ${kind}`, () =>
+    fixture(({ app, put }) => {
+      savePointer(app);
+      const saved = resolve(app, '.void/preview-deploy-config.json');
+      const native = resolve(app, '.wrangler/deploy/config.json');
+      if (kind === 'dual')
+        put('.wrangler/deploy/config.json', readFileSync(saved).toString());
+      else if (kind === 'dangling dual')
+        symlinkSync(resolve(app, 'missing'), native);
+      else if (kind === 'ancestor symlink') {
+        renameSync(resolve(app, '.void'), resolve(app, 'saved-pointer'));
+        symlinkSync(resolve(app, 'saved-pointer'), resolve(app, '.void'));
+      } else {
+        renameSync(saved, resolve(app, 'pointer-copy.json'));
+        if (kind === 'saved symlink')
+          symlinkSync(resolve(app, 'pointer-copy.json'), saved);
+        if (kind === 'dangling saved')
+          symlinkSync(resolve(app, 'missing'), saved);
+        if (kind === 'directory') mkdirSync(saved);
+      }
+      assert.throws(() => validateOutput(app));
+    }));
+}
+for (const [label, change] of [
+  [
+    'absolute',
+    (p) => {
+      p.configPath = '/tmp/wrangler.json';
+    },
+  ],
+  [
+    'escape',
+    (p) => {
+      p.configPath = '../../../wrangler.json';
+    },
+  ],
+  [
+    'saved-directory base',
+    (p) => {
+      p.configPath = '../dist/server/wrangler.json';
+    },
+  ],
+  [
+    'multiline',
+    (p) => {
+      p.configPath += '\nconfig=escape';
+    },
+  ],
+  [
+    'auxiliary Worker',
+    (p) => {
+      p.auxiliaryWorkers = ['extra'];
+    },
+  ],
+  [
+    'extra field',
+    (p) => {
+      p.extra = true;
+    },
+  ],
+]) {
+  test(`saved pointer rejects ${label}`, () =>
+    fixture(({ app, put, pointer }) => {
+      savePointer(app);
+      change(pointer);
+      put('.void/preview-deploy-config.json', pointer);
+      assert.throws(() => validateOutput(app));
+    }));
+}
+for (const [label, change] of [
+  [
+    'identity',
+    (c) => {
+      c.name = 'other';
+    },
+  ],
+  [
+    'compatibility date',
+    (c) => {
+      c.compatibility_date = '2026-10-18';
+    },
+  ],
+  [
+    'compatibility flags',
+    (c) => {
+      c.compatibility_flags = [];
+    },
+  ],
+  [
+    'worker publication',
+    (c) => {
+      c.workers_dev = true;
+    },
+  ],
+  [
+    'placement',
+    (c) => {
+      c.placement = { mode: 'smart' };
+    },
+  ],
+  [
+    'Durable Objects',
+    (c) => {
+      c.durable_objects = { bindings: [{ name: 'DO', class_name: 'Room' }] };
+    },
+  ],
+  [
+    'storage',
+    (c) => {
+      c.r2_buckets = [{ binding: 'BUCKET', bucket_name: 'other' }];
+    },
+  ],
+  [
+    'secrets',
+    (c) => {
+      c.secrets = { required: ['UNREVIEWED_SECRET'] };
+    },
+  ],
+  [
+    'environment',
+    (c) => {
+      c.env = { production: {} };
+    },
+  ],
+  [
+    'assets binding',
+    (c) => {
+      c.assets.binding = 'OTHER';
+    },
+  ],
+  [
+    'assets routing',
+    (c) => {
+      c.assets.run_worker_first = false;
+    },
+  ],
+  [
+    'SPA fallback',
+    (c) => {
+      c.assets.not_found_handling = 'single-page-application';
+    },
+  ],
+  [
+    'Worker escape',
+    (c) => {
+      c.main = '../../outside.js';
+    },
+  ],
+]) {
+  test(`saved pointer retains qualification: ${label}`, () =>
+    fixture(({ app, put, config }) => {
+      savePointer(app);
+      change(config);
+      put('dist/server/wrangler.json', config);
+      assert.throws(() => manifest(app, sha));
+    }));
+}
+test('saved pointer retains complete artifact and private-client fences', () =>
+  fixture(({ app, put }) => {
+    savePointer(app);
+    put('dist/server/module.wasm', 'wasm-fixture');
+    put('dist/client/font.woff2', 'font-fixture');
+    const receipt = manifest(app, sha);
+    put('dist/client/font.woff2', 'changed-font');
+    assert.throws(() => verify(app, receipt, sha));
+    put('dist/client/font.woff2', 'font-fixture');
+    put('dist/server/module.wasm', 'changed-wasm');
+    assert.throws(() => verify(app, receipt, sha));
+    put('dist/server/module.wasm', 'wasm-fixture');
+    put('dist/client/leak.js', PRIVATE_CANARY);
+    assert.throws(() => manifest(app, sha));
+    rmSync(resolve(app, 'dist/client/leak.js'));
+    symlinkSync(
+      resolve(app, 'dist/server/worker.js'),
+      resolve(app, 'dist/client/link.js')
+    );
+    assert.throws(() => manifest(app, sha));
+  }));
+
+for (const saved of [false, true]) {
+  test(`workflow archive restores the selected ${saved ? 'saved' : 'native'} pointer`, async () => {
+    const { createRequire } = await import('node:module');
+    const { readWorkflow } = createRequire(import.meta.url)(
+      './workflow-yaml-test-helper.js'
+    );
+    const { jobs } = readWorkflow('mail-calendar-tasks-builds.yaml');
+    const archive = jobs['calendar-native'].steps.find((step) =>
+      step.run?.includes('tar -czf')
+    );
+    assert.ok(
+      archive.run.startsWith(
+        'node scripts/ci/calendar-native-artifact.mjs verify '
+      )
+    );
+    const commands = archive.run.split('\n').slice(1).join('\n');
+    fixture(({ app, put }) => {
+      if (saved) savePointer(app);
+      put('.void/private-state.json', 'must not ship');
+      const receipt = manifest(app, sha);
+      put('calendar-artifact.json', receipt);
+      const sandbox = mkdtempSync(resolve(tmpdir(), 'calendar-archive-'));
+      try {
+        mkdirSync(resolve(sandbox, 'apps'));
+        cpSync(app, resolve(sandbox, 'apps/calendar'), { recursive: true });
+        const packed = spawnSync('bash', ['-e', '-c', commands], {
+          cwd: sandbox,
+          env: { ...process.env, RUNNER_TEMP: sandbox },
+          encoding: 'utf8',
+          timeout: 10000,
+        });
+        assert.equal(packed.status, 0, packed.stderr);
+        const restored = resolve(sandbox, 'restored');
+        mkdirSync(restored);
+        const unpacked = spawnSync(
+          'tar',
+          ['-xzf', resolve(sandbox, 'calendar-worker.tar.gz'), '-C', restored],
+          {
+            encoding: 'utf8',
+            timeout: 10000,
+          }
+        );
+        assert.equal(unpacked.status, 0, unpacked.stderr);
+        verify(
+          restored,
+          JSON.parse(
+            readFileSync(resolve(restored, 'calendar-artifact.json'), 'utf8')
+          ),
+          sha
+        );
+        assert.throws(
+          () => readFileSync(resolve(restored, '.void/private-state.json')),
+          { code: 'ENOENT' }
+        );
+      } finally {
+        rmSync(sandbox, { recursive: true, force: true });
+      }
+    });
+  });
+}

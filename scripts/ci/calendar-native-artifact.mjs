@@ -41,11 +41,29 @@ function local(root, base, value) {
   assert.equal(realpathSync(target), target, 'artifact symlinks forbidden');
   return target;
 }
+function deployPointer(app) {
+  const native = resolve(app, '.wrangler/deploy/config.json');
+  const saved = resolve(app, '.void/preview-deploy-config.json');
+  const candidates = [native, saved].filter((path) => {
+    try {
+      lstatSync(path);
+      return true;
+    } catch (error) {
+      if (error.code === 'ENOENT') return false;
+      throw error;
+    }
+  });
+  assert.equal(candidates.length, 1, 'exactly one deploy pointer is required');
+  const path = candidates[0];
+  assert.equal(realpathSync(path), path, 'pointer symlink forbidden');
+  assert.ok(lstatSync(path).isFile(), 'pointer must be a regular file');
+  // Void saves unchanged bytes; configPath retains the native directory base.
+  return { path, base: dirname(native) };
+}
 export function validateOutput(directory) {
   const app = realpathSync(directory),
     dist = resolve(app, 'dist');
-  const pointer = resolve(app, '.wrangler/deploy/config.json');
-  assert.equal(realpathSync(pointer), pointer, 'pointer symlink forbidden');
+  const { path: pointer, base: pointerBase } = deployPointer(app);
   const redirect = json(pointer);
   assert.deepEqual(Object.keys(redirect).sort(), [
     'auxiliaryWorkers',
@@ -56,7 +74,7 @@ export function validateOutput(directory) {
     [],
     'auxiliary Workers forbidden'
   );
-  const configPath = local(dist, dirname(pointer), redirect.configPath),
+  const configPath = local(dist, pointerBase, redirect.configPath),
     config = json(configPath);
   // Proposed source identity only. This does not establish an account or hosted Worker.
   assert.equal(config.name, 'tuturuuu-calendar');
@@ -154,7 +172,7 @@ function hashes(app) {
     files[name] = sha256(bytes);
   }
   visit(resolve(app, 'dist'));
-  visit(resolve(app, '.wrangler/deploy/config.json'));
+  visit(deployPointer(app).path);
   visit(resolve(app, 'cloudflare-env.d.ts'));
   return files;
 }
