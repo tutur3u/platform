@@ -98,7 +98,17 @@ export const Route = createRootRoute({
   shellComponent: Document,
   notFoundComponent: () => <Missing />,
   errorComponent: ({ error, reset }) => (
-    <AppErrorBoundary appName="Apps" error={error} reset={reset} />
+    <AppErrorBoundary
+      appName="Apps"
+      error={
+        error instanceof Error
+          ? error
+          : new Error(typeof error === 'string' ? error : 'Unknown error', {
+              cause: error,
+            })
+      }
+      reset={reset}
+    />
   ),
 });
 function Root() {

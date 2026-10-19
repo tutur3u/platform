@@ -138,8 +138,11 @@ jobs:
             git diff --exit-code HEAD -- "$route_tree"
           fi
       - name: Type-check native app without a build
-        working-directory: apps/apps
-        run: bun run type-check
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/apps && bun run type-check
+          token: ''
+          team: ''
       - name: Discover actual emitted config and assert staging resource/static contract
         id: output
         run: python3 scripts/ci/apps-native-artifact.py config apps/apps

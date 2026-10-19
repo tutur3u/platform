@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GATEWAY_APPS } from '../lib/apps-registry';
-import { canonicalLocaleRedirect, requestLocale } from './locale';
+import { canonicalLocaleRedirect, localeCookie, requestLocale } from './locale';
 import { gatewayDestination } from './redirect';
 
 afterEach(() => vi.unstubAllEnvs());
@@ -118,4 +118,79 @@ describe('Apps native route parity', () => {
       )?.headers.get('Set-Cookie')
     ).not.toContain('Domain=');
   });
+});
+
+describe('locale cookie policy', () => {
+  it.each([
+    {
+      origin: 'http://apps.tuturuuu.com',
+      domain: '.tuturuuu.com',
+      secure: true,
+    },
+    {
+      origin: 'https://apps.tuturuuu.com',
+      domain: '.tuturuuu.com',
+      secure: true,
+    },
+    {
+      origin: 'http://apps.tuturuuu.localhost',
+      domain: '.tuturuuu.localhost',
+      secure: false,
+    },
+    {
+      origin: 'https://apps.tuturuuu.localhost',
+      domain: '.tuturuuu.localhost',
+      secure: true,
+    },
+    { origin: 'http://localhost:3000', domain: null, secure: false },
+    { origin: 'https://preview.fixture.test', domain: null, secure: true },
+    { origin: 'https://tuturuuu.com.evil.test', domain: null, secure: true },
+  ])(
+    'serializes canonical policy for $origin',
+    ({ origin, domain, secure }) => {
+      vi.stubEnv('PORTLESS_URL', '');
+      const cookie = localeCookie(new Request(origin), 'vi');
+      expect(cookie).toBe(
+        `NEXT_LOCALE=vi; Path=/; Max-Age=31536000; SameSite=Lax${domain ? `; Domain=${domain}` : ''}${secure ? '; Secure' : ''}`
+      );
+    }
+  );
+
+  it('uses the canonical forwarded and Portless domain resolution', () => {
+    expect(
+      localeCookie(
+        new Request('http://127.0.0.1:3000', {
+          headers: { 'x-forwarded-host': 'apps.tuturuuu.com' },
+        }),
+        'en'
+      )
+    ).toContain('; Domain=.tuturuuu.com; Secure');
+    vi.stubEnv('PORTLESS_URL', 'http://apps.tuturuuu.localhost');
+    vi.stubEnv('PORT', '3000');
+    expect(localeCookie(new Request('http://127.0.0.1:3000'), 'en')).toBe(
+      'NEXT_LOCALE=en; Path=/; Max-Age=31536000; SameSite=Lax; Domain=.tuturuuu.localhost'
+    );
+  });
+
+  it.each(['en', 'vi'])(
+    'preserves the %s redirect query and session cookies',
+    (locale) => {
+      const request = new Request(
+        `https://apps.tuturuuu.com/${locale}/meet/a%2Fb?tag=1&space=a%20b&tag=2&plus=%2B`,
+        { headers: { cookie: 'session=opaque; NEXT_LOCALE=en' } }
+      );
+      const response = canonicalLocaleRedirect(request);
+      expect(response?.status).toBe(307);
+      expect(response?.headers.get('Location')).toBe(
+        'https://apps.tuturuuu.com/meet/a%2Fb?tag=1&space=a%20b&tag=2&plus=%2B'
+      );
+      expect(response?.headers.get('Cache-Control')).toBe('private, no-store');
+      expect(response?.headers.get('Set-Cookie')).toBe(
+        `NEXT_LOCALE=${locale}; Path=/; Max-Age=31536000; SameSite=Lax; Domain=.tuturuuu.com; Secure`
+      );
+      expect(request.headers.get('cookie')).toBe(
+        'session=opaque; NEXT_LOCALE=en'
+      );
+    }
+  );
 });

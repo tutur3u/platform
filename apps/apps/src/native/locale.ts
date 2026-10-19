@@ -1,4 +1,4 @@
-import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
+import { resolveTuturuuuSharedCookieDomain } from '@tuturuuu/utils/shared-cookie';
 export type Locale = 'en' | 'vi';
 export function requestLocale(request: Request): Locale {
   const saved = (request.headers.get('cookie') ?? '')
@@ -29,11 +29,8 @@ export function requestLocale(request: Request): Locale {
     : 'en';
 }
 export function localeCookie(request: Request, locale: Locale) {
-  const options = getTuturuuuSharedCookieOptions(
-    { path: '/', maxAge: 31536000, sameSite: 'lax' as const },
-    request
-  );
-  return `NEXT_LOCALE=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${options.domain ? `; Domain=${options.domain}` : ''}${options.secure || new URL(request.url).protocol === 'https:' ? '; Secure' : ''}`;
+  const sharedDomain = resolveTuturuuuSharedCookieDomain(request);
+  return `NEXT_LOCALE=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${sharedDomain ? `; Domain=${sharedDomain.cookieDomain}` : ''}${sharedDomain?.secure || new URL(request.url).protocol === 'https:' ? '; Secure' : ''}`;
 }
 export function canonicalLocaleRedirect(request: Request) {
   const url = new URL(request.url);

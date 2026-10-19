@@ -65,13 +65,28 @@ function assertWorkflow(source) {
     )?.length,
     2
   );
+  assertWrapper(
+    step(source, 'Type-check native app without a build'),
+    'cd apps/apps && bun run type-check'
+  );
+  const before = step(
+    source,
+    'Record Apps route tree presence before frontend build'
+  );
   const capture = step(source, 'Capture generated Apps route tree evidence');
+  for (const block of [before, capture]) {
+    assert.match(
+      block,
+      /^ {10}route_tree=apps\/apps\/src\/routeTree\.gen\.ts$/mu,
+      'Route tree evidence must pin the owning Apps source path'
+    );
+  }
+  assert.ok(source.indexOf(before) < source.indexOf(build));
   assert.match(capture, /^ {8}if: always\(\)$/mu);
   assert.match(
     capture,
     /^ {10}APPS_FRONTEND_BUILD_OUTCOME: \$\{\{ steps\.apps-frontend-build\.outcome \|\| 'unknown' \}\}$/mu
   );
-  assert.ok(capture.includes('route_tree=apps/apps/src/routeTree.gen.ts'));
   assert.ok(source.indexOf(build) < source.indexOf(capture));
   assert.ok(
     source.includes(
@@ -153,7 +168,48 @@ test('workflow contract rejects build bypass, cwd drift and lost failure evidenc
       ? workflow.replace(build, build.replace(before, after))
       : workflow.replace(before, after);
     assert.notEqual(changed, workflow, `Mutation must reach ${before}`);
-    assert.throws(() => assertWorkflow(changed), undefined, before);
+    assert.throws(
+      () => assertWorkflow(changed),
+      before === 'route_tree=apps/apps/src/routeTree.gen.ts'
+        ? /Route tree evidence must pin the owning Apps source path/u
+        : undefined,
+      before
+    );
+  }
+});
+
+test('owning type-check rejects wrapper, cwd and public cache fence drift', () => {
+  const original = step(workflow, 'Type-check native app without a build');
+  for (const [before, after] of [
+    [`uses: ${wrapper}`, 'run: bun run type-check'],
+    [
+      'command: cd apps/apps && bun run type-check',
+      'command: bun run type-check',
+    ],
+    ["token: ''", 'token: unauthorized-token'],
+    ["team: ''", 'team: unauthorized-team'],
+  ]) {
+    const changed = original.replace(before, after);
+    assert.notEqual(changed, original, `Mutation must reach ${before}`);
+    assert.throws(() => assertWorkflow(workflow.replace(original, changed)));
+  }
+});
+
+test('both route tree evidence steps reject a different source path', () => {
+  for (const name of [
+    'Record Apps route tree presence before frontend build',
+    'Capture generated Apps route tree evidence',
+  ]) {
+    const original = step(workflow, name);
+    const changed = original.replace(
+      'route_tree=apps/apps/src/routeTree.gen.ts',
+      'route_tree=other/routeTree.gen.ts'
+    );
+    assert.notEqual(changed, original, `Mutation must reach ${name}`);
+    assert.throws(
+      () => assertWorkflow(workflow.replace(original, changed)),
+      /Route tree evidence must pin the owning Apps source path/u
+    );
   }
 });
 
