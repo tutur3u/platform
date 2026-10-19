@@ -267,7 +267,11 @@ jobs:
       - name: Seal exact-SHA frontend artifact
         run: |
           node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json
-          tar -czf "$RUNNER_TEMP/meet-worker.tar.gz" -C apps/meet dist .wrangler/deploy/config.json meet-artifact.json
+          pointer=.wrangler/deploy/config.json
+          if [ -f apps/meet/.void/preview-deploy-config.json ]; then
+            pointer=.void/preview-deploy-config.json
+          fi
+          tar -czf "$RUNNER_TEMP/meet-worker.tar.gz" -C apps/meet dist "$pointer" meet-artifact.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: meet-worker-${{ github.sha }}

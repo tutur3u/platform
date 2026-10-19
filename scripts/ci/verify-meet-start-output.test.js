@@ -1,8 +1,10 @@
 const assert = require('node:assert/strict');
 const {
+  cpSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
+  renameSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -302,4 +304,101 @@ test('configuration and manifest errors never dump raw values or nested path map
       return true;
     }
   );
+});
+
+function savedFixture(t) {
+  const output = fixture(t);
+  mkdirSync(join(output.app, '.void'));
+  renameSync(
+    join(output.app, '.wrangler/deploy/config.json'),
+    join(output.app, '.void/preview-deploy-config.json')
+  );
+  return output;
+}
+
+test('saved pointer keeps its original relative base and survives artifact relocation', (t) => {
+  const { app } = savedFixture(t);
+  const manifest = artifactManifest(app, sha);
+  assert.equal(manifest.config, 'dist/ssr/wrangler.json');
+  assert.ok(manifest.files['.void/preview-deploy-config.json']);
+  const restored = mkdtempSync(join(tmpdir(), 'meet-saved-restored-'));
+  t.after(() => rmSync(restored, { recursive: true, force: true }));
+  cpSync(app, restored, { recursive: true });
+  verifyManifest(restored, manifest, sha);
+  assert.throws(() => verifyManifest(restored, manifest, 'b'.repeat(40)));
+  writeFileSync(join(restored, 'dist/ssr/index.js'), 'changed');
+  assert.throws(() => verifyManifest(restored, manifest, sha));
+});
+
+test('rejects missing and simultaneous native and saved pointers', (t) => {
+  const { app } = savedFixture(t);
+  const saved = join(app, '.void/preview-deploy-config.json');
+  const bytes = readFileSync(saved);
+  writeFileSync(join(app, '.wrangler/deploy/config.json'), bytes);
+  assert.throws(() => validateOutput(app));
+  rmSync(saved);
+  rmSync(join(app, '.wrangler/deploy/config.json'));
+  assert.throws(() => validateOutput(app));
+});
+
+for (const redirect of [
+  { configPath: '/tmp/wrangler.json', auxiliaryWorkers: [] },
+  { configPath: '../../void.config.ts', auxiliaryWorkers: [] },
+  { configPath: '../dist/ssr/wrangler.json', auxiliaryWorkers: [] },
+  { configPath: '../../dist/ssr/wrangler.json', auxiliaryWorkers: [{}] },
+  {
+    configPath: '../../dist/ssr/wrangler.json',
+    auxiliaryWorkers: [],
+    extra: true,
+  },
+]) {
+  test('rejects invalid saved pointer shape or destination', (t) => {
+    const { app } = savedFixture(t);
+    writeFileSync(
+      join(app, '.void/preview-deploy-config.json'),
+      JSON.stringify(redirect)
+    );
+    assert.throws(() => validateOutput(app));
+  });
+}
+
+test('rejects saved pointer symlinks including dangling links', (t) => {
+  const { app } = savedFixture(t);
+  const saved = join(app, '.void/preview-deploy-config.json');
+  const bytes = readFileSync(saved);
+  rmSync(saved);
+  const native = join(app, '.wrangler/deploy/config.json');
+  writeFileSync(native, bytes);
+  symlinkSync(native, saved);
+  rmSync(native);
+  assert.throws(() => validateOutput(app));
+  writeFileSync(native, bytes);
+  renameSync(native, join(app, 'pointer-copy.json'));
+  rmSync(saved);
+  symlinkSync(join(app, 'pointer-copy.json'), saved);
+  assert.throws(() => validateOutput(app));
+});
+
+for (const key of Object.keys(identity)) {
+  test(`saved pointer rejects emitted identity drift: ${key}`, (t) => {
+    const { app, config, save } = savedFixture(t);
+    config[key] = null;
+    save();
+    assert.throws(() => validateOutput(app));
+  });
+}
+
+test('saved pointer retains assets, symlink and archive tamper fences', (t) => {
+  const { app, config, save } = savedFixture(t);
+  const manifest = artifactManifest(app, sha);
+  config.assets.not_found_handling = 'single-page-application';
+  save();
+  assert.throws(() => validateOutput(app));
+  config.assets.not_found_handling = 'none';
+  save();
+  symlinkSync(join(app, 'dist/ssr/index.js'), join(app, 'dist/client/link.js'));
+  assert.throws(() => artifactManifest(app, sha));
+  rmSync(join(app, 'dist/client/link.js'));
+  writeFileSync(join(app, '.void/preview-deploy-config.json'), '{}');
+  assert.throws(() => verifyManifest(app, manifest, sha));
 });

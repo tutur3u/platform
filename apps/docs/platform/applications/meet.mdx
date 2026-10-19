@@ -50,7 +50,11 @@ ownership. Framework source or a successful build does not establish production
 cutover or hosted media acceptance.
 
 Use `bun run build:cloudflare` in CI. Discover the emitted Worker configuration
-through `.wrangler/deploy/config.json`; do not assume an output directory.
+through exactly one of `.wrangler/deploy/config.json` or Void's saved
+`.void/preview-deploy-config.json`; reject missing or simultaneous pointers.
+Void preserves the pointer bytes when moving it, so resolve `configPath` from
+the original `.wrangler/deploy` directory in either case. Do not assume an
+output directory or recreate a missing pointer.
 Preserve the existing Worker identity, targeted placement, bindings, secret names
 and Durable Object migration history. Qualify, seal and restore the complete
 output before publishing those exact bytes with the app-local Wrangler adapter.

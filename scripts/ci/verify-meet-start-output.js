@@ -75,11 +75,33 @@ function localPath(root, base, path) {
   return target;
 }
 
+function deployPointer(app) {
+  const native = resolve(app, '.wrangler/deploy/config.json');
+  const saved = resolve(app, '.void/preview-deploy-config.json');
+  const candidates = [native, saved].filter((path) => {
+    try {
+      lstatSync(path);
+      return true;
+    } catch (error) {
+      if (error.code === 'ENOENT') return false;
+      throw error;
+    }
+  });
+  assert.equal(candidates.length, 1, 'exactly one deploy pointer is required');
+  const path = candidates[0];
+  assert.equal(
+    realpathSync(path),
+    path,
+    'deploy pointer symlinks are forbidden'
+  );
+  assert.ok(lstatSync(path).isFile(), 'deploy pointer must be a regular file');
+  return { path, base: dirname(native) };
+}
+
 function validateOutput(appDirectory) {
   const app = realpathSync(appDirectory);
   const dist = resolve(app, 'dist');
-  const redirectPath = resolve(app, '.wrangler/deploy/config.json');
-  assert.equal(realpathSync(redirectPath), redirectPath);
+  const { path: redirectPath, base: redirectBase } = deployPointer(app);
   const redirect = readJson(redirectPath, 'deploy redirect');
   equal(
     Object.keys(redirect).sort(),
@@ -91,11 +113,7 @@ function validateOutput(appDirectory) {
     [],
     'auxiliary Workers are forbidden in the qualified Meet artifact'
   );
-  const configPath = localPath(
-    dist,
-    dirname(redirectPath),
-    redirect.configPath
-  );
+  const configPath = localPath(dist, redirectBase, redirect.configPath);
   const config = readJson(configPath, 'emitted Worker config');
   for (const [key, expected] of Object.entries(identity)) {
     equal(config[key], expected, `emitted ${key} drift`);
@@ -156,7 +174,7 @@ function validateOutput(appDirectory) {
   const assets = localPath(dist, dirname(configPath), config.assets.directory);
   assert.ok(lstatSync(assets).isDirectory(), 'emitted assets must exist');
   assert.ok(readdirSync(assets).length > 0, 'emitted assets must not be empty');
-  return { app, config, configPath, main, assets };
+  return { app, config, configPath, main, assets, redirectPath };
 }
 
 function fileHashes(app) {
@@ -179,7 +197,7 @@ function fileHashes(app) {
     }
   }
   visit(resolve(app, 'dist'));
-  visit(resolve(app, '.wrangler/deploy/config.json'));
+  visit(deployPointer(app).path);
   return hashes;
 }
 
