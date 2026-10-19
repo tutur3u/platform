@@ -68,6 +68,13 @@ output before publishing those exact bytes with the app-local Wrangler adapter.
 Void CLI deployment is not interchangeable: the released CLI rebuilds, prepares
 additional output and cannot preserve this targeted-placement path.
 
+After qualification, collect `native-emitted-config-meet.json` even on failure. Keep the actual source HEAD
+separate from the event SHA. Retain pointer and config hashes and a redacted key-shape inventory, never raw
+configs, resource identifiers, or secret values. Unavailable or overflow diagnostics remain failures. The
+receipt provides no acceptance, allowlist approval, or rollback proof. Inspect the actual receipt before
+qualifying unexpected `queues` or `configPath` fields. Preserve the strict resource, saved-pointer,
+native-relative-base, restore, and deployment gates.
+
 Request adapters preserve satellite sessions, locale rewrites, response cookies
 and central API ownership. Native plan mutations use POST server functions with
 CSRF checks and the canonical authorization suppliers. Intentional credentialed
