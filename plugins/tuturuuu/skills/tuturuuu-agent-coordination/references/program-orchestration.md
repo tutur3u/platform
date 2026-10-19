@@ -129,7 +129,7 @@ An experiment has these fields:
 | `controls` | SHA256 content pins named `input`, `context`, `constraints`, `model`, `executor`, `improver`, `judge`, `webAccess`. |
 | `variants` | Distinct SHA256 guidance/content pins named `baseline` and `candidate`. |
 | `cases` | Closed nonempty list of objects with unique `id`, `kind` from the unit's required evidence, and SHA256 `input` pin. |
-| `budget` | Positive integer `limit` and `used` paired-probe counts; usage must match every observation, including failed/unknown executions. |
+| `budget` | Positive integer `limit` and `used` counts of individual probe executions/observations, with `used` ≤ `limit`. Each baseline/candidate pair consumes two units; `used` must match every observation, including failed/unknown executions. |
 | `observations` | Exactly one baseline and one candidate observation per declared case. |
 | `decision` | `probe`, `reject` or `adopt`; adoption has additional gates below. |
 
