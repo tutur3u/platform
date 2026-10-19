@@ -6,8 +6,9 @@ updatedAt: "2026-10-03"
 
 <Note>
 Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
-the Docker cron runner is retired. Rust and TanStack Start are not in use and
-must not be run, tested, or updated until further notice. Retained Docker and
+the Docker cron runner is retired. Rust and `apps/tanstack-web` remain paused.
+Calendar native candidate CI is a separately admitted application scope; it does
+not resume the retained migration runtime. Retained Docker and
 migration sections below are historical procedures. Current hosted Next.js,
 package, Worker, database, and mobile workflows retain their own gates. See the
 [active runtime map](/build/devops/active-runtime).
@@ -28,14 +29,49 @@ in a disposable fixture with only app-level dependency links and no root
 then run the focused behavior tests separately. The Lettin SWC test transforms
 config source in memory; it does not run a Next release build.
 
-`mail-calendar-tasks-builds.yaml` builds Mail, Calendar and Tasks, including
-their shared dependencies, on relevant PRs and `main` commits. These hosted CI
-jobs check out the immutable PR head (or exact push SHA), use placeholder public
-Supabase configuration, and do not deploy or access production credentials.
-Require all three matrix builds when changes affect these applications or their
-shared packages; type-check results and preview skip statuses do not replace
-real app-build evidence. Mail provider OAuth and real delivery/RSVP acceptance
-still require separately configured test accounts.
+`mail-calendar-tasks-builds.yaml` checks out the exact PR head or push SHA.
+Its Mail, Tasks and affected Web builds retain real app-build evidence. Calendar
+uses a separate native job on Bun 1.4.3 and Node 24.22.0: build shared dependencies,
+run owning Calendar/Web/Tasks UI tests, build with the official Void plugin,
+discover `.wrangler/deploy/config.json`, generate emitted `CloudflareEnv` bindings,
+and type-check Calendar plus affected Web/Tasks consumers. The Tasks app currently
+has no owning test script; shared Tasks tests do not establish a Tasks app suite.
+Root lint and the existing affected-app workflows remain required exact-head gates.
+
+The Calendar pointer must contain `configPath` and an empty `auxiliaryWorkers`
+array. `scripts/ci/calendar-native-artifact.mjs` rejects escaping/symlink paths,
+legacy Next/OpenNext entries, unexpected hosting/resources/build hooks, private
+environment files and a private build canary in client output. It seals the exact
+SHA, emitted main/config, all `dist` bytes, pointer and generated declarations.
+The second job restores the same-run artifact without rebuilding and verifies
+that seal before and after dry-run/runtime checks. Both jobs unconditionally run
+`node --test scripts/ci/calendar-native-worker.runtime.mjs` and, from Calendar,
+`node --test src/runtime/offline-artifact.runtime.mjs`. Artifact suites remain
+outside source-only discovery; boundary regressions are in
+`scripts/ci/calendar-native-artifact.test.mjs`. No artifact or runtime step may
+be skipped or continued on error and reported as acceptance.
+
+The local Worker suite resolves Wrangler/Miniflare from Calendar's own dependency
+links, uses the discovered emitted main/config and denies outbound network calls.
+It checks public EN/VI completion HTML, emitted hydration assets and the exact
+`/serwist/sw.js` root scope. The separate offline suite exercises the emitted
+classic worker's static-only caching and entry bound. These checks do not prove
+signed-in RPC/navigation/refresh, browser hydration, workspace permissions,
+provider callbacks or enabled SQL drain retention. Those need an admitted fixture
+and separate exact-artifact acceptance. Config-schema or missing dependency/fixture
+failures are blockers to investigate, never permission to substitute legacy output.
+
+Calendar publication is disabled for native source. The existing Vercel workflows
+reject a checkout containing `apps/calendar/void.config.ts` before setup or publish;
+legacy source and the previous Vercel production deployment retain rollback
+ownership. There is no Cloudflare publication job or canonical traffic change.
+The source name `tuturuuu-calendar` is a proposal, not an observed account/Worker
+binding. Before cutover, the parent must record actual account, existing Worker,
+domain, bindings, environment-secret names, callback URLs, immutable Vercel rollback
+deployment and rollback procedure; qualify signed-in EN/VI, permissions, offline,
+log-drain and provider outcomes; and atomically choose one publisher in the root
+registry/planner. Calendar has no Meet immediate/no-staging exception. Do not use
+raw Void deploy, create resources, or add a second provider scheduler.
 
 For standalone chat initial-settings qualification, launch the source-owned Vitest entry
 directly with verified Node 24.21.0. Require primary exit zero, no signal or timeout,

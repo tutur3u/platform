@@ -2,17 +2,25 @@
   "extends": "@tuturuuu/typescript-config/nextjs.json",
   "compilerOptions": {
     "module": "ESNext",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@tuturuuu/tasks-ui/tu-do/boards/boardId/task-board-page-model": [
+        "../../packages/tasks-ui/src/tu-do/boards/boardId/task-board-page-model.ts"
+      ]
     },
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["vite/client", "@cloudflare/workers-types", "node"],
+    "noEmit": true
   },
-  "include": ["src", ".next/types/**/*.ts", "global.d.ts", "messages"],
+  "include": [
+    "src",
+    "cloudflare",
+    "cloudflare-env.d.ts",
+    "vite.config.ts",
+    "void.config.ts",
+    "global.d.ts",
+    "messages"
+  ],
   "exclude": ["node_modules", "dist", ".turbo"]
 }

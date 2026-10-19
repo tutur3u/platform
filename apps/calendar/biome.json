@@ -7,7 +7,7 @@
   },
   "linter": {
     "domains": {
-      "next": "recommended"
+      "next": "none"
     }
   }
 }

@@ -1,0 +1,198 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import {
+  appendFileSync,
+  lstatSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
+
+export const PRIVATE_CANARY = 'calendar_ci_private_canary_never_ship_349';
+const empty = (v) =>
+  v === undefined ||
+  (Array.isArray(v)
+    ? v.length === 0
+    : v && typeof v === 'object' && Object.keys(v).length === 0);
+const json = (p) => {
+  try {
+    return JSON.parse(readFileSync(p, 'utf8'));
+  } catch {
+    throw new Error('Invalid artifact JSON');
+  }
+};
+const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+function local(root, base, value) {
+  assert.equal(typeof value, 'string', 'artifact path must be a string');
+  assert.ok(
+    value && !isAbsolute(value) && !/[\r\n]/.test(value),
+    'artifact paths must be relative single-line values'
+  );
+  const target = resolve(base, value);
+  const rel = relative(root, target);
+  assert.ok(
+    rel && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel),
+    'artifact escaped output root'
+  );
+  assert.equal(realpathSync(target), target, 'artifact symlinks forbidden');
+  return target;
+}
+export function validateOutput(directory) {
+  const app = realpathSync(directory),
+    dist = resolve(app, 'dist');
+  const pointer = resolve(app, '.wrangler/deploy/config.json');
+  assert.equal(realpathSync(pointer), pointer, 'pointer symlink forbidden');
+  const redirect = json(pointer);
+  assert.deepEqual(Object.keys(redirect).sort(), [
+    'auxiliaryWorkers',
+    'configPath',
+  ]);
+  assert.deepEqual(
+    redirect.auxiliaryWorkers,
+    [],
+    'auxiliary Workers forbidden'
+  );
+  const configPath = local(dist, dirname(pointer), redirect.configPath),
+    config = json(configPath);
+  // Proposed source identity only. This does not establish an account or hosted Worker.
+  assert.equal(config.name, 'tuturuuu-calendar');
+  assert.equal(config.compatibility_date, '2026-10-19');
+  assert.deepEqual(config.compatibility_flags, [
+    'nodejs_compat',
+    'global_fetch_strictly_public',
+  ]);
+  assert.equal(config.workers_dev, false);
+  assert.equal(config.no_bundle, true, 'emitted Worker must remain prebundled');
+  assert.ok(
+    isDeepStrictEqual(config.rules, [
+      { type: 'ESModule', globs: ['**/*.js', '**/*.mjs'] },
+    ]),
+    'emitted module rules differ from the owning Cloudflare Vite emitter'
+  );
+  assert.equal(config.assets?.binding, 'ASSETS');
+  assert.equal(config.assets.run_worker_first, true);
+  assert.equal(config.assets.not_found_handling, 'none');
+  const allowed = new Set([
+    'name',
+    'main',
+    'no_bundle',
+    'rules',
+    'compatibility_date',
+    'compatibility_flags',
+    'workers_dev',
+    'assets',
+    'vars',
+    'secrets',
+    'env',
+    'send_metrics',
+    '$schema',
+  ]);
+  for (const [key, value] of Object.entries(config))
+    assert.ok(
+      allowed.has(key) || empty(value),
+      `unqualified config field: ${key}`
+    );
+  assert.ok(empty(config.env), 'named environments forbidden');
+  assert.ok(empty(config.vars), 'emitted vars require explicit review');
+  assert.deepEqual(Object.keys(config.assets).sort(), [
+    'binding',
+    'directory',
+    'not_found_handling',
+    'run_worker_first',
+  ]);
+  if (config.secrets !== undefined) {
+    assert.deepEqual(Object.keys(config.secrets), ['required']);
+    assert.ok(Array.isArray(config.secrets.required));
+    assert.deepEqual(
+      config.secrets.required,
+      [],
+      'secret registration requires observed identity and explicit review'
+    );
+  }
+  const main = local(dist, dirname(configPath), config.main);
+  assert.ok(lstatSync(main).isFile(), 'Worker main missing');
+  assert.ok(
+    !/(?:\.next|\.open-next|opennext|next-server)/i.test(relative(app, main)),
+    'legacy Worker forbidden'
+  );
+  const assets = local(dist, dirname(configPath), config.assets.directory);
+  assert.equal(assets, resolve(dist, 'client'), 'unexpected client directory');
+  assert.ok(lstatSync(assets).isDirectory() && readdirSync(assets).length > 0);
+  assert.ok(
+    lstatSync(resolve(assets, 'serwist/sw.js')).isFile(),
+    'exact offline URL asset missing'
+  );
+  return { app, configPath, config, main, assets };
+}
+function hashes(app) {
+  const files = {};
+  function visit(path) {
+    const stat = lstatSync(path);
+    assert.ok(!stat.isSymbolicLink(), 'artifact symlinks forbidden');
+    if (stat.isDirectory()) {
+      for (const name of readdirSync(path).sort()) visit(resolve(path, name));
+      return;
+    }
+    assert.ok(stat.isFile(), 'nonregular artifact forbidden');
+    const name = relative(app, path).split(sep).join('/');
+    assert.ok(
+      !/(^|\/)(?:\.env(?:\.|$)|\.dev\.vars(?:\.|$)|node_modules(?:\/|$)|\.next(?:\/|$)|\.open-next(?:\/|$))/.test(
+        name
+      ),
+      'private or legacy artifact forbidden'
+    );
+    const bytes = readFileSync(path);
+    if (name.startsWith('dist/client/'))
+      assert.ok(
+        !bytes.includes(Buffer.from(PRIVATE_CANARY)),
+        'private build value leaked to client'
+      );
+    files[name] = sha256(bytes);
+  }
+  visit(resolve(app, 'dist'));
+  visit(resolve(app, '.wrangler/deploy/config.json'));
+  visit(resolve(app, 'cloudflare-env.d.ts'));
+  return files;
+}
+export function manifest(directory, sha) {
+  assert.match(sha ?? '', /^[a-f0-9]{40}$/, 'exact source SHA required');
+  const { app, configPath, main } = validateOutput(directory);
+  return {
+    schema: 1,
+    app: 'calendar',
+    sha,
+    bun: '1.4.3',
+    node: '24.22.0',
+    config: relative(app, configPath).split(sep).join('/'),
+    main: relative(app, main).split(sep).join('/'),
+    files: hashes(app),
+  };
+}
+export function verify(directory, receipt, sha) {
+  assert.ok(
+    isDeepStrictEqual(manifest(directory, sha), receipt),
+    'artifact identity or bytes changed'
+  );
+}
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  const [mode, app, receipt] = process.argv.slice(2);
+  if (mode === 'seal')
+    writeFileSync(
+      receipt,
+      `${JSON.stringify(manifest(app, process.env.SOURCE_SHA), null, 2)}\n`
+    );
+  else if (mode === 'verify')
+    verify(app, json(receipt), process.env.SOURCE_SHA);
+  else if (mode === 'config') {
+    const { configPath } = validateOutput(app);
+    assert.ok(process.env.GITHUB_OUTPUT, 'GITHUB_OUTPUT required');
+    appendFileSync(process.env.GITHUB_OUTPUT, `config=${configPath}\n`);
+  } else throw new Error('Expected seal, verify or config');
+}
