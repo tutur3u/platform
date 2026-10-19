@@ -49,6 +49,13 @@ Shared meeting behavior and the separate realtime Worker retain their existing
 ownership. Framework source or a successful build does not establish production
 cutover or hosted media acceptance.
 
+Preserve supplier-generated `src/routeTree.gen.ts` bytes, including generated casts.
+Meet and Calendar need owning-config `formatter.includes` set to
+`["**", "!src/routeTree.gen.ts"]`: Biome 2.5.13 rebases inherited root
+`files.includes` globs under nested configs, so a root app-qualified exclusion
+can miss this file. Follow the development-tooling formatting procedure; isolated
+formatter fixtures do not establish full CI or Worker runtime acceptance.
+
 Use `bun run build:cloudflare` in CI. Discover the emitted Worker configuration
 through exactly one of `.wrangler/deploy/config.json` or Void's saved
 `.void/preview-deploy-config.json`; reject missing or simultaneous pointers.
