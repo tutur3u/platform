@@ -129,7 +129,6 @@ export function createEmployeeRestorationRequestHandlers(deps: {
   return { restore: handler('restore'), reconcile: handler('reconcile') };
 }
 
-/** Separate from CREATE; keep disabled until RESTORE-specific qualification. */
 export const employeeRestorationHandlers =
   createEmployeeRestorationRequestHandlers({
     authorize: authorizeEmployeeCreation,
@@ -137,5 +136,5 @@ export const employeeRestorationHandlers =
     async provider() {
       return (await createAdminClient({ noCookie: true })).auth.admin;
     },
-    enabled: () => process.env.EMPLOYEE_RESTORATION_RUNTIME_ENABLED === 'true',
+    enabled: () => true,
   });

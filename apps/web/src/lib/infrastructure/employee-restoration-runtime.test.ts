@@ -75,7 +75,7 @@ it.each(['unpersisted', 'rollback', 'missing-readback', 'stale-readback'])(
     expect(fixture.provider.updateUserById).not.toHaveBeenCalled();
   }
 );
-it('defaults disabled before configuration, SQL or provider construction', async () => {
+it('honors injected unavailability before configuration, SQL or provider construction', async () => {
   fixture.setEnabled(false);
   const configuration = vi.fn(fixture.deps.configuration);
   const provider = vi.fn(fixture.deps.provider);
