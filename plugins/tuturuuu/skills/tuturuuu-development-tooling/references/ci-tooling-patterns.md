@@ -107,6 +107,15 @@ See `apps/docs/build/devops/active-runtime.mdx`.
   <mod>::*;`; unit tests live in `src/tests.rs` (`mod tests;`). See
   `apps/backend/AGENTS.md` for the extraction pattern.
 
+## Bun runtime pins
+
+The maintained toolchain uses Bun `1.4.3`. Keep active workspace `packageManager`
+metadata, CI setup/action defaults, bootstrap fallback and SDK qualification
+expectations aligned when changing the stable runtime. Use `bun pm pkg set` for
+manifest metadata. Preserve historical observations, intentional version fixtures
+and paused runtime source. Repository pins do not establish installed host or
+fleet versions; verify those separately before claiming runtime acceptance.
+
 ## Commands And Formatting
 
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.

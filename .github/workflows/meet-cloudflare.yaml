@@ -12,8 +12,9 @@ on:
       - 'turbo.json'
       - 'bun.lock'
       - 'patches/**'
-      - 'scripts/ci/meet-cloudflare-render.test.js'
+      - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
       - 'scripts/ci/meet-build-metadata.test.js'
+      - 'scripts/ci/verify-meet-start-output*'
       - 'scripts/ci/workflow-yaml-test-helper.js'
       - 'scripts/ci/verify-meet-build-info*'
       - 'scripts/ci/generate-build-metadata*'
@@ -32,8 +33,9 @@ on:
       - 'packages/**'
       - 'bun.lock'
       - 'patches/**'
-      - 'scripts/ci/meet-cloudflare-render.test.js'
+      - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
       - 'scripts/ci/meet-build-metadata.test.js'
+      - 'scripts/ci/verify-meet-start-output*'
       - 'scripts/ci/workflow-yaml-test-helper.js'
       - 'scripts/ci/verify-meet-build-info*'
       - 'scripts/ci/generate-build-metadata*'
@@ -100,10 +102,10 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.1
+          bun-version: 1.4.3
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version: 24.22.0
       - run: bun install --frozen-lockfile
       - name: Generate shared build metadata
         env:
@@ -112,7 +114,7 @@ jobs:
           PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Test build identity and workflow ordering
-        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js
+        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js
       - name: Build realtime dependencies and test realtime
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -175,8 +177,6 @@ jobs:
           command: bun turbo:local run build --filter='@tuturuuu/meet-core^...' --concurrency=2 && bun turbo:local run test --filter=@tuturuuu/meet-core --filter=@tuturuuu/meet --concurrency=2
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
-      - name: Verify React prerender resume survives Worker bundling
-        run: node --test scripts/ci/meet-cloudflare-render.test.js
       - name: Build the frontend for Workers
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
@@ -188,16 +188,31 @@ jobs:
           command: cd apps/meet && bun run build:cloudflare
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Discover and verify native Void Start output
+        id: meet-output
+        run: node scripts/ci/verify-meet-start-output.js config apps/meet
+      - name: Generate emitted Worker binding types
+        working-directory: apps/meet
+        run: bun x --no-install wrangler types --config "${{ steps.meet-output.outputs.config }}" --env-interface CloudflareEnv --include-runtime=false cloudflare-env.d.ts
       - name: Check Worker binding types
         run: bun run --cwd apps/meet cf:typecheck
+      - name: Verify emitted Start SSR, auth, cookies, rewrites and Live guards
+        timeout-minutes: 3
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: node --test scripts/ci/meet-cloudflare-render.runtime.mjs
       - name: Validate both Worker bundles
         run: |
-          bun x --no-install wrangler deploy --dry-run -c apps/meet/wrangler.jsonc
+          (cd apps/meet && bun x --no-install wrangler deploy --dry-run -c "${{ steps.meet-output.outputs.config }}")
           bun x --no-install wrangler deploy --dry-run -c apps/meet-realtime/wrangler.jsonc
+      - name: Seal exact-SHA frontend artifact
+        run: |
+          node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json
+          tar -czf "$RUNNER_TEMP/meet-worker.tar.gz" -C apps/meet dist .wrangler/deploy/config.json meet-artifact.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: meet-worker-${{ github.sha }}
-          path: apps/meet/.open-next
+          path: ${{ runner.temp }}/meet-worker.tar.gz
           include-hidden-files: true
           retention-days: 7
           if-no-files-found: error
@@ -219,21 +234,39 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.1
+          bun-version: 1.4.3
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version: 24.22.0
       - run: bun install --frozen-lockfile
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: meet-worker-${{ github.sha }}
-          path: apps/meet/.open-next
+          path: ${{ runner.temp }}/meet-worker
+      - name: Restore and verify exact frontend artifact
+        run: |
+          tar -xzf "$RUNNER_TEMP/meet-worker/meet-worker.tar.gz" -C apps/meet
+          node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
+      - name: Discover restored native Void Start output
+        id: meet-output
+        run: node scripts/ci/verify-meet-start-output.js config apps/meet
+      - name: Dry-run restored frontend artifact
+        working-directory: apps/meet
+        run: bun x --no-install wrangler deploy --dry-run -c "${{ steps.meet-output.outputs.config }}"
+      - name: Verify restored Start runtime before production writes
+        timeout-minutes: 3
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: node --test scripts/ci/meet-cloudflare-render.runtime.mjs
+      - name: Recheck artifact after restored runtime qualification
+        run: node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
       - name: Wait for shared meeting billing schema
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
         run: bun packages/meet-core/scripts/verify-schema.ts
       - name: Verify required production secret names
+        working-directory: apps/meet
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
         run: |
@@ -242,13 +275,32 @@ jobs:
           bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
+      - name: Capture existing frontend rollback versions
+        working-directory: apps/meet
+        run: |
+          bun x --no-install wrangler versions list --name tuturuuu-meet --json > "$RUNNER_TEMP/meet-versions-raw.json"
+          bun x --no-install wrangler deployments list --name tuturuuu-meet --json > "$RUNNER_TEMP/meet-deployments-raw.json"
+          jq -e '[.[] | {id, created_on: .metadata.created_on}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.created_on | type == "string")))' "$RUNNER_TEMP/meet-versions-raw.json" > "$RUNNER_TEMP/meet-rollback-versions.json"
+          jq -e '[.[] | {id, created_on, versions}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.versions | length > 0)))' "$RUNNER_TEMP/meet-deployments-raw.json" > "$RUNNER_TEMP/meet-rollback-deployments.json"
+      - name: Retain rollback version evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meet-rollback-${{ github.sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/meet-rollback-*.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Deploy signaling before the frontend
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           bun x --no-install wrangler deploy -c apps/meet-realtime/wrangler.jsonc --message "$GITHUB_SHA"
+      # Void 1.1.12 CLI rebuilds/wraps after build gates and rejects targeted
+      # placement with pinned secrets. Publish its qualified SDK output unchanged.
       - name: Deploy the verified frontend
         working-directory: apps/meet
-        run: bun run deploy:cloudflare -- --message "$GITHUB_SHA"
+        timeout-minutes: 10
+        run: |
+          node ../../scripts/ci/verify-meet-start-output.js verify . meet-artifact.json
+          bun x --no-install wrangler deploy -c "${{ steps.meet-output.outputs.config }}" --message "$GITHUB_SHA"
       - name: Verify canonical routes
         timeout-minutes: 8
         run: |

@@ -6,7 +6,13 @@
     "types": ["@cloudflare/workers-types", "node"],
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
   "include": [
     "cloudflare-env.d.ts",
