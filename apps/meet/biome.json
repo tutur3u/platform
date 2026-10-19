@@ -2,6 +2,9 @@
   "root": false,
   "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
   "extends": "//",
+  "formatter": {
+    "includes": ["**", "!src/routeTree.gen.ts"]
+  },
   "linter": {
     "domains": {
       "next": "none"
