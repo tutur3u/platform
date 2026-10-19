@@ -237,6 +237,45 @@ describe('internal account service', () => {
     expect(getUserById).not.toHaveBeenCalled();
   });
 
+  it('requires exact confirmation to enable a disabled account without changing its password', async () => {
+    const target = authUser({
+      email: 'local@tuturuuu.com',
+      id: 'local-user',
+      banned_until: '2126-01-01T00:00:00.000Z',
+    });
+    const getUserById = vi.fn().mockResolvedValue({
+      data: { user: target },
+      error: null,
+    });
+    const updateUserById = vi.fn().mockResolvedValue({
+      data: { user: { ...target, banned_until: null } },
+      error: null,
+    });
+    const sbAdmin = adminClient({ getUserById, updateUserById });
+    await expect(
+      mutateInternalAccount({
+        action: 'enable_access',
+        actorUserId: 'actor-1',
+        confirmationEmail: 'other@tuturuuu.com',
+        sbAdmin,
+        targetUserId: 'local-user',
+      })
+    ).rejects.toEqual(expect.objectContaining({ status: 400 }));
+    expect(updateUserById).not.toHaveBeenCalled();
+    const updated = await mutateInternalAccount({
+      action: 'enable_access',
+      actorUserId: 'actor-1',
+      confirmationEmail: target.email,
+      sbAdmin,
+      targetUserId: 'local-user',
+    });
+    expect(updateUserById).toHaveBeenCalledExactlyOnceWith('local-user', {
+      ban_duration: 'none',
+    });
+    expect(updated.id).toBe('local-user');
+    expect(updated.isDisabled).toBe(false);
+  });
+
   it('requires exact email confirmation and applies a bounded disable', async () => {
     const target = authUser({
       email: 'local@tuturuuu.com',

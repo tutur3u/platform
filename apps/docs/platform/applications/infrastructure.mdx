@@ -51,6 +51,34 @@ A configuration edit, deploy action, external registration, or production write
 requires its own authorized workflow. Reading a runbook or recalling a private
 record is not authority to execute it.
 
+## Account passwords and access
+
+Administrators with root-workspace `manage_internal_accounts` permission use
+**Reset any password** to select an account by email, or **Reset password** in
+an internal account's menu. Both dialogs accept a chosen password or generate a
+20-character temporary password locally using Web Crypto. Passwords must contain
+12–72 characters. The global reset dialog freezes its target and password and
+prevents dismissal while the request is pending; a failed request keeps the form
+editable, and a successful request exposes the credential handoff. Passwords are
+not written to application logs.
+
+The internal-account menu shows **Disable access** for active accounts and
+**Enable access** for disabled accounts. Both require matching target-email
+confirmation. Enable removes the provider ban; it does not change the password
+or perform managed-employee restoration. These existing password/access actions
+have no optional activation gate. Current administrator identity, permission,
+target eligibility and self-target protections still apply. Administrators cannot
+use these actions on their own account; managed-employee lifecycle recovery
+continues through its separate inspection and restoration flow.
+
+Regression coverage: `account-password-reset-dialog.test.tsx` exercises password
+bounds, pending-request protection, generation and refusal;
+`internal-account-row.test.tsx` exercises the existing active/disabled menus and
+self-target controls; `service.test.ts` verifies exact confirmation and provider
+ban changes. Route authorization and password-boundary suites cover the existing
+Infrastructure API contracts. These synthetic tests do not establish provider or
+production acceptance.
+
 ## Employee API routing
 
 Web owns `/api/v1/infrastructure/internal-accounts/employees` and its descendants,
