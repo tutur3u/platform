@@ -10,6 +10,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { test } from 'node:test';
@@ -355,4 +356,255 @@ test('missing source provenance fails instead of borrowing event identity', (t) 
   assert.equal(result.status, 1);
   assert.equal(receipt.status, 'unavailable');
   assert.equal(receipt.source, undefined);
+});
+
+// AUTHORED UNRUN: these are synthetic defaults, not actual runtime evidence.
+// Resolve installed data from Void's own context; never execute Void or hooks.
+function owningVoidDirectory() {
+  let directory = dirname(
+    realpathSync(
+      createRequire(import.meta.url).resolve('void', {
+        paths: [
+          resolve(dirname(fileURLToPath(import.meta.url)), '../../apps/meet'),
+        ],
+      })
+    )
+  );
+  while (directory !== dirname(directory)) {
+    try {
+      const metadata = JSON.parse(
+        readFileSync(resolve(directory, 'package.json'))
+      );
+      if (metadata.name === 'void') return directory;
+    } catch {
+      /* Not a package boundary. */
+    }
+    directory = dirname(directory);
+  }
+  throw new Error('installed_void_unavailable');
+}
+
+function materializedFixture(t, input = { name: canary }) {
+  const f = fixture(t);
+  const directory = resolve(f.root, 'apps/example/node_modules/void');
+  rmSync(directory, { recursive: true });
+  symlinkSync(owningVoidDirectory(), directory, 'dir');
+  const path = f.put('apps/example/.void-wrangler.jsonc', input);
+  f.put('apps/example/void.config.ts', `throw new Error('${canary}');`);
+  f.put('apps/example/void.lock.json', {
+    version: 1,
+    source: input,
+    resolved: input,
+    text: JSON.stringify(input),
+  });
+  const config = {
+    configPath: path,
+    userConfigPath: path,
+    topLevelName: input.name,
+    definedEnvironments: [],
+    jsx_factory: 'React.createElement',
+    jsx_fragment: 'React.Fragment',
+    durable_objects: { bindings: [] },
+    queues: { producers: [], consumers: [] },
+    logfwdr: { bindings: [] },
+    python_modules: { exclude: ['**/*.pyc'] },
+    upload_source_maps: true,
+    dev: {
+      ip: 'localhost',
+      local_protocol: 'http',
+      upstream_protocol: 'http',
+      enable_containers: true,
+      generate_types: false,
+    },
+  };
+  f.put('apps/example/dist/server/wrangler.json', config);
+  return { ...f, path, input, config };
+}
+
+const evidence = (probe, name) =>
+  probe.evidence.find((row) => row.name === name);
+function recordedCandidates(probe) {
+  assert.equal(probe.fields.length, 11);
+  assert.equal(probe.status, 'recorded');
+  assert.equal(probe.reason, 'value_candidates_only');
+  assert.equal(probe.causalProvenance.status, 'unknown');
+  for (const row of probe.fields) assert.equal(row.status, 'recorded');
+}
+
+test('actual collector derives a supplier-ready, redacted eleven-row baseline', (t) => {
+  const f = materializedFixture(t);
+  const probe = f.invoke().receipt.defaultProbe;
+  recordedCandidates(probe);
+  assert.ok(probe.fields.every((row) => row.candidateMatch === true));
+  assert.equal(probe.preconditions.supplierProfileMatches, true);
+  assert.equal(probe.preconditions.parserProfileMatches, true);
+  assert.equal(probe.parser.version, '3.3.1');
+  assert.equal(probe.loaderSelection.proven, true);
+  assert.equal(probe.materialized.hash, hash(readFileSync(f.path)));
+  for (const row of probe.evidence) assert.equal(row.status, 'matched');
+  assert.ok(probe.fields.every((row) => row.authoredPresent === null));
+});
+
+test('unsafe source hooks and resource identities stay data and remain redacted', (t) => {
+  const f = materializedFixture(t, {
+    name: canary,
+    build: { command: canary, cwd: canary, [canary]: canary },
+    queues: { producers: [{ binding: canary, queue: canary }] },
+  });
+  f.config.queues = f.input.queues;
+  f.put('apps/example/dist/server/wrangler.json', f.config);
+  const probe = f.invoke().receipt.defaultProbe;
+  recordedCandidates(probe);
+  assert.equal(probe.input.buildCommandPresent, true);
+  assert.equal(probe.input.buildCwdPresent, true);
+  assert.equal(probe.input.buildShape.keyCount, 3);
+  assert.equal(
+    probe.fields.find((row) => row.name === 'queues').candidateMatch,
+    false
+  );
+  assert.equal(
+    probe.fields.find((row) => row.name === 'queues').inputPresent,
+    true
+  );
+  assert.equal(
+    probe.fields.find((row) => row.name === 'queues').retainedSourcePresent,
+    true
+  );
+  assert.equal(
+    probe.fields.find((row) => row.name === 'dev').candidateMatch,
+    true
+  );
+});
+
+for (const key of ['configPath', 'userConfigPath', 'topLevelName']) {
+  test(`collector isolates a wrong ${key} without following its value`, (t) => {
+    const f = materializedFixture(t);
+    f.config[key] = `${canary}/never-open`;
+    f.put('apps/example/dist/server/wrangler.json', f.config);
+    const probe = f.invoke().receipt.defaultProbe;
+    recordedCandidates(probe);
+    assert.equal(evidence(probe, key).status, 'mismatch');
+    assert.equal(
+      evidence(probe, key).reason,
+      {
+        configPath: 'metadata_config_path_mismatch',
+        userConfigPath: 'metadata_user_config_path_mismatch',
+        topLevelName: 'metadata_top_level_name_mismatch',
+      }[key]
+    );
+    for (const row of probe.fields)
+      assert.equal(row.candidateMatch, row.name !== key);
+  });
+}
+
+for (const scenario of [
+  'missing-input',
+  'symlink',
+  'dangling-symlink',
+  'oversize',
+  'malformed-jsonc',
+  'trailing-content',
+]) {
+  test(`collector rejects ${scenario} from an otherwise-ready baseline`, (t) => {
+    const f = materializedFixture(t);
+    if (['missing-input', 'symlink', 'dangling-symlink'].includes(scenario))
+      rmSync(f.path);
+    if (scenario === 'symlink') symlinkSync(f.emitted, f.path);
+    if (scenario === 'dangling-symlink')
+      symlinkSync(resolve(f.root, 'missing'), f.path);
+    if (scenario === 'oversize')
+      writeFileSync(f.path, ' '.repeat(4 * 1024 * 1024 + 1));
+    if (scenario === 'malformed-jsonc') writeFileSync(f.path, '{ "name":, }');
+    if (scenario === 'trailing-content')
+      writeFileSync(f.path, `${JSON.stringify(f.input)} {}`);
+    const probe = f.invoke().receipt.defaultProbe;
+    assert.equal(probe.status, 'unavailable');
+    assert.equal(
+      probe.materialized.reason,
+      ['malformed-jsonc', 'trailing-content'].includes(scenario)
+        ? 'materialized_parse_errors'
+        : 'materialized_unavailable'
+    );
+    assert.equal(evidence(probe, 'supplier').status, 'matched');
+    assert.equal(evidence(probe, 'parser').status, 'matched');
+    for (const row of probe.fields) {
+      assert.equal(row.status, 'unavailable');
+      assert.equal(row.reason, 'materialized_input_unavailable');
+      assert.equal(row.candidateMatch, null);
+    }
+    if (scenario.includes('symlink'))
+      assert.equal(probe.materialized.symlink, true);
+  });
+}
+
+for (const scenario of [
+  'comments-trailing-comma',
+  'missing-state',
+  'wrong-state',
+  'malformed-state',
+]) {
+  test(`${scenario} retains value comparisons and truthful state provenance`, (t) => {
+    const f = materializedFixture(t);
+    if (scenario === 'comments-trailing-comma')
+      writeFileSync(
+        f.path,
+        `// ${canary}\n{ "name": ${JSON.stringify(canary)}, /* data */ }`
+      );
+    if (scenario === 'missing-state')
+      rmSync(resolve(f.root, 'apps/example/void.lock.json'));
+    if (scenario === 'wrong-state')
+      f.put('apps/example/void.lock.json', {
+        version: 1,
+        source: {},
+        resolved: {},
+        text: '{}',
+      });
+    if (scenario === 'malformed-state')
+      f.put('apps/example/void.lock.json', '{');
+    const probe = f.invoke().receipt.defaultProbe;
+    recordedCandidates(probe);
+    assert.ok(probe.fields.every((row) => row.candidateMatch === true));
+    assert.equal(evidence(probe, 'supplier').status, 'matched');
+    assert.equal(evidence(probe, 'parser').status, 'matched');
+    const state = evidence(
+      probe,
+      scenario === 'comments-trailing-comma'
+        ? 'stateText'
+        : scenario === 'wrong-state'
+          ? 'stateResolved'
+          : 'stateShape'
+    );
+    assert.equal(
+      state.status,
+      scenario === 'missing-state' ? 'unknown' : 'mismatch'
+    );
+    assert.equal(
+      state.reason,
+      scenario === 'missing-state'
+        ? 'retained_state_shape_unknown'
+        : scenario === 'wrong-state'
+          ? 'retained_state_resolved_mismatch'
+          : scenario === 'malformed-state'
+            ? 'retained_state_shape_mismatch'
+            : 'retained_state_text_mismatch'
+    );
+  });
+}
+
+test('unmatched materializer is derived as a mismatch, never supplier proof', (t) => {
+  const f = fixture(t);
+  f.put(
+    'apps/example/node_modules/void/index.cjs',
+    'import { r as materializeCloudflareConfig } from "./cloudflare-config-fixture.mjs";'
+  );
+  const chunk = f.put(
+    'apps/example/node_modules/void/cloudflare-config-fixture.mjs',
+    `throw new Error('${canary}');`
+  );
+  const probe = f.invoke().receipt.defaultProbe;
+  assert.equal(probe.materializerHash, hash(readFileSync(chunk)));
+  assert.equal(probe.preconditions.supplierProfileMatches, false);
+  assert.equal(evidence(probe, 'supplier').status, 'mismatch');
+  assert.equal(evidence(probe, 'supplier').reason, 'supplier_profile_mismatch');
+  assert.equal(probe.preconditions.parserProfileMatches, false);
 });

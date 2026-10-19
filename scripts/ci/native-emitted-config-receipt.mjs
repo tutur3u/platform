@@ -12,6 +12,7 @@ import {
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { nativeDefaultProbe } from './native-config-default-probe.mjs';
 
 const MAX_RECEIPT = 16 * 1024;
 const MAX_INPUT = 4 * 1024 * 1024;
@@ -295,6 +296,7 @@ export function collect({ root, appDirectory, eventSha }) {
     const head = gitHead(root);
     receipt.source = { head, eventSha, equal: head === eventSha };
     receipt.suppliers = provenance(app);
+    receipt.defaultProbe = nativeDefaultProbe(app, config, receipt.suppliers);
   } catch {
     receipt.status = 'unavailable';
     receipt.reason = 'public_provenance_unavailable';
