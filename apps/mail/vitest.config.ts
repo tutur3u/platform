@@ -9,6 +9,22 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^next\/headers(?:\.js)?$/u,
+        replacement: resolve(__dirname, 'src/runtime/request-context.ts'),
+      },
+      {
+        find: /^next\/navigation(?:\.js)?$/u,
+        replacement: resolve(__dirname, 'src/runtime/next-navigation.tsx'),
+      },
+      {
+        find: /^next\/server(?:\.js)?$/u,
+        replacement: resolve(__dirname, 'src/runtime/next-server.ts'),
+      },
+      {
+        find: /^next-intl\/server$/u,
+        replacement: resolve(__dirname, 'src/runtime/intl-server.ts'),
+      },
+      {
         find: /^@tuturuuu\/internal-api\/(calendar|client|mail)$/,
         replacement: `${resolve(__dirname, '../../packages/internal-api/src')}/$1`,
       },

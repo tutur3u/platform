@@ -1,0 +1,5 @@
+@import "@fontsource-variable/noto-sans/latin.css";
+@import "@fontsource-variable/noto-sans/vietnamese.css";
+.mail-font {
+  font-family: "Noto Sans Variable", sans-serif;
+}
