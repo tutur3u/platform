@@ -11,25 +11,37 @@ const taskName = '//#test:apps-native-browser';
 const wrapper = './.github/actions/run-with-turbo-remote-cache';
 const browserCommand =
   'bun turbo:local run test:apps-native-browser --concurrency=1';
-const browserNames = [
-  'Exercise actual catalogue anchors on the same emitted artifact',
-  'Repeat ordinary anchor acceptance on restored workerd output',
+const sourceExpression = `\${{ github.event.pull_request.head.sha || github.sha }}`;
+const concurrencyGroup =
+  `apps-cloudflare-source-\${{ github.event_name }}-` +
+  sourceExpression +
+  `-\${{ github.run_id }}`;
+const buildName = 'Build native Start SSR with the official Void SDK';
+const typeName = 'Type-check native app without a build';
+const presenceName = 'Record Apps route tree presence before frontend build';
+const captureName = 'Capture generated Apps route tree evidence';
+const browserActors = [
+  [
+    'validate',
+    'Exercise actual catalogue anchors on the same emitted artifact',
+  ],
+  [
+    'restore-acceptance',
+    'Repeat ordinary anchor acceptance on restored workerd output',
+  ],
 ];
-
-function step(source, name) {
-  const matches = source
-    .split(/(?=^ {6}- (?:name:|uses:))/mu)
-    .filter((block) => block.startsWith(`      - name: ${name}\n`));
-  assert.equal(matches.length, 1, `Require exactly one ${name} step`);
-  return matches[0];
-}
+const uploadActors = [
+  ['Retain generated Apps route tree evidence', 'warn'],
+  ['Retain apps diagnostic config receipt', 'error'],
+  [`artifact:apps-native-\${{ env.APPS_SOURCE_SHA }}`, 'error'],
+];
 
 function job(source, name) {
   const lines = source.split('\n');
   const starts = lines.flatMap((line, index) =>
     line === `  ${name}:` ? [index] : []
   );
-  assert.equal(starts.length, 1, `Require exactly one ${name} job`);
+  assert.equal(starts.length, 1, `${name}.job must be unique`);
   const start = starts[0];
   const next = lines.findIndex(
     (line, index) => index > start && /^ {2}[A-Za-z0-9_-]+:$/u.test(line)
@@ -37,116 +49,225 @@ function job(source, name) {
   return lines.slice(start, next === -1 ? lines.length : next).join('\n');
 }
 
-function jobEnv(source, name) {
-  const matches = job(source, name).match(/^ {4}env:\n(?:^ {6}.+\n)+/gmu);
-  assert.equal(matches?.length, 1, `Require exactly one ${name}.env`);
+function actor(source, owner, name) {
+  if (owner === 'concurrency') {
+    const matches = source.match(/^concurrency:\n(?:^ {2}.+\n)+/gmu);
+    assert.equal(matches?.length, 1, 'concurrency.block must be unique');
+    return matches[0];
+  }
+  const body = job(source, owner);
+  if (name === 'env') {
+    const matches = body.match(/^ {4}env:\n(?:^ {6}.+\n)+/gmu);
+    assert.equal(matches?.length, 1, `${owner}.env must be unique`);
+    return matches[0];
+  }
+  const blocks = body.split(/(?=^ {6}- (?:name:|uses:))/mu).slice(1);
+  const matches = blocks.filter((block) => {
+    if (name === 'checkout') {
+      return block.startsWith('      - uses: actions/checkout@');
+    }
+    if (name.startsWith('artifact:')) {
+      return (
+        block.startsWith('      - uses: actions/upload-artifact@') &&
+        block.split('\n').includes(`          name: ${name.slice(9)}`)
+      );
+    }
+    return block.startsWith(`      - name: ${name}\n`);
+  });
+  assert.equal(matches.length, 1, `${owner}/${name}.step must be unique`);
   return matches[0];
 }
 
-function concurrency(source) {
-  const matches = source.match(/^concurrency:\n(?:^ {2}.+\n)+/gmu);
-  assert.equal(matches?.length, 1, 'Require exactly one concurrency block');
-  return matches[0];
+function diagnostic(rule) {
+  const [owner, name, field] = rule;
+  return `${owner}/${name}.${field}`;
 }
 
-function assertField(block, indent, key, value, actor) {
-  const prefix = `${' '.repeat(indent)}${key}:`;
-  assert.deepEqual(
-    block.split('\n').filter((line) => line.startsWith(prefix)),
-    [`${prefix} ${value}`],
-    `${actor} must retain its exact field policy`
+function fieldLine(rule) {
+  const [, , field, indent, value] = rule;
+  return `${' '.repeat(indent)}${field}: ${value}`;
+}
+
+const wrapperActors = [
+  ['validate', buildName, 'cd apps/apps && bun run build:cloudflare'],
+  ['validate', typeName, 'cd apps/apps && bun run type-check'],
+  ...browserActors.map(([owner, name]) => [owner, name, browserCommand]),
+];
+const fieldRules = [];
+for (const [owner, name, command] of wrapperActors) {
+  fieldRules.push(
+    [owner, name, 'uses', 8, wrapper],
+    [owner, name, 'command', 10, command],
+    [owner, name, 'token', 10, "''"],
+    [owner, name, 'team', 10, "''"]
   );
 }
-
-const sourceExpression = `\${{ github.event.pull_request.head.sha || github.sha }}`;
-const concurrencyGroup =
-  `apps-cloudflare-source-\${{ github.event_name }}-` +
-  sourceExpression +
-  `-\${{ github.run_id }}`;
-
-function assertWrapper(block, command) {
-  assert.ok(block.includes(`        uses: ${wrapper}\n`));
-  assert.doesNotMatch(block, /^ {8}(?:run|working-directory):/mu);
-  assert.ok(block.includes(`          command: ${command}\n`));
-  assert.match(block, /^ {10}token: ''$/mu);
-  assert.match(block, /^ {10}team: ''$/mu);
+fieldRules.push(['validate', buildName, 'id', 8, 'apps-frontend-build']);
+for (const [owner, name] of browserActors) {
+  fieldRules.push(
+    [owner, name, 'timeout-minutes', 8, '5'],
+    [owner, name, 'CI', 10, "'true'"],
+    [
+      owner,
+      name,
+      'APPS_ARTIFACT_RECEIPT',
+      10,
+      `\${{ runner.temp }}/apps-native-artifact.json`,
+    ]
+  );
 }
+for (const owner of ['validate', 'restore-acceptance']) {
+  fieldRules.push(
+    [owner, 'env', 'APPS_SOURCE_SHA', 6, sourceExpression],
+    [owner, 'checkout', 'ref', 10, `\${{ env.APPS_SOURCE_SHA }}`],
+    [owner, 'checkout', 'persist-credentials', 10, 'false']
+  );
+}
+for (const [field, value] of [
+  ['group', concurrencyGroup],
+  ['cancel-in-progress', 'false'],
+  ['queue', 'max'],
+]) {
+  fieldRules.push(['concurrency', 'workflow', field, 2, value]);
+}
+fieldRules.push(
+  ['validate', captureName, 'if', 8, 'always()'],
+  [
+    'validate',
+    captureName,
+    'APPS_FRONTEND_BUILD_OUTCOME',
+    10,
+    `\${{ steps.apps-frontend-build.outcome || 'unknown' }}`,
+  ]
+);
+for (const [name, policy] of uploadActors) {
+  fieldRules.push(
+    ['validate', name, 'retention-days', 10, '7'],
+    ['validate', name, 'if-no-files-found', 10, policy]
+  );
+  if (!name.startsWith('artifact:')) {
+    fieldRules.push(['validate', name, 'if', 8, 'always()']);
+  }
+}
+
+const fragmentRules = [
+  ...[presenceName, captureName].map((name) => [
+    'validate',
+    name,
+    'route_tree',
+    '          route_tree=apps/apps/src/routeTree.gen.ts',
+  ]),
+  [
+    'validate',
+    'Recheck output and pack only qualified bytes',
+    'receipt-verification',
+    'python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"',
+  ],
+  [
+    'restore-acceptance',
+    'Confirm qualification did not mutate the restored artifact',
+    'receipt-verification',
+    'python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"',
+  ],
+];
 
 function assertWorkflow(source) {
-  const build = step(
-    source,
-    'Build native Start SSR with the official Void SDK'
-  );
-  assert.match(build, /^ {8}id: apps-frontend-build$/mu);
-  assertWrapper(build, 'cd apps/apps && bun run build:cloudflare');
-  for (const name of browserNames) {
-    const browser = step(source, name);
-    assertWrapper(browser, browserCommand);
-    assert.match(browser, /^ {8}timeout-minutes: 5$/mu);
-    assert.match(browser, /^ {10}CI: 'true'$/mu);
-    assert.match(
-      browser,
-      /^ {10}APPS_ARTIFACT_RECEIPT: \$\{\{ runner\.temp \}\}\/apps-native-artifact\.json$/mu
+  for (const rule of fieldRules) {
+    const [owner, name, field, indent] = rule;
+    const prefix = `${' '.repeat(indent)}${field}:`;
+    assert.deepEqual(
+      actor(source, owner, name)
+        .split('\n')
+        .filter((line) => line.startsWith(prefix)),
+      [fieldLine(rule)],
+      `${diagnostic(rule)} must retain its exact field policy`
     );
   }
+  for (const [owner, name] of wrapperActors) {
+    for (const field of ['run', 'working-directory']) {
+      assert.doesNotMatch(
+        actor(source, owner, name),
+        new RegExp(`^ {8}${field}:`, 'mu'),
+        `${owner}/${name}.${field} must remain absent`
+      );
+    }
+  }
+  for (const rule of fragmentRules) {
+    const [owner, name, , fragment] = rule;
+    assert.equal(
+      actor(source, owner, name).split(fragment).length - 1,
+      1,
+      `${diagnostic(rule)} must retain its owning source literal`
+    );
+  }
+  const before = actor(source, 'validate', presenceName);
+  const build = actor(source, 'validate', buildName);
+  const capture = actor(source, 'validate', captureName);
+  assert.ok(
+    source.indexOf(before) < source.indexOf(build),
+    `validate/${presenceName}.order must precede build`
+  );
+  assert.ok(
+    source.indexOf(build) < source.indexOf(capture),
+    `validate/${captureName}.order must follow build`
+  );
   assert.equal(
     source.match(
       /command: bun turbo:local run test:apps-native-browser --concurrency=1/gu
     )?.length,
-    2
+    2,
+    'workflow.browser-command-count must remain two'
   );
   assert.doesNotMatch(
     source,
-    /^ {8}run: node --test scripts\/ci\/apps-native-browser\.runtime\.mjs$/mu
+    /^ {8}run: node --test scripts\/ci\/apps-native-browser\.runtime\.mjs$/mu,
+    'workflow.runtime-bypass must remain absent'
   );
-  for (const name of ['validate', 'restore-acceptance']) {
-    assertField(
-      jobEnv(source, name),
-      6,
-      'APPS_SOURCE_SHA',
-      sourceExpression,
-      `${name}.env.APPS_SOURCE_SHA`
-    );
-  }
-  const fence = concurrency(source);
-  for (const [key, value] of [
-    ['group', concurrencyGroup],
-    ['cancel-in-progress', 'false'],
-    ['queue', 'max'],
-  ]) {
-    assertField(fence, 2, key, value, `concurrency.${key}`);
-  }
-  assertWrapper(
-    step(source, 'Type-check native app without a build'),
-    'cd apps/apps && bun run type-check'
-  );
-  const before = step(
+  assert.doesNotMatch(
     source,
-    'Record Apps route tree presence before frontend build'
+    /secrets\./u,
+    'workflow.secrets must remain absent'
   );
-  const capture = step(source, 'Capture generated Apps route tree evidence');
-  for (const block of [before, capture]) {
-    assert.match(
-      block,
-      /^ {10}route_tree=apps\/apps\/src\/routeTree\.gen\.ts$/mu,
-      'Route tree evidence must pin the owning Apps source path'
-    );
-  }
-  assert.ok(source.indexOf(before) < source.indexOf(build));
-  assert.match(capture, /^ {8}if: always\(\)$/mu);
-  assert.match(
-    capture,
-    /^ {10}APPS_FRONTEND_BUILD_OUTCOME: \$\{\{ steps\.apps-frontend-build\.outcome \|\| 'unknown' \}\}$/mu
+}
+
+function replaceActor(source, owner, name, before, after) {
+  const original = actor(source, owner, name);
+  assert.equal(original.split(before).length - 1, 1, 'Unique intended literal');
+  assert.equal(source.split(original).length - 1, 1, 'Unique intended actor');
+  const updated = original.replace(before, after);
+  assert.notEqual(updated, original, 'Intended actor must change');
+  const offset = source.indexOf(original);
+  const changed =
+    source.slice(0, offset) + updated + source.slice(offset + original.length);
+  assert.equal(actor(changed, owner, name), updated, 'Selected actor changed');
+  assert.equal(
+    changed.slice(0, offset) +
+      original +
+      changed.slice(offset + updated.length),
+    source,
+    'Only the intended actor changed'
   );
-  assert.ok(source.indexOf(build) < source.indexOf(capture));
-  assert.ok(
-    source.includes(
-      'python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"'
-    )
+  return changed;
+}
+
+function rejectsActor(rule, before, after) {
+  const changed = replaceActor(workflow, rule[0], rule[1], before, after);
+  const expected = `${diagnostic(rule)} `;
+  assert.throws(
+    () => assertWorkflow(changed),
+    (error) =>
+      error instanceof assert.AssertionError &&
+      error.message.startsWith(expected),
+    expected
   );
-  assert.ok(source.includes('if-no-files-found: error'));
-  assert.equal(source.match(/persist-credentials: false/gu)?.length, 2);
-  assert.doesNotMatch(source, /secrets\./u);
+}
+
+function ruleFor(owner, name, field) {
+  const matches = fieldRules.filter(
+    (rule) => rule[0] === owner && rule[1] === name && rule[2] === field
+  );
+  assert.equal(matches.length, 1, 'Mutation must own one field rule');
+  return matches[0];
 }
 
 function matchesEnv(pattern, name) {
@@ -159,18 +280,32 @@ function matchesEnv(pattern, name) {
 function assertMetadata(pkg, config) {
   assert.equal(
     pkg.scripts['test:apps-native-browser'],
-    'node --test scripts/ci/apps-native-browser.runtime.mjs'
+    'node --test scripts/ci/apps-native-browser.runtime.mjs',
+    'package.scripts.test:apps-native-browser must retain the root command'
   );
-  assert.deepEqual(config.tasks[taskName], {
-    cache: false,
-    env: ['APPS_SOURCE_SHA', 'CI'],
-    passThroughEnv: ['APPS_ARTIFACT_RECEIPT'],
-  });
+  const task = config.tasks[taskName];
+  assert.ok(task, 'turbo.task must exist');
+  for (const [field, expected] of [
+    ['cache', false],
+    ['env', ['APPS_SOURCE_SHA', 'CI']],
+    ['passThroughEnv', ['APPS_ARTIFACT_RECEIPT']],
+  ]) {
+    assert.deepEqual(
+      task[field],
+      expected,
+      `turbo.task.${field} must be exact`
+    );
+  }
+  assert.deepEqual(
+    Object.keys(task).sort(),
+    ['cache', 'env', 'passThroughEnv'],
+    'turbo.task.keys must exclude build dependencies and extra policy'
+  );
   for (const key of ['globalEnv', 'globalPassThroughEnv']) {
     for (const name of ['APPS_SOURCE_SHA', 'APPS_ARTIFACT_RECEIPT', 'CI']) {
       assert.ok(
         !(config[key] ?? []).some((pattern) => matchesEnv(pattern, name)),
-        `${name} must be task-owned`
+        `turbo.${key}.${name} must be task-owned`
       );
     }
   }
@@ -184,69 +319,68 @@ test('browser root task hashes the source SHA and always rechecks the transporte
   assertMetadata(packageJson, turbo);
 });
 
-test('workflow contract rejects build bypass, cwd drift and lost failure evidence', () => {
-  const changes = [
-    [
-      'command: cd apps/apps && bun run build:cloudflare',
-      'command: bun run build:cloudflare',
-    ],
-    [`uses: ${wrapper}`, 'run: bun run build:cloudflare'],
-    ['id: apps-frontend-build', 'id: renamed-build'],
-    ["token: ''", 'token: unauthorized-token'],
-    ["team: ''", 'team: unauthorized-team'],
-    [
-      'name: Capture generated Apps route tree evidence\n        if: always()',
-      'name: Capture generated Apps route tree evidence\n        if: success()',
-    ],
-    [
-      "steps.apps-frontend-build.outcome || 'unknown'",
-      "steps.renamed-build.outcome || 'unknown'",
-    ],
-    [
-      'route_tree=apps/apps/src/routeTree.gen.ts',
-      'route_tree=other/routeTree.gen.ts',
-    ],
-    ['if-no-files-found: error', 'if-no-files-found: ignore'],
-    ['persist-credentials: false', 'persist-credentials: true'],
-  ];
-  for (const [before, after] of changes) {
-    const build = step(
-      workflow,
-      'Build native Start SSR with the official Void SDK'
-    );
-    const changed = build.includes(before)
-      ? workflow.replace(build, build.replace(before, after))
-      : workflow.replace(before, after);
-    assert.notEqual(changed, workflow, `Mutation must reach ${before}`);
-    assert.throws(
-      () => assertWorkflow(changed),
-      before === 'route_tree=apps/apps/src/routeTree.gen.ts'
-        ? /Route tree evidence must pin the owning Apps source path/u
-        : undefined,
-      before
+test('every workflow field rejects drift at its unique owning actor', () => {
+  for (const rule of fieldRules) {
+    rejectsActor(
+      rule,
+      fieldLine(rule),
+      fieldLine(rule).replace(/: .*$/u, ': drift')
     );
   }
 });
 
+test('workflow contract rejects build bypass, cwd drift and lost failure evidence', () => {
+  const changes = [
+    [
+      buildName,
+      'command',
+      'cd apps/apps && bun run build:cloudflare',
+      'bun run build:cloudflare',
+    ],
+    [buildName, 'uses', `uses: ${wrapper}`, 'run: bun run build:cloudflare'],
+    [buildName, 'id', 'id: apps-frontend-build', 'id: renamed-build'],
+    [buildName, 'token', "token: ''", 'token: unauthorized-token'],
+    [buildName, 'team', "team: ''", 'team: unauthorized-team'],
+    [captureName, 'if', 'if: always()', 'if: success()'],
+    [
+      captureName,
+      'APPS_FRONTEND_BUILD_OUTCOME',
+      "steps.apps-frontend-build.outcome || 'unknown'",
+      "steps.renamed-build.outcome || 'unknown'",
+    ],
+    [
+      'Retain apps diagnostic config receipt',
+      'if-no-files-found',
+      'if-no-files-found: error',
+      'if-no-files-found: ignore',
+    ],
+    [
+      'checkout',
+      'persist-credentials',
+      'persist-credentials: false',
+      'persist-credentials: true',
+    ],
+  ];
+  for (const [name, field, before, after] of changes) {
+    rejectsActor(ruleFor('validate', name, field), before, after);
+  }
+  const rule = fragmentRules[0];
+  rejectsActor(rule, rule[3], rule[3].replace('apps/apps/src', 'other'));
+});
+
 test('each job owns its pull-request head source pin', () => {
-  for (const name of ['validate', 'restore-acceptance']) {
-    const original = job(workflow, name);
-    const env = jobEnv(workflow, name);
-    const changed = original.replace(
-      env,
-      env.replace(sourceExpression, `\${{ github.sha }}`)
-    );
-    assert.notEqual(changed, original, `Mutation must reach ${name}.env`);
-    assert.throws(
-      () => assertWorkflow(workflow.replace(original, changed)),
-      new RegExp(`${name}\\.env\\.APPS_SOURCE_SHA`, 'u')
+  for (const owner of ['validate', 'restore-acceptance']) {
+    const rule = ruleFor(owner, 'env', 'APPS_SOURCE_SHA');
+    rejectsActor(
+      rule,
+      fieldLine(rule),
+      fieldLine(rule).replace(sourceExpression, `\${{ github.sha }}`)
     );
   }
 });
 
 test('concurrency retains source, event and run identity with a non-cancelling max queue', () => {
-  const original = concurrency(workflow);
-  for (const [key, before, after] of [
+  for (const [field, before, after] of [
     ['group', 'apps-cloudflare-source-', 'other-source-'],
     ['group', `\${{ github.event_name }}`, 'pull_request'],
     ['group', sourceExpression, `\${{ github.sha }}`],
@@ -254,107 +388,111 @@ test('concurrency retains source, event and run identity with a non-cancelling m
     ['cancel-in-progress', 'false', 'true'],
     ['queue', 'max', 'single'],
   ]) {
-    const field = `  ${key}: ${key === 'group' ? concurrencyGroup : before}`;
-    const changed = original.replace(field, field.replace(before, after));
-    assert.notEqual(
-      changed,
-      original,
-      `Mutation must reach concurrency.${key}`
-    );
-    assert.throws(
-      () => assertWorkflow(workflow.replace(original, changed)),
-      new RegExp(`concurrency\\.${key}`, 'u')
-    );
+    const rule = ruleFor('concurrency', 'workflow', field);
+    rejectsActor(rule, fieldLine(rule), fieldLine(rule).replace(before, after));
   }
 });
 
 test('owning type-check rejects wrapper, cwd and public cache fence drift', () => {
-  const original = step(workflow, 'Type-check native app without a build');
-  for (const [before, after] of [
-    [`uses: ${wrapper}`, 'run: bun run type-check'],
+  for (const [field, before, after] of [
+    ['uses', `uses: ${wrapper}`, 'run: bun run type-check'],
     [
+      'command',
       'command: cd apps/apps && bun run type-check',
       'command: bun run type-check',
     ],
-    ["token: ''", 'token: unauthorized-token'],
-    ["team: ''", 'team: unauthorized-team'],
+    ['token', "token: ''", 'token: unauthorized-token'],
+    ['team', "team: ''", 'team: unauthorized-team'],
   ]) {
-    const changed = original.replace(before, after);
-    assert.notEqual(changed, original, `Mutation must reach ${before}`);
-    assert.throws(() => assertWorkflow(workflow.replace(original, changed)));
+    rejectsActor(ruleFor('validate', typeName, field), before, after);
   }
 });
 
 test('both route tree evidence steps reject a different source path', () => {
-  for (const name of [
-    'Record Apps route tree presence before frontend build',
-    'Capture generated Apps route tree evidence',
-  ]) {
-    const original = step(workflow, name);
-    const changed = original.replace(
-      'route_tree=apps/apps/src/routeTree.gen.ts',
-      'route_tree=other/routeTree.gen.ts'
-    );
-    assert.notEqual(changed, original, `Mutation must reach ${name}`);
-    assert.throws(
-      () => assertWorkflow(workflow.replace(original, changed)),
-      /Route tree evidence must pin the owning Apps source path/u
-    );
+  for (const rule of fragmentRules.slice(0, 2)) {
+    rejectsActor(rule, rule[3], rule[3].replace('apps/apps/src', 'other'));
+  }
+});
+
+test('each artifact receipt verification remains at its owning step', () => {
+  for (const rule of fragmentRules.slice(2)) {
+    rejectsActor(rule, rule[3], rule[3].replace('apps/apps', 'other'));
   }
 });
 
 test('each browser job rejects runtime bypasses, token leakage and receipt drift', () => {
-  for (const name of browserNames) {
-    const original = step(workflow, name);
-    for (const [before, after] of [
+  for (const [owner, name] of browserActors) {
+    for (const [field, before, after] of [
       [
+        'uses',
         `uses: ${wrapper}`,
         'run: node --test scripts/ci/apps-native-browser.runtime.mjs',
       ],
       [
+        'command',
         browserCommand,
         'node --test scripts/ci/apps-native-browser.runtime.mjs',
       ],
-      ["token: ''", 'token: unauthorized-token'],
-      ["team: ''", 'team: unauthorized-team'],
-      ['timeout-minutes: 5', 'timeout-minutes: 10'],
-      ["CI: 'true'", "CI: 'false'"],
-      ['APPS_ARTIFACT_RECEIPT:', 'OTHER_RECEIPT:'],
+      ['token', "token: ''", 'token: unauthorized-token'],
+      ['team', "team: ''", 'team: unauthorized-team'],
+      ['timeout-minutes', 'timeout-minutes: 5', 'timeout-minutes: 10'],
+      ['CI', "CI: 'true'", "CI: 'false'"],
+      ['APPS_ARTIFACT_RECEIPT', 'APPS_ARTIFACT_RECEIPT:', 'OTHER_RECEIPT:'],
     ]) {
-      const changed = original.replace(before, after);
-      assert.notEqual(changed, original, `Mutation must reach ${before}`);
-      assert.throws(
-        () => assertWorkflow(workflow.replace(original, changed)),
-        undefined,
-        `${name}: ${before}`
+      rejectsActor(ruleFor(owner, name, field), before, after);
+    }
+  }
+});
+
+test('wrapper actors reject competing execution fields without hiding behind another actor', () => {
+  for (const [owner, name] of wrapperActors) {
+    for (const field of ['run', 'working-directory']) {
+      const before = `        uses: ${wrapper}\n`;
+      rejectsActor(
+        [owner, name, field],
+        before,
+        `${before}        ${field}: unauthorized\n`
       );
     }
   }
 });
 
+function mutateProperty(original, path, value) {
+  const changed = structuredClone(original);
+  let parent = changed;
+  for (const key of path.slice(0, -1)) parent = parent[key];
+  const key = path.at(-1);
+  const present = Object.hasOwn(parent, key);
+  const before = parent[key];
+  if (value === undefined) delete parent[key];
+  else parent[key] = value;
+  assert.notDeepEqual(changed, original, 'Intended property must change');
+  const restored = structuredClone(changed);
+  let restoredParent = restored;
+  for (const part of path.slice(0, -1)) restoredParent = restoredParent[part];
+  if (present) restoredParent[key] = before;
+  else delete restoredParent[key];
+  assert.deepEqual(restored, original, 'Only the intended property changed');
+  return changed;
+}
+
 test('metadata contract rejects caching, incorrect hashing and global allowances', () => {
   const changes = [
-    (config) => {
-      config.tasks[taskName].cache = true;
-    },
-    (config) => {
-      delete config.tasks[taskName];
-    },
-    (config) => {
-      config.tasks[taskName].env = ['CI'];
-    },
-    (config) => {
-      config.tasks[taskName].env.push('APPS_ARTIFACT_RECEIPT');
-    },
-    (config) => {
-      config.tasks[taskName].passThroughEnv.push('APPS_SOURCE_SHA');
-    },
-    (config) => {
-      config.tasks[taskName].passThroughEnv = [];
-    },
-    (config) => {
-      config.tasks[taskName].dependsOn = ['build'];
-    },
+    [['tasks', taskName, 'cache'], true, 'turbo.task.cache'],
+    [['tasks', taskName], undefined, 'turbo.task must exist'],
+    [['tasks', taskName, 'env'], ['CI'], 'turbo.task.env'],
+    [
+      ['tasks', taskName, 'env'],
+      ['APPS_SOURCE_SHA', 'CI', 'APPS_ARTIFACT_RECEIPT'],
+      'turbo.task.env',
+    ],
+    [
+      ['tasks', taskName, 'passThroughEnv'],
+      ['APPS_ARTIFACT_RECEIPT', 'APPS_SOURCE_SHA'],
+      'turbo.task.passThroughEnv',
+    ],
+    [['tasks', taskName, 'passThroughEnv'], [], 'turbo.task.passThroughEnv'],
+    [['tasks', taskName, 'dependsOn'], ['build'], 'turbo.task.keys'],
   ];
   for (const key of ['globalEnv', 'globalPassThroughEnv']) {
     for (const pattern of [
@@ -364,18 +502,37 @@ test('metadata contract rejects caching, incorrect hashing and global allowances
       '*',
       'CI',
     ]) {
-      changes.push((config) => {
-        config[key] = [...(config[key] ?? []), pattern];
-      });
+      const name =
+        pattern === 'CI'
+          ? 'CI'
+          : pattern === 'APPS_ARTIFACT_RECEIPT'
+            ? pattern
+            : 'APPS_SOURCE_SHA';
+      changes.push([
+        [key],
+        [...(turbo[key] ?? []), pattern],
+        `turbo.${key}.${name}`,
+      ]);
     }
   }
-  for (const change of changes) {
-    const config = structuredClone(turbo);
-    change(config);
-    assert.throws(() => assertMetadata(packageJson, config));
+  for (const [path, value, expected] of changes) {
+    const config = mutateProperty(turbo, path, value);
+    assert.throws(
+      () => assertMetadata(packageJson, config),
+      (error) =>
+        error instanceof assert.AssertionError &&
+        error.message.startsWith(expected)
+    );
   }
-  const pkg = structuredClone(packageJson);
-  pkg.scripts['test:apps-native-browser'] =
-    'node --test apps/apps/cloudflare/native-built-worker.test.mjs';
-  assert.throws(() => assertMetadata(pkg, turbo));
+  const pkg = mutateProperty(
+    packageJson,
+    ['scripts', 'test:apps-native-browser'],
+    'node --test apps/apps/cloudflare/native-built-worker.test.mjs'
+  );
+  assert.throws(
+    () => assertMetadata(pkg, turbo),
+    (error) =>
+      error instanceof assert.AssertionError &&
+      error.message.startsWith('package.scripts.test:apps-native-browser ')
+  );
 });
