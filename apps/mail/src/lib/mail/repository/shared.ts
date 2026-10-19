@@ -1,4 +1,6 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
 import { readMailAutomation } from '../automation/policy';
 import { readGroupPolicy } from '../groups/policy';
 import { resolveInternalMailboxName } from '../identity';
@@ -44,7 +46,7 @@ export function privateTable(client: AnyRecord, table: MailTableName) {
   return client.schema('private').from(table);
 }
 
-export async function getAdminClient() {
+export async function getAdminClient(): Promise<SupabaseClient<Database>> {
   return createAdminClient({ noCookie: true });
 }
 
