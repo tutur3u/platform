@@ -34,6 +34,13 @@ normalizer defaults. Producer `configPath`/`userConfigPath` metadata points to t
 original `.void-wrangler.jsonc`; it is sealed information, never dereferenced on
 restore. The deploy pointer and emitted main/assets paths have independent
 containment checks. The fixture is not observed build output or runtime evidence.
+The Apps emitted-config contract also requires `upload_source_maps` to be exactly
+JSON `true`. This reviewed emitted normalizer value is not an authored Apps
+setting or proof of retained-state provenance. The regressions in
+`scripts/ci/apps-native-artifact.test.py` reject false, number1, null, string and
+object substitutes and unrelated fields, and check raw emitted config bytes
+through sealing and restore. Artifact validation does not qualify source-map
+upload, dry-run, hosted runtime or publication.
 
 The checked name `tuturuuu-apps-vite-staging` is the candidate's source-declared
 sandbox name. This check does not establish an existing hosted Worker, account,

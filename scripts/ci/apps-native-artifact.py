@@ -35,6 +35,7 @@ NORMALIZED_DEFAULTS = {
     "vpc_networks": [], "logfwdr": {"bindings": []},
     "python_modules": {"exclude": ["**/*.pyc"]},
     "dev": {"ip": "localhost", "local_protocol": "http", "upstream_protocol": "http", "enable_containers": True, "generate_types": False},
+    "upload_source_maps": True,
     "no_bundle": True,
     "rules": [{"type": "ESModule", "globs": ["**/*.js", "**/*.mjs"]}],
 }

@@ -36,7 +36,7 @@ class ArtifactTest(unittest.TestCase):
             "workers_dev": True, "observability": {"enabled": True, "head_sampling_rate": 0.05},
             "vars": {"TUTURUUU_NOINDEX": "1"}, "definedEnvironments": [],
             "configPath": str(app / ".void-wrangler.jsonc"), "userConfigPath": str(app / ".void-wrangler.jsonc"),
-            "main": "index.js", "no_bundle": True,
+            "main": "index.js", "no_bundle": True, "upload_source_maps": True,
             "rules": [{"type": "ESModule", "globs": ["**/*.js", "**/*.mjs"]}],
             "assets": {"binding": "ASSETS", "directory": "../client", "run_worker_first": True, "not_found_handling": "none"},
             "jsx_factory": "React.createElement", "jsx_fragment": "React.Fragment", "triggers": {},
@@ -59,10 +59,15 @@ class ArtifactTest(unittest.TestCase):
         (app / artifact.REDIRECT).write_text(json.dumps(pointer))
 
     def test_real_adapter_metadata_and_relocated_seal_restore(self):
-        app, _, _ = self.fixture()
+        app, config, _ = self.fixture()
+        self.assertIs(config["upload_source_maps"], True)
+        config_path = app / "dist/native/wrangler.json"
+        config_bytes = b" \n" + json.dumps(config, indent=2).encode() + b"\n"
+        config_path.write_bytes(config_bytes)
         receipt = artifact.artifact(app, SHA)
         self.assertEqual(receipt["configPath"], "dist/native/wrangler.json")
         self.assertIn(artifact.REDIRECT, receipt["files"])
+        self.assertEqual(config_path.read_bytes(), config_bytes)
         receipt_path, archive = app / "receipt.json", app / "artifact.tar.gz"
         receipt_path.write_text(json.dumps(receipt))
         artifact.pack(app, receipt_path, archive, SHA)
@@ -73,6 +78,8 @@ class ArtifactTest(unittest.TestCase):
             (target / "public" / name).write_bytes((app / "public" / name).read_bytes())
         artifact.restore(target, archive, app / "restored.json", SHA)
         artifact.verify(target, receipt, SHA)
+        self.assertEqual((target / "dist/native/wrangler.json").read_bytes(), config_bytes)
+        self.assertIs(json.loads((target / "dist/native/wrangler.json").read_bytes())["upload_source_maps"], True)
         self.assertEqual(json.loads((target / "dist/native/wrangler.json").read_text())["configPath"], str(app / ".void-wrangler.jsonc"))
         self.assertEqual((target / "dist/native/index.js").read_bytes(), (app / "dist/native/index.js").read_bytes())
 
@@ -316,6 +323,23 @@ class ArtifactTest(unittest.TestCase):
             self.save(app, config, pointer)
             with self.assertRaises(ValueError):
                 artifact.validate_output(app)
+
+    def test_upload_source_maps_requires_exact_true_and_rejects_unrelated_fields(self):
+        for value in (False, 1, None, "true", {}):
+            with self.subTest(value=value):
+                app, config, pointer = self.fixture()
+                config["upload_source_maps"] = value
+                self.save(app, config, pointer)
+                config_path = app / "dist/native/wrangler.json"
+                before = config_path.read_bytes()
+                with self.assertRaisesRegex(ValueError, "contract drift: upload_source_maps"):
+                    artifact.validate_output(app)
+                self.assertEqual(config_path.read_bytes(), before)
+        app, config, pointer = self.fixture()
+        config["unrelated_key"] = True
+        self.save(app, config, pointer)
+        with self.assertRaisesRegex(ValueError, "unreviewed emitted config field"):
+            artifact.validate_output(app)
 
     def test_config_containment_identity_resources_and_static_controls(self):
         mutations = [
