@@ -233,10 +233,16 @@ function assertWorkflow(source) {
 function replaceActor(source, owner, name, before, after) {
   const original = actor(source, owner, name);
   assert.equal(original.split(before).length - 1, 1, 'Unique intended literal');
-  assert.equal(source.split(original).length - 1, 1, 'Unique intended actor');
+  const scope = owner === 'concurrency' ? source : job(source, owner);
+  assert.equal(
+    scope.split(original).length - 1,
+    1,
+    'Unique actor in owning scope'
+  );
+  assert.equal(source.split(scope).length - 1, 1, 'Unique owning scope');
   const updated = original.replace(before, after);
   assert.notEqual(updated, original, 'Intended actor must change');
-  const offset = source.indexOf(original);
+  const offset = source.indexOf(scope) + scope.indexOf(original);
   const changed =
     source.slice(0, offset) + updated + source.slice(offset + original.length);
   assert.equal(actor(changed, owner, name), updated, 'Selected actor changed');
