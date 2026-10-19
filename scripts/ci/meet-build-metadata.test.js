@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub expressions are tested as literal YAML values.
 const assert = require('node:assert/strict');
 const { existsSync, readFileSync } = require('node:fs');
-const { cp, mkdtemp, mkdir, rm } = require('node:fs/promises');
+const { cp, mkdtemp, mkdir, rm, writeFile } = require('node:fs/promises');
 const { spawnSync } = require('node:child_process');
 const { tmpdir } = require('node:os');
 const { dirname, join, resolve } = require('node:path');
@@ -122,10 +122,9 @@ test('Meet qualifies the native artifact and restored runtime before publication
       seal > runtime &&
       upload > seal
   );
-  assert.match(
-    validate[seal].run,
-    /dist \.wrangler\/deploy\/config\.json meet-artifact\.json/
-  );
+  artifactArchiveCommand(validate[seal].run);
+  assert.equal(validate[seal].if, undefined);
+  assert.notEqual(validate[seal]['continue-on-error'], true);
   assert.equal(
     validate[upload].with.path,
     '${{ runner.temp }}/meet-worker.tar.gz'
@@ -173,6 +172,82 @@ test('Meet qualifies the native artifact and restored runtime before publication
     /void deploy|build:cloudflare|wrangler\.legacy/
   );
   assert.notEqual(deploy[restoredRuntime]['continue-on-error'], true);
+});
+
+function artifactArchiveCommand(command) {
+  const [seal, ...archive] = command.trim().split('\n');
+  assert.equal(
+    seal,
+    'node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json'
+  );
+  assert.equal(
+    archive.at(-1),
+    'tar -czf "$RUNNER_TEMP/meet-worker.tar.gz" -C apps/meet dist "$pointer" meet-artifact.json'
+  );
+  return archive.join('\n');
+}
+
+function runArchiveTool(command, args, options) {
+  const result = spawnSync(command, args, {
+    ...options,
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  return result.stdout;
+}
+
+test('Meet archives either selected pointer and excludes private source files', async () => {
+  const seal = workflow.jobs.validate.steps.find((step) =>
+    step.run?.includes('verify-meet-start-output.js seal')
+  );
+  const archive = artifactArchiveCommand(seal.run);
+  const nativePointer = '.wrangler/deploy/config.json';
+  const voidPointer = '.void/preview-deploy-config.json';
+  for (const selected of [nativePointer, voidPointer]) {
+    const snapshot = await mkdtemp(join(tmpdir(), 'meet-pointer-archive-'));
+    try {
+      const files = {
+        'dist/index.js': 'export default {};\n',
+        'meet-artifact.json': '{"source":"exact-fixture-source"}\n',
+        [nativePointer]: '{"configPath":"../../dist/wrangler.json"}\n',
+        '.env': 'PRIVATE_FIXTURE_ONLY\n',
+        'wrangler.jsonc': 'PRIVATE_SOURCE_CONFIG\n',
+        '.void/private.json': 'PRIVATE_VOID_STATE\n',
+        '.wrangler/state/private.json': 'PRIVATE_WRANGLER_STATE\n',
+      };
+      if (selected === voidPointer) {
+        files[voidPointer] = files[nativePointer];
+        delete files[nativePointer];
+      }
+      for (const [file, content] of Object.entries(files)) {
+        const destination = join(snapshot, 'apps/meet', file);
+        await mkdir(dirname(destination), { recursive: true });
+        await writeFile(destination, content);
+      }
+      const options = {
+        cwd: snapshot,
+        env: { ...process.env, RUNNER_TEMP: snapshot },
+      };
+      runArchiveTool('sh', ['-eu', '-c', archive], options);
+      const artifact = join(snapshot, 'meet-worker.tar.gz');
+      const entries = runArchiveTool('tar', ['-tzf', artifact], options)
+        .trim()
+        .split('\n')
+        .sort();
+      assert.deepEqual(
+        entries,
+        ['dist/', 'dist/index.js', selected, 'meet-artifact.json'].sort()
+      );
+      for (const file of ['dist/index.js', selected, 'meet-artifact.json']) {
+        assert.equal(
+          runArchiveTool('tar', ['-xOzf', artifact, file], options),
+          files[file]
+        );
+      }
+    } finally {
+      await rm(snapshot, { recursive: true, force: true });
+    }
+  }
 });
 
 test('source-only discovery excludes the emitted runtime while both artifact gates require it', () => {
@@ -273,7 +348,7 @@ test('Meet workflow contracts run in a clean snapshot without Node dependencies'
       [
         '--test',
         '--test-reporter=tap',
-        '--test-name-pattern=Meet generates|only the production|metadata source|Meet qualifies|source-only discovery',
+        '--test-name-pattern=Meet generates|only the production|metadata source|Meet qualifies|Meet archives|source-only discovery',
         join(snapshot, 'scripts/ci/meet-build-metadata.test.js'),
       ],
       {
@@ -285,7 +360,7 @@ test('Meet workflow contracts run in a clean snapshot without Node dependencies'
       }
     );
     assert.equal(result.status, 0, result.stderr || result.stdout);
-    assert.match(result.stdout, /pass 5/);
+    assert.match(result.stdout, /pass 6/);
     assert.match(result.stdout, /fail 0/);
   } finally {
     await rm(snapshot, { recursive: true, force: true });
