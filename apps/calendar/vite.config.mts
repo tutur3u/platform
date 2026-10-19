@@ -47,7 +47,12 @@ export default defineConfig(
       voidPlugin(),
       tanstackStart({
         serverFns: { base: CALENDAR_FUNCTION_BASE },
-        router: { enableRouteGeneration: false },
+        router: {
+          enableRouteGeneration: true,
+          routesDirectory: 'routes',
+          generatedRouteTree: 'routeTree.gen.ts',
+          routeTreeFileHeader: [],
+        },
         rsc: { enabled: false },
         importProtection: {
           behavior: 'error',

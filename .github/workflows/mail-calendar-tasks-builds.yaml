@@ -121,13 +121,72 @@ jobs:
           command: bun turbo:local run build --filter='@tuturuuu/calendar^...' --filter='@tuturuuu/web^...' --concurrency=2
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Record Calendar route tree presence before frontend build
+        id: calendar-route-tree-before
+        run: |
+          route_tree=apps/calendar/src/routeTree.gen.ts
+          if [ -e "$route_tree" ] || [ -L "$route_tree" ]; then
+            echo 'state=present' >> "$GITHUB_OUTPUT"
+          else
+            echo 'state=absent' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build native Calendar with the official Void plugin
+        id: calendar-native-build
+        run: bun run --cwd apps/calendar build
+      - name: Capture generated Calendar route tree evidence
+        if: always()
+        env:
+          CALENDAR_ROUTE_TREE_BEFORE: ${{ steps.calendar-route-tree-before.outputs.state || 'unknown' }}
+          CALENDAR_NATIVE_BUILD_OUTCOME: ${{ steps.calendar-native-build.outcome || 'unknown' }}
+        run: |
+          route_tree=apps/calendar/src/routeTree.gen.ts
+          if [ ! -f "$route_tree" ]; then
+            echo '::notice::Calendar route tree is absent; no generated evidence captured'
+            exit 0
+          fi
+          head_tracked=false
+          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
+            head_tracked=true
+          fi
+          source_origin=unproven
+          if [ "$CALENDAR_ROUTE_TREE_BEFORE" = absent ] && [ "$head_tracked" = false ]; then
+            case "$CALENDAR_NATIVE_BUILD_OUTCOME" in
+              success|failure) source_origin=fresh-bootstrap ;;
+            esac
+          fi
+          evidence="$RUNNER_TEMP/calendar-route-tree-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$evidence"
+          cp "$route_tree" "$evidence/routeTree.gen.ts"
+          {
+            printf 'source_head=%s\n' "$(git rev-parse HEAD)"
+            printf 'github_sha=%s\n' "$GITHUB_SHA"
+            printf 'prebuild_state=%s\n' "$CALENDAR_ROUTE_TREE_BEFORE"
+            printf 'head_tracked=%s\n' "$head_tracked"
+            printf 'build_outcome=%s\n' "$CALENDAR_NATIVE_BUILD_OUTCOME"
+            printf 'source_origin=%s\n' "$source_origin"
+            printf 'bun_lock_sha256=%s\n' "$(sha256sum bun.lock | cut -d ' ' -f 1)"
+            printf 'route_tree_sha256=%s\n' "$(sha256sum "$evidence/routeTree.gen.ts" | cut -d ' ' -f 1)"
+          } > "$evidence/source-receipt.txt"
+      - name: Retain generated Calendar route tree evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/calendar-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Reject tracked Calendar route tree drift
+        if: always()
+        run: |
+          route_tree=apps/calendar/src/routeTree.gen.ts
+          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
+            git diff --exit-code HEAD -- "$route_tree"
+          fi
       - name: Run owning Calendar, Web and shared Tasks tests
         run: |
           bun run --cwd apps/calendar test
           bun run --cwd apps/web test
           bun run --cwd packages/tasks-ui test
-      - name: Build native Calendar with the official Void plugin
-        run: bun run --cwd apps/calendar build
       - name: Discover and qualify emitted Worker config
         id: output
         run: node scripts/ci/calendar-native-artifact.mjs config apps/calendar "$SOURCE_SHA"
