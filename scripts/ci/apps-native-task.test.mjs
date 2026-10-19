@@ -24,6 +24,46 @@ function step(source, name) {
   return matches[0];
 }
 
+function job(source, name) {
+  const lines = source.split('\n');
+  const starts = lines.flatMap((line, index) =>
+    line === `  ${name}:` ? [index] : []
+  );
+  assert.equal(starts.length, 1, `Require exactly one ${name} job`);
+  const start = starts[0];
+  const next = lines.findIndex(
+    (line, index) => index > start && /^ {2}[A-Za-z0-9_-]+:$/u.test(line)
+  );
+  return lines.slice(start, next === -1 ? lines.length : next).join('\n');
+}
+
+function jobEnv(source, name) {
+  const matches = job(source, name).match(/^ {4}env:\n(?:^ {6}.+\n)+/gmu);
+  assert.equal(matches?.length, 1, `Require exactly one ${name}.env`);
+  return matches[0];
+}
+
+function concurrency(source) {
+  const matches = source.match(/^concurrency:\n(?:^ {2}.+\n)+/gmu);
+  assert.equal(matches?.length, 1, 'Require exactly one concurrency block');
+  return matches[0];
+}
+
+function assertField(block, indent, key, value, actor) {
+  const prefix = `${' '.repeat(indent)}${key}:`;
+  assert.deepEqual(
+    block.split('\n').filter((line) => line.startsWith(prefix)),
+    [`${prefix} ${value}`],
+    `${actor} must retain its exact field policy`
+  );
+}
+
+const sourceExpression = `\${{ github.event.pull_request.head.sha || github.sha }}`;
+const concurrencyGroup =
+  `apps-cloudflare-source-\${{ github.event_name }}-` +
+  sourceExpression +
+  `-\${{ github.run_id }}`;
+
 function assertWrapper(block, command) {
   assert.ok(block.includes(`        uses: ${wrapper}\n`));
   assert.doesNotMatch(block, /^ {8}(?:run|working-directory):/mu);
@@ -59,12 +99,23 @@ function assertWorkflow(source) {
     source,
     /^ {8}run: node --test scripts\/ci\/apps-native-browser\.runtime\.mjs$/mu
   );
-  assert.equal(
-    source.match(
-      /APPS_SOURCE_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/gu
-    )?.length,
-    2
-  );
+  for (const name of ['validate', 'restore-acceptance']) {
+    assertField(
+      jobEnv(source, name),
+      6,
+      'APPS_SOURCE_SHA',
+      sourceExpression,
+      `${name}.env.APPS_SOURCE_SHA`
+    );
+  }
+  const fence = concurrency(source);
+  for (const [key, value] of [
+    ['group', concurrencyGroup],
+    ['cancel-in-progress', 'false'],
+    ['queue', 'max'],
+  ]) {
+    assertField(fence, 2, key, value, `concurrency.${key}`);
+  }
   assertWrapper(
     step(source, 'Type-check native app without a build'),
     'cd apps/apps && bun run type-check'
@@ -157,7 +208,6 @@ test('workflow contract rejects build bypass, cwd drift and lost failure evidenc
     ],
     ['if-no-files-found: error', 'if-no-files-found: ignore'],
     ['persist-credentials: false', 'persist-credentials: true'],
-    ['github.event.pull_request.head.sha || github.sha', 'github.sha'],
   ];
   for (const [before, after] of changes) {
     const build = step(
@@ -174,6 +224,46 @@ test('workflow contract rejects build bypass, cwd drift and lost failure evidenc
         ? /Route tree evidence must pin the owning Apps source path/u
         : undefined,
       before
+    );
+  }
+});
+
+test('each job owns its pull-request head source pin', () => {
+  for (const name of ['validate', 'restore-acceptance']) {
+    const original = job(workflow, name);
+    const env = jobEnv(workflow, name);
+    const changed = original.replace(
+      env,
+      env.replace(sourceExpression, `\${{ github.sha }}`)
+    );
+    assert.notEqual(changed, original, `Mutation must reach ${name}.env`);
+    assert.throws(
+      () => assertWorkflow(workflow.replace(original, changed)),
+      new RegExp(`${name}\\.env\\.APPS_SOURCE_SHA`, 'u')
+    );
+  }
+});
+
+test('concurrency retains source, event and run identity with a non-cancelling max queue', () => {
+  const original = concurrency(workflow);
+  for (const [key, before, after] of [
+    ['group', 'apps-cloudflare-source-', 'other-source-'],
+    ['group', `\${{ github.event_name }}`, 'pull_request'],
+    ['group', sourceExpression, `\${{ github.sha }}`],
+    ['group', `\${{ github.run_id }}`, 'shared-run'],
+    ['cancel-in-progress', 'false', 'true'],
+    ['queue', 'max', 'single'],
+  ]) {
+    const field = `  ${key}: ${key === 'group' ? concurrencyGroup : before}`;
+    const changed = original.replace(field, field.replace(before, after));
+    assert.notEqual(
+      changed,
+      original,
+      `Mutation must reach concurrency.${key}`
+    );
+    assert.throws(
+      () => assertWorkflow(workflow.replace(original, changed)),
+      new RegExp(`concurrency\\.${key}`, 'u')
     );
   }
 });
