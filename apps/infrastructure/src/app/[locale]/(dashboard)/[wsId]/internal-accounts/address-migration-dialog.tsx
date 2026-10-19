@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import {
   inspectInternalEmployeeAddressMigration,
   migrateInternalEmployeeAddress,
+  prepareInternalEmployeeAddressMigration,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -25,6 +26,7 @@ import {
   AddressMigrationSession,
   createMigrationTuple,
   type MigrationView,
+  validMigrationInput,
 } from './address-migration-session';
 
 const lifetimeIds = new WeakMap<object, number>();
@@ -72,6 +74,8 @@ function ScopedMigrationDialog({
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState('');
   const [source, setSource] = useState('');
+  const [operationId, setOperationId] = useState('');
+  const [targetConfirmation, setTargetConfirmation] = useState('');
   const [sourceConfirmation, setSourceConfirmation] = useState('');
   const [destinationConfirmation, setDestinationConfirmation] = useState('');
   const [view, setView] = useState<MigrationView>({ kind: 'editing' });
@@ -79,6 +83,7 @@ function ScopedMigrationDialog({
     return new AddressMigrationSession({
       inspect: inspectInternalEmployeeAddressMigration,
       migrate: migrateInternalEmployeeAddress,
+      prepare: prepareInternalEmployeeAddressMigration,
       assertActive: assertActorActive,
       storage: {
         getItem: (key) => sessionStorage.getItem(key),
@@ -99,18 +104,52 @@ function ScopedMigrationDialog({
   });
   const tuple = 'tuple' in view ? view.tuple : undefined;
   const busy = action.isPending || view.kind === 'busy';
-  const editable = !tuple && view.kind !== 'busy';
+  const editable = view.kind === 'editing';
+  const canPrepare = session.canPrepare();
+  const validInput = validMigrationInput(userId, source, operationId);
+  const confirmationsMatch =
+    sourceConfirmation === (tuple?.sourceAddress ?? source) &&
+    destinationConfirmation ===
+      (tuple?.destinationAddress ??
+        source.replace('@xwf.tuturuuu.com', '@tuturuuu.com'));
   function changeOpen(next: boolean) {
     if (busy) return;
     if (next) session.recover();
     setOpen(next);
+    setTargetConfirmation('');
     setSourceConfirmation('');
     setDestinationConfirmation('');
   }
+  function targetTuple() {
+    if (tuple) return tuple;
+    if (!editable || !validInput) return null;
+    const parsed = createMigrationTuple(
+      userId,
+      source,
+      operationId || undefined
+    );
+    return parsed.success ? parsed.data : null;
+  }
   function inspect() {
-    const parsed = createMigrationTuple(userId, source);
-    const target = tuple ?? (parsed.success ? parsed.data : null);
+    const target = targetTuple();
     if (target) action.mutate(() => session.inspect(target));
+    setSourceConfirmation('');
+    setDestinationConfirmation('');
+  }
+  function prepare() {
+    const target = targetTuple();
+    if (target)
+      action.mutate(() =>
+        session.prepare(
+          target,
+          targetConfirmation,
+          sourceConfirmation,
+          destinationConfirmation
+        )
+      );
+    setTargetConfirmation('');
+    setSourceConfirmation('');
+    setDestinationConfirmation('');
   }
   return (
     <section className="space-y-2 rounded-xl border bg-card p-4">
@@ -139,6 +178,17 @@ function ScopedMigrationDialog({
             <AlertDescription>{t('mail_safeguard')}</AlertDescription>
           </Alert>
           <div className="space-y-2">
+            <Label htmlFor={`${id}-operation`}>{t('operation_id')}</Label>
+            <Input
+              id={`${id}-operation`}
+              value={tuple?.operationId ?? operationId}
+              disabled={!editable}
+              onChange={(event) => setOperationId(event.target.value)}
+              autoComplete="off"
+            />
+            <p className="text-muted-foreground text-sm">
+              {t('operation_help')}
+            </p>
             <Label htmlFor={`${id}-user`}>{t('user_id')}</Label>
             <Input
               id={`${id}-user`}
@@ -173,9 +223,26 @@ function ScopedMigrationDialog({
               })}
             </p>
           ) : null}
-          {view.kind === 'ready' ? (
+          {view.kind === 'ready' || canPrepare ? (
             <div className="space-y-2">
-              <p className="text-sm">{t('ready')}</p>
+              <p className="text-sm">
+                {t(view.kind === 'ready' ? 'ready' : 'prepare_help')}
+              </p>
+              {canPrepare ? (
+                <>
+                  <Label htmlFor={`${id}-confirm-target`}>
+                    {t('confirm_target')}
+                  </Label>
+                  <Input
+                    id={`${id}-confirm-target`}
+                    value={targetConfirmation}
+                    onChange={(event) =>
+                      setTargetConfirmation(event.target.value)
+                    }
+                    autoComplete="off"
+                  />
+                </>
+              ) : null}
               <Label htmlFor={`${id}-confirm-source`}>
                 {t('confirm_source')}
               </Label>
@@ -203,6 +270,9 @@ function ScopedMigrationDialog({
               {t('denied')}
             </p>
           ) : null}
+          {view.kind === 'frozen' || view.kind === 'prepared' ? (
+            <output className="block text-sm">{t(view.kind)}</output>
+          ) : null}
           {view.kind === 'pending' ? (
             <output className="block text-sm">{t('pending')}</output>
           ) : null}
@@ -222,14 +292,26 @@ function ScopedMigrationDialog({
             <Button
               type="button"
               variant="outline"
-              disabled={
-                busy ||
-                (!tuple && !createMigrationTuple(userId, source).success)
-              }
+              disabled={busy || (!tuple && (!editable || !validInput))}
               onClick={inspect}
             >
               {t('inspect')}
             </Button>
+            {canPrepare ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={
+                  busy ||
+                  (!tuple && !validInput) ||
+                  !confirmationsMatch ||
+                  targetConfirmation !== (tuple?.userId ?? userId)
+                }
+                onClick={prepare}
+              >
+                {t('prepare')}
+              </Button>
+            ) : null}
             {view.kind === 'ready' ? (
               <Button
                 type="button"

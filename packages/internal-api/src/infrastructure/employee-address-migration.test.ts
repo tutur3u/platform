@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   inspectInternalEmployeeAddressMigration,
   migrateInternalEmployeeAddress,
+  prepareInternalEmployeeAddressMigration,
 } from './employee-address-migration';
 
 const payload = {
@@ -48,6 +49,97 @@ describe('address migration typed consumer', () => {
       expect(JSON.parse(String(init?.body))).toEqual(payload);
     }
   );
+  it('prepares only the exact target through one explicit action POST', async () => {
+    const receipt = {
+      prepared: true,
+      userId: payload.userId,
+      destinationAddress: payload.destinationAddress,
+    };
+    const f = setup(receipt);
+    expect(
+      await prepareInternalEmployeeAddressMigration(payload, f.options)
+    ).toEqual(receipt);
+    expect(f.fetcher).toHaveBeenCalledTimes(1);
+    const call = f.fetcher.mock.calls[0];
+    if (!call) throw new Error('Missing preparation request');
+    expect(call[0]).toBe(
+      'https://infra.test/api/v1/infrastructure/internal-accounts/address-migrations/prepare'
+    );
+    expect(call[1]?.method).toBe('POST');
+    expect(call[1]?.cache).toBe('no-store');
+    expect(new Headers(call[1]?.headers).get('Content-Type')).toBe(
+      'application/json'
+    );
+    expect(new Headers(call[1]?.headers).get('x-tuturuuu-account-action')).toBe(
+      '1'
+    );
+    expect(JSON.parse(String(call[1]?.body))).toEqual(payload);
+  });
+  it.each([
+    {
+      prepared: true,
+      userId: payload.operationId,
+      destinationAddress: payload.destinationAddress,
+    },
+    {
+      prepared: true,
+      userId: payload.userId,
+      destinationAddress: payload.sourceAddress,
+    },
+    {
+      prepared: false,
+      userId: payload.userId,
+      destinationAddress: payload.destinationAddress,
+    },
+    {
+      prepared: true,
+      userId: payload.userId,
+      destinationAddress: payload.destinationAddress,
+      actorId: payload.userId,
+    },
+    { status: 'ready', ...payload },
+    {
+      status: 'completed',
+      operationId: payload.operationId,
+      userId: payload.userId,
+      email: payload.destinationAddress,
+    },
+  ])(
+    'refuses malformed or mismatched preparation acknowledgement %j',
+    async (receipt) => {
+      const f = setup(receipt);
+      await expect(
+        prepareInternalEmployeeAddressMigration(payload, f.options)
+      ).rejects.toThrow();
+      expect(f.fetcher).toHaveBeenCalledTimes(1);
+    }
+  );
+  it.each([403, 409, 503])(
+    'does not replay a preparation HTTP %s failure',
+    async (status) => {
+      const f = setup({ code: 'unavailable' }, status);
+      await expect(
+        prepareInternalEmployeeAddressMigration(payload, f.options)
+      ).rejects.toMatchObject({ status });
+      expect(f.fetcher).toHaveBeenCalledTimes(1);
+    }
+  );
+  it('does not replay a lost preparation response or accept a client actor', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => {
+      throw new TypeError('Lost preparation response');
+    });
+    const options = { baseUrl: 'https://infra.test', fetch: fetcher };
+    await expect(
+      prepareInternalEmployeeAddressMigration(payload, options)
+    ).rejects.toThrow('Lost preparation response');
+    await expect(
+      prepareInternalEmployeeAddressMigration(
+        { ...payload, actorId: payload.userId },
+        options
+      )
+    ).rejects.toThrow();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it('returns readiness only for the exact inspected tuple', async () => {
     const f = setup({ status: 'ready', ...payload });
     expect(

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   inspect: vi.fn(),
   migrate: vi.fn(),
+  prepare: vi.fn(),
   actor: {
     actorId: 'actor-a',
     assertActive: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
   inspectInternalEmployeeAddressMigration: mocks.inspect,
   migrateInternalEmployeeAddress: mocks.migrate,
+  prepareInternalEmployeeAddressMigration: mocks.prepare,
 }));
 vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
   useWorkspaceActor: () => mocks.actor,
@@ -26,9 +28,9 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
 import { AddressMigrationDialog } from './address-migration-dialog';
 
-const userId = '53581515-5358-4358-8358-535815155359';
-const source = 'khoi@xwf.tuturuuu.com';
-const destination = 'khoi@tuturuuu.com';
+const userId = '10000000-0000-4000-8000-000000000002';
+const source = 'fixture@xwf.tuturuuu.com';
+const destination = 'fixture@tuturuuu.com';
 function tree() {
   return (
     <QueryClientProvider client={new QueryClient()}>
@@ -55,6 +57,11 @@ beforeEach(() => {
   mocks.inspect.mockImplementation(async (tuple) => ({
     status: 'ready',
     ...tuple,
+  }));
+  mocks.prepare.mockImplementation(async (tuple) => ({
+    prepared: true,
+    userId: tuple.userId,
+    destinationAddress: tuple.destinationAddress,
   }));
   mocks.migrate.mockRejectedValue(new Error('lost acknowledgement'));
 });
@@ -101,17 +108,110 @@ describe('address migration dialog', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
     await screen.findByText('denied');
-    expect(screen.getByLabelText('user_id')).toBeEnabled();
-    expect(screen.getByLabelText('source')).toBeEnabled();
-    fireEvent.change(screen.getByLabelText('source'), {
-      target: { value: 'corrected@xwf.tuturuuu.com' },
-    });
-    expect(screen.getByLabelText('destination')).toHaveValue(
-      'corrected@tuturuuu.com'
-    );
+    expect(screen.getByLabelText('user_id')).toBeDisabled();
+    expect(screen.getByLabelText('source')).toBeDisabled();
+    expect(screen.getByLabelText('operation_id')).toBeDisabled();
+    expect(screen.getByLabelText('destination')).toHaveValue(destination);
+    expect(mocks.prepare).not.toHaveBeenCalled();
     expect(
       screen.queryByRole('button', { name: 'migrate' })
     ).not.toBeInTheDocument();
+    expect(mocks.migrate).not.toHaveBeenCalled();
+  });
+  it('exposes explicit confirmed preparation and keeps a supplied operation ID through denial and remount', async () => {
+    const operationId = '10000000-0000-4000-8000-000000000001';
+    mocks.inspect.mockResolvedValueOnce({
+      status: 'denied',
+      code: 'not_ready',
+    });
+    const mounted = render(tree());
+    fireEvent.click(screen.getByRole('button', { name: 'open' }));
+    fireEvent.change(screen.getByLabelText('operation_id'), {
+      target: { value: operationId },
+    });
+    fireEvent.change(screen.getByLabelText('user_id'), {
+      target: { value: userId },
+    });
+    fireEvent.change(screen.getByLabelText('source'), {
+      target: { value: source },
+    });
+    expect(screen.getByRole('button', { name: 'prepare' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+    await screen.findByText('denied');
+    const tuple = {
+      operationId,
+      userId,
+      sourceAddress: source,
+      destinationAddress: destination,
+      expectedRevision: 0,
+    };
+    expect(mocks.inspect).toHaveBeenCalledExactlyOnceWith(tuple);
+    expect(mocks.prepare).not.toHaveBeenCalled();
+    mounted.unmount();
+    render(tree());
+    fireEvent.click(screen.getByRole('button', { name: 'open' }));
+    expect(screen.getByLabelText('operation_id')).toHaveValue(operationId);
+    expect(screen.getByLabelText('operation_id')).toBeDisabled();
+    expect(screen.getByLabelText('user_id')).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('confirm_source'), {
+      target: { value: source },
+    });
+    fireEvent.change(screen.getByLabelText('confirm_destination'), {
+      target: { value: destination },
+    });
+    expect(screen.getByRole('button', { name: 'prepare' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('confirm_target'), {
+      target: { value: userId },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'prepare' }));
+    await screen.findByText('prepared');
+    expect(mocks.prepare).toHaveBeenCalledExactlyOnceWith(tuple);
+    expect(mocks.inspect).toHaveBeenCalledTimes(1);
+    expect(mocks.migrate).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', { name: 'migrate' })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+    await screen.findByText('ready');
+    expect(mocks.inspect).toHaveBeenCalledTimes(2);
+    expect(mocks.inspect).toHaveBeenLastCalledWith(tuple);
+    expect(screen.getByRole('button', { name: 'migrate' })).toBeDisabled();
+  });
+  it('retains unknown preparation across reopen and exposes only inspection', async () => {
+    mocks.prepare.mockRejectedValueOnce(new Error('lost preparation response'));
+    render(tree());
+    fireEvent.click(screen.getByRole('button', { name: 'open' }));
+    fireEvent.change(screen.getByLabelText('user_id'), {
+      target: { value: userId },
+    });
+    fireEvent.change(screen.getByLabelText('source'), {
+      target: { value: source },
+    });
+    fireEvent.change(screen.getByLabelText('confirm_target'), {
+      target: { value: userId },
+    });
+    fireEvent.change(screen.getByLabelText('confirm_source'), {
+      target: { value: source },
+    });
+    fireEvent.change(screen.getByLabelText('confirm_destination'), {
+      target: { value: destination },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'prepare' }));
+    await screen.findByText('pending');
+    expect(mocks.prepare).toHaveBeenCalledTimes(1);
+    expect(mocks.inspect).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'open' }));
+    expect(screen.getByLabelText('source')).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'prepare' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'migrate' })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+    await screen.findByText('ready');
+    expect(mocks.prepare).toHaveBeenCalledTimes(1);
     expect(mocks.migrate).not.toHaveBeenCalled();
   });
   it('retires readiness on a new lifetime for the same actor', async () => {
@@ -121,7 +221,9 @@ describe('address migration dialog', () => {
     mounted.rerender(tree());
     expect(screen.queryByText('ready')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'open' }));
-    expect(screen.getByLabelText('source')).toHaveValue('');
+    expect(screen.getByLabelText('source')).toHaveValue(source);
+    expect(screen.getByLabelText('source')).toBeDisabled();
+    expect(screen.queryByText('ready')).not.toBeInTheDocument();
     expect(mocks.migrate).not.toHaveBeenCalled();
   });
   it('retires visible state on live actor or workspace replacement', async () => {
