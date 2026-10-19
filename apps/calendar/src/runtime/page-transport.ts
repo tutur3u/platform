@@ -1,4 +1,5 @@
 import type { DehydratedState } from '@tanstack/react-query';
+import type { ExtendedWorkspaceTask } from '@tuturuuu/ui/time-tracker/types';
 import { z } from 'zod';
 
 const jsonValue = z.json();
@@ -6,6 +7,24 @@ const optionalJsonValue = jsonValue.optional();
 
 export function pageTaskEmbedding(value: unknown) {
   return optionalJsonValue.parse(value);
+}
+
+export type CalendarSchedulingTask = Omit<
+  ExtendedWorkspaceTask,
+  'embedding' | 'fts'
+> & {
+  embedding: z.infer<typeof optionalJsonValue>;
+  fts: z.infer<typeof optionalJsonValue>;
+};
+
+export function schedulingTaskTransport(
+  task: ExtendedWorkspaceTask
+): CalendarSchedulingTask {
+  return {
+    ...task,
+    embedding: pageTaskEmbedding(task.embedding),
+    fts: optionalJsonValue.parse(task.fts),
+  };
 }
 
 // This model seeds a new QueryClient with one completed boards read, not mutations

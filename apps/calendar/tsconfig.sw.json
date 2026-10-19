@@ -13,5 +13,9 @@
     "types": ["node"]
   },
   "exclude": ["node_modules", "dist", ".turbo", ".typecheck"],
-  "include": ["src/app/sw.ts", "src/runtime/offline-worker.ts"]
+  "include": [
+    "src/app/sw.ts",
+    "src/runtime/offline-worker.ts",
+    "src/runtime/offline-assets.test.ts"
+  ]
 }

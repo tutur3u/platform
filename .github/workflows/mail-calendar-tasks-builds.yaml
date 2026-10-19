@@ -118,7 +118,7 @@ jobs:
       - name: Build shared dependencies without a legacy Calendar build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --filter='@tuturuuu/calendar^...' --concurrency=2
+          command: bun turbo:local run build --filter='@tuturuuu/calendar^...' --filter='@tuturuuu/web^...' --concurrency=2
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Run owning Calendar, Web and shared Tasks tests

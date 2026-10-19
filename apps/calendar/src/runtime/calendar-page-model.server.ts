@@ -7,7 +7,7 @@ import { getRequestWorkspace as getWorkspace } from '@tuturuuu/utils/request-wor
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { pageTaskEmbedding } from './page-transport';
+import { schedulingTaskTransport } from './page-transport';
 
 interface PageProps {
   params: Promise<{
@@ -110,10 +110,7 @@ export async function calendarPageModel({ params, searchParams }: PageProps) {
     initialEventId: eventId,
     isPersonalWorkspace,
     locale,
-    smartSchedulingTasks: smartSchedulingTasks.map((task) => ({
-      ...task,
-      embedding: pageTaskEmbedding(task.embedding),
-    })),
+    smartSchedulingTasks: smartSchedulingTasks.map(schedulingTaskTransport),
     userId: user.id,
     workspace,
   };

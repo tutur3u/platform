@@ -19,7 +19,7 @@ describe('Calendar native type host boundaries', () => {
     const sw = config('tsconfig.sw.json');
     expect(app.include).toEqual([
       'src',
-      'vite.config.ts',
+      'vite.config.mts',
       'void.config.ts',
       'global.d.ts',
       'messages',
@@ -35,13 +35,24 @@ describe('Calendar native type host boundaries', () => {
       '.typecheck',
       'src/app/sw.ts',
       'src/runtime/offline-worker.ts',
+      'src/runtime/offline-assets.test.ts',
     ]);
     expect(sw.include).toEqual([
       'src/app/sw.ts',
       'src/runtime/offline-worker.ts',
+      'src/runtime/offline-assets.test.ts',
     ]);
     expect(sw.compilerOptions.lib).toEqual(['ESNext', 'WebWorker']);
     expect(sw.compilerOptions.types).toEqual(['node']);
+    expect(sw.compilerOptions.noEmit).toBe(true);
+    expect(sw.compilerOptions.noEmitOnError).toBe(true);
+    // This real-worker test keeps its runtime discovery path and assertions.
+    // It belongs to the WebWorker program, never to neither program.
+    const offlineTest = 'src/runtime/offline-assets.test.ts';
+    expect(app.include).toContain('src');
+    expect(app.exclude).toContain(offlineTest);
+    expect(sw.include.filter((path) => path === offlineTest)).toHaveLength(1);
+    expect(sw.exclude).not.toContain(offlineTest);
   });
   it('checks the actual Worker only against genuine DOM handler declarations', () => {
     const worker = config('tsconfig.worker.json');
@@ -73,7 +84,7 @@ describe('Calendar native type host boundaries', () => {
     const entry = readFileSync(join(appRoot, 'cloudflare/worker.ts'), 'utf8');
     expect(entry).toContain("from '#calendar-handler'");
     expect(entry).toContain('satisfies ExportedHandler<CloudflareEnv>');
-    const vite = readFileSync(join(appRoot, 'vite.config.ts'), 'utf8');
+    const vite = readFileSync(join(appRoot, 'vite.config.mts'), 'utf8');
     expect(vite).toContain('find: /^#calendar-handler$/u');
     expect(vite).toContain("replacement: local('./src/runtime/handler.ts')");
   });

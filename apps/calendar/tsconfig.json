@@ -20,7 +20,7 @@
   },
   "include": [
     "src",
-    "vite.config.ts",
+    "vite.config.mts",
     "void.config.ts",
     "global.d.ts",
     "messages"
@@ -31,6 +31,7 @@
     ".turbo",
     ".typecheck",
     "src/app/sw.ts",
-    "src/runtime/offline-worker.ts"
+    "src/runtime/offline-worker.ts",
+    "src/runtime/offline-assets.test.ts"
   ]
 }
