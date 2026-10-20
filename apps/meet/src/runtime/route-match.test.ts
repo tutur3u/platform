@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchRoute, routeParam } from './route-match';
+import { matchRoute, routeParam, routeSegments } from './route-match';
 
 describe('Meet stable route matching', () => {
   it('binds tenant and meeting independently without accepting extra segments', () => {
@@ -33,6 +33,33 @@ describe('Meet stable route matching', () => {
     ).toEqual({ meetingId: 'room', port: '3000', path: ['a b', 'index.html'] });
     expect(() => routeParam({ path: [] }, 'path')).toThrow(
       'Missing route parameter'
+    );
+  });
+
+  it('rejects static path mismatches and malformed encoded identifiers', () => {
+    expect(
+      matchRoute('/api/meet-call/[meetingId]', '/api/other/room')
+    ).toBeNull();
+    expect(() =>
+      matchRoute('/api/meet-call/[meetingId]', '/api/meet-call/%ZZ')
+    ).toThrow(URIError);
+  });
+
+  it('requires scalar identifiers and preserves decoded preview path segments', () => {
+    expect(routeParam({ meetingId: 'room' }, 'meetingId')).toBe('room');
+    expect(() => routeParam({}, 'meetingId')).toThrow(
+      'Missing route parameter: meetingId'
+    );
+    expect(routeSegments({ path: ['a b', 'index.html'] }, 'path')).toEqual([
+      'a b',
+      'index.html',
+    ]);
+    expect(routeSegments({ path: [] }, 'path')).toEqual([]);
+    expect(() => routeSegments({ path: 'tenant' }, 'path')).toThrow(
+      'Missing route segments: path'
+    );
+    expect(() => routeSegments({}, 'path')).toThrow(
+      'Missing route segments: path'
     );
   });
 });

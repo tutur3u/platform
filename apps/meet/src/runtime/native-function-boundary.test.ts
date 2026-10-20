@@ -127,4 +127,39 @@ describe('native function boundary', () => {
       expect(dispatch).not.toHaveBeenCalled();
     }
   );
+
+  it('returns the canonical expired-session failure before API dispatch', async () => {
+    const incoming = request('POST', {
+      cookie: 'fixture=expired',
+      'content-type': 'application/json',
+    });
+    const sessionResponse = NextResponse.next();
+    const failure = new NextResponse('session expired', { status: 401 });
+    auth.refresh.mockResolvedValue({
+      ok: false,
+      error: 'fixture-expired',
+      response: sessionResponse,
+    });
+    auth.failure.mockReturnValue(failure);
+    expect(await nativeFunctionProxy(incoming)).toBe(failure);
+    expect(auth.failure).toHaveBeenCalledWith(
+      incoming,
+      'fixture-expired',
+      sessionResponse
+    );
+    expect(auth.guard).not.toHaveBeenCalled();
+    expect(auth.propagate).not.toHaveBeenCalled();
+  });
+
+  it('preserves anonymous API-guard denial without refreshing or propagating a fabricated session', async () => {
+    const denial = new NextResponse('limited', { status: 429 });
+    auth.guard.mockResolvedValue(denial);
+    expect(
+      await nativeFunctionProxy(
+        request('POST', { 'content-type': 'application/json' })
+      )
+    ).toBe(denial);
+    expect(auth.refresh).not.toHaveBeenCalled();
+    expect(auth.propagate).not.toHaveBeenCalled();
+  });
 });

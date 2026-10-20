@@ -189,4 +189,53 @@ describe('legacy plan transport ports', () => {
     });
     expect(refresh).toHaveBeenCalledTimes(1);
   });
+
+  it('retains a confirmed mutation response when navigation refresh fails', async () => {
+    const result = { data: { success: true, operationId: 'confirmed-once' } };
+    const refresh = vi.fn(async () => {
+      throw new Error('fixture navigation unavailable');
+    });
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(await refreshConfirmedAction(result, refresh)).toBe(result);
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(warning).toHaveBeenCalledWith(
+        'Meet view refresh failed after a confirmed action'
+      );
+    } finally {
+      warning.mockRestore();
+    }
+  });
+
+  it.each([
+    { userType: 'GUEST', pollId: 'poll', value: 'Option' },
+    { userType: 'GUEST', pollId: 'poll', value: 'Option', guestId: 'guest' },
+    {
+      userType: 'GUEST',
+      pollId: 'poll',
+      value: 'Option',
+      guestPasswordHash: 'hash',
+    },
+  ])(
+    'denies guest option creation without both credentials: %j',
+    async (participant) => {
+      const f = fixture(false);
+      expect(await f.ports.addPollOption(['plan', participant])).toEqual({
+        error: 'Unauthorized',
+      });
+      expect(f.load).not.toHaveBeenCalled();
+      expect(f.actor).not.toHaveBeenCalled();
+      expect(f.supplier.addPollOption).not.toHaveBeenCalled();
+    }
+  );
+
+  it('does not refresh an ambiguous mutation result containing both data and an error', async () => {
+    const result = {
+      data: { operationId: 'not-confirmed' },
+      error: 'Rejected',
+    };
+    const refresh = vi.fn();
+    expect(await refreshConfirmedAction(result, refresh)).toBe(result);
+    expect(refresh).not.toHaveBeenCalled();
+  });
 });

@@ -318,3 +318,57 @@ it('does not preserve a success receipt on failure or delete metadata through sy
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+it('rejects escaped metadata paths before compiler launch or foreign deletion', () => {
+  const root = mkdtempSync(join(tmpdir(), 'meet-type-scope-fence-'));
+  let calls = 0;
+  try {
+    const cwd = join(root, 'owner');
+    mkdirSync(cwd);
+    writeFileSync(join(root, 'foreign.tsbuildinfo'), 'foreign');
+    expect(() =>
+      runWithDeclarationCache({
+        cwd,
+        projects: [{ output: 'types/app', info: '../foreign.tsbuildinfo' }],
+        manifest: 'types/outputs.json',
+        compile: () => {
+          calls++;
+          return 0;
+        },
+      })
+    ).toThrow('Type cache path escapes project');
+    expect(calls).toBe(0);
+    expect(readFileSync(join(root, 'foreign.tsbuildinfo'), 'utf8')).toBe(
+      'foreign'
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+it('rejects compiler success without declaration outputs instead of publishing healthy qualification', () => {
+  const root = mkdtempSync(join(tmpdir(), 'meet-type-empty-output-'));
+  let calls = 0;
+  try {
+    expect(() =>
+      runWithDeclarationCache({
+        cwd: root,
+        projects: [{ output: 'types/app', info: 'app.tsbuildinfo' }],
+        manifest: 'types/outputs.json',
+        compile: () => {
+          calls++;
+          writeFileSync(
+            join(root, 'app.tsbuildinfo'),
+            'fixture native metadata'
+          );
+          return 0;
+        },
+      })
+    ).toThrow('Successful type check did not produce owned declarations');
+    expect(calls).toBe(1);
+    expect(existsSync(join(root, 'types/outputs.json'))).toBe(false);
+    expect(existsSync(join(root, 'types/producers.json'))).toBe(false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
