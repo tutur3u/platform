@@ -129,3 +129,16 @@ unfinished body is not navigation success. Use the bound receipt to narrow the
 next investigation; preserve the actual profile assertions, cleanup and exact-head
 runtime gate. These diagnostics alone establish neither a causal repair nor
 provider or production acceptance.
+
+Failed profile navigation also retains bounded browser observations in
+`terminal.results[].navigationDiagnostics`. Request starts, responses, finishes,
+failures and frame commits remain separate from body completion and page
+`DOMContentLoaded`/`load`. Read capped counts and truncation fields before drawing
+conclusions; unobserved requests and frame load stay unknown. The helper records
+only safe route classes, local ordinals, relative timings and fixed status fields.
+It retains no raw URLs, headers, bodies or failure text. The result parser accepts
+one versioned text record from the failed profile attempt and preserves its status.
+These observations preserve the original navigation deadline and error. They do
+not prove a load blocker or justify a retry. Helper and result-summary regressions
+cover privacy, framing, limits, cleanup and late callbacks; actual runtime evidence
+still requires the exact-head fixture gate.
