@@ -225,6 +225,28 @@ read-only permissions. Live provider consent/delivery remains a separate check.
 
 ## CI And Dependency Drift
 
+For native Wrangler lifecycle qualification, distinguish source/static review,
+executed runtime evidence and customer delivery. A proposed correction does not
+clear profile adoption. Apply the lifecycle procedure in
+`apps/docs/build/development-tools/without-docker.mdx`; preserve the existing
+three-minute watchdog and 30-second boundary-test limit.
+
+Record hashes and owning package versions for the CLI actually loaded and its
+resolved transitive Miniflare entry. A root package, lockfile resolution or local
+snapshot does not prove installed CI bytes. Keep the notified PR head, synthetic
+merge checkout, dependency resolution and installed supplier receipt distinct;
+require evidence for the actual tested commit and never borrow another SHA's green
+result. Supplier receipts alone do not prove the complete runtime graph.
+
+A logical module-specifier rejection does not prove rejection of a physical
+neighboring file. Preserve the required Durable Object export when isolating Node
+compatibility; its absence can fail startup before the intended control. Omitted
+Node flags do not necessarily disable Node support: inspect the effective date,
+flags and selected supplier's default threshold. Keep such thresholds bound to
+that supplier rather than publishing a current-version rule as general policy.
+Meaningful controls must reach their intended boundary; unknown public rejection
+reachability remains NOTPASS even when source assertions look correct.
+
 - Keep workflow Bun versions aligned with the repo `packageManager` pin.
 - Workflows that need Bun should use
   `.github/actions/setup-bun-with-retry` instead of `oven-sh/setup-bun`

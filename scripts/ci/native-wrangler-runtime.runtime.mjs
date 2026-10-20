@@ -4,10 +4,10 @@ import {
   chmod,
   mkdir,
   mkdtemp,
-  readdir,
   readFile,
   realpath,
   rm,
+  stat,
   utimes,
   writeFile,
 } from 'node:fs/promises';
@@ -16,7 +16,18 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  classifyChildReceipt,
+  createChildProducer,
+  diagnosticError,
+  persistFinalization,
+  requireChildOutcome,
+  validateReceipt,
+} from './native-wrangler-evidence.mjs';
+import {
   assertChildTempIsolation,
+  createNativeFinalizer,
+  phaseErrors,
+  prepareNativePlan,
   sealArtifact,
   startNativeWrangler,
 } from './native-wrangler-runtime.mjs';
@@ -48,8 +59,18 @@ export default { async fetch(request, env) {
 } };
 //# sourceURL=annotation-only-0000000000000000000000000000000000000000.mjs`;
 
-async function fixture() {
-  const root = await mkdtemp(join(process.cwd(), 'native-portable-artifact-'));
+async function fixture(cwd = process.cwd()) {
+  if (process.env.NATIVE_FIXTURE_CASE) {
+    const data = JSON.parse(
+      await readFile(process.env.NATIVE_PLAN_FILE, 'utf8')
+    );
+    return {
+      ...data.options,
+      fixtureServices: { SERVICE: () => new Response('same-process-service') },
+      outbound: () => new Response('denied-egress', { status: 599 }),
+    };
+  }
+  const root = await mkdtemp(join(cwd, 'native-portable-artifact-'));
   await mkdir(join(root, 'public'));
   await mkdir(join(root, 'unused-empty'));
   await writeFile(join(root, 'unused.bin'), Buffer.from([0, 255, 42]));
@@ -125,19 +146,100 @@ function causes(error) {
     ...(error.errors ?? []).map(causes),
   ].join('\n');
 }
-async function removed(path) {
-  await assert.rejects(realpath(path), { code: 'ENOENT' });
+const producer = createChildProducer(process.env.NATIVE_FIXTURE_CASE);
+async function load(options) {
+  const data = JSON.parse(await readFile(process.env.NATIVE_PLAN_FILE, 'utf8'));
+  return startNativeWrangler(options, data.plan);
 }
-async function close(runtime, options) {
-  await runtime.cleanup();
-  await removed(runtime.scratch); // A no-op cleanup must fail this assertion.
-  assert.deepEqual(await sealArtifact(options.root), options.seal);
-  await rm(options.root, { recursive: true });
+const start = (options) => producer.start(() => load(options));
+function boundaryEntry(imports, expression) {
+  return `${imports}\n${main.replace(
+    '  const url = new URL(request.url);',
+    `  const url = new URL(request.url);\n  if (url.pathname === '/boundary') return new Response(${expression});`
+  )}`;
 }
+const graphEntry = (specifier) =>
+  boundaryEntry(
+    `import { value as boundaryValue } from '${specifier}';`,
+    'boundaryValue'
+  );
+const nodeEntry = boundaryEntry(
+  "import fs from 'node:fs';",
+  'typeof fs.readFile'
+);
+function startupDiagnostics(error) {
+  const raw = causes(error);
+  const messages = [raw];
+  for (const line of raw.split('\n')) {
+    try {
+      const record = JSON.parse(line);
+      if (typeof record?.message === 'string') messages.push(record.message);
+    } catch {
+      /* Non-JSON diagnostic lines remain in raw. */
+    }
+  }
+  return messages;
+}
+function graphRejection(error) {
+  assert.ok(
+    startupDiagnostics(error).some(
+      (text) =>
+        text.includes(
+          'service core:user:native-portable-fixture: Uncaught TypeError: Invalid module specifier "../outside.mjs".'
+        ) && text.includes('imported from "main.mjs"')
+    )
+  );
+}
+function nodeRejection(error) {
+  assert.ok(
+    startupDiagnostics(error).some(
+      (text) =>
+        text.includes(
+          'service core:user:native-portable-fixture: Uncaught Error: No such module "node:fs".'
+        ) && text.includes('imported from "main.mjs"')
+    )
+  );
+}
+const startupSpecs = {
+  wrongModule: [
+    `import bytes from './empty.wasm';\nconst instance = new WebAssembly.Instance(bytes);\n${main}`,
+    /TypeError[^\n]*WebAssembly|(?:first argument|Argument 0)[^\n]*WebAssembly\.Module/i,
+    (config) => {
+      config.rules = [
+        { type: 'ESModule', globs: ['**/*.mjs'] },
+        { type: 'Text', globs: ['**/*.txt', '**/*.wasm'], fallthrough: true },
+      ];
+    },
+  ],
+  syntax: [
+    'export default = ;',
+    /Unexpected ["']=["']|SyntaxError[^\n]*Unexpected token ["']=["']/,
+  ],
+  graphEscape: [graphEntry('../outside.mjs'), graphRejection],
+  graphValid: [graphEntry('./lazy.mjs')],
+  wrongType: [
+    `import { absent } from './message.txt';\n${main}`,
+    /(?:does not provide an export named|No matching export)[^\n]*absent/,
+  ],
+  nodeBuiltin: [
+    nodeEntry,
+    nodeRejection,
+    (config) => {
+      config.compatibility_date = '2026-08-03';
+    },
+  ],
+  nodeBuiltinEnabled: [
+    nodeEntry,
+    undefined,
+    (config) => {
+      config.compatibility_date = '2026-08-04';
+    },
+  ],
+};
 const cases = {
   async sdkResidual() {
     const options = await fixture();
-    const runtime = await startNativeWrangler(options);
+    const runtime = await start(options);
     await runtime.worker.ready;
     const sibling = join(
       process.env.NATIVE_SDK_TEMP_ROOT,
@@ -145,7 +247,7 @@ const cases = {
     );
     await mkdir(sibling);
     await writeFile(join(sibling, 'sentinel'), 'retain-sdk-sibling');
-    await assert.rejects(runtime.cleanup(), /Public SDK cleanup failed/);
+
     await realpath(runtime.scratch);
     assert.equal(
       await readFile(join(sibling, 'sentinel'), 'utf8'),
@@ -155,67 +257,61 @@ const cases = {
   },
   async positive() {
     const options = await fixture();
-    const runtime = await startNativeWrangler(options);
-    try {
-      await runtime.worker.ready;
-      assert.equal((await runtime.worker.url).hostname, '127.0.0.1');
-      // The copy uses the complete original inventory, including unused files.
-      assert.notEqual(runtime.copyMain, options.main);
-      assert.equal(await readFile(runtime.copyMain, 'utf8'), main);
-      assert.deepEqual(
-        await readFile(join(runtime.copyRoot, 'unused.bin')),
-        await readFile(join(options.root, 'unused.bin'))
+    const runtime = await start(options);
+    await runtime.worker.ready;
+    assert.equal((await runtime.worker.url).hostname, '127.0.0.1');
+    // The copy uses the complete original inventory, including unused files.
+    assert.notEqual(runtime.copyMain, options.main);
+    assert.equal(await readFile(runtime.copyMain, 'utf8'), main);
+    assert.deepEqual(
+      await readFile(join(runtime.copyRoot, 'unused.bin')),
+      await readFile(join(options.root, 'unused.bin'))
+    );
+    await realpath(runtime.sdkWorkingDir);
+    const result = await runtime.worker.fetch('https://fixture.invalid/check');
+    assert.equal(result.status, 200);
+    assert.deepEqual(await result.json(), {
+      text: 'emitted text',
+      lazy: 'lazy-emitted',
+      wasm: {},
+      host: 'fixture.invalid',
+      sha: sourceSHA,
+      compiled: sourceSHA,
+      value: 'fixture-var',
+      secret: 'synthetic-secret',
+    });
+    for (const [path, expected] of [
+      ['/asset', 'full asset worker'],
+      ['/service', 'same-process-service'],
+      ['/do', '1'],
+      ['/do', '2'],
+    ]) {
+      const response = await runtime.worker.fetch(
+        `https://fixture.invalid${path}`
       );
-      await realpath(runtime.sdkWorkingDir);
-      const result = await runtime.worker.fetch(
-        'https://fixture.invalid/check'
-      );
-      assert.equal(result.status, 200);
-      assert.deepEqual(await result.json(), {
-        text: 'emitted text',
-        lazy: 'lazy-emitted',
-        wasm: {},
-        host: 'fixture.invalid',
-        sha: sourceSHA,
-        compiled: sourceSHA,
-        value: 'fixture-var',
-        secret: 'synthetic-secret',
-      });
-      for (const [path, expected] of [
-        ['/asset', 'full asset worker'],
-        ['/service', 'same-process-service'],
-        ['/do', '1'],
-        ['/do', '2'],
-      ]) {
-        const response = await runtime.worker.fetch(
-          `https://fixture.invalid${path}`
-        );
-        assert.equal(response.status, 200);
-        assert.equal(await response.text(), expected);
-      }
-      for (const path of ['/asset-miss', '/asset-traversal']) {
-        const response = await runtime.worker.fetch(
-          `https://fixture.invalid${path}`
-        );
-        assert.equal(response.status, 404, path);
-        assert.doesNotMatch(
-          await response.text(),
-          /COMPILED_SHA|synthetic-secret/
-        );
-      }
-      const denied = await runtime.worker.fetch('https://fixture.invalid/deny');
-      assert.equal(denied.status, 599);
-      assert.equal(await denied.text(), 'denied-egress');
-      assert.equal(
-        await readFile(
-          join(process.cwd(), '.wrangler/tmp/dev-stale/sentinel'),
-          'utf8'
-        ),
-        'unrelated-stale-scratch'
-      );
-    } finally {
-      await close(runtime, options);
+      assert.equal(response.status, 200);
+      assert.equal(await response.text(), expected);
     }
+    for (const path of ['/asset-miss', '/asset-traversal']) {
+      const response = await runtime.worker.fetch(
+        `https://fixture.invalid${path}`
+      );
+      assert.equal(response.status, 404, path);
+      assert.doesNotMatch(
+        await response.text(),
+        /COMPILED_SHA|synthetic-secret/
+      );
+    }
+    const denied = await runtime.worker.fetch('https://fixture.invalid/deny');
+    assert.equal(denied.status, 599);
+    assert.equal(await denied.text(), 'denied-egress');
+    assert.equal(
+      await readFile(
+        join(process.cwd(), '.wrangler/tmp/dev-stale/sentinel'),
+        'utf8'
+      ),
+      'unrelated-stale-scratch'
+    );
   },
   async originalMutation() {
     await mutation('original');
@@ -230,180 +326,335 @@ const cases = {
       'Removal-failure fixture requires an unprivileged runner'
     );
     const options = await fixture();
-    const runtime = await startNativeWrangler(options);
+    const runtime = await start(options);
     await runtime.worker.ready;
     const denied = join(runtime.scratch, 'removal-denied');
     await mkdir(join(denied, 'child'), { recursive: true });
     await chmod(denied, 0);
-    await assert.rejects(runtime.cleanup(), (error) => {
-      assert.match(causes(error), /EACCES|EPERM/);
-      assert.match(error.message, /cleanup failed; evidence retained/);
-      return true;
-    });
     await realpath(runtime.scratch);
-    // Keep the denied directory and both seals for independent failure inspection.
+    // An unreadable subtree must prevent snapshot verification and all removal.
     assert.deepEqual(await sealArtifact(options.root), options.seal);
   },
   async wrongModule() {
-    await startupFailure(
-      'import bytes from "./empty.wasm"; const instance = new WebAssembly.Instance(bytes); export default { fetch() { return new Response(String(instance)); } };',
-      /TypeError[^\n]*WebAssembly|(?:first argument|Argument 0)[^\n]*WebAssembly\.Module/i,
-      (config) => {
-        config.rules = [
-          { type: 'ESModule', globs: ['**/*.mjs'] },
-          { type: 'Text', globs: ['**/*.wasm'], fallthrough: true },
-        ];
-      }
-    );
+    await startupFailure(...startupSpecs.wrongModule);
   },
   async syntax() {
-    await startupFailure(
-      'export default = ;',
-      /Unexpected ["']=["']|SyntaxError[^\n]*Unexpected token ["']=["']/
-    );
+    await startupFailure(...startupSpecs.syntax);
   },
   async graphEscape() {
-    // This sibling exists outside the claimed tree, but must not enter the SDK graph.
-    await writeFile(
-      join(process.cwd(), 'outside.mjs'),
-      'export default "escaped";'
-    );
-    await startupFailure(
-      'import value from "../outside.mjs"; export default { fetch() { return new Response(value); } };',
-      /(?:No such module|Could not resolve|Cannot find module)[^\n]*outside\.mjs/
-    );
+    await startupFailure(...startupSpecs.graphEscape);
   },
   async wrongType() {
-    await startupFailure(
-      'import { absent } from "./message.txt"; export default { fetch() { return new Response(absent); } };',
-      /(?:does not provide an export named|No matching export)[^\n]*absent/
-    );
+    await startupFailure(...startupSpecs.wrongType);
   },
   async nodeBuiltin() {
-    await startupFailure(
-      'import fs from "node:fs"; export default { fetch() { return new Response(String(fs)); } };',
-      /(?:No such module|Could not resolve|Cannot find module)[^\n]*node:fs/
-    );
+    await startupFailure(...startupSpecs.nodeBuiltin);
+  },
+  async graphValid() {
+    await boundaryPositive('lazy-emitted');
+  },
+  async nodeBuiltinEnabled() {
+    await boundaryPositive('function');
   },
   async preload() {
     const options = await fixture();
     const { createRequire } = await import('node:module');
     createRequire(options.ownerPackage)('wrangler');
-    await assert.rejects(
-      startNativeWrangler(options),
-      /Preloaded Wrangler SDK unsupported/
-    );
-    await rm(options.root, { recursive: true });
+    await producer.expectPreload(() => load(options));
   },
 };
 async function mutation(target) {
   const options = await fixture();
-  const runtime = await startNativeWrangler(options);
+  const runtime = await start(options);
   await runtime.worker.ready;
   await writeFile(
     target === 'original' ? options.main : runtime.copyMain,
     'mutated'
   );
-  await assert.rejects(runtime.cleanup(), (error) => {
-    assert.match(
-      causes(error),
-      target === 'original' ? /Artifact hash mutation/ : /Copy hash mutation/
-    );
-    assert.match(error.message, /cleanup failed; evidence retained/);
-    return true;
-  });
   await realpath(runtime.scratch);
   await realpath(options.root);
-  // Intentionally retained evidence; a second cleanup must not silently succeed.
-  await assert.rejects(runtime.cleanup(), /cleanup failed; evidence retained/);
 }
-async function startupFailure(code, expected, configure) {
+async function boundaryPositive(expected) {
+  const runtime = await start(await fixture());
+  await runtime.worker.ready;
+  const response = await runtime.worker.fetch(
+    'https://fixture.invalid/boundary'
+  );
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), expected);
+  for (const expectedCount of ['1', '2']) {
+    const counter = await runtime.worker.fetch('https://fixture.invalid/do');
+    assert.equal(counter.status, 200);
+    assert.equal(await counter.text(), expectedCount);
+  }
+}
+async function startupFailure(_code, expected, _configure) {
   const options = await fixture();
-  if (configure) {
-    const config = JSON.parse(await readFile(options.config, 'utf8'));
-    configure(config);
-    await writeFile(options.config, JSON.stringify(config));
-  }
-  await writeFile(options.main, code);
-  options.seal = await sealArtifact(options.root);
-  let runtime;
-  try {
-    await assert.rejects(
-      async () => {
-        runtime = await startNativeWrangler(options);
-        await runtime.worker.ready;
-      },
-      (error) => {
-        assert.match(causes(error), expected);
-        if (!runtime) console.error(error.message);
-        return true;
-      }
-    );
-  } finally {
-    // Without a returned Worker, teardown custody is unknown. Preserve evidence;
-    // outstanding SDK work must fail the existing CI watchdog, never fake PASS.
-    if (runtime) await close(runtime, options);
-  }
+  await producer.expectStartup(
+    () => load(options),
+    (error) => {
+      if (typeof expected === 'function') expected(error);
+      else assert.match(causes(error), expected);
+      if (!producer.record().receipt.facts.workerReturned)
+        console.error(error.message);
+    }
+  );
+}
+async function readReceipt(path, name) {
+  assert.ok((await stat(path)).size <= 8192, 'Oversized child receipt');
+  return validateReceipt(JSON.parse(await readFile(path, 'utf8')), name);
 }
 if (process.env.NATIVE_FIXTURE_CASE) {
-  await assertChildTempIsolation();
-  assert.ok(Object.hasOwn(cases, process.env.NATIVE_FIXTURE_CASE));
-  await cases[process.env.NATIVE_FIXTURE_CASE]();
+  let primary;
+  try {
+    await assertChildTempIsolation();
+    assert.ok(Object.hasOwn(cases, process.env.NATIVE_FIXTURE_CASE));
+    await cases[process.env.NATIVE_FIXTURE_CASE]();
+  } catch (error) {
+    primary = error;
+  }
+  const { receipt, errors } = await producer.finish(primary);
+  await writeFile(
+    join(process.cwd(), 'child-phase-errors.json'),
+    JSON.stringify({
+      ...Object.fromEntries(
+        Object.entries(errors).map(([key, error]) => [
+          key,
+          diagnosticError(error),
+        ])
+      ),
+      disposeIsStartup: receipt.disposeIsStartup,
+    }),
+    { flag: 'wx', mode: 0o600 }
+  );
+  await writeFile(process.env.NATIVE_RECEIPT_FILE, JSON.stringify(receipt), {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  const error = phaseErrors(primary, errors.dispose);
+  if (error) console.error(error);
+  try {
+    classifyChildReceipt(receipt, receipt.case);
+  } catch (classificationError) {
+    console.error(classificationError);
+    process.exitCode = 1;
+  }
 } else {
+  test('finalization verifies successful writes and propagates readback failures', async () => {
+    for (const corrupt of [false, true]) {
+      const caseRoot = await mkdtemp(join(tmpdir(), 'native-receipt-'));
+      const result = { errors: [], phases: {} };
+      const path = join(caseRoot, 'parent-finalization.json');
+      const io = {
+        writeFile,
+        async readFile(...args) {
+          const bytes = await readFile(...args);
+          return corrupt ? `${bytes}corrupt` : bytes;
+        },
+      };
+      try {
+        const operation = persistFinalization({ caseRoot }, result, {}, io);
+        if (corrupt)
+          await assert.rejects(operation, (error) => {
+            assert.match(
+              error.errors[0].message,
+              /Finalization readback mismatch/
+            );
+            assert.equal(error.record.persistenceErrors.length, 1);
+            return true;
+          });
+        else assert.deepEqual((await operation).persistenceErrors, []);
+        assert.deepEqual(JSON.parse(await readFile(path, 'utf8')).errors, []);
+      } finally {
+        await rm(caseRoot, { recursive: true });
+      }
+    }
+  });
+  test('preload control requires exact pre-start cause without Worker or disposal', async () => {
+    for (const message of [
+      'Preloaded Wrangler SDK unsupported',
+      'other failure',
+    ]) {
+      const producer = createChildProducer('preload');
+      let primary;
+      try {
+        await producer.expectPreload(async () => {
+          assert.fail(message);
+        });
+      } catch (error) {
+        primary = error;
+      }
+      const { receipt } = await producer.finish(primary);
+      const classify = () => classifyChildReceipt(receipt, 'preload');
+      if (primary) assert.throws(classify);
+      else assert.equal(classify(), 'PROVEN_PRESTART_PRELOAD_REJECTION');
+      assert.throws(() =>
+        classifyChildReceipt({ ...receipt, case: 'syntax' }, 'syntax')
+      );
+    }
+  });
+  const programRoot = await realpath(
+    await mkdtemp(join(tmpdir(), 'native-sdk-run-'))
+  );
+  const diagnosticRoot = join(programRoot, 'diagnostics');
+  await mkdir(diagnosticRoot, { mode: 0o700 });
   for (const name of Object.keys(cases)) {
     test(`public SDK isolated ${name}`, { timeout: 30000 }, async (t) => {
-      const cwd = await mkdtemp(join(tmpdir(), 'native-sdk-testcwd-'));
-      const tempRoot = join(await realpath(cwd), 'native-sdk-temp');
+      const cwd = await realpath(await mkdtemp(join(programRoot, 'case-')));
+      const tempRoot = join(cwd, 'native-sdk-temp');
       await mkdir(tempRoot);
       const stale = join(cwd, '.wrangler/tmp/dev-stale');
       await mkdir(stale, { recursive: true });
-      await writeFile(join(stale, 'sentinel'), 'unrelated-stale-scratch');
+      const foreignPath = join(stale, 'sentinel');
+      const foreignValue = 'unrelated-stale-scratch';
+      await writeFile(foreignPath, foreignValue);
       await utimes(stale, new Date(0), new Date(0));
-      const child = spawn(process.execPath, [fileURLToPath(import.meta.url)], {
-        cwd,
-        env: {
-          ...process.env,
-          NATIVE_FIXTURE_CASE: name,
-          NATIVE_SDK_TEMP_ROOT: tempRoot,
-          TMPDIR: tempRoot,
-          TMP: tempRoot,
-          TEMP: tempRoot,
-          NODE_OPTIONS: '',
-          NODE_PATH: '',
-          CLOUDFLARE_ENV: '',
-          CLOUDFLARE_INCLUDE_PROCESS_ENV: 'false',
-          CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: 'false',
-          WRANGLER_WRITE_LOGS: 'false',
-        },
-        stdio: 'inherit',
+      const options = await fixture(cwd);
+      if (startupSpecs[name]) {
+        const [code, , configure] = startupSpecs[name];
+        if (configure) {
+          const config = JSON.parse(await readFile(options.config, 'utf8'));
+          configure(config);
+          await writeFile(options.config, JSON.stringify(config));
+        }
+        await writeFile(options.main, code);
+        if (name === 'graphEscape')
+          await writeFile(
+            join(cwd, 'outside.mjs'),
+            'export default "escaped";'
+          );
+        options.seal = await sealArtifact(options.root);
+      }
+      const plan = {
+        ...(await prepareNativePlan(options, tempRoot)),
+        foreignPath,
+        foreignValue,
+        caseRoot: cwd,
+        diagnosticRoot,
+      };
+      const planFile = join(cwd, 'parent-plan.json');
+      const receiptFile = join(cwd, 'child-receipt.json');
+      await writeFile(planFile, JSON.stringify({ options, plan }), {
+        flag: 'wx',
+        mode: 0o600,
       });
-      await new Promise((resolve, reject) => {
-        child.once('error', reject);
-        child.once('exit', (code, signal) => {
-          if (code === 0 && signal === null) resolve();
-          else
-            reject(
-              new Error(
-                `SDK child failed: code=${code}, signal=${signal}; cwd retained: ${cwd}`
-              )
-            );
+      const gates = [];
+      let outcome;
+      try {
+        const child = spawn(
+          process.execPath,
+          [fileURLToPath(import.meta.url)],
+          {
+            cwd,
+            env: {
+              ...process.env,
+              NATIVE_FIXTURE_CASE: name,
+              NATIVE_PLAN_FILE: planFile,
+              NATIVE_RECEIPT_FILE: receiptFile,
+              NATIVE_SDK_TEMP_ROOT: tempRoot,
+              TMPDIR: tempRoot,
+              TMP: tempRoot,
+              TEMP: tempRoot,
+              NODE_OPTIONS: '',
+              NODE_PATH: '',
+              CLOUDFLARE_ENV: '',
+              CLOUDFLARE_INCLUDE_PROCESS_ENV: 'false',
+              CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: 'false',
+              WRANGLER_WRITE_LOGS: 'false',
+            },
+            stdio: 'inherit',
+          }
+        );
+        outcome = await new Promise((resolve) => {
+          child.once('error', (error) => resolve({ error }));
+          child.once('exit', (code, signal) => resolve({ code, signal }));
         });
+        if (outcome.error) gates.push(outcome.error);
+        if (outcome.code !== 0 || outcome.signal !== null)
+          gates.push(
+            new Error(
+              `SDK child exit: code=${outcome.code}, signal=${outcome.signal}`
+            )
+          );
+      } catch (error) {
+        gates.push(error);
+      }
+      let classification;
+      try {
+        const receipt = await readReceipt(receiptFile, name);
+        classification = requireChildOutcome(receipt, name, outcome);
+        if (classification === 'PROVEN_PRESTART_PRELOAD_REJECTION') {
+          await realpath(plan.scratch);
+          assert.deepEqual(await sealArtifact(plan.copyRoot), plan.seal);
+          await assert.rejects(stat(plan.sdkWorkingDir), { code: 'ENOENT' });
+          assert.equal(await readFile(plan.envFile, 'utf8'), '');
+        }
+      } catch (error) {
+        gates.push(error);
+      }
+      // This always runs after the sole child settles, including a failed exit/spawn.
+      const result = await createNativeFinalizer(plan, undefined, {
+        classification,
+        exit: outcome,
+      })(gates);
+      await persistFinalization(plan, result, {
+        exit: outcome
+          ? {
+              code: outcome.code ?? null,
+              signal: outcome.signal ?? null,
+              spawnError: diagnosticError(outcome.error),
+            }
+          : null,
+        classification,
+        gates: gates.map(diagnosticError),
       });
-      assert.equal(
-        await readFile(join(stale, 'sentinel'), 'utf8'),
-        'unrelated-stale-scratch'
+      assert.deepEqual(
+        gates,
+        [],
+        `Child phases failed; evidence retained: ${cwd}`
       );
-      if (name === 'positive' || name === 'preload') {
-        assert.deepEqual(
-          await readdir(tempRoot),
-          [],
-          `SDK temporary residuals retained: ${tempRoot}`
+      const failed = Object.entries(result.phases)
+        .filter(([, phase]) => !phase.ok)
+        .map(([phase]) => phase);
+      const expected = {
+        originalMutation: 'originalSeal',
+        copyMutation: 'copySeal',
+        sdkResidual: 'residual',
+        removalFailure: 'snapshot',
+      }[name];
+      if (expected) {
+        assert.deepEqual(failed, [expected]);
+        assert.equal(result.errors.length, 1);
+        if (name === 'sdkResidual') {
+          assert.deepEqual(result.phases.residual.error.residual, [
+            'miniflare-negative-control',
+          ]);
+          assert.equal(
+            await readFile(
+              join(tempRoot, 'miniflare-negative-control/sentinel'),
+              'utf8'
+            ),
+            'retain-sdk-sibling'
+          );
+        } else if (name === 'removalFailure') {
+          assert.equal(result.phases.removal, undefined);
+          assert.match(causes(result.phases.snapshot.error), /EACCES|EPERM/);
+        } else
+          assert.match(
+            causes(result.phases[expected].error),
+            name === 'originalMutation'
+              ? /Artifact hash mutation/
+              : /Copy hash mutation/
+          );
+        await realpath(plan.scratch);
+        t.diagnostic(`Expected ${expected} failure; evidence retained: ${cwd}`);
+      } else {
+        assert.deepEqual(result.errors, []);
+        assert.equal(result.phases.removal.ok, true);
+        t.diagnostic(
+          `${classification}; private diagnostic snapshot: ${result.snapshot.path}`
         );
         await rm(cwd, { recursive: true });
-      } else {
-        t.diagnostic(
-          `Negative-case evidence retained: ${cwd}; SDK siblings: ${(await readdir(tempRoot)).length}`
-        );
       }
     });
   }

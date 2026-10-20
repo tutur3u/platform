@@ -20,6 +20,12 @@ import {
   relative,
   resolve,
 } from 'node:path';
+import {
+  captureDiagnosticSnapshot,
+  diagnosticError,
+  supplierReceipt,
+  supplierSummaryLine,
+} from './native-wrangler-evidence.mjs';
 
 function closed(value, keys, label) {
   assert.ok(value && Object.getPrototypeOf(value) === Object.prototype, label);
@@ -323,29 +329,11 @@ export async function assertTempContents(root, expected = []) {
   );
 }
 
-export async function startNativeWrangler(options) {
-  const tempRoot = await assertChildTempIsolation();
-  assert.equal(tmpdir(), tempRoot, 'SDK os.tmpdir must use the admitted root');
+export async function prepareNativePlan(options, tempRoot) {
+  await inspectArtifact(options);
   await assertTempContents(tempRoot);
-  assertAmbientEnvironment();
-  const { bindings } = await inspectArtifact(options);
-  const require = createRequire(options.ownerPackage);
-  const sdkPath = require.resolve('wrangler');
-  assert.equal(
-    createHash('sha256')
-      .update(await readFile(sdkPath))
-      .digest('hex'),
-    '507cd3644d6a53f0d66922d79c04b03557b7d2d0a376d2d906b92ed20812bb30',
-    'Unreviewed public Wrangler supplier bytes'
-  );
-  if (!supplier) {
-    assert.ok(!require.cache[sdkPath], 'Preloaded Wrangler SDK unsupported');
-    supplier = { path: sdkPath, sdk: require('wrangler') };
-  }
-  assert.equal(supplier.path, sdkPath, 'SDK owner changed');
-  const { unstable_startWorker } = supplier.sdk;
   const scratch = await realpath(
-    await mkdtemp(join(tmpdir(), 'native-wrangler-fixture-'))
+    await mkdtemp(join(tempRoot, 'native-wrangler-fixture-'))
   );
   const copyRoot = join(scratch, 'artifact');
   const copyConfig = join(copyRoot, relative(options.root, options.config));
@@ -375,6 +363,159 @@ export async function startNativeWrangler(options) {
       cause: error,
     });
   }
+  return {
+    root: options.root,
+    seal: options.seal,
+    tempRoot,
+    scratch,
+    copyRoot,
+    copyConfig,
+    copyMain,
+    sdkWorkingDir,
+    envFile,
+  };
+}
+
+// This function preserves the original error objects, including a shared ready error.
+export function memoizePublicDispose(worker) {
+  let completion;
+  return () => {
+    completion ??= Promise.resolve().then(() => worker.dispose());
+    return completion;
+  };
+}
+
+export function phaseErrors(primary, dispose) {
+  if (!primary) return dispose;
+  if (!dispose) return primary;
+  const error = new AggregateError(
+    [primary, dispose],
+    'Primary and public dispose failed'
+  );
+  error.primary = primary;
+  error.dispose = dispose;
+  return error;
+}
+
+export function createNativeFinalizer(plan, remove = rm, records = {}) {
+  let completion;
+  return function finalize(gates = []) {
+    completion ??= (async () => {
+      const phases = {};
+      const errors = [...gates];
+      async function check(name, run) {
+        try {
+          await run();
+          phases[name] = { ok: true };
+        } catch (error) {
+          phases[name] = { ok: false, error };
+          errors.push(error);
+        }
+      }
+      await check('residual', async () => {
+        const actual = (await readdir(plan.tempRoot)).sort();
+        const residual = actual.filter(
+          (name) => name !== basename(plan.scratch)
+        );
+        const error = new Error('SDK temporary residuals retained');
+        error.residual = residual;
+        if (residual.length) throw error;
+        assert.deepEqual(actual, [basename(plan.scratch)]);
+      });
+      await check('originalSeal', () => assertArtifactUnchanged(plan));
+      await check('copySeal', async () =>
+        assert.deepEqual(
+          await inventory(
+            plan.copyRoot,
+            relative(plan.copyRoot, plan.sdkWorkingDir)
+          ),
+          plan.seal,
+          'Copy hash mutation'
+        )
+      );
+      await check('foreign', async () =>
+        assert.equal(
+          await readFile(plan.foreignPath, 'utf8'),
+          plan.foreignValue
+        )
+      );
+      let snapshot;
+      await check('snapshot', async () => {
+        snapshot = await captureDiagnosticSnapshot(plan, {
+          ...records,
+          gates: gates.map(diagnosticError),
+          phases: Object.fromEntries(
+            Object.entries(phases).map(([name, phase]) => [
+              name,
+              { ok: phase.ok, error: diagnosticError(phase.error) },
+            ])
+          ),
+        });
+      });
+      if (!errors.length) {
+        await check('removal', async () => {
+          await remove(plan.scratch, { recursive: true });
+          await assert.rejects(realpath(plan.scratch), { code: 'ENOENT' });
+          await assertTempContents(plan.tempRoot);
+          assert.equal(
+            await readFile(plan.foreignPath, 'utf8'),
+            plan.foreignValue
+          );
+        });
+      }
+      return { phases, errors, snapshot };
+    })();
+    return completion;
+  };
+}
+
+export async function startNativeWrangler(options, plan) {
+  const tempRoot = await assertChildTempIsolation();
+  assert.equal(tmpdir(), tempRoot, 'SDK os.tmpdir must use the admitted root');
+  await assertTempContents(tempRoot, plan ? [basename(plan.scratch)] : []);
+  assertAmbientEnvironment();
+  const { bindings } = await inspectArtifact(options);
+  const require = createRequire(options.ownerPackage);
+  const {
+    cliPath: sdkPath,
+    miniflarePath,
+    summary,
+  } = await supplierReceipt(options.ownerPackage);
+  console.log(supplierSummaryLine(summary));
+  assert.equal(
+    createHash('sha256')
+      .update(await readFile(sdkPath))
+      .digest('hex'),
+    '507cd3644d6a53f0d66922d79c04b03557b7d2d0a376d2d906b92ed20812bb30',
+    'Unreviewed public Wrangler supplier bytes'
+  );
+  if (!supplier) {
+    assert.ok(!require.cache[sdkPath], 'Preloaded Wrangler SDK unsupported');
+    assert.ok(
+      !require.cache[miniflarePath],
+      'Preloaded owning Miniflare unsupported'
+    );
+    supplier = { path: sdkPath, summary, sdk: require(sdkPath) };
+    for (const [path, expected] of [
+      [sdkPath, summary.wranglerSha256],
+      [miniflarePath, summary.miniflareSha256],
+    ])
+      assert.equal(
+        createHash('sha256')
+          .update(await readFile(path))
+          .digest('hex'),
+        expected,
+        'Supplier changed during loading'
+      );
+  }
+  assert.equal(supplier.path, sdkPath, 'SDK owner changed');
+  assert.deepEqual(supplier.summary, summary, 'Loaded supplier bytes changed');
+  const { unstable_startWorker } = supplier.sdk;
+  const owned = plan ?? (await prepareNativePlan(options, tempRoot));
+  const { scratch, copyRoot, copyConfig, copyMain, sdkWorkingDir, envFile } =
+    owned;
+  assert.equal(owned.root, options.root);
+  assert.deepEqual(owned.seal, options.seal);
   let worker;
   try {
     worker = await unstable_startWorker({
@@ -410,7 +551,6 @@ export async function startNativeWrangler(options) {
       { cause: error }
     );
   }
-  let cleanup;
   return {
     worker,
     scratch,
@@ -418,44 +558,7 @@ export async function startNativeWrangler(options) {
     copyConfig,
     copyMain,
     sdkWorkingDir,
-    cleanup() {
-      cleanup ??= (async () => {
-        try {
-          await worker.dispose();
-          // Miniflare removal is fire-and-forget. Residuals are failure evidence;
-          // never sweep them to manufacture a successful cleanup.
-          await assertTempContents(tempRoot, [basename(scratch)]);
-          const checks = await Promise.allSettled([
-            assertArtifactUnchanged(options),
-            (async () => {
-              assert.deepEqual(
-                await inventory(copyRoot, relative(copyRoot, sdkWorkingDir)),
-                options.seal,
-                'Copy hash mutation'
-              );
-            })(),
-          ]);
-          const errors = checks
-            .filter((c) => c.status === 'rejected')
-            .map((c) => c.reason);
-          if (errors.length)
-            throw new AggregateError(errors, 'Artifact cleanup seals failed');
-          await rm(scratch, { recursive: true });
-          try {
-            await realpath(scratch);
-            throw new Error('Owned scratch removal did not remove root');
-          } catch (error) {
-            if (error.code !== 'ENOENT') throw error;
-          }
-        } catch (error) {
-          throw new Error(
-            `Public SDK cleanup failed; evidence retained: ${scratch}`,
-            { cause: error }
-          );
-        }
-      })();
-      return cleanup;
-    },
+    cleanup: memoizePublicDispose(worker),
   };
 }
 
