@@ -179,6 +179,7 @@ jobs:
         working-directory: apps/apps
         run: bun x --no-install wrangler deploy --dry-run --config "${{ steps.output.outputs.config }}" --outdir "$RUNNER_TEMP/apps-dry-run"
       - name: Seal exact-source output before runtime acceptance
+        id: apps-canonical-seal
         run: python3 scripts/ci/apps-native-artifact.py seal apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
       - name: Exercise all native emitted HTTP/SSR/RPC contracts
         timeout-minutes: 3
@@ -209,6 +210,28 @@ jobs:
           name: apps-native-${{ env.APPS_SOURCE_SHA }}
           path: ${{ runner.temp }}/apps-native.tar.gz
           retention-days: 7
+          if-no-files-found: error
+      - name: Verify and pack failed-job sealed source for debugging
+        id: apps-debug-pack
+        env:
+          WORKFLOW_SOURCE_SHA: ${{ github.workflow_sha }}
+        if: ${{ failure() && steps.apps-canonical-seal.outcome == 'success' }}
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$APPS_SOURCE_SHA"
+          python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
+          python3 scripts/ci/apps-native-artifact.py pack apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json" --archive "$RUNNER_TEMP/apps-debug-sealed-source.tar.gz"
+          printf 'classification=DEBUG sealed source; NOT qualified release\nexpected_source_sha=%s\ncheckout_head=%s\ngithub_sha=%s\nworkflow_source_sha=%s\nevent_name=%s\nrun_id=%s\nrun_attempt=%s\n' "$APPS_SOURCE_SHA" "$(git rev-parse HEAD)" "$GITHUB_SHA" "$WORKFLOW_SOURCE_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/apps-debug-sealed-source.txt"
+          sha256sum "$RUNNER_TEMP/apps-debug-sealed-source.tar.gz" "$RUNNER_TEMP/apps-native-artifact.json" >> "$RUNNER_TEMP/apps-debug-sealed-source.txt"
+      - name: Retain failed-job sealed source for debugging
+        if: ${{ failure() && steps.apps-canonical-seal.outcome == 'success' && steps.apps-debug-pack.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: apps-debug-sealed-source-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/apps-debug-sealed-source.tar.gz
+            ${{ runner.temp }}/apps-debug-sealed-source.txt
+          retention-days: 3
           if-no-files-found: error
   restore-acceptance:
     needs: validate

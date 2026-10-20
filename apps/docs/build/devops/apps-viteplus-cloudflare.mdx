@@ -105,6 +105,41 @@ The restored configuration, Wrangler dry-run, emitted HTTP/RPC suite and ordinar
 browser-anchor suite must pass again, followed by a final full hash comparison.
 A missing or skipped native/runtime/browser gate is not acceptance.
 
+### Failed-job sealed source diagnostics
+
+The owning Meet, Calendar and Apps jobs may retain a separate
+`*-debug-sealed-source-<source-sha>-<run-id>-<attempt>` artifact for three days.
+Retention requires job failure, a successful canonical seal, and a successful
+verify/pack step. Build or canonical config/seal failure produces no debug archive.
+Meet seals before emitted runtime startup; accepted packing still follows all
+existing runtime and bundle gates and re-verifies the seal. Calendar and Apps
+retain their existing seal and acceptance ordering.
+
+Debug packing reuses the canonical receipt and external expected source SHA;
+checkout HEAD must match. The receipt records immutable file hashes. Meet and
+Calendar verify the packed archive after extraction against the same receipt;
+Apps uses its canonical per-member verified pack command. The adjacent bounded
+metadata records the expected source SHA, checkout HEAD, event SHA (`GITHUB_SHA`),
+workflow source SHA (explicit `github.workflow_sha` step environment), event name
+(`GITHUB_EVENT_NAME`), run and attempt, plus archive and receipt hashes. No resealing, rebuilding, normalization repair
+or acceptance bypass is permitted. Changed bytes fail closed. The normal success
+archives and restore jobs remain separate and never consume these debug names.
+
+The retained payload is limited to the already approved normal artifact members
+and receipt, plus that metadata. Config vars remain constrained by each canonical
+validator: Meet public service URLs and secret names only, Calendar empty vars
+and required secret names, Apps the noindex marker and no secret bindings.
+Calendar and Apps build auth bindings are synthetic fixtures. Meet's build uses
+fixtures on pull requests and existing public Supabase URL/publishable-key
+bindings otherwise; this does not admit private credentials, raw environment
+files, or additional config. If a new field introduces private data, retain only
+a reviewed bounded manifest/hash/file graph instead of that data.
+
+These are **DEBUG sealed source, NOT qualified release** artifacts. A retained
+archive does not make a failing runtime gate pass, establish a compiled typed
+module graph, or qualify deployment. An actual failed-run upload, download and
+receipt verification remain separate execution evidence.
+
 ## Delivery remains separate
 
 This workflow validates and retains artifacts; it has no publish job, provider
