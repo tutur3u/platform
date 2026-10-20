@@ -20,7 +20,14 @@ Void SDK supplies the Cloudflare adapter; no separate adapter or RSC mode is add
 No local release build is implied by this runbook.
 
 The artifact helper discovers the actual config through
-`.wrangler/deploy/config.json`. Both `configPath` and an explicitly empty
+exactly one native `.wrangler/deploy/config.json` or Void-saved
+`.void/preview-deploy-config.json`. Both runtime harnesses use the shared
+`scripts/ci/apps-native-runtime-pointer.mjs` reader. Saved pointer bytes retain
+the original `.wrangler/deploy` relative base; never create a replacement pointer.
+Missing, duplicate, malformed, symlinked or escaping pointers fail closed.
+The focused reader regression suite covers both layouts and rejection cases;
+receipt/source-SHA validation remains mandatory at its existing CI and browser
+boundaries. Both `configPath` and an explicitly empty
 `auxiliaryWorkers` array are required. The config, Worker main and assets must
 stay within the output tree; ASSETS must use `dist/client`, Worker-first routing
 and no SPA fallback. Static robots/sitemap bytes must match the checked-out public

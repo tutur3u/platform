@@ -7,6 +7,7 @@ import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { verifyNativeBrowserNavigation } from '../../apps/apps/cloudflare/native-browser-navigation.mjs';
+import { readNativeRuntimeConfig } from './apps-native-runtime-pointer.mjs';
 
 const app = fileURLToPath(new URL('../../apps/apps/', import.meta.url));
 const ownRequire = createRequire(
@@ -50,16 +51,7 @@ test('ordinary catalogue anchors retain every query contract through the emitted
 }, async (t) => {
   assert.equal(process.env.CI, 'true');
   verifySealedOutput();
-  const redirect = JSON.parse(
-    readFileSync(resolve(app, '.wrangler/deploy/config.json'), 'utf8')
-  );
-  assert.deepEqual(Object.keys(redirect).sort(), [
-    'auxiliaryWorkers',
-    'configPath',
-  ]);
-  assert.deepEqual(redirect.auxiliaryWorkers, []);
-  const configPath = resolve(app, '.wrangler/deploy', redirect.configPath);
-  const config = JSON.parse(readFileSync(configPath, 'utf8'));
+  const { configPath, config } = readNativeRuntimeConfig(app);
   const { workerOptions, externalWorkers } =
     unstable_getMiniflareWorkerOptions(configPath);
   const unexpected = [];

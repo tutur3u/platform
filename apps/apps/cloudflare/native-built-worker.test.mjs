@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { gatewayFunctionId } from './native-artifact-functions.mjs';
 import { nativeRedirectCases } from './native-browser-navigation.mjs';
 import {
@@ -65,20 +66,7 @@ test('actual native Worker implements both pages, every app launch and the API b
   const runtime = runtimeDeadline(t.signal, 54000);
   const source = process.env.CI_SOURCE_SHA;
   assert.match(source ?? '', /^[a-f0-9]{40}$/);
-  const redirect = JSON.parse(
-    await readFile(join(app, '.wrangler/deploy/config.json'), 'utf8')
-  );
-  assert.equal(typeof redirect.configPath, 'string');
-  assert.deepEqual(Object.keys(redirect).sort(), [
-    'auxiliaryWorkers',
-    'configPath',
-  ]);
-  assert.deepEqual(redirect.auxiliaryWorkers, []);
-  const configPath = contained(
-    join(app, 'dist'),
-    resolve(app, '.wrangler/deploy', redirect.configPath)
-  );
-  const config = JSON.parse(await readFile(configPath, 'utf8'));
+  const { configPath, config } = readNativeRuntimeConfig(app);
   assert.equal(config.name, 'tuturuuu-apps-vite-staging');
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
