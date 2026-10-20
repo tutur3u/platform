@@ -225,11 +225,9 @@ read-only permissions. Live provider consent/delivery remains a separate check.
 
 ## CI And Dependency Drift
 
-For native Wrangler lifecycle qualification, distinguish source/static review,
-executed runtime evidence and customer delivery. A proposed correction does not
-clear profile adoption. Apply the lifecycle procedure in
-`apps/docs/build/development-tools/without-docker.mdx`; preserve the existing
-three-minute watchdog and 30-second boundary-test limit.
+For native Wrangler lifecycle qualification, separate source/static review, runtime evidence and customer delivery; candidates do not clear caller adoption.
+Apply the narrow returned-Worker classification and independent closure gates in `apps/docs/build/development-tools/without-docker.mdx`;
+preserve the existing three-minute watchdog, 30-second boundary-test limit and old raw NOTPASS results.
 
 Record hashes and owning package versions for the CLI actually loaded and its
 resolved transitive Miniflare entry. A root package, lockfile resolution or local
@@ -244,8 +242,10 @@ compatibility; its absence can fail startup before the intended control. Omitted
 Node flags do not necessarily disable Node support: inspect the effective date,
 flags and selected supplier's default threshold. Keep such thresholds bound to
 that supplier rather than publishing a current-version rule as general policy.
-Meaningful controls must reach their intended boundary; unknown public rejection
-reachability remains NOTPASS even when source assertions look correct.
+Meaningful controls must reach their intended boundary; public pre-return syntax remains NOTPASS/unknown pending actual parser cause and closure.
+The dedicated preload control has a different scope, with no generic missing-Worker waiver. Next CI must bound public cause-chain
+and independent proof-phase observations, normalize path roles, mark unknowns/missing fields/truncation and retain full private evidence.
+Preserve primary errors; receipts or observed errors alone never establish closure. Source assertions do not clear runtime NOTPASS.
 
 - Keep workflow Bun versions aligned with the repo `packageManager` pin.
 - Workflows that need Bun should use

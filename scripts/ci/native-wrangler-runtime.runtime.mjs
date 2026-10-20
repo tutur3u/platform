@@ -7,7 +7,6 @@ import {
   readFile,
   realpath,
   rm,
-  stat,
   utimes,
   writeFile,
 } from 'node:fs/promises';
@@ -16,49 +15,29 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  emitChildDiagnostics,
+  syntaxCauseProjection,
+} from './native-wrangler-diagnostics.mjs';
+import {
+  causes,
   classifyChildReceipt,
   createChildProducer,
-  diagnosticError,
+  finalizeObservedCase,
+  observeCaseReceipt,
+  observeStartupFailure,
   persistFinalization,
-  requireChildOutcome,
-  validateReceipt,
+  runChildFixture,
+  supplierReceipt,
+  supplierSummaryLine,
 } from './native-wrangler-evidence.mjs';
+import { graphEntry, main, nodeEntry } from './native-wrangler-fixture.mjs';
 import {
-  assertChildTempIsolation,
-  createNativeFinalizer,
-  phaseErrors,
   prepareNativePlan,
   sealArtifact,
   startNativeWrangler,
 } from './native-wrangler-runtime.mjs';
 
 const sourceSHA = '5409c0a3704a29547c5a3cebf95df6b015b657f4';
-// Fixed portable emitted bytes, materialized only in CI. No transpiler or bundler.
-const main = `import text from './message.txt';
-import wasm from './empty.wasm';
-export class Counter {
-  constructor(state) { this.state = state; }
-  async fetch() {
-    const n = (await this.state.storage.get('n') ?? 0) + 1;
-    await this.state.storage.put('n', n);
-    return new Response(String(n));
-  }
-}
-export default { async fetch(request, env) {
-  const url = new URL(request.url);
-  if (url.pathname === '/asset') return env.ASSETS.fetch(new Request('https://fixture.invalid/hello.txt'));
-  if (url.pathname === '/asset-miss') return env.ASSETS.fetch(new Request('https://fixture.invalid/absent.txt'));
-  if (url.pathname === '/asset-traversal') return env.ASSETS.fetch(new Request('https://fixture.invalid/%2e%2e/wrangler.json'));
-  if (url.pathname === '/service') return env.SERVICE.fetch(request);
-  if (url.pathname === '/deny') return fetch('https://unadmitted.invalid/provider');
-  if (url.pathname === '/do') return env.COUNTER.get(env.COUNTER.idFromName('same')).fetch(request);
-  const lazy = await import('./lazy.mjs');
-  return Response.json({ text, lazy: lazy.value, wasm: new WebAssembly.Instance(wasm).exports,
-    host: url.host, sha: '5409c0a3704a29547c5a3cebf95df6b015b657f4',
-    compiled: env.COMPILED_SHA, value: env.VALUE, secret: env.SECRET });
-} };
-//# sourceURL=annotation-only-0000000000000000000000000000000000000000.mjs`;
-
 async function fixture(cwd = process.cwd()) {
   if (process.env.NATIVE_FIXTURE_CASE) {
     const data = JSON.parse(
@@ -133,77 +112,18 @@ async function fixture(cwd = process.cwd()) {
     outbound: () => new Response('denied-egress', { status: 599 }),
   };
 }
-
-// Each child has its own disposable cwd and SDK module cache. No child timeout or
-// kill is installed: the existing whole 3-minute step must fail an unsettled SDK.
-function causes(error) {
-  if (!error) return '';
-  return [
-    error.name,
-    error.message,
-    error.text,
-    causes(error.cause),
-    ...(error.errors ?? []).map(causes),
-  ].join('\n');
-}
+let childPlan;
 const producer = createChildProducer(process.env.NATIVE_FIXTURE_CASE);
 async function load(options) {
   const data = JSON.parse(await readFile(process.env.NATIVE_PLAN_FILE, 'utf8'));
+  childPlan = data.plan;
   return startNativeWrangler(options, data.plan);
 }
 const start = (options) => producer.start(() => load(options));
-function boundaryEntry(imports, expression) {
-  return `${imports}\n${main.replace(
-    '  const url = new URL(request.url);',
-    `  const url = new URL(request.url);\n  if (url.pathname === '/boundary') return new Response(${expression});`
-  )}`;
-}
-const graphEntry = (specifier) =>
-  boundaryEntry(
-    `import { value as boundaryValue } from '${specifier}';`,
-    'boundaryValue'
-  );
-const nodeEntry = boundaryEntry(
-  "import fs from 'node:fs';",
-  'typeof fs.readFile'
-);
-function startupDiagnostics(error) {
-  const raw = causes(error);
-  const messages = [raw];
-  for (const line of raw.split('\n')) {
-    try {
-      const record = JSON.parse(line);
-      if (typeof record?.message === 'string') messages.push(record.message);
-    } catch {
-      /* Non-JSON diagnostic lines remain in raw. */
-    }
-  }
-  return messages;
-}
-function graphRejection(error) {
-  assert.ok(
-    startupDiagnostics(error).some(
-      (text) =>
-        text.includes(
-          'service core:user:native-portable-fixture: Uncaught TypeError: Invalid module specifier "../outside.mjs".'
-        ) && text.includes('imported from "main.mjs"')
-    )
-  );
-}
-function nodeRejection(error) {
-  assert.ok(
-    startupDiagnostics(error).some(
-      (text) =>
-        text.includes(
-          'service core:user:native-portable-fixture: Uncaught Error: No such module "node:fs".'
-        ) && text.includes('imported from "main.mjs"')
-    )
-  );
-}
 const startupSpecs = {
   wrongModule: [
     `import bytes from './empty.wasm';\nconst instance = new WebAssembly.Instance(bytes);\n${main}`,
-    /TypeError[^\n]*WebAssembly|(?:first argument|Argument 0)[^\n]*WebAssembly\.Module/i,
+    undefined,
     (config) => {
       config.rules = [
         { type: 'ESModule', globs: ['**/*.mjs'] },
@@ -215,15 +135,12 @@ const startupSpecs = {
     'export default = ;',
     /Unexpected ["']=["']|SyntaxError[^\n]*Unexpected token ["']=["']/,
   ],
-  graphEscape: [graphEntry('../outside.mjs'), graphRejection],
+  graphEscape: [graphEntry('../outside.mjs')],
   graphValid: [graphEntry('./lazy.mjs')],
-  wrongType: [
-    `import { absent } from './message.txt';\n${main}`,
-    /(?:does not provide an export named|No matching export)[^\n]*absent/,
-  ],
+  wrongType: [`import { absent } from './message.txt';\n${main}`, undefined],
   nodeBuiltin: [
     nodeEntry,
-    nodeRejection,
+    undefined,
     (config) => {
       config.compatibility_date = '2026-08-03';
     },
@@ -247,7 +164,6 @@ const cases = {
     );
     await mkdir(sibling);
     await writeFile(join(sibling, 'sentinel'), 'retain-sdk-sibling');
-
     await realpath(runtime.scratch);
     assert.equal(
       await readFile(join(sibling, 'sentinel'), 'utf8'),
@@ -260,7 +176,6 @@ const cases = {
     const runtime = await start(options);
     await runtime.worker.ready;
     assert.equal((await runtime.worker.url).hostname, '127.0.0.1');
-    // The copy uses the complete original inventory, including unused files.
     assert.notEqual(runtime.copyMain, options.main);
     assert.equal(await readFile(runtime.copyMain, 'utf8'), main);
     assert.deepEqual(
@@ -332,7 +247,6 @@ const cases = {
     await mkdir(join(denied, 'child'), { recursive: true });
     await chmod(denied, 0);
     await realpath(runtime.scratch);
-    // An unreadable subtree must prevent snapshot verification and all removal.
     assert.deepEqual(await sealArtifact(options.root), options.seal);
   },
   async wrongModule() {
@@ -390,56 +304,195 @@ async function boundaryPositive(expected) {
 }
 async function startupFailure(_code, expected, _configure) {
   const options = await fixture();
-  await producer.expectStartup(
-    () => load(options),
-    (error) => {
-      if (typeof expected === 'function') expected(error);
-      else assert.match(causes(error), expected);
-      if (!producer.record().receipt.facts.workerReturned)
-        console.error(error.message);
-    }
-  );
+  const name = process.env.NATIVE_FIXTURE_CASE;
+  const run = () => load(options);
+  await observeStartupFailure(producer, run, name, expected);
 }
-async function readReceipt(path, name) {
-  assert.ok((await stat(path)).size <= 8192, 'Oversized child receipt');
-  return validateReceipt(JSON.parse(await readFile(path, 'utf8')), name);
-}
+
 if (process.env.NATIVE_FIXTURE_CASE) {
-  let primary;
-  try {
-    await assertChildTempIsolation();
-    assert.ok(Object.hasOwn(cases, process.env.NATIVE_FIXTURE_CASE));
-    await cases[process.env.NATIVE_FIXTURE_CASE]();
-  } catch (error) {
-    primary = error;
-  }
-  const { receipt, errors } = await producer.finish(primary);
-  await writeFile(
-    join(process.cwd(), 'child-phase-errors.json'),
-    JSON.stringify({
-      ...Object.fromEntries(
-        Object.entries(errors).map(([key, error]) => [
-          key,
-          diagnosticError(error),
-        ])
-      ),
-      disposeIsStartup: receipt.disposeIsStartup,
-    }),
-    { flag: 'wx', mode: 0o600 }
-  );
-  await writeFile(process.env.NATIVE_RECEIPT_FILE, JSON.stringify(receipt), {
-    flag: 'wx',
-    mode: 0o600,
+  await runChildFixture({
+    name: process.env.NATIVE_FIXTURE_CASE,
+    cases,
+    producer,
+    plan: () => childPlan,
+    receiptFile: process.env.NATIVE_RECEIPT_FILE,
   });
-  const error = phaseErrors(primary, errors.dispose);
-  if (error) console.error(error);
-  try {
-    classifyChildReceipt(receipt, receipt.case);
-  } catch (classificationError) {
-    console.error(classificationError);
-    process.exitCode = 1;
-  }
 } else {
+  test('child diagnostic seam preserves original errors through diagnostic faults', async () => {
+    const modes = 'cycle deep getter nonarray projection writer persistence';
+    for (const mode of modes.split(' ')) {
+      const startup = new Error('original startup'),
+        dispose = new Error('original dispose');
+      const fault = new Error(`diagnostic ${mode}`),
+        persisted = new Map(),
+        lines = [];
+      if (mode === 'cycle') startup.cause = startup;
+      if (mode === 'deep') {
+        let current = startup;
+        for (let i = 0; i < 12000; i++)
+          current = current.cause = { message: `cause ${i}` };
+      }
+      if (mode === 'getter')
+        Object.defineProperty(startup, 'message', {
+          get() {
+            throw fault;
+          },
+        });
+      if (mode === 'nonarray')
+        startup.errors = { message: 'nonarray collection', cause: dispose };
+      const source = createChildProducer('syntax');
+      await assert.rejects(
+        source.observeReturnedStartup(async () => ({
+          worker: { ready: Promise.reject(startup), dispose() {} },
+          cleanup: async () => {
+            throw dispose;
+          },
+        })),
+        (error) => error === startup
+      );
+      const { errors, receipt } = await source.finish(startup);
+      let reached = 0;
+      const operation = emitChildDiagnostics(
+        { receipt, errors, plan: {} },
+        {
+          writePrivate: async (name, bytes) => {
+            if (mode === 'persistence' && name === 'child-phase-errors.json')
+              throw fault;
+            persisted.set(name, bytes);
+          },
+          writeReceipt: async () => {},
+          project: (error, plan) => {
+            reached++;
+            assert.equal(error, startup);
+            if (mode === 'projection') throw fault;
+            return syntaxCauseProjection(error, plan);
+          },
+          writeFailure: () => {},
+          writeLine: (line) => {
+            if (mode === 'writer') throw fault;
+            lines.push(line);
+          },
+          classify: (value) => {
+            reached++;
+            assert.equal(value, receipt);
+            assert.equal(errors.startup, startup);
+            assert.equal(errors.dispose, dispose);
+            return classifyChildReceipt(value, value.case);
+          },
+        }
+      );
+      if (mode === 'persistence')
+        await assert.rejects(operation, (error) => error === fault);
+      else {
+        const result = await operation;
+        const classified = result.classificationError;
+        assert.match(classified.message, /Syntax REGISTERED NOTPASS/);
+        assert.equal(result.errors, errors);
+        const privateBytes = persisted.get('child-phase-errors.json');
+        assert.doesNotThrow(() => JSON.parse(privateBytes));
+        assert.ok(privateBytes.includes('original dispose'));
+        if (mode === 'cycle') assert.ok(privateBytes.includes('"$ref"'));
+        if (mode === 'deep') {
+          assert.ok(privateBytes.includes('cause 11999'));
+          const root = await realpath(
+            await mkdtemp(join(tmpdir(), 'deep-snapshot-'))
+          );
+          const caseRoot = join(root, 'case'),
+            diagnosticRoot = join(root, 'diagnostics');
+          try {
+            await Promise.all([mkdir(caseRoot), mkdir(diagnosticRoot)]);
+            const result = await finalizeObservedCase(
+              {
+                caseRoot,
+                diagnosticRoot,
+                tempRoot: caseRoot,
+                scratch: caseRoot,
+              },
+              [startup],
+              { name: 'syntax', receiptStatus: 'notrun' }
+            );
+            assert.equal(result.phases.snapshot.ok, true);
+            const metadata = JSON.parse(
+              await readFile(
+                join(result.snapshot.path, 'pre-removal.json'),
+                'utf8'
+              )
+            );
+            let tail = metadata.records.gates[0];
+            for (let i = 0; i < 12000; i++) tail = tail.cause;
+            assert.equal(tail.message, 'cause 11999');
+            assert.equal(metadata.version, 1);
+          } finally {
+            await rm(root, { recursive: true });
+          }
+        }
+        if (mode === 'nonarray')
+          assert.ok(privateBytes.includes('nonarray collection'));
+        if (['getter', 'projection', 'writer'].includes(mode)) {
+          assert.ok(result.diagnosticFaults.includes(fault));
+          const faultBytes = persisted.get('child-diagnostic-faults.json');
+          assert.ok(faultBytes.includes(`diagnostic ${mode}`));
+        }
+        if (mode === 'getter') assert.ok(privateBytes.includes('$unreadable'));
+      }
+      assert.equal(reached, 2, mode);
+      assert.deepEqual(errors, { primary: startup, startup, dispose });
+      assert.ok(Buffer.byteLength(lines.join('\n')) < 1500);
+    }
+  });
+  test('supplier receipt hashes the owning Wrangler dependency without executing it', async () => {
+    const root = await realpath(
+      await mkdtemp(join(tmpdir(), 'native-supplier-control-'))
+    );
+    try {
+      const wrangler = join(root, 'node_modules/wrangler');
+      const mf = join(wrangler, 'node_modules/miniflare');
+      await mkdir(mf, { recursive: true });
+      await writeFile(join(root, 'package.json'), '{}');
+      await writeFile(
+        join(wrangler, 'package.json'),
+        JSON.stringify({ name: 'wrangler', version: '1.2.3', main: 'cli.cjs' })
+      );
+      await writeFile(
+        join(mf, 'package.json'),
+        JSON.stringify({
+          name: 'miniflare',
+          version: '3.4.5',
+          main: 'index.cjs',
+        })
+      );
+      const bytes = 'throw new Error("supplier execution forbidden");';
+      await writeFile(join(wrangler, 'cli.cjs'), bytes);
+      await writeFile(join(mf, 'index.cjs'), bytes);
+      await mkdir(join(root, 'node_modules/miniflare'));
+      await writeFile(
+        join(root, 'node_modules/miniflare/package.json'),
+        JSON.stringify({
+          name: 'miniflare',
+          version: '4.0.0',
+          main: 'index.cjs',
+        })
+      );
+      await writeFile(
+        join(root, 'node_modules/miniflare/index.cjs'),
+        'root decoy'
+      );
+      const first = await supplierReceipt(join(root, 'package.json'));
+      assert.equal(first.cliPath, join(wrangler, 'cli.cjs'));
+      assert.equal(first.summary.miniflareVersion, '3.4.5');
+      assert.equal(first.summary.wranglerSha256, first.summary.miniflareSha256);
+      assert.ok(!supplierSummaryLine(first.summary).includes(root));
+      await writeFile(join(mf, 'index.cjs'), `${bytes}\n`);
+      const second = await supplierReceipt(join(root, 'package.json'));
+      assert.notEqual(
+        first.summary.miniflareSha256,
+        second.summary.miniflareSha256
+      );
+      assert.equal(first.summary.wranglerSha256, second.summary.wranglerSha256);
+    } finally {
+      await rm(root, { recursive: true });
+    }
+  });
   test('finalization verifies successful writes and propagates readback failures', async () => {
     for (const corrupt of [false, true]) {
       const caseRoot = await mkdtemp(join(tmpdir(), 'native-receipt-'));
@@ -579,34 +632,14 @@ if (process.env.NATIVE_FIXTURE_CASE) {
       } catch (error) {
         gates.push(error);
       }
-      let classification;
-      try {
-        const receipt = await readReceipt(receiptFile, name);
-        classification = requireChildOutcome(receipt, name, outcome);
-        if (classification === 'PROVEN_PRESTART_PRELOAD_REJECTION') {
-          await realpath(plan.scratch);
-          assert.deepEqual(await sealArtifact(plan.copyRoot), plan.seal);
-          await assert.rejects(stat(plan.sdkWorkingDir), { code: 'ENOENT' });
-          assert.equal(await readFile(plan.envFile, 'utf8'), '');
-        }
-      } catch (error) {
-        gates.push(error);
-      }
-      // This always runs after the sole child settles, including a failed exit/spawn.
-      const result = await createNativeFinalizer(plan, undefined, {
+      const { classification, receipt, receiptStatus } =
+        await observeCaseReceipt(receiptFile, name, outcome, plan, gates);
+      const result = await finalizeObservedCase(plan, gates, {
+        name,
+        receipt,
+        outcome,
         classification,
-        exit: outcome,
-      })(gates);
-      await persistFinalization(plan, result, {
-        exit: outcome
-          ? {
-              code: outcome.code ?? null,
-              signal: outcome.signal ?? null,
-              spawnError: diagnosticError(outcome.error),
-            }
-          : null,
-        classification,
-        gates: gates.map(diagnosticError),
+        receiptStatus,
       });
       assert.deepEqual(
         gates,

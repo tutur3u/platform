@@ -12,11 +12,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import {
+  casePhaseSummary,
   createChildProducer,
   persistFinalization,
   requireChildOutcome,
-  supplierReceipt,
-  supplierSummaryLine,
 } from './native-wrangler-evidence.mjs';
 import {
   assertAmbientEnvironment,
@@ -511,138 +510,140 @@ test('successful cleanup and failed removal postcheck retain verified snapshots'
       await saved(result, 'pre-removal.json');
     });
 });
-test('child producer derives public identity and facts before classification and filesystem proof', async () => {
+test('returned Worker producer observes exact public C and rejects mismatched lifecycle or target', async () => {
+  const diagnostics = {
+    wrongModule:
+      'TypeError: WebAssembly.Instance(): Argument 0 must be a WebAssembly.Module\n  at main.mjs:2:18',
+    graphEscape:
+      'TypeError: Invalid module specifier "../outside.mjs".\n  imported from "main.mjs".',
+    wrongType:
+      "SyntaxError: The requested module './message.txt' does not provide an export named 'absent'\n  at file:///fixture/artifact/main.mjs:1:9",
+    nodeBuiltin: 'Error: No such module "node:fs".\n  imported from "main.mjs"',
+  };
   const exit = { code: 0, signal: null };
-  for (const variant of [
-    'same',
-    'distinct',
-    'predicate',
-    'missing',
-    'absent',
-    'pending',
-  ]) {
-    const producer = createChildProducer('syntax');
-    const E = new Error('ready E');
-    const T = new Error(E.message);
-    let calls = 0,
-      release,
-      primary;
-    const worker = {
-      get ready() {
-        return Promise.reject(E);
-      },
-      dispose() {
-        calls++;
-        if (variant === 'pending')
-          return new Promise((done) => {
-            release = done;
-          });
-        return Promise.reject(variant === 'distinct' ? T : E);
-      },
-    };
-    if (variant === 'absent') delete worker.dispose;
-    try {
-      await producer.expectStartup(
-        async () => {
-          if (variant === 'missing') throw E;
-          return { worker, cleanup: memoizePublicDispose(worker) };
-        },
-        (error) => {
-          assert.equal(error, E);
-          if (variant === 'predicate') assert.fail('wrong predicate');
+  for (const [name, diagnostic] of Object.entries(diagnostics)) {
+    for (const variant of [
+      'exact',
+      'service',
+      'target',
+      'text',
+      'name',
+      'code',
+      'import',
+      'primary',
+      'fulfilled',
+      'missing',
+      'readyRejected',
+      'preReturn',
+    ]) {
+      const producer = createChildProducer(name);
+      let message = `service core:user:native-portable-fixture: Uncaught ${diagnostic}`;
+      if (variant === 'service')
+        message = message.replace('core:user:', 'core:other:');
+      if (variant === 'import')
+        message = message
+          .replace('message.txt', 'other.txt')
+          .replaceAll('main.mjs', 'other.mjs');
+      if (variant === 'target')
+        message = message.replaceAll('main.mjs', 'other.mjs');
+      if (variant === 'text')
+        message = message
+          .replace('WebAssembly.Instance()', 'OtherWASM')
+          .replace('../outside.mjs', './allowed.mjs')
+          .replace("'absent'", "'present'")
+          .replace('node:fs', 'node:path');
+      const C = Object.assign(
+        new Error(`Runtime stderr:\n${JSON.stringify({ message })}`),
+        {
+          name:
+            variant === 'name'
+              ? 'MiniflareCoreError'
+              : 'MiniflareCoreError [ERR_RUNTIME_FAILURE]',
+          code: variant === 'code' ? 'OTHER' : 'ERR_RUNTIME_FAILURE',
         }
       );
-    } catch (error) {
-      primary = error;
+      const E = new Error('independent failure');
+      let calls = 0,
+        primary;
+      const worker = {
+        get ready() {
+          return variant === 'readyRejected'
+            ? Promise.reject(E)
+            : Promise.resolve();
+        },
+        async dispose() {
+          calls++;
+          if (variant !== 'fulfilled') throw C;
+        },
+      };
+      try {
+        await producer.observeReturnedStartup(async () => {
+          if (variant === 'preReturn') throw E;
+          return variant === 'missing'
+            ? {}
+            : { worker, cleanup: memoizePublicDispose(worker) };
+        });
+        if (variant === 'primary') throw E;
+      } catch (error) {
+        primary = error;
+      }
+      const completion = producer.finish(primary);
+      assert.equal(producer.finish(primary), completion);
+      const raw = await completion;
+      const receipt = JSON.parse(JSON.stringify(raw.receipt));
+      const classify = (value = exit) =>
+        requireChildOutcome(receipt, name, value);
+      assert.equal(calls, ['preReturn', 'missing'].includes(variant) ? 0 : 1);
+      if (calls && variant !== 'fulfilled') assert.equal(raw.errors.dispose, C);
+      if (primary) assert.equal(raw.errors.primary, primary);
+      if (variant !== 'exact') {
+        assert.throws(classify);
+        continue;
+      }
+      assert.equal(raw.errors.startup, undefined);
+      assert.equal(receipt.disposeIsStartup, false);
+      assert.equal(receipt.facts.readyFulfilled, true);
+      assert.equal(classify(), 'EXPECTED_USER_STARTUP_REJECTION_OBSERVED');
+      for (const failure of [
+        { code: 1, signal: null },
+        { code: 0, signal: 'SIGTERM' },
+        { error: E },
+      ])
+        assert.throws(() => classify(failure));
+      for (const key of Object.keys(receipt.facts)) {
+        receipt.facts[key] = !receipt.facts[key];
+        assert.throws(classify);
+        receipt.facts[key] = !receipt.facts[key];
+      }
+      const phaseNames =
+        'residual originalSeal copySeal foreign snapshot removal'.split(' ');
+      for (const [kind, phase, ...completion] of [
+        ['none', null, true, 'ok'],
+        ['errors', null, true, 'ok'],
+        ['persistence', null, false, 'ok'],
+        ['persistence', null, undefined, 'ok'],
+        ['receipt', null, true],
+        ...['fail', 'notrun', undefined].map((status) =>
+          Array.of('receipt', null, true, status)
+        ),
+        ...phaseNames.flatMap((key) =>
+          [{ ok: false }, 'absent', {}, { ok: undefined }].map((phase) =>
+            Array.of(key, phase, true, 'ok')
+          )
+        ),
+      ]) {
+        const phases = Object.fromEntries(
+          phaseNames.map((key) => [key, { ok: true }])
+        );
+        const result = { phases, errors: kind === 'errors' ? [E] : [] };
+        if (phase === 'absent') delete result.phases[kind];
+        else if (phase) result.phases[kind] = phase;
+        const inputs = [name, receipt, exit, classify(), result, ...completion];
+        const summary = casePhaseSummary(...inputs);
+        assert.equal(summary.includes('_WITH_CLOSED_PROCESS'), kind === 'none');
+        assert.equal(summary.includes(E.message), false);
+      }
     }
-    const completion = producer.finish(primary);
-    let raw;
-    if (variant === 'pending') {
-      await Promise.resolve();
-      raw = producer.record(primary);
-      release();
-    }
-    raw ??= await completion;
-    await completion;
-    assert.equal(producer.finish(primary), completion);
-    assert.equal(calls, ['missing', 'absent'].includes(variant) ? 0 : 1);
-    const receipt = JSON.parse(JSON.stringify(raw.receipt));
-    const classify = () => requireChildOutcome(receipt, 'syntax', exit);
-    const absent = {
-      missing: 'workerReturned',
-      absent: 'disposeAttempted',
-      pending: 'disposeSettled',
-      predicate: 'predicateMatched',
-    }[variant];
-    if (absent) assert.equal(receipt.facts[absent], false);
-    if (variant === 'distinct') assert.equal(raw.errors.dispose, T);
-    if (variant !== 'same') {
-      assert.throws(classify);
-      continue;
-    }
-    assert.equal(raw.errors.dispose, E);
-    assert.equal(classify(), 'EXPECTED_STARTUP_REJECTION');
-    for (const residual of [false, true])
-      await finalizerFixture(async (plan) => {
-        if (residual)
-          await mkdir(join(plan.tempRoot, 'miniflare-negative-control'));
-        const result = await createNativeFinalizer(plan)();
-        assert.deepEqual(failedPhases(result), residual ? ['residual'] : []);
-        assert.equal(result.errors.length, Number(residual));
-        assert.equal(result.phases.snapshot.ok, true);
-        if (residual) {
-          assert.equal(result.phases.removal, undefined);
-          await realpath(plan.scratch);
-        } else {
-          assert.equal(result.phases.removal.ok, true);
-          await assert.rejects(realpath(plan.scratch), { code: 'ENOENT' });
-        }
-      });
-  }
-});
-test('supplier receipt hashes the owning Wrangler dependency without executing it', async () => {
-  const root = await realpath(
-    await mkdtemp(join(tmpdir(), 'native-supplier-control-'))
-  );
-  try {
-    const wrangler = join(root, 'node_modules/wrangler');
-    const mf = join(wrangler, 'node_modules/miniflare');
-    await mkdir(mf, { recursive: true });
-    await writeFile(join(root, 'package.json'), '{}');
-    await writeFile(
-      join(wrangler, 'package.json'),
-      JSON.stringify({ name: 'wrangler', version: '1.2.3', main: 'cli.cjs' })
-    );
-    await writeFile(
-      join(mf, 'package.json'),
-      JSON.stringify({ name: 'miniflare', version: '3.4.5', main: 'index.cjs' })
-    );
-    const bytes = 'throw new Error("supplier execution forbidden");';
-    await writeFile(join(wrangler, 'cli.cjs'), bytes);
-    await writeFile(join(mf, 'index.cjs'), bytes);
-    await mkdir(join(root, 'node_modules/miniflare'));
-    await writeFile(
-      join(root, 'node_modules/miniflare/package.json'),
-      JSON.stringify({ name: 'miniflare', version: '4.0.0', main: 'index.cjs' })
-    );
-    await writeFile(
-      join(root, 'node_modules/miniflare/index.cjs'),
-      'root decoy'
-    );
-    const first = await supplierReceipt(join(root, 'package.json'));
-    assert.equal(first.cliPath, join(wrangler, 'cli.cjs'));
-    assert.equal(first.summary.miniflareVersion, '3.4.5');
-    assert.equal(first.summary.wranglerSha256, first.summary.miniflareSha256);
-    assert.ok(!supplierSummaryLine(first.summary).includes(root));
-    await writeFile(join(mf, 'index.cjs'), `${bytes}\n`);
-    const second = await supplierReceipt(join(root, 'package.json'));
-    assert.notEqual(
-      first.summary.miniflareSha256,
-      second.summary.miniflareSha256
-    );
-    assert.equal(first.summary.wranglerSha256, second.summary.wranglerSha256);
-  } finally {
-    await rm(root, { recursive: true });
   }
 });
 test('actual persistence attempts both destinations and retains all partial-removal errors', async () => {

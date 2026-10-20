@@ -9,11 +9,25 @@ import {
   readFile,
   readlink,
   realpath,
+  stat,
   symlink,
   writeFile,
 } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, relative } from 'node:path';
+import {
+  causes,
+  diagnosticError,
+  emitChildDiagnostics,
+  persistWithSummary,
+  privateDiagnosticJSON,
+  receiptError,
+} from './native-wrangler-diagnostics.mjs';
+import {
+  assertChildTempIsolation,
+  createNativeFinalizer,
+  sealArtifact,
+} from './native-wrangler-runtime.mjs';
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 function outside(root, path) {
@@ -95,7 +109,7 @@ export async function captureDiagnosticSnapshot(plan, records) {
     source,
     'Source changed before deletion'
   );
-  const metadata = JSON.stringify({ version: 1, source, plan, records });
+  const metadata = privateDiagnosticJSON({ version: 1, source, plan, records });
   await writeFile(join(path, 'pre-removal.json'), metadata, {
     flag: 'wx',
     mode: 0o600,
@@ -108,37 +122,11 @@ export async function captureDiagnosticSnapshot(plan, records) {
   return { path, seal: digest(metadata), entries: source.length };
 }
 
-export function diagnosticError(error) {
-  if (!error) return null;
-  return {
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-    code: error.code,
-    text: error.text,
-    residual: error.residual,
-    cause: error.cause ? diagnosticError(error.cause) : null,
-    errors: error.errors?.map(diagnosticError) ?? null,
-  };
-}
-
-export function receiptError(error) {
-  if (!error) return null;
-  const message = (value) =>
-    [
-      value?.name,
-      value?.message,
-      value?.text,
-      value?.cause && message(value.cause),
-      ...(value?.errors ?? []).map(message),
-    ]
-      .filter(Boolean)
-      .join('\n');
-  return {
-    name: String(error.name).slice(0, 128),
-    message: message(error).slice(0, 2048),
-  };
-}
+export {
+  diagnosticError,
+  receiptError,
+  syntaxCauseProjection,
+} from './native-wrangler-diagnostics.mjs';
 
 export function createChildProducer(name) {
   let active, startup, dispose, completion;
@@ -164,6 +152,17 @@ export function createChildProducer(name) {
   return {
     start,
     record,
+    async observeReturnedStartup(load) {
+      const runtime = await start(load);
+      try {
+        await runtime.worker.ready;
+        facts.readyFulfilled = true;
+      } catch (error) {
+        startup = error;
+        facts.readyRejected = true;
+        throw error;
+      }
+    },
     async expectStartup(load, predicate) {
       await assert.rejects(
         async () => {
@@ -205,6 +204,8 @@ export function createChildProducer(name) {
             facts.disposeSettled = true;
           }
         }
+        if (observedCases.has(name) && !primary)
+          facts.predicateMatched = matchesObservedStartup(name, dispose);
         return record(primary);
       })();
       return completion;
@@ -224,14 +225,13 @@ export async function persistFinalization(
     snapshot: result.snapshot ?? null,
     errors: result.errors.map(diagnosticError),
     phases: Object.fromEntries(
-      Object.entries(result.phases).map(([phase, value]) => [
-        phase,
-        {
-          ok: value.ok,
-          error: diagnosticError(value.error),
-          residual: value.error?.residual ?? null,
-        },
-      ])
+      Object.entries(result.phases).map(([phase, value]) => {
+        const error = diagnosticError(value.error);
+        return [
+          phase,
+          { ok: value.ok, error, residual: error?.residual ?? null },
+        ];
+      })
     ),
     persistenceErrors: failures.map(({ destination, error }) => ({
       destination,
@@ -243,7 +243,7 @@ export async function persistFinalization(
     destinations.push(join(result.snapshot.path, 'parent-finalization.json'));
   const verified = [];
   const write = async (destination, flag) => {
-    const bytes = JSON.stringify(record());
+    const bytes = privateDiagnosticJSON(record());
     await io.writeFile(destination, bytes, { flag, mode: 0o600 });
     assert.equal(
       await io.readFile(destination, 'utf8'),
@@ -279,18 +279,67 @@ export async function persistFinalization(
   return record();
 }
 
-const negativeCases = new Set([
+const observedCases = new Set([
   'wrongModule',
-  'syntax',
   'graphEscape',
   'wrongType',
   'nodeBuiltin',
 ]);
+const observedOutcome = 'EXPECTED_USER_STARTUP_REJECTION_OBSERVED';
+export function matchesObservedStartup(name, error) {
+  if (
+    !observedCases.has(name) ||
+    error?.name !== 'MiniflareCoreError [ERR_RUNTIME_FAILURE]' ||
+    error.code !== 'ERR_RUNTIME_FAILURE'
+  )
+    return false;
+  const messages = [error.message];
+  for (const line of String(error.message).split('\n')) {
+    try {
+      const record = JSON.parse(line);
+      if (typeof record?.message === 'string') messages.push(record.message);
+    } catch {
+      /* Public stderr also contains non-JSON lines. */
+    }
+  }
+  const diagnostic = {
+    wrongModule: [
+      'TypeError: WebAssembly.Instance(): Argument 0 must be a WebAssembly.Module',
+      /(?:^|[ (])main\.mjs:2:18(?:[)\s]|$)/,
+    ],
+    graphEscape: [
+      'TypeError: Invalid module specifier "../outside.mjs".',
+      /imported from "main\.mjs"/,
+    ],
+    wrongType: [
+      "SyntaxError: The requested module './message.txt' does not provide an export named 'absent'",
+      /\/artifact\/main\.mjs:1:9(?:[)\s]|$)/,
+    ],
+    nodeBuiltin: [
+      'Error: No such module "node:fs".',
+      /imported from "main\.mjs"/,
+    ],
+  }[name];
+  return messages.some((message) =>
+    String(message)
+      .split('service ')
+      .some((part) => {
+        const lines = part.trim().split('\n');
+        return (
+          lines[0] ===
+            `core:user:native-portable-fixture: Uncaught ${diagnostic[0]}` &&
+          diagnostic[1].test(lines.slice(1).join('\n'))
+        );
+      })
+  );
+}
+
 const factKeys = [
   'disposeAttempted',
   'disposeSettled',
   'predicateMatched',
   'preloadRejected',
+  'readyFulfilled',
   'readyRejected',
   'workerReturned',
 ];
@@ -314,7 +363,11 @@ export function validateReceipt(value, name) {
     assert.equal(typeof value.facts[fact], 'boolean');
   for (const phase of [value.primary, value.dispose, value.startup]) {
     if (phase === null) continue;
-    assert.deepEqual(Object.keys(phase).sort(), ['message', 'name']);
+    assert.deepEqual(Object.keys(phase).sort(), ['code', 'message', 'name']);
+    assert.ok(
+      phase.code === null ||
+        (typeof phase.code === 'string' && phase.code.length <= 128)
+    );
     assert.equal(typeof phase.name, 'string');
     assert.equal(typeof phase.message, 'string');
     assert.ok(phase.name.length <= 128 && phase.message.length <= 2048);
@@ -333,21 +386,23 @@ export function classifyChildReceipt(receipt, name) {
     return 'PROVEN_PRESTART_PRELOAD_REJECTION';
   }
   assert.equal(receipt.facts.preloadRejected, false);
-  if (negativeCases.has(name)) {
-    assert.equal(receipt.primary, null, 'Startup assertion failed');
+  if (name === 'syntax')
+    assert.fail('Syntax REGISTERED NOTPASS; pre-return cleanup UNKNOWN');
+  if (observedCases.has(name)) {
+    assert.equal(receipt.primary, null, 'Unrelated primary failure');
+    assert.equal(receipt.startup, null, 'Unexpected start/ready rejection');
+    assert.equal(receipt.disposeIsStartup, false);
+    for (const key of factKeys)
+      assert.equal(
+        receipt.facts[key],
+        !['preloadRejected', 'readyRejected'].includes(key),
+        key
+      );
     assert.ok(
-      receipt.startup && receipt.dispose,
-      'Missing startup/dispose error'
+      matchesObservedStartup(name, receipt.dispose),
+      'Unmatched public startup diagnostic'
     );
-    for (const key of factKeys.filter((key) => key !== 'preloadRejected'))
-      assert.equal(receipt.facts[key], true, key);
-    // This bit is assigned by object identity in the child, before serialization.
-    assert.equal(
-      receipt.disposeIsStartup,
-      true,
-      'Distinct public dispose error'
-    );
-    return 'EXPECTED_STARTUP_REJECTION';
+    return observedOutcome;
   }
   assert.equal(receipt.primary, null, 'Primary case failed');
   assert.equal(receipt.dispose, null, 'Public disposal failed');
@@ -365,6 +420,80 @@ export function requireChildOutcome(receipt, name, exit) {
   assert.equal(exit.code, 0, 'Unexpected child exit');
   assert.equal(exit.signal, null, 'Child signal');
   return classifyChildReceipt(receipt, name);
+}
+
+export function casePhaseSummary(
+  name,
+  receipt,
+  exit,
+  classification,
+  result,
+  persisted,
+  receiptStatus = 'notrun'
+) {
+  const names = [
+    'wrongModule',
+    'graphEscape',
+    'wrongType',
+    'nodeBuiltin',
+    'syntax',
+    'positive',
+    'sdkResidual',
+    'originalMutation',
+    'copyMutation',
+    'removalFailure',
+    'graphValid',
+    'nodeBuiltinEnabled',
+    'preload',
+  ];
+  const phases = [
+    'residual',
+    'originalSeal',
+    'copySeal',
+    'foreign',
+    'snapshot',
+    'removal',
+  ];
+  const state = (value) =>
+    value === true ? 'ok' : value === false ? 'fail' : 'notrun';
+  const closed =
+    receiptStatus === 'ok' &&
+    classification === observedOutcome &&
+    exit?.code === 0 &&
+    exit.signal === null &&
+    persisted &&
+    result.errors.length === 0 &&
+    phases.every((key) => result.phases[key]?.ok === true);
+  const known = [
+    observedOutcome,
+    'ORDINARY_SUCCESS',
+    'PROVEN_PRESTART_PRELOAD_REJECTION',
+  ];
+  const outcome = closed
+    ? `${observedOutcome}_WITH_CLOSED_PROCESS`
+    : known.includes(classification)
+      ? classification
+      : 'NOTPASS';
+  return [
+    'native-case',
+    `case=${names.includes(name) ? name : 'unknown'}`,
+    `exit=${Number.isInteger(exit?.code) && exit.code >= 0 && exit.code <= 255 ? exit.code : 'unknown'}`,
+    `signal=${exit?.signal === null ? 'null' : 'other'}`,
+    `classification=${outcome}`,
+    `receipt=${['ok', 'fail', 'notrun'].includes(receiptStatus) ? receiptStatus : 'notrun'}`,
+    ...[
+      'workerReturned',
+      'readyFulfilled',
+      'readyRejected',
+      'disposeAttempted',
+      'disposeSettled',
+      'predicateMatched',
+    ].map((key) => `${key}=${state(receipt?.facts?.[key])}`),
+    ...phases.map((key) => `${key}=${state(result.phases[key]?.ok)}`),
+    `snapshotVerified=${state(result.phases.snapshot?.ok === true && Boolean(result.snapshot?.seal))}`,
+    `persistence=${state(persisted)}`,
+    `preReturnCleanup=${name === 'syntax' ? 'UNKNOWN' : 'notrun'}`,
+  ].join(' ');
 }
 
 async function packageMetadata(entry, expectedName) {
@@ -416,4 +545,151 @@ export function supplierSummaryLine(summary) {
     assert.match(summary[key], /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/);
   }
   return `native-suppliers wrangler=${summary.wranglerVersion} sha256=${summary.wranglerSha256} miniflare=${summary.miniflareVersion} sha256=${summary.miniflareSha256}`;
+}
+
+export async function persistCaseFinalization(plan, result, context, summary) {
+  return persistWithSummary(
+    () => persistFinalization(plan, result, context),
+    (persisted) =>
+      console.log(
+        casePhaseSummary(
+          summary.name,
+          summary.receipt,
+          summary.exit,
+          summary.classification,
+          result,
+          persisted,
+          summary.receiptStatus
+        )
+      ),
+    (bytes) =>
+      writeFile(join(plan.caseRoot, 'parent-diagnostic-faults.json'), bytes, {
+        flag: 'wx',
+        mode: 0o600,
+      })
+  );
+}
+
+export async function readReceipt(path, name) {
+  assert.ok((await stat(path)).size <= 8192, 'Oversized child receipt');
+  return validateReceipt(JSON.parse(await readFile(path, 'utf8')), name);
+}
+
+export async function observeCaseReceipt(
+  receiptFile,
+  name,
+  outcome,
+  plan,
+  gates
+) {
+  let classification, receipt;
+  let receiptStatus = 'notrun';
+  try {
+    try {
+      receipt = await readReceipt(receiptFile, name);
+      receiptStatus = 'ok';
+    } catch (error) {
+      receiptStatus = 'fail';
+      throw error;
+    }
+    classification = requireChildOutcome(receipt, name, outcome);
+    if (classification === 'PROVEN_PRESTART_PRELOAD_REJECTION') {
+      await realpath(plan.scratch);
+      assert.deepEqual(await sealArtifact(plan.copyRoot), plan.seal);
+      await assert.rejects(stat(plan.sdkWorkingDir), { code: 'ENOENT' });
+      assert.equal(await readFile(plan.envFile, 'utf8'), '');
+    }
+  } catch (error) {
+    gates.push(error);
+  }
+  return { classification, receipt, receiptStatus };
+}
+
+export async function writeChildDiagnostics(
+  receipt,
+  errors,
+  plan,
+  receiptFile
+) {
+  return emitChildDiagnostics(
+    { receipt, errors, plan },
+    {
+      writePrivate: (name, bytes) =>
+        writeFile(join(process.cwd(), name), bytes, {
+          flag: 'wx',
+          mode: 0o600,
+        }),
+      writeReceipt: (bytes) =>
+        writeFile(receiptFile, bytes, { flag: 'wx', mode: 0o600 }),
+      classify: classifyChildReceipt,
+    }
+  );
+}
+
+export { causes } from './native-wrangler-diagnostics.mjs';
+
+export async function runChildFixture({
+  name,
+  cases,
+  producer,
+  plan,
+  receiptFile,
+}) {
+  let primary;
+  try {
+    await assertChildTempIsolation();
+    assert.ok(Object.hasOwn(cases, name));
+    await cases[name]();
+  } catch (error) {
+    primary = error;
+  }
+  const { receipt, errors } = await producer.finish(primary);
+  const diagnostics = await writeChildDiagnostics(
+    receipt,
+    errors,
+    plan(),
+    receiptFile
+  );
+  if (diagnostics.classificationError || diagnostics.diagnosticFaults.length) {
+    process.exitCode = 1;
+  }
+}
+
+export async function finalizeObservedCase(
+  plan,
+  gates,
+  { name, receipt, outcome, classification, receiptStatus }
+) {
+  const result = await createNativeFinalizer(plan, undefined, {
+    classification,
+    exit: outcome,
+  })(gates);
+  await persistCaseFinalization(
+    plan,
+    result,
+    {
+      exit: outcome
+        ? {
+            code: outcome.code ?? null,
+            signal: outcome.signal ?? null,
+            spawnError: diagnosticError(outcome.error),
+          }
+        : null,
+      classification,
+      gates: gates.map(diagnosticError),
+    },
+    { name, receipt, exit: outcome, classification, receiptStatus }
+  );
+  return result;
+}
+
+export async function observeStartupFailure(producer, load, name, expected) {
+  if (name !== 'syntax') {
+    await producer.observeReturnedStartup(load);
+    return;
+  }
+  await producer.expectStartup(load, (error) => {
+    if (typeof expected === 'function') expected(error);
+    else assert.match(causes(error), expected);
+  });
 }

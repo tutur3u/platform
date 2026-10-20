@@ -169,26 +169,37 @@ and finish under the existing watchdog. Root metadata and provider limits must
 remain unchanged. Real-graph gaps remain for external Workers, nodejs flags and
 named RPC; synthetic tests do not close these gaps.
 
-Public `dispose()` can repeat a startup-ready rejection even after teardown;
-Miniflare can also schedule filesystem removal through `fireAndForget`.
-Awaiting disposal is therefore not a filesystem fence. The isolated harness must
-meet the lifecycle controls below. Source acceptance alone does not establish
-runtime acceptance or clear profile/caller adoption.
+Public `Worker.ready` reports proxy readiness, not successful user-Worker linking.
+For the four allowlisted returned-Worker startup controls (WASM, logical import
+underflow, missing text export and Node builtin), classify the target error only
+if observed from a single public `dispose()`: require the exact public name
+`MiniflareCoreError [ERR_RUNTIME_FAILURE]`, code `ERR_RUNTIME_FAILURE`, and the
+case-specific user-service diagnostic predicate after observation, with fulfilled
+proxy readiness. Preserve the observed error C and all primary, ready and disposal failures separately. Do not
+invent a ready error or error-object identity, or infer generic disposal success.
+Executed evidence qualifies only this isolated harness; caller adoption still
+requires separate real-graph acceptance. Existing NOTPASS records stay unchanged.
 
 For the isolated harness, retain a parent-owned sealed cleanup plan. Observe
-natural child exit and its actual code/signal, then collect residual, original,
+natural child exit and its actual code/signal (require code 0 and null signal),
+then collect residual, original,
 copy and foreign-sentinel proofs independently, even when another phase fails.
 Before deletion, verify a complete diagnostic snapshot outside every removal
 target, including readback and preservation of partial failures. A surviving
 pathname or hash cannot recover deleted bytes. If snapshot verification fails,
-retain the source and stop deletion. Keep the current finite archives
-for parent collection and disposition; do not add automatic sweeps, retries,
-timeouts, controllers or private SDK hooks.
+retain the source and stop deletion. Seal, snapshot, retention, persistence and
+removal closure must all pass independently; a receipt or error alone is not
+closure. Awaited disposal is not a filesystem fence: Miniflare can schedule
+removal through `fireAndForget`. Keep the current finite archives for parent
+collection and disposition; do not add automatic sweeps, retries, timeouts,
+controllers or private SDK hooks.
 
-An expected startup rejection requires an actual returned Worker, the intended
-predicate recorded only after its assertion succeeds, and error-object identity
-proved inside the child. Preserve primary, ready and disposal failures separately.
-These facts are conditional acceptance requirements, not proof that every negative
-public route is reachable. Unknown early startup/teardown failures and stalls
-remain NOTPASS. Private error and snapshot paths are diagnostics only; never stage
-sensitive transcripts. See the CI tooling reference for supplier evidence.
+Public syntax failure before a Worker returns remains NOTPASS with teardown
+unknown until the actual parser cause and independent closure are observed.
+The dedicated preload-control outcome has a different scope; it grants no generic
+missing-Worker waiver. The next bounded CI observation must retain the public
+cause chain and proof-phase states, explicit unknown/missing/truncated fields,
+and normalized path roles while preserving full diagnostics privately. Do not
+infer a parser route or closure from absent public fields. Existing raw NOTPASS
+results remain unchanged. Never stage sensitive transcripts; see the CI tooling
+reference for supplier evidence.
