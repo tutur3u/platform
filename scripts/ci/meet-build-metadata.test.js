@@ -10,6 +10,11 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 const { discoverScriptTests } = require('../run-script-tests');
 const root = resolve(__dirname, '../..');
 const workflow = readWorkflow('meet-cloudflare.yaml');
+const runtimeGateCommands = {
+  validate:
+    'node --test --test-concurrency=1 scripts/ci/meet-cloudflare-render.runtime.mjs scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs',
+  deploy: 'node --test scripts/ci/meet-cloudflare-render.runtime.mjs',
+};
 
 test('Meet generates source metadata before dependency and Worker builds', () => {
   const steps = workflow.jobs.validate.steps;
@@ -192,10 +197,7 @@ function assertMeetArtifactActors(steps) {
     ).length,
     1
   );
-  assert.equal(
-    actors[5].run,
-    'node --test --test-concurrency=1 scripts/ci/meet-cloudflare-render.runtime.mjs scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs'
-  );
+  assert.equal(actors[5].run, runtimeGateCommands.validate);
   assert.match(
     actors[6].run,
     /wrangler deploy --dry-run -c "\$\{\{ steps.meet-output.outputs.config \}\}"/
@@ -419,10 +421,9 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
   );
   assert.ok(!sourceTests.includes(runtimePath));
   assert.ok(!sourceTests.includes('scripts/ci/meet-cloudflare-render.test.js'));
-  for (const name of ['validate', 'deploy']) {
-    const job = workflow.jobs[name];
+  const assertRuntimeGate = (name, job) => {
     const probes = job.steps.filter(
-      (step) => step.run === `node --test ${runtimePath}`
+      (step) => step.run === runtimeGateCommands[name]
     );
     assert.equal(
       probes.length,
@@ -436,6 +437,38 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
     );
     assert.notEqual(probes[0]['continue-on-error'], true);
     assert.notEqual(job['continue-on-error'], true);
+  };
+  for (const name of ['validate', 'deploy']) {
+    const job = workflow.jobs[name];
+    assertRuntimeGate(name, job);
+    const command = runtimeGateCommands[name];
+    const gate = job.steps.find((step) => step.run === command);
+    const withoutGate = job.steps.filter((step) => step !== gate);
+    const rejectedJobs = [
+      { ...job, steps: withoutGate },
+      { ...job, steps: [...job.steps, gate] },
+      { ...job, 'continue-on-error': true },
+      ...[
+        { ...gate, if: 'always()' },
+        { ...gate, 'continue-on-error': true },
+        { ...gate, run: command.replace(runtimePath, '') },
+        {
+          ...gate,
+          run: command.replace(runtimePath, `${runtimePath} ${runtimePath}`),
+        },
+        { ...gate, run: `${command} --test-reporter=spec` },
+        {
+          ...gate,
+          run: runtimeGateCommands[name === 'validate' ? 'deploy' : 'validate'],
+        },
+      ].map((step) => ({ ...job, steps: [...withoutGate, step] })),
+    ];
+    for (const rejectedJob of rejectedJobs) {
+      assert.throws(
+        () => assertRuntimeGate(name, rejectedJob),
+        assert.AssertionError
+      );
+    }
   }
   const typegen = workflow.jobs.validate.steps.find((step) =>
     step.run?.includes('wrangler types --config')
