@@ -121,6 +121,14 @@ permission changes or navigation time.
 The collector uses its existing owned private log checks and 128-KiB tail. Only
 allowlisted stage names, capped started/completed/failed counts and last status
 leave the collector, with at most 256 events and explicit tail/event truncation.
+Completed and failed read durations retain observed/absent/invalid counts and
+maximum milliseconds; a real zero differs from an absent value. Recognized Next
+startup, compilation and type-checking display timings remain separate fixed
+categories. Display decimals convert exactly at their emitted precision. Missing
+compiler timing remains unknown, including webpack paths that emit none. These
+aggregate maxima have no request correlation and must not be added into a
+critical-path estimate. Each summary has an 8192-byte guard with explicit loss
+flags. Timing regressions cover malformed/overflow values and decimal precision.
 No raw log lines, paths, request IDs, user data or error messages are retained.
 Concurrent reads are not request-correlated: unmatched counts or last status
 cannot identify a stalled request, particularly after truncation. Missing stage
