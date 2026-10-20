@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import {
   chmod,
   mkdir,
@@ -31,6 +30,11 @@ import {
   supplierSummaryLine,
 } from './native-wrangler-evidence.mjs';
 import { graphEntry, main, nodeEntry } from './native-wrangler-fixture.mjs';
+import {
+  assertIntendedSyntax,
+  spawnOwnedFixture,
+  syntaxClosed,
+} from './native-wrangler-observable.mjs';
 import {
   prepareNativePlan,
   sealArtifact,
@@ -306,7 +310,14 @@ async function startupFailure(_code, expected, _configure) {
   const options = await fixture();
   const name = process.env.NATIVE_FIXTURE_CASE;
   const run = () => load(options);
-  await observeStartupFailure(producer, run, name, expected);
+  await observeStartupFailure(
+    producer,
+    run,
+    name,
+    name === 'syntax'
+      ? (error) => assertIntendedSyntax(error, childPlan)
+      : expected
+  );
 }
 
 if (process.env.NATIVE_FIXTURE_CASE) {
@@ -594,36 +605,19 @@ if (process.env.NATIVE_FIXTURE_CASE) {
       const gates = [];
       let outcome;
       try {
-        const child = spawn(
-          process.execPath,
-          [fileURLToPath(import.meta.url)],
-          {
-            cwd,
-            env: {
-              ...process.env,
-              NATIVE_FIXTURE_CASE: name,
-              NATIVE_PLAN_FILE: planFile,
-              NATIVE_RECEIPT_FILE: receiptFile,
-              NATIVE_SDK_TEMP_ROOT: tempRoot,
-              TMPDIR: tempRoot,
-              TMP: tempRoot,
-              TEMP: tempRoot,
-              NODE_OPTIONS: '',
-              NODE_PATH: '',
-              CLOUDFLARE_ENV: '',
-              CLOUDFLARE_INCLUDE_PROCESS_ENV: 'false',
-              CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: 'false',
-              WRANGLER_WRITE_LOGS: 'false',
-            },
-            stdio: 'inherit',
-          }
-        );
-        outcome = await new Promise((resolve) => {
-          child.once('error', (error) => resolve({ error }));
-          child.once('exit', (code, signal) => resolve({ code, signal }));
+        outcome = await spawnOwnedFixture({
+          entry: fileURLToPath(import.meta.url),
+          cwd,
+          name,
+          planFile,
+          receiptFile,
+          tempRoot,
         });
         if (outcome.error) gates.push(outcome.error);
-        if (outcome.code !== 0 || outcome.signal !== null)
+        if (
+          name !== 'syntax' &&
+          (outcome.code !== 0 || outcome.signal !== null)
+        )
           gates.push(
             new Error(
               `SDK child exit: code=${outcome.code}, signal=${outcome.signal}`
@@ -684,8 +678,12 @@ if (process.env.NATIVE_FIXTURE_CASE) {
       } else {
         assert.deepEqual(result.errors, []);
         assert.equal(result.phases.removal.ok, true);
+        const observed =
+          name === 'syntax'
+            ? `${syntaxClosed}; internalCleanup=UNKNOWN; descendantClosure=UNKNOWN`
+            : classification;
         t.diagnostic(
-          `${classification}; private diagnostic snapshot: ${result.snapshot.path}`
+          `${observed}; private diagnostic snapshot: ${result.snapshot.path}`
         );
         await rm(cwd, { recursive: true });
       }

@@ -200,8 +200,27 @@ removal through `fireAndForget`. Keep the current finite archives for parent
 collection and disposition; do not add automatic sweeps, retries, timeouts,
 controllers or private SDK hooks.
 
-Public syntax failure before a Worker returns remains NOTPASS with teardown
-unknown until the actual parser cause and independent closure are observed.
+The isolated public SDK harness has one intentional pre-return syntax case:
+`export default = ;` must produce exactly the owned copied-entry compiler
+error `Unexpected "="` at line 1, column 15, with no extra error graph. It may
+report `OBSERVABLE_SYNTAX_REJECTION_WITH_CLOSED_CHILD` only after the parent
+observes natural child `close`, exit 1 with no signal, drained stdout/stderr and
+no spawn/output failure or intervention. Original/copy seals, residual and foreign
+file guards, verified retained snapshot, successful owned-file removal and
+verified finalization persistence must all succeed first. A failed proof retains
+its errors and available evidence; a failed snapshot prevents removal and retains
+the source. Internal cleanup and descendant-process closure remain UNKNOWN.
+This is a distinct observable negative outcome, not ordinary SDK success or proof
+that Wrangler's unobservable internal disposal fulfilled. Every other startup
+failure still fails closed. The existing CI watchdog must continue to fail a
+stuck stage; no timeout, forced exit or retry can qualify this case.
+
+Synthetic controls live in `native-wrangler-observable.test.mjs`, imported by the
+workflow's explicitly named `native-wrangler-runtime.test.mjs` entry. Run that
+entry in CI before reviewing the isolated SDK syntax result. Existing Meet,
+Calendar and Apps application runtime callers require separate qualification
+before adopting this contract.
+
 The dedicated preload-control outcome has a different scope; it grants no generic
 missing-Worker waiver. The next bounded CI observation must retain the public
 cause chain and proof-phase states, explicit unknown/missing/truncated fields,

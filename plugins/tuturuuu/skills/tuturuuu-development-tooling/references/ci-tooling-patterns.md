@@ -246,7 +246,7 @@ compatibility; its absence can fail startup before the intended control. Omitted
 Node flags do not necessarily disable Node support: inspect the effective date,
 flags and selected supplier's default threshold. Keep such thresholds bound to
 that supplier rather than publishing a current-version rule as general policy.
-Meaningful controls must reach their intended boundary; public pre-return syntax remains NOTPASS/unknown pending actual parser cause and closure.
+The isolated syntax case follows the [observable closure contract](../../../../../apps/docs/build/development-tools/without-docker.mdx); preserve its test wiring and keep internal cleanup and descendant closure UNKNOWN. Application caller adoption remains a separate gate.
 The dedicated preload control has a different scope, with no generic missing-Worker waiver. Next CI must bound public cause-chain
 and independent proof-phase observations, normalize path roles, mark unknowns/missing fields/truncation and retain full private evidence.
 Preserve primary errors; receipts or observed errors alone never establish closure. Source assertions do not clear runtime NOTPASS.

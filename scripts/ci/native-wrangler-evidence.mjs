@@ -24,10 +24,15 @@ import {
   receiptError,
 } from './native-wrangler-diagnostics.mjs';
 import {
+  requireSyntaxClosure,
+  requireSyntaxReceipt,
+} from './native-wrangler-observable.mjs';
+import {
   assertChildTempIsolation,
   createNativeFinalizer,
   sealArtifact,
 } from './native-wrangler-runtime.mjs';
+import { casePhaseSummary } from './native-wrangler-summary.mjs';
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 function outside(root, path) {
@@ -386,8 +391,7 @@ export function classifyChildReceipt(receipt, name) {
     return 'PROVEN_PRESTART_PRELOAD_REJECTION';
   }
   assert.equal(receipt.facts.preloadRejected, false);
-  if (name === 'syntax')
-    assert.fail('Syntax REGISTERED NOTPASS; pre-return cleanup UNKNOWN');
+  if (name === 'syntax') return requireSyntaxReceipt(receipt);
   if (observedCases.has(name)) {
     assert.equal(receipt.primary, null, 'Unrelated primary failure');
     assert.equal(receipt.startup, null, 'Unexpected start/ready rejection');
@@ -416,85 +420,17 @@ export function classifyChildReceipt(receipt, name) {
   return 'ORDINARY_SUCCESS';
 }
 export function requireChildOutcome(receipt, name, exit) {
+  if (name === 'syntax') {
+    requireSyntaxClosure(exit);
+    return classifyChildReceipt(receipt, name);
+  }
   assert.ok(exit && !exit.error, 'Child spawn failed');
   assert.equal(exit.code, 0, 'Unexpected child exit');
   assert.equal(exit.signal, null, 'Child signal');
   return classifyChildReceipt(receipt, name);
 }
 
-export function casePhaseSummary(
-  name,
-  receipt,
-  exit,
-  classification,
-  result,
-  persisted,
-  receiptStatus = 'notrun'
-) {
-  const names = [
-    'wrongModule',
-    'graphEscape',
-    'wrongType',
-    'nodeBuiltin',
-    'syntax',
-    'positive',
-    'sdkResidual',
-    'originalMutation',
-    'copyMutation',
-    'removalFailure',
-    'graphValid',
-    'nodeBuiltinEnabled',
-    'preload',
-  ];
-  const phases = [
-    'residual',
-    'originalSeal',
-    'copySeal',
-    'foreign',
-    'snapshot',
-    'removal',
-  ];
-  const state = (value) =>
-    value === true ? 'ok' : value === false ? 'fail' : 'notrun';
-  const closed =
-    receiptStatus === 'ok' &&
-    classification === observedOutcome &&
-    exit?.code === 0 &&
-    exit.signal === null &&
-    persisted &&
-    result.errors.length === 0 &&
-    phases.every((key) => result.phases[key]?.ok === true);
-  const known = [
-    observedOutcome,
-    'ORDINARY_SUCCESS',
-    'PROVEN_PRESTART_PRELOAD_REJECTION',
-  ];
-  const outcome = closed
-    ? `${observedOutcome}_WITH_CLOSED_PROCESS`
-    : known.includes(classification)
-      ? classification
-      : 'NOTPASS';
-  return [
-    'native-case',
-    `case=${names.includes(name) ? name : 'unknown'}`,
-    `exit=${Number.isInteger(exit?.code) && exit.code >= 0 && exit.code <= 255 ? exit.code : 'unknown'}`,
-    `signal=${exit?.signal === null ? 'null' : 'other'}`,
-    `classification=${outcome}`,
-    `receipt=${['ok', 'fail', 'notrun'].includes(receiptStatus) ? receiptStatus : 'notrun'}`,
-    ...[
-      'workerReturned',
-      'readyFulfilled',
-      'readyRejected',
-      'disposeAttempted',
-      'disposeSettled',
-      'predicateMatched',
-    ].map((key) => `${key}=${state(receipt?.facts?.[key])}`),
-    ...phases.map((key) => `${key}=${state(result.phases[key]?.ok)}`),
-    `snapshotVerified=${state(result.phases.snapshot?.ok === true && Boolean(result.snapshot?.seal))}`,
-    `persistence=${state(persisted)}`,
-    `preReturnCleanup=${name === 'syntax' ? 'UNKNOWN' : 'notrun'}`,
-  ].join(' ');
-}
+export { casePhaseSummary } from './native-wrangler-summary.mjs';
 
 async function packageMetadata(entry, expectedName) {
   let directory = dirname(entry);
@@ -644,23 +580,48 @@ export async function runChildFixture({
     primary = error;
   }
   const { receipt, errors } = await producer.finish(primary);
-  const diagnostics = await writeChildDiagnostics(
-    receipt,
-    errors,
-    plan(),
-    receiptFile
-  );
-  if (diagnostics.classificationError || diagnostics.diagnosticFaults.length) {
-    process.exitCode = 1;
+  let diagnostics;
+  try {
+    diagnostics = await writeChildDiagnostics(
+      receipt,
+      errors,
+      plan(),
+      receiptFile
+    );
+  } catch (error) {
+    if (name !== 'syntax') throw error;
+    // Code 1 is reserved for the fully persisted intentional syntax rejection.
+    // A diagnostic failure must remain distinguishable even after receipt write.
+    process.exitCode = 2;
+    try {
+      await writeFile(
+        join(process.cwd(), 'child-finalization-fault.json'),
+        privateDiagnosticJSON({ error: diagnosticError(error) }),
+        { flag: 'wx', mode: 0o600 }
+      );
+    } catch {
+      /* Failed persistence remains NOTPASS; retain the source tree. */
+    }
+    try {
+      console.error('native-child diagnostics=fail classification=NOTPASS');
+    } catch {
+      /* Parent still observes exit 2. */
+    }
+    return;
   }
+  const failed =
+    diagnostics.classificationError || diagnostics.diagnosticFaults.length;
+  if (name === 'syntax') process.exitCode = failed ? 2 : 1;
+  else if (failed) process.exitCode = 1;
 }
 
 export async function finalizeObservedCase(
   plan,
   gates,
-  { name, receipt, outcome, classification, receiptStatus }
+  { name, receipt, outcome, classification, receiptStatus },
+  remove
 ) {
-  const result = await createNativeFinalizer(plan, undefined, {
+  const result = await createNativeFinalizer(plan, remove, {
     classification,
     exit: outcome,
   })(gates);

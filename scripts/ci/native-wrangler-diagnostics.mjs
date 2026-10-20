@@ -145,6 +145,7 @@ const errorKeys = [
   'residual',
   'cause',
   'errors',
+  'detail',
 ];
 const unreadable = new WeakSet();
 function read(object, key) {
