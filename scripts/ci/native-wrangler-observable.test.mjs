@@ -4,7 +4,10 @@ import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { test } from 'node:test';
-import { emitChildDiagnostics } from './native-wrangler-diagnostics.mjs';
+import {
+  emitChildDiagnostics,
+  receiptError,
+} from './native-wrangler-diagnostics.mjs';
 import {
   casePhaseSummary,
   classifyChildReceipt,
@@ -39,7 +42,9 @@ function compilerGraph(plan) {
       },
     ],
   });
-  const startup = new Error('Error starting worker', { cause: compiler });
+  const startup = new Error('An error occurred when starting the server', {
+    cause: compiler,
+  });
   startup.stack += '\n    at startWorker (public-sdk.mjs:1:1)';
   return new Error(
     `Public SDK startup rejected; scratch retained: ${plan.scratch}`,
@@ -626,4 +631,70 @@ test('extra supplier detail fault fails qualification and survives retained diag
     assert.equal(detail.name, 'AggregateError');
     assert.equal(detail.errors[0].message, 'unrelated supplier detail fault');
   });
+});
+
+test('syntax consumer accepts the producer graph format and rejects misleading roots', async () => {
+  await syntaxFixture(async (plan) => {
+    const receipt = await receiptFor(plan);
+    assert.deepEqual(receipt.startup, receiptError(compilerGraph(plan)));
+    assert.equal(
+      /^Public SDK startup rejected; scratch retained: .+$/.test(
+        receipt.startup.message
+      ),
+      false
+    );
+    assert.equal(classifyChildReceipt(receipt, 'syntax'), syntaxPending);
+    const observed = await orchestrate(plan, receipt);
+    assert.deepEqual(observed.gates, []);
+    assert.equal(observed.result.phases.removal.ok, true);
+    assert.ok(summary(observed).includes(syntaxClosed));
+    await assert.rejects(realpath(plan.scratch), { code: 'ENOENT' });
+  });
+  const graphChanges = [
+    (error) => Object.assign(error, { message: 'Unrelated startup' }),
+    (error) => Object.defineProperty(error, 'message', { value: undefined }),
+    (error) => Object.assign(error, { name: 'OtherError' }),
+    (error) => Object.defineProperty(error, 'name', { value: undefined }),
+    (error) => Object.assign(error, { message: `${error.message}\nError` }),
+  ];
+  for (const change of graphChanges) {
+    await syntaxFixture(async (plan) => {
+      const receipt = await receiptFor(plan, change);
+      assert.equal(receipt.facts.predicateMatched, false);
+      assert.throws(() => classifyChildReceipt(receipt, 'syntax'));
+      const observed = await orchestrate(plan, receipt);
+      await assertRetained(plan, observed.result);
+    });
+  }
+  const wireChanges = [
+    (message) => message.replace(/^Error\n/, ''),
+    (message) => message.replace(/Public SDK[^\n]+\n/, ''),
+    (message) => message.split('\n')[1],
+    (message) => `Unrelated startup\n${message}`,
+    (message) =>
+      message.replace(
+        '\nError\nAn error occurred when starting the server',
+        '\nAn error occurred when starting the server'
+      ),
+    (message) => message.replace('\nError\nBuild failed', '\nBuild failed'),
+    (message) =>
+      message.replace(
+        'An error occurred when starting the server',
+        'Unrelated startup'
+      ),
+    (message) =>
+      message.replace(
+        'Build failed with 1 error:',
+        'Build failed with 2 errors:'
+      ),
+  ];
+  for (const change of wireChanges) {
+    await syntaxFixture(async (plan) => {
+      const receipt = await receiptFor(plan);
+      receipt.startup.message = change(receipt.startup.message);
+      assert.throws(() => classifyChildReceipt(receipt, 'syntax'));
+      const observed = await orchestrate(plan, receipt);
+      await assertRetained(plan, observed.result);
+    });
+  }
 });

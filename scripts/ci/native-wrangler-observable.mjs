@@ -66,9 +66,10 @@ export function requireSyntaxReceipt(receipt) {
   assert.equal(receipt.disposeIsStartup, false);
   assert.equal(receipt.startup?.name, 'Error');
   assert.equal(receipt.startup?.code, null);
+  // receiptError serializes names/messages; predicateMatched proves the graph.
   assert.match(
     receipt.startup?.message,
-    /^Public SDK startup rejected; scratch retained: .+$/
+    /^Error\nPublic SDK startup rejected; scratch retained: [^\r\n]+\nError\nAn error occurred when starting the server\nError\nBuild failed with 1 error:/
   );
   for (const [key, value] of Object.entries(receipt.facts))
     assert.equal(value, key === 'predicateMatched', key);

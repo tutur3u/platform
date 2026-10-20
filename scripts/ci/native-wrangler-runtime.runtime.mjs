@@ -397,7 +397,7 @@ if (process.env.NATIVE_FIXTURE_CASE) {
       else {
         const result = await operation;
         const classified = result.classificationError;
-        assert.match(classified.message, /Syntax REGISTERED NOTPASS/);
+        assert.match(classified.message, /Unrelated primary failure/);
         assert.equal(result.errors, errors);
         const privateBytes = persisted.get('child-phase-errors.json');
         assert.doesNotThrow(() => JSON.parse(privateBytes));
