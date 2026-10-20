@@ -116,7 +116,7 @@ jobs:
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test artifact boundary regressions
-        run: node --test scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs
+        run: node --test scripts/ci/calendar-native-artifact.test.mjs scripts/ci/calendar-emitted-defaults.test.mjs scripts/ci/calendar-native-typegen.test.mjs
       - name: Build shared dependencies without a legacy Calendar build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -205,7 +205,18 @@ jobs:
           if-no-files-found: error
       - name: Generate bindings from the actual emitted config
         working-directory: apps/calendar
-        run: bun x --no-install wrangler types --config "${{ steps.output.outputs.config }}" --env-interface CloudflareEnv --include-runtime=false cloudflare-env.d.ts
+        env:
+          CALENDAR_EMITTED_CONFIG: ${{ steps.output.outputs.config }}
+        run: |
+          typegen_dir="$(mktemp -d "${RUNNER_TEMP:?}/calendar-typegen.XXXXXX")"
+          trap 'rm -rf -- "$typegen_dir"' EXIT
+          typegen_file="$typegen_dir/cloudflare-env.d.ts"
+          bun x --no-install wrangler types --config "$CALENDAR_EMITTED_CONFIG" --env-interface CloudflareEnv --include-runtime=false "$typegen_file"
+          if [[ ! -f "$typegen_file" || ! -s "$typegen_file" || -L "$typegen_file" ]]; then
+            printf '%s\n' 'Wrangler did not generate a regular, nonempty bindings file' >&2
+            exit 1
+          fi
+          cp -- "$typegen_file" cloudflare-env.d.ts
       - name: Check Calendar native Worker and affected Web Tasks consumers
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
