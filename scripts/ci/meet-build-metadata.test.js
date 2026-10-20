@@ -194,7 +194,7 @@ function assertMeetArtifactActors(steps) {
   );
   assert.equal(
     actors[5].run,
-    'node --test scripts/ci/meet-cloudflare-render.runtime.mjs'
+    'node --test --test-concurrency=1 scripts/ci/meet-cloudflare-render.runtime.mjs scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs'
   );
   assert.match(
     actors[6].run,

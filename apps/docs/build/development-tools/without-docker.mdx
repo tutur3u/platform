@@ -150,3 +150,21 @@ These observations preserve the original navigation deadline and error. They do
 not prove a load blocker or justify a retry. Helper and result-summary regressions
 cover privacy, framing, limits, cleanup and late callbacks; actual runtime evidence
 still requires the exact-head fixture gate.
+
+## Native Wrangler prototype CI validation
+
+The existing three-minute emitted Start SSR/auth/cookie/rewrite/Live validation
+step additionally selects the synthetic native Wrangler prototype unit and runtime
+suites in the original Node test invocation. File concurrency is one; Node's
+default process isolation is retained. The original runtime suite and all its
+assertions remain selected. The separate restored-runtime production gate is
+unchanged. This adds CI work; duration fit is unproven. Existing 30/60-second
+test limits and the three-minute watchdog remain acceptance requirements.
+
+This covers a prototype only, not caller adoption or an SDK fork. Owned temporary
+negative controls and retention assertions remain unchanged. Tests are UNRUN in
+private preparation. Exact-head CI must prove that all three suites execute even
+when the original Miniflare 5 constructor fails, retain that failure as NOTPASS,
+and finish under the existing watchdog. Root metadata and provider limits must
+remain unchanged. Real-graph gaps remain for external Workers, nodejs flags and
+named RPC; synthetic tests do not close these gaps.

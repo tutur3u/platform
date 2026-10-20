@@ -13,6 +13,9 @@ on:
       - 'bun.lock'
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
+      - 'scripts/ci/native-wrangler-runtime.mjs'
+      - 'scripts/ci/native-wrangler-runtime.test.mjs'
+      - 'scripts/ci/native-wrangler-runtime.runtime.mjs'
       - 'scripts/ci/meet-build-metadata.test.js'
       - 'scripts/ci/verify-meet-start-output*'
       - 'scripts/ci/meet-emitted-defaults.mjs'
@@ -38,6 +41,9 @@ on:
       - 'bun.lock'
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
+      - 'scripts/ci/native-wrangler-runtime.mjs'
+      - 'scripts/ci/native-wrangler-runtime.test.mjs'
+      - 'scripts/ci/native-wrangler-runtime.runtime.mjs'
       - 'scripts/ci/meet-build-metadata.test.js'
       - 'scripts/ci/verify-meet-start-output*'
       - 'scripts/ci/meet-emitted-defaults.mjs'
@@ -285,7 +291,7 @@ jobs:
         timeout-minutes: 3
         env:
           WRANGLER_SEND_METRICS: 'false'
-        run: node --test scripts/ci/meet-cloudflare-render.runtime.mjs
+        run: node --test --test-concurrency=1 scripts/ci/meet-cloudflare-render.runtime.mjs scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs
       - name: Validate both Worker bundles
         run: |
           (cd apps/meet && bun x --no-install wrangler deploy --dry-run -c "${{ steps.meet-output.outputs.config }}")
