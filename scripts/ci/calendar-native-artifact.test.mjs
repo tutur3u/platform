@@ -288,6 +288,12 @@ function calendarActor(job, name) {
 function assertCalendarActors(jobs) {
   for (const job of Object.values(jobs)) {
     assert.equal(job['continue-on-error'], undefined);
+    if (Object.hasOwn(job, 'uses')) {
+      assert.equal(typeof job.uses, 'string');
+      assert.equal(Object.hasOwn(job, 'steps'), false);
+      continue;
+    }
+    assert.ok(Array.isArray(job.steps));
     for (const step of job.steps) {
       assert.equal(step['continue-on-error'], undefined);
       for (const command of (step.run ?? '').split('\n')) {
@@ -428,6 +434,16 @@ test('Calendar actor guards reject missing, moved, duplicate and forged source e
   );
   const { jobs } = readWorkflow('mail-calendar-tasks-builds.yaml');
   assertCalendarActors(jobs);
+  const reusable = { uses: './.github/workflows/ci-check.yml' };
+  assertCalendarActors({ ...jobs, reusable });
+  for (const invalid of [
+    { ...reusable, 'continue-on-error': true },
+    { ...reusable, steps: [] },
+    {},
+    { steps: {} },
+  ]) {
+    assert.throws(() => assertCalendarActors({ ...jobs, invalid }));
+  }
   for (const kind of [
     'removed',
     'moved',
