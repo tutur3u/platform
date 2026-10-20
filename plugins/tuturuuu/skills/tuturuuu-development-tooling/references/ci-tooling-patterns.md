@@ -181,6 +181,10 @@ read-only permissions. Live provider consent/delivery remains a separate check.
   string literals that trip `noTemplateCurlyInString`.
 - Do not remove caching, fail-fast behavior, or security validation silently;
   document the rationale when tooling behavior changes.
+- Hosted profile browser dependency setup uses a step-local `APT_CONFIG` for
+  the runner's signed Ubuntu sources. Preserve signature checks, native browser
+  packages and runner-owned browser downloads; vendor-feed setup errors are not
+  application failures. Require exact-commit CI to verify runner layout and packages.
 - `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,

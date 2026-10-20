@@ -63,10 +63,20 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Install local certificate tooling and sandboxed Chromium
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libnss3-tools
+          # Browser OS packages come from Ubuntu, not the runner's vendor feeds.
+          apt_sources=/etc/apt/sources.list.d/ubuntu.sources
+          test -s "$apt_sources"
+          apt_config=$(mktemp "$RUNNER_TEMP/mail-profile-apt.XXXXXX")
+          trap 'rm -f "$apt_config"' EXIT
+          cat > "$apt_config" <<EOF
+          Dir::Etc::sourcelist "$apt_sources";
+          Dir::Etc::sourceparts "-";
+          EOF
+          sudo env APT_CONFIG="$apt_config" apt-get update
+          sudo env APT_CONFIG="$apt_config" apt-get install -y libnss3-tools
           cd apps/web
-          bun x --no-install playwright install --with-deps chromium
+          sudo env APT_CONFIG="$apt_config" "$BUN_INSTALL/bin/bun" x --no-install playwright install-deps chromium
+          bun x --no-install playwright install chromium
       - name: Provision an authenticated sandbox helper in the exclusive hosted VM
         run: |
           timeout --signal=TERM --kill-after=5 540s sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT,RUNNER_OS,ImageOS /usr/bin/python3 -I scripts/ci/mail-profile-runtime-sandbox-install.py

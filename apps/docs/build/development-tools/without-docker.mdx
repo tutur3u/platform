@@ -111,6 +111,12 @@ anonymous/protected snapshots; they do not prove live database access.
 
 ## Hosted profile await diagnostics
 
+The hosted fixture installs Chromium OS packages through a temporary APT
+configuration selecting the runner's signed Ubuntu sources. Unrelated vendor
+feeds do not participate; missing Ubuntu sources or package failures stop setup.
+Browser downloads run as the runner user. A setup failure before tests produces
+no profile acceptance result, even if the terminal artifact is absent.
+
 The disposable hosted Lettin profile fixture retains fixed server read-stage
 counts in its existing terminal receipt. Profile actor, bindings, creator and
 public-world reads, and workspace layout session, workspace, invitation, list
