@@ -276,6 +276,11 @@ jobs:
         run: bun x --no-install wrangler types --config "${{ steps.meet-output.outputs.config }}" --env-interface CloudflareEnv --include-runtime=false cloudflare-env.d.ts
       - name: Check Worker binding types
         run: bun run --cwd apps/meet cf:typecheck
+      - name: Seal exact-SHA frontend artifact
+        id: meet-canonical-seal
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json
       - name: Verify emitted Start SSR, auth, cookies, rewrites and Live guards
         timeout-minutes: 3
         env:
@@ -285,9 +290,10 @@ jobs:
         run: |
           (cd apps/meet && bun x --no-install wrangler deploy --dry-run -c "${{ steps.meet-output.outputs.config }}")
           bun x --no-install wrangler deploy --dry-run -c apps/meet-realtime/wrangler.jsonc
-      - name: Seal exact-SHA frontend artifact
+      - name: Verify and pack accepted exact-SHA frontend artifact
         run: |
-          node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
           pointer=.wrangler/deploy/config.json
           if [ -f apps/meet/.void/preview-deploy-config.json ]; then
             pointer=.void/preview-deploy-config.json
@@ -299,6 +305,38 @@ jobs:
           path: ${{ runner.temp }}/meet-worker.tar.gz
           include-hidden-files: true
           retention-days: 7
+          if-no-files-found: error
+      - name: Verify and pack failed-job sealed source for debugging
+        id: meet-debug-pack
+        env:
+          WORKFLOW_SOURCE_SHA: ${{ github.workflow_sha }}
+        if: ${{ failure() && steps.meet-canonical-seal.outcome == 'success' }}
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
+          pointer=.wrangler/deploy/config.json
+          if [ -f apps/meet/.void/preview-deploy-config.json ]; then
+            pointer=.void/preview-deploy-config.json
+          fi
+          tar -czf "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" -C apps/meet dist "$pointer" meet-artifact.json
+          verify_dir="$(mktemp -d "${RUNNER_TEMP:?}/meet-debug-verify.XXXXXX")"
+          trap 'rm -rf -- "$verify_dir"' EXIT
+          tar -xzf "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" -C "$verify_dir"
+          cmp "apps/meet/meet-artifact.json" "$verify_dir/meet-artifact.json"
+          node scripts/ci/verify-meet-start-output.js verify "$verify_dir" "$verify_dir/meet-artifact.json"
+          node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
+          printf 'classification=DEBUG sealed source; NOT qualified release\nexpected_source_sha=%s\ncheckout_head=%s\ngithub_sha=%s\nworkflow_source_sha=%s\nevent_name=%s\nrun_id=%s\nrun_attempt=%s\n' "$GITHUB_SHA" "$(git rev-parse HEAD)" "$GITHUB_SHA" "$WORKFLOW_SOURCE_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/meet-debug-sealed-source.txt"
+          sha256sum "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" "apps/meet/meet-artifact.json" >> "$RUNNER_TEMP/meet-debug-sealed-source.txt"
+      - name: Retain failed-job sealed source for debugging
+        if: ${{ failure() && steps.meet-canonical-seal.outcome == 'success' && steps.meet-debug-pack.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meet-debug-sealed-source-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/meet-debug-sealed-source.tar.gz
+            ${{ runner.temp }}/meet-debug-sealed-source.txt
+          retention-days: 3
           if-no-files-found: error
   deploy:
     needs: validate

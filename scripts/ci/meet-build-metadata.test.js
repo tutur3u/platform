@@ -94,41 +94,7 @@ test('Meet qualifies the native artifact and restored runtime before publication
     assert.equal(String(node.with['node-version']), '24.22.0');
   }
   const validate = workflow.jobs.validate.steps;
-  const build = validate.findIndex((step) =>
-    step.with?.command?.includes('bun run build:cloudflare')
-  );
-  const discover = validate.findIndex((step) => step.id === 'meet-output');
-  const types = validate.findIndex((step) =>
-    step.run?.includes('wrangler types --config')
-  );
-  const runtime = validate.findIndex((step) =>
-    step.run?.includes(
-      'node --test scripts/ci/meet-cloudflare-render.runtime.mjs'
-    )
-  );
-  const seal = validate.findIndex((step) =>
-    step.run?.includes('verify-meet-start-output.js seal')
-  );
-  const upload = validate.findIndex(
-    (step) =>
-      step.uses?.startsWith('actions/upload-artifact@') &&
-      step.with?.path === '${{ runner.temp }}/meet-worker.tar.gz'
-  );
-  assert.ok(
-    build >= 0 &&
-      discover > build &&
-      types > discover &&
-      runtime > types &&
-      seal > runtime &&
-      upload > seal
-  );
-  artifactArchiveCommand(validate[seal].run);
-  assert.equal(validate[seal].if, undefined);
-  assert.notEqual(validate[seal]['continue-on-error'], true);
-  assert.equal(
-    validate[upload].with.path,
-    '${{ runner.temp }}/meet-worker.tar.gz'
-  );
+  assertMeetArtifactActors(validate);
   const deploy = workflow.jobs.deploy.steps;
   const restore = deploy.findIndex(
     (step) => step.name === 'Restore and verify exact frontend artifact'
@@ -174,11 +140,195 @@ test('Meet qualifies the native artifact and restored runtime before publication
   assert.notEqual(deploy[restoredRuntime]['continue-on-error'], true);
 });
 
-function artifactArchiveCommand(command) {
-  const [seal, ...archive] = command.trim().split('\n');
+function uniqueActor(steps, name) {
+  const matches = steps.filter((step) => step.name === name);
+  assert.equal(matches.length, 1, `unique actor: ${name}`);
+  return matches[0];
+}
+function assertDebugMetadata(step, app, source) {
+  assert.equal(step.env.WORKFLOW_SOURCE_SHA, '${{ github.workflow_sha }}');
+  const lines = step.run.trim().split('\n');
+  const metadata = lines.filter((line) => line.startsWith('printf '));
+  assert.equal(metadata.length, 1);
   assert.equal(
-    seal,
-    'node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json'
+    metadata[0],
+    `printf 'classification=DEBUG sealed source; NOT qualified release\\nexpected_source_sha=%s\\ncheckout_head=%s\\ngithub_sha=%s\\nworkflow_source_sha=%s\\nevent_name=%s\\nrun_id=%s\\nrun_attempt=%s\\n' "${source}" "$(git rev-parse HEAD)" "$GITHUB_SHA" "$WORKFLOW_SOURCE_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/${app}-debug-sealed-source.txt"`
+  );
+  assert.equal(lines[0], `test "$(git rev-parse HEAD)" = "${source}"`);
+  assert.equal(
+    lines.at(-1),
+    `sha256sum "$RUNNER_TEMP/${app}-debug-sealed-source.tar.gz" "apps/meet/meet-artifact.json" >> "$RUNNER_TEMP/${app}-debug-sealed-source.txt"`
+  );
+}
+function assertMeetArtifactActors(steps) {
+  const names = [
+    'Build the frontend for Workers',
+    'Discover and verify native Void Start output',
+    'Generate emitted Worker binding types',
+    'Check Worker binding types',
+    'Seal exact-SHA frontend artifact',
+    'Verify emitted Start SSR, auth, cookies, rewrites and Live guards',
+    'Validate both Worker bundles',
+    'Verify and pack accepted exact-SHA frontend artifact',
+  ];
+  const actors = names.map((name) => uniqueActor(steps, name));
+  for (let i = 0; i < actors.length; i++) {
+    assert.equal(actors[i].if, undefined);
+    assert.notEqual(actors[i]['continue-on-error'], true);
+    if (i) assert.ok(steps.indexOf(actors[i]) > steps.indexOf(actors[i - 1]));
+  }
+  assert.match(actors[0].with.command, /bun run build:cloudflare/);
+  assert.equal(actors[1].id, 'meet-output');
+  assert.match(actors[2].run, /wrangler types --config/);
+  const seal = actors[4];
+  assert.equal(seal.id, 'meet-canonical-seal');
+  assert.equal(
+    seal.run.trim(),
+    'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"\nnode scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json'
+  );
+  assert.equal(
+    steps.filter((step) =>
+      step.run?.includes('verify-meet-start-output.js seal')
+    ).length,
+    1
+  );
+  assert.equal(
+    actors[5].run,
+    'node --test scripts/ci/meet-cloudflare-render.runtime.mjs'
+  );
+  assert.match(
+    actors[6].run,
+    /wrangler deploy --dry-run -c "\$\{\{ steps.meet-output.outputs.config \}\}"/
+  );
+  assert.match(
+    actors[6].run,
+    /wrangler deploy --dry-run -c apps\/meet-realtime\/wrangler.jsonc/
+  );
+  artifactArchiveCommand(actors[7].run);
+  const uploads = steps.filter(
+    (step) => step.with?.path === '${{ runner.temp }}/meet-worker.tar.gz'
+  );
+  assert.equal(uploads.length, 1);
+  assert.match(
+    uploads[0].uses ?? '',
+    /^actions\/upload-artifact@[a-f0-9]{40}$/
+  );
+  assert.equal(uploads[0].run, undefined);
+  assert.ok(steps.indexOf(uploads[0]) > steps.indexOf(actors[7]));
+  assert.equal(uploads[0].if, undefined);
+  const debug = uniqueActor(
+    steps,
+    'Verify and pack failed-job sealed source for debugging'
+  );
+  assert.equal(debug.id, 'meet-debug-pack');
+  assert.equal(
+    debug.if,
+    "${{ failure() && steps.meet-canonical-seal.outcome == 'success' }}"
+  );
+  assertDebugMetadata(debug, 'meet', '$GITHUB_SHA');
+  const evidence = debug.run
+    .trim()
+    .split('\n')
+    .filter((line) => /^(node scripts\/ci\/verify-meet|tar |cmp )/.test(line));
+  assert.deepEqual(evidence, [
+    'node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json',
+    'tar -czf "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" -C apps/meet dist "$pointer" meet-artifact.json',
+    'tar -xzf "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" -C "$verify_dir"',
+    'cmp "apps/meet/meet-artifact.json" "$verify_dir/meet-artifact.json"',
+    'node scripts/ci/verify-meet-start-output.js verify "$verify_dir" "$verify_dir/meet-artifact.json"',
+    'node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json',
+  ]);
+  const upload = uniqueActor(
+    steps,
+    'Retain failed-job sealed source for debugging'
+  );
+  assert.equal(
+    upload.if,
+    "${{ failure() && steps.meet-canonical-seal.outcome == 'success' && steps.meet-debug-pack.outcome == 'success' }}"
+  );
+  assert.equal(upload.with['retention-days'], 3);
+}
+
+test('Meet artifact actor guards reject removed, moved, duplicate and forged evidence', () => {
+  const original = workflow.jobs.validate.steps;
+  assertMeetArtifactActors(original);
+  const mutations = [
+    (steps) =>
+      steps.splice(
+        steps.findIndex((s) => s.id === 'meet-canonical-seal'),
+        1
+      ),
+    (steps) =>
+      steps.push(uniqueActor(steps, 'Seal exact-SHA frontend artifact')),
+    (steps) => {
+      const i = steps.findIndex((s) => s.id === 'meet-canonical-seal');
+      steps.push(...steps.splice(i, 1));
+    },
+    (steps) => {
+      uniqueActor(
+        steps,
+        'Verify and pack accepted exact-SHA frontend artifact'
+      ).run =
+        'node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json';
+    },
+    (steps) => {
+      uniqueActor(
+        steps,
+        'Verify and pack failed-job sealed source for debugging'
+      ).env.WORKFLOW_SOURCE_SHA = '${{ github.sha }}';
+    },
+    (steps) => {
+      const a = uniqueActor(
+        steps,
+        'Verify and pack failed-job sealed source for debugging'
+      );
+      a.run = a.run.replace('"$GITHUB_EVENT_NAME"', '"$GITHUB_SHA"');
+    },
+    (steps) => {
+      const a = uniqueActor(
+        steps,
+        'Verify and pack failed-job sealed source for debugging'
+      );
+      a.run = a.run.replace('sha256sum', 'echo');
+    },
+  ];
+  mutations.push((steps) => {
+    const actor = uniqueActor(
+      steps,
+      'Verify and pack failed-job sealed source for debugging'
+    );
+    actor.run = actor.run.replace(
+      'cmp "apps/meet/meet-artifact.json"',
+      'echo "apps/meet/meet-artifact.json"'
+    );
+  });
+  mutations.push((steps) => {
+    const actor = uniqueActor(
+      steps,
+      'Verify and pack accepted exact-SHA frontend artifact'
+    );
+    actor.run = actor.run.replace('"$GITHUB_SHA"', '"forged-source"');
+  });
+  mutations.push((steps) => {
+    const upload = steps.find(
+      (step) => step.with?.path === '${{ runner.temp }}/meet-worker.tar.gz'
+    );
+    delete upload.uses;
+    upload.run = 'echo omitted-upload';
+  });
+  for (const mutate of mutations) {
+    const steps = structuredClone(original);
+    mutate(steps);
+    assert.throws(() => assertMeetArtifactActors(steps));
+  }
+});
+
+function artifactArchiveCommand(command) {
+  const [head, verify, ...archive] = command.trim().split('\n');
+  assert.equal(head, 'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"');
+  assert.equal(
+    verify,
+    'node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json'
   );
   assert.equal(
     archive.at(-1),
@@ -197,10 +347,11 @@ function runArchiveTool(command, args, options) {
 }
 
 test('Meet archives either selected pointer and excludes private source files', async () => {
-  const seal = workflow.jobs.validate.steps.find((step) =>
-    step.run?.includes('verify-meet-start-output.js seal')
+  const pack = uniqueActor(
+    workflow.jobs.validate.steps,
+    'Verify and pack accepted exact-SHA frontend artifact'
   );
-  const archive = artifactArchiveCommand(seal.run);
+  const archive = artifactArchiveCommand(pack.run);
   const nativePointer = '.wrangler/deploy/config.json';
   const voidPointer = '.void/preview-deploy-config.json';
   for (const selected of [nativePointer, voidPointer]) {
