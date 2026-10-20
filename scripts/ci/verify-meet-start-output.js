@@ -10,6 +10,11 @@ const {
 } = require('node:fs');
 const { dirname, isAbsolute, relative, resolve, sep } = require('node:path');
 const { isDeepStrictEqual } = require('node:util');
+const {
+  captureNormalization,
+  checkNormalization,
+  checkPolicy,
+} = require('./meet-emitted-defaults.mjs');
 
 const secretNames = [
   'GOOGLE_GENERATIVE_AI_API_KEY',
@@ -98,7 +103,7 @@ function deployPointer(app) {
   return { path, base: dirname(native) };
 }
 
-function validateOutput(appDirectory) {
+function readArtifact(appDirectory) {
   const app = realpathSync(appDirectory);
   const dist = resolve(app, 'dist');
   const { path: redirectPath, base: redirectBase } = deployPointer(app);
@@ -115,60 +120,7 @@ function validateOutput(appDirectory) {
   );
   const configPath = localPath(dist, redirectBase, redirect.configPath);
   const config = readJson(configPath, 'emitted Worker config');
-  for (const [key, expected] of Object.entries(identity)) {
-    equal(config[key], expected, `emitted ${key} drift`);
-  }
-  for (const key of [
-    'd1_databases',
-    'kv_namespaces',
-    'hyperdrive',
-    'queues',
-    'workflows',
-    'dispatch_namespaces',
-    'unsafe',
-    'containers',
-    'vpc_services',
-    'send_email',
-    'ai',
-    'vectorize',
-    'browser',
-    'analytics_engine_datasets',
-    'ratelimits',
-    'mtls_certificates',
-    'pipelines',
-    'secrets_store_secrets',
-    'build',
-    'triggers',
-  ]) {
-    const value = config[key];
-    assert.ok(
-      value === undefined ||
-        (Array.isArray(value) && value.length === 0) ||
-        (value && typeof value === 'object' && Object.keys(value).length === 0),
-      `unexpected emitted resource or build hook: ${key}`
-    );
-  }
-  equal(
-    [...config.secrets.required].sort(),
-    secretNames,
-    'required secret names drift'
-  );
-  equal(Object.keys(config.secrets), ['required']);
-  assert.equal(config.assets.binding, 'ASSETS');
-  assert.equal(
-    config.assets.run_worker_first,
-    true,
-    'all auth/API/SSR requests must reach the Worker before assets'
-  );
-  assert.equal(
-    config.assets.not_found_handling,
-    'none',
-    'SPA fallback is forbidden'
-  );
-  assert.ok(
-    !config.env || Object.keys(config.env).length === 0,
-    'named deployment environments are forbidden'
-  );
+  checkPolicy(config, identity, secretNames);
   const main = localPath(dist, dirname(configPath), config.main);
   assert.ok(lstatSync(main).isFile(), 'emitted Worker entry must exist');
   const assets = localPath(dist, dirname(configPath), config.assets.directory);
@@ -201,45 +153,154 @@ function fileHashes(app) {
   return hashes;
 }
 
-function artifactManifest(appDirectory, sha) {
+function expectedSha(sha) {
   assert.match(sha ?? '', /^[a-f0-9]{40}$/, 'exact source SHA is required');
-  const { app, configPath } = validateOutput(appDirectory);
+}
+function sealPath(app) {
+  return resolve(app, 'meet-artifact.json');
+}
+function sealExists(app) {
+  try {
+    const path = sealPath(app);
+    const stat = lstatSync(path);
+    assert.ok(
+      stat.isFile() && !stat.isSymbolicLink() && realpathSync(path) === path,
+      'artifact seal must be a canonical regular file'
+    );
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+function artifactManifest(appDirectory, sha) {
+  expectedSha(sha);
+  const artifact = readArtifact(appDirectory);
+  const normalization = captureNormalization(
+    artifact.app,
+    artifact.config,
+    identity,
+    secretNames
+  );
   return {
-    schema: 1,
+    schema: 2,
     sha,
-    config: relative(app, configPath).split(sep).join('/'),
-    files: fileHashes(app),
+    config: relative(artifact.app, artifact.configPath).split(sep).join('/'),
+    files: fileHashes(artifact.app),
+    normalization,
   };
 }
-
 function verifyManifest(appDirectory, manifest, sha) {
+  expectedSha(sha);
+  assert.ok(
+    manifest && typeof manifest === 'object' && !Array.isArray(manifest),
+    'invalid artifact manifest'
+  );
   equal(
-    artifactManifest(appDirectory, sha),
-    manifest,
+    Object.keys(manifest).sort(),
+    ['config', 'files', 'normalization', 'schema', 'sha'],
+    'invalid artifact manifest fields'
+  );
+  equal(manifest.schema, 2, 'unsupported artifact manifest schema');
+  equal(manifest.sha, sha, 'artifact source SHA mismatch');
+  const app = realpathSync(appDirectory);
+  assert.ok(
+    manifest.files &&
+      typeof manifest.files === 'object' &&
+      !Array.isArray(manifest.files),
+    'invalid file hashes'
+  );
+  assert.ok(
+    Object.values(manifest.files).every(
+      (value) => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+    ),
+    'invalid file hashes'
+  );
+  // Authenticate the complete archive before using the original sealed metadata.
+  equal(
+    fileHashes(app),
+    manifest.files,
     'restored artifact differs from the qualified exact-SHA artifact'
   );
+  const artifact = readArtifact(app);
+  equal(
+    relative(app, artifact.configPath).split(sep).join('/'),
+    manifest.config,
+    'artifact config mismatch'
+  );
+  checkNormalization(artifact.config, manifest.normalization);
+  return artifact;
+}
+function validateOutput(
+  appDirectory,
+  { sha = process.env.GITHUB_SHA, mode = 'auto' } = {}
+) {
+  assert.ok(
+    ['auto', 'restore-required'].includes(mode),
+    'unsupported artifact lifecycle'
+  );
+  const app = realpathSync(appDirectory);
+  if (sealExists(app))
+    return verifyManifest(
+      app,
+      readJson(sealPath(app), 'artifact manifest'),
+      sha
+    );
+  assert.notEqual(mode, 'restore-required', 'artifact seal is required');
+  const artifact = readArtifact(app);
+  captureNormalization(app, artifact.config, identity, secretNames);
+  return artifact;
 }
 
 if (require.main === module) {
-  const [mode, directory, receipt] = process.argv.slice(2);
-  if (mode === 'seal') {
-    writeFileSync(
-      receipt,
-      `${JSON.stringify(artifactManifest(directory, process.env.GITHUB_SHA), null, 2)}\n`
-    );
-  } else if (mode === 'verify') {
-    verifyManifest(
-      directory,
-      readJson(receipt, 'artifact manifest'),
-      process.env.GITHUB_SHA
-    );
-  } else if (mode === 'config') {
-    const { configPath } = validateOutput(directory);
-    if (process.env.GITHUB_OUTPUT)
-      appendFileSync(process.env.GITHUB_OUTPUT, `config=${configPath}\n`);
-    else process.stdout.write(`${configPath}\n`);
-  } else {
-    throw new Error('Expected seal, verify or config');
+  try {
+    const [mode, directory, receipt] = process.argv.slice(2);
+    if (mode === 'seal') {
+      equal(
+        resolve(receipt),
+        sealPath(realpathSync(directory)),
+        'unexpected artifact seal location'
+      );
+      if (sealExists(realpathSync(directory)))
+        throw new Error('artifact is already sealed');
+      writeFileSync(
+        receipt,
+        `${JSON.stringify(artifactManifest(directory, process.env.GITHUB_SHA), null, 2)}\n`
+      );
+    } else if (mode === 'verify') {
+      equal(
+        resolve(receipt),
+        sealPath(realpathSync(directory)),
+        'unexpected artifact seal location'
+      );
+      assert.ok(
+        sealExists(realpathSync(directory)),
+        'artifact seal is required'
+      );
+      verifyManifest(
+        directory,
+        readJson(receipt, 'artifact manifest'),
+        process.env.GITHUB_SHA
+      );
+    } else if (mode === 'config' || mode === 'config-restored') {
+      const { configPath } = validateOutput(directory, {
+        mode: mode === 'config-restored' ? 'restore-required' : 'auto',
+      });
+      if (process.env.GITHUB_OUTPUT)
+        appendFileSync(process.env.GITHUB_OUTPUT, `config=${configPath}\n`);
+      else process.stdout.write(`${configPath}\n`);
+    } else {
+      throw new Error('Expected seal, verify or config');
+    }
+  } catch (error) {
+    const message =
+      /^meet_normalization:(candidate|inputrelation|type|profilematch|hashrace|unexpectedkeycount):[A-Za-z0-9_]+$/.test(
+        error.message
+      )
+        ? error.message
+        : 'meet_artifact:rejected';
+    process.stderr.write(`${message}\n`);
+    process.exitCode = 1;
   }
 }
 

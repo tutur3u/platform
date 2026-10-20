@@ -366,3 +366,31 @@ test('Meet workflow contracts run in a clean snapshot without Node dependencies'
     await rm(snapshot, { recursive: true, force: true });
   }
 });
+
+test('Meet exact normalization helper and public probe changes select both workflow triggers', () => {
+  for (const trigger of ['pull_request', 'push']) {
+    for (const path of [
+      'scripts/ci/meet-emitted-defaults.mjs',
+      'scripts/ci/native-config-default-probe.mjs',
+    ]) {
+      assert.ok(workflow.on[trigger].paths.includes(path));
+    }
+  }
+  const deploy = workflow.jobs.deploy.steps;
+  const discovery = deploy.find(
+    (step) => step.name === 'Discover restored native Void Start output'
+  );
+  assert.equal(
+    discovery.run,
+    'node scripts/ci/verify-meet-start-output.js config-restored apps/meet'
+  );
+  const validation = workflow.jobs.validate.steps;
+  assert.ok(
+    validation.some(
+      (step) =>
+        step.run?.includes(
+          'node --test scripts/ci/meet-build-metadata.test.js'
+        ) && step.run.includes('scripts/ci/verify-meet-start-output.test.js')
+    )
+  );
+});

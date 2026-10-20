@@ -68,6 +68,22 @@ output before publishing those exact bytes with the app-local Wrangler adapter.
 Void CLI deployment is not interchangeable: the released CLI rebuilds, prepares
 additional output and cannot preserve this targeted-placement path.
 
+Live qualification validates the materialized input and emitted config against
+Meet's fixed resource policy and pinned supplier/parser profiles. It measures
+materializer and loader-selection facts twice, rejects typed-source, input or
+profile drift, and admits only explicit default representations. Empty queue
+producer/consumer lists cannot authorize a queue; existing bindings, migration
+history and placement remain exact. Inspect the bounded field-rejection reason
+when qualification fails; diagnostic absence does not approve a value.
+
+The schema-2 artifact seal retains the original input path/hash, platform and
+qualification profile alongside exact output hashes. Restored discovery requires
+the seal, external expected SHA and complete file hashes before policy checks.
+It compares historical metadata without opening or rebasing the original input
+path and never falls back after a malformed seal. Raw emitted config bytes stay
+unchanged. This relationship does not prove historical retained-state provenance.
+Regression coverage is in `scripts/ci/verify-meet-start-output.test.js`.
+
 After qualification, collect `native-emitted-config-meet.json` even on failure. Keep the actual source HEAD
 separate from the event SHA. Retain pointer and config hashes and a redacted key-shape inventory, never raw
 configs, resource identifiers, or secret values. Unavailable or overflow diagnostics remain failures. The

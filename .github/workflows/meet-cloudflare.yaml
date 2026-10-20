@@ -15,6 +15,8 @@ on:
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
       - 'scripts/ci/meet-build-metadata.test.js'
       - 'scripts/ci/verify-meet-start-output*'
+      - 'scripts/ci/meet-emitted-defaults.mjs'
+      - 'scripts/ci/native-config-default-probe.mjs'
       - 'scripts/ci/workflow-yaml-test-helper.js'
       - 'scripts/ci/verify-meet-build-info*'
       - 'scripts/ci/generate-build-metadata*'
@@ -36,6 +38,8 @@ on:
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
       - 'scripts/ci/meet-build-metadata.test.js'
       - 'scripts/ci/verify-meet-start-output*'
+      - 'scripts/ci/meet-emitted-defaults.mjs'
+      - 'scripts/ci/native-config-default-probe.mjs'
       - 'scripts/ci/workflow-yaml-test-helper.js'
       - 'scripts/ci/verify-meet-build-info*'
       - 'scripts/ci/generate-build-metadata*'
@@ -323,7 +327,7 @@ jobs:
           node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
       - name: Discover restored native Void Start output
         id: meet-output
-        run: node scripts/ci/verify-meet-start-output.js config apps/meet
+        run: node scripts/ci/verify-meet-start-output.js config-restored apps/meet
       - name: Dry-run restored frontend artifact
         working-directory: apps/meet
         run: bun x --no-install wrangler deploy --dry-run -c "${{ steps.meet-output.outputs.config }}"
