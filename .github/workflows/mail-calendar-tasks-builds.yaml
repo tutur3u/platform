@@ -227,6 +227,7 @@ jobs:
         working-directory: apps/calendar
         run: bun x --no-install wrangler deploy --dry-run --config "${{ steps.output.outputs.config }}" --outdir "$RUNNER_TEMP/calendar-dry-run"
       - name: Seal source and emitted artifact identity
+        id: calendar-canonical-seal
         run: node scripts/ci/calendar-native-artifact.mjs seal apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
       - name: Exercise exact emitted Worker public routes
         timeout-minutes: 3
@@ -248,6 +249,38 @@ jobs:
           path: ${{ runner.temp }}/calendar-worker.tar.gz
           include-hidden-files: true
           retention-days: 7
+          if-no-files-found: error
+      - name: Verify and pack failed-job sealed source for debugging
+        id: calendar-debug-pack
+        env:
+          WORKFLOW_SOURCE_SHA: ${{ github.workflow_sha }}
+        if: ${{ failure() && steps.calendar-canonical-seal.outcome == 'success' }}
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+          pointer=.wrangler/deploy/config.json
+          if [ -f apps/calendar/.void/preview-deploy-config.json ]; then
+            pointer=.void/preview-deploy-config.json
+          fi
+          tar -czf "$RUNNER_TEMP/calendar-debug-sealed-source.tar.gz" -C apps/calendar dist "$pointer" cloudflare-env.d.ts calendar-artifact.json
+          verify_dir="$(mktemp -d "${RUNNER_TEMP:?}/calendar-debug-verify.XXXXXX")"
+          trap 'rm -rf -- "$verify_dir"' EXIT
+          tar -xzf "$RUNNER_TEMP/calendar-debug-sealed-source.tar.gz" -C "$verify_dir"
+          cmp "apps/calendar/calendar-artifact.json" "$verify_dir/calendar-artifact.json"
+          node scripts/ci/calendar-native-artifact.mjs verify "$verify_dir" "$SOURCE_SHA" "$verify_dir/calendar-artifact.json"
+          node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+          printf 'classification=DEBUG sealed source; NOT qualified release\nexpected_source_sha=%s\ncheckout_head=%s\ngithub_sha=%s\nworkflow_source_sha=%s\nevent_name=%s\nrun_id=%s\nrun_attempt=%s\n' "$SOURCE_SHA" "$(git rev-parse HEAD)" "$GITHUB_SHA" "$WORKFLOW_SOURCE_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/calendar-debug-sealed-source.txt"
+          sha256sum "$RUNNER_TEMP/calendar-debug-sealed-source.tar.gz" "apps/calendar/calendar-artifact.json" >> "$RUNNER_TEMP/calendar-debug-sealed-source.txt"
+      - name: Retain failed-job sealed source for debugging
+        if: ${{ failure() && steps.calendar-canonical-seal.outcome == 'success' && steps.calendar-debug-pack.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-debug-sealed-source-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/calendar-debug-sealed-source.tar.gz
+            ${{ runner.temp }}/calendar-debug-sealed-source.txt
+          retention-days: 3
           if-no-files-found: error
   calendar-artifact-restore:
     needs: calendar-native

@@ -104,41 +104,21 @@ for (const change of [
       put('.wrangler/deploy/config.json', pointer);
       assert.throws(() => validateOutput(app));
     }));
-for (const change of [
-  (c) => {
-    c.name = 'other';
-  },
-  (c) => {
-    c.account_id = 'invented';
-  },
-  (c) => {
-    c.routes = [{ pattern: 'calendar.invalid' }];
-  },
-  (c) => {
-    c.workers_dev = true;
-  },
-  (c) => {
-    c.assets.run_worker_first = false;
-  },
-  (c) => {
-    c.assets.not_found_handling = 'single-page-application';
-  },
-  (c) => {
-    c.triggers = { crons: ['* * * * *'] };
-  },
-  (c) => {
-    c.services = [{ binding: 'NEW_SERVICE', service: 'new' }];
-  },
-  (c) => {
-    c.build = { command: 'void deploy' };
-  },
-  (c) => {
-    c.secrets = { required: ['UNREVIEWED_SECRET'] };
-  },
+for (const [field, value] of [
+  ['name', 'other'],
+  ['account_id', 'invented'],
+  ['routes', [{ pattern: 'calendar.invalid' }]],
+  ['workers_dev', true],
+  ['assets.run_worker_first', false],
+  ['assets.not_found_handling', 'single-page-application'],
+  ['triggers', { crons: ['* * * * *'] }],
+  ['services', [{ binding: 'NEW_SERVICE', service: 'new' }]],
+  ['build', { command: 'void deploy' }],
+  ['secrets', { required: ['UNREVIEWED_SECRET'] }],
 ])
-  test(`reject unqualified config ${change.toString()}`, () =>
+  test(`reject unqualified config ${field}`, () =>
     fixture(({ app, put, config }) => {
-      change(config);
+      changeField(config, field, value);
       put('dist/server/wrangler.json', config);
       assert.throws(() => manifest(app, sha));
     }));
@@ -183,37 +163,10 @@ test('source-only discovery excludes mandatory artifact runtime suites', async (
   const tests = discoverScriptTests();
   assert.ok(tests.includes('scripts/ci/calendar-native-artifact.test.mjs'));
   assert.ok(!tests.includes('scripts/ci/calendar-native-worker.runtime.mjs'));
-  const workflow = readFileSync(
-    new URL(
-      '../../.github/workflows/mail-calendar-tasks-builds.yaml',
-      import.meta.url
-    ),
-    'utf8'
+  const { readWorkflow } = createRequire(import.meta.url)(
+    './workflow-yaml-test-helper.js'
   );
-  assert.equal(
-    (
-      workflow.match(
-        /node scripts\/ci\/calendar-native-worker\.runtime\.mjs "\$SOURCE_SHA"/g
-      ) ?? []
-    ).length,
-    2
-  );
-  assert.equal(
-    (
-      workflow.match(
-        /node --test src\/runtime\/offline-artifact\.runtime\.mjs/g
-      ) ?? []
-    ).length,
-    2
-  );
-  assert.doesNotMatch(
-    workflow,
-    /continue-on-error|wrangler deploy(?! --dry-run)/
-  );
-  assert.match(
-    workflow,
-    /SOURCE_SHA: \$\{\{ github.event.pull_request.head.sha \|\| github.sha \}\}/
-  );
+  assertCalendarActors(readWorkflow('mail-calendar-tasks-builds.yaml').jobs);
 });
 
 test('accept the owning Cloudflare Vite 1.64 prebundled ESModule output shape', () =>
@@ -225,77 +178,28 @@ test('accept the owning Cloudflare Vite 1.64 prebundled ESModule output shape', 
     ]);
     assert.equal(manifest(app, sha).main, 'dist/server/worker.js');
   }));
-for (const [label, change] of [
-  [
-    'missing no_bundle',
-    (c) => {
-      delete c.no_bundle;
-    },
-  ],
-  [
-    'bundle enabled',
-    (c) => {
-      c.no_bundle = false;
-    },
-  ],
-  [
-    'string no_bundle',
-    (c) => {
-      c.no_bundle = 'true';
-    },
-  ],
-  [
-    'missing rules',
-    (c) => {
-      delete c.rules;
-    },
-  ],
-  [
-    'empty rules',
-    (c) => {
-      c.rules = [];
-    },
-  ],
-  [
-    'CommonJS rule',
-    (c) => {
-      c.rules[0].type = 'CommonJS';
-    },
-  ],
-  [
-    'missing mjs glob',
-    (c) => {
-      c.rules[0].globs = ['**/*.js'];
-    },
-  ],
-  [
-    'extra wildcard glob',
-    (c) => {
-      c.rules[0].globs.push('**/*');
-    },
-  ],
-  [
-    'extra module rule',
-    (c) => {
-      c.rules.push({ type: 'Text', globs: ['**/*.txt'] });
-    },
-  ],
-  [
-    'extra fallthrough property',
-    (c) => {
-      c.rules[0].fallthrough = true;
-    },
-  ],
-  [
-    'extra rule property',
-    (c) => {
-      c.rules[0].unexpected = true;
-    },
-  ],
+function changeField(config, field, value) {
+  const keys = field.split('.');
+  const target = keys.slice(0, -1).reduce((node, key) => node[key], config);
+  if (value === undefined) delete target[keys.at(-1)];
+  else target[keys.at(-1)] = value;
+}
+for (const [label, field, value] of [
+  ['missing no_bundle', 'no_bundle', undefined],
+  ['bundle enabled', 'no_bundle', false],
+  ['string no_bundle', 'no_bundle', 'true'],
+  ['missing rules', 'rules', undefined],
+  ['empty rules', 'rules', []],
+  ['CommonJS rule', 'rules.0.type', 'CommonJS'],
+  ['missing mjs glob', 'rules.0.globs', ['**/*.js']],
+  ['extra wildcard glob', 'rules.0.globs.2', '**/*'],
+  ['extra module rule', 'rules.1', { type: 'Text', globs: ['**/*.txt'] }],
+  ['extra fallthrough property', 'rules.0.fallthrough', true],
+  ['extra rule property', 'rules.0.unexpected', true],
 ])
   test(`reject unsafe or noncanonical emitter shape: ${label}`, () =>
     fixture(({ app, put, config }) => {
-      change(config);
+      changeField(config, field, value);
       put('dist/server/wrangler.json', config);
       assert.throws(() => validateOutput(app));
     }));
@@ -376,27 +280,197 @@ test('actual Worker-suite CLI rejects a missing SHA before artifact or runtime s
   assert.equal(result.status, 1);
   assert.match(result.stderr, /exact source SHA required/);
 });
-test('all actual artifact and Worker workflow calls carry the selected SHA argument', async () => {
+function calendarActor(job, name) {
+  const actors = job.steps.filter((step) => step.name === name);
+  assert.equal(actors.length, 1, `unique actor: ${name}`);
+  return actors[0];
+}
+function assertCalendarActors(jobs) {
+  for (const job of Object.values(jobs)) {
+    assert.equal(job['continue-on-error'], undefined);
+    for (const step of job.steps) {
+      assert.equal(step['continue-on-error'], undefined);
+      for (const command of (step.run ?? '').split('\n')) {
+        if (command.includes('wrangler deploy'))
+          assert.match(command, /wrangler deploy --dry-run/);
+      }
+    }
+  }
+  const cli = 'node scripts/ci/calendar-native-artifact.mjs';
+  for (const name of ['calendar-native', 'calendar-artifact-restore']) {
+    const job = jobs[name];
+    assert.equal(
+      job.env.SOURCE_SHA,
+      `\${{ github.event.pull_request.head.sha || github.sha }}`
+    );
+    const calls = job.steps
+      .flatMap((step) => (step.run ?? '').split('\n'))
+      .filter((line) =>
+        /node scripts\/ci\/calendar-native-(artifact|worker)/.test(line)
+      );
+    for (const call of calls) assert.match(call, /"\$SOURCE_SHA"/);
+    const identity = calendarActor(
+      job,
+      name === 'calendar-native'
+        ? 'Assert source and toolchain identity'
+        : 'Assert restored-job source and toolchain identity'
+    );
+    assert.equal(
+      identity.run.trim().split('\n')[0],
+      'test "$(git rev-parse HEAD)" = "$SOURCE_SHA"'
+    );
+    assert.equal(identity.if, undefined);
+    assert.equal(identity['continue-on-error'], undefined);
+  }
+  const restored = jobs['calendar-artifact-restore'];
+  for (const [name, command] of [
+    [
+      'Verify exact source seal after relocation',
+      `${cli} verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json`,
+    ],
+    ['Discover restored config', `${cli} config apps/calendar "$SOURCE_SHA"`],
+    [
+      'Recheck actual restored Worker public routes',
+      'node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"',
+    ],
+    [
+      'Recheck restored offline asset behavior',
+      'node --test src/runtime/offline-artifact.runtime.mjs',
+    ],
+    [
+      'Verify final restored artifact seal',
+      `${cli} verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json`,
+    ],
+  ]) {
+    const actor = calendarActor(restored, name);
+    assert.equal(actor.run, command);
+    assert.equal(actor.if, undefined);
+    assert.equal(actor['continue-on-error'], undefined);
+  }
+  const job = jobs['calendar-native'];
+  const names = [
+    'Discover and qualify emitted Worker config',
+    'Seal source and emitted artifact identity',
+    'Exercise exact emitted Worker public routes',
+    'Exercise exact emitted offline asset',
+    'Verify runtime checks left the sealed artifact unchanged',
+  ];
+  const actors = names.map((name) => calendarActor(job, name));
+  actors.forEach((step, i) => {
+    assert.equal(step.if, undefined);
+    assert.equal(step['continue-on-error'], undefined);
+    if (i)
+      assert.ok(job.steps.indexOf(step) > job.steps.indexOf(actors[i - 1]));
+  });
+  assert.equal(actors[0].run, `${cli} config apps/calendar "$SOURCE_SHA"`);
+  assert.equal(actors[1].id, 'calendar-canonical-seal');
+  assert.equal(
+    actors[1].run,
+    `${cli} seal apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json`
+  );
+  assert.equal(
+    actors[2].run,
+    'node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"'
+  );
+  assert.equal(
+    actors[3].run,
+    'node --test src/runtime/offline-artifact.runtime.mjs'
+  );
+  assert.equal(
+    actors[4].run.trim().split('\n')[0],
+    `${cli} verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json`
+  );
+  const debug = calendarActor(
+    job,
+    'Verify and pack failed-job sealed source for debugging'
+  );
+  assert.equal(debug.id, 'calendar-debug-pack');
+  assert.equal(
+    debug.if,
+    `\${{ failure() && steps.calendar-canonical-seal.outcome == 'success' }}`
+  );
+  assert.equal(debug.env.WORKFLOW_SOURCE_SHA, `\${{ github.workflow_sha }}`);
+  const lines = debug.run.trim().split('\n');
+  assert.equal(lines[0], 'test "$(git rev-parse HEAD)" = "$SOURCE_SHA"');
+  const evidence = lines.filter(
+    (line) => line.startsWith(cli) || /^(tar |cmp )/.test(line)
+  );
+  assert.deepEqual(evidence, [
+    `${cli} verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json`,
+    'tar -czf "$RUNNER_TEMP/calendar-debug-sealed-source.tar.gz" -C apps/calendar dist "$pointer" cloudflare-env.d.ts calendar-artifact.json',
+    'tar -xzf "$RUNNER_TEMP/calendar-debug-sealed-source.tar.gz" -C "$verify_dir"',
+    'cmp "apps/calendar/calendar-artifact.json" "$verify_dir/calendar-artifact.json"',
+    `${cli} verify "$verify_dir" "$SOURCE_SHA" "$verify_dir/calendar-artifact.json"`,
+    `${cli} verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json`,
+  ]);
+  assert.equal(
+    lines.at(-2),
+    'printf \'classification=DEBUG sealed source; NOT qualified release\\nexpected_source_sha=%s\\ncheckout_head=%s\\ngithub_sha=%s\\nworkflow_source_sha=%s\\nevent_name=%s\\nrun_id=%s\\nrun_attempt=%s\\n\' "$SOURCE_SHA" "$(git rev-parse HEAD)" "$GITHUB_SHA" "$WORKFLOW_SOURCE_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/calendar-debug-sealed-source.txt"'
+  );
+  assert.equal(
+    lines.at(-1),
+    'sha256sum "$RUNNER_TEMP/calendar-debug-sealed-source.tar.gz" "apps/calendar/calendar-artifact.json" >> "$RUNNER_TEMP/calendar-debug-sealed-source.txt"'
+  );
+  const upload = calendarActor(
+    job,
+    'Retain failed-job sealed source for debugging'
+  );
+  assert.equal(
+    upload.if,
+    `\${{ failure() && steps.calendar-canonical-seal.outcome == 'success' && steps.calendar-debug-pack.outcome == 'success' }}`
+  );
+  assert.equal(upload.with['retention-days'], 3);
+}
+test('Calendar actor guards reject missing, moved, duplicate and forged source evidence', async () => {
   const { createRequire } = await import('node:module');
   const { readWorkflow } = createRequire(import.meta.url)(
     './workflow-yaml-test-helper.js'
   );
   const { jobs } = readWorkflow('mail-calendar-tasks-builds.yaml');
-  for (const name of ['calendar-native', 'calendar-artifact-restore']) {
-    const job = jobs[name];
-    assert.match(
-      job.env.SOURCE_SHA,
-      /^\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}$/
+  assertCalendarActors(jobs);
+  for (const kind of [
+    'removed',
+    'moved',
+    'duplicate',
+    'source',
+    'workflow',
+    'receipt',
+    'event',
+    'hash',
+    'build-continue',
+    'build-step-continue',
+    'build-deploy',
+  ]) {
+    const copy = structuredClone(jobs),
+      job = copy['calendar-native'];
+    const seal = calendarActor(
+      job,
+      'Seal source and emitted artifact identity'
     );
-    const commands = job.steps.flatMap((step) => (step.run ?? '').split('\n'));
-    const calls = commands.filter((line) =>
-      /node scripts\/ci\/calendar-native-(artifact|worker)/.test(line)
+    const debug = calendarActor(
+      job,
+      'Verify and pack failed-job sealed source for debugging'
     );
-    assert.equal(calls.length, 4);
-    for (const command of calls) assert.match(command, /"\$SOURCE_SHA"/);
-    assert.ok(
-      commands.includes('test "$(git rev-parse HEAD)" = "$SOURCE_SHA"')
-    );
+    if (kind === 'removed') job.steps.splice(job.steps.indexOf(seal), 1);
+    if (kind === 'moved') {
+      job.steps.splice(job.steps.indexOf(seal), 1);
+      job.steps.push(seal);
+    }
+    if (kind === 'duplicate') job.steps.push(seal);
+    if (kind === 'source')
+      debug.run = debug.run.replaceAll('"$SOURCE_SHA"', '"$GITHUB_SHA"');
+    if (kind === 'workflow')
+      debug.env.WORKFLOW_SOURCE_SHA = `\${{ github.sha }}`;
+    if (kind === 'event')
+      debug.run = debug.run.replace('"$GITHUB_EVENT_NAME"', '"$GITHUB_SHA"');
+    if (kind === 'receipt') debug.run = debug.run.replace('cmp ', 'echo ');
+    if (kind === 'hash') debug.run = debug.run.replace('sha256sum', 'echo');
+    if (kind === 'build-continue') copy.build['continue-on-error'] = true;
+    if (kind === 'build-step-continue')
+      copy.build.steps[0]['continue-on-error'] = true;
+    if (kind === 'build-deploy')
+      copy.build.steps.push({ run: 'bun x wrangler deploy' });
+    assert.throws(() => assertCalendarActors(copy));
   }
 });
 function savePointer(app) {
@@ -481,136 +555,45 @@ for (const kind of [
       assert.throws(() => validateOutput(app));
     }));
 }
-for (const [label, change] of [
-  [
-    'absolute',
-    (p) => {
-      p.configPath = '/tmp/wrangler.json';
-    },
-  ],
-  [
-    'escape',
-    (p) => {
-      p.configPath = '../../../wrangler.json';
-    },
-  ],
-  [
-    'saved-directory base',
-    (p) => {
-      p.configPath = '../dist/server/wrangler.json';
-    },
-  ],
-  [
-    'multiline',
-    (p) => {
-      p.configPath += '\nconfig=escape';
-    },
-  ],
-  [
-    'auxiliary Worker',
-    (p) => {
-      p.auxiliaryWorkers = ['extra'];
-    },
-  ],
-  [
-    'extra field',
-    (p) => {
-      p.extra = true;
-    },
-  ],
+for (const [label, field, value] of [
+  ['absolute', 'configPath', '/tmp/wrangler.json'],
+  ['escape', 'configPath', '../../../wrangler.json'],
+  ['saved-directory base', 'configPath', '../dist/server/wrangler.json'],
+  ['multiline', 'configPath', '../../dist/server/wrangler.json\nconfig=escape'],
+  ['auxiliary Worker', 'auxiliaryWorkers', ['extra']],
+  ['extra field', 'extra', true],
 ]) {
   test(`saved pointer rejects ${label}`, () =>
     fixture(({ app, put, pointer }) => {
       savePointer(app);
-      change(pointer);
+      changeField(pointer, field, value);
       put('.void/preview-deploy-config.json', pointer);
       assert.throws(() => validateOutput(app));
     }));
 }
-for (const [label, change] of [
-  [
-    'identity',
-    (c) => {
-      c.name = 'other';
-    },
-  ],
-  [
-    'compatibility date',
-    (c) => {
-      c.compatibility_date = '2026-10-18';
-    },
-  ],
-  [
-    'compatibility flags',
-    (c) => {
-      c.compatibility_flags = [];
-    },
-  ],
-  [
-    'worker publication',
-    (c) => {
-      c.workers_dev = true;
-    },
-  ],
-  [
-    'placement',
-    (c) => {
-      c.placement = { mode: 'smart' };
-    },
-  ],
+for (const [label, field, value] of [
+  ['identity', 'name', 'other'],
+  ['compatibility date', 'compatibility_date', '2026-10-18'],
+  ['compatibility flags', 'compatibility_flags', []],
+  ['worker publication', 'workers_dev', true],
+  ['placement', 'placement', { mode: 'smart' }],
   [
     'Durable Objects',
-    (c) => {
-      c.durable_objects = { bindings: [{ name: 'DO', class_name: 'Room' }] };
-    },
+    'durable_objects',
+    { bindings: [{ name: 'DO', class_name: 'Room' }] },
   ],
-  [
-    'storage',
-    (c) => {
-      c.r2_buckets = [{ binding: 'BUCKET', bucket_name: 'other' }];
-    },
-  ],
-  [
-    'secrets',
-    (c) => {
-      c.secrets = { required: ['UNREVIEWED_SECRET'] };
-    },
-  ],
-  [
-    'environment',
-    (c) => {
-      c.env = { production: {} };
-    },
-  ],
-  [
-    'assets binding',
-    (c) => {
-      c.assets.binding = 'OTHER';
-    },
-  ],
-  [
-    'assets routing',
-    (c) => {
-      c.assets.run_worker_first = false;
-    },
-  ],
-  [
-    'SPA fallback',
-    (c) => {
-      c.assets.not_found_handling = 'single-page-application';
-    },
-  ],
-  [
-    'Worker escape',
-    (c) => {
-      c.main = '../../outside.js';
-    },
-  ],
+  ['storage', 'r2_buckets', [{ binding: 'BUCKET', bucket_name: 'other' }]],
+  ['secrets', 'secrets', { required: ['UNREVIEWED_SECRET'] }],
+  ['environment', 'env', { production: {} }],
+  ['assets binding', 'assets.binding', 'OTHER'],
+  ['assets routing', 'assets.run_worker_first', false],
+  ['SPA fallback', 'assets.not_found_handling', 'single-page-application'],
+  ['Worker escape', 'main', '../../outside.js'],
 ]) {
   test(`saved pointer retains qualification: ${label}`, () =>
     fixture(({ app, put, config }) => {
       savePointer(app);
-      change(config);
+      changeField(config, field, value);
       put('dist/server/wrangler.json', config);
       assert.throws(() => manifest(app, sha));
     }));
@@ -644,8 +627,9 @@ for (const saved of [false, true]) {
       './workflow-yaml-test-helper.js'
     );
     const { jobs } = readWorkflow('mail-calendar-tasks-builds.yaml');
-    const archive = jobs['calendar-native'].steps.find((step) =>
-      step.run?.includes('tar -czf')
+    const archive = calendarActor(
+      jobs['calendar-native'],
+      'Verify runtime checks left the sealed artifact unchanged'
     );
     assert.ok(
       archive.run.startsWith(
