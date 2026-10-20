@@ -125,7 +125,10 @@ function documentRequest(prefix = '/en') {
 }
 
 test('entry overrides incoming identity and real intl forwards each concurrent document independently', async () => {
-  const requests = [documentRequest(''), documentRequest('')];
+  const requests: [NextRequest, NextRequest] = [
+    documentRequest(''),
+    documentRequest(''),
+  ];
   requests[1].headers.set('accept-language', 'vi');
   const ids = await Promise.all(
     requests.map(async (item) => beginProfileRequest(item, env))
