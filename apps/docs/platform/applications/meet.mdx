@@ -91,6 +91,25 @@ receipt provides no acceptance, allowlist approval, or rollback proof. Inspect t
 qualifying unexpected `queues` or `configPath` fields. Preserve the strict resource, saved-pointer,
 native-relative-base, restore, and deployment gates.
 
+Diagnostic receipts use schema 2 with `wireEncoding: "scoped-layouts-v1"` when
+`inventory` or `defaultProbe` is present. Only those fields use shared ordered
+`layouts`: `[0, layoutIndex, ...values]` represents an object and `[1, ...items]`
+represents an array. Scalars and full hashes remain unchanged; optional absence,
+null, false, property order and row order are preserved. Top-level status and
+provenance remain readable. Use `decodeReceipt` from
+`scripts/ci/native-receipt-layout.mjs` to restore the original logical schema 1;
+it also accepts legacy schema-1 receipts. It rejects unsupported encodings,
+malformed layouts/tags, duplicate or prototype-related layout keys, excessive
+depth and expanded size. Decoding never qualifies acceptance or supplies missing
+status/evidence. `inventoryHash` still commits to the original inventory JSON.
+The complete wire receipt, including its final LF, must fit 16,384 UTF-8 bytes.
+Overflow retains the existing schema-1 unavailable summary and failing exit code,
+without partial diagnostics. Collection and the live default probe stay logical
+objects. Regression coverage lives in `native-receipt-layout.test.mjs` and
+`native-emitted-config-receipt.test.mjs`; actual emitted-payload fit requires CI
+on the new commit, separately from historical and synthetic fixture coverage.
+
+
 Request adapters preserve satellite sessions, locale rewrites, response cookies
 and central API ownership. Native plan mutations use POST server functions with
 CSRF checks and the canonical authorization suppliers. Intentional credentialed

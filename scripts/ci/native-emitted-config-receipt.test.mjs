@@ -15,8 +15,8 @@ import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-
 import { bounded } from './native-emitted-config-receipt.mjs';
+import { decodeReceipt } from './native-receipt-layout.mjs';
 
 const helper = fileURLToPath(
   new URL('./native-emitted-config-receipt.mjs', import.meta.url)
@@ -106,7 +106,7 @@ function fixture(t, { saved = false, config = {} } = {}) {
     assert.ok(Buffer.byteLength(raw) <= 16 * 1024);
     assert.ok(!raw.includes(canary));
     assert.ok(!raw.includes(root));
-    return { result, raw, receipt: JSON.parse(raw) };
+    return { result, raw, receipt: decodeReceipt(raw) };
   };
   return { root, put, emitted, pointer, invoke };
 }
@@ -332,12 +332,10 @@ test('exact receipt byte boundary preserves full inventory or fails closed', () 
     inventory: [{ unknownNameHash: hash(canary), type: 'object', empty: true }],
     padding: '',
   };
-  receipt.padding = 'x'.repeat(
-    16 * 1024 - Buffer.byteLength(`${JSON.stringify(receipt)}\n`)
-  );
+  receipt.padding = 'x'.repeat(16 * 1024 - Buffer.byteLength(bounded(receipt)));
   const full = bounded(receipt);
   assert.equal(Buffer.byteLength(full), 16 * 1024);
-  assert.deepEqual(JSON.parse(full), receipt);
+  assert.deepEqual(decodeReceipt(full), receipt);
   receipt.padding += 'x';
   const overflow = bounded(receipt);
   assert.deepEqual(JSON.parse(overflow), {

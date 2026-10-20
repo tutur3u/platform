@@ -17,6 +17,8 @@ on:
       - 'scripts/ci/verify-meet-start-output*'
       - 'scripts/ci/meet-emitted-defaults.mjs'
       - 'scripts/ci/native-config-default-probe.mjs'
+      - 'scripts/ci/native-emitted-config-receipt*'
+      - 'scripts/ci/native-receipt-layout*'
       - 'scripts/ci/workflow-yaml-test-helper.js'
       - 'scripts/ci/verify-meet-build-info*'
       - 'scripts/ci/generate-build-metadata*'
@@ -40,6 +42,8 @@ on:
       - 'scripts/ci/verify-meet-start-output*'
       - 'scripts/ci/meet-emitted-defaults.mjs'
       - 'scripts/ci/native-config-default-probe.mjs'
+      - 'scripts/ci/native-emitted-config-receipt*'
+      - 'scripts/ci/native-receipt-layout*'
       - 'scripts/ci/workflow-yaml-test-helper.js'
       - 'scripts/ci/verify-meet-build-info*'
       - 'scripts/ci/generate-build-metadata*'
@@ -119,6 +123,8 @@ jobs:
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Test build identity and workflow ordering
         run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js
+      - name: Test diagnostic receipt serialization
+        run: node --test scripts/ci/native-emitted-config-receipt.test.mjs scripts/ci/native-receipt-layout.test.mjs
       - name: Build realtime dependencies and test realtime
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:

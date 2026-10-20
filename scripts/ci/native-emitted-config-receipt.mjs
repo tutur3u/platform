@@ -13,6 +13,7 @@ import { createRequire } from 'node:module';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nativeDefaultProbe } from './native-config-default-probe.mjs';
+import { encodeReceipt } from './native-receipt-layout.mjs';
 
 const MAX_RECEIPT = 16 * 1024;
 const MAX_INPUT = 4 * 1024 * 1024;
@@ -307,8 +308,12 @@ export function collect({ root, appDirectory, eventSha }) {
 }
 
 export function bounded(receipt) {
-  const serialized = `${JSON.stringify(receipt)}\n`;
-  if (Buffer.byteLength(serialized) <= MAX_RECEIPT) return serialized;
+  try {
+    const serialized = `${JSON.stringify(encodeReceipt(receipt))}\n`;
+    if (Buffer.byteLength(serialized) <= MAX_RECEIPT) return serialized;
+  } catch (error) {
+    if (error.message !== 'diagnostic_receipt_limit') throw error;
+  }
   return `${JSON.stringify({
     schema: 1,
     diagnosticOnly: true,
