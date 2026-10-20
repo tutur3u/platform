@@ -31,7 +31,10 @@ import {
 } from './i18n/routing';
 
 import { getLoginRedirect } from './login-redirect';
-import { tagProfileProxyResponse } from './profile-proxy-diagnostics';
+import {
+  beginProfileRequest,
+  tagProfileProxyResponse,
+} from './profile-proxy-diagnostics';
 import { getWorkspaceRouteStatus } from './workspace-route-status';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -178,6 +181,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  beginProfileRequest(request);
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX

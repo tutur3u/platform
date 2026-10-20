@@ -1,6 +1,10 @@
 import { constants } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {
+  joinProfileReadEvents,
+  parseProfileReadEvents,
+} from './mail-profile-correlation.mjs';
 
 const limit = 128 * 1024;
 const categories = [
@@ -237,6 +241,10 @@ export async function privateStartupDiagnostics(reports, children) {
         record.nextTiming = nextTimingObservations(text, record.truncated);
         if (app === 'lettin') {
           record.readStages = readStageObservations(text, record.truncated);
+          record.profileReadEvents = parseProfileReadEvents(
+            text,
+            record.truncated
+          );
         }
         record.causeProven = false;
       }
@@ -277,4 +285,15 @@ export function safeFixtureFailure(error) {
     ['Preflight and receipt failed', 'preflight-receipt-failed'],
   ]);
   return reasons.get(message) ?? 'unclassified-fixture-failure';
+}
+
+export async function profileTerminalDiagnostics(reports, children, results) {
+  const startupDiagnostics = await privateStartupDiagnostics(reports, children);
+  const parsed = startupDiagnostics.find(
+    (item) => item.app === 'lettin'
+  )?.profileReadEvents;
+  return {
+    startupDiagnostics,
+    results: joinProfileReadEvents(results, parsed),
+  };
 }

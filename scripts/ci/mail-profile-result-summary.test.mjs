@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import {
+  joinProfileReadEvents,
+  parseProfileReadEvents,
+} from './mail-profile-correlation.mjs';
 import { summarizeBrowserResults } from './mail-profile-result-summary.mjs';
 
 const titles = ['fixed profile', 'fixed transport'];
@@ -386,4 +390,56 @@ test('legacy allowlists persist while added keys and contradictory request state
     assert.equal(terminal.results[1].status, 'passed');
     assert.doesNotMatch(JSON.stringify(terminal), /private/u);
   }
+});
+
+test('response ID survives strict reporter extraction and joins events into terminal results', () => {
+  const requestId = 'b'.repeat(32);
+  const record = safeRecord();
+  record.hops = [
+    {
+      route: 'profile',
+      locale: 'en',
+      targetRoute: 'unavailable',
+      targetLocale: 'unavailable',
+      samePath: null,
+      sameOrigin: null,
+      status: 200,
+      body: 'pending',
+      requestId,
+    },
+  ];
+  const terminal = terminalResult([textEntry(record)]);
+  const events = [
+    { version: 1, requestId, stage: 'proxy', event: 'entry', elapsedMs: 0 },
+    {
+      version: 1,
+      requestId,
+      stage: 'profile actor',
+      event: 'started',
+      elapsedMs: 0,
+    },
+  ];
+  const parsed = parseProfileReadEvents(
+    events
+      .map((event) => `[lettin-profile-read] ${JSON.stringify(event)}\n`)
+      .join('')
+  );
+  terminal.results = joinProfileReadEvents(terminal.results, parsed);
+  assert.equal(terminal.results[0].readCorrelation.requestId, requestId);
+  assert.equal(
+    terminal.results[0].readCorrelation.rendererCompletion,
+    'unknown'
+  );
+  assert.equal(terminal.results[0].status, 'failed');
+  for (const bad of ['', 'unsafe', `${requestId},${requestId}`]) {
+    record.hops[0].requestId = bad;
+    assert.equal(
+      evidence(terminalResult([textEntry(record)])).state,
+      'unknown'
+    );
+  }
+  assert.equal(
+    evidence(terminalResult([textEntry(record)], { retry: 1 })).state,
+    'unknown'
+  );
 });

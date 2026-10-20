@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { test } from 'vitest';
+import { test, vi } from 'vitest';
 import { routing } from './i18n/routing';
-import { tagProfileProxyResponse } from './profile-proxy-diagnostics';
+import {
+  beginProfileRequest,
+  PROFILE_REQUEST_HEADER,
+  tagProfileProxyResponse,
+} from './profile-proxy-diagnostics';
 
 const env = {
   TUTURUUU_LETTIN_PROFILE_DIAGNOSTICS: '1',
@@ -107,4 +111,114 @@ test('real next-intl rewrites an unprefixed profile and redirects only the prefi
   const prefixed = intl(new NextRequest(`http://127.0.0.1:7833/en${path}`));
   assert.equal(prefixed.status, 307);
   assert.equal(new URL(prefixed.headers.get('location')!).pathname, path);
+});
+
+function documentRequest(prefix = '/en') {
+  return new NextRequest(`http://127.0.0.1:7833${prefix}${path}`, {
+    headers: {
+      accept: 'text/html',
+      'sec-fetch-dest': 'document',
+      [PROFILE_REQUEST_HEADER]: 'untrusted-incoming',
+      'x-existing': 'retained',
+    },
+  });
+}
+
+test('entry overrides incoming identity and real intl forwards each concurrent document independently', async () => {
+  const requests = [documentRequest(''), documentRequest('')];
+  requests[1].headers.set('accept-language', 'vi');
+  const ids = await Promise.all(
+    requests.map(async (item) => beginProfileRequest(item, env))
+  );
+  assert.ok(
+    ids.every((id) => typeof id === 'string' && /^[a-f0-9]{32}$/u.test(id))
+  );
+  assert.notEqual(ids[0], ids[1]);
+  const intl = createIntlMiddleware(routing);
+  requests.forEach((item, index) => {
+    const response = intl(item);
+    const before = new Headers(response.headers);
+    tagProfileProxyResponse(item, response, 'intl', env);
+    assert.equal(response.headers.get(PROFILE_REQUEST_HEADER), ids[index]);
+    assert.equal(
+      response.headers.get(`x-middleware-request-${PROFILE_REQUEST_HEADER}`),
+      ids[index]
+    );
+    assert.equal(
+      response.headers.get('x-middleware-request-x-existing'),
+      'retained'
+    );
+    for (const [key, value] of before)
+      assert.equal(response.headers.get(key), value);
+  });
+});
+
+test('all tagged response branches retain status, headers, body and cookies', () => {
+  const item = documentRequest();
+  const id = beginProfileRequest(item, env);
+  for (const stage of [
+    'canonical-locale',
+    'canonical-public',
+    'verify-token',
+    'login',
+    'auth-login',
+    'workspace-route-status',
+    'intl',
+  ] as const) {
+    const response = NextResponse.redirect(new URL('/login', item.url));
+    response.cookies.set('existing-cookie', 'retained', { httpOnly: true });
+    const before = new Headers(response.headers);
+    assert.equal(tagProfileProxyResponse(item, response, stage, env), response);
+    assert.equal(response.status, 307);
+    assert.equal(response.headers.get(PROFILE_REQUEST_HEADER), id);
+    for (const [key, value] of before)
+      assert.equal(response.headers.get(key), value);
+  }
+});
+
+test('disabled, non-HTML and non-GET requests remove untrusted IDs and create none', () => {
+  for (const settings of [{}, env]) {
+    const item = documentRequest();
+    if (settings === env) item.headers.set('accept', 'application/json');
+    assert.equal(beginProfileRequest(item, settings), undefined);
+    assert.equal(item.headers.get(PROFILE_REQUEST_HEADER), null);
+    const response = tagProfileProxyResponse(
+      item,
+      NextResponse.next(),
+      'intl',
+      settings
+    );
+    assert.equal(response.headers.get(PROFILE_REQUEST_HEADER), null);
+  }
+  const item = new NextRequest(`http://127.0.0.1:7833/en${path}`, {
+    method: 'POST',
+    headers: { accept: 'text/html', 'sec-fetch-dest': 'document' },
+  });
+  assert.equal(beginProfileRequest(item, env), undefined);
+});
+
+test('entry and response diagnostic failures preserve the request and original response', () => {
+  const item = documentRequest('');
+  const logger = vi.spyOn(console, 'info').mockImplementation(() => {
+    throw new Error('diagnostic log');
+  });
+  try {
+    const id = beginProfileRequest(item, env);
+    assert.ok(id);
+    assert.equal(item.headers.get(PROFILE_REQUEST_HEADER), id);
+    const response = NextResponse.next();
+    const setter = vi.spyOn(response.headers, 'set').mockImplementation(() => {
+      throw new Error('diagnostic header');
+    });
+    try {
+      assert.equal(
+        tagProfileProxyResponse(item, response, 'intl', env),
+        response
+      );
+    } finally {
+      setter.mockRestore();
+    }
+  } finally {
+    logger.mockRestore();
+  }
 });

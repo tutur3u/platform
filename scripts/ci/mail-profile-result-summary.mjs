@@ -83,7 +83,13 @@ const hop = object(
     status: integer(599, 100),
     body: enumeration('pending', 'finished', 'failed', 'unavailable'),
   },
-  { proxy }
+  {
+    proxy,
+    requestId: (value) =>
+      typeof value === 'string' && /^[a-f0-9]{32}$/u.test(value)
+        ? value
+        : invalid(),
+  }
 );
 const request = object({
   id: integer(64, 1),

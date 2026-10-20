@@ -75,11 +75,14 @@ export function profileProxyProvenance(value: string | undefined) {
     },
   };
 }
-function responseProxyProvenance(response: Response) {
+export function responseProxyProvenance(response: Pick<Response, 'headers'>) {
   try {
-    return profileProxyProvenance(
-      response.headers?.()['x-lettin-profile-proxy']
-    );
+    const responseHeaders = response.headers();
+    const value = responseHeaders['x-lettin-profile-request-id'];
+    return {
+      ...profileProxyProvenance(responseHeaders['x-lettin-profile-proxy']),
+      ...(/^[a-f0-9]{32}$/u.test(value ?? '') ? { requestId: value } : {}),
+    };
   } catch {
     return {};
   }

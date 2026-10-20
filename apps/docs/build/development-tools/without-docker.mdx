@@ -150,7 +150,7 @@ failures and frame commits remain separate from body completion and page
 `DOMContentLoaded`/`load`. Read capped counts and truncation fields before drawing
 conclusions; unobserved requests and frame load stay unknown. The helper records
 only safe route classes, local ordinals, relative timings and fixed status fields.
-It retains no raw URLs, headers, bodies or failure text. The result parser accepts
+It retains no raw URLs, arbitrary headers, bodies or failure text. The result parser accepts
 one versioned text record from the failed profile attempt and preserves its status.
 These observations preserve the original navigation deadline and error. They do
 not prove a load blocker or justify a retry. Helper and result-summary regressions
@@ -228,3 +228,22 @@ and normalized path roles while preserving full diagnostics privately. Do not
 infer a parser route or closure from absent public fields. Existing raw NOTPASS
 results remain unchanged. Never stage sensitive transcripts; see the CI tooling
 reference for supplier evidence.
+
+### Profile request attribution
+
+Only the existing disposable hosted development profile diagnostic gate admits
+request attribution. GET HTML document requests receive a fresh 128-bit opaque
+`x-lettin-profile-request-id` at proxy entry, replacing any incoming value. The
+existing next-intl request-header forwarding carries it into the request context;
+the actual response exposes the same ID. Request-scoped memoization reads the
+context once for fixed read-stage events. Browser extraction retains only a
+validated ID, and `terminal.results[].readCorrelation` joins the single main
+profile document response to that ID's bounded events. Redirect IDs cannot stand
+in for the destination document. Missing, malformed, duplicate, ambiguous,
+cross-attempt or truncated evidence remains unknown; older unattributed aggregates
+remain intact. Attributed reads prove only read-stage observations, never renderer,
+HTML stream, DOM or page-load completion. Regression coverage lives in
+`profile-proxy-diagnostics.test.ts`, `read-diagnostics.test.ts`,
+`profile-request-identity.test.ts`, `mail-profile-correlation.test.mjs` and
+`mail-profile-result-summary.test.mjs`. Run them in the admitted CI environment;
+source inspection and syntax checks do not establish runtime acceptance.
