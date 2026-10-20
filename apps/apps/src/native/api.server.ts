@@ -17,7 +17,15 @@ export async function apiRequest(
   webOrigin: string,
   fetcher: typeof fetch = fetch
 ) {
-  const guard = await guardApiProxyRequest(new NextRequest(request.clone()), {
+  const guardRequest = new NextRequest(request.url, {
+    method: request.method,
+    headers: request.headers,
+    body: request.clone().body,
+    redirect: request.redirect,
+    signal: request.signal,
+    duplex: 'half',
+  });
+  const guard = await guardApiProxyRequest(guardRequest, {
     prefixBase: 'proxy:apps:api',
   });
   if (guard) return guard;
