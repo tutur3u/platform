@@ -32,3 +32,19 @@ it('captures server error-boundary category without changing fallback or error i
   expect(log).toHaveBeenCalledWith('calendar-ssr-error category=TYPE_ERROR');
   expect(JSON.stringify(log.mock.calls)).not.toContain('PRIVATE_SENTINEL');
 });
+
+it('wraps a non-Error cause without exposing it in UNKNOWN server diagnostics', () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const cause = 'PRIVATE_NON_ERROR_SENTINEL';
+  ports.error.mockClear();
+  expect(renderToString(<CalendarError error={cause} reset={() => {}} />)).toBe(
+    '<main>same fallback</main>'
+  );
+  expect(ports.error).toHaveBeenCalledTimes(1);
+  const wrapped = ports.error.mock.calls.at(0)?.[0];
+  expect(wrapped).toBeInstanceOf(Error);
+  expect(wrapped).toHaveProperty('message', 'Calendar page failed');
+  expect(wrapped).toHaveProperty('cause', cause);
+  expect(log.mock.calls).toEqual([['calendar-ssr-error category=UNKNOWN']]);
+  expect(JSON.stringify(log.mock.calls)).not.toContain(cause);
+});

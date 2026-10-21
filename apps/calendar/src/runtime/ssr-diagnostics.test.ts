@@ -101,3 +101,20 @@ describe('bounded owning SSR error projection', () => {
     ).not.toThrow();
   });
 });
+
+it.each([
+  null,
+  { function: 'getLocale', line: 1, column: 2, message: sentinel },
+  ...[-1, Number.NaN, Number.POSITIVE_INFINITY, 1000001].flatMap((value) => [
+    { function: 'getLocale', line: value, column: 2 },
+    { function: 'getLocale', line: 1, column: value },
+  ]),
+])(
+  'rejects malformed frame metadata without accepting private fields: %j',
+  (frame) => {
+    const record = projectCalendarSsrError(new TypeError(sentinel), 'handler');
+    expect(
+      parseCalendarSsrErrorRecord({ ...record, frames: [frame] })
+    ).toBeUndefined();
+  }
+);

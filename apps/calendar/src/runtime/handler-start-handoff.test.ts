@@ -121,3 +121,68 @@ it('captures a sanitized owning failure without replacing its identity', async (
     log.mockRestore();
   }
 });
+
+it('captures real asynchronous response-policy rejection after successful asset dispatch', async () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const failure = new TypeError('PRIVATE_POLICY_SENTINEL');
+  let headerReads = 0;
+  class PolicyFailureResponse extends Response {
+    override get headers(): Headers {
+      headerReads += 1;
+      throw failure;
+    }
+  }
+  const fetchAsset = vi.fn(async () => new PolicyFailureResponse('asset'));
+  try {
+    await expect(
+      handleCalendarRequest(
+        new Request('https://calendar.test/assets/fixture.js'),
+        { ASSETS: { fetch: fetchAsset } },
+        ctx,
+        telemetry
+      )
+    ).rejects.toBe(failure);
+    expect(fetchAsset).toHaveBeenCalledTimes(1);
+    expect(headerReads).toBe(1);
+    expect(suppliers.start).not.toHaveBeenCalled();
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+    expect(log.mock.calls).toEqual([
+      ['calendar-ssr-error category=TYPE_ERROR'],
+    ]);
+    expect(JSON.stringify(log.mock.calls)).not.toContain(
+      'PRIVATE_POLICY_SENTINEL'
+    );
+  } finally {
+    log.mockRestore();
+  }
+});
+
+it('retains a returned 500 body and security policy without inventing an owning exception', async () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  suppliers.proxy.mockResolvedValueOnce(NextResponse.next());
+  suppliers.start.mockResolvedValueOnce(
+    new Response('upstream failed', {
+      status: 500,
+      headers: { 'content-type': 'text/html', 'x-owner': 'calendar' },
+    })
+  );
+  try {
+    const response = await handleCalendarRequest(
+      new Request('https://calendar.test/verify-token'),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(500);
+    expect(await response.text()).toBe('upstream failed');
+    expect(response.headers.get('x-owner')).toBe('calendar');
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
+    expect(response.headers.get('content-security-policy')).toContain(
+      "frame-ancestors 'none'"
+    );
+    expect(suppliers.start).toHaveBeenCalledTimes(1);
+    expect(log).not.toHaveBeenCalled();
+  } finally {
+    log.mockRestore();
+  }
+});
