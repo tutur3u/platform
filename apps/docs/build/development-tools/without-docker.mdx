@@ -540,8 +540,36 @@ receipts; an extra request fails rather than increasing a cap.
 Each role retains at most 32 hook operations across all categories, including two
 pre-start denial controls; PATCH bodies retain the 16 KiB cap. Browser app HTTP
 remains deny-all with zero assurance reads; anonymous Chromium anchor navigation
-needs no account fixture. Page routing admits the runtime listener and the existing
-exact in-memory destination fixtures. Hash-pinned SDK-generated actors and Node
+needs no account fixture. One owned page-target CDP session admits the runtime
+listener and existing exact in-memory destination origins. Its Fetch request-stage
+listener is attached before wildcard enablement and classifies every redirect hop
+independently: continue the fixed listener without overrides, fulfill destination
+HTML in memory, or fail with BlockedByClient. Neither page.route nor context.route
+covers redirected hops in the owning Playwright 1.63.0 implementation; do not
+stack those interceptors with this fence. Counters have fixed categories and a
+4096-request ceiling; diagnostics retain no request URLs, headers or payloads.
+Fetch remains enabled through owned page closure; handler promises drain before
+session detachment and listener removal. Setup, protocol, navigation and cleanup
+failures all fail acceptance. Scope is one page target, without browser-wide,
+OOPIF or popup coverage. The historical browser timeout cause remains UNKNOWN.
+
+`native-browser-fence.test.mjs` covers protocol, cap and lifecycle failures without
+loading the SDK. The finite `apps-native-browser-fence.runtime.mjs` proof uses only
+two disposable 127.0.0.1 listeners: actual anchor, 307, intermediate listener hop,
+and exact final URL/load. Its old-route RED control must fulfill zero requests
+and reach destination upstream once. CDP GREEN must fulfill once with zero
+upstream; an unadmitted destination must block once with zero upstream. CI uses
+owning bundled Chromium after the existing Web Chromium installation. A local
+machine with bundled Chromium absent may explicitly run
+`ttr resources run -- node scripts/ci/apps-native-browser-fence.runtime.mjs --chrome`
+with existing Chrome through Playwright's public channel, headless and a fresh
+owned ephemeral profile. Never use a real user profile. Local Chrome proof does
+not qualify CI bundled Chromium or emitted Worker acceptance; no SDK, account
+fixture or external host participates in the finite proof. Keep strict residual
+checks, including rejection of unknown `.org.chromium` files; do not delete foreign
+residuals or broaden admission for browser temporary files.
+
+Hash-pinned SDK-generated actors and Node
 helper/debug/control networking are trusted tooling outside this claimed
 application HTTP confinement. This is no OS, TCP or DNS firewall claim. Focused
 policy/receipt tests use doubles and do not qualify the compiled guard; original

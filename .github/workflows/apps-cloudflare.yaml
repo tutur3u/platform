@@ -125,7 +125,7 @@ jobs:
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Artifact helper source regressions
         run: |
-          node --test scripts/ci/apps-native-source-identity.test.js apps/apps/cloudflare/native-artifact-functions.test.mjs
+          node --test scripts/ci/apps-native-source-identity.test.js apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-browser-fence.test.mjs
           python3 scripts/ci/apps-native-artifact.test.py
           node --test scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
       - name: Build required active workspace dependencies
@@ -147,7 +147,7 @@ jobs:
         working-directory: apps/apps
         run: bun run test:cloudflare
       - name: Check native owning source and fixture formatting
-        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
+        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-browser-fence.mjs apps/apps/cloudflare/native-browser-fence.test.mjs scripts/ci/apps-native-browser-fence.runtime.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
       - name: Record Apps route tree presence before frontend build
         id: apps-route-tree-before
         shell: bash
@@ -276,6 +276,9 @@ jobs:
       - name: Install existing Web Playwright Chromium for emitted browser acceptance
         working-directory: apps/web
         run: bun x --no-install playwright install --with-deps chromium
+      - name: Prove redirect interception with disposable loopback listeners
+        timeout-minutes: 2
+        run: node --test scripts/ci/apps-native-browser-fence.runtime.mjs
       - name: Exercise actual catalogue anchors on the same emitted artifact
         timeout-minutes: 5
         env:

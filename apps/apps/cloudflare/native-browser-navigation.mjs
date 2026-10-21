@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { withNativeBrowserFence } from './native-browser-fence.mjs';
 
 export const nativeRedirectCases = [
   { input: '?tag=1&tag=2', output: '?tag=1&tag=2&source=apps' },
@@ -23,47 +24,39 @@ export const nativeRedirectCases = [
 ];
 
 export async function verifyNativeBrowserNavigation(browser, origin, fixtures) {
-  const page = await browser.newPage();
-  page.setDefaultTimeout(10000);
-  const destinations = new Set(fixtures.map((app) => app.origin));
-  await page.route(
-    (url) => destinations.has(url.origin),
-    (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'text/html',
-        body: '<title>Disposable destination fixture</title>',
-      })
-  );
-  try {
-    for (const app of fixtures) {
-      for (const query of nativeRedirectCases) {
-        const catalogue = await page.goto(origin);
-        assert.equal(catalogue?.status(), 200);
-        const anchor = page.locator(`a[href="/${app.slug}"]`);
-        await anchor.evaluate((element, href) => {
-          element.setAttribute('id', 'native-query-regression');
-          element.setAttribute('href', href);
-        }, `/${app.slug}/a%2Fb${query.input}`);
-        const requestUrl = new URL(`/${app.slug}/a%2Fb${query.input}`, origin)
-          .href;
-        const redirect = page.waitForResponse(
-          (response) =>
-            response.url() === requestUrl && response.status() === 307
-        );
-        await page.locator('#native-query-regression').click();
-        const response = await redirect;
-        assert.equal(
-          response.headers().location,
-          `${app.origin}/a%2Fb${query.output}`
-        );
-        await page.waitForURL(
-          (url) => url.href === `${app.origin}/a%2Fb${query.output}`
-        );
-        assert.equal(page.url(), `${app.origin}/a%2Fb${query.output}`);
+  return withNativeBrowserFence(
+    browser,
+    origin,
+    fixtures.map((app) => app.origin),
+    async (page) => {
+      for (const app of fixtures) {
+        for (const query of nativeRedirectCases) {
+          const catalogue = await page.goto(origin);
+          assert.equal(catalogue?.status(), 200);
+          const anchor = page.locator(`a[href="/${app.slug}"]`);
+          await anchor.evaluate((element, href) => {
+            element.setAttribute('id', 'native-query-regression');
+            element.setAttribute('href', href);
+          }, `/${app.slug}/a%2Fb${query.input}`);
+          const requestUrl = new URL(`/${app.slug}/a%2Fb${query.input}`, origin)
+            .href;
+          const redirect = page.waitForResponse(
+            (response) =>
+              response.url() === requestUrl && response.status() === 307
+          );
+          void redirect.catch(() => {});
+          await page.locator('#native-query-regression').click();
+          const response = await redirect;
+          assert.equal(
+            response.headers().location,
+            `${app.origin}/a%2Fb${query.output}`
+          );
+          await page.waitForURL(
+            (url) => url.href === `${app.origin}/a%2Fb${query.output}`
+          );
+          assert.equal(page.url(), `${app.origin}/a%2Fb${query.output}`);
+        }
       }
     }
-  } finally {
-    await page.close();
-  }
+  );
 }

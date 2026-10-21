@@ -825,3 +825,28 @@ CI must tar the full owned evidence directory, including hidden
 `.wrangler` data, before artifact upload. Never replace natural child closure,
 independent seals, verified snapshots or persistence readbacks with a fulfilled
 `dispose()`. Internal cleanup and descendant closure remain UNKNOWN.
+
+
+The Apps browser redirect fence owns one public page-target CDP session with
+Fetch.requestPaused attached before wildcard Request-stage enablement. Remove
+both page.route layers: owning Playwright 1.63.0 auto-continues redirected requests
+before user routing; context.route uses the same mechanism. Classify every hop
+against the fixed listener and existing fixture origins, continuing without
+request overrides, fulfilling constant HTML, or blocking. Preserve service-worker
+blocking, exact anchor/307/Location/final-URL/load assertions, deadlines, Worker
+policy budgets and strict residual rejection. No browser-wide/OOPIF/popup claim.
+Keep Fetch enabled until owned page closure, drain handler promises, observe
+session closure or detach, remove handlers, and aggregate failures with the primary.
+
+Queue `apps/apps/cloudflare/native-browser-fence.test.mjs` for pure protocol,
+setup, cap, drain and failure propagation controls. The separate finite
+`scripts/ci/apps-native-browser-fence.runtime.mjs` uses only two disposable
+127.0.0.1 listeners without SDK or external hosts. Require the real old-route RED
+bypass (zero fulfillment, one destination upstream), CDP GREEN (one fulfillment,
+zero upstream, exact URL/load), an independently classified intermediate hop,
+and unadmitted destination blocking (one block, zero upstream). CI runs it with
+owning bundled Chromium after existing browser setup. Explicit local `--chrome`
+selects existing Chrome via the public channel with headless ephemeral custody;
+it is separate evidence from CI Chromium and emitted Worker acceptance. See the
+Apps runbook above for cleanup and remaining qualification boundaries. Historical
+timeout causality remains UNKNOWN; the routing gap is a separate source finding.

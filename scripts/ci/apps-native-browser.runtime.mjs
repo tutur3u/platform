@@ -83,21 +83,21 @@ test('ordinary catalogue anchors retain every query contract through the emitted
       const browser = await chromium.launch({ headless: true });
       let browserPrimary;
       try {
-        const guardedBrowser = {
-          async newPage() {
-            const page = await browser.newPage({ serviceWorkers: 'block' });
-            await page.route('**/*', async (route) => {
-              const url = new URL(route.request().url());
-              if (url.origin === origin) return route.continue();
-              unexpected.push(`browser ${url.origin}${url.pathname}`);
-              return route.abort('blockedbyclient');
-            });
-            return page;
-          },
-        };
-        // The frozen helper adds higher-priority disposable destination fulfillment,
-        // then clicks the actual catalogue anchors against this workerd HTTP listener.
-        await verifyNativeBrowserNavigation(guardedBrowser, origin, fixtures);
+        const { counts } = await verifyNativeBrowserNavigation(
+          browser,
+          origin,
+          fixtures
+        );
+        assert.equal(
+          counts.blocked,
+          0,
+          'Browser blocked unexpected fixture egress'
+        );
+        assert.equal(
+          counts.excess,
+          0,
+          'Browser request cap must remain unexceeded'
+        );
         completed('anchors');
         assert.equal(
           unexpected.length,
