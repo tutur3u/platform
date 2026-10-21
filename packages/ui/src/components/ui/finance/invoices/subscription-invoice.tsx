@@ -56,6 +56,7 @@ import { useInvoiceRounding } from './hooks/use-invoice-rounding';
 import { useInvoiceSubtotal } from './hooks/use-invoice-subtotal';
 import { useSubscriptionAutoSelection } from './hooks/use-subscription-auto-selection';
 import { useSubscriptionCreate } from './hooks/use-subscription-create';
+import { useSubscriptionGroupSelection } from './hooks/use-subscription-group-selection';
 import { useSubscriptionInvoiceContent } from './hooks/use-subscription-invoice-content';
 import { ProductSelection } from './product-selection';
 import {
@@ -634,22 +635,14 @@ export function SubscriptionInvoice({
     defaultCategoryId,
   ]);
 
-  useEffect(() => {
-    if (
-      groupsWithScheduleIds.length > 0 &&
-      selectedGroupIds.length === 0 &&
-      !userGroupsLoading &&
-      selectedUserId
-    ) {
-      setSelectedGroupIds(groupsWithScheduleIds);
-    }
-  }, [
+  const groupSelection = useSubscriptionGroupSelection({
+    wsId,
+    userId: selectedUserId,
+    selectedGroupIds,
     groupsWithScheduleIds,
-    selectedGroupIds.length,
-    userGroupsLoading,
-    selectedUserId,
-    setSelectedGroupIds,
-  ]);
+    loading: userGroupsLoading,
+    onChange: setSelectedGroupIds,
+  });
 
   const availableMonths = useMemo(
     () =>
@@ -894,19 +887,9 @@ export function SubscriptionInvoice({
             userGroups={userGroups}
             userGroupsLoading={userGroupsLoading}
             selectedGroupIds={selectedGroupIds}
-            onGroupSelect={(groupId) => {
-              setSelectedGroupIds((prev) => {
-                const isAlreadySelected = prev.includes(groupId);
-                const updated = isAlreadySelected
-                  ? prev.filter((id) => id !== groupId)
-                  : [...prev, groupId];
-                return updated;
-              });
-            }}
-            onSelectAllWithSchedule={() =>
-              setSelectedGroupIds(groupsWithScheduleIds)
-            }
-            onDeselectAll={() => setSelectedGroupIds([])}
+            onGroupSelect={groupSelection.toggle}
+            onSelectAllWithSchedule={groupSelection.selectAll}
+            onDeselectAll={groupSelection.deselectAll}
             isLoadingSubscriptionData={isLoadingSubscriptionData}
             locale={locale}
             selectedMonth={effectiveSelectedMonth}

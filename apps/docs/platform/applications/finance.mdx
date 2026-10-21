@@ -498,6 +498,32 @@ Invoice browser preferences are optional: a blocked storage getter or read uses 
 Invoice schedule previews use the workspace billing timezone for both projected recurring classes and materialized sessions. A class keeps the same invoice civil day and month when materialized, including midnight and daylight-saving boundaries; multiple classes on one billing day remain one date. Recurrence identity and cancellation use the original series timezone, and previewing never writes schedules. `planned-session-dates.test.ts` covers projected/materialized parity and cancellation controls. This source regression does not establish the cause of a customer screenshot or deployed invoice behavior.
 
 
+### Subscription group choices survive clearing and refetching
+
+The Finance subscription invoice form and its shared Web surface default an
+untouched customer selection to groups with schedules. Explicit URL group
+selections remain selected. Once an operator changes the group selection,
+including clearing the last group or using **Deselect all**, that choice remains
+authoritative for the current workspace and customer. Context or membership
+refetches must not select all groups again. Changing workspace or customer resets
+this preference so the new untouched selection can receive its own defaults.
+
+This lets an operator pay class A, clear it, and select class B for a separate
+invoice in the same month. Completed coverage still applies per group, and
+selecting both billable classes together remains supported. Group status badges
+do not disable selection. Selecting a class alone with no linked products
+produces no automatic charges on a fresh form; operators must configure or
+manually select the appropriate billing items. Inventory and invoice-creation
+admission rules still apply.
+
+`subscription-group-selection.test.tsx` exercises the actual form, selector,
+membership/product/context query transformations and create transport with
+synthetic HTTP responses, including shared and distinct products, missing links,
+separate payments and combined selection. `use-subscription-group-selection.test.tsx`
+covers refetches and workspace/customer resets. These regressions establish the
+selection behavior; they do not establish the cause of a specific customer's
+reported incident or verify production financial writes.
+
 ### Invoice create completion belongs to the admitted draft
 
 Subscription invoice creation captures the current account lifetime, workspace,
