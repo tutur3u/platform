@@ -124,7 +124,18 @@ export async function createInternalEmployee(
 }
 
 export const EmployeeCreationObservationSchema = z.union([
-  EmployeeCreationReplySchema,
+  EmployeeCreationReplySchema.options[1],
+  EmployeeCreationReplySchema.options[2],
+  z.strictObject({
+    status: z.literal('created'),
+    operationId: z.uuid(),
+    account: z.strictObject({
+      id: z.uuid(),
+      email: z.email(),
+      displayName: z.string().min(1).max(100),
+      creationDisplayName: z.string().min(1).max(100).optional(),
+    }),
+  }),
   z
     .object({
       status: z.literal('stopped'),
@@ -154,7 +165,8 @@ export async function getInternalEmployeeCreationOperation(
     result.operationId !== operationId ||
     (result.status === 'created' &&
       (result.account.email !== identity.email ||
-        result.account.displayName !== identity.displayName))
+        (result.account.creationDisplayName ?? result.account.displayName) !==
+          identity.displayName))
   ) {
     throw new Error('Employee operation identity mismatch');
   }

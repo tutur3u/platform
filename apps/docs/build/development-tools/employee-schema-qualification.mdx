@@ -752,3 +752,15 @@ Web request authorization. The selected HTTP fixture typecheck maps the
 `@tuturuuu/supabase/next/user` type-only export to its owning source because the
 package declaration export otherwise requires unbuilt `dist`. Keep that
 source-only gate enabled; do not build locally or bypass type errors.
+
+## Managed profile qualification
+
+Select `include_managed_profile=true` together with `include_journal=true` on the
+same reviewed control/source commit. This adds the managed-profile rollback packet
+to the journal profile and generates types from that full-migration disposable
+database. Existing optional defaults and packet counts remain unchanged when the
+selection is off. `managedProfileQualified` requires the exact packet, same-run
+artifact digest, base packet success and positive owned cleanup. It proves only
+the exercised SQL assertions; real concurrent-session and HTTP acceptance need
+their own executed evidence. The managed profile product contract is recorded in
+[Infrastructure](/platform/applications/infrastructure#managed-employee-profile-edits).

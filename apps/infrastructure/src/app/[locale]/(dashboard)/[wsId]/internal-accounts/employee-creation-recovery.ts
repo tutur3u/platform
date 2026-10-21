@@ -336,6 +336,14 @@ export class EmployeeCreationRecovery {
         this.deps.observe ?? getInternalEmployeeCreationOperation
       )(value, { signal: AbortSignal.timeout(8000) });
       this.assertActive();
+      if (
+        result.status === 'created' &&
+        (result.operationId !== value.operationId ||
+          result.account.email !== value.email ||
+          (result.account.creationDisplayName ?? result.account.displayName) !==
+            value.displayName)
+      )
+        throw new Error('Creation observation identity mismatch');
       if (result.status === 'created') {
         try {
           this.complete();

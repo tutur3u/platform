@@ -12,6 +12,9 @@ import {
 } from './service';
 
 vi.mock('server-only', () => ({}));
+vi.mock('./managed-profile-service', () => ({
+  updateManagedInternalAccountProfile: vi.fn().mockResolvedValue(null),
+}));
 vi.mock('./recovery-service', () => ({
   recoverAccountPassword: (
     admin: SupabaseClient<Database>,

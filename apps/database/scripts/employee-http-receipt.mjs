@@ -164,6 +164,25 @@ function rejectionFailure(value) {
     ...(Object.hasOwn(value, 'actual') ? { actual: value.actual } : {}),
   };
 }
+function managedProfileReceipt(value) {
+  if (
+    value?.qualified !== true ||
+    value.assertions !== 11 ||
+    value.writes !== 1 ||
+    value.lostAcknowledgementReadback !== true ||
+    value.routeAuthorizationProof !== false ||
+    value.productionProof !== false
+  )
+    throw new Error('Managed profile HTTP receipt invalid');
+  return {
+    qualified: true,
+    assertions: 11,
+    writes: 1,
+    lostAcknowledgementReadback: true,
+    routeAuthorizationProof: false,
+    productionProof: false,
+  };
+}
 export function httpQualificationReceipt(text) {
   if (typeof text !== 'string' || Buffer.byteLength(text) > 4096)
     throw new Error('HTTP qualification receipt exceeds bound');
@@ -196,6 +215,13 @@ export function httpQualificationReceipt(text) {
     ...(candidate.rejectionFailure === undefined
       ? {}
       : { rejectionFailure: rejectionFailure(candidate.rejectionFailure) }),
+    ...(candidate.managedProfileQualification === undefined
+      ? {}
+      : {
+          managedProfileQualification: managedProfileReceipt(
+            candidate.managedProfileQualification
+          ),
+        }),
     ...(candidate.restoreQualification === undefined
       ? {}
       : {

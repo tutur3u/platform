@@ -55,6 +55,9 @@ export function createEmployeeManagementTransport(input: {
   return async (
     name:
       | 'inspect_employee_management'
+      | 'inspect_employee_profile'
+      | 'update_employee_profile'
+      | 'inspect_employee_profile_operation'
       | 'begin_employee_restore'
       | 'mark_employee_restore_attempt'
       | 'confirm_employee_restore'

@@ -61,7 +61,7 @@ test('strict receipt tests run from control root', () => {
   assert.doesNotMatch(step, /working-directory:/u);
   assert.match(
     step,
-    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-retained-mailbox-schema.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs$/mu
+    /^ {8}run: node --test apps\/database\/scripts\/employee-managed-profile-qualification.test.mjs apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-retained-mailbox-schema.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs$/mu
   );
 });
 
@@ -127,6 +127,7 @@ test('combined profiles reject incompatible selections before hosted database se
           EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: String(journal),
           EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: String(personal),
           EMPLOYEE_SCHEMA_INCLUDE_HTTP: String(http),
+          EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_RESTORE: String(restore),
           EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: String(webSession),
           EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: String(addressMigration),
