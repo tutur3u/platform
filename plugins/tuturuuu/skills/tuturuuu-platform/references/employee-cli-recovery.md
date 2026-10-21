@@ -18,3 +18,16 @@ pending and 409 conflict with matching payloads. See the
 [CLI recovery runbook](../../../../../apps/docs/build/development-tools/employee-cli-recovery.mdx)
 and the focused CLI recovery authorization/boundary/client tests. Independent
 review and exact Web build CI precede release-owner runtime acceptance.
+
+
+For later original-operation outcome readback with the same CLI credential, use
+`GET .../cli-recovery?view=outcome` through `observeEmployeeCliRecoveryOutcome`.
+Reuse the existing observation factory with the CLI authorizer and an inspect /
+provider-get-only connection. Keep original actor/operation binding, independent
+provider read then fresh SQL proof, and final CLI authorization. Preserve default
+rejection GET and strict POST resume. The outcome client uses the observation
+schema and original target/email/creation-name binding, accepting only 200 created
+or stopped and 202 pending, with no automatic refresh or replay. Terminal active
+rename provenance may expose current displayName plus immutable creationDisplayName;
+never widen the mutation schema. Regressions live in the CLI outcome route/client
+tests, including one-dispatch HTTP matrix and no mutation calls.

@@ -70,15 +70,18 @@ it('submits one explicit resume using the existing client authorization options'
 });
 it('rejects missing attestation, changed operation, weak password and wrong target readback', async () => {
   const fetch = vi.fn<typeof globalThis.fetch>(async () =>
-    Response.json({
-      status: 'created',
-      operationId: id(2),
-      account: {
-        id: id(9),
-        email: ready.email,
-        displayName: ready.displayName,
+    Response.json(
+      {
+        status: 'created',
+        operationId: id(2),
+        account: {
+          id: id(9),
+          email: ready.email,
+          displayName: ready.displayName,
+        },
       },
-    })
+      { status: 201 }
+    )
   );
   await expect(
     submitEmployeeCliRecovery(id(9), resume, { fetch })

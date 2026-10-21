@@ -144,6 +144,16 @@ behavior does not promise a creation latency. Regression coverage and remaining
 runtime evidence are recorded in the
 [CREATE qualification contract](../../build/development-tools/employee-schema-qualification#original-create-response-recovery).
 
+CLI recovery of an existing CREATE operation also supports read-only
+`GET .../operations/{operationId}/cli-recovery?view=outcome` with the same platform
+CLI access credential. Fresh CLI MFA, current canonical email, root membership
+and permission checks apply before reads and before disclosure. This view binds
+the original actor/operation and requires provider plus fresh SQL proof; it never
+resumes or mutates. Default rejection GET and version-3 POST resume keep their
+existing contracts. Infrastructure audience authentication remains separate.
+See the [CLI recovery runbook](../../build/development-tools/employee-cli-recovery)
+and its CLI outcome route/client regressions for strict HTTP and identity checks.
+
 ### Managed employee inspection
 
 Web serves `GET /api/v1/infrastructure/internal-accounts/employees/:userId`

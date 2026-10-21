@@ -26,6 +26,7 @@ adjudication or resume. Refresh authentication separately before starting if nee
 import { TuturuuuUserClient } from '@tuturuuu/sdk';
 import {
   inspectEmployeeCliRecovery,
+  observeEmployeeCliRecoveryOutcome,
   submitEmployeeCliRecovery,
 } from '@tuturuuu/internal-api/infrastructure';
 // Repository operator code uses the existing SDK configuration loader.
@@ -72,13 +73,39 @@ The typed client accepts adjudication only at HTTP 200, and resume only as HTTP
 201/created, 202/pending or 409/conflict with the matching original identity.
 Contradictory HTTP/payload pairs require inspection and never establish completion.
 An uncertain CREATE returns inspection guidance, never permission
-for another CREATE or replacement UUID. Use the existing separately authenticated
-original-operation observation path for later pending/active completion proof;
-this recovery route deliberately fences those later phases.
+for another CREATE or replacement UUID. Use the same unexpired CLI access
+credential for read-only original-operation outcome observation:
+
+```ts
+const outcome = await observeEmployeeCliRecoveryOutcome({
+  operationId: originalOperationId,
+  targetUserId: retainedOriginalTargetUserId,
+  email: retainedOriginalEmail,
+  displayName: retainedOriginalDisplayName,
+}, options);
+```
+
+This calls `GET .../cli-recovery?view=outcome` with the original operation key.
+Default GET remains rejection inspection and fences pending/active phases;
+`view=outcome` uses the normal observation factory with fresh CLI authorization,
+original actor/operation binding, independent provider identity, fresh SQL proof
+and final authorization before disclosure. It never claims, creates, provisions,
+unbans or replays. It requires no Infrastructure audience or credential exchange.
+Only HTTP 200/created or stopped and 202/pending are valid outcome pairs; conflict,
+contradictory statuses, identity mismatches and errors never establish completion.
+The original target, email and creation name remain bound; when terminal active
+SQL provenance supplies `creationDisplayName`, that immutable name binds the
+operation while `displayName` reports the current managed profile name.
+POST resume still requires the exact `retry_ready` version-3 tuple. Authentication
+restoration happens separately; do not add SDK refresh/replay to these calls.
 
 Synthetic local regressions cover signed credential target/scope/origin, expiry,
 refresh/signature failures, stale/missing signed or current emails, authorization
 changes during awaited journal work, the HTTP/outcome matrix, owned/missing/foreign
 operations, tuple/version changes, lost acknowledgement and no CREATE during
-adjudication. They do not prove production operation state, original actor,
+adjudication. `employee-cli-outcome-route.test.ts` exercises the actual GET with
+signed CLI credentials, foreign actor/operation, active/pending/stopped, provider
+ban, contradictory fresh SQL, stale authority and no mutation dispatch.
+`employee-cli-outcome.test.ts` covers identity and the strict read-only HTTP matrix
+with one dispatch. These tests do not prove production operation state, original actor,
 provider effects or delivery. Parent/release custody retains those actions.
