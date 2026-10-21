@@ -9,9 +9,11 @@ vi.mock('./employee-creation-authorization', () => ({
   authorizeEmployeeCreation: vi.fn(),
 }));
 
+import { POST as adoptRetainedRoute } from '@/app/api/v1/infrastructure/internal-accounts/address-migrations/adopt-retained/route';
 import { POST as inspectRoute } from '@/app/api/v1/infrastructure/internal-accounts/address-migrations/inspect/route';
 import { POST as migrateRoute } from '@/app/api/v1/infrastructure/internal-accounts/address-migrations/migrate/route';
 import { POST as prepareRoute } from '@/app/api/v1/infrastructure/internal-accounts/address-migrations/prepare/route';
+import { POST as inspectRetainedRoute } from '@/app/api/v1/infrastructure/internal-accounts/address-migrations/retained-inspect/route';
 import { createEmployeeAddressMigrationRequestHandlers } from './employee-address-migration-runtime';
 import { authorizeEmployeeCreation } from './employee-creation-authorization';
 
@@ -151,7 +153,13 @@ async function fixture() {
 
 afterEach(() => vi.unstubAllEnvs());
 describe('address migration runtime binding', () => {
-  it.each([inspectRoute, migrateRoute, prepareRoute])(
+  it.each([
+    inspectRoute,
+    migrateRoute,
+    prepareRoute,
+    inspectRetainedRoute,
+    adoptRetainedRoute,
+  ])(
     'reaches authorization regardless of the retired optional env flag',
     async (route) => {
       for (const flag of [undefined, 'false']) {

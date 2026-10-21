@@ -8746,6 +8746,21 @@
       "search": "Tìm kiếm"
     },
     "address_migration": {
+      "adoption": {
+        "adopt": "Tiếp nhận và giữ nguyên thư",
+        "adopted": "Đã xác nhận biên nhận tiếp nhận. Đọc trạng thái sẵn sàng chuyển đổi trước khi tiếp tục.",
+        "busy": "Đang kiểm tra hộp thư…",
+        "denied": "Không thể tiếp nhận. Giữ nguyên hộp thư và xử lý quyền truy cập, xung đột hoặc thay đổi ảnh chụp.",
+        "description": "Thao tác quản trị riêng dành cho thư đã lưu. Kiểm tra thao tác gốc và xác nhận toàn bộ nội dung thuộc tài khoản này. Dữ liệu phong bì thư lịch sử còn thiếu được giữ nguyên.",
+        "destination": "Xác nhận địa chỉ chuẩn",
+        "inspect": "Đọc trạng thái tiếp nhận",
+        "ownership": "Tôi xác nhận mọi mục được giữ lại trong hộp thư đều thuộc tài khoản đích này và cần tiếp tục truy cập được.",
+        "snapshot": "Ảnh chụp nội dung đã kiểm tra: {snapshot}",
+        "source": "Xác nhận địa chỉ cũ",
+        "target": "Xác nhận UUID tài khoản đích",
+        "title": "Tiếp nhận hộp thư có dữ liệu",
+        "unknown": "Chưa rõ kết quả. Đọc lại thao tác gốc; không gửi yêu cầu tiếp nhận khác."
+      },
       "close": "Đóng",
       "completed": "Đối soát độc lập đã xác nhận địa chỉ đích với cùng UUID người dùng. Điều này chưa xác minh việc gửi và nhận thư đầu cuối.",
       "confirm_destination": "Nhập chính xác địa chỉ đích",

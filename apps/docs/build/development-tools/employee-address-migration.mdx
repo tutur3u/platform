@@ -405,3 +405,56 @@ Related ownership/readiness fields remain exact in a grouped JSON assertion;
 foundation172, journal301, Google30 and legacy10 counts are unchanged. This uses
 `dblink` in the disposable full schema, not a production connection. Executable
 source alone is not a passed contention or provider result.
+
+## Explicit retained-mailbox adoption
+
+Empty-only `prepare` keeps rejecting populated placeholders. A separate
+`retained-inspect` / `adopt-retained` administrator action supports an unowned,
+disabled, unarchived personal canonical mailbox whose sole verified Google
+identity belongs to the unchanged legacy account. This action is available in
+Infrastructure's address migration dialog after the original tuple is frozen,
+including when historical preparation is unknown. It does not resolve that prior
+outcome or mint a replacement operation.
+
+The administrator must freshly confirm the exact target UUID, both addresses and
+that every retained content item belongs to that account. This is an explicit
+entitlement decision for this mailbox snapshot. Missing historical envelope data
+remains missing; matching addresses or localparts alone never establish ownership.
+The action preserves Auth, complete Google identity, workspace memberships,
+mailbox UUID, all retained rows, history and external object references. It makes
+no provider request, creates no account, unbans nobody and sends no mail.
+
+The service-only RPC reuses migration authorization and ordered admission locks,
+then uses NOWAIT table fences for mail graph DML/DDL and conflicting journals.
+It validates the fixed direct and reverse FK inventory, denies unexpected or
+composite FKs, and hashes complete retained rows plus linked raw messages,
+attachments, recipients and label assignments. Only messages, threads, labels and
+stored objects may populate direct mailbox dependencies. Credentials, catch-all
+pointers, jobs, historical events, per-user state, notifications and other access
+records require separate investigation and block this narrow action. Foreign
+authors, cross-mailbox graph links, unlinked/deleted objects, pending or shared
+jobs and conflicting employee journals also block it. Whole-mail-table locks make
+this a short, bounded administrative transaction, never a bulk import API.
+
+Inspection returns only a snapshot digest and tuple-bound eligibility; it writes
+nothing. Adoption revalidates that digest and authorization under the same locks,
+then atomically assigns ownership, inserts exactly one owner membership and writes
+`private.employee_mailbox_adoptions`. That durable receipt binds the actor,
+original operation, revision, target, both addresses and explicit ownership
+confirmation. Migration reservation is fenced to that original operation.
+
+Before dispatch, the UI persists an unknown-outcome fence scoped to the actor,
+workspace and operation. A lost acknowledgement permits only inspection of the
+original receipt. An absent receipt, drift, revoked actor or failed readback never
+silently re-enables adoption. A confirmed receipt triggers the ordinary migration
+readiness read; reserve/claim/complete remain separate. Clearing browser storage
+or choosing another operation is not an unknown-outcome recovery procedure.
+
+Regression coverage is in `employee-retained-mailbox-adoption.sql` (rollback-only
+full-schema packet), the adoption session tests and migration HTTP adapter tests.
+Run the packet using the canonical isolated Supabase runner with
+`--test supabase/tests/employee-retained-mailbox-adoption.sql`, with same-database
+`--typegen` output, on the admitted Linux environment. Preserve Studio priority
+and cold-restore barriers. Static source checks and mocked HTTP tests do not prove
+SQL acceptance; require actual isolated migration application, generated types,
+exact-commit CI and independent review before any authorized account operation.

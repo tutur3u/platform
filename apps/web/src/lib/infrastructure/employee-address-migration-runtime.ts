@@ -11,7 +11,14 @@ export function createEmployeeAddressMigrationRequestHandlers(
     'trustedOrigin'
   >
 ) {
-  function handler(action: 'inspect' | 'migrate' | 'prepare') {
+  function handler(
+    action:
+      | 'inspect'
+      | 'migrate'
+      | 'prepare'
+      | 'retained-inspect'
+      | 'adopt-retained'
+  ) {
     return (request: Request) =>
       createEmployeeAddressMigrationHandler({
         ...deps,
@@ -22,6 +29,8 @@ export function createEmployeeAddressMigrationRequestHandlers(
     inspect: handler('inspect'),
     migrate: handler('migrate'),
     prepare: handler('prepare'),
+    inspectRetained: handler('retained-inspect'),
+    adoptRetained: handler('adopt-retained'),
   };
 }
 

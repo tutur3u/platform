@@ -287,3 +287,21 @@ CI controls, not runtime activation gates: the migration API uses current root
 permission/configuration/readiness with no optional environment flag. The selected
 30-case packet fences a real FK-writer table lock on a separate disposable database
 connection and verifies unchanged state and cleanup; it does not access production.
+
+### Explicit retained-mailbox adoption
+
+Keep the Google-destination empty-only prepare guard unchanged. Populated
+placeholders require the separate retained adoption RPC and explicit content
+ownership confirmation tied to the original tuple/revision and fresh snapshot.
+Confirmation resolves entitlement only for that mailbox; it cannot waive foreign
+access, identity, graph or catalog contradictions. Preserve missing historical
+provenance rather than fabricating envelopes or reparenting content.
+
+The adoption receipt is distinct from the migration journal. Reconcile lost
+acknowledgements by inspecting the original operation; never replay an uncertain
+write or replace its UUID. Require committed adoption/readiness before ordinary
+reserve/claim/complete. Use the canonical full-schema rollback packet and
+same-database type generation; source-only tests or a minimal fixture cannot
+qualify SQL. See the retained-adoption section of
+`apps/docs/build/development-tools/employee-address-migration.mdx` for its narrow
+four-relation allowance, graph rejection rules and operational fences.
