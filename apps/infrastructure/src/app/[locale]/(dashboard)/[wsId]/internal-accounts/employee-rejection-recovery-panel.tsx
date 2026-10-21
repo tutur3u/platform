@@ -1,5 +1,5 @@
 'use client';
-import type { EmployeeRejectionRecoveryState } from '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery';
+import type { EmployeeRejectionRecoveryState } from '@tuturuuu/internal-api/infrastructure';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';

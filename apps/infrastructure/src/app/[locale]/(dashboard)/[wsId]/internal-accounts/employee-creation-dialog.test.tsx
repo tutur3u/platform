@@ -14,17 +14,9 @@ vi.mock('@tuturuuu/internal-api/infrastructure', async (original) => ({
   createInternalEmployee: api.create,
   getEmployeeCreationAvailability: api.availability,
   getInternalEmployeeCreationOperation: api.observe,
+  inspectEmployeeRejection: api.inspectRejection,
+  adjudicateEmployeeRejection: api.adjudicateRejection,
 }));
-vi.mock(
-  '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery',
-  async (original) => ({
-    ...(await original<
-      typeof import('@tuturuuu/internal-api/infrastructure/employee-rejection-recovery')
-    >()),
-    inspectEmployeeRejection: api.inspectRejection,
-    adjudicateEmployeeRejection: api.adjudicateRejection,
-  })
-);
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
 const scope = vi.hoisted(() => ({

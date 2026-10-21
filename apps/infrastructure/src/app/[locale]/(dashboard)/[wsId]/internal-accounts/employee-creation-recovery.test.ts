@@ -1,5 +1,5 @@
 import { InternalApiError } from '@tuturuuu/internal-api/client';
-import type { EmployeeRejectionRecoveryState } from '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery';
+import type { EmployeeRejectionRecoveryState } from '@tuturuuu/internal-api/infrastructure';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { EmployeeCreationRecovery } from './employee-creation-recovery';
 

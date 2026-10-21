@@ -1,13 +1,11 @@
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
-  type EmployeeCreationObservation,
-  getInternalEmployeeCreationOperation,
-} from '@tuturuuu/internal-api/infrastructure';
-import {
   adjudicateEmployeeRejection,
+  type EmployeeCreationObservation,
   type EmployeeRejectionRecoveryState,
+  getInternalEmployeeCreationOperation,
   inspectEmployeeRejection,
-} from '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery';
+} from '@tuturuuu/internal-api/infrastructure';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
 
