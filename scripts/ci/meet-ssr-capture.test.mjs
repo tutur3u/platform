@@ -77,7 +77,7 @@ test('chunked prefixed markers and EOF record are sanitized; ordinary output sti
     collector.forward('stdout', Buffer.from([byte]));
   const packet = collector.finish(closed, source);
   assert.deepEqual(packet.records, [record]);
-  assert.deepEqual(output, [['stdout', 'ordinary\n']]);
+  assert.deepEqual(collectedBytes(output, 'stdout'), Buffer.from('ordinary\n'));
   assert.throws(() => collector.finish(closed, source), /already finalized/);
 });
 
@@ -171,4 +171,89 @@ test('real caller wiring keeps distinct loader phases, handler outcome and post-
   );
   assert.match(launcher, /collector\.forward/);
   assert.match(launcher, /round,\s*outcome,\s*receipt,\s*ssr,/);
+});
+
+function collectedBytes(output, stream = 'stderr') {
+  return Buffer.concat(
+    output
+      .filter(([name]) => name === stream)
+      .map(([, bytes]) => (Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes)))
+  );
+}
+test('R9 ordinary long bytes and embedded valid marker suffix are never capped or captured', () => {
+  const output = [],
+    collector = createMeetSsrCollector((...args) => output.push(args));
+  const ordinary = Buffer.concat([
+    Buffer.from(`ordinary ${'x'.repeat(9000)}`),
+    Buffer.from([0xff, 0xfe]),
+    Buffer.from(` ${marker}${JSON.stringify(record)}\n`),
+  ]);
+  for (let i = 0; i < ordinary.length; i += 17)
+    collector.forward('stderr', ordinary.subarray(i, i + 17));
+  const packet = collector.finish(closed, source);
+  assert.deepEqual(collectedBytes(output), ordinary);
+  assert.equal(packet.availability, 'UNKNOWN');
+  assert.equal(packet.dropped, 0);
+  const embeddedOutput = [],
+    embedded = createMeetSsrCollector((...args) => embeddedOutput.push(args));
+  const short = Buffer.from(
+    `primary contains ${marker}${JSON.stringify(record)}\n`
+  );
+  embedded.forward('stderr', short);
+  assert.equal(embedded.finish(closed, source).availability, 'UNKNOWN');
+  assert.deepEqual(collectedBytes(embeddedOutput), short);
+});
+test('R9 incomplete natural closure still flushes ordinary EOF exactly and keeps capture UNKNOWN', () => {
+  for (const outcome of [
+    { ...closed, signal: 'SIGTERM' },
+    { ...closed, stdioDrained: false },
+    { ...closed, closeObserved: false },
+  ]) {
+    const output = [],
+      collector = createMeetSsrCollector((...args) => output.push(args));
+    send(collector, record);
+    const tail = Buffer.from('meet-ssr-');
+    collector.forward('stderr', tail);
+    const packet = collector.finish(outcome, source);
+    assert.deepEqual(collectedBytes(output), tail);
+    assert.equal(packet.availability, 'UNKNOWN');
+    assert.deepEqual(packet.records, []);
+  }
+});
+test('R9 recognized prefix chunk boundaries suppress payloads while other prefix lookalikes remain ordinary', () => {
+  for (const prefix of [marker, `# ${marker}`]) {
+    for (let split = 0; split <= prefix.length; split++) {
+      const output = [],
+        collector = createMeetSsrCollector((...args) => output.push(args));
+      const line = Buffer.from(`${prefix}${JSON.stringify(record)}\n`);
+      collector.forward('stderr', line.subarray(0, split));
+      collector.forward('stderr', line.subarray(split));
+      assert.deepEqual(collector.finish(closed, source).records, [record]);
+      assert.equal(collectedBytes(output).length, 0);
+    }
+  }
+  for (const text of [
+    ` # ${marker}${JSON.stringify(record)}\n`,
+    `prefix# ${marker}${JSON.stringify(record)}\n`,
+    'meet-ssr-',
+    '# meet-ssr-',
+  ]) {
+    const output = [],
+      collector = createMeetSsrCollector((...args) => output.push(args));
+    collector.forward('stderr', Buffer.from(text));
+    assert.equal(collector.finish(closed, source).availability, 'UNKNOWN');
+    assert.deepEqual(collectedBytes(output), Buffer.from(text));
+  }
+});
+
+test('R9 exhausted diagnostic candidate cap never caps subsequent ordinary bytes', () => {
+  const output = [],
+    collector = createMeetSsrCollector((...args) => output.push(args));
+  for (let i = 0; i < 70; i++) send(collector, record);
+  const ordinary = Buffer.from(`primary ${'x'.repeat(10000)}`);
+  collector.forward('stdout', ordinary);
+  const packet = collector.finish(closed, source);
+  assert.equal(packet.records.length, 64);
+  assert.equal(packet.dropped, 6);
+  assert.deepEqual(collectedBytes(output, 'stdout'), ordinary);
 });

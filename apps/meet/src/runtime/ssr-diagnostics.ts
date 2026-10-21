@@ -69,7 +69,7 @@ export type MeetSsrRecord = z.infer<typeof recordSchema>;
 type Phase = MeetSsrRecord['phase'];
 type Outcome = MeetSsrRecord['outcome'];
 
-function data(value: object, key: string): unknown {
+function data(value: object, key: PropertyKey, complete = false): unknown {
   let current: object | null = value;
   for (let depth = 0; current && depth < 3; depth++) {
     const descriptor = Object.getOwnPropertyDescriptor(current, key);
@@ -80,6 +80,8 @@ function data(value: object, key: string): unknown {
     }
     current = Object.getPrototypeOf(current);
   }
+  if (current && complete)
+    throw new Error('Unavailable diagnostic prototype depth');
   return undefined;
 }
 const allowed = <T extends string>(value: unknown, values: readonly T[]) =>
@@ -101,7 +103,11 @@ export function projectMeetSsr(
     frames: [],
   };
   try {
-    // Use the owning router's predicate; neither status nor Location proves a router redirect.
+    // The owning predicate reads instanceof Response and options; inspect descriptors first.
+    // This avoids ordinary accessors, not hostile Proxy traps or mutated global intrinsics.
+    data(Response, Symbol.hasInstance, true);
+    data(Response, 'prototype', true);
+    if (value instanceof Response) data(value, 'options', true);
     record.kind = isRedirect(value)
       ? 'router-redirect'
       : value instanceof Response

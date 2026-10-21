@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { StringDecoder } from 'node:string_decoder';
 import {
   MEET_SSR_MARKER,
   parseMeetSsrRecord,
@@ -9,12 +8,18 @@ import {
 export function createMeetSsrCollector(
   forward = (stream, bytes) => process[stream].write(bytes)
 ) {
-  const streams = new Map(
-    ['stdout', 'stderr'].map((name) => [
-      name,
-      { decoder: new StringDecoder('utf8'), text: '', overflow: false },
-    ])
+  // Only the raw console marker and Node test's exact TAP console prefix qualify.
+  const prefixes = [MEET_SSR_MARKER, `# ${MEET_SSR_MARKER}`].map((text) =>
+    Buffer.from(text)
   );
+  const fresh = () => ({
+    mode: 'prefix',
+    prefix: Buffer.alloc(0),
+    payload: Buffer.alloc(0),
+    size: 0,
+    overflow: false,
+  });
+  const streams = new Map(['stdout', 'stderr'].map((name) => [name, fresh()]));
   const candidates = [];
   const phases = (records) =>
     Object.fromEntries(
@@ -32,39 +37,59 @@ export function createMeetSsrCollector(
   const drop = () => {
     dropped = Math.min(1_000_000, dropped + 1);
   };
-  function line(stream, text, overflow) {
-    if (overflow) {
+  function diagnostic(state) {
+    if (state.overflow || candidates.length === 64) {
       drop();
       return;
     }
-    const offset = text.indexOf(MEET_SSR_MARKER);
-    if (offset < 0) {
-      forward(stream, `${text}\n`);
-      return;
-    }
-    if (candidates.length === 64) {
-      drop();
-      return;
-    }
-    candidates.push(text.slice(offset + MEET_SSR_MARKER.length));
+    candidates.push(state.payload.toString('utf8'));
   }
-  function consume(stream, text) {
+  function reset(state) {
+    Object.assign(state, fresh());
+  }
+  function consume(stream, chunk) {
     const state = streams.get(stream);
-    let start = 0;
-    while (start < text.length) {
-      const end = text.indexOf('\n', start);
-      const part = text.slice(start, end < 0 ? text.length : end);
-      if (!state.overflow && state.text.length + part.length <= 2048)
-        state.text += part;
-      else {
-        state.text = '';
-        state.overflow = true;
+    let offset = 0;
+    while (offset < chunk.length) {
+      if (state.mode === 'prefix') {
+        const byte = chunk.subarray(offset, ++offset);
+        state.prefix = Buffer.concat([state.prefix, byte]);
+        const possible = prefixes.filter((prefix) =>
+          prefix.subarray(0, state.prefix.length).equals(state.prefix)
+        );
+        if (!possible.length) {
+          forward(stream, state.prefix);
+          state.prefix = Buffer.alloc(0);
+          if (byte[0] === 10) reset(state);
+          else state.mode = 'ordinary';
+        } else if (
+          possible.some((prefix) => prefix.length === state.prefix.length)
+        ) {
+          state.mode = 'diagnostic';
+          state.size = state.prefix.length;
+          state.prefix = Buffer.alloc(0);
+        }
+        continue;
       }
-      if (end < 0) break;
-      line(stream, state.text, state.overflow);
-      state.text = '';
-      state.overflow = false;
-      start = end + 1;
+      const newline = chunk.indexOf(10, offset);
+      const end = newline < 0 ? chunk.length : newline + 1;
+      const part = chunk.subarray(offset, end);
+      if (state.mode === 'ordinary') forward(stream, part);
+      else {
+        const payload = newline < 0 ? part : part.subarray(0, part.length - 1);
+        state.size += payload.length;
+        if (!state.overflow && state.size <= 2048)
+          state.payload = Buffer.concat([state.payload, payload]);
+        else {
+          state.payload = Buffer.alloc(0);
+          state.overflow = true;
+        }
+      }
+      if (newline >= 0) {
+        if (state.mode === 'diagnostic') diagnostic(state);
+        reset(state);
+      }
+      offset = end;
     }
   }
   return {
@@ -74,12 +99,19 @@ export function createMeetSsrCollector(
         'Unsupported diagnostic stream'
       );
       assert.ok(Buffer.isBuffer(chunk), 'Unsupported diagnostic bytes');
-      consume(stream, streams.get(stream).decoder.write(chunk));
+      consume(stream, chunk);
     },
     finish(outcome, sourceSHA) {
       assert.equal(finished, false, 'Diagnostics already finalized');
       assert.match(sourceSHA, /^[a-f0-9]{40}$/);
       finished = true;
+      // Ordinary tails survive even a signaled child or incomplete diagnostic closure.
+      for (const [stream, state] of streams) {
+        if (state.mode === 'prefix' && state.prefix.length)
+          forward(stream, state.prefix);
+        else if (state.mode === 'diagnostic') diagnostic(state);
+        reset(state);
+      }
       const closed =
         outcome?.closeObserved === true &&
         outcome?.stdioDrained === true &&
@@ -100,12 +132,6 @@ export function createMeetSsrCollector(
           records: [],
           dropped,
         };
-      }
-      for (const [stream, state] of streams) {
-        consume(stream, state.decoder.end());
-        if (state.text || state.overflow)
-          line(stream, state.text, state.overflow);
-        state.text = '';
       }
       const records = [];
       for (const candidate of candidates) {

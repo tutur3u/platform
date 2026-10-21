@@ -177,3 +177,96 @@ it('emission is bounded per instance with explicit overflow, not silent success'
     'meet-ssr-diagnostic {"version":1,"overflow":true}'
   );
 });
+
+it('R9 own and inherited options accessors are unavailable without invocation and retain primary identity', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  for (const inherited of [false, true]) {
+    const getter = vi.fn(() => {
+      throw Error('SECRET');
+    });
+    const original = new Response(null, { status: 307 });
+    const target = inherited
+      ? Object.create(Object.getPrototypeOf(original))
+      : original;
+    Object.defineProperty(target, 'options', { get: getter });
+    if (inherited) Object.setPrototypeOf(original, target);
+    const record = projectMeetSsr(original, 'loader-model', 'threw');
+    expect(record.kind).toBe('UNKNOWN');
+    expect(record.inspection).toBe('unavailable');
+    await expect(
+      observeMeetSsr('loader-model', () => {
+        throw original;
+      })
+    ).rejects.toBe(original);
+    expect(getter).not.toHaveBeenCalled();
+  }
+});
+
+it('R9 beyond-bound prototype options remain unavailable without reading a later accessor', () => {
+  const getter = vi.fn(() => {
+    throw Error('SECRET');
+  });
+  const original = new Response(null, { status: 307 });
+  const inherited = Object.create(Response.prototype);
+  Object.defineProperty(inherited, 'options', { get: getter });
+  Object.setPrototypeOf(
+    original,
+    Object.create(Object.create(Object.create(inherited)))
+  );
+  expect(projectMeetSsr(original, 'loader-model', 'threw').inspection).toBe(
+    'unavailable'
+  );
+  expect(getter).not.toHaveBeenCalled();
+});
+it('R9 rejected-promise options accessors never run and late operation rejection stays observed', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  const accessor = vi.fn(() => Promise.reject(new Error('UNOBSERVED')));
+  const original = new Response(null, { status: 307 });
+  Object.defineProperty(original, 'options', { get: accessor });
+  expect(projectMeetSsr(original, 'loader-model', 'threw').inspection).toBe(
+    'unavailable'
+  );
+  expect(accessor).not.toHaveBeenCalled();
+  const unhandled = vi.fn();
+  process.on('unhandledRejection', unhandled);
+  try {
+    let rejectOperation: (reason: unknown) => void = () => {
+      throw Error('operation not acquired');
+    };
+    const operation = new Promise<never>((_, reject) => {
+      rejectOperation = reject;
+    });
+    const observed = observeMeetSsr('loader-model', () => operation);
+    const assertion = expect(observed).rejects.toBe(original);
+    await Promise.resolve();
+    rejectOperation(original);
+    await assertion;
+    await Promise.resolve();
+    expect(unhandled).not.toHaveBeenCalled();
+  } finally {
+    process.off('unhandledRejection', unhandled);
+  }
+});
+it('R9 predicate instanceof accessor is checked before invocation', () => {
+  const previous = Object.getOwnPropertyDescriptor(
+    Response,
+    Symbol.hasInstance
+  );
+  const getter = vi.fn(() => {
+    throw Error('SECRET');
+  });
+  let record: ReturnType<typeof projectMeetSsr> | undefined;
+  try {
+    Object.defineProperty(Response, Symbol.hasInstance, {
+      configurable: true,
+      get: getter,
+    });
+    record = projectMeetSsr({}, 'loader-model', 'threw');
+  } finally {
+    if (previous) Object.defineProperty(Response, Symbol.hasInstance, previous);
+    else Reflect.deleteProperty(Response, Symbol.hasInstance);
+  }
+  expect(record?.kind).toBe('UNKNOWN');
+  expect(record?.inspection).toBe('unavailable');
+  expect(getter).not.toHaveBeenCalled();
+});
