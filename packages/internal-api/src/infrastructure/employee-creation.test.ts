@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import { InternalApiError } from '../client';
 import {
   createInternalEmployee,
+  EmployeeCreationNotAdmittedError,
   EmployeeCreationPayloadSchema,
   getEmployeeCreationAvailability,
 } from './employee-creation';
@@ -221,6 +223,38 @@ it.each(
 );
 
 const actorUserId = '11111111-1111-4111-8111-111111111111';
+it.each([400, 503])(
+  'preserves HTTP %s with a non-JSON body without qualifying nonadmission or replaying',
+  async (status) => {
+    const transport = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response('upstream unavailable', { status }));
+    const request = createInternalEmployee(payload, {
+      operationId,
+      actorUserId,
+      fetch: transport,
+      baseUrl: 'https://infra.test',
+    });
+    await expect(request).rejects.toBeInstanceOf(InternalApiError);
+    await expect(request).rejects.toMatchObject({
+      name: 'InternalApiError',
+      status,
+      message: `Internal API request failed: ${status}`,
+    });
+    await expect(request).rejects.not.toBeInstanceOf(
+      EmployeeCreationNotAdmittedError
+    );
+    await expect(request).rejects.not.toHaveProperty('outcome');
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(transport.mock.calls[0]?.[0]).toBe(
+      'https://infra.test/api/v1/infrastructure/internal-accounts/employees'
+    );
+    const init = transport.mock.calls[0]?.[1];
+    expect(init?.method).toBe('POST');
+    expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(operationId);
+    expect(JSON.parse(String(init?.body))).toEqual(payload);
+  }
+);
 const notAdmitted = {
   status: 'not_admitted',
   code: 'employee_creation_not_admitted',
