@@ -1,3 +1,4 @@
+import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,7 +16,8 @@ const mock = vi.hoisted(() => ({
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mock.satellite,
 }));
-vi.mock('@tuturuuu/auth/app-session', () => ({
+vi.mock('@tuturuuu/auth/app-session', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/auth/app-session')>()),
   getAppSessionUserFromRequest: mock.app,
 }));
 vi.mock('@tuturuuu/auth/supabase-session-user', () => ({
@@ -241,4 +243,23 @@ describe('fresh root employee creation authority', () => {
       await authorizeEmployeeCreation(new Request('https://web.test/employees'))
     ).toEqual({ authorized: false, status: 503 });
   });
+});
+
+it('keeps a valid platform CLI token denied on ordinary Infrastructure authorization', async () => {
+  const actual = await vi.importActual<
+    typeof import('@tuturuuu/auth/app-session')
+  >('@tuturuuu/auth/app-session');
+  mock.app.mockImplementation(actual.getAppSessionUserFromRequest);
+  const token = createCliAppSession({
+    userId: '10000000-0000-4000-8000-000000000001',
+    email: 'actor@tuturuuu.com',
+  }).access.token;
+  expect(
+    await authorizeEmployeeCreation(
+      new Request('https://web.test/employees', {
+        headers: { authorization: `Bearer ${token}` },
+      })
+    )
+  ).toEqual({ authorized: false, status: 401 });
+  expect(mock.permissions).not.toHaveBeenCalled();
 });

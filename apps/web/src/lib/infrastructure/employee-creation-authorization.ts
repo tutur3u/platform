@@ -25,6 +25,17 @@ export async function authorizeEmployeeCreation(
           : null
         : await getSatelliteAppSessionUser('infra');
     if (!user) return { authorized: false, status: 401 };
+    return await authorizeCurrentEmployeeActor(request, user);
+  } catch {
+    return { authorized: false, status: 503 };
+  }
+}
+
+export async function authorizeCurrentEmployeeActor(
+  request: Request,
+  user: { id: string; email?: string | null }
+): Promise<EmployeeCreationAuthorization> {
+  try {
     if (!isExactTuturuuuDotComEmail(user.email))
       return { authorized: false, status: 403 };
     const permissions = await getPermissions({

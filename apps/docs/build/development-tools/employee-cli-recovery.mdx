@@ -1,0 +1,71 @@
+---
+title: Employee CLI recovery
+description: Operation-scoped employee CREATE recovery with existing CLI authentication.
+---
+
+The operation-only Web route is
+`/api/v1/infrastructure/internal-accounts/employees/operations/{operationId}/cli-recovery`.
+Its CLI authorization grant is separate from Infrastructure audience acceptance.
+It verifies the unchanged CLI access bearer, CLI origin, current required-MFA
+policy/lineage and the existing current employee administrator checks. There is
+no CLI-to-Infra exchange, actor override, service-auth bypass or ordinary CREATE
+admission. The release owner must independently review this grant and require
+exact-commit Web build, lint, type-check and test CI before any authorized release.
+
+For repository operator code, load the existing CLI configuration through its
+normal loader and create the existing SDK client. Do not print configuration,
+headers, passwords or credentials. Recovery requests must use a client without
+automatic refresh/replay: a final authorization failure can follow a committed
+adjudication. Refresh authentication separately before starting if needed.
+
+```ts
+import { TuturuuuUserClient } from '@tuturuuu/sdk';
+import {
+  inspectEmployeeCliRecovery,
+  submitEmployeeCliRecovery,
+} from '@tuturuuu/internal-api/infrastructure';
+// Repository operator code uses the existing SDK configuration loader.
+import { readCliConfig } from '../../packages/sdk/src/cli/config';
+
+const config = await readCliConfig();
+if (!config.session?.accessToken || !config.session.expiresAt ||
+    config.session.expiresAt * 1000 <= Date.now()) {
+  throw new Error('Authenticate with ttr login before recovery');
+}
+const client = new TuturuuuUserClient({
+  baseUrl: config.baseUrl,
+  accessToken: config.session.accessToken,
+  // Omit refreshToken: this client must not retry a mutation after a 401.
+});
+const options = client.getClientOptions();
+const state = await inspectEmployeeCliRecovery(originalOperationId, options);
+```
+
+The caller supplies its retained original operation ID; no production identity is
+embedded in the adapter. Independently compare the returned actor and complete
+identity tuple to the authorized retained intent. A `fenced`/unavailable response
+or an actor mismatch stops the procedure. GET never claims or creates anything.
+
+For `eligible` version 2, the original actor must actually establish terminal
+rejection from retained evidence and explicitly approve every existing
+attestation. Submit `{ action: 'adjudicate', adjudication }` once with the exact
+returned tuple, original lease/attempt, retained event ID and evidence SHA-256.
+A nearby provider 422 and account absence do not establish terminal rejection.
+After an uncertain response, inspect; do not blindly repeat adjudication.
+
+Only after an independently matching `retry_ready` version-3 readback may the
+operator explicitly submit `{ action: 'resume', expected: state,
+temporaryPassword }` once through `submitEmployeeCliRecovery`. Obtain the fresh
+password privately and keep it transient. The route rechecks current
+administrator authorization, operation/key and every identity/audit field before
+claiming the original operation. The existing journal reauthorizes its SQL and
+provider phases. An uncertain CREATE returns inspection guidance, never permission
+for another CREATE or replacement UUID. Use the existing separately authenticated
+original-operation observation path for later pending/active completion proof;
+this recovery route deliberately fences those later phases.
+
+Synthetic local regressions cover signed credential target/scope/origin, expiry,
+refresh/signature failures, current authorization, owned/missing/foreign
+operations, tuple/version changes, lost acknowledgement and no CREATE during
+adjudication. They do not prove production operation state, original actor,
+provider effects or delivery. Parent/release custody retains those actions.
