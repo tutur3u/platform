@@ -11,7 +11,7 @@ import { restoreInternalEmployee } from './employee-restoration';
 
 import { EmployeeRestorationConsumer } from './employee-restoration-consumer';
 
-vi.mock('server-only', () => ({}));
+vi.mock('../../../utils/node_modules/server-only/index.js', () => ({}));
 
 const id = '10000000-0000-4000-8000-000000000001';
 const operationId = '20000000-0000-4000-8000-000000000001';
