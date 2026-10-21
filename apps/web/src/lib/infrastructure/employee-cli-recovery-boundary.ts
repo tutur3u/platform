@@ -17,9 +17,9 @@ type Dependencies = {
   connect: Parameters<typeof makeEmployeeRejectionBoundary>[0]['connect'];
   journal(request: Request): Promise<EmployeeCreationJournal | undefined>;
 };
-const reply = (status: number, code: string) =>
+const reply = (status: number, code: string, nextAction?: 'inspect') =>
   Response.json(
-    { code },
+    { code, ...(nextAction ? { nextAction } : {}) },
     {
       status,
       headers: { 'Cache-Control': 'private, no-store, max-age=0' },
@@ -114,7 +114,7 @@ export function makeEmployeeCliRecoveryBoundary(deps: Dependencies) {
         return reply(409, 'employee_recovery_fenced');
       const journal = await deps.journal(request);
       if (!journal) return reply(503, 'employee_recovery_unavailable');
-      return makeEmployeeCreationBoundary({
+      const response = await makeEmployeeCreationBoundary({
         authorize: deps.authorize,
         journal: {
           available: (actorId) => journal.available(actorId),
@@ -169,8 +169,19 @@ export function makeEmployeeCliRecoveryBoundary(deps: Dependencies) {
           }),
         })
       );
+      const finalActor = await deps.authorize(request);
+      if (
+        !finalActor.authorized ||
+        finalActor.actorUserId !== actor.actorUserId
+      )
+        return reply(
+          finalActor.authorized ? 403 : finalActor.status,
+          'employee_recovery_unconfirmed',
+          'inspect'
+        );
+      return response;
     } catch {
-      return reply(503, 'employee_recovery_unconfirmed');
+      return reply(503, 'employee_recovery_unconfirmed', 'inspect');
     }
   };
 }

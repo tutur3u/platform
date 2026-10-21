@@ -73,6 +73,8 @@ export async function submitEmployeeCliRecovery(
     throw await parseInternalApiError(response);
   const value: unknown = await response.json();
   if (body.action === 'adjudicate') {
+    if (response.status !== 200)
+      throw new Error('Recovery adjudication requires inspection');
     const state = EmployeeCliRetryReadySchema.parse(value);
     for (const key of [
       'actorUserId',
@@ -91,7 +93,8 @@ export async function submitEmployeeCliRecovery(
   }
   const result = EmployeeCreationReplySchema.parse(value);
   if (
-    (response.status === 409) !== (result.status === 'conflict') ||
+    response.status !==
+      { created: 201, pending: 202, conflict: 409 }[result.status] ||
     result.operationId !== operationId ||
     (result.status === 'created' &&
       (result.account.id !== identity.targetUserId ||

@@ -12,6 +12,10 @@ const mock = vi.hoisted(() => ({
   from: vi.fn(),
   member: vi.fn(),
   filters: [] as [string, unknown][],
+  mfa: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/required-mfa-app-session', () => ({
+  isRequiredMfaAppSessionAllowed: mock.mfa,
 }));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mock.satellite,
@@ -31,11 +35,13 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mock.admin,
 }));
 
+import { authorizeEmployeeCliRecovery } from './employee-cli-recovery-authorization';
 import { authorizeEmployeeCreation } from './employee-creation-authorization';
 
 const user = { id: 'actor', email: 'actor@tuturuuu.com' };
 beforeEach(() => {
   vi.clearAllMocks();
+  mock.mfa.mockResolvedValue(true);
   mock.satellite.mockResolvedValue(user);
   mock.app.mockReturnValue(user);
   mock.supabase.mockResolvedValue({ user });
@@ -76,6 +82,69 @@ beforeEach(() => {
     },
     error: null,
   });
+});
+
+it.each([
+  { signed: user.email, current: 'renamed@tuturuuu.com' },
+  { signed: user.email, current: null },
+  { signed: user.email, current: undefined },
+  { signed: null, current: user.email },
+  { signed: undefined, current: user.email },
+  { signed: 'bad..email@tuturuuu.com', current: 'bad..email@tuturuuu.com' },
+  { signed: 'actor@tuturuuu.com.attacker.test', current: user.email },
+])(
+  'CLI rejects stale, missing or invalid signed/current email: %j',
+  async ({ signed, current }) => {
+    mock.identity.mockResolvedValue({
+      data: {
+        user: { ...user, email: current, email_confirmed_at: '2026-01-01' },
+      },
+      error: null,
+    });
+    const token = createCliAppSession({ userId: user.id, email: signed }).access
+      .token;
+    for (const method of ['GET', 'POST']) {
+      expect(
+        await authorizeEmployeeCliRecovery(
+          new Request('https://web.test/recovery', {
+            method,
+            headers: { authorization: `Bearer ${token}` },
+          })
+        )
+      ).toEqual({ authorized: false, status: 403 });
+    }
+  }
+);
+
+it('CLI compares canonical signed email to fresh Auth email', async () => {
+  const token = createCliAppSession({
+    userId: user.id,
+    email: ' Actor@TUTURUUU.COM ',
+  }).access.token;
+  expect(
+    await authorizeEmployeeCliRecovery(
+      new Request('https://web.test/recovery', {
+        headers: { authorization: `Bearer ${token}` },
+      })
+    )
+  ).toEqual({ authorized: true, actorUserId: user.id });
+  expect(mock.identity).toHaveBeenCalledExactlyOnceWith(user.id);
+});
+
+it('preserves ordinary Infra acceptance of a changed internal Auth email', async () => {
+  mock.identity.mockResolvedValue({
+    data: {
+      user: {
+        ...user,
+        email: 'renamed@tuturuuu.com',
+        email_confirmed_at: '2026-01-01',
+      },
+    },
+    error: null,
+  });
+  expect(
+    await authorizeEmployeeCreation(new Request('https://web.test/employees'))
+  ).toEqual({ authorized: true, actorUserId: user.id });
 });
 describe('fresh root employee creation authority', () => {
   it('restores creator authority with MEMBER membership while default grants remain absent', async () => {

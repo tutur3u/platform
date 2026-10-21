@@ -7,7 +7,11 @@ The operation-only Web route is
 `/api/v1/infrastructure/internal-accounts/employees/operations/{operationId}/cli-recovery`.
 Its CLI authorization grant is separate from Infrastructure audience acceptance.
 It verifies the unchanged CLI access bearer, CLI origin, current required-MFA
-policy/lineage and the existing current employee administrator checks. There is
+policy/lineage and the existing current employee administrator checks. CLI recovery
+also requires a valid signed email that canonically matches the freshly read,
+confirmed Auth email, including when both addresses are internal. Missing or
+invalid email fails closed for reads and writes. Ordinary Infrastructure
+authorization keeps its existing behavior. There is
 no CLI-to-Infra exchange, actor override, service-auth bypass or ordinary CREATE
 admission. The release owner must independently review this grant and require
 exact-commit Web build, lint, type-check and test CI before any authorized release.
@@ -16,7 +20,7 @@ For repository operator code, load the existing CLI configuration through its
 normal loader and create the existing SDK client. Do not print configuration,
 headers, passwords or credentials. Recovery requests must use a client without
 automatic refresh/replay: a final authorization failure can follow a committed
-adjudication. Refresh authentication separately before starting if needed.
+adjudication or resume. Refresh authentication separately before starting if needed.
 
 ```ts
 import { TuturuuuUserClient } from '@tuturuuu/sdk';
@@ -59,13 +63,22 @@ temporaryPassword }` once through `submitEmployeeCliRecovery`. Obtain the fresh
 password privately and keep it transient. The route rechecks current
 administrator authorization, operation/key and every identity/audit field before
 claiming the original operation. The existing journal reauthorizes its SQL and
-provider phases. An uncertain CREATE returns inspection guidance, never permission
+provider phases. After all awaited resume work, the route freshly checks the CLI
+token, MFA and current administrator authority before disclosing any result.
+Authorization loss withholds the result and returns `nextAction: inspect`; the
+mutation may already have committed. Retain the original operation and evidence,
+restore authorization separately, and inspect without replaying the mutation.
+The typed client accepts adjudication only at HTTP 200, and resume only as HTTP
+201/created, 202/pending or 409/conflict with the matching original identity.
+Contradictory HTTP/payload pairs require inspection and never establish completion.
+An uncertain CREATE returns inspection guidance, never permission
 for another CREATE or replacement UUID. Use the existing separately authenticated
 original-operation observation path for later pending/active completion proof;
 this recovery route deliberately fences those later phases.
 
 Synthetic local regressions cover signed credential target/scope/origin, expiry,
-refresh/signature failures, current authorization, owned/missing/foreign
+refresh/signature failures, stale/missing signed or current emails, authorization
+changes during awaited journal work, the HTTP/outcome matrix, owned/missing/foreign
 operations, tuple/version changes, lost acknowledgement and no CREATE during
 adjudication. They do not prove production operation state, original actor,
 provider effects or delivery. Parent/release custody retains those actions.

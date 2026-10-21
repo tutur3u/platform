@@ -5,6 +5,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { z } from 'zod';
 import type { EmployeeCreationAuthorization } from './employee-creation-boundary';
 
 export async function authorizeEmployeeCreation(
@@ -33,10 +34,17 @@ export async function authorizeEmployeeCreation(
 
 export async function authorizeCurrentEmployeeActor(
   request: Request,
-  user: { id: string; email?: string | null }
+  user: { id: string; email?: string | null },
+  options: { requireMatchingEmail?: boolean } = {}
 ): Promise<EmployeeCreationAuthorization> {
   try {
-    if (!isExactTuturuuuDotComEmail(user.email))
+    const signedEmail = options.requireMatchingEmail
+      ? z.email().safeParse(user.email?.trim().toLowerCase())
+      : null;
+    if (
+      !isExactTuturuuuDotComEmail(user.email) ||
+      (signedEmail && !signedEmail.success)
+    )
       return { authorized: false, status: 403 };
     const permissions = await getPermissions({
       request,
@@ -65,6 +73,8 @@ export async function authorizeCurrentEmployeeActor(
       !current ||
       current.id !== user.id ||
       !isExactTuturuuuDotComEmail(current.email) ||
+      (signedEmail?.success &&
+        current.email?.trim().toLowerCase() !== signedEmail.data) ||
       !current.email_confirmed_at ||
       (current.banned_until &&
         (!Number.isFinite(Date.parse(current.banned_until)) ||

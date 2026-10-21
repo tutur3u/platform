@@ -245,3 +245,90 @@ it('does not expose a different target returned from a malformed journal', async
   });
   expect((await run()).status).toBe(202);
 });
+
+it.each([
+  { name: 'expiry', authority: { authorized: false, status: 401 } },
+  { name: 'MFA revocation', authority: { authorized: false, status: 403 } },
+  { name: 'permission removal', authority: { authorized: false, status: 403 } },
+  {
+    name: 'actor replacement',
+    authority: { authorized: true, actorUserId: id(9) },
+  },
+  {
+    name: 'authorization outage',
+    authority: { authorized: false, status: 503 },
+  },
+])(
+  'withholds every outcome after $name during awaited journal work',
+  async ({ authority }) => {
+    for (const status of [
+      'created',
+      'pending',
+      'conflict',
+      'throw',
+      'malformed',
+    ]) {
+      authorize.mockResolvedValue({ authorized: true, actorUserId: id(1) });
+      const entered = Promise.withResolvers<void>();
+      const finish = Promise.withResolvers<void>();
+      claim.mockImplementationOnce(async () => {
+        entered.resolve();
+        await finish.promise;
+        if (status === 'throw') throw new Error('lost acknowledgement');
+        if (status === 'malformed') return {};
+        return {
+          targetUserId: id(3),
+          outcome:
+            status === 'created'
+              ? {
+                  status,
+                  operationId: id(2),
+                  account: {
+                    id: id(3),
+                    email: ready.email,
+                    displayName: ready.displayName,
+                  },
+                }
+              : {
+                  status,
+                  operationId: id(2),
+                  code:
+                    status === 'pending'
+                      ? 'account_creation_outcome_unknown'
+                      : 'employee_operation_payload_conflict',
+                  nextAction: 'inspect',
+                },
+        };
+      });
+      const responsePromise = run();
+      await entered.promise;
+      authorize.mockResolvedValue(authority);
+      finish.resolve();
+      const response = await responsePromise;
+      expect(response.status).toBe(
+        authority.authorized ? 403 : authority.status
+      );
+      expect(response.headers.get('cache-control')).toContain('no-store');
+      expect(await response.json()).toEqual({
+        code: 'employee_recovery_unconfirmed',
+        nextAction: 'inspect',
+      });
+    }
+    expect(claim).toHaveBeenCalledTimes(5);
+    expect(adjudicate).not.toHaveBeenCalled();
+  }
+);
+
+it('fails closed if final authorization throws after journal completion', async () => {
+  claim.mockImplementationOnce(async () => {
+    authorize.mockRejectedValue(new Error('authority unavailable'));
+    return {};
+  });
+  const response = await run();
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({
+    code: 'employee_recovery_unconfirmed',
+    nextAction: 'inspect',
+  });
+  expect(claim).toHaveBeenCalledTimes(1);
+});

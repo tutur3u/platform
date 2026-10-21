@@ -16,10 +16,11 @@ export async function authorizeEmployeeCliRecovery(
       return { authorized: false, status: 401 };
     if (!(await isRequiredMfaAppSessionAllowed(verified.claims)))
       return { authorized: false, status: 403 };
-    return await authorizeCurrentEmployeeActor(request, {
-      id: verified.claims.sub,
-      email: verified.claims.email,
-    });
+    return await authorizeCurrentEmployeeActor(
+      request,
+      { id: verified.claims.sub, email: verified.claims.email },
+      { requireMatchingEmail: true }
+    );
   } catch {
     return { authorized: false, status: 503 };
   }

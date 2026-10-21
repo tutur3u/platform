@@ -36,10 +36,11 @@ it('verifies the unchanged signed CLI access token and binds only verified sub',
   expect(mock.mfa).toHaveBeenCalledWith(
     expect.objectContaining({ sub: actor, origin_app: 'cli' })
   );
-  expect(mock.current).toHaveBeenCalledWith(req, {
-    id: actor,
-    email: claims.email,
-  });
+  expect(mock.current).toHaveBeenCalledWith(
+    req,
+    { id: actor, email: claims.email },
+    { requireMatchingEmail: true }
+  );
 });
 it('rejects missing, refresh, wrong target/scope/origin, signature and expiry before current authorization', async () => {
   const session = createCliAppSession(claims, { secret });
