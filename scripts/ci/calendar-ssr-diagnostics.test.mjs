@@ -340,16 +340,10 @@ test('packet writer rejects a noncanonical parent even when its target is privat
 
 test('workflow uploads only the parent verified sanitized packet for each runtime job', async () => {
   const { createRequire } = await import('node:module');
-  const { parse } = createRequire(import.meta.url)('yaml');
-  const workflow = parse(
-    await readFile(
-      new URL(
-        '../../.github/workflows/mail-calendar-tasks-builds.yaml',
-        import.meta.url
-      ),
-      'utf8'
-    )
+  const { readWorkflow } = createRequire(import.meta.url)(
+    './workflow-yaml-test-helper.js'
   );
+  const workflow = readWorkflow('mail-calendar-tasks-builds.yaml');
   for (const job of ['calendar-native', 'calendar-artifact-restore']) {
     const steps = workflow.jobs[job].steps;
     const runtime = steps.find((step) => step.id === 'calendar-runtime');
