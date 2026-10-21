@@ -173,3 +173,50 @@ describe('Meet request bridge', () => {
     ).rejects.toThrow('Unexpected external Meet middleware rewrite');
   });
 });
+
+it('R21 passes the exact navigation callback through initial, forwarded and spread model contexts', async () => {
+  const { createLoginRedirectProbe } = await import(
+    './login-redirect-diagnostics'
+  );
+  const { redirect } = await import('./next-navigation');
+  const { isRedirect } = await import('@tanstack/react-router');
+  const probe = createLoginRedirectProbe('https://meet.tuturuuu.com/login');
+  const observeLoginNavigation = probe.observeNavigation;
+  const start = new Response('SECRET_BODY', {
+    status: 307,
+    headers: { location: '/login' },
+  });
+  const result = await dispatchThroughMeetProxy({
+    request: new Request('https://meet.tuturuuu.com/login'),
+    waitUntil,
+    observeLoginNavigation,
+    proxy: async () => {
+      expect(meetRequest().observeLoginNavigation).toBe(observeLoginNavigation);
+      return NextResponse.rewrite('https://meet.tuturuuu.com/en/login');
+    },
+    dispatch: async () => {
+      expect(meetRequest().observeLoginNavigation).toBe(observeLoginNavigation);
+      withMeetRequest({ ...meetRequest() }, () => {
+        try {
+          redirect('https://tuturuuu.com/login?SECRET=token');
+        } catch (error) {
+          expect(isRedirect(error)).toBe(true);
+          return;
+        }
+        throw Error('Missing owning redirect');
+      });
+      probe.observeStart(start);
+      meetRequest().responseHeaders.set('location', '/vi/verify-token');
+      return start;
+    },
+  });
+  expect(result.bodyUsed).toBe(false);
+  expect(start.bodyUsed).toBe(false);
+  expect(probe.seal(result, 'returnedredirect')).toMatchObject({
+    navigationCalls: 'one',
+    navigationInput: { origin: 'CENTRAL', path: 'LOGIN' },
+    navigationResponse: { origin: 'CENTRAL', path: 'LOGIN' },
+    startResponse: { origin: 'SAME', path: 'LOGIN' },
+    proxyResponse: { origin: 'SAME', path: 'VERIFY_TOKEN' },
+  });
+});

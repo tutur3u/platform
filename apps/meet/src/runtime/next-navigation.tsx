@@ -6,12 +6,26 @@ import {
   useParams as useStartParams,
   useRouter as useStartRouter,
 } from '@tanstack/react-router';
+import { createServerOnlyFn } from '@tanstack/react-start';
 import { createContext, useContext, useMemo } from 'react';
+import { meetRequest } from './request-context';
 
 export const MeetParamsContext = createContext<Record<string, string>>({});
 
+const observeLoginRedirect = createServerOnlyFn(
+  (href: string, response: unknown) => {
+    meetRequest().observeLoginNavigation?.(href, response);
+  }
+);
+
 export function redirect(href: string): never {
-  throw startRedirect({ href });
+  const result = startRedirect({ href });
+  try {
+    observeLoginRedirect(href, result);
+  } catch {
+    /* Diagnostic hooks cannot replace the owning redirect. */
+  }
+  throw result;
 }
 export function permanentRedirect(href: string): never {
   throw startRedirect({ href, statusCode: 308 });

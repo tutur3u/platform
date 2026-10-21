@@ -3,10 +3,12 @@ import {
   RequestCookies,
   ResponseCookies,
 } from 'next/dist/compiled/@edge-runtime/cookies';
+import type { ObserveLoginNavigation } from './login-redirect-diagnostics';
 import type { MeetExecutionContext, MeetRuntimeBindings } from './worker-port';
 
 export interface MeetRequestContext {
   request: Request;
+  observeLoginNavigation?: ObserveLoginNavigation;
   responseHeaders: Headers;
   waitUntil: (work: Promise<unknown>) => void;
   cloudflare?: { env: MeetRuntimeBindings; ctx: MeetExecutionContext };

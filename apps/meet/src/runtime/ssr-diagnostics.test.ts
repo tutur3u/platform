@@ -486,3 +486,94 @@ it('concurrent real handler outcomes retain their own local scope and response i
     ['login', 'returnedother'],
   ]);
 });
+
+it('R21 accepts only strict enum projection on the terminal handler/login/proxy record', async () => {
+  const { createLoginRedirectProbe } = await import(
+    './login-redirect-diagnostics'
+  );
+  const loginRedirect = createLoginRedirectProbe(
+    'https://meet.invalid/login'
+  ).seal(new Response(null), 'returnedother');
+  const terminal = projectMeetSsr(
+    new Response(null),
+    'handler',
+    'returnedother',
+    {
+      scope: 'login',
+      stage: 'proxy',
+      loginRedirect,
+    }
+  );
+  expect(parseMeetSsrRecord(terminal)).toEqual(terminal);
+  expect(
+    new TextEncoder().encode(JSON.stringify(terminal)).byteLength
+  ).toBeLessThan(2048);
+  for (const delta of [
+    { phase: 'loader-model', scope: 'UNKNOWN', stage: 'UNKNOWN' },
+    { scope: 'callback' },
+    { scope: 'other' },
+    { stage: 'start' },
+    { outcome: 'delegating' },
+  ])
+    expect(parseMeetSsrRecord({ ...terminal, ...delta })).toBeUndefined();
+  for (const bad of [
+    { ...loginRedirect, raw: 'SECRET' },
+    { ...loginRedirect, navigationCalls: 'SECRET' },
+    { ...loginRedirect, inspection: 'SECRET' },
+    {
+      ...loginRedirect,
+      navigationInput: { origin: 'SAME', path: 'LOGIN', url: 'SECRET' },
+    },
+    ...[
+      'navigationInput',
+      'navigationResponse',
+      'startResponse',
+      'proxyResponse',
+    ].map((key) => ({
+      ...loginRedirect,
+      [key]: { origin: 'https://SECRET', path: '/SECRET' },
+    })),
+  ])
+    expect(
+      parseMeetSsrRecord({ ...terminal, loginRedirect: bad })
+    ).toBeUndefined();
+  const legacy = projectMeetSsr(null, 'handler', 'returnedother');
+  expect(legacy).not.toHaveProperty('loginRedirect');
+  expect(parseMeetSsrRecord(legacy)).toEqual(legacy);
+  expect(
+    projectMeetSsr(null, 'handler', 'delegating', {
+      scope: 'login',
+      stage: 'proxy',
+      loginRedirect,
+    })
+  ).not.toHaveProperty('loginRedirect');
+});
+
+it('R21 terminal hook failures preserve the exact primary result and the existing record', async () => {
+  const sink = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const hook = vi.fn(() => {
+    throw Error('SECRET');
+  });
+  const context = { scope: 'login', stage: 'proxy' } as const;
+  const response = new Response('SECRET_BODY');
+  expect(await observeMeetSsr('handler', () => response, context, hook)).toBe(
+    response
+  );
+  expect(response.bodyUsed).toBe(false);
+  const original = new Error('SECRET_PRIMARY');
+  await expect(
+    observeMeetSsr(
+      'handler',
+      () => {
+        throw original;
+      },
+      context,
+      hook
+    )
+  ).rejects.toBe(original);
+  expect(hook).toHaveBeenCalledTimes(2);
+  expect(sink).toHaveBeenCalledTimes(4);
+  expect(sink.mock.calls.map(([line]) => String(line)).join('')).not.toContain(
+    'SECRET'
+  );
+});

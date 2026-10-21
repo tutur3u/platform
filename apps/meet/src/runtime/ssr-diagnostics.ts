@@ -1,5 +1,9 @@
 import { isRedirect } from '@tanstack/react-router';
 import { z } from 'zod';
+import {
+  type LoginRedirectProjection,
+  loginRedirectSchema,
+} from './login-redirect-diagnostics';
 
 export const MEET_SSR_MARKER = 'meet-ssr-diagnostic ';
 const names = [
@@ -43,6 +47,7 @@ const integer = z.number().int().min(0).max(1_000_000);
 const recordSchema = z
   .object({
     version: z.literal(1),
+    loginRedirect: loginRedirectSchema.optional(),
     phase: z.enum(phases),
     outcome: z.enum(outcomes),
     scope: z.enum(scopes).default('UNKNOWN'),
@@ -72,6 +77,14 @@ const recordSchema = z
   .strict()
   .refine(
     (record) =>
+      record.loginRedirect === undefined ||
+      (record.phase === 'handler' &&
+        record.scope === 'login' &&
+        record.stage === 'proxy' &&
+        record.outcome !== 'delegating')
+  )
+  .refine(
+    (record) =>
       record.phase === 'handler' ||
       (record.scope === 'UNKNOWN' && record.stage === 'UNKNOWN')
   )
@@ -86,7 +99,9 @@ const recordSchema = z
         record.frames.length === 0)
   );
 export type MeetSsrRecord = z.infer<typeof recordSchema>;
-export type MeetSsrContext = Readonly<Pick<MeetSsrRecord, 'scope' | 'stage'>>;
+export type MeetSsrContext = Readonly<
+  Pick<MeetSsrRecord, 'scope' | 'stage' | 'loginRedirect'>
+>;
 type Phase = MeetSsrRecord['phase'];
 type Outcome = MeetSsrRecord['outcome'];
 
@@ -148,6 +163,19 @@ export function projectMeetSsr(
     inspection: 'available',
     frames: [],
   };
+  if (
+    phase === 'handler' &&
+    record.scope === 'login' &&
+    record.stage === 'proxy' &&
+    outcome !== 'delegating'
+  ) {
+    try {
+      const projection = loginRedirectSchema.safeParse(context?.loginRedirect);
+      if (projection.success) record.loginRedirect = projection.data;
+    } catch {
+      /* An unavailable extension must not suppress the existing record. */
+    }
+  }
   if (outcome === 'delegating') return record;
   try {
     // The owning predicate reads instanceof Response and options; inspect descriptors first.
@@ -231,7 +259,8 @@ export function reportMeetSsr(
 export async function observeMeetSsr<T>(
   phase: Phase,
   operation: () => T | Promise<T>,
-  context?: MeetSsrContext
+  context?: MeetSsrContext,
+  terminal?: (value: unknown, outcome: Outcome) => LoginRedirectProjection
 ): Promise<T> {
   if (
     phase === 'handler' &&
@@ -239,11 +268,27 @@ export async function observeMeetSsr<T>(
     ['proxy', 'start'].includes(context.stage)
   )
     reportMeetSsr(undefined, phase, 'delegating', context);
+  function reportTerminal(value: unknown, outcome: Outcome) {
+    let finalContext = context;
+    try {
+      if (
+        terminal &&
+        phase === 'handler' &&
+        context?.scope === 'login' &&
+        context.stage === 'proxy'
+      ) {
+        finalContext = { ...context, loginRedirect: terminal(value, outcome) };
+      }
+    } catch {
+      /* Preserve the primary result and the existing terminal record. */
+    }
+    reportMeetSsr(value, phase, outcome, finalContext);
+  }
   let value: T;
   try {
     value = await operation();
   } catch (error) {
-    reportMeetSsr(error, phase, 'threw', context);
+    reportTerminal(error, 'threw');
     throw error;
   }
   let outcome: Outcome = 'returnedother';
@@ -260,6 +305,6 @@ export async function observeMeetSsr<T>(
   } catch {
     /* Preserve a returned value even when its diagnostic inspection fails. */
   }
-  reportMeetSsr(value, phase, outcome, context);
+  reportTerminal(value, outcome);
   return value;
 }

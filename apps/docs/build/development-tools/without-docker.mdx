@@ -172,6 +172,20 @@ closures carry scope through the outer proxy pipeline and the Start handoff;
 `delegating` records precede each handoff, followed by its original outcome.
 Concurrent requests share no mutable correlation state. Loader/render observations
 remain scope/stage `UNKNOWN`; temporal proximity does not bind them to a request.
+A terminal login/proxy record may also contain one strict `loginRedirect`
+projection. A request-local closure classifies the actual navigation argument,
+constructed redirect, Start fetch result and final proxy result using fixed
+origin/path enums. It retains no raw target, query or request identifier. The
+same optional callback crosses both request contexts and is sealed at the outer
+outcome; multiple navigation calls saturate to an ambiguous classification and
+late callbacks cannot change the snapshot. Missing or unavailable cells do not
+prove a producer. Compare the first divergent boundary only after exact-source
+hosted capture; pure handler controls use a fixed Start port and do not qualify
+Start finalization or the shared login page. Coverage lives in
+`login-redirect-diagnostics.test.ts`, `handler-start-handoff.test.ts` and the
+existing bridge/parser suites. The navigation hook uses the owning server-only
+factory; the real build and emitted client inspection must confirm its removal
+from client code before delivery.
 The collector accepts the exact observed SDK ANSI `ERROR` prefix and closing reset,
 as well as the bare marker and Node TAP marker. It performs no general ANSI
 stripping or mid-line marker search. Foreign prefixes remain ordinary output,

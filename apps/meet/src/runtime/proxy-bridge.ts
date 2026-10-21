@@ -23,17 +23,25 @@ export async function dispatchThroughMeetProxy({
   dispatch,
   waitUntil,
   cloudflare,
+  observeLoginNavigation,
 }: {
   request: Request;
   proxy: Proxy;
   dispatch: Dispatch;
   waitUntil: (work: Promise<unknown>) => void;
   cloudflare?: MeetRequestContext['cloudflare'];
+  observeLoginNavigation?: MeetRequestContext['observeLoginNavigation'];
 }) {
   const initial = new NextRequest(request);
   const responseHeaders = new Headers();
   return withMeetRequest(
-    { request: initial, responseHeaders, waitUntil, cloudflare },
+    {
+      request: initial,
+      responseHeaders,
+      waitUntil,
+      cloudflare,
+      observeLoginNavigation,
+    },
     async () => {
       const middleware = proxyMatches(initial.nextUrl.pathname)
         ? await proxy(initial)
@@ -73,7 +81,13 @@ export async function dispatchThroughMeetProxy({
         new Request(initial, { headers: forwarded })
       );
       const result = await withMeetRequest(
-        { request: next, responseHeaders, waitUntil, cloudflare },
+        {
+          request: next,
+          responseHeaders,
+          waitUntil,
+          cloudflare,
+          observeLoginNavigation,
+        },
         () => dispatch(next)
       );
       const merged = new Headers(result.headers);
