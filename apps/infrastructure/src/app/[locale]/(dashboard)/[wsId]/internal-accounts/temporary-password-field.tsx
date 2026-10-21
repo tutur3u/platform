@@ -5,7 +5,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { generateSecureTemporaryPassword } from './password-generator';
 
 interface Props {
@@ -32,6 +32,16 @@ export function TemporaryPasswordField({
   const t = useTranslations('internal-accounts.dialog');
   const [showPassword, setShowPassword] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
+  const copyAttempt = useRef(0);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Changing the controlled secret invalidates clipboard feedback without retaining its previous value.
+  useLayoutEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- Clear external clipboard feedback before a replacement secret is painted.
+    setCopyFailed(false);
+    return () => {
+      copyAttempt.current += 1;
+    };
+  }, [value]);
 
   return (
     <div className="space-y-2">
@@ -85,6 +95,7 @@ export function TemporaryPasswordField({
           aria-label={t('copy_password')}
           disabled={disabled || !value}
           onClick={async () => {
+            const attempt = ++copyAttempt.current;
             setCopyFailed(false);
             try {
               if (
@@ -94,7 +105,7 @@ export function TemporaryPasswordField({
                 throw new Error('Clipboard unavailable');
               await navigator.clipboard.writeText(value);
             } catch {
-              setCopyFailed(true);
+              if (copyAttempt.current === attempt) setCopyFailed(true);
             }
           }}
           size="icon"
