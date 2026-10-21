@@ -238,8 +238,18 @@ it('recovers precommit adjudication failure through explicit same-event retry be
   await screen.findByRole('alert');
   expect(screen.queryByLabelText('evidence')).not.toBeInTheDocument();
   expect(api.adjudicateRejection).toHaveBeenCalledTimes(1);
+  expect(screen.getByText('fenced')).toBeInTheDocument();
+  api.inspectRejection.mockResolvedValueOnce({
+    status: 'fenced',
+    operationId: saved.operationId,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+  await waitFor(() => expect(api.inspectRejection).toHaveBeenCalledTimes(3));
+  expect(screen.getByText('fenced')).toBeInTheDocument();
+  expect(screen.queryByLabelText('evidence')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
   await screen.findByLabelText('evidence');
+  expect(screen.queryByText('fenced')).not.toBeInTheDocument();
   expect(screen.getByLabelText('evidence')).toHaveValue('a'.repeat(64));
   expect(screen.getByLabelText('evidence')).toBeDisabled();
   expect(screen.getByRole('button', { name: 'adjudicate' })).toBeDisabled();

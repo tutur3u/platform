@@ -108,7 +108,8 @@ export function EmployeeRejectionRecoveryPanel({
         </>
       ) : null}
       {candidate?.status === 'fenced' ||
-      recovery.reference?.state === 'adjudicating' ? (
+      (recovery.reference?.state === 'adjudicating' &&
+        candidate?.status !== 'eligible') ? (
         <p>{t('fenced')}</p>
       ) : null}
       {failed ? (
