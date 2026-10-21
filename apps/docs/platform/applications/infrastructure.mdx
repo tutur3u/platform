@@ -276,6 +276,14 @@ Password reset accepts a new credential through its ordinary form, supports Ente
 and prevents simultaneous duplicate submissions. Its explicit credential handoff
 remains available until close; administrators must share it securely.
 
+The Create dialog accepts the root workspace UUID and the `internal` route alias,
+including its case variants. Both use the canonical root UUID for component,
+query and saved-operation scope, so switching between these routes preserves an
+unknown original CREATE without another POST. Personal and non-root workspaces,
+and sessions without an actor, do not expose Create. Server permissions and actor
+lifetime checks remain authoritative. Mounted regressions in
+`employee-creation-dialog.test.tsx` cover these routes and retired-actor results.
+
 Ordinary messages explain the next action without requiring UUID, digest, revision
 or provider-state inspection. Advanced recovery retains technical observations and
 explicit audited CREATE adjudication for exceptional failures. Unknown CREATE
