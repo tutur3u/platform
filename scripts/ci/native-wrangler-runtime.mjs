@@ -20,6 +20,7 @@ import {
   relative,
   resolve,
 } from 'node:path';
+import { inspectCalendarProfile } from './calendar-native-runtime-profile.mjs';
 import {
   captureDiagnosticSnapshot,
   diagnosticError,
@@ -83,6 +84,7 @@ export async function inspectArtifact(options) {
   closed(
     options,
     [
+      'profile',
       'root',
       'config',
       'main',
@@ -118,34 +120,43 @@ export async function inspectArtifact(options) {
     'Artifact hash mutation'
   );
   const config = JSON.parse(await readFile(options.config, 'utf8'));
-  closed(
-    config,
-    [
-      'name',
-      'main',
-      'compatibility_date',
-      'compatibility_flags',
-      'no_bundle',
-      'find_additional_modules',
-      'rules',
-      'vars',
-      'durable_objects',
-      'migrations',
-      'assets',
-      'services',
-    ],
-    'emitted config'
+  assert.ok(
+    options.profile === undefined || options.profile === 'calendar',
+    'Unsupported runtime profile'
   );
-  assert.match(config.name, /^[a-z0-9-]+$/);
-  assert.equal(resolve(dirname(options.config), config.main), options.main);
-  assert.match(config.compatibility_date, /^\d{4}-\d{2}-\d{2}$/);
-  assert.deepEqual(
-    config.compatibility_flags ?? [],
-    [],
-    'Compatibility flags unsupported'
-  );
+  if (options.profile === 'calendar') {
+    await inspectCalendarProfile(options, config);
+  } else {
+    closed(
+      config,
+      [
+        'name',
+        'main',
+        'compatibility_date',
+        'compatibility_flags',
+        'no_bundle',
+        'find_additional_modules',
+        'rules',
+        'vars',
+        'durable_objects',
+        'migrations',
+        'assets',
+        'services',
+      ],
+      'emitted config'
+    );
+    assert.match(config.name, /^[a-z0-9-]+$/);
+    assert.equal(resolve(dirname(options.config), config.main), options.main);
+    assert.match(config.compatibility_date, /^\d{4}-\d{2}-\d{2}$/);
+    assert.deepEqual(
+      config.compatibility_flags ?? [],
+      [],
+      'Compatibility flags unsupported'
+    );
+  }
   assert.equal(config.no_bundle, true);
-  assert.equal(config.find_additional_modules, true);
+  if (options.profile !== 'calendar')
+    assert.equal(config.find_additional_modules, true);
   assert.ok(Array.isArray(config.rules));
   for (const rule of config.rules) {
     closed(rule, ['type', 'globs', 'fallthrough'], 'module rule');
@@ -158,11 +169,12 @@ export async function inspectArtifact(options) {
       rule.fallthrough === undefined || typeof rule.fallthrough === 'boolean'
     );
   }
-  assert.equal(
-    config.vars?.COMPILED_SHA,
-    options.sourceSHA,
-    'Compiled source SHA mismatch'
-  );
+  if (options.profile !== 'calendar')
+    assert.equal(
+      config.vars?.COMPILED_SHA,
+      options.sourceSHA,
+      'Compiled source SHA mismatch'
+    );
   closed(config.vars ?? {}, Object.keys(config.vars ?? {}), 'vars');
   for (const value of Object.values(config.vars ?? {}))
     assert.equal(typeof value, 'string');
@@ -489,6 +501,15 @@ export async function startNativeWrangler(options, plan) {
     '507cd3644d6a53f0d66922d79c04b03557b7d2d0a376d2d906b92ed20812bb30',
     'Unreviewed public Wrangler supplier bytes'
   );
+  if (options.profile === 'calendar') {
+    assert.equal(summary.wranglerVersion, '4.151.2');
+    assert.equal(summary.miniflareVersion, '5.20261019.0-beta');
+    assert.equal(
+      summary.miniflareSha256,
+      '309b8863f0f4c3050e173e945b4c696db8c330cdf3f35f0ecfd8417d75891eaa',
+      'Unreviewed Calendar Miniflare supplier bytes'
+    );
+  }
   if (!supplier) {
     assert.ok(!require.cache[sdkPath], 'Preloaded Wrangler SDK unsupported');
     assert.ok(

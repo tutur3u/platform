@@ -380,6 +380,51 @@ entry in CI before reviewing the isolated SDK syntax result. Existing Meet,
 Calendar and Apps application runtime callers require separate qualification
 before adopting this contract.
 
+### Calendar emitted Worker caller
+
+Calendar's `scripts/ci/calendar-native-worker.runtime.mjs` uses the public
+`unstable_startWorker` adapter with the owning Calendar SDK resolution. Its finite
+`calendar` profile requires the existing `calendar-artifact.json` seal and
+`calendar-native-artifact.mjs` validator: exact compatibility flags, module rules,
+assets, normalized defaults and empty resource registrations remain checked.
+The emitted configuration is copied byte for byte, without deleting fields or
+inventing module relationships. The default adapter profile still rejects unknown
+fields, compatibility flags and external Workers as before.
+
+This local fixture trusts the hash-pinned Wrangler 4.151.2 and its owning
+Miniflare 5.20261019.0-beta control plane. The configured Calendar application
+Worker receives an explicit outbound handler that returns status 599 for every
+request and records unexpected origins; there are no allowed outbound fixtures
+or configured probe Workers. SDK-generated core, registry and debug helpers and
+Node networking are outside this application egress boundary. A bug or compromise
+in that trusted tooling can retain network capability. This is not whole-runtime
+confinement or a sandbox for hostile code. Production cost, durable stop and
+access guards retain their separate acceptance requirements.
+
+The caller acquires the public handle before observing readiness, memoizes
+disposal, observes natural child close and drained pipes, and independently
+checks original/copy seals, residuals, the foreign sentinel, retained diagnostics,
+removal and finalization persistence through the existing helper. Failed gates
+retain evidence. Internal SDK cleanup and descendant closure remain UNKNOWN.
+The original bilingual rendering, locale cookie/header, hydration asset and exact
+offline URL assertions remain. The companion
+`apps/calendar/src/runtime/offline-artifact.runtime.mjs` still tests emitted
+classic service-worker bytes in a VM and does not construct a native SDK runtime.
+
+Run the source-only profile controls through the canonical resource queue with
+`node --test --test-concurrency=1 scripts/ci/calendar-native-artifact.test.mjs
+scripts/ci/calendar-emitted-defaults.test.mjs
+scripts/ci/native-wrangler-runtime.test.mjs`. These controls do not import the SDK
+or qualify a real Worker. After review and parent integration, the existing
+`mail-calendar-tasks-builds.yaml` Calendar job must build fresh artifacts for its
+exact `SOURCE_SHA`, emit the supplier hashes, run
+`node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"`, run the
+companion offline suite, and verify the original seal under the unchanged
+three-minute runtime watchdog. A restored artifact must pass the same caller and
+seal checks for that exact source. Runtime acceptance remains pending until those
+hosted gates pass; no local build or dependency restore is required for the pure
+controls.
+
 The dedicated preload-control outcome has a different scope; it grants no generic
 missing-Worker waiver. The next bounded CI observation must retain the public
 cause chain and proof-phase states, explicit unknown/missing/truncated fields,

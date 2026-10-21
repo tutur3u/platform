@@ -239,6 +239,16 @@ for the diagnostic collector's legacy comparison field and remaining gates.
 ## CI And Dependency Drift
 
 For native Wrangler lifecycle qualification, separate source/static review, runtime evidence and customer delivery; candidates do not clear caller adoption.
+Calendar's finite adapter profile delegates admission to its existing sealed
+artifact validator and preserves emitted config bytes. Its configured application
+Worker denies every outbound request; the hash-pinned SDK control plane, generated
+registry/core/debug helpers and Node networking are trusted tooling outside that
+boundary. Do not describe this as whole-runtime confinement. Preserve default
+unknown-field/external-worker rejection, lifecycle proofs and production
+cost/stop/access gates. See the Calendar emitted Worker caller section in
+`apps/docs/build/development-tools/without-docker.mdx` for source-only controls and
+the separate fresh-artifact, exact-head hosted acceptance sequence. The offline
+VM companion is not a second Miniflare constructor.
 Apply the narrow returned-Worker classification and independent closure gates in `apps/docs/build/development-tools/without-docker.mdx`;
 preserve the existing three-minute watchdog, 30-second boundary-test limit and old raw NOTPASS results.
 
