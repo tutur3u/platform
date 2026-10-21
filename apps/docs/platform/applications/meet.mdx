@@ -1,7 +1,7 @@
 ---
 title: "Meet"
 description: "Meeting plans, collaboration rooms, calls, transcription, assistants, and follow-up review."
-updatedAt: '2026-10-19'
+updatedAt: '2026-10-22'
 ---
 
 Meet (`meet.tuturuuu.com`, `apps/meet`) combines meeting planning and live
@@ -42,6 +42,22 @@ session cookies, login routing and protected routes retain their existing rules.
 The exception applies only to these exact callback routes, not API or workspace
 routes. Real-proxy controls live in `apps/meet/src/proxy.public-callback.test.ts`;
 SSR, hydration assets and both locales still require the emitted Worker CI gate.
+
+## Browser language selection
+
+When a Meet page has no supported locale in its URL or locale cookie, browser
+language negotiation uses valid locale tags from `Accept-Language` in their
+quality order. Wildcard ranges and invalid locale tags are ignored before locale
+matching. If no valid preference remains, Meet uses its existing English default.
+Valid regional English and Vietnamese preferences continue to select their
+supported language. Zero-quality ranges remain excluded by negotiation.
+
+A supported URL locale takes precedence over the locale cookie, which takes
+precedence over the browser header. Public callbacks retain their existing locale
+handling; authentication, SSO destinations and safe next-path rules are unchanged.
+Real-proxy and Request-bridge regression controls live in
+`apps/meet/src/proxy.public-callback.test.ts`. Hosted original and restored Worker
+acceptance remains a separate gate.
 
 ## Runtime boundaries
 

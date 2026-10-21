@@ -1,4 +1,5 @@
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
+import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createMeetPolicy } from '../../../scripts/ci/meet-native-policy.mjs';
@@ -214,4 +215,150 @@ it('one graph account-assurance budget is exactly two plus three plus three real
   expect(policy.assurance).toHaveLength(8);
   expect(policy.unexpected).toHaveLength(0);
   expect(policy.forwarded).toHaveLength(0);
+});
+
+for (const adapter of ['direct NextRequest', 'Worker Request bridge'])
+  it(`real ${adapter} login accepts wildcard transport language before Start`, async () => {
+    const url =
+      'https://meet.tuturuuu.com/login?next=https%3A%2F%2Funtrusted.invalid%2F';
+    const dispatch = vi.fn(async (forwarded: NextRequest) => {
+      expect(forwarded.nextUrl.pathname).toBe('/en/login');
+      expect(forwarded.nextUrl.searchParams.get('next')).toBe(
+        'https://untrusted.invalid/'
+      );
+      return new Response(null, { status: 204 });
+    });
+    const init = {
+      method: 'GET',
+      redirect: 'manual',
+      headers: { 'accept-language': '*' },
+    } as const;
+    const response =
+      adapter === 'direct NextRequest'
+        ? await proxy(new NextRequest(url, init))
+        : await dispatchThroughMeetProxy({
+            request: new Request(url, init),
+            proxy,
+            waitUntil: () => {},
+            dispatch,
+          });
+    expect(response.status).toBe(adapter === 'direct NextRequest' ? 200 : 204);
+    if (adapter === 'direct NextRequest') {
+      expect(
+        new URL(response.headers.get('x-middleware-rewrite') ?? '').pathname
+      ).toBe('/en/login');
+      expect(dispatch).not.toHaveBeenCalled();
+    } else expect(dispatch).toHaveBeenCalledOnce();
+    expect(fetch).not.toHaveBeenCalled();
+    await response.text();
+  });
+
+for (const path of ['/login', '/vi/login'])
+  it(`headerless real Worker bridge ${path} characterizes the proxy boundary before SSO page rendering`, async () => {
+    const dispatch = vi.fn(async () => new Response(null, { status: 204 }));
+    const response = await dispatchThroughMeetProxy({
+      request: new Request(
+        `https://meet.tuturuuu.com${path}?next=https%3A%2F%2Funtrusted.invalid%2F`,
+        { method: 'GET', redirect: 'manual' }
+      ),
+      proxy,
+      waitUntil: () => {},
+      dispatch,
+    });
+    if (path === '/login') {
+      expect(response.status).toBe(204);
+      expect(dispatch).toHaveBeenCalledOnce();
+    } else {
+      expect(response.status).toBe(307);
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(new URL(response.headers.get('location') ?? '').origin).toBe(
+        'https://meet.tuturuuu.com'
+      );
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+        '/login'
+      );
+    }
+    expect(fetch).not.toHaveBeenCalled();
+    await response.text();
+  });
+
+for (const [language, locale] of [
+  ['*', 'en'],
+  ['en_US', 'en'],
+  ['en_US,vi-VN;q=0.8,en-US;q=0.7', 'vi'],
+  ['*;q=1,vi-VN;q=0.9,en-US;q=0.8', 'vi'],
+  ['vi-VN;q=0,en-US;q=0.8,*;q=0.7', 'en'],
+  ['vi-VN;q=0.9,en-US;q=0.8', 'vi'],
+  ['en-US;q=0.9,vi-VN;q=0.8', 'en'],
+  ['en-US;q=0,vi-VN;q=0,*;q=0', 'en'],
+  ['bad_tag;q=1,vi-VN;q=0,en-US;q=0.2', 'en'],
+  ['fr-FR', 'en'],
+])
+  it(`real locale negotiation ${language} selects ${locale} without accepting zero-quality ranges`, async () => {
+    const response = await dispatchThroughMeetProxy({
+      request: new Request('https://meet.tuturuuu.com/login', {
+        headers: { 'accept-language': language },
+      }),
+      proxy,
+      waitUntil: () => {},
+      dispatch: async (forwarded) =>
+        Response.json({
+          locale: forwarded.headers.get('x-next-intl-locale'),
+          path: forwarded.nextUrl.pathname,
+        }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ locale, path: `/${locale}/login` });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+for (const [cookie, language, locale] of [
+  ['vi', 'en-US', 'vi'],
+  ['en', 'vi-VN', 'en'],
+  ['vi', '*', 'vi'],
+  ['en', 'en_US', 'en'],
+])
+  it(`existing ${cookie} locale cookie takes precedence over ${language}`, async () => {
+    const response = await dispatchThroughMeetProxy({
+      request: new Request('https://meet.tuturuuu.com/login', {
+        headers: {
+          cookie: `NEXT_LOCALE=${cookie}`,
+          'accept-language': language,
+        },
+      }),
+      proxy,
+      waitUntil: () => {},
+      dispatch: async (forwarded) =>
+        Response.json({ locale: forwarded.headers.get('x-next-intl-locale') }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ locale });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+for (const locale of ['en', 'vi'])
+  it(`explicit ${locale} URL keeps precedence over the opposite locale cookie and invalid language`, async () => {
+    const response = await proxy(
+      new NextRequest(`https://meet.tuturuuu.com/${locale}/login`, {
+        headers: {
+          cookie: `NEXT_LOCALE=${locale === 'en' ? 'vi' : 'en'}`,
+          'accept-language': '*',
+        },
+      })
+    );
+    expect(response.status).toBe(307);
+    expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+      '/login'
+    );
+    expect(response.cookies.get('NEXT_LOCALE')?.value).toBe(locale);
+    expect(fetch).not.toHaveBeenCalled();
+    await response.text();
+  });
+it('the unchanged shared SSO next-path guard rejects the external login destination', () => {
+  expect(
+    normalizeAuthRedirectPath(
+      'https://untrusted.invalid/',
+      'https://meet.tuturuuu.com',
+      '/'
+    )
+  ).toBe('/');
 });
