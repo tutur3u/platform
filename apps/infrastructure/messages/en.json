@@ -8793,7 +8793,7 @@
       "advanced": "Advanced recovery",
       "checking": "Checking whether account creation is available…",
       "close": "Close",
-      "confirming": "Creating the account. Please wait while we confirm it is ready…",
+      "confirming": "Checking the result of your original request…",
       "conflict": "This address or request needs administrator review. Contact an administrator before trying again.",
       "created": "The employee account is confirmed and ready to sign in.",
       "denied": "We could not complete this request. Check the details below or contact an administrator for help.",
@@ -8806,7 +8806,16 @@
       "password": "Temporary password",
       "password_help": "Use 12–72 characters with lowercase and uppercase letters, a number and a symbol. Save or copy it securely before creating; this field clears after submission.",
       "password_strength": "Add the required character types: lowercase, uppercase, number and symbol; use 12–72 characters.",
+      "problems": {
+        "authorization": "Your authorization could not be confirmed. Your original request is saved. Use a currently authorized session to inspect it; do not submit another request.",
+        "invalid_input": "Check the staff email, full name and password requirements before submitting.",
+        "not_admitted": "This attempt did not start account creation. Your original request is saved; earlier attempts may still need confirmation. Inspect the original request before taking another action.",
+        "readiness_read_failed": "We could not check whether creation is available. Retry the availability check; no creation request will be sent.",
+        "storage": "We could not save or read your recovery reference. Creation is blocked. Keep this form open and contact an administrator; do not start another request.",
+        "unknown": "We couldn’t confirm the result. Your original request is saved. Do not create another request."
+      },
       "refresh": "Refresh directory",
+      "retry_readiness": "Check availability again",
       "stopped": "We could not finish confirming this account. Contact an administrator before trying again.",
       "submit": "Create account",
       "submitting": "Submitting…",
@@ -8836,6 +8845,7 @@
         "title": "Enable account access?"
       },
       "generate_password": "Generate",
+      "generate_password_failed": "We could not generate a password securely. Enter a password manually using the requirements below.",
       "hide_password": "Hide password",
       "new_password": "New temporary password",
       "optional_mfa": {
@@ -8884,6 +8894,7 @@
       "active_description": "Hide accounts whose sign-in access is disabled.",
       "active_only": "Active accounts only",
       "description": "Both safeguards are enabled by default.",
+      "include_disabled": "Include disabled accounts",
       "title": "Filter accounts",
       "verified_description": "Hide accounts that have not confirmed their email.",
       "verified_only": "Verified accounts only"
@@ -8932,6 +8943,7 @@
     },
     "restoration": {
       "advanced": "Advanced recovery",
+      "check_result": "Check original result",
       "close": "Close",
       "confirmation": "Confirm account email",
       "confirmation_help": "Type {email} exactly to confirm this account.",
@@ -8941,7 +8953,7 @@
       "next": {
         "adoption_required": "This legacy account needs an administrator to finish its address migration.",
         "creation_reconciliation_required": "Account setup needs administrator help before access can be restored.",
-        "inspect": "We are checking a previous restoration. Confirm the email to continue safely.",
+        "inspect": "A previous restoration needs inspection. Read the current state; do not start another restoration.",
         "manual_review": "Contact an administrator to resolve this account before restoring access.",
         "none": "No access restoration is required.",
         "restore": "Confirm the email below, then restore access."
@@ -8952,7 +8964,7 @@
       "outcomes": {
         "conflict": "We could not verify this account. Close and reopen this form to check again. If this continues, contact an administrator.",
         "denied": "Your authorization could not be confirmed. Reopen this page with a currently authorized session.",
-        "pending": "We could not yet confirm that access is restored. Contact an administrator if you still cannot sign in.",
+        "pending": "We couldn’t confirm whether access was restored. Read the current state to check the original request. Do not start another restoration.",
         "restored": "Access restored. This account can sign in again.",
         "unavailable": "Restoring access is temporarily unavailable. Contact an administrator for help."
       },
@@ -8981,6 +8993,7 @@
       },
       "restore": "Restore access",
       "retained_operation": "Retained operation: {operationId}",
+      "revision_conflict": "The account revision or operation changed. Your original request is retained. Read the current state; this form cannot submit another restoration.",
       "title": "Managed employee access",
       "working": "Checking access…"
     },

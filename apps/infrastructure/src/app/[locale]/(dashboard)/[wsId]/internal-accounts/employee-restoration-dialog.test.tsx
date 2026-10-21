@@ -18,29 +18,31 @@ const session = vi.hoisted(() => ({
 vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
   useWorkspaceActor: () => session.actor,
 }));
-vi.mock('@tuturuuu/internal-api/infrastructure', async (original) => {
-  const actual =
-    await original<typeof import('@tuturuuu/internal-api/infrastructure')>();
-  return {
-    ...actual,
-    EmployeeRestorationConsumer: class extends actual.EmployeeRestorationConsumer {
-      constructor(
-        input: ConstructorParameters<
-          typeof actual.EmployeeRestorationConsumer
-        >[0]
-      ) {
-        super({
-          ...input,
-          transport: {
-            inspect: api.inspect,
-            restore: api.restore,
-            reconcile: api.reconcile,
-          },
-        });
-      }
-    },
-  };
-});
+vi.mock(
+  '@tuturuuu/internal-api/infrastructure/employee-management',
+  async (original) => ({
+    ...(await original<
+      Pick<
+        typeof import('@tuturuuu/internal-api/infrastructure'),
+        'getInternalEmployeeManagement' | 'reconcileInternalEmployee'
+      >
+    >()),
+    getInternalEmployeeManagement: api.inspect,
+    reconcileInternalEmployee: api.reconcile,
+  })
+);
+vi.mock(
+  '@tuturuuu/internal-api/infrastructure/employee-restoration',
+  async (original) => ({
+    ...(await original<
+      Pick<
+        typeof import('@tuturuuu/internal-api/infrastructure'),
+        'restoreInternalEmployee'
+      >
+    >()),
+    restoreInternalEmployee: api.restore,
+  })
+);
 
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { EmployeeRestorationDialog } from './employee-restoration-dialog';
@@ -123,7 +125,7 @@ describe('managed employee access dialog', () => {
       expect(api.restore).not.toHaveBeenCalled();
     }
   );
-  it('automatically checks readiness, requires exact email and bounds same-operation recovery through reopen', async () => {
+  it('checks readiness and retains a pending operation through reopen using reads only', async () => {
     render(<Harness />);
     expect(
       screen.queryByRole('button', { name: 'Restore access' })
@@ -152,15 +154,20 @@ describe('managed employee access dialog', () => {
       operation: { operationId, revision: 7, phase: 'unknown' },
     });
     await submit();
-    await waitFor(() => expect(api.reconcile).toHaveBeenCalledTimes(1));
+    await screen.findByText(
+      en['internal-accounts'].restoration.outcomes.pending
+    );
+    expect(api.reconcile).not.toHaveBeenCalled();
     expect(screen.getByText(operationId)).not.toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
-    await screen.findByRole('button', { name: 'Restore access' });
-    expect(screen.getByLabelText('Confirm account email')).toHaveValue('');
+    await waitFor(() => expect(api.inspect).toHaveBeenCalledTimes(4));
+    expect(
+      screen.queryByRole('button', { name: 'Restore access' })
+    ).not.toBeInTheDocument();
     expect(api.restore).toHaveBeenCalledTimes(1);
   });
-  it('finishes a pending restore automatically using only the matching operation', async () => {
+  it('confirms a pending restore by explicit read without reconciling', async () => {
     render(<Harness />);
     await inspect();
     const pending = {
@@ -178,7 +185,6 @@ describe('managed employee access dialog', () => {
     api.inspect
       .mockResolvedValueOnce(detail)
       .mockResolvedValueOnce(pending)
-      .mockResolvedValueOnce(pending)
       .mockResolvedValue(completed);
     api.restore.mockResolvedValue({
       status: 'pending',
@@ -195,14 +201,19 @@ describe('managed employee access dialog', () => {
     });
     await submit();
     await screen.findByText(
+      en['internal-accounts'].restoration.outcomes.pending
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Check original result' })
+    );
+    await screen.findByText(
       en['internal-accounts'].restoration.outcomes.restored
     );
-    expect(api.restore).toHaveBeenCalledTimes(1);
-    expect(api.reconcile).toHaveBeenCalledExactlyOnceWith(id, {
+    expect(api.restore).toHaveBeenCalledExactlyOnceWith(id, {
       confirmationEmail: email,
       expectedRevision: 7,
-      operationId,
     });
+    expect(api.reconcile).not.toHaveBeenCalled();
     expect(api.refresh).toHaveBeenCalledTimes(1);
   });
   it('does not reconcile a replacement operation or claim success', async () => {
@@ -334,4 +345,116 @@ describe('managed employee access dialog', () => {
     expect(api.inspect).toHaveBeenCalledTimes(reads);
     expect(api.refresh).not.toHaveBeenCalled();
   });
+});
+
+it('shows a revision conflict and never mutates again after a fresh inspection', async () => {
+  render(<Harness />);
+  await inspect();
+  api.inspect
+    .mockResolvedValueOnce(detail)
+    .mockRejectedValueOnce(
+      new InternalApiError(
+        'PRIVATE provider conflict',
+        409,
+        'employee_revision_or_operation_conflict'
+      )
+    );
+  api.restore.mockResolvedValue({
+    status: 'pending',
+    operationId,
+    code: 'employee_restore_outcome_unknown',
+    nextAction: 'inspect',
+    message: 'Unconfirmed',
+  });
+  await submit();
+  await screen.findByText(
+    'The account revision or operation changed. Your original request is retained. Read the current state; this form cannot submit another restoration.'
+  );
+  expect(api.restore).toHaveBeenCalledExactlyOnceWith(id, {
+    confirmationEmail: email,
+    expectedRevision: 7,
+  });
+  expect(
+    screen.queryByText('PRIVATE provider conflict')
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByText(`Retained operation: ${operationId}`)
+  ).not.toBeVisible();
+  api.inspect.mockResolvedValue({
+    ...detail,
+    revision: 9,
+    operation: { operationId, revision: 9, phase: 'reserved' },
+    nextAction: 'inspect',
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Check original result' })
+  );
+  await waitFor(() => expect(api.inspect).toHaveBeenCalledTimes(4));
+  expect(
+    screen.queryByRole('button', { name: 'Restore access' })
+  ).not.toBeInTheDocument();
+  const form = screen.getByRole('button', { name: 'Close' }).closest('form');
+  if (!form) throw new Error('Missing RESTORE form');
+  fireEvent.submit(form);
+  expect(api.restore).toHaveBeenCalledTimes(1);
+  expect(api.reconcile).not.toHaveBeenCalled();
+});
+it.each(['network', 'begin ACK', 'attempt ACK'])(
+  'keeps %s uncertainty inspection-only without automatic reconciliation',
+  async (stage) => {
+    render(<Harness />);
+    await inspect();
+    const pending = {
+      ...detail,
+      nextAction: 'inspect',
+      operation: { operationId, revision: 7, phase: 'unknown' },
+    };
+    api.inspect.mockResolvedValueOnce(detail).mockResolvedValue(pending);
+    if (stage === 'network')
+      api.restore.mockRejectedValue(new Error('POST response lost'));
+    else
+      api.restore.mockResolvedValue({
+        status: 'pending',
+        operationId,
+        code: 'employee_restore_outcome_unknown',
+        nextAction: 'inspect',
+        message: stage,
+      });
+    await submit();
+    await screen.findByText(
+      en['internal-accounts'].restoration.outcomes.pending
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Restore access' })
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Check original result' })
+    );
+    await waitFor(() =>
+      expect(api.inspect).toHaveBeenCalledTimes(stage === 'network' ? 3 : 4)
+    );
+    expect(api.restore).toHaveBeenCalledTimes(1);
+    expect(api.reconcile).not.toHaveBeenCalled();
+    expect(api.refresh).not.toHaveBeenCalled();
+  }
+);
+
+it('opens an existing unknown operation for read-only inspection without reconciliation', async () => {
+  api.inspect.mockResolvedValue({
+    ...detail,
+    nextAction: 'inspect',
+    operation: { operationId, revision: 7, phase: 'unknown' },
+  });
+  render(<Harness />);
+  await screen.findByText(en['internal-accounts'].restoration.next.inspect);
+  expect(
+    screen.queryByRole('button', { name: 'Restore access' })
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Check original result' })
+  );
+  await waitFor(() => expect(api.inspect).toHaveBeenCalledTimes(2));
+  expect(screen.getByText(operationId)).not.toBeVisible();
+  expect(api.restore).not.toHaveBeenCalled();
+  expect(api.reconcile).not.toHaveBeenCalled();
 });
