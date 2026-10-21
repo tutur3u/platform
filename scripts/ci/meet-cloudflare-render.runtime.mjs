@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHmac, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -10,7 +11,7 @@ import {
 import { createMeetGraph } from './meet-native-graph.mjs';
 import { readMeetRegistry } from './meet-native-graph-files.mjs';
 import { createMeetPolicy, PROBE_NEGATIVES } from './meet-native-policy.mjs';
-import { projectMeetServerFailure } from './meet-native-response-diagnostics.mjs';
+import { rejectMeetServerFailure } from './meet-native-response-diagnostics.mjs';
 import { privateDiagnosticJSON } from './native-wrangler-diagnostics.mjs';
 import { diagnosticError } from './native-wrangler-evidence.mjs';
 
@@ -36,6 +37,7 @@ const policies = {
 };
 const { forwarded, unexpected } = policies.app;
 const serverFailures = [];
+const caseBudget = new AsyncLocalStorage();
 let serverFailuresTruncated = false;
 let runtime,
   graph,
@@ -50,15 +52,17 @@ function recordPrimary(error) {
   }
 }
 function test(name, options, run) {
-  nodeTest(name, options, async () => {
-    try {
-      await run();
-      completed++;
-    } catch (error) {
-      recordPrimary(error);
-      throw error;
-    }
-  });
+  nodeTest(name, options, (context) =>
+    caseBudget.run(context.signal, async () => {
+      try {
+        await run();
+        completed++;
+      } catch (error) {
+        recordPrimary(error);
+        throw error;
+      }
+    })
+  );
 }
 
 function session(target) {
@@ -89,9 +93,14 @@ const fetchWorker = async (path, options = {}) => {
     redirect: 'manual',
   });
   if (response.status === 500) {
-    const fact = await projectMeetServerFailure(response, path);
-    if (serverFailures.length < 4) serverFailures.push(fact);
-    else serverFailuresTruncated = true;
+    await rejectMeetServerFailure(response, path, {
+      signal: caseBudget.getStore(),
+      recordPrimary,
+      recordFact(fact) {
+        if (serverFailures.length < 4) serverFailures.push(fact);
+        else serverFailuresTruncated = true;
+      },
+    });
   }
   return response;
 };
