@@ -11,12 +11,12 @@ import {
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
-
 import {
   captureNormalization,
   checkNormalization,
   NORMALIZATION_KEYS,
 } from './calendar-emitted-defaults.mjs';
+import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
 
 export const PRIVATE_CANARY = 'calendar_ci_private_canary_never_ship_349';
 const EMPTY_RESOURCES = {
@@ -199,6 +199,7 @@ function validateArtifact(directory, sealedNormalization) {
   return { app, configPath, config, main, assets, normalization };
 }
 function hashes(app) {
+  sealCalendarArtifact(resolve(app, 'dist'));
   const files = {};
   function visit(path) {
     const stat = lstatSync(path);

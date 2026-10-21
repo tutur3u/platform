@@ -51,7 +51,7 @@ async function runParent() {
     sourceSHA,
     canonicalHost: 'calendar-ci.invalid',
     ownerPackage: resolve(app, 'package.json'),
-    seal: await sealArtifact(root),
+    seal: await sealArtifact(root, 'calendar'),
     outbound: denyCalendarOutbound([]),
   };
   const programRoot = await realpath(

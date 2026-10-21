@@ -20,6 +20,7 @@ import {
   relative,
   resolve,
 } from 'node:path';
+import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
 import { inspectCalendarProfile } from './calendar-native-runtime-profile.mjs';
 import {
   captureDiagnosticSnapshot,
@@ -45,8 +46,12 @@ function inside(root, path) {
 }
 
 // Inventory names first: never read ambient credential files or follow links.
-export async function sealArtifact(root) {
-  return inventory(root);
+export async function sealArtifact(root, profile) {
+  assert.ok(
+    profile === undefined || profile === 'calendar',
+    'Unsupported runtime profile'
+  );
+  return profile === 'calendar' ? sealCalendarArtifact(root) : inventory(root);
 }
 
 async function inventory(root, ignored) {
@@ -115,7 +120,7 @@ export async function inspectArtifact(options) {
   inside(root, options.config);
   inside(root, options.main);
   assert.deepEqual(
-    await sealArtifact(root),
+    await sealArtifact(root, options.profile),
     options.seal,
     'Artifact hash mutation'
   );
@@ -365,7 +370,7 @@ export async function prepareNativePlan(options, tempRoot) {
     }
     await assertArtifactUnchanged(options);
     assert.deepEqual(
-      await sealArtifact(copyRoot),
+      await sealArtifact(copyRoot, options.profile),
       options.seal,
       'Copy hash mutation'
     );
@@ -376,6 +381,7 @@ export async function prepareNativePlan(options, tempRoot) {
     });
   }
   return {
+    ...(options.profile === 'calendar' ? { profile: 'calendar' } : {}),
     root: options.root,
     seal: options.seal,
     tempRoot,
@@ -437,10 +443,12 @@ export function createNativeFinalizer(plan, remove = rm, records = {}) {
       await check('originalSeal', () => assertArtifactUnchanged(plan));
       await check('copySeal', async () =>
         assert.deepEqual(
-          await inventory(
-            plan.copyRoot,
-            relative(plan.copyRoot, plan.sdkWorkingDir)
-          ),
+          await (plan.profile === 'calendar'
+            ? sealCalendarArtifact(plan.copyRoot, true)
+            : inventory(
+                plan.copyRoot,
+                relative(plan.copyRoot, plan.sdkWorkingDir)
+              )),
           plan.seal,
           'Copy hash mutation'
         )
@@ -585,7 +593,7 @@ export async function startNativeWrangler(options, plan) {
 
 export async function assertArtifactUnchanged(options) {
   assert.deepEqual(
-    await sealArtifact(options.root),
+    await sealArtifact(options.root, options.profile),
     options.seal,
     'Artifact hash mutation'
   );

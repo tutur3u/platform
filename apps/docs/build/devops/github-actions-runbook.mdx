@@ -59,6 +59,18 @@ canaries. Live qualification checks exact defaults and materialized input agains
 seal retains that input relationship as historical metadata; restore never opens or rebases the old absolute path.
 Retained-state provenance stays unknown; raw config bytes stay unchanged.
 
+Calendar's finite inventory hashes the emitted `client/.assetsignore` and
+`server/.vite/manifest.json`, including the hidden directory entry. The ignore
+file must contain exactly `wrangler.json\n.dev.vars\n`; Vite records have closed,
+typed fields and references to existing emitted files/records. Source identifiers
+in metadata are never opened. Credential files (including `.dev.vars`), links,
+unknown hidden entries and extra ignore values fail admission. The producer seal,
+original/copy checks and finalization use this same Calendar inventory. Only the
+SDK-owned `server/.wrangler` directory is excluded during copy finalization.
+The shared helper selects it only for the explicit Calendar profile; its default
+hidden-entry rejection is unchanged. Test the actual sealed artifact statically
+before SDK execution; a successful inventory is not Worker or restore acceptance.
+
 The seal binds SHA, emitted main/config, all `dist` bytes, pointer and generated declarations. The second job restores
 without rebuilding and checks the seal before/after dry-run/runtime. Both jobs run `node --test
 scripts/ci/calendar-native-worker.runtime.mjs` and, from Calendar, `node --test

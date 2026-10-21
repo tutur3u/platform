@@ -155,6 +155,16 @@ and main-SHA builds without deployment or production credentials. Keep the
 separate tests/type-check/lint gates; a skipped manual preview is not build
 evidence. Build-only workflows use placeholder public configuration and
 read-only permissions. Live provider consent/delivery remains a separate check.
+Calendar's `calendar-native-inventory.mjs` owns the finite emitted hidden-file
+contract: exact `.assetsignore` bytes, typed Vite manifest metadata and hashes for
+both files. Do not infer this contract from another app's output or permit
+`.dev.vars`. The shared runtime's explicit Calendar profile dispatches the same
+inventory across original/copy/finalization; default callers still reject hidden
+entries. `calendar-native-artifact.test.mjs` imports the profile controls so CI
+executes credential, metadata, copy and final-seal regressions without SDK loading.
+Debug archives require bounded name/type/escape/link inspection before private
+extraction; retain producer receipt hashes and source identity separately from
+runtime acceptance.
 
 Native Meet/Calendar/Apps source-bearing receipts must use the same PR-head-or-event
 selection as checkout, stamps, seals and runtime expectations. Preserve the actual

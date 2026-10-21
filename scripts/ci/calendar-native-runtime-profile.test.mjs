@@ -5,14 +5,22 @@ import {
   readFile,
   realpath,
   rm,
+  symlink,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { manifest } from './calendar-native-artifact.mjs';
+import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
 import { denyCalendarOutbound } from './calendar-native-runtime-profile.mjs';
-import { inspectArtifact, sealArtifact } from './native-wrangler-runtime.mjs';
+import {
+  assertArtifactUnchanged,
+  createNativeFinalizer,
+  inspectArtifact,
+  prepareNativePlan,
+  sealArtifact,
+} from './native-wrangler-runtime.mjs';
 
 const sourceSHA = 'a'.repeat(40);
 async function calendarFixture(run) {
@@ -54,7 +62,7 @@ async function calendarFixture(run) {
   async function save() {
     await put('dist/server/wrangler.json', config);
     await put('calendar-artifact.json', manifest(app, sourceSHA));
-    options.seal = await sealArtifact(options.root);
+    options.seal = await sealArtifact(options.root, 'calendar');
   }
   try {
     await put('.wrangler/deploy/config.json', {
@@ -73,6 +81,14 @@ async function calendarFixture(run) {
       'cloudflare-env.d.ts',
       'interface CloudflareEnv { ASSETS: Fetcher }'
     );
+    await put('dist/client/.assetsignore', 'wrangler.json\n.dev.vars\n');
+    await put('dist/server/.vite/manifest.json', {
+      'worker.js': {
+        file: 'worker.js',
+        src: '/historical/source/worker.ts',
+        isEntry: true,
+      },
+    });
     await save();
     await run({ options, config, save, put });
   } finally {
@@ -90,10 +106,13 @@ test('Calendar profile admits sealed owning config without changing any bytes', 
     assert.equal(admitted.config.workers_dev, false);
     assert.deepEqual(admitted.bindings, {});
     assert.deepEqual(await readFile(options.config), bytes);
-    assert.deepEqual(await sealArtifact(options.root), options.seal);
+    assert.deepEqual(
+      await sealArtifact(options.root, 'calendar'),
+      options.seal
+    );
     await assert.rejects(
       inspectArtifact({ ...options, profile: undefined }),
-      /Unsupported emitted config field/
+      /Hidden artifact entry unsupported/
     );
     await assert.rejects(
       inspectArtifact({ ...options, profile: 'other' }),
@@ -120,7 +139,7 @@ test('Calendar profile rejects changed bytes, identity and unqualified config fi
     await calendarFixture(async ({ options, config, put }) => {
       config[key] = value;
       await put('dist/server/wrangler.json', config);
-      options.seal = await sealArtifact(options.root);
+      options.seal = await sealArtifact(options.root, 'calendar');
       await assert.rejects(
         inspectArtifact(options),
         /artifact identity or bytes changed|unqualified config field|resource registration forbidden|Expected values/
@@ -158,4 +177,108 @@ test('Calendar fixture denies all nonfixture origins and methods without forward
     'https://calendar-ci.invalid',
     'https://calendar-ci.invalid',
   ]);
+});
+
+test('Calendar actual hidden shape is copied and final seals retain every hidden hash', async () => {
+  await calendarFixture(async ({ options }) => {
+    const tempRoot = join(dirname(options.root), 'temp');
+    await mkdir(tempRoot);
+    const plan = await prepareNativePlan(options, tempRoot);
+    assert.equal(plan.profile, 'calendar');
+    assert.deepEqual(sealCalendarArtifact(plan.copyRoot), options.seal);
+    assert.ok(options.seal['server/.vite/manifest.json']);
+    assert.ok(options.seal['client/.assetsignore']);
+    await assertArtifactUnchanged(plan);
+    const foreignPath = join(dirname(options.root), 'foreign');
+    await writeFile(foreignPath, 'unrelated');
+    await mkdir(plan.sdkWorkingDir);
+    await writeFile(join(plan.sdkWorkingDir, 'local-state'), 'owned SDK state');
+    const result = await createNativeFinalizer({
+      ...plan,
+      foreignPath,
+      foreignValue: 'unrelated',
+    })([]);
+    assert.equal(result.phases.originalSeal.ok, true);
+    assert.equal(result.phases.copySeal.ok, true);
+  });
+});
+test('Calendar finite inventory rejects hidden credentials, unknown metadata and links', async () => {
+  for (const path of [
+    'dist/.env',
+    'dist/client/.env.local',
+    'dist/server/.dev.vars',
+    'dist/server/.dev.vars.preview',
+    'dist/server/.vite/.env',
+    'dist/server/.vite/credentials.json',
+    'dist/client/.unknown',
+  ])
+    await calendarFixture(async ({ options, put }) => {
+      await put(path, 'PRIVATE_VALUE');
+      await assert.rejects(
+        sealArtifact(options.root, 'calendar'),
+        /Hidden Calendar/
+      );
+    });
+  for (const value of [
+    { 'worker.js': { file: 'worker.js', credentials: 'PRIVATE_VALUE' } },
+    { 'worker.js': { file: '../worker.js' } },
+    { 'worker.js': { file: 'worker.js', isEntry: 'true' } },
+    { 'worker.js': { file: 'worker.js', imports: ['missing'] } },
+    { 'worker.js': { file: 'worker.js', assets: ['missing.css'] } },
+  ])
+    await calendarFixture(async ({ options, put }) => {
+      await put('dist/server/.vite/manifest.json', value);
+      await assert.rejects(sealArtifact(options.root, 'calendar'));
+    });
+  await calendarFixture(async ({ options, put }) => {
+    await put('dist/client/.assetsignore', 'wrangler.json\n.dev.vars\n.env\n');
+    await assert.rejects(
+      sealArtifact(options.root, 'calendar'),
+      /ignore bytes changed/
+    );
+  });
+  for (const path of ['client/.assetsignore', 'server/.vite/manifest.json']) {
+    await calendarFixture(async ({ options }) => {
+      const target = join(options.root, path);
+      await rm(target);
+      await symlink(options.main, target);
+      await assert.rejects(
+        sealArtifact(options.root, 'calendar'),
+        /symlinks forbidden/
+      );
+    });
+  }
+});
+
+test('Calendar finalization detects each hidden-file mutation independently and retains evidence', async () => {
+  for (const original of [true, false]) {
+    for (const name of ['client/.assetsignore', 'server/.vite/manifest.json']) {
+      await calendarFixture(async ({ options }) => {
+        const tempRoot = join(dirname(options.root), 'temp');
+        await mkdir(tempRoot);
+        const plan = await prepareNativePlan(options, tempRoot);
+        const path = join(original ? options.root : plan.copyRoot, name);
+        await writeFile(
+          path,
+          name.endsWith('manifest.json')
+            ? JSON.stringify({
+                'worker.js': { file: 'worker.js', name: 'changed' },
+              })
+            : 'changed ignore bytes'
+        );
+        const foreignPath = join(dirname(options.root), 'foreign');
+        await writeFile(foreignPath, 'unrelated');
+        const result = await createNativeFinalizer({
+          ...plan,
+          foreignPath,
+          foreignValue: 'unrelated',
+        })([]);
+        assert.equal(result.phases.originalSeal.ok, !original);
+        assert.equal(result.phases.copySeal.ok, original);
+        assert.equal(result.phases.removal, undefined);
+        assert.ok(result.errors.length > 0);
+        assert.equal(await realpath(plan.scratch), plan.scratch);
+      });
+    }
+  }
 });
