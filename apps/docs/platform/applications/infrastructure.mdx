@@ -64,7 +64,11 @@ not written to application logs.
 
 The internal-account menu shows **Disable access** for active accounts and
 **Enable access** for disabled accounts. Both require matching target-email
-confirmation. Enable removes the provider ban; it does not change the password
+confirmation. Disable and enable accept the root `@tuturuuu.com` domain and
+strictly validated managed subdomains such as `@xwf.tuturuuu.com`, preserving
+the account UUID. External addresses and suffix lookalikes are rejected. This
+exception does not widen profile, password, or MFA action eligibility or the
+exact-root administrator identity requirement. Enable removes the provider ban; it does not change the password
 or perform managed-employee restoration. These existing password/access actions
 have no optional activation gate. Current administrator identity, permission,
 target eligibility and self-target protections still apply. Administrators cannot
@@ -75,7 +79,8 @@ Regression coverage: `account-password-reset-dialog.test.tsx` exercises password
 bounds, pending-request protection, generation and refusal;
 `internal-account-row.test.tsx` exercises the existing active/disabled menus and
 self-target controls; `service.test.ts` verifies exact confirmation and provider
-ban changes. Route authorization and password-boundary suites cover the existing
+ban changes, managed-subdomain disable/enable UUID preservation, unmanaged-target
+rejection, and unchanged root-only profile/password/MFA eligibility. Route authorization and password-boundary suites cover the existing
 Infrastructure API contracts. These synthetic tests do not establish provider or
 production acceptance.
 
