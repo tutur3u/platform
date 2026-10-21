@@ -411,6 +411,15 @@ offline URL assertions remain. The companion
 `apps/calendar/src/runtime/offline-artifact.runtime.mjs` still tests emitted
 classic service-worker bytes in a VM and does not construct a native SDK runtime.
 
+The adapter suites `request-context.test.ts`, `next-navigation.test.tsx` and
+`handler-start-handoff.test.ts` exercise real request storage, cookie serialization,
+memory-router transitions and handler forwarding through fixed external ports.
+They cover behavior independently of generated registry invocation counts. Memory
+history does not qualify browser scrolling, and router search normalization does
+not prove duplicate-key preservation. If unbuilt workspace exports block local
+collection, a private source alias can qualify focused source behavior only;
+normal dependency builds and exact-commit CI remain separate requirements.
+
 Run the source-only profile controls through the canonical resource queue with
 `node --test --test-concurrency=1 scripts/ci/calendar-native-artifact.test.mjs
 scripts/ci/calendar-emitted-defaults.test.mjs
