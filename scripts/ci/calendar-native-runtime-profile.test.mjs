@@ -282,3 +282,48 @@ test('Calendar finalization detects each hidden-file mutation independently and 
     }
   }
 });
+
+test('Calendar root __proto__ filename is sealed, copied and independently checked for mutations', async () => {
+  for (const original of [true, false]) {
+    await calendarFixture(async ({ options, put, save }) => {
+      await put('dist/__proto__', 'prototype-named artifact bytes');
+      await save();
+      assert.equal(Object.hasOwn(options.seal, '__proto__'), true);
+      assert.match(
+        Object.getOwnPropertyDescriptor(options.seal, '__proto__').value,
+        /^[a-f0-9]{64}$/
+      );
+      assert.equal(Object.getPrototypeOf(options.seal), Object.prototype);
+      assert.deepEqual(JSON.parse(JSON.stringify(options.seal)), options.seal);
+      const tempRoot = join(dirname(options.root), 'temp');
+      await mkdir(tempRoot);
+      const plan = await prepareNativePlan(options, tempRoot);
+      assert.equal(
+        await readFile(join(plan.copyRoot, '__proto__'), 'utf8'),
+        'prototype-named artifact bytes'
+      );
+      assert.deepEqual(sealCalendarArtifact(plan.copyRoot), options.seal);
+      await writeFile(
+        join(original ? options.root : plan.copyRoot, '__proto__'),
+        'changed prototype-named bytes'
+      );
+      if (original)
+        await assert.rejects(
+          assertArtifactUnchanged(plan),
+          /Artifact hash mutation/
+        );
+      const foreignPath = join(dirname(options.root), 'foreign');
+      await writeFile(foreignPath, 'unrelated');
+      const result = await createNativeFinalizer({
+        ...plan,
+        foreignPath,
+        foreignValue: 'unrelated',
+      })([]);
+      assert.equal(result.phases.originalSeal.ok, !original);
+      assert.equal(result.phases.copySeal.ok, original);
+      assert.equal(result.phases.removal, undefined);
+      assert.ok(result.errors.length > 0);
+      assert.equal(await realpath(plan.scratch), plan.scratch);
+    });
+  }
+});

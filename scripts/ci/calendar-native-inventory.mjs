@@ -94,7 +94,7 @@ function validateVite(bytes, files) {
 export function sealCalendarArtifact(root, finalizing = false) {
   assert.equal(realpathSync(root), root, 'Calendar root must be canonical');
   assert.ok(lstatSync(root).isDirectory(), 'Calendar root must be a directory');
-  const files = {};
+  const entries = [];
   let vite;
   function visit(directory) {
     for (const entry of readdirSync(directory, { withFileTypes: true }).sort(
@@ -126,7 +126,7 @@ export function sealCalendarArtifact(root, finalizing = false) {
           'Hidden Calendar artifact entry unsupported'
         );
       if (entry.isDirectory()) {
-        files[`${name}/`] = null;
+        entries.push([`${name}/`, null]);
         visit(path);
       } else {
         assert.ok(
@@ -141,11 +141,12 @@ export function sealCalendarArtifact(root, finalizing = false) {
             'Calendar asset ignore bytes changed'
           );
         if (name === 'server/.vite/manifest.json') vite = bytes;
-        files[name] = createHash('sha256').update(bytes).digest('hex');
+        entries.push([name, createHash('sha256').update(bytes).digest('hex')]);
       }
     }
   }
   visit(root);
+  const files = Object.fromEntries(entries);
   if (Object.hasOwn(files, 'server/.vite/')) {
     assert.ok(vite, 'Missing Vite manifest');
     validateVite(vite, files);
