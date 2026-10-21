@@ -11,7 +11,15 @@ import { restoreInternalEmployee } from './employee-restoration';
 
 import { EmployeeRestorationConsumer } from './employee-restoration-consumer';
 
-vi.mock('../../../utils/node_modules/server-only/index.js', () => ({}));
+const serverOnlyPath = await vi.hoisted(async () => {
+  const { createRequire } = await import('node:module');
+
+  return createRequire(
+    new URL('../../../utils/package.json', import.meta.url)
+  ).resolve('server-only');
+});
+
+vi.mock(serverOnlyPath, () => ({}));
 
 const id = '10000000-0000-4000-8000-000000000001';
 const operationId = '20000000-0000-4000-8000-000000000001';
