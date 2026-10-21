@@ -10,35 +10,66 @@ import {
   parseCalendarResponseRecord,
 } from './calendar-response-diagnostics.mjs';
 
+// This exact console.error envelope is observed in both owning Calendar and
+// inherited Mail captures. Other prefixes remain ordinary output.
+const SDK_ERROR_PREFIX =
+  '\u001b[31m✘ \u001b[41;31m[\u001b[41;97mERROR\u001b[41;31m]\u001b[0m \u001b[1m';
+function recognized(text) {
+  const sdk = text.startsWith(SDK_ERROR_PREFIX);
+  const content = sdk ? text.slice(SDK_ERROR_PREFIX.length) : text;
+  const marker = [CALENDAR_SSR_MARKER, CALENDAR_RESPONSE_MARKER].find((key) =>
+    content.startsWith(key)
+  );
+  if (!marker) return;
+  let body = content.slice(marker.length);
+  if (sdk) body = body.endsWith('\u001b[0m') ? body.slice(0, -4) : '';
+  return { marker, text: body };
+}
+
 export function createCalendarSsrCollector(
   forward = (stream, chunk) => process[stream].write(chunk)
 ) {
-  const streams = new Map(
-    ['stdout', 'stderr'].map((name) => [name, { text: '', overflow: false }])
-  );
+  const fresh = () => ({
+    bytes: Buffer.alloc(0),
+    binary: false,
+    overflow: false,
+    passthrough: false,
+  });
+  const streams = new Map(['stdout', 'stderr'].map((name) => [name, fresh()]));
   const candidates = [];
+  const rejections = { parse: 0, schema: 0, overflow: 0, limit: 0 };
   let dropped = 0,
+    droppedSaturated = false,
     finished = false;
-  function line(stream, text, overflow) {
-    if (overflow) {
-      dropped = Math.min(dropped + 1, 1000000);
+  function reject(reason) {
+    if (dropped === 1000000) {
+      droppedSaturated = true;
       return;
     }
-    const marker = [CALENDAR_SSR_MARKER, CALENDAR_RESPONSE_MARKER].find((key) =>
-      text.includes(key)
+    dropped += 1;
+    rejections[reason] += 1;
+  }
+  const emit = (stream, bytes, binary) => {
+    if (bytes.length) forward(stream, binary ? bytes : bytes.toString('utf8'));
+  };
+  function flush(stream, state) {
+    if (state.overflow) {
+      reject('overflow');
+      return;
+    }
+    if (state.passthrough) return;
+    const candidate = recognized(
+      state.bytes.toString('utf8').replace(/\r?\n$/, '')
     );
-    if (!marker) {
-      forward(stream, `${text}\n`);
+    if (!candidate) {
+      emit(stream, state.bytes, state.binary);
       return;
     }
     if (candidates.length === 32) {
-      dropped = Math.min(dropped + 1, 1000000);
+      reject('limit');
       return;
     }
-    candidates.push({
-      marker,
-      text: text.slice(text.indexOf(marker) + marker.length),
-    });
+    candidates.push(candidate);
   }
   return {
     forward(stream, chunk) {
@@ -46,23 +77,35 @@ export function createCalendarSsrCollector(
         !finished && streams.has(stream),
         'Unsupported diagnostic stream'
       );
-      const state = streams.get(stream);
-      const text = Buffer.isBuffer(chunk)
-        ? chunk.toString('utf8')
-        : String(chunk);
+      let state = streams.get(stream);
+      const binary = Buffer.isBuffer(chunk);
+      const bytes = binary ? chunk : Buffer.from(String(chunk), 'utf8');
       let start = 0;
-      while (start < text.length) {
-        const end = text.indexOf('\n', start);
-        const part = text.slice(start, end < 0 ? text.length : end);
-        if (state.text.length + part.length <= 2048) state.text += part;
-        else {
-          state.text = '';
-          state.overflow = true;
+      while (start < bytes.length) {
+        const end = bytes.indexOf(10, start);
+        const part = bytes.subarray(start, end < 0 ? bytes.length : end + 1);
+        if (state.overflow) {
+          /* Suppress recognized payload until line end. */
+        } else if (state.passthrough) emit(stream, part, binary);
+        else if (state.bytes.length + part.length <= 2048) {
+          state.bytes = Buffer.concat([state.bytes, part]);
+          state.binary ||= binary;
+        } else {
+          const head = Buffer.concat([state.bytes, part.subarray(0, 192)])
+            .subarray(0, 192)
+            .toString('utf8');
+          if (recognized(head)) state.overflow = true;
+          else {
+            emit(stream, state.bytes, state.binary);
+            emit(stream, part, binary);
+            state.passthrough = true;
+          }
+          state.bytes = Buffer.alloc(0);
         }
         if (end < 0) break;
-        line(stream, state.text, state.overflow);
-        state.text = '';
-        state.overflow = false;
+        flush(stream, state);
+        state = fresh();
+        streams.set(stream, state);
         start = end + 1;
       }
     },
@@ -94,8 +137,7 @@ export function createCalendarSsrCollector(
         ['calendar-native', 'calendar-artifact-restore'].includes(binding.job)
       );
       for (const [stream, state] of streams)
-        if (state.text || state.overflow)
-          line(stream, state.text, state.overflow);
+        if (state.bytes.length || state.overflow) flush(stream, state);
       finished = true;
       const owningErrors = [],
         responses = [];
@@ -104,7 +146,7 @@ export function createCalendarSsrCollector(
         try {
           value = JSON.parse(candidate.text);
         } catch {
-          dropped += 1;
+          reject('parse');
           continue;
         }
         const record =
@@ -112,13 +154,13 @@ export function createCalendarSsrCollector(
             ? parseCalendarSsrErrorRecord(value)
             : parseCalendarResponseRecord(value);
         if (!record) {
-          dropped += 1;
+          reject('schema');
           continue;
         }
         const target =
           candidate.marker === CALENDAR_SSR_MARKER ? owningErrors : responses;
         if (target.length < 16) target.push(record);
-        else dropped += 1;
+        else reject('limit');
       }
       candidates.length = 0;
       return {
@@ -138,6 +180,8 @@ export function createCalendarSsrCollector(
         owningErrors,
         responses,
         dropped,
+        rejections: { ...rejections },
+        droppedSaturated,
       };
     },
   };
@@ -165,7 +209,7 @@ function validatedPacket(packet) {
   assert.ok(
     packet &&
       Object.keys(packet).sort().join(',') ===
-        'attempt,classification,closure,dropped,job,owningError,owningErrors,responses,runId,sourceSHA,version',
+        'attempt,classification,closure,dropped,droppedSaturated,job,owningError,owningErrors,rejections,responses,runId,sourceSHA,version',
     'Invalid sanitized packet fields'
   );
   validateBinding(packet);
@@ -173,7 +217,7 @@ function validatedPacket(packet) {
     packet.version === 1 &&
       Number.isInteger(packet.dropped) &&
       packet.dropped >= 0 &&
-      packet.dropped <= 1000032,
+      packet.dropped <= 1000000,
     'Invalid packet limits'
   );
   assert.ok(
@@ -182,6 +226,19 @@ function validatedPacket(packet) {
       Array.isArray(packet.responses) &&
       packet.responses.length <= 16,
     'Invalid packet records'
+  );
+  const reasons = packet.rejections;
+  assert.ok(
+    reasons &&
+      Object.keys(reasons).sort().join(',') === 'limit,overflow,parse,schema' &&
+      Object.values(reasons).every(
+        (value) => Number.isInteger(value) && value >= 0 && value <= 1000000
+      ) &&
+      Object.values(reasons).reduce((total, value) => total + value, 0) ===
+        packet.dropped &&
+      typeof packet.droppedSaturated === 'boolean' &&
+      (!packet.droppedSaturated || packet.dropped === 1000000),
+    'Invalid rejection counts'
   );
   const owningErrors = packet.owningErrors.map(parseCalendarSsrErrorRecord),
     responses = packet.responses.map(parseCalendarResponseRecord);
@@ -226,6 +283,13 @@ function validatedPacket(packet) {
     owningErrors,
     responses,
     dropped: packet.dropped,
+    rejections: {
+      parse: reasons.parse,
+      schema: reasons.schema,
+      overflow: reasons.overflow,
+      limit: reasons.limit,
+    },
+    droppedSaturated: packet.droppedSaturated,
   };
 }
 export async function writeCalendarSsrPacket(path, packet) {

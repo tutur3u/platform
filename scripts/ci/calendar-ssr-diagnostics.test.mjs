@@ -248,7 +248,7 @@ test('collector waits for natural close/drain, strips sentinels and bounds malfo
     new TypeError(sentinel),
     'render-boundary'
   );
-  const line = `[wrangler:error] ${CALENDAR_SSR_MARKER}${JSON.stringify(error)}\n`;
+  const line = `${CALENDAR_SSR_MARKER}${JSON.stringify(error)}\n`;
   collector.forward('stderr', Buffer.from(line.slice(0, 40)));
   collector.forward('stderr', Buffer.from(line.slice(40)));
   collector.forward('stdout', 'ordinary log\n');
@@ -309,6 +309,19 @@ test('unknown remains UNKNOWN, records cap and packet writes exclusive private v
       }),
       /Invalid sanitized records/
     );
+    for (const forged of [
+      { ...packet, rejections: { ...packet.rejections, message: sentinel } },
+      { ...packet, rejections: { ...packet.rejections, parse: -1 } },
+      {
+        ...packet,
+        rejections: { ...packet.rejections, parse: packet.dropped + 1 },
+      },
+      { ...packet, droppedSaturated: true },
+    ])
+      await assert.rejects(
+        writeCalendarSsrPacket(path, forged),
+        /Invalid rejection counts/
+      );
     await writeCalendarSsrPacket(path, packet);
     assert.equal((await stat(path)).mode & 0o777, 0o600);
     assert.deepEqual(JSON.parse(await readFile(path, 'utf8')), packet);
@@ -374,4 +387,104 @@ test('workflow uploads only the parent verified sanitized packet for each runtim
     );
     assert.ok(steps.indexOf(upload) > steps.indexOf(runtime));
   }
+});
+
+const sdkErrorPrefix =
+  '\u001b[31m✘ \u001b[41;31m[\u001b[41;97mERROR\u001b[41;31m]\u001b[0m \u001b[1m';
+test('captures the observed SDK error envelope without forwarding recognized payloads', () => {
+  const forwarded = [];
+  const collector = createCalendarSsrCollector((stream, chunk) =>
+    forwarded.push([stream, chunk])
+  );
+  const error = projectCalendarSsrError(
+    new RangeError(sentinel),
+    'render-boundary'
+  );
+  const line = `${sdkErrorPrefix}${CALENDAR_SSR_MARKER}${JSON.stringify(error)}\u001b[0m\n`;
+  const bytes = Buffer.from(line);
+  for (let index = 0; index < bytes.length; index += 1)
+    collector.forward('stderr', bytes.subarray(index, index + 1));
+  const packet = collector.finish(closed, binding);
+  assert.deepEqual(packet.owningErrors, [error]);
+  assert.equal(packet.dropped, 0);
+  assert.deepEqual(forwarded, []);
+});
+
+test('foreign or embedded markers and ordinary byte streams remain unchanged', () => {
+  const parts = [];
+  const collector = createCalendarSsrCollector((_stream, chunk) =>
+    parts.push(Buffer.from(chunk))
+  );
+  const ordinary = Buffer.concat([
+    Buffer.from(
+      `foreign ${CALENDAR_SSR_MARKER}{}\n[wrangler:error] ${CALENDAR_SSR_MARKER}{}\n`
+    ),
+    Buffer.from(`prefix ${sdkErrorPrefix}${CALENDAR_SSR_MARKER}{}\n`),
+    Buffer.from('ordinary '.repeat(1000)),
+    Buffer.from('\nTiếng Việt '),
+    Buffer.from([0xff, 0xfe]),
+    Buffer.from(' no final newline'),
+  ]);
+  for (let index = 0; index < ordinary.length; index += 1)
+    collector.forward('stdout', ordinary.subarray(index, index + 1));
+  const packet = collector.finish(closed, binding);
+  assert.deepEqual(Buffer.concat(parts), ordinary);
+  assert.equal(packet.dropped, 0);
+  assert.deepEqual(packet.owningErrors, []);
+});
+
+test('SDK parsing remains strict with closed truthful rejection classes', () => {
+  const forwarded = [];
+  const collector = createCalendarSsrCollector((_stream, chunk) =>
+    forwarded.push(chunk)
+  );
+  const error = projectCalendarSsrError(new TypeError(sentinel), 'handler');
+  for (const tail of [
+    `${JSON.stringify(error)}${sentinel}\u001b[0m`,
+    `${JSON.stringify(error)}\u001b[2J\u001b[0m`,
+    `${JSON.stringify({ ...error, message: sentinel })}\u001b[0m`,
+    '{\u001b[0m',
+    JSON.stringify(error),
+    `${JSON.stringify(error)}\u001b[0m\u001b[0m`,
+  ])
+    collector.forward(
+      'stderr',
+      `${sdkErrorPrefix}${CALENDAR_SSR_MARKER}${tail}\n`
+    );
+  collector.forward(
+    'stderr',
+    `${CALENDAR_SSR_MARKER}${JSON.stringify(error)}\u001b[0m\n`
+  );
+  collector.forward(
+    'stderr',
+    `${sdkErrorPrefix}${CALENDAR_SSR_MARKER}${sentinel.repeat(200)}\n`
+  );
+  for (let index = 0; index < 33; index += 1)
+    collector.forward(
+      'stderr',
+      `${CALENDAR_SSR_MARKER}${JSON.stringify(error)}\n`
+    );
+  const packet = collector.finish(closed, binding);
+  assert.deepEqual(packet.rejections, {
+    parse: 6,
+    schema: 1,
+    overflow: 1,
+    limit: 17,
+  });
+  assert.equal(packet.dropped, 25);
+  assert.equal(packet.droppedSaturated, false);
+  assert.equal(packet.owningErrors.length, 16);
+  assert.deepEqual(forwarded, []);
+  assert.ok(!JSON.stringify(packet).includes(sentinel));
+});
+
+test('ordinary forwarding preserves the exact primary callback error', () => {
+  const primary = new Error(sentinel);
+  const collector = createCalendarSsrCollector(() => {
+    throw primary;
+  });
+  assert.throws(
+    () => collector.forward('stderr', 'ordinary\n'),
+    (error) => error === primary
+  );
 });
