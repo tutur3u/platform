@@ -38,7 +38,7 @@ const post = () =>
     body: JSON.stringify({
       email: 'staff@tuturuuu.com',
       displayName: 'Staff',
-      temporaryPassword: 'temporary-pass-123',
+      temporaryPassword: 'Synthetic-Pass-123!',
     }),
   });
 beforeEach(() => {
