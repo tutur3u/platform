@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import {
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  stat,
+  symlink,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -286,7 +293,9 @@ test('unknown remains UNKNOWN, records cap and packet writes exclusive private v
   assert.equal(packet.owningErrors.length, 16);
   assert.ok(packet.dropped > 0);
   assert.equal(packet.owningErrors[0].category, 'UNKNOWN');
-  const root = await mkdtemp(join(tmpdir(), 'calendar-sanitized-'));
+  const root = await realpath(
+    await mkdtemp(join(tmpdir(), 'calendar-sanitized-'))
+  );
   try {
     const path = join(root, 'packet.json');
     await assert.rejects(
@@ -306,6 +315,24 @@ test('unknown remains UNKNOWN, records cap and packet writes exclusive private v
     await assert.rejects(writeCalendarSsrPacket(path, packet), {
       code: 'EEXIST',
     });
+  } finally {
+    await rm(root, { recursive: true });
+  }
+});
+
+test('packet writer rejects a noncanonical parent even when its target is private', async () => {
+  const root = await realpath(
+    await mkdtemp(join(tmpdir(), 'calendar-noncanonical-'))
+  );
+  try {
+    const alias = join(root, 'alias');
+    await symlink(root, alias, 'dir');
+    const packet = createCalendarSsrCollector(() => {}).finish(closed, binding);
+    await assert.rejects(
+      writeCalendarSsrPacket(join(alias, 'packet.json'), packet),
+      /Noncanonical diagnostic destination/
+    );
+    await assert.rejects(stat(join(root, 'packet.json')), { code: 'ENOENT' });
   } finally {
     await rm(root, { recursive: true });
   }
