@@ -661,13 +661,10 @@ test('primary, seal, snapshot and pre-removal persistence failures each retain s
 });
 
 test('both CI evidence pack steps retain the complete hidden inventory', async (t) => {
-  const { parse } = createRequire(import.meta.url)('yaml');
-  const workflow = parse(
-    await readFile(
-      new URL('../../.github/workflows/apps-cloudflare.yaml', import.meta.url),
-      'utf8'
-    )
+  const { readWorkflow } = createRequire(import.meta.url)(
+    './workflow-yaml-test-helper.js'
   );
+  const workflow = readWorkflow('apps-cloudflare.yaml');
   for (const job of ['validate', 'restore-acceptance']) {
     const temporary = await realpath(
       await mkdtemp(join(tmpdir(), 'apps-pack-'))
