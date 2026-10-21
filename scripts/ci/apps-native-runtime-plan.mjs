@@ -83,11 +83,125 @@ export function verifyAppsArtifact(plan) {
   );
 }
 
-// Unlike the generic fixture seal, emitted Apps assets include .assetsignore.
-// Only this one hidden source name is admitted; SDK workdirs are inventoried separately.
+const VITE_DIRECTORY = 'server/.vite';
+const VITE_MANIFEST = `${VITE_DIRECTORY}/manifest.json`;
+const MAX_MANIFEST_BYTES = 1024 * 1024;
+const MANIFEST_FIELDS = new Set([
+  'file',
+  'name',
+  'src',
+  'isEntry',
+  'isDynamicEntry',
+  'imports',
+  'dynamicImports',
+  'css',
+  'assets',
+]);
+function metadataString(value) {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= 1024 &&
+    [...value].every((character) => {
+      const code = character.codePointAt(0);
+      return code >= 32 && code !== 127;
+    })
+  );
+}
+export function validateAppsViteManifest(bytes, seal) {
+  assert.ok(
+    bytes.length <= MAX_MANIFEST_BYTES,
+    'Apps Vite manifest byte bound'
+  );
+  let manifest;
+  try {
+    manifest = JSON.parse(bytes.toString('utf8'));
+  } catch {
+    throw new Error('Malformed Apps Vite manifest');
+  }
+  assert.ok(
+    manifest && typeof manifest === 'object' && !Array.isArray(manifest),
+    'Apps Vite manifest object required'
+  );
+  const entries = Object.entries(manifest);
+  assert.ok(
+    entries.length > 0 && entries.length <= 512,
+    'Apps Vite manifest entry bound'
+  );
+  for (const [name, entry] of entries) {
+    assert.ok(metadataString(name), 'Invalid Apps Vite manifest key');
+    assert.ok(
+      entry && typeof entry === 'object' && !Array.isArray(entry),
+      'Apps Vite manifest entry object required'
+    );
+    assert.ok(
+      Object.keys(entry).every((key) => MANIFEST_FIELDS.has(key)),
+      'Unknown Apps Vite manifest field'
+    );
+    assert.ok(
+      Object.hasOwn(entry, 'file'),
+      'Incomplete Apps Vite manifest entry'
+    );
+    const files = [entry.file];
+    for (const key of ['css', 'assets', 'imports', 'dynamicImports']) {
+      if (!Object.hasOwn(entry, key)) continue;
+      assert.ok(
+        Array.isArray(entry[key]) && entry[key].length <= 512,
+        'Apps Vite manifest reference array required'
+      );
+      for (const value of entry[key]) {
+        assert.ok(
+          metadataString(value),
+          'Invalid Apps Vite manifest reference'
+        );
+        if (key === 'css' || key === 'assets') files.push(value);
+        else
+          assert.ok(
+            Object.hasOwn(manifest, value),
+            'Missing own Apps Vite manifest import'
+          );
+      }
+    }
+    for (const value of files) {
+      assert.ok(
+        metadataString(value) &&
+          !value.includes('\\') &&
+          value
+            .split('/')
+            .every((part) => part && part !== '..' && !part.startsWith('.')),
+        'Escaping Apps Vite manifest file'
+      );
+      const target = `server/${value}`;
+      assert.ok(
+        Object.hasOwn(seal, target) &&
+          typeof seal[target] === 'string' &&
+          /^[a-f0-9]{64}$/.test(seal[target]),
+        'Apps Vite manifest file must be sealed'
+      );
+    }
+    for (const key of ['name', 'src'])
+      if (Object.hasOwn(entry, key))
+        assert.ok(
+          metadataString(entry[key]),
+          'Invalid Apps Vite manifest metadata'
+        );
+    for (const key of ['isEntry', 'isDynamicEntry'])
+      if (Object.hasOwn(entry, key))
+        assert.equal(
+          typeof entry[key],
+          'boolean',
+          'Invalid Apps Vite manifest flag'
+        );
+  }
+  return manifest;
+}
+
+// Preserve .assetsignore admission. Only this observed server metadata directory
+// is newly admitted; SDK workdirs remain separately inventoried exact exclusions.
 export async function inventoryApps(root, ignored) {
   assert.equal(await realpath(root), root);
-  const files = {};
+  const files = [];
+  let manifest;
   async function walk(directory) {
     for (const item of (await readdir(directory, { withFileTypes: true })).sort(
       (a, b) => a.name.localeCompare(b.name)
@@ -96,20 +210,44 @@ export async function inventoryApps(root, ignored) {
         name = relative(root, path);
       if (name === ignored) continue;
       assert.ok(
-        !item.name.startsWith('.') || item.name === '.assetsignore',
+        !item.name.startsWith('.') ||
+          item.name === '.assetsignore' ||
+          name === VITE_DIRECTORY,
         'Unadmitted hidden artifact entry'
       );
+      if (name === VITE_DIRECTORY) {
+        assert.ok(item.isDirectory(), 'Apps Vite metadata must be a directory');
+        const children = await readdir(path, { withFileTypes: true });
+        assert.deepEqual(
+          children.map((child) => child.name),
+          ['manifest.json'],
+          'Incomplete or extra Apps Vite metadata'
+        );
+        assert.ok(
+          children[0].isFile(),
+          'Apps Vite manifest must be a regular file'
+        );
+      }
       if (item.isDirectory()) {
-        files[`${name}/`] = null;
+        files.push([`${name}/`, null]);
         await walk(path);
       } else {
         assert.ok(item.isFile(), 'Artifact links/special entries forbidden');
-        files[name] = hash(await readFile(path));
+        if (name === VITE_MANIFEST)
+          assert.ok(
+            (await lstat(path)).size <= MAX_MANIFEST_BYTES,
+            'Apps Vite manifest byte bound'
+          );
+        const bytes = await readFile(path);
+        files.push([name, hash(bytes)]);
+        if (name === VITE_MANIFEST) manifest = bytes;
       }
     }
   }
   await walk(root);
-  return files;
+  const seal = Object.fromEntries(files);
+  if (manifest) validateAppsViteManifest(manifest, seal);
+  return seal;
 }
 async function fileHash(path) {
   const info = await lstat(path);
@@ -168,6 +306,16 @@ export async function inspectAppsPlan(
     .map((name) => join(appDirectory, name))
     .find((path) => Object.hasOwn(receipt.files, relative(appDirectory, path)));
   assert.ok(pointerPath, 'Receipt must seal the actual pointer');
+  const seal = await inventoryApps(root);
+  if (Object.hasOwn(seal, `${VITE_DIRECTORY}/`)) {
+    assert.equal(
+      relative(root, configPath),
+      'server/wrangler.json',
+      'Apps Vite metadata/config layout mismatch'
+    );
+    assert.equal(dirname(main), join(root, 'server'));
+    assert.equal(assets, join(root, 'client'));
+  }
   const lockPath = join(repository, 'bun.lock');
   const identities = {};
   for (const path of [ownerPackage, lockPath, artifactReceipt, pointerPath])
@@ -183,7 +331,7 @@ export async function inspectAppsPlan(
     pointerPath,
     configRelative: relative(root, configPath),
     supplierPins: APPS_SUPPLIER,
-    seal: await inventoryApps(root),
+    seal,
     identities,
   };
   await assertAppsOriginal(plan, io.verify);

@@ -478,6 +478,18 @@ The plan invokes `apps-native-artifact.py verify` with an explicit source SHA an
 canonical receipt, checks the actual native or saved deploy pointer and preserves
 all normalized configuration fields. Every session copies every sealed emitted
 module and asset, including `.assetsignore`, without rewriting producer metadata.
+The Apps hidden metadata profile additionally admits only `server/.vite` as a
+directory containing exactly one regular `manifest.json`. That file stays in the
+source receipt, original/copy inventory and every session copy. Its bounded JSON
+entries use a closed field vocabulary; file/CSS/asset references must name hashed
+regular entries in the sealed server inventory, and imports must name own manifest
+entries. Own `__proto__` keys survive as data without prototype mutation. Reject
+unknown hidden paths, env/credential entries, links, incomplete metadata, escapes,
+unsealed references and malformed or mistyped fields. Existing `.assetsignore`
+and deploy-pointer admission remain unchanged. This profile does not admit SDK
+workdirs before startup or exclude `.vite` from seals. Cover it with
+`apps-native-runtime-hidden.test.mjs`; metadata admission is no runtime proof.
+
 The application resource/auxiliary topology must remain exactly empty. HTTP uses
 two unchanged Apps copies, each with a private registry; its negative role changes
 only the admitted API fixture origin. Browser uses one copy. No Meet graph,

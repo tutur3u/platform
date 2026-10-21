@@ -789,6 +789,15 @@ reverse exactly-once disposal, natural child/pipe observation and independent
 snapshot/persistence gates without loading the SDK. Runtime qualification still
 requires both real callers on original and freshly restored exact-commit output.
 
+Apps emitted `server/.vite` is a closed metadata directory, containing only a
+regular, bounded, typed `manifest.json`. Keep it hashed and copied; require sealed
+regular file references and own manifest import keys, preserving own `__proto__`
+entries safely. Existing assets-ignore/pointer admission stays unchanged. Never
+turn this into a generic hidden-directory exception or SDK-workdir exclusion.
+Queue `apps-native-runtime-hidden.test.mjs` for malformed, unknown, credential,
+symlink, escape, incomplete and original/copy mutation controls; the existing
+Apps runbook above owns the exact profile.
+
 Configured app/negative HTTP hooks admit only the bounded exact local fixture;
 SDK-generated helper/control actors are hash-pinned trusted tooling outside that
 confinement claim. Preserve the original compiled API 599 negative and its exact
