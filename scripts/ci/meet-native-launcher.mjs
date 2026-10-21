@@ -17,6 +17,7 @@ import {
   prepareMeetGraph,
 } from './meet-native-graph-files.mjs';
 import { inspectMeetGraph } from './meet-native-profile.mjs';
+import { createMeetSsrCollector } from './meet-ssr-capture.mjs';
 import { observeOwnedChild } from './native-wrangler-observable.mjs';
 
 export function meetChildEnvironment(
@@ -103,6 +104,7 @@ export async function launchMeet(sourceSHA) {
       mode: 0o600,
     });
     const gates = [];
+    const collector = createMeetSsrCollector();
     const outcome = await observeOwnedChild(
       spawn(
         process.execPath,
@@ -124,8 +126,15 @@ export async function launchMeet(sourceSHA) {
           stdio: ['ignore', 'pipe', 'pipe'],
         }
       ),
-      (stream, bytes) => process[stream].write(bytes)
+      collector.forward
     );
+    let ssr;
+    try {
+      ssr = collector.finish(outcome, sourceSHA);
+    } catch (error) {
+      gates.push(error);
+      ssr = { availability: 'UNKNOWN', closure: 'UNKNOWN' };
+    }
     let receipt;
     // Receipt acquisition and child outcome are independent failure channels.
     try {
@@ -178,6 +187,7 @@ export async function launchMeet(sourceSHA) {
       round,
       outcome,
       receipt,
+      ssr,
     });
     console.log(
       `Meet graph ${round}: childClose=${outcome.closeObserved}; stdioDrained=${outcome.stdioDrained}; internalCleanup=UNKNOWN; descendantClosure=UNKNOWN`

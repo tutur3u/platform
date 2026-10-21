@@ -159,6 +159,23 @@ still requires the exact-head fixture gate.
 
 ## Native Wrangler prototype CI validation
 
+Meet SSR diagnostics distinguish `loader-import`, `loader-model`, `handler` and
+`render-boundary`. The owning router predicate identifies thrown router redirects;
+handler outcomes distinguish returned 500s, redirects and other responses. Original
+throws and responses retain their identity. Records contain only closed enums,
+allowlisted error names/codes and up to four known function names with bounded
+numeric locations. Accessor-backed inspection is unavailable; messages, causes,
+raw stacks, URLs, headers, cookies and environment values are never projected.
+Emission is limited to 64 records per Worker instance plus an overflow marker.
+The launcher suppresses marker lines from forwarded output, bounds candidates to
+64 lines of 2048 characters, sanitizes again after natural child close and pipe
+drainage, and includes the result in the existing private parent-finalization
+evidence. Missing or incomplete capture is `UNKNOWN`; dropped records are counted.
+These diagnostics add no request, retry, timer or runtime acceptance. A login 500
+remains unexplained until exact-source hosted evidence identifies its phase and
+outcome. Pure controls live in `ssr-diagnostics.test.ts`,
+`ssr-error-boundary.test.tsx` and `meet-ssr-capture.test.mjs`.
+
 Meet's finite `meet-emitted-v1` graph uses two public
 `unstable_startWorker` handles and one fresh private registry. Both the original
 and restored artifact gates run `node scripts/ci/meet-native-launcher.mjs

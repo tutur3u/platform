@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { observeMeetSsr } from './ssr-diagnostics';
 
 export const loadMeetPage = createServerFn({ method: 'GET' })
   .validator(
@@ -11,6 +12,9 @@ export const loadMeetPage = createServerFn({ method: 'GET' })
     })
   )
   .handler(async ({ data }) => {
-    const { loadPageModel } = await import('./page-model.server');
-    return loadPageModel(data.path);
+    const { loadPageModel } = await observeMeetSsr(
+      'loader-import',
+      () => import('./page-model.server')
+    );
+    return observeMeetSsr('loader-model', () => loadPageModel(data.path));
   });

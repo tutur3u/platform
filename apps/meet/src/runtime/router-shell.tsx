@@ -11,6 +11,7 @@ import type { ReactElement } from 'react';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
 import { AppProviders } from './app-providers';
+import { reportMeetSsr } from './ssr-diagnostics';
 import '../app/[locale]/meet.css';
 import './typography.css';
 
@@ -72,6 +73,7 @@ export function Pending(): ReactElement {
 }
 
 export function ErrorPage({ error, reset }: ErrorComponentProps) {
+  reportMeetSsr(error, 'render-boundary', 'threw');
   const pathname = useLocation({ select: (location) => location.pathname });
   return (
     <AppProviders

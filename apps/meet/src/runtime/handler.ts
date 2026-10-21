@@ -6,9 +6,20 @@ import { MEET_FUNCTION_BASE } from './native-function-config';
 import { nativeFunctionProxy } from './native-function-proxy';
 import { dispatchThroughMeetProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
+import { observeMeetSsr } from './ssr-diagnostics';
 import type { MeetExecutionContext, MeetRuntimeBindings } from './worker-port';
 
 export function handleMeetRequest(
+  request: Request,
+  env: MeetRuntimeBindings,
+  ctx: MeetExecutionContext
+) {
+  return observeMeetSsr('handler', () =>
+    dispatchMeetRequest(request, env, ctx)
+  );
+}
+
+function dispatchMeetRequest(
   request: Request,
   env: MeetRuntimeBindings,
   ctx: MeetExecutionContext
