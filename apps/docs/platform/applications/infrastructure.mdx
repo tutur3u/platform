@@ -100,7 +100,9 @@ out of shared diagnostics.
 `profile-service.ts` emits `Internal account profile stage failed` on a returned
 database failure, with a fixed `profile_read`, `username_reserve`, or
 `profile_update` stage and an allowlisted code. Unrecognized or absent codes become
-`unknown`. These events do not prove a specific SQL trigger caused the rejection.
+`unknown`. A successful profile lookup that returns no row also logs `profile_read`
+with code `unknown` and returns HTTP 404; this event does not necessarily indicate
+a database error. These events do not prove a specific SQL trigger caused the rejection.
 They do not cover earlier authorization, provider lookup, or thrown transport
 failures. Missing events alone do not prove that execution stopped earlier.
 
