@@ -130,7 +130,11 @@ test('the original embedded setup COMMIT remains RED while dedicated remote cont
 
 function managedDiagnostic(
   result,
-  ordinal = basePackets(true).length + 2,
+  ordinal = basePackets(true).length +
+    managedProfilePackets.findIndex(
+      ([file]) => file === 'employee-managed-profile-concurrency.sql'
+    ) +
+    1,
   phase = 'packet-tap'
 ) {
   const previous = process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE;
@@ -447,6 +451,19 @@ test('administrator username packet has an exact closed rollback plan', () => {
   );
   const count = sql.match(/^select (?:is|ok|throws_ok)\(/gmu)?.length;
   assert.equal(count, 74);
-  assert.deepEqual(managedProfilePackets.at(-1), [file, count]);
+  assert.deepEqual(
+    managedProfilePackets.find(([name]) => name === file),
+    [file, count]
+  );
   assert.doesNotThrow(() => assertRollbackSource(sql));
+});
+
+test('rollback username packet precedes committed concurrency fixtures', () => {
+  const username = managedProfilePackets.findIndex(
+    ([file]) => file === 'employee-admin-profile-usernames.sql'
+  );
+  const concurrency = managedProfilePackets.findIndex(
+    ([file]) => file === 'employee-managed-profile-concurrency.sql'
+  );
+  assert.ok(username >= 0 && concurrency >= 0 && username < concurrency);
 });

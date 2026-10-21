@@ -10,8 +10,8 @@ import {
 
 export const managedProfilePackets = [
   ['employee-managed-profile.sql', 53],
-  ['employee-managed-profile-concurrency.sql', 10],
   ['employee-admin-profile-usernames.sql', 74],
+  ['employee-managed-profile-concurrency.sql', 10],
 ];
 function selected(journal) {
   const value = process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE;
