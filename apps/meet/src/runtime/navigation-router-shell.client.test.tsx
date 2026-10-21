@@ -15,6 +15,7 @@ import {
   render,
   screen,
 } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import en from '../../messages/en.json';
 import vietnamese from '../../messages/vi.json';
@@ -89,12 +90,12 @@ async function mountNavigation() {
     defaultPendingMinMs: 0,
   });
 
-  function NavigationProbe() {
+  function NavigationProbe(): ReactElement {
     const pathname = usePathname();
     const search = useSearchParams();
-    const params = useParams();
+    const params: Record<string, string | undefined> = useParams();
     const navigation = useRouter();
-    const data = page.useLoaderData();
+    const data = page.useLoaderData<typeof router>();
     return (
       <main>
         <output data-testid="pathname">{pathname}</output>
