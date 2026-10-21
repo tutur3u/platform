@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import {
   managedProfilePackets,
@@ -13,7 +14,10 @@ test('managed profile selection preserves defaults and requires journal/typegen/
     delete process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE;
     assert.deepEqual(selectSchemaPackets(true), basePackets(true));
     process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE = 'true';
-    assert.throws(() => selectSchemaPackets(false));
+    assert.throws(
+      () => selectSchemaPackets(false),
+      /Managed profile qualification requires employee journal/u
+    );
     const packets = selectSchemaPackets(true).map(([file, assertions]) => ({
       file,
       assertions,
@@ -50,4 +54,37 @@ test('managed profile selection preserves defaults and requires journal/typegen/
       delete process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE;
     else process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE = previous;
   }
+});
+
+test('feedback profile and causal matrices isolate managed selection inherited from dispatch', () => {
+  const env = {
+    ...process.env,
+    EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE: 'true',
+    EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: 'true',
+    EMPLOYEE_SCHEMA_INCLUDE_HTTP: 'true',
+    EMPLOYEE_SCHEMA_INCLUDE_RESTORE: 'true',
+  };
+  delete env.NODE_TEST_CONTEXT;
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--test',
+      '--test-concurrency=1',
+      new URL('./product-feedback-schema-profile.test.mjs', import.meta.url)
+        .pathname,
+      new URL('./product-feedback-causal-controls.test.mjs', import.meta.url)
+        .pathname,
+    ],
+    { env, encoding: 'utf8', timeout: 60000, maxBuffer: 1024 * 1024 }
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(
+    result.stdout,
+    /runner rejects incompatible feedback profiles before hosted admission and retains the hosted guard/u
+  );
+  assert.match(
+    result.stdout,
+    /real runner validates causal selection before hosted setup without spoofing identity/u
+  );
 });
