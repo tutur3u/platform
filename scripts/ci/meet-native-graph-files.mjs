@@ -11,6 +11,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { basename, dirname, join, relative } from 'node:path';
+import { sealMeetApp } from './meet-native-inventory.mjs';
 import {
   admitRegistry,
   assertMeetOriginal,
@@ -28,7 +29,8 @@ import {
   sealArtifact,
 } from './native-wrangler-runtime.mjs';
 
-async function copySealed(root, target, seal) {
+async function copySealed(plan, target) {
+  const { root, seal } = plan;
   await mkdir(target, { mode: 0o700 });
   for (const name of Object.keys(seal)) {
     const destination = within(target, join(target, name));
@@ -37,7 +39,11 @@ async function copySealed(root, target, seal) {
       await mkdir(destination, { recursive: true, mode: 0o700 });
     else await copyFile(within(root, join(root, name)), destination);
   }
-  assert.deepEqual(await sealArtifact(target), seal, 'Graph copy mutation');
+  assert.deepEqual(
+    await sealMeetApp(target, plan),
+    seal,
+    'Graph copy mutation'
+  );
 }
 
 export async function prepareMeetGraph(plan, context) {
@@ -49,7 +55,7 @@ export async function prepareMeetGraph(plan, context) {
   const appRoot = join(scratch, 'app'),
     probeRoot = join(scratch, 'probe');
   const registry = join(scratch, 'registry');
-  await copySealed(plan.root, appRoot, plan.seal);
+  await copySealed(plan, appRoot);
   await mkdir(probeRoot, { mode: 0o700 });
   await mkdir(registry, { mode: 0o700 });
   await copyFile(plan.probePath, join(probeRoot, 'probe.mjs'));
@@ -177,9 +183,13 @@ export async function assertMeetCopy(plan, prepared, beforeLoad = false) {
     hash(await readFile(join(prepared.evidenceRoot, 'deploy-pointer.json'))),
     plan.pointerHash
   );
-  for (const role of Object.values(prepared.roles)) {
+  for (const [name, role] of Object.entries(prepared.roles)) {
     assert.deepEqual(
-      await (beforeLoad ? sealArtifact(role.root) : inventoryRole(role)),
+      await (name === 'app'
+        ? sealMeetApp(role.root, { ...plan, allowSdkWorkingDir: !beforeLoad })
+        : beforeLoad
+          ? sealArtifact(role.root)
+          : inventoryRole(role)),
       role.seal,
       'Copied role changed'
     );

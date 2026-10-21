@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkNormalization, checkPolicy } from './meet-emitted-defaults.mjs';
-import { sealArtifact } from './native-wrangler-runtime.mjs';
+import { sealMeetApp } from './meet-native-inventory.mjs';
 
 const { validateOutput, verifyManifest, identity, secretNames } = createRequire(
   import.meta.url
@@ -135,7 +135,9 @@ export async function inspectMeetGraph(options) {
   verifyManifest(app, manifest, sourceSHA);
   admitApp(artifact.config, manifest.normalization);
   const root = join(app, 'dist');
-  const seal = await sealArtifact(root);
+  const configRelative = relative(root, artifact.configPath);
+  const assetsRelative = relative(root, artifact.assets);
+  const seal = await sealMeetApp(root, { configRelative, assetsRelative });
   within(root, artifact.configPath);
   within(root, artifact.main);
   within(root, artifact.assets);
@@ -155,9 +157,9 @@ export async function inspectMeetGraph(options) {
     root,
     seal,
     config: artifact.config,
-    configRelative: relative(root, artifact.configPath),
+    configRelative,
     mainRelative: relative(root, artifact.main),
-    assetsRelative: relative(root, artifact.assets),
+    assetsRelative,
     manifestPath,
     manifestHash: hash(manifestBytes),
     manifest,

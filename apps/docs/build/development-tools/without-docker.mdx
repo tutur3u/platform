@@ -173,7 +173,21 @@ scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.m
 The app config remains byte-identical, including metadata/normalization paths,
 ordered compatibility flags, ESModule rules, self-reference service, local R2,
 Images and Live SQLite migration. Normalization paths are provenance, never
-ambient-config discovery authority. The authored probe uses an external Live
+ambient-config discovery authority. Meet's finite inventory hashes the exact emitted hidden files
+`client/.assetsignore`, `server/.vite/manifest.json` and `server/.dev.vars`, plus
+the `.vite` directory. The ignore file must contain exactly the producer's two
+rules (`wrangler.json` and `.dev.vars`); dev-vars must contain only the exact two
+public CI placeholder assignments. This file is inert sealed evidence: explicit
+empty environment-file selection prevents ambient loading, and fixture bindings remain injected.
+Nonfixture public values, private values, extra keys, unknown hidden paths,
+symlinks and incomplete layouts fail before SDK load. Vite metadata has a closed
+typed field set; output paths and import references must point into the sealed
+inventory. Source IDs remain provenance. The shared generic hidden-file rejection
+is unchanged. A valid archive manifest alone does not establish that a fixture
+profile admits every emitted file; preserve a positive actual-layout regression
+and unknown-hidden/credential negatives in `meet-native-hidden.test.mjs`.
+
+The authored probe uses an external Live
 namespace and the named `MeetingAIProvider` service binding. Acceptance requires
 the real emitted Live class's exact 401 and the real named provider's exact 403
 with zero HTTP attempts; a route or manually constructed class cannot replace

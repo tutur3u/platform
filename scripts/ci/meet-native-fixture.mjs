@@ -20,7 +20,7 @@ const { identity, secretNames } = createRequire(import.meta.url)(
   './verify-meet-start-output.js'
 );
 export const sourceSHA = 'a'.repeat(40);
-export async function meetFixture(t) {
+export async function meetFixture(t, { server = 'ssr' } = {}) {
   const root = await realpath(
     await mkdtemp(join(tmpdir(), 'meet-finite-unit-'))
   );
@@ -28,7 +28,7 @@ export async function meetFixture(t) {
   const app = join(root, 'apps/meet'),
     caseRoot = join(root, 'case');
   for (const path of [
-    'apps/meet/dist/ssr',
+    `apps/meet/dist/${server}`,
     'apps/meet/dist/client',
     'apps/meet/.wrangler/deploy',
     'case/native-sdk-temp',
@@ -64,7 +64,7 @@ export async function meetFixture(t) {
   await writeFile(join(app, 'package.json'), '{}');
   await writeFile(join(root, 'bun.lock'), 'synthetic lock provenance');
   await writeFile(
-    join(app, 'dist/ssr/main.mjs'),
+    join(app, `dist/${server}/main.mjs`),
     'export default {}; export class MeetLiveDurableObject {} export class MeetingAIProvider {}'
   );
   await writeFile(
@@ -76,13 +76,13 @@ export async function meetFixture(t) {
   await writeFile(
     pointerPath,
     JSON.stringify({
-      configPath: '../../dist/ssr/wrangler.json',
+      configPath: `../../dist/${server}/wrangler.json`,
       auxiliaryWorkers: [],
     })
   );
   async function save() {
     await writeFile(
-      join(app, 'dist/ssr/wrangler.json'),
+      join(app, `dist/${server}/wrangler.json`),
       JSON.stringify(config)
     );
     const files = {};
@@ -100,7 +100,7 @@ export async function meetFixture(t) {
       JSON.stringify({
         schema: 2,
         sha: sourceSHA,
-        config: 'dist/ssr/wrangler.json',
+        config: `dist/${server}/wrangler.json`,
         files,
         normalization,
       })
