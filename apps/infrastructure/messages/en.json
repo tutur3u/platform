@@ -8910,6 +8910,16 @@
       "username_help": "Optional. Use lowercase letters, numbers, hyphens, or underscores.",
       "username_invalid": "Start and end with a letter or number; use only lowercase letters, numbers, hyphens, or underscores."
     },
+    "rejected_creation": {
+      "adjudicate": "Adjudicate rejected attempt",
+      "attestation": "I adjudicate that this exact original Auth attempt was terminally rejected, no request remains in flight, and absence alone is not proof. I accept responsibility for this decision.",
+      "description": "A stopped first Auth attempt can only be reopened after an administrator adjudicates a terminal rejection. Account absence and nearby logs are not rejection proof.",
+      "evidence": "SHA-256 digest of the retained evidence reference",
+      "fenced": "Recovery remains fenced. Inspect the original operation before any further action.",
+      "identity": "Original operation {operation}, target {target}, account {email}, name {name}.",
+      "inspect": "Inspect original recovery",
+      "unconfirmed": "Recovery is unconfirmed. Keep the original reference and inspect again; do not create a replacement account."
+    },
     "restoration": {
       "close": "Close",
       "confirmation": "Confirm account email",

@@ -393,3 +393,27 @@ transaction rollback/catalog equality and restoration GREEN. Synthetic tests and
 source hashes are not SQL proof. The domain-regexp check has a structural redundancy
 disposition, not observed mutation coverage; ACL/registry availability remain ordinary
 denial coverage. No production staff predicate or feature flag is changed.
+
+### Rejected first employee creation
+
+The default for an unknown employee CREATE is to retain the original operation
+and prohibit replay. In the root Infrastructure account dialog, the original
+administrator may explicitly adjudicate a terminal rejection of the first Auth
+attempt at unknown/version 2. This exception requires retained evidence, an
+explicit no-request-in-flight attestation and independent SQL absence checks;
+nearby logs or absence alone do not prove rejection. A failed adjudication remains
+bound to its original event, evidence digest and identity tuple. After a fresh
+matching eligible readback, the administrator may explicitly retry that same
+adjudication and attest again. A committed readback enables the original CREATE
+without another adjudication; fenced or changed identities remain blocked. Old
+references without the retained tuple remain inspectable but cannot be retried.
+The recovery helper and rendered dialog regressions cover this distinction.
+
+A committed one-time repair preserves the UUID, intent and history and returns
+reserved/version 3. Matching audit readback unlocks a fresh password field
+for one explicit normal CREATE submission with the original UUID, email and
+name. Neither closing the form nor losing the repair response clears that
+reference. Uncertain repairs stay fenced for explicit readback. Later phases,
+revoked operations and other actors/workspaces are excluded. Route, recovery
+helper and dialog regressions enforce this rule; the optional disposable Web
+session fixture exercises authenticated adjudication and CREATE end to end.

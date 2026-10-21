@@ -162,11 +162,11 @@ test('default/historical selections are unchanged; chat is standalone 172+25 onl
     );
   for (const [flags, count] of [
     [[false, false, false, false], 172],
-    [[true, false, false, false], 301],
+    [[true, false, false, false], 324],
     [[false, true, false, false], 196],
     [[false, false, true, false], 253],
     [[false, false, false, true], 278],
-    [[true, false, true, false], 382],
+    [[true, false, true, false], 405],
   ]) {
     assert.deepEqual(
       selectSchemaPackets(...flags),

@@ -42,7 +42,7 @@ test('accepts exactly all 172 closed assertions', () => {
   assert.equal(receipt().assertions, 172);
   assert.equal(receipt().schemaQualified, true);
 });
-test('journal selection requires all 301 assertions and successful cleanup', () => {
+test('journal selection requires all 324 assertions and successful cleanup', () => {
   const all = journalPackets.map(([file, assertions]) => ({
     file,
     assertions,
@@ -50,7 +50,7 @@ test('journal selection requires all 301 assertions and successful cleanup', () 
   assert.equal(receipt({ journal: true }).schemaQualified, false);
   assert.equal(receipt({ packets: all }).schemaQualified, false);
   assert.equal(receipt({ journal: true, packets: all }).schemaQualified, true);
-  assert.equal(receipt({ journal: true, packets: all }).assertions, 301);
+  assert.equal(receipt({ journal: true, packets: all }).assertions, 324);
   assert.equal(
     receipt({ journal: true, packets: all, cleanupSucceeded: false })
       .schemaQualified,
@@ -177,7 +177,9 @@ test('journal diagnostics bind packets six and seven without exposing SQL text',
   assert.match(diagnostic.sqlErrorMessageSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(diagnostic.failedAssertionOrdinals, [61]);
   assert.equal(JSON.stringify(diagnostic).includes('PRIVATE VALUE'), false);
-  assert.throws(() => schemaFailureDiagnostic('packet-execution', 9, {}, true));
+  assert.throws(() =>
+    schemaFailureDiagnostic('packet-execution', 10, {}, true)
+  );
 });
 test('schema failure diagnostic sanitizes unknown exit statuses', () => {
   for (const status of ['secret', -1, 256]) {
@@ -622,7 +624,7 @@ test('migration packet is opt-in and strict in both incompatible profiles', () =
       41,
     ]);
     for (const [, count] of selected) assertPacketTap(tap(count), count);
-    const expected = journal ? 382 : 253;
+    const expected = journal ? 405 : 253;
     const complete = receipt({ journal, addressMigration: true, packets: all });
     assert.equal(complete.schemaQualified, true);
     assert.equal(complete.assertions, expected);

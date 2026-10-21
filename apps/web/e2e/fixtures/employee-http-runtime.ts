@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
@@ -9,6 +9,7 @@ import { createEmployeeCreationJournal } from '../../src/lib/infrastructure/empl
 import { createEmployeeCreationOperationStore } from '../../src/lib/infrastructure/employee-creation-operation-store';
 import { createEmployeeRuntimeRpc } from '../../src/lib/infrastructure/employee-creation-rpc';
 import { createEmployeeRpcPhaseProvider } from '../../src/lib/infrastructure/employee-creation-rpc-provider';
+import { qualifyEmployeeRejectionHttp } from './employee-rejection-http-runtime';
 import { qualifyEmployeeRestoreHttp } from './employee-restore-http-runtime';
 
 const JournalResultSchema = z.strictObject({
@@ -35,12 +36,35 @@ const Config = z.strictObject({
 });
 let phase = 'configuration';
 let assertions = 0;
+let rejectionStep: string | null = null;
+let authHttpStatus: number | null = null;
+let authObservation: { userReturned: boolean; providerCode: string } | null =
+  null;
 let restoreQualification: Awaited<
   ReturnType<typeof qualifyEmployeeRestoreHttp>
 > | null = null;
 function check(value: unknown) {
   assert.ok(value);
   assertions++;
+}
+function safeAssertionActual(value: unknown) {
+  if (value === undefined) return 'undefined';
+  const parsed = z
+    .union([
+      z.number().int().min(0).max(599),
+      z.enum([
+        'weak_password',
+        'validation_failed',
+        'created',
+        'active',
+        'reserved',
+        'unknown',
+      ]),
+      z.boolean(),
+      z.null(),
+    ])
+    .safeParse(value);
+  return parsed.success ? parsed.data : 'redacted';
 }
 async function main() {
   check(process.env.GITHUB_ACTIONS === 'true' && process.platform === 'linux');
@@ -52,6 +76,18 @@ async function main() {
   );
   check(!url.username && !url.password && !url.search && !url.hash);
   const admin = createClient(config.url, config.key, {
+    global: {
+      fetch: async (request, init) => {
+        const response = await fetch(request, init);
+        if (
+          new URL(request instanceof Request ? request.url : request)
+            .pathname === '/auth/v1/admin/users' &&
+          init?.method === 'POST'
+        )
+          authHttpStatus = response.status;
+        return response;
+      },
+    },
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -62,7 +98,7 @@ async function main() {
     url: config.url,
     key: config.key,
   });
-  const password = randomBytes(24).toString('base64url');
+  const password = `Aa1!${randomBytes(24).toString('base64url')}`;
   phase = 'disposable-administrator';
   const actor = await admin.auth.admin.createUser({
     email: `http-admin-${randomUUID()}@tuturuuu.com`,
@@ -321,6 +357,30 @@ commit;`,
     });
     assert.ok(restoreQualification.qualified);
   }
+  phase = 'rejection-adjudication';
+  await qualifyEmployeeRejectionHttp({
+    observeAuth: (value) => {
+      authObservation = value;
+    },
+    checkpoint: (step) => {
+      rejectionStep = step;
+    },
+    ...config,
+    admin,
+    actorUserId: actorId,
+    transport,
+    complete: (operationId, email) =>
+      claimAndRun(journal, {
+        actorUserId: actorId,
+        operationId,
+        payload: {
+          email,
+          displayName: 'Adjudicated Employee',
+          temporaryPassword: password,
+        },
+      }),
+  });
+  assertions++;
   phase = 'complete';
 }
 try {
@@ -336,13 +396,38 @@ try {
       ...(restoreQualification ? { restoreQualification } : {}),
     })
   );
-} catch {
+} catch (error) {
   // No SDK/SQL/network errors, synthetic passwords or response bodies leave the runner.
   console.log(
     JSON.stringify({
       qualified: false,
       phase,
       assertions,
+      ...(phase === 'rejection-adjudication'
+        ? {
+            rejectionFailure: {
+              step: rejectionStep,
+              httpStatus: authHttpStatus,
+              ...(authObservation ?? {}),
+              kind:
+                error instanceof assert.AssertionError
+                  ? 'assertion'
+                  : error instanceof z.ZodError
+                    ? 'schema'
+                    : 'other',
+              messageSha256: createHash('sha256')
+                .update(
+                  error instanceof Error ? error.message : 'non-error-rejection'
+                )
+                .digest('hex'),
+              ...(error instanceof assert.AssertionError
+                ? {
+                    actual: safeAssertionActual(error.actual),
+                  }
+                : {}),
+            },
+          }
+        : {}),
       productionProof: false,
       routeAuthorizationProof: false,
       ...(restoreQualification ? { restoreQualification } : {}),

@@ -10,7 +10,7 @@ import {
 const complete = {
   qualified: true,
   phase: 'complete',
-  assertions: 29,
+  assertions: 30,
   productionProof: false,
   routeAuthorizationProof: false,
 };
@@ -53,7 +53,7 @@ test('malformed, oversized and overstated proof fails closed', () => {
     null,
     [],
     { ...complete, phase: 'private-runtime-message' },
-    { ...complete, assertions: 30 },
+    { ...complete, assertions: 31 },
     { ...complete, assertions: '29' },
     { ...complete, productionProof: true },
     { ...complete, routeAuthorizationProof: true },
@@ -173,4 +173,71 @@ test('failed RESTORE evidence retains bounded phase counts without qualifying', 
   };
   assert.deepEqual(httpQualificationReceipt(JSON.stringify(value)), value);
   assert.throws(() => assertQualifiedHttp(value, 1, true));
+});
+
+test('failed rejection transport retains only bounded step and primary assertion evidence', () => {
+  const rejectionFailure = {
+    step: 'auth-status',
+    kind: 'assertion',
+    messageSha256: 'a'.repeat(64),
+    actual: 400,
+  };
+  const failed = {
+    ...complete,
+    qualified: false,
+    phase: 'rejection-adjudication',
+    assertions: 29,
+    rejectionFailure,
+  };
+  assert.deepEqual(httpQualificationReceipt(JSON.stringify(failed)), failed);
+  assert.throws(() => assertQualifiedHttp(failed, 1));
+  for (const delta of [
+    { step: 'password=SECRET' },
+    { actual: 'SECRET' },
+    { messageSha256: 'SECRET' },
+    { kind: 'SECRET' },
+    { response: 'SECRET' },
+  ])
+    assert.throws(() =>
+      httpQualificationReceipt(
+        JSON.stringify({
+          ...failed,
+          rejectionFailure: { ...rejectionFailure, ...delta },
+        })
+      )
+    );
+});
+
+test('provider rejection diagnostics distinguish absent errors from numeric HTTP results without raw data', () => {
+  const diagnostic = {
+    step: 'auth-status',
+    kind: 'assertion',
+    messageSha256: 'a'.repeat(64),
+    actual: 'undefined',
+    httpStatus: 200,
+    providerCode: 'none',
+    userReturned: true,
+  };
+  const failed = {
+    ...complete,
+    qualified: false,
+    phase: 'rejection-adjudication',
+    assertions: 29,
+    rejectionFailure: diagnostic,
+  };
+  assert.deepEqual(httpQualificationReceipt(JSON.stringify(failed)), failed);
+  for (const delta of [
+    { httpStatus: '200' },
+    { httpStatus: 600 },
+    { providerCode: 'private-error' },
+    { userReturned: 'SECRET' },
+  ])
+    assert.throws(() =>
+      httpQualificationReceipt(
+        JSON.stringify({
+          ...failed,
+          rejectionFailure: { ...diagnostic, ...delta },
+        })
+      )
+    );
 });

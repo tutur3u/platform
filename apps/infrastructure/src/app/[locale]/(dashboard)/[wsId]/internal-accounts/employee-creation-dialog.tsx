@@ -32,6 +32,7 @@ import {
   useState,
 } from 'react';
 import { EmployeeCreationRecovery } from './employee-creation-recovery';
+import { EmployeeRejectionRecoveryPanel } from './employee-rejection-recovery-panel';
 
 type Outcome =
   | 'editing'
@@ -166,7 +167,11 @@ function ScopedEmployeeCreationDialog({
               ? recovery.canRead()
                 ? 'recovering'
                 : 'inspection'
-              : saved.state
+              : saved.state === 'retry_ready'
+                ? 'editing'
+                : saved.state === 'adjudicating'
+                  ? 'stopped'
+                  : saved.state
           );
         }
       } catch {
@@ -237,7 +242,7 @@ function ScopedEmployeeCreationDialog({
           caught.status === 403 ||
           (caught.status === 503 &&
             caught.code === 'employee_creation_unavailable'));
-      if (denied) {
+      if (denied && !recovery.reference?.rejection) {
         try {
           recovery.complete();
         } catch {
@@ -246,7 +251,9 @@ function ScopedEmployeeCreationDialog({
           return;
         }
       }
-      setOutcome(denied ? 'editing' : 'recovering');
+      setOutcome(
+        denied && !recovery.reference?.rejection ? 'editing' : 'recovering'
+      );
       setError(denied);
       setTemporaryPassword('');
     } finally {
@@ -287,7 +294,7 @@ function ScopedEmployeeCreationDialog({
                 autoComplete="off"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                disabled={!editable}
+                disabled={!editable || Boolean(recovery.reference)}
                 required
                 maxLength={320}
               />
@@ -300,7 +307,7 @@ function ScopedEmployeeCreationDialog({
                 autoComplete="off"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                disabled={!editable}
+                disabled={!editable || Boolean(recovery.reference)}
                 required
                 maxLength={100}
               />
@@ -354,6 +361,18 @@ function ScopedEmployeeCreationDialog({
                   )}
                 </AlertDescription>
               </Alert>
+            ) : null}
+            {['inspection', 'conflict', 'stopped'].includes(outcome) &&
+            recovery.reference ? (
+              <EmployeeRejectionRecoveryPanel
+                recovery={recovery}
+                onReady={() => {
+                  recovery.assertActive();
+                  setTemporaryPassword('');
+                  setError(false);
+                  setOutcome('editing');
+                }}
+              />
             ) : null}
             <DialogFooter className="gap-2 sm:flex-row">
               <Button

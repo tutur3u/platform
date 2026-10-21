@@ -6,12 +6,16 @@ const api = vi.hoisted(() => ({
   create: vi.fn(),
   availability: vi.fn(),
   observe: vi.fn(),
+  inspectRejection: vi.fn(),
+  adjudicateRejection: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api/infrastructure', async (original) => ({
   ...(await original<typeof import('@tuturuuu/internal-api/infrastructure')>()),
   createInternalEmployee: api.create,
   getEmployeeCreationAvailability: api.availability,
   getInternalEmployeeCreationOperation: api.observe,
+  inspectEmployeeRejection: api.inspectRejection,
+  adjudicateEmployeeRejection: api.adjudicateRejection,
 }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
@@ -187,4 +191,95 @@ describe('employee creation form', () => {
     expect(screen.getByRole('button', { name: 'submit' })).toBeDisabled();
     expect(api.create).toHaveBeenCalledTimes(1);
   });
+});
+
+it('recovers precommit adjudication failure through explicit same-event retry before one same-operation CREATE', async () => {
+  api.create.mockImplementationOnce(async (_payload, options) => ({
+    status: 'pending',
+    operationId: options.operationId,
+    code: 'account_creation_outcome_unknown',
+    nextAction: 'inspect',
+  }));
+  await mount();
+  fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+  await screen.findByRole('button', { name: 'inspect' });
+  const key = `infra:employee-create:v1:${scope.actorId}:00000000-0000-0000-0000-000000000000`;
+  const saved = JSON.parse(sessionStorage.getItem(key) ?? '{}');
+  const candidate = {
+    status: 'eligible',
+    actorUserId: scope.actorId,
+    operationId: saved.operationId,
+    targetUserId: '10000000-0000-4000-8000-000000000003',
+    email: 'staff@tuturuuu.com',
+    displayName: 'Staff',
+    originalLeaseId: '10000000-0000-4000-8000-000000000004',
+    originalAttemptEventId: '10000000-0000-4000-8000-000000000005',
+    expectedVersion: 2,
+  };
+  api.inspectRejection.mockResolvedValue(candidate);
+  api.adjudicateRejection.mockRejectedValueOnce(
+    new Error('precommit unavailable')
+  );
+  api.adjudicateRejection.mockImplementation(async (body) => ({
+    ...candidate,
+    status: 'retry_ready',
+    expectedVersion: 3,
+    eventId: body.adjudication.eventId,
+    evidenceReferenceSha256: body.adjudication.evidenceReferenceSha256,
+  }));
+  fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+  await screen.findByLabelText('evidence');
+  fireEvent.change(screen.getByLabelText('evidence'), {
+    target: { value: 'a'.repeat(64) },
+  });
+  expect(screen.getByRole('button', { name: 'adjudicate' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'attestation' }));
+  fireEvent.click(screen.getByRole('button', { name: 'adjudicate' }));
+  await screen.findByRole('alert');
+  expect(screen.queryByLabelText('evidence')).not.toBeInTheDocument();
+  expect(api.adjudicateRejection).toHaveBeenCalledTimes(1);
+  expect(screen.getByText('fenced')).toBeInTheDocument();
+  api.inspectRejection.mockResolvedValueOnce({
+    status: 'fenced',
+    operationId: saved.operationId,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+  await waitFor(() => expect(api.inspectRejection).toHaveBeenCalledTimes(3));
+  expect(screen.getByText('fenced')).toBeInTheDocument();
+  expect(screen.queryByLabelText('evidence')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+  await screen.findByLabelText('evidence');
+  expect(screen.queryByText('fenced')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('evidence')).toHaveValue('a'.repeat(64));
+  expect(screen.getByLabelText('evidence')).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'adjudicate' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'attestation' }));
+  fireEvent.click(screen.getByRole('button', { name: 'adjudicate' }));
+  await waitFor(() => expect(screen.getByLabelText('password')).toBeEnabled());
+  expect(api.adjudicateRejection.mock.calls[1]?.[0]).toEqual(
+    api.adjudicateRejection.mock.calls[0]?.[0]
+  );
+  expect(api.create).toHaveBeenCalledTimes(1);
+  expect(screen.getByLabelText('email')).toBeDisabled();
+  expect(screen.getByLabelText('name')).toBeDisabled();
+  expect(screen.getByLabelText('password')).toHaveValue('');
+  fireEvent.change(screen.getByLabelText('password'), {
+    target: { value: 'Fresh-Password-456!' },
+  });
+  api.create.mockImplementationOnce(async (payload, options) => ({
+    status: 'created',
+    operationId: options.operationId,
+    account: {
+      id: candidate.targetUserId,
+      email: payload.email,
+      displayName: payload.displayName,
+    },
+  }));
+  fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+  await screen.findByText('created');
+  expect(api.create.mock.calls[1]?.[1].operationId).toBe(saved.operationId);
+  expect(api.create.mock.calls[1]?.[0].temporaryPassword).toBe(
+    'Fresh-Password-456!'
+  );
+  expect(sessionStorage.getItem(key)).toBeNull();
 });

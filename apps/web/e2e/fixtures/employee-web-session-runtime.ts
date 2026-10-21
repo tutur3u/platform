@@ -9,6 +9,7 @@ import {
   caseResponseDiagnostic,
   type projectCaseDiagnostic,
 } from '../../../database/scripts/employee-web-session-case-diagnostic.mjs';
+import { qualifyEmployeeRejectionWebSession } from './employee-rejection-web-session';
 import {
   type StartupDiagnostic,
   waitForSessionReadiness,
@@ -93,7 +94,7 @@ async function main() {
     check(startupDiagnostic.outcome === 'ready');
     phase = 'cases';
     const { admin, anon } = fixtureClients(config);
-    const password = randomBytes(24).toString('base64url');
+    const password = `Aa1!${randomBytes(24).toString('base64url')}`;
     async function identity(domain = 'tuturuuu.com') {
       const result = await admin.auth.admin.createUser({
         email: `web-session-${randomUUID()}@${domain}`,
@@ -390,6 +391,17 @@ insert into public.workspace_default_permissions(ws_id,member_type,permission,en
       );
       return { id, email };
     }
+    await qualifyEmployeeRejectionWebSession({
+      config,
+      admin,
+      actorUserId: actor.id,
+      password,
+      endpoint,
+      headers: satellite,
+      revokedHeaders: bearer,
+      request,
+    });
+    cases.push('rejected-create-adjudication');
     const target = await createTarget();
     cases.push('create');
     const payload = { confirmationEmail: target.email, expectedRevision: 0 };

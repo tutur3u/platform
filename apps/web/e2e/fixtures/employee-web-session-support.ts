@@ -7,10 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import {
-  type buildOutputCapture,
-  projectBuildDiagnostic,
-} from '../../../database/scripts/employee-web-session-build-diagnostic.mjs';
+import { projectBuildDiagnostic } from '../../../database/scripts/employee-web-session-build-diagnostic.mjs';
 import { runOwnedBuildProcess } from '../../../database/scripts/employee-web-session-process.mjs';
 import { startupOutputCapture } from '../../../database/scripts/employee-web-session-startup-diagnostic.mjs';
 
@@ -142,9 +139,7 @@ class SessionProcessError extends Error {
     readonly exitCode: number | null,
     readonly signal: NodeJS.Signals | null,
     readonly timedOut: boolean,
-    readonly buildDiagnostic: ReturnType<
-      ReturnType<typeof buildOutputCapture>['receipt']
-    >
+    readonly buildDiagnostic: ReturnType<typeof projectBuildDiagnostic>
   ) {
     super('Session process failed');
   }

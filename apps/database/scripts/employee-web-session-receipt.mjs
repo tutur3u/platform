@@ -20,6 +20,7 @@ export const sessionCases = Object.freeze([
   'fetch-site',
   'action-header',
   'self-action',
+  'rejected-create-adjudication',
   'create',
   'restore',
   'restore-replay',
