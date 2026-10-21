@@ -84,8 +84,8 @@ test('feedback selection is separate from every existing optional profile', () =
     [false, false, false, 172],
     [true, false, false, 301],
     [false, true, false, 196],
-    [false, false, true, 252],
-    [true, false, true, 381],
+    [false, false, true, 253],
+    [true, false, true, 382],
   ]) {
     const selected = selectSchemaPackets(journal, personal, address, false);
     assert.deepEqual(selected, selectSchemaPackets(journal, personal, address));
@@ -94,7 +94,7 @@ test('feedback selection is separate from every existing optional profile', () =
         ...(journal ? journalPackets : foundationPackets),
         ['employee-google-destination-migration.sql', 30],
         ['employee-address-migration.sql', 10],
-        ['employee-retained-mailbox-adoption.sql', 40],
+        ['employee-retained-mailbox-adoption.sql', 41],
       ]);
     assert.equal(
       selected.reduce((n, [, assertions]) => n + assertions, 0),

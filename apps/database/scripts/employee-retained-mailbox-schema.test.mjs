@@ -24,8 +24,8 @@ const packets = selectSchemaPackets(false, false, true).map(
 const tap = () =>
   [
     'BEGIN',
-    ...Array.from({ length: 40 }, (_, i) => `ok ${i + 1} - retained assertion`),
-    '1..40',
+    ...Array.from({ length: 41 }, (_, i) => `ok ${i + 1} - retained assertion`),
+    '1..41',
     'ROLLBACK',
     '',
   ].join('\n');
@@ -40,23 +40,23 @@ const receipt = (extra = {}) =>
     ...extra,
   });
 
-test('canonical address selection includes the frozen actual adoption40 packet', () => {
+test('canonical address selection includes the frozen actual adoption41 packet', () => {
   assert.deepEqual(
     selectSchemaPackets(false, false, true).slice(foundationPackets.length),
     [
       ['employee-google-destination-migration.sql', 30],
       ['employee-address-migration.sql', 10],
-      [file, 40],
+      [file, 41],
     ]
   );
   assertRollbackSource(sql);
-  assert.match(sql, /select plan\(40\);/u);
+  assert.match(sql, /select plan\(41\);/u);
   assert.equal(
     [...sql.matchAll(/^select (?:is|isnt|ok|throws_ok)\(/gmu)].length,
-    40
+    41
   );
   assert.equal(receipt().schemaQualified, true);
-  assert.equal(receipt().assertions, 252);
+  assert.equal(receipt().assertions, 253);
 });
 
 for (const [name, mutate] of [
@@ -68,7 +68,7 @@ for (const [name, mutate] of [
   ],
   [
     'different retained count',
-    (p) => p.map((x) => (x.file === file ? { ...x, assertions: 39 } : x)),
+    (p) => p.map((x) => (x.file === file ? { ...x, assertions: 40 } : x)),
   ],
   ['reordered packets', (p) => [...p].reverse()],
 ]) {
@@ -76,34 +76,34 @@ for (const [name, mutate] of [
     assert.equal(receipt({ packets: mutate(packets) }).schemaQualified, false));
 }
 for (const [name, malformed] of [
-  ['missing assertion', tap().replace('ok 40 - retained assertion\n', '')],
+  ['missing assertion', tap().replace('ok 41 - retained assertion\n', '')],
   [
     'double assertion',
-    tap().replace('ok 40 - retained assertion', 'ok 39 - retained assertion'),
+    tap().replace('ok 41 - retained assertion', 'ok 40 - retained assertion'),
   ],
-  ['failed assertion', tap().replace('ok 40 -', 'not ok 40 -')],
+  ['failed assertion', tap().replace('ok 41 -', 'not ok 41 -')],
   [
     'skipped assertion',
     tap().replace(
-      'ok 40 - retained assertion',
-      'ok 40 - retained assertion # SKIP'
+      'ok 41 - retained assertion',
+      'ok 41 - retained assertion # SKIP'
     ),
   ],
   [
     'TODO assertion',
     tap().replace(
-      'ok 40 - retained assertion',
-      'ok 40 - retained assertion # TODO'
+      'ok 41 - retained assertion',
+      'ok 41 - retained assertion # TODO'
     ),
   ],
   ['missing rollback', tap().replace('ROLLBACK', '')],
-  ['different plan', tap().replace('1..40', '1..39')],
+  ['different plan', tap().replace('1..41', '1..40')],
 ]) {
   test(`actual retained count parser rejects ${name}`, () =>
-    assert.throws(() => assertPacketTap(malformed, 40)));
+    assert.throws(() => assertPacketTap(malformed, 41)));
 }
-test('all 40 complete sequential assertions are required', () =>
-  assert.equal(assertPacketTap(tap(), 40), 40));
+test('all 41 complete sequential assertions are required', () =>
+  assert.equal(assertPacketTap(tap(), 41), 41));
 for (const generatedTypesSha256 of [
   undefined,
   null,
@@ -208,4 +208,18 @@ test('typegen failure propagates instead of qualifying SQL-only success', async 
     }),
     /Generated database types absent/u
   );
+});
+
+test('independent writer starts and drains before successful inspection holds its transaction fence', () => {
+  const writer = sql.indexOf(
+    "perform dblink_connect('retained_adoption_writer'"
+  );
+  const disconnect = sql.indexOf(
+    "perform dblink_disconnect('retained_adoption_writer'"
+  );
+  const success = sql.indexOf(
+    "select is(private.employee_retained_mailbox_adoption('inspect'"
+  );
+  assert.ok(writer > 0 && writer < disconnect && disconnect < success);
+  assert.ok(sql.indexOf("mode='ShareRowExclusiveLock'") < writer);
 });

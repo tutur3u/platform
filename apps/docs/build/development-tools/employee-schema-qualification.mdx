@@ -200,8 +200,8 @@ provider, production configuration, generated types or live account operations.
 
 The independent `include_address_migration=true` selection appends three exact
 rollback packets, in order: Google destination30, legacy address migration10,
-and retained mailbox adoption40. The defaults remain foundation172 and
-journal301; the selected totals are foundation252 or journal381. Personal journal
+and retained mailbox adoption41. The defaults remain foundation172 and
+journal301; the selected totals are foundation253 or journal382. Personal journal
 cannot combine with address migration. Its receipt scope adds `-address-migration`
 and requires every packet exactly once, in order, with the exact count, no skips,
 TODOs, failed assertions or truncation, successful lifecycle and owned cleanup.
@@ -220,7 +220,7 @@ For SQL-only qualification, dispatch `employee-schema-contract.yaml` with
 false. Use a published branch or tag resolving to the reviewed commit as `--ref` and
 set `source_sha` to its full immutable SHA. GitHub rejects a raw SHA as the
 dispatch ref. Verify the accepted run control SHA equals that source SHA before
-moving the ref; the workflow also rejects mismatched address source/control SHAs. An older control that omits adoption40 cannot qualify retained
+moving the ref; the workflow also rejects mismatched address source/control SHAs. An older control that omits adoption41 cannot qualify retained
 adoption, even when its source snapshot applies the new migration. Inspect the
 run's actual control SHA, exact source SHA, three packet entries and fixture
 hashes, generated artifact digest, lifecycle exit and cleanup receipt. A queued,
@@ -231,6 +231,13 @@ The journal, personal journal, feedback and public-consumer profiles retain thei
 existing same-database type generation. Default foundation selection stays
 unchanged. Preserve owned cleanup on generation failure; never substitute source
 parser tests, a minimal fixture or manual SQL for the full isolated migration run.
+
+The retained adoption concurrency fixture must connect and drain its independent
+writer before the first successful adoption inspection. Those inspections retain
+ShareRowExclusive table fences for the rollback transaction; starting the writer
+afterward waits behind the fixture itself rather than exercising NOWAIT admission.
+The packet asserts no such fence is held before starting the writer, verifies its
+actual independent lock, then exercises the original denial without relaxing it.
 
 Conflict fixtures that insert a logical mailbox must link its `domain_id` to the
 matching `private.mail_domains` row. The current mailbox trigger rejects an

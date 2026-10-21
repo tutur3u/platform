@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 create extension if not exists dblink with schema extensions;
 set local search_path=public,extensions;
-select plan(40);
+select plan(41);
 insert into auth.users(id,email,email_confirmed_at,email_change,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000009970','retained-adoption-admin@tuturuuu.com',now(),'','{}','{}'),
 ('00000000-0000-4000-8000-000000009971','retained-adoption-target@xwf.tuturuuu.com',now(),'','{}','{}');
@@ -59,6 +59,25 @@ update retained_adoption_fixture set original_state=private.employee_address_goo
   content=private.employee_retained_mailbox_content('00000000-0000-4000-8000-000000009973',(request->>'userId')::uuid);
 select throws_ok($$select private.employee_address_migration('prepare',request) from retained_adoption_fixture$$,
   '23514','Mailbox preparation has retained data','default empty-only prepare remains closed');
+create function pg_temp.retained_adoption_busy(p_request jsonb) returns boolean
+language plpgsql as $$ begin
+  perform private.employee_retained_mailbox_adoption('inspect',p_request);
+  return false;
+exception when lock_not_available then return true; end; $$;
+select ok(not exists(select 1 from pg_locks where pid=pg_backend_pid()
+  and relation='private.mail_threads'::regclass and mode='ShareRowExclusiveLock' and granted),
+  'remote writer starts before a successful inspection retains its table fence');
+do $control$ begin
+  perform dblink_connect('retained_adoption_writer',format('dbname=%L user=%L',current_database(),current_user));
+  perform dblink_exec('retained_adoption_writer','begin; lock table private.mail_threads in row exclusive mode');
+end $control$;
+select ok(exists(select 1 from pg_locks where pid=(select pid from dblink('retained_adoption_writer','select pg_backend_pid()') as remote(pid integer))
+  and relation='private.mail_threads'::regclass and mode='RowExclusiveLock' and granted),'independent graph writer holds exact lock');
+select ok(pg_temp.retained_adoption_busy(request),'concurrent graph writer fails NOWAIT without mutation') from retained_adoption_fixture;
+do $control$ begin
+  perform dblink_exec('retained_adoption_writer','rollback');
+  perform dblink_disconnect('retained_adoption_writer');
+end $control$;
 select is(private.employee_retained_mailbox_adoption('inspect',request)->>'status','eligible','retained data is explicitly eligible') from retained_adoption_fixture;
 update retained_adoption_fixture set snapshot=private.employee_retained_mailbox_adoption('inspect',request)->>'snapshot';
 select is((select count(*) from private.employee_mailbox_adoptions),0::bigint,'inspection creates no receipt');
@@ -129,22 +148,6 @@ select throws_ok($$do $probe$ begin
     where id='00000000-0000-4000-8000-000000009977';
   perform private.employee_retained_mailbox_adoption('adopt',request,snapshot,true) from retained_adoption_fixture;
 end $probe$;$$,'23514','Retained mailbox graph unavailable','cross-mailbox graph cannot be confirmed away');
-create function pg_temp.retained_adoption_busy(p_request jsonb) returns boolean
-language plpgsql as $$ begin
-  perform private.employee_retained_mailbox_adoption('inspect',p_request);
-  return false;
-exception when lock_not_available then return true; end; $$;
-do $control$ begin
-  perform dblink_connect('retained_adoption_writer',format('dbname=%L user=%L',current_database(),current_user));
-  perform dblink_exec('retained_adoption_writer','begin; lock table private.mail_threads in row exclusive mode');
-end $control$;
-select ok(exists(select 1 from pg_locks where pid=(select pid from dblink('retained_adoption_writer','select pg_backend_pid()') as remote(pid integer))
-  and relation='private.mail_threads'::regclass and mode='RowExclusiveLock' and granted),'independent graph writer holds exact lock');
-select ok(pg_temp.retained_adoption_busy(request),'concurrent graph writer fails NOWAIT without mutation') from retained_adoption_fixture;
-do $control$ begin
-  perform dblink_exec('retained_adoption_writer','rollback');
-  perform dblink_disconnect('retained_adoption_writer');
-end $control$;
 select is(private.employee_retained_mailbox_adoption('adopt',request,snapshot,true)->>'status','adopted','explicit adoption preserves populated mailbox') from retained_adoption_fixture;
 select is(private.employee_retained_mailbox_adoption('inspect',request)->>'snapshot',snapshot,'original operation recovers lost acknowledgement') from retained_adoption_fixture;
 select is(private.employee_retained_mailbox_adoption('adopt',request,snapshot,true)->>'status','adopted','exact committed receipt is idempotent') from retained_adoption_fixture;
