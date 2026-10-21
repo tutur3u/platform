@@ -174,3 +174,36 @@ test('failed RESTORE evidence retains bounded phase counts without qualifying', 
   assert.deepEqual(httpQualificationReceipt(JSON.stringify(value)), value);
   assert.throws(() => assertQualifiedHttp(value, 1, true));
 });
+
+test('failed rejection transport retains only bounded step and primary assertion evidence', () => {
+  const rejectionFailure = {
+    step: 'auth-status',
+    kind: 'assertion',
+    messageSha256: 'a'.repeat(64),
+    actual: 400,
+  };
+  const failed = {
+    ...complete,
+    qualified: false,
+    phase: 'rejection-adjudication',
+    assertions: 29,
+    rejectionFailure,
+  };
+  assert.deepEqual(httpQualificationReceipt(JSON.stringify(failed)), failed);
+  assert.throws(() => assertQualifiedHttp(failed, 1));
+  for (const delta of [
+    { step: 'password=SECRET' },
+    { actual: 'SECRET' },
+    { messageSha256: 'SECRET' },
+    { kind: 'SECRET' },
+    { response: 'SECRET' },
+  ])
+    assert.throws(() =>
+      httpQualificationReceipt(
+        JSON.stringify({
+          ...failed,
+          rejectionFailure: { ...rejectionFailure, ...delta },
+        })
+      )
+    );
+});

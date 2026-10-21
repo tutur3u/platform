@@ -15,6 +15,7 @@ export async function qualifyEmployeeRejectionHttp(input: {
   actorUserId: string;
   admin: SupabaseClient;
   transport: EmployeeRuntimeRpc;
+  checkpoint: (step: string) => void;
   complete: (
     operationId: string,
     email: string
@@ -22,6 +23,7 @@ export async function qualifyEmployeeRejectionHttp(input: {
 }) {
   const operationId = randomUUID();
   const email = `http-adjudicated-${randomUUID()}@tuturuuu.com`;
+  input.checkpoint('claim');
   const claimed = z
     .strictObject({
       kind: z.literal('claimed'),
@@ -39,6 +41,7 @@ export async function qualifyEmployeeRejectionHttp(input: {
   const op = claimed.operation;
   const leaseId = z.uuid().parse(op.leaseId);
   const attemptedEvent = randomUUID();
+  input.checkpoint('attempt');
   await input.transport.rpc.advance({
     actorUserId: input.actorUserId,
     operationId,
@@ -48,6 +51,7 @@ export async function qualifyEmployeeRejectionHttp(input: {
     nextPhase: 'auth_attempted',
     receipt: null,
   });
+  input.checkpoint('auth-rejection');
   const rejected = await input.admin.auth.admin.createUser({
     id: op.targetUserId,
     email,
@@ -56,8 +60,11 @@ export async function qualifyEmployeeRejectionHttp(input: {
     ban_duration: '876000h',
     app_metadata: { employee_onboarding: true },
   });
+  input.checkpoint('auth-status');
   assert.equal(rejected.error?.status, 422);
+  input.checkpoint('auth-code');
   assert.equal(rejected.error?.code, 'weak_password');
+  input.checkpoint('unknown');
   await input.transport.rpc.advance({
     actorUserId: input.actorUserId,
     operationId,
@@ -67,6 +74,7 @@ export async function qualifyEmployeeRejectionHttp(input: {
     nextPhase: 'unknown',
     receipt: null,
   });
+  input.checkpoint('expiry');
   // Fixture-only expiry; production RPC never accepts an expiry override.
   execFileSync(
     'docker',
@@ -127,9 +135,11 @@ export async function qualifyEmployeeRejectionHttp(input: {
         body: JSON.stringify(body),
       }
     );
+    input.checkpoint(`adjudicate-http-${response.status}`);
     assert.equal(response.ok, true);
     return response.json();
   };
+  input.checkpoint('adjudicate');
   const repaired = await adjudicateEmployeeCreationRejection({
     request,
     call,
@@ -138,12 +148,14 @@ export async function qualifyEmployeeRejectionHttp(input: {
       return { actorUserId: input.actorUserId };
     },
   });
+  input.checkpoint('readback');
   const observed = await input.transport.inspect(
     input.actorUserId,
     operationId
   );
   assert.deepEqual(observed.operation, repaired.operation);
   assert.equal(observed.account, null);
+  input.checkpoint('duplicate-denial');
   await assert.rejects(
     adjudicateEmployeeCreationRejection({
       request,
@@ -151,9 +163,11 @@ export async function qualifyEmployeeRejectionHttp(input: {
       authorize: async () => ({ actorUserId: input.actorUserId }),
     })
   );
+  input.checkpoint('completion');
   const completed = await input.complete(operationId, email);
   assert.equal(completed.targetUserId, op.targetUserId);
   assert.equal(completed.outcome.status, 'created');
+  input.checkpoint('final-readback');
   const final = await input.transport.inspect(input.actorUserId, operationId);
   assert.equal(final.operation?.phase, 'active');
   assert.equal(final.account?.id, op.targetUserId);

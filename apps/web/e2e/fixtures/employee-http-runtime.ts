@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
@@ -36,12 +36,31 @@ const Config = z.strictObject({
 });
 let phase = 'configuration';
 let assertions = 0;
+let rejectionStep: string | null = null;
 let restoreQualification: Awaited<
   ReturnType<typeof qualifyEmployeeRestoreHttp>
 > | null = null;
 function check(value: unknown) {
   assert.ok(value);
   assertions++;
+}
+function safeAssertionActual(value: unknown) {
+  const parsed = z
+    .union([
+      z.number().int().min(0).max(599),
+      z.enum([
+        'weak_password',
+        'validation_failed',
+        'created',
+        'active',
+        'reserved',
+        'unknown',
+      ]),
+      z.boolean(),
+      z.null(),
+    ])
+    .safeParse(value);
+  return parsed.success ? parsed.data : 'redacted';
 }
 async function main() {
   check(process.env.GITHUB_ACTIONS === 'true' && process.platform === 'linux');
@@ -324,6 +343,9 @@ commit;`,
   }
   phase = 'rejection-adjudication';
   await qualifyEmployeeRejectionHttp({
+    checkpoint: (step) => {
+      rejectionStep = step;
+    },
     ...config,
     admin,
     actorUserId: actorId,
@@ -355,13 +377,36 @@ try {
       ...(restoreQualification ? { restoreQualification } : {}),
     })
   );
-} catch {
+} catch (error) {
   // No SDK/SQL/network errors, synthetic passwords or response bodies leave the runner.
   console.log(
     JSON.stringify({
       qualified: false,
       phase,
       assertions,
+      ...(phase === 'rejection-adjudication'
+        ? {
+            rejectionFailure: {
+              step: rejectionStep,
+              kind:
+                error instanceof assert.AssertionError
+                  ? 'assertion'
+                  : error instanceof z.ZodError
+                    ? 'schema'
+                    : 'other',
+              messageSha256: createHash('sha256')
+                .update(
+                  error instanceof Error ? error.message : 'non-error-rejection'
+                )
+                .digest('hex'),
+              ...(error instanceof assert.AssertionError
+                ? {
+                    actual: safeAssertionActual(error.actual),
+                  }
+                : {}),
+            },
+          }
+        : {}),
       productionProof: false,
       routeAuthorizationProof: false,
       ...(restoreQualification ? { restoreQualification } : {}),

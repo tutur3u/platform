@@ -70,6 +70,61 @@ function restoreReceipt(value) {
     phaseAssertions: Object.fromEntries(entries),
   };
 }
+function rejectionFailure(value) {
+  const steps = [
+    'claim',
+    'attempt',
+    'auth-rejection',
+    'auth-status',
+    'auth-code',
+    'unknown',
+    'expiry',
+    'adjudicate',
+    'readback',
+    'duplicate-denial',
+    'completion',
+    'final-readback',
+  ];
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    !(
+      steps.includes(value.step) ||
+      /^adjudicate-http-[1-5][0-9]{2}$/.test(value.step)
+    ) ||
+    !['assertion', 'schema', 'other'].includes(value.kind) ||
+    !/^[a-f0-9]{64}$/.test(value.messageSha256) ||
+    Object.keys(value).some(
+      (key) => !['step', 'kind', 'messageSha256', 'actual'].includes(key)
+    ) ||
+    (Object.hasOwn(value, 'actual') &&
+      !(
+        Number.isInteger(value.actual) &&
+        value.actual >= 0 &&
+        value.actual <= 599
+      ) &&
+      ![
+        'weak_password',
+        'validation_failed',
+        'created',
+        'active',
+        'reserved',
+        'unknown',
+        true,
+        false,
+        null,
+        'redacted',
+      ].includes(value.actual))
+  )
+    throw new Error('Rejection failure diagnostic invalid');
+  return {
+    step: value.step,
+    kind: value.kind,
+    messageSha256: value.messageSha256,
+    ...(Object.hasOwn(value, 'actual') ? { actual: value.actual } : {}),
+  };
+}
 export function httpQualificationReceipt(text) {
   if (typeof text !== 'string' || Buffer.byteLength(text) > 4096)
     throw new Error('HTTP qualification receipt exceeds bound');
@@ -99,6 +154,9 @@ export function httpQualificationReceipt(text) {
     assertions: candidate.assertions,
     productionProof: false,
     routeAuthorizationProof: false,
+    ...(candidate.rejectionFailure === undefined
+      ? {}
+      : { rejectionFailure: rejectionFailure(candidate.rejectionFailure) }),
     ...(candidate.restoreQualification === undefined
       ? {}
       : {
