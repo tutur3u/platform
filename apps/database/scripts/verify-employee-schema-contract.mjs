@@ -14,11 +14,16 @@ import {
   runChatInitialSettingsBridge,
 } from './chat-initial-settings-runner.mjs';
 import {
-  assertQualifiedHttp,
   httpQualificationReceipt,
   selectHttpRuntime,
   selectRestoreRuntime,
 } from './employee-http-receipt.mjs';
+import {
+  assertQualifiedHttp,
+  schemaFailureDiagnostic as foundationFailureDiagnostic,
+  schemaReceipt,
+  selectSchemaPackets,
+} from './employee-managed-profile-qualification.mjs';
 import {
   assertEmployeeSchemaSnapshot,
   employeePublicConsumerReceipt,
@@ -29,11 +34,8 @@ import {
   assertPacketTap,
   assertRollbackSource,
   exactSourceSha,
-  schemaFailureDiagnostic as foundationFailureDiagnostic,
-  schemaReceipt,
   selectAddressMigration,
   selectFeedback,
-  selectSchemaPackets,
 } from './employee-schema-tap.mjs';
 import { runSchemaTypegen } from './employee-schema-typegen.mjs';
 import { runOwnedSessionProcess } from './employee-web-session-process.mjs';

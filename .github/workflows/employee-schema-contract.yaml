@@ -21,6 +21,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_managed_profile:
+        description: Qualify atomic managed profile rename, provenance and RESTORE revisions; requires include_journal
+        required: false
+        default: false
+        type: boolean
       include_personal_journal:
         description: Qualify personal journal rollback assertions and generate private RPC types; excludes employee journal and HTTP profiles
         required: false
@@ -94,6 +99,7 @@ jobs:
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
       EMPLOYEE_SCHEMA_INCLUDE_PUBLIC_CONSUMER: ${{ inputs.include_public_consumer }}
+      EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE: ${{ inputs.include_managed_profile }}
       EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: ${{ inputs.include_personal_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
@@ -202,7 +208,7 @@ jobs:
         if: inputs.include_chat_initial_settings == true
         run: node --test --test-concurrency=1 apps/database/scripts/chat-initial-settings-qualification.test.mjs apps/database/scripts/chat-process-diagnostic.test.mjs
       - name: Verify strict TAP and receipt gates
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-retained-mailbox-schema.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
+        run: node --test apps/database/scripts/employee-managed-profile-qualification.test.mjs apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-retained-mailbox-schema.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify Google destination packet source
         if: inputs.include_address_migration == true
         working-directory: source

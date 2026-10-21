@@ -22,10 +22,14 @@ export const EmployeeRuntimeAccountSchema = z
     status: z.enum(['pending', 'created']),
   })
   .strict();
+export const EmployeeObservedAccountSchema =
+  EmployeeRuntimeAccountSchema.extend({
+    creationDisplayName: z.string().min(1).max(100).optional(),
+  });
 const ObservationSchema = z
   .object({
     operation: EmployeeOperationSnapshotSchema.nullable(),
-    account: EmployeeRuntimeAccountSchema.nullable(),
+    account: EmployeeObservedAccountSchema.nullable(),
   })
   .strict();
 const MutationSchema = z

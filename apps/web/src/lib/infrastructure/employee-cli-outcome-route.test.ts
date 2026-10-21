@@ -279,3 +279,66 @@ it('retains default rejection GET rather than routing it through outcome observa
   expect(mock.rejection).toHaveBeenCalledTimes(1);
   expect(mock.inspect).not.toHaveBeenCalled();
 });
+
+it('CLI outcome GET returns SQL-verified current and immutable creation names without mutation', async () => {
+  mock.inspect.mockResolvedValue({
+    operation,
+    account: {
+      ...account,
+      displayName: 'Duyên Dương',
+      creationDisplayName: operation.displayName,
+    },
+  });
+  const response = await run();
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    status: 'created',
+    operationId,
+    account: {
+      id: target,
+      email: operation.email,
+      displayName: 'Duyên Dương',
+      creationDisplayName: operation.displayName,
+    },
+  });
+  expect(mock.inspect).toHaveBeenCalledTimes(2);
+  expect(mock.current).toHaveBeenCalledTimes(2);
+  expect(mock.identity).toHaveBeenCalledExactlyOnceWith(target);
+});
+
+it.each([
+  { ...account, displayName: 'Duyên Dương' },
+  {
+    ...account,
+    displayName: 'Duyên Dương',
+    creationDisplayName: 'Foreign original',
+  },
+  null,
+])(
+  'CLI outcome GET withholds renamed completion without matching SQL lineage/readiness',
+  async (observed) => {
+    mock.inspect.mockResolvedValue({ operation, account: observed });
+    const response = await run();
+    expect(response.status).toBe(202);
+    expect((await response.json()).status).toBe('pending');
+  }
+);
+
+it('renamed CLI completion still rechecks authority before final disclosure', async () => {
+  mock.inspect.mockResolvedValue({
+    operation,
+    account: {
+      ...account,
+      displayName: 'Duyên Dương',
+      creationDisplayName: operation.displayName,
+    },
+  });
+  mock.current
+    .mockResolvedValueOnce({ authorized: true, actorUserId: actor })
+    .mockResolvedValueOnce({ authorized: false, status: 403 });
+  const response = await run();
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({
+    code: 'employee_observation_denied',
+  });
+});

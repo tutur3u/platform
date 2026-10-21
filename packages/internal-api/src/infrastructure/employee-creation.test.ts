@@ -157,3 +157,27 @@ it('refuses a length-valid weak password locally without any HTTP request', asyn
   ).rejects.toThrow();
   expect(transport).not.toHaveBeenCalled();
 });
+
+it('never accepts observation lineage fields as a CREATE mutation result', async () => {
+  const transport = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(
+      {
+        ...reply,
+        account: {
+          ...reply.account,
+          displayName: 'Renamed',
+          creationDisplayName: payload.displayName,
+        },
+      },
+      { status: 201 }
+    )
+  );
+  await expect(
+    createInternalEmployee(payload, {
+      operationId,
+      fetch: transport,
+      baseUrl: 'https://infra.test',
+    })
+  ).rejects.toThrow();
+  expect(transport).toHaveBeenCalledTimes(1);
+});

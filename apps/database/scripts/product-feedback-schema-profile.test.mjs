@@ -175,6 +175,7 @@ test('runner rejects incompatible feedback profiles before hosted admission and 
           EMPLOYEE_SCHEMA_SOURCE_SHA: 'a'.repeat(40),
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: 'true',
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: String(Boolean(bits & 1)),
           EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: String(Boolean(bits & 2)),
           EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: String(Boolean(bits & 4)),

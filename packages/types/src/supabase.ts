@@ -4356,6 +4356,66 @@ export type Database = {
         };
         Relationships: [];
       };
+      employee_address_migrations: {
+        Row: {
+          attempt_id: string | null;
+          binding: Json;
+          completed_at: string | null;
+          created_at: string;
+          destination_address: string;
+          operation_id: string;
+          original_state: Json;
+          phase: string;
+          source_address: string;
+          transition_kind: string;
+          transition_receipt: Json | null;
+          user_id: string;
+        };
+        Insert: {
+          attempt_id?: string | null;
+          binding: Json;
+          completed_at?: string | null;
+          created_at?: string;
+          destination_address: string;
+          operation_id: string;
+          original_state: Json;
+          phase: string;
+          source_address: string;
+          transition_kind?: string;
+          transition_receipt?: Json | null;
+          user_id: string;
+        };
+        Update: {
+          attempt_id?: string | null;
+          binding?: Json;
+          completed_at?: string | null;
+          created_at?: string;
+          destination_address?: string;
+          operation_id?: string;
+          original_state?: Json;
+          phase?: string;
+          source_address?: string;
+          transition_kind?: string;
+          transition_receipt?: Json | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_address_migrations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'employee_address_migrations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       employee_creation_intents: {
         Row: {
           actor_id: string;
@@ -4501,6 +4561,192 @@ export type Database = {
             columns: ['actor_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      employee_creation_rejection_adjudications: {
+        Row: {
+          actor_id: string;
+          adjudicator_id: string;
+          attestation: Json;
+          created_at: string;
+          event_id: string;
+          evidence_reference_sha256: string;
+          expected_version: number;
+          operation_id: string;
+          original_attempt_event_id: string;
+          original_lease_id: string;
+          reason: string;
+        };
+        Insert: {
+          actor_id: string;
+          adjudicator_id: string;
+          attestation: Json;
+          created_at?: string;
+          event_id: string;
+          evidence_reference_sha256: string;
+          expected_version: number;
+          operation_id: string;
+          original_attempt_event_id: string;
+          original_lease_id: string;
+          reason: string;
+        };
+        Update: {
+          actor_id?: string;
+          adjudicator_id?: string;
+          attestation?: Json;
+          created_at?: string;
+          event_id?: string;
+          evidence_reference_sha256?: string;
+          expected_version?: number;
+          operation_id?: string;
+          original_attempt_event_id?: string;
+          original_lease_id?: string;
+          reason?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_creation_rejection_a_actor_id_operation_id_event__fkey';
+            columns: ['actor_id', 'operation_id', 'event_id'];
+            isOneToOne: false;
+            referencedRelation: 'employee_creation_operation_history';
+            referencedColumns: ['actor_id', 'operation_id', 'event_id'];
+          },
+          {
+            foreignKeyName: 'employee_creation_rejection_a_actor_id_operation_id_origin_fkey';
+            columns: ['actor_id', 'operation_id', 'original_attempt_event_id'];
+            isOneToOne: false;
+            referencedRelation: 'employee_creation_operation_history';
+            referencedColumns: ['actor_id', 'operation_id', 'event_id'];
+          },
+          {
+            foreignKeyName: 'employee_creation_rejection_adjudications_adjudicator_id_fkey';
+            columns: ['adjudicator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'employee_creation_rejection_adjudications_adjudicator_id_fkey';
+            columns: ['adjudicator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      employee_mailbox_adoptions: {
+        Row: {
+          adopted_at: string;
+          content_snapshot: string;
+          mailbox_id: string;
+          operation_id: string;
+          ownership_confirmed: boolean;
+          request: Json;
+          snapshot: string;
+        };
+        Insert: {
+          adopted_at?: string;
+          content_snapshot: string;
+          mailbox_id: string;
+          operation_id: string;
+          ownership_confirmed: boolean;
+          request: Json;
+          snapshot: string;
+        };
+        Update: {
+          adopted_at?: string;
+          content_snapshot?: string;
+          mailbox_id?: string;
+          operation_id?: string;
+          ownership_confirmed?: boolean;
+          request?: Json;
+          snapshot?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_mailbox_adoptions_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: true;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      employee_profile_renames: {
+        Row: {
+          actor_id: string;
+          after_handle: string | null;
+          after_name: string;
+          after_revision: number;
+          before_handle: string | null;
+          before_name: string;
+          before_revision: number;
+          created_at: string;
+          creation_actor_id: string | null;
+          creation_operation_id: string | null;
+          operation_id: string;
+          staff_email: string;
+          user_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          after_handle?: string | null;
+          after_name: string;
+          after_revision: number;
+          before_handle?: string | null;
+          before_name: string;
+          before_revision: number;
+          created_at?: string;
+          creation_actor_id?: string | null;
+          creation_operation_id?: string | null;
+          operation_id: string;
+          staff_email: string;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          after_handle?: string | null;
+          after_name?: string;
+          after_revision?: number;
+          before_handle?: string | null;
+          before_name?: string;
+          before_revision?: number;
+          created_at?: string;
+          creation_actor_id?: string | null;
+          creation_operation_id?: string | null;
+          operation_id?: string;
+          staff_email?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_profile_renames_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'employee_profile_renames_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'employee_profile_renames_creation_actor_id_creation_operat_fkey';
+            columns: ['creation_actor_id', 'creation_operation_id'];
+            isOneToOne: false;
+            referencedRelation: 'employee_creation_operations';
+            referencedColumns: ['actor_id', 'operation_id'];
+          },
+          {
+            foreignKeyName: 'employee_profile_renames_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'infrastructure_employees';
             referencedColumns: ['user_id'];
           },
         ];
@@ -14582,6 +14828,110 @@ export type Database = {
           },
         ];
       };
+      personal_journal_entries: {
+        Row: {
+          actor_id: string;
+          body: string;
+          category: string;
+          created_at: string;
+          domain: string;
+          id: string;
+          mood: string | null;
+          mood_context: string;
+          occurred_at: string;
+          revision: number;
+          timezone: string;
+          title: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          body: string;
+          category: string;
+          created_at?: string;
+          domain: string;
+          id: string;
+          mood?: string | null;
+          mood_context: string;
+          occurred_at: string;
+          revision: number;
+          timezone: string;
+          title: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          body?: string;
+          category?: string;
+          created_at?: string;
+          domain?: string;
+          id?: string;
+          mood?: string | null;
+          mood_context?: string;
+          occurred_at?: string;
+          revision?: number;
+          timezone?: string;
+          title?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'personal_journal_entries_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'personal_journal_entries_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      personal_journal_revisions: {
+        Row: {
+          created_at: string;
+          entry_id: string;
+          entry_snapshot: Json;
+          expected_revision: number;
+          operation_id: string;
+          request_document: Json;
+          revision: number;
+        };
+        Insert: {
+          created_at?: string;
+          entry_id: string;
+          entry_snapshot: Json;
+          expected_revision: number;
+          operation_id: string;
+          request_document: Json;
+          revision: number;
+        };
+        Update: {
+          created_at?: string;
+          entry_id?: string;
+          entry_snapshot?: Json;
+          expected_revision?: number;
+          operation_id?: string;
+          request_document?: Json;
+          revision?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'personal_journal_revisions_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'personal_journal_entries';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       personal_notes: {
         Row: {
           content: string | null;
@@ -18758,6 +19108,24 @@ export type Database = {
         Args: { p_actor_id: string };
         Returns: boolean;
       };
+      adjudicate_employee_creation_rejection: {
+        Args: {
+          p_actor_id: string;
+          p_adjudicator_id: string;
+          p_attestation: Json;
+          p_email: string;
+          p_event_id: string;
+          p_evidence_reference_sha256: string;
+          p_expected_version: number;
+          p_name: string;
+          p_operation_id: string;
+          p_original_attempt_event_id: string;
+          p_original_lease_id: string;
+          p_reason: string;
+          p_target_id: string;
+        };
+        Returns: Json;
+      };
       admin_create_user_group_metric_with_audit_actor: {
         Args: {
           p_actor_auth_uid?: string;
@@ -20269,6 +20637,31 @@ export type Database = {
         };
         Returns: boolean;
       };
+      employee_address_google_destination: {
+        Args: { p_destination: string; p_user: string };
+        Returns: boolean;
+      };
+      employee_address_google_state: {
+        Args: {
+          p_destination: string;
+          p_source: string;
+          p_user: string;
+          p_without_email: boolean;
+        };
+        Returns: Json;
+      };
+      employee_address_identity_fingerprint: {
+        Args: { p_user_id: string };
+        Returns: string;
+      };
+      employee_address_migration: {
+        Args: { p_action: string; p_attempt_id?: string; p_request: Json };
+        Returns: Json;
+      };
+      employee_address_state: {
+        Args: { p_destination: string; p_source: string; p_user_id: string };
+        Returns: Json;
+      };
       employee_creation_operation_advance: {
         Args: {
           p_actor_id: string;
@@ -20324,6 +20717,36 @@ export type Database = {
       employee_inbound_mailbox: {
         Args: { p_domain_id: string; p_email: string };
         Returns: Json;
+      };
+      employee_profile_lineage: {
+        Args: {
+          p_creation_actor: string;
+          p_creation_operation: string;
+          p_email: string;
+          p_name: string;
+          p_revision: number;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
+      employee_profile_receipt: {
+        Args: {
+          p: Database['private']['Tables']['employee_profile_renames']['Row'];
+        };
+        Returns: Json;
+      };
+      employee_retained_mailbox_adoption: {
+        Args: {
+          p_action: string;
+          p_ownership_confirmed?: boolean;
+          p_request: Json;
+          p_snapshot?: string;
+        };
+        Returns: Json;
+      };
+      employee_retained_mailbox_content: {
+        Args: { p_mailbox: string; p_target: string };
+        Returns: string;
       };
       enqueue_learn_coding_execution: {
         Args: {
@@ -21681,8 +22104,25 @@ export type Database = {
         Args: { p_actor_id: string; p_key: string };
         Returns: boolean;
       };
+      inspect_employee_creation_rejection: {
+        Args: { p_actor_id: string; p_operation_id: string };
+        Returns: Json;
+      };
       inspect_employee_management: {
         Args: { p_actor_id: string; p_email: string; p_user_id: string };
+        Returns: Json;
+      };
+      inspect_employee_profile: {
+        Args: { p_actor_id: string; p_email: string; p_user_id: string };
+        Returns: Json;
+      };
+      inspect_employee_profile_operation: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_operation_id: string;
+          p_user_id: string;
+        };
         Returns: Json;
       };
       inventory_bundle_category_components_json: {
@@ -21959,6 +22399,10 @@ export type Database = {
       };
       list_managed_cron_whitelisted_domains: {
         Args: { p_limit?: number; p_offset?: number; p_search?: string };
+        Returns: Json;
+      };
+      list_personal_journal: {
+        Args: { p_actor_id: string; p_before?: string; p_ws_id: string };
         Returns: Json;
       };
       list_task_source_filter_ids: {
@@ -22330,6 +22774,20 @@ export type Database = {
         Args: { approval: string; delivery: string; generation: string };
         Returns: string;
       };
+      personal_journal_authorized: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      personal_journal_snapshot: {
+        Args: {
+          p_entry: Database['private']['Tables']['personal_journal_entries']['Row'];
+        };
+        Returns: Json;
+      };
+      personal_journal_valid_document: {
+        Args: { p_document: Json };
+        Returns: boolean;
+      };
       playground_collaboration_scope: {
         Args: { p_actor_id: string; p_id: string };
         Returns: Json;
@@ -22405,6 +22863,10 @@ export type Database = {
         Returns: Json;
       };
       read_meeting_document: { Args: { p_meeting_id: string }; Returns: Json };
+      read_personal_journal: {
+        Args: { p_actor_id: string; p_entry_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       read_time_tracker_control: {
         Args: { p_actor_id: string; p_ws_id: string };
         Returns: Json;
@@ -22905,6 +23367,18 @@ export type Database = {
         Args: { p_kind: string; p_row: Json };
         Returns: Json;
       };
+      update_employee_profile: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_expected_revision: number;
+          p_handle: string;
+          p_name: string;
+          p_operation_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       update_expired_sessions: { Args: never; Returns: undefined };
       update_inventory_scheduled_period: {
         Args: {
@@ -23288,6 +23762,17 @@ export type Database = {
               isSetofReturn: true;
             };
           };
+      write_personal_journal: {
+        Args: {
+          p_actor_id: string;
+          p_document: Json;
+          p_entry_id: string;
+          p_expected_revision: number;
+          p_operation_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

@@ -216,3 +216,46 @@ it('keeps an unknown Auth-attempt outcome incomplete without replay or a complet
   });
   expect(identity).not.toHaveBeenCalled();
 });
+
+it('observes terminal current name with separately bound original CREATE name', async () => {
+  inspect.mockResolvedValue({
+    operation: { ...operation, phase: 'active' },
+    account: {
+      ...account,
+      displayName: 'Duyên Dương',
+      creationDisplayName: 'Staff',
+    },
+  });
+  const response = await run();
+  expect(response.status).toBe(200);
+  expect((await response.json()).account).toEqual({
+    id: target,
+    email: operation.email,
+    displayName: 'Duyên Dương',
+    creationDisplayName: 'Staff',
+  });
+});
+
+it.each(['activation_attempted', 'unknown'])(
+  'rejects renamed observation in %s',
+  async (phase) => {
+    inspect.mockResolvedValue({
+      operation: { ...operation, phase },
+      account: {
+        ...account,
+        displayName: 'Duyên Dương',
+        creationDisplayName: 'Staff',
+      },
+    });
+    const response = await run();
+    expect((await response.json()).status).not.toBe('created');
+  }
+);
+
+it('requires SQL provenance before accepting a changed observed name', async () => {
+  inspect.mockResolvedValue({
+    operation: { ...operation, phase: 'active' },
+    account: { ...account, displayName: 'Duyên Dương' },
+  });
+  expect((await (await run()).json()).status).toBe('pending');
+});

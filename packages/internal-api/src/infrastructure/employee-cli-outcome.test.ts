@@ -108,3 +108,50 @@ it('does not replay a lost observation response', async () => {
   ).rejects.toThrow('lost');
   expect(fetch).toHaveBeenCalledTimes(1);
 });
+
+it('observes a renamed account while binding its immutable original CREATE name', async () => {
+  const outcome = {
+    ...created,
+    account: {
+      ...created.account,
+      displayName: 'Duyên Dương',
+      creationDisplayName: identity.displayName,
+    },
+  };
+  const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+    Response.json(outcome, { status: 200 })
+  );
+  await expect(
+    observeEmployeeCliRecoveryOutcome(identity, { fetch })
+  ).resolves.toEqual(outcome);
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  { displayName: 'Duyên Dương' },
+  { displayName: 'Duyên Dương', creationDisplayName: 'Foreign original' },
+  {
+    displayName: 'Duyên Dương',
+    creationDisplayName: identity.displayName,
+    id: operationId,
+  },
+  {
+    displayName: 'Duyên Dương',
+    creationDisplayName: identity.displayName,
+    email: 'foreign@tuturuuu.com',
+  },
+])(
+  'rejects renamed outcomes with missing or mismatched original identity',
+  async (patch) => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      Response.json(
+        { ...created, account: { ...created.account, ...patch } },
+        { status: 200 }
+      )
+    );
+    await expect(
+      observeEmployeeCliRecoveryOutcome(identity, { fetch })
+    ).rejects.toThrow('inspection');
+    expect(fetch).toHaveBeenCalledTimes(1);
+  }
+);

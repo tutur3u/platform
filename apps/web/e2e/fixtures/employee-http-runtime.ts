@@ -9,6 +9,7 @@ import { createEmployeeCreationJournal } from '../../src/lib/infrastructure/empl
 import { createEmployeeCreationOperationStore } from '../../src/lib/infrastructure/employee-creation-operation-store';
 import { createEmployeeRuntimeRpc } from '../../src/lib/infrastructure/employee-creation-rpc';
 import { createEmployeeRpcPhaseProvider } from '../../src/lib/infrastructure/employee-creation-rpc-provider';
+import { qualifyManagedProfileHttp } from './employee-managed-profile-http-runtime';
 import { qualifyEmployeeRejectionHttp } from './employee-rejection-http-runtime';
 import { qualifyEmployeeRestoreHttp } from './employee-restore-http-runtime';
 
@@ -34,6 +35,9 @@ const Config = z.strictObject({
   basePort: z.number().int().min(12000).max(31999),
   includeRestore: z.boolean().default(false),
 });
+let managedProfileQualification: Awaited<
+  ReturnType<typeof qualifyManagedProfileHttp>
+> | null = null;
 let phase = 'configuration';
 let assertions = 0;
 let rejectionStep: string | null = null;
@@ -357,6 +361,28 @@ commit;`,
     });
     assert.ok(restoreQualification.qualified);
   }
+  if (process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE === 'true') {
+    managedProfileQualification = await qualifyManagedProfileHttp({
+      ...config,
+      actorUserId: actorId,
+      transport,
+      async createTarget() {
+        const email = `managed-http-${randomUUID()}@tuturuuu.com`;
+        const operationId = randomUUID();
+        const created = await claimAndRun(journal, {
+          actorUserId: actorId,
+          operationId,
+          payload: {
+            email,
+            displayName: 'Managed HTTP Original',
+            temporaryPassword: password,
+          },
+        });
+        assert.equal(created.outcome.status, 'created');
+        return { id: created.targetUserId, email, operationId };
+      },
+    });
+  }
   phase = 'rejection-adjudication';
   await qualifyEmployeeRejectionHttp({
     observeAuth: (value) => {
@@ -394,6 +420,7 @@ try {
       productionProof: false,
       routeAuthorizationProof: false,
       ...(restoreQualification ? { restoreQualification } : {}),
+      ...(managedProfileQualification ? { managedProfileQualification } : {}),
     })
   );
 } catch (error) {
@@ -431,6 +458,7 @@ try {
       productionProof: false,
       routeAuthorizationProof: false,
       ...(restoreQualification ? { restoreQualification } : {}),
+      ...(managedProfileQualification ? { managedProfileQualification } : {}),
     })
   );
   process.exitCode = 1;

@@ -377,3 +377,52 @@ it('denies overlapping dispatch and actor retirement during fresh inspection', a
   await expect(first).rejects.toThrow('retired');
   expect(adjudicateRejection).not.toHaveBeenCalled();
 });
+
+it('completes renamed observation only when its immutable creation name matches the retained reference', async () => {
+  const current = session();
+  const original = current.prepare(payload);
+  const outcome = {
+    status: 'created',
+    operationId: original.operationId,
+    account: {
+      id: actorId,
+      email: payload.email,
+      displayName: 'Duyên Dương',
+      creationDisplayName: payload.displayName,
+    },
+  };
+  observe.mockResolvedValue(outcome);
+  expect(await current.read()).toEqual(outcome);
+  expect(current.load()).toBeNull();
+  expect(observe).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  { displayName: 'Duyên Dương' },
+  { displayName: 'Duyên Dương', creationDisplayName: 'Foreign original' },
+  { displayName: payload.displayName, creationDisplayName: 'Foreign original' },
+  {
+    displayName: 'Duyên Dương',
+    creationDisplayName: payload.displayName,
+    email: 'foreign@tuturuuu.com',
+  },
+])(
+  'retains pending original recovery when observed renamed identity does not match',
+  async (patch) => {
+    const current = session();
+    const original = current.prepare(payload);
+    observe.mockResolvedValue({
+      status: 'created',
+      operationId: original.operationId,
+      account: { id: actorId, email: payload.email, ...patch },
+    });
+    expect(await current.read()).toBeNull();
+    expect(current.load()).toMatchObject({
+      operationId: original.operationId,
+      email: payload.email,
+      displayName: payload.displayName,
+      state: 'pending',
+    });
+    expect(observe).toHaveBeenCalledTimes(1);
+  }
+);

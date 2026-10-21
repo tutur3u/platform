@@ -7,13 +7,13 @@ import type { EmployeeCreationAuthorization } from './employee-creation-boundary
 import { EmployeeOperationSnapshotSchema } from './employee-creation-operation-store';
 import {
   createEmployeeRuntimeRpc,
-  EmployeeRuntimeAccountSchema,
+  EmployeeObservedAccountSchema,
 } from './employee-creation-rpc';
 
 const ObservationSchema = z
   .object({
     operation: EmployeeOperationSnapshotSchema.nullable(),
-    account: EmployeeRuntimeAccountSchema.nullable(),
+    account: EmployeeObservedAccountSchema.nullable(),
   })
   .strict();
 const ActiveIdentitySchema = z.object({
@@ -118,7 +118,11 @@ export function makeEmployeeCreationObservation(deps: {
         account.status !== 'created' ||
         account.id !== current.targetUserId ||
         account.email !== current.email ||
-        account.displayName !== current.displayName
+        (account.creationDisplayName === undefined
+          ? account.displayName !== current.displayName
+          : current.phase !== 'active' ||
+            account.creationDisplayName !== current.displayName ||
+            account.displayName === current.displayName)
       )
         return pending();
       return reply(200, {
@@ -128,6 +132,9 @@ export function makeEmployeeCreationObservation(deps: {
           id: account.id,
           email: account.email,
           displayName: account.displayName,
+          ...(account.creationDisplayName === undefined
+            ? {}
+            : { creationDisplayName: account.creationDisplayName }),
         },
       });
     } catch {

@@ -332,3 +332,17 @@ same-database type generation; source-only tests or a minimal fixture cannot
 qualify SQL. See the retained-adoption section of
 `apps/docs/build/development-tools/employee-address-migration.mdx` for its narrow
 four-relation allowance, graph rejection rules and operational fences.
+
+### Managed employee profile updates
+
+Use the service-only atomic managed-profile RPC after current request auth. Acquire
+shared employee-address admission before the sorted Auth pair and established
+registry/intent, mailbox/member, profile and operation locks. Preserve name triggers;
+update the validated registry first and call `update_public_user_profile` for
+username ownership and quotas. Keep old owned handles, never adopt NULL/foreign
+reservations, and roll back every write together. Preserve immutable CREATE
+intent/journal names; only terminal active observations with complete append-only
+rename and completed-RESTORE revision lineage may expose a separate original
+creation name. Missing provenance or current profile/mailbox drift denies proof.
+Use the hosted managed-profile schema selection and same-database type artifact;
+source checks cannot establish SQL, concurrency or production acceptance.

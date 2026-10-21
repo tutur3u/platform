@@ -11,6 +11,7 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { readRequiredMfaPolicy } from '@tuturuuu/utils/required-mfa-policy';
 import { InternalAccountAdminError } from './errors';
 import { parseManagedAccountAddress } from './managed-address';
+import { updateManagedInternalAccountProfile } from './managed-profile-service';
 import {
   isRequiredMfaPolicyAvailable,
   setInternalAccountMfaPolicy,
@@ -445,12 +446,20 @@ export async function mutateInternalAccount({
   }
 
   if (action === 'update_profile') {
-    const profile = await updateInternalAccountProfile({
-      displayName,
-      sbAdmin,
-      targetUserId,
-      username,
-    });
+    const profile =
+      (await updateManagedInternalAccountProfile({
+        actorUserId,
+        targetUserId,
+        email: account.email,
+        displayName,
+        username,
+      })) ??
+      (await updateInternalAccountProfile({
+        displayName,
+        sbAdmin,
+        targetUserId,
+        username,
+      }));
     console.info('Internal account administration action completed', {
       action,
       actorUserId,

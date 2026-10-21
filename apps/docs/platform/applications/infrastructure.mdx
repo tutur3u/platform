@@ -532,3 +532,35 @@ Regression coverage: `employee-cli-recovery-authorization.test.ts`,
 existing Infrastructure authorization/runtime and rejection boundary regressions.
 Hosted authentication, exact Web build CI and account delivery remain separate
 release-owner checks.
+
+## Managed employee profile edits
+
+The existing **Edit profile → Save profile** action supports active, consistently
+managed employee names and usernames. The service authenticates the current
+request; SQL independently requires a fresh root employee administrator. The
+atomic transaction updates the managed registry, public display name, private full
+name and canonical personal mailbox display/sender names, advancing the registry
+revision and appending an immutable rename receipt. It never changes UUID, email,
+Auth credentials, grants, membership or account access.
+
+Managed edits follow the public-profile username validation, exact reservation
+ownership and cooldown rules. Previously owned handles remain reserved by that
+user, matching the public-profile RPC. This is an intentional exception to the
+legacy Infrastructure unmanaged writer's old-handle release behavior. Unmanaged
+eligibility and writes retain their existing path. NULL or foreign reservations
+are never adopted. Any failed write rolls back all profile, mailbox, handle,
+quota, revision and receipt changes.
+
+Pending/inconsistent employees and unresolved CREATE, RESTORE or address
+operations cannot be renamed. Original CREATE names, intent and journal remain
+historical evidence. Terminal active CREATE observations expose the real current
+`displayName` and, after complete SQL provenance/readiness proof, a separate
+`creationDisplayName` binding the original request. Pending and unknown operations
+retain strict original-name proof. A rename makes old RESTORE revision receipts
+stale; a new RESTORE uses the new revision and current name. Lost acknowledgements
+are inspected by their original internal operation reference, without a second
+write or a new confirmation step.
+
+Regression coverage: `employee-managed-profile.sql`, managed-profile transport
+checks, and read-only CREATE observation/client negative controls. Hosted
+qualification and production acceptance are separate delivery gates.
