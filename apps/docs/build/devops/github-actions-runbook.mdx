@@ -29,6 +29,21 @@ in a disposable fixture with only app-level dependency links and no root
 then run the focused behavior tests separately. The Lettin SWC test transforms
 config source in memory; it does not run a Next release build.
 
+Meet, native Calendar and Apps select `github.event.pull_request.head.sha ||
+github.sha` as their source identity. Checkout, build stamps, seals, runtime
+expectations and source-bearing artifact names must use that selection. Keep the
+merge-event `github.sha` and workflow supplier `github.workflow_sha` separate in
+debug receipts; the release-only comparison checkout and deployment markers retain
+their event roles. Meet passes the source SHA through command-scoped `GITHUB_SHA`
+for existing helpers and runtime probes; it does not change the job's event SHA.
+The diagnostic config collector's legacy `source.eventSha` field records its
+explicit comparison argument, which these jobs supply from the selected source.
+Route and debug receipts retain the actual event SHA separately. Run
+`node --test scripts/ci/{meet,calendar,apps}-native-source-identity.test.js` for
+source/event/supplier mismatch controls using shell fixtures and command sinks.
+These tests exercise workflow wiring without running a build or Worker; hosted
+exact-source CI and admitted runtime acceptance remain separate evidence.
+
 `mail-calendar-tasks-builds.yaml` checks out the exact PR head or push SHA.
 Its Mail, Tasks and affected Web builds retain real app-build evidence. Calendar
 uses a separate native job on Bun 1.4.3 and Node 24.22.0: build shared dependencies,
