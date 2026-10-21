@@ -155,6 +155,13 @@ it('uses the explicit adjudication RPC without converting lost acknowledgement i
 it.each(['http-error', 'rollback', 'oversize', 'malformed'])(
   'fails closed for %s on private transport without replay',
   async (kind) => {
+    const oversizedReady = `${JSON.stringify(ready)}${' '.repeat(262145)}`;
+    if (kind === 'oversize') {
+      expect(
+        new TextEncoder().encode(oversizedReady).byteLength
+      ).toBeGreaterThan(262144);
+      expect(JSON.parse(oversizedReady)).toEqual(ready);
+    }
     transport.mockResolvedValueOnce(
       kind === 'http-error'
         ? Response.json({}, { status: 503 })
@@ -162,7 +169,7 @@ it.each(['http-error', 'rollback', 'oversize', 'malformed'])(
           ? Response.json(ready, {
               headers: { 'preference-applied': 'tx=rollback' },
             })
-          : new Response(kind === 'oversize' ? 'x'.repeat(262145) : '{')
+          : new Response(kind === 'oversize' ? oversizedReady : '{')
     );
     const response = await makeEmployeeRejectionBoundary({
       authorize: cli,
