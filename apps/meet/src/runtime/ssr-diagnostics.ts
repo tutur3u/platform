@@ -1,9 +1,30 @@
 import { isRedirect } from '@tanstack/react-router';
 import { z } from 'zod';
-import {
-  type LoginRedirectProjection,
-  loginRedirectSchema,
-} from './login-redirect-diagnostics';
+
+const targetSchema = z
+  .object({
+    origin: z.enum(['SAME', 'CENTRAL', 'OTHER', 'MISSING', 'UNKNOWN']),
+    path: z.enum([
+      'ROOT',
+      'LOGIN',
+      'VERIFY_TOKEN',
+      'OTHER',
+      'MISSING',
+      'UNKNOWN',
+    ]),
+  })
+  .strict();
+export const loginRedirectSchema = z
+  .object({
+    navigationCalls: z.enum(['none', 'one', 'multiple']),
+    navigationInput: targetSchema,
+    navigationResponse: targetSchema,
+    startResponse: targetSchema,
+    proxyResponse: targetSchema,
+    inspection: z.enum(['available', 'unavailable']),
+  })
+  .strict();
+export type LoginRedirectProjection = z.infer<typeof loginRedirectSchema>;
 
 export const MEET_SSR_MARKER = 'meet-ssr-diagnostic ';
 const names = [
