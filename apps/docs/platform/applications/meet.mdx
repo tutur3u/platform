@@ -59,6 +59,29 @@ Real-proxy and Request-bridge regression controls live in
 `apps/meet/src/proxy.public-callback.test.ts`. Hosted original and restored Worker
 acceptance remains a separate gate.
 
+## Public login locale routing
+
+For the exact locale-prefixed public login paths `/vi/login` and `/en/login`,
+Meet uses the configured English default for `as-needed` prefix handling.
+Explicit `/vi/login` continues to the login renderer with the Vietnamese locale
+header, even when the locale cookie or browser language prefers English.
+Explicit `/en/login` intentionally retains its redirect to unprefixed `/login`.
+Unprefixed `/login` retains the existing cookie and browser language selection;
+all other paths retain their existing locale handling.
+
+This path-scoped rule leaves the default authentication policy, public callback
+handling, token verification, session checks and branch ordering unchanged.
+Central SSO continues to return through Meet's `/verify-token` callback, and the
+shared safe next-path guard continues to reject external destinations.
+The real-proxy/bridge regressions in
+`apps/meet/src/proxy.public-callback.test.ts` cover both login paths with absent,
+English and Vietnamese headers and conflicting locale cookies, preserving the
+encoded query, forwarded locale, exact callback continuation and zero fetches.
+Their fixed Start SSO response establishes only proxy/bridge continuation; shared
+login-page rendering and emitted original/restored Worker acceptance require
+separate runtime evidence. These controls do not establish the cause of a past
+hosted redirect.
+
 ## Runtime boundaries
 
 Meet shares behavior through `packages/meet-core` and `packages/meet-ui`.

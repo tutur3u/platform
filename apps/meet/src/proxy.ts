@@ -399,10 +399,13 @@ const getLocale = (
 const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
   // Get locale from cookie or browser languages
   const { locale } = getLocale(req);
+  const isPrefixedPublicLogin = supportedLocales.some(
+    (locale) => req.nextUrl.pathname === `/${locale}/login`
+  );
 
   const nextIntlMiddleware = createIntlMiddleware({
     locales: supportedLocales,
-    defaultLocale: locale as Locale,
+    defaultLocale: isPrefixedPublicLogin ? defaultLocale : (locale as Locale),
     localeDetection: false,
     localePrefix: 'as-needed',
   });

@@ -269,14 +269,9 @@ for (const path of ['/login', '/vi/login'])
       expect(response.status).toBe(204);
       expect(dispatch).toHaveBeenCalledOnce();
     } else {
-      expect(response.status).toBe(307);
-      expect(dispatch).not.toHaveBeenCalled();
-      expect(new URL(response.headers.get('location') ?? '').origin).toBe(
-        'https://meet.tuturuuu.com'
-      );
-      expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
-        '/login'
-      );
+      expect(response.status).toBe(204);
+      expect(dispatch).toHaveBeenCalledOnce();
+      expect(response.headers.has('location')).toBe(false);
     }
     expect(fetch).not.toHaveBeenCalled();
     await response.text();
@@ -345,10 +340,19 @@ for (const locale of ['en', 'vi'])
         },
       })
     );
-    expect(response.status).toBe(307);
-    expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
-      '/login'
-    );
+    if (locale === 'en') {
+      expect(response.status).toBe(307);
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+        '/login'
+      );
+    } else {
+      expect(response.status).toBe(200);
+      expect(response.headers.has('location')).toBe(false);
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(
+        response.headers.get('x-middleware-request-x-next-intl-locale')
+      ).toBe('vi');
+    }
     expect(response.cookies.get('NEXT_LOCALE')?.value).toBe(locale);
     expect(fetch).not.toHaveBeenCalled();
     await response.text();
@@ -362,3 +366,82 @@ it('the unchanged shared SSO next-path guard rejects the external login destinat
     )
   ).toBe('/');
 });
+
+const loginLocaleCases: {
+  name: string;
+  headers: Record<string, string>;
+  locale: 'en' | 'vi';
+}[] = [
+  { name: 'headerless', headers: {}, locale: 'en' },
+  {
+    name: 'English header',
+    headers: { 'accept-language': 'en-US,en;q=0.8' },
+    locale: 'en',
+  },
+  {
+    name: 'Vietnamese header',
+    headers: { 'accept-language': 'vi-VN,vi;q=0.8' },
+    locale: 'vi',
+  },
+  {
+    name: 'Vietnamese cookie over English header',
+    headers: { 'accept-language': 'en-US', cookie: 'NEXT_LOCALE=vi' },
+    locale: 'vi',
+  },
+  {
+    name: 'English cookie over Vietnamese header',
+    headers: { 'accept-language': 'vi-VN', cookie: 'NEXT_LOCALE=en' },
+    locale: 'en',
+  },
+];
+
+for (const path of ['/login', '/vi/login'])
+  for (const { name, headers, locale } of loginLocaleCases)
+    it(`real proxy bridge ${path}, ${name} reaches a fixed Start SSO port in one hop`, async () => {
+      const origin = 'https://meet.tuturuuu.com';
+      const query = '?next=https%3A%2F%2Funtrusted.invalid%2F';
+      const canonical =
+        'https://tuturuuu.com/login?returnUrl=https%3A%2F%2Fmeet.tuturuuu.com%2Fverify-token%3FnextUrl%3D%252F';
+      const expectedLocale = path === '/vi/login' ? 'vi' : locale;
+      // Fixed Start response bounds this to proxy/bridge continuation, not page rendering.
+      const dispatch = vi.fn(async (forwarded: NextRequest) => {
+        expect(forwarded.nextUrl.pathname).toBe(`/${expectedLocale}/login`);
+        expect(forwarded.nextUrl.search).toBe(query);
+        expect(forwarded.headers.get('x-next-intl-locale')).toBe(
+          expectedLocale
+        );
+        expect(
+          normalizeAuthRedirectPath(
+            forwarded.nextUrl.searchParams.get('next'),
+            origin,
+            '/'
+          )
+        ).toBe('/');
+        return new Response(null, {
+          status: 307,
+          headers: { location: canonical },
+        });
+      });
+      const response = await dispatchThroughMeetProxy({
+        request: new Request(`${origin}${path}${query}`, {
+          headers,
+          redirect: 'manual',
+        }),
+        proxy,
+        waitUntil: () => {},
+        dispatch,
+      });
+      expect(response.status).toBe(307);
+      const location = new URL(response.headers.get('location') ?? '');
+      expect(location.origin).toBe('https://tuturuuu.com');
+      expect(location.pathname).toBe('/login');
+      expect(location.href).toBe(canonical);
+      const callback = new URL(location.searchParams.get('returnUrl') ?? '');
+      expect(callback.origin).toBe(origin);
+      expect(callback.pathname).toBe('/verify-token');
+      expect(callback.search).toBe('?nextUrl=%2F');
+      expect(callback.searchParams.get('nextUrl')).toBe('/');
+      expect(dispatch).toHaveBeenCalledOnce();
+      expect(fetch).not.toHaveBeenCalled();
+      await response.text();
+    });
