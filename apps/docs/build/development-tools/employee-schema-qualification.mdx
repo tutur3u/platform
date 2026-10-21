@@ -217,9 +217,10 @@ access, provider changes, acknowledgement-loss runtime behavior or account actio
 
 For SQL-only qualification, dispatch `employee-schema-contract.yaml` with
 `include_address_migration=true`, `include_http=false`, and other optional inputs
-false. Select the immutable commit containing both source and control changes as
-both `--ref` and `source_sha`; the workflow rejects mismatched address source and
-control SHAs. An older control that omits adoption40 cannot qualify retained
+false. Use a published branch or tag resolving to the reviewed commit as `--ref` and
+set `source_sha` to its full immutable SHA. GitHub rejects a raw SHA as the
+dispatch ref. Verify the accepted run control SHA equals that source SHA before
+moving the ref; the workflow also rejects mismatched address source/control SHAs. An older control that omits adoption40 cannot qualify retained
 adoption, even when its source snapshot applies the new migration. Inspect the
 run's actual control SHA, exact source SHA, three packet entries and fixture
 hashes, generated artifact digest, lifecycle exit and cleanup receipt. A queued,
