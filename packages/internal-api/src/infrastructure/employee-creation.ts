@@ -3,6 +3,15 @@ import { getInternalApiClient, type InternalApiClientOptions } from '../client';
 import { parseInternalApiError } from '../internal-api-error';
 
 export const EmployeeCreationOperationSchema = z.uuid();
+// Supabase's required-symbol set is the printable ASCII punctuation ranges.
+export const EmployeeCreationPasswordSchema = z
+  .string()
+  .min(12)
+  .max(72)
+  .regex(/[a-z]/)
+  .regex(/[A-Z]/)
+  .regex(/[0-9]/)
+  .regex(/[\u0021-\u002f\u003a-\u0040\u005b-\u0060\u007b-\u007e]/);
 export const EmployeeCreationPayloadSchema = z
   .object({
     email: z
@@ -13,7 +22,7 @@ export const EmployeeCreationPayloadSchema = z
       .max(320)
       .endsWith('@tuturuuu.com'),
     displayName: z.string().trim().min(1).max(100),
-    temporaryPassword: z.string().min(12).max(72),
+    temporaryPassword: EmployeeCreationPasswordSchema,
   })
   .strict();
 export const EmployeeCreationReplySchema = z.discriminatedUnion('status', [
@@ -110,6 +119,44 @@ export async function createInternalEmployee(
         result.account.displayName !== input.displayName))
   ) {
     throw new Error('Employee creation outcome requires inspection');
+  }
+  return result;
+}
+
+export const EmployeeCreationObservationSchema = z.union([
+  EmployeeCreationReplySchema,
+  z
+    .object({
+      status: z.literal('stopped'),
+      operationId: z.uuid(),
+      code: z.enum(['employee_operation_revoked', 'employee_operation_halted']),
+    })
+    .strict(),
+]);
+export type EmployeeCreationObservation = z.infer<
+  typeof EmployeeCreationObservationSchema
+>;
+
+/** Observation only; never resumes a provider or SQL mutation. */
+export async function getInternalEmployeeCreationOperation(
+  identity: { operationId: string; email: string; displayName: string },
+  options?: InternalApiClientOptions & { signal?: AbortSignal }
+) {
+  const operationId = EmployeeCreationOperationSchema.parse(
+    identity.operationId
+  );
+  const value = await getInternalApiClient(options).json<unknown>(
+    `${endpoint}/operations/${operationId}`,
+    { cache: 'no-store', signal: options?.signal }
+  );
+  const result = EmployeeCreationObservationSchema.parse(value);
+  if (
+    result.operationId !== operationId ||
+    (result.status === 'created' &&
+      (result.account.email !== identity.email ||
+        result.account.displayName !== identity.displayName))
+  ) {
+    throw new Error('Employee operation identity mismatch');
   }
   return result;
 }

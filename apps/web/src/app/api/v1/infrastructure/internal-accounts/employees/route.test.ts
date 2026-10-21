@@ -29,7 +29,7 @@ it('shipped GET and POST remain unavailable without a runtime supplier', async (
       body: JSON.stringify({
         email: 'staff@tuturuuu.com',
         displayName: 'Staff',
-        temporaryPassword: 'temporary-pass-123',
+        temporaryPassword: 'Synthetic-Pass-123!',
       }),
     })
   );

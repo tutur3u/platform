@@ -1099,3 +1099,16 @@ fresh actor/permission checks. See the Infrastructure application guide's
   Contacts recipient completion saves current dirty remarks with their revision;
   omit pristine snapshots. Prove persistence with real cards/transport and remounts
   from stored rows. See Contacts modules decisions and deferred/remount regressions.
+
+## Original employee CREATE observation
+
+Recover uncertain CREATE replies through the authenticated uncached original
+operation GET, never employee RESTORE/reconcile or a repeated POST. Preserve the
+actor/workspace-scoped operation reference before dispatch without a password;
+fail closed when storage fails. Completion needs independent exact active
+onboarding provider identity and fresh SQL account/profile/mailbox/grant proof,
+followed by actor reauthorization. Keep the GET supplier observation-only and
+retain attempted phase fences. Bound read admissions across remounts and stop on
+conflict, revocation, retired scope or budget exhaustion. See
+`apps/docs/build/development-tools/employee-schema-qualification.mdx` for the
+contract, limits and regression/hosted evidence distinction.
