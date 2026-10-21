@@ -8892,6 +8892,12 @@
       "description": "Password resets can target any platform account by exact email. Access and profile controls remain internal-only, and you cannot target your own account.",
       "title": "Restricted root-workspace operation"
     },
+    "original_creation": {
+      "description": "Resume an older interrupted creation using its original operation ID. This only checks the existing request.",
+      "load": "Load original request",
+      "operation": "Original operation ID",
+      "unavailable": "The original request could not be loaded. Check the operation ID and your access."
+    },
     "password_recovery": {
       "action": "Reset any password",
       "confirm": "Set temporary password",

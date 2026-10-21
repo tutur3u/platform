@@ -444,3 +444,5 @@ reference. Uncertain repairs stay fenced for explicit readback. Later phases,
 revoked operations and other actors/workspaces are excluded. Route, recovery
 helper and dialog regressions enforce this rule; the optional disposable Web
 session fixture exercises authenticated adjudication and CREATE end to end.
+
+Older interrupted employee creation requests without a saved browser reference can be loaded under **Advanced recovery** using their original operation ID. The server supplies and validates the account identity. Loading only observes the request; a fenced or unavailable request cannot create a replacement account. Audited recovery still requires explicit administrator action and a fresh temporary password. Regression coverage: `employee-original-operation-resume.test.ts`.

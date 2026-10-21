@@ -32,6 +32,7 @@ import {
   useState,
 } from 'react';
 import { EmployeeCreationRecovery } from './employee-creation-recovery';
+import { EmployeeOriginalOperationResume } from './employee-original-operation-resume';
 import { EmployeeRejectionRecoveryPanel } from './employee-rejection-recovery-panel';
 import { TemporaryPasswordField } from './temporary-password-field';
 
@@ -152,11 +153,12 @@ function ScopedEmployeeCreationDialog({
   const passwordInvalid =
     temporaryPassword.length > 0 &&
     !EmployeeCreationPasswordSchema.safeParse(temporaryPassword).success;
-  const editable = outcome === 'editing';
+  const [resumingOriginal, setResumingOriginal] = useState(false);
+  const editable = outcome === 'editing' && !resumingOriginal;
   const available =
     availability.data?.available === true && !availability.isFetching;
   function changeOpen(next: boolean) {
-    if (inFlight.current) return;
+    if (inFlight.current || resumingOriginal) return;
     if (next) {
       try {
         const saved = recovery.load();
@@ -354,6 +356,30 @@ function ScopedEmployeeCreationDialog({
                   )}
                 </AlertDescription>
               </Alert>
+            ) : null}
+            {outcome === 'editing' && !recovery.reference ? (
+              <details>
+                <summary className="cursor-pointer text-sm">
+                  {t('advanced')}
+                </summary>
+                <EmployeeOriginalOperationResume
+                  recovery={recovery}
+                  onBusyChange={(busy) => {
+                    inFlight.current = busy;
+                    setResumingOriginal(busy);
+                  }}
+                  onResume={(reference) => {
+                    recovery.assertActive();
+                    setEmail(reference.email);
+                    setDisplayName(reference.displayName);
+                    setTemporaryPassword('');
+                    setError(false);
+                    setOutcome(
+                      reference.state === 'retry_ready' ? 'editing' : 'stopped'
+                    );
+                  }}
+                />
+              </details>
             ) : null}
             {['inspection', 'conflict', 'stopped'].includes(outcome) &&
             recovery.reference ? (

@@ -8892,6 +8892,12 @@
       "description": "Có thể đặt lại mật khẩu cho mọi tài khoản nền tảng bằng email chính xác. Quyền quản lý truy cập và hồ sơ vẫn chỉ dành cho tài khoản nội bộ, đồng thời bạn không thể thao tác trên chính tài khoản của mình.",
       "title": "Thao tác giới hạn trong không gian làm việc gốc"
     },
+    "original_creation": {
+      "description": "Tiếp tục yêu cầu tạo tài khoản cũ bằng mã thao tác ban đầu. Thao tác này chỉ kiểm tra yêu cầu hiện có.",
+      "load": "Tải yêu cầu ban đầu",
+      "operation": "Mã thao tác ban đầu",
+      "unavailable": "Không thể tải yêu cầu ban đầu. Kiểm tra mã thao tác và quyền truy cập."
+    },
     "password_recovery": {
       "action": "Đặt lại mật khẩu bất kỳ",
       "confirm": "Đặt mật khẩu tạm thời",
