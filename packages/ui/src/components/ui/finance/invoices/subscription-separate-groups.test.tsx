@@ -94,7 +94,13 @@ const links: UserGroupProducts[] = groups.map((group_id) => ({
 const products = [product];
 const reset = () => {};
 
-function Form({ groupIds }: { groupIds: string[] }) {
+function Form({
+  groupIds,
+  useAttendanceBased,
+}: {
+  groupIds: string[];
+  useAttendanceBased: boolean;
+}) {
   const context = useSubscriptionInvoiceContext(
     'ws',
     'customer',
@@ -111,7 +117,7 @@ function Form({ groupIds }: { groupIds: string[] }) {
     ),
     products,
     userGroups: memberships,
-    useAttendanceBased: false,
+    useAttendanceBased,
     userAttendance: context.data?.attendance ?? [],
     latestSubscriptionInvoices: context.data?.latestInvoices ?? [],
     onSelectedProductsChange: setSelected,
@@ -174,14 +180,14 @@ function Form({ groupIds }: { groupIds: string[] }) {
   );
 }
 
-function mount(groupIds: string[]) {
+function mount(groupIds: string[], useAttendanceBased = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   const view = (ids: string[]) => (
     <QueryClientProvider client={client}>
       <WorkspaceVisibilityProvider actorId="operator">
-        <Form groupIds={ids} />
+        <Form groupIds={ids} useAttendanceBased={useAttendanceBased} />
       </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
@@ -209,7 +215,11 @@ beforeEach(() => {
       'https://example.test'
     ).searchParams.getAll('groupIds');
     const context: SubscriptionInvoiceContextResponse = {
-      attendance: [],
+      attendance: requestedGroups.flatMap((group_id) => [
+        { group_id, date: '2026-01-05', status: 'PRESENT' },
+        { group_id, date: '2026-01-12', status: 'LATE' },
+        { group_id, date: '2026-01-19', status: 'ABSENT' },
+      ]),
       latestInvoices: requestedGroups
         .filter((id) => paidGroups.has(id))
         .map((group_id) => ({
@@ -231,67 +241,70 @@ afterEach(() => {
 });
 
 describe('separate subscription invoices for the same customer and month', () => {
-  it('creates A then B, rereads invalidated A coverage, and blocks A again', async () => {
-    const form = mount(['class-b']);
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled()
-    );
-    form.select(['class-a']);
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled()
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
-    await waitFor(() =>
-      expect(screen.getByLabelText('coverage')).toHaveTextContent('covered')
-    );
-    form.select(['class-b']);
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled()
-    );
-    expect(screen.getByLabelText('quantity')).toHaveTextContent('2');
-    await waitFor(() =>
+  it.each([false, true])(
+    'creates A then B, rereads invalidated A coverage, and blocks A again (attendance billing: %s)',
+    async (useAttendanceBased) => {
+      const form = mount(['class-b'], useAttendanceBased);
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled()
+      );
+      form.select(['class-a']);
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled()
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+      await waitFor(() =>
+        expect(screen.getByLabelText('coverage')).toHaveTextContent('covered')
+      );
+      form.select(['class-b']);
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled()
+      );
+      expect(screen.getByLabelText('quantity')).toHaveTextContent('2');
+      await waitFor(() =>
+        expect(
+          transport.mock.calls.filter(([url]) =>
+            String(url).includes('groupIds=class-b')
+          )
+        ).toHaveLength(2)
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+      await waitFor(() =>
+        expect(screen.getByLabelText('coverage')).toHaveTextContent('covered')
+      );
       expect(
-        transport.mock.calls.filter(([url]) =>
-          String(url).includes('groupIds=class-b')
-        )
-      ).toHaveLength(2)
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
-    await waitFor(() =>
-      expect(screen.getByLabelText('coverage')).toHaveTextContent('covered')
-    );
-    expect(
-      writes.map(({ group_ids, customer_id, selected_month }) => ({
-        group_ids,
-        customer_id,
-        selected_month,
-      }))
-    ).toEqual([
-      {
-        group_ids: ['class-a'],
-        customer_id: 'customer',
-        selected_month: '2026-01',
-      },
-      {
-        group_ids: ['class-b'],
-        customer_id: 'customer',
-        selected_month: '2026-01',
-      },
-    ]);
-    form.select(['class-a']);
-    await waitFor(() =>
-      expect(screen.getByLabelText('coverage')).toHaveTextContent('covered')
-    );
-    expect(screen.getByRole('button', { name: 'Create' })).toBeDisabled();
-    expect(writes).toHaveLength(2);
-    await waitFor(() =>
-      expect(
-        transport.mock.calls.filter(([url]) =>
-          String(url).includes('groupIds=class-a')
-        )
-      ).toHaveLength(3)
-    );
-  });
+        writes.map(({ group_ids, customer_id, selected_month }) => ({
+          group_ids,
+          customer_id,
+          selected_month,
+        }))
+      ).toEqual([
+        {
+          group_ids: ['class-a'],
+          customer_id: 'customer',
+          selected_month: '2026-01',
+        },
+        {
+          group_ids: ['class-b'],
+          customer_id: 'customer',
+          selected_month: '2026-01',
+        },
+      ]);
+      form.select(['class-a']);
+      await waitFor(() =>
+        expect(screen.getByLabelText('coverage')).toHaveTextContent('covered')
+      );
+      expect(screen.getByRole('button', { name: 'Create' })).toBeDisabled();
+      expect(writes).toHaveLength(2);
+      await waitFor(() =>
+        expect(
+          transport.mock.calls.filter(([url]) =>
+            String(url).includes('groupIds=class-a')
+          )
+        ).toHaveLength(3)
+      );
+    }
+  );
 
   it('preserves a combined A+B invoice with both groups billable', async () => {
     mount(groups);
