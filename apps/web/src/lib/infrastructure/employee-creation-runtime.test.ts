@@ -132,3 +132,16 @@ it('keeps unavailable SQL readiness unavailable after composition', async () => 
   expect((await POST(post())).status).toBe(503);
   expect(transport).toHaveBeenCalledTimes(2);
 });
+
+it('uses the injected recovery authorizer for actual runtime journal readiness', async () => {
+  mock.authorize.mockResolvedValue({ authorized: false, status: 401 });
+  const recovery = vi
+    .fn()
+    .mockResolvedValue({ authorized: true, actorUserId: actor });
+  const journal = await createEmployeeRuntimeJournal(request(), recovery);
+  expect(await journal?.available(actor)).toBe(true);
+  expect(recovery).toHaveBeenCalled();
+  expect(mock.authorize).not.toHaveBeenCalled();
+  recovery.mockResolvedValue({ authorized: false, status: 403 });
+  expect(await journal?.available(actor)).toBe(false);
+});
