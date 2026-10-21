@@ -332,3 +332,124 @@ it('fails closed if final authorization throws after journal completion', async 
   });
   expect(claim).toHaveBeenCalledTimes(1);
 });
+
+it.each([
+  {
+    headers: {
+      'x-tuturuuu-account-action': '',
+      'content-type': 'application/json',
+    },
+    status: 403,
+    code: 'employee_recovery_denied',
+  },
+  {
+    headers: { 'x-tuturuuu-account-action': '1', 'content-type': 'text/plain' },
+    status: 415,
+    code: 'unsupported_media_type',
+  },
+])(
+  'rejects invalid mutation headers before journal admission ($status)',
+  async ({ headers, status, code }) => {
+    const response = await run(resume, headers);
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ code });
+    expect(journal).not.toHaveBeenCalled();
+    expect(claim).not.toHaveBeenCalled();
+    expect(adjudicate).not.toHaveBeenCalled();
+  }
+);
+it('rejects malformed JSON and unsupported methods without journal admission', async () => {
+  const handler = makeEmployeeCliRecoveryBoundary({
+    authorize,
+    connect,
+    journal,
+  });
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-tuturuuu-account-action': '1',
+    'Idempotency-Key': id(2),
+  };
+  expect(
+    (
+      await handler(
+        new Request('https://web.test/recovery', {
+          method: 'POST',
+          headers,
+          body: '{',
+        }),
+        id(2)
+      )
+    ).status
+  ).toBe(400);
+  expect(
+    (
+      await handler(
+        new Request('https://web.test/recovery', { method: 'DELETE', headers }),
+        id(2)
+      )
+    ).status
+  ).toBe(405);
+  expect(journal).not.toHaveBeenCalled();
+  expect(claim).not.toHaveBeenCalled();
+});
+it('withholds private inspection after a freshly denied actor', async () => {
+  authorize
+    .mockResolvedValueOnce({ authorized: true, actorUserId: id(1) })
+    .mockResolvedValue({ authorized: false, status: 401 });
+  const response = await run(undefined, {}, 'GET');
+  expect(response.status).toBe(401);
+  expect(await response.json()).toEqual({ code: 'employee_recovery_denied' });
+  expect(journal).not.toHaveBeenCalled();
+  expect(claim).not.toHaveBeenCalled();
+});
+it('does not claim when runtime journal composition is unavailable', async () => {
+  journal.mockResolvedValueOnce(undefined);
+  const response = await run();
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({
+    code: 'employee_recovery_unavailable',
+  });
+  expect(claim).not.toHaveBeenCalled();
+  expect(adjudicate).not.toHaveBeenCalled();
+});
+it('fences actor replacement at the delegated CREATE boundary before any durable claim', async () => {
+  authorize
+    .mockResolvedValueOnce({ authorized: true, actorUserId: id(1) })
+    .mockResolvedValueOnce({ authorized: true, actorUserId: id(1) })
+    .mockResolvedValueOnce({ authorized: true, actorUserId: id(9) })
+    .mockResolvedValue({ authorized: true, actorUserId: id(1) });
+  const response = await run();
+  expect(response.status).toBe(202);
+  expect(await response.json()).toMatchObject({
+    status: 'pending',
+    nextAction: 'inspect',
+  });
+  expect(claim).not.toHaveBeenCalled();
+  expect(inspect).toHaveBeenCalledTimes(1);
+});
+it.each([
+  { authorized: false, status: 403 },
+  { authorized: true, actorUserId: id(9) },
+])(
+  'fences authorization changes immediately before the durable claim',
+  async (changed) => {
+    authorize
+      .mockResolvedValueOnce({ authorized: true, actorUserId: id(1) })
+      .mockResolvedValueOnce({ authorized: true, actorUserId: id(1) })
+      .mockResolvedValueOnce({ authorized: true, actorUserId: id(1) })
+      .mockResolvedValueOnce(changed)
+      .mockResolvedValue({ authorized: true, actorUserId: id(1) });
+    expect((await run()).status).toBe(202);
+    expect(claim).not.toHaveBeenCalled();
+    expect(inspect).toHaveBeenCalledTimes(2);
+  }
+);
+
+it('rejects a new version-2 adjudication after the operation is already retry-ready at version 3', async () => {
+  const response = await run({ action: 'adjudicate', adjudication });
+  expect(response.status).toBe(409);
+  expect(await response.json()).toEqual({ code: 'employee_recovery_fenced' });
+  expect(adjudicate).not.toHaveBeenCalled();
+  expect(journal).not.toHaveBeenCalled();
+  expect(claim).not.toHaveBeenCalled();
+});

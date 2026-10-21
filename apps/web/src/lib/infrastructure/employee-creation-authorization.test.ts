@@ -332,3 +332,21 @@ it('keeps a valid platform CLI token denied on ordinary Infrastructure authoriza
   ).toEqual({ authorized: false, status: 401 });
   expect(mock.permissions).not.toHaveBeenCalled();
 });
+
+it('fails closed if initial Infrastructure session resolution throws', async () => {
+  mock.satellite.mockRejectedValueOnce(new Error('session unavailable'));
+  expect(
+    await authorizeEmployeeCreation(new Request('https://web.test/employees'))
+  ).toEqual({ authorized: false, status: 503 });
+  expect(mock.permissions).not.toHaveBeenCalled();
+  expect(mock.identity).not.toHaveBeenCalled();
+});
+it('fails closed for an explicit current Auth lookup error', async () => {
+  mock.identity.mockResolvedValueOnce({
+    data: { user: null },
+    error: { message: 'unavailable' },
+  });
+  expect(
+    await authorizeEmployeeCreation(new Request('https://web.test/employees'))
+  ).toEqual({ authorized: false, status: 503 });
+});

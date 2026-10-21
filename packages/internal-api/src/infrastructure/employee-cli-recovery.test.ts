@@ -237,3 +237,42 @@ it.each([resume, adjudicateRequest])(
     expect(fetch).toHaveBeenCalledTimes(1);
   }
 );
+
+it('rejects an inspection of another operation without a second dispatch', async () => {
+  const fetch = vi.fn(async () =>
+    Response.json({ ...ready, operationId: id(9) })
+  );
+  await expect(inspectEmployeeCliRecovery(id(2), { fetch })).rejects.toThrow(
+    'Recovery operation mismatch'
+  );
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+it.each([
+  'actorUserId',
+  'targetUserId',
+  'email',
+  'displayName',
+  'originalLeaseId',
+  'originalAttemptEventId',
+  'eventId',
+  'evidenceReferenceSha256',
+] as const)(
+  'rejects a mismatched adjudication %s without permitting resume',
+  async (field) => {
+    const value =
+      field === 'email'
+        ? 'other@tuturuuu.com'
+        : field === 'displayName'
+          ? 'Other'
+          : field === 'evidenceReferenceSha256'
+            ? 'b'.repeat(64)
+            : id(9);
+    const fetch = vi.fn(async () =>
+      Response.json({ ...ready, [field]: value })
+    );
+    await expect(
+      submitEmployeeCliRecovery(id(2), adjudicateRequest, { fetch })
+    ).rejects.toThrow('Recovery adjudication unconfirmed');
+    expect(fetch).toHaveBeenCalledTimes(1);
+  }
+);

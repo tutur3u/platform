@@ -179,3 +179,57 @@ it('does not publish readiness from an unrelated audit record', async () => {
     .mockResolvedValue({ ...ready, eventId: id(9) });
   expect((await run()).status).toBe(503);
 });
+
+it('rejects invalid operation, unsupported methods, content type and malformed JSON before connecting', async () => {
+  const handler = makeEmployeeRejectionBoundary({ authorize, connect });
+  expect(
+    (
+      await handler(
+        new Request('https://web.test/rejection'),
+        'not-an-operation'
+      )
+    ).status
+  ).toBe(400);
+  expect((await run(body, {}, 'DELETE')).status).toBe(405);
+  expect((await run(body, { 'Content-Type': 'text/plain' })).status).toBe(415);
+  expect(
+    (
+      await handler(
+        new Request('https://web.test/rejection', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-tuturuuu-account-action': '1',
+          },
+          body: '{',
+        }),
+        id(2)
+      )
+    ).status
+  ).toBe(400);
+  expect(connect).not.toHaveBeenCalled();
+  expect(adjudicate).not.toHaveBeenCalled();
+});
+it.each([
+  { ...ready, actorUserId: id(9) },
+  { ...ready, operationId: id(9) },
+])('does not disclose a foreign inspected operation', async (state) => {
+  inspect.mockReset().mockResolvedValue(state);
+  const response = await run(undefined, {}, 'GET');
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({
+    code: 'employee_rejection_unconfirmed',
+  });
+  expect(adjudicate).not.toHaveBeenCalled();
+});
+it('withholds adjudication readback if the final authorized subject changes', async () => {
+  authorize
+    .mockResolvedValueOnce({ authorized: true, actorUserId: id(1) })
+    .mockResolvedValueOnce({ authorized: true, actorUserId: id(1) })
+    .mockResolvedValue({ authorized: true, actorUserId: id(9) });
+  const response = await run();
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({ code: 'employee_rejection_denied' });
+  expect(adjudicate).toHaveBeenCalledTimes(1);
+  expect(inspect).toHaveBeenCalledTimes(2);
+});
