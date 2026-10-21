@@ -712,7 +712,16 @@ replay an unknown provider request, delete history or allocate another target.
 A lost repair acknowledgement requires inspection; do not blindly retry it.
 
 The journal profile now requires the separate 23-assertion rollback packet
-`employee-rejection-adjudication.sql` (324 total). Failed rejection HTTP qualification
+`employee-rejection-adjudication.sql` (324 total). The disposable CLI 2.117.0 pins GoTrue v2.196.0, whose administrator CREATE
+path does not enforce password strength. Its terminal rejection control submits
+mutually exclusive plaintext and hash inputs, requires exactly HTTP 400 with
+`validation_failed`, and independently verifies the selected Auth UUID remains
+absent before adjudication. This qualifies terminal rejection recovery, not the
+hosted production weak-password policy. Production policy is a separate runtime
+observation. See [the pinned Auth guard](https://github.com/supabase/auth/blob/v2.196.0/internal/api/admin.go)
+and [the CLI image manifest](https://github.com/supabase/cli/blob/v2.117.0/apps/cli-go/pkg/config/templates/Dockerfile).
+
+Failed rejection HTTP qualification
 retains a fixed substep, primary error category, message hash and bounded assertion
 value in `httpQualification.rejectionFailure`. Raw SDK errors, response bodies,
 addresses and passwords are excluded. The top-level assertion counter does not

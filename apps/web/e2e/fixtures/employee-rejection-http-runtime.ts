@@ -7,6 +7,8 @@ import { EmployeeOperationSnapshotSchema } from '../../src/lib/infrastructure/em
 import type { EmployeeRuntimeRpc } from '../../src/lib/infrastructure/employee-creation-rpc';
 import { adjudicateEmployeeCreationRejection } from '../../src/lib/infrastructure/employee-rejection-adjudication';
 
+import { assertTerminalRejection } from './employee-rejection-http-proof';
+
 // Called only inside the canonical disposable GoTrue/PostgREST fixture.
 export async function qualifyEmployeeRejectionHttp(input: {
   url: string;
@@ -56,7 +58,10 @@ export async function qualifyEmployeeRejectionHttp(input: {
   const rejected = await input.admin.auth.admin.createUser({
     id: op.targetUserId,
     email,
-    password: 'x',
+    // CLI-pinned GoTrue v2.196.0 does not enforce admin-create strength.
+    // Mutually exclusive inputs are rejected before any user creation.
+    password: 'Aa1!Disposable-Rejection',
+    password_hash: 'deliberately-incompatible-with-plaintext',
     email_confirm: true,
     ban_duration: '876000h',
     app_metadata: { employee_onboarding: true },
@@ -75,9 +80,13 @@ export async function qualifyEmployeeRejectionHttp(input: {
         : 'redacted',
   });
   input.checkpoint('auth-status');
-  assert.equal(rejected.error?.status, 422);
+  assert.equal(rejected.error?.status, 400);
   input.checkpoint('auth-code');
-  assert.equal(rejected.error?.code, 'weak_password');
+  assertTerminalRejection(rejected);
+  input.checkpoint('auth-absence');
+  const absent = await input.admin.auth.admin.getUserById(op.targetUserId);
+  assert.equal(absent.error?.status, 404);
+  assert.equal(absent.data.user, null);
   input.checkpoint('unknown');
   await input.transport.rpc.advance({
     actorUserId: input.actorUserId,

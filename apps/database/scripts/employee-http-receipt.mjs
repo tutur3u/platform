@@ -77,6 +77,7 @@ function rejectionFailure(value) {
     'auth-rejection',
     'auth-status',
     'auth-code',
+    'auth-absence',
     'unknown',
     'expiry',
     'adjudicate',
