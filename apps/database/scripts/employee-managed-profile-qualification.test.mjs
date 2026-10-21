@@ -67,6 +67,7 @@ test('feedback profile and causal matrices isolate managed selection inherited f
   const env = {
     ...process.env,
     EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE: 'true',
+    EMPLOYEE_SCHEMA_INCLUDE_PROFILE_ROUTE: 'true',
     EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: 'true',
     EMPLOYEE_SCHEMA_INCLUDE_HTTP: 'true',
     EMPLOYEE_SCHEMA_INCLUDE_RESTORE: 'true',
