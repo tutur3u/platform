@@ -12,8 +12,9 @@ const root = resolve(__dirname, '../..');
 const workflow = readWorkflow('meet-cloudflare.yaml');
 const runtimeGateCommands = {
   validate:
-    'node --test --test-concurrency=1 scripts/ci/meet-cloudflare-render.runtime.mjs scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs',
-  deploy: 'node --test scripts/ci/meet-cloudflare-render.runtime.mjs',
+    'GITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/meet-cloudflare-render.runtime.mjs scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs',
+  deploy:
+    'GITHUB_SHA="$SOURCE_SHA" node --test scripts/ci/meet-cloudflare-render.runtime.mjs',
 };
 
 test('Meet generates source metadata before dependency and Worker builds', () => {
@@ -60,7 +61,7 @@ test('Meet generates source metadata before dependency and Worker builds', () =>
     "${{ github.ref == 'refs/heads/production' && 'production' || 'preview' }}"
   );
   assert.equal(env.PLATFORM_BUILD_REF_NAME, '${{ github.ref_name }}');
-  assert.equal(env.PLATFORM_BUILD_COMMIT_HASH, '${{ github.sha }}');
+  assert.equal(env.PLATFORM_BUILD_COMMIT_HASH, '${{ env.SOURCE_SHA }}');
 });
 
 test('only the production deploy verifies canonical identity before its success marker', () => {
@@ -189,7 +190,7 @@ function assertMeetArtifactActors(steps) {
   assert.equal(seal.id, 'meet-canonical-seal');
   assert.equal(
     seal.run.trim(),
-    'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"\nnode scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json'
+    'test "$(git rev-parse HEAD)" = "$SOURCE_SHA"\nGITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json'
   );
   assert.equal(
     steps.filter((step) =>
@@ -227,18 +228,18 @@ function assertMeetArtifactActors(steps) {
     debug.if,
     "${{ failure() && steps.meet-canonical-seal.outcome == 'success' }}"
   );
-  assertDebugMetadata(debug, 'meet', '$GITHUB_SHA');
+  assertDebugMetadata(debug, 'meet', '$SOURCE_SHA');
   const evidence = debug.run
     .trim()
     .split('\n')
-    .filter((line) => /^(node scripts\/ci\/verify-meet|tar |cmp )/.test(line));
+    .filter((line) => /^(GITHUB_SHA=|tar |cmp )/.test(line));
   assert.deepEqual(evidence, [
-    'node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json',
+    'GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json',
     'tar -czf "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" -C apps/meet dist "$pointer" meet-artifact.json',
     'tar -xzf "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" -C "$verify_dir"',
     'cmp "apps/meet/meet-artifact.json" "$verify_dir/meet-artifact.json"',
-    'node scripts/ci/verify-meet-start-output.js verify "$verify_dir" "$verify_dir/meet-artifact.json"',
-    'node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json',
+    'GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify "$verify_dir" "$verify_dir/meet-artifact.json"',
+    'GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json',
   ]);
   const upload = uniqueActor(
     steps,
@@ -271,7 +272,7 @@ test('Meet artifact actor guards reject removed, moved, duplicate and forged evi
         steps,
         'Verify and pack accepted exact-SHA frontend artifact'
       ).run =
-        'node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json';
+        'GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json';
     },
     (steps) => {
       uniqueActor(
@@ -309,7 +310,7 @@ test('Meet artifact actor guards reject removed, moved, duplicate and forged evi
       steps,
       'Verify and pack accepted exact-SHA frontend artifact'
     );
-    actor.run = actor.run.replace('"$GITHUB_SHA"', '"forged-source"');
+    actor.run = actor.run.replace('"$SOURCE_SHA"', '"forged-source"');
   });
   mutations.push((steps) => {
     const upload = steps.find(
@@ -327,10 +328,10 @@ test('Meet artifact actor guards reject removed, moved, duplicate and forged evi
 
 function artifactArchiveCommand(command) {
   const [head, verify, ...archive] = command.trim().split('\n');
-  assert.equal(head, 'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"');
+  assert.equal(head, 'test "$(git rev-parse HEAD)" = "$SOURCE_SHA"');
   assert.equal(
     verify,
-    'node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json'
+    'GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json'
   );
   assert.equal(
     archive.at(-1),
@@ -502,7 +503,7 @@ test('metadata source and environment identity participate in dependency cache i
     workflow.jobs.validate.steps.find((step) =>
       step.with?.name?.startsWith('meet-worker-')
     ).with.name,
-    'meet-worker-${{ github.sha }}'
+    'meet-worker-${{ env.SOURCE_SHA }}'
   );
 });
 
@@ -566,7 +567,7 @@ test('Meet exact normalization helper and public probe changes select both workf
   );
   assert.equal(
     discovery.run,
-    'node scripts/ci/verify-meet-start-output.js config-restored apps/meet'
+    'GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js config-restored apps/meet'
   );
   const validation = workflow.jobs.validate.steps;
   assert.ok(
