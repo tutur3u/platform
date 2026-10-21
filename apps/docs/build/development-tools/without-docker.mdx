@@ -474,6 +474,15 @@ test and CI watchdog limits remain unchanged. A listener-visible locale redirect
 must preserve its original scheme, host and port; a proxy-origin mismatch fails
 acceptance rather than changing the expected URL.
 
+RPC discovery parses sealed JavaScript metadata and requires exactly one distinct
+ID for the Apps gateway function. Accept string literals and expression-free,
+single-quasi template literals with a string cooked value. Reject interpolation,
+tagged templates, dynamic expressions, zero candidates and distinct-ID ambiguity;
+never evaluate aliases or use source maps to supply or normalize an ID. Preserve
+parse and symlink failures. The adjacent `native-artifact-functions.test.mjs`
+retains a hash-checked actual emitted chunk and negative controls. Its pure
+success does not establish actual RPC wire or Chromium/restored acceptance.
+
 The plan invokes `apps-native-artifact.py verify` with an explicit source SHA and
 canonical receipt, checks the actual native or saved deploy pointer and preserves
 all normalized configuration fields. Every session copies every sealed emitted

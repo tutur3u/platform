@@ -790,6 +790,15 @@ reverse exactly-once disposal, natural child/pipe observation and independent
 snapshot/persistence gates without loading the SDK. Runtime qualification still
 requires both real callers on original and freshly restored exact-commit output.
 
+Queue `apps/apps/cloudflare/native-artifact-functions.test.mjs` for sealed RPC
+metadata discovery. The actual emitted fixture must retain its producer hash;
+accept only string literals or single-quasi, expression-free template literals
+with a string cooked value. Keep target predicates, exactly-one-distinct-ID,
+parse and symlink guards. Reject interpolation, tagged/dynamic/non-string values,
+zero/distinct-ID ambiguity and source-map fallback; leave aliases and shorthand
+unevaluated. Pure discovery coverage does not qualify actual RPC or browser wire
+behavior; the Apps runbook owns the remaining original/restored acceptance gates.
+
 Apps emitted `server/.vite` is a closed metadata directory, containing only a
 regular, bounded, typed `manifest.json`. Keep it hashed and copied; require sealed
 regular file references and own manifest import keys, preserving own `__proto__`

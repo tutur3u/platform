@@ -3,6 +3,19 @@ import { lstat, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from '@babel/parser';
 
+function staticString(node) {
+  if (node.type === 'StringLiteral') return node.value;
+  if (
+    node.type === 'TemplateLiteral' &&
+    node.expressions.length === 0 &&
+    node.quasis.length === 1 &&
+    typeof node.quasis[0].value.cooked === 'string'
+  ) {
+    return node.quasis[0].value.cooked;
+  }
+  return undefined;
+}
+
 export async function gatewayFunctionId(directory) {
   const ids = new Set();
   async function scan(directory) {
@@ -30,11 +43,11 @@ export async function gatewayFunctionId(directory) {
               .filter(
                 (property) =>
                   property.type === 'ObjectProperty' &&
-                  property.value.type === 'StringLiteral'
+                  typeof staticString(property.value) === 'string'
               )
               .map((property) => [
                 property.key.name ?? property.key.value,
-                property.value.value,
+                staticString(property.value),
               ])
           );
           if (
