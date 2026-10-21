@@ -319,15 +319,49 @@ test('actual native Worker implements both pages, every app launch and the API b
       completed('redirects');
       const functionId = await gatewayFunctionId(prepared.roles.app.root);
       const rpc = `${origin}/_serverFn/${encodeURIComponent(functionId)}`;
+      const rpcCounters = () => ({
+        fixtureCalls: calls.length,
+        app: {
+          permitted: fence.permitted.length,
+          assurance: fence.assurance.length,
+          unexpected: fence.unexpected.length,
+        },
+        negative: {
+          permitted: negativeFence.permitted.length,
+          assurance: negativeFence.assurance.length,
+          unexpected: negativeFence.unexpected.length,
+        },
+      });
+      for (const requestOrigin of [
+        null,
+        'https://apps-foreign-origin.invalid',
+      ]) {
+        const before = rpcCounters();
+        const denied = await runtime.fetch(rpc, {
+          headers: {
+            'x-tsr-serverfn': 'true',
+            cookie: `NEXT_LOCALE=vi; tuturuuu_app_session=${session}`,
+            ...(requestOrigin === null ? {} : { origin: requestOrigin }),
+          },
+        });
+        await runtime.text(denied);
+        assert.equal(denied.status, 403);
+        assert.deepEqual(rpcCounters(), before);
+      }
       const [signedRpc, anonymousRpc] = await Promise.all([
         runtime.fetch(rpc, {
           headers: {
             'x-tsr-serverfn': 'true',
+            origin,
             cookie: `NEXT_LOCALE=vi; tuturuuu_app_session=${session}`,
           },
         }),
         runtime.fetch(rpc, {
-          headers: { 'x-tsr-serverfn': 'true', cookie: 'NEXT_LOCALE=en' },
+          headers: {
+            'x-tsr-serverfn': 'true',
+            cookie: 'NEXT_LOCALE=en',
+            origin,
+          },
         }),
       ]);
       assert.equal(signedRpc.status, 200);
@@ -345,6 +379,7 @@ test('actual native Worker implements both pages, every app launch and the API b
       const wrongTarget = await runtime.fetch(rpc, {
         headers: {
           'x-tsr-serverfn': 'true',
+          origin,
           cookie: `tuturuuu_app_session=${token(secret, userId, 'mail')}`,
         },
       });
