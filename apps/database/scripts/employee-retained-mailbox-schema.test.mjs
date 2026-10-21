@@ -24,8 +24,8 @@ const packets = selectSchemaPackets(false, false, true).map(
 const tap = () =>
   [
     'BEGIN',
-    ...Array.from({ length: 28 }, (_, i) => `ok ${i + 1} - retained assertion`),
-    '1..28',
+    ...Array.from({ length: 40 }, (_, i) => `ok ${i + 1} - retained assertion`),
+    '1..40',
     'ROLLBACK',
     '',
   ].join('\n');
@@ -40,23 +40,23 @@ const receipt = (extra = {}) =>
     ...extra,
   });
 
-test('canonical address selection includes the frozen actual adoption28 packet', () => {
+test('canonical address selection includes the frozen actual adoption40 packet', () => {
   assert.deepEqual(
     selectSchemaPackets(false, false, true).slice(foundationPackets.length),
     [
       ['employee-google-destination-migration.sql', 30],
       ['employee-address-migration.sql', 10],
-      [file, 28],
+      [file, 40],
     ]
   );
   assertRollbackSource(sql);
-  assert.match(sql, /select plan\(28\);/u);
+  assert.match(sql, /select plan\(40\);/u);
   assert.equal(
     [...sql.matchAll(/^select (?:is|isnt|ok|throws_ok)\(/gmu)].length,
-    28
+    40
   );
   assert.equal(receipt().schemaQualified, true);
-  assert.equal(receipt().assertions, 240);
+  assert.equal(receipt().assertions, 252);
 });
 
 for (const [name, mutate] of [
@@ -68,7 +68,7 @@ for (const [name, mutate] of [
   ],
   [
     'different retained count',
-    (p) => p.map((x) => (x.file === file ? { ...x, assertions: 27 } : x)),
+    (p) => p.map((x) => (x.file === file ? { ...x, assertions: 39 } : x)),
   ],
   ['reordered packets', (p) => [...p].reverse()],
 ]) {
@@ -76,34 +76,34 @@ for (const [name, mutate] of [
     assert.equal(receipt({ packets: mutate(packets) }).schemaQualified, false));
 }
 for (const [name, malformed] of [
-  ['missing assertion', tap().replace('ok 28 - retained assertion\n', '')],
+  ['missing assertion', tap().replace('ok 40 - retained assertion\n', '')],
   [
     'double assertion',
-    tap().replace('ok 28 - retained assertion', 'ok 27 - retained assertion'),
+    tap().replace('ok 40 - retained assertion', 'ok 39 - retained assertion'),
   ],
-  ['failed assertion', tap().replace('ok 28 -', 'not ok 28 -')],
+  ['failed assertion', tap().replace('ok 40 -', 'not ok 40 -')],
   [
     'skipped assertion',
     tap().replace(
-      'ok 28 - retained assertion',
-      'ok 28 - retained assertion # SKIP'
+      'ok 40 - retained assertion',
+      'ok 40 - retained assertion # SKIP'
     ),
   ],
   [
     'TODO assertion',
     tap().replace(
-      'ok 28 - retained assertion',
-      'ok 28 - retained assertion # TODO'
+      'ok 40 - retained assertion',
+      'ok 40 - retained assertion # TODO'
     ),
   ],
   ['missing rollback', tap().replace('ROLLBACK', '')],
-  ['different plan', tap().replace('1..28', '1..27')],
+  ['different plan', tap().replace('1..40', '1..39')],
 ]) {
   test(`actual retained count parser rejects ${name}`, () =>
-    assert.throws(() => assertPacketTap(malformed, 28)));
+    assert.throws(() => assertPacketTap(malformed, 40)));
 }
-test('all 28 complete sequential assertions are required', () =>
-  assert.equal(assertPacketTap(tap(), 28), 28));
+test('all 40 complete sequential assertions are required', () =>
+  assert.equal(assertPacketTap(tap(), 40), 40));
 for (const generatedTypesSha256 of [
   undefined,
   null,

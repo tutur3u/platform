@@ -67,7 +67,7 @@ export function selectSchemaPackets(
       ? [
           ['employee-google-destination-migration.sql', 30],
           ['employee-address-migration.sql', 10],
-          ['employee-retained-mailbox-adoption.sql', 28],
+          ['employee-retained-mailbox-adoption.sql', 40],
         ]
       : []),
     ...(feedback ? feedbackPackets : []),

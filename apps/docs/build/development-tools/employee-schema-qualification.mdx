@@ -200,8 +200,8 @@ provider, production configuration, generated types or live account operations.
 
 The independent `include_address_migration=true` selection appends three exact
 rollback packets, in order: Google destination30, legacy address migration10,
-and retained mailbox adoption28. The defaults remain foundation172 and
-journal301; the selected totals are foundation240 or journal369. Personal journal
+and retained mailbox adoption40. The defaults remain foundation172 and
+journal301; the selected totals are foundation252 or journal381. Personal journal
 cannot combine with address migration. Its receipt scope adds `-address-migration`
 and requires every packet exactly once, in order, with the exact count, no skips,
 TODOs, failed assertions or truncation, successful lifecycle and owned cleanup.
@@ -219,7 +219,7 @@ For SQL-only qualification, dispatch `employee-schema-contract.yaml` with
 `include_address_migration=true`, `include_http=false`, and other optional inputs
 false. Select the immutable commit containing both source and control changes as
 both `--ref` and `source_sha`; the workflow rejects mismatched address source and
-control SHAs. An older control that omits adoption28 cannot qualify retained
+control SHAs. An older control that omits adoption40 cannot qualify retained
 adoption, even when its source snapshot applies the new migration. Inspect the
 run's actual control SHA, exact source SHA, three packet entries and fixture
 hashes, generated artifact digest, lifecycle exit and cleanup receipt. A queued,

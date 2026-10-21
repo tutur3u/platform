@@ -619,10 +619,10 @@ test('migration packet is opt-in and strict in both incompatible profiles', () =
     assert.deepEqual(selected.at(-2), ['employee-address-migration.sql', 10]);
     assert.deepEqual(selected.at(-1), [
       'employee-retained-mailbox-adoption.sql',
-      28,
+      40,
     ]);
     for (const [, count] of selected) assertPacketTap(tap(count), count);
-    const expected = journal ? 369 : 240;
+    const expected = journal ? 381 : 252;
     const complete = receipt({ journal, addressMigration: true, packets: all });
     assert.equal(complete.schemaQualified, true);
     assert.equal(complete.assertions, expected);
@@ -643,7 +643,7 @@ test('migration packet is opt-in and strict in both incompatible profiles', () =
       [...all].reverse(),
       [
         ...all.slice(0, -1),
-        { file: 'employee-retained-mailbox-adoption.sql', assertions: 27 },
+        { file: 'employee-retained-mailbox-adoption.sql', assertions: 39 },
       ],
     ]) {
       assert.equal(
@@ -673,12 +673,12 @@ test('migration packet is opt-in and strict in both incompatible profiles', () =
     const diagnostic = schemaFailureDiagnostic(
       'packet-tap',
       selected.length,
-      { status: 1, stdout: 'not ok 28 - private' },
+      { status: 1, stdout: 'not ok 40 - private' },
       journal,
       false,
       true
     );
-    assert.deepEqual(diagnostic.failedAssertionOrdinals, [28]);
+    assert.deepEqual(diagnostic.failedAssertionOrdinals, [40]);
   }
 });
 

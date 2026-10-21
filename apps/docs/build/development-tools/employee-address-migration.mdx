@@ -450,7 +450,7 @@ silently re-enables adoption. A confirmed receipt triggers the ordinary migratio
 readiness read; reserve/claim/complete remain separate. Clearing browser storage
 or choosing another operation is not an unknown-outcome recovery procedure.
 
-Regression coverage is in `employee-retained-mailbox-adoption.sql` (rollback-only
+Regression coverage is in `employee-retained-mailbox-adoption.sql` (40 assertions, rollback-only
 full-schema packet), the adoption session tests and migration HTTP adapter tests.
 Run the packet using the canonical isolated Supabase runner with
 `--test supabase/tests/employee-retained-mailbox-adoption.sql`, with same-database

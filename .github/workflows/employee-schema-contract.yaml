@@ -52,7 +52,7 @@ on:
         default: false
         type: boolean
       include_address_migration:
-        description: Add legacy10, Google30 and retained-adoption28 rollback packets with same-database typegen
+        description: Add legacy10, Google30 and retained-adoption40 rollback packets with same-database typegen
         required: false
         default: false
         type: boolean

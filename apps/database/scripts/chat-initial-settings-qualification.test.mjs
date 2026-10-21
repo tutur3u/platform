@@ -164,9 +164,9 @@ test('default/historical selections are unchanged; chat is standalone 172+25 onl
     [[false, false, false, false], 172],
     [[true, false, false, false], 301],
     [[false, true, false, false], 196],
-    [[false, false, true, false], 182],
+    [[false, false, true, false], 252],
     [[false, false, false, true], 278],
-    [[true, false, true, false], 311],
+    [[true, false, true, false], 381],
   ]) {
     assert.deepEqual(
       selectSchemaPackets(...flags),
