@@ -17,6 +17,8 @@ const closed = {
 const marker = 'meet-ssr-diagnostic ';
 const record = {
   version: 1,
+  scope: 'UNKNOWN',
+  stage: 'UNKNOWN',
   phase: 'loader-model',
   outcome: 'threw',
   kind: 'router-redirect',
@@ -160,7 +162,7 @@ test('real caller wiring keeps distinct loader phases, handler outcome and post-
     new URL('../../apps/meet/src/runtime/handler.ts', import.meta.url),
     'utf8'
   );
-  assert.match(handler, /observeMeetSsr\('handler'/);
+  assert.match(handler, /observeMeetSsr\(\s*'handler'/);
   const launcher = await readFile(
     new URL('./meet-native-launcher.mjs', import.meta.url),
     'utf8'
@@ -256,4 +258,128 @@ test('R9 exhausted diagnostic candidate cap never caps subsequent ordinary bytes
   assert.equal(packet.records.length, 64);
   assert.equal(packet.dropped, 6);
   assert.deepEqual(collectedBytes(output, 'stdout'), ordinary);
+});
+
+const sdkErrorPrefix =
+  '\x1b[31m✘ \x1b[41;31m[\x1b[41;97mERROR\x1b[41;31m]\x1b[0m \x1b[1m';
+const sdkErrorSuffix = '\x1b[0m';
+// Closed projections of all 23 actual50a records; no timestamp or raw SDK data.
+const actual50a = [
+  ['loader-import', 'returnedother', 'other', 'UNKNOWN', 'available'],
+  ['loader-model', 'returnedother', 'other', 'UNKNOWN', 'available'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['loader-import', 'returnedother', 'other', 'UNKNOWN', 'available'],
+  ['loader-model', 'returnedother', 'other', 'UNKNOWN', 'available'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['loader-import', 'returnedother', 'other', 'UNKNOWN', 'available'],
+  ['loader-model', 'returnedother', 'other', 'UNKNOWN', 'available'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['loader-import', 'returnedother', 'other', 'UNKNOWN', 'available'],
+  ['loader-model', 'returnedother', 'other', 'UNKNOWN', 'available'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'threw', 'error', 'RangeError', 'unavailable'],
+  ['handler', 'returnedredirect', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedredirect', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+  ['handler', 'returnedother', 'UNKNOWN', 'UNKNOWN', 'unavailable'],
+].map(([phase, outcome, kind, name, inspection]) => ({
+  version: 1,
+  phase,
+  outcome,
+  kind,
+  name,
+  code: 'UNKNOWN',
+  inspection,
+  frames: [],
+}));
+test('exact actual50a SDK ERROR envelope captures all 23 legacy closed records after close', () => {
+  const output = [],
+    collector = createMeetSsrCollector((...args) => output.push(args));
+  for (const entry of actual50a) {
+    const line = Buffer.from(
+      `${sdkErrorPrefix}${marker}${JSON.stringify(entry)}${sdkErrorSuffix}\n`
+    );
+    for (let i = 0; i < line.length; i += 7)
+      collector.forward('stderr', line.subarray(i, i + 7));
+  }
+  const packet = collector.finish(closed, source);
+  assert.equal(packet.availability, 'CAPTURED');
+  assert.equal(packet.records.length, 23);
+  assert.equal(packet.dropped, 0);
+  assert.deepEqual(
+    packet.records.map(({ scope, stage, ...entry }) => entry),
+    actual50a
+  );
+  assert.ok(
+    packet.records.every(
+      (entry) => entry.scope === 'UNKNOWN' && entry.stage === 'UNKNOWN'
+    )
+  );
+  assert.equal(collectedBytes(output).length, 0);
+});
+test('foreign SDK envelope prefixes remain ordinary while recognized malformed/oversize records never leak', () => {
+  const output = [],
+    collector = createMeetSsrCollector((...args) => output.push(args));
+  const ordinary = Buffer.from(
+    `${sdkErrorPrefix.replace('ERROR', 'WARN')}${marker}${JSON.stringify(record)}${sdkErrorSuffix}\n`
+  );
+  collector.forward('stderr', ordinary);
+  for (const payload of [
+    '{invalid SECRET}',
+    JSON.stringify({ ...record, message: 'SECRET' }),
+    'SECRET'.repeat(1000),
+  ]) {
+    collector.forward(
+      'stderr',
+      Buffer.from(`${sdkErrorPrefix}${marker}${payload}${sdkErrorSuffix}\n`)
+    );
+  }
+  collector.forward(
+    'stderr',
+    Buffer.from(`${sdkErrorPrefix}${marker}${JSON.stringify(record)}\x1b[1m\n`)
+  );
+  const packet = collector.finish(closed, source);
+  assert.equal(packet.availability, 'UNKNOWN');
+  assert.equal(packet.dropped, 4);
+  assert.deepEqual(collectedBytes(output), ordinary);
+  assert.doesNotMatch(JSON.stringify(packet), /SECRET/);
+});
+
+test('closed scope/stage schema rejects raw strings and false bindings, preserving valid handler facts', () => {
+  const output = [],
+    collector = createMeetSsrCollector((...args) => output.push(args));
+  const invalid = [
+    { ...record, scope: 'SECRET' },
+    { ...record, stage: 'SECRET' },
+    { ...record, scope: 'login' },
+    { ...record, stage: 'start' },
+    {
+      ...record,
+      phase: 'handler',
+      scope: 'login',
+      stage: 'start',
+      outcome: 'delegating',
+    },
+  ];
+  for (const entry of invalid) send(collector, entry);
+  const valid = {
+    ...record,
+    phase: 'handler',
+    scope: 'login',
+    stage: 'start',
+    kind: 'UNKNOWN',
+    outcome: 'delegating',
+  };
+  send(collector, valid);
+  const packet = collector.finish(closed, source);
+  assert.deepEqual(packet.records, [valid]);
+  assert.equal(packet.dropped, invalid.length);
+  assert.equal(collectedBytes(output).length, 0);
+  assert.doesNotMatch(JSON.stringify(packet), /SECRET/);
 });

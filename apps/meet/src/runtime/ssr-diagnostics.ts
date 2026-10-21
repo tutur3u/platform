@@ -30,7 +30,10 @@ const phases = [
   'handler',
   'render-boundary',
 ] as const;
+const scopes = ['login', 'callback', 'other', 'UNKNOWN'] as const;
+const stages = ['proxy', 'start', 'UNKNOWN'] as const;
 const outcomes = [
+  'delegating',
   'threw',
   'returned500',
   'returnedredirect',
@@ -42,6 +45,8 @@ const recordSchema = z
     version: z.literal(1),
     phase: z.enum(phases),
     outcome: z.enum(outcomes),
+    scope: z.enum(scopes).default('UNKNOWN'),
+    stage: z.enum(stages).default('UNKNOWN'),
     kind: z.enum([
       'router-redirect',
       'response-other',
@@ -64,10 +69,42 @@ const recordSchema = z
       )
       .max(4),
   })
-  .strict();
+  .strict()
+  .refine(
+    (record) =>
+      record.phase === 'handler' ||
+      (record.scope === 'UNKNOWN' && record.stage === 'UNKNOWN')
+  )
+  .refine(
+    (record) =>
+      record.outcome !== 'delegating' ||
+      (record.phase === 'handler' &&
+        record.stage !== 'UNKNOWN' &&
+        record.kind === 'UNKNOWN' &&
+        record.name === 'UNKNOWN' &&
+        record.code === 'UNKNOWN' &&
+        record.frames.length === 0)
+  );
 export type MeetSsrRecord = z.infer<typeof recordSchema>;
+export type MeetSsrContext = Readonly<Pick<MeetSsrRecord, 'scope' | 'stage'>>;
 type Phase = MeetSsrRecord['phase'];
 type Outcome = MeetSsrRecord['outcome'];
+
+export function classifyMeetSsrRequest(
+  request: Request
+): MeetSsrRecord['scope'] {
+  try {
+    const path = new URL(request.url).pathname;
+    if (['/login', '/en/login', '/vi/login'].includes(path)) return 'login';
+    if (
+      ['/verify-token', '/en/verify-token', '/vi/verify-token'].includes(path)
+    )
+      return 'callback';
+    return 'other';
+  } catch {
+    return 'UNKNOWN';
+  }
+}
 
 function data(value: object, key: PropertyKey, complete = false): unknown {
   let current: object | null = value;
@@ -90,18 +127,28 @@ const allowed = <T extends string>(value: unknown, values: readonly T[]) =>
 export function projectMeetSsr(
   value: unknown,
   phase: Phase,
-  outcome: Outcome
+  outcome: Outcome,
+  context?: MeetSsrContext
 ): MeetSsrRecord {
   const record: MeetSsrRecord = {
     version: 1,
     phase,
     outcome,
+    scope:
+      phase === 'handler'
+        ? (scopes.find((scope) => scope === context?.scope) ?? 'UNKNOWN')
+        : 'UNKNOWN',
+    stage:
+      phase === 'handler'
+        ? (stages.find((stage) => stage === context?.stage) ?? 'UNKNOWN')
+        : 'UNKNOWN',
     kind: 'UNKNOWN',
     name: 'UNKNOWN',
     code: 'UNKNOWN',
     inspection: 'available',
     frames: [],
   };
+  if (outcome === 'delegating') return record;
   try {
     // The owning predicate reads instanceof Response and options; inspect descriptors first.
     // This avoids ordinary accessors, not hostile Proxy traps or mutated global intrinsics.
@@ -162,7 +209,12 @@ export function parseMeetSsrRecord(value: unknown): MeetSsrRecord | undefined {
   }
 }
 let reported = 0;
-export function reportMeetSsr(value: unknown, phase: Phase, outcome: Outcome) {
+export function reportMeetSsr(
+  value: unknown,
+  phase: Phase,
+  outcome: Outcome,
+  context?: MeetSsrContext
+) {
   try {
     if (typeof window !== 'undefined' || reported > 64) return;
     if (reported++ === 64) {
@@ -170,7 +222,7 @@ export function reportMeetSsr(value: unknown, phase: Phase, outcome: Outcome) {
       return;
     }
     console.error(
-      `${MEET_SSR_MARKER}${JSON.stringify(projectMeetSsr(value, phase, outcome))}`
+      `${MEET_SSR_MARKER}${JSON.stringify(projectMeetSsr(value, phase, outcome, context))}`
     );
   } catch {
     /* Diagnostics cannot replace the owning throw, response or fallback. */
@@ -178,13 +230,20 @@ export function reportMeetSsr(value: unknown, phase: Phase, outcome: Outcome) {
 }
 export async function observeMeetSsr<T>(
   phase: Phase,
-  operation: () => T | Promise<T>
+  operation: () => T | Promise<T>,
+  context?: MeetSsrContext
 ): Promise<T> {
+  if (
+    phase === 'handler' &&
+    context &&
+    ['proxy', 'start'].includes(context.stage)
+  )
+    reportMeetSsr(undefined, phase, 'delegating', context);
   let value: T;
   try {
     value = await operation();
   } catch (error) {
-    reportMeetSsr(error, phase, 'threw');
+    reportMeetSsr(error, phase, 'threw', context);
     throw error;
   }
   let outcome: Outcome = 'returnedother';
@@ -201,6 +260,6 @@ export async function observeMeetSsr<T>(
   } catch {
     /* Preserve a returned value even when its diagnostic inspection fails. */
   }
-  reportMeetSsr(value, phase, outcome);
+  reportMeetSsr(value, phase, outcome, context);
   return value;
 }

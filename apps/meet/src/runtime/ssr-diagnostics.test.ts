@@ -1,13 +1,58 @@
 import { redirect } from '@tanstack/react-router';
+import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const ports = vi.hoisted(() => ({
+  proxy: vi.fn(),
+  start: vi.fn(),
+  unusedProxy: vi.fn(() => {
+    throw Error('Unexpected proxy port');
+  }),
+  unusedNative: vi.fn(() => {
+    throw Error('Unexpected native proxy port');
+  }),
+  webOrigin: vi.fn(() => 'https://unused.invalid'),
+  endpoint: vi.fn(async (request: Request) => {
+    if (
+      ![
+        '/login',
+        '/vi/verify-token',
+        '/unknown/SECRET',
+        '/verify-token',
+      ].includes(new URL(request.url).pathname)
+    )
+      throw Error('Unexpected endpoint fixture path');
+    return undefined;
+  }),
+}));
+vi.mock('@tanstack/react-start/server-entry', () => ({
+  default: { fetch: ports.start },
+}));
+vi.mock('./proxy-bridge', () => ({ dispatchThroughMeetProxy: ports.proxy }));
+vi.mock('../proxy', () => ({ proxy: ports.unusedProxy }));
+vi.mock('./native-function-proxy', () => ({
+  nativeFunctionProxy: ports.unusedNative,
+}));
+vi.mock('./api-registry', () => ({ dispatchMeetEndpoint: ports.endpoint }));
+vi.mock('@tuturuuu/utils/next-config', () => ({
+  resolveTuturuuuWebAppUrl: ports.webOrigin,
+}));
+
+import { handleMeetRequest } from './handler';
 import {
+  classifyMeetSsrRequest,
   observeMeetSsr,
   parseMeetSsrRecord,
   projectMeetSsr,
   reportMeetSsr,
 } from './ssr-diagnostics';
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  expect(ports.unusedProxy).not.toHaveBeenCalled();
+  expect(ports.unusedNative).not.toHaveBeenCalled();
+  expect(ports.webOrigin).not.toHaveBeenCalled();
+  vi.restoreAllMocks();
+});
 describe('closed Meet SSR observations', () => {
   it('preserves actual router redirect and normal error identities', async () => {
     const sink = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -269,4 +314,175 @@ it('R9 predicate instanceof accessor is checked before invocation', () => {
   expect(record?.kind).toBe('UNKNOWN');
   expect(record?.inspection).toBe('unavailable');
   expect(getter).not.toHaveBeenCalled();
+});
+
+it('real handler binds login/callback/other locally and records proxy/start before delegation and outcomes', async () => {
+  const sink = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const records = () =>
+    sink.mock.calls.map(([line]) =>
+      JSON.parse(String(line).split('meet-ssr-diagnostic ')[1]!)
+    );
+  for (const [path, scope] of [
+    ['/login?SECRET=value', 'login'],
+    ['/vi/verify-token?SECRET=value', 'callback'],
+    ['/unknown/SECRET', 'other'],
+  ]) {
+    sink.mockClear();
+    const request = new NextRequest(`https://meet.invalid${path}`);
+    const response = new Response(null, { status: 307 });
+    ports.proxy.mockImplementation(
+      async ({
+        dispatch,
+      }: {
+        dispatch: (request: Request) => Promise<Response>;
+      }) => {
+        expect(records().at(-1)).toMatchObject({
+          phase: 'handler',
+          scope,
+          stage: 'proxy',
+          outcome: 'delegating',
+        });
+        return dispatch(request);
+      }
+    );
+    ports.start.mockImplementation(() => {
+      expect(records().at(-1)).toMatchObject({
+        phase: 'handler',
+        scope,
+        stage: 'start',
+        outcome: 'delegating',
+      });
+      return response;
+    });
+    expect(await handleMeetRequest(request, {}, { waitUntil() {} })).toBe(
+      response
+    );
+    expect(records().map(({ stage, outcome }) => [stage, outcome])).toEqual([
+      ['proxy', 'delegating'],
+      ['start', 'delegating'],
+      ['start', 'returnedredirect'],
+      ['proxy', 'returnedredirect'],
+    ]);
+    expect(JSON.stringify(records())).not.toContain('SECRET');
+  }
+});
+it('real handler retains exact proxy and Start throw identities with separate stage outcomes', async () => {
+  const sink = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const original = new RangeError('SECRET');
+  for (const failingStage of ['proxy', 'start']) {
+    sink.mockClear();
+    ports.proxy.mockImplementation(
+      async ({
+        dispatch,
+      }: {
+        dispatch: (request: Request) => Promise<Response>;
+      }) => {
+        if (failingStage === 'proxy') throw original;
+        return dispatch(new NextRequest('https://meet.invalid/login'));
+      }
+    );
+    ports.start.mockImplementation(() => {
+      throw original;
+    });
+    await expect(
+      handleMeetRequest(
+        new Request('https://meet.invalid/login'),
+        {},
+        { waitUntil() {} }
+      )
+    ).rejects.toBe(original);
+    const records = sink.mock.calls.map(([line]) =>
+      JSON.parse(String(line).split('meet-ssr-diagnostic ')[1]!)
+    );
+    expect(
+      records.some(
+        (entry) =>
+          entry.scope === 'login' &&
+          entry.stage === failingStage &&
+          entry.outcome === 'threw' &&
+          entry.name === 'RangeError'
+      )
+    ).toBe(true);
+    expect(JSON.stringify(records)).not.toContain('SECRET');
+  }
+});
+
+it('scope is a closed canonical pathname classification, never query text or a raw path', () => {
+  for (const prefix of ['', '/en', '/vi']) {
+    expect(
+      classifyMeetSsrRequest(
+        new Request(`https://meet.invalid${prefix}/login?SECRET=value`)
+      )
+    ).toBe('login');
+    expect(
+      classifyMeetSsrRequest(
+        new Request(`https://meet.invalid${prefix}/verify-token?SECRET=value`)
+      )
+    ).toBe('callback');
+  }
+  for (const path of [
+    '/login/extra',
+    '/LOGIN',
+    '/en/verify-token/extra',
+    '/other?next=/login',
+    '/SECRET',
+  ]) {
+    expect(
+      classifyMeetSsrRequest(new Request(`https://meet.invalid${path}`))
+    ).toBe('other');
+  }
+});
+it('concurrent real handler outcomes retain their own local scope and response identities', async () => {
+  const sink = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const completions = new Map<string, (response: Response) => void>();
+  let enteredResolve = () => {};
+  const entered = new Promise<void>((resolve) => {
+    enteredResolve = resolve;
+  });
+  ports.proxy.mockImplementation(
+    ({
+      request,
+      dispatch,
+    }: {
+      request: Request;
+      dispatch: (request: NextRequest) => Promise<Response>;
+    }) => dispatch(new NextRequest(request))
+  );
+  ports.start.mockImplementation(
+    (request: Request) =>
+      new Promise<Response>((resolve) => {
+        completions.set(new URL(request.url).pathname, resolve);
+        if (completions.size === 2) enteredResolve();
+      })
+  );
+  const loginResponse = new Response(null, { status: 200 });
+  const callbackResponse = new Response(null, { status: 500 });
+  const login = handleMeetRequest(
+    new Request('https://meet.invalid/login'),
+    {},
+    { waitUntil() {} }
+  );
+  const callback = handleMeetRequest(
+    new Request('https://meet.invalid/verify-token'),
+    {},
+    { waitUntil() {} }
+  );
+  await entered;
+  completions.get('/verify-token')!(callbackResponse);
+  expect(await callback).toBe(callbackResponse);
+  completions.get('/login')!(loginResponse);
+  expect(await login).toBe(loginResponse);
+  const records = sink.mock.calls.map(([line]) =>
+    JSON.parse(String(line).split('meet-ssr-diagnostic ')[1]!)
+  );
+  expect(
+    records
+      .filter(
+        (record) => record.stage === 'start' && record.outcome !== 'delegating'
+      )
+      .map(({ scope, outcome }) => [scope, outcome])
+  ).toEqual([
+    ['callback', 'returned500'],
+    ['login', 'returnedother'],
+  ]);
 });

@@ -6,7 +6,7 @@ import { MEET_FUNCTION_BASE } from './native-function-config';
 import { nativeFunctionProxy } from './native-function-proxy';
 import { dispatchThroughMeetProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
-import { observeMeetSsr } from './ssr-diagnostics';
+import { classifyMeetSsrRequest, observeMeetSsr } from './ssr-diagnostics';
 import type { MeetExecutionContext, MeetRuntimeBindings } from './worker-port';
 
 export function handleMeetRequest(
@@ -14,15 +14,19 @@ export function handleMeetRequest(
   env: MeetRuntimeBindings,
   ctx: MeetExecutionContext
 ) {
-  return observeMeetSsr('handler', () =>
-    dispatchMeetRequest(request, env, ctx)
+  const scope = classifyMeetSsrRequest(request);
+  return observeMeetSsr(
+    'handler',
+    () => dispatchMeetRequest(request, env, ctx, scope),
+    { scope, stage: 'proxy' }
   );
 }
 
 function dispatchMeetRequest(
   request: Request,
   env: MeetRuntimeBindings,
-  ctx: MeetExecutionContext
+  ctx: MeetExecutionContext,
+  scope: ReturnType<typeof classifyMeetSsrRequest>
 ) {
   const path = new URL(request.url).pathname;
   if (
@@ -64,7 +68,11 @@ function dispatchMeetRequest(
       }
       // The locale rewrite supplies server context, while Start must hydrate the
       // browser-visible URL rather than the internal Next middleware pathname.
-      return start.fetch(new Request(request.url, forwarded));
+      return observeMeetSsr(
+        'handler',
+        () => start.fetch(new Request(request.url, forwarded)),
+        { scope, stage: 'start' }
+      );
     },
   });
 }

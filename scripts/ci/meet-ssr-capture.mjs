@@ -8,15 +8,23 @@ import {
 export function createMeetSsrCollector(
   forward = (stream, bytes) => process[stream].write(bytes)
 ) {
-  // Only the raw console marker and Node test's exact TAP console prefix qualify.
-  const prefixes = [MEET_SSR_MARKER, `# ${MEET_SSR_MARKER}`].map((text) =>
-    Buffer.from(text)
-  );
+  // Only the raw/TAP marker or the exact observed SDK ERROR envelope qualifies.
+  const sdkErrorPrefix =
+    '\x1b[31m✘ \x1b[41;31m[\x1b[41;97mERROR\x1b[41;31m]\x1b[0m \x1b[1m';
+  const prefixes = [
+    { text: MEET_SSR_MARKER, suffix: Buffer.alloc(0) },
+    { text: `# ${MEET_SSR_MARKER}`, suffix: Buffer.alloc(0) },
+    {
+      text: `${sdkErrorPrefix}${MEET_SSR_MARKER}`,
+      suffix: Buffer.from('\x1b[0m'),
+    },
+  ].map(({ text, suffix }) => ({ bytes: Buffer.from(text), suffix }));
   const fresh = () => ({
     mode: 'prefix',
     prefix: Buffer.alloc(0),
     payload: Buffer.alloc(0),
     size: 0,
+    suffix: Buffer.alloc(0),
     overflow: false,
   });
   const streams = new Map(['stdout', 'stderr'].map((name) => [name, fresh()]));
@@ -42,7 +50,15 @@ export function createMeetSsrCollector(
       drop();
       return;
     }
-    candidates.push(state.payload.toString('utf8'));
+    const suffixAt = state.payload.length - state.suffix.length;
+    if (
+      suffixAt < 0 ||
+      !state.payload.subarray(suffixAt).equals(state.suffix)
+    ) {
+      drop();
+      return;
+    }
+    candidates.push(state.payload.subarray(0, suffixAt).toString('utf8'));
   }
   function reset(state) {
     Object.assign(state, fresh());
@@ -55,7 +71,7 @@ export function createMeetSsrCollector(
         const byte = chunk.subarray(offset, ++offset);
         state.prefix = Buffer.concat([state.prefix, byte]);
         const possible = prefixes.filter((prefix) =>
-          prefix.subarray(0, state.prefix.length).equals(state.prefix)
+          prefix.bytes.subarray(0, state.prefix.length).equals(state.prefix)
         );
         if (!possible.length) {
           forward(stream, state.prefix);
@@ -63,9 +79,12 @@ export function createMeetSsrCollector(
           if (byte[0] === 10) reset(state);
           else state.mode = 'ordinary';
         } else if (
-          possible.some((prefix) => prefix.length === state.prefix.length)
+          possible.some((prefix) => prefix.bytes.length === state.prefix.length)
         ) {
           state.mode = 'diagnostic';
+          state.suffix = possible.find(
+            (prefix) => prefix.bytes.length === state.prefix.length
+          ).suffix;
           state.size = state.prefix.length;
           state.prefix = Buffer.alloc(0);
         }

@@ -166,6 +166,16 @@ throws and responses retain their identity. Records contain only closed enums,
 allowlisted error names/codes and up to four known function names with bounded
 numeric locations. Accessor-backed inspection is unavailable; messages, causes,
 raw stacks, URLs, headers, cookies and environment values are never projected.
+Handler records add only `login`, `callback`, `other` or `UNKNOWN` request scope,
+classified from the three canonical locale variants of each public route. Local
+closures carry scope through the outer proxy pipeline and the Start handoff;
+`delegating` records precede each handoff, followed by its original outcome.
+Concurrent requests share no mutable correlation state. Loader/render observations
+remain scope/stage `UNKNOWN`; temporal proximity does not bind them to a request.
+The collector accepts the exact observed SDK ANSI `ERROR` prefix and closing reset,
+as well as the bare marker and Node TAP marker. It performs no general ANSI
+stripping or mid-line marker search. Foreign prefixes remain ordinary output,
+while recognized malformed or oversized diagnostic payloads are suppressed.
 Emission is limited to 64 records per Worker instance plus an overflow marker.
 The launcher suppresses marker lines from forwarded output, bounds candidates to
 64 lines of 2048 characters, sanitizes again after natural child close and pipe
