@@ -9,9 +9,18 @@
       "@tuturuuu/internal-api/*": ["../../../../packages/internal-api/src/*"],
       "@tuturuuu/types": ["../../../../packages/types/src/index.ts"],
       "@tuturuuu/types/*": ["../../../../packages/types/src/*"],
-      "@tuturuuu/supabase/types": ["../../../../packages/supabase/src/types.ts"]
+      "@tuturuuu/supabase/types": [
+        "../../../../packages/supabase/src/types.ts"
+      ],
+      "@tuturuuu/supabase/next/user": [
+        "../../../../packages/supabase/src/next/user.ts"
+      ]
     }
   },
-  "include": ["employee-http-runtime.ts", "employee-restore-http-runtime.ts"],
+  "include": [
+    "employee-http-runtime.ts",
+    "employee-restore-http-runtime.ts",
+    "employee-rejection-web-session.ts"
+  ],
   "exclude": []
 }

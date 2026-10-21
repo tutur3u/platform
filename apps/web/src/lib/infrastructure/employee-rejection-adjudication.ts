@@ -1,28 +1,12 @@
 import 'server-only';
+import { EmployeeRejectionAdjudicationSchema } from '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery';
 import { z } from 'zod';
-import {
-  EmployeeOperationIdentitySchema,
-  EmployeeOperationSnapshotSchema,
-} from './employee-creation-operation-store';
+import { EmployeeOperationSnapshotSchema } from './employee-creation-operation-store';
 
-export const EmployeeRejectionAttestationSchema = z.strictObject({
-  kind: z.literal('administrator-adjudication-v1'),
-  terminalAuthRejection: z.literal(true),
-  noRequestInFlight: z.literal(true),
-  absenceIsNotRejectionProof: z.literal(true),
-  acceptResponsibility: z.literal(true),
-});
-export const EmployeeRejectionAdjudicationSchema =
-  EmployeeOperationIdentitySchema.extend({
-    targetUserId: z.uuid(),
-    expectedVersion: z.literal(2),
-    originalLeaseId: z.uuid(),
-    originalAttemptEventId: z.uuid(),
-    eventId: z.uuid(),
-    evidenceReferenceSha256: z.string().regex(/^[a-f0-9]{64}$/),
-    reason: z.literal('administrator_adjudicated_terminal_auth_rejection'),
-    attestation: EmployeeRejectionAttestationSchema,
-  }).strict();
+export {
+  EmployeeRejectionAdjudicationSchema,
+  EmployeeRejectionAttestationSchema,
+} from '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery';
 
 // Deliberately separate from CREATE and the automatic observation/retry ports.
 // The caller supplies a fresh request authorization, never a cached actor proof.

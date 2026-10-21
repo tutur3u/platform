@@ -8895,6 +8895,16 @@
       "username_help": "Không bắt buộc. Dùng chữ thường, số, dấu gạch ngang hoặc gạch dưới.",
       "username_invalid": "Bắt đầu và kết thúc bằng chữ hoặc số; chỉ dùng chữ thường, số, dấu gạch ngang hoặc gạch dưới."
     },
+    "rejected_creation": {
+      "adjudicate": "Xác nhận lần tạo bị từ chối",
+      "attestation": "Tôi xác định chính xác lần tạo Auth gốc này đã bị từ chối dứt điểm, không còn yêu cầu đang xử lý và việc không tồn tại tài khoản không đủ làm bằng chứng. Tôi chịu trách nhiệm về quyết định này.",
+      "description": "Chỉ mở lại lần tạo Auth đầu tiên đã dừng sau khi quản trị viên xác định yêu cầu đã bị từ chối dứt điểm. Tài khoản không tồn tại và nhật ký gần thời điểm đó không phải bằng chứng từ chối.",
+      "evidence": "Mã SHA-256 của tham chiếu bằng chứng đã lưu",
+      "fenced": "Khôi phục vẫn bị khóa. Kiểm tra thao tác gốc trước khi thực hiện thêm.",
+      "identity": "Thao tác gốc {operation}, đích {target}, tài khoản {email}, tên {name}.",
+      "inspect": "Kiểm tra khôi phục ban đầu",
+      "unconfirmed": "Chưa xác nhận được khôi phục. Giữ tham chiếu gốc và kiểm tra lại; không tạo tài khoản thay thế."
+    },
     "restoration": {
       "close": "Đóng",
       "confirmation": "Xác nhận email tài khoản",

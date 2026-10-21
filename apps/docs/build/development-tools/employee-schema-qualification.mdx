@@ -272,7 +272,7 @@ does not change SQL, the 25 assertions or the strict 172-assertion success gate.
 ## Disposable HTTP and Auth qualification
 
 The optional `include_http=true` input requires `include_journal=true`. It keeps
-GoTrue, PostgREST and Kong in the same isolated stack, runs all 319 SQL assertions
+GoTrue, PostgREST and Kong in the same isolated stack, runs all 324 SQL assertions
 and type generation, then exercises the actual Web journal, RPC adapter and
 provider adapter through loopback HTTP. It creates synthetic identities only in
 that disposable project; the entire owned stack is stopped by the existing
@@ -694,10 +694,29 @@ journal, provider and persisted completion proof. Never persist credentials,
 replay an unknown provider request, delete history or allocate another target.
 A lost repair acknowledgement requires inspection; do not blindly retry it.
 
-The journal profile now requires the separate 18-assertion rollback packet
-`employee-rejection-adjudication.sql` (319 total). The canonical disposable HTTP
+The journal profile now requires the separate 23-assertion rollback packet
+`employee-rejection-adjudication.sql` (324 total). The canonical disposable HTTP
 fixture additionally rejects a real weak password through GoTrue, adjudicates
 through PostgREST, verifies the committed reservation, denies replay and finishes
 normal CREATE with the same UUID. Its strict top-level count is 30. Until that
 exact-source fixture and real migration application pass, these are authored
 regressions, not runtime qualification or production acceptance.
+
+The Infrastructure stopped-operation panel offers explicit inspection and
+adjudication. The authenticated Web recovery route reauthorizes the original
+root administrator, binds the full tuple and workspace, and reads back the
+committed audit before exposing retry readiness. Session storage retains the
+original operation plus repair event/digest before dispatch, never a password.
+An uncertain response stays fenced until explicit matching audit readback. Only
+then can a user enter a fresh password and explicitly submit normal CREATE with
+the original operation UUID and locked email/name. Closing or remounting the
+form does not mint a replacement operation.
+
+The optional Web-session profile adds the real authenticated recovery GET/POST
+and normal CREATE POST to its ordered case inventory, including revoked-session,
+workspace, actor, attestation, origin, tuple and replay denials. The basic HTTP
+profile qualifies the lower service/journal boundary; it does not establish
+Web request authorization. The selected HTTP fixture typecheck maps the
+`@tuturuuu/supabase/next/user` type-only export to its owning source because the
+package declaration export otherwise requires unbuilt `dist`. Keep that
+source-only gate enabled; do not build locally or bypass type errors.

@@ -1,4 +1,5 @@
 import { InternalApiError } from '@tuturuuu/internal-api/client';
+import type { EmployeeRejectionRecoveryState } from '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { EmployeeCreationRecovery } from './employee-creation-recovery';
 
@@ -177,4 +178,87 @@ it('stops denial even when persisting the terminal state fails', async () => {
   } finally {
     vi.restoreAllMocks();
   }
+});
+
+it('retains the operation across adjudication loss, readback and one explicit same-operation submission', async () => {
+  const inspectRejection = vi.fn();
+  const adjudicateRejection = vi.fn();
+  const make = () => {
+    const value = new EmployeeCreationRecovery({
+      actorId,
+      workspaceId,
+      storage: sessionStorage,
+      assertActive: active,
+      inspectRejection,
+      adjudicateRejection,
+    });
+    value.activate();
+    return value;
+  };
+  const current = make();
+  const original = current.prepare(payload);
+  current.stop('stopped');
+  const eligible = {
+    status: 'eligible',
+    actorUserId: actorId,
+    operationId: original.operationId,
+    targetUserId: '10000000-0000-4000-8000-000000000003',
+    email: payload.email,
+    displayName: payload.displayName,
+    originalLeaseId: '10000000-0000-4000-8000-000000000004',
+    originalAttemptEventId: '10000000-0000-4000-8000-000000000005',
+    expectedVersion: 2,
+  } satisfies Extract<EmployeeRejectionRecoveryState, { status: 'eligible' }>;
+  adjudicateRejection.mockRejectedValue(new Error('lost'));
+  await expect(
+    current.adjudicateRejection(eligible, 'a'.repeat(64))
+  ).rejects.toThrow('lost');
+  expect(current.reference?.state).toBe('adjudicating');
+  expect(() => current.prepare(payload)).toThrow('Unresolved');
+  const submitted = adjudicateRejection.mock.calls[0]?.[0].adjudication;
+  current.retire();
+  const remount = make();
+  remount.load();
+  inspectRejection.mockResolvedValue({
+    ...eligible,
+    status: 'retry_ready',
+    expectedVersion: 3,
+    eventId: submitted.eventId,
+    evidenceReferenceSha256: submitted.evidenceReferenceSha256,
+  });
+  await remount.inspectRejection();
+  expect(remount.reference?.state).toBe('retry_ready');
+  expect(() =>
+    remount.prepare({ ...payload, email: 'other@tuturuuu.com' })
+  ).toThrow('Unresolved');
+  expect(remount.prepare(payload).operationId).toBe(original.operationId);
+  expect(() => remount.prepare(payload)).toThrow('Unresolved');
+  expect(sessionStorage.getItem(remount.key)).not.toContain(
+    payload.temporaryPassword
+  );
+  expect(adjudicateRejection).toHaveBeenCalledTimes(1);
+});
+
+it('rejects foreign recovery readback and cannot adjudicate after actor retirement', async () => {
+  const inspectRejection = vi.fn();
+  const adjudicateRejection = vi.fn();
+  const recovery = new EmployeeCreationRecovery({
+    actorId,
+    workspaceId,
+    storage: sessionStorage,
+    assertActive: active,
+    inspectRejection,
+    adjudicateRejection,
+  });
+  recovery.activate();
+  const original = recovery.prepare(payload);
+  inspectRejection.mockResolvedValue({
+    status: 'fenced',
+    operationId: '10000000-0000-4000-8000-000000000009',
+  });
+  await expect(recovery.inspectRejection()).rejects.toThrow('scope');
+  expect(recovery.reference?.operationId).toBe(original.operationId);
+  recovery.retire();
+  await expect(recovery.inspectRejection()).rejects.toThrow('retired');
+  expect(adjudicateRejection).not.toHaveBeenCalled();
 });

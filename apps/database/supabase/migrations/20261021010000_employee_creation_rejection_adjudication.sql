@@ -120,3 +120,48 @@ revoke all on function private.adjudicate_employee_creation_rejection(uuid,uuid,
   from public,anon,authenticated;
 grant execute on function private.adjudicate_employee_creation_rejection(uuid,uuid,uuid,uuid,text,text,integer,uuid,uuid,uuid,text,text,jsonb)
   to service_role;
+
+-- Read-only recovery admission/readback. Candidate status is never rejection proof.
+create function private.inspect_employee_creation_rejection(p_actor_id uuid,p_operation_id uuid)
+returns jsonb language plpgsql security definer set search_path='' as $$
+declare op private.employee_creation_operations%rowtype;
+  attempt private.employee_creation_operation_history%rowtype;
+  audit private.employee_creation_rejection_adjudications%rowtype;
+  identity jsonb;
+begin
+  perform private.assert_employee_administrator(p_actor_id);
+  select * into op from private.employee_creation_operations
+    where actor_id=p_actor_id and operation_id=p_operation_id;
+  if not found or op.revoked_at is not null or op.last_receipt is not null
+    or op.lease_expires_at>clock_timestamp() then
+    return jsonb_build_object('status','fenced','operationId',p_operation_id);
+  end if;
+  select * into attempt from private.employee_creation_operation_history
+    where actor_id=p_actor_id and operation_id=p_operation_id and resulting_version=1
+      and expected_version=0 and previous_phase='reserved' and next_phase='auth_attempted' and receipt is null;
+  if not found then return jsonb_build_object('status','fenced','operationId',p_operation_id); end if;
+  identity=jsonb_build_object('actorUserId',op.actor_id,'operationId',op.operation_id,
+    'targetUserId',op.target_id,'email',op.staff_email,'displayName',op.managed_name,
+    'originalLeaseId',attempt.lease_id,'originalAttemptEventId',attempt.event_id);
+  select * into audit from private.employee_creation_rejection_adjudications
+    where actor_id=p_actor_id and operation_id=p_operation_id;
+  if found and op.phase='reserved' and op.version=3 and op.lease_id<>audit.original_lease_id
+    and audit.original_attempt_event_id=attempt.event_id and audit.original_lease_id=attempt.lease_id
+    and exists(select 1 from private.employee_creation_operation_history where actor_id=p_actor_id
+      and operation_id=p_operation_id and event_id=audit.event_id and resulting_version=3
+      and previous_phase='unknown' and next_phase='reserved') then
+    return identity||jsonb_build_object('status','retry_ready','expectedVersion',3,
+      'eventId',audit.event_id,'evidenceReferenceSha256',audit.evidence_reference_sha256);
+  elsif not found and op.phase='unknown' and op.version=2 and op.lease_id=attempt.lease_id
+    and (select count(*) from private.employee_creation_operation_history
+      where actor_id=p_actor_id and operation_id=p_operation_id)=2
+    and exists(select 1 from private.employee_creation_operation_history where actor_id=p_actor_id
+      and operation_id=p_operation_id and resulting_version=2 and expected_version=1
+      and previous_phase='auth_attempted' and next_phase='unknown' and receipt is null and lease_id=attempt.lease_id) then
+    return identity||jsonb_build_object('status','eligible','expectedVersion',2);
+  end if;
+  return jsonb_build_object('status','fenced','operationId',p_operation_id);
+end;
+$$;
+revoke all on function private.inspect_employee_creation_rejection(uuid,uuid) from public,anon,authenticated;
+grant execute on function private.inspect_employee_creation_rejection(uuid,uuid) to service_role;

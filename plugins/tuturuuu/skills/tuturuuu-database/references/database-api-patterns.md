@@ -299,3 +299,8 @@ not rejection proof. Preserve all history and target IDs, append the audit event
 then require explicit normal CREATE with a fresh lease and password. See
 `apps/docs/build/development-tools/employee-schema-qualification.mdx` for the
 operator boundary and canonical rollback/GoTrue/PostgREST regression coverage.
+
+Recovery admission and committed repair readback use the separate service-only
+`inspect_employee_creation_rejection` RPC. Candidate eligibility is not rejection
+proof. Only a matching committed audit at reserved/version 3 may unlock explicit
+same-operation CREATE in the UI; a lost mutation acknowledgement stays fenced.

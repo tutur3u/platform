@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "./tsconfig.employee-http.json",
   "compilerOptions": {
     "noEmit": true,
     "incremental": false,

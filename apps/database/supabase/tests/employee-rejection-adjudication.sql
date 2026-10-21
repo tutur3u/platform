@@ -34,6 +34,8 @@ select ok(not has_table_privilege('service_role','private.employee_creation_reje
 select throws_ok($$select pg_temp.adjudicate()$$,'23514','Employee rejection recovery state denied','live lease denied');
 update private.employee_creation_operations set lease_expires_at=clock_timestamp()-interval '1 second'
 where operation_id='00000000-0000-4000-8000-000000009720';
+select is(private.inspect_employee_creation_rejection('00000000-0000-4000-8000-000000009710','00000000-0000-4000-8000-000000009720')->>'status','eligible','readback exposes only expired original unknown candidate');
+select ok(not has_function_privilege('authenticated','private.inspect_employee_creation_rejection(uuid,uuid)','EXECUTE'),'authenticated cannot directly inspect service recovery');
 select throws_ok($$select pg_temp.adjudicate('{}')$$,'23514','Employee rejection attestation required','absence alone cannot adjudicate');
 update private.employee_creation_operations set revoked_at=clock_timestamp()
 where operation_id='00000000-0000-4000-8000-000000009720';
@@ -47,6 +49,8 @@ insert into public.platform_email_roles(email,enabled) values('adjudication-new@
 select throws_ok($$select pg_temp.adjudicate()$$,'23514','Employee rejection absence guard denied','reserved grants denied');
 delete from public.platform_email_roles where email='adjudication-new@tuturuuu.com';
 select is(pg_temp.adjudicate()->>'kind','adjudicated','explicit adjudication succeeds');
+select is(private.inspect_employee_creation_rejection('00000000-0000-4000-8000-000000009710','00000000-0000-4000-8000-000000009720')->>'status','retry_ready','committed audit permits explicit retry');
+select is(private.inspect_employee_creation_rejection('00000000-0000-4000-8000-000000009710','00000000-0000-4000-8000-000000009720')->>'eventId','00000000-0000-4000-8000-000000009732','readback binds audit event');
 select is((select phase from private.employee_creation_operations where operation_id=(select operation_id from original)),'reserved','only reservation restored');
 select is((select version from private.employee_creation_operations where operation_id=(select operation_id from original)),3,'version increases');
 select ok((select employee_creation_operations.lease_id<>original.lease_id and employee_creation_operations.lease_expires_at<clock_timestamp() from private.employee_creation_operations cross join original where employee_creation_operations.operation_id=original.operation_id),'old lease fenced and new fence expired');
@@ -56,6 +60,7 @@ select is((select user_id from private.employee_creation_intents where staff_ema
 select throws_ok($$select pg_temp.adjudicate()$$,'23514','Employee rejection recovery state denied','repair cannot replay');
 select is(private.employee_creation_operation_claim('00000000-0000-4000-8000-000000009710',
   '00000000-0000-4000-8000-000000009720','adjudication-new@tuturuuu.com','Adjudication Employee')->>'kind','claimed','normal explicit create may claim');
+select is(private.inspect_employee_creation_rejection('00000000-0000-4000-8000-000000009710','00000000-0000-4000-8000-000000009720')->>'status','fenced','claimed live lease cannot reopen editing');
 select ok(not exists(select 1 from auth.users where id=(select target_id from original)),'repair never creates Auth');
 select * from finish();
 rollback;

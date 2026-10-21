@@ -63,7 +63,7 @@ async function main() {
     url: config.url,
     key: config.key,
   });
-  const password = randomBytes(24).toString('base64url');
+  const password = `Aa1!${randomBytes(24).toString('base64url')}`;
   phase = 'disposable-administrator';
   const actor = await admin.auth.admin.createUser({
     email: `http-admin-${randomUUID()}@tuturuuu.com`,

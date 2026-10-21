@@ -3,6 +3,12 @@ import {
   type EmployeeCreationObservation,
   getInternalEmployeeCreationOperation,
 } from '@tuturuuu/internal-api/infrastructure';
+import {
+  adjudicateEmployeeRejection,
+  type EmployeeRejectionRecoveryState,
+  inspectEmployeeRejection,
+} from '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
 
 const ReferenceSchema = z
@@ -14,7 +20,20 @@ const ReferenceSchema = z
     displayName: z.string().trim().min(1).max(100),
     startedAt: z.number().int().nonnegative().nullable(),
     reads: z.number().int().min(0).max(6),
-    state: z.enum(['pending', 'conflict', 'stopped']),
+    state: z.enum([
+      'pending',
+      'conflict',
+      'stopped',
+      'retry_ready',
+      'adjudicating',
+    ]),
+    rejection: z
+      .strictObject({
+        eventId: z.uuid(),
+        evidenceReferenceSha256: z.string().regex(/^[a-f0-9]{64}$/),
+      })
+      .nullable()
+      .default(null),
   })
   .strict();
 export type CreationReference = z.infer<typeof ReferenceSchema>;
@@ -31,6 +50,8 @@ export class EmployeeCreationRecovery {
       assertActive(): void;
       now?: () => number;
       observe?: typeof getInternalEmployeeCreationOperation;
+      inspectRejection?: typeof inspectEmployeeRejection;
+      adjudicateRejection?: typeof adjudicateEmployeeRejection;
     }
   ) {
     this.key = `infra:employee-create:v1:${deps.actorId}:${deps.workspaceId}`;
@@ -78,7 +99,22 @@ export class EmployeeCreationRecovery {
   }
   prepare(input: { email: string; displayName: string }) {
     this.assertActive();
-    if (this.load()) throw new Error('Unresolved original creation');
+    const existing = this.load();
+    if (existing) {
+      if (
+        existing.state !== 'retry_ready' ||
+        !existing.rejection ||
+        existing.email !== input.email ||
+        existing.displayName !== input.displayName
+      )
+        throw new Error('Unresolved original creation');
+      return this.save({
+        ...existing,
+        state: 'pending',
+        reads: 0,
+        startedAt: null,
+      });
+    }
     return this.save({
       email: input.email,
       displayName: input.displayName,
@@ -88,7 +124,88 @@ export class EmployeeCreationRecovery {
       startedAt: null,
       reads: 0,
       state: 'pending',
+      rejection: null,
     });
+  }
+  private validateRejection(result: EmployeeRejectionRecoveryState) {
+    this.assertActive();
+    if (this.deps.workspaceId !== ROOT_WORKSPACE_ID)
+      throw new Error('Recovery workspace denied');
+    const value = this.reference;
+    if (
+      !value ||
+      result.operationId !== value.operationId ||
+      (result.status !== 'fenced' &&
+        (result.actorUserId !== value.actorId ||
+          result.email !== value.email ||
+          result.displayName !== value.displayName))
+    )
+      throw new Error('Recovery scope mismatch');
+    if (result.status === 'retry_ready') {
+      if (
+        !value.rejection ||
+        result.eventId !== value.rejection.eventId ||
+        result.evidenceReferenceSha256 !==
+          value.rejection.evidenceReferenceSha256
+      )
+        throw new Error('Unrecognized adjudication');
+      this.save({ ...value, state: 'retry_ready' });
+    }
+    return result;
+  }
+  async inspectRejection() {
+    this.assertActive();
+    if (this.deps.workspaceId !== ROOT_WORKSPACE_ID)
+      throw new Error('Recovery workspace denied');
+    if (!this.reference) throw new Error('Original creation required');
+    return this.validateRejection(
+      await (this.deps.inspectRejection ?? inspectEmployeeRejection)(
+        this.reference.operationId
+      )
+    );
+  }
+  async adjudicateRejection(
+    eligible: Extract<EmployeeRejectionRecoveryState, { status: 'eligible' }>,
+    digest: string
+  ) {
+    this.validateRejection(eligible);
+    const value = this.reference;
+    if (!value || value.rejection)
+      throw new Error('Adjudication already submitted; inspect original');
+    const rejection = {
+      eventId: crypto.randomUUID(),
+      evidenceReferenceSha256: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/)
+        .parse(digest),
+    };
+    this.save({ ...value, state: 'adjudicating', rejection });
+    // Persist the reference before dispatch. Any ambiguous response remains fenced.
+    const result = await (
+      this.deps.adjudicateRejection ?? adjudicateEmployeeRejection
+    )({
+      workspaceId: ROOT_WORKSPACE_ID,
+      adjudication: {
+        actorUserId: eligible.actorUserId,
+        operationId: eligible.operationId,
+        targetUserId: eligible.targetUserId,
+        email: eligible.email,
+        displayName: eligible.displayName,
+        originalLeaseId: eligible.originalLeaseId,
+        originalAttemptEventId: eligible.originalAttemptEventId,
+        expectedVersion: 2,
+        ...rejection,
+        reason: 'administrator_adjudicated_terminal_auth_rejection',
+        attestation: {
+          kind: 'administrator-adjudication-v1',
+          terminalAuthRejection: true,
+          noRequestInFlight: true,
+          absenceIsNotRejectionProof: true,
+          acceptResponsibility: true,
+        },
+      },
+    });
+    return this.validateRejection(result);
   }
   stop(state: 'conflict' | 'stopped') {
     if (this.reference) this.save({ ...this.reference, state });
