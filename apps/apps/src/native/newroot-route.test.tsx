@@ -10,7 +10,12 @@ import type { loadGatewayData } from './page-data.server';
 type Data = Awaited<ReturnType<typeof loadGatewayData>>;
 type Options = typeof import('../routes/__root').Route.options;
 type Head = NonNullable<Options['head']>;
+type Loader = Extract<
+  NonNullable<Options['loader']>,
+  (...args: never[]) => unknown
+>;
 type Registration = {
+  loader: () => ReturnType<Loader>;
   head: (context: Pick<Parameters<Head>[0], 'loaderData'>) => ReturnType<Head>;
   component: NonNullable<Options['component']>;
   shellComponent: NonNullable<RootRouteOptions['shellComponent']>;
@@ -35,6 +40,9 @@ const router = vi.hoisted(() => {
     },
   };
 });
+const loadGateway = vi.hoisted(() =>
+  vi.fn<() => ReturnType<typeof import('./page-data').loadGateway>>()
+);
 const provider = vi.hoisted(() =>
   vi.fn(
     ({
@@ -50,7 +58,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 vi.mock('./providers', () => ({ GatewayProviders: provider }));
 // The server function transport and shared error UI are outside these callback tests.
-vi.mock('./page-data', () => ({ loadGateway: vi.fn() }));
+vi.mock('./page-data', () => ({ loadGateway }));
 vi.mock('@tuturuuu/ui/custom/app-error-boundary', () => ({
   AppErrorBoundary: () => null,
 }));
@@ -60,6 +68,7 @@ import '../routes/__root';
 afterEach(() => {
   cleanup();
   provider.mockClear();
+  loadGateway.mockReset();
   router.setData(undefined);
 });
 
@@ -97,6 +106,29 @@ const cases: {
 ];
 
 describe('actual Apps root route callbacks', () => {
+  it.each(['en', 'vi'] satisfies Data['locale'][])(
+    'returns the exact %s gateway result from one transport call',
+    async (locale) => {
+      const loaded = data(locale);
+      loadGateway.mockResolvedValueOnce(loaded);
+
+      await expect(router.options().loader()).resolves.toBe(loaded);
+
+      expect(loadGateway).toHaveBeenCalledTimes(1);
+      expect(loadGateway).toHaveBeenCalledWith();
+    }
+  );
+
+  it('propagates the exact gateway rejection without fallback data or retry', async () => {
+    const failure = new Error('Gateway transport failed');
+    loadGateway.mockRejectedValueOnce(failure);
+
+    await expect(router.options().loader()).rejects.toBe(failure);
+
+    expect(loadGateway).toHaveBeenCalledTimes(1);
+    expect(loadGateway).toHaveBeenCalledWith();
+  });
+
   it.each(cases)(
     'emits $name metadata with fixed canonical URL and reciprocal OG locales',
     async ({ input, locale, og, alternate }) => {
