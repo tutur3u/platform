@@ -1,5 +1,6 @@
+import assert from 'node:assert/strict';
 import { constants } from 'node:fs';
-import { lstat, open, opendir } from 'node:fs/promises';
+import { lstat, open, opendir, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const roles = new Map([
@@ -16,16 +17,34 @@ const fields = [
 // Diagnostics never authorize a role or retain SDK record contents/identifiers.
 export async function projectMeetRegistry(prepared, startedAt) {
   try {
+    const root = prepared.registry;
+    const identity = await lstat(root);
+    async function checkRoot() {
+      const info = await lstat(root);
+      assert.ok(info.isDirectory() && !info.isSymbolicLink());
+      assert.equal(await realpath(root), root);
+      assert.equal(info.dev, identity.dev);
+      assert.equal(info.ino, identity.ino);
+    }
+    await checkRoot();
     const entries = [],
       identities = [];
     let truncated = false;
-    for await (const entry of await opendir(prepared.registry)) {
+    const directory = await opendir(root);
+    try {
+      await checkRoot();
+    } catch (error) {
+      await directory.close();
+      throw error;
+    }
+    for await (const entry of directory) {
+      await checkRoot();
       if (entries.length === 4) {
         truncated = true;
         break;
       }
       const role = roles.get(entry.name) ?? 'foreign';
-      const path = join(prepared.registry, entry.name);
+      const path = join(root, entry.name);
       const info = await lstat(path);
       const fact = { role, regular: info.isFile() && !info.isSymbolicLink() };
       entries.push(fact);
@@ -35,7 +54,10 @@ export async function projectMeetRegistry(prepared, startedAt) {
         constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
       );
       try {
+        await checkRoot();
         const stat = await file.stat();
+        assert.equal(stat.dev, info.dev);
+        assert.equal(stat.ino, info.ino);
         fact.bounded = stat.isFile() && stat.size <= 4096;
         fact.fresh = stat.mtimeMs >= startedAt;
         if (!fact.bounded) continue;
@@ -78,6 +100,7 @@ export async function projectMeetRegistry(prepared, startedAt) {
         await file.close();
       }
     }
+    await checkRoot();
     entries.sort((a, b) => a.role.localeCompare(b.role));
     return {
       schema: 1,

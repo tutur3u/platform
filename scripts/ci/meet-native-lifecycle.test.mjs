@@ -1,15 +1,17 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import {
+import fs, {
   mkdir,
   readdir,
   readFile,
   realpath,
+  rename,
   symlink,
   unlink,
   utimes,
   writeFile,
 } from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { meetFixture } from './meet-native-fixture.mjs';
@@ -559,3 +561,83 @@ test('failure receipt captures live registry facts before either public disposal
   assert.equal(persisted.internalCleanup, 'UNKNOWN');
   assert.equal(persisted.descendantClosure, 'UNKNOWN');
 });
+
+for (const kind of ['root-symlink', 'ancestor-symlink', 'noncanonical'])
+  test(`registry projection rejects ${kind} before enumeration or record reads`, async (t) => {
+    const { prepared } = await populatedRegistry(t);
+    const alias = join(prepared.scratch, 'registry-alias');
+    let registry;
+    if (kind === 'root-symlink') {
+      await symlink(prepared.registry, alias);
+      registry = alias;
+    } else if (kind === 'ancestor-symlink') {
+      await symlink(prepared.scratch, alias);
+      registry = join(alias, 'registry');
+    } else registry = `${prepared.registry}/../registry`;
+    let enumerations = 0,
+      opens = 0;
+    const originalOpen = fs.open,
+      originalOpendir = fs.opendir;
+    t.mock.method(fs, 'open', (...args) => {
+      opens++;
+      return originalOpen(...args);
+    });
+    t.mock.method(fs, 'opendir', (...args) => {
+      enumerations++;
+      return originalOpendir(...args);
+    });
+    syncBuiltinESMExports();
+    t.after(() => {
+      t.mock.restoreAll();
+      syncBuiltinESMExports();
+    });
+    let failure;
+    try {
+      await projectMeetRegistry({ registry }, 100);
+    } catch (error) {
+      failure = error;
+    }
+    assert.equal(enumerations, 0, 'root must be rejected before enumeration');
+    assert.equal(
+      opens,
+      0,
+      'canonical role records behind the alias must never open'
+    );
+    assert.equal(failure?.message, 'Meet registry projection unavailable');
+  });
+
+for (const replacement of ['symlink', 'directory'])
+  test(`registry projection detects root ${replacement} replacement before opening records`, async (t) => {
+    const { prepared, values } = await populatedRegistry(t);
+    const retained = join(prepared.scratch, 'retained-registry');
+    const originalOpen = fs.open,
+      originalOpendir = fs.opendir;
+    let opens = 0,
+      enumerations = 0;
+    t.mock.method(fs, 'open', (...args) => {
+      opens++;
+      return originalOpen(...args);
+    });
+    t.mock.method(fs, 'opendir', async (...args) => {
+      enumerations++;
+      const directory = await originalOpendir(...args);
+      await rename(prepared.registry, retained);
+      if (replacement === 'symlink') await symlink(retained, prepared.registry);
+      else {
+        await mkdir(prepared.registry);
+        for (const [name, value] of Object.entries(values))
+          await writeFile(join(prepared.registry, name), JSON.stringify(value));
+      }
+      return directory;
+    });
+    syncBuiltinESMExports();
+    t.after(() => {
+      t.mock.restoreAll();
+      syncBuiltinESMExports();
+    });
+    await assert.rejects(projectMeetRegistry(prepared, 100), {
+      message: 'Meet registry projection unavailable',
+    });
+    assert.equal(enumerations, 1);
+    assert.equal(opens, 0, 'changed root must fail before any record opens');
+  });
