@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { getPlatformReleaseInfo } from '@tuturuuu/utils/platform-release';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const suppliers = vi.hoisted(() => ({
@@ -37,6 +38,63 @@ describe('native loader public transport', () => {
     expect(JSON.stringify(data)).not.toMatch(
       /secret-token|private-profile|user_metadata/
     );
+  });
+  it.each(['member@tuturuuu.com', 'MEMBER@TUTURUUU.COM'])(
+    'transports actual Apps release metadata only for exact internal email %s',
+    async (email) => {
+      suppliers.actor.mockResolvedValue({
+        id: 'internal-actor',
+        access_token: 'private-token',
+      });
+      suppliers.profile.mockResolvedValue({
+        email,
+        id: 'private-profile-id',
+        full_name: 'Private Name',
+        private: 'private-profile',
+        user_metadata: { private: true },
+      });
+      const data = await withRequestContext(
+        new Request('https://apps.tuturuuu.com', {
+          headers: { cookie: 'NEXT_LOCALE=vi' },
+        }),
+        loadGatewayData
+      );
+      expect(data).toEqual({
+        actorId: 'internal-actor',
+        locale: 'vi',
+        release: getPlatformReleaseInfo('Tuturuuu Apps'),
+      });
+      expect(data.release?.appName).toBe('Tuturuuu Apps');
+      expect(Object.keys(data).sort()).toEqual([
+        'actorId',
+        'locale',
+        'release',
+      ]);
+      expect(JSON.stringify(data)).not.toMatch(
+        /private-token|private-profile|Private Name|user_metadata|full_name/
+      );
+      expect(suppliers.actor).toHaveBeenCalledExactlyOnceWith('apps');
+      expect(suppliers.profile).toHaveBeenCalledExactlyOnceWith('apps');
+    }
+  );
+  it.each([
+    'member@tuturuuu.com.evil.test',
+    'member@sub.tuturuuu.com',
+    'member@xwf.tuturuuu.com',
+    'member@tuturuuu-com.test',
+  ])('withholds release metadata from lookalike email %s', async (email) => {
+    suppliers.actor.mockResolvedValue({ id: 'ordinary-actor' });
+    suppliers.profile.mockResolvedValue({ email, private: 'private-profile' });
+    const data = await withRequestContext(
+      new Request('https://apps.tuturuuu.com'),
+      loadGatewayData
+    );
+    expect(data).toEqual({
+      actorId: 'ordinary-actor',
+      locale: 'en',
+      release: null,
+    });
+    expect(JSON.stringify(data)).not.toContain('private-profile');
   });
   it('allows an anonymous public catalogue without granting workspace visibility', async () => {
     suppliers.actor.mockResolvedValue(null);

@@ -70,6 +70,24 @@ describe('Apps central API ownership', () => {
     ]);
     expect(seen).toBe(1);
   });
+  it('answers build-info OPTIONS with exact empty 204 and Allow without upstream access', async () => {
+    const upstream = vi.fn<typeof fetch>();
+    const unexpectedFetch = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', unexpectedFetch);
+    const response = await apiRequest(
+      new Request('https://apps.tuturuuu.com/api/build-info', {
+        method: 'OPTIONS',
+      }),
+      'https://tuturuuu.com',
+      upstream
+    );
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe('');
+    expect(response.headers.get('allow')).toBe('GET, HEAD, OPTIONS');
+    expect(upstream).not.toHaveBeenCalled();
+    expect(unexpectedFetch).not.toHaveBeenCalled();
+    expect(guard).toHaveBeenCalledTimes(1);
+  });
   it('owns only build-info and rejects central proxy loops', async () => {
     expect(
       (
