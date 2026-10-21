@@ -2,7 +2,6 @@ import {
   MAX_DISPLAY_NAME_LENGTH,
   MAX_EMAIL_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { WORKSPACE_HANDLE_REGEX } from '@tuturuuu/utils/workspace-handle';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeInternalAccountRequest } from '@/lib/internal-accounts/authorization';
@@ -38,9 +37,8 @@ const UpdateInternalAccountSchema = z.discriminatedUnion('action', [
       .string()
       .trim()
       .toLowerCase()
-      .max(64)
-      .regex(WORKSPACE_HANDLE_REGEX)
-      .nullable(),
+      .nullable()
+      .transform((value) => value || null),
   }),
 ]);
 

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
-import { WORKSPACE_HANDLE_REGEX } from '@tuturuuu/utils/workspace-handle';
+import { isValidAdminProfileHandle } from '@tuturuuu/utils/internal-accounts/employee-profile-handle';
 import { InternalAccountAdminError } from './errors';
 
 type AdminClient = SupabaseClient<Database>;
@@ -56,9 +56,6 @@ export async function updateInternalAccountProfile({
   if (!normalizedDisplayName) {
     throw new InternalAccountAdminError('A display name is required', 400);
   }
-  if (normalizedUsername && !WORKSPACE_HANDLE_REGEX.test(normalizedUsername)) {
-    throw new InternalAccountAdminError('The username is invalid', 400);
-  }
 
   const { data: currentProfile, error: profileError } = await sbAdmin
     .from('users')
@@ -74,6 +71,14 @@ export async function updateInternalAccountProfile({
   }
 
   const previousUsername = currentProfile.handle;
+  if (
+    !isValidAdminProfileHandle({
+      username: normalizedUsername,
+      currentUsername: previousUsername,
+    })
+  ) {
+    throw new InternalAccountAdminError('The username is invalid', 400);
+  }
   const usernameChanged = previousUsername !== normalizedUsername;
   if (usernameChanged && normalizedUsername) {
     const { error: handleError } = await sbAdmin.from('handles').insert({

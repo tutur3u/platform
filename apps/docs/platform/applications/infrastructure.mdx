@@ -84,6 +84,21 @@ rejection, and unchanged root-only profile/password/MFA eligibility. Route autho
 Infrastructure API contracts. These synthetic tests do not establish provider or
 production acceptance.
 
+## Administrator profile username input
+
+The Infrastructure internal-account profile dialog accepts administrator usernames
+without product minimum or maximum length limits. Input is trimmed and lowercased;
+empty input clears the username. Changed nonempty usernames start with an ASCII
+letter or digit and contain only lowercase ASCII letters, digits, and underscores.
+An unchanged legacy username can be retained while editing the display name.
+Usernames must be unique; reserved names and availability are checked by the server
+when saving. This administrator input policy does not change ordinary self-service
+username rules or workspace handles. Transport and storage safety limits remain
+separate from product input policy. UI and service regression coverage lives in
+`internal-account-edit-dialog.test.tsx`, `profile-service.test.ts`, and
+`managed-profile-service.test.ts`; these tests do not establish database or
+production acceptance.
+
 ## Diagnose an internal profile save failure
 
 The internal profile dialog sends a same-origin UUID `PATCH` through

@@ -317,3 +317,69 @@ describe('internal profile failure diagnostics', () => {
     expect(log).not.toHaveBeenCalled();
   });
 });
+
+describe('administrator username policy', () => {
+  it.each([1, 4, 33, 65, 81, 1001])(
+    'allows %i characters without a product length bound',
+    async (length) => {
+      const client = fixture();
+      const username = 'a'.repeat(length);
+      await expect(
+        updateInternalAccountProfile({
+          ...profile,
+          username,
+          sbAdmin: client.sbAdmin,
+        })
+      ).resolves.toMatchObject({ username });
+      expect(client.reserveUsername).toHaveBeenCalledOnce();
+      expect(client.updateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ handle: username })
+      );
+    }
+  );
+  it.each(['bad-name', '_bad', 'bad.name', 'naïve', 'two words'])(
+    'reads preimage then rejects changed invalid %s without mutation',
+    async (username) => {
+      const client = fixture();
+      await expect(
+        updateInternalAccountProfile({
+          ...profile,
+          username,
+          sbAdmin: client.sbAdmin,
+        })
+      ).rejects.toMatchObject({ status: 400 });
+      expect(client.readProfile).toHaveBeenCalledOnce();
+      expect(client.reserveUsername).not.toHaveBeenCalled();
+      expect(client.updateProfile).not.toHaveBeenCalled();
+    }
+  );
+  it.each(['hehe', 'old-name', 'old.name'])(
+    'retains unchanged legacy %s',
+    async (username) => {
+      const client = fixture({ previousUsername: username });
+      await expect(
+        updateInternalAccountProfile({
+          ...profile,
+          username,
+          sbAdmin: client.sbAdmin,
+        })
+      ).resolves.toMatchObject({ username });
+      expect(client.reserveUsername).not.toHaveBeenCalled();
+      expect(client.updateProfile).toHaveBeenCalledOnce();
+    }
+  );
+  it('clears an existing username with empty input', async () => {
+    const client = fixture({ previousUsername: 'old-name' });
+    await expect(
+      updateInternalAccountProfile({
+        ...profile,
+        username: '  ',
+        sbAdmin: client.sbAdmin,
+      })
+    ).resolves.toMatchObject({ username: null });
+    expect(client.reserveUsername).not.toHaveBeenCalled();
+    expect(client.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ handle: null })
+    );
+  });
+});

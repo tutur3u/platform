@@ -8917,8 +8917,8 @@
       "save": "Save profile",
       "title": "Edit internal profile",
       "username": "Username",
-      "username_help": "Optional. Use lowercase letters, numbers, hyphens, or underscores.",
-      "username_invalid": "Start and end with a letter or number; use only lowercase letters, numbers, hyphens, or underscores."
+      "username_help": "Optional. Start with a lowercase ASCII letter or number; use lowercase ASCII letters, numbers, or underscores. Usernames must be unique; reserved names and availability are checked when saving.",
+      "username_invalid": "Start with a lowercase ASCII letter or number; use only lowercase ASCII letters, numbers, or underscores."
     },
     "rejected_creation": {
       "adjudicate": "Adjudicate rejected attempt",
