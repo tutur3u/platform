@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { EmployeeRestorationConsumer } from '@tuturuuu/internal-api/infrastructure';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,6 +17,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useId, useLayoutEffect, useState } from 'react';
+import { EmployeeRestorationDetails } from './employee-restoration-details';
 
 class RestorationSession {
   private active = false;
@@ -105,7 +107,18 @@ export function EmployeeRestorationDialog({
   }
   function submit(event: FormEvent) {
     event.preventDefault();
-    void run(() => consumer.submit(confirmation));
+    const submittedAction = consumer.action;
+    void run(async () => {
+      await consumer.submit(confirmation);
+      session.assertActive();
+      // One recovery admission for the same retained operation; never replay RESTORE.
+      if (
+        submittedAction === 'restore' &&
+        consumer.view.retained?.operationId &&
+        consumer.action === 'reconcile'
+      )
+        await consumer.submit(confirmation);
+    });
   }
   let active = actor !== null && actor === boundActor;
   try {
@@ -113,6 +126,19 @@ export function EmployeeRestorationDialog({
   } catch {
     active = false;
   }
+  useQuery({
+    queryKey: ['employee-restoration-readiness', id, userId, email],
+    enabled: open && active,
+    queryFn: async () => {
+      await run(() => consumer.inspect());
+      return null;
+    },
+    retry: false,
+    gcTime: 0,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
   if (!active) return null;
   const detail = view.detail;
   return (
@@ -134,45 +160,17 @@ export function EmployeeRestorationDialog({
         <Alert>
           <AlertDescription>{t('migration_separate')}</AlertDescription>
         </Alert>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={view.busy || view.outcome === 'denied'}
-          onClick={() => void run(() => consumer.inspect())}
-        >
-          {view.busy ? t('working') : t('inspect')}
-        </Button>
+        {view.busy ? <output>{t('working')}</output> : null}
         {view.outcome !== 'idle' ? (
           <output>{t(`outcomes.${view.outcome}`)}</output>
         ) : null}
         {detail ? (
-          <div className="space-y-2 text-sm" aria-live="polite">
-            <p>{t(`next.${detail.nextAction}`)}</p>
-            <dl className="grid grid-cols-2 gap-2">
-              <dt>{t('registry')}</dt>
-              <dd>{t(`registry_states.${detail.registryState}`)}</dd>
-              <dt>{t('provider')}</dt>
-              <dd>{t(`provider_states.${detail.providerState}`)}</dd>
-              <dt>{t('observed_at')}</dt>
-              <dd>{detail.providerReadAt}</dd>
-              {detail.operation ? (
-                <>
-                  <dt>{t('operation')}</dt>
-                  <dd className="break-all">{detail.operation.operationId}</dd>
-                  <dt>{t('phase')}</dt>
-                  <dd>{t(`phases.${detail.operation.phase}`)}</dd>
-                </>
-              ) : null}
-            </dl>
-          </div>
+          <p aria-live="polite">{t(`next.${detail.nextAction}`)}</p>
         ) : null}
-        {view.retained?.operationId && !detail ? (
-          <p className="break-all text-sm">
-            {t('retained_operation', {
-              operationId: view.retained.operationId,
-            })}
-          </p>
-        ) : null}
+        <EmployeeRestorationDetails
+          view={view}
+          onInspect={() => void run(() => consumer.inspect())}
+        />
         <form onSubmit={submit} className="space-y-4">
           {action ? (
             <div className="space-y-2">
@@ -205,7 +203,7 @@ export function EmployeeRestorationDialog({
                 type="submit"
                 disabled={view.busy || confirmation !== email}
               >
-                {t(action)}
+                {t('restore')}
               </Button>
             ) : null}
           </DialogFooter>

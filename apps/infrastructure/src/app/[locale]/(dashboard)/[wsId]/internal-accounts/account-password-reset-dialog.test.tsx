@@ -83,6 +83,18 @@ describe('platform account password reset', () => {
     );
   });
 
+  it('submits the password form once when Enter submission repeats before completion', async () => {
+    mocks.reset.mockImplementation(() => new Promise(() => {}));
+    const { submit } = prepare();
+    const form = submit.closest('form');
+    if (!form) throw new Error('Password reset form missing');
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    await waitFor(() => expect(mocks.reset).toHaveBeenCalledTimes(1));
+    expect(
+      screen.queryByLabelText('dialog.reset_password.handoff_label')
+    ).not.toBeInTheDocument();
+  });
   it('generates a replacement password locally and sends the selected value', async () => {
     mocks.reset.mockResolvedValue(undefined);
     const { submit } = prepare();

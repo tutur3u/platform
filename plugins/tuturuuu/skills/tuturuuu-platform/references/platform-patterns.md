@@ -1112,3 +1112,15 @@ retain attempted phase fences. Bound read admissions across remounts and stop on
 conflict, revocation, retired scope or budget exhaustion. See
 `apps/docs/build/development-tools/employee-schema-qualification.mdx` for the
 contract, limits and regression/hosted evidence distinction.
+
+### Simple Infrastructure account forms
+
+Use automatic read-only readiness on Restore open and retain exact email confirmation.
+After explicit Restore submission, at most one matching-operation reconciliation
+may follow through the portable consumer; never replay RESTORE or mutate on open.
+Keep technical readbacks and audited CREATE adjudication in Advanced recovery,
+while ordinary messages give a plain next action. Unknown CREATE retains the original
+operation and requires its existing explicit adjudication; password fields and secure
+generation stay in memory and clear on close. Preserve independent completion proof,
+actor/workspace fences and the separate retained-mailbox adoption workflow. See the
+Infrastructure application decision and creation/restoration/reset dialog regressions.

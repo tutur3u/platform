@@ -33,6 +33,7 @@ import {
 } from 'react';
 import { EmployeeCreationRecovery } from './employee-creation-recovery';
 import { EmployeeRejectionRecoveryPanel } from './employee-rejection-recovery-panel';
+import { TemporaryPasswordField } from './temporary-password-field';
 
 type Outcome =
   | 'editing'
@@ -282,7 +283,9 @@ function ScopedEmployeeCreationDialog({
           </DialogHeader>
           {!available && editable ? (
             <Alert>
-              <AlertDescription>{t('unavailable')}</AlertDescription>
+              <AlertDescription>
+                {t(availability.isFetching ? 'checking' : 'unavailable')}
+              </AlertDescription>
             </Alert>
           ) : null}
           <form onSubmit={submit} className="space-y-4">
@@ -313,26 +316,16 @@ function ScopedEmployeeCreationDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`${id}-password`}>{t('password')}</Label>
-              <Input
+              <TemporaryPasswordField
                 id={`${id}-password`}
-                aria-invalid={passwordInvalid}
-                aria-describedby={`${id}-password-help`}
-                type="password"
-                autoComplete="new-password"
-                value={temporaryPassword}
-                onChange={(event) => setTemporaryPassword(event.target.value)}
-                disabled={!editable}
-                required
+                label={t('password')}
+                help={t('password_help')}
                 minLength={12}
-                maxLength={72}
+                value={temporaryPassword}
+                onChange={setTemporaryPassword}
+                disabled={!editable}
+                invalid={passwordInvalid}
               />
-              <p
-                id={`${id}-password-help`}
-                className="text-muted-foreground text-sm"
-              >
-                {t('password_help')}
-              </p>
               {passwordInvalid && editable ? (
                 <p role="alert" className="text-destructive text-sm">
                   {t('password_strength')}
@@ -364,15 +357,20 @@ function ScopedEmployeeCreationDialog({
             ) : null}
             {['inspection', 'conflict', 'stopped'].includes(outcome) &&
             recovery.reference ? (
-              <EmployeeRejectionRecoveryPanel
-                recovery={recovery}
-                onReady={() => {
-                  recovery.assertActive();
-                  setTemporaryPassword('');
-                  setError(false);
-                  setOutcome('editing');
-                }}
-              />
+              <details>
+                <summary className="cursor-pointer text-sm">
+                  {t('advanced')}
+                </summary>
+                <EmployeeRejectionRecoveryPanel
+                  recovery={recovery}
+                  onReady={() => {
+                    recovery.assertActive();
+                    setTemporaryPassword('');
+                    setError(false);
+                    setOutcome('editing');
+                  }}
+                />
+              </details>
             ) : null}
             <DialogFooter className="gap-2 sm:flex-row">
               <Button

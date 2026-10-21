@@ -8790,22 +8790,24 @@
     "count": "{count, plural, one {# tài khoản nội bộ} other {# tài khoản nội bộ}}",
     "count_loading": "Đang tải số lượng tài khoản...",
     "creation": {
+      "advanced": "Khôi phục nâng cao",
+      "checking": "Đang kiểm tra khả năng tạo tài khoản…",
       "close": "Đóng",
-      "confirming": "Đang xác nhận thao tác tạo ban đầu…",
-      "conflict": "Thao tác tạo xung đột với tài khoản hoặc thao tác hiện có. Hệ thống không thử tạo lại.",
+      "confirming": "Đang tạo tài khoản. Vui lòng đợi xác nhận tài khoản sẵn sàng…",
+      "conflict": "Địa chỉ hoặc yêu cầu này cần quản trị viên xem xét. Liên hệ quản trị viên trước khi thử lại.",
       "created": "Tài khoản nhân viên đã được xác nhận và sẵn sàng đăng nhập.",
-      "denied": "Yêu cầu bị từ chối trước khi tạo tài khoản. Kiểm tra quyền truy cập và trạng thái khả dụng trước khi gửi lại.",
-      "description": "Tạo danh tính nhân viên được quản lý sau khi máy chủ xác nhận quyền truy cập và điều kiện sẵn sàng.",
+      "denied": "Chưa thể hoàn tất yêu cầu này. Kiểm tra thông tin bên dưới hoặc liên hệ quản trị viên để được hỗ trợ.",
+      "description": "Nhập email nhân viên, họ tên và mật khẩu tạm thời, rồi tạo tài khoản.",
       "email": "Email nhân viên",
       "email_help": "Sử dụng địa chỉ nhân viên chính xác @tuturuuu.com. Tên miền phụ trong danh bạ không cấp quyền nhân viên.",
-      "inspect": "Đã đạt giới hạn xác nhận tự động. Thao tác ban đầu được giữ lại; chưa xác nhận hoàn tất.",
+      "inspect": "Chưa thể xác nhận tài khoản đã sẵn sàng. Liên hệ quản trị viên để được hỗ trợ; yêu cầu của bạn đã được lưu.",
       "name": "Họ và tên",
       "open": "Tạo tài khoản nhân viên",
       "password": "Mật khẩu tạm thời",
-      "password_help": "Dùng 12–72 ký tự, gồm chữ thường, chữ hoa, chữ số và ký hiệu như ! hoặc @. Chia sẻ mật khẩu qua kênh an toàn.",
+      "password_help": "Dùng 12–72 ký tự gồm chữ thường, chữ hoa, số và ký hiệu. Lưu hoặc sao chép an toàn trước khi tạo; trường này sẽ được xóa sau khi gửi.",
       "password_strength": "Bổ sung đủ chữ thường, chữ hoa, chữ số và ký hiệu; dùng 12–72 ký tự.",
       "refresh": "Làm mới danh bạ",
-      "stopped": "Đã dừng xác nhận tự động. Thao tác ban đầu được giữ lại và sẽ không được thử tạo lại.",
+      "stopped": "Chưa thể hoàn tất xác nhận tài khoản. Liên hệ quản trị viên trước khi thử lại.",
       "submit": "Tạo tài khoản",
       "submitting": "Đang gửi…",
       "title": "Tạo tài khoản nhân viên",
@@ -8820,6 +8822,8 @@
     "dialog": {
       "confirmation_help": "Nhập chính xác {email} để xác nhận thao tác nhạy cảm này.",
       "confirmation_label": "Xác nhận email tài khoản",
+      "copy_password": "Sao chép mật khẩu",
+      "copy_password_failed": "Không thể sao chép mật khẩu. Chọn và sao chép thủ công rồi chia sẻ an toàn.",
       "disable_access": {
         "confirm": "Vô hiệu hóa truy cập",
         "description": "Thao tác này sẽ chặn ngay {email} đăng nhập cho đến khi quyền truy cập được khôi phục.",
@@ -8921,29 +8925,30 @@
       "unconfirmed": "Chưa xác nhận được khôi phục. Giữ tham chiếu gốc và kiểm tra lại; không tạo tài khoản thay thế."
     },
     "restoration": {
+      "advanced": "Khôi phục nâng cao",
       "close": "Đóng",
       "confirmation": "Xác nhận email tài khoản",
       "confirmation_help": "Nhập chính xác {email} để xác nhận tài khoản này.",
-      "description": "Kiểm tra trạng thái truy cập đã lưu của {email} trước khi khôi phục hoặc đối soát.",
+      "description": "Khôi phục quyền đăng nhập cho {email}. Xác nhận email bên dưới để tiếp tục.",
       "inspect": "Đọc trạng thái hiện tại",
-      "migration_separate": "Di chuyển địa chỉ cũ và tiếp nhận tài khoản cần quy trình riêng. Hộp thoại này không đổi địa chỉ tài khoản.",
+      "migration_separate": "Thao tác này chỉ khôi phục quyền đăng nhập. Đổi địa chỉ email cũ là thao tác riêng.",
       "next": {
-        "adoption_required": "Tài khoản này cần quy trình tiếp nhận hoặc di chuyển địa chỉ cũ riêng.",
-        "creation_reconciliation_required": "Cần đối soát việc tạo tài khoản qua quy trình phụ trách.",
-        "inspect": "Cần kiểm tra và đối soát thao tác đã lưu. Không bắt đầu lần khôi phục khác.",
-        "manual_review": "Tài khoản này cần được xem xét thủ công. Không có thao tác khôi phục khả dụng.",
+        "adoption_required": "Tài khoản cũ này cần quản trị viên hoàn tất chuyển đổi địa chỉ.",
+        "creation_reconciliation_required": "Việc thiết lập tài khoản cần quản trị viên hỗ trợ trước khi khôi phục truy cập.",
+        "inspect": "Đang kiểm tra yêu cầu khôi phục trước đó. Xác nhận email để tiếp tục an toàn.",
+        "manual_review": "Liên hệ quản trị viên để xử lý tài khoản trước khi khôi phục truy cập.",
         "none": "Không cần khôi phục quyền truy cập.",
-        "restore": "Tài khoản được quản lý này đủ điều kiện khôi phục quyền truy cập."
+        "restore": "Xác nhận email bên dưới rồi khôi phục quyền truy cập."
       },
       "observed_at": "Thời điểm quan sát",
-      "open": "Kiểm tra quyền truy cập được quản lý",
+      "open": "Khôi phục truy cập",
       "operation": "UUID thao tác",
       "outcomes": {
-        "conflict": "Không thể xác minh trạng thái hiện tại hoặc trạng thái đã thay đổi. Đọc lại trước khi tiếp tục.",
+        "conflict": "Chưa thể xác minh tài khoản này. Đóng rồi mở lại biểu mẫu để kiểm tra. Nếu vẫn gặp lỗi, hãy liên hệ quản trị viên.",
         "denied": "Không thể xác nhận quyền của bạn. Mở lại trang bằng phiên hiện có quyền truy cập.",
-        "pending": "Kết quả đang chờ hoặc chưa xác định. Đọc trạng thái đã lưu trước khi tiếp tục. Không tự động lặp lại thao tác với nhà cung cấp.",
-        "restored": "Đã xác nhận khôi phục bằng lần đọc độc lập trạng thái đã lưu.",
-        "unavailable": "Thao tác truy cập được quản lý hiện không khả dụng. Không suy đoán kết quả từ lỗi này. Vẫn có thể đọc trạng thái."
+        "pending": "Chưa thể xác nhận quyền truy cập đã được khôi phục. Liên hệ quản trị viên nếu bạn vẫn không đăng nhập được.",
+        "restored": "Đã khôi phục truy cập. Tài khoản này có thể đăng nhập lại.",
+        "unavailable": "Tạm thời không thể khôi phục truy cập. Liên hệ quản trị viên để được hỗ trợ."
       },
       "phase": "Giai đoạn thao tác",
       "phases": {
@@ -8968,7 +8973,7 @@
         "pending": "Đang chờ",
         "provisioned": "Đã cấp phát"
       },
-      "restore": "Khôi phục quyền truy cập được quản lý",
+      "restore": "Khôi phục truy cập",
       "retained_operation": "Thao tác đã lưu: {operationId}",
       "title": "Quyền truy cập nhân viên được quản lý",
       "working": "Đang kiểm tra quyền truy cập…"

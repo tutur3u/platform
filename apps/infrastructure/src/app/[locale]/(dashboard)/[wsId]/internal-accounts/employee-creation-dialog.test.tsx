@@ -74,6 +74,40 @@ async function mount() {
   return refresh;
 }
 describe('employee creation form', () => {
+  it('generates a valid password without dispatch or persistence', async () => {
+    await mount();
+    fireEvent.click(screen.getByRole('button', { name: 'generate_password' }));
+    const input = screen.getByLabelText<HTMLInputElement>('password');
+    expect(input.value).toHaveLength(20);
+    expect(input).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.getByRole('button', { name: 'submit' })).toBeEnabled();
+    expect(api.create).not.toHaveBeenCalled();
+    expect(sessionStorage.length).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: 'close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'open' }));
+    expect(screen.getByLabelText('password')).toHaveValue('');
+  });
+  it('copies a password only after an explicit action through the secure clipboard', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('isSecureContext', true);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    try {
+      await mount();
+      expect(writeText).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: 'copy_password' }));
+      await waitFor(() =>
+        expect(writeText).toHaveBeenCalledExactlyOnceWith('Synthetic-Pass-123!')
+      );
+      vi.stubGlobal('isSecureContext', false);
+      fireEvent.click(screen.getByRole('button', { name: 'copy_password' }));
+      expect(await screen.findByText('copy_password_failed')).toBeVisible();
+      expect(writeText).toHaveBeenCalledTimes(1);
+      expect(api.create).not.toHaveBeenCalled();
+      expect(sessionStorage.length).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it('gives inline password guidance and disables creation before operation admission', async () => {
     await mount();
     fireEvent.change(screen.getByLabelText('password'), {
