@@ -42,7 +42,7 @@ vi.mock('nuqs', async () => {
       withDefault: () => ({ withOptions: () => ({}) }),
     }),
     useQueryState: (key: string) => {
-      const initial =
+      const initial: string | string[] =
         key === 'group_ids'
           ? fixture.initialGroups
           : key === 'user_id'
@@ -312,6 +312,9 @@ describe('actual invoice form membership and group selector', () => {
           })
         ).toBeEnabled()
       );
+      await waitFor(() =>
+        expect(screen.getByLabelText('invoice total')).toHaveTextContent('200')
+      );
       fireEvent.click(
         screen.getByRole('button', {
           name: 'ws-invoices.create_subscription_invoice',
@@ -413,6 +416,9 @@ describe('actual invoice form membership and group selector', () => {
           name: 'ws-invoices.create_subscription_invoice',
         })
       ).toBeEnabled()
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText('invoice total')).toHaveTextContent('400')
     );
     fireEvent.click(
       screen.getByRole('button', {
