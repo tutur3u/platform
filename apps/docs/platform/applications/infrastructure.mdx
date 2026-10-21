@@ -558,13 +558,19 @@ name and canonical personal mailbox display/sender names, advancing the registry
 revision and appending an immutable rename receipt. It never changes UUID, email,
 Auth credentials, grants, membership or account access.
 
-Managed edits follow the public-profile username validation, exact reservation
-ownership and cooldown rules. Previously owned handles remain reserved by that
-user, matching the public-profile RPC. This is an intentional exception to the
-legacy Infrastructure unmanaged writer's old-handle release behavior. Unmanaged
-eligibility and writes retain their existing path. NULL or foreign reservations
-are never adopted. Any failed write rolls back all profile, mailbox, handle,
-quota, revision and receipt changes.
+Administrator Infrastructure profile edits allow any nonempty username length;
+public self-service remains 5–32 characters. Changed usernames retain lowercase
+letters, digits and underscores, must start with a letter or digit, and reject
+reserved names. NULL clears the username. PostgreSQL B-tree key size and storage
+limits still apply; this is not a guarantee that arbitrarily large values fit.
+The managed SQL writer uses an ungranted backend/transaction/actor/target/handle
+capability with fresh root authority. Only `users.handle` and `handles.value`
+length enforcement admits that exception; bare service writes cannot mint it.
+Exact reservation ownership, uniqueness and cooldowns remain enforced. Previously
+owned handles stay reserved, unlike the legacy unmanaged writer's release of old
+handles. NULL or foreign reservations are never adopted. Unmanaged eligibility
+retains its existing path. Failed writes roll back profile, mailbox, handle,
+quota, revision, capability and receipt changes.
 
 Pending/inconsistent employees and unresolved CREATE, RESTORE or address
 operations cannot be renamed. Original CREATE names, intent and journal remain
@@ -576,6 +582,7 @@ stale; a new RESTORE uses the new revision and current name. Lost acknowledgemen
 are inspected by their original internal operation reference, without a second
 write or a new confirmation step.
 
-Regression coverage: `employee-managed-profile.sql`, managed-profile transport
+Regression coverage: `employee-managed-profile.sql`,
+`employee-admin-profile-usernames.sql`, managed-profile transport
 checks, and read-only CREATE observation/client negative controls. Hosted
 qualification and production acceptance are separate delivery gates.

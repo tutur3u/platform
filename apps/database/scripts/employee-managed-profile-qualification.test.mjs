@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { httpQualificationReceipt } from './employee-http-receipt.mjs';
 import {
   managedProfilePackets,
   schemaFailureDiagnostic,
@@ -29,7 +30,7 @@ test('managed profile selection preserves defaults and requires journal/typegen/
       assertions,
     }));
     assert.deepEqual(
-      selectSchemaPackets(true).slice(-2),
+      selectSchemaPackets(true).slice(-managedProfilePackets.length),
       managedProfilePackets
     );
     const input = {
@@ -203,7 +204,11 @@ test('managed diagnostics bound hostile output, reject invalid packet binding, a
     false
   );
   assert.throws(
-    () => managedDiagnostic({}, basePackets(true).length + 3),
+    () =>
+      managedDiagnostic(
+        {},
+        basePackets(true).length + managedProfilePackets.length + 1
+      ),
     /Invalid managed profile diagnostic binding/u
   );
   assert.throws(
@@ -388,4 +393,60 @@ test('pure wait model accepts a delayed owned waiter before the deadline, never 
     modelPoll(() => ({ ...absent, busy: false })),
     { observed: false, elapsedMs: 0 }
   );
+});
+
+test('managed HTTP receipt rejects the old length-limited fixture and missing length cases', () => {
+  const receipt = {
+    qualified: true,
+    phase: 'complete',
+    assertions: 30,
+    routeAuthorizationProof: false,
+    productionProof: false,
+    managedProfileQualification: {
+      qualified: true,
+      assertions: 47,
+      writes: 1,
+      usernameLengths: [4, 1, 33, 65, 81, 1001],
+      lostAcknowledgementReadback: true,
+      routeAuthorizationProof: false,
+      productionProof: false,
+    },
+  };
+  const parse = (managedProfileQualification) =>
+    httpQualificationReceipt(
+      JSON.stringify({
+        ...receipt,
+        managedProfileQualification,
+      })
+    );
+  assert.deepEqual(parse(receipt.managedProfileQualification), receipt);
+  assert.throws(
+    () => parse({ ...receipt.managedProfileQualification, assertions: 11 }),
+    /Managed profile HTTP receipt invalid/u
+  );
+  for (const length of receipt.managedProfileQualification.usernameLengths) {
+    assert.throws(
+      () =>
+        parse({
+          ...receipt.managedProfileQualification,
+          usernameLengths:
+            receipt.managedProfileQualification.usernameLengths.filter(
+              (value) => value !== length
+            ),
+        }),
+      /Managed profile HTTP receipt invalid/u
+    );
+  }
+});
+
+test('administrator username packet has an exact closed rollback plan', () => {
+  const file = 'employee-admin-profile-usernames.sql';
+  const sql = readFileSync(
+    new URL(`../supabase/tests/${file}`, import.meta.url),
+    'utf8'
+  );
+  const count = sql.match(/^select (?:is|ok|throws_ok)\(/gmu)?.length;
+  assert.equal(count, 74);
+  assert.deepEqual(managedProfilePackets.at(-1), [file, count]);
+  assert.doesNotThrow(() => assertRollbackSource(sql));
 });

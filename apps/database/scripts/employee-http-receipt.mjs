@@ -167,8 +167,9 @@ function rejectionFailure(value) {
 function managedProfileReceipt(value) {
   if (
     value?.qualified !== true ||
-    value.assertions !== 11 ||
+    value.assertions !== 47 ||
     value.writes !== 1 ||
+    JSON.stringify(value.usernameLengths) !== '[4,1,33,65,81,1001]' ||
     value.lostAcknowledgementReadback !== true ||
     value.routeAuthorizationProof !== false ||
     value.productionProof !== false
@@ -176,8 +177,9 @@ function managedProfileReceipt(value) {
     throw new Error('Managed profile HTTP receipt invalid');
   return {
     qualified: true,
-    assertions: 11,
+    assertions: 47,
     writes: 1,
+    usernameLengths: [4, 1, 33, 65, 81, 1001],
     lostAcknowledgementReadback: true,
     routeAuthorizationProof: false,
     productionProof: false,

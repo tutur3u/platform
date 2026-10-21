@@ -755,19 +755,18 @@ source-only gate enabled; do not build locally or bypass type errors.
 
 ## Managed profile qualification
 
-Select `include_managed_profile=true` together with `include_journal=true` on the
-same reviewed control/source commit. This adds `employee-managed-profile.sql`
-(53 rollback assertions) and `employee-managed-profile-concurrency.sql`
-(10 assertions using real independent database sessions) to the journal profile
-and generates types from that full-migration disposable database. Existing
-optional defaults and packet counts remain unchanged when the selection is off.
-`managedProfileQualified` requires both exact packets, the same-run artifact
-digest, base packet success and positive owned cleanup.
+Select `include_managed_profile=true` with `include_journal=true` on the same reviewed control/source commit.
+The canonical runner adds `employee-managed-profile.sql` (53 rollback assertions),
+`employee-managed-profile-concurrency.sql` (10 independent-session assertions) and
+`employee-admin-profile-usernames.sql` (74 rollback assertions), then generates types from that disposable database.
+The username packet exercises changed 1/4/33/65/81/1001-character handles, ownership conflicts, null clear,
+unchanged public 5–32 policy, protected capability denial, CAS/replay, lineage and preserved account data.
+Generic `users.handle` and `handles.value` length CHECKs move to equivalent trigger enforcement with an exact
+administrator capability exception; other fields retain their limits. B-tree key/storage limits remain physical bounds.
+Optional defaults remain unchanged. `managedProfileQualified` requires all three exact packets, same-run types digest,
+base packet success and positive owned cleanup. Missing packets or the old HTTP receipt cannot qualify.
 
-When `include_http=true` is also selected, the actual disposable PostgREST fixture
-calls `qualifyManagedProfileHttp`. The HTTP gate requires
-`managedProfileQualification.qualified=true` and its exact 11-assertion receipt,
-including one write and lost-acknowledgement readback. These executed SQL and HTTP
-checks do not establish browser behavior, Web request authorization or production
-acceptance. The managed profile product contract is recorded in
-[Infrastructure](/platform/applications/infrastructure#managed-employee-profile-edits).
+With `include_http=true`, `qualifyManagedProfileHttp` requires an exact 47-assertion receipt: one lost-ACK write,
+independent receipt inspection and changed handles at lengths 4/1/33/65/81/1001 with duplicate and stale-CAS denials.
+These SQL/PostgREST checks do not establish authenticated Web route composition, browser or production acceptance.
+Require separate authenticated route qualification; see the [Infrastructure contract](/platform/applications/infrastructure#managed-employee-profile-edits).

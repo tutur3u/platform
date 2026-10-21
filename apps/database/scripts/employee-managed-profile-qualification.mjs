@@ -11,6 +11,7 @@ import {
 export const managedProfilePackets = [
   ['employee-managed-profile.sql', 53],
   ['employee-managed-profile-concurrency.sql', 10],
+  ['employee-admin-profile-usernames.sql', 74],
 ];
 function selected(journal) {
   const value = process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE;
@@ -27,7 +28,7 @@ export function selectSchemaPackets(...args) {
 }
 export function schemaReceipt(input) {
   if (!selected(input.journal)) return baseReceipt(input);
-  const tail = input.packets.slice(-2);
+  const tail = input.packets.slice(-managedProfilePackets.length);
   const complete =
     JSON.stringify(tail) ===
     JSON.stringify(
@@ -35,7 +36,7 @@ export function schemaReceipt(input) {
     );
   const receipt = baseReceipt({
     ...input,
-    packets: input.packets.slice(0, -2),
+    packets: input.packets.slice(0, -managedProfilePackets.length),
   });
   return {
     ...receipt,
