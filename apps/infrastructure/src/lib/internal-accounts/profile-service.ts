@@ -5,6 +5,27 @@ import { InternalAccountAdminError } from './errors';
 
 type AdminClient = SupabaseClient<Database>;
 
+function logProfileFailure(
+  stage: 'profile_read' | 'username_reserve' | 'profile_update',
+  code: string | undefined
+) {
+  const knownCodes = [
+    '22023',
+    '23503',
+    '23505',
+    '23514',
+    '42501',
+    '55P03',
+    'PT429',
+    'PGRST204',
+    'PGRST205',
+  ];
+  console.error('Internal account profile stage failed', {
+    stage,
+    code: code && knownCodes.includes(code) ? code : 'unknown',
+  });
+}
+
 export async function updateInternalAccountProfile({
   displayName,
   sbAdmin,
@@ -31,6 +52,7 @@ export async function updateInternalAccountProfile({
     .eq('id', targetUserId)
     .maybeSingle();
   if (profileError || !currentProfile) {
+    logProfileFailure('profile_read', profileError?.code);
     throw new InternalAccountAdminError(
       'Internal account profile not found',
       404
@@ -45,6 +67,7 @@ export async function updateInternalAccountProfile({
       value: normalizedUsername,
     });
     if (handleError) {
+      logProfileFailure('username_reserve', handleError.code);
       throw new InternalAccountAdminError(
         handleError.code === '23505'
           ? 'The username is already in use'
@@ -62,6 +85,7 @@ export async function updateInternalAccountProfile({
     })
     .eq('id', targetUserId);
   if (updateError) {
+    logProfileFailure('profile_update', updateError.code);
     if (usernameChanged && normalizedUsername) {
       await sbAdmin
         .from('handles')

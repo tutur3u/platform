@@ -84,6 +84,41 @@ rejection, and unchanged root-only profile/password/MFA eligibility. Route autho
 Infrastructure API contracts. These synthetic tests do not establish provider or
 production acceptance.
 
+## Diagnose an internal profile save failure
+
+The internal profile dialog sends a same-origin UUID `PATCH` through
+`updateInternalAccount` in `packages/internal-api`. Infrastructure owns this
+route and its profile service. Web's satellite rewrite inventory does not forward
+this legacy UUID route. The employee subtree below has a separate owner.
+
+The generic update toast does not identify the failing boundary. Inspect the
+existing failed request's HTTP status and response message first, then the owning
+Infrastructure request logs. Do not replay a profile mutation to gather evidence.
+Keep credentials, request bodies, provider error details, and account identifiers
+out of shared diagnostics.
+
+`profile-service.ts` emits `Internal account profile stage failed` on a returned
+database failure, with a fixed `profile_read`, `username_reserve`, or
+`profile_update` stage and an allowlisted code. Unrecognized or absent codes become
+`unknown`. These events do not prove a specific SQL trigger caused the rejection.
+They do not cover earlier authorization, provider lookup, or thrown transport
+failures. Missing events alone do not prove that execution stopped earlier.
+
+For an update-stage `42501`, a separately authorized read-only SQL inspection can
+compare the target's canonical `users.display_name` with the registry's
+`infrastructure_employees.managed_name` and confirm the installed managed-name
+trigger. Registered employee names remain managed: changing the public name away
+from that managed value is rejected even for a service-role write. Do not bypass
+that fence or widen administrator authorization to make the toast disappear.
+`23505` indicates a uniqueness conflict; `PT429` indicates a profile change limit.
+Confirm the exact database error before attributing either to this incident.
+
+`profile-service.test.ts` covers each returned failure stage, unknown-code privacy,
+unchanged status/rollback behavior, and success without failure logs.
+`apps/database/supabase/tests/employee-signup-guards.sql` covers the managed-name
+fence through the public profile RPC. Service mocks do not establish deployed
+schema, provider, transport, or customer acceptance.
+
 ## Employee API routing
 
 Web owns `/api/v1/infrastructure/internal-accounts/employees` and its descendants,
