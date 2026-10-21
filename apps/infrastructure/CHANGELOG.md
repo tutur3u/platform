@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/infra-v0.35.0...infra-v0.36.0) (2026-10-21)
+
+
+### Features
+
+* **infrastructure:** simplify account delivery forms ([5dad0b6](https://github.com/tutur3u/platform/commit/5dad0b64aa0cee1a4782fd0df88d9f18b2201a6c)) ([#6364](https://github.com/tutur3u/platform/issues/6364)) ([bf10e03](https://github.com/tutur3u/platform/commit/bf10e03acd5952fb6d2bc9d5123f87becd9b63cf))
+* **mail:** add explicit retained mailbox adoption ([d6279c6](https://github.com/tutur3u/platform/commit/d6279c665c578c11412bffd5a97bba4c87386dbf)) ([#6361](https://github.com/tutur3u/platform/issues/6361)) ([16d4725](https://github.com/tutur3u/platform/commit/16d4725e8ce503d170b25be62907425a30f52664))
+
+
+### Bug Fixes
+
+* **auth:** expose explicit rejected creation recovery ([6d6287d](https://github.com/tutur3u/platform/commit/6d6287d576785483fd576fb87c305d8683a107cb))
+* **auth:** guard administrator rejection adjudication ([#6360](https://github.com/tutur3u/platform/issues/6360)) ([9446519](https://github.com/tutur3u/platform/commit/944651919152146a13ae99e089bb1f36c8249016))
+* **infrastructure:** allow managed subdomain access changes ([d56376f](https://github.com/tutur3u/platform/commit/d56376ffac0b3fb3e50e4fe37dfb18e1c7f8f80c)) ([#6358](https://github.com/tutur3u/platform/issues/6358)) ([b2b6b1d](https://github.com/tutur3u/platform/commit/b2b6b1db3778fc23098785cfecca3d0aacba74ec))
+* **infrastructure:** clarify eligible adjudication retry ([5a492a3](https://github.com/tutur3u/platform/commit/5a492a3a891fccd145752f48e6fd2841b8752656))
+* **infrastructure:** clear stale password clipboard feedback ([4a4ffed](https://github.com/tutur3u/platform/commit/4a4ffed432fd3c06815ce1300597bafc76bc24a7))
+* **infrastructure:** fence create during original request loading ([5cdc43d](https://github.com/tutur3u/platform/commit/5cdc43d9f9e348e45f84b284f221c5017f809cae))
+* **infrastructure:** resume original employee creation requests ([5cf148e](https://github.com/tutur3u/platform/commit/5cf148e007ab3e4ca97173df1dd69c3f08c6732e))
+* **infrastructure:** retry adjudication with retained evidence ([a7c2f80](https://github.com/tutur3u/platform/commit/a7c2f8001f8635194192a89e98d30001b1d8e6ea))
+* **infrastructure:** use exported employee recovery entrypoint ([cff128a](https://github.com/tutur3u/platform/commit/cff128a4f39fd10e74886be373e893198a20cf8c))
+* **infrastructure:** validate employee passwords and confirm original creates ([#6359](https://github.com/tutur3u/platform/issues/6359)) ([8ad2602](https://github.com/tutur3u/platform/commit/8ad2602d0078e1eb307456788fce52fa78ec553b))
+* **infrastructure:** validate passwords and confirm original employee creates ([3826457](https://github.com/tutur3u/platform/commit/3826457e3a7a7b314ab93f320e24e6bcf9b62fed))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/infra-v0.34.0...infra-v0.35.0) (2026-10-19)
 
 

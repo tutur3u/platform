@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.53.0](https://github.com/tutur3u/platform/compare/internal-api-v0.52.0...internal-api-v0.53.0) (2026-10-21)
+
+
+### Features
+
+* **mail:** add explicit retained mailbox adoption ([d6279c6](https://github.com/tutur3u/platform/commit/d6279c665c578c11412bffd5a97bba4c87386dbf)) ([#6361](https://github.com/tutur3u/platform/issues/6361)) ([16d4725](https://github.com/tutur3u/platform/commit/16d4725e8ce503d170b25be62907425a30f52664))
+
+
+### Bug Fixes
+
+* **auth:** expose explicit rejected creation recovery ([6d6287d](https://github.com/tutur3u/platform/commit/6d6287d576785483fd576fb87c305d8683a107cb))
+* **auth:** guard administrator rejection adjudication ([#6360](https://github.com/tutur3u/platform/issues/6360)) ([9446519](https://github.com/tutur3u/platform/commit/944651919152146a13ae99e089bb1f36c8249016))
+* **infrastructure:** validate employee passwords and confirm original creates ([#6359](https://github.com/tutur3u/platform/issues/6359)) ([8ad2602](https://github.com/tutur3u/platform/commit/8ad2602d0078e1eb307456788fce52fa78ec553b))
+* **infrastructure:** validate passwords and confirm original employee creates ([3826457](https://github.com/tutur3u/platform/commit/3826457e3a7a7b314ab93f320e24e6bcf9b62fed))
+
 ## [0.52.0](https://github.com/tutur3u/platform/compare/internal-api-v0.51.0...internal-api-v0.52.0) (2026-10-19)
 
 

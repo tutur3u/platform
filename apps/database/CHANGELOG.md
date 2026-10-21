@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.42.0](https://github.com/tutur3u/platform/compare/database-v1.41.3...database-v1.42.0) (2026-10-21)
+
+
+### Features
+
+* **mail:** add explicit retained mailbox adoption ([d6279c6](https://github.com/tutur3u/platform/commit/d6279c665c578c11412bffd5a97bba4c87386dbf)) ([#6361](https://github.com/tutur3u/platform/issues/6361)) ([16d4725](https://github.com/tutur3u/platform/commit/16d4725e8ce503d170b25be62907425a30f52664))
+
+
+### Bug Fixes
+
+* **auth:** expose explicit rejected creation recovery ([6d6287d](https://github.com/tutur3u/platform/commit/6d6287d576785483fd576fb87c305d8683a107cb))
+* **auth:** guard administrator rejection adjudication ([26e9b5c](https://github.com/tutur3u/platform/commit/26e9b5c63eb21424503146a289532b3c4ba3ae9b)) ([#6360](https://github.com/tutur3u/platform/issues/6360)) ([9446519](https://github.com/tutur3u/platform/commit/944651919152146a13ae99e089bb1f36c8249016))
+* **ci:** require retained mailbox qualification packet and types ([ad545aa](https://github.com/tutur3u/platform/commit/ad545aa445aac6ee37155310177a4f71806bc806))
+* **database:** align companion qualification journal counts ([c104c09](https://github.com/tutur3u/platform/commit/c104c0907a00bd9bc61cf75bbf25c691abcc4807))
+* **database:** assign unique rejection migration version ([59338a1](https://github.com/tutur3u/platform/commit/59338a19b507951b943007aee5e57555921a46c4))
+* **test:** bind rejection proof to fixture TypeScript project ([4ecd38b](https://github.com/tutur3u/platform/commit/4ecd38b9792581485b8be2af5a6627338b720f70))
+
 ## [1.41.3](https://github.com/tutur3u/platform/compare/database-v1.41.2...database-v1.41.3) (2026-10-19)
 
 
