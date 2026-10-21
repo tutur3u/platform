@@ -198,29 +198,38 @@ assertion, lifecycle step or cleanup proof is missing. The default remains the
 172-assertion foundation profile. This SQL gate does not qualify the fixed worker,
 provider, production configuration, generated types or live account operations.
 
-The independent `include_address_migration=true` selection appends the separate
-10-assertion `employee-address-migration.sql` packet after the selected employee
-profile; combining it with the personal journal profile is rejected:
-182 assertions for foundation plus migration, or 311 for journal plus migration.
-Its receipt scope adds `-address-migration`. Missing, reordered, duplicated or
-miscounted packets cannot qualify; the original 172 and 301 profiles remain
-unchanged and cannot be substituted for one another. HTTP remains a separate
-29-assertion gate; RESTORE's separately admitted 66-assertion transport gate must
-remain intact when integrating this addition. Neither transport count is added
-to the SQL assertion total.
+The independent `include_address_migration=true` selection appends three exact
+rollback packets, in order: Google destination30, legacy address migration10,
+and retained mailbox adoption28. The defaults remain foundation172 and
+journal301; the selected totals are foundation240 or journal369. Personal journal
+cannot combine with address migration. Its receipt scope adds `-address-migration`
+and requires every packet exactly once, in order, with the exact count, no skips,
+TODOs, failed assertions or truncation, successful lifecycle and owned cleanup.
+The original Google30 and legacy10 packets keep their bytes and ordering.
 
-The dispatch control checkout must contain the new workflow input, selector,
-strict receipt helper and tests, while `source_sha` must bind the exact supplier
-commit containing the packet and migrations. An older control checkout silently
-omits a new source packet; its green artifact cannot qualify address migration.
-Dispatch and artifact inspection remain with the integration owner. Do not rerun
-or replace an already queued run to infer missing coverage.
+After all selected address packets pass, the runner generates public, private
+and storage definitions from the same isolated database before cleanup. A missing
+or malformed generated artifact digest prevents address schema qualification.
+The artifact includes `generated-types.ts`; verify its digest against
+`generatedTypesSha256` in `qualification.json` before reconciling canonical types.
+This does not prove application consumers compile or qualify retained storage
+access, provider changes, acknowledgement-loss runtime behavior or account actions.
 
-After the selected journal packets pass, the workflow generates public, private
-and storage TypeScript definitions from that same isolated database before
-cleanup. Its artifact includes `generated-types.ts` and the receipt records the
-file digest. Review and format that artifact before updating canonical types;
-generating it alone does not prove that application consumers compile.
+For SQL-only qualification, dispatch `employee-schema-contract.yaml` with
+`include_address_migration=true`, `include_http=false`, and other optional inputs
+false. Select the immutable commit containing both source and control changes as
+both `--ref` and `source_sha`; the workflow rejects mismatched address source and
+control SHAs. An older control that omits adoption28 cannot qualify retained
+adoption, even when its source snapshot applies the new migration. Inspect the
+run's actual control SHA, exact source SHA, three packet entries and fixture
+hashes, generated artifact digest, lifecycle exit and cleanup receipt. A queued,
+skipped or failed run establishes no SQL acceptance. HTTP and RESTORE remain
+separate transport gates and do not contribute to the SQL count.
+
+The journal, personal journal, feedback and public-consumer profiles retain their
+existing same-database type generation. Default foundation selection stays
+unchanged. Preserve owned cleanup on generation failure; never substitute source
+parser tests, a minimal fixture or manual SQL for the full isolated migration run.
 
 Conflict fixtures that insert a logical mailbox must link its `domain_id` to the
 matching `private.mail_domains` row. The current mailbox trigger rejects an

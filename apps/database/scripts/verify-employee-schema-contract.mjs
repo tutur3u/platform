@@ -22,8 +22,6 @@ import {
 import {
   assertEmployeeSchemaSnapshot,
   employeePublicConsumerReceipt,
-  generateEmployeeTypes,
-  runEmployeePublicConsumer,
   runEmployeePublicConsumerLifecycle,
   selectEmployeePublicConsumer,
 } from './employee-public-consumer-qualification.mjs';
@@ -37,6 +35,7 @@ import {
   selectFeedback,
   selectSchemaPackets,
 } from './employee-schema-tap.mjs';
+import { runSchemaTypegen } from './employee-schema-typegen.mjs';
 import { runOwnedSessionProcess } from './employee-web-session-process.mjs';
 import {
   assertQualifiedWebSession,
@@ -465,28 +464,23 @@ const runner = async (command, args, cwd) => {
         packetOrdinal = 0;
         finishFeedbackCausalPhase(causalState, causalRunSQL, causalRemaining);
       }
-      if (journal || personalJournal || feedback || publicConsumer) {
-        packetOrdinal = 0;
-        currentPhase = 'typegen';
-        const generate = () => {
-          generatedTypesSha256 = generateEmployeeTypes({
-            binaryPath,
-            metadata,
-            receiptDirectory,
-            bounded,
-          });
-          return generatedTypesSha256;
-        };
-        if (publicConsumer)
-          publicConsumerState = await runEmployeePublicConsumer({
-            root,
-            metadata,
-            receiptDirectory,
-            generate,
-            runSQL: causalRunSQL,
-          });
-        else generate();
-      }
+      ({ generatedTypesSha256, publicConsumerState } = await runSchemaTypegen({
+        journal,
+        personalJournal,
+        addressMigration,
+        feedback,
+        publicConsumer,
+        binaryPath,
+        metadata,
+        receiptDirectory,
+        bounded,
+        root,
+        runSQL: causalRunSQL,
+        beforeGenerate() {
+          packetOrdinal = 0;
+          currentPhase = 'typegen';
+        },
+      }));
       if (httpRuntime) {
         packetOrdinal = 0;
         currentPhase = 'http-runtime';
@@ -634,6 +628,7 @@ const baseReceipt = schemaReceipt({
   feedback,
   chatInitialSettings,
   chatInitialSettingsQualified: chatQualification?.qualified === true,
+  generatedTypesSha256,
 });
 const receipt = {
   ...baseReceipt,

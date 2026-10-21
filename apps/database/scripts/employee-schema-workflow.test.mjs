@@ -61,7 +61,7 @@ test('strict receipt tests run from control root', () => {
   assert.doesNotMatch(step, /working-directory:/u);
   assert.match(
     step,
-    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs$/mu
+    /^ {8}run: node --test apps\/database\/scripts\/programming-database-tap.test.mjs apps\/database\/scripts\/employee-schema-tap.test.mjs apps\/database\/scripts\/employee-retained-mailbox-schema.test.mjs apps\/database\/scripts\/employee-schema-workflow.test.mjs$/mu
   );
 });
 
@@ -200,9 +200,14 @@ test('employee public consumer proof stays default-off and uses the maintained q
     new URL('apps/database/scripts/verify-employee-schema-contract.mjs', root),
     'utf8'
   );
+  assert.match(runner, /await runSchemaTypegen\(/u);
+  const typegen = readFileSync(
+    new URL('apps/database/scripts/employee-schema-typegen.mjs', root),
+    'utf8'
+  );
   assert.ok(
-    runner.indexOf('generatedTypesSha256 = generateEmployeeTypes(') <
-      runner.indexOf('publicConsumerState = await runEmployeePublicConsumer(')
+    typegen.indexOf('generatedTypesSha256 = generateEmployeeTypes(') <
+      typegen.indexOf('publicConsumerState = await runEmployeePublicConsumer(')
   );
   assert.match(
     runner,
