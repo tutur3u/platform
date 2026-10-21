@@ -12,6 +12,7 @@ import {
   fixtureBindings,
   SUPPLIER,
 } from './meet-native-profile.mjs';
+import { projectMeetRegistry } from './meet-native-registry-facts.mjs';
 import {
   diagnosticError,
   supplierReceipt,
@@ -131,6 +132,102 @@ export function createMeetOwner(startWorker, inputs) {
   };
 }
 
+function egressCounts(policies) {
+  return ['app', 'probe'].map((role) =>
+    ['forwarded', 'unexpected', 'controls'].map(
+      (key) => policies[role][key].length
+    )
+  );
+}
+
+export function createMeetStartup(
+  owner,
+  policies,
+  readRegistry,
+  projectRegistry
+) {
+  let failed = false,
+    startupError,
+    finishing;
+  return {
+    async start() {
+      try {
+        const adapters = await owner.start();
+        const before = egressCounts(policies);
+        const app = await adapters.fetchApp(
+          'https://meet.tuturuuu.com/.well-known/meeting-runtime',
+          { method: 'GET', redirect: 'manual' }
+        );
+        const appBody = await app.text();
+        assert.equal(app.status, 200, 'Meet startup health status');
+        let health;
+        try {
+          health = JSON.parse(appBody);
+        } catch {
+          throw new Error('Meet startup health body');
+        }
+        assert.ok(
+          health &&
+            typeof health === 'object' &&
+            !Array.isArray(health) &&
+            Object.keys(health).length === 1 &&
+            health.version === 1,
+          'Meet startup health body'
+        );
+        const probe = await adapters.fetchProbe(
+          'https://meet-ci-probe.invalid/startup-denial',
+          { method: 'POST', redirect: 'manual' }
+        );
+        const probeBody = await probe.text();
+        assert.equal(probe.status, 403, 'Meet startup probe status');
+        assert.ok(probeBody === 'Forbidden', 'Meet startup probe body');
+        assert.deepEqual(
+          egressCounts(policies),
+          before,
+          'Meet startup changed HTTP egress counters'
+        );
+        await readRegistry();
+        return adapters;
+      } catch (error) {
+        failed = true;
+        startupError = error;
+        throw error;
+      }
+    },
+    finish(...primary) {
+      finishing ??= (async () => {
+        let facts,
+          projectionError,
+          projectionFailed = false;
+        if (failed || primary.length) {
+          try {
+            facts = await projectRegistry();
+          } catch (error) {
+            projectionFailed = true;
+            projectionError = error;
+            facts = { schema: 1, status: 'unavailable' };
+          }
+        }
+        const result = await owner.finish(
+          ...(primary.length ? primary : failed ? [startupError] : [])
+        );
+        for (const error of [
+          ...(failed && !result.errors.includes(startupError)
+            ? [startupError]
+            : []),
+          ...(projectionFailed ? [projectionError] : []),
+        ]) {
+          result.errors.push(error);
+          result.receipt.errors.push(diagnosticError(error));
+        }
+        if (facts) result.receipt.preDisposalRegistry = facts;
+        return result;
+      })();
+      return finishing;
+    },
+  };
+}
+
 export async function createMeetGraph(
   plan,
   prepared,
@@ -196,11 +293,16 @@ export async function createMeetGraph(
   );
   const owner = createMeetOwner(startWorker, inputs);
   const startedAt = Date.now();
+  const startup = createMeetStartup(
+    owner,
+    policies,
+    () => readMeetRegistry(prepared, startedAt),
+    () => projectMeetRegistry(prepared, startedAt)
+  );
   return {
     supplier: receipt,
     async start() {
-      const adapters = await owner.start();
-      await readMeetRegistry(prepared, startedAt);
+      const adapters = await startup.start();
       assert.deepEqual(
         await supplierReceipt(plan.ownerPackage),
         receipt,
@@ -208,6 +310,6 @@ export async function createMeetGraph(
       );
       return adapters;
     },
-    finish: (...primary) => owner.finish(...primary),
+    finish: (...primary) => startup.finish(...primary),
   };
 }

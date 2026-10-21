@@ -170,6 +170,19 @@ exact-commit CI evidence. Never run it without a fresh sealed emitted artifact.
 Pure checks use `node --test scripts/ci/meet-native-admission.test.mjs
 scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs`.
 
+Public SDK readiness can precede the real user-worker registry publication.
+After acquiring and starting both handles, the graph makes exactly one public
+GET to the canonical app `/.well-known/meeting-runtime` route (200, version 1)
+and one unauthenticated probe POST (403, `Forbidden`). Both bodies must drain
+and validate, with unchanged outbound-hook counters, before the unchanged strict
+registry admission. This uses neither private readiness nor retries. Failure
+retains bounded projected registry facts in the existing private lifecycle receipt
+before reverse disposal: role categories and shape, freshness, loopback, mapping
+and instance-reuse booleans only, without raw names, records or identifiers.
+The projection never grants admission. Deferred-response/body-drain regressions
+and empty, foreign, stale, reused and invalid-mapping registry controls remain
+pure checks; actual SDK linking and deadline fit require exact-head hosted CI.
+
 The app config remains byte-identical, including metadata/normalization paths,
 ordered compatibility flags, ESModule rules, self-reference service, local R2,
 Images and Live SQLite migration. Normalization paths are provenance, never
