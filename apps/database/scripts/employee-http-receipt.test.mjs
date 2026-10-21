@@ -207,3 +207,37 @@ test('failed rejection transport retains only bounded step and primary assertion
       )
     );
 });
+
+test('provider rejection diagnostics distinguish absent errors from numeric HTTP results without raw data', () => {
+  const diagnostic = {
+    step: 'auth-status',
+    kind: 'assertion',
+    messageSha256: 'a'.repeat(64),
+    actual: 'undefined',
+    httpStatus: 200,
+    providerCode: 'none',
+    userReturned: true,
+  };
+  const failed = {
+    ...complete,
+    qualified: false,
+    phase: 'rejection-adjudication',
+    assertions: 29,
+    rejectionFailure: diagnostic,
+  };
+  assert.deepEqual(httpQualificationReceipt(JSON.stringify(failed)), failed);
+  for (const delta of [
+    { httpStatus: '200' },
+    { httpStatus: 600 },
+    { providerCode: 'private-error' },
+    { userReturned: 'SECRET' },
+  ])
+    assert.throws(() =>
+      httpQualificationReceipt(
+        JSON.stringify({
+          ...failed,
+          rejectionFailure: { ...diagnostic, ...delta },
+        })
+      )
+    );
+});

@@ -96,7 +96,16 @@ function rejectionFailure(value) {
     !['assertion', 'schema', 'other'].includes(value.kind) ||
     !/^[a-f0-9]{64}$/.test(value.messageSha256) ||
     Object.keys(value).some(
-      (key) => !['step', 'kind', 'messageSha256', 'actual'].includes(key)
+      (key) =>
+        ![
+          'step',
+          'kind',
+          'messageSha256',
+          'actual',
+          'httpStatus',
+          'userReturned',
+          'providerCode',
+        ].includes(key)
     ) ||
     (Object.hasOwn(value, 'actual') &&
       !(
@@ -115,10 +124,39 @@ function rejectionFailure(value) {
         false,
         null,
         'redacted',
+        'undefined',
       ].includes(value.actual))
   )
     throw new Error('Rejection failure diagnostic invalid');
+  if (
+    (value.httpStatus !== undefined &&
+      value.httpStatus !== null &&
+      !(
+        Number.isInteger(value.httpStatus) &&
+        value.httpStatus >= 100 &&
+        value.httpStatus <= 599
+      )) ||
+    (value.userReturned !== undefined &&
+      typeof value.userReturned !== 'boolean') ||
+    (value.providerCode !== undefined &&
+      ![
+        'weak_password',
+        'validation_failed',
+        'email_exists',
+        'unexpected_failure',
+        'none',
+        'redacted',
+      ].includes(value.providerCode))
+  )
+    throw new Error('Rejection provider observation invalid');
   return {
+    ...(value.httpStatus === undefined ? {} : { httpStatus: value.httpStatus }),
+    ...(value.userReturned === undefined
+      ? {}
+      : { userReturned: value.userReturned }),
+    ...(value.providerCode === undefined
+      ? {}
+      : { providerCode: value.providerCode }),
     step: value.step,
     kind: value.kind,
     messageSha256: value.messageSha256,

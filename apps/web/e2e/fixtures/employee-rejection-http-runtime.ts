@@ -16,6 +16,7 @@ export async function qualifyEmployeeRejectionHttp(input: {
   admin: SupabaseClient;
   transport: EmployeeRuntimeRpc;
   checkpoint: (step: string) => void;
+  observeAuth: (value: { userReturned: boolean; providerCode: string }) => void;
   complete: (
     operationId: string,
     email: string
@@ -59,6 +60,19 @@ export async function qualifyEmployeeRejectionHttp(input: {
     email_confirm: true,
     ban_duration: '876000h',
     app_metadata: { employee_onboarding: true },
+  });
+  input.observeAuth({
+    userReturned: rejected.data.user !== null,
+    providerCode: [
+      'weak_password',
+      'validation_failed',
+      'email_exists',
+      'unexpected_failure',
+    ].includes(rejected.error?.code ?? '')
+      ? (rejected.error?.code ?? 'redacted')
+      : rejected.error === null
+        ? 'none'
+        : 'redacted',
   });
   input.checkpoint('auth-status');
   assert.equal(rejected.error?.status, 422);

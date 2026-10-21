@@ -37,6 +37,9 @@ const Config = z.strictObject({
 let phase = 'configuration';
 let assertions = 0;
 let rejectionStep: string | null = null;
+let authHttpStatus: number | null = null;
+let authObservation: { userReturned: boolean; providerCode: string } | null =
+  null;
 let restoreQualification: Awaited<
   ReturnType<typeof qualifyEmployeeRestoreHttp>
 > | null = null;
@@ -45,6 +48,7 @@ function check(value: unknown) {
   assertions++;
 }
 function safeAssertionActual(value: unknown) {
+  if (value === undefined) return 'undefined';
   const parsed = z
     .union([
       z.number().int().min(0).max(599),
@@ -72,6 +76,18 @@ async function main() {
   );
   check(!url.username && !url.password && !url.search && !url.hash);
   const admin = createClient(config.url, config.key, {
+    global: {
+      fetch: async (request, init) => {
+        const response = await fetch(request, init);
+        if (
+          new URL(request instanceof Request ? request.url : request)
+            .pathname === '/auth/v1/admin/users' &&
+          init?.method === 'POST'
+        )
+          authHttpStatus = response.status;
+        return response;
+      },
+    },
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -343,6 +359,9 @@ commit;`,
   }
   phase = 'rejection-adjudication';
   await qualifyEmployeeRejectionHttp({
+    observeAuth: (value) => {
+      authObservation = value;
+    },
     checkpoint: (step) => {
       rejectionStep = step;
     },
@@ -388,6 +407,8 @@ try {
         ? {
             rejectionFailure: {
               step: rejectionStep,
+              httpStatus: authHttpStatus,
+              ...(authObservation ?? {}),
               kind:
                 error instanceof assert.AssertionError
                   ? 'assertion'
