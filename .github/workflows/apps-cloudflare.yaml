@@ -1,10 +1,88 @@
 name: Apps Cloudflare Source
 on:
   pull_request:
-    paths: ['apps/apps/**', 'packages/ai/**', 'packages/apis/**', 'packages/google/**', 'packages/hooks/**', 'packages/payment/**', 'packages/payment-core/**', 'packages/realtime/**', 'packages/storage-core/**', 'packages/turnstile/**', 'packages/auth/**', 'packages/satellite/**', 'packages/internal-api/**', 'packages/supabase/**', 'packages/ui/**', 'packages/utils/**', 'packages/icons/**', 'packages/types/**', 'packages/typescript-config/**', 'apps/web/package.json', 'scripts/ci/apps-native-*', 'bun.lock', '.github/workflows/apps-cloudflare.yaml', '.github/workflows/ci-check.yml', '.github/actions/setup-bun-with-retry/action.yml', '.github/actions/run-with-turbo-remote-cache/action.yml', 'scripts/ci/generate-build-metadata.ts', 'scripts/ci/check-workflow-config.ts', 'scripts/ci/workflow-config-core.ts', 'scripts/ci/workspace-dependency-closure.ts', 'scripts/ci/resolve-changed-files-core.ts', 'scripts/ci/resolve-changed-files.ts', 'package.json', 'turbo.json', 'tuturuuu.ts', 'tuturuuu.ci.ts']
+    paths:
+      [
+        'apps/apps/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/storage-core/**',
+        'packages/turnstile/**',
+        'packages/auth/**',
+        'packages/satellite/**',
+        'packages/internal-api/**',
+        'packages/supabase/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/icons/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'apps/web/package.json',
+        'scripts/ci/apps-native-*',
+        'scripts/ci/native-source-identity-test-helper.js',
+        'bun.lock',
+        '.github/workflows/apps-cloudflare.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
   push:
     branches: [main]
-    paths: ['apps/apps/**', 'packages/ai/**', 'packages/apis/**', 'packages/google/**', 'packages/hooks/**', 'packages/payment/**', 'packages/payment-core/**', 'packages/realtime/**', 'packages/storage-core/**', 'packages/turnstile/**', 'packages/auth/**', 'packages/satellite/**', 'packages/internal-api/**', 'packages/supabase/**', 'packages/ui/**', 'packages/utils/**', 'packages/icons/**', 'packages/types/**', 'packages/typescript-config/**', 'apps/web/package.json', 'scripts/ci/apps-native-*', 'bun.lock', '.github/workflows/apps-cloudflare.yaml', '.github/workflows/ci-check.yml', '.github/actions/setup-bun-with-retry/action.yml', '.github/actions/run-with-turbo-remote-cache/action.yml', 'scripts/ci/generate-build-metadata.ts', 'scripts/ci/check-workflow-config.ts', 'scripts/ci/workflow-config-core.ts', 'scripts/ci/workspace-dependency-closure.ts', 'scripts/ci/resolve-changed-files-core.ts', 'scripts/ci/resolve-changed-files.ts', 'package.json', 'turbo.json', 'tuturuuu.ts', 'tuturuuu.ci.ts']
+    paths:
+      [
+        'apps/apps/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/storage-core/**',
+        'packages/turnstile/**',
+        'packages/auth/**',
+        'packages/satellite/**',
+        'packages/internal-api/**',
+        'packages/supabase/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/icons/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'apps/web/package.json',
+        'scripts/ci/apps-native-*',
+        'scripts/ci/native-source-identity-test-helper.js',
+        'bun.lock',
+        '.github/workflows/apps-cloudflare.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
 permissions:
   contents: read
 concurrency:
@@ -43,6 +121,7 @@ jobs:
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Artifact helper source regressions
         run: |
+          node --test scripts/ci/apps-native-source-identity.test.js
           python3 scripts/ci/apps-native-artifact.test.py
           node --test scripts/ci/apps-native-runtime-pointer.test.mjs
       - name: Build required active workspace dependencies
@@ -110,10 +189,11 @@ jobs:
               success|failure) source_origin=fresh-bootstrap ;;
             esac
           fi
-          evidence="$RUNNER_TEMP/apps-route-tree-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence="$RUNNER_TEMP/apps-route-tree-$APPS_SOURCE_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           mkdir "$evidence"
           cp "$route_tree" "$evidence/routeTree.gen.ts"
           {
+            printf 'expected_source_sha=%s\n' "$APPS_SOURCE_SHA"
             printf 'source_head=%s\n' "$(git rev-parse HEAD)"
             printf 'github_sha=%s\n' "$GITHUB_SHA"
             printf 'prebuild_state=%s\n' "$APPS_ROUTE_TREE_BEFORE"
@@ -127,8 +207,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: apps-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/apps-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/
+          name: apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}/
           retention-days: 7
           if-no-files-found: warn
       - name: Reject tracked Apps route tree drift
@@ -150,12 +230,12 @@ jobs:
         run: python3 scripts/ci/apps-native-artifact.py config apps/apps
       - name: Record bounded apps native emitted config receipt
         if: always()
-        run: node scripts/ci/native-emitted-config-receipt.mjs apps/apps "${{ github.sha }}" "$RUNNER_TEMP/native-emitted-config-apps.json"
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/apps "$APPS_SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config-apps.json"
       - name: Retain apps diagnostic config receipt
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: apps-native-config-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: apps-native-config-receipt-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/native-emitted-config-apps.json
           retention-days: 7
           if-no-files-found: error
