@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Calendar behavior across Web, standalone Calendar, and mobile."
-updatedAt: "2026-10-21"
+updatedAt: "2026-10-22"
 ---
 
 ## Public authentication completion document
@@ -28,6 +28,25 @@ shared token consumer, locale resolution, anonymous page model, security policy,
 cookie cleanup and token-bearing/protected negative controls. The emitted Worker
 suite separately requires 200 EN/VI HTML, hydration assets and framing protection;
 source tests do not establish hosted or restored-artifact acceptance.
+
+## Browser language fallback
+
+Standalone Calendar filters wildcard and invalid BCP 47 language ranges before
+matching browser preferences. A wildcard-only, zero-quality-only or otherwise
+empty usable language list falls back to English. Remaining valid ranges retain
+Negotiator's quality ordering and the existing English/Vietnamese best-fit
+matching, including regional tags. An explicit supported path locale takes
+precedence over a valid `NEXT_LOCALE` cookie, followed by browser preferences.
+
+This applies to Calendar document/native-function locale resolution and the
+browser-language default used by its existing login middleware. Token
+verification, authenticated routes and callback redirects retain their existing
+authentication contracts. Web, mobile and other apps use their own locale rules.
+`apps/calendar/src/runtime/request-locale.test.ts` and
+`apps/calendar/src/runtime/public-completion.test.ts` cover wildcard/malformed
+ranges, regional and quality preferences, precedence, the real public proxy and
+login locale middleware. Hosted request headers and Worker acceptance require
+separate evidence.
 
 ## Calendar editor timezone
 

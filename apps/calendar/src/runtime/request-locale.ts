@@ -17,12 +17,25 @@ export function resolveCalendarLocale(
     new RequestCookies(request.headers).get(LOCALE_COOKIE_NAME)?.value
   );
   if (cookie) return cookie;
+  return preferredCalendarLocale(request.headers.get('accept-language'));
+}
+
+export function preferredCalendarLocale(acceptLanguage: string | null): Locale {
   const languages = new Negotiator({
     headers: {
-      'accept-language':
-        request.headers.get('accept-language') ?? 'en-US,en;q=0.5',
+      'accept-language': acceptLanguage ?? 'en-US,en;q=0.5',
     },
-  }).languages();
+  })
+    .languages()
+    .flatMap((language) => {
+      if (language === '*') return [];
+      try {
+        return Intl.getCanonicalLocales(language);
+      } catch (error) {
+        if (error instanceof RangeError) return [];
+        throw error;
+      }
+    });
   return (
     supported(match(languages, supportedLocales, defaultLocale)) ??
     defaultLocale

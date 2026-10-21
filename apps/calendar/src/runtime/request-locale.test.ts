@@ -87,3 +87,42 @@ describe('Calendar locale selection for documents and native functions', () => {
     );
   });
 });
+
+it.each([
+  ['*', 'en'],
+  ['*;q=1,vi-VN;q=0.8,en-US;q=0.5', 'vi'],
+  ['vi-VN;q=0.8,*;q=0.5,en-US;q=0.2', 'vi'],
+  ['en_US,vi-VN;q=0.8', 'vi'],
+  ['en_US', 'en'],
+  ['vi;q=0,*;q=0', 'en'],
+  ['vi;q=0,en-GB;q=0.5,*;q=1', 'en'],
+  ['vi-VN,en-US;q=0.5', 'vi'],
+  ['en-GB', 'en'],
+  ['en-GB,vi-VN;q=0.5', 'vi'],
+  ['en-US;q=0.4,vi-VN;q=0.9', 'vi'],
+  ['vi;q=0.5,en;q=0.5', 'vi'],
+  ['', 'en'],
+])(
+  'resolves browser preference %s without passing invalid tags to Intl: %s',
+  (language, locale) => {
+    expect(
+      resolveCalendarLocale(
+        request('/verify-token', { 'accept-language': language })
+      )
+    ).toBe(locale);
+  }
+);
+
+it.each([
+  ['/en/verify-token', 'NEXT_LOCALE=vi', 'en'],
+  ['/vi/verify-token', 'NEXT_LOCALE=en', 'vi'],
+  ['/verify-token', 'NEXT_LOCALE=vi', 'vi'],
+  ['/verify-token', 'NEXT_LOCALE=en', 'en'],
+])(
+  'preserves path then valid cookie precedence over wildcard for %s',
+  (path, cookie, locale) => {
+    expect(
+      resolveCalendarLocale(request(path, { cookie, 'accept-language': '*' }))
+    ).toBe(locale);
+  }
+);

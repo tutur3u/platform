@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ports = vi.hoisted(() => ({
@@ -300,3 +300,72 @@ describe('real production Calendar completion proxy and locale contract', () => 
     expect(outbound).not.toHaveBeenCalled();
   });
 });
+
+it.each(['GET', 'HEAD'])(
+  'keeps real public completion %s safe for a wildcard language preference',
+  async (method) => {
+    const { response, render } = await dispatch(
+      new Request(`${origin}/verify-token`, {
+        method,
+        headers: { 'accept-language': '*' },
+      })
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.has('location')).toBe(false);
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
+    expect(response.headers.get('content-security-policy')).toContain(
+      "frame-ancestors 'none'"
+    );
+    expect(await response.text()).toContain('lang="en"');
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(ports.actor).not.toHaveBeenCalled();
+    expect(ports.data).not.toHaveBeenCalled();
+    expect(outbound).not.toHaveBeenCalled();
+  }
+);
+
+it.each([
+  ['*', 'en'],
+  ['*;q=1,vi-VN;q=0.8,en-US;q=0.5', 'vi'],
+  ['en_US,vi-VN;q=0.8', 'vi'],
+  ['vi;q=0,*;q=0', 'en'],
+])(
+  'keeps real login locale middleware safe for browser preference %s',
+  async (language, locale) => {
+    const request = new Request(`${origin}/login`, {
+      headers: { 'accept-language': language },
+    });
+    const response = await proxy(new NextRequest(request));
+    expect(response.headers.has('location')).toBe(false);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      `${origin}/${locale}/login`
+    );
+    expect(
+      response.headers.get('x-middleware-request-x-next-intl-locale')
+    ).toBe(locale);
+    expect(outbound).not.toHaveBeenCalled();
+    expect(ports.data).not.toHaveBeenCalled();
+  }
+);
+
+it.each([
+  ['/verify-token', 'NEXT_LOCALE=vi', '*', 'vi'],
+  ['/en/verify-token', 'NEXT_LOCALE=vi', '*', 'en'],
+  ['/vi/verify-token', 'NEXT_LOCALE=en', '*', 'vi'],
+  ['/verify-token', 'NEXT_LOCALE=unsupported', '*;q=1,vi-VN;q=0.8', 'vi'],
+])(
+  'keeps real public completion locale precedence for %s with %s',
+  async (path, cookie, language, locale) => {
+    const { response } = await dispatch(
+      new Request(`${origin}${path}`, {
+        headers: { cookie, 'accept-language': language },
+      })
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.has('location')).toBe(false);
+    expect(await response.text()).toContain(`lang="${locale}"`);
+    expect(ports.actor).not.toHaveBeenCalled();
+    expect(ports.data).not.toHaveBeenCalled();
+    expect(outbound).not.toHaveBeenCalled();
+  }
+);

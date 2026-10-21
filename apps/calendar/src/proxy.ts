@@ -1,4 +1,3 @@
-import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -26,13 +25,15 @@ import {
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
-import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
-import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
-import { resolveCalendarLocale } from './runtime/request-locale';
+import { type Locale, supportedLocales } from './i18n/routing';
+import {
+  preferredCalendarLocale,
+  resolveCalendarLocale,
+} from './runtime/request-locale';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -346,18 +347,8 @@ const getDefaultLocale = (
 ): {
   locale: Locale;
 } => {
-  // Get browser languages
-  const headers = {
-    'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
-  };
-
-  const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, supportedLocales, defaultLocale);
-
   return {
-    locale: supportedLocales.includes(detectedLocale as Locale)
-      ? (detectedLocale as Locale)
-      : defaultLocale,
+    locale: preferredCalendarLocale(req.headers.get('accept-language')),
   };
 };
 
