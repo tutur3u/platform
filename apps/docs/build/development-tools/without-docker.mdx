@@ -208,7 +208,11 @@ natural child close and stdout/stderr drainage before independently checking
 original/copy seals, both SDK work directories, registry removal, foreign sentinel
 and temporary-root inventory. A verified retained snapshot precedes removal;
 any failed gate retains scratch. Finalization persistence has readback checks.
-Private seven-day CI artifacts retain the complete graph diagnostic evidence;
+Private seven-day CI artifacts retain a tar archive of the existing owned
+`meet-native-run-*` roots, including hidden `.wrangler` snapshot files, modes,
+links and empty directories. Upload only the archive, avoiding the upload action's
+hidden-file filter. `meet-native-evidence.test.mjs` executes both selected packaging
+commands and compares extracted inventories, including an omission negative;
 logs contain bounded statuses rather than fixture credentials. No sweeper, retry,
 forced exit or private SDK controller may manufacture closure. SDK internal
 cleanup and descendant closure remain UNKNOWN even after public disposal and

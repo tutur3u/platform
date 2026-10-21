@@ -148,7 +148,7 @@ jobs:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Test build identity and workflow ordering
-        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs
+        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs
       - name: Test diagnostic receipt serialization
         run: node --test scripts/ci/native-emitted-config-receipt.test.mjs scripts/ci/native-receipt-layout.test.mjs
       - name: Build realtime dependencies and test realtime
@@ -319,12 +319,20 @@ jobs:
           GITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?
           test "$meet_status" -eq 0
           test "$sdk_status" -eq 0
+      - name: Pack finite Meet graph evidence
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -- meet-native-run-*
+          if [ -d "$1" ]; then
+            tar -czf meet-native-evidence.tar.gz -- "$@"
+          fi
       - name: Retain finite Meet graph evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: meet-native-graph-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/meet-native-run-*/
+          path: ${{ runner.temp }}/meet-native-evidence.tar.gz
           retention-days: 7
           if-no-files-found: warn
       - name: Validate both Worker bundles
@@ -424,12 +432,20 @@ jobs:
         env:
           WRANGLER_SEND_METRICS: 'false'
         run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA"
+      - name: Pack restored finite Meet graph evidence
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -- meet-native-run-*
+          if [ -d "$1" ]; then
+            tar -czf meet-native-evidence.tar.gz -- "$@"
+          fi
       - name: Retain restored finite Meet graph evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: meet-restored-native-graph-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/meet-native-run-*/
+          path: ${{ runner.temp }}/meet-native-evidence.tar.gz
           retention-days: 7
           if-no-files-found: warn
       - name: Recheck artifact after restored runtime qualification
