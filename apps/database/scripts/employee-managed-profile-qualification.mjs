@@ -11,6 +11,7 @@ import {
 export const managedProfilePackets = [
   ['employee-managed-profile.sql', 53],
   ['employee-admin-profile-usernames.sql', 74],
+  ['employee-unmanaged-profile-usernames.sql', 100],
   ['employee-managed-profile-concurrency.sql', 10],
 ];
 function selected(journal) {
@@ -132,6 +133,13 @@ export function schemaFailureDiagnostic(phase, ordinal, result = {}, ...args) {
 
 export function assertQualifiedHttp(value, status, restore) {
   baseHttp(value, status, restore);
-  if (selected(true) && value.managedProfileQualification?.qualified !== true)
+  if (
+    selected(true) &&
+    (value.managedProfileQualification?.qualified !== true ||
+      value.managedProfileQualification.unmanagedProfileQualification
+        ?.qualified !== true ||
+      value.managedProfileQualification.unmanagedProfileQualification
+        .version !== 1)
+  )
     throw new Error('Managed profile HTTP qualification incomplete');
 }

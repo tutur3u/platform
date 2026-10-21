@@ -192,12 +192,279 @@ export async function qualifyManagedProfileHttp(input: {
     check(duplicate.error?.code === '23505');
     usernameLengths.push(username.length);
   }
+  const unmanagedProfileQualification = await qualifyUnmanagedProfileHttp(
+    input,
+    target
+  );
   return {
     qualified: true,
     assertions,
     writes,
     usernameLengths,
+    unmanagedProfileQualification,
     lostAcknowledgementReadback: true,
+    routeAuthorizationProof: false,
+    productionProof: false,
+  };
+}
+
+/** Bounded legacy identities belong only to this disposable qualification project. */
+async function qualifyUnmanagedProfileHttp(
+  input: Parameters<typeof qualifyManagedProfileHttp>[0],
+  managedTarget: { id: string; email: string }
+) {
+  let assertions = 0;
+  let writes = 0;
+  let lostAcknowledgements = 0;
+  const check = (value: unknown) => {
+    assert.ok(value);
+    assertions++;
+  };
+  const headers = {
+    apikey: input.key,
+    Authorization: `Bearer ${input.key}`,
+    'Content-Type': 'application/json',
+    'Content-Profile': 'private',
+    'Accept-Profile': 'private',
+    Prefer: 'tx=commit',
+  };
+  const receiptSchema = z
+    .object({
+      operationId: z.uuid(),
+      actorUserId: z.uuid(),
+      id: z.uuid(),
+      email: z.email(),
+      expectedDisplayName: z.string().nullable(),
+      expectedUsername: z.string().nullable(),
+      displayName: z.string(),
+      username: z.string().nullable(),
+    })
+    .strict();
+  const observationSchema = z
+    .object({
+      current: z
+        .object({
+          managed: z.literal(false),
+          id: z.uuid(),
+          email: z.email(),
+          displayName: z.string().nullable(),
+          username: z.string().nullable(),
+        })
+        .strict(),
+      receipt: receiptSchema.nullable(),
+    })
+    .strict();
+  const request = (name: string, body: object) =>
+    fetch(new URL(`/rest/v1/rpc/${name}`, input.url), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      redirect: 'error',
+      signal: AbortSignal.timeout(8000),
+    });
+  const call = async (
+    name:
+      | 'update_unmanaged_internal_profile'
+      | 'inspect_unmanaged_internal_profile_operation',
+    body: object
+  ) => {
+    const response = await request(name, body);
+    const data: unknown = await response.json();
+    if (!response.ok)
+      return { data: null, error: z.object({ code: z.string() }).parse(data) };
+    return { data, error: null };
+  };
+  const createTarget = async () => {
+    const email = `legacy-profile-${randomUUID()}@tuturuuu.com`;
+    const response = await fetch(new URL('/auth/v1/admin/users', input.url), {
+      method: 'POST',
+      headers: {
+        apikey: input.key,
+        Authorization: `Bearer ${input.key}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        email_confirm: false,
+        password: `${randomUUID()}aA!9`,
+        user_metadata: { full_name: 'Legacy HTTP Original' },
+      }),
+      redirect: 'error',
+      signal: AbortSignal.timeout(8000),
+    });
+    check(response.ok);
+    const user = z
+      .object({ id: z.uuid(), email: z.literal(email) })
+      .parse(await response.json());
+    return {
+      p_actor_id: input.actorUserId,
+      p_user_id: user.id,
+      p_email: user.email,
+    };
+  };
+  const duplicate = await createTarget();
+  const duplicateInitial = await call(
+    'inspect_unmanaged_internal_profile_operation',
+    { ...duplicate, p_operation_id: randomUUID() }
+  );
+  check(!duplicateInitial.error);
+  const duplicateCurrent = observationSchema.parse(
+    duplicateInitial.data
+  ).current;
+  const usernameLengths = [];
+  for (const username of [
+    'v',
+    'haha',
+    'n'.repeat(33),
+    'o'.repeat(65),
+    'p'.repeat(81),
+    'r'.repeat(1001),
+  ]) {
+    const tuple = await createTarget();
+    const p_operation_id = randomUUID();
+    const initial = await call('inspect_unmanaged_internal_profile_operation', {
+      ...tuple,
+      p_operation_id,
+    });
+    check(!initial.error);
+    const preimage = observationSchema.parse(initial.data).current;
+    const payload = {
+      ...tuple,
+      p_operation_id,
+      p_expected_name: preimage.displayName,
+      p_expected_handle: preimage.username,
+      p_name: 'Legacy HTTP Updated',
+      p_handle: username,
+    };
+    const lostAck = new Error('Synthetic legacy lost acknowledgement');
+    try {
+      writes++;
+      const response = await request(
+        'update_unmanaged_internal_profile',
+        payload
+      );
+      check(response.ok);
+      await response.arrayBuffer();
+      throw lostAck;
+    } catch (error) {
+      check(error === lostAck);
+      lostAcknowledgements++;
+    }
+    const independent = await call(
+      'inspect_unmanaged_internal_profile_operation',
+      { ...tuple, p_operation_id }
+    );
+    check(!independent.error);
+    const observed = observationSchema.parse(independent.data);
+    const expected = {
+      operationId: p_operation_id,
+      actorUserId: tuple.p_actor_id,
+      id: tuple.p_user_id,
+      email: tuple.p_email,
+      expectedDisplayName: preimage.displayName,
+      expectedUsername: preimage.username,
+      displayName: payload.p_name,
+      username,
+    };
+    check(
+      isDeepStrictEqual(observed.receipt, expected) &&
+        observed.current.username === username &&
+        observed.current.displayName === payload.p_name &&
+        observed.current.id === tuple.p_user_id &&
+        observed.current.email === tuple.p_email
+    );
+    const replay = await call('update_unmanaged_internal_profile', payload);
+    check(
+      !replay.error &&
+        isDeepStrictEqual(receiptSchema.parse(replay.data), expected)
+    );
+    const stale = await call('update_unmanaged_internal_profile', {
+      ...payload,
+      p_operation_id: randomUUID(),
+    });
+    check(stale.error?.code === '23514');
+    const conflict = await call('update_unmanaged_internal_profile', {
+      ...payload,
+      p_name: 'Changed payload',
+    });
+    check(conflict.error?.code === '23505');
+    const duplicateWrite = await call('update_unmanaged_internal_profile', {
+      ...payload,
+      ...duplicate,
+      p_operation_id: randomUUID(),
+      p_expected_name: duplicateCurrent.displayName,
+      p_expected_handle: duplicateCurrent.username,
+    });
+    check(duplicateWrite.error?.code === '23505');
+    const ownershipUrl = new URL('/rest/v1/handles', input.url);
+    ownershipUrl.searchParams.set('value', `eq.${username}`);
+    ownershipUrl.searchParams.set('select', 'creator_id');
+    const ownershipResponse = await fetch(ownershipUrl, {
+      headers: { apikey: input.key, Authorization: `Bearer ${input.key}` },
+      redirect: 'error',
+      signal: AbortSignal.timeout(8000),
+    });
+    const owners = z
+      .array(z.object({ creator_id: z.uuid() }))
+      .parse(await ownershipResponse.json());
+    check(
+      ownershipResponse.ok &&
+        owners.length === 1 &&
+        owners[0]?.creator_id === tuple.p_user_id
+    );
+    usernameLengths.push(username.length);
+  }
+  for (const username of ['v', 'haha', 'n'.repeat(33)]) {
+    const response = await fetch(
+      new URL('/rest/v1/rpc/update_public_user_profile', input.url),
+      {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Profile': 'public',
+          'Accept-Profile': 'public',
+        },
+        body: JSON.stringify({
+          p_user_id: duplicate.p_user_id,
+          p_patch: { handle: username },
+        }),
+        redirect: 'error',
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    const error = z.object({ code: z.string() }).parse(await response.json());
+    check(!response.ok && error.code === '22023');
+  }
+  const managed = await call('update_unmanaged_internal_profile', {
+    p_actor_id: input.actorUserId,
+    p_user_id: managedTarget.id,
+    p_email: managedTarget.email,
+    p_operation_id: randomUUID(),
+    p_expected_name: null,
+    p_expected_handle: null,
+    p_name: 'Loose Rename',
+    p_handle: 'legacyloose',
+  });
+  check(managed.error?.code === '23514');
+  const ordinary = await call('update_unmanaged_internal_profile', {
+    ...duplicate,
+    p_actor_id: duplicate.p_user_id,
+    p_operation_id: randomUUID(),
+    p_expected_name: duplicateCurrent.displayName,
+    p_expected_handle: duplicateCurrent.username,
+    p_name: 'Forbidden',
+    p_handle: 'forbiddenlegacy',
+  });
+  check(ordinary.error?.code === '42501');
+  check(writes === 6);
+  check(lostAcknowledgements === 6);
+  return {
+    version: 1,
+    qualified: true,
+    assertions,
+    writes,
+    lostAcknowledgements,
+    usernameLengths,
     routeAuthorizationProof: false,
     productionProof: false,
   };

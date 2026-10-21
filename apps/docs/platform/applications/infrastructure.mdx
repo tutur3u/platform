@@ -570,9 +570,21 @@ capability with fresh root authority. Only `users.handle` and `handles.value`
 length enforcement admits that exception; bare service writes cannot mint it.
 Exact reservation ownership, uniqueness and cooldowns remain enforced. Previously
 owned handles stay reserved, unlike the legacy unmanaged writer's release of old
-handles. NULL or foreign reservations are never adopted. Unmanaged eligibility
-retains its existing path. Failed writes roll back profile, mailbox, handle,
+handles. NULL or foreign reservations are never adopted. Failed writes roll back profile, mailbox, handle,
 quota, revision, capability and receipt changes.
+
+Legacy unmanaged Infrastructure edits use a separate private atomic SQL entrypoint
+with fresh root authority, exact target/email admission and nullable name/username
+preimage comparison. Exact `@tuturuuu.com` eligibility includes disabled and
+unconfirmed targets. Managed registry, intent, onboarding, CREATE, RESTORE or
+address-migration evidence excludes this path. Its protected transaction context
+admits the same username length exception without bypassing syntax, reservations
+or quotas. The transaction releases only the target's previous owned handle and
+appends an immutable operation receipt; failures roll everything back. Independent
+operation inspection verifies committed current state after success or a lost
+acknowledgement, without another write. Legacy edits do not change managed names,
+mailbox state or employee provenance. Regression coverage includes
+`employee-unmanaged-profile-usernames.sql` and the versioned legacy HTTP packet.
 
 Pending/inconsistent employees and unresolved CREATE, RESTORE or address
 operations cannot be renamed. Original CREATE names, intent and journal remain

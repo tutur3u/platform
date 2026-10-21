@@ -756,17 +756,17 @@ source-only gate enabled; do not build locally or bypass type errors.
 ## Managed profile qualification
 
 Select `include_managed_profile=true` with `include_journal=true` on the same reviewed control/source commit.
-The canonical runner adds `employee-managed-profile.sql` (53 rollback assertions),
-`employee-managed-profile-concurrency.sql` (10 independent-session assertions) and
-`employee-admin-profile-usernames.sql` (74 rollback assertions), then generates types from that disposable database.
-The username packet exercises changed 1/4/33/65/81/1001-character handles, ownership conflicts, null clear,
-unchanged public 5–32 policy, protected capability denial, CAS/replay, lineage and preserved account data.
-Generic `users.handle` and `handles.value` length CHECKs move to equivalent trigger enforcement with an exact
-administrator capability exception; other fields retain their limits. B-tree key/storage limits remain physical bounds.
-Optional defaults remain unchanged. `managedProfileQualified` requires all three exact packets, same-run types digest,
-base packet success and positive owned cleanup. Missing packets or the old HTTP receipt cannot qualify.
-
-With `include_http=true`, `qualifyManagedProfileHttp` requires an exact 47-assertion receipt: one lost-ACK write,
-independent receipt inspection and changed handles at lengths 4/1/33/65/81/1001 with duplicate and stale-CAS denials.
+The runner selects rollback packets `employee-managed-profile.sql` (53), `employee-admin-profile-usernames.sql` (74),
+then `employee-unmanaged-profile-usernames.sql` (100), before the committed `employee-managed-profile-concurrency.sql` (10).
+Types come from the same disposable database. Username packets exercise changed 1/4/33/65/81/1001-character handles,
+null clear, exact ownership, duplicate/CAS/replay denials, unchanged public 5–32 policy and preserved account data.
+The legacy packet additionally rejects partial/historical managed evidence, revoked actors and wrong identity/domain;
+it preserves disabled/unconfirmed target eligibility, nullable preimages and atomic owned old-handle release.
+Only exact protected contexts admit length exceptions; other generic limits and B-tree physical bounds remain.
+Optional defaults remain unchanged. `managedProfileQualified` requires all four exact packets, same-run types digest,
+base packet success and positive owned cleanup. Missing packets and old receipts cannot qualify.
+With `include_http=true`, the managed receipt remains exactly 47 assertions and one lost-ACK write.
+Its required `unmanagedProfileQualification` v1 adds 75 assertions, lengths 1/4/33/65/81/1001, six single writes with
+lost-ACK independent inspection, exact replay, stale-CAS/duplicate/managed-bypass/ordinary-actor and public-policy denials.
 These SQL/PostgREST checks do not establish authenticated Web route composition, browser or production acceptance.
 Require separate authenticated route qualification; see the [Infrastructure contract](/platform/applications/infrastructure#managed-employee-profile-edits).

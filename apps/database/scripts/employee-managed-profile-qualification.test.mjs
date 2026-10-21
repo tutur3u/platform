@@ -411,6 +411,16 @@ test('managed HTTP receipt rejects the old length-limited fixture and missing le
       assertions: 47,
       writes: 1,
       usernameLengths: [4, 1, 33, 65, 81, 1001],
+      unmanagedProfileQualification: {
+        version: 1,
+        qualified: true,
+        assertions: 75,
+        writes: 6,
+        lostAcknowledgements: 6,
+        usernameLengths: [1, 4, 33, 65, 81, 1001],
+        routeAuthorizationProof: false,
+        productionProof: false,
+      },
       lostAcknowledgementReadback: true,
       routeAuthorizationProof: false,
       productionProof: false,
@@ -424,6 +434,33 @@ test('managed HTTP receipt rejects the old length-limited fixture and missing le
       })
     );
   assert.deepEqual(parse(receipt.managedProfileQualification), receipt);
+  const { unmanagedProfileQualification, ...oldManagedOnly } =
+    receipt.managedProfileQualification;
+  assert.throws(
+    () => parse(oldManagedOnly),
+    /Unmanaged profile HTTP receipt invalid/u
+  );
+  for (const incomplete of [
+    { ...unmanagedProfileQualification, version: 0 },
+    { ...unmanagedProfileQualification, assertions: 74 },
+    { ...unmanagedProfileQualification, writes: 5 },
+    { ...unmanagedProfileQualification, lostAcknowledgements: 5 },
+    ...unmanagedProfileQualification.usernameLengths.map((length) => ({
+      ...unmanagedProfileQualification,
+      usernameLengths: unmanagedProfileQualification.usernameLengths.filter(
+        (value) => value !== length
+      ),
+    })),
+  ])
+    assert.throws(
+      () =>
+        parse({
+          ...receipt.managedProfileQualification,
+          unmanagedProfileQualification: incomplete,
+        }),
+      /Unmanaged profile HTTP receipt invalid/u
+    );
+
   assert.throws(
     () => parse({ ...receipt.managedProfileQualification, assertions: 11 }),
     /Managed profile HTTP receipt invalid/u
@@ -466,4 +503,24 @@ test('rollback username packet precedes committed concurrency fixtures', () => {
     ([file]) => file === 'employee-managed-profile-concurrency.sql'
   );
   assert.ok(username >= 0 && concurrency >= 0 && username < concurrency);
+});
+
+test('unmanaged packet has a closed exact rollback plan before committed sessions', () => {
+  const file = 'employee-unmanaged-profile-usernames.sql';
+  const sql = readFileSync(
+    new URL(`../supabase/tests/${file}`, import.meta.url),
+    'utf8'
+  );
+  const count = sql.match(/^select (?:is|ok|throws_ok)\(/gmu)?.length;
+  assert.equal(count, 100);
+  assert.deepEqual(
+    managedProfilePackets.find(([name]) => name === file),
+    [file, count]
+  );
+  assert.doesNotThrow(() => assertRollbackSource(sql));
+  const position = managedProfilePackets.findIndex(([name]) => name === file);
+  const committed = managedProfilePackets.findIndex(
+    ([name]) => name === 'employee-managed-profile-concurrency.sql'
+  );
+  assert.ok(position >= 0 && position < committed);
 });
