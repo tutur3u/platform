@@ -82,10 +82,10 @@ test('feedback selection is separate from every existing optional profile', () =
     assert.throws(() => selectSchemaPackets(false, false, false, value));
   for (const [journal, personal, address, count] of [
     [false, false, false, 172],
-    [true, false, false, 301],
+    [true, false, false, 324],
     [false, true, false, 196],
     [false, false, true, 253],
-    [true, false, true, 382],
+    [true, false, true, 405],
   ]) {
     const selected = selectSchemaPackets(journal, personal, address, false);
     assert.deepEqual(selected, selectSchemaPackets(journal, personal, address));

@@ -190,9 +190,9 @@ activates this optional phase; fresh independent review and parent exact-source 
 control hosted admission remain required. Feature activation is separate.
 
 Select `include_journal=true` on the employee schema workflow to apply the full
-selected database snapshot and run 301 rollback assertions: the original 172,
-48 durable-operation assertions, 61 reserved-preflight assertions and 20 HTTP
-runtime-observation assertions. The receipt
+selected database snapshot and run 324 rollback assertions: the original 172,
+48 durable-operation assertions, 61 reserved-preflight assertions, 20 HTTP
+runtime-observation assertions and 23 rejection-adjudication assertions. The receipt
 uses the `employee-creation-restoration-journal` scope and fails if any packet,
 assertion, lifecycle step or cleanup proof is missing. The default remains the
 172-assertion foundation profile. This SQL gate does not qualify the fixed worker,
@@ -496,7 +496,7 @@ artifact and all independent production gates.
 
 `include_restore=true` additionally requires both `include_http=true` and
 `include_journal=true`. It extends the same disposable project, exact-source
-checkout, bounded child and always-run cleanup. The default 301 SQL and 29 CREATE
+checkout, bounded child and always-run cleanup. The default 324 SQL and 29 CREATE
 HTTP checks retain their counts. RESTORE adds 66 checks in seven fixed phases:
 RPC permissions (18), success/replay/conflict (11), lost committed reservation,
 attempt and completion acknowledgements (8 each), lost successful GoTrue unban
