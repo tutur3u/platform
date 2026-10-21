@@ -125,6 +125,20 @@ prototype retains its separate operator, connection and asset qualification
 requirements. RESTORE and legacy-domain migration remain separate runtime flows;
 successful CREATE qualification does not establish either behavior.
 
+In the Infrastructure CREATE form and Web boundary, the shared password schema
+requires 12–72 characters with lowercase and uppercase ASCII letters, a digit
+and ASCII punctuation before journal admission. The password remains transient.
+Normal success confirms that the account is ready to sign in without an extra
+observation request. After an uncertain response, the browser retains the original
+operation reference scoped to actor and workspace, without retaining the password,
+and admits up to six observation checks within 30 seconds of the first check.
+These reads never replay CREATE. Completion requires independent active onboarding
+identity and fresh SQL account/profile/mailbox/grant proof; incomplete outcomes
+retain the original operation and stay blocked against another CREATE. This
+behavior does not promise a creation latency. Regression coverage and remaining
+runtime evidence are recorded in the
+[CREATE qualification contract](../../build/development-tools/employee-schema-qualification#original-create-response-recovery).
+
 ### Managed employee inspection
 
 Web serves `GET /api/v1/infrastructure/internal-accounts/employees/:userId`

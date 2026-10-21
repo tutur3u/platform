@@ -8778,7 +8778,7 @@
       "close": "Close",
       "confirming": "Confirming the original creation…",
       "conflict": "This creation conflicts with an existing account or operation. No creation was retried.",
-      "created": "The server confirmed the employee account was created. Refresh the directory to inspect it.",
+      "created": "The employee account is confirmed and ready to sign in.",
       "denied": "The request was refused before creation. Verify access and availability before submitting again.",
       "description": "Create a managed staff identity after server checks confirm access and readiness.",
       "email": "Staff email",

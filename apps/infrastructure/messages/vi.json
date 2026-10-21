@@ -8778,7 +8778,7 @@
       "close": "Đóng",
       "confirming": "Đang xác nhận thao tác tạo ban đầu…",
       "conflict": "Thao tác tạo xung đột với tài khoản hoặc thao tác hiện có. Hệ thống không thử tạo lại.",
-      "created": "Máy chủ đã xác nhận tạo tài khoản nhân viên. Làm mới danh bạ để kiểm tra.",
+      "created": "Tài khoản nhân viên đã được xác nhận và sẵn sàng đăng nhập.",
       "denied": "Yêu cầu bị từ chối trước khi tạo tài khoản. Kiểm tra quyền truy cập và trạng thái khả dụng trước khi gửi lại.",
       "description": "Tạo danh tính nhân viên được quản lý sau khi máy chủ xác nhận quyền truy cập và điều kiện sẵn sàng.",
       "email": "Email nhân viên",
