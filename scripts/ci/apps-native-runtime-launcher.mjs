@@ -138,11 +138,16 @@ export function requireAppsReceipt(receipt, plan, mode) {
   for (const role of roles) {
     const policy = receipt.policies[role];
     assert.deepEqual(Object.keys(policy).sort(), [
+      'assurance',
       'controls',
       'permitted',
       'unexpected',
     ]);
     assert.equal(policy.controls, 2);
+    assert.equal(
+      policy.assurance,
+      mode === 'browser' ? 0 : role === 'app' ? 4 : 1
+    );
     assert.ok(Number.isInteger(policy.permitted));
     if (mode === 'http' && role === 'app')
       assert.ok(policy.permitted > 0 && policy.permitted <= 30);

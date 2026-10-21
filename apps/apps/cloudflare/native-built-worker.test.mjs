@@ -15,6 +15,7 @@ import { nativeRedirectCases } from './native-browser-navigation.mjs';
 import {
   assertNoRuntimeResources,
   fixtureEgress,
+  isAppsAssuranceRequest,
 } from './native-runtime-fence.mjs';
 import { runtimeDeadline } from './runtime-deadline.mjs';
 
@@ -89,6 +90,8 @@ test('actual native Worker implements both pages, every app launch and the API b
   const userId = randomUUID();
   const secret = randomBytes(32).toString('hex');
   const session = token(secret, userId);
+  const fixtureKey = randomBytes(32).toString('hex');
+  let assuranceState = 'allowed';
   const fixture = createServer(async (request, response) => {
     const chunks = [];
     for await (const chunk of request) chunks.push(chunk);
@@ -99,10 +102,47 @@ test('actual native Worker implements both pages, every app launch and the API b
       cookie: request.headers.cookie,
     });
     response.setHeader('Content-Type', 'application/json');
-    if (
-      request.url?.startsWith('/auth/v1/user') ||
-      request.url === `/auth/v1/admin/users/${userId}`
-    ) {
+    if (request.url?.startsWith('/auth/v1/admin/')) {
+      if (
+        !isAppsAssuranceRequest(
+          {
+            url: `${fixtureOrigin}${request.url}`,
+            method: request.method,
+            headers: new Headers(request.headers),
+            body: chunks.length ? Buffer.concat(chunks) : null,
+          },
+          fixtureOrigin,
+          userId,
+          fixtureKey
+        )
+      ) {
+        response.statusCode = 599;
+        response.end(JSON.stringify({ error: 'Fixture assurance denied' }));
+        return;
+      }
+      if (assuranceState === 'unavailable') {
+        response.statusCode = 503;
+        response.end(
+          JSON.stringify({ message: 'Fixture assurance unavailable' })
+        );
+        return;
+      }
+      response.end(
+        JSON.stringify({
+          id: userId,
+          email: 'fixture@example.test',
+          user_metadata: {},
+          app_metadata: {
+            tuturuuu_required_mfa: {
+              required: assuranceState === 'required',
+              verifiedAfter: 0,
+            },
+          },
+          banned_until:
+            assuranceState === 'banned' ? '2999-01-01T00:00:00.000Z' : null,
+        })
+      );
+    } else if (request.url?.startsWith('/auth/v1/user')) {
       response.end(
         JSON.stringify({
           id: userId,
@@ -147,19 +187,27 @@ test('actual native Worker implements both pages, every app launch and the API b
     false,
     'Compiled source identity must not be replaced by a runtime binding'
   );
-  const fence = fixtureEgress(fixtureOrigin, userId, runtime.signal);
+  const fence = fixtureEgress(
+    fixtureOrigin,
+    userId,
+    runtime.signal,
+    undefined,
+    'app',
+    fixtureKey
+  );
   const negativeFence = fixtureEgress(
     fixtureOrigin,
     userId,
     runtime.signal,
     undefined,
-    'negative'
+    'negative',
+    fixtureKey
   );
   const bindings = {
     INTERNAL_WEB_API_ORIGIN: fixtureOrigin,
     NEXT_PUBLIC_SUPABASE_URL: fixtureOrigin,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'fixture-public-key',
-    SUPABASE_SECRET_KEY: 'fixture-service-key',
+    SUPABASE_SECRET_KEY: fixtureKey,
     TUTURUUU_APP_COORDINATION_SECRET: secret,
   };
   await exerciseAppsSessions(
@@ -189,6 +237,7 @@ test('actual native Worker implements both pages, every app launch and the API b
         },
       ]);
       assert.deepEqual(negativeFence.permitted, []);
+      assert.equal(negativeFence.assurance.length, 1);
       completed('negative');
       const info = await runtime.json(
         await runtime.fetch(`${origin}/api/build-info`)
@@ -237,6 +286,7 @@ test('actual native Worker implements both pages, every app launch and the API b
           assert.ok(
             !html.includes('fullAppPort') &&
               !html.includes('fixture-service-key') &&
+              !html.includes(fixtureKey) &&
               !html.includes(secret)
           );
           const scripts = [...html.matchAll(/src="(\/assets\/[^" ]+\.js)"/g)];
@@ -289,7 +339,8 @@ test('actual native Worker implements both pages, every app launch and the API b
       assert.ok(
         !signedPayload.includes(secret) &&
           !signedPayload.includes(session) &&
-          !signedPayload.includes('fixture-service-key')
+          !signedPayload.includes('fixture-service-key') &&
+          !signedPayload.includes(fixtureKey)
       );
       const wrongTarget = await runtime.fetch(rpc, {
         headers: {
@@ -318,6 +369,47 @@ test('actual native Worker implements both pages, every app launch and the API b
         404
       );
       completed('methods');
+      try {
+        for (const [state, status, code, assurance] of [
+          ['required', 403, 'MFA_REQUIRED', 'required'],
+          ['banned', 401, 'UNAUTHENTICATED', null],
+          ['unavailable', 503, 'AUTH_UNAVAILABLE', 'unavailable'],
+        ]) {
+          assuranceState = state;
+          const reads = fence.assurance.length;
+          const forwarded = fence.permitted.length;
+          const blocked = await runtime.fetch(
+            `${origin}/api/v1/workspaces/other?tag=1&tag=2`,
+            {
+              method: 'PATCH',
+              headers: {
+                cookie: `tuturuuu_app_session=${session}`,
+                'content-type': 'application/json',
+              },
+              body: '{"title":"exact"}',
+            }
+          );
+          assert.equal(blocked.status, status);
+          assert.equal((await runtime.json(blocked)).code, code);
+          assert.match(blocked.headers.get('cache-control'), /no-store/);
+          assert.equal(
+            blocked.headers.get('x-tuturuuu-auth-assurance'),
+            assurance
+          );
+          assert.equal(blocked.headers.get('location'), null);
+          assert.deepEqual(blocked.headers.getSetCookie(), []);
+          assert.equal(fence.assurance.length, reads + 1);
+          assert.equal(fence.permitted.length, forwarded);
+          assert.equal(
+            calls.filter(
+              (call) => call.url === '/api/v1/workspaces/other?tag=1&tag=2'
+            ).length,
+            0
+          );
+        }
+      } finally {
+        assuranceState = 'allowed';
+      }
       const api = await runtime.fetch(
         `${origin}/api/v1/workspaces/other?tag=1&tag=2`,
         {
@@ -347,6 +439,22 @@ test('actual native Worker implements both pages, every app launch and the API b
         { headers: { authorization: 'Bearer ttr_app_invalid' } }
       );
       assert.equal(invalidBearer.status, 401);
+      assert.equal(fence.assurance.length, 4);
+      assert.equal(negativeFence.assurance.length, 1);
+      assert.deepEqual(negativeFence.permitted, []);
+      assert.deepEqual(
+        fence.permitted.map(({ method, url }) => ({
+          method,
+          path: new URL(url).pathname + new URL(url).search,
+        })),
+        [
+          ...Array.from({ length: 3 }, () => ({
+            method: 'GET',
+            path: '/api/v1/users/me/profile',
+          })),
+          { method: 'PATCH', path: '/api/v1/workspaces/other?tag=1&tag=2' },
+        ]
+      );
       completed('patch');
       assert.ok(
         fence.permitted.length > 0,
@@ -378,4 +486,7 @@ test('actual native Worker implements both pages, every app launch and the API b
     [],
     'No unexpected runtime egress during disposal'
   );
+  assert.equal(fence.assurance.length, 4);
+  assert.equal(negativeFence.assurance.length, 1);
+  assert.deepEqual(negativeFence.permitted, []);
 });

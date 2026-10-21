@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 
 const policies = new WeakMap();
-// Four signed SSR/RPC/API paths, each bounded to eight fixture operations.
-export const APPS_FIXTURE_MAX_OPERATIONS = 4 * 8;
+export const APPS_FIXTURE_MAX_OPERATIONS = 32;
+export const APPS_ASSURANCE_READS = Object.freeze({ app: 4, negative: 1 });
 export const APPS_FIXTURE_MAX_BODY = 16 * 1024;
 
 export function assertNoRuntimeResources(config) {
@@ -23,12 +23,24 @@ export function assertNoRuntimeResources(config) {
   }
 }
 
+export function isAppsAssuranceRequest(request, fixtureOrigin, userId, key) {
+  return (
+    request.method === 'GET' &&
+    request.url === `${fixtureOrigin}/auth/v1/admin/users/${userId}` &&
+    request.headers.get('apikey') === key &&
+    request.headers.get('authorization') === `Bearer ${key}` &&
+    !request.headers.has('cookie') &&
+    !request.body
+  );
+}
+
 export function fixtureEgress(
   fixtureOrigin,
   userId,
   signal,
   fetcher = fetch,
-  role = 'app'
+  role = 'app',
+  assuranceKey
 ) {
   const origin = new URL(fixtureOrigin);
   assert.equal(origin.protocol, 'http:');
@@ -38,8 +50,18 @@ export function fixtureEgress(
   assert.equal(origin.hash, '');
   assert.equal(origin.username + origin.password, '');
   assert.ok(['app', 'negative'].includes(role), 'Closed HTTP role');
+  assert.ok(
+    typeof userId === 'string' &&
+      /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(userId),
+    'Known fixture UUID required'
+  );
+  assert.ok(
+    typeof assuranceKey === 'string' && /^[a-f0-9]{64}$/.test(assuranceKey),
+    'Generated fixture key required'
+  );
   const unexpected = [];
   const permitted = [];
+  const assurance = [];
   let operations = 0;
   const outboundService = async (request) => {
     if (++operations > APPS_FIXTURE_MAX_OPERATIONS) {
@@ -47,10 +69,15 @@ export function fixtureEgress(
       throw new Error('Fixture operation budget exceeded');
     }
     const url = new URL(request.url);
+    const isAssurance = isAppsAssuranceRequest(
+      request,
+      origin.origin,
+      userId,
+      assuranceKey
+    );
     const allowedPath =
       (request.method === 'GET' &&
         (url.pathname === '/auth/v1/user' ||
-          url.pathname === `/auth/v1/admin/users/${userId}` ||
           url.pathname.startsWith('/rest/v1/') ||
           url.pathname === '/api/v1/users/me/profile')) ||
       (request.method === 'PATCH' &&
@@ -60,7 +87,8 @@ export function fixtureEgress(
       url.origin !== origin.origin ||
       url.username ||
       url.password ||
-      !allowedPath
+      (!allowedPath && !isAssurance) ||
+      (isAssurance && assurance.length >= APPS_ASSURANCE_READS[role])
     ) {
       unexpected.push({ method: request.method, url: request.url });
       return new Response('Fixture egress denied', { status: 599 });
@@ -74,7 +102,8 @@ export function fixtureEgress(
       unexpected.push({ method: request.method, url: request.url });
       throw error;
     }
-    permitted.push({ method: request.method, url: request.url });
+    if (isAssurance) assurance.push({ method: 'GET', url: request.url });
+    else permitted.push({ method: request.method, url: request.url });
     return fetcher(request.url, {
       method: request.method,
       headers: [...request.headers],
@@ -90,7 +119,8 @@ export function fixtureEgress(
     permitted,
     fetcher === fetch,
     'http',
-    origin.origin
+    origin.origin,
+    assurance
   );
 }
 
@@ -123,13 +153,17 @@ function registerPolicy(
   permitted,
   trusted,
   mode,
-  fixtureOrigin
+  fixtureOrigin,
+  assurance = []
 ) {
   const policy = Object.freeze({
     role,
     outboundService,
     unexpected,
     permitted,
+    get assurance() {
+      return Object.freeze(assurance.slice());
+    },
   });
   policies.set(policy, { role, trusted, mode, fixtureOrigin });
   return policy;
@@ -202,6 +236,7 @@ export async function controlAppsPolicies(mode, values) {
     const policy = values[role];
     assert.deepEqual(policy.unexpected, []);
     assert.deepEqual(policy.permitted, []);
+    assert.deepEqual(policy.assurance, []);
     for (const url of [
       'https://unadmitted.invalid/control',
       'http://127.0.0.1:1/control',
@@ -217,6 +252,7 @@ export async function controlAppsPolicies(mode, values) {
     }
     assert.equal(policy.unexpected.length, 2);
     assert.deepEqual(policy.permitted, []);
+    assert.deepEqual(policy.assurance, []);
     policy.unexpected.splice(0, 2);
     controls[role] = 2;
   }
@@ -231,6 +267,7 @@ export function appsPolicyReceipt(mode, values, controls) {
       {
         controls: controls[role],
         permitted: values[role].permitted.length,
+        assurance: values[role].assurance.length,
         unexpected: values[role].unexpected.map((value) =>
           typeof value === 'string'
             ? value

@@ -782,7 +782,8 @@ after loading and teardown. Required pins are not local qualification evidence.
 Keep package-manager repair separate when a stale owning lock edge remains;
 reject unrelated lock churn rather than editing the lock by hand.
 
-Queue the focused `apps-native-runtime.test.mjs` and
+Queue the focused `apps-native-runtime.test.mjs`,
+`apps-native-runtime-receipt.test.mjs` and
 `apps/apps/cloudflare/native-runtime-fence.test.mjs` pure tests. They exercise
 artifact/source admission, policy bounds, supplier doubles, acquisition-before-ready,
 reverse exactly-once disposal, natural child/pipe observation and independent
@@ -800,8 +801,18 @@ Apps runbook above owns the exact profile.
 
 Configured app/negative HTTP hooks admit only the bounded exact local fixture;
 SDK-generated helper/control actors are hash-pinned trusted tooling outside that
-confinement claim. Preserve the original compiled API 599 negative and its exact
-one-call counter. CI must tar the full owned evidence directory, including hidden
+confinement claim. Record account assurance separately from central forwarding:
+exact known-subject admin GET, captured generated service key in apikey/Bearer,
+no query, fragment,
+URL credentials, Cookie or body. HTTP app assurance is exactly four reads and
+negative exactly one, sharing the unchanged 32-operation ceiling; browser stays
+deny-all with zero assurance. Preserve the original compiled API 599 negative,
+its exact one-call denied counter and zero negative central forwarding. Require
+compiled-handler controls for required MFA (403), banned accounts (401) and
+unavailable policy (503), using the same session across policy changes, with no
+forwarding or cookie clearing, before the original PATCH/cookie assertions. Pure doubles do not prove those runtime
+controls. The Apps runbook above owns the exact fixture ledger and limits.
+CI must tar the full owned evidence directory, including hidden
 `.wrangler` data, before artifact upload. Never replace natural child closure,
 independent seals, verified snapshots or persistence readbacks with a fulfilled
 `dispose()`. Internal cleanup and descendant closure remain UNKNOWN.

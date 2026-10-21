@@ -103,7 +103,10 @@ export function appsFixtureBindings(mode, values, role) {
       values.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
       'fixture-public-key'
     );
-    assert.equal(values.SUPABASE_SECRET_KEY, 'fixture-service-key');
+    assert.ok(
+      /^[a-f0-9]{64}$/.test(values.SUPABASE_SECRET_KEY),
+      'Generated fixture service key required'
+    );
   } else {
     assert.equal(values.TUTURUUU_NOINDEX, '1');
     assert.equal(

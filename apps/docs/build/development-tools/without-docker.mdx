@@ -510,13 +510,33 @@ the lock or broaden pins when a scoped repair churns unrelated dependencies.
 The configured app and negative-role HTTP hooks deny every nonfixture origin.
 HTTP forwarding admits only the exact disposable 127.0.0.1 origin and the existing
 method/path/query contracts, propagates headers/body/cookies and cancellation,
-and never follows redirects. Each role has at most 32 hook operations, including
-two pre-start denial controls; PATCH bodies have a 16 KiB cap. The bound derives
-from the four signed SSR/RPC/API cases, with eight operations each. Browser app
-HTTP denies all outbound requests; page routing admits the runtime listener and
-the existing exact in-memory destination fixtures. Hash-pinned SDK-generated
-actors and Node helper/debug/control networking are trusted tooling outside this
-claimed application HTTP confinement. This is no OS, TCP or DNS firewall claim.
+and never follows redirects. Account assurance has a separate recorded category:
+only GET of the one generated fixture UUID's exact admin-user URL, with the
+captured generated service key in both `apikey` and Bearer authorization, no
+query, fragment, URL credentials, Cookie or body. The local fixture validates
+the same request before returning its explicit server-owned non-required policy.
+The HTTP app permits exactly four assurance reads: three compiled API guard
+negatives (required MFA, banned account and unavailable policy), then the original
+signed PATCH. The negative role permits exactly one assurance read before its
+original API 599 denial; central forwarding stays zero and the exact denied-call
+counter remains one. The same signed session is reused across account-policy
+transitions; production guards and policy freshness are unchanged. Required,
+banned and unavailable cases must return 403/MFA_REQUIRED, 401/UNAUTHENTICATED
+and 503/AUTH_UNAVAILABLE respectively, without forwarding or clearing cookies.
+Two signed SSR locales and one signed RPC account for three profile forwards;
+the original PATCH remains the sole forwarded write, with its exact query, body,
+cookie and two response cookies. Require the separate counts in child and parent
+receipts; an extra request fails rather than increasing a cap.
+
+Each role retains at most 32 hook operations across all categories, including two
+pre-start denial controls; PATCH bodies retain the 16 KiB cap. Browser app HTTP
+remains deny-all with zero assurance reads; anonymous Chromium anchor navigation
+needs no account fixture. Page routing admits the runtime listener and the existing
+exact in-memory destination fixtures. Hash-pinned SDK-generated actors and Node
+helper/debug/control networking are trusted tooling outside this claimed
+application HTTP confinement. This is no OS, TCP or DNS firewall claim. Focused
+policy/receipt tests use doubles and do not qualify the compiled guard; original
+and freshly restored hosted HTTP and real Chromium acceptance remain required.
 
 The launcher supplies fresh allowlisted child environment, HOME/XDG/temp roots,
 empty fixture env file and per-role registries. Browser alone receives the

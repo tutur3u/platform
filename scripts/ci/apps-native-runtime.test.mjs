@@ -17,7 +17,6 @@ import { PassThrough } from 'node:stream';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  APPS_ASSERTION_GROUPS,
   APPS_SUPPLIER,
   admitAppsSupplier,
   appsFixtureBindings,
@@ -28,7 +27,6 @@ import {
 import {
   appsChildEnvironment,
   requireAppsChildOutcome,
-  requireAppsReceipt,
 } from './apps-native-runtime-launcher.mjs';
 import {
   appsRoles,
@@ -419,7 +417,7 @@ test('closed fixture inputs cannot inject identity, arbitrary bindings or destin
     INTERNAL_WEB_API_ORIGIN: 'http://127.0.0.1:12345',
     NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:12345',
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'fixture-public-key',
-    SUPABASE_SECRET_KEY: 'fixture-service-key',
+    SUPABASE_SECRET_KEY: 'b'.repeat(64),
     TUTURUUU_APP_COORDINATION_SECRET: 'a'.repeat(64),
   };
   const app = appsFixtureBindings('http', values, 'app'),
@@ -439,124 +437,6 @@ test('closed fixture inputs cannot inject identity, arbitrary bindings or destin
       appsFixtureBindings('http', { ...values, ...delta }, 'app')
     );
   assert.throws(() => appsFixtureBindings('http', values, 'probe'));
-});
-
-function receipt(mode) {
-  const roles = appsRoles(mode);
-  return {
-    schema: 1,
-    mode,
-    sourceSHA,
-    supplier: {
-      cliPath: '/supplier/cli.js',
-      miniflarePath: '/supplier/mf.js',
-      summary: APPS_SUPPLIER,
-    },
-    completed: APPS_ASSERTION_GROUPS[mode],
-    errors: [],
-    internalCleanup: 'UNKNOWN',
-    descendantClosure: 'UNKNOWN',
-    policies: Object.fromEntries(
-      roles.map((role) => [
-        role,
-        {
-          controls: 2,
-          permitted: mode === 'http' && role === 'app' ? 1 : 0,
-          unexpected:
-            role === 'negative'
-              ? [
-                  {
-                    method: 'GET',
-                    url: 'https://apps-unadmitted.invalid/api/v1/users/me/profile',
-                  },
-                ]
-              : [],
-        },
-      ])
-    ),
-    lifecycle: {
-      roles,
-      phases: [
-        ...roles.flatMap((role) =>
-          ['acquired', 'ready'].map((phase) => ({
-            role,
-            phase,
-            ok: true,
-            error: null,
-            errorIdentity: null,
-          }))
-        ),
-        ...roles
-          .slice()
-          .reverse()
-          .map((role) => ({
-            role,
-            phase: 'dispose',
-            ok: true,
-            error: null,
-            errorIdentity: null,
-          })),
-      ],
-      primaryIdentity: null,
-      errors: [],
-      internalCleanup: 'UNKNOWN',
-      descendantClosure: 'UNKNOWN',
-    },
-  };
-}
-const closedOutcome = {
-  code: 0,
-  signal: null,
-  closeObserved: true,
-  stdioDrained: true,
-  intervened: false,
-};
-test('parent requires independent natural close, every assertion group and exact finite receipt', () => {
-  requireAppsChildOutcome(closedOutcome);
-  for (const change of [
-    { code: 1 },
-    { signal: 'SIGTERM' },
-    { stdioDrained: false },
-    { closeObserved: false },
-    { intervened: true },
-    { error: new Error('output') },
-  ])
-    assert.throws(() =>
-      requireAppsChildOutcome({ ...closedOutcome, ...change })
-    );
-  for (const mode of ['http', 'browser']) {
-    requireAppsReceipt(receipt(mode), { sourceSHA }, mode);
-    for (const mutate of [
-      (r) => {
-        r.sourceSHA = 'b'.repeat(40);
-      },
-      (r) => {
-        r.completed = [];
-      },
-      (r) => {
-        r.lifecycle.phases.pop();
-      },
-      (r) => {
-        r.lifecycle.phases[0].ok = false;
-      },
-      (r) => {
-        r.policies.app.controls = 0;
-      },
-      (r) => {
-        r.supplier.summary.wranglerVersion = '4.149.0';
-      },
-      (r) => {
-        r.lifecycle = null;
-      },
-      (r) => {
-        delete r.supplier;
-      },
-    ]) {
-      const candidate = structuredClone(receipt(mode));
-      mutate(candidate);
-      assert.throws(() => requireAppsReceipt(candidate, { sourceSHA }, mode));
-    }
-  }
 });
 
 test('close observation waits for both pipes rather than child exit', async () => {
@@ -692,4 +572,63 @@ test('both CI evidence pack steps retain the complete hidden inventory', async (
       before
     );
   }
+});
+
+test('generated fixture service credentials remain closed and role-bound', () => {
+  const values = {
+    INTERNAL_WEB_API_ORIGIN: 'http://127.0.0.1:12345',
+    NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:12345',
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'fixture-public-key',
+    SUPABASE_SECRET_KEY: 'b'.repeat(64),
+    TUTURUUU_APP_COORDINATION_SECRET: 'a'.repeat(64),
+  };
+  for (const role of ['app', 'negative']) {
+    const bindings = appsFixtureBindings('http', values, role);
+    assert.deepEqual(bindings.SUPABASE_SECRET_KEY, {
+      type: 'secret_text',
+      value: values.SUPABASE_SECRET_KEY,
+    });
+  }
+  const missing = { ...values };
+  delete missing.SUPABASE_SECRET_KEY;
+  assert.throws(() => appsFixtureBindings('http', missing, 'app'));
+  for (const role of ['app', 'negative'])
+    for (const invalid of [
+      undefined,
+      null,
+      1,
+      '',
+      'fixture-service-key',
+      'A'.repeat(64),
+      'a'.repeat(63),
+      'a'.repeat(65),
+    ])
+      assert.throws(() =>
+        appsFixtureBindings(
+          'http',
+          { ...values, SUPABASE_SECRET_KEY: invalid },
+          role
+        )
+      );
+});
+
+test('browser fixture service credentials remain the exact unused disposable literal', () => {
+  const values = {
+    TUTURUUU_NOINDEX: '1',
+    TUTURUUU_APP_COORDINATION_SECRET: 'a'.repeat(64),
+    SUPABASE_SECRET_KEY: 'disposable-unused-fixture',
+    NEXT_PUBLIC_SUPABASE_URL: 'https://apps-ci.supabase.invalid',
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_apps_ci_placeholder',
+  };
+  assert.equal(
+    appsFixtureBindings('browser', values, 'app').SUPABASE_SECRET_KEY.value,
+    values.SUPABASE_SECRET_KEY
+  );
+  assert.throws(() =>
+    appsFixtureBindings(
+      'browser',
+      { ...values, SUPABASE_SECRET_KEY: 'b'.repeat(64) },
+      'app'
+    )
+  );
 });
