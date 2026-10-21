@@ -208,10 +208,34 @@ Infrastructure CI builds. Production migration completion and authorized
 delivery remain release-owner gates; neither GET inspection nor CREATE
 qualification establishes RESTORE delivery.
 
+### Simple account forms
+
+For root administrators in Infrastructure, Create uses staff email, full name and
+an in-memory temporary password. Readiness and bounded original-operation
+confirmation run automatically; the form reports readiness only after existing
+creation proof succeeds. Password generation uses the existing cryptographic
+sampler; explicit password copying requires the secure clipboard and reports failure
+without logging the credential. Save the CREATE credential before submitting: its
+field clears after submission and on close, and never enters recovery storage.
+Password reset accepts a new credential through its ordinary form, supports Enter,
+and prevents simultaneous duplicate submissions. Its explicit credential handoff
+remains available until close; administrators must share it securely.
+
+Ordinary messages explain the next action without requiring UUID, digest, revision
+or provider-state inspection. Advanced recovery retains technical observations and
+explicit audited CREATE adjudication for exceptional failures. Unknown CREATE
+never silently replays or receives a replacement operation. Legacy migration and
+retained mailbox adoption remain separate, and neither is authorized by Restore.
+These defaults cover the active Infrastructure forms; backend readiness, conflict,
+self-action and actor/workspace fences remain authoritative. Coverage includes
+`employee-creation-dialog.test.tsx`, `account-password-reset-dialog.test.tsx` and
+the restoration regressions below. Hosted login and production account delivery
+require separate acceptance by the release owner.
+
 ### Managed-access console
 
-The Infrastructure account directory exposes **Inspect managed access** for
-other accounts. The administrator explicitly reads current state; only an active,
+The Infrastructure account directory exposes **Restore access** for
+other accounts. Opening the form automatically checks current state; only an active,
 managed, mailbox-ready canonical account with a confirmed provider ban and a
 RESTORE next action offers restoration. Creation recovery, adoption, conflicting
 or unconfirmed provider state and legacy migration have explanatory states
@@ -224,8 +248,10 @@ The portable consumer retains the original expected revision and server operatio
 UUID across pending results and dialog close/reopen. A lost POST response blocks
 another RESTORE in that dialog lifetime, even if a subsequent read has no operation.
 Only the matching persisted operation can be reconciled; reconciliation never
-replays the provider mutation. No client-generated replacement UUID or automatic
-POST retry is used. State is private and ephemeral; a new page lifetime recovers
+replays the provider mutation. After an explicit Restore submission, the form can reconcile the matching retained
+operation once, with the same email, UUID and revision fences and another completion
+readback. It never automatically repeats RESTORE or reconciles on dialog open.
+No client-generated replacement UUID or blind POST retry is used. State is private and ephemeral; a new page lifetime recovers
 operations from the authorized persisted inspection rather than browser storage.
 
 RESTORE is enabled by default for authorized root administrators at the Web endpoint. Inspection does not
@@ -245,7 +271,8 @@ and private management state remain separate observations.
 `employee-restoration-consumer.test.ts` covers revision/UUID fences, explicit
 reconciliation, unavailable capability, duplicate admission and revoked actors.
 `employee-restoration-dialog.test.tsx` covers rendered English/Vietnamese controls,
-exact confirmation, pending close/reopen, independent readback and actor replacement.
+automatic readiness, exact confirmation, bounded matching-operation recovery,
+replacement-operation denial, pending close/reopen, independent readback and actor replacement.
 These are synthetic source regressions. Exact-commit Infrastructure/internal-API
 CI and authenticated deployed session/provider/SQL acceptance remain separate;
 no runtime flags, account activation or migration are performed by the UI change.
@@ -417,3 +444,5 @@ reference. Uncertain repairs stay fenced for explicit readback. Later phases,
 revoked operations and other actors/workspaces are excluded. Route, recovery
 helper and dialog regressions enforce this rule; the optional disposable Web
 session fixture exercises authenticated adjudication and CREATE end to end.
+
+Older interrupted employee creation requests without a saved browser reference can be loaded under **Advanced recovery** using their original operation ID. The server supplies and validates the account identity. Loading only observes the request; a fenced or unavailable request cannot create a replacement account. Audited recovery still requires explicit administrator action and a fresh temporary password. Regression coverage: `employee-original-operation-resume.test.ts`.

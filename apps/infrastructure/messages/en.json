@@ -8790,22 +8790,24 @@
     "count": "{count, plural, one {# internal account} other {# internal accounts}}",
     "count_loading": "Loading account count...",
     "creation": {
+      "advanced": "Advanced recovery",
+      "checking": "Checking whether account creation is available…",
       "close": "Close",
-      "confirming": "Confirming the original creation…",
-      "conflict": "This creation conflicts with an existing account or operation. No creation was retried.",
+      "confirming": "Creating the account. Please wait while we confirm it is ready…",
+      "conflict": "This address or request needs administrator review. Contact an administrator before trying again.",
       "created": "The employee account is confirmed and ready to sign in.",
-      "denied": "The request was refused before creation. Verify access and availability before submitting again.",
-      "description": "Create a managed staff identity after server checks confirm access and readiness.",
+      "denied": "We could not complete this request. Check the details below or contact an administrator for help.",
+      "description": "Enter the staff email, name and temporary password, then create the account.",
       "email": "Staff email",
       "email_help": "Use an exact @tuturuuu.com staff address. Directory subdomains do not grant staff privileges.",
-      "inspect": "Automatic confirmation reached its limit. The original operation is retained; its completion is not yet confirmed.",
+      "inspect": "We could not confirm that the account is ready. Contact an administrator for help; your request has been saved.",
       "name": "Full name",
       "open": "Create employee account",
       "password": "Temporary password",
-      "password_help": "Use 12–72 characters with lowercase and uppercase letters, a number, and a symbol such as ! or @. Share it securely.",
+      "password_help": "Use 12–72 characters with lowercase and uppercase letters, a number and a symbol. Save or copy it securely before creating; this field clears after submission.",
       "password_strength": "Add the required character types: lowercase, uppercase, number and symbol; use 12–72 characters.",
       "refresh": "Refresh directory",
-      "stopped": "Automatic confirmation stopped. The original operation is retained; no creation will be retried.",
+      "stopped": "We could not finish confirming this account. Contact an administrator before trying again.",
       "submit": "Create account",
       "submitting": "Submitting…",
       "title": "Create an employee account",
@@ -8820,6 +8822,8 @@
     "dialog": {
       "confirmation_help": "Enter {email} exactly to confirm this sensitive action.",
       "confirmation_label": "Confirm account email",
+      "copy_password": "Copy password",
+      "copy_password_failed": "Could not copy the password. Select it and copy it manually, then share it securely.",
       "disable_access": {
         "confirm": "Disable access",
         "description": "This immediately blocks {email} from signing in until access is restored.",
@@ -8888,6 +8892,12 @@
       "description": "Password resets can target any platform account by exact email. Access and profile controls remain internal-only, and you cannot target your own account.",
       "title": "Restricted root-workspace operation"
     },
+    "original_creation": {
+      "description": "Resume an older interrupted creation using its original operation ID. This only checks the existing request.",
+      "load": "Load original request",
+      "operation": "Original operation ID",
+      "unavailable": "The original request could not be loaded. Check the operation ID and your access."
+    },
     "password_recovery": {
       "action": "Reset any password",
       "confirm": "Set temporary password",
@@ -8921,29 +8931,30 @@
       "unconfirmed": "Recovery is unconfirmed. Keep the original reference and inspect again; do not create a replacement account."
     },
     "restoration": {
+      "advanced": "Advanced recovery",
       "close": "Close",
       "confirmation": "Confirm account email",
       "confirmation_help": "Type {email} exactly to confirm this account.",
-      "description": "Inspect retained access state for {email} before restoring or reconciling.",
+      "description": "Restore sign-in access for {email}. Confirm the email below to continue.",
       "inspect": "Read current state",
-      "migration_separate": "Legacy address migration and account adoption require a separate workflow. This dialog does not rename an account.",
+      "migration_separate": "This restores sign-in access only. Changing a legacy email address is a separate action.",
       "next": {
-        "adoption_required": "This account requires the separate adoption or legacy migration workflow.",
-        "creation_reconciliation_required": "Account creation needs reconciliation through its owning workflow.",
-        "inspect": "A retained operation needs inspection and reconciliation. Do not start another restoration.",
-        "manual_review": "This account needs manual review. No restoration action is available.",
+        "adoption_required": "This legacy account needs an administrator to finish its address migration.",
+        "creation_reconciliation_required": "Account setup needs administrator help before access can be restored.",
+        "inspect": "We are checking a previous restoration. Confirm the email to continue safely.",
+        "manual_review": "Contact an administrator to resolve this account before restoring access.",
         "none": "No access restoration is required.",
-        "restore": "This managed account is eligible for access restoration."
+        "restore": "Confirm the email below, then restore access."
       },
       "observed_at": "Observed at",
-      "open": "Inspect managed access",
+      "open": "Restore access",
       "operation": "Operation UUID",
       "outcomes": {
-        "conflict": "Current state could not be verified or changed. Read it again before proceeding.",
+        "conflict": "We could not verify this account. Close and reopen this form to check again. If this continues, contact an administrator.",
         "denied": "Your authorization could not be confirmed. Reopen this page with a currently authorized session.",
-        "pending": "The outcome is pending or unknown. Read the retained state before taking another action. No provider action is automatically repeated.",
-        "restored": "Restoration is confirmed by an independent persisted readback.",
-        "unavailable": "Managed access actions are unavailable. The outcome has not been inferred from this failure. Read-only inspection remains available."
+        "pending": "We could not yet confirm that access is restored. Contact an administrator if you still cannot sign in.",
+        "restored": "Access restored. This account can sign in again.",
+        "unavailable": "Restoring access is temporarily unavailable. Contact an administrator for help."
       },
       "phase": "Operation phase",
       "phases": {
@@ -8968,7 +8979,7 @@
         "pending": "Pending",
         "provisioned": "Provisioned"
       },
-      "restore": "Restore managed access",
+      "restore": "Restore access",
       "retained_operation": "Retained operation: {operationId}",
       "title": "Managed employee access",
       "working": "Checking access…"

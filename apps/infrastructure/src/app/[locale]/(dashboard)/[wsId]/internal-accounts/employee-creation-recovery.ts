@@ -2,6 +2,7 @@ import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
   adjudicateEmployeeRejection,
   type EmployeeCreationObservation,
+  EmployeeRejectionRecoverySchema,
   type EmployeeRejectionRecoveryState,
   getInternalEmployeeCreationOperation,
   inspectEmployeeRejection,
@@ -42,6 +43,7 @@ type StoragePort = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 export class EmployeeCreationRecovery {
   private active = false;
   private adjudicating = false;
+  private resuming = false;
   readonly key: string;
   reference: CreationReference | null = null;
   constructor(
@@ -99,8 +101,56 @@ export class EmployeeCreationRecovery {
     this.reference = parsed;
     return parsed;
   }
+  async resumeOriginal(operationId: string) {
+    this.assertActive();
+    if (this.resuming || this.reference || this.load())
+      throw new Error('Original reference already retained');
+    if (this.deps.workspaceId !== ROOT_WORKSPACE_ID)
+      throw new Error('Recovery workspace denied');
+    const id = z.uuid().parse(operationId);
+    this.resuming = true;
+    try {
+      const result = EmployeeRejectionRecoverySchema.parse(
+        await (this.deps.inspectRejection ?? inspectEmployeeRejection)(id)
+      );
+      this.assertActive();
+      if (this.reference || this.load())
+        throw new Error('Original reference already retained');
+      if (
+        result.status === 'fenced' ||
+        result.operationId !== id ||
+        result.actorUserId !== this.deps.actorId
+      )
+        throw new Error('Original operation unavailable');
+      const reference = this.save({
+        actorId: this.deps.actorId,
+        workspaceId: this.deps.workspaceId,
+        operationId: result.operationId,
+        email: result.email,
+        displayName: result.displayName,
+        startedAt: null,
+        reads: 0,
+        state: result.status === 'retry_ready' ? 'retry_ready' : 'stopped',
+        rejection:
+          result.status === 'retry_ready'
+            ? {
+                targetUserId: result.targetUserId,
+                originalLeaseId: result.originalLeaseId,
+                originalAttemptEventId: result.originalAttemptEventId,
+                eventId: result.eventId,
+                evidenceReferenceSha256: result.evidenceReferenceSha256,
+              }
+            : null,
+      });
+      this.validateRejection(result);
+      return reference;
+    } finally {
+      this.resuming = false;
+    }
+  }
   prepare(input: { email: string; displayName: string }) {
     this.assertActive();
+    if (this.resuming) throw new Error('Original operation load in flight');
     const existing = this.load();
     if (existing) {
       if (

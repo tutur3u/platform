@@ -18,7 +18,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { TemporaryPasswordField } from './temporary-password-field';
 
 const MIN_PASSWORD_LENGTH = 12;
@@ -34,6 +34,7 @@ export function AccountPasswordResetDialog({ onOpenChange, open }: Props) {
   const [newPassword, setNewPassword] = useState('');
   const [complete, setComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const inFlight = useRef(false);
   const { copyToClipboard, isCopied } = useCopyToClipboard({ timeout: 2000 });
   const normalizedEmail = email.trim().toLowerCase();
   const canSubmit =
@@ -52,7 +53,8 @@ export function AccountPasswordResetDialog({ onOpenChange, open }: Props) {
   }
 
   async function submit() {
-    if (!canSubmit) return;
+    if (!canSubmit || inFlight.current) return;
+    inFlight.current = true;
     setIsSubmitting(true);
     try {
       await resetAccountPassword({
@@ -65,6 +67,7 @@ export function AccountPasswordResetDialog({ onOpenChange, open }: Props) {
     } catch {
       toast.error(t('password_recovery.toast_error'));
     } finally {
+      inFlight.current = false;
       setIsSubmitting(false);
     }
   }
@@ -89,98 +92,105 @@ export function AccountPasswordResetDialog({ onOpenChange, open }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        {complete ? (
-          <div className="space-y-4 py-2">
-            <Alert>
-              <Check className="size-4" />
-              <AlertTitle>
-                {t('dialog.reset_password.success_title')}
-              </AlertTitle>
-              <AlertDescription>
-                {t('dialog.reset_password.success_description')}
-              </AlertDescription>
-            </Alert>
-            <div className="space-y-2">
-              <Label htmlFor="platform-account-handoff-message">
-                {t('dialog.reset_password.handoff_label')}
-              </Label>
-              <Textarea
-                className="min-h-28 resize-none font-mono text-sm"
-                id="platform-account-handoff-message"
-                readOnly
-                value={handoffMessage}
-              />
-            </div>
-          </div>
-        ) : (
-          <fieldset className="space-y-4 py-2" disabled={isSubmitting}>
-            <div className="space-y-2">
-              <Label htmlFor="platform-account-email">
-                {t('password_recovery.email_label')}
-              </Label>
-              <Input
-                autoComplete="off"
-                id="platform-account-email"
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder={t('password_recovery.email_placeholder')}
-                type="email"
-                value={email}
-              />
-              <p className="text-muted-foreground text-xs">
-                {t('password_recovery.email_help')}
-              </p>
-            </div>
-            <TemporaryPasswordField
-              id="platform-account-new-password"
-              minLength={MIN_PASSWORD_LENGTH}
-              onChange={setNewPassword}
-              value={newPassword}
-            />
-          </fieldset>
-        )}
-
-        <DialogFooter>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit();
+          }}
+        >
           {complete ? (
-            <>
-              <Button
-                onClick={() => void copyToClipboard(handoffMessage)}
-                type="button"
-                variant="outline"
-              >
-                {isCopied ? (
-                  <Check className="size-4" />
-                ) : (
-                  <Copy className="size-4" />
-                )}
-                {isCopied
-                  ? t('dialog.reset_password.copied')
-                  : t('dialog.reset_password.copy_message')}
-              </Button>
-              <Button onClick={() => handleOpenChange(false)} type="button">
-                {t('dialog.done')}
-              </Button>
-            </>
+            <div className="space-y-4 py-2">
+              <Alert>
+                <Check className="size-4" />
+                <AlertTitle>
+                  {t('dialog.reset_password.success_title')}
+                </AlertTitle>
+                <AlertDescription>
+                  {t('dialog.reset_password.success_description')}
+                </AlertDescription>
+              </Alert>
+              <div className="space-y-2">
+                <Label htmlFor="platform-account-handoff-message">
+                  {t('dialog.reset_password.handoff_label')}
+                </Label>
+                <Textarea
+                  className="min-h-28 resize-none font-mono text-sm"
+                  id="platform-account-handoff-message"
+                  readOnly
+                  value={handoffMessage}
+                />
+              </div>
+            </div>
           ) : (
-            <>
-              <Button
-                disabled={isSubmitting}
-                onClick={() => handleOpenChange(false)}
-                type="button"
-                variant="outline"
-              >
-                {t('actions.cancel')}
-              </Button>
-              <Button disabled={!canSubmit} onClick={submit} type="button">
-                {isSubmitting ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <KeyRound className="size-4" />
-                )}
-                {t('password_recovery.confirm')}
-              </Button>
-            </>
+            <fieldset className="space-y-4 py-2" disabled={isSubmitting}>
+              <div className="space-y-2">
+                <Label htmlFor="platform-account-email">
+                  {t('password_recovery.email_label')}
+                </Label>
+                <Input
+                  autoComplete="off"
+                  id="platform-account-email"
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder={t('password_recovery.email_placeholder')}
+                  type="email"
+                  value={email}
+                />
+                <p className="text-muted-foreground text-xs">
+                  {t('password_recovery.email_help')}
+                </p>
+              </div>
+              <TemporaryPasswordField
+                id="platform-account-new-password"
+                minLength={MIN_PASSWORD_LENGTH}
+                onChange={setNewPassword}
+                value={newPassword}
+              />
+            </fieldset>
           )}
-        </DialogFooter>
+
+          <DialogFooter>
+            {complete ? (
+              <>
+                <Button
+                  onClick={() => void copyToClipboard(handoffMessage)}
+                  type="button"
+                  variant="outline"
+                >
+                  {isCopied ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
+                  {isCopied
+                    ? t('dialog.reset_password.copied')
+                    : t('dialog.reset_password.copy_message')}
+                </Button>
+                <Button onClick={() => handleOpenChange(false)} type="button">
+                  {t('dialog.done')}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  disabled={isSubmitting}
+                  onClick={() => handleOpenChange(false)}
+                  type="button"
+                  variant="outline"
+                >
+                  {t('actions.cancel')}
+                </Button>
+                <Button disabled={!canSubmit} type="submit">
+                  {isSubmitting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <KeyRound className="size-4" />
+                  )}
+                  {t('password_recovery.confirm')}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
