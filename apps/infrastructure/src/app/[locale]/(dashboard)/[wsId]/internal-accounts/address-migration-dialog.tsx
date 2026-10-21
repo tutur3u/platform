@@ -29,6 +29,8 @@ import {
   validMigrationInput,
 } from './address-migration-session';
 
+import { RetainedMailboxAdoption } from './retained-mailbox-adoption';
+
 const lifetimeIds = new WeakMap<object, number>();
 let nextLifetimeId = 0;
 function lifetimeId(lifetime: object) {
@@ -280,6 +282,18 @@ function ScopedMigrationDialog({
             <output className="block text-sm">{t('completed')}</output>
           ) : null}
           {busy ? <output>{t('working')}</output> : null}
+          {tuple &&
+          !busy &&
+          view.kind !== 'completed' &&
+          view.kind !== 'ready' ? (
+            <RetainedMailboxAdoption
+              key={tuple.operationId}
+              tuple={tuple}
+              storageKey={`infra:retained-adoption:v1:${actorId}:${workspaceId}:${tuple.operationId}`}
+              assertActive={assertActorActive}
+              adopted={() => session.inspect(tuple)}
+            />
+          ) : null}
           <DialogFooter className="gap-2">
             <Button
               type="button"

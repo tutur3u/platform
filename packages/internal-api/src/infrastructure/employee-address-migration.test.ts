@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  adoptRetainedMailbox,
   inspectInternalEmployeeAddressMigration,
+  inspectRetainedMailboxAdoption,
   migrateInternalEmployeeAddress,
   prepareInternalEmployeeAddressMigration,
 } from './employee-address-migration';
@@ -205,5 +207,51 @@ describe('address migration typed consumer', () => {
       )
     ).rejects.toThrow();
     expect(f.fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('retained adoption consumer', () => {
+  const receipt = {
+    status: 'adopted',
+    operationId: payload.operationId,
+    userId: payload.userId,
+    destinationAddress: payload.destinationAddress,
+    expectedRevision: 0,
+    snapshot: 'a'.repeat(64),
+  };
+  it('requires explicit confirmation and binds the original operation and snapshot', async () => {
+    const p = setup(receipt);
+    expect(
+      await adoptRetainedMailbox(
+        payload,
+        { snapshot: receipt.snapshot, ownershipConfirmed: true },
+        p.options
+      )
+    ).toEqual(receipt);
+    expect(JSON.parse(String(p.fetcher.mock.calls[0]?.[1]?.body))).toEqual({
+      ...payload,
+      snapshot: receipt.snapshot,
+      ownershipConfirmed: true,
+    });
+    expect(String(p.fetcher.mock.calls[0]?.[0])).toContain('/adopt-retained');
+    const q = setup({ ...receipt, snapshot: 'b'.repeat(64) });
+    await expect(
+      adoptRetainedMailbox(
+        payload,
+        { snapshot: receipt.snapshot, ownershipConfirmed: true },
+        q.options
+      )
+    ).rejects.toThrow();
+  });
+  it('uses readback on the original tuple and rejects a rebound receipt', async () => {
+    const p = setup(receipt);
+    expect(await inspectRetainedMailboxAdoption(payload, p.options)).toEqual(
+      receipt
+    );
+    expect(String(p.fetcher.mock.calls[0]?.[0])).toContain('/retained-inspect');
+    const q = setup({ ...receipt, userId: payload.operationId });
+    await expect(
+      inspectRetainedMailboxAdoption(payload, q.options)
+    ).rejects.toThrow();
   });
 });

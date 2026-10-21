@@ -39,6 +39,11 @@ export function createEmployeeAddressMigrationJournal(input: {
   fetch?: typeof fetch;
 }): AddressMigrationJournal & {
   prepare(request: AddressMigrationRequest): Promise<unknown>;
+  inspectRetained(request: AddressMigrationRequest): Promise<unknown>;
+  adoptRetained(
+    request: AddressMigrationRequest,
+    snapshot: string
+  ): Promise<unknown>;
 } {
   const request = AddressMigrationRequest.parse(input.request);
   const origin = new URL(input.url);
@@ -70,15 +75,37 @@ export function createEmployeeAddressMigrationJournal(input: {
     return parsed;
   }
   async function call(
-    action: 'inspect' | 'prepare' | 'reserve' | 'claim' | 'complete',
+    action:
+      | 'inspect'
+      | 'prepare'
+      | 'reserve'
+      | 'claim'
+      | 'complete'
+      | 'retained-inspect'
+      | 'adopt-retained',
     value: unknown,
-    attemptId?: string
+    attemptId?: string,
+    snapshot?: string
   ) {
-    const parsed = bound(value, action !== 'inspect' && action !== 'prepare');
+    const retained =
+      action === 'retained-inspect' || action === 'adopt-retained';
+    const parsed = bound(
+      value,
+      !retained && action !== 'inspect' && action !== 'prepare'
+    );
+    if (action === 'adopt-retained')
+      z.string()
+        .regex(/^[a-f0-9]{64}$/)
+        .parse(snapshot);
     if (!(await input.authorize(request.actorId)))
       throw new Error('Migration forbidden');
     const response = await fetcher(
-      new URL('/rest/v1/rpc/employee_address_migration', origin),
+      new URL(
+        retained
+          ? '/rest/v1/rpc/employee_retained_mailbox_adoption'
+          : '/rest/v1/rpc/employee_address_migration',
+        origin
+      ),
       {
         method: 'POST',
         cache: 'no-store',
@@ -93,9 +120,19 @@ export function createEmployeeAddressMigrationJournal(input: {
           Prefer: 'tx=commit',
         },
         body: JSON.stringify({
-          p_action: action,
+          p_action:
+            action === 'retained-inspect'
+              ? 'inspect'
+              : action === 'adopt-retained'
+                ? 'adopt'
+                : action,
           p_request: parsed,
-          p_attempt_id: attemptId ?? null,
+          ...(retained
+            ? {
+                p_snapshot: snapshot ?? null,
+                p_ownership_confirmed: action === 'adopt-retained',
+              }
+            : { p_attempt_id: attemptId ?? null }),
         }),
       }
     );
@@ -108,6 +145,9 @@ export function createEmployeeAddressMigrationJournal(input: {
   }
   return {
     prepare: (value) => call('prepare', value),
+    inspectRetained: (value) => call('retained-inspect', value),
+    adoptRetained: (value, snapshot) =>
+      call('adopt-retained', value, undefined, snapshot),
     async inspect(value) {
       const observed = MigrationInspection.parse(await call('inspect', value));
       if (

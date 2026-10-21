@@ -96,7 +96,7 @@ describe('internal account service', () => {
     ).toBeNull();
   });
 
-  it('lists genuine managed subdomains without widening root-only mutation classification', async () => {
+  it('lists genuine managed subdomains without widening the root-only account mapper', async () => {
     const listUsers = vi.fn().mockResolvedValue({
       data: {
         nextPage: null,
@@ -503,4 +503,155 @@ describe('authenticator action dispatch', () => {
     expect(updateUserById).not.toHaveBeenCalled();
     expect(result.isDisabled).toBe(true);
   });
+});
+
+describe('managed-subdomain access mutations', () => {
+  const targetUserId = '6bd970b6-2ab0-42af-b6b6-526df79bd655';
+  const actorUserId = '63a57bf8-b751-4ee7-a4fc-b4103d5e5e4b';
+  const email = 'operator@xwf.tuturuuu.com';
+
+  function fixture(targetEmail = email) {
+    const target = authUser({ id: targetUserId, email: targetEmail });
+    const getUserById = vi.fn().mockResolvedValue({
+      data: { user: target },
+      error: null,
+    });
+    const updateUserById = vi.fn().mockResolvedValue({
+      data: { user: target },
+      error: null,
+    });
+    return {
+      target,
+      getUserById,
+      updateUserById,
+      sbAdmin: adminClient({ getUserById, updateUserById }),
+    };
+  }
+
+  it.each(['disable_access', 'enable_access'] as const)(
+    '%s preserves the managed UUID and validates confirmation/self before update',
+    async (action) => {
+      const { target, sbAdmin, getUserById, updateUserById } = fixture();
+      await expect(
+        mutateInternalAccount({
+          action,
+          actorUserId,
+          targetUserId,
+          confirmationEmail: 'wrong@xwf.tuturuuu.com',
+          sbAdmin,
+        })
+      ).rejects.toMatchObject({ status: 400 });
+      expect(updateUserById).not.toHaveBeenCalled();
+      getUserById.mockClear();
+      await expect(
+        mutateInternalAccount({
+          action,
+          actorUserId: targetUserId,
+          targetUserId,
+          confirmationEmail: email,
+          sbAdmin,
+        })
+      ).rejects.toMatchObject({ status: 409 });
+      expect(getUserById).not.toHaveBeenCalled();
+      expect(updateUserById).not.toHaveBeenCalled();
+      const disabled = action === 'disable_access';
+      updateUserById.mockResolvedValueOnce({
+        data: {
+          user: {
+            ...target,
+            banned_until: disabled ? '2126-01-01T00:00:00Z' : null,
+          },
+        },
+        error: null,
+      });
+      const result = await mutateInternalAccount({
+        action,
+        actorUserId,
+        targetUserId,
+        confirmationEmail: email,
+        sbAdmin,
+      });
+      expect(getUserById).toHaveBeenCalledExactlyOnceWith(targetUserId);
+      expect(updateUserById).toHaveBeenCalledExactlyOnceWith(targetUserId, {
+        ban_duration: disabled ? '876000h' : 'none',
+      });
+      expect(result).toMatchObject({
+        id: targetUserId,
+        email,
+        isDisabled: disabled,
+      });
+    }
+  );
+
+  it.each([
+    'operator@tuturuuu.com.example',
+    'operator@eviltuturuuu.com',
+    'operator@example.com',
+    'operator@xwf..tuturuuu.com',
+  ])(
+    'rejects unmanaged target %s for both access actions',
+    async (targetEmail) => {
+      for (const action of ['disable_access', 'enable_access'] as const) {
+        const { sbAdmin, updateUserById } = fixture(targetEmail);
+        await expect(
+          mutateInternalAccount({
+            action,
+            actorUserId,
+            targetUserId,
+            confirmationEmail: targetEmail,
+            sbAdmin,
+          })
+        ).rejects.toMatchObject({ status: 404 });
+        expect(updateUserById).not.toHaveBeenCalled();
+      }
+    }
+  );
+
+  it.each([
+    'update_profile',
+    'reset_password',
+    'reset_mfa',
+    'require_mfa',
+    'optional_mfa',
+  ] as const)('keeps %s root-only', async (action) => {
+    const { sbAdmin, updateUserById } = fixture();
+    await expect(
+      mutateInternalAccount({
+        action,
+        actorUserId,
+        targetUserId,
+        confirmationEmail: email,
+        sbAdmin,
+        newPassword: 'valid-temporary-password',
+        displayName: 'Operator',
+      })
+    ).rejects.toMatchObject({ status: 404 });
+    expect(updateUserById).not.toHaveBeenCalled();
+  });
+
+  it.each(['disable_access', 'enable_access'] as const)(
+    '%s strictly validates the provider response',
+    async (action) => {
+      const { sbAdmin, updateUserById } = fixture();
+      updateUserById.mockResolvedValueOnce({
+        data: {
+          user: authUser({
+            id: targetUserId,
+            email: 'operator@tuturuuu.com.example',
+          }),
+        },
+        error: null,
+      });
+      await expect(
+        mutateInternalAccount({
+          action,
+          actorUserId,
+          targetUserId,
+          confirmationEmail: email,
+          sbAdmin,
+        })
+      ).rejects.toMatchObject({ status: 500 });
+      expect(updateUserById).toHaveBeenCalledTimes(1);
+    }
+  );
 });

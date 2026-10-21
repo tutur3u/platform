@@ -304,3 +304,21 @@ Recovery admission and committed repair readback use the separate service-only
 `inspect_employee_creation_rejection` RPC. Candidate eligibility is not rejection
 proof. Only a matching committed audit at reserved/version 3 may unlock explicit
 same-operation CREATE in the UI; a lost mutation acknowledgement stays fenced.
+
+### Explicit retained-mailbox adoption
+
+Keep the Google-destination empty-only prepare guard unchanged. Populated
+placeholders require the separate retained adoption RPC and explicit content
+ownership confirmation tied to the original tuple/revision and fresh snapshot.
+Confirmation resolves entitlement only for that mailbox; it cannot waive foreign
+access, identity, graph or catalog contradictions. Preserve missing historical
+provenance rather than fabricating envelopes or reparenting content.
+
+The adoption receipt is distinct from the migration journal. Reconcile lost
+acknowledgements by inspecting the original operation; never replay an uncertain
+write or replace its UUID. Require committed adoption/readiness before ordinary
+reserve/claim/complete. Use the canonical full-schema rollback packet and
+same-database type generation; source-only tests or a minimal fixture cannot
+qualify SQL. See the retained-adoption section of
+`apps/docs/build/development-tools/employee-address-migration.mdx` for its narrow
+four-relation allowance, graph rejection rules and operational fences.

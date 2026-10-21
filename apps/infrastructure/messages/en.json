@@ -8746,6 +8746,21 @@
       "search": "Search"
     },
     "address_migration": {
+      "adoption": {
+        "adopt": "Adopt and preserve retained mail",
+        "adopted": "Adoption receipt confirmed. Read migration readiness before continuing.",
+        "busy": "Checking retained mailbox…",
+        "denied": "Adoption unavailable. Preserve the mailbox and resolve permissions, conflicts or snapshot changes.",
+        "description": "Separate administrator action for existing retained mail. Review the original operation and confirm that all retained contents belong to this account. Historical missing envelope data is preserved.",
+        "destination": "Confirm canonical address",
+        "inspect": "Read adoption state",
+        "ownership": "I confirm that every retained mailbox item belongs to this target account and should remain accessible to it.",
+        "snapshot": "Reviewed content snapshot: {snapshot}",
+        "source": "Confirm legacy address",
+        "target": "Confirm target account UUID",
+        "title": "Adopt retained mailbox",
+        "unknown": "Outcome unknown. Read the original operation again; do not submit another adoption."
+      },
       "close": "Close",
       "completed": "Independent reconciliation confirmed the destination address for the same user UUID. This does not verify end-to-end mail delivery.",
       "confirm_destination": "Type the exact destination address",

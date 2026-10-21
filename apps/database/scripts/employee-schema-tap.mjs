@@ -68,6 +68,7 @@ export function selectSchemaPackets(
       ? [
           ['employee-google-destination-migration.sql', 30],
           ['employee-address-migration.sql', 10],
+          ['employee-retained-mailbox-adoption.sql', 41],
         ]
       : []),
     ...(feedback ? feedbackPackets : []),
@@ -121,6 +122,7 @@ export function schemaReceipt({
   feedback = false,
   chatInitialSettings = false,
   chatInitialSettingsQualified = false,
+  generatedTypesSha256 = null,
 }) {
   const expected = selectSchemaPackets(
     journal,
@@ -135,6 +137,7 @@ export function schemaReceipt({
   const passed =
     lifecycleCode === 0 &&
     cleanupSucceeded === true &&
+    (!addressMigration || /^[a-f0-9]{64}$/u.test(generatedTypesSha256 ?? '')) &&
     (!chatInitialSettings || chatInitialSettingsQualified === true) &&
     JSON.stringify(packets) === JSON.stringify(expected);
   return {

@@ -52,7 +52,7 @@ on:
         default: false
         type: boolean
       include_address_migration:
-        description: Add separate legacy 10 and Google destination 30 assertion rollback packets
+        description: Add legacy10, Google30 and retained-adoption41 rollback packets with same-database typegen
         required: false
         default: false
         type: boolean
@@ -202,7 +202,7 @@ jobs:
         if: inputs.include_chat_initial_settings == true
         run: node --test --test-concurrency=1 apps/database/scripts/chat-initial-settings-qualification.test.mjs apps/database/scripts/chat-process-diagnostic.test.mjs
       - name: Verify strict TAP and receipt gates
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-retained-mailbox-schema.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify Google destination packet source
         if: inputs.include_address_migration == true
         working-directory: source
