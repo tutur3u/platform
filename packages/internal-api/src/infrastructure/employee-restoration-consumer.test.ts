@@ -1,7 +1,17 @@
+import type { EmployeeRestoreTuple } from '@tuturuuu/utils/internal-accounts/employee-restoration-boundary';
+import { makeEmployeeRestorationHandlers } from '@tuturuuu/utils/internal-accounts/employee-restoration-http';
 import { describe, expect, it, vi } from 'vitest';
 import { InternalApiError } from '../client';
-import type { InternalEmployeeManagement } from './employee-management';
+import {
+  getInternalEmployeeManagement,
+  type InternalEmployeeManagement,
+  reconcileInternalEmployee,
+} from './employee-management';
+import { restoreInternalEmployee } from './employee-restoration';
+
 import { EmployeeRestorationConsumer } from './employee-restoration-consumer';
+
+vi.mock('server-only', () => ({}));
 
 const id = '10000000-0000-4000-8000-000000000001';
 const operationId = '20000000-0000-4000-8000-000000000001';
@@ -260,3 +270,154 @@ describe('restoration consumer', () => {
     expect(consumer.action).toBeNull();
   });
 });
+
+it('keeps explicit revision conflict visible with original recovery tuple and no subsequent mutation', async () => {
+  const { consumer, transport } = setup();
+  await consumer.inspect();
+  transport.restore.mockRejectedValue(
+    new InternalApiError(
+      'Conflict',
+      409,
+      'employee_revision_or_operation_conflict'
+    )
+  );
+  await consumer.submit(email);
+  expect(consumer.view).toMatchObject({
+    outcome: 'conflict',
+    restoreAttempted: true,
+    retained: { confirmationEmail: email, expectedRevision: 7 },
+  });
+  transport.inspect.mockResolvedValue({
+    ...detail,
+    nextAction: 'inspect',
+    operation: { operationId, revision: 7, phase: 'reserved' },
+  });
+  await consumer.inspect();
+  expect(consumer.view.outcome).toBe('conflict');
+  expect(consumer.action).toBeNull();
+  await consumer.submit(email);
+  expect(transport.restore).toHaveBeenCalledTimes(1);
+  expect(transport.reconcile).not.toHaveBeenCalled();
+});
+
+it.each(['revision-conflict', 'lost-begin-ACK', 'lost-attempt-ACK'] as const)(
+  'real restore service/client/consumer preserves %s with zero unban',
+  async (fault) => {
+    const actorUserId = '30000000-0000-4000-8000-000000000001';
+    const provider = {
+      getUserById: vi.fn(async (userId: string) => ({
+        data: {
+          user: {
+            id: userId,
+            email,
+            aud: 'authenticated',
+            created_at: '2026-01-01',
+            email_confirmed_at: '2026-01-01',
+            app_metadata: { employee_onboarding: true },
+            user_metadata: {},
+            banned_until: userId === id ? '2126-01-01' : undefined,
+          },
+        },
+        error: null,
+      })),
+      updateUserById: vi.fn(),
+    };
+    let original: EmployeeRestoreTuple | null = null;
+    const operations = {
+      inspect: vi.fn(async () => ({
+        data: {
+          id,
+          email,
+          registryState: 'active',
+          managedName: 'Staff',
+          managementRoleLabel: null,
+          revision: fault === 'revision-conflict' ? 8 : 7,
+          mailboxReady: true,
+          readinessCode: 'ready',
+          reservation: 'exact_intent',
+          managed: true,
+          operation: null,
+          recovery: null,
+        },
+        error: null,
+      })),
+      begin: vi.fn(async (tuple: EmployeeRestoreTuple) => {
+        original = tuple;
+        if (fault === 'lost-begin-ACK')
+          throw new Error('begin committed, ACK lost');
+        return {
+          data: {
+            operationId: tuple.operationId,
+            revision: tuple.expectedRevision,
+            phase: 'reserved',
+          },
+          error: null,
+        };
+      }),
+      markAttempt: vi.fn(async () => {
+        throw new Error('attempt committed, ACK lost');
+      }),
+      confirm: vi.fn(),
+      reconcile: vi.fn(),
+    };
+    const handlers = makeEmployeeRestorationHandlers(async () => ({
+      authorized: true,
+      input: { actorUserId, provider, operations },
+    }));
+    const replies: unknown[] = [];
+    const http = vi.fn<typeof fetch>(async (url, init) => {
+      if (!init?.method || init.method === 'GET') return Response.json(detail);
+      const response = await handlers.restore(new Request(url, init), {
+        params: Promise.resolve({ userId: id }),
+      });
+      replies.push(await response.clone().json());
+      return response;
+    });
+    const options = { fetch: http, baseUrl: 'https://web.test' };
+    const consumer = new EmployeeRestorationConsumer({
+      targetId: id,
+      email,
+      assertActive: () => {},
+      transport: {
+        inspect: (target) => getInternalEmployeeManagement(target, options),
+        restore: (target, input) =>
+          restoreInternalEmployee(target, input, options),
+        reconcile: (target, input) =>
+          reconcileInternalEmployee(target, input, options),
+      },
+    });
+    await consumer.inspect();
+    await consumer.submit(email);
+    expect(consumer.view.outcome, JSON.stringify(replies)).toBe(
+      fault === 'revision-conflict' ? 'conflict' : 'pending'
+    );
+    expect(consumer.view.retained).toMatchObject({
+      confirmationEmail: email,
+      expectedRevision: 7,
+    });
+    if (fault === 'revision-conflict') {
+      expect(original).toBeNull();
+      expect(operations.begin).not.toHaveBeenCalled();
+    } else {
+      expect(original).toMatchObject({
+        actorUserId,
+        targetUserId: id,
+        email,
+        expectedRevision: 7,
+        operationId: consumer.view.retained?.operationId,
+      });
+      expect(operations.begin).toHaveBeenCalledTimes(1);
+    }
+    expect(operations.markAttempt).toHaveBeenCalledTimes(
+      fault === 'lost-attempt-ACK' ? 1 : 0
+    );
+    expect(provider.updateUserById).not.toHaveBeenCalled();
+    await consumer.inspect();
+    await consumer.submit(email);
+    expect(
+      http.mock.calls.filter(([, init]) => init?.method === 'POST')
+    ).toHaveLength(1);
+    expect(operations.reconcile).not.toHaveBeenCalled();
+    expect(provider.updateUserById).not.toHaveBeenCalled();
+  }
+);

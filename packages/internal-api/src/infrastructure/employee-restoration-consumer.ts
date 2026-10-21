@@ -126,6 +126,7 @@ export class EmployeeRestorationConsumer {
       transport?: Transport;
     }
   ) {}
+  private revisionConflict = false;
   private get transport(): Transport {
     return (
       this.input.transport ?? {
@@ -151,7 +152,7 @@ export class EmployeeRestorationConsumer {
     if (detail.id !== this.input.targetId || detail.email !== this.input.email)
       throw new Error('Inspection tuple changed');
     const retained = this.view.retained;
-    if (retained && detail.operation) {
+    if (retained && detail.operation && !this.revisionConflict) {
       if (
         detail.operation.revision !== retained.expectedRevision ||
         (retained.operationId &&
@@ -166,6 +167,7 @@ export class EmployeeRestorationConsumer {
     this.view = { ...this.view, detail };
     if (
       retained &&
+      !this.revisionConflict &&
       detail.operation?.phase === 'completed' &&
       detail.revision === retained.expectedRevision + 1 &&
       detail.providerState === 'confirmed_active' &&
@@ -187,6 +189,11 @@ export class EmployeeRestorationConsumer {
       error instanceof InternalApiError &&
       error.status === 503 &&
       error.code === 'employee_management_unavailable';
+    const revisionConflict =
+      error instanceof InternalApiError &&
+      error.status === 409 &&
+      error.code === 'employee_revision_or_operation_conflict';
+    this.revisionConflict ||= revisionConflict;
     this.view = {
       ...this.view,
       detail: null,
@@ -194,9 +201,11 @@ export class EmployeeRestorationConsumer {
         ? 'denied'
         : unavailable
           ? 'unavailable'
-          : this.view.restoreAttempted || this.view.retained
-            ? 'pending'
-            : 'conflict',
+          : this.revisionConflict
+            ? 'conflict'
+            : this.view.restoreAttempted || this.view.retained
+              ? 'pending'
+              : 'conflict',
     };
   }
   async inspect() {
@@ -216,6 +225,7 @@ export class EmployeeRestorationConsumer {
     if (
       !detail ||
       busy ||
+      this.revisionConflict ||
       ['denied', 'unavailable', 'restored'].includes(outcome)
     )
       return null;
