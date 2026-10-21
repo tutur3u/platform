@@ -398,3 +398,11 @@ test('address-only and provider profiles require source and control to be the sa
     }
   }
 });
+
+test('installed rejection proof files belong to the nearest fixture tsconfig instead of control solution references', () => {
+  const config = JSON.parse(
+    readFileSync(new URL('apps/web/e2e/fixtures/tsconfig.json', root), 'utf8')
+  );
+  assert.ok(config.include.includes('employee-rejection-http-proof*.ts'));
+  assert.equal(config.extends, '../../tsconfig.json');
+});

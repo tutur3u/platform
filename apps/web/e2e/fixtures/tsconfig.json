@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "include": [
     "employee-web-session-*.ts",
+    "employee-rejection-http-proof*.ts",
     "vitest.employee-web-session.config.ts"
   ],
   "exclude": ["node_modules"]
