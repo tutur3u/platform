@@ -1,3 +1,4 @@
+import type { RootRouteOptions } from '@tanstack/react-router';
 import { cleanup, render } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -12,7 +13,7 @@ type Head = NonNullable<Options['head']>;
 type Registration = {
   head: (context: Pick<Parameters<Head>[0], 'loaderData'>) => ReturnType<Head>;
   component: NonNullable<Options['component']>;
-  shellComponent: NonNullable<Options['shellComponent']>;
+  shellComponent: NonNullable<RootRouteOptions['shellComponent']>;
   notFoundComponent: NonNullable<Options['notFoundComponent']>;
 };
 
@@ -117,7 +118,7 @@ describe('actual Apps root route callbacks', () => {
           { name: 'twitter:description', content: copy.description },
         ])
       );
-      expect(head.links?.filter((link) => link.rel === 'canonical')).toEqual([
+      expect(head.links?.filter((link) => link?.rel === 'canonical')).toEqual([
         { rel: 'canonical', href: 'https://apps.tuturuuu.com/' },
       ]);
       expect(
