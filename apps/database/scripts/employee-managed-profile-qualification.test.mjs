@@ -253,3 +253,139 @@ test('actual concurrency fixture suppresses only the two confirmed remote COMMIT
   assert.equal(assertPacketTap(shape(sql), 10), 10);
   assert.doesNotThrow(() => assertRollbackSource(sql));
 });
+
+test('concurrency fixture captures owned PIDs before dispatch and gates both races on bounded Auth lock proof', () => {
+  const sql = readFileSync(
+    new URL(
+      '../supabase/tests/employee-managed-profile-concurrency.sql',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  assert.ok(
+    sql.indexOf('create temporary table profile_sessions') <
+      sql.indexOf('dblink_send_query')
+  );
+  for (const read of [
+    "dblink('profile_a','select pg_backend_pid()')",
+    "dblink('profile_b','select pg_backend_pid()')",
+  ])
+    assert.ok(sql.includes(read));
+  for (const proof of [
+    'waiting.pid=sessions.b_pid and not waiting.granted',
+    "waiting.locktype='transactionid' and waiting.mode='ShareLock'",
+    'held.transactionid=waiting.transactionid and held.granted',
+    'held.pid=sessions.a_pid',
+    'sessions.a_pid=any(pg_catalog.pg_blocking_pids(sessions.b_pid))',
+    "relation_lock.relation='auth.users'::regclass",
+    "relation_lock.mode='RowShareLock'",
+    "clock_timestamp()+interval '2 seconds'",
+    'pg_sleep(least(0.01,remaining))',
+  ])
+    assert.ok(sql.includes(proof), proof);
+  assert.ok(
+    sql.indexOf('if clock_timestamp()>=deadline then return false') <
+      sql.indexOf(
+        'if pg_temp.profile_owned_waiter() then return clock_timestamp()<deadline'
+      )
+  );
+  assert.equal(
+    sql.match(
+      /insert into profile_waits values\('(rename|restore)',pg_temp.await_profile_waiter\(\)\);/gu
+    )?.length,
+    2
+  );
+  assert.equal(sql.match(/^select (?:is|ok|matches)\(/gmu)?.length, 10);
+  assert.equal(sql.includes('pg_sleep(0.15)'), false);
+  assert.equal(sql.includes('pid<>pg_backend_pid()'), false);
+});
+
+// Deterministic models exercise the predicate/deadline design, not PostgreSQL.
+function modelOwnedWait(snapshot) {
+  return (
+    snapshot.authRelations.includes(101) &&
+    snapshot.authRelations.includes(102) &&
+    snapshot.blockers.includes(101) &&
+    snapshot.waiting.some(
+      (wait) =>
+        wait.pid === 102 &&
+        !wait.granted &&
+        wait.type === 'transactionid' &&
+        wait.mode === 'ShareLock' &&
+        snapshot.held.some(
+          (held) =>
+            held.pid === 101 &&
+            held.granted &&
+            held.mode === 'ExclusiveLock' &&
+            held.transaction === wait.transaction
+        )
+    )
+  );
+}
+function modelPoll(snapshotAt) {
+  for (let elapsedMs = 0; elapsedMs < 2000; elapsedMs += 10) {
+    const snapshot = snapshotAt(elapsedMs);
+    if (modelOwnedWait(snapshot)) {
+      const completedAtMs = elapsedMs + (snapshot.probeDurationMs ?? 0);
+      return { observed: completedAtMs < 2000, elapsedMs: completedAtMs };
+    }
+    if (!snapshot.busy) return { observed: false, elapsedMs };
+  }
+  return { observed: false, elapsedMs: 2000 };
+}
+const ownedWait = {
+  busy: true,
+  authRelations: [101, 102],
+  blockers: [101],
+  waiting: [
+    {
+      pid: 102,
+      granted: false,
+      type: 'transactionid',
+      mode: 'ShareLock',
+      transaction: 77,
+    },
+  ],
+  held: [{ pid: 101, granted: true, mode: 'ExclusiveLock', transaction: 77 }],
+};
+test('pure wait model never qualifies unrelated, missing, wrong-owner or wrong-relation waiters from busy alone', () => {
+  for (const snapshot of [
+    { ...ownedWait, waiting: [{ ...ownedWait.waiting[0], pid: 999 }] },
+    { ...ownedWait, waiting: [] },
+    { ...ownedWait, blockers: [999] },
+    { ...ownedWait, held: [{ ...ownedWait.held[0], transaction: 88 }] },
+    { ...ownedWait, authRelations: [101] },
+  ])
+    assert.deepEqual(
+      modelPoll(() => snapshot),
+      { observed: false, elapsedMs: 2000 }
+    );
+});
+test('pure wait model accepts a delayed owned waiter before the deadline, never at or after it', () => {
+  const absent = { ...ownedWait, waiting: [] };
+  assert.deepEqual(
+    modelPoll((now) => (now >= 1700 ? ownedWait : absent)),
+    { observed: true, elapsedMs: 1700 }
+  );
+  for (const arrival of [2000, 2010])
+    assert.deepEqual(
+      modelPoll((now) => (now >= arrival ? ownedWait : absent)),
+      { observed: false, elapsedMs: 2000 }
+    );
+  assert.deepEqual(
+    modelPoll((now) =>
+      now >= 1990 ? { ...ownedWait, probeDurationMs: 10 } : absent
+    ),
+    { observed: false, elapsedMs: 2000 }
+  );
+  assert.deepEqual(
+    modelPoll((now) =>
+      now >= 1990 ? { ...ownedWait, probeDurationMs: 9 } : absent
+    ),
+    { observed: true, elapsedMs: 1999 }
+  );
+  assert.deepEqual(
+    modelPoll(() => ({ ...absent, busy: false })),
+    { observed: false, elapsedMs: 0 }
+  );
+});
