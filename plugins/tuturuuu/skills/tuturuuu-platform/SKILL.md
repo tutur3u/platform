@@ -12,6 +12,7 @@ load only the reference section needed by the affected surface.
   boundaries, dashboard interaction, translations, and navigation.
 - `references/repository-workflows.md`: app ownership, settings shells, package
   commands, task capture, and coordination metadata.
+- `references/employee-cli-recovery.md`: operation-only CLI employee recovery authorization and dispatch fences.
 - `references/platform-checklist.md`: follow-through for a substantial change across
   translations, navigation, active route ownership, or multiple packages.
 

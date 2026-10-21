@@ -84,6 +84,51 @@ rejection, and unchanged root-only profile/password/MFA eligibility. Route autho
 Infrastructure API contracts. These synthetic tests do not establish provider or
 production acceptance.
 
+## Diagnose an internal profile save failure
+
+The internal profile dialog sends a same-origin UUID `PATCH` through
+`updateInternalAccount` in `packages/internal-api`. Infrastructure owns this
+route and its profile service. Web's satellite rewrite inventory does not forward
+this legacy UUID route. The employee subtree below has a separate owner.
+
+The generic update toast does not identify the failing boundary. Inspect the
+existing failed request's HTTP status and response message first, then the owning
+Infrastructure request logs. Do not replay a profile mutation to gather evidence.
+Keep credentials, request bodies, provider error details, and account identifiers
+out of shared diagnostics.
+
+`profile-service.ts` emits `Internal account profile stage failed` on a returned
+database failure, with a fixed `profile_read`, `username_reserve`, or
+`profile_update` stage and an allowlisted code. Unrecognized or absent codes become
+`unknown`. A successful profile lookup that returns no row also logs `profile_read`
+with code `unknown` and returns HTTP 404; this event does not necessarily indicate
+a database error. These events do not prove a specific SQL trigger caused the rejection.
+They do not cover earlier authorization, provider lookup, or thrown transport
+failures. Missing events alone do not prove that execution stopped earlier.
+
+Returned username-cleanup failures emit `Internal account profile cleanup failed`
+with a fixed `username_rollback` or `previous_username_release` stage and the same
+code allowlist. Cleanup diagnostics omit account IDs and raw error fields. A
+thrown rollback rejection emits `username_rollback` with code `unknown` and
+preserves the original profile-update failure. Returned previous-username cleanup
+errors preserve the successful profile response.
+
+For an update-stage `42501`, a separately authorized read-only SQL inspection can
+compare the target's canonical `users.display_name` with the registry's
+`infrastructure_employees.managed_name` and confirm the installed managed-name
+trigger. Registered employee names remain managed: changing the public name away
+from that managed value is rejected even for a service-role write. Do not bypass
+that fence or widen administrator authorization to make the toast disappear.
+`23505` indicates a uniqueness conflict; `PT429` indicates a profile change limit.
+Confirm the exact database error before attributing either to this incident.
+
+`profile-service.test.ts` covers each returned failure stage, unknown-code privacy,
+unchanged status/rollback behavior, cleanup returned errors and rollback rejection,
+explicit read/reserve/update/cleanup ordering, and success without failure logs.
+`apps/database/supabase/tests/employee-signup-guards.sql` covers the managed-name
+fence through the public profile RPC. Service mocks do not establish deployed
+schema, provider, transport, or customer acceptance.
+
 ## Employee API routing
 
 Web owns `/api/v1/infrastructure/internal-accounts/employees` and its descendants,
@@ -143,6 +188,16 @@ retain the original operation and stay blocked against another CREATE. This
 behavior does not promise a creation latency. Regression coverage and remaining
 runtime evidence are recorded in the
 [CREATE qualification contract](../../build/development-tools/employee-schema-qualification#original-create-response-recovery).
+
+CLI recovery of an existing CREATE operation also supports read-only
+`GET .../operations/{operationId}/cli-recovery?view=outcome` with the same platform
+CLI access credential. Fresh CLI MFA, current canonical email, root membership
+and permission checks apply before reads and before disclosure. This view binds
+the original actor/operation and requires provider plus fresh SQL proof; it never
+resumes or mutates. Default rejection GET and version-3 POST resume keep their
+existing contracts. Infrastructure audience authentication remains separate.
+See the [CLI recovery runbook](../../build/development-tools/employee-cli-recovery)
+and its CLI outcome route/client regressions for strict HTTP and identity checks.
 
 ### Managed employee inspection
 
@@ -446,6 +501,37 @@ helper and dialog regressions enforce this rule; the optional disposable Web
 session fixture exercises authenticated adjudication and CREATE end to end.
 
 Older interrupted employee creation requests without a saved browser reference can be loaded under **Advanced recovery** using their original operation ID. The server supplies and validates the account identity. Loading only observes the request; a fenced or unavailable request cannot create a replacement account. Audited recovery still requires explicit administrator action and a fresh temporary password. Regression coverage: `employee-original-operation-resume.test.ts`.
+
+### CLI recovery of an existing employee CREATE
+
+Web exposes the explicitly scoped
+`employees/operations/{operationId}/cli-recovery` GET/POST endpoint for the
+original administrator when browser recovery is unavailable. This exception
+accepts only a verified platform CLI access bearer with CLI origin and current
+required-MFA proof. It freshly checks the corporate domain, persisted root MEMBER
+membership, `manage_internal_accounts`, and confirmed, unbanned current Auth
+identity. It grants no CLI access to ordinary employee creation, availability,
+management, RESTORE or address migration routes and issues no new credentials.
+
+Every request binds the path to `Idempotency-Key`. GET inspects only an owned
+original operation; missing, foreign and fenced operations cannot be resumed.
+POST accepts only `adjudicate` with the existing full explicit attestation and
+evidence digest, or `resume` with the complete freshly read `retry_ready`
+version-3 tuple and a fresh validated temporary password. Resume preserves the
+original actor, operation, target UUID, email, name and audit identity; it rereads
+that tuple before the durable claim. Unknown/pending state never admits replay.
+Adjudication never automatically submits CREATE. A lost acknowledgement requires
+inspection and retention of the same event/evidence reference.
+
+Use the portable `inspectEmployeeCliRecovery` and `submitEmployeeCliRecovery`
+helpers from `@tuturuuu/internal-api/infrastructure`. Operator setup and the
+single-dispatch CLI authentication example are in the
+[employee qualification runbook](/build/development-tools/employee-cli-recovery).
+Regression coverage: `employee-cli-recovery-authorization.test.ts`,
+`employee-cli-recovery-boundary.test.ts`, `employee-cli-recovery.test.ts`, and the
+existing Infrastructure authorization/runtime and rejection boundary regressions.
+Hosted authentication, exact Web build CI and account delivery remain separate
+release-owner checks.
 
 ## Managed employee profile edits
 

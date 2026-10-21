@@ -72,6 +72,16 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 ## Validation
 
+- For internal profile save failures, resolve the actual route owner first:
+  Infrastructure owns the legacy UUID PATCH; Web owns the employee subtree.
+  Capture the existing failed HTTP status/message before inferring SQL failure.
+  The profile service logs fixed failure stages and allowlisted codes without
+  payloads. An update-stage `42501` can be a managed employee name fence, but
+  requires read-only target/registry and installed-trigger evidence to attribute.
+  Preserve that fence, uniqueness and quotas; do not broaden authorization or
+  replay a mutation for diagnosis. See
+  [profile failure diagnosis](../../../../../apps/docs/platform/applications/infrastructure.mdx#diagnose-an-internal-profile-save-failure).
+
 - Use concrete table insert/update types for typed Supabase payloads instead of
   `Record<string, unknown>`.
 - Narrow split-key or grouped identifiers before `.in(...)` calls and `Map`

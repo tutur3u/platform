@@ -114,47 +114,48 @@ export function makeEmployeeRejectionBoundary(deps: {
 }
 export const handleEmployeeRejection = makeEmployeeRejectionBoundary({
   authorize: authorizeEmployeeCreation,
-  async connect() {
-    const { url, key } = checkEnvVariables({ useSecretKey: true });
-    const call = async (
-      name:
-        | 'inspect_employee_creation_rejection'
-        | 'adjudicate_employee_creation_rejection',
-      body: object
-    ) => {
-      const response = await fetch(new URL(`/rest/v1/rpc/${name}`, url), {
-        method: 'POST',
-        cache: 'no-store',
-        redirect: 'error',
-        signal: AbortSignal.timeout(8000),
-        headers: {
-          apikey: key,
-          Authorization: `Bearer ${key}`,
-          'Content-Type': 'application/json',
-          'Content-Profile': 'private',
-          'Accept-Profile': 'private',
-          Prefer: 'tx=commit',
-        },
-        body: JSON.stringify(body),
-      });
-      if (
-        !response.ok ||
-        response.headers.get('preference-applied')?.includes('tx=rollback')
-      )
-        throw new Error('Recovery unavailable');
-      const text = await response.text();
-      if (new TextEncoder().encode(text).byteLength > 262144)
-        throw new Error('Recovery response exceeds bound');
-      return JSON.parse(text);
-    };
-    return {
-      inspect: (actorId, operationId) =>
-        call('inspect_employee_creation_rejection', {
-          p_actor_id: actorId,
-          p_operation_id: operationId,
-        }),
-      adjudicate: (body) =>
-        call('adjudicate_employee_creation_rejection', body),
-    };
-  },
+  connect: connectEmployeeRejection,
 });
+
+export async function connectEmployeeRejection(): Promise<Port> {
+  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  const call = async (
+    name:
+      | 'inspect_employee_creation_rejection'
+      | 'adjudicate_employee_creation_rejection',
+    body: object
+  ) => {
+    const response = await fetch(new URL(`/rest/v1/rpc/${name}`, url), {
+      method: 'POST',
+      cache: 'no-store',
+      redirect: 'error',
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'Content-Profile': 'private',
+        'Accept-Profile': 'private',
+        Prefer: 'tx=commit',
+      },
+      body: JSON.stringify(body),
+    });
+    if (
+      !response.ok ||
+      response.headers.get('preference-applied')?.includes('tx=rollback')
+    )
+      throw new Error('Recovery unavailable');
+    const text = await response.text();
+    if (new TextEncoder().encode(text).byteLength > 262144)
+      throw new Error('Recovery response exceeds bound');
+    return JSON.parse(text);
+  };
+  return {
+    inspect: (actorId, operationId) =>
+      call('inspect_employee_creation_rejection', {
+        p_actor_id: actorId,
+        p_operation_id: operationId,
+      }),
+    adjudicate: (body) => call('adjudicate_employee_creation_rejection', body),
+  };
+}

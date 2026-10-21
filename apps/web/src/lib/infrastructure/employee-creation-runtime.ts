@@ -2,21 +2,27 @@ import 'server-only';
 import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { authorizeEmployeeCreation } from './employee-creation-authorization';
-import type { EmployeeCreationJournal } from './employee-creation-boundary';
+import type {
+  EmployeeCreationAuthorization,
+  EmployeeCreationJournal,
+} from './employee-creation-boundary';
 import { createEmployeeCreationJournal } from './employee-creation-journal';
 import { createEmployeeCreationOperationStore } from './employee-creation-operation-store';
 import { createEmployeeRuntimeRpc } from './employee-creation-rpc';
 import { createEmployeeRpcPhaseProvider } from './employee-creation-rpc-provider';
 
 export async function createEmployeeRuntimeJournal(
-  request: Request
+  request: Request,
+  authorizeRequest: (
+    request: Request
+  ) => Promise<EmployeeCreationAuthorization> = authorizeEmployeeCreation
 ): Promise<EmployeeCreationJournal | undefined> {
   try {
     const config = checkEnvVariables({ useSecretKey: true });
     const transport = createEmployeeRuntimeRpc(config);
     const admin = await createAdminClient({ noCookie: true });
     async function authorize(actorUserId: string) {
-      const actor = await authorizeEmployeeCreation(request);
+      const actor = await authorizeRequest(request);
       return actor.authorized && actor.actorUserId === actorUserId;
     }
     const store = createEmployeeCreationOperationStore({

@@ -475,6 +475,14 @@ Docker setup is inactive and the Docker cron runner is retired; local docs use
 
 ## Bounded billing projections
 
+Keep subscription group defaults separate from explicit operator choices. An
+empty selection after clearing a paid class is intentional; do not reapply
+select-all defaults during context or membership refetches. Reset that preference
+at workspace/customer changes and preserve URL-prefilled groups. Exercise the
+actual selector and membership/product/context query transformations, as in
+`subscription-group-selection.test.tsx`; direct hook happy paths omit selection
+effects. See the Finance product decision on subscription group choices.
+
 Treat a schedule response as authoritative only within its explicit civil-date
 window. Replace legacy dates inside that window, including for a present empty
 group list; retain dates outside it. Missing keys, pending reads and failed or
