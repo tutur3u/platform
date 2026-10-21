@@ -27,6 +27,9 @@ const ReferenceSchema = z
     ]),
     rejection: z
       .strictObject({
+        targetUserId: z.uuid().optional(),
+        originalLeaseId: z.uuid().optional(),
+        originalAttemptEventId: z.uuid().optional(),
         eventId: z.uuid(),
         evidenceReferenceSha256: z.string().regex(/^[a-f0-9]{64}$/),
       })
@@ -38,6 +41,7 @@ export type CreationReference = z.infer<typeof ReferenceSchema>;
 type StoragePort = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 export class EmployeeCreationRecovery {
   private active = false;
+  private adjudicating = false;
   readonly key: string;
   reference: CreationReference | null = null;
   constructor(
@@ -139,6 +143,15 @@ export class EmployeeCreationRecovery {
           result.displayName !== value.displayName))
     )
       throw new Error('Recovery scope mismatch');
+    if (
+      result.status !== 'fenced' &&
+      value.rejection?.targetUserId &&
+      (result.targetUserId !== value.rejection.targetUserId ||
+        result.originalLeaseId !== value.rejection.originalLeaseId ||
+        result.originalAttemptEventId !==
+          value.rejection.originalAttemptEventId)
+    )
+      throw new Error('Recovery tuple mismatch');
     if (result.status === 'retry_ready') {
       if (
         !value.rejection ||
@@ -166,44 +179,72 @@ export class EmployeeCreationRecovery {
     eligible: Extract<EmployeeRejectionRecoveryState, { status: 'eligible' }>,
     digest: string
   ) {
-    this.validateRejection(eligible);
-    const value = this.reference;
-    if (!value || value.rejection)
-      throw new Error('Adjudication already submitted; inspect original');
-    const rejection = {
-      eventId: crypto.randomUUID(),
-      evidenceReferenceSha256: z
+    this.assertActive();
+    if (this.adjudicating) throw new Error('Adjudication in flight');
+    this.adjudicating = true;
+    try {
+      this.validateRejection(eligible);
+      const value = this.reference;
+      if (!value) throw new Error('Original creation required');
+      const parsedDigest = z
         .string()
         .regex(/^[a-f0-9]{64}$/)
-        .parse(digest),
-    };
-    this.save({ ...value, state: 'adjudicating', rejection });
-    // Persist the reference before dispatch. Any ambiguous response remains fenced.
-    const result = await (
-      this.deps.adjudicateRejection ?? adjudicateEmployeeRejection
-    )({
-      workspaceId: ROOT_WORKSPACE_ID,
-      adjudication: {
-        actorUserId: eligible.actorUserId,
-        operationId: eligible.operationId,
-        targetUserId: eligible.targetUserId,
-        email: eligible.email,
-        displayName: eligible.displayName,
-        originalLeaseId: eligible.originalLeaseId,
-        originalAttemptEventId: eligible.originalAttemptEventId,
-        expectedVersion: 2,
-        ...rejection,
-        reason: 'administrator_adjudicated_terminal_auth_rejection',
-        attestation: {
-          kind: 'administrator-adjudication-v1',
-          terminalAuthRejection: true,
-          noRequestInFlight: true,
-          absenceIsNotRejectionProof: true,
-          acceptResponsibility: true,
+        .parse(digest);
+      if (
+        value.rejection &&
+        value.rejection.evidenceReferenceSha256 !== parsedDigest
+      )
+        throw new Error('Adjudication evidence mismatch');
+      const fresh = await this.inspectRejection();
+      if (fresh.status === 'retry_ready') return fresh;
+      if (
+        fresh.status !== 'eligible' ||
+        fresh.targetUserId !== eligible.targetUserId ||
+        fresh.originalLeaseId !== eligible.originalLeaseId ||
+        fresh.originalAttemptEventId !== eligible.originalAttemptEventId ||
+        fresh.expectedVersion !== eligible.expectedVersion
+      )
+        throw new Error('Fresh eligible recovery required');
+      if (value.rejection && !value.rejection.targetUserId)
+        throw new Error('Original adjudication tuple unavailable');
+      const rejection = value.rejection ?? {
+        targetUserId: fresh.targetUserId,
+        originalLeaseId: fresh.originalLeaseId,
+        originalAttemptEventId: fresh.originalAttemptEventId,
+        eventId: crypto.randomUUID(),
+        evidenceReferenceSha256: parsedDigest,
+      };
+      this.save({ ...value, state: 'adjudicating', rejection });
+      // Persist the reference before dispatch. Any ambiguous response remains fenced.
+      const result = await (
+        this.deps.adjudicateRejection ?? adjudicateEmployeeRejection
+      )({
+        workspaceId: ROOT_WORKSPACE_ID,
+        adjudication: {
+          actorUserId: eligible.actorUserId,
+          operationId: eligible.operationId,
+          targetUserId: eligible.targetUserId,
+          email: eligible.email,
+          displayName: eligible.displayName,
+          originalLeaseId: eligible.originalLeaseId,
+          originalAttemptEventId: eligible.originalAttemptEventId,
+          expectedVersion: 2,
+          eventId: rejection.eventId,
+          evidenceReferenceSha256: rejection.evidenceReferenceSha256,
+          reason: 'administrator_adjudicated_terminal_auth_rejection',
+          attestation: {
+            kind: 'administrator-adjudication-v1',
+            terminalAuthRejection: true,
+            noRequestInFlight: true,
+            absenceIsNotRejectionProof: true,
+            acceptResponsibility: true,
+          },
         },
-      },
-    });
-    return this.validateRejection(result);
+      });
+      return this.validateRejection(result);
+    } finally {
+      this.adjudicating = false;
+    }
   }
   stop(state: 'conflict' | 'stopped') {
     if (this.reference) this.save({ ...this.reference, state });

@@ -36,10 +36,16 @@ export function EmployeeRejectionRecoveryPanel({
           : await recovery.inspectRejection();
       recovery.assertActive();
       setCandidate(state);
+      if (state.status === 'eligible') {
+        setDigest(recovery.reference?.rejection?.evidenceReferenceSha256 ?? '');
+        setAttested(false);
+      }
       if (state.status === 'retry_ready') onReady();
     } catch {
       try {
         recovery.assertActive();
+        setCandidate(null);
+        setAttested(false);
         setFailed(true);
       } catch {
         /* Retired surface cannot publish state. */
@@ -64,7 +70,7 @@ export function EmployeeRejectionRecoveryPanel({
       >
         {t('inspect')}
       </Button>
-      {candidate?.status === 'eligible' && !recovery.reference?.rejection ? (
+      {candidate?.status === 'eligible' ? (
         <>
           <p className="break-all text-sm">
             {t('identity', {
@@ -81,7 +87,7 @@ export function EmployeeRejectionRecoveryPanel({
             onChange={(event) => setDigest(event.target.value)}
             maxLength={64}
             autoComplete="off"
-            disabled={busy}
+            disabled={busy || Boolean(recovery.reference?.rejection)}
           />
           <Label className="flex items-start gap-2">
             <input

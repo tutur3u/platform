@@ -193,7 +193,7 @@ describe('employee creation form', () => {
   });
 });
 
-it('requires explicit adjudication and a fresh password before one same-operation CREATE', async () => {
+it('recovers precommit adjudication failure through explicit same-event retry before one same-operation CREATE', async () => {
   api.create.mockImplementationOnce(async (_payload, options) => ({
     status: 'pending',
     operationId: options.operationId,
@@ -217,6 +217,9 @@ it('requires explicit adjudication and a fresh password before one same-operatio
     expectedVersion: 2,
   };
   api.inspectRejection.mockResolvedValue(candidate);
+  api.adjudicateRejection.mockRejectedValueOnce(
+    new Error('precommit unavailable')
+  );
   api.adjudicateRejection.mockImplementation(async (body) => ({
     ...candidate,
     status: 'retry_ready',
@@ -232,7 +235,20 @@ it('requires explicit adjudication and a fresh password before one same-operatio
   expect(screen.getByRole('button', { name: 'adjudicate' })).toBeDisabled();
   fireEvent.click(screen.getByRole('checkbox', { name: 'attestation' }));
   fireEvent.click(screen.getByRole('button', { name: 'adjudicate' }));
+  await screen.findByRole('alert');
+  expect(screen.queryByLabelText('evidence')).not.toBeInTheDocument();
+  expect(api.adjudicateRejection).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+  await screen.findByLabelText('evidence');
+  expect(screen.getByLabelText('evidence')).toHaveValue('a'.repeat(64));
+  expect(screen.getByLabelText('evidence')).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'adjudicate' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'attestation' }));
+  fireEvent.click(screen.getByRole('button', { name: 'adjudicate' }));
   await waitFor(() => expect(screen.getByLabelText('password')).toBeEnabled());
+  expect(api.adjudicateRejection.mock.calls[1]?.[0]).toEqual(
+    api.adjudicateRejection.mock.calls[0]?.[0]
+  );
   expect(api.create).toHaveBeenCalledTimes(1);
   expect(screen.getByLabelText('email')).toBeDisabled();
   expect(screen.getByLabelText('name')).toBeDisabled();

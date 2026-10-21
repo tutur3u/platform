@@ -209,6 +209,7 @@ it('retains the operation across adjudication loss, readback and one explicit sa
     originalAttemptEventId: '10000000-0000-4000-8000-000000000005',
     expectedVersion: 2,
   } satisfies Extract<EmployeeRejectionRecoveryState, { status: 'eligible' }>;
+  inspectRejection.mockResolvedValue(eligible);
   adjudicateRejection.mockRejectedValue(new Error('lost'));
   await expect(
     current.adjudicateRejection(eligible, 'a'.repeat(64))
@@ -260,5 +261,119 @@ it('rejects foreign recovery readback and cannot adjudicate after actor retireme
   expect(recovery.reference?.operationId).toBe(original.operationId);
   recovery.retire();
   await expect(recovery.inspectRejection()).rejects.toThrow('retired');
+  expect(adjudicateRejection).not.toHaveBeenCalled();
+});
+
+it('retries only an explicit fresh eligible adjudication with the original event, digest and tuple', async () => {
+  const inspectRejection = vi.fn();
+  const adjudicateRejection = vi.fn();
+  const current = new EmployeeCreationRecovery({
+    actorId,
+    workspaceId,
+    storage: sessionStorage,
+    assertActive: active,
+    inspectRejection,
+    adjudicateRejection,
+  });
+  current.activate();
+  const original = current.prepare(payload);
+  const eligible = {
+    status: 'eligible',
+    actorUserId: actorId,
+    operationId: original.operationId,
+    targetUserId: '10000000-0000-4000-8000-000000000003',
+    email: payload.email,
+    displayName: payload.displayName,
+    originalLeaseId: '10000000-0000-4000-8000-000000000004',
+    originalAttemptEventId: '10000000-0000-4000-8000-000000000005',
+    expectedVersion: 2,
+  } satisfies Extract<EmployeeRejectionRecoveryState, { status: 'eligible' }>;
+  inspectRejection.mockResolvedValue(eligible);
+  adjudicateRejection.mockRejectedValue(new Error('precommit unavailable'));
+  await expect(
+    current.adjudicateRejection(eligible, 'a'.repeat(64))
+  ).rejects.toThrow('precommit');
+  const first = adjudicateRejection.mock.calls[0]?.[0];
+  await expect(
+    current.adjudicateRejection(eligible, 'b'.repeat(64))
+  ).rejects.toThrow('evidence');
+  await expect(
+    current.adjudicateRejection(
+      { ...eligible, targetUserId: actorId },
+      'a'.repeat(64)
+    )
+  ).rejects.toThrow('tuple');
+  await expect(
+    current.adjudicateRejection(
+      { ...eligible, actorUserId: eligible.targetUserId },
+      'a'.repeat(64)
+    )
+  ).rejects.toThrow('scope');
+  inspectRejection.mockResolvedValue({
+    status: 'fenced',
+    operationId: original.operationId,
+  });
+  await expect(
+    current.adjudicateRejection(eligible, 'a'.repeat(64))
+  ).rejects.toThrow('Fresh eligible');
+  expect(adjudicateRejection).toHaveBeenCalledTimes(1);
+  inspectRejection.mockResolvedValue(eligible);
+  await expect(
+    current.adjudicateRejection(eligible, 'a'.repeat(64))
+  ).rejects.toThrow('precommit');
+  expect(adjudicateRejection.mock.calls[1]?.[0]).toEqual(first);
+  inspectRejection.mockResolvedValue({
+    ...eligible,
+    status: 'retry_ready',
+    expectedVersion: 3,
+    eventId: first.adjudication.eventId,
+    evidenceReferenceSha256: first.adjudication.evidenceReferenceSha256,
+  });
+  await expect(
+    current.adjudicateRejection(eligible, 'a'.repeat(64))
+  ).resolves.toMatchObject({ status: 'retry_ready' });
+  expect(adjudicateRejection).toHaveBeenCalledTimes(2);
+  expect(current.prepare(payload).operationId).toBe(original.operationId);
+  expect(() => current.prepare(payload)).toThrow('Unresolved');
+});
+
+it('denies overlapping dispatch and actor retirement during fresh inspection', async () => {
+  let resolveInspection: (value: EmployeeRejectionRecoveryState) => void =
+    () => {};
+  const inspectRejection = vi.fn(
+    () =>
+      new Promise<EmployeeRejectionRecoveryState>((resolve) => {
+        resolveInspection = resolve;
+      })
+  );
+  const adjudicateRejection = vi.fn();
+  const current = new EmployeeCreationRecovery({
+    actorId,
+    workspaceId,
+    storage: sessionStorage,
+    assertActive: active,
+    inspectRejection,
+    adjudicateRejection,
+  });
+  current.activate();
+  const original = current.prepare(payload);
+  const eligible = {
+    status: 'eligible',
+    actorUserId: actorId,
+    operationId: original.operationId,
+    targetUserId: '10000000-0000-4000-8000-000000000003',
+    email: payload.email,
+    displayName: payload.displayName,
+    originalLeaseId: '10000000-0000-4000-8000-000000000004',
+    originalAttemptEventId: '10000000-0000-4000-8000-000000000005',
+    expectedVersion: 2,
+  } satisfies Extract<EmployeeRejectionRecoveryState, { status: 'eligible' }>;
+  const first = current.adjudicateRejection(eligible, 'a'.repeat(64));
+  await expect(
+    current.adjudicateRejection(eligible, 'a'.repeat(64))
+  ).rejects.toThrow('in flight');
+  current.retire();
+  resolveInspection(eligible);
+  await expect(first).rejects.toThrow('retired');
   expect(adjudicateRejection).not.toHaveBeenCalled();
 });
