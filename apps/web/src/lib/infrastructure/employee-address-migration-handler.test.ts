@@ -268,3 +268,103 @@ describe('permission-authorized Web migration adapter', () => {
     expect(admin).not.toHaveBeenCalled();
   });
 });
+
+describe('explicit retained adoption adapter', () => {
+  const snapshot = 'c'.repeat(64);
+  const receipt = {
+    status: 'adopted',
+    operationId,
+    userId,
+    destinationAddress: body.destinationAddress,
+    expectedRevision: 0,
+    snapshot,
+  };
+  it('requires ownership confirmation and snapshot without changing empty prepare', async () => {
+    const p = setup();
+    for (const extra of [
+      {},
+      { snapshot },
+      { snapshot, ownershipConfirmed: false },
+      { snapshot: 'wrong', ownershipConfirmed: true },
+    ]) {
+      expect((await p.handler(request(extra), 'adopt-retained')).status).toBe(
+        400
+      );
+    }
+    expect(p.fetcher).not.toHaveBeenCalled();
+    expect(
+      (
+        await p.handler(
+          request({ snapshot, ownershipConfirmed: true }),
+          'prepare'
+        )
+      ).status
+    ).toBe(400);
+  });
+  it('binds the authenticated actor and routes only to the separate adoption RPC', async () => {
+    const p = setup();
+    p.fetcher.mockResolvedValueOnce(Response.json(receipt));
+    const response = await p.handler(
+      request({ snapshot, ownershipConfirmed: true }),
+      'adopt-retained'
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(receipt);
+    expect(String(p.fetcher.mock.calls[0]?.[0])).toContain(
+      '/rpc/employee_retained_mailbox_adoption'
+    );
+    expect(JSON.parse(String(p.fetcher.mock.calls[0]?.[1]?.body))).toEqual({
+      p_action: 'adopt',
+      p_request: { ...body, actorId },
+      p_snapshot: snapshot,
+      p_ownership_confirmed: true,
+    });
+    expect(p.admin).not.toHaveBeenCalled();
+    expect(p.fetcher).toHaveBeenCalledTimes(1);
+  });
+  it('readback accepts only the original tuple and never calls a provider', async () => {
+    const p = setup();
+    p.fetcher.mockResolvedValueOnce(Response.json(receipt));
+    expect((await p.handler(request(), 'retained-inspect')).status).toBe(200);
+    expect(
+      JSON.parse(String(p.fetcher.mock.calls[0]?.[1]?.body)).p_action
+    ).toBe('inspect');
+    expect(p.admin).not.toHaveBeenCalled();
+    p.fetcher.mockResolvedValueOnce(
+      Response.json({ ...receipt, operationId: userId })
+    );
+    expect((await p.handler(request(), 'retained-inspect')).status).toBe(503);
+  });
+  it('does not replay unknown adoption and fences fresh authorization revocation', async () => {
+    const p = setup();
+    p.fetcher.mockRejectedValueOnce(new Error('lost ack'));
+    expect(
+      (
+        await p.handler(
+          request({ snapshot, ownershipConfirmed: true }),
+          'adopt-retained'
+        )
+      ).status
+    ).toBe(503);
+    expect(p.fetcher).toHaveBeenCalledTimes(1);
+    const q = setup();
+    q.fetcher.mockResolvedValueOnce(Response.json(receipt));
+    let checks = 0;
+    const handler = createEmployeeAddressMigrationHandler({
+      ...q.deps,
+      authorize: async () =>
+        ++checks < 3
+          ? { authorized: true, actorUserId: actorId }
+          : { authorized: false, status: 403 },
+    });
+    expect(
+      (
+        await handler(
+          request({ snapshot, ownershipConfirmed: true }),
+          'adopt-retained'
+        )
+      ).status
+    ).toBe(403);
+    expect(q.admin).not.toHaveBeenCalled();
+  });
+});

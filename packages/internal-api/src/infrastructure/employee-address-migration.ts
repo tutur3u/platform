@@ -119,3 +119,70 @@ export async function prepareInternalEmployeeAddressMigration(
     throw new Error('Mailbox preparation receipt does not match the target');
   return receipt;
 }
+
+const RetainedReceipt = z.strictObject({
+  status: z.enum(['eligible', 'adopted']),
+  operationId: Uuid,
+  userId: Uuid,
+  destinationAddress: z.email(),
+  expectedRevision: z.literal(0),
+  snapshot: z.string().regex(/^[a-f0-9]{64}$/),
+});
+export type RetainedMailboxReceipt = z.infer<typeof RetainedReceipt>;
+
+async function retainedCall(
+  payload: InternalEmployeeAddressMigrationPayload,
+  confirmation: { snapshot: string; ownershipConfirmed: true } | null,
+  options?: InternalApiClientOptions
+) {
+  const tuple = Tuple.parse(payload);
+  const adoption =
+    confirmation === null
+      ? null
+      : z
+          .strictObject({
+            snapshot: RetainedReceipt.shape.snapshot,
+            ownershipConfirmed: z.literal(true),
+          })
+          .parse(confirmation);
+  const response = await getInternalApiClient(options).json<unknown>(
+    `/api/v1/infrastructure/internal-accounts/address-migrations/${adoption ? 'adopt-retained' : 'retained-inspect'}`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-tuturuuu-account-action': '1',
+      },
+      body: JSON.stringify({ ...tuple, ...adoption }),
+    }
+  );
+  const receipt = RetainedReceipt.parse(response);
+  if (
+    receipt.operationId !== tuple.operationId ||
+    receipt.userId !== tuple.userId ||
+    receipt.destinationAddress !== tuple.destinationAddress ||
+    receipt.expectedRevision !== tuple.expectedRevision ||
+    (adoption &&
+      (receipt.status !== 'adopted' || receipt.snapshot !== adoption.snapshot))
+  )
+    throw new Error(
+      'Retained adoption receipt does not match the original operation'
+    );
+  return receipt;
+}
+
+export function inspectRetainedMailboxAdoption(
+  payload: InternalEmployeeAddressMigrationPayload,
+  options?: InternalApiClientOptions
+) {
+  return retainedCall(payload, null, options);
+}
+
+export function adoptRetainedMailbox(
+  payload: InternalEmployeeAddressMigrationPayload,
+  confirmation: { snapshot: string; ownershipConfirmed: true },
+  options?: InternalApiClientOptions
+) {
+  return retainedCall(payload, confirmation, options);
+}

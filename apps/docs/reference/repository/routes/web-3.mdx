@@ -11,6 +11,8 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/storage/download/[...path]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/download/%5B...path%5D/route.ts) |
+| `/api/v1/storage/folders` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/folders/route.ts) |
 | `/api/v1/storage/guarded-download/[token]` | GET, HEAD, OPTIONS | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/guarded-download/%5Btoken%5D/route.ts) |
 | `/api/v1/storage/list` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/list/route.ts) |
 | `/api/v1/storage/share` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/storage/share/route.ts) |
@@ -189,7 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/integrations/sepay/endpoints/[id]/rotate` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/integrations/sepay/endpoints/%5Bid%5D/rotate/route.ts) |
 | `/api/v1/workspaces/[wsId]/integrations/sepay/endpoints/[id]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/integrations/sepay/endpoints/%5Bid%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/integrations/sepay/endpoints` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/integrations/sepay/endpoints/route.ts) |
-| `/api/v1/workspaces/[wsId]/integrations/sepay/oauth/callback` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/integrations/sepay/oauth/callback/route.ts) |
-| `/api/v1/workspaces/[wsId]/integrations/sepay/oauth/start` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/integrations/sepay/oauth/start/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

@@ -36,7 +36,12 @@ export function createEmployeeAddressMigrationHandler(deps: {
 }) {
   return async (
     request: Request,
-    action: 'migrate' | 'inspect' | 'prepare'
+    action:
+      | 'migrate'
+      | 'inspect'
+      | 'prepare'
+      | 'retained-inspect'
+      | 'adopt-retained'
   ) => {
     function result(body: object, status: number) {
       return Response.json(body, { status, headers });
@@ -98,7 +103,27 @@ export function createEmployeeAddressMigrationHandler(deps: {
       } catch {
         return result({ code: 'invalid_input' }, 400);
       }
-      const parsed = Body.safeParse(decoded);
+      const adoption =
+        action === 'adopt-retained'
+          ? z
+              .strictObject({
+                ...Body.shape,
+                snapshot: z.string().regex(/^[a-f0-9]{64}$/),
+                ownershipConfirmed: z.literal(true),
+              })
+              .safeParse(decoded)
+          : null;
+      if (adoption && !adoption.success)
+        return result({ code: 'invalid_input' }, 400);
+      const parsed = Body.safeParse(
+        adoption?.success
+          ? Object.fromEntries(
+              Object.entries(adoption.data).filter(
+                ([key]) => key !== 'snapshot' && key !== 'ownershipConfirmed'
+              )
+            )
+          : decoded
+      );
       if (!parsed.success) return result({ code: 'invalid_input' }, 400);
       const validated = AddressMigrationRequest.safeParse({
         ...parsed.data,
@@ -117,6 +142,31 @@ export function createEmployeeAddressMigrationHandler(deps: {
         authorize,
         fetch: deps.fetch,
       });
+      if (action === 'retained-inspect' || action === 'adopt-retained') {
+        const snapshot = adoption?.success ? adoption.data.snapshot : undefined;
+        const raw =
+          action === 'retained-inspect'
+            ? await journal.inspectRetained(tuple)
+            : await journal.adoptRetained(tuple, z.string().parse(snapshot));
+        const receipt = z
+          .strictObject({
+            status:
+              action === 'adopt-retained'
+                ? z.literal('adopted')
+                : z.enum(['eligible', 'adopted']),
+            operationId: z.literal(tuple.operationId),
+            userId: z.literal(tuple.userId),
+            destinationAddress: z.literal(tuple.destinationAddress),
+            expectedRevision: z.literal(0),
+            snapshot: z.string().regex(/^[a-f0-9]{64}$/),
+          })
+          .parse(raw);
+        if (snapshot && receipt.snapshot !== snapshot)
+          throw new Error('Adoption snapshot changed');
+        if (!(await authorize(tuple.actorId)))
+          return result({ code: 'forbidden' }, 403);
+        return result(receipt, 200);
+      }
       if (action === 'prepare') {
         const receipt = z
           .strictObject({

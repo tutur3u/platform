@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   inspect: vi.fn(),
   migrate: vi.fn(),
   prepare: vi.fn(),
+  retainedInspect: vi.fn(),
+  retainedAdopt: vi.fn(),
   actor: {
     actorId: 'actor-a',
     assertActive: vi.fn(),
@@ -17,6 +19,8 @@ vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
   inspectInternalEmployeeAddressMigration: mocks.inspect,
   migrateInternalEmployeeAddress: mocks.migrate,
   prepareInternalEmployeeAddressMigration: mocks.prepare,
+  inspectRetainedMailboxAdoption: mocks.retainedInspect,
+  adoptRetainedMailbox: mocks.retainedAdopt,
 }));
 vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
   useWorkspaceActor: () => mocks.actor,
@@ -24,7 +28,10 @@ vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
 vi.mock('next/navigation', () => ({
   useParams: () => ({ wsId: mocks.workspace }),
 }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string) =>
+    namespace.endsWith('.adoption') ? `adoption.${key}` : key,
+}));
 
 import { AddressMigrationDialog } from './address-migration-dialog';
 
@@ -243,4 +250,50 @@ describe('address migration dialog', () => {
     ).not.toBeInTheDocument();
     expect(mocks.migrate).not.toHaveBeenCalled();
   });
+});
+
+it('keeps adoption separate and recovers its lost acknowledgement before migration readiness', async () => {
+  mocks.inspect.mockResolvedValueOnce({ status: 'denied', code: 'not_ready' });
+  mocks.retainedInspect.mockImplementation(async (tuple) => ({
+    status: mocks.retainedAdopt.mock.calls.length ? 'adopted' : 'eligible',
+    operationId: tuple.operationId,
+    userId: tuple.userId,
+    destinationAddress: tuple.destinationAddress,
+    expectedRevision: 0,
+    snapshot: 'a'.repeat(64),
+  }));
+  mocks.retainedAdopt.mockRejectedValueOnce(new Error('lost acknowledgement'));
+  render(tree());
+  fireEvent.click(screen.getByRole('button', { name: 'open' }));
+  fireEvent.change(screen.getByLabelText('user_id'), {
+    target: { value: userId },
+  });
+  fireEvent.change(screen.getByLabelText('source'), {
+    target: { value: source },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'inspect' }));
+  await screen.findByText('denied');
+  const original = mocks.inspect.mock.calls[0]?.[0];
+  fireEvent.click(screen.getByRole('button', { name: 'adoption.inspect' }));
+  await screen.findByLabelText('adoption.ownership');
+  expect(screen.getByRole('button', { name: 'adoption.adopt' })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText('adoption.target'), {
+    target: { value: userId },
+  });
+  fireEvent.change(screen.getByLabelText('adoption.source'), {
+    target: { value: source },
+  });
+  fireEvent.change(screen.getByLabelText('adoption.destination'), {
+    target: { value: destination },
+  });
+  fireEvent.click(screen.getByLabelText('adoption.ownership'));
+  fireEvent.click(screen.getByRole('button', { name: 'adoption.adopt' }));
+  await screen.findByText('ready');
+  expect(mocks.retainedAdopt).toHaveBeenCalledExactlyOnceWith(original, {
+    snapshot: 'a'.repeat(64),
+    ownershipConfirmed: true,
+  });
+  expect(mocks.retainedInspect).toHaveBeenCalledTimes(2);
+  expect(mocks.prepare).not.toHaveBeenCalled();
+  expect(mocks.migrate).not.toHaveBeenCalled();
 });

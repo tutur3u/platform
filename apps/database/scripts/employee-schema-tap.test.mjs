@@ -30,6 +30,7 @@ const packets = foundationPackets.map(([file, assertions]) => ({
 const receipt = (extra = {}) =>
   schemaReceipt({
     sourceSha: 'a'.repeat(40),
+    generatedTypesSha256: 'b'.repeat(64),
     packets,
     lifecycleCode: 0,
     cleanupSucceeded: true,
@@ -610,14 +611,18 @@ test('migration packet is opt-in and strict in both incompatible profiles', () =
     const base = selectSchemaPackets(journal);
     const selected = selectSchemaPackets(journal, false, true);
     const all = selected.map(([file, assertions]) => ({ file, assertions }));
-    assert.deepEqual(selected.slice(0, -2), base);
-    assert.deepEqual(selected.at(-2), [
+    assert.deepEqual(selected.slice(0, -3), base);
+    assert.deepEqual(selected.at(-3), [
       'employee-google-destination-migration.sql',
       30,
     ]);
-    assert.deepEqual(selected.at(-1), ['employee-address-migration.sql', 10]);
+    assert.deepEqual(selected.at(-2), ['employee-address-migration.sql', 10]);
+    assert.deepEqual(selected.at(-1), [
+      'employee-retained-mailbox-adoption.sql',
+      41,
+    ]);
     for (const [, count] of selected) assertPacketTap(tap(count), count);
-    const expected = journal ? 341 : 212;
+    const expected = journal ? 382 : 253;
     const complete = receipt({ journal, addressMigration: true, packets: all });
     assert.equal(complete.schemaQualified, true);
     assert.equal(complete.assertions, expected);
@@ -638,7 +643,7 @@ test('migration packet is opt-in and strict in both incompatible profiles', () =
       [...all].reverse(),
       [
         ...all.slice(0, -1),
-        { file: 'employee-address-migration.sql', assertions: 9 },
+        { file: 'employee-retained-mailbox-adoption.sql', assertions: 40 },
       ],
     ]) {
       assert.equal(
@@ -668,12 +673,12 @@ test('migration packet is opt-in and strict in both incompatible profiles', () =
     const diagnostic = schemaFailureDiagnostic(
       'packet-tap',
       selected.length,
-      { status: 1, stdout: 'not ok 10 - private' },
+      { status: 1, stdout: 'not ok 41 - private' },
       journal,
       false,
       true
     );
-    assert.deepEqual(diagnostic.failedAssertionOrdinals, [10]);
+    assert.deepEqual(diagnostic.failedAssertionOrdinals, [41]);
   }
 });
 
