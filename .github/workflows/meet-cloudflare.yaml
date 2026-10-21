@@ -13,6 +13,11 @@ on:
       - 'bun.lock'
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
+      - 'scripts/ci/meet-native-*.mjs'
+      - 'scripts/ci/native-wrangler-evidence.mjs'
+      - 'scripts/ci/native-wrangler-diagnostics.mjs'
+      - 'scripts/ci/native-wrangler-observable.mjs'
+      - 'scripts/ci/native-wrangler-summary.mjs'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/meet-native-source-identity.test.js'
       - 'scripts/ci/native-wrangler-runtime.mjs'
@@ -43,6 +48,11 @@ on:
       - 'bun.lock'
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
+      - 'scripts/ci/meet-native-*.mjs'
+      - 'scripts/ci/native-wrangler-evidence.mjs'
+      - 'scripts/ci/native-wrangler-diagnostics.mjs'
+      - 'scripts/ci/native-wrangler-observable.mjs'
+      - 'scripts/ci/native-wrangler-summary.mjs'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/meet-native-source-identity.test.js'
       - 'scripts/ci/native-wrangler-runtime.mjs'
@@ -138,7 +148,7 @@ jobs:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Test build identity and workflow ordering
-        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js
+        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs
       - name: Test diagnostic receipt serialization
         run: node --test scripts/ci/native-emitted-config-receipt.test.mjs scripts/ci/native-receipt-layout.test.mjs
       - name: Build realtime dependencies and test realtime
@@ -302,7 +312,21 @@ jobs:
         timeout-minutes: 3
         env:
           WRANGLER_SEND_METRICS: 'false'
-        run: GITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/meet-cloudflare-render.runtime.mjs scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs
+        run: |
+          meet_status=0
+          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" || meet_status=$?
+          sdk_status=0
+          GITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?
+          test "$meet_status" -eq 0
+          test "$sdk_status" -eq 0
+      - name: Retain finite Meet graph evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meet-native-graph-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/meet-native-run-*/
+          retention-days: 7
+          if-no-files-found: warn
       - name: Validate both Worker bundles
         run: |
           (cd apps/meet && bun x --no-install wrangler deploy --dry-run -c "${{ steps.meet-output.outputs.config }}")
@@ -399,7 +423,15 @@ jobs:
         timeout-minutes: 3
         env:
           WRANGLER_SEND_METRICS: 'false'
-        run: GITHUB_SHA="$SOURCE_SHA" node --test scripts/ci/meet-cloudflare-render.runtime.mjs
+        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA"
+      - name: Retain restored finite Meet graph evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meet-restored-native-graph-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/meet-native-run-*/
+          retention-days: 7
+          if-no-files-found: warn
       - name: Recheck artifact after restored runtime qualification
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
       - name: Wait for shared meeting billing schema

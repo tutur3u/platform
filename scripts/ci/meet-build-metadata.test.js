@@ -12,9 +12,9 @@ const root = resolve(__dirname, '../..');
 const workflow = readWorkflow('meet-cloudflare.yaml');
 const runtimeGateCommands = {
   validate:
-    'GITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/meet-cloudflare-render.runtime.mjs scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs',
+    'meet_status=0\nTMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" || meet_status=$?\nsdk_status=0\nGITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?\ntest "$meet_status" -eq 0\ntest "$sdk_status" -eq 0\n',
   deploy:
-    'GITHUB_SHA="$SOURCE_SHA" node --test scripts/ci/meet-cloudflare-render.runtime.mjs',
+    'TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA"',
 };
 
 test('Meet generates source metadata before dependency and Worker builds', () => {
@@ -404,9 +404,11 @@ test('Meet archives either selected pointer and excludes private source files', 
   }
 });
 
-test('source-only discovery excludes the emitted runtime while both artifact gates require it', () => {
+test('source-only discovery excludes the emitted runtime while both artifact gates require it', async () => {
   const runtimePath = 'scripts/ci/meet-cloudflare-render.runtime.mjs';
   assert.ok(existsSync(resolve(root, runtimePath)));
+  const launcherPath = 'scripts/ci/meet-native-launcher.mjs';
+  assert.ok(existsSync(resolve(root, launcherPath)));
   assert.equal(
     existsSync(resolve(root, 'scripts/ci/meet-cloudflare-render.test.js')),
     false
@@ -421,6 +423,7 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
     sourceTests.includes('scripts/ci/verify-meet-start-output.test.js')
   );
   assert.ok(!sourceTests.includes(runtimePath));
+  assert.ok(!sourceTests.includes(launcherPath));
   assert.ok(!sourceTests.includes('scripts/ci/meet-cloudflare-render.test.js'));
   const assertRuntimeGate = (name, job) => {
     const probes = job.steps.filter(
@@ -451,11 +454,12 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
       { ...job, 'continue-on-error': true },
       ...[
         { ...gate, if: 'always()' },
+        { ...gate, run: `GITHUB_SHA="$SOURCE_SHA" node --test ${runtimePath}` },
         { ...gate, 'continue-on-error': true },
-        { ...gate, run: command.replace(runtimePath, '') },
+        { ...gate, run: command.replace(launcherPath, '') },
         {
           ...gate,
-          run: command.replace(runtimePath, `${runtimePath} ${runtimePath}`),
+          run: command.replace(launcherPath, `${launcherPath} ${launcherPath}`),
         },
         { ...gate, run: `${command} --test-reporter=spec` },
         {
@@ -481,6 +485,46 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
       (step) => step.uses === './.github/actions/setup-bun-with-retry'
     );
     assert.equal(setup.with['bun-version'], '1.4.3');
+  }
+  const sink = await mkdtemp(join(tmpdir(), 'meet-launcher-command-'));
+  try {
+    await writeFile(
+      join(sink, 'node'),
+      '#!/bin/sh\nprintf "%s\\n" "$1" >> "$MEET_INVOCATIONS"\ncase "$1" in scripts/ci/meet-native-launcher.mjs) exit "$MEET_EXIT" ;; --test) exit "$SDK_EXIT" ;; *) exit 99 ;; esac\n',
+      { mode: 0o700 }
+    );
+    for (const [meetExit, sdkExit] of [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1],
+    ]) {
+      const calls = join(sink, `calls-${meetExit}-${sdkExit}`);
+      const result = spawnSync(
+        'bash',
+        ['-eu', '-c', runtimeGateCommands.validate],
+        {
+          cwd: sink,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            PATH: `${sink}:${process.env.PATH}`,
+            RUNNER_TEMP: sink,
+            SOURCE_SHA: 'a'.repeat(40),
+            MEET_INVOCATIONS: calls,
+            MEET_EXIT: String(meetExit),
+            SDK_EXIT: String(sdkExit),
+          },
+        }
+      );
+      assert.equal(result.status, meetExit || sdkExit ? 1 : 0, result.stderr);
+      assert.deepEqual(readFileSync(calls, 'utf8').trim().split('\n'), [
+        launcherPath,
+        '--test',
+      ]);
+    }
+  } finally {
+    await rm(sink, { recursive: true, force: true });
   }
 });
 
@@ -517,6 +561,7 @@ test('Meet workflow contracts run in a clean snapshot without Node dependencies'
       'scripts/paused-runtimes.js',
       'scripts/ci/verify-meet-start-output.test.js',
       'scripts/ci/meet-cloudflare-render.runtime.mjs',
+      'scripts/ci/meet-native-launcher.mjs',
       '.github/workflows/meet-cloudflare.yaml',
       'turbo.json',
       'packages/utils/src/generated/platform-build-metadata.ts',
@@ -557,6 +602,11 @@ test('Meet exact normalization helper and public probe changes select both workf
     for (const path of [
       'scripts/ci/meet-emitted-defaults.mjs',
       'scripts/ci/native-config-default-probe.mjs',
+      'scripts/ci/meet-native-*.mjs',
+      'scripts/ci/native-wrangler-evidence.mjs',
+      'scripts/ci/native-wrangler-diagnostics.mjs',
+      'scripts/ci/native-wrangler-observable.mjs',
+      'scripts/ci/native-wrangler-summary.mjs',
     ]) {
       assert.ok(workflow.on[trigger].paths.includes(path));
     }

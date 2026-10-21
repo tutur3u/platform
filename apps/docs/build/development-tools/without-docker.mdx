@@ -159,21 +159,66 @@ still requires the exact-head fixture gate.
 
 ## Native Wrangler prototype CI validation
 
-The existing three-minute emitted Start SSR/auth/cookie/rewrite/Live validation
-step additionally selects the synthetic native Wrangler prototype unit and runtime
-suites in the original Node test invocation. File concurrency is one; Node's
-default process isolation is retained. The original runtime suite and all its
-assertions remain selected. The separate restored-runtime production gate is
-unchanged. This adds CI work; duration fit is unproven. Existing 30/60-second
-test limits and the three-minute watchdog remain acceptance requirements.
+Meet's finite `meet-emitted-v1` graph uses two public
+`unstable_startWorker` handles and one fresh private registry. Both the original
+and restored artifact gates run `node scripts/ci/meet-native-launcher.mjs
+"$SOURCE_SHA"`. Each launcher runs all ten original cases and three HTTP hook
+controls twice, with distinct private homes, registries, temporary roots and
+nonpersistent local storage. The existing three-minute CI watchdog and 30000 ms
+per-case deadlines stay in force; duration fit and real binding resolution need
+exact-commit CI evidence. Never run it without a fresh sealed emitted artifact.
+Pure checks use `node --test scripts/ci/meet-native-admission.test.mjs
+scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs`.
 
-This covers a prototype only, not caller adoption or an SDK fork. Owned temporary
-negative controls and retention assertions remain unchanged. Tests are UNRUN in
-private preparation. Exact-head CI must prove that all three suites execute even
-when the original Miniflare 5 constructor fails, retain that failure as NOTPASS,
-and finish under the existing watchdog. Root metadata and provider limits must
-remain unchanged. Real-graph gaps remain for external Workers, nodejs flags and
-named RPC; synthetic tests do not close these gaps.
+The app config remains byte-identical, including metadata/normalization paths,
+ordered compatibility flags, ESModule rules, self-reference service, local R2,
+Images and Live SQLite migration. Normalization paths are provenance, never
+ambient-config discovery authority. The authored probe uses an external Live
+namespace and the named `MeetingAIProvider` service binding. Acceptance requires
+the real emitted Live class's exact 401 and the real named provider's exact 403
+with zero HTTP attempts; a route or manually constructed class cannot replace
+these cases. Unsupported local resources, registry records or remote auth fail
+closed. Do not strip bindings to obtain startup success.
+
+The HTTP fixture claim covers trusted repository app/probe code through each
+configured role's outbound hook. App allows one exact bounded central API fixture;
+probe allows none. Live controls exercise app default, app named-entrypoint and
+probe hooks, including private/loopback/lookalike targets. Hash-pinned SDK generated
+helpers, assets/registry/control-plane traffic and Node control paths are trusted
+tooling outside that claim. This is neither hostile-code isolation nor whole-process
+or TCP confinement. Production access, billing limits and durable stop guards are
+unchanged. The app's required provider binding gets only a disposable synthetic
+value; no ambient credentials or remote bindings enter the child environment.
+
+Runtime suppliers resolve from Meet's package and then Wrangler's ancestry:
+Wrangler 4.151.2 CLI SHA256
+`507cd3644d6a53f0d66922d79c04b03557b7d2d0a376d2d906b92ed20812bb30`
+and Miniflare 5.20261019.0-beta entry SHA256
+`309b8863f0f4c3050e173e945b4c696db8c330cdf3f35f0ecfd8417d75891eaa`.
+Both pins are checked before and after SDK load, with preloads rejected and
+ownership rechecked across the graph. These attest two entry files, not the
+entire transitive installation. Keep the independently pinned normalization
+producer separate. A missing or mismatched installation is a blocker; do not
+restore dependencies without determining cause and authority.
+
+The graph records each returned public handle before readiness, disposes in
+reverse order exactly once and attempts both disposals even when one fails.
+Startup/readiness/primary/disposal errors remain separate. The launcher observes
+natural child close and stdout/stderr drainage before independently checking
+original/copy seals, both SDK work directories, registry removal, foreign sentinel
+and temporary-root inventory. A verified retained snapshot precedes removal;
+any failed gate retains scratch. Finalization persistence has readback checks.
+Private seven-day CI artifacts retain the complete graph diagnostic evidence;
+logs contain bounded statuses rather than fixture credentials. No sweeper, retry,
+forced exit or private SDK controller may manufacture closure. SDK internal
+cleanup and descendant closure remain UNKNOWN even after public disposal and
+natural owned-child close. Pure/source checks do not qualify the emitted graph.
+
+The original validation step also runs the synthetic native Wrangler prototype
+unit/runtime suites with file concurrency one and default Node process isolation.
+They retain their existing test limits and the same outer three-minute watchdog.
+Synthetic qualification is independent of Meet acceptance and does not qualify
+Calendar or Apps callers. Historical raw NOTPASS evidence stays unchanged.
 
 Public `Worker.ready` reports proxy readiness, not successful user-Worker linking.
 For the four allowlisted returned-Worker startup controls (WASM, logical import

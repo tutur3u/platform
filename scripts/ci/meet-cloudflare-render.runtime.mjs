@@ -1,36 +1,58 @@
 import assert from 'node:assert/strict';
 import { createHmac, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { dirname } from 'node:path';
-import { after, before, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { readFile, writeFile } from 'node:fs/promises';
+import { after, before, test as nodeTest } from 'node:test';
+import { createMeetGraph } from './meet-native-graph.mjs';
+import { readMeetRegistry } from './meet-native-graph-files.mjs';
+import { createMeetPolicy, PROBE_NEGATIVES } from './meet-native-policy.mjs';
+import { privateDiagnosticJSON } from './native-wrangler-diagnostics.mjs';
+import { diagnosticError } from './native-wrangler-evidence.mjs';
 
-const require = createRequire(
-  new URL('../../apps/meet/package.json', import.meta.url)
-);
-const { unstable_getMiniflareWorkerOptions } = require('wrangler');
-const { Miniflare } = require(
-  require.resolve('miniflare', {
-    paths: [dirname(require.resolve('wrangler'))],
-  })
-);
-const { validateOutput } = createRequire(import.meta.url)(
-  './verify-meet-start-output'
+assert.equal(
+  process.env.NATIVE_FIXTURE_CASE,
+  'meet-emitted-v1',
+  'Run through meet-native-launcher.mjs'
 );
 assert.match(
   process.env.GITHUB_SHA ?? '',
   /^[a-f0-9]{40}$/,
   'exact source SHA is required'
 );
-const app = fileURLToPath(new URL('../../apps/meet', import.meta.url));
-const { configPath, main } = validateOutput(app);
-const { workerOptions, externalWorkers } =
-  unstable_getMiniflareWorkerOptions(configPath);
+const { plan, prepared } = JSON.parse(
+  await readFile(process.env.NATIVE_PLAN_FILE, 'utf8')
+);
+assert.equal(plan.sourceSHA, process.env.GITHUB_SHA);
 const secret = randomUUID() + randomUUID();
-const forwarded = [];
-const unexpected = [];
-let runtime;
+const probeToken = randomUUID() + randomUUID();
+const policies = {
+  app: createMeetPolicy('app'),
+  probe: createMeetPolicy('probe'),
+};
+const { forwarded, unexpected } = policies.app;
+let runtime,
+  graph,
+  primary,
+  hasPrimary = false,
+  completed = 0,
+  registry;
+function recordPrimary(error) {
+  if (!hasPrimary) {
+    hasPrimary = true;
+    primary = error;
+  }
+}
+function test(name, options, run) {
+  nodeTest(name, options, async () => {
+    try {
+      await run();
+      completed++;
+    } catch (error) {
+      recordPrimary(error);
+      throw error;
+    }
+  });
+}
 
 function session(target) {
   const now = Math.floor(Date.now() / 1000);
@@ -55,76 +77,72 @@ function session(target) {
 const signedCookie = () =>
   `tuturuuu_app_session=${session('meet')}; tuturuuu_web_app_session=${session('web')}`;
 const fetchWorker = (path, options = {}) =>
-  runtime.dispatchFetch(`https://meet.tuturuuu.com${path}`, {
+  runtime.fetchApp(`https://meet.tuturuuu.com${path}`, {
     ...options,
     redirect: 'manual',
   });
 
-before(async () => {
-  runtime = new Miniflare({
-    host: '127.0.0.1',
-    port: 0,
-    workers: [
-      {
-        ...workerOptions,
-        name: 'tuturuuu-meet',
-        modules: true,
-        scriptPath: main,
-        modulesRoot: dirname(main),
-        bindings: {
-          ...workerOptions.bindings,
-          MEET_REALTIME_TOKEN_SECRET: secret,
-          SUPABASE_SECRET_KEY: secret,
-          NEXT_PUBLIC_SUPABASE_URL: 'https://meet-ci.supabase.invalid',
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
-            'sb_publishable_meet_ci_placeholder',
-          GOOGLE_GENERATIVE_AI_API_KEY: 'disposable-unused-fixture',
-        },
-        outboundService: async (request) => {
-          const url = new URL(request.url);
-          if (
-            url.origin === 'https://tuturuuu.com' &&
-            url.pathname === '/api/v1/meet-ci-rewrite'
-          ) {
-            forwarded.push({
-              method: request.method,
-              query: url.search,
-              cookie: request.headers.get('cookie'),
-              body: await request.text(),
-            });
-            return new Response(
-              JSON.stringify({ fixture: 'central-web-api' }),
-              {
-                status: 207,
-                headers: {
-                  'content-type': 'application/json',
-                  'set-cookie':
-                    'meet_ci_upstream=one; Path=/; HttpOnly; Secure; SameSite=Lax',
-                },
-              }
-            );
-          }
-          unexpected.push(`${request.method} ${url.origin}${url.pathname}`);
-          return new Response('Unexpected fixture egress', { status: 599 });
-        },
-      },
-      ...externalWorkers,
-      {
-        name: 'meet-ci-provider-probe',
-        compatibilityDate: '2026-09-06',
-        modules: true,
-        script:
-          'export default { fetch(request, env) { return env.PROVIDER.fetch(request); } };',
-        serviceBindings: {
-          PROVIDER: { name: 'tuturuuu-meet', entrypoint: 'MeetingAIProvider' },
-        },
-      },
-    ],
+const fetchProbe = (path) =>
+  runtime.fetchProbe(`https://meet-ci-probe.invalid${path}`, {
+    method: 'POST',
+    redirect: 'manual',
+    headers: { authorization: `Bearer ${probeToken}` },
   });
-  await runtime.ready;
+before(async () => {
+  try {
+    graph = await createMeetGraph(plan, prepared, {
+      policies,
+      secret,
+      probeToken,
+    });
+    runtime = await graph.start();
+    registry = await readMeetRegistry(prepared, 0);
+  } catch (error) {
+    recordPrimary(error);
+    throw error;
+  }
 });
 after(async () => {
-  await runtime?.dispose();
+  const result = await graph?.finish(...(hasPrimary ? [primary] : []));
+  const errors = result?.errors ?? (hasPrimary ? [primary] : []);
+  const receipt = {
+    schema: 1,
+    sourceSHA: plan.sourceSHA,
+    completed,
+    lifecycle: result?.receipt ?? {
+      roles: [],
+      errors: errors.map(diagnosticError),
+      phases: [],
+    },
+    registry,
+    supplier: graph?.supplier,
+    policies: {
+      appControls: policies.app.controls.length,
+      probeControls: policies.probe.controls.length,
+      forwarded: forwarded.length,
+      unexpected: [...unexpected, ...policies.probe.unexpected],
+    },
+    internalCleanup: 'UNKNOWN',
+    descendantClosure: 'UNKNOWN',
+  };
+  try {
+    const bytes = privateDiagnosticJSON(receipt);
+    await writeFile(process.env.NATIVE_RECEIPT_FILE, bytes, {
+      flag: 'wx',
+      mode: 0o600,
+    });
+    assert.equal(
+      await readFile(process.env.NATIVE_RECEIPT_FILE, 'utf8'),
+      bytes
+    );
+  } catch (error) {
+    errors.push(error);
+  }
+  if (errors.length)
+    throw new AggregateError(
+      errors,
+      'Meet primary/readiness/disposal/receipt failure'
+    );
 });
 
 test('native Start renders bilingual callback HTML and serves its emitted client module', {
@@ -319,12 +337,7 @@ test('emitted Worker serves exact source identity and retains Live admission gua
 test('emitted Live class constructs against disposable SQLite and denies absent sessions', {
   timeout: 30000,
 }, async () => {
-  const namespace = await runtime.getDurableObjectNamespace(
-    'MEET_LIVE',
-    'tuturuuu-meet'
-  );
-  const stub = namespace.get(namespace.idFromName(`ci-${randomUUID()}`));
-  const response = await stub.fetch('https://meet.tuturuuu.com/live-connect');
+  const response = await fetchProbe(`/live-empty?name=ci-${randomUUID()}`);
   assert.equal(response.status, 401);
   await response.text();
   assert.deepEqual(unexpected, []);
@@ -333,9 +346,79 @@ test('emitted Live class constructs against disposable SQLite and denies absent 
 test('emitted private provider entrypoint rejects invalid transport before billable egress', {
   timeout: 30000,
 }, async () => {
-  const probe = await runtime.getWorker('meet-ci-provider-probe');
-  const response = await probe.fetch('https://untrusted.invalid/provider');
+  const response = await fetchProbe('/provider-invalid');
   assert.equal(response.status, 403);
   await response.text();
+  assert.deepEqual(unexpected, []);
+});
+
+test('app default HTTP hook denies an authenticated nonfixture API forward', {
+  timeout: 30000,
+}, async () => {
+  const before = forwarded.length;
+  policies.app.expectDenial(
+    'POST',
+    'https://tuturuuu.com/api/v1/meet-ci-denied'
+  );
+  const response = await fetchWorker('/api/v1/meet-ci-denied', {
+    method: 'POST',
+    headers: {
+      Cookie: signedCookie(),
+      Origin: 'https://meet.tuturuuu.com',
+      'Content-Type': 'application/json',
+    },
+    body: '{"fixture":true}',
+  });
+  assert.equal(response.status, 599);
+  assert.equal(await response.text(), 'Unexpected fixture egress');
+  assert.equal(forwarded.length, before);
+  policies.app.assertControls(1);
+  policies.probe.assertControls(0);
+});
+
+test('probe HTTP hook denies nonfixture, private, loopback and lookalike destinations', {
+  timeout: 30000,
+}, async () => {
+  const targets = [
+    'https://untrusted.invalid/nonfixture',
+    'http://tuturuuu.com/api/v1/meet-ci-rewrite',
+    'http://127.0.0.1/',
+    'http://localhost/',
+    'http://10.0.0.1/',
+    'http://169.254.169.254/',
+    'https://tuturuuu.com:444/api/v1/meet-ci-rewrite',
+    'https://tuturuuu.com.untrusted.invalid/api/v1/meet-ci-rewrite',
+    'https://tuturuuu.com/api/v1/meet-ci-rewrite-lookalike',
+  ];
+  assert.equal(targets.length, PROBE_NEGATIVES);
+  for (const [index, target] of targets.entries()) {
+    policies.probe.expectDenial('GET', target);
+    const response = await fetchProbe(`/egress-denied/${index}`);
+    assert.equal(response.status, 599, target);
+    assert.equal(await response.text(), 'Unexpected fixture egress');
+    policies.probe.assertControls(index + 1);
+  }
+  policies.app.assertControls(1);
+});
+
+test('named provider execution uses app HTTP denial while invalid transport makes zero attempts', {
+  timeout: 30000,
+}, async () => {
+  policies.app.expectDenial(
+    'POST',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-ci:generateContent'
+  );
+  const response = await fetchProbe('/provider-egress-denied');
+  assert.equal(response.status, 599);
+  assert.deepEqual(await response.json(), {
+    error: { message: 'Meeting provider request failed' },
+  });
+  policies.app.assertControls(2);
+  policies.probe.assertControls(PROBE_NEGATIVES);
+  const count = policies.app.controls.length;
+  const invalid = await fetchProbe('/provider-invalid');
+  assert.equal(invalid.status, 403);
+  await invalid.text();
+  assert.equal(policies.app.controls.length, count);
   assert.deepEqual(unexpected, []);
 });
