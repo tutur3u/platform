@@ -5,10 +5,7 @@ import { InternalAccountAdminError } from './errors';
 
 type AdminClient = SupabaseClient<Database>;
 
-function logProfileFailure(
-  stage: 'profile_read' | 'username_reserve' | 'profile_update',
-  code: string | undefined
-) {
+function sanitizedProfileCode(code: string | undefined) {
   const knownCodes = [
     '22023',
     '23503',
@@ -20,9 +17,26 @@ function logProfileFailure(
     'PGRST204',
     'PGRST205',
   ];
+  return code && knownCodes.includes(code) ? code : 'unknown';
+}
+
+function logProfileFailure(
+  stage: 'profile_read' | 'username_reserve' | 'profile_update',
+  code: string | undefined
+) {
   console.error('Internal account profile stage failed', {
     stage,
-    code: code && knownCodes.includes(code) ? code : 'unknown',
+    code: sanitizedProfileCode(code),
+  });
+}
+
+function logProfileCleanupFailure(
+  stage: 'username_rollback' | 'previous_username_release',
+  code: string | undefined
+) {
+  console.warn('Internal account profile cleanup failed', {
+    stage,
+    code: sanitizedProfileCode(code),
   });
 }
 
@@ -87,11 +101,18 @@ export async function updateInternalAccountProfile({
   if (updateError) {
     logProfileFailure('profile_update', updateError.code);
     if (usernameChanged && normalizedUsername) {
-      await sbAdmin
-        .from('handles')
-        .delete()
-        .eq('value', normalizedUsername)
-        .eq('creator_id', targetUserId);
+      try {
+        const { error: rollbackError } = await sbAdmin
+          .from('handles')
+          .delete()
+          .eq('value', normalizedUsername)
+          .eq('creator_id', targetUserId);
+        if (rollbackError) {
+          logProfileCleanupFailure('username_rollback', rollbackError.code);
+        }
+      } catch {
+        logProfileCleanupFailure('username_rollback', undefined);
+      }
     }
     throw new InternalAccountAdminError(
       'Unable to update the internal account profile',
@@ -106,10 +127,7 @@ export async function updateInternalAccountProfile({
       .eq('value', previousUsername)
       .eq('creator_id', targetUserId);
     if (cleanupError) {
-      console.warn('Failed to release previous internal account username', {
-        code: cleanupError.code,
-        targetUserId,
-      });
+      logProfileCleanupFailure('previous_username_release', cleanupError.code);
     }
   }
 

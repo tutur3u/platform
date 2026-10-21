@@ -14,14 +14,16 @@ function fixture({
   failure,
   code = '42501',
   missingProfile = false,
+  previousUsername = null,
 }: {
   failure?: FailureStage;
   code?: string;
   missingProfile?: boolean;
+  previousUsername?: string | null;
 } = {}) {
   const error = { code, ...privateErrorFields };
   const readProfile = vi.fn().mockResolvedValue({
-    data: missingProfile ? null : { handle: null },
+    data: missingProfile ? null : { handle: previousUsername },
     error: failure === 'profile_read' ? error : null,
   });
   const reserveUsername = vi.fn().mockResolvedValue({
@@ -53,6 +55,7 @@ function fixture({
   const sbAdmin = { from } as unknown as TypedSupabaseClient;
   return {
     sbAdmin,
+    readProfile,
     reserveUsername,
     updateProfile,
     deleteUsername,
@@ -69,6 +72,154 @@ const profile = {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+describe('internal profile cleanup failures', () => {
+  function expectWriteOrder(client: ReturnType<typeof fixture>) {
+    const calls = [
+      client.readProfile,
+      client.reserveUsername,
+      client.updateProfile,
+      client.deleteUsername,
+      client.rollbackValue,
+      client.rollbackOwner,
+    ];
+    for (const call of calls) expect(call).toHaveBeenCalledOnce();
+    const order = calls.flatMap((call) => call.mock.invocationCallOrder);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  }
+
+  it.each(['42501', 'PRIVATE arbitrary code'])(
+    'preserves the update failure when rollback returns %s',
+    async (code) => {
+      const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const client = fixture({
+        failure: 'profile_update',
+        previousUsername: 'previous_operator',
+      });
+      client.rollbackOwner.mockResolvedValue({
+        error: { code, ...privateErrorFields },
+      });
+
+      await expect(
+        updateInternalAccountProfile({ ...profile, sbAdmin: client.sbAdmin })
+      ).rejects.toMatchObject({
+        name: 'InternalAccountAdminError',
+        message: 'Unable to update the internal account profile',
+        status: 500,
+      });
+
+      expectWriteOrder(client);
+      expect(client.rollbackValue).toHaveBeenCalledWith(
+        'value',
+        'synthetic_operator'
+      );
+      expect(client.rollbackOwner).toHaveBeenCalledWith(
+        'creator_id',
+        'synthetic-target'
+      );
+      expect(errorLog.mock.calls).toEqual([
+        [
+          'Internal account profile stage failed',
+          { stage: 'profile_update', code: '42501' },
+        ],
+      ]);
+      expect(warning.mock.calls).toEqual([
+        [
+          'Internal account profile cleanup failed',
+          {
+            stage: 'username_rollback',
+            code: code === '42501' ? code : 'unknown',
+          },
+        ],
+      ]);
+    }
+  );
+
+  it('preserves the primary failure when rollback rejects with a private error', async () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const client = fixture({
+      failure: 'profile_update',
+      previousUsername: 'previous_operator',
+    });
+    client.rollbackOwner.mockRejectedValue(
+      Object.assign(new Error('PRIVATE rollback message and stack'), {
+        code: 'PRIVATE rollback code',
+        ...privateErrorFields,
+      })
+    );
+
+    await expect(
+      updateInternalAccountProfile({ ...profile, sbAdmin: client.sbAdmin })
+    ).rejects.toMatchObject({
+      name: 'InternalAccountAdminError',
+      message: 'Unable to update the internal account profile',
+      status: 500,
+    });
+
+    expectWriteOrder(client);
+    expect(client.rollbackValue).toHaveBeenCalledWith(
+      'value',
+      'synthetic_operator'
+    );
+    expect(client.rollbackOwner).toHaveBeenCalledWith(
+      'creator_id',
+      'synthetic-target'
+    );
+    expect(errorLog.mock.calls).toEqual([
+      [
+        'Internal account profile stage failed',
+        { stage: 'profile_update', code: '42501' },
+      ],
+    ]);
+    expect(warning.mock.calls).toEqual([
+      [
+        'Internal account profile cleanup failed',
+        { stage: 'username_rollback', code: 'unknown' },
+      ],
+    ]);
+  });
+
+  it.each(['23503', 'PRIVATE arbitrary code'])(
+    'preserves success when previous username cleanup returns %s',
+    async (code) => {
+      const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const client = fixture({ previousUsername: 'previous_operator' });
+      client.rollbackOwner.mockResolvedValue({
+        error: { code, ...privateErrorFields },
+      });
+
+      await expect(
+        updateInternalAccountProfile({ ...profile, sbAdmin: client.sbAdmin })
+      ).resolves.toEqual({
+        displayName: 'Synthetic Operator',
+        username: 'synthetic_operator',
+      });
+
+      expectWriteOrder(client);
+      expect(client.rollbackValue).toHaveBeenCalledWith(
+        'value',
+        'previous_operator'
+      );
+      expect(client.rollbackOwner).toHaveBeenCalledWith(
+        'creator_id',
+        'synthetic-target'
+      );
+      expect(errorLog).not.toHaveBeenCalled();
+      expect(warning.mock.calls).toEqual([
+        [
+          'Internal account profile cleanup failed',
+          {
+            stage: 'previous_username_release',
+            code: code === '23503' ? code : 'unknown',
+          },
+        ],
+      ]);
+    }
+  );
 });
 
 describe('internal profile failure diagnostics', () => {

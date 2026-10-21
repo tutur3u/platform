@@ -104,6 +104,13 @@ database failure, with a fixed `profile_read`, `username_reserve`, or
 They do not cover earlier authorization, provider lookup, or thrown transport
 failures. Missing events alone do not prove that execution stopped earlier.
 
+Returned username-cleanup failures emit `Internal account profile cleanup failed`
+with a fixed `username_rollback` or `previous_username_release` stage and the same
+code allowlist. Cleanup diagnostics omit account IDs and raw error fields. A
+thrown rollback rejection emits `username_rollback` with code `unknown` and
+preserves the original profile-update failure. Returned previous-username cleanup
+errors preserve the successful profile response.
+
 For an update-stage `42501`, a separately authorized read-only SQL inspection can
 compare the target's canonical `users.display_name` with the registry's
 `infrastructure_employees.managed_name` and confirm the installed managed-name
@@ -114,7 +121,8 @@ that fence or widen administrator authorization to make the toast disappear.
 Confirm the exact database error before attributing either to this incident.
 
 `profile-service.test.ts` covers each returned failure stage, unknown-code privacy,
-unchanged status/rollback behavior, and success without failure logs.
+unchanged status/rollback behavior, cleanup returned errors and rollback rejection,
+explicit read/reserve/update/cleanup ordering, and success without failure logs.
 `apps/database/supabase/tests/employee-signup-guards.sql` covers the managed-name
 fence through the public profile RPC. Service mocks do not establish deployed
 schema, provider, transport, or customer acceptance.
