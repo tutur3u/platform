@@ -199,10 +199,10 @@ export class EmployeeRestorationConsumer {
       detail: null,
       outcome: denied
         ? 'denied'
-        : unavailable
-          ? 'unavailable'
-          : this.revisionConflict
-            ? 'conflict'
+        : this.revisionConflict
+          ? 'conflict'
+          : unavailable
+            ? 'unavailable'
             : this.view.restoreAttempted || this.view.retained
               ? 'pending'
               : 'conflict',

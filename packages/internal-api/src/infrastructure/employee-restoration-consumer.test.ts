@@ -308,6 +308,67 @@ it('keeps explicit revision conflict visible with original recovery tuple and no
   expect(transport.reconcile).not.toHaveBeenCalled();
 });
 
+it.each([401, 403])(
+  'retains revision conflict through unavailable inspection, then honors denial %s',
+  async (status) => {
+    const { consumer, transport } = setup();
+    await consumer.inspect();
+    transport.restore.mockRejectedValue(
+      new InternalApiError(
+        'Conflict',
+        409,
+        'employee_revision_or_operation_conflict'
+      )
+    );
+    await consumer.submit(email);
+    const retained = consumer.view.retained;
+    expect(retained).toEqual({
+      confirmationEmail: email,
+      expectedRevision: 7,
+    });
+    transport.inspect.mockRejectedValue(
+      new InternalApiError(
+        'Unavailable',
+        503,
+        'employee_management_unavailable'
+      )
+    );
+    await consumer.inspect();
+    expect(consumer.view.outcome).toBe('conflict');
+    expect(consumer.view.detail).toBeNull();
+    expect(consumer.view.retained).toBe(retained);
+    expect(consumer.action).toBeNull();
+    await consumer.submit(email);
+    expect(transport.restore).toHaveBeenCalledTimes(1);
+    expect(transport.reconcile).not.toHaveBeenCalled();
+    transport.inspect.mockRejectedValue(new InternalApiError('Denied', status));
+    await consumer.inspect();
+    expect(consumer.view.outcome).toBe('denied');
+    expect(consumer.view.retained).toBe(retained);
+    expect(consumer.action).toBeNull();
+    const inspections = transport.inspect.mock.calls.length;
+    await consumer.inspect();
+    await consumer.submit(email);
+    expect(transport.inspect).toHaveBeenCalledTimes(inspections);
+    expect(transport.restore).toHaveBeenCalledTimes(1);
+    expect(transport.reconcile).not.toHaveBeenCalled();
+  }
+);
+
+it('shows unavailable inspection without a retained revision conflict', async () => {
+  const { consumer, transport } = setup();
+  transport.inspect.mockRejectedValue(
+    new InternalApiError('Unavailable', 503, 'employee_management_unavailable')
+  );
+  await consumer.inspect();
+  expect(consumer.view.outcome).toBe('unavailable');
+  expect(consumer.view.retained).toBeNull();
+  expect(consumer.action).toBeNull();
+  await consumer.submit(email);
+  expect(transport.restore).not.toHaveBeenCalled();
+  expect(transport.reconcile).not.toHaveBeenCalled();
+});
+
 it.each(['revision-conflict', 'lost-begin-ACK', 'lost-attempt-ACK'] as const)(
   'real restore service/client/consumer preserves %s with zero unban',
   async (fault) => {
@@ -331,6 +392,7 @@ it.each(['revision-conflict', 'lost-begin-ACK', 'lost-attempt-ACK'] as const)(
       updateUserById: vi.fn(),
     };
     let original: EmployeeRestoreTuple | null = null;
+    let persistedOperation: InternalEmployeeManagement['operation'] = null;
     const operations = {
       inspect: vi.fn(async () => ({
         data: {
@@ -344,13 +406,18 @@ it.each(['revision-conflict', 'lost-begin-ACK', 'lost-attempt-ACK'] as const)(
           readinessCode: 'ready',
           reservation: 'exact_intent',
           managed: true,
-          operation: null,
+          operation: persistedOperation,
           recovery: null,
         },
         error: null,
       })),
       begin: vi.fn(async (tuple: EmployeeRestoreTuple) => {
         original = tuple;
+        persistedOperation = {
+          operationId: tuple.operationId,
+          revision: tuple.expectedRevision,
+          phase: 'reserved',
+        };
         if (fault === 'lost-begin-ACK')
           throw new Error('begin committed, ACK lost');
         return {
@@ -362,7 +429,12 @@ it.each(['revision-conflict', 'lost-begin-ACK', 'lost-attempt-ACK'] as const)(
           error: null,
         };
       }),
-      markAttempt: vi.fn(async () => {
+      markAttempt: vi.fn(async (tuple: EmployeeRestoreTuple) => {
+        persistedOperation = {
+          operationId: tuple.operationId,
+          revision: tuple.expectedRevision,
+          phase: 'attempted',
+        };
         throw new Error('attempt committed, ACK lost');
       }),
       confirm: vi.fn(),
@@ -374,7 +446,10 @@ it.each(['revision-conflict', 'lost-begin-ACK', 'lost-attempt-ACK'] as const)(
     }));
     const replies: unknown[] = [];
     const http = vi.fn<typeof fetch>(async (url, init) => {
-      if (!init?.method || init.method === 'GET') return Response.json(detail);
+      // Stateful operation readback only; nextAction remains the fixed fixture.
+      // This does not route the production management GET composition.
+      if (!init?.method || init.method === 'GET')
+        return Response.json({ ...detail, operation: persistedOperation });
       const response = await handlers.restore(new Request(url, init), {
         params: Promise.resolve({ userId: id }),
       });
@@ -420,8 +495,36 @@ it.each(['revision-conflict', 'lost-begin-ACK', 'lost-attempt-ACK'] as const)(
       fault === 'lost-attempt-ACK' ? 1 : 0
     );
     expect(provider.updateUserById).not.toHaveBeenCalled();
+    const retained = consumer.view.retained;
+    const persistedTuple = original;
     await consumer.inspect();
+    expect(consumer.view.outcome).toBe(
+      fault === 'revision-conflict' ? 'conflict' : 'pending'
+    );
+    expect(consumer.view.detail?.operation).toEqual(persistedOperation);
+    if (fault === 'revision-conflict') {
+      expect(consumer.view.detail?.operation).toBeNull();
+    } else {
+      expect(consumer.view.detail?.operation).toEqual({
+        operationId: consumer.view.retained?.operationId,
+        revision: 7,
+        phase: fault === 'lost-begin-ACK' ? 'reserved' : 'attempted',
+      });
+      expect(consumer.view.retained).toEqual({
+        confirmationEmail: email,
+        expectedRevision: 7,
+        operationId: consumer.view.detail?.operation?.operationId,
+      });
+    }
+    expect(consumer.view.retained).toEqual(retained);
     await consumer.submit(email);
+    expect(original).toBe(persistedTuple);
+    expect(operations.begin).toHaveBeenCalledTimes(
+      fault === 'revision-conflict' ? 0 : 1
+    );
+    expect(operations.markAttempt).toHaveBeenCalledTimes(
+      fault === 'lost-attempt-ACK' ? 1 : 0
+    );
     expect(
       http.mock.calls.filter(([, init]) => init?.method === 'POST')
     ).toHaveLength(1);
