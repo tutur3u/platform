@@ -7,6 +7,7 @@ import {
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
 import type { ReactElement, ReactNode } from 'react';
 import { AppProviders } from './app-providers';
+import { reportCalendarSsrError } from './ssr-diagnostics';
 
 function useResolvedLocale(): 'en' | 'vi' {
   return useRouterState({
@@ -44,6 +45,7 @@ export function CalendarError({
   error,
   reset,
 }: ErrorComponentProps): ReactElement {
+  if (import.meta.env.SSR) reportCalendarSsrError(error, 'render-boundary');
   const locale = useResolvedLocale();
   return (
     <AppProviders locale={locale} params={{}} showVersionBadge={false}>

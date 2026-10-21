@@ -100,3 +100,24 @@ describe('actual Calendar handler to Start handoff', () => {
     expect(suppliers.proxy).toHaveBeenCalledTimes(1);
   });
 });
+
+it('captures a sanitized owning failure without replacing its identity', async () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const failure = new TypeError('PRIVATE_SENTINEL never log this');
+  suppliers.start.mockRejectedValueOnce(failure);
+  suppliers.proxy.mockResolvedValueOnce(NextResponse.next());
+  try {
+    await expect(
+      handleCalendarRequest(
+        new Request('https://calendar.test/verify-token'),
+        env,
+        ctx,
+        telemetry
+      )
+    ).rejects.toBe(failure);
+    expect(log).toHaveBeenCalledWith('calendar-ssr-error category=TYPE_ERROR');
+    expect(JSON.stringify(log.mock.calls)).not.toContain('PRIVATE_SENTINEL');
+  } finally {
+    log.mockRestore();
+  }
+});

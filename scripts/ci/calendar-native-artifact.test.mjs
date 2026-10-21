@@ -1,4 +1,5 @@
 import './calendar-native-runtime-profile.test.mjs';
+import './calendar-ssr-diagnostics.test.mjs';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {

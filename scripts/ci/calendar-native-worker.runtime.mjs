@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
+  appendFile,
   mkdir,
   mkdtemp,
   readFile,
@@ -17,6 +18,11 @@ import {
   verify,
 } from './calendar-native-artifact.mjs';
 import { denyCalendarOutbound } from './calendar-native-runtime-profile.mjs';
+import { createCalendar500Diagnostics } from './calendar-response-diagnostics.mjs';
+import {
+  createCalendarSsrCollector,
+  writeCalendarSsrPacket,
+} from './calendar-ssr-capture.mjs';
 import {
   createChildProducer,
   finalizeObservedCase,
@@ -45,6 +51,7 @@ async function runParent() {
   const root = resolve(app, 'dist');
   const options = {
     profile: 'calendar',
+    fixtureVars: { CALENDAR_SSR_DIAGNOSTICS: 'fixture-v1' },
     root,
     config: configPath,
     main,
@@ -81,15 +88,19 @@ async function runParent() {
   });
   const gates = [];
   let outcome;
+  const collector = createCalendarSsrCollector();
   try {
-    outcome = await spawnOwnedFixture({
-      entry: fileURLToPath(import.meta.url),
-      cwd,
-      name,
-      planFile,
-      receiptFile,
-      tempRoot,
-    });
+    outcome = await spawnOwnedFixture(
+      {
+        entry: fileURLToPath(import.meta.url),
+        cwd,
+        name,
+        planFile,
+        receiptFile,
+        tempRoot,
+      },
+      collector.forward
+    );
     assert.equal(outcome.error, undefined, 'Child spawn/output failed');
     assert.equal(outcome.code, 0, 'Calendar child failed');
     assert.equal(outcome.signal, null, 'Calendar child signal');
@@ -98,6 +109,27 @@ async function runParent() {
     assert.equal(outcome.intervened, false, 'Calendar child intervention');
   } catch (error) {
     gates.push(error);
+  }
+  try {
+    const packet = collector.finish(outcome, {
+      sourceSHA,
+      runId: process.env.GITHUB_RUN_ID,
+      attempt: process.env.GITHUB_RUN_ATTEMPT,
+      // biome-ignore lint/suspicious/noUndeclaredEnvVars: This direct Node CI fixture does not run through Turbo.
+      job: process.env.GITHUB_JOB,
+    });
+    const packetFile = join(
+      process.env.RUNNER_TEMP ?? diagnosticRoot,
+      `calendar-ssr-${packet.sourceSHA}-${packet.runId}-${packet.attempt}-${packet.job}.json`
+    );
+    await writeCalendarSsrPacket(packetFile, packet);
+    if (process.env.GITHUB_OUTPUT)
+      await appendFile(
+        process.env.GITHUB_OUTPUT,
+        `ssr_diagnostic=${packetFile}\n`
+      );
+  } catch {
+    gates.push(new Error('Sanitized Calendar SSR diagnostics unavailable'));
   }
   const observed = await observeCaseReceipt(
     receiptFile,
@@ -130,6 +162,7 @@ async function runChild() {
   const unexpected = [];
   const producer = createChildProducer(name);
   let runtime, primary;
+  const responseDiagnostics = createCalendar500Diagnostics();
   before(async () => {
     try {
       await producer.observeReturnedStartup(async () => {
@@ -146,6 +179,7 @@ async function runChild() {
   });
   after(async () => {
     const { receipt, errors } = await producer.finish(primary);
+    responseDiagnostics.afterDispose();
     const diagnostics = await writeChildDiagnostics(
       receipt,
       errors,
@@ -157,13 +191,14 @@ async function runChild() {
   });
   function checkedTest(title, ...args) {
     const run = args.pop();
-    test(title, ...args, async () => {
+    test(title, ...args, async (context) => {
       try {
-        await run();
+        await run(context);
       } catch (error) {
-        primary = primary
-          ? new AggregateError([primary, error], 'Calendar assertions failed')
-          : error;
+        primary =
+          primary && primary !== error
+            ? new AggregateError([primary, error], 'Calendar assertions failed')
+            : error;
         throw error;
       }
     });
@@ -178,7 +213,7 @@ async function runChild() {
     {
       timeout: 30000,
     },
-    async () => {
+    async (context) => {
       for (const [path, locale, headers] of [
         ['/verify-token', 'en', {}],
         ['/vi/verify-token', 'vi', {}],
@@ -186,11 +221,16 @@ async function runChild() {
         ['/verify-token', 'vi', { 'accept-language': 'vi,en;q=0.5' }],
       ]) {
         const response = await fetchWorker(path, headers);
-        assert.equal(
-          response.status,
-          200,
-          `Calendar request=https://calendar-ci.invalid${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
-        );
+        try {
+          assert.equal(
+            response.status,
+            200,
+            `Calendar request=https://calendar-ci.invalid${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
+          );
+        } catch (error) {
+          primary = error;
+          responseDiagnostics.fail(error, response, context.signal);
+        }
         assert.match(response.headers.get('content-type') ?? '', /text\/html/);
         assert.equal(response.headers.get('x-frame-options'), 'DENY');
         const html = await response.text();

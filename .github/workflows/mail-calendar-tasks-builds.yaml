@@ -233,8 +233,17 @@ jobs:
         id: calendar-canonical-seal
         run: node scripts/ci/calendar-native-artifact.mjs seal apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
       - name: Exercise exact emitted Worker public routes
+        id: calendar-runtime
         timeout-minutes: 3
         run: node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"
+      - name: Retain sanitized Calendar SSR fixture diagnostics
+        if: ${{ always() && steps.calendar-runtime.outputs.ssr_diagnostic != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-ssr-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          path: ${{ steps.calendar-runtime.outputs.ssr_diagnostic }}
+          retention-days: 3
+          if-no-files-found: error
       - name: Exercise exact emitted offline asset
         working-directory: apps/calendar
         run: node --test src/runtime/offline-artifact.runtime.mjs
@@ -324,8 +333,17 @@ jobs:
         working-directory: apps/calendar
         run: bun x --no-install wrangler deploy --dry-run --config "${{ steps.output.outputs.config }}" --outdir "$RUNNER_TEMP/calendar-restored-dry-run"
       - name: Recheck actual restored Worker public routes
+        id: calendar-runtime
         timeout-minutes: 3
         run: node scripts/ci/calendar-native-worker.runtime.mjs "$SOURCE_SHA"
+      - name: Retain sanitized Calendar SSR fixture diagnostics
+        if: ${{ always() && steps.calendar-runtime.outputs.ssr_diagnostic != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: calendar-ssr-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          path: ${{ steps.calendar-runtime.outputs.ssr_diagnostic }}
+          retention-days: 3
+          if-no-files-found: error
       - name: Recheck restored offline asset behavior
         working-directory: apps/calendar
         run: node --test src/runtime/offline-artifact.runtime.mjs

@@ -15,6 +15,7 @@ import {
   createCalendarTelemetryPort,
 } from './request-telemetry.server';
 import { applyCalendarResponsePolicy } from './response-policy';
+import { reportCalendarSsrError } from './ssr-diagnostics';
 import type {
   CalendarExecutionContext,
   CalendarWorkerEnvironment,
@@ -26,10 +27,15 @@ export async function handleCalendarRequest(
   ctx: CalendarExecutionContext,
   telemetry?: CalendarTelemetryPort
 ): Promise<Response> {
-  return applyCalendarResponsePolicy(
-    request,
-    await dispatchCalendarRequest(request, env, ctx, telemetry)
-  );
+  try {
+    return await applyCalendarResponsePolicy(
+      request,
+      await dispatchCalendarRequest(request, env, ctx, telemetry)
+    );
+  } catch (error) {
+    reportCalendarSsrError(error, 'handler');
+    throw error;
+  }
 }
 
 async function dispatchCalendarRequest(

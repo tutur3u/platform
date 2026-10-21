@@ -89,6 +89,35 @@ this SSR check. The 200 assertions remain strict; failures report bounded reques
 and Location paths without query/fragment values. Run
 `src/runtime/public-completion.test.ts` for real-proxy/model regressions before
 requiring exact-source CI and original/restored Worker acceptance.
+
+Calendar SSR diagnostics keep normal server logs to an allowlisted category, with
+at most 16 reports per Worker instance. The isolated fixture enables detailed
+sanitized records using its `CALENDAR_SSR_DIAGNOSTICS` binding. Handler failures
+are rethrown unchanged; the server error boundary keeps the same fallback/error.
+Records contain only allowlisted error names/codes/categories, known function
+identifiers and numeric stack locations. Unknown data stays `UNKNOWN`; raw
+messages, paths, URLs, environment, credentials and response bodies are excluded.
+On HTTP 500 the fixture registers the original status assertion and publishes a
+bounded initial record synchronously, before observing any stream work. It
+requests at most eight stream reads or 64 KiB before cancelling; a single oversized
+chunk is counted truthfully and immediately discarded. Cancellation/read/release
+outcomes and pending flags remain explicit. Underlying cancellation stays `UNKNOWN`,
+even if the cancel promise settles or the reader lock is released. Neither read nor
+cancellation is awaited on the assertion or teardown path. The existing
+test abort signal stops further reads and requests cancellation; stalled operations
+remain pending with underlying cleanup UNKNOWN. Late rejections are observed.
+There is no extra timer, retry, race-based closure claim or relaxed 200 gate.
+The exact original status assertion is thrown immediately even if diagnostics fail.
+
+Only after natural child close and stdout/stderr drainage does the parent validate
+and persist a source SHA/run/attempt/job-key-bound, exclusive mode-0600 JSON packet.
+The job key is the GitHub job identifier; numeric job IDs require the run metadata.
+The artifact step receives only the verified sanitized packet's exact step-output
+path. It never uploads case roots, raw snapshots or SDK logs. Missing owning errors
+remain `UNKNOWN`, even with a captured 500. Tests run through the existing Calendar
+artifact suite and owning Vitest discovery; a diagnostic artifact is not runtime
+acceptance or proof that another app's 500 has the same cause.
+
 The separate offline suite exercises the emitted
 classic worker's static-only caching and entry bound. These checks do not prove
 signed-in RPC/navigation/refresh, browser hydration, workspace permissions,
