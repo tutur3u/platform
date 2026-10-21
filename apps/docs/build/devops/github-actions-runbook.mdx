@@ -81,7 +81,15 @@ fresh output, replacement bytes, failure/invalid-output stub preservation, scrat
 The local Worker suite resolves Wrangler/Miniflare from Calendar's own dependency
 links, uses the discovered emitted main/config and denies outbound network calls.
 It checks public EN/VI completion HTML, emitted hydration assets and the exact
-`/serwist/sw.js` root scope. The separate offline suite exercises the emitted
+`/serwist/sw.js` root scope. Tokenless GET/HEAD completion requests exercise the existing
+public verifier page through Calendar's auth proxy and native locale resolver;
+no actor or workspace data is loaded by its page model. A present token parameter
+retains shared verification redirects, so supplying a fixture token cannot replace
+this SSR check. The 200 assertions remain strict; failures report bounded request
+and Location paths without query/fragment values. Run
+`src/runtime/public-completion.test.ts` for real-proxy/model regressions before
+requiring exact-source CI and original/restored Worker acceptance.
+The separate offline suite exercises the emitted
 classic worker's static-only caching and entry bound. These checks do not prove
 signed-in RPC/navigation/refresh, browser hydration, workspace permissions,
 provider callbacks or enabled SQL drain retention. Those need an admitted fixture

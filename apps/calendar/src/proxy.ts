@@ -32,6 +32,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { resolveCalendarLocale } from './runtime/request-locale';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -95,9 +96,13 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
+  const publicCompletion =
+    (req.method === 'GET' || req.method === 'HEAD') &&
+    PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
+    !req.nextUrl.searchParams.has('token');
+  const verifyTokenResponse = publicCompletion
+    ? null
+    : await consumeVerifyTokenRequest(req, { locales: supportedLocales });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }
@@ -111,6 +116,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
+  if (publicCompletion) {
+    authRequestHeaders.set('x-next-intl-locale', resolveCalendarLocale(req));
+    const completion = clearSupabaseAuthCookies(
+      req,
+      NextResponse.next({ request: { headers: authRequestHeaders } })
+    );
+    propagateAuthCookies(authRes, completion);
+    return completion;
+  }
   const authRequest = { headers: authRequestHeaders };
   const appSession = getAppSessionClaimsFromRequest(authRequest, {
     targetApp: 'calendar',

@@ -2,6 +2,7 @@ import '@tanstack/react-start/server-only';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import LoginPage from '../app/[locale]/(auth)/login/page';
+import { PUBLIC_PATHS } from '../constants/common';
 import { calendarPageModel } from './calendar-page-model.server';
 import { labModel } from './lab-model.server';
 import { loadLocaleContext } from './locale-context.server';
@@ -18,7 +19,10 @@ export async function loadPageModel(path: string) {
   return withCalendarRequest(
     {
       ...current,
-      request: new Request(url, { headers: current.request.headers }),
+      request: new Request(url, {
+        method: current.request.method,
+        headers: current.request.headers,
+      }),
     },
     () => loadResolvedPageModel(url)
   );
@@ -31,6 +35,19 @@ async function loadResolvedPageModel(url: URL) {
     .map(decodeURIComponent);
   const locale = loadLocaleContext(`${url.pathname}${url.search}`);
   if (segments[0] === 'en' || segments[0] === 'vi') segments.shift();
+  const request = calendarRequest().request;
+  if (
+    (request.method === 'GET' || request.method === 'HEAD') &&
+    PUBLIC_PATHS.includes(url.pathname) &&
+    !url.searchParams.has('token')
+  )
+    return {
+      kind: 'verify-token' as const,
+      locale,
+      params: { locale, wsId: 'verify-token' },
+      actorId: undefined,
+      showVersionBadge: false,
+    };
   const actor = await getSatelliteAppSessionUser('calendar');
   const params: Record<string, string> = { locale };
   if (segments[0]) params.wsId = segments[0];

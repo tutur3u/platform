@@ -1,8 +1,33 @@
 ---
 title: "Calendar"
 description: "Calendar behavior across Web, standalone Calendar, and mobile."
-updatedAt: "2026-10-06"
+updatedAt: "2026-10-21"
 ---
+
+## Public authentication completion document
+
+Standalone Calendar renders its existing `/verify-token`, `/en/verify-token` and
+`/vi/verify-token` completion screen as a public SSR document for GET and HEAD
+requests with no `token` query parameter. The default is English; an explicit
+supported locale prefix, then `NEXT_LOCALE`, then browser language resolves the
+document language. These documents do not redirect solely to canonicalize the
+locale prefix, and their page model does not resolve an actor or workspace data.
+The normal Calendar auth proxy, auth-cookie cleanup and response security policy
+still apply. Rendering this screen does not create or prove an authenticated
+session; the existing client completion flow normalizes its next destination.
+
+This rule applies only to these exact Calendar paths and document methods. A
+present `token` parameter, including an empty value, retains the existing shared
+server verification and safe redirect behavior. Token-bearing success propagates
+verifier cookies; failure retains the safe fallback and cookie cleanup. Other
+methods, protected pages, shared auth defaults and other satellite apps are
+unchanged. Web and mobile Calendar surfaces are outside this rule's scope.
+
+`apps/calendar/src/runtime/public-completion.test.ts` covers the real proxy,
+shared token consumer, locale resolution, anonymous page model, security policy,
+cookie cleanup and token-bearing/protected negative controls. The emitted Worker
+suite separately requires 200 EN/VI HTML, hydration assets and framing protection;
+source tests do not establish hosted or restored-artifact acceptance.
 
 ## Calendar editor timezone
 

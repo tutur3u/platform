@@ -186,7 +186,11 @@ async function runChild() {
         ['/verify-token', 'vi', { 'accept-language': 'vi,en;q=0.5' }],
       ]) {
         const response = await fetchWorker(path, headers);
-        assert.equal(response.status, 200);
+        assert.equal(
+          response.status,
+          200,
+          `Calendar request=https://calendar-ci.invalid${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
+        );
         assert.match(response.headers.get('content-type') ?? '', /text\/html/);
         assert.equal(response.headers.get('x-frame-options'), 'DENY');
         const html = await response.text();
