@@ -105,9 +105,15 @@ it('reads the original operation after a lost acknowledgement without replay', a
   });
   expect(f.fetcher).toHaveBeenCalledTimes(3);
 });
-it.each(['id', 'email', 'displayName', 'username', 'revision'] as const)(
-  'rejects committed current %s drift',
-  async (key) => {
+it.each([
+  { key: 'id', value: '00000000-0000-4000-8000-000000012003' },
+  { key: 'email', value: 'different-profile@tuturuuu.com' },
+  { key: 'displayName', value: 'Different Profile' },
+  { key: 'username', value: 'differentprofile' },
+  { key: 'revision', value: 2 },
+])(
+  'rejects committed current $key drift with a 503',
+  async ({ key, value }) => {
     const f = fixture();
     f.fetcher
       .mockReset()
@@ -120,12 +126,15 @@ it.each(['id', 'email', 'displayName', 'username', 'revision'] as const)(
             revision: 1,
             displayName: receipt.displayName,
             username: receipt.username,
-            [key]: key === 'revision' ? 2 : 'drift',
+            [key]: value,
           },
           receipt,
         })
       );
-    await expect(updateManagedEmployeeProfile(f.input)).rejects.toThrow();
+    await expect(updateManagedEmployeeProfile(f.input)).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(f.fetcher).toHaveBeenCalledTimes(3);
   }
 );
 it('does not treat rollback JSON as a committed update', async () => {
