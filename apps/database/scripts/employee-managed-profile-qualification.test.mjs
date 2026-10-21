@@ -9,6 +9,7 @@ import {
   selectSchemaPackets,
 } from './employee-managed-profile-qualification.mjs';
 import {
+  assertPacketTap,
   assertRollbackSource,
   selectSchemaPackets as basePackets,
 } from './employee-schema-tap.mjs';
@@ -209,4 +210,46 @@ test('managed diagnostics bound hostile output, reject invalid packet binding, a
     () => managedDiagnostic({}, basePackets(true).length + 1.5),
     /Invalid managed profile diagnostic binding/u
   );
+});
+
+test('actual concurrency fixture suppresses only the two confirmed remote COMMIT result rows', () => {
+  const sql = readFileSync(
+    new URL(
+      '../supabase/tests/employee-managed-profile-concurrency.sql',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const silent =
+    "do $$ begin perform dblink_exec('profile_a','commit'); end $$;";
+  const printed = "select dblink_exec('profile_a','commit');";
+  assert.equal(sql.split(silent).length - 1, 2);
+  assert.equal(sql.includes(printed), false);
+  const before = sql.replaceAll(silent, printed);
+  // The same remote commands remain in the same order; only result emission differs.
+  const controls = (source) =>
+    [...source.matchAll(/dblink_exec\('profile_a','commit'\)/gu)].map(
+      (match) => match[0]
+    );
+  assert.deepEqual(controls(sql), controls(before));
+  assert.equal(controls(sql).length, 3);
+  const shape = (source) => {
+    const statusRows = source
+      .split(/\r?\n/u)
+      .filter((line) => line === printed)
+      .map(() => 'COMMIT');
+    return concurrencyTap.replace(
+      'ROLLBACK',
+      [...statusRows, 'ROLLBACK'].join('\n')
+    );
+  };
+  assert.equal(
+    shape(before)
+      .split('\n')
+      .filter((line) => line === 'COMMIT').length,
+    2
+  );
+  assert.throws(() => assertPacketTap(shape(before), 10));
+  assert.equal(assertPacketTap(shape(sql), 10), 10);
+  assert.doesNotThrow(() => assertRollbackSource(sql));
 });

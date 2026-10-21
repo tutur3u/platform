@@ -45,7 +45,7 @@ select is(dblink_send_query('profile_b',$q$select private.update_employee_profil
 do $$ begin perform pg_sleep(0.15); end $$;
 select is(dblink_is_busy('profile_b'),1,'second session waits behind sorted Auth lock');
 select ok(exists(select 1 from pg_locks where not granted and pid<>pg_backend_pid()),'database observes an actual lock waiter');
-select dblink_exec('profile_a','commit');
+do $$ begin perform dblink_exec('profile_a','commit'); end $$;
 select * from dblink_get_result('profile_b',false) as r(result jsonb);
 select matches(dblink_error_message('profile_b'),'Employee profile preimage conflict','second session rejects stale revision after first commits');
 select * from dblink_get_result('profile_b',false) as r(result jsonb);
@@ -61,7 +61,7 @@ select dblink_send_query('profile_b',$q$select private.begin_employee_restore(
 '00000000-0000-4000-8000-000000013020')$q$);
 do $$ begin perform pg_sleep(0.15); end $$;
 select is(dblink_is_busy('profile_b'),1,'RESTORE waits on same sorted lock pair');
-select dblink_exec('profile_a','commit');
+do $$ begin perform dblink_exec('profile_a','commit'); end $$;
 select * from dblink_get_result('profile_b',false) as r(result jsonb);
 select matches(dblink_error_message('profile_b'),'Employee restoration tuple or revision conflict','RESTORE rejects stale revision without deadlock');
 select * from dblink_get_result('profile_b',false) as r(result jsonb);
