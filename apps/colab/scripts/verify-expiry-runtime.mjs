@@ -43,30 +43,26 @@ after(async () => {
   reportObservation('close-complete');
 });
 for (const path of ['/duplicates', '/failure']) {
-  test(
-    `real DO expiry is atomic and idempotent: ${path}`,
-    {
-      timeout: 30_000,
-    },
-    async () => {
-      const current = {
-        case: path === '/failure' ? 'failure' : 'duplicates',
-        nodePhase: 'fetch-start',
-      };
-      observation = current;
-      const response = await server.fetch(path);
-      current.nodePhase = 'fetch-complete';
-      assert.equal(response.status, 200);
-      current.nodePhase = 'read-start';
-      const result = await response.json();
-      current.nodePhase = 'read-complete';
-      assert.deepEqual(result, {
-        revision: 1,
-        mode: 'readonly',
-        ended: 1,
-        complete: true,
-        nextAlarm: null,
-      });
-    }
-  );
+  test(`real DO expiry is atomic and idempotent: ${path}`, {
+    timeout: 30_000,
+  }, async () => {
+    const current = {
+      case: path === '/failure' ? 'failure' : 'duplicates',
+      nodePhase: 'fetch-start',
+    };
+    observation = current;
+    const response = await server.fetch(path);
+    current.nodePhase = 'fetch-complete';
+    assert.equal(response.status, 200);
+    current.nodePhase = 'read-start';
+    const result = await response.json();
+    current.nodePhase = 'read-complete';
+    assert.deepEqual(result, {
+      revision: 1,
+      mode: 'readonly',
+      ended: 1,
+      complete: true,
+      nextAlarm: null,
+    });
+  });
 }
