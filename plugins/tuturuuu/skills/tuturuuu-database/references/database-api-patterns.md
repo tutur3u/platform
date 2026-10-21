@@ -287,3 +287,15 @@ CI controls, not runtime activation gates: the migration API uses current root
 permission/configuration/readiness with no optional environment flag. The selected
 30-case packet fences a real FK-writer table lock on a separate disposable database
 connection and verifies unchanged state and cleanup; it does not access production.
+
+### Rejected employee creation adjudication
+
+An `unknown` CREATE cannot ordinarily retry. The dedicated service-only
+`adjudicate_employee_creation_rejection` contract admits only the original
+administrator's explicitly adjudicated terminal rejection at unknown/version 2,
+with exact original identity, expired lease, two-event history, retained intent
+and independent current absence guards. Absence and temporal provider logs are
+not rejection proof. Preserve all history and target IDs, append the audit event,
+then require explicit normal CREATE with a fresh lease and password. See
+`apps/docs/build/development-tools/employee-schema-qualification.mdx` for the
+operator boundary and canonical rollback/GoTrue/PostgREST regression coverage.

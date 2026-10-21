@@ -272,13 +272,13 @@ does not change SQL, the 25 assertions or the strict 172-assertion success gate.
 ## Disposable HTTP and Auth qualification
 
 The optional `include_http=true` input requires `include_journal=true`. It keeps
-GoTrue, PostgREST and Kong in the same isolated stack, runs all 301 SQL assertions
+GoTrue, PostgREST and Kong in the same isolated stack, runs all 319 SQL assertions
 and type generation, then exercises the actual Web journal, RPC adapter and
 provider adapter through loopback HTTP. It creates synthetic identities only in
 that disposable project; the entire owned stack is stopped by the existing
 cleanup path. No production configuration or activation flag is changed.
 
-The 29 checks cover effective service/anonymous RPC access, successful CREATE,
+The 30 checks cover effective service/anonymous RPC access, successful CREATE,
 independent persisted state, stable-UUID replay, payload conflict, a committed
 claim with a lost acknowledgement and a successful Auth create with a lost
 acknowledgement. Neither unknown outcome may trigger a second provider create.
@@ -666,3 +666,38 @@ outcome mapping or retiring an earlier rejected reservation requires a separatel
 reviewed causal recovery contract; observation must continue to report incomplete
 state truthfully. Provider-specific rejection (including any additional hosted
 policy) is not permission to replay CREATE.
+
+## Administrator adjudication of a rejected initial Auth attempt
+
+An initial CREATE at `unknown` remains non-retryable by default. The service-only
+`adjudicate_employee_creation_rejection` RPC is a one-time exception for the
+original administrator's terminally rejected first attempt, at version 2. It
+requires explicit human attestation of terminal rejection and no request in
+flight. Temporal log correlation and account absence are never machine-verified
+rejection proof. If the administrator cannot make that determination, retain the
+unknown operation and escalate for investigation.
+
+Bind the exact original actor, operation, target UUID, canonical email, name,
+expired lease and attempted event. Retain the evidence outside the journal and
+supply its SHA-256 reference digest with the fixed adjudication reason. The RPC
+freshly authorizes the original administrator, validates both original history
+events and the retained intent, and independently checks current Auth identity,
+profiles, registry, mailbox, grants and competing reservations. Revocation,
+changed identities, later phases, existing repair or conflicting state deny it.
+Only service execution is granted; direct audit-table writes are denied.
+
+Success appends a history event and immutable adjudication record and returns the
+same operation at reserved/version 3 with an expired replacement fence. It does
+not create, activate or prove an account ready. A later explicit normal CREATE
+must acquire a fresh lease and use a newly validated password through the existing
+journal, provider and persisted completion proof. Never persist credentials,
+replay an unknown provider request, delete history or allocate another target.
+A lost repair acknowledgement requires inspection; do not blindly retry it.
+
+The journal profile now requires the separate 18-assertion rollback packet
+`employee-rejection-adjudication.sql` (319 total). The canonical disposable HTTP
+fixture additionally rejects a real weak password through GoTrue, adjudicates
+through PostgREST, verifies the committed reservation, denies replay and finishes
+normal CREATE with the same UUID. Its strict top-level count is 30. Until that
+exact-source fixture and real migration application pass, these are authored
+regressions, not runtime qualification or production acceptance.

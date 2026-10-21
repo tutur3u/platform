@@ -9,6 +9,7 @@ import { createEmployeeCreationJournal } from '../../src/lib/infrastructure/empl
 import { createEmployeeCreationOperationStore } from '../../src/lib/infrastructure/employee-creation-operation-store';
 import { createEmployeeRuntimeRpc } from '../../src/lib/infrastructure/employee-creation-rpc';
 import { createEmployeeRpcPhaseProvider } from '../../src/lib/infrastructure/employee-creation-rpc-provider';
+import { qualifyEmployeeRejectionHttp } from './employee-rejection-http-runtime';
 import { qualifyEmployeeRestoreHttp } from './employee-restore-http-runtime';
 
 const JournalResultSchema = z.strictObject({
@@ -321,6 +322,24 @@ commit;`,
     });
     assert.ok(restoreQualification.qualified);
   }
+  phase = 'rejection-adjudication';
+  await qualifyEmployeeRejectionHttp({
+    ...config,
+    admin,
+    actorUserId: actorId,
+    transport,
+    complete: (operationId, email) =>
+      claimAndRun(journal, {
+        actorUserId: actorId,
+        operationId,
+        payload: {
+          email,
+          displayName: 'Adjudicated Employee',
+          temporaryPassword: password,
+        },
+      }),
+  });
+  assertions++;
   phase = 'complete';
 }
 try {

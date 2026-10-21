@@ -8,6 +8,7 @@ const phases = new Set([
   'lost-claim-acknowledgement',
   'lost-provider-acknowledgement',
   'restore-runtime',
+  'rejection-adjudication',
   'complete',
 ]);
 export function selectHttpRuntime(value, journal) {
@@ -86,7 +87,7 @@ export function httpQualificationReceipt(text) {
     typeof candidate.qualified !== 'boolean' ||
     !Number.isInteger(candidate.assertions) ||
     candidate.assertions < 0 ||
-    candidate.assertions > 29 ||
+    candidate.assertions > 30 ||
     candidate.productionProof !== false ||
     candidate.routeAuthorizationProof !== false
   )
@@ -110,7 +111,7 @@ export function assertQualifiedHttp(value, status, restore = false) {
     status !== 0 ||
     value.qualified !== true ||
     value.phase !== 'complete' ||
-    value.assertions !== 29 ||
+    value.assertions !== 30 ||
     (restore &&
       (!value.restoreQualification?.qualified ||
         value.restoreQualification.phase !== 'complete' ||

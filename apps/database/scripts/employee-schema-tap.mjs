@@ -13,6 +13,7 @@ export const journalPackets = Object.freeze([
   ['employee-creation-operations.sql', 48],
   ['employee-creation-reserved-preflight.sql', 61],
   ['employee-runtime-observation.sql', 20],
+  ['employee-rejection-adjudication.sql', 18],
 ]);
 
 export const personalJournalPackets = Object.freeze([

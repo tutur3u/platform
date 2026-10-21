@@ -10,7 +10,7 @@ import {
 const complete = {
   qualified: true,
   phase: 'complete',
-  assertions: 29,
+  assertions: 30,
   productionProof: false,
   routeAuthorizationProof: false,
 };
@@ -53,7 +53,7 @@ test('malformed, oversized and overstated proof fails closed', () => {
     null,
     [],
     { ...complete, phase: 'private-runtime-message' },
-    { ...complete, assertions: 30 },
+    { ...complete, assertions: 31 },
     { ...complete, assertions: '29' },
     { ...complete, productionProof: true },
     { ...complete, routeAuthorizationProof: true },
