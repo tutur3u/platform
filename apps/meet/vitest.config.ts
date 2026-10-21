@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   esbuild: { jsx: 'automatic' },
@@ -26,5 +26,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
+    exclude: [...configDefaults.exclude, 'src/proxy.public-callback.test.ts'],
   },
 });

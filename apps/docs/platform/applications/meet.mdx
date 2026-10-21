@@ -29,6 +29,20 @@ Afterward, review notes and proposed follow-ups before writing to Tasks or
 Calendar. A proposal is not an executed action, and a room URL is not broad
 workspace authority.
 
+## Public authentication callback
+
+Meet's native app renders the tokenless `/verify-token` and `/vi/verify-token`
+callback shell for exact GET and HEAD requests, including locale context, without
+consuming a verification token or requiring an account session. The explicit
+English locale prefix retains normal locale canonicalization. This lets a direct
+callback visit render the bilingual loading/logo UI and its hydration assets.
+An explicit `token` query parameter, including an empty value, and other methods
+continue through the shared verifier; token validation, safe next destinations,
+session cookies, login routing and protected routes retain their existing rules.
+The exception applies only to these exact callback routes, not API or workspace
+routes. Real-proxy controls live in `apps/meet/src/proxy.public-callback.test.ts`;
+SSR, hydration assets and both locales still require the emitted Worker CI gate.
+
 ## Runtime boundaries
 
 Meet shares behavior through `packages/meet-core` and `packages/meet-ui`.

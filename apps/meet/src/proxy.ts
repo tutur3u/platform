@@ -36,6 +36,12 @@ const AUTH_PUBLIC_PATHS = [
   ...supportedLocales.map((locale) => `/${locale}/native-collaboration`),
   ...supportedLocales.map((locale) => `/${locale}/login`),
 ];
+const publicCallbackLocale = createIntlMiddleware({
+  locales: supportedLocales,
+  defaultLocale,
+  localeDetection: false,
+  localePrefix: 'as-needed',
+});
 const LEGACY_PLAN_ID_PATTERN = /^[0-9a-f]{32}$/iu;
 
 function getPathSegments(pathname: string) {
@@ -189,6 +195,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       appSessionRefresh?.response ??
       clearSupabaseAuthCookies(req, NextResponse.next())
     );
+  }
+
+  if (
+    (req.method === 'GET' || req.method === 'HEAD') &&
+    PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
+    !req.nextUrl.searchParams.has('token')
+  ) {
+    return publicCallbackLocale(req);
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(req, {

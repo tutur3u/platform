@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import {
+  ASSURANCE_READS,
+  assuranceResponse,
+  isAssuranceRequest,
+} from './meet-native-assurance.mjs';
 
 const policies = new WeakMap();
 export const DENIAL = 'Unexpected fixture egress';
@@ -26,9 +31,19 @@ async function boundedBody(request) {
   }
 }
 
-export function createMeetPolicy(role) {
+export function createMeetPolicy(role, options = {}) {
   assert.ok(['app', 'probe'].includes(role), 'Unknown HTTP policy role');
-  const forwarded = [],
+  assert.deepEqual(
+    Object.keys(options),
+    options.assuranceKey === undefined ? [] : ['assuranceKey']
+  );
+  if (options.assuranceKey !== undefined) {
+    assert.equal(role, 'app', 'Account assurance fixture is app-only');
+    assert.match(options.assuranceKey, /^[a-f0-9-]{72}$/);
+  }
+  const assuranceKey = options.assuranceKey;
+  const assurance = [],
+    forwarded = [],
     unexpected = [],
     controls = [];
   let expected,
@@ -42,6 +57,14 @@ export function createMeetPolicy(role) {
       origin: url.origin,
       path: url.pathname,
     };
+    if (
+      role === 'app' &&
+      assurance.length < ASSURANCE_READS &&
+      isAssuranceRequest(request, assuranceKey)
+    ) {
+      assurance.push({ role, method: 'GET' });
+      return assuranceResponse();
+    }
     const cookie = request.headers.get('cookie') ?? '';
     if (
       role === 'app' &&
@@ -91,6 +114,7 @@ export function createMeetPolicy(role) {
     role,
     handler,
     forwarded,
+    assurance,
     unexpected,
     controls,
     expectDenial(method, target) {

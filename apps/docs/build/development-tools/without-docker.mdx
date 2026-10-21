@@ -207,9 +207,38 @@ with zero HTTP attempts; a route or manually constructed class cannot replace
 these cases. Unsupported local resources, registry records or remote auth fail
 closed. Do not strip bindings to obtain startup success.
 
+The finite fixture also admits exactly eight app-role GETs to the synthetic
+`https://meet-ci.supabase.invalid/auth/v1/admin/users/be0e8f2e-c239-4e40-a1f4-d6881938cae4`
+account-assurance endpoint. `meet-native-assurance.mjs` defines the sole subject
+and deterministic confirmed, unbanned account with server-owned optional MFA.
+Both admin credential headers must match the generated disposable fixture key;
+URL credentials, cookies, query parameters, other subjects/methods/origins and
+excess reads are denied. These reads have their own counter, separate from the
+single central API forward: two for logout and three each for the authenticated
+forward and app denial control. Real production signature and current-account
+MFA guards still run; banned, MFA-required and unavailable account responses must
+fail in the real-proxy tests. No production auth fallback or provider access is
+introduced. The focused `vitest.native-auth.config.ts` retains real auth/locale
+code, uses the existing product Vite `bun` source-export condition for Node/SSR
+resolution, and transforms only `next-intl` for its extensionless Next import.
+Its include array selects only the public-callback/assurance test file. The
+ordinary app test config excludes that one file; the dedicated unconditional CI
+gate restores the standard exclusions and executes it with real auth and locale
+code. No test is replaced with a skip.
+
+HTTP500 fixture responses are consumed into bounded private receipt diagnostics
+before the original exact-status assertion fails. At most four projections retain
+only route/content/error/owning-frame categories and bounded lengths; no response
+bytes, headers, tokens, arbitrary errors or paths are persisted. The 64 KiB bound
+marks oversized cancellation or failed reads truthfully rather than claiming a
+complete drain. Unrecognized response errors remain UNKNOWN. These observations
+are response markers, not proof of an underlying server exception; product login
+routing must not change to conceal an unexplained HTTP500.
+
 The HTTP fixture claim covers trusted repository app/probe code through each
-configured role's outbound hook. App allows one exact bounded central API fixture;
-probe allows none. Live controls exercise app default, app named-entrypoint and
+configured role's outbound hook. App allows one exact bounded central API forward
+and the eight exact synthetic account-assurance reads above; probe allows none.
+Live controls exercise app default, app named-entrypoint and
 probe hooks, including private/loopback/lookalike targets. Hash-pinned SDK generated
 helpers, assets/registry/control-plane traffic and Node control paths are trusted
 tooling outside that claim. This is neither hostile-code isolation nor whole-process

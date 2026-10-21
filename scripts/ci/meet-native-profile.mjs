@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkNormalization, checkPolicy } from './meet-emitted-defaults.mjs';
+import { ASSURANCE_ORIGIN } from './meet-native-assurance.mjs';
 import { sealMeetApp } from './meet-native-inventory.mjs';
 
 const { validateOutput, verifyManifest, identity, secretNames } = createRequire(
@@ -96,7 +97,7 @@ export function fixtureBindings(secret) {
     SUPABASE_SECRET_KEY: { type: 'secret_text', value: secret },
     NEXT_PUBLIC_SUPABASE_URL: {
       type: 'plain_text',
-      value: 'https://meet-ci.supabase.invalid',
+      value: ASSURANCE_ORIGIN,
     },
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
       type: 'plain_text',

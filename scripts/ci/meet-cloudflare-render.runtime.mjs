@@ -3,9 +3,14 @@ import { createHmac, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { after, before, test as nodeTest } from 'node:test';
+import {
+  ASSURANCE_READS,
+  ASSURANCE_SUBJECT,
+} from './meet-native-assurance.mjs';
 import { createMeetGraph } from './meet-native-graph.mjs';
 import { readMeetRegistry } from './meet-native-graph-files.mjs';
 import { createMeetPolicy, PROBE_NEGATIVES } from './meet-native-policy.mjs';
+import { projectMeetServerFailure } from './meet-native-response-diagnostics.mjs';
 import { privateDiagnosticJSON } from './native-wrangler-diagnostics.mjs';
 import { diagnosticError } from './native-wrangler-evidence.mjs';
 
@@ -26,10 +31,12 @@ assert.equal(plan.sourceSHA, process.env.GITHUB_SHA);
 const secret = randomUUID() + randomUUID();
 const probeToken = randomUUID() + randomUUID();
 const policies = {
-  app: createMeetPolicy('app'),
+  app: createMeetPolicy('app', { assuranceKey: secret }),
   probe: createMeetPolicy('probe'),
 };
 const { forwarded, unexpected } = policies.app;
+const serverFailures = [];
+let serverFailuresTruncated = false;
 let runtime,
   graph,
   primary,
@@ -62,7 +69,7 @@ function session(target) {
     aud: 'tuturuuu-api',
     iss: 'tuturuuu',
     typ: 'app_coordination',
-    sub: 'be0e8f2e-c239-4e40-a1f4-d6881938cae4',
+    sub: ASSURANCE_SUBJECT,
     email: null,
     exp: now + 300,
     iat: now,
@@ -76,11 +83,18 @@ function session(target) {
 
 const signedCookie = () =>
   `tuturuuu_app_session=${session('meet')}; tuturuuu_web_app_session=${session('web')}`;
-const fetchWorker = (path, options = {}) =>
-  runtime.fetchApp(`https://meet.tuturuuu.com${path}`, {
+const fetchWorker = async (path, options = {}) => {
+  const response = await runtime.fetchApp(`https://meet.tuturuuu.com${path}`, {
     ...options,
     redirect: 'manual',
   });
+  if (response.status === 500) {
+    const fact = await projectMeetServerFailure(response, path);
+    if (serverFailures.length < 4) serverFailures.push(fact);
+    else serverFailuresTruncated = true;
+  }
+  return response;
+};
 
 const fetchProbe = (path) =>
   runtime.fetchProbe(`https://meet-ci-probe.invalid${path}`, {
@@ -96,6 +110,8 @@ before(async () => {
       probeToken,
     });
     runtime = await graph.start();
+    assert.equal(policies.app.assurance.length, 0);
+    assert.equal(policies.probe.assurance.length, 0);
     registry = await readMeetRegistry(prepared, 0);
   } catch (error) {
     recordPrimary(error);
@@ -116,10 +132,14 @@ after(async () => {
     },
     registry,
     supplier: graph?.supplier,
+    serverFailures,
+    serverFailuresTruncated,
     policies: {
       appControls: policies.app.controls.length,
       probeControls: policies.probe.controls.length,
       forwarded: forwarded.length,
+      assuranceReads: policies.app.assurance.length,
+      probeAssuranceReads: policies.probe.assurance.length,
       unexpected: [...unexpected, ...policies.probe.unexpected],
     },
     internalCleanup: 'UNKNOWN',
@@ -172,6 +192,10 @@ test('native Start renders bilingual callback HTML and serves its emitted client
     assert.equal(script.status, 200);
     assert.match(script.headers.get('content-type') ?? '', /javascript/);
     assert.ok((await script.text()).length > 0);
+    const head = await fetchWorker(path, { method: 'HEAD' });
+    assert.equal(head.status, 200, path);
+    assert.match(head.headers.get('content-type') ?? '', /text\/html/);
+    assert.equal(await head.text(), '');
   }
   assert.deepEqual(unexpected, [], 'SSR must not contact production providers');
 });
@@ -214,12 +238,15 @@ test('unsigned personal meetings preserve the authentication boundary in both lo
 test('emitted public brand asset preserves its exact committed bytes', {
   timeout: 30000,
 }, async () => {
-  const response = await fetchWorker('/brand-mark-light.svg');
+  const response = await fetchWorker('/media/branding/brand-mark-light.svg');
   assert.equal(response.status, 200);
   assert.deepEqual(
     Buffer.from(await response.arrayBuffer()),
     readFileSync(
-      new URL('../../apps/meet/public/brand-mark-light.svg', import.meta.url)
+      new URL(
+        '../../apps/meet/public/media/branding/brand-mark-light.svg',
+        import.meta.url
+      )
     )
   );
   assert.deepEqual(unexpected, []);
@@ -251,6 +278,7 @@ test('native local auth handler clears all satellite cookies without reaching th
     );
   }
   assert.deepEqual(forwarded, []);
+  assert.equal(policies.app.assurance.length, 2);
   assert.deepEqual(unexpected, []);
 });
 
@@ -273,6 +301,7 @@ test('authenticated unknown API forwards method, query, body and cookies and pre
   assert.equal(response.status, 207);
   assert.deepEqual(await response.json(), { fixture: 'central-web-api' });
   assert.equal(forwarded.length, 1);
+  assert.equal(policies.app.assurance.length, 5);
   assert.equal(forwarded[0].method, 'POST');
   assert.equal(forwarded[0].query, '?repeat=one&repeat=two');
   assert.equal(forwarded[0].body, '{"fixture":true}');
@@ -372,6 +401,7 @@ test('app default HTTP hook denies an authenticated nonfixture API forward', {
   assert.equal(response.status, 599);
   assert.equal(await response.text(), 'Unexpected fixture egress');
   assert.equal(forwarded.length, before);
+  assert.equal(policies.app.assurance.length, ASSURANCE_READS);
   policies.app.assertControls(1);
   policies.probe.assertControls(0);
 });
@@ -413,6 +443,8 @@ test('named provider execution uses app HTTP denial while invalid transport make
   assert.deepEqual(await response.json(), {
     error: { message: 'Meeting provider request failed' },
   });
+  assert.equal(policies.app.assurance.length, ASSURANCE_READS);
+  assert.equal(policies.probe.assurance.length, 0);
   policies.app.assertControls(2);
   policies.probe.assertControls(PROBE_NEGATIVES);
   const count = policies.app.controls.length;
