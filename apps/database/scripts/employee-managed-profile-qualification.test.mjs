@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   managedProfilePackets,
   schemaReceipt,
   selectSchemaPackets,
 } from './employee-managed-profile-qualification.mjs';
-import { selectSchemaPackets as basePackets } from './employee-schema-tap.mjs';
+import {
+  assertRollbackSource,
+  selectSchemaPackets as basePackets,
+} from './employee-schema-tap.mjs';
 
 test('managed profile selection preserves defaults and requires journal/typegen/cleanup', () => {
   const previous = process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE;
@@ -86,5 +90,37 @@ test('feedback profile and causal matrices isolate managed selection inherited f
   assert.match(
     result.stdout,
     /real runner validates causal selection before hosted setup without spoofing identity/u
+  );
+});
+
+test('every selected journal and managed fixture satisfies the unchanged rollback source guard', () => {
+  for (const [file] of [...basePackets(true), ...managedProfilePackets]) {
+    const sql = readFileSync(
+      new URL(`../supabase/tests/${file}`, import.meta.url),
+      'utf8'
+    );
+    assert.doesNotThrow(() => assertRollbackSource(sql), file);
+  }
+});
+
+test('the original embedded setup COMMIT remains RED while dedicated remote control passes', () => {
+  const sql = readFileSync(
+    new URL(
+      '../supabase/tests/employee-managed-profile-concurrency.sql',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const boundary = "  $remote$);\n  perform dblink_exec('profile_a','commit');";
+  assert.equal(sql.split(boundary).length, 2);
+  const before = sql.replace(boundary, '    commit;\n  $remote$);');
+  assert.throws(
+    () => assertRollbackSource(before),
+    /Fixture must close with finish and rollback/u
+  );
+  assert.doesNotThrow(() => assertRollbackSource(sql));
+  assert.throws(
+    () => assertRollbackSource(sql.replace(/rollback;\s*$/u, 'commit;')),
+    /Fixture must close with finish and rollback/u
   );
 });

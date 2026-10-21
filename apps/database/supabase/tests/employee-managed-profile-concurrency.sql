@@ -31,8 +31,8 @@ begin
       perform private.confirm_employee_activation('00000000-0000-4000-8000-000000013001',
       '00000000-0000-4000-8000-000000013002','concurrent-target@tuturuuu.com');
     end $seed$;
-    commit;
   $remote$);
+  perform dblink_exec('profile_a','commit');
   perform dblink_exec('profile_a','begin; set local statement_timeout=''10s''; set local lock_timeout=''3s''');
   perform dblink_exec('profile_b','set statement_timeout=''10s''; set lock_timeout=''3s''');
 end $setup$;
