@@ -1,6 +1,6 @@
-import type { EmployeeRestoreTuple } from '@tuturuuu/utils/internal-accounts/employee-restoration-boundary';
-import { makeEmployeeRestorationHandlers } from '@tuturuuu/utils/internal-accounts/employee-restoration-http';
 import { describe, expect, it, vi } from 'vitest';
+import type { EmployeeRestoreTuple } from '../../../utils/src/internal-accounts/employee-restoration-boundary';
+import { makeEmployeeRestorationHandlers } from '../../../utils/src/internal-accounts/employee-restoration-http';
 import { InternalApiError } from '../client';
 import {
   getInternalEmployeeManagement,
