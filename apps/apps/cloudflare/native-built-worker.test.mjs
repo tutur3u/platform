@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
-import { cp, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { createRequire } from 'node:module';
-import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { exerciseAppsSessions } from '../../../scripts/ci/apps-native-runtime.mjs';
+import {
+  launchAppsAcceptance,
+  readAppsChildPlan,
+} from '../../../scripts/ci/apps-native-runtime-launcher.mjs';
 import { gatewayFunctionId } from './native-artifact-functions.mjs';
 import { nativeRedirectCases } from './native-browser-navigation.mjs';
 import {
@@ -16,7 +18,6 @@ import {
 } from './native-runtime-fence.mjs';
 import { runtimeDeadline } from './runtime-deadline.mjs';
 
-const require = createRequire(import.meta.url);
 const app = fileURLToPath(new URL('../', import.meta.url));
 const fixtures = JSON.parse(
   await readFile(
@@ -63,10 +64,18 @@ test('actual native Worker implements both pages, every app launch and the API b
     'true',
     'Run only after the owning CI native build, never as a source-only unit test'
   );
+  if (!process.env.NATIVE_FIXTURE_CASE)
+    return launchAppsAcceptance(
+      fileURLToPath(import.meta.url),
+      'http',
+      process.env.CI_SOURCE_SHA,
+      process.env.APPS_ARTIFACT_RECEIPT
+    );
+  const { plan, prepared, receiptFile } = await readAppsChildPlan('http');
   const runtime = runtimeDeadline(t.signal, 54000);
   const source = process.env.CI_SOURCE_SHA;
   assert.match(source ?? '', /^[a-f0-9]{40}$/);
-  const { configPath, config } = readNativeRuntimeConfig(app);
+  const { configPath, config } = plan;
   assert.equal(config.name, 'tuturuuu-apps-vite-staging');
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
@@ -76,8 +85,6 @@ test('actual native Worker implements both pages, every app launch and the API b
   await stat(
     contained(join(app, 'dist'), resolve(dirname(configPath), config.main))
   );
-  const temporary = await mkdtemp(join(tmpdir(), 'apps-start-runtime-'));
-  t.after(() => rm(temporary, { recursive: true, force: true }));
   const calls = [];
   const userId = randomUUID();
   const secret = randomBytes(32).toString('hex');
@@ -135,261 +142,240 @@ test('actual native Worker implements both pages, every app launch and the API b
   const fixtureAddress = fixture.address();
   assert.ok(fixtureAddress && typeof fixtureAddress === 'object');
   const fixtureOrigin = `http://127.0.0.1:${fixtureAddress.port}`;
-  await cp(join(app, 'dist'), join(temporary, 'dist'), {
-    recursive: true,
-    dereference: false,
-  });
-  await writeFile(join(temporary, '.dev.vars'), '');
-  const emitted = join(temporary, relative(app, configPath));
-  const { unstable_getMiniflareWorkerOptions } = require('wrangler');
-  const { Miniflare } = require(
-    require.resolve('miniflare', {
-      paths: [dirname(require.resolve('wrangler'))],
-    })
-  );
-  const { workerOptions, externalWorkers } =
-    unstable_getMiniflareWorkerOptions(emitted);
   assert.equal(
-    Object.hasOwn(workerOptions.bindings ?? {}, 'PLATFORM_BUILD_COMMIT_HASH'),
+    Object.hasOwn(config.vars, 'PLATFORM_BUILD_COMMIT_HASH'),
     false,
     'Compiled source identity must not be replaced by a runtime binding'
   );
   const fence = fixtureEgress(fixtureOrigin, userId, runtime.signal);
-  const negativeFence = fixtureEgress(fixtureOrigin, userId, runtime.signal);
+  const negativeFence = fixtureEgress(
+    fixtureOrigin,
+    userId,
+    runtime.signal,
+    undefined,
+    'negative'
+  );
   const bindings = {
-    ...workerOptions.bindings,
     INTERNAL_WEB_API_ORIGIN: fixtureOrigin,
     NEXT_PUBLIC_SUPABASE_URL: fixtureOrigin,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'fixture-public-key',
     SUPABASE_SECRET_KEY: 'fixture-service-key',
     TUTURUUU_APP_COORDINATION_SECRET: secret,
   };
-  const emittedWorker = {
-    ...workerOptions,
-    modules: true,
-    scriptPath: resolve(dirname(emitted), config.main),
-    modulesRoot: dirname(resolve(dirname(emitted), config.main)),
+  await exerciseAppsSessions(
+    plan,
+    prepared,
+    { app: fence, negative: negativeFence },
     bindings,
-    outboundService: fence.outboundService,
-  };
-  const worker = new Miniflare({
-    host: '127.0.0.1',
-    port: 0,
-    workers: [
-      { ...emittedWorker, name: config.name },
-      {
-        ...emittedWorker,
-        name: 'apps-egress-negative-control',
-        bindings: {
-          ...bindings,
-          INTERNAL_WEB_API_ORIGIN: 'https://apps-unadmitted.invalid',
+    async (workers, completed) => {
+      runtime.check();
+      const origin = (await workers.app.url).origin;
+      runtime.check();
+      // The same compiled API handler must hit the runtime deny service.
+      const negativeWorker = workers.negative;
+      const denied = await negativeWorker.fetch(
+        `${origin}/api/v1/users/me/profile`,
+        {
+          headers: { cookie: `tuturuuu_app_session=${session}` },
+          signal: runtime.signal,
+        }
+      );
+      assert.equal(denied.status, 599);
+      assert.equal(await runtime.text(denied), 'Fixture egress denied');
+      assert.deepEqual(negativeFence.unexpected, [
+        {
+          method: 'GET',
+          url: 'https://apps-unadmitted.invalid/api/v1/users/me/profile',
         },
-        outboundService: negativeFence.outboundService,
-      },
-      ...externalWorkers.map((external) => ({
-        ...external,
-        outboundService: fence.outboundService,
-      })),
-    ],
-  });
-  t.after(async () => {
-    await worker.dispose();
-    assert.deepEqual(
-      fence.unexpected,
-      [],
-      'No unexpected runtime egress during disposal'
-    );
-  });
-  runtime.check();
-  const origin = await new Promise((resolve, reject) => {
-    const aborted = () => reject(runtime.signal.reason);
-    runtime.signal.addEventListener('abort', aborted, { once: true });
-    worker.ready.then(
-      (url) => {
-        runtime.signal.removeEventListener('abort', aborted);
-        resolve(url.origin);
-      },
-      (error) => {
-        runtime.signal.removeEventListener('abort', aborted);
-        reject(error);
+      ]);
+      assert.deepEqual(negativeFence.permitted, []);
+      completed('negative');
+      const info = await runtime.json(
+        await runtime.fetch(`${origin}/api/build-info`)
+      );
+      assert.equal(info.appName, 'apps');
+      assert.equal(info.commitHash, source);
+      assert.equal(
+        (await runtime.fetch(`${origin}/api/build-info`, { method: 'POST' }))
+          .status,
+        405
+      );
+      assert.equal(
+        (await runtime.fetch(`${origin}/api/build-info`, { method: 'HEAD' }))
+          .status,
+        200
+      );
+      completed('build');
+      for (const locale of ['en', 'vi']) {
+        const prefixed = await runtime.fetch(
+          `${origin}/${locale}/meet/a%2Fb?tag=1&tag=2`,
+          { redirect: 'manual' }
+        );
+        assert.equal(prefixed.status, 307);
+        assert.equal(
+          prefixed.headers.get('location'),
+          `${origin}/meet/a%2Fb?tag=1&tag=2`
+        );
+        assert.match(
+          prefixed.headers.get('set-cookie'),
+          new RegExp(`NEXT_LOCALE=${locale}`)
+        );
+        for (const signed of [false, true]) {
+          const response = await runtime.fetch(origin, {
+            headers: {
+              cookie: `NEXT_LOCALE=${locale}${signed ? `; tuturuuu_app_session=${session}` : ''}`,
+            },
+          });
+          assert.equal(response.status, 200);
+          const html = await runtime.text(response);
+          assert.match(html, new RegExp(`<html[^>]*lang="${locale}"`));
+          for (const app of fixtures)
+            assert.ok(
+              html.includes(`href="/${app.slug}"`),
+              `Missing native SSR app ${app.slug}`
+            );
+          assert.ok(
+            !html.includes('fullAppPort') &&
+              !html.includes('fixture-service-key') &&
+              !html.includes(secret)
+          );
+          const scripts = [...html.matchAll(/src="(\/assets\/[^" ]+\.js)"/g)];
+          assert.ok(
+            scripts.length > 0,
+            'Native Start must emit real client scripts'
+          );
+          for (const [, script] of scripts)
+            assert.equal(
+              (await runtime.fetch(new URL(script, origin))).status,
+              200
+            );
+          assert.match(response.headers.get('cache-control'), /no-store/);
+        }
       }
-    );
-  });
-  runtime.check();
-  // The same compiled API handler must hit the runtime deny service.
-  const negativeWorker = await worker.getWorker('apps-egress-negative-control');
-  const denied = await negativeWorker.fetch(
-    `${origin}/api/v1/users/me/profile`,
-    {
-      headers: { cookie: `tuturuuu_app_session=${session}` },
-      signal: runtime.signal,
-    }
-  );
-  assert.equal(denied.status, 599);
-  assert.equal(await runtime.text(denied), 'Fixture egress denied');
-  assert.deepEqual(negativeFence.unexpected, [
-    {
-      method: 'GET',
-      url: 'https://apps-unadmitted.invalid/api/v1/users/me/profile',
-    },
-  ]);
-  assert.deepEqual(negativeFence.permitted, []);
-  const info = await runtime.json(
-    await runtime.fetch(`${origin}/api/build-info`)
-  );
-  assert.equal(info.appName, 'apps');
-  assert.equal(info.commitHash, source);
-  assert.equal(
-    (await runtime.fetch(`${origin}/api/build-info`, { method: 'POST' }))
-      .status,
-    405
-  );
-  assert.equal(
-    (await runtime.fetch(`${origin}/api/build-info`, { method: 'HEAD' }))
-      .status,
-    200
-  );
-  for (const locale of ['en', 'vi']) {
-    const prefixed = await runtime.fetch(
-      `${origin}/${locale}/meet/a%2Fb?tag=1&tag=2`,
-      { redirect: 'manual' }
-    );
-    assert.equal(prefixed.status, 307);
-    assert.equal(
-      prefixed.headers.get('location'),
-      `${origin}/meet/a%2Fb?tag=1&tag=2`
-    );
-    assert.match(
-      prefixed.headers.get('set-cookie'),
-      new RegExp(`NEXT_LOCALE=${locale}`)
-    );
-    for (const signed of [false, true]) {
-      const response = await runtime.fetch(origin, {
+      completed('localeSSR');
+      for (const app of fixtures) {
+        for (const query of nativeRedirectCases) {
+          const response = await runtime.fetch(
+            `${origin}/${app.slug}/a%2Fb${query.input}`,
+            { redirect: 'manual' }
+          );
+          assert.equal(response.status, 307);
+          assert.equal(
+            response.headers.get('location'),
+            `${app.origin}/a%2Fb${query.output}`
+          );
+        }
+      }
+      completed('redirects');
+      const functionId = await gatewayFunctionId(prepared.roles.app.root);
+      const rpc = `${origin}/_serverFn/${encodeURIComponent(functionId)}`;
+      const [signedRpc, anonymousRpc] = await Promise.all([
+        runtime.fetch(rpc, {
+          headers: {
+            'x-tsr-serverfn': 'true',
+            cookie: `NEXT_LOCALE=vi; tuturuuu_app_session=${session}`,
+          },
+        }),
+        runtime.fetch(rpc, {
+          headers: { 'x-tsr-serverfn': 'true', cookie: 'NEXT_LOCALE=en' },
+        }),
+      ]);
+      assert.equal(signedRpc.status, 200);
+      assert.equal(anonymousRpc.status, 200);
+      const signedPayload = await runtime.text(signedRpc);
+      const anonymousPayload = await runtime.text(anonymousRpc);
+      assert.ok(signedPayload.includes(userId) && signedPayload.includes('vi'));
+      assert.ok(!anonymousPayload.includes(userId));
+      assert.ok(
+        !signedPayload.includes(secret) &&
+          !signedPayload.includes(session) &&
+          !signedPayload.includes('fixture-service-key')
+      );
+      const wrongTarget = await runtime.fetch(rpc, {
         headers: {
-          cookie: `NEXT_LOCALE=${locale}${signed ? `; tuturuuu_app_session=${session}` : ''}`,
+          'x-tsr-serverfn': 'true',
+          cookie: `tuturuuu_app_session=${token(secret, userId, 'mail')}`,
         },
       });
-      assert.equal(response.status, 200);
-      const html = await runtime.text(response);
-      assert.match(html, new RegExp(`<html[^>]*lang="${locale}"`));
-      for (const app of fixtures)
-        assert.ok(
-          html.includes(`href="/${app.slug}"`),
-          `Missing native SSR app ${app.slug}`
-        );
+      assert.equal(wrongTarget.status, 200);
       assert.ok(
-        !html.includes('fullAppPort') &&
-          !html.includes('fixture-service-key') &&
-          !html.includes(secret)
+        !(await runtime.text(wrongTarget)).includes(userId),
+        'Another app target cannot become an Apps actor'
       );
-      const scripts = [...html.matchAll(/src="(\/assets\/[^" ]+\.js)"/g)];
+      completed('rpc');
+      assert.equal((await runtime.fetch(`${origin}/%ZZ`)).status, 400);
+      assert.equal(
+        (await runtime.fetch(origin, { method: 'POST' })).status,
+        405
+      );
+      const wrongMethod = await runtime.fetch(rpc, {
+        method: 'POST',
+        headers: { 'x-tsr-serverfn': 'true', origin },
+      });
+      assert.equal(wrongMethod.status, 405);
+      assert.equal(
+        (await runtime.fetch(`${origin}/missing-app-fixture`)).status,
+        404
+      );
+      completed('methods');
+      const api = await runtime.fetch(
+        `${origin}/api/v1/workspaces/other?tag=1&tag=2`,
+        {
+          method: 'PATCH',
+          headers: {
+            cookie: `tuturuuu_app_session=${session}`,
+            'content-type': 'application/json',
+          },
+          body: '{"title":"exact"}',
+        }
+      );
+      assert.equal(api.status, 403);
+      assert.equal(await runtime.text(api), '{"message":"tenant denied"}');
+      assert.deepEqual(api.headers.getSetCookie(), [
+        'fixture_a=1; Path=/',
+        'fixture_b=2; Path=/',
+      ]);
+      const forwarded = calls.filter(
+        (call) => call.url === '/api/v1/workspaces/other?tag=1&tag=2'
+      );
+      assert.equal(forwarded.length, 1);
+      assert.equal(forwarded[0].method, 'PATCH');
+      assert.equal(forwarded[0].body, '{"title":"exact"}');
+      assert.equal(forwarded[0].cookie, `tuturuuu_app_session=${session}`);
+      const invalidBearer = await runtime.fetch(
+        `${origin}/api/v1/workspaces/other`,
+        { headers: { authorization: 'Bearer ttr_app_invalid' } }
+      );
+      assert.equal(invalidBearer.status, 401);
+      completed('patch');
       assert.ok(
-        scripts.length > 0,
-        'Native Start must emit real client scripts'
+        fence.permitted.length > 0,
+        'Actual Worker must reach disposable fixtures'
       );
-      for (const [, script] of scripts)
-        assert.equal(
-          (await runtime.fetch(new URL(script, origin))).status,
-          200
-        );
-      assert.match(response.headers.get('cache-control'), /no-store/);
-    }
-  }
-  for (const app of fixtures) {
-    for (const query of nativeRedirectCases) {
-      const response = await runtime.fetch(
-        `${origin}/${app.slug}/a%2Fb${query.input}`,
+      assert.deepEqual(
+        fence.unexpected,
+        [],
+        'Actual HTTP/SSR/RPC suite must have zero unexpected egress'
+      );
+      completed('egress');
+      // A real HTTP listener must preserve the original host, scheme and port.
+      const listenerRedirect = await runtime.fetch(
+        `${origin}/vi/meet/a%2Fb?tag=1&tag=2`,
         { redirect: 'manual' }
       );
-      assert.equal(response.status, 307);
+      assert.equal(listenerRedirect.status, 307);
       assert.equal(
-        response.headers.get('location'),
-        `${app.origin}/a%2Fb${query.output}`
+        listenerRedirect.headers.get('location'),
+        `${origin}/meet/a%2Fb?tag=1&tag=2`
       );
-    }
-  }
-  const functionId = await gatewayFunctionId(join(temporary, 'dist'));
-  const rpc = `${origin}/_serverFn/${encodeURIComponent(functionId)}`;
-  const [signedRpc, anonymousRpc] = await Promise.all([
-    runtime.fetch(rpc, {
-      headers: {
-        'x-tsr-serverfn': 'true',
-        cookie: `NEXT_LOCALE=vi; tuturuuu_app_session=${session}`,
-      },
-    }),
-    runtime.fetch(rpc, {
-      headers: { 'x-tsr-serverfn': 'true', cookie: 'NEXT_LOCALE=en' },
-    }),
-  ]);
-  assert.equal(signedRpc.status, 200);
-  assert.equal(anonymousRpc.status, 200);
-  const signedPayload = await runtime.text(signedRpc);
-  const anonymousPayload = await runtime.text(anonymousRpc);
-  assert.ok(signedPayload.includes(userId) && signedPayload.includes('vi'));
-  assert.ok(!anonymousPayload.includes(userId));
-  assert.ok(
-    !signedPayload.includes(secret) &&
-      !signedPayload.includes(session) &&
-      !signedPayload.includes('fixture-service-key')
-  );
-  const wrongTarget = await runtime.fetch(rpc, {
-    headers: {
-      'x-tsr-serverfn': 'true',
-      cookie: `tuturuuu_app_session=${token(secret, userId, 'mail')}`,
+      completed('listenerOrigin');
     },
-  });
-  assert.equal(wrongTarget.status, 200);
-  assert.ok(
-    !(await runtime.text(wrongTarget)).includes(userId),
-    'Another app target cannot become an Apps actor'
-  );
-  assert.equal((await runtime.fetch(`${origin}/%ZZ`)).status, 400);
-  assert.equal((await runtime.fetch(origin, { method: 'POST' })).status, 405);
-  const wrongMethod = await runtime.fetch(rpc, {
-    method: 'POST',
-    headers: { 'x-tsr-serverfn': 'true', origin },
-  });
-  assert.equal(wrongMethod.status, 405);
-  assert.equal(
-    (await runtime.fetch(`${origin}/missing-app-fixture`)).status,
-    404
-  );
-  const api = await runtime.fetch(
-    `${origin}/api/v1/workspaces/other?tag=1&tag=2`,
-    {
-      method: 'PATCH',
-      headers: {
-        cookie: `tuturuuu_app_session=${session}`,
-        'content-type': 'application/json',
-      },
-      body: '{"title":"exact"}',
-    }
-  );
-  assert.equal(api.status, 403);
-  assert.equal(await runtime.text(api), '{"message":"tenant denied"}');
-  assert.deepEqual(api.headers.getSetCookie(), [
-    'fixture_a=1; Path=/',
-    'fixture_b=2; Path=/',
-  ]);
-  const forwarded = calls.filter(
-    (call) => call.url === '/api/v1/workspaces/other?tag=1&tag=2'
-  );
-  assert.equal(forwarded.length, 1);
-  assert.equal(forwarded[0].method, 'PATCH');
-  assert.equal(forwarded[0].body, '{"title":"exact"}');
-  assert.equal(forwarded[0].cookie, `tuturuuu_app_session=${session}`);
-  const invalidBearer = await runtime.fetch(
-    `${origin}/api/v1/workspaces/other`,
-    { headers: { authorization: 'Bearer ttr_app_invalid' } }
-  );
-  assert.equal(invalidBearer.status, 401);
-  assert.ok(
-    fence.permitted.length > 0,
-    'Actual Worker must reach disposable fixtures'
+    receiptFile,
+    runtime.signal
   );
   assert.deepEqual(
     fence.unexpected,
     [],
-    'Actual HTTP/SSR/RPC suite must have zero unexpected egress'
+    'No unexpected runtime egress during disposal'
   );
 });

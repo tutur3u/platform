@@ -460,3 +460,84 @@ HTML stream, DOM or page-load completion. Regression coverage lives in
 `profile-request-identity.test.ts`, `mail-profile-correlation.test.mjs` and
 `mail-profile-result-summary.test.mjs`. Run them in the admitted CI environment;
 source inspection and syntax checks do not establish runtime acceptance.
+
+
+### Apps finite emitted Worker callers
+
+Both Apps acceptance entries use the Apps-owned finite public SDK adapter:
+`apps/apps/cloudflare/native-built-worker.test.mjs` and
+`scripts/ci/apps-native-browser.runtime.mjs`. The former retains the real HTTP,
+SSR, locale/query redirects, discovered RPC, PATCH/cookie forwarding and exact
+599 compiled-handler negative control. The latter retains real Chromium anchor
+clicks against the public `Worker.url` listener. Existing request, navigation,
+test and CI watchdog limits remain unchanged. A listener-visible locale redirect
+must preserve its original scheme, host and port; a proxy-origin mismatch fails
+acceptance rather than changing the expected URL.
+
+The plan invokes `apps-native-artifact.py verify` with an explicit source SHA and
+canonical receipt, checks the actual native or saved deploy pointer and preserves
+all normalized configuration fields. Every session copies every sealed emitted
+module and asset, including `.assetsignore`, without rewriting producer metadata.
+The application resource/auxiliary topology must remain exactly empty. HTTP uses
+two unchanged Apps copies, each with a private registry; its negative role changes
+only the admitted API fixture origin. Browser uses one copy. No Meet graph,
+synthetic app, raw Miniflare constructor, private SDK accessor or option deletion
+is part of this adapter.
+
+Wrangler resolves from `apps/apps/package.json`, and Miniflare resolves from that
+Wrangler CLI. Before SDK loading, require Wrangler 4.151.2 CLI SHA256
+`507cd3644d6a53f0d66922d79c04b03557b7d2d0a376d2d906b92ed20812bb30`
+and its Miniflare 5.20261019.0-beta entry SHA256
+`309b8863f0f4c3050e173e945b4c696db8c330cdf3f35f0ecfd8417d75891eaa`.
+These are requirements, not evidence that an installation is qualified. Reject
+preloads, wrong ancestry, byte/version changes, owner/lock changes and runtime
+build-SHA bindings. A stale owning lock edge requires separately admitted
+package-manager repair; root package presence is insufficient. Do not hand-edit
+the lock or broaden pins when a scoped repair churns unrelated dependencies.
+
+The configured app and negative-role HTTP hooks deny every nonfixture origin.
+HTTP forwarding admits only the exact disposable 127.0.0.1 origin and the existing
+method/path/query contracts, propagates headers/body/cookies and cancellation,
+and never follows redirects. Each role has at most 32 hook operations, including
+two pre-start denial controls; PATCH bodies have a 16 KiB cap. The bound derives
+from the four signed SSR/RPC/API cases, with eight operations each. Browser app
+HTTP denies all outbound requests; page routing admits the runtime listener and
+the existing exact in-memory destination fixtures. Hash-pinned SDK-generated
+actors and Node helper/debug/control networking are trusted tooling outside this
+claimed application HTTP confinement. This is no OS, TCP or DNS firewall claim.
+
+The launcher supplies fresh allowlisted child environment, HOME/XDG/temp roots,
+empty fixture env file and per-role registries. Browser alone receives the
+installed Web-owned Playwright cache path. Each public handle is owned before
+readiness and disposed once in reverse order. Browser closure precedes session
+teardown; primary/start/readiness/disposal failures remain separately recorded.
+Natural child close, code 0, null signal and both drained pipes are independent
+of the child's finite assertion/lifecycle receipt. Parent readbacks recheck the
+original/copy/pointer/receipt/owner/lock/supplier evidence and foreign sentinel.
+Generated `.wrangler` workdirs are inventoried separately; only those exact
+directories are excluded from copied-source seal comparison. A verified snapshot
+and pre-removal persistence/readback precede owned scratch removal. Failures retain
+scratch and diagnostics; final persistence failure also fails qualification.
+Internal SDK cleanup and descendant closure remain UNKNOWN.
+
+Run source-only checks through the canonical resource queue:
+
+```sh
+ttr resources run -- node --test scripts/ci/apps-native-runtime.test.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs
+```
+
+For the separate `apps-native-artifact.test.py` suite on macOS, use a canonical
+temp directory such as `TMPDIR=/private/tmp`. Its restore fault injection compares
+exact paths; the `/var` versus `/private/var` alias can prevent the injected move
+fault from firing. Preserve every assertion when correcting fixture setup.
+
+These tests use normalized data fixtures and supplier/lifecycle doubles. They
+neither load the SDK nor qualify real emitted output. Exact-commit CI must build,
+seal, run both original callers, pack unchanged qualified bytes, restore them to
+fresh output and repeat both callers and final seal checks. Both HTTP steps use
+the same `APPS_ARTIFACT_RECEIPT` as browser acceptance. Each invocation creates new
+home/temp/registry custody. CI retains a seven-day tar archive of
+`$RUNNER_TEMP/apps-native-evidence`, including hidden snapshot/workdir evidence,
+on success or failure. Archive the directory itself, not a shell `*` expansion.
+Source review, supplier correction, real runtime acceptance, promotion and customer
+acceptance remain separate gates.

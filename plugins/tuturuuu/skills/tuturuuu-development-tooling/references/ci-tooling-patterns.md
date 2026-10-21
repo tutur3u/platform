@@ -762,3 +762,37 @@ upstream readiness, then publish only the exact SHA256-bound qualified tarball.
 Never accept a SOURCE receipt as public acceptance or rebuild after qualification.
 Run `node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/package-release-readiness.test.js packages/sdk/scripts/portable-build.test.cjs`
 for focused controls; builds and real consumer acceptance belong to exact-SHA CI.
+
+
+## Apps finite public SDK acceptance
+
+Apps owns `apps-native-runtime-plan.mjs`, `apps-native-runtime.mjs` and
+`apps-native-runtime-launcher.mjs`; shared Calendar evidence/lifecycle primitives
+remain read-only dependencies. Both existing HTTP and browser callers must use
+public `unstable_startWorker` with unchanged sealed Apps output and exact empty
+application topology. Keep the original assertions and 3/5-minute CI watchdogs.
+Pass the canonical artifact receipt to original and restored HTTP/browser steps;
+never inject compiled identity through runtime bindings.
+
+Admission requires Apps-owned Wrangler 4.151.2 and its owning Miniflare
+5.20261019.0-beta, with the exact entry hashes documented in the
+[Apps runbook](../../../../../apps/docs/build/development-tools/without-docker.mdx#apps-finite-emitted-worker-callers).
+Resolve through Apps ancestry before loading, reject preloads, and verify again
+after loading and teardown. Required pins are not local qualification evidence.
+Keep package-manager repair separate when a stale owning lock edge remains;
+reject unrelated lock churn rather than editing the lock by hand.
+
+Queue the focused `apps-native-runtime.test.mjs` and
+`apps/apps/cloudflare/native-runtime-fence.test.mjs` pure tests. They exercise
+artifact/source admission, policy bounds, supplier doubles, acquisition-before-ready,
+reverse exactly-once disposal, natural child/pipe observation and independent
+snapshot/persistence gates without loading the SDK. Runtime qualification still
+requires both real callers on original and freshly restored exact-commit output.
+
+Configured app/negative HTTP hooks admit only the bounded exact local fixture;
+SDK-generated helper/control actors are hash-pinned trusted tooling outside that
+confinement claim. Preserve the original compiled API 599 negative and its exact
+one-call counter. CI must tar the full owned evidence directory, including hidden
+`.wrangler` data, before artifact upload. Never replace natural child closure,
+independent seals, verified snapshots or persistence readbacks with a fulfilled
+`dispose()`. Internal cleanup and descendant closure remain UNKNOWN.

@@ -24,6 +24,8 @@ on:
         'packages/typescript-config/**',
         'apps/web/package.json',
         'scripts/ci/apps-native-*',
+        'scripts/ci/native-wrangler-*.mjs',
+        'scripts/ci/calendar-native-runtime-profile.mjs',
         'scripts/ci/native-source-identity-test-helper.js',
         'bun.lock',
         '.github/workflows/apps-cloudflare.yaml',
@@ -66,6 +68,8 @@ on:
         'packages/typescript-config/**',
         'apps/web/package.json',
         'scripts/ci/apps-native-*',
+        'scripts/ci/native-wrangler-*.mjs',
+        'scripts/ci/calendar-native-runtime-profile.mjs',
         'scripts/ci/native-source-identity-test-helper.js',
         'bun.lock',
         '.github/workflows/apps-cloudflare.yaml',
@@ -123,7 +127,7 @@ jobs:
         run: |
           node --test scripts/ci/apps-native-source-identity.test.js
           python3 scripts/ci/apps-native-artifact.test.py
-          node --test scripts/ci/apps-native-runtime-pointer.test.mjs
+          node --test scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime.test.mjs
       - name: Build required active workspace dependencies
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -143,7 +147,7 @@ jobs:
         working-directory: apps/apps
         run: bun run test:cloudflare
       - name: Check native owning source and fixture formatting
-        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs
+        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs
       - name: Record Apps route tree presence before frontend build
         id: apps-route-tree-before
         shell: bash
@@ -267,6 +271,7 @@ jobs:
         env:
           CI: 'true'
           CI_SOURCE_SHA: ${{ env.APPS_SOURCE_SHA }}
+          APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
         run: node --test cloudflare/native-built-worker.test.mjs
       - name: Install existing Web Playwright Chromium for emitted browser acceptance
         working-directory: apps/web
@@ -313,6 +318,21 @@ jobs:
             ${{ runner.temp }}/apps-debug-sealed-source.txt
           retention-days: 3
           if-no-files-found: error
+      - name: Pack Apps finite public SDK evidence including hidden files
+        if: always()
+        shell: bash
+        run: |
+          if [ -d "$RUNNER_TEMP/apps-native-evidence" ]; then
+            tar -czf "$RUNNER_TEMP/apps-native-evidence.tar.gz" -C "$RUNNER_TEMP" apps-native-evidence
+          fi
+      - name: Retain Apps finite public SDK evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: apps-native-evidence-validate-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/apps-native-evidence.tar.gz
+          retention-days: 7
+          if-no-files-found: ignore
   restore-acceptance:
     needs: validate
     runs-on: ubuntu-latest
@@ -352,6 +372,7 @@ jobs:
         env:
           CI: 'true'
           CI_SOURCE_SHA: ${{ env.APPS_SOURCE_SHA }}
+          APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
         run: node --test cloudflare/native-built-worker.test.mjs
       - name: Install existing Web Chromium driver
         working-directory: apps/web
@@ -368,3 +389,18 @@ jobs:
           team: ''
       - name: Confirm qualification did not mutate the restored artifact
         run: python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
+      - name: Pack Apps finite public SDK evidence including hidden files
+        if: always()
+        shell: bash
+        run: |
+          if [ -d "$RUNNER_TEMP/apps-native-evidence" ]; then
+            tar -czf "$RUNNER_TEMP/apps-native-evidence.tar.gz" -C "$RUNNER_TEMP" apps-native-evidence
+          fi
+      - name: Retain Apps finite public SDK evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: apps-native-evidence-restored-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/apps-native-evidence.tar.gz
+          retention-days: 7
+          if-no-files-found: ignore
