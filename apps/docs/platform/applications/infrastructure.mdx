@@ -558,10 +558,9 @@ name and canonical personal mailbox display/sender names, advancing the registry
 revision and appending an immutable rename receipt. It never changes UUID, email,
 Auth credentials, grants, membership or account access.
 
-Managed administrator profile edits allow any nonempty username length;
-public self-service remains 5–32 characters. The database length exception applies
-only to managed employees. Unmanaged legacy input accepts these lengths, but its
-current SQL writer rejects changed usernames outside 5–32 characters. Changed usernames retain lowercase
+Administrator Infrastructure profile edits allow any nonempty username length;
+public self-service remains 5–32 characters. The guarded managed and unmanaged
+SQL entrypoints provide this exception. Changed usernames retain lowercase
 letters, digits and underscores, must start with a letter or digit, and reject
 reserved names. NULL clears the username. PostgreSQL B-tree key size and storage
 limits still apply; this is not a guarantee that arbitrarily large values fit.
