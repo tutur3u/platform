@@ -109,6 +109,7 @@ it('rejects concurrent load, stale sessions and a reference appearing during GET
   );
   const recovery = session();
   const first = recovery.resumeOriginal(operationId);
+  expect(() => recovery.prepare(eligible)).toThrow('load in flight');
   await expect(recovery.resumeOriginal(operationId)).rejects.toThrow();
   recovery.retire();
   finish();

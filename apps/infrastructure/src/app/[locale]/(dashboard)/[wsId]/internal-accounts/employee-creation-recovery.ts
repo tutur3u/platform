@@ -150,6 +150,7 @@ export class EmployeeCreationRecovery {
   }
   prepare(input: { email: string; displayName: string }) {
     this.assertActive();
+    if (this.resuming) throw new Error('Original operation load in flight');
     const existing = this.load();
     if (existing) {
       if (
