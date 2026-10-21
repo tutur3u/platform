@@ -226,6 +226,19 @@ ordinary app test config excludes that one file; the dedicated unconditional CI
 gate restores the standard exclusions and executes it with real auth and locale
 code. No test is replaced with a skip.
 
+Coverage shards also run this existing focused config after a successful ordinary
+suite, only when `run-test-shard.js` receives `--coverage` and its dynamic shard
+plan owns `@tuturuuu/meet`. The focused run keeps its one-worker cap and writes to
+`apps/meet/coverage/native-auth`, so its report cleanup cannot overwrite the
+ordinary coverage report. Existing coverage artifact collection includes both
+reports. Unit and plan modes, other shards and failed ordinary suites do not
+start it; focused failures remain shard failures. Verify actual focused coverage
+hits the public callback return, preserves the parent report inventory and keeps
+all 25 ordinary test files discoverable. Runner command-sink regressions live in
+`scripts/ci/meet-focused-coverage.test.mjs`; omitting the focused invocation must
+fail coverage verification. This does not qualify the emitted Worker runtime.
+
+
 HTTP500 fixture responses are consumed into bounded private receipt diagnostics
 before the original exact-status assertion fails. At most four projections retain
 only route/content/error/owning-frame categories and bounded lengths; no response
