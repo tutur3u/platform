@@ -613,3 +613,65 @@ Pure contract regressions are in
 `apps/database/scripts/chat-initial-settings-qualification.test.mjs`; run them
 through admitted resource control before claiming execution. Source preparation
 and static syntax checks do not qualify SQL, Web or Dart behavior.
+
+## Original CREATE response recovery
+
+Infrastructure preserves a validated actor/workspace-scoped original CREATE
+operation reference in session storage before dispatch, without a password. If
+storage cannot confirm that reference, it does not dispatch CREATE. Pending,
+malformed or lost responses trigger bounded TanStack observation reads of
+`GET /api/v1/infrastructure/internal-accounts/employees/operations/:operationId`.
+This is a CREATE observation contract; employee RESTORE GET/reconcile endpoints
+must never substitute for it. A normal confirmed CREATE response incurs no extra
+observation round trip.
+
+The GET uses the current Infrastructure session actor and rechecks authorization
+before disclosure. Its supplier exposes only readiness/inspection and provider
+identity reads. Existing private `employee_creation_runtime_inspect` performs
+observation with row locks and no durable writes. Completion requires the exact
+operation/target/email/name tuple, an independent confirmed active provider
+identity with `employee_onboarding=true`, and a subsequent fresh SQL inspection
+of the active account, profiles, personal mailbox/ownership and restricted grants.
+A stored phase or earlier receipt alone cannot establish completion. Revoked or
+halted operations stop confirmation; absent or incomplete observations remain
+unconfirmed. No GET can claim, advance, finalize, activate, reconcile or repeat a
+provider operation.
+
+The client admits at most six reads within 30 seconds of the first confirmation read,
+with a 500 ms interval and an eight-second client request timeout. Admission
+counts and start time survive remounts; reopening cannot reset the budget.
+Conflicts remain conflicts, permission denial stops reads, and results from a
+retired actor/workspace lifetime are ignored. Unresolved references remain locked
+against another CREATE after the budget expires. These bounds describe behavior,
+not measured production latency. Readback cannot finish a provider/SQL step that
+the original invocation never completed; it can recover confirmation when that
+invocation completed despite an uncertain response.
+
+Regression coverage: Web `employee-creation-observation.test.ts` and operation
+route tests; internal-api `employee-creation.test.ts`; Infrastructure creation
+client/dialog/recovery tests. These synthetic transport and DOM checks do not
+qualify real SQL/Auth, deployed authorization, customer creation latency or
+production acceptance. The delivery owner must verify exact-commit CI and Web
+and Infrastructure builds, then separately collect authorized runtime evidence.
+
+### CREATE password admission
+
+The shared internal-api `EmployeeCreationPasswordSchema` is used by both the
+Infrastructure form and Web CREATE boundary. Before readiness or journal claim,
+it requires 12–72 characters including an ASCII lowercase letter, uppercase
+letter, digit and printable ASCII punctuation. The punctuation set follows
+[Supabase password security](https://supabase.com/docs/guides/auth/password-security).
+The form explains these requirements in English and Vietnamese and disables
+submission until the shared schema accepts the password. It does not normalize,
+log or retain the credential in the recovery reference. Boundary regression
+controls reject each missing character class before readiness, claim or provider
+admission; the internal-api test additionally proves zero HTTP dispatch.
+
+This admission check prevents the observed character-policy mismatch for future
+requests. It cannot confirm or repair an existing reservation whose Auth creation
+was rejected. The current provider adapter still classifies non-conflict provider
+errors, including weak-password rejection, as unknown. Changing that durable
+outcome mapping or retiring an earlier rejected reservation requires a separately
+reviewed causal recovery contract; observation must continue to report incomplete
+state truthfully. Provider-specific rejection (including any additional hosted
+policy) is not permission to replay CREATE.

@@ -7,7 +7,7 @@ const userId = 'e0dfe613-9e8a-4fa4-8f52-fd881aa2e9f2';
 const payload = {
   email: 'staff@tuturuuu.com',
   displayName: 'Staff',
-  temporaryPassword: 'temporary-pass-123',
+  temporaryPassword: 'Synthetic-Pass-123!',
 };
 const request = (
   body: unknown = payload,
@@ -225,3 +225,31 @@ describe('employee source boundary', () => {
     }
   });
 });
+
+it.each([
+  'lowercase-only-123!',
+  'UPPERCASE-ONLY-123!',
+  'MixedCase-NoDigits!',
+  'MixedCaseNoSymbol123',
+  'MixedCase Space123',
+  'MixedCaseEmoji123😀',
+  'Short1!',
+  'Aa1!'.repeat(19),
+])(
+  'rejects a noncompliant password before journal readiness, claim or provider dispatch',
+  async (temporaryPassword) => {
+    const provider = vi.fn();
+    const claimAndRun = vi.fn(async () => provider());
+    const available = vi.fn(async () => true);
+    const handler = makeEmployeeCreationBoundary({
+      authorize,
+      journal: { available, claimAndRun },
+    });
+    const response = await handler(request({ ...payload, temporaryPassword }));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ code: 'invalid_request' });
+    expect(available).not.toHaveBeenCalled();
+    expect(claimAndRun).not.toHaveBeenCalled();
+    expect(provider).not.toHaveBeenCalled();
+  }
+);

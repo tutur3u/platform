@@ -9,7 +9,7 @@ const operationId = '0da9bb8d-fd22-433b-97a0-d54a0cecf5b3';
 const payload = {
   email: 'staff@tuturuuu.com',
   displayName: 'Staff',
-  temporaryPassword: 'temporary-pass-123',
+  temporaryPassword: 'Synthetic-Pass-123!',
 };
 const reply = {
   status: 'created',
@@ -113,4 +113,47 @@ describe('strict employee client', () => {
       EmployeeCreationPayloadSchema.safeParse({ ...payload, email }).success
     ).toBe(false);
   });
+});
+
+it('observes the original operation with one uncached GET and binds completion identity', async () => {
+  const { getInternalEmployeeCreationOperation } = await import(
+    './employee-creation'
+  );
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(reply));
+  expect(
+    await getInternalEmployeeCreationOperation(
+      { operationId, ...payload },
+      { fetch: transport }
+    )
+  ).toEqual(reply);
+  expect(transport).toHaveBeenCalledTimes(1);
+  expect(transport.mock.calls[0]?.[0]).toContain(
+    `/employees/operations/${operationId}`
+  );
+  expect(transport.mock.calls[0]?.[1]).toMatchObject({ cache: 'no-store' });
+  transport.mockResolvedValue(
+    Response.json({
+      ...reply,
+      account: { ...reply.account, displayName: 'Other' },
+    })
+  );
+  await expect(
+    getInternalEmployeeCreationOperation(
+      { operationId, ...payload },
+      { fetch: transport }
+    )
+  ).rejects.toThrow('identity mismatch');
+});
+
+it('refuses a length-valid weak password locally without any HTTP request', async () => {
+  const transport = vi.fn<typeof fetch>();
+  await expect(
+    createInternalEmployee(
+      { ...payload, temporaryPassword: 'lowercase-only-123!' },
+      { operationId, fetch: transport }
+    )
+  ).rejects.toThrow();
+  expect(transport).not.toHaveBeenCalled();
 });

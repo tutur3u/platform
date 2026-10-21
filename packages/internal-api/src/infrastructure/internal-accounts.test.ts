@@ -119,7 +119,7 @@ it('creates an employee with the existing action header and an unchanged passwor
   const payload = {
     email: 'staff@tuturuuu.com',
     displayName: 'Staff',
-    temporaryPassword: '  safe-password-123  ',
+    temporaryPassword: '  Safe-password-123!  ',
   };
   expect(
     await createInternalEmployee(payload, {
@@ -157,7 +157,7 @@ it.each([
       {
         email: 'staff@tuturuuu.com',
         displayName: 'Staff',
-        temporaryPassword: 'safe-password-123',
+        temporaryPassword: 'Safe-password-123!',
       },
       {
         baseUrl: 'https://infra.test',

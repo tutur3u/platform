@@ -435,7 +435,11 @@ export async function mutateInternalAccount({
     throw new InternalAccountAdminError('Internal account not found', 404);
   }
 
-  const account = toInternalAccount(data.user, actorUserId);
+  const projectAccount =
+    action === 'disable_access' || action === 'enable_access'
+      ? toDirectoryAccount
+      : toInternalAccount;
+  const account = projectAccount(data.user, actorUserId);
   if (!account) {
     throw new InternalAccountAdminError('Internal account not found', 404);
   }
@@ -527,7 +531,7 @@ export async function mutateInternalAccount({
     targetUserId,
   });
 
-  const updatedAccount = toInternalAccount(updateData.user, actorUserId);
+  const updatedAccount = projectAccount(updateData.user, actorUserId);
   if (!updatedAccount) {
     throw new InternalAccountAdminError(
       'Unable to verify the updated internal account',

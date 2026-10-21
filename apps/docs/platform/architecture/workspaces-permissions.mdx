@@ -386,8 +386,12 @@ requires the actor to use an exact `@tuturuuu.com` email address.
 
 Use **Platform account recovery** to force-set a temporary password for any
 Tuturuuu platform account by its exact email address. The internal directory
-continues to limit profile, Drive, disable-access, and restore-access controls
-to exact `@tuturuuu.com` accounts. Self-service access and password mutations
+limits profile, Drive, and per-account password/MFA controls to exact
+`@tuturuuu.com` accounts. Disable-access and enable-access are an explicit
+exception: they also accept strictly validated managed subdomains such as
+`@xwf.tuturuuu.com`, with matching email confirmation and the same target UUID.
+External addresses and suffix lookalikes remain ineligible; actors still require
+an exact-root address and `manage_internal_accounts`. Self-service access and password mutations
 are rejected to reduce accidental lockouts. Passwords must never be copied into
 logs, tickets, or coordination notes; share a temporary password only through
 an approved secure channel.
