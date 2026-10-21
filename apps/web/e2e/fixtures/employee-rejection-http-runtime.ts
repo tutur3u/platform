@@ -7,7 +7,10 @@ import { EmployeeOperationSnapshotSchema } from '../../src/lib/infrastructure/em
 import type { EmployeeRuntimeRpc } from '../../src/lib/infrastructure/employee-creation-rpc';
 import { adjudicateEmployeeCreationRejection } from '../../src/lib/infrastructure/employee-rejection-adjudication';
 
-import { assertTerminalRejection } from './employee-rejection-http-proof';
+import {
+  assertTerminalRejection,
+  terminalRejectionCredentials,
+} from './employee-rejection-http-proof';
 
 // Called only inside the canonical disposable GoTrue/PostgREST fixture.
 export async function qualifyEmployeeRejectionHttp(input: {
@@ -60,8 +63,7 @@ export async function qualifyEmployeeRejectionHttp(input: {
     email,
     // CLI-pinned GoTrue v2.196.0 does not enforce admin-create strength.
     // Mutually exclusive inputs are rejected before any user creation.
-    password: 'Aa1!Disposable-Rejection',
-    password_hash: 'deliberately-incompatible-with-plaintext',
+    ...terminalRejectionCredentials,
     email_confirm: true,
     ban_duration: '876000h',
     app_metadata: { employee_onboarding: true },

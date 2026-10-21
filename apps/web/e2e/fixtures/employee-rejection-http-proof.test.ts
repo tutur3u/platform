@@ -3,7 +3,10 @@ import { once } from 'node:events';
 import { createServer } from 'node:http';
 import { createClient } from '@supabase/supabase-js';
 import { it } from 'vitest';
-import { assertTerminalRejection } from './employee-rejection-http-proof';
+import {
+  assertTerminalRejection,
+  terminalRejectionCredentials,
+} from './employee-rejection-http-proof';
 
 it('requires terminal rejection evidence even when the user is absent', () => {
   assert.throws(() =>
@@ -73,8 +76,7 @@ it('real SDK loopback results gate adjudication after exact rejection and deny s
       );
       const result = await client.auth.admin.createUser({
         email: 'synthetic@tuturuuu.com',
-        password: 'Aa1!Disposable-Rejection',
-        password_hash: 'deliberately-incompatible-with-plaintext',
+        ...terminalRejectionCredentials,
       });
       assert.equal(conflict, true);
       let adjudicationReached = false;

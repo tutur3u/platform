@@ -5,6 +5,10 @@ import { z } from 'zod';
 import { EmployeeRejectionRecoverySchema } from '../../../../packages/internal-api/src/infrastructure/employee-rejection-recovery';
 import { EmployeeOperationSnapshotSchema } from '../../src/lib/infrastructure/employee-creation-operation-store';
 import { createEmployeeRuntimeRpc } from '../../src/lib/infrastructure/employee-creation-rpc';
+import {
+  assertTerminalRejection,
+  terminalRejectionCredentials,
+} from './employee-rejection-http-proof';
 import { type SessionConfig, sql } from './employee-web-session-support';
 
 export async function qualifyEmployeeRejectionWebSession(input: {
@@ -48,13 +52,15 @@ export async function qualifyEmployeeRejectionWebSession(input: {
   const rejected = await input.admin.auth.admin.createUser({
     id: op.targetUserId,
     email,
-    password: 'x',
+    ...terminalRejectionCredentials,
     email_confirm: true,
     ban_duration: '876000h',
     app_metadata: { employee_onboarding: true },
   });
-  assert.equal(rejected.error?.status, 422);
-  assert.equal(rejected.error?.code, 'weak_password');
+  assertTerminalRejection(rejected);
+  const absent = await input.admin.auth.admin.getUserById(op.targetUserId);
+  assert.equal(absent.error?.status, 404);
+  assert.equal(absent.data.user, null);
   await rpc.advance({
     actorUserId: input.actorUserId,
     operationId,

@@ -713,7 +713,8 @@ A lost repair acknowledgement requires inspection; do not blindly retry it.
 
 The journal profile now requires the separate 23-assertion rollback packet
 `employee-rejection-adjudication.sql` (324 total). The disposable CLI 2.117.0 pins GoTrue v2.196.0, whose administrator CREATE
-path does not enforce password strength. Its terminal rejection control submits
+path does not enforce password strength. Both HTTP and authenticated Web session terminal rejection controls share the
+same invalid-input producer and exact rejection proof. Each control submits
 mutually exclusive plaintext and hash inputs, requires exactly HTTP 400 with
 `validation_failed`, and independently verifies the selected Auth UUID remains
 absent before adjudication. This qualifies terminal rejection recovery, not the
