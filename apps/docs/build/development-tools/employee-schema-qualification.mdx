@@ -769,4 +769,17 @@ With `include_http=true`, the managed receipt remains exactly 47 assertions and 
 Its required `unmanagedProfileQualification` v1 adds 75 assertions, lengths 1/4/33/65/81/1001, six single writes with
 lost-ACK independent inspection, exact replay, stale-CAS/duplicate/managed-bypass/ordinary-actor and public-policy denials.
 These SQL/PostgREST checks do not establish authenticated Web route composition, browser or production acceptance.
-Require separate authenticated route qualification; see the [Infrastructure contract](/platform/applications/infrastructure#managed-employee-profile-edits).
+Select the separate default-off `include_profile_route=true` with journal, HTTP and managed profile enabled;
+`include_web_session` is not required and its existing creation/restoration matrix is unchanged. The hosted fixture
+builds and starts exact Infrastructure source on loopback under the owned process/deadline helpers. Anonymous PATCH
+readiness must return 401; GET 405 is not readiness. Real GoTrue sessions traverse the Infrastructure proxy, required-MFA
+guard, route authorization, service and managed/null-fallback SQL writers. Each managed and unmanaged target already
+owns `hehe`: a name-only PATCH must return 200 with SQL readback and exactly one correctly bound writer RPC;
+a competing target must return 409 without SQL state changes. Retained credentials after root revocation or ban,
+AAL1 after policy activation, and an invalidated real TOTP proof must be denied without writer calls; real TOTP
+verification must pass. Anonymous and malformed Bearer requests cannot borrow a valid cookie. Private SQL snapshots
+compare identity, credentials, access, mailbox ownership and creation provenance; receipts publish only fixed diagnostics.
+`profileRouteQualification` is independent of the 47/75 transport counts and requires exact source, all 18 cases,
+process-group drainage and owned database cleanup. Its `routeAuthorizationProof=true` remains disposable route evidence;
+`productionProof=false` always. Direct PATCH imports and mocked authentication cannot qualify this receipt.
+See the [Infrastructure contract](/platform/applications/infrastructure#managed-employee-profile-edits).

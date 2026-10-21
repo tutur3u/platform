@@ -24,6 +24,7 @@ import {
   schemaReceipt,
   selectSchemaPackets,
 } from './employee-managed-profile-qualification.mjs';
+import * as profile from './employee-profile-route-receipt.mjs';
 import {
   assertEmployeeSchemaSnapshot,
   employeePublicConsumerReceipt,
@@ -494,6 +495,7 @@ const runner = async (command, args, cwd) => {
             10000
           )
         );
+        await profile.run({ root, status, metadata, sourceSha });
         const output = bounded(
           'bun',
           [
@@ -662,6 +664,7 @@ const receipt = {
     cleanupSucceeded &&
     webSessionQualification?.qualified === true,
   webSessionQualification,
+  profileRouteQualification: profile.receipt(lifecycleCode, cleanupSucceeded),
   ...(failureDiagnostic ? { failureDiagnostic } : {}),
 };
 if (chatInitialSettings) {

@@ -36,6 +36,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_profile_route:
+        description: Build exact Infrastructure and qualify authenticated profile PATCH; requires journal, HTTP and managed profile
+        required: false
+        default: false
+        type: boolean
       include_web_session:
         description: Build exact Next Web source and qualify real request/session auth; requires include_http
         required: false
@@ -103,6 +108,7 @@ jobs:
       EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: ${{ inputs.include_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: ${{ inputs.include_personal_journal }}
       EMPLOYEE_SCHEMA_INCLUDE_HTTP: ${{ inputs.include_http }}
+      EMPLOYEE_SCHEMA_INCLUDE_PROFILE_ROUTE: ${{ inputs.include_profile_route }}
       EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: ${{ inputs.include_web_session }}
       EMPLOYEE_SCHEMA_INCLUDE_RESTORE: ${{ inputs.include_restore }}
       EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: ${{ inputs.include_feedback_causal }}
@@ -163,6 +169,15 @@ jobs:
             structuredProvenance: process.env.EMPLOYEE_SCHEMA_INCLUDE_STRUCTURED_PROVENANCE === 'true',
           });
           NODE
+      - name: Validate authenticated profile route selection
+        run: |
+          node --input-type=module - <<'NODE'
+          import { selectProfileRouteRuntime } from './apps/database/scripts/employee-profile-route-receipt.mjs';
+          selectProfileRouteRuntime(process.env.EMPLOYEE_SCHEMA_INCLUDE_PROFILE_ROUTE,
+            Object.fromEntries(['JOURNAL', 'HTTP', 'MANAGED_PROFILE', 'PERSONAL_JOURNAL',
+              'CHAT_INITIAL_SETTINGS', 'STRUCTURED_PROVENANCE'].map(name =>
+              [name, process.env[`EMPLOYEE_SCHEMA_INCLUDE_${name}`]])));
+          NODE
       - name: Install exact source dependencies
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -207,6 +222,12 @@ jobs:
       - name: Verify opt-in chat qualification contracts
         if: inputs.include_chat_initial_settings == true
         run: node --test --test-concurrency=1 apps/database/scripts/chat-initial-settings-qualification.test.mjs apps/database/scripts/chat-process-diagnostic.test.mjs
+      - name: Verify authenticated profile route receipt gates
+        run: node --test apps/database/scripts/employee-profile-route-receipt.test.mjs
+      - name: Typecheck authenticated Infrastructure profile fixture
+        if: inputs.include_profile_route == true
+        working-directory: source
+        run: bun x tsc --noEmit -p apps/infrastructure/e2e/fixtures/tsconfig.employee-profile-route.json
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/employee-managed-profile-qualification.test.mjs apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-retained-mailbox-schema.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify Google destination packet source

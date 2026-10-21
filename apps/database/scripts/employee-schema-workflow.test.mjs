@@ -128,6 +128,7 @@ test('combined profiles reject incompatible selections before hosted database se
           EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: String(personal),
           EMPLOYEE_SCHEMA_INCLUDE_HTTP: String(http),
           EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_PROFILE_ROUTE: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_RESTORE: String(restore),
           EMPLOYEE_SCHEMA_INCLUDE_WEB_SESSION: String(webSession),
           EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: String(addressMigration),
@@ -359,6 +360,7 @@ test('qualification Node test census keeps builtin controls separate from the tw
     [
       ...dependencyContracts.map(([name]) => name),
       'Verify opt-in chat qualification contracts',
+      'Verify authenticated profile route receipt gates',
       'Verify strict TAP and receipt gates',
       'Verify employee public consumer proof gates',
       'Verify feedback profile gates',
@@ -406,4 +408,37 @@ test('installed rejection proof files belong to the nearest fixture tsconfig ins
   );
   assert.ok(config.include.includes('employee-rejection-http-proof*.ts'));
   assert.equal(config.extends, '../../tsconfig.json');
+});
+
+test('authenticated profile PATCH is optional and owns its separate source compiler and receipt gate', () => {
+  assert.match(
+    workflow,
+    /include_profile_route:\n(?:[^\n]*\n)*? {8}default: false\n {8}type: boolean/u
+  );
+  assert.match(
+    workflow,
+    /EMPLOYEE_SCHEMA_INCLUDE_PROFILE_ROUTE: \$\{\{ inputs.include_profile_route \}\}/u
+  );
+  const selection = namedStep('Validate authenticated profile route selection');
+  assert.match(selection, /selectProfileRouteRuntime/u);
+  assert.doesNotMatch(selection, /WEB_SESSION/u);
+  assert.ok(
+    workflow.indexOf(selection) <
+      workflow.indexOf(namedStep('Install exact source dependencies'))
+  );
+  const compiler = namedStep(
+    'Typecheck authenticated Infrastructure profile fixture'
+  );
+  assert.match(compiler, /^ {8}if: inputs.include_profile_route == true$/mu);
+  assert.match(compiler, /^ {8}working-directory: source$/mu);
+  assert.match(
+    compiler,
+    /tsc --noEmit -p apps\/infrastructure\/e2e\/fixtures\/tsconfig.employee-profile-route.json/u
+  );
+  const gate = namedStep('Verify authenticated profile route receipt gates');
+  assert.doesNotMatch(gate, /working-directory:/u);
+  assert.match(
+    gate,
+    /node --test apps\/database\/scripts\/employee-profile-route-receipt.test.mjs/u
+  );
 });
