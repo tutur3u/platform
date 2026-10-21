@@ -455,6 +455,8 @@ export async function mutateInternalAccount({
         username,
       })) ??
       (await updateInternalAccountProfile({
+        actorUserId,
+        email: account.email,
         displayName,
         sbAdmin,
         targetUserId,
