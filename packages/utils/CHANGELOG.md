@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/utils-v0.36.1...utils-v0.37.0) (2026-10-21)
+
+
+### Features
+
+* **mail:** add explicit retained mailbox adoption ([d6279c6](https://github.com/tutur3u/platform/commit/d6279c665c578c11412bffd5a97bba4c87386dbf)) ([#6361](https://github.com/tutur3u/platform/issues/6361)) ([16d4725](https://github.com/tutur3u/platform/commit/16d4725e8ce503d170b25be62907425a30f52664))
+
 ## [0.36.1](https://github.com/tutur3u/platform/compare/utils-v0.36.0...utils-v0.36.1) (2026-10-19)
 
 
