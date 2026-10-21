@@ -22,6 +22,10 @@ import {
 import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -51,7 +55,8 @@ export function EmployeeCreationDialog(props: {
 }) {
   const actor = useWorkspaceActor();
   const { wsId } = useParams<{ wsId: string }>();
-  if (!actor || wsId !== '00000000-0000-0000-0000-000000000000') return null;
+  const workspaceId = resolveWorkspaceId(wsId);
+  if (!actor || workspaceId !== ROOT_WORKSPACE_ID) return null;
   let lifetime = lifetimes.get(actor.lifetime);
   if (lifetime === undefined) {
     lifetime = ++lifetimeSequence;
@@ -59,10 +64,10 @@ export function EmployeeCreationDialog(props: {
   }
   return (
     <ScopedEmployeeCreationDialog
-      key={`${actor.actorId}:${wsId}:${lifetime}`}
+      key={`${actor.actorId}:${workspaceId}:${lifetime}`}
       {...props}
       actorId={actor.actorId}
-      workspaceId={wsId}
+      workspaceId={workspaceId}
       assertActorActive={actor.assertActive}
     />
   );

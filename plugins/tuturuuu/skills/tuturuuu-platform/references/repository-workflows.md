@@ -59,6 +59,11 @@ generated type files.
    access through `packages/internal-api/src/*`.
 4. Update navigation for new dashboard routes.
 5. Run `bun i18n:sort` after message edits.
+6. Resolve client route aliases with `resolveWorkspaceId` from
+   `@tuturuuu/utils/constants` before workspace guards, component keys, query keys
+   and recovery storage scope. Compare canonical root scope to `ROOT_WORKSPACE_ID`;
+   `internal` and its accepted case variants must share the UUID route's original
+   operation. Keep server authorization and actor lifetime checks unchanged.
 
 ### Settings
 
