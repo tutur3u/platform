@@ -53,6 +53,16 @@ record is not authority to execute it.
 
 ## Account passwords and access
 
+Infrastructure internal-account API requests require fresh persisted root-workspace
+`MEMBER` membership for the authoritative current actor before any account-service
+RPC, in addition to the existing exact corporate email, permission, confirmed and
+unbanned Auth identity, and MFA checks. The global workspace creator permission
+override does not replace this membership requirement. Each request rechecks
+membership without caching: removal returns 403 even for a creator; a membership
+query error or transport exception returns 503 without exposing diagnostics.
+Regression coverage: `authorization.test.ts`. The separately guarded CLI recovery
+exception retains its documented authentication boundary below.
+
 Administrators with root-workspace `manage_internal_accounts` permission use
 **Reset any password** to select an account by email, or **Reset password** in
 an internal account's menu. Both dialogs accept a chosen password or generate a

@@ -1,8 +1,13 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authorizeInternalAccountRequest } from './authorization';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  from: vi.fn(),
+  select: vi.fn(),
+  eq: vi.fn(),
+  maybeSingle: vi.fn(),
   getAppSessionUserFromRequest: vi.fn(),
   getUserById: vi.fn(),
   resolveSupabaseSessionRequest: vi.fn(),
@@ -138,6 +143,7 @@ describe('internal account authorization', () => {
     vi.clearAllMocks();
     mocks.createAdminClient.mockResolvedValue({
       auth: { admin: { getUserById: mocks.getUserById } },
+      from: mocks.from,
     });
     mocks.getUserById.mockResolvedValue({
       data: {
@@ -149,6 +155,18 @@ describe('internal account authorization', () => {
       },
       error: null,
     });
+    const membershipQuery = {
+      select: mocks.select,
+      eq: mocks.eq,
+      maybeSingle: mocks.maybeSingle,
+    };
+    mocks.from.mockReturnValue(membershipQuery);
+    mocks.select.mockReturnValue(membershipQuery);
+    mocks.eq.mockReturnValue(membershipQuery);
+    mocks.maybeSingle.mockResolvedValue({
+      data: { user_id: 'operator-1' },
+      error: null,
+    });
     mocks.resolveSupabaseSessionRequest.mockResolvedValue({ user: null });
     mocks.getAppSessionUserFromRequest.mockReturnValue(null);
     mocks.getSatelliteAppSessionUser.mockResolvedValue({
@@ -158,6 +176,88 @@ describe('internal account authorization', () => {
     mocks.getPermissions.mockResolvedValue({
       containsPermission: vi.fn(() => true),
     });
+  });
+
+  it('denies a creator whose permission still allows access after root membership removal', async () => {
+    const containsPermission = vi.fn(() => true);
+    mocks.getPermissions.mockResolvedValue({ containsPermission });
+    mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+    const result = await authorizeInternalAccountRequest(
+      new Request('https://infra.test/api')
+    );
+
+    expect(containsPermission).toHaveBeenCalledWith('manage_internal_accounts');
+    expect(containsPermission.mock.results[0]?.value).toBe(true);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(403);
+      expect(await result.response.json()).toEqual({ message: 'Forbidden' });
+    }
+  });
+
+  it.each(['query error', 'rejected transport', 'thrown transport'])(
+    'fails closed on a membership %s',
+    async (failure) => {
+      if (failure === 'query error') {
+        mocks.maybeSingle.mockResolvedValue({
+          data: { user_id: 'operator-1' },
+          error: { message: 'private membership detail' },
+        });
+      } else if (failure === 'rejected transport') {
+        mocks.maybeSingle.mockRejectedValue(
+          new Error('private membership detail')
+        );
+      } else {
+        mocks.from.mockImplementationOnce(() => {
+          throw new Error('private membership detail');
+        });
+      }
+
+      const result = await authorizeInternalAccountRequest(
+        new Request('https://infra.test/api')
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.response.status).toBe(503);
+        expect(await result.response.json()).toEqual({
+          message: 'Unable to verify administrator access',
+        });
+      }
+    }
+  );
+
+  it('binds persisted MEMBER eligibility to the authoritative actor and root', async () => {
+    const result = await authorizeInternalAccountRequest(
+      new Request('https://infra.test/api')
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.user.id).toBe('operator-1');
+    expect(mocks.getUserById).toHaveBeenCalledWith('operator-1');
+    expect(mocks.from).toHaveBeenCalledExactlyOnceWith('workspace_members');
+    expect(mocks.select).toHaveBeenCalledExactlyOnceWith('user_id');
+    expect(mocks.eq.mock.calls).toEqual([
+      ['ws_id', ROOT_WORKSPACE_ID],
+      ['user_id', 'operator-1'],
+      ['type', 'MEMBER'],
+    ]);
+    expect(mocks.maybeSingle).toHaveBeenCalledTimes(1);
+  });
+
+  it('rechecks membership after a previously authorized request', async () => {
+    const request = new Request('https://infra.test/api');
+    expect((await authorizeInternalAccountRequest(request)).ok).toBe(true);
+    mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+    const result = await authorizeInternalAccountRequest(request);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(403);
+    expect(mocks.getUserById).toHaveBeenCalledTimes(2);
+    expect(mocks.from).toHaveBeenCalledTimes(2);
+    expect(mocks.maybeSingle).toHaveBeenCalledTimes(2);
   });
 
   it('rejects anonymous requests', async () => {

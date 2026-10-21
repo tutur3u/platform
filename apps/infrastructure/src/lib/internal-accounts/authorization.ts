@@ -81,5 +81,30 @@ export async function authorizeInternalAccountRequest(request: Request) {
     };
   }
 
+  try {
+    const { data: membership, error: membershipError } = await sbAdmin
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', ROOT_WORKSPACE_ID)
+      .eq('user_id', currentUser.id)
+      .eq('type', 'MEMBER')
+      .maybeSingle();
+    if (membershipError) throw membershipError;
+    if (!membership) {
+      return {
+        ok: false as const,
+        response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
+      };
+    }
+  } catch {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { message: 'Unable to verify administrator access' },
+        { status: 503 }
+      ),
+    };
+  }
+
   return { ok: true as const, sbAdmin, user: currentUser };
 }
