@@ -86,9 +86,16 @@ return to the index instead of showing an infinite loading state.
 - `/api/v1/workspaces/:wsId/mind/ai/patches/:patchId/apply`
 - `/api/ai/mind`
 
-Exact local handlers win before the fallback rewrites for `/api/v1/*` and
-`/api/ai/*`. The shared AI attachment endpoints have no Mind-local handler and
-are therefore forwarded to `apps/web`:
+Exact local handlers win before the `/api/*` fallback rewrite. All remaining
+API requests go to `apps/web` with their paths intact, including the shared
+workspace selector's `/api/workspaces/invitations` and `/api/workspaces/:wsId`
+reads. These unversioned routes still belong to Web; forwarding only `/api/v1/*`
+and `/api/ai/*` leaves the selector's requests as Mind-local 404s.
+`apps/mind/src/next-config.test.ts` covers both workspace requests, versioned
+APIs, shared AI attachments, and fallback placement.
+
+The shared AI attachment endpoints also have no Mind-local handler and are
+therefore forwarded to `apps/web`:
 
 - `/api/ai/chat/upload-url`, `/api/ai/chat/delete-file`, and
   `/api/ai/chat/file-urls`, which provide shared Mind chat attachments
