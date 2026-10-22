@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
   checkProductFeedbackEligibility,
   getProductFeedback,
@@ -61,7 +62,10 @@ export function FeedbackInbox({
     setCursor(undefined);
     setSelected(undefined);
   }
-  const accessLost = eligibility.isError || list.isError || detail.isError;
+  const accessLost = [eligibility.error, list.error, detail.error].some(
+    (error) =>
+      error instanceof InternalApiError && [401, 403].includes(error.status)
+  );
   return (
     <section className="space-y-4">
       <header>
@@ -138,6 +142,8 @@ export function FeedbackInbox({
       </form>
       {accessLost ? (
         <p role="alert">{t('unavailable')}</p>
+      ) : eligibility.isError || list.isError ? (
+        <p role="alert">{t('load-error')}</p>
       ) : eligibility.isPending || list.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : (
@@ -189,6 +195,15 @@ export function FeedbackInbox({
           <article className="min-w-0 rounded-md border p-4" aria-live="polite">
             {!selected ? (
               <p>{t('select')}</p>
+            ) : detail.isError ? (
+              <p role="alert">
+                {t(
+                  detail.error instanceof InternalApiError &&
+                    detail.error.status === 404
+                    ? 'not-found'
+                    : 'load-error'
+                )}
+              </p>
             ) : detail.isPending ? (
               <p role="status">{t('loading')}</p>
             ) : (
