@@ -225,6 +225,35 @@ SELECT lives_ok($$SELECT public.sso_reject_transaction(f.ws,c.id,t.id,repeat('b'
  FROM fixture f,clients c,reject_login t$$,'unassigned rejection burns transaction and audits');
 SELECT is((SELECT outcome FROM private.sso_transactions WHERE id=(SELECT id FROM reject_login)),'denied',
  'rejected transaction is consumed');
+-- Bind the known starter at creation, before either account can load consent.
+CREATE TEMP TABLE starter_login AS SELECT t.id FROM fixture f,clients c,LATERAL public.sso_create_transaction(
+ f.ws,c.id,2,'_starter',repeat('6',64),repeat('b',64),NULL,'https://sp.example.test/acs',
+ clock_timestamp()+interval '4 minutes',true,repeat('e',64)) t;
+SELECT ok((SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2)
+ FROM fixture f,clients c,starter_login t),'the starting user and session can load consent');
+SELECT throws_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.member,repeat('b',64),repeat('f',64),2,true)
+ FROM fixture f,clients c,starter_login t$$,'42501','sso_forbidden','unassigned account still fails authorization');
+SELECT throws_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('f',64),2,true)
+ FROM fixture f,clients c,starter_login t$$,'42501','sso_session_changed','direct consent cannot bypass the starter binding');
+SELECT is((SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('f',64),2)
+ FROM fixture f,clients c,starter_login t),false,'replacement session is rejected');
+SELECT is((SELECT outcome FROM private.sso_transactions WHERE id=(SELECT id FROM starter_login)),'denied',
+ 'session mismatch commits transaction invalidation');
+SELECT is((SELECT count(*)::integer FROM private.sso_audit_events WHERE transaction_id=(SELECT id FROM starter_login)
+ AND event_type='issuance.failed'),1,'session mismatch durably audits one failure');
+SELECT throws_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2,true)
+ FROM fixture f,clients c,starter_login t$$,'40001','sso_transaction_unavailable','original session cannot revive a burned transaction');
+CREATE TEMP TABLE unbound_login AS SELECT pg_temp.start_login('_unbound','unbound-handle') id;
+SELECT ok((SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2)
+ FROM fixture f,clients c,unbound_login t),'signed-out admission claims its first authenticated session');
+SELECT ok((SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2)
+ FROM fixture f,clients c,unbound_login t),'same-session reload is idempotent');
+SELECT lives_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2,true)
+ FROM fixture f,clients c,unbound_login t$$,'bound session can still approve');
+SELECT throws_ok($$SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('f',64),2)
+ FROM fixture f,clients c,unbound_login t$$,'40001','sso_consent_recorded','a losing bind cannot burn committed consent');
+SELECT is((SELECT consumed_at FROM private.sso_transactions WHERE id=(SELECT id FROM unbound_login)),NULL::timestamptz,
+ 'a concurrent bind preserves the consent winner');
 UPDATE private.sso_clients SET enabled=false WHERE id=(SELECT id FROM clients);
 SELECT is((SELECT public.sso_issuance_snapshot(id) FROM clients),NULL::jsonb,'disabled client has no snapshot');
 UPDATE private.sso_clients SET enabled=true WHERE id=(SELECT id FROM clients);

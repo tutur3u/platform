@@ -18,7 +18,7 @@ import {
   unseal,
 } from './browser-state';
 import { configuration, enabled, hash, privateHeaders } from './config';
-import { principal } from './identity';
+import { bindSession, browserSession, principal } from './identity';
 import { postResponse } from './post-response';
 import { adminClient, requireRpc, snapshot } from './store';
 
@@ -120,6 +120,7 @@ export async function start(request: NextRequest, clientId: string) {
     const browserHash = hash(opaque());
     // Leave a margin below the database's five-minute maximum after network transit.
     const expiresAt = new Date(Date.now() + 290_000).toISOString();
+    const starter = await browserSession(request);
     const result = await admin.rpc('sso_create_transaction', {
       p_ws_id: current.policy.workspaceId,
       p_client_id: clientId,
@@ -131,6 +132,13 @@ export async function start(request: NextRequest, clientId: string) {
       p_acs_url: parsed.acsUrl,
       p_allow_create: parsed.allowCreate,
       p_expires_at: expiresAt,
+      ...(starter
+        ? {
+            p_starter_binding_hash: hash(
+              `${starter.userId}:${starter.sessionId}`
+            ),
+          }
+        : {}),
     });
     requireRpc(result);
     if (!result.data) throw new SsoError({ code: 'unavailable' });
@@ -190,6 +198,7 @@ export async function decision(request: NextRequest, handle: string) {
     let actor: IssuancePrincipal | undefined;
     let consumingActor: IssuancePrincipal | undefined;
     let accountRateChecked = false;
+    let sessionRejected = false;
     const txArgs = {
       p_ws_id: state.policy.workspaceId,
       p_client_id: config.clientId,
@@ -211,12 +220,19 @@ export async function decision(request: NextRequest, handle: string) {
         generateId: () => `_${randomUUID()}`,
         current: async () => {
           actor = await principal(request, admin);
-          if (form.get('csrf') !== csrfFor(state, actor))
-            throw new SsoError({ code: 'forbidden' });
           if (!accountRateChecked) {
+            try {
+              await bindSession(admin, state, actor);
+            } catch (error) {
+              sessionRejected =
+                error instanceof SsoError && error.code === 'session_changed';
+              throw error;
+            }
             await rateLimit(`decision:${config.clientId}:${actor.userId}`, 10);
             accountRateChecked = true;
           }
+          if (form.get('csrf') !== csrfFor(state, actor))
+            throw new SsoError({ code: 'forbidden' });
           return {
             ...(await snapshot(admin, config, actor.userId)),
             principal: actor,
@@ -253,6 +269,7 @@ export async function decision(request: NextRequest, handle: string) {
             })
           ),
         failed: async (consumed) => {
+          if (sessionRejected) return;
           if (consumed && consumingActor) {
             requireRpc(
               await admin.rpc('sso_append_audit', {

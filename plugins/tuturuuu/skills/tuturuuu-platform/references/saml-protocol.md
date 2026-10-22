@@ -41,3 +41,15 @@ The adapter accepts phase-2 hex pairwise subjects as well as earlier UUID fixtur
 See the SSO feature page for the default-off flag, server secret names, browser
 binding, fixture boundaries and later pilot runbook. None of these fixtures proves
 real Claude acceptance or authorizes enabling a client.
+
+Web admission stores the verified starter user/session hash separately from the
+later consent actor. Signed-out requests claim that hash atomically at their
+first authenticated continuation using `sso_bind_transaction`. Check it on both
+consent load and decision POST; never mint a fresh CSRF token for another session.
+A mismatch returns false after committing rejection/audit, rather than raising
+and rolling back the invalidation. Preserve committed consent against a losing
+concurrent binder. Require SP restart after account changes or replacement
+sessions. Re-evaluate verified MFA age after the finalization RPC before releasing
+the signed response, preserving the inclusive ten-minute limit. Keep negative
+factor/recovery fixtures otherwise valid and assert their exact error branch;
+retain a successful fixture and a clock-crossing positive control.

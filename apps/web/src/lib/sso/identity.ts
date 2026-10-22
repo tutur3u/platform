@@ -1,9 +1,4 @@
-import {
-  authorizeIdentity,
-  type LoginTransaction,
-  principalSchema,
-  SsoError,
-} from '@tuturuuu/sso';
+import { authorizeIdentity, principalSchema, SsoError } from '@tuturuuu/sso';
 import { createRequestClient } from '@tuturuuu/supabase/request/server';
 import { bindCurrentMfaFactor } from '@tuturuuu/utils/required-mfa-lineage';
 import {
@@ -14,18 +9,62 @@ import {
   satisfiesRequiredMfaPolicy,
 } from '@tuturuuu/utils/required-mfa-policy';
 import { checkRequiredAccountMfa } from '@tuturuuu/utils/required-mfa-request';
-import type { SsoConfiguration } from './config';
-import { boundedFetch, type SsoAdmin, snapshot } from './store';
+import type { BrowserState } from './browser-state';
+import { hash, type SsoConfiguration } from './config';
+import { boundedFetch, requireRpc, type SsoAdmin, snapshot } from './store';
 
 /** Web cookie identity only; external SAML never receives an internal app token. */
-export async function principal(request: Request, admin: SsoAdmin) {
+async function cookieClient(request: Request) {
   // Ignore Authorization: browser consent is bound only to provider cookies.
   const cookieHeaders = new Headers(request.headers);
   cookieHeaders.delete('authorization');
-  const client = await createRequestClient(
+  return createRequestClient(
     new Request(request.url, { headers: cookieHeaders }),
     { fetch: boundedFetch }
   );
+}
+
+export async function browserSession(request: Request) {
+  const client = await cookieClient(request);
+  const result = await client.auth.getUser();
+  if (result.error) {
+    if (result.error.name === 'AuthSessionMissingError') return null;
+    throw new SsoError({ code: 'unavailable' });
+  }
+  if (!result.data.user) return null;
+  const verified = await client.auth.getClaims();
+  const claims = verified.data?.claims;
+  if (
+    verified.error ||
+    claims?.sub !== result.data.user.id ||
+    typeof claims.session_id !== 'string' ||
+    !claims.session_id
+  )
+    throw new SsoError({ code: 'forbidden' });
+  return { userId: result.data.user.id, sessionId: claims.session_id };
+}
+
+export async function bindSession(
+  admin: SsoAdmin,
+  state: BrowserState,
+  actor: { userId: string; sessionId: string }
+) {
+  const result = await admin.rpc('sso_bind_transaction', {
+    p_ws_id: state.policy.workspaceId,
+    p_client_id: state.policy.clientId,
+    p_transaction_id: state.id,
+    p_actor_id: actor.userId,
+    p_policy_revision: state.policy.revision,
+    p_browser_binding_hash: state.browserHash,
+    p_session_binding_hash: hash(`${actor.userId}:${actor.sessionId}`),
+  });
+  requireRpc(result);
+  if (result.data === false) throw new SsoError({ code: 'session_changed' });
+  if (result.data !== true) throw new SsoError({ code: 'unavailable' });
+}
+
+export async function principal(request: Request, admin: SsoAdmin) {
+  const client = await cookieClient(request);
   const authenticated = await client.auth.getUser();
   if (authenticated.error || !authenticated.data.user)
     throw new SsoError({ code: 'forbidden' });
@@ -103,9 +142,17 @@ export async function consentIdentity(
   request: Request,
   admin: SsoAdmin,
   config: SsoConfiguration,
-  state: LoginTransaction
+  state: BrowserState
 ) {
+  const session = await browserSession(request);
+  if (session) await bindSession(admin, state, session);
   const actor = await principal(request, admin);
+  if (
+    !session ||
+    session.userId !== actor.userId ||
+    session.sessionId !== actor.sessionId
+  )
+    await bindSession(admin, state, actor);
   const current = await snapshot(admin, config, actor.userId);
   authorizeIdentity({
     ...current,

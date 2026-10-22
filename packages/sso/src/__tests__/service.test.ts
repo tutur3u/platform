@@ -170,6 +170,30 @@ describe('one-use issuance orchestration', () => {
     await expect(decideLogin(tx, true, d)).rejects.toThrow();
     expect(d.finalize).not.toHaveBeenCalled();
   });
+  it.each([598, 600])(
+    'rechecks %s-second-old MFA after finalization',
+    async (age) => {
+      const { tx, d, principal } = setup();
+      let now = new Date(Math.floor(f.now.getTime() / 1000) * 1000);
+      d.now = () => now;
+      const started = now.getTime();
+      principal.mfaAt -= age;
+      principal.primaryAt = principal.mfaAt - 1;
+      d.finalize = vi.fn(async () => {
+        now = new Date(started + 2000);
+      });
+      if (age === 600) {
+        await expect(decideLogin(tx, true, d)).rejects.toMatchObject({
+          code: 'mfa_required',
+        });
+        expect(d.failed).toHaveBeenCalledWith(true);
+      } else {
+        expect((await decideLogin(tx, true, d)).kind).toBe('issued');
+        expect(d.failed).not.toHaveBeenCalled();
+      }
+      expect(d.finalize).toHaveBeenCalledTimes(1);
+    }
+  );
   it('does not emit when finalization finishes after the five-second budget', async () => {
     const { tx, d } = setup();
     let now = f.now;

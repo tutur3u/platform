@@ -3,7 +3,13 @@ import { z } from 'zod';
 import { identitySchema, type ValidatedRequest } from '../contracts';
 
 export class SsoError extends Data.TaggedError('SsoError')<{
-  code: 'unavailable' | 'forbidden' | 'mfa_required' | 'expired' | 'disabled';
+  code:
+    | 'unavailable'
+    | 'forbidden'
+    | 'mfa_required'
+    | 'expired'
+    | 'disabled'
+    | 'session_changed';
 }> {}
 
 export interface IssuancePolicy {

@@ -50,6 +50,12 @@ export default async function ConsentPage({
       state
     );
   } catch (error) {
+    if (error instanceof SsoError && error.code === 'session_changed')
+      return (
+        <main className="mx-auto max-w-lg p-6">
+          <h1>{t('denied')}</h1>
+        </main>
+      );
     const returnPath = `/${locale}/sso/consent?transaction=${handle.data}`;
     const loginPath = `/${locale}/login?mfa=required&nextUrl=${encodeURIComponent(returnPath)}`;
     return (

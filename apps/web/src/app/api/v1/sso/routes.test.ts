@@ -3,6 +3,7 @@ vi.mock('server-only', () => ({}));
 
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type BrowserState,
@@ -12,12 +13,13 @@ import {
   seal,
   unseal,
 } from '@/lib/sso/browser-state';
-import { configuration } from '@/lib/sso/config';
+import { configuration, hash } from '@/lib/sso/config';
 import {
   type Fixture,
   fixture,
   serviceProvider,
 } from '../../../../../../../packages/sso/src/__tests__/fixture';
+import ConsentPage from '../../../[locale]/(auth)/sso/consent/page';
 import { GET as metadata } from './saml/[clientId]/metadata/route';
 import { POST as postStart, GET as start } from './saml/[clientId]/sso/route';
 import { POST as decision } from './transactions/[transactionId]/decision/route';
@@ -28,6 +30,8 @@ const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
   getUserById: vi.fn(),
   limiter: vi.fn(),
+  cookies: vi.fn(),
+  headers: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
@@ -39,6 +43,16 @@ vi.mock('@tuturuuu/supabase/request/server', () => ({
   createRequestClient: async () => ({
     auth: { getUser: mocks.getUser, getClaims: mocks.getClaims },
   }),
+}));
+vi.mock('next/headers', () => ({
+  cookies: mocks.cookies,
+  headers: mocks.headers,
+}));
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => (key: string) => key,
+}));
+vi.mock('../../../[locale]/(auth)/sso/consent/reauthenticate', () => ({
+  Reauthenticate: () => null,
 }));
 vi.mock('@/lib/rate-limit', () => ({ checkRateLimitRedis: mocks.limiter }));
 vi.mock('next/server', async (original) => ({
@@ -61,6 +75,8 @@ let failRpc = '';
 let transactionId: string;
 let events: string[];
 let mfaTime: number;
+let factor: string | null;
+let starterBinding: string | null;
 let currentSnapshot: ReturnType<typeof row>;
 function row() {
   return {
@@ -99,6 +115,8 @@ beforeEach(() => {
   consumed = false;
   failRpc = '';
   events = [];
+  factor = 'factor';
+  starterBinding = null;
   transactionId = randomUUID();
   mfaTime = Math.floor(Date.now() / 1000);
   vi.stubEnv('SSO_SAML_ENABLED', 'true');
@@ -138,9 +156,21 @@ beforeEach(() => {
     if (name === 'sso_issuance_snapshot')
       return { data: { ...currentSnapshot, member, assigned }, error: null };
     if (name === 'account_mfa_verified_factor')
-      return { data: 'factor', error: null };
-    if (name === 'sso_create_transaction')
+      return { data: factor, error: null };
+    if (name === 'sso_create_transaction') {
+      starterBinding = args.p_starter_binding_hash ?? null;
       return { data: { id: transactionId }, error: null };
+    }
+    if (name === 'sso_bind_transaction') {
+      if (consumed) return { error: {}, data: null };
+      if (starterBinding && starterBinding !== args.p_session_binding_hash) {
+        consumed = true;
+        events.push('failed');
+        return { data: false, error: null };
+      }
+      starterBinding = args.p_session_binding_hash;
+      return { data: true, error: null };
+    }
     if (name === 'sso_record_consent') {
       if (consumed) return { error: {}, data: null };
       events.push(args.p_approved ? 'approved' : 'denied');
@@ -151,8 +181,10 @@ beforeEach(() => {
       consumed = true;
       return { data: { subject: 'ab'.repeat(32) }, error: null };
     }
-    if (name === 'sso_reject_transaction' || name === 'sso_append_audit')
+    if (name === 'sso_reject_transaction' || name === 'sso_append_audit') {
+      consumed = true;
       events.push('failed');
+    }
     if (name === 'sso_finalize_issuance') events.push('signed');
     return { data: randomUUID(), error: null };
   });
@@ -182,7 +214,8 @@ async function browser() {
 async function decide(
   input: Awaited<ReturnType<typeof browser>>,
   choice = 'approve',
-  changes: Record<string, string> = {}
+  changes: Record<string, string> = {},
+  actor = { userId: actorId, sessionId: 'session' }
 ) {
   return decision(
     new NextRequest(
@@ -197,7 +230,7 @@ async function decide(
         },
         body: new URLSearchParams({
           decision: choice,
-          csrf: csrfFor(input.state, { userId: actorId, sessionId: 'session' }),
+          csrf: csrfFor(input.state, actor),
           locale: 'en',
         }),
       }
@@ -278,6 +311,10 @@ describe('admission and metadata', () => {
     }
   );
   it('admits cross-site POST without an ambient cookie and resumes via a secure host cookie', async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: { name: 'AuthSessionMissingError' },
+    });
     const response = await postStart(
       new NextRequest(`${base}/sso`, {
         method: 'POST',
@@ -357,13 +394,13 @@ describe('browser decisions and signed response', () => {
     if (kind === 'unassigned') assigned = false;
     if (kind === 'guest' || kind === 'removed member') member = false;
     if (kind === 'stale MFA') mfaTime -= 601;
-    if (kind === 'removed factor')
-      mocks.rpc.mockImplementation(async () => ({ error: null, data: null }));
-    if (kind === 'recovery')
+    if (kind === 'removed factor') factor = null;
+    if (kind === 'recovery') {
+      const user = (await mocks.getUserById()).data.user;
       mocks.getUserById.mockResolvedValue({
         data: {
           user: {
-            id: actorId,
+            ...user,
             app_metadata: {
               tuturuuu_required_mfa: {
                 required: true,
@@ -372,7 +409,9 @@ describe('browser decisions and signed response', () => {
             },
           },
         },
+        error: null,
       });
+    }
     if (kind === 'unconfirmed email') {
       const user = (await mocks.getUserById()).data.user;
       mocks.getUserById.mockResolvedValue({
@@ -381,7 +420,25 @@ describe('browser decisions and signed response', () => {
     }
     if (kind === 'audit outage') failRpc = 'sso_finalize_issuance';
     const response = await decide(b);
-    expect([403, 503]).toContain(response.status);
+    const error =
+      kind === 'audit outage'
+        ? 'unavailable'
+        : ['stale MFA', 'removed factor', 'recovery'].includes(kind)
+          ? 'mfa_required'
+          : 'forbidden';
+    expect(response.status).toBe(kind === 'audit outage' ? 503 : 403);
+    expect(await response.clone().json()).toEqual({ error: `sso_${error}` });
+    if (['removed factor', 'recovery'].includes(kind)) {
+      expect(
+        mocks.rpc.mock.calls.some(([name]) =>
+          [
+            'sso_record_consent',
+            'sso_consume_transaction',
+            'sso_finalize_issuance',
+          ].includes(name)
+        )
+      ).toBe(false);
+    }
     expect(await response.text()).not.toContain('SAMLResponse');
     expect(events).not.toContain('signed');
   });
@@ -394,19 +451,117 @@ describe('browser decisions and signed response', () => {
       ).status
     ).toBe(403);
   });
-  it('rejects a stale consent form after an account/session switch', async () => {
-    const b = await browser();
-    const switchedId = randomUUID();
-    const user = { ...(await mocks.getUser()).data.user, id: switchedId };
+  async function consentPage(b: Awaited<ReturnType<typeof browser>>) {
+    mocks.cookies.mockResolvedValue({
+      get: () => ({ value: b.cookie.slice(b.cookie.indexOf('=') + 1) }),
+    });
+    mocks.headers.mockResolvedValue(new Headers({ cookie: b.cookie }));
+    return renderToStaticMarkup(
+      await ConsentPage({
+        params: Promise.resolve({ locale: 'en' }),
+        searchParams: Promise.resolve({ transaction: b.handle }),
+      })
+    );
+  }
+  async function switchSession(userId: string, sessionId: string) {
+    const user = { ...(await mocks.getUserById()).data.user, id: userId };
     mocks.getUser.mockResolvedValue({ data: { user }, error: null });
     mocks.getUserById.mockResolvedValue({ data: { user }, error: null });
     const claims = {
       ...(await mocks.getClaims()).data.claims,
-      sub: switchedId,
-      session_id: 'switched-session',
+      sub: userId,
+      session_id: sessionId,
     };
     mocks.getClaims.mockResolvedValue({ data: { claims }, error: null });
-    expect((await decide(b)).status).toBe(403);
+    return { userId, sessionId };
+  }
+  it('the otherwise-valid factor and recovery fixture renders consent and issues', async () => {
+    const b = await browser();
+    expect(await consentPage(b)).toContain('name="csrf"');
+    expect((await decide(b)).status).toBe(200);
+    expect(events).toEqual(['approved', 'signed']);
+  });
+  it.each(['other account', 'new session'])(
+    'the switched %s can issue when starting a fresh SP transaction',
+    async (kind) => {
+      const actor = await switchSession(
+        kind === 'other account' ? randomUUID() : actorId,
+        'replacement'
+      );
+      const b = await browser();
+      expect(await consentPage(b)).toContain('name="csrf"');
+      expect((await decide(b, 'approve', {}, actor)).status).toBe(200);
+      expect(events).toEqual(['approved', 'signed']);
+    }
+  );
+  it.each(['other account', 'new session'])(
+    'denies a reloaded consent page after switching to %s',
+    async (kind) => {
+      const b = await browser();
+      expect(starterBinding).toBe(hash(`${actorId}:session`));
+      // Switching before the first consent load must also preserve the starter.
+      const actor = await switchSession(
+        kind === 'other account' ? randomUUID() : actorId,
+        'replacement'
+      );
+      expect(await consentPage(b)).toContain('denied');
+      expect(await consentPage(b)).not.toContain('name="csrf"');
+      expect(events).toEqual(['failed']);
+      const response = await decide(b, 'approve', {}, actor);
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ error: 'sso_unavailable' });
+      expect(events).not.toContain('approved');
+    }
+  );
+  it.each(['other account', 'new session'])(
+    'denies a fresh decision token for %s without a page reload',
+    async (kind) => {
+      const b = await browser();
+      expect(await consentPage(b)).toContain('name="csrf"');
+      const actor = await switchSession(
+        kind === 'other account' ? randomUUID() : actorId,
+        'replacement'
+      );
+      const response = await decide(b, 'approve', {}, actor);
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ error: 'sso_session_changed' });
+      expect(events).toEqual(['failed']);
+    }
+  );
+  it('binds a signed-out start to the first authenticated continuation', async () => {
+    const user = (await mocks.getUser()).data.user;
+    mocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: { name: 'AuthSessionMissingError' },
+    });
+    const b = await browser();
+    expect(starterBinding).toBeNull();
+    mocks.getUser.mockResolvedValue({ data: { user }, error: null });
+    expect(await consentPage(b)).toContain('name="csrf"');
+    expect(starterBinding).toBe(hash(`${actorId}:session`));
+    expect((await decide(b)).status).toBe(200);
+  });
+  it('claims a signed-out transaction before asking its first authenticated viewer for MFA', async () => {
+    const user = (await mocks.getUser()).data.user;
+    const claims = (await mocks.getClaims()).data.claims;
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    const b = await browser();
+    mocks.getUser.mockResolvedValue({ data: { user }, error: null });
+    mocks.getClaims.mockResolvedValue({
+      data: {
+        claims: {
+          ...claims,
+          aal: 'aal1',
+          amr: [{ method: 'password', timestamp: mfaTime - 1 }],
+        },
+      },
+      error: null,
+    });
+    expect(await consentPage(b)).toContain('authentication_required');
+    expect(starterBinding).toBe(hash(`${actorId}:session`));
+    mocks.getClaims.mockResolvedValue({ data: { claims }, error: null });
+    await switchSession(randomUUID(), 'another-session');
+    expect(await consentPage(b)).toContain('denied');
     expect(events).toEqual(['failed']);
   });
   it('rejects missing browser binding', async () => {

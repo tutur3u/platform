@@ -120,6 +120,7 @@ export async function decideLogin(
       checkDeadline();
       await d.finalize(current.principal);
       checkDeadline();
+      authorizeIdentity({ ...final, request: tx.request, now: d.now() });
       return { kind: 'issued' as const, response };
     },
     catch: (error) =>
