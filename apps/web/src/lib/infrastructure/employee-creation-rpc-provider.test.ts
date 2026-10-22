@@ -47,6 +47,7 @@ function fixture(
     displayName: string;
     status: 'pending' | 'created';
   } | null = null;
+  let claims = 0;
   let mutations = 0;
   const transport = createEmployeeRuntimeRpc({
     url: 'https://project.supabase.co',
@@ -64,6 +65,7 @@ function fixture(
       if (name === 'employee_creation_runtime_inspect')
         return Response.json({ operation, account });
       if (name === 'employee_creation_operation_claim') {
+        claims++;
         if (operation) return Response.json({ kind: 'inspect', operation });
         const created: EmployeeOperationSnapshot = {
           actorUserId: actor,
@@ -154,6 +156,7 @@ function fixture(
     journal: createEmployeeCreationJournal({ store, provider }),
     create,
     update,
+    claims: () => claims,
     mutations: () => mutations,
     operation: () => operation,
   };
@@ -203,15 +206,33 @@ describe('RPC phase provider with the real journal and store', () => {
       expect(f.mutations()).toBe(count);
     }
   );
-  it.each([{ rollbackClaim: true }, { denyActor: true }])(
-    'denies provider calls without persisted admission %j',
-    async (options) => {
-      const f = fixture(options);
-      await expect(
-        f.journal.claimAndRun({ actorUserId: actor, operationId, payload })
-      ).rejects.toThrow();
-      expect(f.create).not.toHaveBeenCalled();
-      expect(f.update).not.toHaveBeenCalled();
-    }
-  );
+  it('denies provider calls without persisted admission after claim rollback', async () => {
+    const f = fixture({ rollbackClaim: true });
+    await expect(
+      f.journal.claimAndRun({ actorUserId: actor, operationId, payload })
+    ).rejects.toThrow();
+    expect(f.create).not.toHaveBeenCalled();
+    expect(f.update).not.toHaveBeenCalled();
+  });
+  it('returns bound non-admission before claim when the actor is denied', async () => {
+    const f = fixture({ denyActor: true });
+    await expect(
+      f.journal.claimAndRun({ actorUserId: actor, operationId, payload })
+    ).resolves.toEqual({
+      status: 'not_admitted',
+      code: 'employee_creation_not_admitted',
+      reason: 'unavailable',
+      phase: 'before_claim',
+      targetUserId: null,
+      actorUserId: actor,
+      operationId,
+      email: payload.email,
+      displayName: payload.displayName,
+    });
+    expect(f.create).not.toHaveBeenCalled();
+    expect(f.update).not.toHaveBeenCalled();
+    expect(f.claims()).toBe(0);
+    expect(f.mutations()).toBe(0);
+    expect(f.operation()).toBeNull();
+  });
 });
