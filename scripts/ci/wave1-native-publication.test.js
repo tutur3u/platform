@@ -311,6 +311,19 @@ test('inactive matching uploaded version blocks reupload and reconciles only aft
   assert.equal(p.state.writes, 1);
   assert.equal(p.getLedger().entries[0].state, 'activated');
 });
+test('rerunning an activated publication re-verifies without downgrading the ledger', async (t) => {
+  const p = await publisher(t);
+  await p.run();
+  const writes = p.state.ledgerWrites;
+  await p.run();
+  assert.equal(p.state.ledgerWrites, writes);
+  p.state.active = oldId;
+  await assert.rejects(p.run);
+  assert.equal(p.state.writes, 1);
+  assert.equal(p.state.ledgerWrites, writes);
+  assert.equal(p.getLedger().entries[0].state, 'activated');
+  assert.equal(p.getLedger().entries[0].versionId, newId);
+});
 test('finite admission rejects later main pushes, changed bytes, and consumed identities', async (t) => {
   const p = await publisher(t);
   await p.run();

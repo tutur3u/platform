@@ -95,8 +95,8 @@ to the canonical host would return 503 and is forbidden.
    Bootstrap through the owner's reviewed infrastructure procedure with the identities
    and resource descriptors in `wave1-native-profiles.json`; do not use canonical configs.
 3. Provision Mail's isolated staging R2 bucket and scoped S3 credentials according to
-   that descriptor. Keep production storage/resource IDs and encryption/signing keys.
-   Grant only staging access to staging secrets. Confirm the existing staging central
+   that descriptor. Never reuse production storage/resource IDs or encryption/signing
+   keys in staging. Grant only staging access to staging secrets. Confirm the existing staging central
    issuer/API and Supabase instance are admitted for disposable acceptance.
 4. Provision Worker secret **names** from each app's `secrets` list in the profile
    file. Values stay in the provider. The workflow checks names through the API and
@@ -408,4 +408,4 @@ rejects emitted server assets containing static CommonJS Node builtin calls, inc
 Rolldown's `__require` helper. Unit and profile tests cover the adapter, the unchanged
 compatibility settings and both profile rejection paths. Exact-head CI must still prove
 original/restored emitted Worker startup; config tests are not emitted-byte proof.
-The same unadapted dependency graph exists on main independently of this staging-publisher PR.
+The unadapted dependency graph is not specific to the staging profile; production builds share it.

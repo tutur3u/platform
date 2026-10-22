@@ -337,8 +337,20 @@ export async function main({
     'Multiple matching versions require owner reconciliation'
   );
   if (identical.length) {
-    if (!ledger.prior) await ledger.start(rollback);
     record.versionId = identical[0].id;
+    if (ledger.prior?.state === 'activated') {
+      // A terminal activation is never downgraded; a rerun only re-verifies it.
+      assert.equal(
+        ledger.prior.versionId,
+        record.versionId,
+        'Activated version mismatch'
+      );
+      await accept(record.versionId);
+      record.state = 'activated';
+      save();
+      return;
+    }
+    if (!ledger.prior) await ledger.start(rollback);
     record.state = 'uploaded';
     save();
     await ledger.save('uploaded', record.versionId);
