@@ -9,7 +9,7 @@ describe('Teach next config rewrites', () => {
     vi.unstubAllEnvs();
   });
 
-  it('forwards ai and v1 api routes to the central web app', async () => {
+  it('forwards every api route to the central web app as a fallback', async () => {
     vi.stubEnv('WEB_APP_URL', 'https://web.example.com');
 
     const { default: nextConfig } = await import('./next.config');
@@ -20,12 +20,8 @@ describe('Teach next config rewrites', () => {
       beforeFiles: [],
       fallback: [
         {
-          destination: 'https://web.example.com/api/ai/:path*',
-          source: '/api/ai/:path*',
-        },
-        {
-          destination: 'https://web.example.com/api/v1/:path*',
-          source: '/api/v1/:path*',
+          destination: 'https://web.example.com/api/:path*',
+          source: '/api/:path*',
         },
       ],
     });

@@ -19,6 +19,10 @@
       "!apps/backend",
       "!apps/tanstack-web",
       "!apps/tanstack-web/src/routeTree.gen.ts",
+      "!apps/meet/src/routeTree.gen.ts",
+      "!apps/calendar/src/routeTree.gen.ts",
+      "!apps/mail/src/routeTree.gen.ts",
+      "!apps/apps/src/routeTree.gen.ts",
       "!apps/mobile",
       "!.worktrees",
       "!.agents/skills/security-audit"

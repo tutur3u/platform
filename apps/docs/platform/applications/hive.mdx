@@ -23,6 +23,12 @@ redirects browser form submissions back to `/login`. Keep that route outside the
 generic API proxy guard path so logout does not wait on product API rate-limit
 checks.
 
+Unmatched `/api/workspaces/*` requests, including workspace invitations and
+workspace details, use the Web fallback with their paths and queries intact.
+Local Hive API handlers retain precedence. Regression coverage lives in
+`apps/hive/src/next-config.test.ts`. The `/realtime/*` rewrite remains
+separate and continues to target the Hive realtime service.
+
 ## Dual-Host Parity
 
 Hive is available through both the standalone satellite host and the main web

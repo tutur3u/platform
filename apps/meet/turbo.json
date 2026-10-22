@@ -1,0 +1,9 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "type-check": {
+      "outputs": ["$TURBO_EXTENDS$", ".turbo/types/**"]
+    }
+  }
+}

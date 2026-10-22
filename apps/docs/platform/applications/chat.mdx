@@ -17,9 +17,16 @@ and call the same `@tuturuuu/internal-api` chat client. Do not add direct
 browser Supabase reads, client-local raw `fetch('/api/...')`, or host-specific
 chat business logic.
 
+Unmatched `/api/workspaces/*` requests, including workspace invitations and
+workspace details, use the Web fallback with their paths and queries intact.
+Local Chat API handlers retain precedence. Regression coverage lives in
+`apps/chat/src/next-config.test.ts`.
+
 ## API Ownership
 
-`apps/chat` forwards `/api/v1/*` and `/api/ai/*` to `apps/web`. The standalone
+`apps/chat` forwards unmatched `/api/*` paths to `apps/web` through fallback
+rewrites, after local auth and build-info handlers. The more specific
+`/api/v1/infrastructure/*` fallback still targets Infrastructure first. The standalone
 app authenticates through the cross-app session target `chat`; `apps/web`
 accepts that target only on the chat API surface and still performs normal
 request-scoped user validation before protected work.

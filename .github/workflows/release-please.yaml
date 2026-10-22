@@ -87,7 +87,7 @@ jobs:
       - name: Setup pinned Bun for generated lock metadata
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.1
+          bun-version: 1.4.3
 
       - name: Normalize generated release formatting
         shell: bash

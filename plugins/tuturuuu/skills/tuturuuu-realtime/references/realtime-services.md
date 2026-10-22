@@ -335,3 +335,27 @@ Parley uses `localePrefix: never`: built-Worker bilingual probes request the
 canonical `/access-denied` URL with an explicit `Accept-Language: en` or `vi`.
 A prefixed `/vi/access-denied` request redirects and sets a locale cookie; a
 fetch client without a cookie jar must not infer Vietnamese from that prefix.
+
+
+## Native Meet artifact boundary
+
+Meet's Start renderer uses the official Void SDK build plugin and a custom Worker
+entry, while the separate realtime service retains signaling and media ownership.
+Keep request state in request-scoped adapters and preserve original session,
+origin, locale, guest and multiple-cookie behavior. Do not expose a shared Next
+server action to the browser or assume development-only code disappears.
+
+Discover the emitted configuration through `.wrangler/deploy/config.json` and
+validate the adapter's actual metadata, including an empty `auxiliaryWorkers`
+array. Unexpected auxiliary workers fail closed. Generate `CloudflareEnv` with
+`--include-runtime=false`. Artifact-dependent runtime tests belong outside generic
+source-only discovery and remain mandatory after build and restored-output checks.
+
+Seal modules, assets and deployment metadata, then restore, hash, dry-run and
+exercise those same bytes before app-local Wrangler publication. Retain Wrangler
+where the released Void CLI rebuilds or changes prepared output, provisions before
+validation, or rejects existing targeted placement. Do not remove placement or
+fork the SDK to make publication pass. Capture hosted resource/version identity
+and rollback before cutover. Follow the [Meet verification contract](../../../../../apps/docs/platform/applications/meet.mdx)
+for signed-in page/RPC/browser and hosted media acceptance; source review is not
+runtime proof.

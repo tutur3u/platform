@@ -6,6 +6,11 @@ updatedAt: 2026-10-01
 
 Learn lives in `apps/learn` and runs locally on port `7812`. It is the learner-facing companion to the main Tuturuuu web platform: students and parents use Learn for lessons, practice, assignments, reports, marks, XP, streaks, and hearts, while teachers and admins manage education data in Teach.
 
+Unmatched `/api/workspaces/*` requests, including workspace invitations and
+workspace details, use the Web fallback with their paths and queries intact.
+Local Learn API handlers retain precedence. Regression coverage lives in
+`apps/learn/src/next-config.test.ts`.
+
 ## Ownership model
 
 Learn does not render its own login portal. Its `/login` route first checks for an existing Learn app-session JWT. If the app session is already present, it redirects inside Learn to the requested `next` path, usually `/dashboard`. Otherwise it redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. Learn stores a host-only `tuturuuu_app_session` cookie after token verification, not a Learn-local Supabase Auth session.
@@ -17,7 +22,7 @@ Social auth providers still run on `apps/web` because OAuth provider callbacks a
 Learn owns learner and parent-facing v1 API contracts, including bootstrap,
 courses, modules, tests, practice, assignments, reports, marks, parent links,
 and vocabulary support. These handlers live under `apps/learn/src/app/api/v1`.
-Next.js fallback rewrites send only unmatched `/api/v1/*` and `/api/ai/*` paths
+Next.js fallback rewrites send all unmatched `/api/*` paths
 to Web; they do not proxy a path that Learn implements locally.
 
 ## Programming

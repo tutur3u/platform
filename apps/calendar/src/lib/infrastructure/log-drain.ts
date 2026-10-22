@@ -813,28 +813,27 @@ export function setLogDrainUserContext({
 
 async function runWithLogDrain<T>(
   context: LogDrainContext,
-  handler: () => Promise<T>
+  handler: () => Promise<T>,
+  retainBackground?: (work: Promise<void>) => void
 ) {
-  let response: Response | null = null;
-  let error: unknown = null;
-
-  try {
-    return await storage.run(context, async () => {
+  return storage.run(context, async () => {
+    let response: Response | null = null;
+    let error: unknown = null;
+    try {
+      const result = await handler();
+      if (result instanceof Response) response = result;
+      return result;
+    } catch (caught) {
+      error = caught;
+      captureEvent(createEvent('error', ['Unhandled server error', caught]));
+      throw caught;
+    } finally {
+      const persistence = persistContext({ context, error, response });
       try {
-        const result = await handler();
-        if (result instanceof Response) {
-          response = result;
-        }
-        return result;
-      } catch (caught) {
-        error = caught;
-        captureEvent(createEvent('error', ['Unhandled server error', caught]));
-        throw caught;
-      }
-    });
-  } finally {
-    void persistContext({ context, error, response });
-  }
+        retainBackground?.(persistence);
+      } catch {}
+    }
+  });
 }
 
 export async function withRequestLogDrain<T extends Response>(
@@ -846,9 +845,10 @@ export async function withRequestLogDrain<T extends Response>(
 
 export async function withCronLogDrain<T extends Response>(
   options: CronDrainOptions,
-  handler: () => Promise<T>
+  handler: () => Promise<T>,
+  retain?: (work: Promise<void>) => void
 ) {
-  return runWithLogDrain(createCronLogDrainContext(options), handler);
+  return runWithLogDrain(createCronLogDrainContext(options), handler, retain);
 }
 
 function writeServerLog(level: LogDrainLevel, args: unknown[]) {

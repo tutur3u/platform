@@ -18,7 +18,7 @@ import {
 
 import {
   observeFixtureFailure,
-  privateStartupDiagnostics,
+  profileTerminalDiagnostics,
   safeFixtureFailure,
 } from './mail-profile-startup-diagnostics.mjs';
 
@@ -664,14 +664,13 @@ export async function main() {
         failureReason ??
         (cleanupFailures.length ? 'owned-cleanup-failed' : null),
       appStopAttempted: appCleanup.attempted,
-      startupDiagnostics: await privateStartupDiagnostics(reports, children),
+      ...(await profileTerminalDiagnostics(reports, children, browserResults)),
       outcome: primary === 0 && cleanupFailures.length === 0 ? 'PASS' : 'FAIL',
       profile: PROFILE_TITLE,
       transport: TRANSPORT_TITLE,
       scope: 'local application contract; not Cloudflare/provider/production',
       project: metadata?.projectId,
       fixtureRoot: metadata?.disposableRoot,
-      results: browserResults,
       deploymentProof: false,
       productionProof: false,
     };

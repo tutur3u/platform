@@ -36,12 +36,24 @@ type Params = {
   }>;
 };
 
-async function authorize(request: Request, rawWsId: string) {
+type Authorization =
+  | { ok: false; response: Response }
+  | {
+      ok: true;
+      sbAdmin: Awaited<ReturnType<typeof createAdminClient>>;
+      userId: string;
+      wsId: string;
+    };
+
+async function authorize(
+  request: Request,
+  rawWsId: string
+): Promise<Authorization> {
   const auth = await resolveSessionAuthContext(request, {
     allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
-  if (!auth.ok) return { error: auth.response };
+  if (!auth.ok) return { ok: false, response: auth.response };
 
   const wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
   const membership = await verifyWorkspaceMembershipType({
@@ -52,7 +64,8 @@ async function authorize(request: Request, rawWsId: string) {
 
   if (membership.error === 'membership_lookup_failed') {
     return {
-      error: NextResponse.json(
+      ok: false,
+      response: NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       ),
@@ -61,7 +74,8 @@ async function authorize(request: Request, rawWsId: string) {
 
   if (!membership.ok) {
     return {
-      error: NextResponse.json(
+      ok: false,
+      response: NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
       ),
@@ -69,6 +83,7 @@ async function authorize(request: Request, rawWsId: string) {
   }
 
   return {
+    ok: true,
     sbAdmin: await createAdminClient(),
     userId: auth.user.id,
     wsId,
@@ -77,7 +92,7 @@ async function authorize(request: Request, rawWsId: string) {
 
 export async function GET(request: Request, { params }: Params) {
   const access = await authorize(request, (await params).wsId);
-  if ('error' in access) return access.error;
+  if (!access.ok) return access.response;
 
   try {
     return NextResponse.json(
@@ -101,7 +116,7 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function PATCH(request: Request, { params }: Params) {
   const access = await authorize(request, (await params).wsId);
-  if ('error' in access) return access.error;
+  if (!access.ok) return access.response;
 
   try {
     const body = await request.json();

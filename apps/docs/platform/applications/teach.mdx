@@ -5,6 +5,11 @@ description: Teacher-facing education companion app for Tuturuuu workspaces.
 
 Teach lives in `apps/teach` and runs locally on port `7813`. It is the teacher-facing operations app for Tuturuuu education workspaces. Teachers create and publish courses, enroll existing workspace users, author modules, save attendance, write posts and reports, and enter metrics through Teach-owned APIs.
 
+Unmatched `/api/workspaces/*` requests, including workspace invitations and
+workspace details, use the Web fallback with their paths and queries intact.
+Local Teach API handlers retain precedence. Regression coverage lives in
+`apps/teach/src/next-config.test.ts`.
+
 ## Ownership model
 
 Teach owns teacher authoring, administration, and shared education v1 API
@@ -14,7 +19,7 @@ teacher workflows under `apps/teach/src/app/api/v1`. Teach also implements
 selected education AI handlers locally.
 
 Local handlers run before the Next.js fallback rewrites. Only unmatched
-`/api/v1/*` and `/api/ai/*` paths go to Web, which remains responsible for
+`/api/*` paths go to Web, which remains responsible for
 platform login, cross-app token issuance, and explicitly retained platform or
 central AI services. New Teach-owned flows should add typed helpers in
 `@tuturuuu/internal-api` and consume those helpers from Teach client components

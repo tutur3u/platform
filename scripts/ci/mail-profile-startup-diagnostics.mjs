@@ -1,6 +1,10 @@
 import { constants } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {
+  joinProfileReadEvents,
+  parseProfileReadEvents,
+} from './mail-profile-correlation.mjs';
 
 const limit = 128 * 1024;
 const categories = [
@@ -50,6 +54,46 @@ const readStages = new Set([
   'layout navigation',
 ]);
 const eventLimit = 256;
+const maxDurationMs = 999_999_999_999;
+const summaryByteLimit = 8192;
+const sgr = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]{1,16}m`, 'gu');
+
+function timingCounts() {
+  return { observedCount: 0, maxMs: null, absentCount: 0, invalidCount: 0 };
+}
+
+function retainDuration(counts, value, multiplier = 1) {
+  if (value === undefined) {
+    counts.absentCount += 1;
+    return;
+  }
+  if (
+    !/^\d{1,12}(?:\.\d)?$/u.test(value) ||
+    (multiplier === 1 && value.includes('.'))
+  ) {
+    counts.invalidCount += 1;
+    return;
+  }
+  const divisor = value.includes('.') ? 10n : 1n;
+  const duration =
+    (BigInt(value.replace('.', '')) * BigInt(multiplier)) / divisor;
+  if (duration > BigInt(maxDurationMs)) {
+    counts.invalidCount += 1;
+    return;
+  }
+  counts.observedCount += 1;
+  counts.maxMs = Math.max(counts.maxMs ?? 0, Number(duration));
+}
+
+function boundedSummary(summary) {
+  const result = { ...summary, summaryByteLimit, summaryTruncated: false };
+  if (Buffer.byteLength(JSON.stringify(result), 'utf8') > summaryByteLimit) {
+    result.stages = [];
+    result.summaryTruncated = true;
+    result.truncated = true;
+  }
+  return result;
+}
 
 // Aggregate observations only: concurrent reads have no request correlation.
 export function readStageObservations(text, tailTruncated = false) {
@@ -61,27 +105,29 @@ export function readStageObservations(text, tailTruncated = false) {
   let eventsTruncated = false;
   for (const line of lines) {
     const match = line.match(
-      /^\[lettin-read\] ([a-z ]+) (started|completed|failed)(?: \{ elapsedMs: \d{1,12} \})?$/u
+      /^\[lettin-read\] ([a-z ]+) (started|completed|failed)(?: \{ elapsedMs: ([A-Za-z0-9.+-]{1,80}) \})?$/u
     );
     if (!match || !readStages.has(match[1])) continue;
     if (events === eventLimit) {
       eventsTruncated = true;
       break;
     }
-    const [, stage, status] = match;
+    const [, stage, status, elapsed] = match;
     const counts = stages.get(stage) ?? {
       stage,
       started: 0,
       completed: 0,
       failed: 0,
       lastStatus: status,
+      elapsedMs: timingCounts(),
     };
     counts[status] += 1;
     counts.lastStatus = status;
+    if (status !== 'started') retainDuration(counts.elapsedMs, elapsed);
     stages.set(stage, counts);
     events += 1;
   }
-  return {
+  return boundedSummary({
     events,
     eventLimit,
     tailTruncated: inputTruncated,
@@ -89,7 +135,67 @@ export function readStageObservations(text, tailTruncated = false) {
     truncated: inputTruncated || eventsTruncated,
     requestAttribution: 'unavailable',
     stages: [...stages.values()],
-  };
+  });
+}
+
+// Installed Next emitters only; framework activity is never a profile span.
+export function nextTimingObservations(text, tailTruncated = false) {
+  const inputTruncated = tailTruncated || text.length > limit;
+  const lines = text.slice(-limit).split(/\r?\n/u);
+  if (inputTruncated) lines.shift();
+  const stages = new Map();
+  let events = 0;
+  let eventsTruncated = false;
+  for (const raw of lines) {
+    const line = raw.replace(sgr, '');
+    const timed = line.match(
+      /^✓ (Compiled in|Ready in) ([0-9]{1,12}(?:\.[0-9])?)(ms|s|min)$/u
+    );
+    const bundled = line.match(
+      /^ {2}bundled [A-Za-z0-9_./()[\]-]{1,256} in ([0-9]{1,12}(?:\.[0-9])?)(ms|s)(?: \(\d{1,9} modules\))?, type checking\.\.\.$/u
+    );
+    const compiling = /^○ Compiling [A-Za-z0-9_./()[\]-]{1,256} \.\.\.$/u.test(
+      line
+    );
+    if (!timed && !compiling && !bundled) continue;
+    if (timed?.[1] === 'Compiled in' && timed[3] === 'min') continue;
+    if (events === eventLimit) {
+      eventsTruncated = true;
+      break;
+    }
+    const stage = compiling
+      ? 'compilation-started'
+      : bundled
+        ? 'bundled-typechecking'
+        : timed[1] === 'Ready in'
+          ? 'framework-ready'
+          : 'compilation-completed';
+    const counts = stages.get(stage) ?? {
+      stage,
+      count: 0,
+      elapsedMs: timingCounts(),
+    };
+    counts.count += 1;
+    if (timed || bundled) {
+      const value = timed ? timed[2] : bundled[1];
+      const unit = timed ? timed[3] : bundled[2];
+      const multiplier = unit === 'min' ? 60000 : unit === 's' ? 1000 : 1;
+      retainDuration(counts.elapsedMs, value, multiplier);
+    }
+    stages.set(stage, counts);
+    events += 1;
+  }
+  return boundedSummary({
+    state: events ? 'observed' : 'unknown',
+    events,
+    eventLimit,
+    tailTruncated: inputTruncated,
+    eventsTruncated,
+    truncated: inputTruncated || eventsTruncated,
+    requestAttribution: 'unavailable',
+    profileAttribution: 'unavailable',
+    stages: [...stages.values()],
+  });
 }
 
 export async function privateStartupDiagnostics(reports, children) {
@@ -132,8 +238,13 @@ export async function privateStartupDiagnostics(reports, children) {
         record.truncated = stat.size > bytesRead;
         const text = buffer.subarray(0, bytesRead).toString('utf8');
         record.categories = startupCategories(text);
+        record.nextTiming = nextTimingObservations(text, record.truncated);
         if (app === 'lettin') {
           record.readStages = readStageObservations(text, record.truncated);
+          record.profileReadEvents = parseProfileReadEvents(
+            text,
+            record.truncated
+          );
         }
         record.causeProven = false;
       }
@@ -174,4 +285,15 @@ export function safeFixtureFailure(error) {
     ['Preflight and receipt failed', 'preflight-receipt-failed'],
   ]);
   return reasons.get(message) ?? 'unclassified-fixture-failure';
+}
+
+export async function profileTerminalDiagnostics(reports, children, results) {
+  const startupDiagnostics = await privateStartupDiagnostics(reports, children);
+  const parsed = startupDiagnostics.find(
+    (item) => item.app === 'lettin'
+  )?.profileReadEvents;
+  return {
+    startupDiagnostics,
+    results: joinProfileReadEvents(results, parsed),
+  };
 }

@@ -307,7 +307,22 @@ query and saved-operation scope, so switching between these routes preserves an
 unknown original CREATE without another POST. Personal and non-root workspaces,
 and sessions without an actor, do not expose Create. Server permissions and actor
 lifetime checks remain authoritative. Mounted regressions in
-`employee-creation-dialog.test.tsx` cover these routes and retired-actor results.
+`employee-creation-alias.test.tsx` cover these routes and retired-actor results.
+
+These Infrastructure forms distinguish a failed availability read from confirmed
+unavailability; **Check availability again** performs only a GET and cannot admit
+CREATE. Input, authorization and local recovery-storage failures have separate
+safe guidance. A bound non-admission receipt proves only that invocation stopped
+before claim: the original UUID, actor, email and name stay retained for inspection,
+including after generic errors. Unknown outcomes never clear intent or replay.
+Secure password generation failure leaves the existing value and visibility intact
+and offers manual entry in Create, row reset and reset-any-account forms; passwords
+never enter recovery storage. The directory defaults to active, verified accounts;
+**Include disabled accounts** changes only the existing active filter. A disabled
+row grants no restoration eligibility. See the
+[mounted regression tests](https://github.com/tutur3u/platform/tree/main/apps/infrastructure/src/app/%5Blocale%5D/%28dashboard%29/%5BwsId%5D/internal-accounts):
+`employee-creation-dialog.test.tsx`, `temporary-password-field.test.tsx` and
+`internal-accounts-client.test.tsx`.
 
 Ordinary messages explain the next action without requiring UUID, digest, revision
 or provider-state inspection. Advanced recovery retains technical observations and
@@ -335,10 +350,12 @@ another uncached inspection and compares revision and operation before dispatch.
 The portable consumer retains the original expected revision and server operation
 UUID across pending results and dialog close/reopen. A lost POST response blocks
 another RESTORE in that dialog lifetime, even if a subsequent read has no operation.
-Only the matching persisted operation can be reconciled; reconciliation never
-replays the provider mutation. After an explicit Restore submission, the form can reconcile the matching retained
-operation once, with the same email, UUID and revision fences and another completion
-readback. It never automatically repeats RESTORE or reconciles on dialog open.
+Pending or uncertain replies expose read-only inspection of the retained request;
+the form does not invoke reconciliation or offer another mutation for it. A latched
+revision/operation conflict remains visible and blocks subsequent mutations even
+after another inspection. The portable consumer's explicit reconciliation API is
+unchanged and remains separate from this ordinary form. It never automatically
+repeats RESTORE or reconciles on dialog open.
 No client-generated replacement UUID or blind POST retry is used. State is private and ephemeral; a new page lifetime recovers
 operations from the authorized persisted inspection rather than browser storage.
 
@@ -359,7 +376,7 @@ and private management state remain separate observations.
 `employee-restoration-consumer.test.ts` covers revision/UUID fences, explicit
 reconciliation, unavailable capability, duplicate admission and revoked actors.
 `employee-restoration-dialog.test.tsx` covers rendered English/Vietnamese controls,
-automatic readiness, exact confirmation, bounded matching-operation recovery,
+automatic readiness, exact confirmation, inspection-only pending recovery and revision conflicts,
 replacement-operation denial, pending close/reopen, independent readback and actor replacement.
 These are synthetic source regressions. Exact-commit Infrastructure/internal-API
 CI and authenticated deployed session/provider/SQL acceptance remain separate;
