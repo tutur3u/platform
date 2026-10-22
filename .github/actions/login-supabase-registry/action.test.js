@@ -1,6 +1,6 @@
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub expressions are literal workflow data.
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   mkdtempSync,
   readdirSync,
@@ -11,7 +11,21 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { parse } from 'yaml';
+
+// Parse with Bun's built-in YAML, as the workflow checker does, so the test needs no
+// installed npm dependency.
+const parse = (file) =>
+  JSON.parse(
+    execFileSync(
+      'bun',
+      [
+        '-e',
+        'console.log(JSON.stringify(Bun.YAML.parse(await Bun.file(process.argv[1]).text())))',
+        file,
+      ],
+      { encoding: 'utf8' }
+    )
+  );
 
 const action = new URL('./action.yml', import.meta.url);
 const script = new URL('./login.sh', import.meta.url);
@@ -76,7 +90,7 @@ test('all contract stack jobs authenticate before startup with read-only package
     if (!name.endsWith('.yaml')) continue;
     const source = readFileSync(new URL(name, workflows), 'utf8');
     if (!source.includes('SUPABASE_INTERNAL_IMAGE_REGISTRY')) continue;
-    const workflow = parse(source);
+    const workflow = parse(new URL(name, workflows).pathname);
     for (const job of Object.values(workflow.jobs)) {
       if (!job['runs-on'] || job.if === '${{ false }}') continue;
       count++;
@@ -101,6 +115,6 @@ test('all contract stack jobs authenticate before startup with read-only package
     }
   }
   assert.equal(count, 18);
-  const login = parse(readFileSync(action, 'utf8')).runs.steps[0];
+  const login = parse(action.pathname).runs.steps[0];
   assert.equal(login['continue-on-error'], true);
 });
