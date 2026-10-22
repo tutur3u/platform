@@ -6,12 +6,29 @@ import {
   checkProviderSyncBudget,
   createSyncAdminClient,
   MAX_SYNC_WORKSPACES,
+  providerSyncSignal,
   rotatingSyncBatch,
   withProviderSyncBudget,
 } from '@/lib/calendar/provider-sync-budget';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 export const maxDuration = 300;
+
+class WorkspaceSyncHttpError extends Error {
+  constructor(public readonly status: number) {
+    super('Workspace sync HTTP failure');
+    this.name = 'WorkspaceSyncHttpError';
+  }
+}
+
+function failureDiagnostic(error: unknown) {
+  return {
+    errorName: error instanceof Error ? error.name : 'unknown',
+    ...(error instanceof WorkspaceSyncHttpError
+      ? { httpStatus: error.status }
+      : {}),
+  };
+}
 
 export async function GET(request: NextRequest) {
   return withCronLogDrain(
@@ -52,7 +69,7 @@ async function handleGET(request: NextRequest) {
         const pageSize = 500;
         for (let offset = 0; ; offset += pageSize) {
           checkProviderSyncBudget();
-          if (offset >= 10_000)
+          if (offset > 10_000)
             throw new Error('Calendar workspace scan limit exceeded');
           const { data: tokenRows, error } = await sbAdmin
             .from('calendar_auth_tokens')
@@ -61,13 +78,15 @@ async function handleGET(request: NextRequest) {
             .eq('calendar_connections.is_enabled', true)
             .eq('calendar_connections.sync_inbound_enabled', true)
             .order('id', { ascending: true })
-            .range(offset, offset + pageSize - 1);
+            .range(offset, offset === 10_000 ? offset : offset + pageSize - 1);
           if (error) {
             return NextResponse.json(
               { ok: false, error: 'Failed to fetch connected workspaces' },
               { status: 500 }
             );
           }
+          if (offset === 10_000 && (tokenRows?.length ?? 0) > 0)
+            throw new Error('Calendar workspace scan limit exceeded');
           for (const row of tokenRows ?? []) workspaceSet.add(row.ws_id);
           if (!tokenRows || tokenRows.length < pageSize) break;
         }
@@ -83,12 +102,17 @@ async function handleGET(request: NextRequest) {
           error?: string;
         }> = [];
 
+        let notStarted = 0;
         await Effect.runPromise(
           Effect.forEach(
             workspaceIds,
             (wsId) =>
               Effect.tryPromise(async () => {
                 try {
+                  if (providerSyncSignal()?.aborted) {
+                    notStarted += 1;
+                    return;
+                  }
                   checkProviderSyncBudget();
                   const response = await syncWorkspaceCalendar(
                     new NextRequest(
@@ -113,9 +137,7 @@ async function handleGET(request: NextRequest) {
 
                   if (!response.ok) {
                     await response.body?.cancel();
-                    throw new Error(
-                      `Workspace sync returned HTTP ${response.status}`
-                    );
+                    throw new WorkspaceSyncHttpError(response.status);
                   }
 
                   const body = await response.json().catch(() => null);
@@ -129,6 +151,10 @@ async function handleGET(request: NextRequest) {
                       : {}),
                   });
                 } catch (syncError) {
+                  console.warn('Calendar provider sync workspace failed', {
+                    wsId,
+                    ...failureDiagnostic(syncError),
+                  });
                   results.push({
                     ws_id: wsId,
                     success: false,
@@ -149,7 +175,7 @@ async function handleGET(request: NextRequest) {
           {
             ok: allSucceeded,
             processed: results.length,
-            deferred: workspaceSet.size - workspaceIds.length,
+            deferred: workspaceSet.size - workspaceIds.length + notStarted,
             successful: results.filter((result) => result.success).length,
             failed: results.filter((result) => !result.success).length,
             results,
@@ -158,7 +184,11 @@ async function handleGET(request: NextRequest) {
         );
       }
     );
-  } catch {
+  } catch (error) {
+    console.error(
+      'Calendar provider sync dispatch failed',
+      failureDiagnostic(error)
+    );
     return NextResponse.json(
       {
         ok: false,

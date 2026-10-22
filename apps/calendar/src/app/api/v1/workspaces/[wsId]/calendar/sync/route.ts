@@ -448,14 +448,8 @@ export async function POST(
     const partialFailure =
       (googleSummary.failedConnections ?? 0) > 0 ||
       outboundSummary.failed > 0 ||
-      ('deferredConnections' in googleSummary &&
-        googleSummary.deferredConnections > 0) ||
       ('failedAccounts' in microsoftSummary &&
-        microsoftSummary.failedAccounts > 0) ||
-      ('deferredAccounts' in microsoftSummary &&
-        microsoftSummary.deferredAccounts > 0) ||
-      ('deferredConnections' in microsoftSummary &&
-        microsoftSummary.deferredConnections > 0);
+        microsoftSummary.failedAccounts > 0);
     const googleFailure =
       'failureType' in googleSummary && googleSummary.failureType;
     const microsoftFailure =

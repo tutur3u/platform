@@ -98,7 +98,12 @@ export async function syncGoogleInbound(args: {
         MAX_SYNC_CONNECTIONS
       )
     : googleConnections;
-  for (const connection of batch) {
+  let skippedByBudget = 0;
+  for (const [index, connection] of batch.entries()) {
+    if (providerSyncSignal()?.aborted) {
+      skippedByBudget = batch.length - index;
+      break;
+    }
     try {
       checkProviderSyncBudget();
       if (
@@ -178,8 +183,9 @@ export async function syncGoogleInbound(args: {
     inserted,
     updated,
     deleted,
-    processedConnections: batch.length - failedConnections,
-    deferredConnections: googleConnections.length - batch.length,
+    processedConnections: batch.length - skippedByBudget - failedConnections,
+    deferredConnections:
+      googleConnections.length - batch.length + skippedByBudget,
     failedConnections,
     failedCalendars,
     failureType: firstConnectionError

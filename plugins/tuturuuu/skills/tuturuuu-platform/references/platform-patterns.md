@@ -6,13 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
-- Calendar provider cron failures must retain failed dashboard diagnostics while
-  isolating accounts and bounding transport work. A revoked Google account must
-  stop sibling calls and become inactive only if its attempted credential still
-  matches storage; transient failures remain retryable. Carry cancellation into
-  provider refresh, provider reads and database clients, then drain owned work.
-  See the [Calendar cron runbook](../../../../../apps/docs/platform/applications/calendar.mdx#bounded-cron-execution-and-revoked-consent)
-  and its focused regression tests before changing limits or cron response policy.
+- Calendar provider cron failures retain failed dashboard diagnostics while
+  isolating accounts and bounding work. Rejected Google credentials stop siblings
+  and become inactive only if storage still matches; transient failures retry.
+  Carry cancellation through refresh, reads and database clients; drain owned work.
+  Defer unstarted work. Microsoft calendar errors continue siblings; auth/rate
+  limits stop the account. See the [Calendar cron runbook](../../../../../apps/docs/platform/applications/calendar.mdx#bounded-cron-execution-and-revoked-consent)
+  and focused regressions before changing limits or response policy.
 
 - Private Studio membership facets use only roles returned in the current
   authorized overview. Combine them with existing search/publication facets,

@@ -9,6 +9,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 import { syncGoogleInbound } from './google-inbound-sync';
+import { withProviderSyncBudget } from './provider-sync-budget';
 
 const connections = [
   { id: 'a', calendar_name: 'A', calendar_id: 'a', auth_token_id: 'revoked' },
@@ -198,3 +199,39 @@ it('keeps a transient provider failure retryable and logs no raw provider payloa
     'private-provider-secret'
   );
 });
+
+it.each([false, true])(
+  'defers unattempted Google connections on cancellation (in flight: %s)',
+  async (inFlight) => {
+    const controller = new AbortController();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const abort = () =>
+      controller.abort(
+        new DOMException('Calendar sync timed out', 'TimeoutError')
+      );
+    if (!inFlight) abort();
+    sync.mockImplementation(async () => {
+      abort();
+      controller.signal.throwIfAborted();
+    });
+    const result = await withProviderSyncBudget(controller.signal, () =>
+      syncGoogleInbound({
+        sbAdmin: database() as never,
+        wsId: 'workspace',
+        rangeStart: '2026-10-01',
+        rangeEnd: '2026-11-01',
+        userIdForFallback: 'actor',
+        settingsAvailable: true,
+      })
+    );
+    expect(sync).toHaveBeenCalledTimes(inFlight ? 1 : 0);
+    expect(result).toMatchObject({
+      processedConnections: 0,
+      failedConnections: inFlight ? 1 : 0,
+      deferredConnections: inFlight ? 2 : 3,
+      failureType: inFlight ? 'network' : null,
+    });
+    expect(result.failedCalendars).toHaveLength(inFlight ? 1 : 0);
+    expect(warn).toHaveBeenCalledTimes(inFlight ? 1 : 0);
+  }
+);

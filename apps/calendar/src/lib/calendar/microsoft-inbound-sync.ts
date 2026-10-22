@@ -72,7 +72,10 @@ export async function syncMicrosoftInbound(args: {
     ? MAX_SYNC_CONNECTIONS
     : Number.MAX_SAFE_INTEGER;
   let deferredConnections = 0;
-  for (const token of batch) {
+  let deferredAccounts = tokens.length - batch.length;
+  for (const [tokenIndex, token] of batch.entries()) {
+    let pendingConnections = 0;
+    let calendarFailure: { error: unknown } | undefined;
     try {
       checkProviderSyncBudget();
       const connectionQuery = args.sbAdmin.from('calendar_connections');
@@ -104,11 +107,16 @@ export async function syncMicrosoftInbound(args: {
         allEnabledConnections.length - enabledConnections.length;
       if (!enabledConnections.length) continue;
       remainingConnections -= enabledConnections.length;
+      pendingConnections = enabledConnections.length;
       const refreshed = await ensureValidToken(args.sbAdmin, token);
       if (refreshed.error) {
         throw new CalendarProviderSyncError(
           'Microsoft calendar credential refresh failed',
-          refreshed.error === 'invalid_grant' ? 'auth' : 'configuration'
+          /invalid_grant|token has been revoked|reconnect calendar/i.test(
+            refreshed.error
+          )
+            ? 'auth'
+            : 'configuration'
         );
       }
       const graphClient = providerSyncSignal()
@@ -235,25 +243,40 @@ export async function syncMicrosoftInbound(args: {
           }
 
           inserted += payload.length;
+          pendingConnections -= 1;
         } catch (error) {
+          if (providerSyncSignal()?.aborted) throw error;
+          pendingConnections -= 1;
+          const code = classifyCalendarSyncError(error);
           failedCalendars.push({
             connectionId: connection.id,
             calendarName: connection.calendar_name ?? 'Microsoft calendar',
-            code: classifyCalendarSyncError(error),
+            code,
           });
-          throw error;
+          if (code === 'auth' || code === 'api_limit') throw error;
+          calendarFailure ??= { error };
         }
       }
+      if (calendarFailure) throw calendarFailure.error;
       processedAccounts += 1;
     } catch (error) {
+      const budgetAborted = providerSyncSignal()?.aborted;
+      if (budgetAborted) {
+        deferredConnections += pendingConnections;
+        deferredAccounts += batch.length - tokenIndex;
+        if (!calendarFailure) break;
+      }
       failedAccounts += 1;
-      const code = classifyCalendarSyncError(error);
+      const code = classifyCalendarSyncError(
+        budgetAborted && calendarFailure ? calendarFailure.error : error
+      );
       if (!failureType || code === 'auth') failureType = code;
       console.warn('Microsoft calendar account sync failed', {
         wsId: args.wsId,
         authTokenId: token.id,
         code,
       });
+      if (budgetAborted) break;
     }
   }
 
@@ -266,6 +289,6 @@ export async function syncMicrosoftInbound(args: {
     failureType,
     failedCalendars,
     deferredConnections,
-    deferredAccounts: tokens.length - batch.length,
+    deferredAccounts,
   };
 }
