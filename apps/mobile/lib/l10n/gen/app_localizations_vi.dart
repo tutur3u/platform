@@ -10590,4 +10590,64 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantPreviewPause => 'Tạm dừng bản xem trước';
+
+  @override
+  String get feedbackTitle => 'Gửi phản hồi';
+
+  @override
+  String get feedbackPrivate => 'Gửi phản hồi sản phẩm riêng tư cho nhân viên Tuturuuu. Không gửi mật khẩu hoặc bí mật. Có thể đính kèm một ảnh PNG, JPEG hoặc WebP tối đa 2 MB.';
+
+  @override
+  String get feedbackSubject => 'Tiêu đề';
+
+  @override
+  String get feedbackDetails => 'Chi tiết';
+
+  @override
+  String get feedbackAttach => 'Đính kèm ảnh';
+
+  @override
+  String get feedbackMediaSelected => 'Đã đính kèm ảnh';
+
+  @override
+  String get feedbackRemoveMedia => 'Xóa ảnh đính kèm';
+
+  @override
+  String get feedbackMediaLimit => 'Chọn một ảnh PNG, JPEG hoặc WebP tối đa 2 MB.';
+
+  @override
+  String get feedbackSend => 'Gửi phản hồi';
+
+  @override
+  String get feedbackSending => 'Đang gửi…';
+
+  @override
+  String get feedbackSent => 'Đã nhận phản hồi. Mã xác nhận:';
+
+  @override
+  String get feedbackFailure => 'Chưa thể xác nhận phản hồi. Giữ màn hình này và kiểm tra mã xác nhận ban đầu trước khi thử lại.';
+
+  @override
+  String get feedbackVerification => 'Hoàn tất kiểm tra bảo mật để gửi phản hồi.';
+
+  @override
+  String get feedbackLimited => 'Đã đạt giới hạn phản hồi. Vui lòng thử lại sau.';
+
+  @override
+  String get feedbackPending => 'Một lần gửi trước chưa được xác nhận. Kiểm tra mã ban đầu; chưa có mã xác nhận không có nghĩa là gửi thất bại.';
+
+  @override
+  String get feedbackCheckReceipt => 'Kiểm tra mã ban đầu';
+
+  @override
+  String get feedbackRetry => 'Gửi lại cùng phản hồi';
+
+  @override
+  String get feedbackEditRejected => 'Sửa phản hồi bị từ chối';
+
+  @override
+  String get feedbackSubjectRequired => 'Nhập tiêu đề từ 1–160 ký tự.';
+
+  @override
+  String get feedbackDetailsRequired => 'Nhập chi tiết từ 1–8000 ký tự.';
 }

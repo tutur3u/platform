@@ -50,6 +50,75 @@ Native app work does not require the paused Rust/TanStack Start runtime or the
 retired Docker cron runner. Database-dependent test fixtures still need an
 appropriate isolated environment; see [Without Docker](/build/development-tools/without-docker).
 
+
+## Private product feedback
+
+Settings → Send feedback opens an account-scoped form inside the existing shell;
+the shell keeps its single title and dock navigation. The active platform Web
+`/api/v1/product-feedback` route owns submission, not the workspace CRM feedback
+store. Native calls use the current Supabase Bearer identity and never send an
+authoritative actor id. English and Vietnamese copy ship together.
+
+Ingress retains the shared 512 KiB request limit for every other route/method;
+only exact `POST /api/v1/product-feedback` gets the 2,850,000-byte envelope needed
+for base64 image plus bounded text. Both declared and actual streamed bytes are
+checked at the proxy and again in the owning route. The regression includes an
+old-limit negative control and adjacent-path/method denials.
+
+The default is off: `PRODUCT_FEEDBACK_SUBMISSION_ENABLED=true` enables text
+intake and requires a real Turnstile configuration even in development. Each
+explicit dispatch obtains a fresh token. The existing SQL intake owns atomic
+actor/network/global quota charges and the content-free idempotent receipt;
+unverified forwarded headers do not select a quota bucket. No automatic offline,
+Auth-response or challenge-response replay is allowed. HTTP 429 retains
+`Retry-After`; 409 retains the original reference.
+
+One optional PNG/JPEG/WebP screenshot is bounded at 2 MiB of source bytes. The
+server validates the actual format, rejects animation and more than ten million
+pixels, strips metadata, fits within 1920×1920, and stores at most 512 KiB of WebP.
+`PRODUCT_FEEDBACK_MEDIA_ENABLED=true` additionally requires the additive private
+media migration. The wrapper reuses the existing intake transaction and advisory
+lock: screenshot and receipt commit together, identical retries do not charge
+again, and adding, changing or removing media conflicts. Every Web submission,
+including a screenshot-free replay, uses this wrapper. Omitting a previous
+screenshot still conflicts when media intake is disabled; missing media schema
+fails closed. Small normalized screenshots live in the RLS-protected private media table, one per report; originals, filenames, public
+URLs and general-purpose attachments are not stored. This bounded design does
+not create a public Storage bucket.
+
+The app freezes an attempted draft and retains its original UUID. Only that
+reference is saved in account-scoped preferences; text, images and Turnstile
+tokens stay in memory. After restart, recovery is receipt observation only. The
+owner-only `/receipts/{key}` route remains available with submission disabled,
+so stopping intake does not prevent recovery. A missing receipt remains unknown
+and never starts another POST. An explicit in-session retry uses the same
+immutable draft/key with a fresh token. Initial definitive pre-acceptance
+400/401/403/413/429 responses allow editing only if no earlier attempt has an
+unknown outcome. After a 503/transport uncertainty, a later retry rejection cannot
+erase the original key or unlock editing. Only a confirmed receipt resolves that
+uncertainty. There is no automatic polling or write replay.
+
+Staff can explicitly open a private screenshot from the Web inbox when both
+staff and media gates are enabled. The media route rechecks the current Auth
+identity and the existing SQL activated exact-domain staff assertion on each read.
+It returns a bounded uncached image projection, with no reporter identity,
+storage path or bearer URL. Staff status/archive/revision metadata stays read only.
+
+Regression coverage is in `product-feedback-{handlers,service}.test.ts`,
+`product-feedback-private-media.sql`, the internal-api feedback tests and
+`product_feedback_{page,repository}_test.dart`. The page tests exercise both
+503 and transport uncertainty followed by each supported retry rejection. The
+privacy fixture first verifies synthetic camera/GPS EXIF on the input, then
+requires the stored WebP to omit metadata. Web replay tests exercise the real
+dispatcher against modeled RPC contracts; they do not replace SQL qualification.
+The disposable database runner applies the full current migration history before the 17-assertion media packet and type
+generation. Run it with
+`bun run --cwd apps/database sb:validate:isolated --test supabase/tests/product-feedback-private-media.sql --typegen packages/types/src/supabase.ts`
+through `ttr resources run`; it owns and cleans a separate temporary Supabase
+project. Before activation, require exact-head Web/mobile CI, hosted Auth and
+registry checks, real Turnstile acceptance, and device tests for image picking,
+account changes, pending recovery, keyboard/dock clearance and enlarged text.
+
 ## Desktop beta downloads
 
 The same Flutter app ships through the [desktop beta channel](/build/devops/desktop-beta-distribution)

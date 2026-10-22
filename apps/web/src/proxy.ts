@@ -51,6 +51,7 @@ import { getFormsAppOrigin } from './lib/forms-app-url';
 import { handleLocale } from './lib/locale-proxy';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
+import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import {
@@ -1063,11 +1064,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     ))
       ? [EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY]
       : undefined;
-
     return guardBrowserApiSession(req, async () => {
       const guardResponse = await guardApiProxyRequest(req, {
         additionalRoutePolicies,
         prefixBase: 'proxy:web:api',
+        maxPayloadBytes: feedbackProxyPayloadLimit(
+          req.method,
+          req.nextUrl.pathname
+        ),
         trustedBypassRules: [
           {
             matches: isTrustedCliTuturuuuRateLimitBypass,
@@ -1077,21 +1081,17 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       if (guardResponse) {
         return handleProxyGuardResponse(req, guardResponse);
       }
-
       return null;
     });
   }
-
   const cacheableAuthShellResponse = handleCacheableAuthShellRoute(req);
   if (cacheableAuthShellResponse) {
     return cacheableAuthShellResponse;
   }
-
   const reservedRootRouteResponse = handleReservedRootRoute(req);
   if (reservedRootRouteResponse) {
     return reservedRootRouteResponse;
   }
-
   const publicMarketingRedirectResponse =
     handlePublicMarketingRedirectRoute(req);
   if (publicMarketingRedirectResponse) {

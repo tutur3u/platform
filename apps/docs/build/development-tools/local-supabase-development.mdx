@@ -1,31 +1,31 @@
 ---
 title: 'Local Supabase Development'
 description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
-updatedAt: '2026-08-10'
+updatedAt: '2026-10-22'
 ---
 
 <Info>
-  **Prerequisite**: You should have installed
-  [Docker](https://www.docker.com/products/docker-desktop/) and followed the
+  **Prerequisite**: Install [Docker](https://www.docker.com/products/docker-desktop/) and followed the
   [Development](/build/development-tools/development) setup guide.
 </Info>
 
-## Overview
+## CI image pulls
 
-Tuturuuu utilizes Supabase for database management and authentication. This guide explains how to work efficiently with Supabase in the local development workflow.
+Contract startup and type generation retry registry throttling and transient image-pull transport failures up to seven attempts, waiting 10/20/40/80/120/120 seconds plus 0-25% jitter. SQL tests, resets and pushes are never replayed. Authentication, missing-image and schema failures fail immediately; exhausted pulls remain failures. Type generation retains bounded private diagnostics and publishes only successful output.
+
+The E2E baseline keeps its existing service set, excluding only Edge Runtime and Functions. SQL-only contracts keep their existing narrower service sets. CI uses `public.ecr.aws`; no image archive cache is introduced.
+
+Regression coverage: `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`. Real cold/warm/corrupt baseline and contract acceptance runs in exact-commit CI.
 
 ## Basic Commands
 
 ### Starting Supabase
 
-To start a local Supabase instance tailored for Tuturuuu:
-
 ```bash
 bun sb:start
 ```
 
-This command launches a local Supabase instance on your machine. The local ports
-are pinned in `apps/database/supabase/config.toml`:
+Local ports are pinned in `apps/database/supabase/config.toml`:
 
 | Service                | URL / Port                                        |
 | ---------------------- | ------------------------------------------------- |
@@ -1216,3 +1216,5 @@ try {
   );
 }
 ```
+
+CI pulls Supabase images anonymously from `public.ecr.aws` through `SUPABASE_INTERNAL_IMAGE_REGISTRY`; no registry login or package-read permission is needed. Seven attempts allow at most 487.5 seconds of backoff, excluding command runtime. Throttling (`toomanyrequests`, `Rate exceeded` or HTTP 429) and classified transient pull transport errors retry; SQL never replays. The baseline fingerprint includes the registry, so a registry change invalidates existing snapshots once.
