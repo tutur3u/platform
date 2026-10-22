@@ -382,26 +382,30 @@ jobs:
           }
 
           const contracts = [
-            [workflowPath, 'c80066e1cd038fcda3bd6c1a79c0b12993b94b49'],
-            ['scripts/ci/record-deployment-marker.ts', '35eaf73931589cfe9dd62f7456a3dbe3c48c988c'],
+            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717']],
+            ['scripts/ci/record-deployment-marker.ts', ['35eaf73931589cfe9dd62f7456a3dbe3c48c988c']],
           ];
           async function checkContracts(producerHead) {
-            for (const [path, expected] of contracts) {
+            for (const [path, allowed] of contracts) {
+              const unique = new Set();
               for (const revision of new Set([target, producerHead])) {
                 const { data: entry } = await get(`${base}/contents/${path}?ref=${revision}`);
-                assert(entry.type === 'file' && entry.path === path && entry.sha === expected,
-                  'unknown-or-unequal-producer-contract');
+                assert(entry.type === 'file' && entry.path === path && allowed.includes(entry.sha),
+                  'unknown-producer-contract');
+                unique.add(entry.sha);
               }
-              // Resolve by immutable commit, then read and hash the immutable Git blob.
-              const { data: blob } = await get(`${base}/git/blobs/${expected}`);
-              assert(blob.sha === expected && blob.encoding === 'base64' &&
-                Number.isSafeInteger(blob.size) && blob.size > 0 && blob.size <= 65536 &&
-                typeof blob.content === 'string', 'contract-blob-shape');
-              const bytes = Buffer.from(blob.content.replace(/\s/g, ''), 'base64');
-              assert(bytes.length === blob.size, 'contract-blob-size');
-              const object = Buffer.concat([Buffer.from(`blob ${bytes.length}\0`), bytes]);
-              const digest = Buffer.from(await crypto.subtle.digest('SHA-1', object)).toString('hex');
-              assert(digest === expected, 'contract-blob-hash');
+              // Resolve each commit, then rehash each distinct allowlisted Git blob.
+              for (const expected of unique) {
+                const { data: blob } = await get(`${base}/git/blobs/${expected}`);
+                assert(blob.sha === expected && blob.encoding === 'base64' &&
+                  Number.isSafeInteger(blob.size) && blob.size > 0 && blob.size <= 65536 &&
+                  typeof blob.content === 'string', 'contract-blob-shape');
+                const bytes = Buffer.from(blob.content.replace(/\s/g, ''), 'base64');
+                assert(bytes.length === blob.size, 'contract-blob-size');
+                const object = Buffer.concat([Buffer.from(`blob ${bytes.length}\0`), bytes]);
+                const digest = Buffer.from(await crypto.subtle.digest('SHA-1', object)).toString('hex');
+                assert(digest === expected, 'contract-blob-hash');
+              }
             }
           }
 

@@ -24,10 +24,14 @@ does not authorize promotion.
   production platform deployment marker plus exact-source staging proof. Bind the
   newest canonical marker and latest status to the current successful producer
   attempt and its successful checkout/apply/marker steps; wrapper heads may differ.
-  Verify pinned producer/emitter contracts at target and wrapper commits, use bounded
+  Verify allowlisted, rehashed producer/emitter contracts at target and wrapper, use bounded
   complete inventories, and reread after inspection. Unknown evidence denies migration.
   Keep the verifier inline when old target checkouts lack new helpers. Database
   migration paths must select the platform deployment so that marker exists.
+  Every enabled admitted staging target must apply and emit its exact-target marker,
+  including app-only commits. Read the authoritative checkout-local `ci` boolean
+  without path gating or new helpers; explicit false disables staging. Mixed reviewed
+  producer contracts are allowed; unknown contracts and skipped apply still deny.
 - The production planner deploys app code before the production migration runs.
   Any app change that reads or writes a new column must remain compatible with
   the old production schema during that interval. A green staging migration or

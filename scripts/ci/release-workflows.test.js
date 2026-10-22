@@ -1,4 +1,7 @@
 const {
+  assertStagingWorkflowControls,
+} = require('./fixtures/staging-workflow-fixture.cjs');
+const {
   assertPackagePreparation,
 } = require('./sdk-qualification-workflow-controls');
 const test = require('node:test');
@@ -792,12 +795,7 @@ test('Supabase staging migration includes every local migration when pushing', (
   const deployJob = readWorkflowJobBlock('supabase-staging.yaml', 'migrate');
 
   assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
-  assert.match(deployJob, /Compute pending migration changes/);
-  assert.match(deployJob, /Check migration configuration/);
-  assert.match(deployJob, /--ref-name main/);
-  assert.match(deployJob, /no database changes are pending/);
-  assert.match(deployJob, /supabase db push --include-all/);
-  assert.match(deployJob, /Record successful staging migration marker/);
+  assertStagingWorkflowControls(deployJob);
   assert.match(deployJob, /scripts\/ci\/record-deployment-marker\.ts/);
 });
 
