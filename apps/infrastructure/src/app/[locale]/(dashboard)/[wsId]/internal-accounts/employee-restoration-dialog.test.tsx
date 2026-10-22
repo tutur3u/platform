@@ -399,6 +399,78 @@ it('shows a revision conflict and never mutates again after a fresh inspection',
   expect(api.restore).toHaveBeenCalledTimes(1);
   expect(api.reconcile).not.toHaveBeenCalled();
 });
+it('retains a RESTORE 409 conflict through inspection without adopting an operation or mutating again', async () => {
+  render(<Harness />);
+  await inspect();
+  api.restore.mockRejectedValue(
+    new InternalApiError(
+      'PRIVATE provider conflict',
+      409,
+      'employee_revision_or_operation_conflict'
+    )
+  );
+  await submit();
+  const guidance = en['internal-accounts'].restoration.revision_conflict;
+  expect(await screen.findByText(guidance)).toBeVisible();
+  expect(api.restore).toHaveBeenCalledExactlyOnceWith(id, {
+    confirmationEmail: email,
+    expectedRevision: 7,
+  });
+  expect(api.inspect).toHaveBeenCalledTimes(2);
+  expect(api.refresh).not.toHaveBeenCalled();
+  expect(
+    screen.queryByText('PRIVATE provider conflict')
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText(/Retained operation:/)).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Restore access' })
+  ).not.toBeInTheDocument();
+
+  api.inspect.mockResolvedValueOnce({
+    ...detail,
+    revision: 8,
+    nextAction: 'none',
+    providerState: 'confirmed_active',
+    operation: { operationId, revision: 7, phase: 'completed' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Check original result' })
+  );
+  await waitFor(() =>
+    expect(screen.getByText(operationId)).toBeInTheDocument()
+  );
+  expect(api.inspect).toHaveBeenCalledTimes(3);
+  expect(api.inspect).toHaveBeenLastCalledWith(id);
+  expect(screen.getByText(guidance)).toBeVisible();
+  expect(
+    screen.queryByText(en['internal-accounts'].restoration.outcomes.restored)
+  ).not.toBeInTheDocument();
+
+  api.inspect.mockRejectedValueOnce(new Error('Inspection unavailable'));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Check original result' })
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Check original result' })
+    ).toBeEnabled()
+  );
+  expect(api.inspect).toHaveBeenCalledTimes(4);
+  expect(screen.getByText(guidance)).toBeVisible();
+  expect(screen.queryByText(/Retained operation:/)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText('PRIVATE provider conflict')
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Restore access' })
+  ).not.toBeInTheDocument();
+  const form = screen.getByRole('button', { name: 'Close' }).closest('form');
+  if (!form) throw new Error('Missing RESTORE form');
+  fireEvent.submit(form);
+  expect(api.restore).toHaveBeenCalledTimes(1);
+  expect(api.reconcile).not.toHaveBeenCalled();
+  expect(api.refresh).not.toHaveBeenCalled();
+});
 it.each(['network', 'begin ACK', 'attempt ACK'])(
   'keeps %s uncertainty inspection-only without automatic reconciliation',
   async (stage) => {
