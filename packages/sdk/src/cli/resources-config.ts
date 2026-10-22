@@ -5,26 +5,53 @@ import { availableParallelism, homedir, totalmem } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { z } from 'zod';
 
-const resourceConfigSchema = z.object({
-  version: z.literal(1),
-  enabled: z.boolean(),
-  roots: z.array(z.string().refine(isAbsolute)),
-  repositories: z.array(z.string().refine(isAbsolute)),
-  turboConcurrency: z.number().int().min(1).max(64),
-  vitestWorkers: z.number().int().min(1).max(64),
-  buildJobs: z.number().int().min(1).max(64),
-  validationLanes: z.union([z.literal(1), z.literal(2)]).optional(),
-});
+const resourceConfigSchema = z
+  .object({
+    version: z.literal(1),
+    enabled: z.boolean(),
+    roots: z.array(z.string().refine(isAbsolute)),
+    repositories: z.array(z.string().refine(isAbsolute)),
+    turboConcurrency: z.number().int().min(1).max(64),
+    vitestWorkers: z.number().int().min(1).max(64),
+    buildJobs: z.number().int().min(1).max(64),
+    validationLanes: z.union([z.literal(1), z.literal(2)]).optional(),
+    maxValidationLanes: z.number().int().min(1).max(8).optional(),
+  })
+  .refine(
+    (config) =>
+      (config.maxValidationLanes ?? config.validationLanes ?? 1) >=
+      (config.validationLanes ?? 1)
+  );
 export type ResourceConfig = z.infer<typeof resourceConfigSchema>;
 export type ValidationLanes = 1 | 2;
 
 export function resourceLanes(config: ResourceConfig): ValidationLanes {
   return config.validationLanes ?? 1;
 }
+export function resourceMaxLanes(config: ResourceConfig) {
+  return config.maxValidationLanes ?? resourceLanes(config);
+}
+export function effectiveResourceLanes(config: ResourceConfig) {
+  return Math.min(
+    resourceMaxLanes(config),
+    config.vitestWorkers,
+    config.buildJobs
+  );
+}
+export function adaptiveHostBudget(
+  memory = totalmem(),
+  cpus = availableParallelism()
+) {
+  return Math.max(
+    1,
+    Math.min(8, Math.floor(memory / 1024 ** 3 / 8), Math.floor(cpus / 2))
+  );
+}
 // Include aggregate budgets even when floor division leaves lane caps unchanged.
 export function resourcePolicyKey(config: ResourceConfig) {
   return JSON.stringify([
     resourceLanes(config),
+    resourceMaxLanes(config),
     config.vitestWorkers,
     config.buildJobs,
     1,
@@ -32,22 +59,30 @@ export function resourcePolicyKey(config: ResourceConfig) {
 }
 export function laneResourceConfig(config: ResourceConfig): ResourceConfig {
   const lanes = resourceLanes(config);
+  const max = resourceMaxLanes(config);
+  const adaptive = max > lanes;
   const host = defaultResourceConfig();
+  const hostBudget = adaptive
+    ? Math.max(host.vitestWorkers, adaptiveHostBudget())
+    : host.vitestWorkers;
   if (
+    !Number.isInteger(max) ||
+    max < lanes ||
+    max > 8 ||
     config.vitestWorkers < lanes ||
     config.buildJobs < lanes ||
-    (lanes === 2 &&
-      (config.vitestWorkers > host.vitestWorkers ||
-        config.buildJobs > host.buildJobs))
+    ((lanes === 2 || adaptive) &&
+      (config.vitestWorkers > hostBudget || config.buildJobs > hostBudget))
   )
     throw new Error(
       'Lane worker totals must fit the configured and host budget.'
     );
+  const divisor = adaptive ? effectiveResourceLanes(config) : lanes;
   return {
     ...config,
     turboConcurrency: 1,
-    vitestWorkers: Math.floor(config.vitestWorkers / lanes),
-    buildJobs: Math.floor(config.buildJobs / lanes),
+    vitestWorkers: Math.floor(config.vitestWorkers / divisor),
+    buildJobs: Math.floor(config.buildJobs / divisor),
   };
 }
 

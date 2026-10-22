@@ -371,4 +371,21 @@ describe('PWA public-route boundary', () => {
       expect(matcher.test(path)).toBe(true);
     }
   });
+  it('preserves terminal auth outage before workspace and locale handling', async () => {
+    const unavailable = NextResponse.json(
+      { code: 'APP_SESSION_REFRESH_UNAVAILABLE' },
+      {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store' },
+      }
+    );
+    mocks.authProxy.mockReturnValue(unavailable);
+    const response = await proxy(
+      new NextRequest('https://calendar.tuturuuu.com/dashboard')
+    );
+    expect(response).toBe(unavailable);
+    expect(response.headers.get('set-cookie')).toBeNull();
+    expect(mocks.getRequestHeadersWithResponseCookies).not.toHaveBeenCalled();
+    expect(mocks.getCurrentUserDefaultWorkspace).not.toHaveBeenCalled();
+  });
 });

@@ -188,4 +188,23 @@ describe('Learn proxy local auth API guard', () => {
       targetApp: 'learn',
     });
   });
+  it.each([
+    'App session refresh unavailable',
+    'MFA required',
+    'Account assurance unavailable',
+  ])(
+    'does not reinterpret %s as permission to use request claims',
+    async (error) => {
+      mocks.refreshAppSessionForRequest.mockResolvedValue({ ok: false, error });
+      const response = await proxy(
+        new NextRequest('https://learn.tuturuuu.com/dashboard')
+      );
+      expect(response.status).toBe(error === 'MFA required' ? 403 : 503);
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('set-cookie')).toBeNull();
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(mocks.getAppSessionClaimsFromRequest).not.toHaveBeenCalled();
+      expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
+    }
+  );
 });

@@ -311,6 +311,19 @@ Rules:
 
 ## Satellite Apps (contacts, pay, tasks, …)
 
+- Custom page proxies must consume claims only from a successful
+  `refreshAppSessionForRequest` result. Never reconstruct authority from raw
+  cookies after a failed result: a required MFA proof can expire during refresh
+  while the access signature and expiry still verify. Return terminal MFA and
+  availability responses before locale, workspace or deployment-cookie handling;
+  native runtime bridges must return these responses unchanged before merging
+  response headers or request-context cookies. Cover this with a pending-cookie
+  negative control in `src/runtime/proxy-bridge.test.ts`. For other failures,
+  use the existing unauthenticated redirect. Preserve explicit
+  anonymous routes. See the [browser refresh policy](../../../../../apps/docs/platform/architecture/satellite-apps.mdx#browser-refresh-replay-store-outages)
+  and each custom adapter's `proxy-refresh.test.ts` for denial, composed deadline,
+  outage and healthy controls.
+
 - **Actor resolution**: registered satellites must use
   `getSatelliteAppSessionUser('<app>')`, never `@tuturuuu/utils/user-helper`
   (`getCurrentUser` / `getCurrentWorkspaceUser` read Supabase auth directly). When

@@ -3,6 +3,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import type { Message as SdkMessage, SentMessage } from '@tuturuuu/ai/chat-sdk';
 import { uploadWorkspaceStorageFileDirect } from '@tuturuuu/storage-core/workspace-storage-provider';
+import { readBoundedResponseBytes } from '@tuturuuu/utils/read-bounded-response';
 
 const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -89,17 +90,21 @@ export async function mirrorExternalMessageAttachments({
   return mirrored;
 }
 
-async function readAttachmentBytes(
+export async function readAttachmentBytes(
   attachment: (SdkMessage | SentMessage)['attachments'][number]
 ) {
   if (attachment.data instanceof Buffer) {
+    if (attachment.data.byteLength > MAX_ATTACHMENT_BYTES) return null;
     return new Uint8Array(attachment.data);
   }
   if (attachment.data instanceof Blob) {
+    if (attachment.data.size > MAX_ATTACHMENT_BYTES) return null;
     return new Uint8Array(await attachment.data.arrayBuffer());
   }
   if (attachment.fetchData) {
-    return new Uint8Array(await attachment.fetchData());
+    const data = await attachment.fetchData();
+    if (data.byteLength > MAX_ATTACHMENT_BYTES) return null;
+    return new Uint8Array(data);
   }
   if (!attachment.url) return null;
 
@@ -110,12 +115,11 @@ async function readAttachmentBytes(
     throw new Error(`external_attachment_fetch_failed_${response.status}`);
   }
 
-  const declaredSize = Number(response.headers.get('content-length'));
-  if (Number.isFinite(declaredSize) && declaredSize > MAX_ATTACHMENT_BYTES) {
-    throw new Error('external_attachment_too_large');
-  }
-
-  return new Uint8Array(await response.arrayBuffer());
+  return readBoundedResponseBytes({
+    response,
+    maxBytes: MAX_ATTACHMENT_BYTES,
+    tooLargeMessage: 'external_attachment_too_large',
+  });
 }
 
 function buildStoragePath({
