@@ -850,3 +850,13 @@ selects existing Chrome via the public channel with headless ephemeral custody;
 it is separate evidence from CI Chromium and emitted Worker acceptance. See the
 Apps runbook above for cleanup and remaining qualification boundaries. Historical
 timeout causality remains UNKNOWN; the routing gap is a separate source finding.
+
+## Wave-1 publication holds
+
+Production publication holds live in `tuturuuu.ci.ts`, separately from build/CI
+switches. The production planner reports Held with its reason before baseline
+selection, including dispatch and package recovery. Direct Meet publication reads
+the same policy; do not bypass it with a workflow dispatch. Legacy Vercel guards
+remain fail-closed. Test both missing baselines and manual selection with
+`scripts/ci/resolve-production-vercel-targets.test.js`. Hold removal requires a
+separate explicit cutover PR and the [native runbook](../../../../../apps/docs/build/devops/wave1-native-cutover.mdx).

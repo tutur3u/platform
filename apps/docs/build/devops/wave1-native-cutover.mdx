@@ -1,0 +1,48 @@
+---
+title: "Wave-1 native cutover"
+description: "Publication hold, native staging acceptance, and explicit production cutover gates."
+---
+
+## Production hold
+
+`productionPublicationHolds` in `tuturuuu.ci.ts` holds Meet, Calendar, Mail and
+Apps. A production push reports **held for wave-1 cutover** in the planner log and
+summary and selects no publisher for those apps. Manual planner dispatch and
+package recovery honor the same hold. Meet's direct publisher checks it too.
+Build and original/restored runtime validation can continue. Other apps' deployment
+selection is unchanged. This allows ordinary fixes to ship without native cutover.
+
+Meet keeps its existing frontend and realtime Worker versions. Calendar, Mail and
+Apps keep their existing Vercel deployments and canonical domains. Retain disabled
+Vercel Git deployment and current framework settings. Never bypass the native-source
+Vercel guards. A held app has no new deployment marker; **Held** is not delivery.
+
+## Release gates
+
+A later explicit cutover PR must remove each app's hold independently, after:
+
+1. Exact accepted main SHA passes applicable tests, types, lint, real native builds,
+   sealed original/restored runtime acceptance and transitive supplier checks.
+2. Off-canonical staging uses distinct Worker identities and isolated resources,
+   explicit account, secret names only, no canonical routes, and exact artifact bytes.
+3. Hosted signed-in EN/VI, auth handoff/refresh/no-loop, navigation/RPC/assets and
+   app-specific provider acceptance pass. Mail needs provider/webhook/attachments;
+   Calendar needs provider/offline/Tasks; Meet needs hosted media/reconnect/SFU/TURN;
+   Apps needs redirects and canonical-host fence qualification.
+4. Release owner captures current routing IDs/proxy modes, immutable Vercel fallbacks,
+   old/new Worker versions, secret names, scheduler custody, operator and rollback
+   triggers. Meet rollback captures **both** frontend and realtime versions.
+5. Review and freeze the exact production promotion range. Source sync is not
+   permission to attach canonical routes or activate schedulers.
+
+For Meet restore the captured frontend version, then realtime if changed; preserve
+Custom Domains. For Calendar/Mail/Apps retain their immutable Vercel deployments.
+Reverting Worker code does not restore routing. Restore exact captured Route/Custom
+Domain and DNS/proxy topology before disabling a candidate. Never replay uncertain
+Mail sends or change ingestion/R2 ownership as a frontend rollback. Rehearse recovery;
+DNS TTLs and provider convergence prevent assuming instantaneous rollback.
+
+Observe Apps for at least 14 days and Meet/Mail/provider-critical Calendar flows for
+30 days or the relevant business cycle before separately authorized decommissioning.
+No hold removal, resource provisioning, deployment or DNS change is authorized by
+this runbook alone.

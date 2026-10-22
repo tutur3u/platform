@@ -106,3 +106,12 @@ export const ci = {
   'desktop-store-draft.yaml': true,
   'mobile-build-linux.yaml': true,
 };
+
+// Publication only: native build and original/restored acceptance remain enabled.
+// Remove app holds only in an explicitly reviewed wave-1 cutover PR.
+export const productionPublicationHolds: Record<string, string> = {
+  meet: 'held for wave-1 cutover',
+  calendar: 'held for wave-1 cutover',
+  mail: 'held for wave-1 cutover',
+  apps: 'held for wave-1 cutover',
+};
