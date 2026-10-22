@@ -864,3 +864,19 @@ selects existing Chrome via the public channel with headless ephemeral custody;
 it is separate evidence from CI Chromium and emitted Worker acceptance. See the
 Apps runbook above for cleanup and remaining qualification boundaries. Historical
 timeout causality remains UNKNOWN; the routing gap is a separate source finding.
+
+## Wave-1 staging publication admission
+
+Keep the four-app production hold independent of staging. Same-account staging
+requires the reviewed `stagingAdmission` profile, only the named staging deploy
+secret, isolated resource identities and the exact app/source/artifact repository
+admission variable. Read the stop and admission records again immediately before
+upload. Consume admission in the existing GitHub deployment API before invoking
+Wrangler; never infer retry permission from a missing local receipt or inactive
+version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
+The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
+owns the schema, bounded operation counts, residual account risk and recovery.
+Run `wave1-native-publication.test.js` for the real entrypoint transport tests and
+its final-fence removal negative control, alongside publisher/policy/credential
+and workflow suites. Source-only tests do not establish hosted token permissions
+or emitted Worker acceptance.

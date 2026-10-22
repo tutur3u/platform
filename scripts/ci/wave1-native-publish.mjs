@@ -4,11 +4,13 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
   artifactDigest,
   publicInputsDigest,
   verify,
 } from './wave1-native-artifact.mjs';
+import { attemptLedger } from './wave1-native-attempt.mjs';
 import { profiles } from './wave1-native-profile.mjs';
 
 export function publicationAdmission({
@@ -16,6 +18,9 @@ export function publicationAdmission({
   ref,
   event,
   stagingEnabled,
+  admissionRecord,
+  app,
+  sha,
   hold = profiles.productionHold,
 }) {
   if (environment === 'production') {
@@ -36,9 +41,20 @@ export function publicationAdmission({
       allowed: false,
       reason: 'Staging requires a trusted main push or dispatch',
     };
-  return stagingEnabled === 'true'
-    ? { allowed: true, reason: 'Owner-admitted staging publication' }
-    : { allowed: false, reason: 'Staging provisioning/enable flag is pending' };
+  if (stagingEnabled !== 'true')
+    return {
+      allowed: false,
+      reason: 'Staging provisioning/enable flag is pending',
+    };
+  try {
+    stagingAdmission(admissionRecord, app, sha);
+    return { allowed: true, reason: 'Exact staging source/artifact admission' };
+  } catch {
+    return {
+      allowed: false,
+      reason: 'Missing or mismatched exact staging admission',
+    };
+  }
 }
 export function requireRollback(deployments) {
   assert.ok(
@@ -62,11 +78,14 @@ export function requireRollback(deployments) {
     versions: latest.versions,
   };
 }
-export async function boundedJson(url, token, fetcher = fetch) {
+export async function boundedJson(url, token, fetcher = fetch, body) {
   const response = await fetcher(url, {
+    method: body === undefined ? 'GET' : 'POST',
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       Accept: 'application/json',
+      'Content-Type': 'application/json',
     },
     signal: AbortSignal.timeout(15000),
     redirect: 'error',
@@ -117,8 +136,16 @@ export async function guardedPublication({
   record.state = 'accepted';
   save();
 }
-async function main() {
-  const [mode, app, environment, sha] = process.argv.slice(2);
+export async function main({
+  argv = process.argv.slice(2),
+  env = process.env,
+  fetcher = fetch,
+  exec = execFileSync,
+  appRoot,
+} = {}) {
+  const [mode, app, environment, sha] = argv;
+  appRoot ??= resolve('apps', app);
+  const request = (url, token, body) => boundedJson(url, token, fetcher, body);
   const { productionPublicationHold } = await import(
     './production-publication-policy.ts'
   );
@@ -127,18 +154,18 @@ async function main() {
     hold:
       productionPublicationHold(`${app}-cloudflare.yaml`) ??
       profiles.productionHold,
-    ref: process.env.GITHUB_REF,
-    event: process.env.GITHUB_EVENT_NAME,
-    stagingEnabled: process.env.WAVE1_STAGING_PUBLISH_ENABLED,
+    ref: env.GITHUB_REF,
+    event: env.GITHUB_EVENT_NAME,
+    stagingEnabled: env.WAVE1_STAGING_PUBLISH_ENABLED,
+    admissionRecord: env.WAVE1_STAGING_PUBLICATION_ADMISSION,
+    app,
+    sha,
   });
   if (mode === 'policy') {
     console.log(`${app} ${environment}: ${admission.reason}`);
-    if (process.env.GITHUB_OUTPUT)
-      appendFileSync(
-        process.env.GITHUB_OUTPUT,
-        `allowed=${admission.allowed}\n`
-      );
-    const summary = process.argv[6];
+    if (env.GITHUB_OUTPUT)
+      appendFileSync(env.GITHUB_OUTPUT, `allowed=${admission.allowed}\n`);
+    const summary = argv[4];
     if (summary)
       appendFileSync(
         summary,
@@ -147,52 +174,89 @@ async function main() {
     return;
   }
   assert.equal(mode, 'publish');
+  assert.equal(environment, 'staging', 'Production publication remains HELD');
   assert.ok(admission.allowed, admission.reason);
-  const { receipt, config } = verify(
-    resolve('apps', app),
-    app,
-    environment,
-    sha
-  );
+  const { receipt, config } = verify(appRoot, app, environment, sha);
   const p = receipt.profile;
   assert.equal(
     receipt.publicInputsSha256,
-    publicInputsDigest(process.env),
+    publicInputsDigest(env),
     'Public build inputs differ from admitted publisher inputs'
   );
   assert.ok(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('.invalid'),
+    env.NEXT_PUBLIC_SUPABASE_URL &&
+      !env.NEXT_PUBLIC_SUPABASE_URL.includes('.invalid'),
     'Staging/production public configuration is not provisioned'
   );
   const digest = artifactDigest(receipt);
-  const ghToken = process.env.WAVE1_CONTROL_READ_TOKEN;
-  const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+  const ghToken = env.WAVE1_CONTROL_READ_TOKEN;
+  const admitted = stagingAdmission(
+    env.WAVE1_STAGING_PUBLICATION_ADMISSION,
+    app,
+    sha,
+    digest
+  );
+  const cfToken = env.CLOUDFLARE_STAGING_API_TOKEN;
+  assert.ok(
+    !env.CLOUDFLARE_API_TOKEN,
+    'Production deploy token exposed to staging'
+  );
+  assert.ok(env.GITHUB_TOKEN, 'Missing durable attempt credential');
   assert.ok(ghToken && cfToken, 'Missing named publication credential');
-  assert.equal(process.env.CLOUDFLARE_ACCOUNT_ID, p.accountId);
+  assert.equal(
+    env[admitted.accountIdEnv],
+    p.accountId,
+    'Staging account admission mismatch'
+  );
   if (environment === 'staging')
     assert.equal(
       p.host,
-      `${p.name}.${process.env.CLOUDFLARE_WORKERS_SUBDOMAIN}.workers.dev`
+      `${p.name}.${env.CLOUDFLARE_WORKERS_SUBDOMAIN}.workers.dev`
     );
   const flag =
     environment === 'staging'
       ? 'WAVE1_STAGING_PUBLISH_ENABLED'
       : 'WAVE1_PRODUCTION_PUBLISH_ENABLED';
-  const variableUrl = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/variables/${flag}`;
-  const assertEnabled = async () =>
+  const variableUrl = `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions/variables/${flag}`;
+  const assertEnabled = async () => {
     assert.equal(
-      (await boundedJson(variableUrl, ghToken)).value,
+      (await request(variableUrl, ghToken)).value,
       'true',
       'Publication stop fence is disabled'
     );
+    const fresh = await request(
+      `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions/variables/${profiles.stagingAdmission.publicationVariable}`,
+      ghToken
+    );
+    assert.deepEqual(
+      stagingAdmission(fresh.value, app, sha, digest),
+      admitted,
+      'Staging admission changed'
+    );
+  };
   await assertEnabled();
+  const ledger = await attemptLedger({
+    request,
+    base: `https://api.github.com/repos/${env.GITHUB_REPOSITORY}`,
+    token: env.GITHUB_TOKEN,
+    app,
+    identity: {
+      sha,
+      digest,
+      worker: p.name,
+      accountIdEnv: admitted.accountIdEnv,
+      admission: admitted,
+    },
+  });
   const cfBase = `https://api.cloudflare.com/client/v4/accounts/${p.accountId}/workers/scripts/${p.name}`;
-  const deployments = await boundedJson(`${cfBase}/deployments`, cfToken);
+  const deployments = await request(`${cfBase}/deployments`, cfToken);
   assert.equal(deployments.success, true);
-  const rollback = requireRollback(deployments.result.deployments);
+  const observedRollback = requireRollback(deployments.result.deployments);
+  const rollback = ledger.prior
+    ? requireRollback([ledger.prior.payload.rollback])
+    : observedRollback;
   const recordPath = resolve(
-    process.env.RUNNER_TEMP,
+    env.RUNNER_TEMP,
     `${app}-${environment}-publication.json`
   );
   const record = {
@@ -204,111 +268,146 @@ async function main() {
     host: p.host,
     rollback,
     state: 'preflight',
+    digest,
+    admission: admitted,
     seal: receipt.files,
   };
   writeFileSync(recordPath, `${JSON.stringify(record, null, 2)}\n`);
-  const secrets = await boundedJson(`${cfBase}/secrets`, cfToken);
+  const secrets = await request(`${cfBase}/secrets`, cfToken);
   assert.equal(secrets.success, true);
   const names = secrets.result.map((item) => item.name);
   for (const name of p.secrets)
     assert.ok(names.includes(name), `Missing Worker secret name: ${name}`);
-  const validate = () => verify(resolve('apps', app), app, environment, sha);
+  const validate = () => verify(appRoot, app, environment, sha);
   const save = () =>
     writeFileSync(recordPath, `${JSON.stringify(record, null, 2)}\n`);
   const accept = async (versionId) => {
-    const active = await boundedJson(`${cfBase}/deployments`, cfToken);
+    const active = await request(`${cfBase}/deployments`, cfToken);
     assert.equal(active.success, true);
     assert.deepEqual(requireRollback(active.result.deployments).versions, [
       { version_id: versionId, percentage: 100 },
     ]);
-    const version = await boundedJson(
-      `${cfBase}/versions/${versionId}`,
-      cfToken
-    );
+    const version = await request(`${cfBase}/versions/${versionId}`, cfToken);
     assert.equal(version.success, true);
     assert.ok(
       matchesVersion(version.result, sha, digest),
       'Hosted artifact identity differs'
     );
-    const identity = await boundedJson(`https://${p.host}/api/build-info`, '');
+    const identity = await request(`https://${p.host}/api/build-info`, '');
     assert.equal(identity.appName, app);
     assert.equal(identity.commitHash, sha);
     assert.equal(identity.environment, environment);
     validate();
   };
-  const currentVersion =
-    rollback.versions.length === 1 && rollback.versions[0].percentage === 100
-      ? await boundedJson(
-          `${cfBase}/versions/${rollback.versions[0].version_id}`,
-          cfToken
-        )
-      : null;
-  if (
-    currentVersion?.success &&
-    matchesVersion(currentVersion.result, sha, digest)
-  ) {
-    await accept(rollback.versions[0].version_id);
-    record.versionId = rollback.versions[0].version_id;
-    record.state = 'accepted-existing-identical-artifact';
+  // Inspect uploaded versions as well as active deployments, including an upload
+  // whose process died before returning its receipt. A capped view fails closed.
+  const versions = await request(`${cfBase}/versions?per_page=100`, cfToken);
+  assert.equal(versions.success, true);
+  assert.ok(
+    Array.isArray(versions.result?.items) && versions.result.items.length < 100,
+    'Worker version history incomplete'
+  );
+  assert.ok(
+    versions.result_info?.total_pages === undefined ||
+      versions.result_info.total_pages <= 1,
+    'Worker version history incomplete'
+  );
+  const identical = [];
+  for (const item of versions.result.items) {
+    assert.match(item.id ?? '', /^[a-f0-9-]{36}$/);
+    const version = await request(`${cfBase}/versions/${item.id}`, cfToken);
+    assert.equal(version.success, true);
+    if (matchesVersion(version.result, sha, digest))
+      identical.push({ ...version.result, id: item.id });
+  }
+  assert.ok(
+    identical.length <= 1,
+    'Multiple matching versions require owner reconciliation'
+  );
+  if (identical.length) {
+    if (!ledger.prior) await ledger.start(rollback);
+    record.versionId = identical[0].id;
+    record.state = 'uploaded';
     save();
-    console.log(
-      `Retained identical accepted ${p.name} artifact; no publication replay`
-    );
+    await ledger.save('uploaded', record.versionId);
+    await accept(record.versionId);
+    record.state = 'activated';
+    save();
+    await ledger.save('activated', record.versionId);
     return;
   }
-  await guardedPublication({
-    enabled: assertEnabled,
-    validate,
-    record,
-    save,
-    accept,
-    write: async () => {
-      const outputFile = resolve(
-        process.env.RUNNER_TEMP,
-        `${app}-${environment}-wrangler.ndjson`
+  assert.ok(
+    !ledger.prior,
+    'Earlier artifact attempt is unresolved or consumed; never replay an upload'
+  );
+  await ledger.start(rollback);
+  record.state = 'pending';
+  save();
+  try {
+    await assertEnabled();
+    validate();
+  } catch (error) {
+    record.state = 'failed';
+    save();
+    await ledger.save('failed');
+    throw error;
+  }
+  const write = async () => {
+    const outputFile = resolve(
+      env.RUNNER_TEMP,
+      `${app}-${environment}-wrangler.ndjson`
+    );
+    try {
+      exec(
+        'bun',
+        [
+          'x',
+          '--no-install',
+          'wrangler',
+          'deploy',
+          '--config',
+          config,
+          '--message',
+          sha,
+          '--tag',
+          digest,
+        ],
+        {
+          env: {
+            ...env,
+            CLOUDFLARE_API_TOKEN: cfToken,
+            CLOUDFLARE_ACCOUNT_ID: p.accountId,
+            WRANGLER_OUTPUT_FILE_PATH: outputFile,
+            WRANGLER_SEND_METRICS: 'false',
+          },
+          stdio: ['ignore', 'pipe', 'pipe'],
+          timeout: 180000,
+          maxBuffer: 1024 * 1024,
+        }
       );
-      try {
-        execFileSync(
-          'bun',
-          [
-            'x',
-            '--no-install',
-            'wrangler',
-            'deploy',
-            '--config',
-            config,
-            '--message',
-            sha,
-            '--tag',
-            digest,
-          ],
-          {
-            env: {
-              ...process.env,
-              WRANGLER_OUTPUT_FILE_PATH: outputFile,
-              WRANGLER_SEND_METRICS: 'false',
-            },
-            stdio: ['ignore', 'pipe', 'pipe'],
-            timeout: 180000,
-            maxBuffer: 1024 * 1024,
-          }
-        );
-      } catch {
-        throw new Error(
-          'Wrangler publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
-        );
-      }
-      const writes = readFileSync(outputFile, 'utf8')
-        .split('\n')
-        .filter(Boolean)
-        .map((line) => JSON.parse(line))
-        .filter((item) => item.type === 'deploy');
-      assert.equal(writes.length, 1, 'Expected one publication receipt');
-      assert.equal(writes[0].worker_name, p.name);
-      assert.match(writes[0].version_id, /^[a-f0-9-]{36}$/);
-      return writes[0].version_id;
-    },
-  });
+    } catch {
+      throw new Error(
+        'Wrangler publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
+      );
+    }
+    const writes = readFileSync(outputFile, 'utf8')
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .filter((item) => item.type === 'deploy');
+    assert.equal(writes.length, 1, 'Expected one publication receipt');
+    assert.equal(writes[0].worker_name, p.name);
+    assert.match(writes[0].version_id, /^[a-f0-9-]{36}$/);
+    return writes[0].version_id;
+  };
+  record.versionId = await write();
+  record.state = 'uploaded';
+  save();
+  await ledger.save('uploaded', record.versionId);
+  await accept(record.versionId);
+  record.state = 'activated';
+  save();
+  await ledger.save('activated', record.versionId);
   console.log(
     `Accepted ${p.name} version ${record.versionId} at https://${p.host}`
   );

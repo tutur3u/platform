@@ -44,6 +44,33 @@ function empty(value) {
   if (typeof value === 'object') return Object.values(value).every(empty);
   return false;
 }
+export function assertStagingIsolation(config) {
+  assert.deepEqual(
+    config.routes,
+    [],
+    'Staging must have no routes or custom domains'
+  );
+  const forbidden = Object.values(profiles.apps).flatMap((app) => [
+    app.productionWorker,
+    app.canonicalHost,
+    ...Object.entries(app.ownerProvisionedResources ?? {})
+      .filter(([key]) => key.startsWith('retainedProduction'))
+      .map(([, value]) => value),
+  ]);
+  const check = (value) => {
+    if (typeof value === 'string') {
+      let identity = value;
+      if (/^https?:|^wss?:/.test(value)) identity = new URL(value).hostname;
+      assert.ok(
+        !forbidden.includes(identity),
+        'Production resource in staging profile'
+      );
+    } else if (value && typeof value === 'object') {
+      for (const item of Object.values(value)) check(item);
+    }
+  };
+  check(config);
+}
 export function publicationConfig(base, profile, { main, assets }) {
   const originalName =
     profile.app === 'apps'
@@ -88,7 +115,7 @@ export function publicationConfig(base, profile, { main, assets }) {
   assert.ok(empty(base.env), 'Named source environments are not admitted');
   if (base.account_id) assert.equal(base.account_id, profile.accountId);
   const production = profile.environment === 'production';
-  return {
+  const config = {
     name: profile.name,
     account_id: profile.accountId,
     main,
@@ -132,4 +159,6 @@ export function publicationConfig(base, profile, { main, assets }) {
     },
     observability: { enabled: true, head_sampling_rate: 0.05 },
   };
+  if (!production) assertStagingIsolation(config);
+  return config;
 }

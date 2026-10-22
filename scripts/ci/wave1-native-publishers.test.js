@@ -1,7 +1,6 @@
 const assert = require('node:assert/strict');
 const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
@@ -12,60 +11,7 @@ const modules = Promise.all([
   import('./wave1-native-artifact.mjs'),
   import('./wave1-native-publish.mjs'),
 ]);
-function fixture(t, app = 'mail') {
-  const dir = fs.realpathSync(
-    fs.mkdtempSync(path.join(os.tmpdir(), 'wave1-artifact-'))
-  );
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-  for (const sub of ['dist/server', 'dist/client/assets', '.wrangler/deploy'])
-    fs.mkdirSync(path.join(dir, sub), { recursive: true });
-  fs.writeFileSync(
-    path.join(dir, 'dist/server/index.js'),
-    'export default { fetch() { return new Response("fixture"); } };'
-  );
-  fs.writeFileSync(
-    path.join(dir, 'dist/client/assets/app.js'),
-    'console.log("fixture");'
-  );
-  fs.writeFileSync(
-    path.join(dir, '.wrangler/deploy/config.json'),
-    JSON.stringify({
-      auxiliaryWorkers: [],
-      configPath: '../../dist/server/wrangler.json',
-    })
-  );
-  fs.writeFileSync(
-    path.join(dir, 'dist/server/wrangler.json'),
-    JSON.stringify({
-      name: app === 'apps' ? 'tuturuuu-apps-vite-staging' : `tuturuuu-${app}`,
-      no_bundle: true,
-      main: './index.js',
-      compatibility_date: app === 'apps' ? '2026-10-12' : '2026-10-19',
-      compatibility_flags:
-        app === 'apps'
-          ? ['nodejs_compat']
-          : ['nodejs_compat', 'global_fetch_strictly_public'],
-      vars:
-        app === 'apps'
-          ? { TUTURUUU_NOINDEX: '1' }
-          : app === 'mail'
-            ? {
-                NEXT_PUBLIC_APP_URL: 'https://mail.tuturuuu.com',
-                NEXT_PUBLIC_MAIL_APP_URL: 'https://mail.tuturuuu.com',
-                NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
-              }
-            : {},
-      rules: [{ type: 'ESModule', globs: ['**/*.js'] }],
-      assets: {
-        directory: '../client',
-        binding: 'ASSETS',
-        run_worker_first: true,
-        not_found_handling: 'none',
-      },
-    })
-  );
-  return dir;
-}
+const { fixture } = require('./wave1-native-test-fixture.cjs');
 for (const app of ['calendar', 'mail', 'apps']) {
   for (const env of ['staging', 'production']) {
     test(`${app} ${env} has an explicit isolated reviewed profile and relocatable seal`, async (t) => {
@@ -214,6 +160,19 @@ test('hold and enable flag reject production, PRs, branch dispatch and unprovisi
       ref: 'refs/heads/main',
       event: 'push',
       stagingEnabled: 'true',
+      app: 'mail',
+      sha,
+      admissionRecord: JSON.stringify({
+        schema: 1,
+        app: 'mail',
+        sourceSha: sha,
+        artifactSha256: 'a'.repeat(64),
+        ...JSON.parse(
+          fs.readFileSync(
+            path.join(root, 'scripts/ci/wave1-native-profiles.json')
+          )
+        ).stagingAdmission,
+      }),
     }).allowed,
     true
   );
@@ -356,7 +315,7 @@ test('original, restored and publication jobs cannot bypass seal/runtime or poli
   );
   assert.ok(runtime < write && write < marker);
   assert.equal(publish.jobs.publish.steps[runtime].env, undefined);
-  assert.ok(publish.jobs.publish.steps[write].env.CLOUDFLARE_API_TOKEN);
+  assert.ok(publish.jobs.publish.steps[write].env.CLOUDFLARE_STAGING_API_TOKEN);
 });
 test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', () => {
   const result = JSON.parse(
@@ -377,6 +336,11 @@ test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', (
     )
   );
   assert.equal(result.name, 'tuturuuu-meet-wave1-staging');
+  assert.equal(
+    result.images,
+    undefined,
+    'Account-level production Images access is not admitted'
+  );
   assert.deepEqual(result.routes, []);
   assert.equal(result.services[0].service, result.name);
   assert.equal(
@@ -398,6 +362,48 @@ test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', (
   assert.ok(
     realtime.durable_objects.bindings.every((binding) => !binding.script_name)
   );
+  const production = JSON.parse(
+    execFileSync(
+      'bun',
+      [
+        '--eval',
+        `
+    import config from './apps/meet/void.config.ts';
+    console.log(JSON.stringify(config.cloudflare));
+  `,
+      ],
+      {
+        cwd: root,
+        env: { ...process.env, MEET_DEPLOYMENT_PROFILE: '' },
+        encoding: 'utf8',
+      }
+    )
+  );
+  const productionRealtime = JSON.parse(
+    fs.readFileSync(path.join(root, 'apps/meet-realtime/wrangler.jsonc'))
+  );
+  const forbidden = [
+    production.name,
+    productionRealtime.name,
+    ...production.r2_buckets.map((bucket) => bucket.bucket_name),
+    ...production.routes.map((route) => route.pattern),
+    ...productionRealtime.routes.map((route) => route.pattern),
+  ];
+  const inspect = (value) => {
+    if (typeof value === 'string') {
+      const identity = /^(https?|wss?):/.test(value)
+        ? new URL(value).hostname
+        : value;
+      assert.ok(
+        !forbidden.includes(identity),
+        `Production identity in staging: ${identity}`
+      );
+    } else if (value && typeof value === 'object') {
+      for (const item of Object.values(value)) inspect(item);
+    }
+  };
+  inspect(result);
+  inspect(realtime);
 });
 test('Worker build-info is public, read-only, exact-path and retains app identity', () => {
   const value = JSON.parse(

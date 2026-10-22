@@ -59,5 +59,14 @@
         "TUTURUUU_APP_COORDINATION_SECRET"
       ]
     }
+  },
+  "stagingAdmission": {
+    "isolation": "same-account-staging-only",
+    "accountIdEnv": "CLOUDFLARE_STAGING_ACCOUNT_ID",
+    "tokenSecret": "CLOUDFLARE_STAGING_API_TOKEN",
+    "scopedTokenRequired": true,
+    "residualRisk": "shared-account",
+    "publicationVariable": "WAVE1_STAGING_PUBLICATION_ADMISSION",
+    "maxUploadsPerArtifact": 1
   }
 }

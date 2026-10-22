@@ -33,6 +33,8 @@ function fixture(t, policy) {
     'tuturuuu.ci.ts',
     'scripts/ci/production-publication-policy.ts',
     'scripts/ci/wave1-native-publish.mjs',
+    'scripts/ci/wave1-native-admission.mjs',
+    'scripts/ci/wave1-native-attempt.mjs',
     'scripts/ci/wave1-native-profile.mjs',
     'scripts/ci/wave1-native-profiles.json',
     'scripts/ci/wave1-native-artifact.mjs',
@@ -361,6 +363,13 @@ for (const app of ['calendar', 'mail', 'apps']) {
             GITHUB_REF: ref,
             GITHUB_EVENT_NAME: event,
             WAVE1_STAGING_PUBLISH_ENABLED: enabled,
+            WAVE1_STAGING_PUBLICATION_ADMISSION: JSON.stringify({
+              schema: 1,
+              app,
+              sourceSha: 'a'.repeat(40),
+              artifactSha256: 'b'.repeat(64),
+              ...profiles.stagingAdmission,
+            }),
           },
           timeout: 10000,
         }

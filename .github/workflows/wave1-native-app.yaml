@@ -30,6 +30,7 @@ jobs:
           node-version: 24
       - id: policy
         env:
+          WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
           WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
           APP: ${{ inputs.app }}
         run: node scripts/ci/wave1-native-publish.mjs policy "$APP" staging "$GITHUB_SHA" "$GITHUB_STEP_SUMMARY"

@@ -14,14 +14,24 @@ PR must reconcile both policies and its exact production promotion range.
 
 These workflows add no automatic schedule and perform no provider or DNS setup.
 Main pushes and trusted main dispatch can publish **staging only**, after provisioning
-and the repository enable flag. PRs and other branches qualify artifacts without
+the repository enable flag and an exact source/artifact admission. PRs and other branches qualify artifacts without
 publication. Existing Vercel deployments, project framework settings and disabled
 Git deployment remain unchanged. Existing central APIs and scheduler/provider owners
 stay authoritative; a native frontend is not a completed Vercel exit.
 
 ## Identities and resource continuity
 
-The explicit Cloudflare account is `e8912e2867beecc673d171907bf09649`.
+Owner decision: staging stays in the production Cloudflare account. The
+`stagingAdmission` record in `scripts/ci/wave1-native-profiles.json` records this
+exception as `same-account-staging-only`, with `shared-account` residual risk and
+a required scoped token. The account identity is supplied by the repository variable
+`CLOUDFLARE_STAGING_ACCOUNT_ID`; publication compares its value with the reviewed
+profile account and fails closed if absent or different. No new account is created.
+This is resource and credential isolation within one account, with shared account
+administration, account-wide limits and billing risk. A secret name cannot prove
+its actual permission scope: the owner must provision and review a token limited
+to the staging operations/resources supported by Cloudflare, and acknowledge any
+remaining account-level Worker permission exposure before admission.
 `CLOUDFLARE_WORKERS_SUBDOMAIN` is the owner's actual account subdomain, not a guessed
 hostname. Configure it as a repository variable. Staging hosts are the corresponding
 Worker name followed by `.<CLOUDFLARE_WORKERS_SUBDOMAIN>.workers.dev`.
@@ -58,8 +68,13 @@ to the canonical host would return 503 and is forbidden.
 1. Retain the production hold. Create protected GitHub environments
    `wave1-<app>-staging` and `wave1-<app>-production` for Calendar, Mail and Apps.
    Production needs explicit release-owner approval. Use a least-privilege
-   `CLOUDFLARE_API_TOKEN` for the stated account; never copy credentials into source
-   or evidence. Keep staging and production credentials separate by environment.
+   `CLOUDFLARE_STAGING_API_TOKEN` for staging only; this is the only deploy-token
+   secret referenced by staging publication. Never store a production token under
+   that name. The workflow never reads `secrets.CLOUDFLARE_API_TOKEN` or production
+   token secrets. Only the staging token is mapped to Wrangler's standard
+   `CLOUDFLARE_API_TOKEN` process variable, after admission. Never copy credential
+   values into source or evidence. Set `CLOUDFLARE_STAGING_ACCOUNT_ID` to the reviewed
+   shared account identity. Missing or mismatched identity denies publication.
    Provision `WAVE1_CONTROL_READ_TOKEN` with repository Variables read permission
    for the fresh stop-fence observation. Do not assume `actions: read` supplies
    that permission; see [GitHub's variable API permissions](https://docs.github.com/en/rest/actions/variables#get-a-repository-variable).
@@ -80,14 +95,17 @@ to the canonical host would return 503 and is forbidden.
    connected-account encryption key and storage credentials preserve the owning
    environment's identity. Optional names are listed separately; provider acceptance
    must identify which are required for the configured transports and old attachments.
-5. Supply GitHub build/publication secret names `STAGING_SUPABASE_URL`,
-   `STAGING_SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_SUPABASE_URL`, and
-   `PRODUCTION_SUPABASE_PUBLISHABLE_KEY`. Only public Supabase inputs reach builds.
+5. Supply GitHub build/publication secret names `STAGING_SUPABASE_URL` and
+   `STAGING_SUPABASE_PUBLISHABLE_KEY`. Held production builds retain fixtures and
+   read no production inputs. Only public Supabase inputs reach staging builds.
    Missing values allow source-only fixture artifacts, which cannot publish: the
    publisher rejects fixture URLs, different public-input fingerprints or a different
    account subdomain. Environment overrides must agree with the qualified artifact.
-6. After owner review, set repository variable `WAVE1_STAGING_PUBLISH_ENABLED=true`.
-   A new main push or trusted main dispatch can now publish accepted staging bytes.
+6. After owner review, set the exact `WAVE1_STAGING_PUBLICATION_ADMISSION` record
+   described below and repository variable `WAVE1_STAGING_PUBLISH_ENABLED=true`.
+   Only that admitted main source and artifact can publish once; later sources
+   default to denied. Retain the same qualified archive when resuming a failed
+   publication job after updating admission.
    Turning it off is the durable stop fence for subsequent writes; the publisher reads
    it freshly immediately before its sole deployment. This cannot cancel a write
    already accepted by Cloudflare. No resources, settings, secrets or DNS were created
@@ -118,15 +136,74 @@ receipt digest and its message is the source SHA. Both the hosted active version
 and actual HTTP build identity must match before recording a GitHub deployment marker.
 Staging and production marker environments remain distinct.
 
-There is no deployment retry or recurring producer. Reads have 15-second deadlines
-and 1 MiB limits. A run has at most one Wrangler publication, a 180-second publication
-command limit, and fewer than ten explicit control-plane/identity reads. Wrangler's
-asset API requests are additional; archive limits are 50,000 members / 1 GiB, and
-these bounds are not a total-spend guarantee. CI concurrency serializes each app and
-environment. An identical active SHA **and artifact tag** is accepted without another
-deploy. Failure after a write leaves an explicit pending/unknown receipt and no success
-marker. Never blindly replay an uncertain operation; inspect the retained receipt and
-matching provider version first.
+## Finite publication admission and uncertain outcomes
+
+`WAVE1_STAGING_PUBLISH_ENABLED=true` alone authorizes zero uploads. The owner must
+also set the repository variable `WAVE1_STAGING_PUBLICATION_ADMISSION` to one exact
+app/source/artifact record after reviewing the qualified artifact receipt. All
+fields are required, unknown fields are refused, and the account is named by
+variable reference, never copied into the admission JSON:
+
+```json
+{
+  "schema": 1,
+  "app": "mail",
+  "sourceSha": "<full admitted source SHA>",
+  "artifactSha256": "<SHA256 from artifactDigest of wave1-artifact.json>",
+  "isolation": "same-account-staging-only",
+  "accountIdEnv": "CLOUDFLARE_STAGING_ACCOUNT_ID",
+  "tokenSecret": "CLOUDFLARE_STAGING_API_TOKEN",
+  "scopedTokenRequired": true,
+  "residualRisk": "shared-account",
+  "publicationVariable": "WAVE1_STAGING_PUBLICATION_ADMISSION",
+  "maxUploadsPerArtifact": 1
+}
+```
+
+This admits at most one upload for that artifact, with zero application retries.
+Later main pushes and other apps are denied until the owner explicitly replaces
+this record. Deleting the record or disabling the enable variable stops future
+uploads. Both are freshly read from GitHub before preflight and again immediately
+before upload; deletion, malformed data, denial or timeout fails closed. The earlier
+policy job checks source admission; the publisher additionally checks the exact
+restored digest. These controls stop publication, not invocations of an already
+serving Worker; the owner must separately disable serving to stop its runtime spend.
+
+Before any upload, the publisher creates a non-transient GitHub deployment in
+`wave1-<app>-staging-attempt` with source SHA, artifact digest, account-variable name,
+Worker and rollback identity in its payload, using the job's `GITHUB_TOKEN` with
+`deployments: write`. The existing success-marker environment stays separate.
+[Deployment statuses](https://docs.github.com/en/rest/deployments/statuses) retain
+`pending`, `uploaded:<version>`, `activated:<version>` or `failed` progress.
+A crash after marker creation but before its status receipt remains unresolved;
+a definitive fence/seal refusal before upload records failed and consumes admission.
+Upload exceptions remain pending, and failures after a returned upload stay uploaded.
+Missing or expired status history is unresolved. A different artifact cannot proceed
+past the latest unresolved attempt. Do not delete attempt records to retry.
+
+Reruns load this ledger and inspect the [Worker versions API](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/versions/methods/list/),
+including inactive versions. Each listed version is read by ID because the list
+response does not include artifact annotations. Exactly matching SHA plus digest is
+reconciled against active 100% deployment and HTTP identity without uploading or
+activating anything. An inactive match remains uploaded until the owner resolves
+activation under separate authority. A previous attempt with no matching version is
+blocked, even after failed status; absence is not proof that the original write did
+not happen. Preserve the original operation identity, inspect provider/audit evidence,
+and obtain a new explicitly reviewed artifact admission only after resolving an
+uncertain outcome. A lost Wrangler receipt does not permit a second upload.
+
+Reads have 15-second deadlines, 1 MiB response bounds and no application retry.
+There is one bounded history page per service, fewer than 100 attempt records and
+fewer than 100 Worker versions; a full page or reported additional version page
+blocks rather than silently dropping history. At most 99 version-detail reads,
+13 other explicit reads and four GitHub ledger writes occur on a fresh successful
+path (one extra latest-status read when earlier history exists). The publication
+step has a five-minute watchdog; each single Wrangler invocation has a 180-second
+limit. Wrangler's internal asset requests/retries are additional, bounded by that
+watchdog and the 50,000-member / 1 GiB artifact ceiling. No recurring producer or
+automatic renewal exists. Non-cancelling app/environment concurrency serializes the
+ledger and publication. A new owner admission is required to spend another upload;
+these publication bounds do not cap public Worker runtime costs.
 
 ## Meet off-canonical profile
 
@@ -139,9 +216,11 @@ self-reference to that same staging Worker and bucket
 `tuturuuu-meet-realtime-wave1-staging`, no canonical route and its own local DO
 namespaces/migration history. Its secret names retain the protocol contract but must
 refer to disposable staging SFU/TURN credentials, never production resources.
+The staging frontend omits the account-level Images binding; shared production
+Images access is not admitted.
 
 The owner must provision those staging identities, the isolated cache bucket,
-self-service binding, Images access, stage Supabase/central issuer and disposable
+self-service binding, stage Supabase/central issuer and disposable
 SFU/TURN app/key before CI building/qualifying/publishing this profile. Meet staging
 publication is not automated by these three frontend publishers. This is a defined
 profile, not a deployed or workerd-qualified Meet staging claim and not a no-staging
@@ -175,9 +254,16 @@ business cycles. Provider side effects and persistent data do not roll back with
 ## Source-only validation
 
 Run `ttr resources run -- node --test scripts/ci/wave1-native-publishers.test.js`
-for resource/profile isolation, exact bytes and relocation, unsafe archive rejection,
+and `scripts/ci/wave1-native-publication.test.js` for resource/profile isolation,
+exact bytes and relocation, unsafe archive rejection,
 production holds, source/ref admission, fresh-stop failure, one-write bounds, unknown
 outcome retention, rollback shape, identical-version identity and workflow gate order.
+The real `main` publish entrypoint runs with sealed fixtures and bounded counting
+GitHub/Cloudflare/CLI transports. Tests cover post-preflight disable/delete/deny/
+timeout/admission changes, fresh-runner restart, inactive versions and lost receipts.
+A copied entrypoint with its final fresh check removed must fail the same zero-upload
+assertion; it reaches exactly one forbidden fake upload. These are source regression
+proofs, not hosted token-scope, emitted app or deployment evidence.
 Real app builds and workerd gates run only in CI. No local build or production
 workflow dispatch is part of this validation.
 

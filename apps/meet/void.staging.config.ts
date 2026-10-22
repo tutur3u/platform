@@ -48,7 +48,6 @@ export function meetStagingConfig() {
           bucket_name: 'tuturuuu-meet-wave1-staging-cache',
         },
       ],
-      images: { binding: 'IMAGES' },
       durable_objects: {
         bindings: [{ name: 'MEET_LIVE', class_name: 'MeetLiveDurableObject' }],
       },
