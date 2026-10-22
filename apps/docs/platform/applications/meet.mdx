@@ -137,6 +137,30 @@ path and never falls back after a malformed seal. Raw emitted config bytes stay
 unchanged. This relationship does not prove historical retained-state provenance.
 Regression coverage is in `scripts/ci/verify-meet-start-output.test.js`.
 
+Both the original prepack dry-run and production restored dry-run use
+`scripts/ci/meet-dry-run-scratch.mjs` from `apps/meet`, passing `"$SOURCE_SHA"`.
+The wrapper derives the emitted config through the existing artifact verifier,
+requires its manifest and canonical output, and captures the strict directory
+seal and absence of the config parent's `.wrangler` and `.wrangler/tmp` before
+running the same app-owned `bun x --no-install wrangler deploy --dry-run -c`
+command with the discovered config and inherited environment.
+
+Wrangler can leave empty `.wrangler/tmp` ancestors after removing its deploy
+child. After successful child close, the wrapper accepts no residue or exactly
+that empty two-directory layout. It verifies file hashes and the complete prior
+layout before using nonrecursive `rmdir` on the leaf and then parent, and
+rechecks the manifest and strict directory seal afterward. Preexisting, partial,
+nonempty, linked, special or unexpected entries fail closed; command failure
+preserves residue without cleanup or retry. The file manifest alone cannot
+reject extra empty directories. Keep the hidden-entry allowlist, full tar
+contents and launcher's original-artifact seal unchanged. The credential-free
+restored gate does not need another dry-run or rebuild.
+
+On rejection, preserve the failed artifact/evidence for bounded inspection;
+do not recursively delete scratch or normalize the archive. Syntax and source
+review do not qualify this repair: require exact-commit dry-run, pack/restore,
+and original/restored launcher acceptance in CI before claiming producer repair.
+
 After qualification, collect `native-emitted-config-meet.json` even on failure. Keep the actual source HEAD
 separate from the event SHA. Retain pointer and config hashes and a redacted key-shape inventory, never raw
 configs, resource identifiers, or secret values. Unavailable or overflow diagnostics remain failures. The

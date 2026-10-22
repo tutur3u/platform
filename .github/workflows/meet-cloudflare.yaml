@@ -14,6 +14,7 @@ on:
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
       - 'scripts/ci/meet-native-*.mjs'
+      - 'scripts/ci/meet-dry-run-scratch.mjs'
       - 'scripts/ci/native-wrangler-evidence.mjs'
       - 'scripts/ci/native-wrangler-diagnostics.mjs'
       - 'scripts/ci/native-wrangler-observable.mjs'
@@ -49,6 +50,7 @@ on:
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
       - 'scripts/ci/meet-native-*.mjs'
+      - 'scripts/ci/meet-dry-run-scratch.mjs'
       - 'scripts/ci/native-wrangler-evidence.mjs'
       - 'scripts/ci/native-wrangler-diagnostics.mjs'
       - 'scripts/ci/native-wrangler-observable.mjs'
@@ -343,7 +345,7 @@ jobs:
           if-no-files-found: warn
       - name: Validate both Worker bundles
         run: |
-          (cd apps/meet && bun x --no-install wrangler deploy --dry-run -c "${{ steps.meet-output.outputs.config }}")
+          (cd apps/meet && node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA")
           bun x --no-install wrangler deploy --dry-run -c apps/meet-realtime/wrangler.jsonc
       - name: Verify and pack accepted exact-SHA frontend artifact
         run: |
@@ -492,7 +494,7 @@ jobs:
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js config-restored apps/meet
       - name: Dry-run restored frontend artifact
         working-directory: apps/meet
-        run: bun x --no-install wrangler deploy --dry-run -c "${{ steps.meet-output.outputs.config }}"
+        run: node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA"
       - name: Verify restored Start runtime before production writes
         timeout-minutes: 3
         env:

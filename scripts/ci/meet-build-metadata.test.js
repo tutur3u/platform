@@ -201,7 +201,7 @@ function assertMeetArtifactActors(steps) {
   assert.equal(actors[5].run, runtimeGateCommands.validate);
   assert.match(
     actors[6].run,
-    /wrangler deploy --dry-run -c "\$\{\{ steps.meet-output.outputs.config \}\}"/
+    /^\(cd apps\/meet && node \.\.\/\.\.\/scripts\/ci\/meet-dry-run-scratch\.mjs "\$SOURCE_SHA"\)$/m
   );
   assert.match(
     actors[6].run,
