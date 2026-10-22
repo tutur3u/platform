@@ -1,3 +1,5 @@
+import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
+
 export const ci = {
   'employee-schema-contract.yaml': true,
   'actions-storage-report.yaml': true,
@@ -108,10 +110,10 @@ export const ci = {
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
-// Remove app holds only in an explicitly reviewed wave-1 cutover PR.
-export const productionPublicationHolds: Record<string, string> = {
-  meet: 'held for wave-1 cutover',
-  calendar: 'held for wave-1 cutover',
-  mail: 'held for wave-1 cutover',
-  apps: 'held for wave-1 cutover',
-};
+// Admit each app only in an explicitly reviewed wave-1 cutover PR.
+export const productionPublicationPolicy = {
+  meet: { state: 'held', reason: 'held for wave-1 cutover' },
+  calendar: { state: 'held', reason: 'held for wave-1 cutover' },
+  mail: { state: 'held', reason: 'held for wave-1 cutover' },
+  apps: { state: 'held', reason: 'held for wave-1 cutover' },
+} satisfies ProductionPublicationPolicy;

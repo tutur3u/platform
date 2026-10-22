@@ -5,10 +5,11 @@ description: "Publication hold, native staging acceptance, and explicit producti
 
 ## Production hold
 
-`productionPublicationHolds` in `tuturuuu.ci.ts` holds Meet, Calendar, Mail and
+`productionPublicationPolicy` in `tuturuuu.ci.ts` holds Meet, Calendar, Mail and
 Apps. A production push reports **held for wave-1 cutover** in the planner log and
 summary and selects no publisher for those apps. Manual planner dispatch and
-package recovery honor the same hold. Meet's direct publisher checks it too.
+package recovery honor the same hold. All four direct legacy Vercel publishers and
+Meet's native frontend/realtime publisher check it before publication setup.
 Build and original/restored runtime validation can continue. Other apps' deployment
 selection is unchanged. This allows ordinary fixes to ship without native cutover.
 
@@ -17,9 +18,24 @@ Apps keep their existing Vercel deployments and canonical domains. Retain disabl
 Vercel Git deployment and current framework settings. Never bypass the native-source
 Vercel guards. A held app has no new deployment marker; **Held** is not delivery.
 
+The policy schema requires a record for every protected app with `state` and a
+nonempty, single-line `reason`. A held record uses `state: 'held'`. An admitted
+record uses `state: 'admitted'` and explicit `surfaces`: `['frontend']` for Calendar,
+Mail and Apps, or `['frontend', 'realtime-do']` for Meet. Missing/empty/malformed
+records, unexpected fields and unknown workflow names hold publication. Deleting
+a hold never admits publication. Known unrelated publishers keep normal selection,
+and Supabase production migration eligibility keeps its existing gates. Root
+`production-publication-policy.test.js` covers policy mutations, planner outcomes,
+CLI outputs and the direct publishers' dependency on the policy job.
+
+The hold applies to runs using this source. Rerunning an older workflow retains
+its original source and cannot acquire a later policy. The release owner retains
+custody of pre-hold runs and their resulting deployment baselines.
+
 ## Release gates
 
-A later explicit cutover PR must remove each app's hold independently, after:
+A later explicit cutover PR must admit each app independently with the required
+surfaces and review rationale, after:
 
 1. Exact accepted main SHA passes applicable tests, types, lint, real native builds,
    sealed original/restored runtime acceptance and transitive supplier checks.
