@@ -125,12 +125,9 @@ function prepare({ key, image }) {
   let restored = false;
   let createdVolume = false;
   let restorePhase = 'manifest validation';
+  // E2E also consumes this baseline: preserve Mailpit, Realtime and Storage.
   const start = () =>
-    cli(
-      'start',
-      '--exclude',
-      'realtime,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor'
-    );
+    cli('start', '--exclude', 'studio,edge-runtime,logflare,vector,supavisor');
   const cleanOwned = () => {
     cli('stop', '--no-backup');
     if (createdVolume && existsVolume(volume)) docker('volume', 'rm', volume);

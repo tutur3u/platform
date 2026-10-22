@@ -303,8 +303,8 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   Four installation attempts use 5/10/20-second backoff and fail on exhaustion.
 - Contract startup and type generation share `run-supabase-image-retry.js`:
   five attempts, 10/20/40/80-second waits plus 0-25% jitter for throttling or transient pull transport errors. Never retry SQL tests, resets or pushes. Keep bounded stderr separate from generated types and publish only
-  successful output. Baselines exclude optional services but retain Storage,
-  Auth and REST; existing SQL-only verifiers retain their narrower exclusions. Run `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`.
+  successful output. Baselines exclude Studio, Edge Runtime, Logflare, Vector and Supavisor;
+  retain Storage, Imgproxy, Mailpit, Realtime, Auth and REST for E2E; existing SQL-only verifiers retain their narrower exclusions. Run `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`.
 - Release Please is the monorepo source of truth for version/changelog PRs.
   Keep `release-please-config.json`, `.release-please-manifest.json`,
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
