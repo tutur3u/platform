@@ -147,6 +147,13 @@ receipt rather than infer a dependency fix from a hash. See the
 [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx)
 for the allowlist, limits and cleanup behavior.
 
+When applying shared concurrency policy to SDK qualification, retain its
+forbidden-trigger/secret/publication assertions. Use the event payload's positive
+PR number for PR grouping without introducing privileged trigger names into this
+raw-head workflow. Run `qualify-sdk-package.test.js` together with
+`protected-workflow-concurrency.test.js` to verify both security and cancellation
+contracts; focused policy tests alone do not replace the complete root script suite.
+
 ## Satellite build evidence
 
 Automatic platform builds do not establish satellite build compatibility.
@@ -169,7 +176,10 @@ runtime acceptance.
 Native Meet/Calendar/Apps source-bearing receipts must use the same PR-head-or-event
 selection as checkout, stamps, seals and runtime expectations. Preserve the actual
 event and workflow supplier SHAs separately. Meet's existing `GITHUB_SHA` consumers
-receive the source value only on their individual commands. Run the three
+receive the source value only on their individual commands. Its release-only
+comparison uses the shared `ci-check.yml` event checkout and explicit PR base/head
+inputs; identity tests must follow that caller edge after job consolidation.
+Run the three
 `scripts/ci/*-native-source-identity.test.js` suites for mismatched head/event/supplier
 controls; shell command sinks prove wiring only, never Worker acceptance. See the
 [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence)
@@ -482,9 +492,46 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   shared caller-derived key can cancel sibling deploys and turn intended skips
   into red X statuses. Keep serialized deployment/publication groups on
   `cancel-in-progress: false` and `queue: max` so active and pending runs survive
-  newer pushes. Protected validation groups include SHA, event, and run identity;
-  job-level duplicate proofs decide valid skips. Never combine `queue: max` with
-  cancellation enabled.
+  newer pushes. PR validation groups use workflow, event and PR number, with
+  `cancel-in-progress` enabled. Safe push validation coalesces `main` by workflow
+  and ref. Production, generated Release Please refs and manual qualification
+  retain SHA/run/attempt identity. Explicit reruns (`github.run_attempt > 1`)
+  must also disable cancellation and use that isolated identity; changing only
+  the cancellation flag leaves candidates vulnerable to later main pushes. Never
+  combine `queue: max` with cancellation enabled.
+- Only the exact SHA selected for promotion needs complete CI. Superseded `main`
+  validation may be cancelled, but cancellation is never passing evidence. If a
+  pinned candidate lost a required check to supersession, restore that exact-SHA
+  validation before promotion; do not credit a newer main SHA or weaken the gate.
+  Use the runbook exact-run procedure (`gh run list --commit <sha>`, inspect,
+  then `gh run rerun <run-id>`); reruns retain the original SHA/ref and workflow
+  revision. Older workflow revisions do not acquire this protection on rerun.
+  Production deployment, migration and release workflows retain their locks.
+- Keep mutating jobs outside cancelling workflow parents. Biome uses job-specific
+  cancellable validation locks and a separate serialized non-cancelling mutation
+  lock. Guard Modal deployment before its job lock; cancelled validation
+  completions must never cancel active provider work. Discover `workflow_run`
+  consumers in regression tests rather than protecting producers in isolation.
+- Keep the PR exception list in `scripts/ci/protected-workflow-concurrency.test.js`
+  explicit. Desktop Beta and the seven mixed Cloudflare workflows retain their deployment locks;
+  gVisor acceptance retains bounded cleanup. Paused Docker/Rust workflows are
+  unchanged, and paused TanStack validation retains its existing policy. New
+  validation workflows must coalesce PR revisions, including `pull_request_target`
+  events whose `github.ref` points to the base branch.
+- Consolidate PR-only release checks into the reusable CI config job with
+  `check_pr_release_only: true`. Meet, Lettin and Parley compare the same PR base
+  and head as before; production/manual events always return `run_checks=true`.
+  Meet validation must still need `production-policy` and require explicit
+  successful admission on production before any secret-bearing step; read both
+  validation outputs from `check-ci`, and retain PR/main validation when policy
+  is skipped.
+  Removing their separate release jobs saves up to three runner allocations per
+  production plan without bypassing app configuration, validation or deploy gates.
+  The planner already resolves all target configurations once. Further removal of
+  per-app config jobs needs equivalent output/failure coverage. A dedicated
+  concurrency group serializes work but cannot reserve GitHub-hosted capacity.
+  Runner pool or account capacity changes require separate admission; Upskii
+  runners are outside this repository's custody.
 - For explicitly authorized manual CI cleanup, inventory fresh protected refs
   and open PR heads, then protect `main` and `production` before testing merged
   PR branch membership. Historical promotion PRs can use `main` as their head;
