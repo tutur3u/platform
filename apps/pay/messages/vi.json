@@ -659,6 +659,13 @@
     "step_try_description": "Thực hành ngay trong ngữ cảnh. Bạn có thể bỏ qua hoặc đóng hướng dẫn bất cứ lúc nào.",
     "title": "Hướng dẫn và học lại"
   },
+  "pay-dashboard": {
+    "choose-workspace": "Chọn không gian làm việc để quản lý thanh toán, gói đăng ký, số chỗ và phương thức thanh toán.",
+    "create-or-join": "Tạo hoặc tham gia không gian làm việc",
+    "no-workspaces": "Bạn chưa có quyền truy cập thanh toán của không gian làm việc nào. Hãy yêu cầu quản trị viên cấp quyền truy cập thanh toán, hoặc tạo hay tham gia một không gian làm việc trên Tuturuuu.",
+    "title": "Pay",
+    "unnamed-workspace": "Không gian làm việc chưa có tên"
+  },
   "quiz-set-data-table": {
     "linked_modules": "Mô đun liên kết"
   },

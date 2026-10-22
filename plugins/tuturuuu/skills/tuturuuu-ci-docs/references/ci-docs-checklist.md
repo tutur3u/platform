@@ -83,6 +83,30 @@ does not authorize promotion.
   platform deployment marker and successful staging prerequisite.
 - For repo-local Codex plugins, keep `.agents/plugins/marketplace.json` present and pointed at `./plugins/<plugin-name>`.
 
+## Meet Dry-Run Artifact Scratch
+
+Keep both frontend dry-runs in `meet-cloudflare.yaml` routed through
+`scripts/ci/meet-dry-run-scratch.mjs`, run from `apps/meet` with `"$SOURCE_SHA"`.
+It derives config from `verify-meet-start-output.js`, requires the manifest and
+strict canonical directory seal, and records preabsence of the emitted config
+parent's `.wrangler/tmp` and `.wrangler`. It retains the existing app-owned
+Bun/Wrangler arguments, cwd and environment and waits for child close.
+
+A successful Wrangler dry-run may leave only empty scratch ancestors. Admit no
+residue or exactly `.wrangler/tmp` with an empty leaf; verify the original files
+and complete directory layout before nonrecursive leaf/parent `rmdir`, then
+reverify the manifest and strict seal. Failed commands preserve status and
+residue; preexisting, partial, nonempty, symlink, special or unexpected layouts
+fail closed. Preserve evidence rather than retrying or recursively cleaning.
+Never widen the hidden allowlist, permit SDK working directories on originals,
+or exclude entries from the tar. Keep the credential-free restored gate free of
+new dry-runs/builds and retain all launcher assertions and deadlines.
+
+Require exact-commit producer dry-run, pack/restore and original/restored runtime
+acceptance separately from static review. A file-only manifest passing cannot
+prove directory-layout acceptance. See the Meet application page for the owning
+artifact procedure; this wrapper does not qualify hosted behavior or deployment.
+
 ## Docs
 
 - Add new docs pages to `apps/docs/docs.json`.

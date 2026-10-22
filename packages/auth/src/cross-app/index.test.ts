@@ -121,14 +121,38 @@ describe('mapUrlToApp', () => {
     ).toBe('meet');
   });
 
-  it.each(['https://nova.ai.vn', 'https://rewise.me'])(
-    'rejects retired app return origin %s',
-    (origin) => {
-      expect(
-        mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)
-      ).toBeNull();
-    }
-  );
+  it.each([
+    ['nova', 'https://nova.ai.vn'],
+    ['rewise', 'https://rewise.me'],
+  ])('maps the %s canonical external production origin', (app, origin) => {
+    expect(mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)).toBe(
+      app
+    );
+  });
+
+  it.each([
+    'https://rewise.me.evil.com',
+    'https://nova.ai.vn.evil.com',
+    'https://evilrewise.me',
+    'https://evilnova.ai.vn',
+    'https://preview.rewise.me',
+    'https://preview.nova.ai.vn',
+    'http://rewise.me',
+    'http://nova.ai.vn',
+    'https://rewise.me:444',
+    'https://nova.ai.vn:444',
+    'https://rewise.me@evil.com',
+    'https://nova.ai.vn@evil.com',
+    'https://evil.com@rewise.me',
+    'https://evil.com@nova.ai.vn',
+    'https://user:password@rewise.me',
+    'https://user:password@nova.ai.vn',
+    'https://cms-tuturuuu.vercel.app',
+    'https://rewise-preview.vercel.app',
+    'https://nova-preview.vercel.app',
+  ])('rejects untrusted app return URL %s', (origin) => {
+    expect(mapUrlToApp(`${origin}/verify-token?nextUrl=%2F`)).toBeNull();
+  });
 
   it.each([
     ['platform', 'https://tuturuuu.localhost/verify-token?nextUrl=%2F'],

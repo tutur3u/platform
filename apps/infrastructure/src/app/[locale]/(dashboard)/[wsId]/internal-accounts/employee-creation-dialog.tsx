@@ -5,6 +5,7 @@ import { UserPlus } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
   createInternalEmployee,
+  EmployeeCreationNotAdmittedError,
   EmployeeCreationPasswordSchema,
   EmployeeCreationPayloadSchema,
   getEmployeeCreationAvailability,
@@ -48,6 +49,14 @@ type Outcome =
   | 'recovering'
   | 'conflict'
   | 'stopped';
+type CreationProblem =
+  | 'readiness_read_failed'
+  | 'unavailable'
+  | 'invalid_input'
+  | 'authorization'
+  | 'storage'
+  | 'not_admitted'
+  | 'unknown';
 const lifetimes = new WeakMap<object, number>();
 let lifetimeSequence = 0;
 export function EmployeeCreationDialog(props: {
@@ -90,7 +99,7 @@ function ScopedEmployeeCreationDialog({
   const [displayName, setDisplayName] = useState('');
   const [temporaryPassword, setTemporaryPassword] = useState('');
   const [outcome, setOutcome] = useState<Outcome>('editing');
-  const [error, setError] = useState(false);
+  const [problem, setProblem] = useState<CreationProblem | null>(null);
   const [recovery] = useState(
     () =>
       new EmployeeCreationRecovery({
@@ -121,6 +130,7 @@ function ScopedEmployeeCreationDialog({
       recovery.assertActive();
       if (result?.status === 'created') {
         setOutcome('created');
+        setProblem(null);
         void onDirectoryRefresh().catch(() => undefined);
       } else if (result?.status === 'conflict' || result?.status === 'stopped')
         setOutcome(result.status);
@@ -161,7 +171,12 @@ function ScopedEmployeeCreationDialog({
   const [resumingOriginal, setResumingOriginal] = useState(false);
   const editable = outcome === 'editing' && !resumingOriginal;
   const available =
-    availability.data?.available === true && !availability.isFetching;
+    availability.data?.available === true &&
+    !availability.isFetching &&
+    !availability.isError;
+  const readinessProblem: CreationProblem = availability.isError
+    ? 'readiness_read_failed'
+    : 'unavailable';
   function changeOpen(next: boolean) {
     if (inFlight.current || resumingOriginal) return;
     if (next) {
@@ -170,6 +185,7 @@ function ScopedEmployeeCreationDialog({
         if (saved) {
           setEmail(saved.email);
           setDisplayName(saved.displayName);
+          setProblem(saved.state === 'retry_ready' ? null : 'unknown');
           setOutcome(
             saved.state === 'pending'
               ? recovery.canRead()
@@ -183,7 +199,7 @@ function ScopedEmployeeCreationDialog({
           );
         }
       } catch {
-        setError(true);
+        setProblem('storage');
         setOutcome('stopped');
       }
     }
@@ -193,29 +209,34 @@ function ScopedEmployeeCreationDialog({
         setEmail('');
         setDisplayName('');
         setOutcome('editing');
-        setError(false);
+        setProblem(null);
       }
     }
     setOpen(next);
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (inFlight.current || !editable || !available || !input.success) return;
+    if (inFlight.current || !editable || !available) return;
+    if (!input.success) {
+      setProblem('invalid_input');
+      return;
+    }
     inFlight.current = true;
     let original: ReturnType<EmployeeCreationRecovery['prepare']>;
     try {
       original = recovery.prepare(input.data);
     } catch {
       inFlight.current = false;
-      setError(true);
+      setProblem('storage');
       setOutcome('stopped');
       return;
     }
     setOutcome('submitting');
-    setError(false);
+    setProblem(null);
     try {
       const result = await createInternalEmployee(input.data, {
         operationId: original.operationId,
+        actorUserId: actorId,
       });
       recovery.assertActive();
       if (result.status === 'created') {
@@ -229,7 +250,10 @@ function ScopedEmployeeCreationDialog({
       } else if (result.status === 'conflict') {
         recovery.stop('conflict');
         setOutcome('conflict');
-      } else setOutcome('recovering');
+      } else {
+        setProblem('unknown');
+        setOutcome('recovering');
+      }
       setTemporaryPassword('');
       // Refresh failure cannot turn a confirmed creation into a second creation attempt.
       try {
@@ -243,26 +267,15 @@ function ScopedEmployeeCreationDialog({
       } catch {
         return;
       }
-      const denied =
-        caught instanceof InternalApiError &&
-        (caught.status === 400 ||
-          caught.status === 401 ||
-          caught.status === 403 ||
-          (caught.status === 503 &&
-            caught.code === 'employee_creation_unavailable'));
-      if (denied && !recovery.reference?.rejection) {
-        try {
-          recovery.complete();
-        } catch {
-          setOutcome('stopped');
-          setError(true);
-          return;
-        }
-      }
-      setOutcome(
-        denied && !recovery.reference?.rejection ? 'editing' : 'recovering'
+      setProblem(
+        caught instanceof EmployeeCreationNotAdmittedError
+          ? 'not_admitted'
+          : caught instanceof InternalApiError &&
+              (caught.status === 401 || caught.status === 403)
+            ? 'authorization'
+            : 'unknown'
       );
-      setError(denied);
+      setOutcome('recovering');
       setTemporaryPassword('');
     } finally {
       inFlight.current = false;
@@ -291,7 +304,22 @@ function ScopedEmployeeCreationDialog({
           {!available && editable ? (
             <Alert>
               <AlertDescription>
-                {t(availability.isFetching ? 'checking' : 'unavailable')}
+                {t(
+                  availability.isFetching
+                    ? 'checking'
+                    : readinessProblem === 'unavailable'
+                      ? 'unavailable'
+                      : `problems.${readinessProblem}`
+                )}
+                {!availability.isFetching ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void availability.refetch()}
+                  >
+                    {t('retry_readiness')}
+                  </Button>
+                ) : null}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -339,9 +367,9 @@ function ScopedEmployeeCreationDialog({
                 </p>
               ) : null}
             </div>
-            {error ? (
+            {problem ? (
               <p role="alert" className="text-destructive text-sm">
-                {t('denied')}
+                {t(`problems.${problem}`)}
               </p>
             ) : null}
             {outcome === 'created' ? <output>{t('created')}</output> : null}
@@ -378,7 +406,9 @@ function ScopedEmployeeCreationDialog({
                     setEmail(reference.email);
                     setDisplayName(reference.displayName);
                     setTemporaryPassword('');
-                    setError(false);
+                    setProblem(
+                      reference.state === 'retry_ready' ? null : 'unknown'
+                    );
                     setOutcome(
                       reference.state === 'retry_ready' ? 'editing' : 'stopped'
                     );
@@ -397,7 +427,7 @@ function ScopedEmployeeCreationDialog({
                   onReady={() => {
                     recovery.assertActive();
                     setTemporaryPassword('');
-                    setError(false);
+                    setProblem(null);
                     setOutcome('editing');
                   }}
                 />
