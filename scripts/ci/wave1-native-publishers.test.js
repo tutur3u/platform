@@ -450,6 +450,10 @@ for (const environment of ['staging', 'production']) {
       'require("stream")',
       '__require$1("stream")',
       'require("node:stream")',
+      'require("node:buffer")',
+      '__require("node:buffer")',
+      '__require2(`node:crypto`)',
+      '__require$1(`buffer`)',
     ]) {
       const dir = fixture(t);
       fs.mkdirSync(path.join(dir, 'dist/server/assets'));

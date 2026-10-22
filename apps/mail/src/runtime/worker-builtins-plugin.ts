@@ -1,7 +1,19 @@
 import type { Plugin } from 'vite-plus';
 
 const modulePrefix = '\0mail:node-require:';
-const workerBuiltins = new Set(['fs', 'path', 'stream', 'url']);
+const workerBuiltins = new Set([
+  'buffer',
+  'crypto',
+  'dns',
+  'events',
+  'fs',
+  'https',
+  'path',
+  'stream',
+  'string_decoder',
+  'url',
+  'util',
+]);
 
 type BuiltinImport = {
   source: string;
@@ -61,7 +73,9 @@ export function mailWorkerBuiltins() {
     apply: 'build',
     resolveId: {
       order: 'pre',
-      filter: { id: /^(?:node:)?(?:fs|path|stream|url)$/u },
+      filter: {
+        id: /^(?:node:)?(?:buffer|crypto|dns|events|fs|https|path|stream|string_decoder|url|util)$/u,
+      },
       handler(source, _importer, options) {
         return resolveMailWorkerBuiltin({
           source,
@@ -83,7 +97,9 @@ export function mailWorkerBuiltins() {
       },
     },
     load: {
-      filter: { id: /^\0mail:node-require:(?:fs|path|stream|url)$/u },
+      filter: {
+        id: /^\0mail:node-require:(?:buffer|crypto|dns|events|fs|https|path|stream|string_decoder|url|util)$/u,
+      },
       handler: mailWorkerBuiltinModule,
     },
   } satisfies Plugin;

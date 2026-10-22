@@ -34,3 +34,15 @@ ESM rather than removing verification or installing a global require. Its fallba
 error message also contains a literal require example: rewrite only that diagnostic
 in the workerd build, keeping the conservative emitted-byte guard unchanged. Inspect
 emitted match context before claiming a require example is an executable call. Both profile acceptances belong to exact-head CI.
+
+Mail's emitted guard retains its conservative require-byte check and additionally
+parses server JavaScript modules to follow Rolldown's exported require helper into
+renamed imports. Cover bare/node-prefixed builtin names, quoted/backtick strings,
+helper suffixes and minified aliases (for example t(`node:buffer`)); preserve ESM
+imports. The DKIM/libmime graph also requires buffer, crypto, dns, https and
+string_decoder; bundled deprecation/stream and document-preview helpers require
+util/events. Keep their adapters restricted to workerd server require calls.
+
+Email-service cache cleanup must run lazily during use, never through import-time
+setInterval: workerd forbids timers outside a handler. Preserve TTL/rate-limit
+checks and the timer-free import/expiry regression when changing this path.

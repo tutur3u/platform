@@ -37,18 +37,14 @@ type RedisClient = Pick<
 
 const memoryStore = new Map<string, { count: number; expiresAt: number }>();
 
-// Clean up expired entries periodically
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, value] of memoryStore.entries()) {
-      if (now > value.expiresAt) {
-        memoryStore.delete(key);
-      }
-    }
-  },
-  60 * 1000 // Every minute
-);
+let nextMemoryCleanupAt = 0;
+function pruneMemoryStore(now: number): void {
+  if (now < nextMemoryCleanupAt) return;
+  nextMemoryCleanupAt = now + 60_000;
+  for (const [key, value] of memoryStore) {
+    if (now > value.expiresAt) memoryStore.delete(key);
+  }
+}
 
 // =============================================================================
 // Redis Client Singleton
@@ -442,6 +438,7 @@ export class EmailRateLimiter {
     }
 
     // Memory fallback
+    pruneMemoryStore(Date.now());
     const existing = memoryStore.get(key);
     if (!existing || Date.now() > existing.expiresAt) {
       return 0;
@@ -465,6 +462,7 @@ export class EmailRateLimiter {
     }
 
     // Memory fallback
+    pruneMemoryStore(Date.now());
     const existing = memoryStore.get(key);
     if (existing && Date.now() < existing.expiresAt) {
       return Math.ceil((existing.expiresAt - Date.now()) / 1000);
@@ -493,6 +491,7 @@ export class EmailRateLimiter {
     }
 
     // Memory fallback
+    pruneMemoryStore(Date.now());
     const now = Date.now();
     const existing = memoryStore.get(key);
 

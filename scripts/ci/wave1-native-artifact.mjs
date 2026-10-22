@@ -9,10 +9,10 @@ import {
   realpathSync,
   writeFileSync,
 } from 'node:fs';
-import { isBuiltin } from 'node:module';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
+import { assertMailNodeImports } from './mail-node-imports.mjs';
 import { profileFor, publicationConfig } from './wave1-native-profile.mjs';
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -67,20 +67,6 @@ export function publicInputsDigest(env) {
 export function artifactDigest(receipt) {
   return digest(JSON.stringify(receipt));
 }
-function assertMailNodeImports(dist, app) {
-  if (app !== 'mail') return;
-  for (const file of Object.keys(inventory(dist))) {
-    if (!file.startsWith('server/') || !file.endsWith('.js')) continue;
-    const code = readFileSync(resolve(dist, file), 'utf8');
-    for (const [, , name] of code.matchAll(
-      /\b(?:__)?require(?:\$\d+)?\s*\(\s*(['"])([^'"]+)\1\s*\)/gu
-    ))
-      assert.ok(
-        !isBuiltin(name),
-        `Mail Worker contains a CommonJS Node builtin require: ${file} (${name})`
-      );
-  }
-}
 export function prepare(appRoot, app, environment, subdomain, sha) {
   assert.match(sha ?? '', /^[a-f0-9]{40}$/);
   appRoot = realpathSync(appRoot);
@@ -110,7 +96,7 @@ export function prepare(appRoot, app, environment, subdomain, sha) {
     resolve(dirname(emitted), base.assets.directory)
   );
   assert.equal(assets, resolve(dist, 'client'));
-  assertMailNodeImports(dist, app);
+  assertMailNodeImports(dist, app, Object.keys(inventory(dist)));
   const profile = profileFor(app, environment, subdomain);
   const config = resolve(dist, 'wave1/wrangler.json');
   assert.ok(!existsSync(config), 'Publication profile already exists');
@@ -163,7 +149,7 @@ export function verify(appRoot, app, environment, sha) {
   );
   const dist = resolve(appRoot, 'dist');
   assert.deepEqual(inventory(dist), receipt.files, 'Artifact bytes changed');
-  assertMailNodeImports(dist, app);
+  assertMailNodeImports(dist, app, Object.keys(inventory(dist)));
   const config = resolve(dist, 'wave1/wrangler.json');
   const emitted = contained(dist, resolve(dist, receipt.emitted));
   const base = json(emitted);

@@ -19,6 +19,20 @@ const workerRequire = {
 
 describe('Mail CommonJS builtin imports in Worker builds', () => {
   it.each([
+    'buffer',
+    'node:buffer',
+    'crypto',
+    'node:crypto',
+    'dns',
+    'node:dns',
+    'https',
+    'node:https',
+    'events',
+    'node:events',
+    'string_decoder',
+    'node:string_decoder',
+    'util',
+    'node:util',
     'path',
     'node:path',
     'url',

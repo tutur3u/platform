@@ -400,12 +400,27 @@ only that diagnostic to describe passing the module without a CommonJS call exam
 The emitted-byte guard remains unchanged; tests execute the transformed installed
 iconv-lite entry and check charset decoding and stream construction.
 
-Mail's build plugin resolves CommonJS `path`, `url`, `fs` and `stream` imports in
+The same graph also uses `node:buffer` throughout DKIM and libmime, plus
+`node:dns`, `node:crypto` and `node:https` in mailauth tools. Charset decoding
+reaches `string_decoder`; bundled stream/deprecation helpers and document preview
+reach `util` and `events`. Adapt these imports through the same ESM protocol.
+
+Mail's build plugin resolves CommonJS `buffer`, `crypto`, `dns`, `events`, `fs`,
+`https`, `path`, `stream`, `string_decoder`, `url` and `util` imports in
 the workerd server build to native ESM adapters, matching Void's adapter protocol. Client, development,
 ESM and unrelated builtin imports keep their existing resolution. Both profiles use
 this same plugin. Before original or restored runtime acceptance, the artifact gate
 rejects emitted server assets containing static CommonJS Node builtin calls, including
-Rolldown's `__require` helper. Unit and profile tests cover the adapter, the unchanged
+Rolldown's `__require` helper. The conservative byte check covers bare and
+`node:`-prefixed names with quoted or backtick strings. An additional AST check
+follows the exported Rolldown require helper into renamed imports, so minified
+calls such as ``t(`node:buffer`)`` also fail before startup. ESM imports remain
+allowed. Scan every server JavaScript module, including `.mjs` and `.cjs`.
+Unit and profile tests cover the adapter, the unchanged
 compatibility settings and both profile rejection paths. Exact-head CI must still prove
 original/restored emitted Worker startup; config tests are not emitted-byte proof.
+Email-service memory rate-limit and credential-cache expiry cleanup runs lazily
+during use, at most once per minute. Importing those modules must not start timers:
+workerd forbids global-scope `setInterval`. TTL checks remain authoritative on
+every read; the worker-import regression covers timer-free import and expiry.
 The unadapted dependency graph is not specific to the staging profile; production builds share it.
