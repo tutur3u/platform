@@ -101,7 +101,7 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   sourceBoardIds: [],
 };
 interface Props {
-  workspace: Workspace;
+  workspace: Pick<Workspace, 'id' | 'personal'>;
   workspaceTier?: WorkspaceProductTier | null;
   board: WorkspaceTaskBoard & {
     access_type?: 'member' | 'guest';

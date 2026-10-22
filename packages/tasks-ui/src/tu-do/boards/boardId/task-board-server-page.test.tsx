@@ -158,6 +158,7 @@ describe('TaskBoardServerPage', () => {
       personal: false,
       tier: null,
     });
+    expect(element.props.workspace).not.toHaveProperty('name');
     expect(element.props.workspaceTier).toBeNull();
     expect(element.props.currentUserId).toBe('user-1');
   });

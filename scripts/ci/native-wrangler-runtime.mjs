@@ -20,6 +20,8 @@ import {
   relative,
   resolve,
 } from 'node:path';
+import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
+import { inspectCalendarProfile } from './calendar-native-runtime-profile.mjs';
 import {
   captureDiagnosticSnapshot,
   diagnosticError,
@@ -44,8 +46,12 @@ function inside(root, path) {
 }
 
 // Inventory names first: never read ambient credential files or follow links.
-export async function sealArtifact(root) {
-  return inventory(root);
+export async function sealArtifact(root, profile) {
+  assert.ok(
+    profile === undefined || profile === 'calendar',
+    'Unsupported runtime profile'
+  );
+  return profile === 'calendar' ? sealCalendarArtifact(root) : inventory(root);
 }
 
 async function inventory(root, ignored) {
@@ -83,6 +89,7 @@ export async function inspectArtifact(options) {
   closed(
     options,
     [
+      'profile',
       'root',
       'config',
       'main',
@@ -113,39 +120,48 @@ export async function inspectArtifact(options) {
   inside(root, options.config);
   inside(root, options.main);
   assert.deepEqual(
-    await sealArtifact(root),
+    await sealArtifact(root, options.profile),
     options.seal,
     'Artifact hash mutation'
   );
   const config = JSON.parse(await readFile(options.config, 'utf8'));
-  closed(
-    config,
-    [
-      'name',
-      'main',
-      'compatibility_date',
-      'compatibility_flags',
-      'no_bundle',
-      'find_additional_modules',
-      'rules',
-      'vars',
-      'durable_objects',
-      'migrations',
-      'assets',
-      'services',
-    ],
-    'emitted config'
+  assert.ok(
+    options.profile === undefined || options.profile === 'calendar',
+    'Unsupported runtime profile'
   );
-  assert.match(config.name, /^[a-z0-9-]+$/);
-  assert.equal(resolve(dirname(options.config), config.main), options.main);
-  assert.match(config.compatibility_date, /^\d{4}-\d{2}-\d{2}$/);
-  assert.deepEqual(
-    config.compatibility_flags ?? [],
-    [],
-    'Compatibility flags unsupported'
-  );
+  if (options.profile === 'calendar') {
+    await inspectCalendarProfile(options, config);
+  } else {
+    closed(
+      config,
+      [
+        'name',
+        'main',
+        'compatibility_date',
+        'compatibility_flags',
+        'no_bundle',
+        'find_additional_modules',
+        'rules',
+        'vars',
+        'durable_objects',
+        'migrations',
+        'assets',
+        'services',
+      ],
+      'emitted config'
+    );
+    assert.match(config.name, /^[a-z0-9-]+$/);
+    assert.equal(resolve(dirname(options.config), config.main), options.main);
+    assert.match(config.compatibility_date, /^\d{4}-\d{2}-\d{2}$/);
+    assert.deepEqual(
+      config.compatibility_flags ?? [],
+      [],
+      'Compatibility flags unsupported'
+    );
+  }
   assert.equal(config.no_bundle, true);
-  assert.equal(config.find_additional_modules, true);
+  if (options.profile !== 'calendar')
+    assert.equal(config.find_additional_modules, true);
   assert.ok(Array.isArray(config.rules));
   for (const rule of config.rules) {
     closed(rule, ['type', 'globs', 'fallthrough'], 'module rule');
@@ -158,11 +174,12 @@ export async function inspectArtifact(options) {
       rule.fallthrough === undefined || typeof rule.fallthrough === 'boolean'
     );
   }
-  assert.equal(
-    config.vars?.COMPILED_SHA,
-    options.sourceSHA,
-    'Compiled source SHA mismatch'
-  );
+  if (options.profile !== 'calendar')
+    assert.equal(
+      config.vars?.COMPILED_SHA,
+      options.sourceSHA,
+      'Compiled source SHA mismatch'
+    );
   closed(config.vars ?? {}, Object.keys(config.vars ?? {}), 'vars');
   for (const value of Object.values(config.vars ?? {}))
     assert.equal(typeof value, 'string');
@@ -353,7 +370,7 @@ export async function prepareNativePlan(options, tempRoot) {
     }
     await assertArtifactUnchanged(options);
     assert.deepEqual(
-      await sealArtifact(copyRoot),
+      await sealArtifact(copyRoot, options.profile),
       options.seal,
       'Copy hash mutation'
     );
@@ -364,6 +381,7 @@ export async function prepareNativePlan(options, tempRoot) {
     });
   }
   return {
+    ...(options.profile === 'calendar' ? { profile: 'calendar' } : {}),
     root: options.root,
     seal: options.seal,
     tempRoot,
@@ -425,10 +443,12 @@ export function createNativeFinalizer(plan, remove = rm, records = {}) {
       await check('originalSeal', () => assertArtifactUnchanged(plan));
       await check('copySeal', async () =>
         assert.deepEqual(
-          await inventory(
-            plan.copyRoot,
-            relative(plan.copyRoot, plan.sdkWorkingDir)
-          ),
+          await (plan.profile === 'calendar'
+            ? sealCalendarArtifact(plan.copyRoot, true)
+            : inventory(
+                plan.copyRoot,
+                relative(plan.copyRoot, plan.sdkWorkingDir)
+              )),
           plan.seal,
           'Copy hash mutation'
         )
@@ -489,6 +509,15 @@ export async function startNativeWrangler(options, plan) {
     '507cd3644d6a53f0d66922d79c04b03557b7d2d0a376d2d906b92ed20812bb30',
     'Unreviewed public Wrangler supplier bytes'
   );
+  if (options.profile === 'calendar') {
+    assert.equal(summary.wranglerVersion, '4.151.2');
+    assert.equal(summary.miniflareVersion, '5.20261019.0-beta');
+    assert.equal(
+      summary.miniflareSha256,
+      '309b8863f0f4c3050e173e945b4c696db8c330cdf3f35f0ecfd8417d75891eaa',
+      'Unreviewed Calendar Miniflare supplier bytes'
+    );
+  }
   if (!supplier) {
     assert.ok(!require.cache[sdkPath], 'Preloaded Wrangler SDK unsupported');
     assert.ok(
@@ -564,7 +593,7 @@ export async function startNativeWrangler(options, plan) {
 
 export async function assertArtifactUnchanged(options) {
   assert.deepEqual(
-    await sealArtifact(options.root),
+    await sealArtifact(options.root, options.profile),
     options.seal,
     'Artifact hash mutation'
   );

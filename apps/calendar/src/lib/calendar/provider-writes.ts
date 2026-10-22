@@ -102,7 +102,9 @@ function assertExternalSource(
   }
 }
 
-export function createGoogleAuthClient(source: ResolvedCalendarSource) {
+export function createGoogleAuthClient(
+  source: ResolvedCalendarSource
+): InstanceType<typeof OAuth2Client> {
   const oauth2Client = new OAuth2Client({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
