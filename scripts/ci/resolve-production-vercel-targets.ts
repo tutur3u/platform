@@ -5,6 +5,7 @@ import {
   vercelWorkflowTargets,
   type WorkspaceManifest,
 } from '../../tuturuuu.ts';
+import { productionPublicationHold } from './production-publication-policy.ts';
 import {
   type ChangedFilesResult,
   resolveChangedFiles,
@@ -12,6 +13,7 @@ import {
 import { readWorkspaceManifests } from './workflow-config-core.ts';
 
 type ProductionTargetDecision = {
+  held?: boolean;
   changeResult: ChangedFilesResult;
   migrationChangeResult?: ChangedFilesResult;
   matchedPaths: string[];
@@ -46,7 +48,7 @@ function appendGithubOutput(output: Record<string, string>) {
   );
 }
 
-function appendStepSummary(
+export function appendStepSummary(
   decisions: ProductionTargetDecision[],
   summaryPath?: string
 ) {
@@ -55,8 +57,8 @@ function appendStepSummary(
   }
 
   const rows = decisions.map(
-    ({ changeResult, reason, shouldRun, workflowName }) =>
-      `| \`${workflowName}\` | ${shouldRun ? 'Deploy' : 'Skip'} | ${changeResult.source} | ${reason.replaceAll('|', '\\|')} |`
+    ({ changeResult, held, reason, shouldRun, workflowName }) =>
+      `| \`${workflowName}\` | ${held ? 'Held' : shouldRun ? 'Deploy' : 'Skip'} | ${changeResult.source} | ${reason.replaceAll('|', '\\|')} |`
   );
 
   appendFileSync(
@@ -98,6 +100,21 @@ export async function resolveProductionVercelTargets({
   const selectionEvent = packageResume ? 'push' : eventName;
   return Promise.all(
     targets.map(async ({ productionWorkflow }) => {
+      const hold = productionPublicationHold(productionWorkflow);
+      if (hold) {
+        return {
+          held: true,
+          changeResult: {
+            available: false,
+            files: [],
+            source: 'publication-hold',
+          },
+          matchedPaths: [],
+          reason: hold,
+          shouldRun: false,
+          workflowName: productionWorkflow,
+        };
+      }
       const isPlatform =
         productionWorkflow === 'vercel-production-platform.yaml';
       const commitDriven = selectionEvent === 'push';
@@ -208,7 +225,7 @@ async function main() {
 
   for (const decision of decisions) {
     console.log(
-      `${decision.shouldRun ? 'select' : 'skip'} ${decision.workflowName}: ${decision.reason} (${decision.changeResult.source})`
+      `${decision.held ? 'held' : decision.shouldRun ? 'select' : 'skip'} ${decision.workflowName}: ${decision.reason} (${decision.changeResult.source})`
     );
   }
 
