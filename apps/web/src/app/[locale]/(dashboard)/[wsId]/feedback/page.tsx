@@ -8,5 +8,11 @@ export default async function FeedbackPage() {
   const actor = await getFeedbackStaffIdentity();
   const t = await getTranslations('product-feedback');
   if (!actor) return <p role="alert">{t('unavailable')}</p>;
-  return <FeedbackInbox key={actor} actor={actor} />;
+  return (
+    <FeedbackInbox
+      key={actor}
+      actor={actor}
+      mediaEnabled={process.env.PRODUCT_FEEDBACK_MEDIA_ENABLED === 'true'}
+    />
+  );
 }

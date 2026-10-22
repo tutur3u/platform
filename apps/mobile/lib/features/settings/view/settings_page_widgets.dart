@@ -63,6 +63,12 @@ class _SettingsOverviewSection extends StatelessWidget {
       children: [
         SettingsTile(
           grouped: true,
+          icon: Icons.feedback_outlined,
+          title: l10n.feedbackTitle,
+          onTap: () => context.push(Routes.settingsFeedback),
+        ),
+        SettingsTile(
+          grouped: true,
           icon: Icons.auto_awesome_outlined,
           title: l10n.settingsWhatsNew,
           onTap: () => context.push(Routes.settingsWhatsNew),

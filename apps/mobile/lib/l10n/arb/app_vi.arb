@@ -4562,5 +4562,25 @@
     }
   },
   "assistantPreviewPlay": "Phát bản xem trước",
-  "assistantPreviewPause": "Tạm dừng bản xem trước"
+  "assistantPreviewPause": "Tạm dừng bản xem trước",
+  "feedbackTitle": "Gửi phản hồi",
+  "feedbackPrivate": "Gửi phản hồi sản phẩm riêng tư cho nhân viên Tuturuuu. Không gửi mật khẩu hoặc bí mật. Có thể đính kèm một ảnh PNG, JPEG hoặc WebP tối đa 2 MB.",
+  "feedbackSubject": "Tiêu đề",
+  "feedbackDetails": "Chi tiết",
+  "feedbackAttach": "Đính kèm ảnh",
+  "feedbackMediaSelected": "Đã đính kèm ảnh",
+  "feedbackRemoveMedia": "Xóa ảnh đính kèm",
+  "feedbackMediaLimit": "Chọn một ảnh PNG, JPEG hoặc WebP tối đa 2 MB.",
+  "feedbackSend": "Gửi phản hồi",
+  "feedbackSending": "Đang gửi…",
+  "feedbackSent": "Đã nhận phản hồi. Mã xác nhận:",
+  "feedbackFailure": "Chưa thể xác nhận phản hồi. Giữ màn hình này và kiểm tra mã xác nhận ban đầu trước khi thử lại.",
+  "feedbackVerification": "Hoàn tất kiểm tra bảo mật để gửi phản hồi.",
+  "feedbackLimited": "Đã đạt giới hạn phản hồi. Vui lòng thử lại sau.",
+  "feedbackPending": "Một lần gửi trước chưa được xác nhận. Kiểm tra mã ban đầu; chưa có mã xác nhận không có nghĩa là gửi thất bại.",
+  "feedbackCheckReceipt": "Kiểm tra mã ban đầu",
+  "feedbackRetry": "Gửi lại cùng phản hồi",
+  "feedbackEditRejected": "Sửa phản hồi bị từ chối",
+  "feedbackSubjectRequired": "Nhập tiêu đề từ 1–160 ký tự.",
+  "feedbackDetailsRequired": "Nhập chi tiết từ 1–8000 ký tự."
 }

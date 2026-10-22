@@ -5,3 +5,5 @@ export async function GET(request: Request) {
   await connection();
   return feedbackStaffService.list(request);
 }
+
+export { submitProductFeedbackRequest as POST } from '@/lib/user-feedbacks';

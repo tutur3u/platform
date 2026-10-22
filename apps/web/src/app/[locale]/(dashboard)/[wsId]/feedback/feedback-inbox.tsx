@@ -11,9 +11,16 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { FeedbackMedia } from './feedback-media';
 
 type View = NonNullable<ProductFeedbackListQuery['view']>;
-export function FeedbackInbox({ actor }: { actor: string }) {
+export function FeedbackInbox({
+  actor,
+  mediaEnabled = false,
+}: {
+  actor: string;
+  mediaEnabled?: boolean;
+}) {
   const t = useTranslations('product-feedback');
   const [view, setView] = useState<View>('inbox');
   const [status, setStatus] = useState('');
@@ -187,6 +194,13 @@ export function FeedbackInbox({ actor }: { actor: string }) {
             ) : (
               detail.data && (
                 <>
+                  {mediaEnabled && (
+                    <FeedbackMedia
+                      key={selected}
+                      actor={actor}
+                      id={detail.data.id}
+                    />
+                  )}
                   <h2 className="break-words font-semibold">
                     {detail.data.title}
                   </h2>

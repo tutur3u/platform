@@ -13659,6 +13659,7 @@
     "inbox": "Inbox",
     "loading": "Loading feedback…",
     "next": "Next page",
+    "no-screenshot": "No screenshot attached.",
     "none": "Not archived",
     "open": "Open",
     "private": "Private staff inbox. Report content stays within authorized staff access.",
@@ -13666,13 +13667,15 @@
     "refresh": "Refresh",
     "resolved": "Resolved",
     "revision": "Revision",
+    "screenshot": "Private feedback screenshot",
     "search": "Search titles",
     "select": "Select a report to read its private content.",
     "status": "Status",
     "title": "Feedback inbox",
     "unavailable": "Feedback is unavailable or your staff access has changed.",
     "updated": "Updated",
-    "view": "View"
+    "view": "View",
+    "view-screenshot": "View private screenshot"
   },
   "products": {
     "ai": {

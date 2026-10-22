@@ -57,6 +57,7 @@ abstract final class Routes {
   static const settingsPreferences = '/settings/preferences';
   static const settingsExperiments = '/settings/experiments';
   static const settingsInfrastructure = '/settings/infrastructure';
+  static const settingsFeedback = '/settings/feedback';
   static const settingsAbout = '/settings/about';
   static const settingsWhatsNew = '/settings/whats-new';
   static const settingsReminders = '/settings/reminders';

@@ -4559,5 +4559,25 @@
     }
   },
   "assistantPreviewPlay": "Play preview",
-  "assistantPreviewPause": "Pause preview"
+  "assistantPreviewPause": "Pause preview",
+  "feedbackTitle": "Send feedback",
+  "feedbackPrivate": "Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.",
+  "feedbackSubject": "Subject",
+  "feedbackDetails": "Details",
+  "feedbackAttach": "Attach screenshot",
+  "feedbackMediaSelected": "Screenshot attached",
+  "feedbackRemoveMedia": "Remove screenshot",
+  "feedbackMediaLimit": "Choose one PNG, JPEG or WebP image up to 2 MB.",
+  "feedbackSend": "Send feedback",
+  "feedbackSending": "Sending…",
+  "feedbackSent": "Feedback received. Your receipt:",
+  "feedbackFailure": "Feedback could not be confirmed. Keep this screen and check your original receipt before trying again.",
+  "feedbackVerification": "Complete the security check to send feedback.",
+  "feedbackLimited": "The feedback limit has been reached. Try again later.",
+  "feedbackPending": "An earlier submission is unconfirmed. Check its original receipt; a missing receipt does not confirm failure.",
+  "feedbackCheckReceipt": "Check original receipt",
+  "feedbackRetry": "Retry same submission",
+  "feedbackEditRejected": "Edit rejected submission",
+  "feedbackSubjectRequired": "Enter a subject of 1–160 characters.",
+  "feedbackDetailsRequired": "Enter details of 1–8000 characters."
 }

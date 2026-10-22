@@ -12,6 +12,12 @@ shared-package changes.
   Map only explicit `PT403` to denial; missing schema and provider faults are
   unavailable. Keep the operation transport and abort signal on the RPC, project
   private detail separately from list metadata, and retain the default-off flag.
+  Product feedback submission is distinct from workspace CRM feedback. Use the
+  canonical text/quota/receipt RPC and its media wrapper, never a client actor or
+  direct table insert. Keep body/image bounds, fresh Turnstile and native
+  single-dispatch transport; observe an uncertain original receipt without
+  replay. Private screenshot reads repeat staff authorization and do not expose
+  storage URLs. See the Mobile product decision for flags and local SQL checks.
 
 - Private Studio membership facets use only roles returned in the current
   authorized overview. Combine them with existing search/publication facets,
