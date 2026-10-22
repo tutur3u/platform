@@ -99,39 +99,13 @@ jobs:
       deployments: read
     with:
       workflow_name: meet-cloudflare.yaml
-  release-relevance:
-    name: Check release-only changes
-    runs-on: ubuntu-latest
-    outputs:
-      run_checks: ${{ steps.detect.outputs.run_checks }}
-    steps:
-      - name: Check out comparison history
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          sparse-checkout: scripts/ci/release-only-changes.js
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
-      - name: Detect release-only changes
-        id: detect
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-            result="$(node scripts/ci/release-only-changes.js "$BASE_SHA" "$HEAD_SHA")"
-          else
-            result=true
-          fi
-          echo "run_checks=$result" >> "$GITHUB_OUTPUT"
+      check_pr_release_only: true
   validate:
-    needs: [check-ci, release-relevance, production-policy]
+    needs: [check-ci, production-policy]
     if: >-
       ${{ !cancelled() && needs.check-ci.result == 'success' &&
-          needs.release-relevance.result == 'success' &&
           needs.check-ci.outputs.should_run == 'true' &&
-          needs.release-relevance.outputs.run_checks == 'true' &&
+          needs.check-ci.outputs.run_checks == 'true' &&
           (github.ref != 'refs/heads/production' ||
            (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true')) }}
     runs-on: ubuntu-latest
@@ -240,8 +214,10 @@ jobs:
         id: meet-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          # Only the production ref builds a deployable artifact; PRs and main pushes
+          # validate the sealed public CI fixture.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ github.ref != 'refs/heads/production' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref != 'refs/heads/production' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_APP_URL: https://meet.tuturuuu.com
           NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
         with:

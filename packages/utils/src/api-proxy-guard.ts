@@ -11,11 +11,12 @@ import {
   getCachedTrustEntries,
   hasCachedIpBlockAppealRelief,
 } from './abuse-protection/edge-trust';
+import { guardApiProxyBody } from './api-proxy-body';
 import {
   isFinanceInvoiceCreateSupportRead,
   isFinanceRead,
 } from './api-proxy-read-policy';
-import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
+import { DEV_MODE } from './constants';
 import { guardOfflineDownloadRequest } from './offline-download-guard';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import { enforceRequiredMfaRequest } from './required-mfa-runtime';
@@ -90,6 +91,7 @@ export type GuardOptions = {
   prefixBase: string;
   routePolicies?: ProxyRoutePolicy[];
   skipContentValidation?: boolean;
+  maxPayloadBytes?: number;
   trustedBypassRules?: TrustedProxyBypassRule[];
 };
 
@@ -1086,36 +1088,6 @@ export function clearApiProxyGuardLimiterCache() {
   limiterCache.clear();
 }
 
-async function requestBodyExceedsLimit(
-  req: NextRequest,
-  maxBytes: number
-): Promise<boolean> {
-  const body = req.clone().body;
-  if (!body) {
-    return false;
-  }
-
-  const reader = body.getReader();
-  let totalBytes = 0;
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        return false;
-      }
-
-      totalBytes += value.byteLength;
-      if (totalBytes > maxBytes) {
-        void reader.cancel().catch(() => {});
-        return true;
-      }
-    }
-  } finally {
-    reader.releaseLock();
-  }
-}
-
 export async function guardApiProxyRequest(
   req: NextRequest,
   options: GuardOptions
@@ -1124,23 +1096,8 @@ export async function guardApiProxyRequest(
     const assurance = await enforceRequiredMfaRequest(req);
     if (assurance) return assurance;
   }
-  const contentLength = req.headers.get('content-length');
-  if (contentLength) {
-    const size = Number.parseInt(contentLength, 10);
-    if (!Number.isNaN(size) && size > MAX_PAYLOAD_SIZE) {
-      return NextResponse.json(
-        { error: 'Payload Too Large', message: 'Request body exceeds limit' },
-        { status: 413 }
-      );
-    }
-  }
-
-  if (await requestBodyExceedsLimit(req, MAX_PAYLOAD_SIZE)) {
-    return NextResponse.json(
-      { error: 'Payload Too Large', message: 'Request body exceeds limit' },
-      { status: 413 }
-    );
-  }
+  const payloadResponse = await guardApiProxyBody(req, options.maxPayloadBytes);
+  if (payloadResponse) return payloadResponse;
 
   const routePolicies = [
     ...(options.additionalRoutePolicies ?? []),

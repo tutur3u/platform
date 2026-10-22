@@ -9,7 +9,10 @@ export interface StaffOperationContext {
 }
 export interface StaffOperationPolicy {
   readonly durationMs: number;
-  readonly scope: 'staff-list-detail-handler';
+  readonly scope:
+    | 'staff-list-detail-handler'
+    | 'feedback-intake-handler'
+    | 'feedback-media-handler';
   readonly provenance: string;
 }
 export interface StaffOperationRuntime {
@@ -277,7 +280,11 @@ export function openStaffOperation(
       !policy ||
       !Number.isFinite(policy.durationMs) ||
       policy.durationMs <= 0 ||
-      policy.scope !== 'staff-list-detail-handler' ||
+      ![
+        'staff-list-detail-handler',
+        'feedback-intake-handler',
+        'feedback-media-handler',
+      ].includes(policy.scope) ||
       typeof policy.provenance !== 'string' ||
       !policy.provenance.trim()
     )

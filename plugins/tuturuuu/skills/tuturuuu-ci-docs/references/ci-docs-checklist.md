@@ -56,9 +56,14 @@ does not authorize promotion.
   instead of leaving unselected jobs cleanly skipped.
 - Keep serialized deployment/publication groups on `cancel-in-progress: false`
   with `queue: max`; disabling active cancellation alone still replaces the
-  default single pending run. Protected validation groups include SHA, event,
-  and run identity; duplicate-proof jobs decide valid skips. Never combine
-  `queue: max` with cancellation enabled.
+  default single pending run. Ordinary main/PR validation supersedes older runs;
+  production and release-please pushes retain non-cancelling SHA/run/attempt
+  groups, as do reruns and dispatches. Preserve explicit deployment and paused
+  runtime exceptions. Never combine `queue: max` with cancellation enabled.
+- When changing concurrency, search workflow-reading tests outside `scripts/ci`
+  as well as the root suite. Database contract workflows run their own Node
+  tests; root script discovery does not include all of them. Verify behavior
+  across events, refs, SHAs, run IDs and attempts, retaining negative controls.
 - Keep preview concurrency keyed by workflow and `preview_ref` with
   `cancel-in-progress: true`; repeated requests for one target should replace
   stale runs without canceling a distinct preview ref.

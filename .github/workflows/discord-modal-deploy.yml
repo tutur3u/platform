@@ -15,10 +15,6 @@ env:
   MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
   MODAL_ENVIRONMENT: ${{ vars.MODAL_ENVIRONMENT }}
 
-concurrency:
-  group: discord-modal-deploy
-  cancel-in-progress: true
-
 jobs:
   deploy:
     name: Deploy to Modal
@@ -28,6 +24,10 @@ jobs:
         github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_branch == 'main'
       )
+    concurrency:
+      group: discord-modal-deploy
+      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     defaults:
       run:

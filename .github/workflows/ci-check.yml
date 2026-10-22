@@ -12,6 +12,11 @@ on:
         type: boolean
         default: false
         description: "Also detect whether this push contains only release metadata"
+      check_pr_release_only:
+        required: false
+        type: boolean
+        default: false
+        description: "Also detect release-only PR changes; other events always run"
     outputs:
       run_checks:
         description: "Whether release relevance requires checks (true when not requested)"
@@ -29,7 +34,7 @@ jobs:
     name: Check CI Config
     runs-on: ubuntu-latest
     outputs:
-      run_checks: ${{ steps.release_relevance.outputs.run_checks || 'true' }}
+      run_checks: ${{ steps.pr_release_relevance.outputs.run_checks || steps.release_relevance.outputs.run_checks || 'true' }}
       should_run: ${{ steps.check_config.outputs.should_run }}
     steps:
       - name: Checkout code
@@ -102,4 +107,19 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
         run: |
           result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
+          echo "run_checks=$result" >> "$GITHUB_OUTPUT"
+
+      - name: Detect release-only PR changes
+        if: inputs.check_pr_release_only
+        id: pr_release_relevance
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            result="$(node scripts/ci/release-only-changes.js "$BASE_SHA" "$HEAD_SHA")"
+          else
+            result=true
+          fi
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"

@@ -11,6 +11,8 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/group-tags/[tagId]` | DELETE, GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/group-tags/%5BtagId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/group-tags/[tagId]/user-groups/[groupId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/group-tags/%5BtagId%5D/user-groups/%5BgroupId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/group-tags/[tagId]/user-groups` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/group-tags/%5BtagId%5D/user-groups/route.ts) |
 | `/api/v1/workspaces/[wsId]/group-tags` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/group-tags/route.ts) |
 | `/api/v1/workspaces/[wsId]/integrations/sepay/disconnect` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/integrations/sepay/disconnect/route.ts) |
@@ -189,7 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/user-profile-links` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-profile-links/route.ts) |
 | `/api/v1/workspaces/[wsId]/user-profile-links/users` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/user-profile-links/users/route.ts) |
 | `/api/v1/workspaces/[wsId]/users/[userId]/attendance` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/attendance/route.ts) |
-| `/api/v1/workspaces/[wsId]/users/[userId]/emails` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/emails/route.ts) |
-| `/api/v1/workspaces/[wsId]/users/[userId]/follow-up` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/follow-up/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

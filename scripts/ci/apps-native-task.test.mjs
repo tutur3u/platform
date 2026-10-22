@@ -12,10 +12,6 @@ const wrapper = './.github/actions/run-with-turbo-remote-cache';
 const browserCommand =
   'bun turbo:local run test:apps-native-browser --concurrency=1';
 const sourceExpression = `\${{ github.event.pull_request.head.sha || github.sha }}`;
-const concurrencyGroup =
-  `apps-cloudflare-source-\${{ github.event_name }}-` +
-  sourceExpression +
-  `-\${{ github.run_id }}`;
 const buildName = 'Build native Start SSR with the official Void SDK';
 const typeName = 'Type-check native app without a build';
 const presenceName = 'Record Apps route tree presence before frontend build';
@@ -50,11 +46,6 @@ function job(source, name) {
 }
 
 function actor(source, owner, name) {
-  if (owner === 'concurrency') {
-    const matches = source.match(/^concurrency:\n(?:^ {2}.+\n)+/gmu);
-    assert.equal(matches?.length, 1, 'concurrency.block must be unique');
-    return matches[0];
-  }
   const body = job(source, owner);
   if (name === 'env') {
     const matches = body.match(/^ {4}env:\n(?:^ {6}.+\n)+/gmu);
@@ -122,13 +113,6 @@ for (const owner of ['validate', 'restore-acceptance']) {
     [owner, 'checkout', 'ref', 10, `\${{ env.APPS_SOURCE_SHA }}`],
     [owner, 'checkout', 'persist-credentials', 10, 'false']
   );
-}
-for (const [field, value] of [
-  ['group', concurrencyGroup],
-  ['cancel-in-progress', 'false'],
-  ['queue', 'max'],
-]) {
-  fieldRules.push(['concurrency', 'workflow', field, 2, value]);
 }
 fieldRules.push(
   ['validate', captureName, 'if', 8, 'always()'],
@@ -254,7 +238,7 @@ function assertWorkflow(source) {
 function replaceActor(source, owner, name, before, after) {
   const original = actor(source, owner, name);
   assert.equal(original.split(before).length - 1, 1, 'Unique intended literal');
-  const scope = owner === 'concurrency' ? source : job(source, owner);
+  const scope = job(source, owner);
   assert.equal(
     scope.split(original).length - 1,
     1,
@@ -403,20 +387,6 @@ test('each job owns its pull-request head source pin', () => {
       fieldLine(rule),
       fieldLine(rule).replace(sourceExpression, `\${{ github.sha }}`)
     );
-  }
-});
-
-test('concurrency retains source, event and run identity with a non-cancelling max queue', () => {
-  for (const [field, before, after] of [
-    ['group', 'apps-cloudflare-source-', 'other-source-'],
-    ['group', `\${{ github.event_name }}`, 'pull_request'],
-    ['group', sourceExpression, `\${{ github.sha }}`],
-    ['group', `\${{ github.run_id }}`, 'shared-run'],
-    ['cancel-in-progress', 'false', 'true'],
-    ['queue', 'max', 'single'],
-  ]) {
-    const rule = ruleFor('concurrency', 'workflow', field);
-    rejectsActor(rule, fieldLine(rule), fieldLine(rule).replace(before, after));
   }
 });
 

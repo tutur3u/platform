@@ -35,7 +35,7 @@
     "dayjs": "^1.11.23",
     "diff": "^9.0.0",
     "effect": "^3.22.2",
-    "moment": "^2.30.1",
+    "moment": "^2.31.0",
     "next": "^16.4.0",
     "prosemirror-model": "^1.25.11",
     "react": "^19.2.8",
@@ -55,7 +55,7 @@
     "@types/react": "~19.2.18",
     "@vitejs/plugin-react": "^6.1.1",
     "typescript": "7.0.2",
-    "vite": "^8.3.0",
+    "vite": "^8.3.3",
     "vitest": "^5.0.0"
   },
   "exports": {

@@ -7,6 +7,8 @@ on:
       - "apps/database/supabase/tests/tutoring-absence-credit-lifecycle.sql"
       - "apps/database/scripts/verify-tutoring-absence-credit-contract.mjs"
       - "apps/database/scripts/run-supabase*.js"
+      - '.github/actions/cache-supabase-images/**'
+      - 'scripts/ci/supabase-image-cache*'
       - "apps/database/scripts/programming-database-tap.mjs"
       - "apps/database/scripts/programming-database-tap.test.mjs"
       - "apps/database/scripts/tutoring-absence-credit-concurrency.mjs"
@@ -33,8 +35,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
     permissions:
@@ -46,10 +48,12 @@ jobs:
   contract:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success'
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
     steps:
       - name: Require an enabled contract gate
         env:
@@ -68,6 +72,7 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: ./.github/actions/cache-supabase-images
       - name: Verify TAP parser and bounded fixture sessions
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/tutoring-absence-credit-contract.test.mjs
       - name: Apply complete schema, run strict pgTAP, generate actual schema types

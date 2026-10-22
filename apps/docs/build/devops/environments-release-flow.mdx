@@ -256,7 +256,8 @@ helper refuses execution outside a fresh Linux GitHub Actions runner and must ne
 be used to archive a developer or production database.
 
 The Supabase baseline fingerprint includes the configured image registry as well
-as the image version. CI honors `SUPABASE_INTERNAL_IMAGE_REGISTRY` for restore
+as the image version. CI uses `public.ecr.aws` without a registry login and honors
+`SUPABASE_INTERNAL_IMAGE_REGISTRY` for restore
 integrity checks. Its contract also transfers the pristine snapshot to a separate
 runner and requires a verified restore, so a safe cold fallback cannot hide a
 broken cross-runner cache. Restore failures report only their phase, without
