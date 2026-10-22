@@ -460,3 +460,153 @@ HTML stream, DOM or page-load completion. Regression coverage lives in
 `profile-request-identity.test.ts`, `mail-profile-correlation.test.mjs` and
 `mail-profile-result-summary.test.mjs`. Run them in the admitted CI environment;
 source inspection and syntax checks do not establish runtime acceptance.
+
+
+### Apps finite emitted Worker callers
+
+Both Apps acceptance entries use the Apps-owned finite public SDK adapter:
+`apps/apps/cloudflare/native-built-worker.test.mjs` and
+`scripts/ci/apps-native-browser.runtime.mjs`. The former retains the real HTTP,
+SSR, locale/query redirects, discovered RPC, PATCH/cookie forwarding and exact
+599 compiled-handler negative control. The latter retains real Chromium anchor
+clicks against the public `Worker.url` listener. Existing request, navigation,
+test and CI watchdog limits remain unchanged. A listener-visible locale redirect
+must preserve its original scheme, host and port; a proxy-origin mismatch fails
+acceptance rather than changing the expected URL.
+
+RPC discovery parses sealed JavaScript metadata and requires exactly one distinct
+ID for the Apps gateway function. Accept string literals and expression-free,
+single-quasi template literals with a string cooked value. Reject interpolation,
+tagged templates, dynamic expressions, zero candidates and distinct-ID ambiguity;
+never evaluate aliases or use source maps to supply or normalize an ID. Preserve
+parse and symlink failures. The adjacent `native-artifact-functions.test.mjs`
+retains a hash-checked actual emitted chunk and negative controls. Its pure
+success does not establish actual RPC wire or Chromium/restored acceptance.
+
+The plan invokes `apps-native-artifact.py verify` with an explicit source SHA and
+canonical receipt, checks the actual native or saved deploy pointer and preserves
+all normalized configuration fields. Every session copies every sealed emitted
+module and asset, including `.assetsignore`, without rewriting producer metadata.
+The Apps hidden metadata profile additionally admits only `server/.vite` as a
+directory containing exactly one regular `manifest.json`. That file stays in the
+source receipt, original/copy inventory and every session copy. Its bounded JSON
+entries use a closed field vocabulary; file/CSS/asset references must name hashed
+regular entries in the sealed server inventory, and imports must name own manifest
+entries. Own `__proto__` keys survive as data without prototype mutation. Reject
+unknown hidden paths, env/credential entries, links, incomplete metadata, escapes,
+unsealed references and malformed or mistyped fields. Existing `.assetsignore`
+and deploy-pointer admission remain unchanged. This profile does not admit SDK
+workdirs before startup or exclude `.vite` from seals. Cover it with
+`apps-native-runtime-hidden.test.mjs`; metadata admission is no runtime proof.
+
+The application resource/auxiliary topology must remain exactly empty. HTTP uses
+two unchanged Apps copies, each with a private registry; its negative role changes
+only the admitted API fixture origin. Browser uses one copy. No Meet graph,
+synthetic app, raw Miniflare constructor, private SDK accessor or option deletion
+is part of this adapter.
+
+Wrangler resolves from `apps/apps/package.json`, and Miniflare resolves from that
+Wrangler CLI. Before SDK loading, require Wrangler 4.151.2 CLI SHA256
+`507cd3644d6a53f0d66922d79c04b03557b7d2d0a376d2d906b92ed20812bb30`
+and its Miniflare 5.20261019.0-beta entry SHA256
+`309b8863f0f4c3050e173e945b4c696db8c330cdf3f35f0ecfd8417d75891eaa`.
+These are requirements, not evidence that an installation is qualified. Reject
+preloads, wrong ancestry, byte/version changes, owner/lock changes and runtime
+build-SHA bindings. A stale owning lock edge requires separately admitted
+package-manager repair; root package presence is insufficient. Do not hand-edit
+the lock or broaden pins when a scoped repair churns unrelated dependencies.
+
+The configured app and negative-role HTTP hooks deny every nonfixture origin.
+HTTP forwarding admits only the exact disposable 127.0.0.1 origin and the existing
+method/path/query contracts, propagates headers/body/cookies and cancellation,
+and never follows redirects. Account assurance has a separate recorded category:
+only GET of the one generated fixture UUID's exact admin-user URL, with the
+captured generated service key in both `apikey` and Bearer authorization, no
+query, fragment, URL credentials, Cookie or body. The local fixture validates
+the same request before returning its explicit server-owned non-required policy.
+The HTTP app permits exactly four assurance reads: three compiled API guard
+negatives (required MFA, banned account and unavailable policy), then the original
+signed PATCH. The negative role permits exactly one assurance read before its
+original API 599 denial; central forwarding stays zero and the exact denied-call
+counter remains one. The same signed session is reused across account-policy
+transitions; production guards and policy freshness are unchanged. Required,
+banned and unavailable cases must return 403/MFA_REQUIRED, 401/UNAUTHENTICATED
+and 503/AUTH_UNAVAILABLE respectively, without forwarding or clearing cookies.
+Two signed SSR locales and one signed RPC account for three profile forwards;
+the original PATCH remains the sole forwarded write, with its exact query, body,
+cookie and two response cookies. Require the separate counts in child and parent
+receipts; an extra request fails rather than increasing a cap.
+
+Each role retains at most 32 hook operations across all categories, including two
+pre-start denial controls; PATCH bodies retain the 16 KiB cap. Browser app HTTP
+remains deny-all with zero assurance reads; anonymous Chromium anchor navigation
+needs no account fixture. One owned page-target CDP session admits the runtime
+listener and existing exact in-memory destination origins. Its Fetch request-stage
+listener is attached before wildcard enablement and classifies every redirect hop
+independently: continue the fixed listener without overrides, fulfill destination
+HTML in memory, or fail with BlockedByClient. Neither page.route nor context.route
+covers redirected hops in the owning Playwright 1.63.0 implementation; do not
+stack those interceptors with this fence. Counters have fixed categories and a
+4096-request ceiling; diagnostics retain no request URLs, headers or payloads.
+Fetch remains enabled through owned page closure; handler promises drain before
+session detachment and listener removal. Setup, protocol, navigation and cleanup
+failures all fail acceptance. Scope is one page target, without browser-wide,
+OOPIF or popup coverage. The historical browser timeout cause remains UNKNOWN.
+
+`native-browser-fence.test.mjs` covers protocol, cap and lifecycle failures without
+loading the SDK. The finite `apps-native-browser-fence.runtime.mjs` proof uses only
+two disposable 127.0.0.1 listeners: actual anchor, 307, intermediate listener hop,
+and exact final URL/load. Its old-route RED control must fulfill zero requests
+and reach destination upstream once. CDP GREEN must fulfill once with zero
+upstream; an unadmitted destination must block once with zero upstream. CI uses
+owning bundled Chromium after the existing Web Chromium installation. A local
+machine with bundled Chromium absent may explicitly run
+`ttr resources run -- node scripts/ci/apps-native-browser-fence.runtime.mjs --chrome`
+with existing Chrome through Playwright's public channel, headless and a fresh
+owned ephemeral profile. Never use a real user profile. Local Chrome proof does
+not qualify CI bundled Chromium or emitted Worker acceptance; no SDK, account
+fixture or external host participates in the finite proof. Keep strict residual
+checks, including rejection of unknown `.org.chromium` files; do not delete foreign
+residuals or broaden admission for browser temporary files.
+
+Hash-pinned SDK-generated actors and Node
+helper/debug/control networking are trusted tooling outside this claimed
+application HTTP confinement. This is no OS, TCP or DNS firewall claim. Focused
+policy/receipt tests use doubles and do not qualify the compiled guard; original
+and freshly restored hosted HTTP and real Chromium acceptance remain required.
+
+The launcher supplies fresh allowlisted child environment, HOME/XDG/temp roots,
+empty fixture env file and per-role registries. Browser alone receives the
+installed Web-owned Playwright cache path. Each public handle is owned before
+readiness and disposed once in reverse order. Browser closure precedes session
+teardown; primary/start/readiness/disposal failures remain separately recorded.
+Natural child close, code 0, null signal and both drained pipes are independent
+of the child's finite assertion/lifecycle receipt. Parent readbacks recheck the
+original/copy/pointer/receipt/owner/lock/supplier evidence and foreign sentinel.
+Generated `.wrangler` workdirs are inventoried separately; only those exact
+directories are excluded from copied-source seal comparison. A verified snapshot
+and pre-removal persistence/readback precede owned scratch removal. Failures retain
+scratch and diagnostics; final persistence failure also fails qualification.
+Internal SDK cleanup and descendant closure remain UNKNOWN.
+
+Run source-only checks through the canonical resource queue:
+
+```sh
+ttr resources run -- node --test scripts/ci/apps-native-runtime.test.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs
+```
+
+For the separate `apps-native-artifact.test.py` suite on macOS, use a canonical
+temp directory such as `TMPDIR=/private/tmp`. Its restore fault injection compares
+exact paths; the `/var` versus `/private/var` alias can prevent the injected move
+fault from firing. Preserve every assertion when correcting fixture setup.
+
+These tests use normalized data fixtures and supplier/lifecycle doubles. They
+neither load the SDK nor qualify real emitted output. Exact-commit CI must build,
+seal, run both original callers, pack unchanged qualified bytes, restore them to
+fresh output and repeat both callers and final seal checks. Both HTTP steps use
+the same `APPS_ARTIFACT_RECEIPT` as browser acceptance. Each invocation creates new
+home/temp/registry custody. CI retains a seven-day tar archive of
+`$RUNNER_TEMP/apps-native-evidence`, including hidden snapshot/workdir evidence,
+on success or failure. Archive the directory itself, not a shell `*` expansion.
+Source review, supplier correction, real runtime acceptance, promotion and customer
+acceptance remain separate gates.

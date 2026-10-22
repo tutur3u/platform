@@ -317,6 +317,12 @@ Rules:
 
 ## Satellite Apps (contacts, pay, tasks, …)
 
+- Cold satellite unit checks should select workspace `bun` source exports in both
+  Vitest `resolve.conditions` and `ssr.resolve.conditions`. Keep existing source
+  aliases for dist-only packages and inline `next-intl` where its extensionless
+  Next imports require adapter resolution. Do not build dependencies locally to
+  make focused tests load; retain the app's exact-commit CI build gate.
+
 - Custom page proxies must consume claims only from a successful
   `refreshAppSessionForRequest` result. Never reconstruct authority from raw
   cookies after a failed result: a required MFA proof can expire during refresh
