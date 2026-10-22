@@ -135,6 +135,20 @@ The current foundation does not install cf or convert Worker configurations.
 Track CLI capability gaps independently from app migration so an unsupported
 operation does not block portable libraries or Oxc adoption.
 
+## Qualify dependency resolution
+
+Reconcile workspace requests with Bun's generated lockfile using the repository's
+pinned Bun version. A manifest-only update can leave frozen installation blocked
+before any type checking runs. Keep lifecycle scripts disabled during local
+dependency inspection; require the normal exact-commit CI installation and builds.
+
+Review effective tool dependencies as well as changed lock rows. Oxlint and Oxfmt
+have optional Vite+ peers, so a Vite+ update can change their selected peer without
+changing either tool's own row. Static scoped placements and a successful frozen
+lockfile check do not prove the installer uses those placements. Resolve packages
+from each owning app and tool after installation, record intentional peer changes,
+and retain CI and emitted-runtime gates for the affected apps.
+
 ## Use the tooling foundation
 
 From the repository root, pass **explicit files you own**:
