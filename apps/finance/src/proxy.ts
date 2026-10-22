@@ -64,12 +64,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
-      return finish(
-        appSessionFailureResponse(
-          req,
-          appSessionRefresh.error,
-          appSessionRefresh.response
-        )
+      return appSessionFailureResponse(
+        req,
+        appSessionRefresh.error,
+        appSessionRefresh.response
       );
     }
 
@@ -99,6 +97,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // Handle authentication and MFA with the centralized middleware
   const authRes = await authProxy(req);
+  if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it
   if (authRes.headers.has('Location')) {

@@ -102,6 +102,67 @@ the app's real build in CI on the exact PR head when you change routes, pages,
 or dependencies. Do not run builds on this machine.
 </Note>
 
+### Browser refresh replay-store outages
+
+The central browser refresh route (`POST /api/v1/auth/cross-app-session/refresh`)
+requires available replay state before issuing replacement credentials. First use
+and reuse within the configured `browserRefreshReplayGraceSeconds` continue;
+reuse after grace returns **401**. Signature, target, refresh scope, expiry,
+current-user and required-MFA checks remain in force.
+
+Missing replay storage or failed acquisition, read or write returns **503** with
+`Cache-Control: no-store`, code `APP_SESSION_REFRESH_UNAVAILABLE`, and the stable
+error `App session refresh temporarily unavailable`. This response contains no
+credentials, performs no admin user lookup or token minting, and does not set or
+clear session cookies. It indicates a temporary inability to authorize refresh;
+it is not evidence that the session credential is invalid. The route does not
+extend the configured grace interval or retry storage operations.
+
+Satellite `createRefreshPOST` preserves central **503** and **403 MFA_REQUIRED**
+without minting local credentials or changing cookies. Other non-success refresh
+responses remain invalid credentials; unknown errors are not relabeled as replay
+storage outages. There are no automatic retries.
+
+The shared proxy keeps using independently verified, unexpired, target-bound
+access only after its existing current-MFA check and an expiry check after the
+refresh response arrives. Replacement cookies are verified at response time. A refresh outage grants no
+session authority and never admits expired access. With no valid access, protected
+API and page paths return the same no-store **503**, without login redirects,
+credential minting or cookie changes. Custom page proxies and Lettin's login
+redirect preserve this distinction. Outer app proxies preserve terminal error
+responses before locale, workspace and invite handling. Existing anonymous API
+exceptions remain anonymous; a refresh outage does not create an authenticated
+identity there. Healthy rotation and the existing shared-provider cookie cleanup
+policy are unchanged.
+
+Custom page adapters consume session claims only from an `ok: true` refresh
+result, including an explicitly permitted fallback. A failed result never permits
+reconstructing a session from the original request cookies: access can remain
+cryptographically valid after its required MFA proof expires during an await.
+Generic invalid-refresh and expired-token failures follow the existing login
+redirect policy; dedicated MFA and availability failures retain their terminal
+responses. Forms and Storefront public pages, and Forms, Storefront and Inventory
+anonymous API exceptions, retain their existing policies. Finance returns terminal
+auth failures before deployment pinning, so skew protection cannot add a deployment
+cookie to an outage response; healthy responses still receive deployment pinning.
+
+Regression coverage lives in the central refresh route suite, shared cross-app
+server suite, `packages/auth/src/proxy/refresh-outage.test.ts`,
+`packages/auth/src/proxy/refresh-authority.test.ts`, every custom adapter's
+`proxy-refresh.test.ts`, and the Finance, Learn, Calendar and Lettin suites.
+Adapter coverage composes real signing, verification and final deadline checks
+with mocked provider, refresh transport and locale boundaries. CI and browser
+acceptance are required before claiming deployed outage behavior.
+
+The CLI refresh endpoint has an explicit outage-continuation policy and is outside
+this browser decision. Changing it requires a separate policy review.
+
+Regression coverage lives in
+`apps/web/src/app/api/v1/auth/cross-app-session/refresh/route.test.ts`: unavailable
+storage/acquisition/read/write responses, stateful first use, the configured grace
+boundary, post-grace rejection, and retained invalid-credential controls. These
+handler fixtures do not establish hosted Redis or browser behavior.
+
 ## Auth: resolve the actor from the app session
 
 A registered satellite must resolve the acting user from Tuturuuu app-session
@@ -430,3 +491,31 @@ including the final delay. Exhaustion still fails deployment verification; these
 diagnostics identify a failed boundary without proving a provider-side cause.
 The colocated verifier fixtures run through Lettin’s owning Vitest configuration
 and cover those boundaries without live requests.
+
+### Verified refresh authority
+
+The shared Next.js proxy retains the exact access credential selected by the
+portable verifier. Initial selection keeps bearer, Web cookie, then local cookie
+precedence, with fallback only after cryptographic/scope/target rejection. Current
+MFA rejection of the selected credential does not select another actor or proof.
+Forwarded Authorization and refresh access input use that selected credential.
+A successful rotation verifies the resulting cookies independently of the old
+bearer before forwarding its selected replacement.
+
+The required-MFA owner returns whether current policy required the verified proof,
+and the bound proof when required, from its existing account/factor lookup. The
+proxy carries the earlier of access expiry and required proof expiry. Optional
+MFA proofs do not shorten access authority. A local time comparison after the
+last asynchronous lookup or refresh response must precede forwarding headers or
+cookies; no extra provider request, retry or authority cache supplies this check.
+An explicit `now` option remains deterministic at every comparison.
+
+`packages/auth/src/proxy/refresh-authority.test.ts` covers mixed credentials,
+expiry during factor lookup, required proof expiry during a 503 while access is
+still valid, signed replacement deadlines, optional policy, fixed time, invalid
+signature/scope and current-factor rejection of a healthy replacement. The
+existing refresh-outage tests retain status and cookie boundaries. Central route
+unit tests replace request log draining with a typed pass-through to keep detached
+log persistence outside the unit-test provider boundary. These tests require an
+admitted isolated execution environment; source presence alone is not execution
+evidence.

@@ -1,17 +1,3 @@
-import { appSessionFailureResponse } from './mfa-failure';
-
-export {
-  appSessionFailureResponse,
-  preserveMfaRecoveryCookies,
-} from './mfa-failure';
-
-import {
-  decodeURIComponentSafely,
-  normalizeAuthRedirectPath,
-} from './redirect-path';
-
-export { normalizeAuthRedirectPath } from './redirect-path';
-
 import { updateSession } from '@tuturuuu/supabase/next/proxy';
 import {
   createAdminClient,
@@ -24,7 +10,6 @@ import type {
 import type { Database } from '@tuturuuu/types/db';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
-import { isRequiredMfaAppSessionAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import { discardAppCookiesForVerifiedProvider } from '@tuturuuu/utils/required-mfa-credentials';
 import { enforceRequiredMfaRequest } from '@tuturuuu/utils/required-mfa-runtime';
 import type { NextRequest } from 'next/server';
@@ -34,13 +19,7 @@ import {
   clearAppSessionCookie,
   clearSupabaseAuthCookies,
   createAppSessionToken,
-  getAppSessionRefreshEarlySeconds,
-  getAppSessionRefreshTokenFromRequest,
-  getAppSessionTokenFromRequest,
-  getWebAppSessionRefreshTokenFromRequest,
-  getWebAppSessionTokenFromRequest,
   hasSupportedSupabaseAuthCookie,
-  verifyAppSessionRequest,
 } from '../app-session';
 import {
   hashMfaMobileApprovalSecret,
@@ -48,7 +27,28 @@ import {
   MFA_MOBILE_APPROVAL_KIND,
   parseMfaMobileApprovalCookie,
 } from '../mfa-mobile-approval';
+import { appSessionFailureResponse } from './mfa-failure';
+import {
+  decodeURIComponentSafely,
+  normalizeAuthRedirectPath,
+} from './redirect-path';
+import {
+  copySetCookieHeaders,
+  createNextResponseWithRequestHeaders,
+  getSetCookieHeaders,
+} from './response-cookies';
+import {
+  type AppSessionRefreshState,
+  resolveSignedAppSessionForRequest,
+} from './signed-refresh';
 import { createAppSessionClaimsFromSupabaseClaims } from './supabase-app-claims';
+
+export {
+  appSessionFailureResponse,
+  preserveMfaRecoveryCookies,
+} from './mfa-failure';
+export { normalizeAuthRedirectPath } from './redirect-path';
+export { getRequestHeadersWithResponseCookies } from './response-cookies';
 
 const INTERNAL_HOSTNAME_PATTERN =
   /^(?:0\.0\.0\.0|127(?:\.\d+){0,3}|localhost|::1|\[::1\]|host\.docker\.internal)$/u;
@@ -174,156 +174,6 @@ export function propagateAuthCookies(
   for (const cookie of source.cookies.getAll()) {
     target.cookies.set(cookie);
   }
-}
-
-function getSetCookieHeaders(headers: Headers) {
-  const withGetSetCookie = headers as Headers & {
-    getSetCookie?: () => string[];
-  };
-  const setCookies = withGetSetCookie.getSetCookie?.();
-
-  if (setCookies?.length) {
-    return setCookies;
-  }
-
-  const singleHeader = headers.get('set-cookie');
-  return singleHeader ? splitCombinedSetCookieHeader(singleHeader) : [];
-}
-
-function splitCombinedSetCookieHeader(header: string) {
-  return header
-    .split(/,\s*(?=[A-Za-z0-9!#$%&'*+\-.^_`|~]+=)/u)
-    .map((setCookie) => setCookie.trim())
-    .filter(Boolean);
-}
-
-function parseCookieHeader(cookieHeader: string | null) {
-  const cookies = new Map<string, string>();
-
-  if (!cookieHeader) {
-    return cookies;
-  }
-
-  for (const part of cookieHeader.split(';')) {
-    const [rawName, ...rawValueParts] = part.trim().split('=');
-
-    if (rawName) {
-      cookies.set(rawName, rawValueParts.join('='));
-    }
-  }
-  return cookies;
-}
-
-function updateCookieHeaderFromSetCookies(
-  cookieHeader: string | null,
-  setCookieHeaders: string[]
-) {
-  const cookies = parseCookieHeader(cookieHeader);
-
-  for (const setCookie of setCookieHeaders) {
-    const [cookiePair, ...attributes] = setCookie.split(';');
-    const [rawName, ...rawValueParts] = cookiePair?.trim().split('=') ?? [];
-
-    if (!rawName) {
-      continue;
-    }
-
-    const maxAgeAttribute = attributes.find((attribute) =>
-      attribute.trim().toLowerCase().startsWith('max-age=')
-    );
-    const maxAge = maxAgeAttribute
-      ? Number.parseInt(maxAgeAttribute.split('=')[1] ?? '', 10)
-      : null;
-
-    if (maxAge === 0 || rawValueParts.length === 0) {
-      cookies.delete(rawName);
-      continue;
-    }
-
-    cookies.set(rawName, rawValueParts.join('='));
-  }
-  return [...cookies.entries()]
-    .map(([name, value]) => `${name}=${value}`)
-    .join('; ');
-}
-
-export function getRequestHeadersWithResponseCookies(
-  req: NextRequest,
-  response: NextResponse
-) {
-  const headers = new Headers(req.headers);
-  const overrideHeaders = response.headers
-    .get('x-middleware-override-headers')
-    ?.split(',')
-    .map((header) => header.trim())
-    .filter(Boolean);
-
-  for (const header of overrideHeaders ?? []) {
-    const overrideValue = response.headers.get(
-      `x-middleware-request-${header}`
-    );
-
-    if (overrideValue === null) {
-      headers.delete(header);
-    } else {
-      headers.set(header, overrideValue);
-    }
-  }
-
-  const setCookieHeaders = getSetCookieHeaders(response.headers);
-
-  if (setCookieHeaders.length === 0) {
-    return headers;
-  }
-
-  const nextCookieHeader = updateCookieHeaderFromSetCookies(
-    headers.get('cookie'),
-    setCookieHeaders
-  );
-
-  if (nextCookieHeader) {
-    headers.set('cookie', nextCookieHeader);
-  } else {
-    headers.delete('cookie');
-  }
-  return headers;
-}
-
-function copySetCookieHeaders(
-  setCookieHeaders: string[],
-  response: NextResponse
-) {
-  for (const setCookie of setCookieHeaders) {
-    response.headers.append('set-cookie', setCookie);
-  }
-}
-
-function createNextResponseWithRequestHeaders(headers?: Headers) {
-  return headers
-    ? NextResponse.next({
-        request: {
-          headers,
-        },
-      })
-    : NextResponse.next();
-}
-
-function getAppSessionAuthorizationHeader(headers: Headers) {
-  const token =
-    getWebAppSessionTokenFromRequest({ headers }) ??
-    getAppSessionTokenFromRequest({ headers });
-  return token ? `Bearer ${token}` : null;
-}
-
-function getRequestHeadersWithAppSessionAuthorization(req: NextRequest) {
-  const headers = new Headers(req.headers);
-  const authorization = getAppSessionAuthorizationHeader(headers);
-
-  if (authorization) {
-    headers.set('authorization', authorization);
-    req.headers.set('authorization', authorization);
-  }
-  return headers;
 }
 
 type ConsumeVerifyTokenRequestOptions = {
@@ -499,20 +349,6 @@ export async function consumeVerifyTokenRequest(
   return clearSupabaseAuthCookies(req, redirectResponse);
 }
 
-type AppSessionRefreshState =
-  | {
-      claims: AppCoordinationTokenClaims;
-      ok: true;
-      refreshed: boolean;
-      requestHeaders?: Headers;
-      response: NextResponse;
-    }
-  | {
-      error: string;
-      ok: false;
-      response?: Response;
-    };
-
 function createSupabaseBackedAppSessionResponse(
   req: NextRequest,
   res: NextResponse,
@@ -616,131 +452,9 @@ async function resolveAppSessionForRequest(
     }
   }
 
-  const verification = verifyAppSessionRequest(req, {
-    now,
-    targetApp: options.targetApp,
-  });
-  const webAccessToken = getWebAppSessionTokenFromRequest(req);
-  const accessToken = webAccessToken ?? getAppSessionTokenFromRequest(req);
-  const refreshToken =
-    getWebAppSessionRefreshTokenFromRequest(req) ??
-    getAppSessionRefreshTokenFromRequest(req);
-  const shouldRefreshMissingWebSession =
-    options.requireWebAppSession && !webAccessToken && Boolean(refreshToken);
-
-  if (
-    verification.ok &&
-    !(await isRequiredMfaAppSessionAllowed(verification.claims))
-  ) {
-    return { error: 'MFA required', ok: false };
-  }
-  if (verification.ok) {
-    const earlySeconds = getAppSessionRefreshEarlySeconds(verification.claims);
-    const secondsUntilExpiry =
-      verification.claims.exp - Math.floor(now.getTime() / 1000);
-
-    if (
-      !refreshToken ||
-      (secondsUntilExpiry > earlySeconds && !shouldRefreshMissingWebSession)
-    ) {
-      return {
-        claims: verification.claims,
-        ok: true,
-        refreshed: false,
-        response: clearSupabaseAuthCookies(
-          req,
-          createNextResponseWithRequestHeaders(
-            getRequestHeadersWithAppSessionAuthorization(req)
-          )
-        ),
-      };
-    }
-  } else if (!refreshToken) {
-    return verification;
-  }
-
-  const refreshUrl = getAuthApiUrl(
-    req,
-    options.refreshPath ?? '/api/auth/refresh-app-session'
+  return resolveSignedAppSessionForRequest(req, options, () =>
+    getAuthApiUrl(req, options.refreshPath ?? '/api/auth/refresh-app-session')
   );
-  const refreshResponse = await fetch(refreshUrl, {
-    body: JSON.stringify({ accessToken, refreshToken }),
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-      cookie: req.headers.get('cookie') ?? '',
-    },
-    method: 'POST',
-  }).catch(() => null);
-
-  if (!refreshResponse?.ok) {
-    if (verification.ok) {
-      return {
-        claims: verification.claims,
-        ok: true,
-        refreshed: false,
-        response: clearSupabaseAuthCookies(
-          req,
-          createNextResponseWithRequestHeaders(
-            getRequestHeadersWithAppSessionAuthorization(req)
-          )
-        ),
-      };
-    }
-
-    return {
-      error: 'Invalid app session refresh credentials',
-      ok: false,
-    };
-  }
-
-  const setCookieHeaders = getSetCookieHeaders(refreshResponse.headers);
-  const requestHeaders = new Headers(req.headers);
-  const nextCookieHeader = updateCookieHeaderFromSetCookies(
-    req.headers.get('cookie'),
-    setCookieHeaders
-  );
-
-  if (nextCookieHeader) {
-    requestHeaders.set('cookie', nextCookieHeader);
-  } else {
-    requestHeaders.delete('cookie');
-  }
-
-  const authorization = getAppSessionAuthorizationHeader(requestHeaders);
-  if (authorization) {
-    requestHeaders.set('authorization', authorization);
-  }
-
-  const refreshedVerification = verifyAppSessionRequest(
-    {
-      headers: requestHeaders,
-    },
-    {
-      now,
-      targetApp: options.targetApp,
-    }
-  );
-
-  if (!refreshedVerification.ok) return refreshedVerification;
-  if (!(await isRequiredMfaAppSessionAllowed(refreshedVerification.claims))) {
-    return { error: 'MFA required', ok: false, response: refreshResponse };
-  }
-
-  // Bind subsequent API guards to the same verified refreshed credential.
-  if (authorization) req.headers.set('authorization', authorization);
-  const response = clearSupabaseAuthCookies(
-    req,
-    createNextResponseWithRequestHeaders(requestHeaders)
-  );
-  copySetCookieHeaders(setCookieHeaders, response);
-  return {
-    claims: refreshedVerification.claims,
-    ok: true,
-    refreshed: true,
-    requestHeaders,
-    response,
-  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -1107,7 +821,8 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         if (!appSessionVerification.ok && !isPublic) {
           if (
             req.nextUrl.pathname.startsWith('/api') ||
-            appSessionVerification.error === 'Account assurance unavailable'
+            appSessionVerification.error === 'Account assurance unavailable' ||
+            appSessionVerification.error === 'App session refresh unavailable'
           ) {
             return appSessionFailureResponse(
               req,
@@ -1136,9 +851,8 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
             : clearSupabaseAuthCookies(req, redirectResponse);
         }
 
-        return appSessionVerification.ok
-          ? appSessionVerification.response
-          : clearSupabaseAuthCookies(req, NextResponse.next());
+        if (appSessionVerification.ok) return appSessionVerification.response;
+        return clearSupabaseAuthCookies(req, NextResponse.next());
       }
 
       if (skipApiRoutes && req.nextUrl.pathname.startsWith('/api')) {

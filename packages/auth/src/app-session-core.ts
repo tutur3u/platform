@@ -365,10 +365,12 @@ function getAppSessionTokenCandidatesFromRequest(request: AppSessionRequest) {
   return [...tokens];
 }
 
-export function verifyAppSessionRequest(
+export function verifyAppSessionRequestWithToken(
   request: AppSessionRequest,
   options: AppSessionOptions = {}
-): AppSessionVerification {
+):
+  | (Extract<AppSessionVerification, { ok: true }> & { token: string })
+  | Extract<AppSessionVerification, { ok: false }> {
   const tokens = getAppSessionTokenCandidatesFromRequest(request);
 
   if (tokens.length === 0) {
@@ -378,13 +380,14 @@ export function verifyAppSessionRequest(
     };
   }
 
-  let lastVerification: AppSessionVerification | null = null;
+  let lastVerification: Extract<AppSessionVerification, { ok: false }> | null =
+    null;
 
   for (const token of tokens) {
     const verification = verifyAppSessionToken(token, options);
 
     if (verification.ok) {
-      return verification;
+      return { ...verification, token };
     }
 
     lastVerification = verification;
@@ -396,6 +399,16 @@ export function verifyAppSessionRequest(
       ok: false,
     }
   );
+}
+
+export function verifyAppSessionRequest(
+  request: AppSessionRequest,
+  options: AppSessionOptions = {}
+): AppSessionVerification {
+  const verification = verifyAppSessionRequestWithToken(request, options);
+  return verification.ok
+    ? { ok: true, claims: verification.claims }
+    : verification;
 }
 
 export function getAppSessionClaimsFromRequest(

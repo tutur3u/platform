@@ -51,11 +51,14 @@ it('rejects stale page claims when shared identity requires MFA', async () => {
   const response = await proxy(
     new NextRequest('https://lettin.tuturuuu.com/workspace/worlds/world')
   );
-  expect(response.status).toBe(307);
-  const location = new URL(response.headers.get('location')!);
-  expect(location.pathname).toBe('/login');
-  expect(location.searchParams.get('refresh')).toBe('1');
-  expect(location.searchParams.get('next')).toBe('/workspace/worlds/world');
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({
+    code: 'MFA_REQUIRED',
+    error: 'MFA verification required',
+  });
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(response.headers.get('location')).toBeNull();
+  expect(response.headers.get('set-cookie')).toBeNull();
   expect(mocks.stale).not.toHaveBeenCalled();
 });
 it('admits a successfully refreshed shared session', async () => {
@@ -95,8 +98,12 @@ it('keeps workspace creative spaces protected', async () => {
   const response = await proxy(
     new NextRequest('https://lettin.tuturuuu.com/workspace/spaces/art')
   );
-  expect(response.status).toBe(307);
-  expect(new URL(response.headers.get('location')!).pathname).toBe('/login');
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({
+    code: 'MFA_REQUIRED',
+    error: 'MFA verification required',
+  });
+  expect(response.headers.get('location')).toBeNull();
   expect(mocks.refresh).toHaveBeenCalled();
 });
 
@@ -263,11 +270,14 @@ it('keeps MFA enforcement on an original unprefixed profile', async () => {
   const response = await proxy(
     new NextRequest(`https://lettin.tuturuuu.com${path}`)
   );
-  const location = new URL(response.headers.get('location')!);
-  expect(response.status).toBe(307);
-  expect(location.pathname).toBe('/login');
-  expect(location.searchParams.get('next')).toBe(path);
-  expect(location.searchParams.get('refresh')).toBe('1');
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({
+    code: 'MFA_REQUIRED',
+    error: 'MFA verification required',
+  });
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(response.headers.get('location')).toBeNull();
+  expect(response.headers.get('set-cookie')).toBeNull();
   expect(response.headers.get('x-middleware-rewrite')).toBeNull();
   expect(mocks.stale).not.toHaveBeenCalled();
   expect(mocks.routeStatus).not.toHaveBeenCalled();
