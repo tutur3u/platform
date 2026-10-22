@@ -260,6 +260,7 @@
     "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
     "hide_sidebar": "Ẩn thanh bên",
     "hide_workspace": "Ẩn không gian làm việc",
+    "home": "Trang chủ",
     "join_workspace": "Tham gia workspace",
     "join_workspace_action": "Tham gia",
     "join_workspace_by_slug_description": "Nhập slug workspace để yêu cầu truy cập hoặc nhận lời mời.",
