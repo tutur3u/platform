@@ -13,6 +13,7 @@ import {
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { z } from 'zod';
+import { readResourceConfig, resourceMaxLanes } from './resources-config';
 
 const ownerSchema = z.object({
   scheduler: z.literal(2).optional(),
@@ -266,18 +267,25 @@ async function releaseMutex(path: string, token: string) {
   else await rm(join(path, 'reclaim'), { force: true });
 }
 export async function occupancy(home: string, reclaim = false) {
+  const config = await readResourceConfig(home);
+  const maxLanes = config ? resourceMaxLanes(config) : 1;
   const slots = join(home, 'slots');
   const names = await readdir(slots).catch((error) => {
     if (errno(error, 'ENOENT')) return [];
     throw error;
   });
-  if (names.some((name) => name !== '0' && name !== '1'))
+  if (
+    names.some((name) => !/^(0|[1-7])$/.test(name) || Number(name) >= maxLanes)
+  )
     throw new Error('Unknown resource slot; admission is closed.');
   const owners: ResourceOwner[] = [];
   const occupied: string[] = [];
   let legacy = false;
   let initializing = false;
-  for (const path of [join(home, 'lock'), join(slots, '0'), join(slots, '1')]) {
+  for (const path of [
+    join(home, 'lock'),
+    ...Array.from({ length: maxLanes }, (_, i) => join(slots, String(i))),
+  ]) {
     if (!(await directoryExists(path))) continue;
     const state = await ownerState(join(path, 'owner.json'));
     if (state.kind === 'invalid')
