@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.54.0](https://github.com/tutur3u/platform/compare/internal-api-v0.53.0...internal-api-v0.54.0) (2026-10-22)
+
+
+### Features
+
+* **infrastructure:** support guarded managed profile edits ([603dee3](https://github.com/tutur3u/platform/commit/603dee3acf1c0240d90d797bb3d33bf2bf293cb6)) ([#6368](https://github.com/tutur3u/platform/issues/6368)) ([1b6376a](https://github.com/tutur3u/platform/commit/1b6376ae3dd0f65604fde8d575ab009bba999004))
+
+
+### Bug Fixes
+
+* **auth:** close employee CLI recovery review findings ([c16cc38](https://github.com/tutur3u/platform/commit/c16cc38bd05f56296221c16cc74d39b49092ca96))
+* **auth:** observe CLI recovery outcomes without replay ([376b9ab](https://github.com/tutur3u/platform/commit/376b9ab53c4ed4ba8cfa3199a44d66d6831b9e5d))
+* **infra:** add operation-scoped CLI employee recovery ([533a78b](https://github.com/tutur3u/platform/commit/533a78b913b1346dec9d4a7a9e8626cc4da5fb70)) ([#6367](https://github.com/tutur3u/platform/issues/6367)) ([1d16f55](https://github.com/tutur3u/platform/commit/1d16f5508d3fa8f213cf9d0ca54ee0eed70f8bb3))
+
 ## [0.53.0](https://github.com/tutur3u/platform/compare/internal-api-v0.52.0...internal-api-v0.53.0) (2026-10-21)
 
 
