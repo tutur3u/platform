@@ -13,12 +13,22 @@ shared-package changes.
   Defer unstarted work. Microsoft calendar errors continue siblings; auth/rate
   limits stop the account. See the [Calendar cron runbook](../../../../../apps/docs/platform/applications/calendar.mdx#bounded-cron-execution-and-revoked-consent)
   and focused regressions before changing limits or response policy.
-- Product feedback staff HTTP reads reuse the existing eligibility/list/detail
-  factories and `staff-service.ts`. Resolve the current Auth identity before the
-  service-only RPC, whose canonical registry assertion remains authoritative.
-  Map only explicit `PT403` to denial; missing schema and provider faults are
-  unavailable. Keep the operation transport and abort signal on the RPC, project
-  private detail separately from list metadata, and retain the default-off flag.
+- Product feedback staff reads reuse eligibility/list/detail factories and
+  `staff-service.ts`. Resolve current Auth identity before service-only RPCs;
+  the canonical SQL registry remains authoritative. Map only `PT403` to denial,
+  missing schema/provider faults to unavailable. Retain operation transport,
+  abort signals, separate private detail/list projections and default-off flags.
+  Product submission is distinct from workspace CRM feedback. Every submission,
+  including null media, uses the media wrapper and canonical quota/receipt
+  transaction. Screenshot removal must conflict; a missing wrapper fails closed.
+  Never trust client actors or insert directly. Preserve body/image bounds,
+  fresh Turnstile and single-dispatch native transport.
+  Unknown attempts retain their original key and immutable draft. A rejected
+  retry or missing receipt cannot unlock editing; observe the original receipt.
+  Cover unknown-then-rejected transitions and repeated unknowns. Seed and verify
+  source metadata before testing removal, including a retention negative control.
+  Screenshot reads repeat staff authorization and expose no storage URLs.
+  See the Mobile product decision for flags, regressions and local SQL checks.
 
 - Private Studio membership facets use only roles returned in the current
   authorized overview. Combine them with existing search/publication facets,

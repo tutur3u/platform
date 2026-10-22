@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
+import 'package:mobile/features/product_feedback/product_feedback_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/reminders/reminder_settings_page.dart';
 import 'package:mobile/features/security/account/account_security_page.dart';
@@ -19,6 +20,10 @@ import 'package:mobile/features/shell/view/manage_accounts_page.dart';
 
 /// Account, device and workspace settings share the app shell.
 List<RouteBase> settingsRoutes() => [
+  GoRoute(
+    path: Routes.settingsFeedback,
+    builder: (_, _) => const ProductFeedbackPage(),
+  ),
   GoRoute(path: Routes.profileEdit, redirect: (_, _) => Routes.settingsProfile),
   GoRoute(
     path: Routes.profileAccounts,

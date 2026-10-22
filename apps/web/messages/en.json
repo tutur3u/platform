@@ -13661,6 +13661,7 @@
     "load-error": "Feedback could not be loaded. Please try again.",
     "loading": "Loading feedback…",
     "next": "Next page",
+    "no-screenshot": "No screenshot attached.",
     "none": "Not archived",
     "not-found": "This report was not found or is no longer available.",
     "open": "Open",
@@ -13669,13 +13670,15 @@
     "refresh": "Refresh",
     "resolved": "Resolved",
     "revision": "Revision",
+    "screenshot": "Private feedback screenshot",
     "search": "Search titles",
     "select": "Select a report to read its private content.",
     "status": "Status",
     "title": "Feedback inbox",
     "unavailable": "Feedback is unavailable or your staff access has changed.",
     "updated": "Updated",
-    "view": "View"
+    "view": "View",
+    "view-screenshot": "View private screenshot"
   },
   "products": {
     "ai": {

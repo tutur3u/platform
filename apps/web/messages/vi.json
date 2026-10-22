@@ -13668,6 +13668,7 @@
     "load-error": "Không thể tải phản hồi. Vui lòng thử lại.",
     "loading": "Đang tải phản hồi…",
     "next": "Trang tiếp",
+    "no-screenshot": "Không có ảnh đính kèm.",
     "none": "Chưa lưu trữ",
     "not-found": "Không tìm thấy báo cáo này hoặc báo cáo không còn khả dụng.",
     "open": "Đang mở",
@@ -13676,13 +13677,15 @@
     "refresh": "Làm mới",
     "resolved": "Đã giải quyết",
     "revision": "Phiên bản",
+    "screenshot": "Ảnh phản hồi riêng tư",
     "search": "Tìm theo tiêu đề",
     "select": "Chọn một báo cáo để đọc nội dung riêng tư.",
     "status": "Trạng thái",
     "title": "Hộp thư phản hồi",
     "unavailable": "Phản hồi hiện không khả dụng hoặc quyền nhân viên của bạn đã thay đổi.",
     "updated": "Cập nhật",
-    "view": "Chế độ xem"
+    "view": "Chế độ xem",
+    "view-screenshot": "Xem ảnh riêng tư"
   },
   "products": {
     "ai": {

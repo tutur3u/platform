@@ -79,6 +79,7 @@ class ShellChromeConfig {
       Routes.settingsPreferences => l10n.settingsPreferencesSectionTitle,
       Routes.settingsExperiments => l10n.settingsExperimentalAppsSectionTitle,
       Routes.settingsInfrastructure => l10n.settingsInfrastructureSectionTitle,
+      Routes.settingsFeedback => l10n.feedbackTitle,
       Routes.settingsAbout => l10n.settingsAboutSectionTitle,
       Routes.settingsSession => l10n.settingsDangerSectionTitle,
       Routes.settingsWorkspace => l10n.settingsWorkspaceSectionTitle,
