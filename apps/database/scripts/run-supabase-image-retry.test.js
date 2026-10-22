@@ -6,6 +6,7 @@ import test from 'node:test';
 import { runCommand } from './run-supabase.js';
 import {
   appendDiagnostic,
+  imagePullIdentity,
   isImagePullCommand,
   isTransientImagePullFailure,
   retryImagePull,
@@ -241,4 +242,45 @@ if (count === 0 || process.argv[2] === 'test') {
     signal: null,
   });
   assert.deepEqual(waits, []);
+});
+
+test('classification includes only the known registry host and untagged image', async () => {
+  for (const host of ['ghcr.io', 'public.ecr.aws']) {
+    const diagnostics = `failed to pull docker image: ${host}/supabase/realtime:v2.130.0: toomanyrequests secret-token`;
+    assert.equal(
+      imagePullIdentity(diagnostics),
+      ` (${host} supabase/realtime)`
+    );
+    const messages = [];
+    let attempts = 0;
+    const waits = [];
+    await retryImagePull(
+      async () => {
+        attempts++;
+        return { code: 1, stderr: diagnostics };
+      },
+      {
+        maxAttempts: 3,
+        baseDelayMs: 2000,
+        maxDelayMs: 5000,
+        random: () => 0,
+        sleepMs: async (ms) => waits.push(ms),
+        stderr: { write: (message) => messages.push(message) },
+      }
+    );
+    assert.equal(attempts, 3);
+    assert.deepEqual(waits, [2000, 4000]);
+    assert.equal(
+      messages.at(-1),
+      `Supabase image pull throttled after 3 attempts (${host} supabase/realtime).\n`
+    );
+    assert.ok(
+      messages.every((message) => !/secret-token|v2.130.0/.test(message))
+    );
+  }
+  for (const text of [
+    'https://user:secret@ghcr.io/supabase/postgres:v1',
+    'unknown.example/supabase/postgres:v1',
+  ])
+    assert.equal(imagePullIdentity(text), '');
 });

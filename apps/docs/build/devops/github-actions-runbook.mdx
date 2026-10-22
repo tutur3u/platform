@@ -490,10 +490,50 @@ can print local credentials. Its failure summary forwards only fixed categories:
 image pull throttling or transport exhaustion, migration failure, service health
 failure, timeout, or output-buffer exhaustion. Other failures retain the generic
 diagnostic instruction. Never print the raw child error, stdout, or stderr to CI.
-The retry helper emits its fixed exhaustion summary after seven failed attempts;
-it does not replay SQL tests, resets, or pushes. Supabase startup already performs
-an image pre-pull pass, so a second pre-pull loop needs evidence of a separate
-failure before adoption.
+Active Supabase-starting jobs run `.github/actions/cache-supabase-images` after
+the owning dependency install. Image versions come from the installed pinned CLI's
+`services -o json`, which includes local version overrides. The CLI omits Kong,
+Mailpit and imgproxy there; the helper carries their reviewed 2.117.0 Dockerfile
+pins and rejects a different CLI until those pins are reviewed. Registry rewriting
+matches the CLI, including `postgrest/postgrest` becoming `supabase/postgrest`.
+
+The exact image list, registry, OS and architecture form the SHA256 cache key;
+there are no prefix restores. A hit loads the Docker archive and inspects every
+expected image before startup. The baseline restore also inspects its already
+loaded Postgres image instead of pulling it unconditionally. The CLI inspects
+local images before its pull path. A miss pulls each missing image with at most
+three attempts, 2/4-second backoff plus bounded jitter, 90-second command limits
+and a two-minute total pull deadline. Failure stops before database startup,
+including in the 15-minute cross-runner restore job. It never replays SQL tests,
+resets or pushes. Fixed exhaustion summaries include only the known registry host
+and untagged image name, never raw captured diagnostics or credentials.
+
+Contract jobs cache five images: Postgres, postgres-meta for type generation, and
+GoTrue/Realtime/Storage for fresh-database migration containers. The CLI runs those
+three bootstrap containers even with their long-running services excluded. The
+HTTP contract adds Kong and PostgREST; the full profile caches ten configured
+images, excluding disabled edge runtime, analytics and pooling. Archives have a
+6 GiB hard bound, checked before save from image sizes and again on the tar file
+before save/load. Missing images or an oversized archive fail visibly.
+
+Only `push` and `workflow_dispatch` on `refs/heads/main` save archives. PRs and
+other branches restore only; no PR-scoped uploads duplicate these large caches.
+Until a trusted cache exists, PR jobs still require successful registry pulls.
+Once this workflow is present on main, the release owner can bootstrap all three
+exact profile keys without starting database contracts:
+
+```sh
+gh workflow run supabase-baseline.yaml --ref main -f seed_images_only=true
+```
+
+That main-only dispatch runs profiles sequentially, allows seven attempts within
+a ten-minute total pull budget per profile and retains 15-minute job limits. It
+still needs a runner with working registry access; if hosted IPs remain throttled,
+this seed cannot succeed there. Use an admitted trusted runner with registry
+access to run the same seeding action, or wait for registry recovery. Do not treat
+a registry switch as a fix or upload unreviewed image archives to the main scope.
+GitHub's cache scope allows PRs to read main caches; eviction or a version/profile
+change requires another successful seed. Exact-head hosted CI remains required.
 
 For Linux reproduction, isolate the Supabase project ID and ports, use a
 scratch-local Bun matching the repository pin, and remove only that project's

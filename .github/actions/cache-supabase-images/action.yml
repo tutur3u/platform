@@ -1,0 +1,45 @@
+name: Cache Supabase images
+description: Restore the pinned service images before local Supabase startup.
+inputs:
+  profile:
+    description: contract, contract-http, or full configured stack
+    default: contract
+  database:
+    description: Owning database workspace relative to the checkout
+    default: apps/database
+  pull-budget-seconds:
+    description: 120 normally, or 600 only for a trusted main cache seed
+    default: "120"
+runs:
+  using: composite
+  steps:
+    - name: Derive exact image cache identity
+      id: identity
+      shell: bash
+      env:
+        IMAGE_PROFILE: ${{ inputs.profile }}
+        IMAGE_DATABASE: ${{ inputs.database }}
+      run: node scripts/ci/supabase-image-cache.js key
+    - name: Restore exact image archive
+      id: cache
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}/supabase-images/images.tar
+        key: ${{ steps.identity.outputs.key }}
+    - name: Load cached images
+      if: steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: node scripts/ci/supabase-image-cache.js load
+    - name: Pull missing images within a short budget
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        IMAGE_PULL_BUDGET_SECONDS: ${{ inputs.pull-budget-seconds }}
+        IMAGE_SAVE: ${{ steps.identity.outputs.save }}
+      run: node scripts/ci/supabase-image-cache.js pull
+    - name: Save trusted image archive
+      if: steps.cache.outputs.cache-hit != 'true' && steps.identity.outputs.save == 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ runner.temp }}/supabase-images/images.tar
+        key: ${{ steps.identity.outputs.key }}

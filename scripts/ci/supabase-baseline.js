@@ -17,7 +17,7 @@ const wrapper = path.join(database, 'scripts/run-supabase.js');
 function baselineFailureMessage(error) {
   const diagnostics = String(error.stderr ?? '');
   const exhaustion = diagnostics.match(
-    /(?:^|\n)(Supabase image pull (?:throttled|transport failed) after 7 attempts\.)\r?(?:\n|$)/
+    /(?:^|\n)(Supabase image pull (?:throttled|transport failed) after [1-7] attempts(?: \((?:public\.ecr\.aws|ghcr\.io) supabase\/[a-z0-9-]+\))?\.)\r?(?:\n|$)/
   );
   if (exhaustion) return exhaustion[1];
   if (error.code === 'ETIMEDOUT')
@@ -159,8 +159,6 @@ function prepare({ key, image }) {
       ) {
         throw new Error('Baseline integrity or input mismatch');
       }
-      restorePhase = 'Postgres image pull';
-      docker('pull', image);
       restorePhase = 'Postgres image identity';
       const imageId = docker('image', 'inspect', image, '--format', '{{.Id}}');
       if (manifest.imageId !== imageId)

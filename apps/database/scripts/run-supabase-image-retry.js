@@ -37,6 +37,21 @@ export function isImagePullCommand(args) {
   );
 }
 
+export function imagePullIdentity(diagnostic) {
+  // Extract only known registry/image syntax, never arbitrary error text or URLs.
+  const match = String(diagnostic).match(
+    /(?:^|[\s(])((?:public\.ecr\.aws|ghcr\.io))\/(supabase\/[a-z0-9-]+)(?=[:@\s),]|$)/
+  );
+  return match ? ` (${match[1]} ${match[2]})` : '';
+}
+
+export function imagePullFailureMessage(diagnostic, attempts, image) {
+  const classification = THROTTLING.test(diagnostic)
+    ? 'throttled'
+    : 'transport failed';
+  return `Supabase image pull ${classification} after ${attempts} attempts${imagePullIdentity(image || diagnostic)}.\n`;
+}
+
 export async function retryImagePull(
   invoke,
   {
@@ -44,8 +59,18 @@ export async function retryImagePull(
     sleepMs = sleep,
     random = Math.random,
     stderr = process.stderr,
+    maxAttempts = MAX_ATTEMPTS,
+    baseDelayMs = BASE_DELAY_MS,
+    maxDelayMs = MAX_DELAY_MS,
+    image,
   } = {}
 ) {
+  if (
+    !Number.isInteger(maxAttempts) ||
+    maxAttempts < 1 ||
+    maxAttempts > MAX_ATTEMPTS
+  )
+    throw new Error('Invalid image retry attempt budget');
   for (let attempt = 1; ; attempt += 1) {
     const result = await invoke();
     if (
@@ -55,21 +80,16 @@ export async function retryImagePull(
       !isTransientImagePullFailure(result.stderr ?? '')
     )
       return result;
-    if (attempt === MAX_ATTEMPTS) {
-      const classification = THROTTLING.test(result.stderr)
-        ? 'throttled'
-        : 'transport failed';
-      stderr.write(
-        `Supabase image pull ${classification} after ${MAX_ATTEMPTS} attempts.\n`
-      );
+    if (attempt === maxAttempts) {
+      stderr.write(imagePullFailureMessage(result.stderr, maxAttempts, image));
       return result;
     }
     const delay = Math.round(
-      Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** (attempt - 1)) *
+      Math.min(maxDelayMs, baseDelayMs * 2 ** (attempt - 1)) *
         (1 + random() * JITTER_RATIO)
     );
     stderr.write(
-      `Supabase image pull failed; retry ${attempt + 1}/${MAX_ATTEMPTS} in ${delay}ms.\n`
+      `Supabase image pull failed; retry ${attempt + 1}/${maxAttempts} in ${delay}ms.\n`
     );
     await sleepMs(delay);
   }

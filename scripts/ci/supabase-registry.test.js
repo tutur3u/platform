@@ -49,6 +49,42 @@ test('every active Supabase-starting job uses ECR Public without GHCR login', ()
       if (!startsSupabase && !job.env?.SUPABASE_INTERNAL_IMAGE_REGISTRY)
         continue;
       count++;
+      const caches = steps.filter(
+        (step) => step.uses === './.github/actions/cache-supabase-images'
+      );
+      assert.equal(caches.length, 1, label);
+      if (id === 'seed-images') {
+        assert.match(job.if, /refs\/heads\/main/);
+        assert.deepEqual(job.strategy.matrix.profile, [
+          'contract',
+          'contract-http',
+          'full',
+        ]);
+        assert.equal(caches[0].with['pull-budget-seconds'], '600');
+        count--;
+        continue;
+      }
+      const cache = caches[0];
+      if (name === 'employee-schema-contract.yaml') {
+        assert.equal(cache.with.database, 'source/apps/database');
+        assert.match(cache.with.profile, /inputs.include_http/);
+      } else
+        assert.equal(
+          cache.with?.profile ?? 'contract',
+          [
+            'supabase-baseline.yaml',
+            'mail-profile-runtime-contract.yaml',
+          ].includes(name)
+            ? 'full'
+            : 'contract',
+          label
+        );
+      const cacheIndex = steps.indexOf(cache);
+      const installIndex = steps.findIndex((step) =>
+        /run-with-backoff.sh bun install/.test(step.run ?? '')
+      );
+      assert.ok(cacheIndex > installIndex && installIndex >= 0, label);
+
       const env = { ...workflow.env, ...job.env };
       assert.equal(
         env.SUPABASE_INTERNAL_IMAGE_REGISTRY,

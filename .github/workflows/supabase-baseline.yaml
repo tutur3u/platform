@@ -6,9 +6,16 @@ on:
       - scripts/ci/supabase-registry.test.js
       - scripts/ci/supabase-baseline*
       - apps/database/scripts/run-supabase*.js
+      - '.github/actions/cache-supabase-images/**'
+      - 'scripts/ci/supabase-image-cache*'
       - .github/actions/setup-supabase-baseline/**
       - .github/workflows/supabase-baseline.yaml
   workflow_dispatch:
+    inputs:
+      seed_images_only:
+        description: Seed all image profiles on main without database contracts
+        type: boolean
+        default: false
 env:
   SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
 permissions:
@@ -17,7 +24,31 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}
 jobs:
+  seed-images:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.seed_images_only == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      max-parallel: 1
+      matrix:
+        profile: [contract, contract-http, full]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.3
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: ./.github/actions/cache-supabase-images
+        with:
+          profile: ${{ matrix.profile }}
+          pull-budget-seconds: "600"
   cold-warm-corrupt:
+    if: inputs.seed_images_only != true
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -35,8 +66,11 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
+      - uses: ./.github/actions/cache-supabase-images
+        with:
+          profile: full
       - name: Verify image-pull retry boundaries
-        run: node --test scripts/ci/supabase-registry.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
+        run: node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-registry.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
       - name: Cold baseline from all migrations
         id: cold
         run: node scripts/ci/supabase-baseline.js prepare
@@ -89,6 +123,9 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
+      - uses: ./.github/actions/cache-supabase-images
+        with:
+          profile: full
       - uses: actions/download-artifact@v8
         with:
           name: pristine-supabase-baseline

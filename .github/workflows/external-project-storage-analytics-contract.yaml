@@ -8,6 +8,8 @@ on:
       - "apps/database/scripts/external-project-storage-analytics-concurrency.mjs"
       - "apps/database/scripts/time-tracker-control-concurrency.mjs"
       - "apps/database/scripts/run-supabase*.js"
+      - '.github/actions/cache-supabase-images/**'
+      - 'scripts/ci/supabase-image-cache*'
       - "apps/database/scripts/programming-database-tap.mjs"
       - "apps/database/scripts/programming-database-tap.test.mjs"
       - "apps/database/scripts/external-project-storage-analytics-contract.test.mjs"
@@ -68,6 +70,7 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: ./.github/actions/cache-supabase-images
       - name: Verify TAP parser and bounded fixture sessions
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/external-project-storage-analytics-contract.test.mjs
       - name: Apply complete schema, run strict pgTAP, generate actual schema types

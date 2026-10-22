@@ -6,6 +6,8 @@ on:
       - 'apps/database/supabase/tests/sso-persistence.sql'
       - 'apps/database/scripts/*sso*persistence*.mjs'
       - 'apps/database/scripts/run-supabase*.js'
+      - '.github/actions/cache-supabase-images/**'
+      - 'scripts/ci/supabase-image-cache*'
       - 'apps/database/scripts/programming-database-tap.mjs'
       - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'tuturuuu.ci.ts'
@@ -62,6 +64,7 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: ./.github/actions/cache-supabase-images
       - name: Apply full schema, qualify isolation and replay, generate applied types
         run: node apps/database/scripts/verify-sso-persistence.mjs
       - uses: actions/upload-artifact@v7

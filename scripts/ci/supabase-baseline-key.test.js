@@ -129,6 +129,13 @@ test('baseline failure classification never forwards raw child output', () => {
       'Supabase image pull throttled after 7 attempts.',
     ],
     [
+      {
+        stderr:
+          'Supabase image pull throttled after 3 attempts (public.ecr.aws supabase/realtime).\n',
+      },
+      'Supabase image pull throttled after 3 attempts (public.ecr.aws supabase/realtime).',
+    ],
+    [
       { stderr: 'Supabase image pull transport failed after 7 attempts.\n' },
       'Supabase image pull transport failed after 7 attempts.',
     ],

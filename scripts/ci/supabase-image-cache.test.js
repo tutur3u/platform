@@ -1,0 +1,246 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const test = require('node:test');
+const {
+  cacheKey,
+  imageList,
+  trustedSave,
+  pullBudget,
+  pullImage,
+  MAX_ARCHIVE_BYTES,
+} = require('./supabase-image-cache.js');
+const services = [
+  ['supabase/postgres', '17.6.1.167'],
+  ['supabase/postgres-meta', 'v0.99.0'],
+  ['postgrest/postgrest', 'v16.2'],
+  ['supabase/gotrue', 'v2.196.0'],
+  ['supabase/realtime', 'v2.130.0'],
+  ['supabase/storage-api', 'v1.72.1'],
+  ['supabase/studio', '2026.08.24-sha-8ec45b2'],
+].map(([name, local]) => ({ name, local }));
+const identity = {
+  services,
+  cliVersion: '2.117.0',
+  registry: 'public.ecr.aws',
+  profile: 'contract',
+};
+test('contract images derive versions from CLI metadata including temporary overrides', () => {
+  assert.deepEqual(imageList(identity), [
+    'public.ecr.aws/supabase/gotrue:v2.196.0',
+    'public.ecr.aws/supabase/postgres:17.6.1.167',
+    'public.ecr.aws/supabase/postgres-meta:v0.99.0',
+    'public.ecr.aws/supabase/realtime:v2.130.0',
+    'public.ecr.aws/supabase/storage-api:v1.72.1',
+  ]);
+  assert.ok(
+    imageList({
+      ...identity,
+      services: services.map((s) =>
+        s.name.endsWith('/postgres') ? { ...s, local: '17.6.1.168' } : s
+      ),
+    }).includes('public.ecr.aws/supabase/postgres:17.6.1.168')
+  );
+  assert.deepEqual(imageList({ ...identity, profile: 'contract-http' }), [
+    'public.ecr.aws/supabase/gotrue:v2.196.0',
+    'public.ecr.aws/supabase/kong:2.8.1',
+    'public.ecr.aws/supabase/postgres:17.6.1.167',
+    'public.ecr.aws/supabase/postgres-meta:v0.99.0',
+    'public.ecr.aws/supabase/postgrest:v16.2',
+    'public.ecr.aws/supabase/realtime:v2.130.0',
+    'public.ecr.aws/supabase/storage-api:v1.72.1',
+  ]);
+});
+test('full stack includes pinned supplemental images and omits disabled services', () => {
+  const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
+  const images = imageList({ ...identity, profile: 'full', config });
+  assert.equal(images.length, 10);
+  for (const image of ['kong:2.8.1', 'mailpit:v1.30.2', 'imgproxy:v3.8.0'])
+    assert.ok(images.includes(`public.ecr.aws/supabase/${image}`));
+  assert.ok(
+    images.every(
+      (image) => !/edge-runtime|logflare|vector|supavisor/.test(image)
+    )
+  );
+  assert.throws(
+    () =>
+      imageList({
+        ...identity,
+        profile: 'full',
+        config: config.replace(
+          '[analytics]\nenabled = false',
+          '[analytics]\nenabled = true'
+        ),
+      }),
+    /Uncached service/
+  );
+  assert.equal(MAX_ARCHIVE_BYTES, 6 * 1024 ** 3);
+});
+test('unknown versions, profiles, registry and malformed metadata fail closed', () => {
+  for (const patch of [
+    { cliVersion: '2.118.0' },
+    { profile: 'typo' },
+    { registry: 'https://user:secret@ghcr.io' },
+    { services: [] },
+    { services: [...services, services[0]] },
+    { services: [{ name: 'supabase/postgres', local: 'v1;secret' }] },
+  ])
+    assert.throws(() => imageList({ ...identity, ...patch }));
+});
+test('cache identity is order stable and binds images, registry, OS and architecture', () => {
+  const input = {
+    images: imageList(identity),
+    registry: identity.registry,
+    platform: 'linux',
+    arch: 'x64',
+  };
+  const key = cacheKey(input);
+  assert.equal(
+    cacheKey({ ...input, images: [...input.images].reverse() }),
+    key
+  );
+  for (const patch of [
+    { images: [input.images[0]] },
+    { images: ['public.ecr.aws/supabase/postgres:other'] },
+    { registry: 'ghcr.io' },
+    { platform: 'darwin' },
+    { arch: 'arm64' },
+  ])
+    assert.notEqual(cacheKey({ ...input, ...patch }), key);
+});
+test('only pushes and manual dispatch on main populate caches', () => {
+  for (const event of [
+    'push',
+    'workflow_dispatch',
+    'pull_request',
+    'pull_request_target',
+    'workflow_run',
+  ])
+    for (const ref of [
+      'refs/heads/main',
+      'refs/heads/production',
+      'refs/heads/feature/test',
+      'refs/pull/6409/merge',
+    ])
+      assert.equal(
+        trustedSave(event, ref),
+        ref === 'refs/heads/main' &&
+          ['push', 'workflow_dispatch'].includes(event)
+      );
+});
+
+test('extended seed budget is main-only and normal misses retain two minutes', () => {
+  assert.equal(
+    pullBudget(undefined, 'pull_request', 'refs/pull/1/merge'),
+    120000
+  );
+  assert.equal(
+    pullBudget('600', 'workflow_dispatch', 'refs/heads/main'),
+    600000
+  );
+  assert.throws(() => pullBudget('600', 'pull_request', 'refs/pull/1/merge'));
+  assert.throws(() =>
+    pullBudget('600', 'workflow_dispatch', 'refs/heads/feature/test')
+  );
+  assert.throws(() => pullBudget('900', 'push', 'refs/heads/main'));
+});
+
+test('real cache helper pulls only on miss, saves only trusted archives, and loads without pulls', async (t) => {
+  const { execFileSync } = require('node:child_process');
+  const os = require('node:os');
+  const path = require('node:path');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'image-cache-helper-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const database = path.join(root, 'database');
+  fs.mkdirSync(path.join(database, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(database, 'supabase'));
+  fs.writeFileSync(path.join(database, 'supabase/config.toml'), '');
+  fs.writeFileSync(
+    path.join(database, 'scripts/run-supabase.js'),
+    `console.log(process.argv.includes('--version') ? '2.117.0' : ${JSON.stringify(JSON.stringify(services))});`
+  );
+  const docker = path.join(root, 'docker');
+  fs.writeFileSync(
+    docker,
+    `#!/usr/bin/env node
+const fs = require('node:fs');
+const path = require('node:path');
+const root = __dirname;
+const args = process.argv.slice(2);
+fs.appendFileSync(path.join(root, 'calls'), JSON.stringify(args) + '\\n');
+if (args[0] === 'image') {
+  if (!fs.existsSync(path.join(root, 'present'))) process.exit(1);
+  console.log(args.includes('--format') ? '100' : '[]');
+}
+if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
+`
+  );
+  fs.chmodSync(docker, 0o755);
+  const env = {
+    ...process.env,
+    PATH: `${root}:${process.env.PATH}`,
+    RUNNER_TEMP: root,
+    IMAGE_DATABASE: database,
+    IMAGE_PROFILE: 'contract',
+    SUPABASE_INTERNAL_IMAGE_REGISTRY: 'public.ecr.aws',
+    GITHUB_OUTPUT: path.join(root, 'output'),
+    GITHUB_EVENT_NAME: 'pull_request',
+    GITHUB_REF: 'refs/pull/6409/merge',
+  };
+  const run = (mode) =>
+    execFileSync(
+      process.execPath,
+      ['scripts/ci/supabase-image-cache.js', mode],
+      { env, encoding: 'utf8' }
+    );
+  run('key');
+  assert.match(fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'), /save=false/);
+  run('pull');
+  const calls = () =>
+    fs
+      .readFileSync(path.join(root, 'calls'), 'utf8')
+      .trim()
+      .split('\n')
+      .map(JSON.parse);
+  assert.equal(calls().filter((args) => args[0] === 'pull').length, 5);
+  assert.equal(
+    calls().some((args) => args[0] === 'save'),
+    false
+  );
+  fs.writeFileSync(path.join(root, 'present'), '');
+  env.GITHUB_EVENT_NAME = 'workflow_dispatch';
+  env.GITHUB_REF = 'refs/heads/main';
+  run('key');
+  assert.match(fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'), /save=true/);
+  env.IMAGE_SAVE = 'true';
+  run('pull');
+  assert.equal(calls().filter((args) => args[0] === 'save').length, 1);
+  const pulls = calls().filter((args) => args[0] === 'pull').length;
+  assert.match(run('load'), /Loaded and verified 5 cached Supabase images/);
+  assert.equal(calls().filter((args) => args[0] === 'pull').length, pulls);
+  assert.equal(calls().filter((args) => args[0] === 'load').length, 1);
+});
+
+test('deadline exhaustion retains the last registry classification and bootstrap instruction', async () => {
+  let now = 0;
+  const messages = [];
+  const result = await pullImage('public.ecr.aws/supabase/realtime:v2', {
+    deadline: 100,
+    budget: 120000,
+    now: () => now,
+    spawn: () => ({ status: 1, stderr: 'HTTP 429 secret-token' }),
+    retryOptions: {
+      sleepMs: async () => {
+        now = 101;
+      },
+      random: () => 0,
+    },
+    stderr: { write: (message) => messages.push(message) },
+  });
+  assert.equal(result.code, 1);
+  assert.equal(
+    messages[0],
+    'Supabase image pull throttled after 1 attempts (public.ecr.aws supabase/realtime).\n'
+  );
+  assert.match(messages[1], /trusted main run/);
+  assert.ok(messages.every((message) => !message.includes('secret-token')));
+});

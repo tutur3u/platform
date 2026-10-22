@@ -11,6 +11,8 @@ on:
       - "apps/web/e2e/helpers/**"
       - "apps/database/supabase/**"
       - "apps/database/scripts/run-supabase*.js"
+      - '.github/actions/cache-supabase-images/**'
+      - 'scripts/ci/supabase-image-cache*'
       - "packages/auth/**"
       - "packages/satellite/**"
       - "packages/sdk/src/cli/resources*"
@@ -63,6 +65,9 @@ jobs:
           package-manager-cache: false
       - name: Install frozen dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: ./.github/actions/cache-supabase-images
+        with:
+          profile: full
       - name: Install local certificate tooling and sandboxed Chromium
         run: |
           # Browser OS packages come from Ubuntu, not the runner's vendor feeds.
