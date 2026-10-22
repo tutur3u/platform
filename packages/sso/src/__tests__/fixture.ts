@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { generateKeyPairSync, randomUUID, sign } from 'node:crypto';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { deflateRawSync } from 'node:zlib';
 import { SAML as NodeSaml, ValidateInResponseTo } from '@node-saml/node-saml';
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
@@ -16,23 +19,30 @@ export function fixture() {
     privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
     publicKeyEncoding: { type: 'spki', format: 'pem' },
   });
-  // Private key exists only in memory and the child stdin pipe.
-  const certificate = execFileSync(
-    'openssl',
-    [
-      'req',
-      '-new',
-      '-x509',
-      '-key',
-      '/dev/stdin',
-      '-subj',
-      '/CN=Disposable SSO test',
-      '-days',
-      '1',
-      '-sha256',
-    ],
-    { input: privateKey, encoding: 'utf8' }
-  );
+  const directory = mkdtempSync(join(tmpdir(), 'sso-fixture-'));
+  let certificate: string;
+  try {
+    const keyPath = join(directory, 'private-key.pem');
+    writeFileSync(keyPath, privateKey, { mode: 0o600 });
+    certificate = execFileSync(
+      'openssl',
+      [
+        'req',
+        '-new',
+        '-x509',
+        '-key',
+        keyPath,
+        '-subj',
+        '/CN=Disposable SSO test',
+        '-days',
+        '1',
+        '-sha256',
+      ],
+      { encoding: 'utf8' }
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
   const idp = {
     entityId: 'https://idp.example.test/metadata',
     ssoUrl: 'https://idp.example.test/sso',
