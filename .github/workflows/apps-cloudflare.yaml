@@ -1,14 +1,98 @@
 name: Apps Cloudflare Source
 on:
   pull_request:
-    paths: ['apps/apps/**', 'packages/utils/src/launchable-apps.ts', 'packages/utils/src/constants.ts', 'packages/utils/src/portless.ts', 'bun.lock', '.github/workflows/apps-cloudflare.yaml', 'tuturuuu.ci.ts']
+    paths:
+      [
+        'apps/apps/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/storage-core/**',
+        'packages/turnstile/**',
+        'packages/auth/**',
+        'packages/satellite/**',
+        'packages/internal-api/**',
+        'packages/supabase/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/icons/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'apps/web/package.json',
+        'scripts/ci/apps-native-*',
+        'scripts/ci/native-wrangler-*.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/calendar-native-runtime-profile.mjs',
+        'scripts/ci/native-source-identity-test-helper.js',
+        'bun.lock',
+        '.github/workflows/apps-cloudflare.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
   push:
     branches: [main]
-    paths: ['apps/apps/**', 'packages/utils/src/launchable-apps.ts', 'packages/utils/src/constants.ts', 'packages/utils/src/portless.ts', 'bun.lock', '.github/workflows/apps-cloudflare.yaml', 'tuturuuu.ci.ts']
+    paths:
+      [
+        'apps/apps/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/storage-core/**',
+        'packages/turnstile/**',
+        'packages/auth/**',
+        'packages/satellite/**',
+        'packages/internal-api/**',
+        'packages/supabase/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/icons/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'apps/web/package.json',
+        'scripts/ci/apps-native-*',
+        'scripts/ci/native-wrangler-*.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/calendar-native-runtime-profile.mjs',
+        'scripts/ci/native-source-identity-test-helper.js',
+        'bun.lock',
+        '.github/workflows/apps-cloudflare.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
 permissions:
   contents: read
 concurrency:
-  group: apps-cloudflare-source-${{ github.ref }}
+  group: apps-cloudflare-source-${{ github.event_name }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}
   cancel-in-progress: false
   queue: max
 jobs:
@@ -23,40 +107,305 @@ jobs:
     needs: check-ci
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    env:
+      APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.APPS_SOURCE_SHA }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
-          node-version: 24
-      - run: bun install --frozen-lockfile
-      - run: bun run test:cloudflare
-        working-directory: apps/apps
-      - name: Type-check portable client and Worker without emitting
-        run: bun x --no-install tsc --ignoreConfig --strict --noEmit --moduleResolution bundler --module ESNext --jsx react-jsx --target ESNext --resolveJsonModule --allowSyntheticDefaultImports --skipLibCheck --types node cloudflare/gateway-worker.ts src/portable/catalogue-entry.tsx src/portable/entry.tsx src/portable/vite-env.d.ts vite.config.mts vitest.cloudflare.config.ts
-        working-directory: apps/apps
-      - name: Build owning Apps Next app
+          node-version: 24.22.0
+      - name: Verify immutable checkout identity
+        run: test "$(git rev-parse HEAD)" = "$APPS_SOURCE_SHA"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Artifact helper source regressions
+        run: |
+          node --test scripts/ci/apps-native-source-identity.test.js apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-browser-fence.test.mjs
+          python3 scripts/ci/apps-native-artifact.test.py
+          node --test scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
+      - name: Build required active workspace dependencies
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/apps
+          command: bun turbo:local run build --filter='@tuturuuu/apps^...' --concurrency=2
           token: ''
           team: ''
-      - run: bun run build:cloudflare
+      - name: Generate exact-checkout build identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.APPS_SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: preview
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Test exact emitter resource guard and fixture egress policy
         working-directory: apps/apps
-      - name: Verify built local Worker and asset boundary
+        run: node --test cloudflare/native-runtime-fence.test.mjs
+      - name: Test actual native app boundaries
+        working-directory: apps/apps
+        run: bun run test:cloudflare
+      - name: Check native owning source and fixture formatting
+        run: bun x --no-install biome check apps/apps/src/native apps/apps/src/router.tsx apps/apps/src/routes apps/apps/src/components/apps-catalog-card.tsx apps/apps/cloudflare/worker.ts apps/apps/cloudflare/native-artifact-functions.mjs apps/apps/cloudflare/native-artifact-functions.test.mjs apps/apps/cloudflare/native-built-worker.test.mjs apps/apps/cloudflare/native-runtime-fence.mjs apps/apps/cloudflare/native-runtime-fence.test.mjs apps/apps/cloudflare/native-browser-navigation.mjs apps/apps/cloudflare/native-browser-fence.mjs apps/apps/cloudflare/native-browser-fence.test.mjs scripts/ci/apps-native-browser-fence.runtime.mjs apps/apps/cloudflare/native-route-fixtures.json apps/apps/vite.config.mts apps/apps/void.config.ts apps/apps/vitest.config.ts apps/apps/tsconfig.json apps/apps/package.json scripts/ci/apps-native-browser.runtime.mjs scripts/ci/apps-native-runtime-pointer.mjs scripts/ci/apps-native-runtime-pointer.test.mjs scripts/ci/apps-native-runtime-plan.mjs scripts/ci/apps-native-runtime.mjs scripts/ci/apps-native-runtime-launcher.mjs scripts/ci/apps-native-runtime.test.mjs scripts/ci/apps-native-runtime-receipt.test.mjs scripts/ci/apps-native-runtime-hidden.test.mjs
+      - name: Record Apps route tree presence before frontend build
+        id: apps-route-tree-before
+        shell: bash
+        run: |
+          route_tree=apps/apps/src/routeTree.gen.ts
+          if [ -e "$route_tree" ] || [ -L "$route_tree" ]; then
+            echo 'state=present' >> "$GITHUB_OUTPUT"
+          else
+            echo 'state=absent' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build native Start SSR with the official Void SDK
+        id: apps-frontend-build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://apps-ci.supabase.invalid
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_apps_ci_placeholder
+          NEXT_PUBLIC_APP_URL: https://apps.tuturuuu.com
+          NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+          TUTURUUU_NOINDEX: '1'
+        with:
+          command: cd apps/apps && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Capture generated Apps route tree evidence
+        if: always()
+        shell: bash
+        env:
+          APPS_ROUTE_TREE_BEFORE: ${{ steps.apps-route-tree-before.outputs.state || 'unknown' }}
+          APPS_FRONTEND_BUILD_OUTCOME: ${{ steps.apps-frontend-build.outcome || 'unknown' }}
+        run: |
+          route_tree=apps/apps/src/routeTree.gen.ts
+          if [ ! -f "$route_tree" ]; then
+            echo '::notice::Apps route tree is absent; no generated evidence captured'
+            exit 0
+          fi
+          head_tracked=false
+          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
+            head_tracked=true
+          fi
+          source_origin=unproven
+          if [ "$APPS_ROUTE_TREE_BEFORE" = absent ] && [ "$head_tracked" = false ]; then
+            case "$APPS_FRONTEND_BUILD_OUTCOME" in
+              success|failure) source_origin=fresh-bootstrap ;;
+            esac
+          fi
+          evidence="$RUNNER_TEMP/apps-route-tree-$APPS_SOURCE_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$evidence"
+          cp "$route_tree" "$evidence/routeTree.gen.ts"
+          {
+            printf 'expected_source_sha=%s\n' "$APPS_SOURCE_SHA"
+            printf 'source_head=%s\n' "$(git rev-parse HEAD)"
+            printf 'github_sha=%s\n' "$GITHUB_SHA"
+            printf 'prebuild_state=%s\n' "$APPS_ROUTE_TREE_BEFORE"
+            printf 'head_tracked=%s\n' "$head_tracked"
+            printf 'build_outcome=%s\n' "$APPS_FRONTEND_BUILD_OUTCOME"
+            printf 'source_origin=%s\n' "$source_origin"
+            printf 'bun_lock_sha256=%s\n' "$(sha256sum bun.lock | cut -d ' ' -f 1)"
+            printf 'route_tree_sha256=%s\n' "$(sha256sum "$evidence/routeTree.gen.ts" | cut -d ' ' -f 1)"
+          } > "$evidence/source-receipt.txt"
+      - name: Retain generated Apps route tree evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/apps-route-tree-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Reject tracked Apps route tree drift
+        if: always()
+        shell: bash
+        run: |
+          route_tree=apps/apps/src/routeTree.gen.ts
+          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
+            git diff --exit-code HEAD -- "$route_tree"
+          fi
+      - name: Type-check native app without a build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/apps && bun run type-check
+          token: ''
+          team: ''
+      - name: Discover actual emitted config and assert staging resource/static contract
+        id: output
+        run: python3 scripts/ci/apps-native-artifact.py config apps/apps
+      - name: Record bounded apps native emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/apps "$APPS_SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config-apps.json"
+      - name: Retain apps diagnostic config receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: apps-native-config-receipt-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-emitted-config-apps.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Generate emitted binding types outside the frozen source
+        working-directory: apps/apps
+        run: bun x --no-install wrangler types --config "${{ steps.output.outputs.config }}" --env-interface AppsGeneratedEnv --include-runtime=false "$RUNNER_TEMP/apps-env.d.ts"
+      - name: Check generated binding compatibility with the owning Worker
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root, temporary = Path.cwd(), Path(os.environ['RUNNER_TEMP'])
+          harness = temporary / 'apps-env-check.ts'
+          harness.write_text('/// <reference path=' + json.dumps(str(root / 'apps/apps/node_modules/@cloudflare/workers-types/index.d.ts')) + ' />\nimport type { AppsEnvironment } from ' + json.dumps(str(root / 'apps/apps/cloudflare/worker')) + ';\ndeclare const generated: AppsGeneratedEnv;\nconst owned: AppsEnvironment = generated;\nvoid owned;\n')
+          config = {'extends': str(root / 'apps/apps/tsconfig.json'), 'compilerOptions': {'types': ['node'], 'typeRoots': [str(root / 'node_modules/@types')], 'noEmit': True}, 'include': [str(harness), str(temporary / 'apps-env.d.ts')]}
+          (temporary / 'apps-env-tsconfig.json').write_text(json.dumps(config))
+          PY
+          bun x --no-install tsc --project "$RUNNER_TEMP/apps-env-tsconfig.json"
+      - name: Qualify the emitted exact-artifact Wrangler adapter without publication
+        working-directory: apps/apps
+        run: bun x --no-install wrangler deploy --dry-run --config "${{ steps.output.outputs.config }}" --outdir "$RUNNER_TEMP/apps-dry-run"
+      - name: Seal exact-source output before runtime acceptance
+        id: apps-canonical-seal
+        run: python3 scripts/ci/apps-native-artifact.py seal apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
+      - name: Exercise all native emitted HTTP/SSR/RPC contracts
+        timeout-minutes: 3
         working-directory: apps/apps
         env:
           CI: 'true'
-        run: CI_SOURCE_SHA=$(git rev-parse HEAD) node --test cloudflare/gateway-built-worker.test.mjs
-      - uses: actions/upload-artifact@v7
+          CI_SOURCE_SHA: ${{ env.APPS_SOURCE_SHA }}
+          APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
+        run: node --test cloudflare/native-built-worker.test.mjs
+      - name: Install existing Web Playwright Chromium for emitted browser acceptance
+        working-directory: apps/web
+        run: bun x --no-install playwright install --with-deps chromium
+      - name: Prove redirect interception with disposable loopback listeners
+        timeout-minutes: 2
+        run: node --test scripts/ci/apps-native-browser-fence.runtime.mjs
+      - name: Exercise actual catalogue anchors on the same emitted artifact
+        timeout-minutes: 5
+        env:
+          CI: 'true'
+          APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
+        uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          name: apps-cloudflare-source-${{ github.event.pull_request.head.sha || github.sha }}
-          path: apps/apps/dist
+          command: bun turbo:local run test:apps-native-browser --concurrency=1
+          token: ''
+          team: ''
+      - name: Recheck output and pack only qualified bytes
+        run: |
+          python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
+          python3 scripts/ci/apps-native-artifact.py pack apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json" --archive "$RUNNER_TEMP/apps-native.tar.gz"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: apps-native-${{ env.APPS_SOURCE_SHA }}
+          path: ${{ runner.temp }}/apps-native.tar.gz
           retention-days: 7
           if-no-files-found: error
+      - name: Verify and pack failed-job sealed source for debugging
+        id: apps-debug-pack
+        env:
+          WORKFLOW_SOURCE_SHA: ${{ github.workflow_sha }}
+        if: ${{ failure() && steps.apps-canonical-seal.outcome == 'success' }}
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$APPS_SOURCE_SHA"
+          python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
+          python3 scripts/ci/apps-native-artifact.py pack apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json" --archive "$RUNNER_TEMP/apps-debug-sealed-source.tar.gz"
+          printf 'classification=DEBUG sealed source; NOT qualified release\nexpected_source_sha=%s\ncheckout_head=%s\ngithub_sha=%s\nworkflow_source_sha=%s\nevent_name=%s\nrun_id=%s\nrun_attempt=%s\n' "$APPS_SOURCE_SHA" "$(git rev-parse HEAD)" "$GITHUB_SHA" "$WORKFLOW_SOURCE_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/apps-debug-sealed-source.txt"
+          sha256sum "$RUNNER_TEMP/apps-debug-sealed-source.tar.gz" "$RUNNER_TEMP/apps-native-artifact.json" >> "$RUNNER_TEMP/apps-debug-sealed-source.txt"
+      - name: Retain failed-job sealed source for debugging
+        if: ${{ failure() && steps.apps-canonical-seal.outcome == 'success' && steps.apps-debug-pack.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: apps-debug-sealed-source-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/apps-debug-sealed-source.tar.gz
+            ${{ runner.temp }}/apps-debug-sealed-source.txt
+          retention-days: 3
+          if-no-files-found: error
+      - name: Pack Apps finite public SDK evidence including hidden files
+        if: always()
+        shell: bash
+        run: |
+          if [ -d "$RUNNER_TEMP/apps-native-evidence" ]; then
+            tar -czf "$RUNNER_TEMP/apps-native-evidence.tar.gz" -C "$RUNNER_TEMP" apps-native-evidence
+          fi
+      - name: Retain Apps finite public SDK evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: apps-native-evidence-validate-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/apps-native-evidence.tar.gz
+          retention-days: 7
+          if-no-files-found: ignore
+  restore-acceptance:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.APPS_SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.3
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.22.0
+      - name: Verify immutable checkout identity
+        run: test "$(git rev-parse HEAD)" = "$APPS_SOURCE_SHA"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: apps-native-${{ env.APPS_SOURCE_SHA }}
+          path: ${{ runner.temp }}/apps-native-download
+      - name: Restore into clean output with member/hash/source checks
+        run: python3 scripts/ci/apps-native-artifact.py restore apps/apps --archive "$RUNNER_TEMP/apps-native-download/apps-native.tar.gz" --receipt "$RUNNER_TEMP/apps-native-artifact.json"
+      - name: Verify restored configuration
+        id: output
+        run: python3 scripts/ci/apps-native-artifact.py config apps/apps
+      - name: Recheck the Wrangler adapter on restored bytes without publication
+        working-directory: apps/apps
+        run: bun x --no-install wrangler deploy --dry-run --config "${{ steps.output.outputs.config }}" --outdir "$RUNNER_TEMP/apps-restored-dry-run"
+      - name: Repeat actual native HTTP/SSR/RPC acceptance on restored output
+        timeout-minutes: 3
+        working-directory: apps/apps
+        env:
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ env.APPS_SOURCE_SHA }}
+          APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
+        run: node --test cloudflare/native-built-worker.test.mjs
+      - name: Install existing Web Chromium driver
+        working-directory: apps/web
+        run: bun x --no-install playwright install --with-deps chromium
+      - name: Repeat ordinary anchor acceptance on restored workerd output
+        timeout-minutes: 5
+        env:
+          CI: 'true'
+          APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test:apps-native-browser --concurrency=1
+          token: ''
+          team: ''
+      - name: Confirm qualification did not mutate the restored artifact
+        run: python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
+      - name: Pack Apps finite public SDK evidence including hidden files
+        if: always()
+        shell: bash
+        run: |
+          if [ -d "$RUNNER_TEMP/apps-native-evidence" ]; then
+            tar -czf "$RUNNER_TEMP/apps-native-evidence.tar.gz" -C "$RUNNER_TEMP" apps-native-evidence
+          fi
+      - name: Retain Apps finite public SDK evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: apps-native-evidence-restored-${{ env.APPS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/apps-native-evidence.tar.gz
+          retention-days: 7
+          if-no-files-found: ignore

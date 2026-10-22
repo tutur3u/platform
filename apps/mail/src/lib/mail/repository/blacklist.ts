@@ -5,6 +5,11 @@ import type { MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { getMailMessage } from './messages';
 
+type MailBlacklistContext = {
+  admin: NonNullable<Awaited<ReturnType<typeof requireMailboxAccess>>>['admin'];
+  recipients: ReturnType<typeof getFailedMailRecipients>;
+};
+
 export const MAIL_BLACKLIST_REASONS = {
   inactive: 'Inactive/Abandoned',
   verification_failed: 'Verification Failed',
@@ -17,7 +22,7 @@ export async function getMailBlacklistContext(
   ctx: MailRouteContext,
   mailboxId: string,
   messageId: string
-) {
+): Promise<MailBlacklistContext | null> {
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
   // Match the global blacklist's root-workspace RLS, with the Infrastructure UI permission too.

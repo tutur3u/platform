@@ -35,6 +35,14 @@ jobs:
           echo "Deploying preview ref ${{ inputs.preview_ref }}."
           echo "skip_build=false" >> $GITHUB_OUTPUT
 
+      - name: Keep native Apps outside Vercel publication
+        shell: bash
+        run: |
+          if [ -f apps/apps/void.config.ts ]; then
+            echo "::error::Native Apps requires qualified Worker publication; legacy Vercel publication is disabled. Retain the previous Vercel deployment for rollback."
+            exit 1
+          fi
+
       - name: Setup bun
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: ./.github/actions/setup-bun-with-retry

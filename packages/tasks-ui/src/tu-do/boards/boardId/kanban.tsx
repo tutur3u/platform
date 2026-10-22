@@ -68,7 +68,7 @@ import type { TaskFilters } from './task-filter';
 const DEADLINE_REFRESH_INTERVAL_MS = 60_000;
 
 interface Props {
-  workspace: Workspace;
+  workspace: Pick<Workspace, 'id' | 'personal'>;
   workspaceTier?: WorkspaceProductTier | null;
   workspaceId: string;
   boardId: string | null;

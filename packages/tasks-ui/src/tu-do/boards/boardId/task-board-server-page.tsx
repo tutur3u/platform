@@ -4,17 +4,13 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { BoardClient } from '@tuturuuu/tasks-ui/tu-do/shared/board-client';
-import type {
-  Workspace,
-  WorkspaceProductTier,
-  WorkspaceTaskBoard,
-} from '@tuturuuu/types';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import type { ViewType } from '../../shared/board-views';
+import { loadTaskBoardPageModel } from './task-board-page-model';
 
 interface Props {
   params: Promise<{
@@ -30,31 +26,15 @@ interface Props {
   sessionUser?: { id: string };
 }
 
-type AuthorizedWorkspace = Workspace & {
-  joined: boolean;
-  tier: WorkspaceProductTier | null;
-};
-
-function createBoardGuestWorkspace(wsId: string): AuthorizedWorkspace {
-  return {
-    id: wsId,
-    joined: false,
-    personal: false,
-    tier: null,
-  } as AuthorizedWorkspace;
-}
-
-async function getAuthorizedBoard(wsId: string, boardId: string) {
+async function getAuthorizedBoard(
+  wsId: string,
+  boardId: string,
+  auth: ReturnType<typeof withForwardedInternalApiAuth>
+) {
   try {
-    const { board } = await getWorkspaceTaskBoard(
-      wsId,
-      boardId,
-      withForwardedInternalApiAuth(await headers())
-    );
+    const { board } = await getWorkspaceTaskBoard(wsId, boardId, auth);
 
-    return board as WorkspaceTaskBoard & {
-      access_type?: 'member' | 'guest';
-    };
+    return board;
   } catch (error) {
     if (
       error instanceof InternalApiError &&
@@ -88,14 +68,20 @@ export default async function TaskBoardServerPage({
   const user = sessionUser ?? (await getCurrentUser());
   if (!user) redirect('/login');
 
-  const board = await getAuthorizedBoard(id, boardId);
-  if (!board?.id) notFound();
-
-  const isMemberBoardAccess = board.access_type === 'member';
-  const workspace = isMemberBoardAccess
-    ? await getWorkspace(board.ws_id, { useAdmin: true, user })
-    : createBoardGuestWorkspace(board.ws_id);
-  if (!workspace) notFound();
+  const model = await loadTaskBoardPageModel({
+    boardId,
+    user,
+    auth: withForwardedInternalApiAuth(await headers()),
+    getBoard: (_actor, auth) => getAuthorizedBoard(id, boardId, auth),
+    getWorkspace: (wsId, actor) =>
+      getWorkspace(wsId, { useAdmin: true, user: actor }),
+  });
+  if (!model) notFound();
+  const { board } = model;
+  const workspace =
+    model.access === 'guest'
+      ? { ...model.workspace, joined: false }
+      : model.workspace;
 
   return (
     <BoardClient

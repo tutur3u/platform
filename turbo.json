@@ -125,6 +125,11 @@
     "USERPROFILE"
   ],
   "tasks": {
+    "//#test:apps-native-browser": {
+      "cache": false,
+      "env": ["APPS_SOURCE_SHA", "CI"],
+      "passThroughEnv": ["APPS_ARTIFACT_RECEIPT"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "env": [

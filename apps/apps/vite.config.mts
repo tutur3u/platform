@@ -1,38 +1,64 @@
-import { cloudflare } from '@cloudflare/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
+import { voidPlugin } from 'void';
 
-export default defineConfig({
-  root: new URL('./src/portable', import.meta.url).pathname,
+const native = (path: string) =>
+  new URL(`./src/native/${path}`, import.meta.url).pathname;
+export default defineConfig(({ command }) => ({
   plugins: [
+    voidPlugin(),
+    tanstackStart({
+      start: { entry: './start.ts' },
+      router: {
+        enableRouteGeneration: true,
+        routesDirectory: 'routes',
+        generatedRouteTree: 'routeTree.gen.ts',
+        routeTreeFileHeader: [],
+        disableTypes: false,
+      },
+      serverFns: { base: '/_serverFn' },
+      importProtection: {
+        behavior: 'error',
+        client: {
+          specifiers: [
+            'node:async_hooks',
+            '@tuturuuu/satellite/auth',
+            '@tuturuuu/utils/api-proxy-guard',
+            '@tuturuuu/supabase/next/server',
+          ],
+          files: [/\.server\.[cm]?[jt]sx?$/],
+        },
+      },
+    }),
     react(),
     tailwindcss(),
-    cloudflare({
-      configPath: new URL('./wrangler.staging.jsonc', import.meta.url).pathname,
-      viteEnvironment: { name: 'worker' },
-      remoteBindings: false,
-      inspectorPort: false,
-    }),
-    {
-      name: 'apps-public-framework-boundary',
-      generateBundle() {
-        const forbidden = [...this.getModuleIds()].filter((id) =>
-          /\/node_modules\/(next|next-intl)\//.test(id)
-        );
-        if (forbidden.length)
-          this.error(
-            `Public gateway must remain framework independent: ${forbidden.join(', ')}`
-          );
-      },
-    },
   ],
   environments: {
     client: {
-      build: { outDir: new URL('./dist/client', import.meta.url).pathname },
-    },
-    worker: {
-      build: { outDir: new URL('./dist/worker', import.meta.url).pathname },
+      define: {
+        'process.env': JSON.stringify({
+          ...Object.fromEntries(
+            Object.entries(process.env).filter(([name]) =>
+              name.startsWith('NEXT_PUBLIC_')
+            )
+          ),
+          NODE_ENV:
+            process.env.NODE_ENV ??
+            (command === 'build' ? 'production' : 'development'),
+        }),
+      },
     },
   },
-});
+  resolve: {
+    alias: [
+      { find: /^next\/headers$/, replacement: native('request-context.ts') },
+      { find: /^next\/server$/, replacement: native('next-server.ts') },
+      { find: /^next\/navigation$/, replacement: native('navigation.tsx') },
+      { find: /^next\/link$/, replacement: native('navigation.tsx') },
+      { find: /^next-intl$/, replacement: native('intl.tsx') },
+      { find: '@/', replacement: new URL('./src/', import.meta.url).pathname },
+    ],
+  },
+}));
