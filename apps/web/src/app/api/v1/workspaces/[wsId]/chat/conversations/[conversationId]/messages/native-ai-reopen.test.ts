@@ -60,7 +60,7 @@ it('keeps USER content authoritative when metadata claims a reply preview', asyn
 });
 
 it('saves long completed replies, reopens, and sends a follow-up with the full prior answer', async () => {
-  const saved: Array<typeof assistantMessage> = [];
+  const saved: Array<typeof assistantMessage | typeof userMessage> = [];
   const shadowRows: Record<string, unknown>[] = [];
   let currentUser = { ...userMessage };
   const reply = `${'A'.repeat(10_000)}The ending is required for the follow-up.`;
