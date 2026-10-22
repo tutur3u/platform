@@ -7,6 +7,9 @@ const BASE_DELAY_MS = 10_000;
 const MAX_DELAY_MS = 120_000;
 const JITTER_RATIO = 0.25;
 
+const THROTTLING =
+  /toomanyrequests|too many requests|rate exceeded|\b(?:HTTP(?: status)?[: ]+)?429\b/i;
+
 // Match the CLI's terminal registry diagnostics, not generic command failures.
 export function isTransientImagePullFailure(stderr) {
   const text = String(stderr);
@@ -18,7 +21,7 @@ export function isTransientImagePullFailure(stderr) {
     return false;
   }
   return (
-    /toomanyrequests|too many requests/i.test(text) ||
+    THROTTLING.test(text) ||
     (/failed to pull (?:docker )?image|error pulling image/i.test(text) &&
       /timeout|timed out|connection reset|unexpected EOF|TLS handshake|\b50[234]\b|temporarily unavailable/i.test(
         text
@@ -53,9 +56,7 @@ export async function retryImagePull(
     )
       return result;
     if (attempt === MAX_ATTEMPTS) {
-      const classification = /toomanyrequests|too many requests/i.test(
-        result.stderr
-      )
+      const classification = THROTTLING.test(result.stderr)
         ? 'throttled'
         : 'transport failed';
       stderr.write(

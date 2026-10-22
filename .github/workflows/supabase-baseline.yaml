@@ -3,14 +3,14 @@ on:
   push:
     branches-ignore: [production]
     paths:
+      - scripts/ci/supabase-registry.test.js
       - scripts/ci/supabase-baseline*
       - apps/database/scripts/run-supabase*.js
-      - .github/actions/login-supabase-registry/**
       - .github/actions/setup-supabase-baseline/**
       - .github/workflows/supabase-baseline.yaml
   workflow_dispatch:
 env:
-  SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
 permissions:
   contents: read
 concurrency:
@@ -20,17 +20,12 @@ jobs:
   cold-warm-corrupt:
     permissions:
       contents: read
-      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
       seed-epoch: ${{ steps.cold.outputs.seed-epoch }}
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/login-supabase-registry
-        with:
-          username: ${{ github.actor }}
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3
@@ -41,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
       - name: Verify image-pull retry boundaries
-        run: node --test .github/actions/login-supabase-registry/action.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
+        run: node --test scripts/ci/supabase-registry.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
       - name: Cold baseline from all migrations
         id: cold
         run: node scripts/ci/supabase-baseline.js prepare
@@ -79,17 +74,12 @@ jobs:
     needs: cold-warm-corrupt
     permissions:
       contents: read
-      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       SUPABASE_BASELINE_EPOCH: ${{ needs.cold-warm-corrupt.outputs.seed-epoch }}
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/login-supabase-registry
-        with:
-          username: ${{ github.actor }}
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3

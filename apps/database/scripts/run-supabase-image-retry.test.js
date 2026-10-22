@@ -20,13 +20,15 @@ const failure = {
   code: 1,
   signal: null,
   stderr:
-    'failed to pull docker image from all registries: ghcr.io/supabase/postgres: toomanyrequests',
+    'failed to pull docker image from all registries: public.ecr.aws/supabase/postgres: toomanyrequests',
 };
 
 test('classifies registry throttling and transport errors, rejects real failures', () => {
   for (const text of [
     failure.stderr,
     'Error response from daemon: toomanyrequests',
+    'public.ecr.aws/supabase/postgres: Rate exceeded',
+    'failed to pull docker image: received unexpected HTTP status: 429 Too Many Requests',
     'failed to pull docker image: TLS handshake timeout',
     'error pulling image: unexpected EOF',
     'failed to pull docker image: received unexpected HTTP status: 503 Service Unavailable',
@@ -89,6 +91,8 @@ test('exhaustion returns final failure after seven attempts with bounded exponen
 test('exhaustion publishes only a fixed throttling or transport classification', async () => {
   for (const [diagnostic, classification] of [
     ['toomanyrequests secret-token', 'throttled'],
+    ['public.ecr.aws: Rate exceeded secret-token', 'throttled'],
+    ['HTTP 429 secret-token', 'throttled'],
     [
       'failed to pull docker image: TLS handshake timeout secret-token',
       'transport failed',

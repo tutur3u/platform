@@ -6,7 +6,6 @@ on:
       - 'apps/database/supabase/tests/sso-persistence.sql'
       - 'apps/database/scripts/*sso*persistence*.mjs'
       - 'apps/database/scripts/run-supabase*.js'
-      - .github/actions/login-supabase-registry/**
       - 'apps/database/scripts/programming-database-tap.mjs'
       - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'tuturuuu.ci.ts'
@@ -18,7 +17,6 @@ on:
       - 'apps/database/supabase/tests/sso-persistence.sql'
       - 'apps/database/scripts/*sso*persistence*.mjs'
       - 'apps/database/scripts/run-supabase*.js'
-      - .github/actions/login-supabase-registry/**
       - 'apps/database/scripts/programming-database-tap.mjs'
       - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'tuturuuu.ci.ts'
@@ -42,11 +40,10 @@ jobs:
     if: always() && needs.check-ci.result == 'success'
     permissions:
       contents: read
-      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
     steps:
       - name: Require enabled contract gate
         env:
@@ -56,10 +53,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - uses: ./.github/actions/login-supabase-registry
-        with:
-          username: ${{ github.actor }}
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3

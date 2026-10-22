@@ -7,7 +7,6 @@ on:
       - "apps/database/supabase/tests/tutoring-absence-credit-lifecycle.sql"
       - "apps/database/scripts/verify-tutoring-absence-credit-contract.mjs"
       - "apps/database/scripts/run-supabase*.js"
-      - .github/actions/login-supabase-registry/**
       - "apps/database/scripts/programming-database-tap.mjs"
       - "apps/database/scripts/programming-database-tap.test.mjs"
       - "apps/database/scripts/tutoring-absence-credit-concurrency.mjs"
@@ -23,7 +22,6 @@ on:
       - "apps/database/supabase/tests/tutoring-absence-credit-lifecycle.sql"
       - "apps/database/scripts/verify-tutoring-absence-credit-contract.mjs"
       - "apps/database/scripts/run-supabase*.js"
-      - .github/actions/login-supabase-registry/**
       - "apps/database/scripts/programming-database-tap.mjs"
       - "apps/database/scripts/programming-database-tap.test.mjs"
       - "apps/database/scripts/tutoring-absence-credit-concurrency.mjs"
@@ -50,11 +48,10 @@ jobs:
     if: always() && needs.check-ci.result == 'success'
     permissions:
       contents: read
-      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
     steps:
       - name: Require an enabled contract gate
         env:
@@ -64,10 +61,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - uses: ./.github/actions/login-supabase-registry
-        with:
-          username: ${{ github.actor }}
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3
