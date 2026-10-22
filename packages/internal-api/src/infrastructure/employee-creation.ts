@@ -3,6 +3,27 @@ import { getInternalApiClient, type InternalApiClientOptions } from '../client';
 import { parseInternalApiError } from '../internal-api-error';
 
 export const EmployeeCreationOperationSchema = z.uuid();
+export const EmployeeCreationNonAdmissionSchema = z.strictObject({
+  status: z.literal('not_admitted'),
+  code: z.literal('employee_creation_not_admitted'),
+  reason: z.enum(['invalid_input', 'unavailable']),
+  phase: z.literal('before_claim'),
+  targetUserId: z.null(),
+  actorUserId: z.uuid(),
+  operationId: z.uuid(),
+  email: z.email(),
+  displayName: z.string().min(1).max(100),
+});
+export type EmployeeCreationNonAdmission = z.infer<
+  typeof EmployeeCreationNonAdmissionSchema
+>;
+/** Only this invocation stopped before claim; prior operations still need readback. */
+export class EmployeeCreationNotAdmittedError extends Error {
+  constructor(readonly outcome: EmployeeCreationNonAdmission) {
+    super('Employee creation was not admitted; retain the original operation');
+    this.name = 'EmployeeCreationNotAdmittedError';
+  }
+}
 // Supabase's required-symbol set is the printable ASCII punctuation ranges.
 export const EmployeeCreationPasswordSchema = z
   .string()
@@ -75,6 +96,7 @@ export type CreateInternalEmployeeResponse = z.infer<
 >;
 export type EmployeeCreationOptions = InternalApiClientOptions & {
   operationId: string;
+  actorUserId?: string;
 };
 const endpoint = '/api/v1/infrastructure/internal-accounts/employees';
 
@@ -106,12 +128,30 @@ export async function createInternalEmployee(
     },
     body: JSON.stringify(input),
   });
+  if (response.status === 400 || response.status === 503) {
+    const proof = EmployeeCreationNonAdmissionSchema.safeParse(
+      await response
+        .clone()
+        .json()
+        .catch(() => null)
+    );
+    if (
+      proof.success &&
+      response.status === (proof.data.reason === 'invalid_input' ? 400 : 503) &&
+      proof.data.actorUserId === options.actorUserId &&
+      proof.data.operationId === operationId &&
+      proof.data.email === input.email &&
+      proof.data.displayName === input.displayName
+    )
+      throw new EmployeeCreationNotAdmittedError(proof.data);
+  }
   if (!response.ok && response.status !== 409)
     throw await parseInternalApiError(response);
   const value: unknown = await response.json();
   const result = EmployeeCreationReplySchema.parse(value);
   if (
-    (response.status === 409 && result.status !== 'conflict') ||
+    (result.status === 'created' && response.status !== 201) ||
+    (result.status === 'pending' && response.status !== 202) ||
     (result.status === 'conflict' && response.status !== 409) ||
     result.operationId !== operationId ||
     (result.status === 'created' &&

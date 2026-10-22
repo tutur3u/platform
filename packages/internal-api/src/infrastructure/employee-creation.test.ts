@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import { InternalApiError } from '../client';
 import {
   createInternalEmployee,
+  EmployeeCreationNotAdmittedError,
   EmployeeCreationPayloadSchema,
   getEmployeeCreationAvailability,
 } from './employee-creation';
@@ -181,3 +183,162 @@ it('never accepts observation lineage fields as a CREATE mutation result', async
   ).rejects.toThrow();
   expect(transport).toHaveBeenCalledTimes(1);
 });
+
+const pending = {
+  status: 'pending',
+  operationId,
+  code: 'account_creation_outcome_unknown',
+  nextAction: 'inspect',
+};
+const conflict = {
+  status: 'conflict',
+  operationId,
+  code: 'employee_account_conflict',
+  nextAction: 'inspect',
+};
+it.each(
+  [201, 202, 409, 200].flatMap((status) =>
+    [reply, pending, conflict]
+      .filter(
+        (body) =>
+          !(
+            (status === 201 && body.status === 'created') ||
+            (status === 202 && body.status === 'pending') ||
+            (status === 409 && body.status === 'conflict')
+          )
+      )
+      .map((body) => ({ status, body }))
+  )
+)(
+  'rejects mismatched HTTP $status / $body.status without replay',
+  async ({ status, body }) => {
+    const transport = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json(body, { status }));
+    await expect(
+      createInternalEmployee(payload, { operationId, fetch: transport })
+    ).rejects.toThrow();
+    expect(transport).toHaveBeenCalledTimes(1);
+  }
+);
+
+const actorUserId = '11111111-1111-4111-8111-111111111111';
+it.each([400, 503])(
+  'preserves HTTP %s with a non-JSON body without qualifying nonadmission or replaying',
+  async (status) => {
+    const transport = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response('upstream unavailable', { status }));
+    const request = createInternalEmployee(payload, {
+      operationId,
+      actorUserId,
+      fetch: transport,
+      baseUrl: 'https://infra.test',
+    });
+    await expect(request).rejects.toBeInstanceOf(InternalApiError);
+    await expect(request).rejects.toMatchObject({
+      name: 'InternalApiError',
+      status,
+      message: `Internal API request failed: ${status}`,
+    });
+    await expect(request).rejects.not.toBeInstanceOf(
+      EmployeeCreationNotAdmittedError
+    );
+    await expect(request).rejects.not.toHaveProperty('outcome');
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(transport.mock.calls[0]?.[0]).toBe(
+      'https://infra.test/api/v1/infrastructure/internal-accounts/employees'
+    );
+    const init = transport.mock.calls[0]?.[1];
+    expect(init?.method).toBe('POST');
+    expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(operationId);
+    expect(JSON.parse(String(init?.body))).toEqual(payload);
+  }
+);
+const notAdmitted = {
+  status: 'not_admitted',
+  code: 'employee_creation_not_admitted',
+  reason: 'unavailable',
+  phase: 'before_claim',
+  targetUserId: null,
+  actorUserId,
+  operationId,
+  email: payload.email,
+  displayName: payload.displayName,
+};
+it('exposes only exact request-bound preclaim nonadmission as a typed error', async () => {
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(notAdmitted, { status: 503 }));
+  await expect(
+    createInternalEmployee(payload, {
+      operationId,
+      fetch: transport,
+      actorUserId,
+    })
+  ).rejects.toMatchObject({
+    name: 'EmployeeCreationNotAdmittedError',
+    outcome: notAdmitted,
+  });
+  expect(transport).toHaveBeenCalledTimes(1);
+});
+it.each([
+  {},
+  { actorUserId: operationId },
+  { operationId: actorUserId },
+  { email: 'other@tuturuuu.com' },
+  { displayName: 'Other' },
+  { phase: 'reserved' },
+  { targetUserId: actorUserId },
+  { extra: true },
+])('does not qualify unbound nonadmission %j', async (change) => {
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ ...notAdmitted, ...change }, { status: 503 })
+    );
+  await expect(
+    createInternalEmployee(payload, {
+      operationId,
+      fetch: transport,
+      ...(Object.keys(change).length ? { actorUserId } : {}),
+    })
+  ).rejects.not.toHaveProperty('outcome');
+  expect(transport).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  { status: 201, body: reply },
+  { status: 202, body: pending },
+  { status: 409, body: conflict },
+])('accepts exact HTTP $status / $body.status', async ({ status, body }) => {
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(body, { status }));
+  expect(
+    await createInternalEmployee(payload, { operationId, fetch: transport })
+  ).toEqual(body);
+  expect(transport).toHaveBeenCalledTimes(1);
+});
+it.each([
+  { status: 400, reason: 'unavailable' },
+  { status: 503, reason: 'invalid_input' },
+  { status: 201, reason: 'unavailable' },
+  { status: 202, reason: 'unavailable' },
+  { status: 409, reason: 'unavailable' },
+])(
+  'does not qualify nonadmission at HTTP $status with reason $reason',
+  async ({ status, reason }) => {
+    const transport = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ ...notAdmitted, reason }, { status }));
+    await expect(
+      createInternalEmployee(payload, {
+        operationId,
+        fetch: transport,
+        actorUserId,
+      })
+    ).rejects.not.toHaveProperty('outcome');
+    expect(transport).toHaveBeenCalledTimes(1);
+  }
+);

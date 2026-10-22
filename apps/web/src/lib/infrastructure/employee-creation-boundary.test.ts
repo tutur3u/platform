@@ -1,6 +1,11 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEmployeeCreationBoundary } from './employee-creation-boundary';
+import {
+  createEmployeeCreationJournal,
+  type EmployeeCreationPhaseProvider,
+} from './employee-creation-journal';
+import { createEmployeeCreationOperationStore } from './employee-creation-operation-store';
 
 const operationId = '0da9bb8d-fd22-433b-97a0-d54a0cecf5b3';
 const userId = 'e0dfe613-9e8a-4fa4-8f52-fd881aa2e9f2';
@@ -253,3 +258,175 @@ it.each([
     expect(provider).not.toHaveBeenCalled();
   }
 );
+
+function admissionFixture() {
+  let authorized = true;
+  const claim = vi.fn(async (_identity: unknown): Promise<unknown> => {
+    throw new Error('claim ACK lost');
+  });
+  const ready = vi.fn(async () => ({ ready: true }));
+  const store = createEmployeeCreationOperationStore({
+    now: () => 1000,
+    authorize: async (actorUserId) =>
+      authorized
+        ? {
+            actorUserId,
+            workspaceId: '00000000-0000-0000-0000-000000000000',
+            membership: 'MEMBER',
+            permission: 'admin',
+            email: 'admin@tuturuuu.com',
+            emailConfirmed: true,
+            unbanned: true,
+            observedAt: 1000,
+            expiresAt: 61000,
+          }
+        : null,
+    rpc: { ready, claim, advance: vi.fn(), revoke: vi.fn() },
+  });
+  const provider = {
+    available: vi.fn(async () => true),
+    beginInvocation:
+      vi.fn<NonNullable<EmployeeCreationPhaseProvider['beginInvocation']>>(),
+    createPending: vi.fn(),
+    finalize: vi.fn(),
+    activateAndConfirm: vi.fn(),
+  };
+  const journal = createEmployeeCreationJournal({ store, provider });
+  const handler = makeEmployeeCreationBoundary({ authorize, journal });
+  return {
+    claim,
+    ready,
+    provider,
+    journal,
+    handler,
+    revoke: () => {
+      authorized = false;
+    },
+  };
+}
+const nonAdmission = {
+  status: 'not_admitted',
+  code: 'employee_creation_not_admitted',
+  reason: 'unavailable',
+  actorUserId: userId,
+  operationId,
+  email: payload.email,
+  displayName: payload.displayName,
+  targetUserId: null,
+  phase: 'before_claim',
+};
+it.each(['false', 'throw'])(
+  'outer readiness passes but inner provider readiness %s never claims or reports unknown',
+  async (fault) => {
+    const f = admissionFixture();
+    f.provider.available
+      .mockResolvedValueOnce(true)
+      .mockImplementation(async () => {
+        if (fault === 'throw') throw new Error('readiness failed');
+        return false;
+      });
+    const response = await f.handler(request());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual(nonAdmission);
+    expect(f.claim).not.toHaveBeenCalled();
+    expect(f.provider.beginInvocation).not.toHaveBeenCalled();
+    expect(f.provider.createPending).not.toHaveBeenCalled();
+  }
+);
+it('invalid journal input is explicitly rejected before readiness, claim or provider', async () => {
+  const f = admissionFixture();
+  const result = await f.journal.claimAndRun({
+    actorUserId: userId,
+    operationId,
+    payload: { ...payload, temporaryPassword: 'short' },
+  });
+  expect(result).toEqual({ ...nonAdmission, reason: 'invalid_input' });
+  expect(f.ready).not.toHaveBeenCalled();
+  expect(f.claim).not.toHaveBeenCalled();
+  expect(f.provider.createPending).not.toHaveBeenCalled();
+});
+it.each(['claim-throws', 'lost-claim-ACK'])(
+  '%s stays pending on the original operation without a provider dispatch',
+  async (fault) => {
+    const f = admissionFixture();
+    const stored: unknown[] = [];
+    if (fault === 'lost-claim-ACK')
+      f.claim.mockImplementation(async (identity) => {
+        stored.push(identity);
+        throw new Error('committed reply lost');
+      });
+    const response = await f.handler(request());
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({
+      status: 'pending',
+      operationId,
+      code: 'account_creation_outcome_unknown',
+    });
+    expect(f.claim).toHaveBeenCalledExactlyOnceWith({
+      actorUserId: userId,
+      operationId,
+      email: payload.email,
+      displayName: payload.displayName,
+    });
+    expect(stored).toHaveLength(fault === 'lost-claim-ACK' ? 1 : 0);
+    expect(f.provider.beginInvocation).not.toHaveBeenCalled();
+    expect(f.provider.createPending).not.toHaveBeenCalled();
+  }
+);
+it.each([
+  { actorUserId: operationId },
+  { operationId: userId },
+  { email: 'other@tuturuuu.com' },
+  { displayName: 'Other' },
+  { targetUserId: userId },
+  { phase: 'reserved' },
+  { extra: true },
+])(
+  'keeps malformed or mismatched nonadmission proof unknown: %j',
+  async (change) => {
+    const handler = makeEmployeeCreationBoundary({
+      authorize,
+      journal: {
+        available: async () => true,
+        claimAndRun: async () => ({ ...nonAdmission, ...change }),
+      },
+    });
+    const response = await handler(request());
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({
+      status: 'pending',
+      operationId,
+      code: 'account_creation_outcome_unknown',
+    });
+  }
+);
+
+it('claim invocation remains uncertain when authorization fails inside claim before its RPC', async () => {
+  const f = admissionFixture();
+  f.provider.available
+    .mockResolvedValueOnce(true)
+    .mockImplementationOnce(async () => {
+      f.revoke();
+      return true;
+    });
+  const response = await f.handler(request());
+  expect(response.status).toBe(202);
+  expect(await response.json()).toMatchObject({
+    status: 'pending',
+    operationId,
+    code: 'account_creation_outcome_unknown',
+  });
+  expect(f.claim).not.toHaveBeenCalled();
+  expect(f.provider.createPending).not.toHaveBeenCalled();
+});
+it('inner store readiness failure proves no claim invocation or provider effect', async () => {
+  const f = admissionFixture();
+  f.ready
+    .mockResolvedValueOnce({ ready: true })
+    .mockRejectedValueOnce(new Error('readiness lost'));
+  const response = await f.handler(request());
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual(nonAdmission);
+  expect(f.claim).not.toHaveBeenCalled();
+  expect(f.provider.createPending).not.toHaveBeenCalled();
+});
