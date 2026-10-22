@@ -1863,6 +1863,13 @@ all PR and main-push workflows, checks supersession and explicit exceptions, and
 checks isolated rerun/dispatch groups, discovers workflow-run consumers and
 preserves mutating locks, including Biome jobs and Modal deployment. These are
 source/expression regressions, not a hosted scheduler or deployment experiment.
+Workflow-local contracts also inspect YAML outside `scripts/ci`; root script
+discovery does not cover every database suite. Run each workflow's Node contract
+tests after concurrency changes. For example,
+`node --test apps/database/scripts/topic-delivery-foundation-contract.test.mjs`
+checks main/PR supersession, non-cancelling production/release-please pushes,
+SHA/run/attempt isolation for protected pushes, reruns and dispatches, and negative
+controls for the former main policy and missing isolation guards.
 `scripts/ci/production-preflight-consolidation.test.js`
 executes the shared PR release check and validates the reduced job graph.
 
