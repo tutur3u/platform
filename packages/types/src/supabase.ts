@@ -50497,6 +50497,22 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      sso_finalize_issuance: {
+        Args: {
+          p_actor_id: string;
+          p_client_id: string;
+          p_key_id: string;
+          p_key_revision: number;
+          p_policy_revision: number;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      sso_issuance_snapshot: {
+        Args: { p_actor_id?: string; p_client_id: string };
+        Returns: Json;
+      };
       sso_manage_client: {
         Args: {
           p_acs_urls: string[];
@@ -50545,6 +50561,17 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      sso_reject_transaction: {
+        Args: {
+          p_actor_id?: string;
+          p_browser_binding_hash: string;
+          p_client_id: string;
+          p_policy_revision?: number;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       sso_set_assignment: {
         Args: {

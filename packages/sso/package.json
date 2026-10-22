@@ -17,6 +17,7 @@
   },
   "packageManager": "bun@1.4.1",
   "dependencies": {
+    "@tuturuuu/utils": "workspace:*",
     "@xmldom/xmldom": "0.9.12",
     "xml-crypto": "6.4.0",
     "zod": "4.6.2"

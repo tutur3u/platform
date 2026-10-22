@@ -133,7 +133,7 @@ export type ValidatedRequest = z.infer<typeof validatedRequestSchema>;
 export const identitySchema = z
   .object({
     // Persistence allocates this random value once per (client, Auth user).
-    pairwiseSubject: z.uuid(),
+    pairwiseSubject: z.union([z.uuid(), z.string().regex(/^[0-9a-f]{64}$/)]),
     email: z.email().max(254),
     firstName: xmlText.max(128),
     lastName: xmlText.max(128),

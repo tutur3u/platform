@@ -1867,6 +1867,7 @@
         "@tuturuuu/payment-core": "workspace:*",
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/sso": "workspace:*",
         "@tuturuuu/storage-core": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/tasks-api": "workspace:*",
@@ -2717,6 +2718,7 @@
       "name": "@tuturuuu/sso",
       "version": "0.0.0",
       "dependencies": {
+        "@tuturuuu/utils": "workspace:*",
         "@xmldom/xmldom": "0.9.12",
         "xml-crypto": "6.4.0",
         "zod": "4.6.2",

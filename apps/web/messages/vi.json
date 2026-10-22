@@ -17172,6 +17172,22 @@
     "join_waitlist": "Tham gia danh sách chờ",
     "title": "Sẵn sàng để bắt đầu?"
   },
+  "sso_consent": {
+    "approve": "Chấp thuận và tiếp tục",
+    "authentication_required": "Đăng nhập lại và xác minh bằng phương thức xác thực hiện tại trước khi tiếp tục. Bạn cũng cần là thành viên không gian làm việc hiện tại và được chỉ định rõ ràng.",
+    "continue": "Tiếp tục đến dịch vụ",
+    "denied": "Đã từ chối chia sẻ danh tính.",
+    "deny": "Từ chối",
+    "description": "Dịch vụ này sẽ nhận các thuộc tính danh tính sau:",
+    "destination": "Đăng nhập vào {name}",
+    "each_login": "Sự chấp thuận chỉ áp dụng cho lần đăng nhập này. Không chia sẻ mã truy cập Tuturuuu.",
+    "email": "Địa chỉ email đã xác minh của bạn (email)",
+    "first_name": "Tên của bạn (firstName)",
+    "last_name": "Họ của bạn (lastName)",
+    "sign_in": "Đăng nhập và xác minh MFA",
+    "subject": "Mã định danh ổn định dành riêng cho dịch vụ này (id)",
+    "title": "Chia sẻ danh tính của bạn"
+  },
   "storage-object-data-table": {
     "clear_files": "Huỷ tất cả",
     "created_at": "Ngày tạo",

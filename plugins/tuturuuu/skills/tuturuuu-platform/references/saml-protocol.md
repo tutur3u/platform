@@ -30,3 +30,14 @@ response in the test so a broken outer digest cannot satisfy the negative check;
 verify the intended signatures before expecting semantic rejection. Duplicate-ID
 and digest-tamper controls remain separate. The focused security-review suite
 covers these invariants and nested-request signed-target selection.
+
+Phase-3 Web adapters use service-only issuance snapshot/finalization RPCs; direct
+service-role reads of private SSO tables remain revoked. Preserve the post-signing
+policy/key/assignment fence, durable final audit and five-second emission budget.
+Never retry unknown consume/finalize outcomes. The existing account MFA helper
+permits optional-MFA accounts: SSO must additionally verify current factor lineage
+and ten-minute freshness from verified AMR, including primary-auth/recovery rules.
+The adapter accepts phase-2 hex pairwise subjects as well as earlier UUID fixtures.
+See the SSO feature page for the default-off flag, server secret names, browser
+binding, fixture boundaries and later pilot runbook. None of these fixtures proves
+real Claude acceptance or authorizes enabling a client.

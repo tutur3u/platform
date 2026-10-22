@@ -188,10 +188,10 @@ The harness adds exact Destination/Recipient checks because Node-SAML 5.1.0 does
 not enforce them for login responses. See `packages/sso/README.md` for dependency
 advisories, limits, reproduction commands and the samlify evaluation.
 
-Phase 2 supplies the private database primitives described above. Phase 3 supplies
-authoritative Auth/MFA/eligibility reads,
-disclosure enforcement, key/policy revision fences, durable audit and disabled
-Web routes. Phase 4 supplies bilingual management and per-login consent UI.
+Phase 2 supplies the private database primitives described above. Phase 3 adds
+authoritative Auth/MFA/eligibility reads, disclosure enforcement, key/policy
+revision fences, durable audit, disabled Web routes and a minimal bilingual
+per-login consent page. Phase 4 supplies workspace management UI.
 Phase 5 supplies rotation, compromise/disable procedures, an explicitly selected
 test workspace and connection, exact-commit CI/runtime acceptance and real Claude
 SSO tests. Runtime profile verification and actual Claude login remain unrun.
@@ -200,3 +200,136 @@ Run focused tests through `ttr resources run -- bun run --cwd packages/sso test`
 and the package's `type-check` script. Require applicable exact-commit CI before
 integration; no local release builds or production configuration changes are
 part of this phase.
+
+## Disabled issuance adapters (phase 3)
+
+All endpoints return 404 unless the server-only `SSO_SAML_ENABLED` is exactly
+`true`. No enabled client or production configuration is included in source.
+The adapter additionally requires explicit server configuration, the applied
+schema, an enabled nonpersonal-workspace client, active current public signing-key
+metadata, and matching private signing material. Missing dependencies fail closed.
+The initial adapter supports one pinned client, one exact ACS, persistent NameID
+and TOTP MFA. Other MFA methods and multiple ACS profiles remain unqualified.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/v1/sso/saml/[clientId]/metadata` | Public metadata, subject to the flag and key/config checks |
+| `GET /api/v1/sso/saml/[clientId]/sso` | HTTP-Redirect request admission |
+| `POST /api/v1/sso/saml/[clientId]/sso` | HTTP-POST request admission, including browsers without ambient cookies |
+| `/{locale}/sso/consent?transaction={handle}` | English/Vietnamese account, destination and attribute disclosure |
+| `POST /api/v1/sso/transactions/[transactionId]/decision` | Same-origin, account/session-bound CSRF approval or denial; the path parameter is an opaque handle |
+
+Admission validates the request against the registered SP and reserves its unique
+request ID through `sso_create_transaction`. An encrypted Secure, HttpOnly,
+host-only cookie preserves the exact validated request and RelayState. Navigation
+URLs contain only the opaque handle. Parallel transactions have separate cookies;
+oversized state is rejected rather than truncated. The transaction lasts 290
+seconds, leaving transit margin below the database's five-minute maximum.
+
+Before approval and after signing, the adapter revalidates the provider cookie's
+account, fresh Auth email and server-owned recovery policy. It reuses
+`checkRequiredAccountMfa`, verified claims, `bindCurrentMfaFactor` and the existing
+primary-authentication policy. Optional-MFA accounts still need a current
+factor-bound TOTP proof at most ten minutes old. Refresh `iat` is not MFA evidence.
+ForceAuthn additionally requires primary authentication and MFA after the SP
+request. The consent page links to the existing login/MFA flow with a local
+return path. For an already authenticated account needing fresh MFA it reuses the
+existing required-MFA enrollment surface and Supabase challenge/verify service;
+an explicit sign-in-again action supplies ForceAuthn/recovery primary login.
+
+Current MEMBER status and explicit assignment are checked in both portable policy
+and transactional RPCs. Names must be explicit `given_name` and `family_name`
+profile fields; the adapter does not split display names. Only fresh confirmed
+Auth email is shared. Names confer no access. Phase-2 random 64-character hex
+subjects are accepted as pairwise persistent NameID and `id`; earlier UUID
+protocol fixtures remain supported.
+
+Every admitted decision records immutable per-login consent or a browser-bound
+rejection. Consent and consumption retain phase-2 atomic auditing.
+Rejected decisions can burn only an actor-unbound pending transaction; a losing
+concurrent decision cannot cancel another decision's committed consent. After consume,
+failures append `issuance.failed` through the audit RPC. The new
+`sso_finalize_issuance` locks and rechecks the client, MEMBER, assignment, active
+key revision, expiry and five-second issuance window, then invokes the same
+append-only audit RPC for `issuance.signed`. Finalization cannot be replayed. No
+response is emitted on audit/finalization failure, disable or elapsed budget.
+Unknown outcomes are never retried; restart at the SP. Invalid requests without a
+validated transaction have no client/actor audit attribution.
+
+The adapter signs assertion and response, then returns an auto-submitting form
+to the exact stored ACS, with a localized submit fallback. Its CSP permits only
+that form destination and a nonce-bound script. It uses no external assets and
+sets `no-store`, `no-referrer` and framing denial. Consent pages also deny caching
+and framing. The finalized permit has a bounded emission window; it cannot
+revoke an assertion or Claude session already delivered.
+
+The existing Redis limiter is used with fail-closed behavior: 20 starts/minute
+per IP/client, 10 decisions/minute per account/client, and 100 starts or
+decisions/minute per client. Metadata is limited to 20 reads per IP/client/minute.
+Deployment must sanitize the forwarded IP header. The per-client ceiling applies
+independently of IP attribution.
+
+### Server configuration
+
+These variables are server-only. Never use `NEXT_PUBLIC_` prefixes, print secret
+values, store private keys in the database, or reuse internal session signing keys.
+
+| Variable | Contract |
+| --- | --- |
+| `SSO_SAML_ENABLED` | Defaults off; literal `true` enables the adapters |
+| `SSO_SAML_ORIGIN` | Canonical HTTPS Web origin with trailing `/`; never inferred from Host |
+| `SSO_SAML_CLIENT_ID` | One explicitly authorized client UUID |
+| `SSO_SAML_SIGNING_KID` | Matches current active database key metadata |
+| `SSO_SAML_SIGNING_KEY` | Matching RSA private key from the server secret store; injected signer abstraction |
+| `SSO_SAML_TRANSACTION_SECRET` | Independent random base64url secret with at least 256 bits of entropy, 43–128 characters |
+| `SSO_SAML_REQUEST_SIGNING` | Explicit `required` or `unsigned`, qualified against the actual SP |
+| `SSO_SAML_SP_CERTIFICATE` | Pinned RSA SP certificate for required request signatures |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Existing Redis limiter; missing/unavailable storage denies issuance |
+
+Existing server Supabase configuration supplies Auth and service-only RPC access.
+`sso_issuance_snapshot`, `sso_finalize_issuance` and `sso_reject_transaction` grant
+no direct table privileges or browser execution rights. Their key projection
+contains public certificates only.
+
+### Runbook for a later pilot
+
+1. Keep server flag and client disabled. Require exact-commit Web build, lint,
+   type-check, protocol/route and database-contract CI. Apply migrations through
+   authorized staging/production workflows and verify their separate results;
+   never manually push schema changes.
+2. Obtain separate authorization for one nonpersonal workspace, named MEMBERs,
+   company domains and Claude parent connection. Confirm the actual WorkOS
+   entity ID, ACS, request-signature mode, NameID policy and attribute mapping.
+   Keep Claude enforcement/JIT off and preserve an Owner recovery path.
+3. Through the trusted operator boundary, provision a dedicated RSA secret,
+   install only its public certificate/current revision in key metadata, and
+   configure the independent transaction secret and limiter. Key management UI
+   remains a later phase; this PR provides no provisioning bypass or enabled
+   client. Verify names, email, assignment and current MFA for each invited user.
+4. Enable only the authorized pilot configuration after these gates. Fetch
+   metadata from the canonical host and verify issuer, endpoint and certificate
+   fingerprint. Upload it in Claude's actual setup portal. Run Test SSO and
+   normal sign-in, then denial, stale/removed MFA, unassigned/guest/removed-member,
+   expired/replayed request and disable cases. Retain private redacted correlation
+   evidence; do not publish raw assertions.
+5. To stop issuance, set `SSO_SAML_ENABLED` off and disable the client through the
+   revision-checked management boundary. Confirm new starts/decisions deny.
+   Retain consent and audit history. Handle existing Claude sessions through
+   Claude's own controls; Tuturuuu logout is not SLO.
+6. For rotation or compromise recovery, disable issuance, replace the secret and
+   active public-key metadata with a new revision, update SP trust, and rerun
+   real acceptance before enabling. Overlapping metadata certificates/seamless
+   rotation require later qualification; this adapter publishes one active key.
+
+### Regression evidence and remaining gates
+
+`packages/sso/src/__tests__/policy.test.ts` and `service.test.ts` exercise actual
+portable policy/orchestration, including a response consumed by the phase-1
+Node-SAML SP. `apps/web/src/app/api/v1/sso/routes.test.ts` calls real route exports,
+parser, policy, encrypted cookies and signer, with mocked Supabase Auth/RPC and
+limiter transport. `rate-limit-sso.test.ts` covers unavailable limiter storage.
+The applied-schema pgTAP fixture covers the service-only snapshot, finalization
+and rejection contracts and retains the real consume/revocation races. These
+fixtures do not establish hosted Auth/cookies/PostgREST or Claude behavior.
+Browser accessibility/layout, actual login/MFA return, hosted custody, rotation
+and real WorkOS acceptance remain pilot gates.
