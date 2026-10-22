@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isBuiltin } from 'node:module';
+import { createRequire, isBuiltin } from 'node:module';
 import { dirname, resolve } from 'node:path';
-import { parse } from 'acorn';
+
+// Resolve acorn lazily: dependency-free policy jobs import the artifact helpers
+// without installing workspace packages and never scan a Mail bundle.
+const require = createRequire(import.meta.url);
 
 function walk(node, visit) {
   if (!node || typeof node !== 'object') return;
@@ -126,6 +129,7 @@ function resolveHelperBindings(modules) {
 
 export function assertMailNodeImports(dist, app, files) {
   if (app !== 'mail') return;
+  const { parse } = require('acorn');
   const modules = new Map();
   for (const file of files) {
     if (!file.startsWith('server/') || !/\.(?:[cm]?js)$/u.test(file)) continue;

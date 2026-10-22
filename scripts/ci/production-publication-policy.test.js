@@ -7,7 +7,6 @@ const {
   mkdtempSync,
   readFileSync,
   rmSync,
-  symlinkSync,
   writeFileSync,
 } = require('node:fs');
 const { tmpdir } = require('node:os');
@@ -51,12 +50,6 @@ function fixture(t, policy) {
     mkdirSync(dirname(join(root, file)), { recursive: true });
     copyFileSync(join(repoRoot, file), join(root, file));
   }
-  // The Mail import scanner parses with the root acorn dependency.
-  symlinkSync(
-    join(repoRoot, 'node_modules'),
-    join(root, 'node_modules'),
-    'dir'
-  );
   if (policy !== undefined) {
     const config = join(root, 'tuturuuu.ci.ts');
     writeFileSync(
