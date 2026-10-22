@@ -27,6 +27,16 @@ const refreshSchema = z.object({
 });
 
 type RefreshConsumeResult = 'consumed' | 'grace' | 'replayed' | 'unavailable';
+type RefreshVerificationResult =
+  | {
+      kind: 'verified';
+      claims: Extract<
+        ReturnType<typeof verifyAppSessionRefreshToken>,
+        { ok: true }
+      >['claims'];
+    }
+  | { kind: 'invalid' }
+  | { kind: 'unavailable' };
 
 function isRegisteredAppName(value: string): value is AppName {
   return getAppDomainMap().some((domain) => domain.name === value);
@@ -86,10 +96,8 @@ async function consumeRefreshTokenWithGrace({
     });
 
     return consumed === 'OK' ? 'consumed' : 'replayed';
-  } catch (error) {
-    console.warn('App-session refresh replay check failed', {
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
+    console.warn('App-session refresh replay check failed');
     return 'unavailable';
   }
 }
@@ -102,13 +110,13 @@ async function verifyRefreshToken({
   refreshToken: string;
   replayGraceSeconds: number;
   targetApp: AppName;
-}) {
+}): Promise<RefreshVerificationResult> {
   const verification = verifyAppSessionRefreshToken(refreshToken, {
     targetApp,
   });
 
   if (!verification.ok) {
-    return verification;
+    return { kind: 'invalid' };
   }
 
   const consumeResult = await consumeRefreshTokenWithGrace({
@@ -118,14 +126,19 @@ async function verifyRefreshToken({
     sub: verification.claims.sub,
   });
 
-  if (consumeResult === 'replayed') {
-    return {
-      error: 'Invalid or expired refresh token',
-      ok: false as const,
-    };
+  switch (consumeResult) {
+    case 'consumed':
+    case 'grace':
+      return { kind: 'verified', claims: verification.claims };
+    case 'replayed':
+      return { kind: 'invalid' };
+    case 'unavailable':
+      return { kind: 'unavailable' };
+    default: {
+      const exhaustive: never = consumeResult;
+      return exhaustive;
+    }
   }
-
-  return verification;
 }
 
 async function refreshCrossAppSession(request: NextRequest) {
@@ -155,11 +168,26 @@ async function refreshCrossAppSession(request: NextRequest) {
     targetApp,
   });
 
-  if (!verification.ok) {
-    return jsonNoStore(
-      { error: 'Invalid or expired app session refresh credentials' },
-      { status: 401 }
-    );
+  switch (verification.kind) {
+    case 'invalid':
+      return jsonNoStore(
+        { error: 'Invalid or expired app session refresh credentials' },
+        { status: 401 }
+      );
+    case 'unavailable':
+      return jsonNoStore(
+        {
+          code: 'APP_SESSION_REFRESH_UNAVAILABLE',
+          error: 'App session refresh temporarily unavailable',
+        },
+        { status: 503 }
+      );
+    case 'verified':
+      break;
+    default: {
+      const exhaustive: never = verification;
+      return exhaustive;
+    }
   }
 
   const sbAdmin = (await createAdminClient({
