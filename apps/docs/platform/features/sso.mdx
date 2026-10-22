@@ -376,6 +376,11 @@ permission and MEMBER checks apply to every management API and service RPC.
    resubmitting trust settings. Revisions prevent stale edits from overwriting
    concurrent administrator changes. On a conflict or unknown result, refresh
    before making another change; mutations are never retried automatically.
+   After an editor conflict, Refresh explicitly discards unsaved edits, reloads
+   the latest revision and trust fields, and confirms that values were reloaded.
+   Ordinary background refreshes preserve editor values. The conflict-refresh-save
+   regression in `sso-management.test.tsx` verifies the next intentional save
+   uses the refreshed revision and trust values.
 4. Select the application and assign named test MEMBERs. Guests and invitations
    do not appear. The assignment RPC rechecks current membership atomically;
    stale roster entries cannot assign a demoted member. Revocation prevents future

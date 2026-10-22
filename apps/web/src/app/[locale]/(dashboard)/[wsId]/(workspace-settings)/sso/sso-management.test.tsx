@@ -280,6 +280,60 @@ describe('SSO admin interactions', () => {
     expect(screen.getByLabelText('Exact ACS URL')).toHaveValue(client.acsUrl);
     expect(mocks.update).toHaveBeenCalledTimes(1);
   });
+  it('reloads conflicted trust values and saves with the fresh revision', async () => {
+    const fresh = {
+      ...client,
+      revision: 4,
+      entityId: 'urn:workos:updated',
+      acsUrl: 'https://sp.example.test/updated',
+    };
+    mocks.update.mockImplementation(async (_wsId, _id, input) => {
+      if (input.expectedRevision !== fresh.revision) {
+        throw new InternalApiError('sso_revision_conflict', 409);
+      }
+      return { id: client.id, revision: 5 };
+    });
+    mount();
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByLabelText('SP entity ID'), {
+      target: { value: 'urn:unsaved:edit' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Save disabled application' })
+    );
+    await screen.findByRole('alert');
+    expect(screen.getByLabelText('SP entity ID')).toHaveValue(
+      'urn:unsaved:edit'
+    );
+    mocks.list.mockResolvedValue({ clients: [fresh], globalEnabled: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() =>
+      expect(screen.getByLabelText('SP entity ID')).toHaveValue(fresh.entityId)
+    );
+    expect(screen.getByLabelText('Exact ACS URL')).toHaveValue(fresh.acsUrl);
+    expect(screen.getByText(/Latest settings loaded/)).toBeInTheDocument();
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Save disabled application' })
+    );
+    await waitFor(() =>
+      expect(mocks.update).toHaveBeenLastCalledWith(
+        'ws-a',
+        client.id,
+        expect.objectContaining({
+          expectedRevision: 4,
+          entityId: fresh.entityId,
+          acsUrl: fresh.acsUrl,
+          enabled: false,
+        })
+      )
+    );
+    await waitFor(() =>
+      expect(screen.queryByLabelText('SP entity ID')).not.toBeInTheDocument()
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(mocks.update).toHaveBeenCalledTimes(2);
+  });
   it('reports unavailable overview without exposing raw errors', async () => {
     mocks.list.mockRejectedValue(new Error('sensitive upstream detail'));
     mount();

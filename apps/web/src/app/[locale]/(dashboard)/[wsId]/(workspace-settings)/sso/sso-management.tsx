@@ -1,5 +1,6 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
   createSsoClient,
   listSsoClients,
@@ -22,6 +23,7 @@ export function SsoManagement({ wsId }: { wsId: string }) {
   const [editor, setEditor] = useState<
     { kind: 'create' } | { kind: 'edit'; client: SsoManagedClient } | null
   >(null);
+  const [reloaded, setReloaded] = useState(false);
   const [confirm, setConfirm] = useState<SsoManagedClient | null>(null);
   const overview = useQuery({
     queryKey: ssoKey(wsId),
@@ -41,10 +43,29 @@ export function SsoManagement({ wsId }: { wsId: string }) {
         : createSsoClient(wsId, input),
     onSuccess: async (result) => {
       setEditor(null);
+      setReloaded(false);
       setSelectedId(result.id);
       await refresh();
     },
   });
+  const refreshEditor = async () => {
+    if (
+      editor?.kind !== 'edit' ||
+      !(save.error instanceof InternalApiError) ||
+      save.error.status !== 409
+    ) {
+      await refresh();
+      return;
+    }
+    const result = await overview.refetch();
+    if (!result.isSuccess) return;
+    const client = result.data.clients.find((c) => c.id === editor.client.id);
+    setEditor((current) =>
+      current === editor ? (client ? { kind: 'edit', client } : null) : current
+    );
+    save.reset();
+    setReloaded(true);
+  };
   const toggle = useMutation({
     mutationFn: ({
       client,
@@ -92,6 +113,7 @@ export function SsoManagement({ wsId }: { wsId: string }) {
         <Button
           onClick={() => {
             save.reset();
+            setReloaded(false);
             setEditor({ kind: 'create' });
           }}
           disabled={save.isPending || toggle.isPending}
@@ -100,20 +122,25 @@ export function SsoManagement({ wsId }: { wsId: string }) {
         </Button>
         <Button
           variant="outline"
-          onClick={refresh}
-          disabled={overview.isFetching}
+          onClick={refreshEditor}
+          disabled={overview.isFetching || save.isPending || toggle.isPending}
         >
           {t('refresh')}
         </Button>
       </div>
       <SsoMutationError error={save.error ?? toggle.error} />
+      {reloaded && <p role="status">{t('editorReloaded')}</p>}
       {editor && (
         <>
           <p className="text-muted-foreground text-sm">{t('editDisables')}</p>
           <ClientEditor
-            key={editor.kind === 'edit' ? editor.client.id : 'new'}
+            key={
+              editor.kind === 'edit'
+                ? `${editor.client.id}:${editor.client.revision}`
+                : 'new'
+            }
             client={editor.kind === 'edit' ? editor.client : undefined}
-            busy={save.isPending}
+            busy={save.isPending || overview.isFetching}
             onSave={(input) => save.mutate(input)}
             onCancel={() => setEditor(null)}
           />
@@ -153,6 +180,7 @@ export function SsoManagement({ wsId }: { wsId: string }) {
                 disabled={save.isPending || toggle.isPending}
                 onClick={() => {
                   save.reset();
+                  setReloaded(false);
                   setEditor({ kind: 'edit', client });
                 }}
               >
