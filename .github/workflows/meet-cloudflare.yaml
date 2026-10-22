@@ -393,6 +393,66 @@ jobs:
             ${{ runner.temp }}/meet-debug-sealed-source.txt
           retention-days: 3
           if-no-files-found: error
+  restored-artifact:
+    name: Accept restored Meet artifact
+    needs: validate
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - name: Verify immutable checkout identity
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.3
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: meet-worker-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/meet-worker
+      - name: Restore and verify exact frontend artifact
+        run: |
+          tar -xzf "$RUNNER_TEMP/meet-worker/meet-worker.tar.gz" -C apps/meet
+          GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
+      - name: Discover restored native Void Start output
+        id: meet-output
+        run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js config-restored apps/meet
+      - name: Verify restored Start runtime and finite SDK acceptance
+        timeout-minutes: 3
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          meet_status=0
+          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" || meet_status=$?
+          sdk_status=0
+          GITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?
+          test "$meet_status" -eq 0
+          test "$sdk_status" -eq 0
+      - name: Pack restored acceptance finite Meet graph evidence
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -- meet-native-run-*
+          if [ -d "$1" ]; then
+            tar -czf meet-native-evidence.tar.gz -- "$@"
+          fi
+      - name: Retain restored acceptance finite Meet graph evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meet-restored-acceptance-native-graph-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/meet-native-evidence.tar.gz
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Recheck artifact after restored runtime qualification
+        run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'

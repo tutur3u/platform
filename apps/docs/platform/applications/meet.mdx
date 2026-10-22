@@ -173,8 +173,23 @@ The owning workflow must verify emitted server/client boundaries, bilingual SSR,
 SSO redirects, logout cookies, API forwarding, static assets and Live admission.
 The artifact-dependent suite is `scripts/ci/meet-cloudflare-render.runtime.mjs`;
 it runs after building and again against the restored artifact, outside generic
-source-only test discovery. Signed-in workspace, room and plan flows, all native
-mutation transports and browser hydration need independent acceptance. Preserve
+source-only test discovery.
+
+The credential-free `restored-artifact` job depends on `validate` and downloads
+its exact-SHA `meet-worker` archive into a fresh immutable-source checkout with
+frozen dependencies. Unlike the original post-build gate, it restores the
+uploaded bytes without rebuilding, verifies the seal and discovers the restored
+config, then runs `scripts/ci/meet-native-launcher.mjs` and the finite SDK checks
+under the existing three-minute deadline. It retains finite graph evidence even
+on failure and rechecks the manifest after acceptance. This job has only
+`contents: read`, no production environment or account credentials, and performs
+no deployment. The production job retains its own restored-runtime defense.
+Workflow wiring is not an executed CI result: client-boundary source review does
+not establish hydration or token completion. Provider, staging, canonical-route
+and recoverable rollback acceptance remain separate requirements.
+
+Signed-in workspace, room and plan flows, all native mutation transports and
+browser hydration need independent acceptance. Preserve
 an observed hosted configuration and recoverable prior Worker version before
 traffic changes. Local workerd probes do not qualify hosted SFU/TURN, devices,
 recording or assistant stop behavior.
