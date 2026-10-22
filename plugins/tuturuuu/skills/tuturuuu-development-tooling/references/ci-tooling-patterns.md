@@ -305,6 +305,13 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   seven attempts, 10/20/40/80/120/120-second waits plus 0-25% jitter for throttling or transient pull transport errors. Never retry SQL tests, resets or pushes. Keep bounded stderr separate from generated types and publish only
   successful output. The E2E baseline keeps its existing service set (excluding only Edge
   Runtime and Functions); SQL-only verifiers retain their narrower exclusions. Run `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`.
+- Baseline startup captures child output because it can contain credentials.
+  Forward only fixed failure classifications, including the retry helper's
+  seven-attempt exhaustion marker; never dump a child-process error or raw
+  stdout/stderr into CI. Cover large stderr under a piped parent and preserve
+  nonzero exit codes. For Linux Docker volume-diagnostic compatibility and
+  isolated reproduction, see the database automation section of
+  `apps/docs/build/devops/github-actions-runbook.mdx`.
 - Release Please is the monorepo source of truth for version/changelog PRs.
   Keep `release-please-config.json`, `.release-please-manifest.json`,
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when

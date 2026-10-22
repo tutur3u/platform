@@ -118,6 +118,57 @@ test('baseline rejects symlinked inputs', (t) => {
   assert.throws(() => f.key(), /symlink/);
 });
 
+test('baseline failure classification never forwards raw child output', () => {
+  const { baselineFailureMessage } = require('./supabase-baseline.js');
+  for (const [error, expected] of [
+    [
+      {
+        stderr:
+          'secret-token\nSupabase image pull throttled after 7 attempts.\nsecret-token',
+      },
+      'Supabase image pull throttled after 7 attempts.',
+    ],
+    [
+      { stderr: 'Supabase image pull transport failed after 7 attempts.\n' },
+      'Supabase image pull transport failed after 7 attempts.',
+    ],
+    [
+      { code: 'ETIMEDOUT', stderr: 'secret-token' },
+      'Supabase baseline child command timed out.',
+    ],
+    [
+      { code: 'ENOBUFS', stderr: 'secret-token' },
+      'Supabase baseline child command exceeded its output buffer.',
+    ],
+    [
+      { stderr: 'secret-token toomanyrequests' },
+      'Supabase baseline image pull was throttled.',
+    ],
+    [
+      { stderr: 'secret-token SQLSTATE 23505' },
+      'Supabase baseline migration failed.',
+    ],
+    [
+      { stderr: 'secret-token unexpected status 503' },
+      'Supabase baseline service health check failed.',
+    ],
+    [
+      {
+        stderr: 'secret-token',
+        message: 'secret-token',
+        stdout: 'secret-token',
+      },
+      'Supabase baseline setup failed; run the isolated migration validation for diagnostics.',
+    ],
+    [
+      { stderr: 'Supabase image pull throttled after 7 attempts.secret-token' },
+      'Supabase baseline setup failed; run the isolated migration validation for diagnostics.',
+    ],
+  ]) {
+    assert.equal(baselineFailureMessage(error), expected);
+  }
+});
+
 test('Postgres image follows the Supabase registry override', () => {
   const services = [{ name: 'supabase/postgres', local: '17.6.1.167' }];
   assert.equal(

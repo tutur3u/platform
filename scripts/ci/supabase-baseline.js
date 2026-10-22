@@ -13,6 +13,26 @@ const {
 const root = path.resolve(__dirname, '../..');
 const database = path.join(root, 'apps/database');
 const wrapper = path.join(database, 'scripts/run-supabase.js');
+
+function baselineFailureMessage(error) {
+  const diagnostics = String(error.stderr ?? '');
+  const exhaustion = diagnostics.match(
+    /(?:^|\n)(Supabase image pull (?:throttled|transport failed) after 7 attempts\.)\r?(?:\n|$)/
+  );
+  if (exhaustion) return exhaustion[1];
+  if (error.code === 'ETIMEDOUT')
+    return 'Supabase baseline child command timed out.';
+  if (error.code === 'ENOBUFS')
+    return 'Supabase baseline child command exceeded its output buffer.';
+  if (/toomanyrequests|too many requests/i.test(diagnostics))
+    return 'Supabase baseline image pull was throttled.';
+  if (/SQLSTATE|failed to apply migration/i.test(diagnostics))
+    return 'Supabase baseline migration failed.';
+  if (/unexpected status|unhealthy|health check.*failed/i.test(diagnostics))
+    return 'Supabase baseline service health check failed.';
+  return 'Supabase baseline setup failed; run the isolated migration validation for diagnostics.';
+}
+
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
     cwd: database,
@@ -248,10 +268,10 @@ if (require.main === module) {
   } catch (error) {
     // Child-process output can contain local credentials. Do not dump it to CI logs.
     console.error(
-      error.status === undefined
-        ? error.message
-        : 'Supabase baseline setup failed; run the isolated migration validation for diagnostics.'
+      error.status === undefined ? error.message : baselineFailureMessage(error)
     );
     process.exitCode = 1;
   }
 }
+
+module.exports = { baselineFailureMessage };

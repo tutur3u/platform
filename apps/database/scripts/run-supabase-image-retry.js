@@ -49,10 +49,20 @@ export async function retryImagePull(
       !enabled ||
       result.code === 0 ||
       result.signal ||
-      attempt === MAX_ATTEMPTS ||
       !isTransientImagePullFailure(result.stderr ?? '')
     )
       return result;
+    if (attempt === MAX_ATTEMPTS) {
+      const classification = /toomanyrequests|too many requests/i.test(
+        result.stderr
+      )
+        ? 'throttled'
+        : 'transport failed';
+      stderr.write(
+        `Supabase image pull ${classification} after ${MAX_ATTEMPTS} attempts.\n`
+      );
+      return result;
+    }
     const delay = Math.round(
       Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** (attempt - 1)) *
         (1 + random() * JITTER_RATIO)

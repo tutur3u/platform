@@ -485,6 +485,26 @@ existing Bun runtime keep the installer's runtime. Four attempts use 5, 10 and
 follow-on runtime behavior must pass the owning exact-commit CI jobs before
 integration; this does not authorize a migration dispatch.
 
+The Supabase baseline contract captures child output privately because startup
+can print local credentials. Its failure summary forwards only fixed categories:
+image pull throttling or transport exhaustion, migration failure, service health
+failure, timeout, or output-buffer exhaustion. Other failures retain the generic
+diagnostic instruction. Never print the raw child error, stdout, or stderr to CI.
+The retry helper emits its fixed exhaustion summary after seven failed attempts;
+it does not replay SQL tests, resets, or pushes. Supabase startup already performs
+an image pre-pull pass, so a second pre-pull loop needs evidence of a separate
+failure before adoption.
+
+For Linux reproduction, isolate the Supabase project ID and ports, use a
+scratch-local Bun matching the repository pin, and remove only that project's
+containers and volumes afterward. Supabase CLI 2.117.0 recognizes a missing volume
+only by Docker's `no such volume` diagnostic. Docker 29 can instead report
+`volume ... not found`, causing fresh startup to skip migrations as if restoring
+a backup. A command-scoped `DOCKER_API_VERSION=1.41` restores the expected missing
+volume diagnostic on that host. Verify the diagnostic first; do not change the
+daemon or global environment. This compatibility issue also reproduces on main
+and does not establish the cause of an unrelated CI failure.
+
 ### Rust dependency verification
 
 The combined `rust-backend.yml` workflow is paused in `tuturuuu.ci.ts`.

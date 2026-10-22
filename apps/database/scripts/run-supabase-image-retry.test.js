@@ -86,6 +86,32 @@ test('exhaustion returns final failure after seven attempts with bounded exponen
   }
 });
 
+test('exhaustion publishes only a fixed throttling or transport classification', async () => {
+  for (const [diagnostic, classification] of [
+    ['toomanyrequests secret-token', 'throttled'],
+    [
+      'failed to pull docker image: TLS handshake timeout secret-token',
+      'transport failed',
+    ],
+  ]) {
+    const messages = [];
+    const result = await retryImagePull(
+      async () => ({ code: 19, stderr: diagnostic }),
+      {
+        sleepMs: async () => {},
+        stderr: { write: (message) => messages.push(message) },
+      }
+    );
+    assert.equal(result.code, 19);
+    assert.equal(messages.length, 7);
+    assert.equal(
+      messages[6],
+      `Supabase image pull ${classification} after 7 attempts.\n`
+    );
+    assert.ok(messages.every((message) => !message.includes('secret-token')));
+  }
+});
+
 test('stops on success, non-transient failure, signal, disabled retries or spawn error', async () => {
   for (const result of [
     { code: 0 },
