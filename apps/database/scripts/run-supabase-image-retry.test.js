@@ -29,6 +29,7 @@ test('classifies registry throttling and transport errors, rejects real failures
     'Error response from daemon: toomanyrequests',
     'failed to pull docker image: TLS handshake timeout',
     'error pulling image: unexpected EOF',
+    'failed to pull docker image: received unexpected HTTP status: 503 Service Unavailable',
   ])
     assert.equal(isTransientImagePullFailure(text), true, text);
   for (const text of [
@@ -39,6 +40,7 @@ test('classifies registry throttling and transport errors, rejects real failures
     'failed to pull docker image: no matching manifest',
     'toomanyrequests\nSQLSTATE 23505',
     'failed to pull docker image: invalid reference format',
+    'failed to pull docker image: invalid reference 1502',
   ])
     assert.equal(isTransientImagePullFailure(text), false, text);
 });

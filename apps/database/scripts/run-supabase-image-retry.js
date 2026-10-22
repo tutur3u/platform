@@ -1,5 +1,12 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 
+// Seven attempts: six bounded waits of 10/20/40/80/120/120 seconds plus up to
+// 25% jitter, about eight minutes in the worst case.
+const MAX_ATTEMPTS = 7;
+const BASE_DELAY_MS = 10_000;
+const MAX_DELAY_MS = 120_000;
+const JITTER_RATIO = 0.25;
+
 // Match the CLI's terminal registry diagnostics, not generic command failures.
 export function isTransientImagePullFailure(stderr) {
   const text = String(stderr);
@@ -13,7 +20,7 @@ export function isTransientImagePullFailure(stderr) {
   return (
     /toomanyrequests|too many requests/i.test(text) ||
     (/failed to pull (?:docker )?image|error pulling image/i.test(text) &&
-      /timeout|timed out|connection reset|unexpected EOF|TLS handshake|503|502|504|temporarily unavailable/i.test(
+      /timeout|timed out|connection reset|unexpected EOF|TLS handshake|\b50[234]\b|temporarily unavailable/i.test(
         text
       ))
   );
@@ -42,16 +49,16 @@ export async function retryImagePull(
       !enabled ||
       result.code === 0 ||
       result.signal ||
-      attempt === 7 ||
+      attempt === MAX_ATTEMPTS ||
       !isTransientImagePullFailure(result.stderr ?? '')
     )
       return result;
-    // Six bounded waits: 10/20/40/80/120/120 seconds plus up to 25% jitter.
     const delay = Math.round(
-      Math.min(120_000, 10_000 * 2 ** (attempt - 1)) * (1 + random() * 0.25)
+      Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** (attempt - 1)) *
+        (1 + random() * JITTER_RATIO)
     );
     stderr.write(
-      `Supabase image pull failed; retry ${attempt + 1}/7 in ${delay}ms.\n`
+      `Supabase image pull failed; retry ${attempt + 1}/${MAX_ATTEMPTS} in ${delay}ms.\n`
     );
     await sleepMs(delay);
   }
