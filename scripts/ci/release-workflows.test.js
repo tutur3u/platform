@@ -251,7 +251,7 @@ test('non-Vercel deployment cancellation policies remain environment-specific', 
   );
   assert.match(discordWorkflow, /workflow_run\.head_branch == 'main'/);
   assert.match(discordWorkflow, /group: discord-modal-deploy/);
-  assert.match(discordWorkflow, /cancel-in-progress: true/);
+  assert.match(discordWorkflow, /cancel-in-progress: false\n +queue: max/);
 });
 
 test('external app validation supersedes main and preserves production evidence', () => {

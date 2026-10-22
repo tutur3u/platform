@@ -1771,7 +1771,10 @@ A new head replaces older queued or running validation for that PR. PR-target
 workflows use the PR identity because their Git ref is the base branch. Safe
 push-to-main validation uses workflow and ref rather than SHA, so newer main
 commits replace obsolete validation. Production, generated Release Please refs and
-manual validation attempts keep independent immutable groups.
+manual validation and rerun attempts keep independent immutable groups. Attempts
+with `github.run_attempt > 1` disable cancellation and include SHA, run ID and
+attempt in their group. Later main pushes cannot share that group; rerunning a
+candidate also cannot cancel current main validation.
 
 Only the exact SHA selected for production promotion needs complete CI.
 Superseded main SHAs do not each need a full green receipt. A cancelled workflow
@@ -1779,6 +1782,31 @@ is never a passing check or a valid duplicate proof. If an authorized pinned
 candidate lost required validation to a later main push, rerun the missing checks
 for that exact candidate before promotion. Newer-head green checks cannot replace
 that evidence. The existing exact-SHA promotion gate remains mandatory.
+
+To qualify a pinned candidate, select the existing run by its exact full SHA and
+workflow, verify its identity, and rerun that run (all jobs, not only failures):
+
+```sh
+candidate_sha=<authorized-full-sha>
+gh run list --repo tutur3u/platform --commit "$candidate_sha" \
+  --workflow type-check.yaml --json databaseId,headSha,event,status,conclusion
+candidate_run=<verified-run-id>
+gh run view "$candidate_run" --repo tutur3u/platform \
+  --json headSha,headBranch,event,attempt,workflowName
+gh run rerun "$candidate_run" --repo tutur3u/platform
+```
+
+Repeat for every missing required workflow. Confirm the selected run's `headSha`
+equals the authorized candidate before rerunning, then inspect its new attempt and
+all required job conclusions after completion. GitHub reruns retain the original
+SHA/ref; they remain push events and use the protected rerun group. A workflow
+with `workflow_dispatch` also has an isolated SHA/run/attempt group, but dispatching
+`--ref main` resolves current main and does not qualify an older candidate.
+
+This protection requires the workflow revision used by the run to contain this
+policy. Rerunning an older workflow revision does not backport the policy. If the
+candidate has no run with this protection, stop promotion and obtain an authorized
+qualification path for that exact source; do not substitute newer-head evidence.
 
 The explicit PR exceptions are `colab-cloudflare.yaml`,
 `coordination-cloudflare.yaml`, `cron-control-cloudflare.yaml`,
@@ -1789,9 +1817,14 @@ the paused `docker-setup-check.yaml` and `rust-backend.yml`. The paused
 `tanstack-route-manifest.yaml` retains its existing PR supersession and protected
 main policy. Resuming a paused runtime requires a separate policy review.
 
-Mutating production planners, Vercel and Cloudflare deployments, database
+Mutating production planners, production Vercel and Cloudflare deployments, database
 migrations, package publication, Release Please and store deployments retain their
 shared serialization groups with cancellation disabled and `queue: max`.
+Discord Modal deployment holds its lock on the success/main-guarded deploy job;
+cancelled CI completions never enter that lock. Biome has no workflow-level
+cancelling parent: check/config/format/lint jobs cancel by job and ref, while
+format PR creation, PR closure/branch deletion and comment writes share a separate
+non-cancelling `biome-mutations-<ref>` job group with `queue: max`.
 [GitHub concurrency](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
 allows up to 100 pending runs in these groups. Queue overflow can still cancel
 excess runs. Queue order reflects when each run began waiting, so existing target
@@ -1819,7 +1852,10 @@ without another event. Existing-run cleanup remains a separate authorized action
 
 Regression coverage: `scripts/ci/protected-workflow-concurrency.test.js` discovers
 all PR and main-push workflows, checks supersession and explicit exceptions, and
-preserves mutating locks. `scripts/ci/production-preflight-consolidation.test.js`
+checks isolated rerun/dispatch groups, discovers workflow-run consumers and
+preserves mutating locks, including Biome jobs and Modal deployment. These are
+source/expression regressions, not a hosted scheduler or deployment experiment.
+`scripts/ci/production-preflight-consolidation.test.js`
 executes the shared PR release check and validates the reduced job graph.
 
 

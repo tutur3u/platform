@@ -476,12 +476,23 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   newer pushes. PR validation groups use workflow, event and PR number, with
   `cancel-in-progress` enabled. Safe push validation coalesces `main` by workflow
   and ref. Production, generated Release Please refs and manual qualification
-  retain SHA/run identity. Never combine `queue: max` with cancellation enabled.
+  retain SHA/run/attempt identity. Explicit reruns (`github.run_attempt > 1`)
+  must also disable cancellation and use that isolated identity; changing only
+  the cancellation flag leaves candidates vulnerable to later main pushes. Never
+  combine `queue: max` with cancellation enabled.
 - Only the exact SHA selected for promotion needs complete CI. Superseded `main`
   validation may be cancelled, but cancellation is never passing evidence. If a
   pinned candidate lost a required check to supersession, restore that exact-SHA
   validation before promotion; do not credit a newer main SHA or weaken the gate.
+  Use the runbook exact-run procedure (`gh run list --commit <sha>`, inspect,
+  then `gh run rerun <run-id>`); reruns retain the original SHA/ref and workflow
+  revision. Older workflow revisions do not acquire this protection on rerun.
   Production deployment, migration and release workflows retain their locks.
+- Keep mutating jobs outside cancelling workflow parents. Biome uses job-specific
+  cancellable validation locks and a separate serialized non-cancelling mutation
+  lock. Guard Modal deployment before its job lock; cancelled validation
+  completions must never cancel active provider work. Discover `workflow_run`
+  consumers in regression tests rather than protecting producers in isolation.
 - Keep the PR exception list in `scripts/ci/protected-workflow-concurrency.test.js`
   explicit. The seven mixed Cloudflare workflows retain their deployment locks;
   gVisor acceptance retains bounded cleanup. Paused Docker/Rust workflows are

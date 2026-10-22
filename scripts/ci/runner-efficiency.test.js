@@ -13,7 +13,7 @@ test('translation checks run once per PR update and still cover both protected b
   assert.equal(
     workflow.concurrency.group,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-    "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--'))) && format('{0}-{1}', github.sha, github.run_id) || 'latest' }}"
+    "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}"
   );
   for (const id of [
     'i18n-sort-check',
@@ -69,12 +69,12 @@ test('superseded PR runs cancel, production release evidence does not', () => {
     assert.equal(
       policy,
       // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-      "${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--')) }}"
+      "${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}"
     );
     assert.equal(
       concurrency.group,
       // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--'))) && format('{0}-{1}', github.sha, github.run_id) || 'latest' }}"
+      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}"
     );
   }
 });

@@ -126,13 +126,16 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     'biome-check.yaml',
     'supabase-baseline.yaml',
   ]) {
-    const policy = readWorkflow(name).concurrency;
+    const workflow = readWorkflow(name);
+    const policy = workflow.concurrency || workflow.jobs.format.concurrency;
+    const policyName = name === 'biome-check.yaml' ? `${name}-format` : name;
     const base = {
       workflow: name,
       event: { pull_request: {} },
       sha: 'a'.repeat(40),
       event_name: 'push',
       run_id: '100',
+      run_attempt: 1,
     };
     const variants = [
       base,
@@ -157,7 +160,7 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
         );
         assert.equal(
           group,
-          `${name}-${github.event_name}-${ref}-${github.sha}-${github.run_id}`,
+          `${policyName}-${github.event_name}-${ref}-${github.sha}-${github.run_id}-${github.run_attempt}`,
           `${name}: protected evidence retains SHA, event and run identity`
         );
         return group;
@@ -177,7 +180,7 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     assert.deepEqual(
       featureGroups,
       featureVariants.map(
-        () => `${name}-push-refs/heads/fix/ordinary-feature-latest`
+        () => `${policyName}-push-refs/heads/fix/ordinary-feature-latest`
       )
     );
   }

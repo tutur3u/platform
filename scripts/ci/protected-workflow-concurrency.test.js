@@ -12,11 +12,13 @@ const serialized = [
   'desktop-beta.yaml',
   'desktop-store-draft.yaml',
   'devbox-control-cloudflare.yaml',
+  'discord-modal-deploy.yml',
   'lettin-cloudflare.yaml',
   'meet-cloudflare.yaml',
   'mobile-deploy-stores.yaml',
   'parley-cloudflare.yaml',
   'playground-runtime-acceptance.yaml',
+  'production-package-resume.yaml',
   'release-ai-package.yaml',
   'release-apis-package.yaml',
   'release-devbox-package.yaml',
@@ -84,6 +86,8 @@ const prExceptions = {
 };
 const mainExceptions = {
   ...prExceptions,
+  'biome-check.yaml':
+    'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
 };
 const workflows = Object.fromEntries(
@@ -111,6 +115,7 @@ function context(
     ref,
     sha,
     run_id,
+    run_attempt: 1,
     event_name,
     head_ref: `fix/pr-${number}`,
     event: {
@@ -291,7 +296,8 @@ test('regression controls reject missing, non-cancelling, SHA-specific and cross
 });
 for (const file of serialized) {
   test(`${file}: expanded queues preserve shared deployment serialization`, () => {
-    const c = workflows[file].concurrency;
+    const c =
+      workflows[file].concurrency || workflows[file].jobs.deploy.concurrency;
     assert.equal(c['cancel-in-progress'], false);
     assert.equal(c.queue, 'max');
     const ref = file.endsWith('-cloudflare.yaml')
@@ -343,4 +349,170 @@ test('preview workflows retain latest-run cancellation instead of a conflicting 
     assert.equal(workflow.concurrency['cancel-in-progress'], true);
     assert.notEqual(workflow.concurrency.queue, 'max');
   }
+});
+
+function assertQualification(policy, workflowName) {
+  const first = { ...context('refs/heads/main'), workflow: workflowName };
+  const later = { ...first, sha: 'later', run_id: 2 };
+  const ordinary = render(policy.group, later);
+  const qualified = [];
+  for (const extra of [
+    { run_attempt: 2 },
+    { run_attempt: 3 },
+    { run_attempt: 2, sha: 'other', run_id: 3 },
+    { event_name: 'workflow_dispatch' },
+    { event_name: 'workflow_dispatch', sha: 'other', run_id: 3 },
+  ]) {
+    const candidate = { ...first, ...extra };
+    assert.equal(render(policy['cancel-in-progress'], candidate), false);
+    const group = render(policy.group, candidate);
+    assert.notEqual(
+      group,
+      ordinary,
+      'later pushes cannot cancel qualification'
+    );
+    assert.notEqual(group, render(policy.group, first));
+    qualified.push(group);
+  }
+  assert.equal(new Set(qualified).size, qualified.length);
+  assert.equal(render(policy['cancel-in-progress'], later), true);
+}
+for (const [file, workflow] of Object.entries(workflows)) {
+  const policies = workflow.concurrency
+    ? [workflow.concurrency]
+    : Object.values(workflow.jobs)
+        .map((job) => job.concurrency)
+        .filter(Boolean);
+  for (const [index, policy] of policies.entries()) {
+    if (!policy.group.includes('github.run_attempt')) continue;
+    test(`${file} policy ${index}: rerun and dispatch qualify immutable attempts`, () => {
+      assertQualification(policy, workflow.name);
+    });
+  }
+}
+test('main validation inventory requires isolated qualification, including Biome jobs', () => {
+  for (const [file, workflow] of Object.entries(workflows)) {
+    if (mainExceptions[file] || file.startsWith('vercel-preview-')) continue;
+    if (!Object.hasOwn(events(workflow), 'push')) continue;
+    const push = events(workflow).push;
+    if (push?.branches && !push.branches.includes('main')) continue;
+    if (push?.['branches-ignore']?.includes('main')) continue;
+    assertQualification(workflow.concurrency, workflow.name);
+  }
+});
+test('qualification regression controls reject shared groups in either cancellation direction', () => {
+  const policy = workflows['type-check.yaml'].concurrency;
+  assert.throws(() =>
+    assertQualification({ ...policy, group: 'main-latest' }, 'Type Check')
+  );
+  assert.throws(() =>
+    assertQualification({ ...policy, 'cancel-in-progress': true }, 'Type Check')
+  );
+});
+function assertMutationLocks(workflow) {
+  assert.equal(
+    workflow.concurrency,
+    undefined,
+    'parent cancellation reaches every job'
+  );
+  const jobs = Object.entries(workflow.jobs).filter(([, job]) =>
+    Object.values(job.permissions || {}).includes('write')
+  );
+  assert.deepEqual(
+    jobs.map(([id]) => id),
+    ['apply-format', 'close-outdated-format-pr', 'comment']
+  );
+  let group;
+  for (const [, job] of jobs) {
+    assert.equal(job.concurrency['cancel-in-progress'], false);
+    assert.equal(job.concurrency.queue, 'max');
+    group ||= job.concurrency.group;
+    assert.equal(job.concurrency.group, group);
+  }
+  const validationGroups = new Set();
+  for (const id of ['check-ci', 'duplicate-validation', 'format', 'lint']) {
+    const job = workflow.jobs[id];
+    const first = { ...context('refs/heads/main'), workflow: workflow.name };
+    const validationGroup = assertSupersedes(job, first, {
+      ...first,
+      sha: 'next',
+      run_id: 2,
+    });
+    assert.equal(validationGroups.has(validationGroup), false);
+    validationGroups.add(validationGroup);
+    assert.notEqual(validationGroup, render(group, first));
+    assertQualification(job.concurrency, workflow.name);
+  }
+}
+test('Biome repository writes are outside every cancelling parent and validation group', () => {
+  const workflow = workflows['biome-check.yaml'];
+  assertMutationLocks(workflow);
+  assert.throws(() =>
+    assertMutationLocks({
+      ...workflow,
+      concurrency: workflows['type-check.yaml'].concurrency,
+    })
+  );
+  const unsafe = structuredClone(workflow);
+  unsafe.jobs['close-outdated-format-pr'].concurrency['cancel-in-progress'] =
+    true;
+  assert.throws(() => assertMutationLocks(unsafe));
+});
+test('workflow_run consumers have an explicit non-cancelling deployment/mutation disposition', () => {
+  const jobScoped = { 'discord-modal-deploy.yml': ['deploy'] };
+  for (const [file, workflow] of Object.entries(workflows)) {
+    const trigger = events(workflow).workflow_run;
+    if (!trigger) continue;
+    assert.ok(
+      serialized.includes(file),
+      `${file}: unclassified workflow_run consumer`
+    );
+    const policies = workflow.concurrency
+      ? [workflow.concurrency]
+      : (jobScoped[file] || []).map((id) => workflow.jobs[id].concurrency);
+    assert.ok(policies.length, file);
+    for (const policy of policies) {
+      assert.equal(policy['cancel-in-progress'], false, file);
+      assert.equal(policy.queue, 'max', file);
+      for (const name of trigger.workflows) {
+        const producer = Object.values(workflows).find(
+          (item) => item.name === name
+        );
+        assert.ok(producer, name);
+        if (!producer.concurrency) continue;
+        const cancelled = { ...context('refs/heads/main'), workflow: name };
+        const consumer = {
+          ...cancelled,
+          workflow: workflow.name,
+          event_name: 'workflow_run',
+        };
+        assert.notEqual(
+          render(policy.group, consumer),
+          render(producer.concurrency.group, cancelled)
+        );
+      }
+    }
+  }
+});
+test('cancelled Discord PR/main completions never enter the active Modal deployment lock', () => {
+  const workflow = workflows['discord-modal-deploy.yml'];
+  assert.equal(workflow.concurrency, undefined);
+  const deploy = workflow.jobs.deploy;
+  const active = context('refs/heads/main', 'trusted', 1, 'workflow_run');
+  active.event.workflow_run.head_branch = 'main';
+  assert.equal(expression(deploy.if, active), true);
+  for (const branch of ['main', 'fix/example']) {
+    const cancelled = structuredClone(active);
+    cancelled.event.workflow_run = {
+      conclusion: 'cancelled',
+      head_branch: branch,
+    };
+    assert.equal(expression(deploy.if, cancelled), false);
+  }
+  assert.equal(deploy.concurrency['cancel-in-progress'], false);
+  assert.equal(deploy.concurrency.queue, 'max');
+  assert.equal(
+    expression(deploy.if, { ...active, event_name: 'workflow_dispatch' }),
+    true
+  );
 });
