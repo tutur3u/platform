@@ -208,26 +208,29 @@ function assertWorkflow(source) {
     'workflow.runtime-bypass must remain absent'
   );
   let credentialFreeSource = source;
-  for (const name of ['URL', 'PUBLISHABLE_KEY']) {
-    const admitted = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_${name} || '' }}`;
-    credentialFreeSource = credentialFreeSource.replaceAll(admitted, '');
-  }
-  const publisher = job(credentialFreeSource, 'native-publication-profiles');
-  let admittedPublisher = publisher;
-  for (const name of [
-    'CLOUDFLARE_STAGING_API_TOKEN',
-    'WAVE1_CONTROL_READ_TOKEN',
-  ]) {
-    const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.${name} || '' }}`;
-    admittedPublisher = admittedPublisher.replace(
-      `      ${name}: ${expression}`,
-      ''
+  for (const id of ['native-publication-profiles', 'native-publish-staging']) {
+    const publisher = job(source, id);
+    let admittedPublisher = publisher;
+    for (const name of [
+      'STAGING_SUPABASE_URL',
+      'STAGING_SUPABASE_PUBLISHABLE_KEY',
+      'CLOUDFLARE_STAGING_API_TOKEN',
+      'WAVE1_CONTROL_READ_TOKEN',
+    ]) {
+      const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.${name} || '' }}`;
+      const field = `      ${name}: ${expression}`;
+      assert.equal(
+        publisher.split(field).length - 1,
+        1,
+        'workflow.secrets exact staging field'
+      );
+      admittedPublisher = admittedPublisher.replace(field, '');
+    }
+    credentialFreeSource = credentialFreeSource.replace(
+      publisher,
+      admittedPublisher
     );
   }
-  credentialFreeSource = credentialFreeSource.replace(
-    publisher,
-    admittedPublisher
-  );
   assert.doesNotMatch(
     credentialFreeSource,
     /secrets(?:\.|\[)/u,
@@ -562,5 +565,13 @@ test('staging deploy/control secrets are allowed only in the explicit publisher 
       'secrets.CLOUDFLARE_API_TOKEN'
     );
     assert.throws(() => assertWorkflow(production), /workflow.secrets/);
+  }
+});
+
+test('staging Supabase expressions are rejected in another job', () => {
+  for (const name of ['URL', 'PUBLISHABLE_KEY']) {
+    const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_${name} || '' }}`;
+    const changed = `${workflow}\n  leaked-input:\n    env:\n      INPUT: ${expression}\n`;
+    assert.throws(() => assertWorkflow(changed), /workflow.secrets/);
   }
 });

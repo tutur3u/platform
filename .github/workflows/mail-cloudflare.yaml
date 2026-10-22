@@ -10,7 +10,7 @@ on:
 permissions:
   contents: read
   actions: read
-  deployments: write
+  deployments: read
 # Staging publication consumes a durable attempt ledger; never cancel an upload.
 concurrency:
   group: native-mail-cloudflare-${{ github.ref }}
@@ -27,9 +27,30 @@ jobs:
   native-profiles:
     needs: check-ci
     if: needs.check-ci.outputs.should_run == 'true'
+    permissions:
+      contents: read
+      actions: read
+      deployments: read
     uses: ./.github/workflows/wave1-native-app.yaml
     with:
       app: mail
+    secrets:
+      CLOUDFLARE_STAGING_API_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.CLOUDFLARE_STAGING_API_TOKEN || '' }}
+      WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}
+      STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
+      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
+
+  native-publish-staging:
+    needs: native-profiles
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-profiles.outputs.staging_allowed == 'true'
+    permissions:
+      contents: read
+      actions: read
+      deployments: write
+    uses: ./.github/workflows/wave1-native-publish.yaml
+    with:
+      app: mail
+      profile: staging
     secrets:
       CLOUDFLARE_STAGING_API_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.CLOUDFLARE_STAGING_API_TOKEN || '' }}
       WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}

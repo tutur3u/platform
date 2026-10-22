@@ -5,6 +5,9 @@ on:
       app:
         type: string
         required: true
+    outputs:
+      staging_allowed:
+        value: ${{ jobs.policy-staging.outputs.allowed }}
     secrets:
       CLOUDFLARE_STAGING_API_TOKEN:
         required: false
@@ -17,7 +20,7 @@ on:
 permissions:
   contents: read
   actions: read
-  deployments: write
+  deployments: read
 jobs:
   policy-staging:
     runs-on: ubuntu-latest
@@ -168,23 +171,3 @@ jobs:
         run: |
           (cd "apps/$APP" && bun x --no-install wrangler deploy --dry-run --config dist/wave1/wrangler.json --outdir "$RUNNER_TEMP/restored-dry-run")
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" "$PROFILE" "$SOURCE_SHA"
-  publish-staging:
-    needs: [restored, policy-staging]
-    if: needs.policy-staging.outputs.allowed == 'true'
-    uses: ./.github/workflows/wave1-native-publish.yaml
-    with:
-      app: ${{ inputs.app }}
-      profile: staging
-    secrets:
-      CLOUDFLARE_STAGING_API_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.CLOUDFLARE_STAGING_API_TOKEN || '' }}
-      WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}
-      STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
-      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
-  publish-production:
-    name: Native production publisher held for wave-1 cutover
-    needs: [restored, policy-production]
-    if: needs.policy-production.outputs.allowed == 'true'
-    uses: ./.github/workflows/wave1-native-publish.yaml
-    with:
-      app: ${{ inputs.app }}
-      profile: production

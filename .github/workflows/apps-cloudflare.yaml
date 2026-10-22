@@ -420,10 +420,27 @@ jobs:
     permissions:
       contents: read
       actions: read
-      deployments: write
+      deployments: read
     uses: ./.github/workflows/wave1-native-app.yaml
     with:
       app: apps
+    secrets:
+      CLOUDFLARE_STAGING_API_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.CLOUDFLARE_STAGING_API_TOKEN || '' }}
+      WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}
+      STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
+      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
+
+  native-publish-staging:
+    needs: native-publication-profiles
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-publication-profiles.outputs.staging_allowed == 'true'
+    permissions:
+      contents: read
+      actions: read
+      deployments: write
+    uses: ./.github/workflows/wave1-native-publish.yaml
+    with:
+      app: apps
+      profile: staging
     secrets:
       CLOUDFLARE_STAGING_API_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.CLOUDFLARE_STAGING_API_TOKEN || '' }}
       WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}

@@ -13,6 +13,13 @@ removing either hold alone does not authorize publication. A later explicit cuto
 PR must reconcile both policies and its exact production promotion range.
 
 These workflows add no automatic schedule and perform no provider or DNS setup.
+PR profile qualification has read-only deployment permission. Each caller grants
+`deployments: write` only to its separate staging publication job, after successful
+profile qualification and staging policy admission on a main push or dispatch.
+The reusable qualification workflow never calls a publisher, so read-only callers
+do not need to grant nested write permissions. `wave1-native-permissions.test.js`
+covers this boundary, including same-repository PR events.
+
 Main pushes and trusted main dispatch can publish **staging only**, after provisioning
 the repository enable flag and an exact source/artifact admission. PRs and other branches qualify artifacts without
 publication. Existing Vercel deployments, project framework settings and disabled

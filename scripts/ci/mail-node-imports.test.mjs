@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -42,7 +43,7 @@ test('allows ESM builtin imports and unrelated calls', (t) => {
   )();
 });
 
-function chunks(t, files) {
+function chunks(t, files, { timeout } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'mail-node-imports-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'server/assets'), { recursive: true });
@@ -50,12 +51,22 @@ function chunks(t, files) {
   const all = { 'rolldown-runtime.js': runtime, ...files };
   for (const [name, code] of Object.entries(all))
     writeFileSync(join(root, 'server/assets', name), code);
-  return () =>
-    assertMailNodeImports(
-      root,
-      'mail',
-      Object.keys(all).map((name) => `server/assets/${name}`)
+  const paths = Object.keys(all).map((name) => `server/assets/${name}`);
+  return () => {
+    if (timeout === undefined)
+      return assertMailNodeImports(root, 'mail', paths);
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        `import { assertMailNodeImports } from ${JSON.stringify(new URL('./mail-node-imports.mjs', import.meta.url).href)}; assertMailNodeImports(${JSON.stringify(root)}, 'mail', ${JSON.stringify(paths)});`,
+      ],
+      { encoding: 'utf8', timeout }
     );
+    assert.equal(result.error, undefined, result.error?.message);
+    assert.equal(result.status, 0, result.stderr);
+  };
 }
 
 for (const [label, files] of Object.entries({
@@ -88,3 +99,21 @@ test('allows computed calls to non-helper re-exports', (t) => {
     'entry.js': `import { identity } from './mid.js'; const name = 'node:fs'; identity(name);`,
   })();
 });
+
+for (const [label, middle] of Object.entries({
+  'two star-exported namespaces': `export * from './first.js'; export * from './second.js';`,
+  'explicit and star-exported namespaces': `export * as ns from './rolldown-runtime.js'; export * from './second.js';`,
+}))
+  test(`terminates with ${label}`, (t) => {
+    chunks(
+      t,
+      {
+        'other.js': 'export const value = 1;',
+        'first.js': `export * as ns from './rolldown-runtime.js';`,
+        'second.js': `export * as ns from './other.js';`,
+        'mid.js': middle,
+        'entry.js': `import { ns } from './mid.js'; ns.i('external-package');`,
+      },
+      { timeout: 2000 }
+    )();
+  });

@@ -585,7 +585,9 @@ test('every reusable boundary forwards exactly staging credentials and public in
     ['calendar-cloudflare.yaml', 'native-profiles'],
     ['mail-cloudflare.yaml', 'native-profiles'],
     ['apps-cloudflare.yaml', 'native-publication-profiles'],
-    ['wave1-native-app.yaml', 'publish-staging'],
+    ['calendar-cloudflare.yaml', 'native-publish-staging'],
+    ['mail-cloudflare.yaml', 'native-publish-staging'],
+    ['apps-cloudflare.yaml', 'native-publish-staging'],
   ]) {
     const job = readWorkflow(file).jobs[jobId];
     assert.deepEqual(Object.keys(job.secrets).sort(), names, file);
@@ -598,7 +600,7 @@ test('every reusable boundary forwards exactly staging credentials and public in
       );
   }
   assert.equal(
-    readWorkflow('wave1-native-app.yaml').jobs['publish-production'].secrets,
+    readWorkflow('wave1-native-app.yaml').jobs['publish-production'],
     undefined
   );
   const job = readWorkflow('wave1-native-publish.yaml').jobs.publish;

@@ -52,7 +52,7 @@ function resolveHelperBindings(modules) {
     changed = true;
   };
   const link = (map, key, value) => {
-    if (map.get(key) === value) return;
+    if (map.has(key)) return;
     map.set(key, value);
     changed = true;
   };

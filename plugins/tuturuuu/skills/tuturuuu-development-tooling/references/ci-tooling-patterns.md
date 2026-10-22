@@ -946,3 +946,14 @@ Run `wave1-native-publication.test.js` for the real entrypoint transport tests a
 its final-fence removal negative control, alongside publisher/policy/credential
 and workflow suites. Source-only tests do not establish hosted token permissions
 or emitted Worker acceptance.
+
+## Reusable staging publisher permissions
+
+Keep PR artifact qualification read-only and call staging publishers from separate
+main push/dispatch jobs with explicit deployment-write permission. A skipped nested
+publisher is still a reusable permission contract; remove that call from the
+read-only qualification workflow. Assert exact staging secret maps and expressions
+at each caller boundary and reject references elsewhere, including the actual
+production token name `CLOUDFLARE_API_TOKEN`. The wave-1 permission and publisher
+secret tests cover these boundaries; protected concurrency tests preserve the
+non-cancelling durable-attempt publication queue.

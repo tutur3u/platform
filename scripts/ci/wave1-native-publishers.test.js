@@ -284,14 +284,8 @@ test('control-plane reads refuse redirects and oversized responses with one requ
 });
 test('original, restored and publication jobs cannot bypass seal/runtime or policy', () => {
   const workflow = readWorkflow('wave1-native-app.yaml');
-  assert.deepEqual(workflow.jobs['publish-production'].needs, [
-    'restored',
-    'policy-production',
-  ]);
-  assert.equal(
-    workflow.jobs['publish-production'].if,
-    "needs.policy-production.outputs.allowed == 'true'"
-  );
+  assert.equal(workflow.jobs['publish-production'], undefined);
+  assert.ok(workflow.jobs['policy-production']);
   assert.deepEqual(workflow.jobs.build.strategy.matrix.profile, [
     'staging',
     'production',
