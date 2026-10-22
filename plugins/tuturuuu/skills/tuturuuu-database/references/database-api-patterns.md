@@ -22,6 +22,9 @@ review prove baseline equivalence. Existing migration history stays immutable.
   `@tuturuuu/types/db`.
 - If a migration adds or changes PostgREST-exposed RPC signatures, drop legacy
   overloads that would make named arguments ambiguous.
+- Call typed `.rpc(name, args)` directly. Binding the full generic RPC method can
+  trigger TS2589 as schemas grow; do not cast it to an untyped callable. Omit
+  optional arguments only after verifying their SQL defaults preserve behavior.
 - Public `SECURITY DEFINER` RPCs must enforce `auth.uid()` and workspace/RBAC
   checks internally, then revoke broad execution and grant only required roles.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
@@ -37,7 +40,14 @@ must commit together. Validate changes with
 it applies the full disposable schema, runs pgTAP plus an actual two-connection
 race, generates types from that database and performs owned cleanup. See
 [SSO persistence](../../../../../apps/docs/platform/features/sso.mdx#phase-2-persistence-boundary)
-for the database versus future Auth/MFA/signer boundary.
+for the database versus future Auth/MFA/signer boundary. Bind live user links to
+`auth.users`, not the retained public user row. Membership deletion and demotion
+must revoke assignments; workspace cleanup cascades operational state while
+immutable audit/disclosure receipts keep denormalized correlation UUIDs without
+parent FKs. Force RLS on all eight tables, test a non-BYPASSRLS owner, and verify
+approved definer owners can still execute the RPCs. If the committed base types
+lag the applied schema, reconcile a generated base/candidate delta automatically
+and exclude unrelated baseline drift; never hand-edit generated declarations.
 
 ## Workspace-Scoped Writes
 

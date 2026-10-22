@@ -117,8 +117,6 @@ describe('Contacts approval mutation handler', () => {
     expect(mocks.privateRpc).toHaveBeenCalledWith(
       'reconcile_orphaned_approved_post_email_queue',
       {
-        p_cutoff: null,
-        p_max_posts: null,
         p_skip_posts: 0,
         p_ws_id: 'workspace-1',
       }

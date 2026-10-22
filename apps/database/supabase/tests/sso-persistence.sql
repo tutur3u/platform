@@ -120,7 +120,7 @@ SELECT ok(NOT has_table_privilege('service_role','private.sso_signing_keys','SEL
 SELECT ok(NOT has_table_privilege('anon','private.sso_audit_events','SELECT,INSERT,UPDATE,DELETE'),'anon has no direct audit_events access');
 SELECT ok(NOT has_table_privilege('authenticated','private.sso_audit_events','SELECT,INSERT,UPDATE,DELETE'),'authenticated has no direct audit_events access');
 SELECT ok(NOT has_table_privilege('service_role','private.sso_audit_events','SELECT,INSERT,UPDATE,DELETE'),'service_role has no direct audit_events access');
-SELECT ok((SELECT bool_and(c.relrowsecurity) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='private' AND c.relname LIKE 'sso_%' AND c.relkind='r'),'all SSO tables enable RLS');
+SELECT ok((SELECT count(*) = 8 AND bool_and(c.relrowsecurity AND c.relforcerowsecurity) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='private' AND c.relname LIKE 'sso_%' AND c.relkind='r'),'all eight SSO tables enable and force RLS');
 SELECT ok((SELECT bool_and(p.prosecdef AND 'search_path=""' = ANY(p.proconfig)) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'sso_%'),'all exposed RPCs use SECURITY DEFINER and empty search_path');
 SET LOCAL ROLE anon;
 SELECT throws_ok($$SELECT * FROM private.sso_transactions$$,'42501',NULL,'anonymous direct table read rejected');
@@ -159,7 +159,11 @@ UPDATE public.workspace_members SET type='GUEST' WHERE ws_id=(SELECT ws FROM fix
 SELECT throws_ok($$SELECT public.sso_consume_transaction(f.ws,c.id,t.id,f.member,repeat('b',64),repeat('e',64),2) FROM fixture f,clients c,guest_login t$$,
  '42501','sso_forbidden','guest cannot consume even with assignment and earlier consent');
 SELECT throws_ok($$SELECT private.sso_assert_manager(ws,member) FROM fixture$$,'42501','sso_forbidden','guest cannot manage SSO despite broad default permissions');
+SELECT is((SELECT count(*)::integer FROM private.sso_assignments WHERE user_id=(SELECT member FROM fixture)),0,'demotion revokes assignments');
 UPDATE public.workspace_members SET type='MEMBER' WHERE ws_id=(SELECT ws FROM fixture) AND user_id=(SELECT member FROM fixture);
+SELECT throws_ok($$SELECT public.sso_consume_transaction(f.ws,c.id,t.id,f.member,repeat('b',64),repeat('e',64),2) FROM fixture f,clients c,guest_login t$$,
+ '42501','sso_forbidden','promotion does not revive assignment');
+SELECT public.sso_set_assignment(f.ws,c.id,f.actor,f.member,0,true) FROM fixture f,clients c;
 DELETE FROM public.workspace_members WHERE ws_id=(SELECT ws FROM fixture) AND user_id=(SELECT member FROM fixture);
 SELECT throws_ok($$SELECT public.sso_consume_transaction(f.ws,c.id,t.id,f.member,repeat('b',64),repeat('e',64),2) FROM fixture f,clients c,guest_login t$$,
  '42501','sso_forbidden','membership removal ordered before final authorization denies consume');
@@ -194,7 +198,16 @@ GRANT SELECT ON fixture,clients TO service_role;
 SET LOCAL ROLE service_role;
 SELECT lives_ok($$SELECT public.sso_create_transaction(f.ws,c.id,2,'_service',repeat('1',64),repeat('b',64),NULL,'https://sp.example.test/acs',clock_timestamp()+interval '4 minutes') FROM fixture f,clients c$$,'service role can execute RPC without table grants');
 RESET ROLE;
+SELECT is((SELECT count(*)::integer FROM private.sso_assignments WHERE user_id=(SELECT member FROM fixture)),0,'membership deletion cascades assignment');
 INSERT INTO public.workspace_members(ws_id,user_id,type) SELECT ws,member,'MEMBER' FROM fixture;
+CREATE TEMP TABLE rejoin_login AS SELECT pg_temp.start_login('_rejoin','rejoin-handle') id;
+SELECT throws_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.member,repeat('b',64),repeat('e',64),2,true) FROM fixture f,clients c,rejoin_login t$$,
+ '42501','sso_forbidden','rejoined member cannot consent until explicitly reassigned');
+SELECT throws_ok($$SELECT public.sso_consume_transaction(f.ws,c.id,t.id,f.member,repeat('b',64),repeat('e',64),2) FROM fixture f,clients c,guest_login t$$,
+ '42501','sso_forbidden','rejoined member cannot consume earlier consent until reassigned');
+SELECT public.sso_set_assignment(f.ws,c.id,f.actor,f.member,0,true) FROM fixture f,clients c;
+SELECT lives_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.member,repeat('b',64),repeat('e',64),2,true) FROM fixture f,clients c,rejoin_login t$$,
+ 'explicit reassignment permits fresh consent');
 CREATE TEMP TABLE no_create_login AS SELECT t.id FROM fixture f,clients c,LATERAL public.sso_create_transaction(
  f.ws,c.id,2,'_no_create',repeat('2',64),repeat('b',64),NULL,'https://sp.example.test/acs',clock_timestamp()+interval '4 minutes') t;
 SELECT is((SELECT allow_create FROM private.sso_transactions WHERE id=(SELECT id FROM no_create_login)),false,'omitted AllowCreate is persisted as false');
@@ -212,5 +225,112 @@ SELECT throws_ok($$SELECT public.sso_manage_client(ws,actor,NULL,0,'Bad',ARRAY['
 SELECT ok((SELECT bool_and(NOT has_function_privilege('authenticated',p.oid,'EXECUTE') AND NOT has_function_privilege('anon',p.oid,'EXECUTE'))
  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'sso_%' AND p.proname <> 'sso_read_own_disclosures'),
  'all SSO writer RPCs reject anonymous and authenticated execution');
+
+SELECT ok((SELECT bool_and(r.rolsuper OR r.rolbypassrls) FROM pg_proc p
+ JOIN pg_roles r ON r.oid=p.proowner JOIN pg_namespace n ON n.oid=p.pronamespace
+ WHERE n.nspname IN ('public','private') AND p.proname LIKE 'sso_%' AND p.prosecdef),
+ 'definer owners bypass forced RLS without permissive policies');
+CREATE ROLE sso_test_owner NOLOGIN NOSUPERUSER NOBYPASSRLS;
+GRANT USAGE ON SCHEMA private, extensions TO sso_test_owner;
+GRANT EXECUTE ON FUNCTION private.sso_valid_acs(text[]), private.sso_valid_domains(text[]) TO sso_test_owner;
+CREATE TEMP TABLE original_owners AS SELECT c.relname, r.rolname FROM pg_class c
+ JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_roles r ON r.oid=c.relowner
+ WHERE n.nspname='private' AND c.relname LIKE 'sso_%' AND c.relkind='r';
+DO $$DECLARE t record; BEGIN
+ FOR t IN SELECT * FROM original_owners LOOP
+   EXECUTE format('ALTER TABLE private.%I OWNER TO sso_test_owner',t.relname);
+   EXECUTE format('GRANT ALL ON TABLE private.%I TO %I',t.relname,t.rolname);
+ END LOOP;
+END$$;
+SET LOCAL ROLE sso_test_owner;
+SELECT is((SELECT count(*)::integer FROM private.sso_clients),0,'forced RLS hides clients from non-bypass owner');
+SELECT is((SELECT count(*)::integer FROM private.sso_saml_clients),0,'forced RLS hides saml_clients from non-bypass owner');
+SELECT is((SELECT count(*)::integer FROM private.sso_assignments),0,'forced RLS hides assignments from non-bypass owner');
+SELECT is((SELECT count(*)::integer FROM private.sso_subjects),0,'forced RLS hides subjects from non-bypass owner');
+SELECT is((SELECT count(*)::integer FROM private.sso_transactions),0,'forced RLS hides transactions from non-bypass owner');
+SELECT is((SELECT count(*)::integer FROM private.sso_disclosure_grants),0,'forced RLS hides disclosure_grants from non-bypass owner');
+SELECT is((SELECT count(*)::integer FROM private.sso_signing_keys),0,'forced RLS hides signing_keys from non-bypass owner');
+SELECT is((SELECT count(*)::integer FROM private.sso_audit_events),0,'forced RLS hides audit_events from non-bypass owner');
+SELECT throws_ok($$INSERT INTO private.sso_clients(ws_id,display_name,approved_email_domains)
+ VALUES('00000000-0000-4000-8000-000000009111','Denied',ARRAY['example.test'])$$,
+ '42501',NULL,'non-bypass owner cannot write through forced RLS');
+RESET ROLE;
+SET LOCAL ROLE service_role;
+SELECT lives_ok($$SELECT public.sso_create_transaction('00000000-0000-4000-8000-000000009111',
+ (SELECT id FROM clients),2,'_forced_owner',repeat('3',64),repeat('b',64),NULL,
+ 'https://sp.example.test/acs',clock_timestamp()+interval '4 minutes')$$,
+ 'definer RPC works with non-bypass table owner and forced RLS');
+RESET ROLE;
+DO $$DECLARE t record; BEGIN
+ FOR t IN SELECT * FROM original_owners LOOP
+   EXECUTE format('ALTER TABLE private.%I OWNER TO %I',t.relname,t.rolname);
+ END LOOP;
+END$$;
+CREATE TEMP TABLE disabled_client AS SELECT c.* FROM fixture f,LATERAL public.sso_manage_client(
+ f.ws,f.actor,NULL,0,'Retirement disabled',ARRAY['example.test'],'urn:disabled:sp',ARRAY['https://sp.example.test/acs']) c;
+CREATE TEMP TABLE retire_client AS SELECT c.* FROM fixture f,LATERAL public.sso_manage_client(
+ f.other_ws,f.other_actor,NULL,0,'Direct retirement',ARRAY['example.test'],'urn:retire:sp',ARRAY['https://sp.example.test/acs']) c;
+SELECT public.sso_manage_client(f.other_ws,f.other_actor,c.id,1,'Direct retirement',ARRAY['example.test'],
+ 'urn:retire:sp',ARRAY['https://sp.example.test/acs'],true) FROM fixture f,retire_client c;
+SELECT public.sso_set_assignment(f.other_ws,c.id,f.other_actor,f.other_actor,0,true) FROM fixture f,retire_client c;
+CREATE TEMP TABLE retire_login AS SELECT t.id FROM fixture f,retire_client c,LATERAL public.sso_create_transaction(
+ f.other_ws,c.id,2,'_retire',repeat('5',64),repeat('b',64),NULL,'https://sp.example.test/acs',clock_timestamp()+interval '4 minutes',true) t;
+SELECT public.sso_record_consent(f.other_ws,c.id,t.id,f.other_actor,repeat('b',64),repeat('e',64),2,true)
+ FROM fixture f,retire_client c,retire_login t;
+SELECT public.sso_manage_client(f.other_ws,f.other_actor,c.id,2,'Direct retirement',ARRAY['example.test'],
+ 'urn:retire:sp',ARRAY['https://sp.example.test/acs'],false) FROM fixture f,retire_client c;
+CREATE TEMP TABLE retained_history AS SELECT
+ (SELECT jsonb_agg(to_jsonb(a) ORDER BY id) FROM private.sso_audit_events a) audit,
+ (SELECT jsonb_agg(to_jsonb(g) ORDER BY id) FROM private.sso_disclosure_grants g) disclosures;
+SELECT lives_ok($$DELETE FROM public.workspaces WHERE id=(SELECT other_ws FROM fixture)$$,
+ 'direct workspace deletion succeeds with disabled client, live assignment and consent-bound transaction');
+SELECT is((SELECT count(*)::integer FROM private.sso_clients WHERE ws_id=(SELECT other_ws FROM fixture)),0,
+ 'direct workspace deletion removes disabled client');
+SELECT is((SELECT count(*)::integer FROM private.sso_assignments WHERE ws_id=(SELECT other_ws FROM fixture)),0,
+ 'direct workspace deletion removes live assignment');
+SELECT is((SELECT count(*)::integer FROM private.sso_transactions WHERE ws_id=(SELECT other_ws FROM fixture)),0,
+ 'direct workspace deletion removes consent-bound transaction');
+SELECT lives_ok($$DELETE FROM auth.users WHERE id=(SELECT member FROM fixture)$$,
+ 'actual Auth deletion trigger chain succeeds');
+SELECT ok(EXISTS(SELECT 1 FROM public.users WHERE id=(SELECT member FROM fixture)),
+ 'Auth deletion retains public user proving the actual lifecycle was tested');
+SELECT is((SELECT subject FROM private.sso_subjects WHERE subject=(SELECT subject FROM member_subject)),
+ (SELECT subject FROM member_subject),'Auth deletion preserves nonrecyclable subject value');
+SELECT ok((SELECT user_id IS NULL FROM private.sso_subjects WHERE subject=(SELECT subject FROM member_subject)),
+ 'Auth deletion unlinks subject from retained public user');
+SELECT is((SELECT count(*)::integer FROM private.sso_assignments WHERE user_id=(SELECT member FROM fixture)),0,
+ 'Auth deletion removes assignments');
+SELECT is((SELECT count(*)::integer FROM private.sso_transactions WHERE actor_id=(SELECT member FROM fixture)),0,
+ 'Auth deletion removes consent-bound transactions');
+SELECT is((SELECT count(*)::integer FROM private.sso_disclosure_grants g
+ JOIN private.sso_transactions t ON (t.ws_id,t.client_id,t.id)=(g.ws_id,g.client_id,g.transaction_id)
+ WHERE g.actor_id=(SELECT member FROM fixture)),0,
+ 'Auth deletion leaves no live consent authorization; retained receipts are historical');
+SELECT lives_ok($$DELETE FROM auth.users WHERE id=(SELECT actor FROM fixture)$$,
+ 'creator Auth deletion succeeds with clients and immutable history');
+SELECT ok((SELECT bool_and(created_by IS NULL) FROM private.sso_clients WHERE ws_id=(SELECT ws FROM fixture)),
+ 'creator Auth deletion clears live client attribution');
+SELECT is((SELECT count(*)::integer FROM private.sso_assignments WHERE ws_id=(SELECT ws FROM fixture)),0,
+ 'creator Auth deletion removes remaining assignments');
+SELECT is((SELECT count(*)::integer FROM private.sso_transactions WHERE actor_id=(SELECT actor FROM fixture)),0,
+ 'creator Auth deletion removes creator consent-bound transactions');
+SELECT lives_ok($$DELETE FROM public.workspaces WHERE id=(SELECT ws FROM fixture)$$,
+ 'existing hard workspace cleanup succeeds after creator Auth deletion');
+SELECT is((SELECT count(*)::integer FROM private.sso_clients WHERE ws_id=(SELECT ws FROM fixture)),0,
+ 'workspace deletion cascades enabled and disabled clients');
+SELECT is((SELECT count(*)::integer FROM private.sso_saml_clients WHERE ws_id=(SELECT ws FROM fixture)),0,'workspace deletion removes saml_clients');
+SELECT is((SELECT count(*)::integer FROM private.sso_assignments WHERE ws_id=(SELECT ws FROM fixture)),0,'workspace deletion removes assignments');
+SELECT is((SELECT count(*)::integer FROM private.sso_subjects WHERE ws_id=(SELECT ws FROM fixture)),0,'workspace deletion removes subjects');
+SELECT is((SELECT count(*)::integer FROM private.sso_transactions WHERE ws_id=(SELECT ws FROM fixture)),0,'workspace deletion removes transactions');
+SELECT is((SELECT count(*)::integer FROM private.sso_signing_keys WHERE ws_id=(SELECT ws FROM fixture)),0,'workspace deletion removes signing_keys');
+SELECT is((SELECT jsonb_agg(to_jsonb(a) ORDER BY id) FROM private.sso_audit_events a),
+ (SELECT audit FROM retained_history),'Auth and workspace retirement preserve every audit byte');
+SELECT is((SELECT jsonb_agg(to_jsonb(g) ORDER BY id) FROM private.sso_disclosure_grants g),
+ (SELECT disclosures FROM retained_history),'retirement preserves immutable historical consent receipts');
+SELECT throws_ok($$DELETE FROM private.sso_audit_events$$,'42501','sso_append_only','retired audit remains append only');
+SELECT throws_ok($$DELETE FROM private.sso_disclosure_grants$$,'42501','sso_append_only','retired disclosures remain append only');
+SELECT throws_ok($$SELECT public.sso_create_transaction(f.ws,c.id,2,'_retired',repeat('4',64),repeat('b',64),NULL,
+ 'https://sp.example.test/acs',clock_timestamp()+interval '4 minutes') FROM fixture f,clients c$$,
+ '42501','sso_forbidden','retired workspace cannot admit issuance');
 SELECT * FROM finish();
 ROLLBACK;

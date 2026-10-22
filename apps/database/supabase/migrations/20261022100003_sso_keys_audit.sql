@@ -18,9 +18,10 @@ CREATE TABLE private.sso_signing_keys (
   CHECK (status <> 'retiring' OR retired_at IS NOT NULL),
   CHECK (status <> 'revoked' OR revoked_at IS NOT NULL),
   UNIQUE (ws_id, client_id, kid),
-  FOREIGN KEY (ws_id, client_id) REFERENCES private.sso_clients(ws_id, id) ON DELETE RESTRICT
+  FOREIGN KEY (ws_id, client_id) REFERENCES private.sso_clients(ws_id, id) ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX sso_one_active_key ON private.sso_signing_keys(ws_id, client_id) WHERE status = 'active';
+-- Correlation UUIDs are denormalized so parent retirement never mutates audit history.
 CREATE TABLE private.sso_audit_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ws_id uuid NOT NULL,
@@ -31,9 +32,7 @@ CREATE TABLE private.sso_audit_events (
     'assignment.updated', 'transaction.created', 'transaction.consumed',
     'consent.approved', 'consent.denied', 'issuance.failed', 'issuance.signed')),
   policy_revision bigint NOT NULL CHECK (policy_revision > 0),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  FOREIGN KEY (ws_id, client_id) REFERENCES private.sso_clients(ws_id, id) ON DELETE RESTRICT,
-  FOREIGN KEY (ws_id, client_id, transaction_id) REFERENCES private.sso_transactions(ws_id, client_id, id) ON DELETE RESTRICT
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX sso_audit_tenant_time_idx ON private.sso_audit_events(ws_id, client_id, created_at DESC);
 CREATE FUNCTION private.sso_reject_mutation() RETURNS trigger
@@ -47,6 +46,8 @@ CREATE TRIGGER sso_audit_append_only BEFORE UPDATE OR DELETE ON private.sso_audi
 CREATE TRIGGER sso_disclosure_append_only BEFORE UPDATE OR DELETE ON private.sso_disclosure_grants
   FOR EACH ROW EXECUTE FUNCTION private.sso_reject_mutation();
 ALTER TABLE private.sso_signing_keys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE private.sso_signing_keys FORCE ROW LEVEL SECURITY;
 ALTER TABLE private.sso_audit_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE private.sso_audit_events FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON private.sso_signing_keys, private.sso_audit_events FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION private.sso_reject_mutation() FROM PUBLIC, anon, authenticated, service_role;

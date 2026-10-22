@@ -105,7 +105,21 @@ validity/rotation timestamps. A partial unique index permits at most one active
 key per client. Certificate syntax constraints reject private-key PEM; the future
 signer must validate the actual X.509 certificate and key match. No private key,
 secret reference, key import/rotation RPC or signer route is added by this phase.
-Subjects keep their random value when account deletion clears the user link.
+Subjects reference `auth.users`, so actual Auth deletion clears their user link
+while reserving the random value. Auth deletion also clears client/assignment
+creator attribution and deletes assignments and actor-bound transactions, even
+though the public user row remains. Membership deletion cascades assignments;
+MEMBER-to-GUEST demotion deletes them too. Rejoining or later promotion requires
+an explicit new assignment. This rule applies to every phase 2 SSO client.
+
+Workspace hard deletion cascades clients, protocol profiles, assignments, subjects,
+transactions and public signing-key metadata, including disabled clients. Immutable
+disclosure receipts and audit events retain denormalized workspace/client/actor/
+transaction UUIDs without parent foreign keys. These historical receipts cannot
+authorize a login without a live transaction and current membership/assignment.
+Cleanup never disables or bypasses their append-only triggers. All eight tables
+force RLS; approved definer RPCs retain their PostgreSQL BYPASSRLS owner, while a
+non-BYPASSRLS table owner is subject to the policies.
 Receipt/audit actors are UUID-only correlation values without deletion-blocking
 user foreign keys; retention and pseudonymization require the phase 5 operating
 policy. There is no automatic retention job in this phase.
@@ -125,6 +139,20 @@ consume race. It generates `packages/types/src/supabase.ts` from that same appli
 `public,private,storage` schema, then stops only the owned database without backup.
 Synthetic race rows are committed only inside the disposable database and vanish
 with its teardown; immutable audit rows are never bypassed for fixture cleanup.
+The pgTAP packet covers membership removal/rejoin, demotion/promotion, real Auth
+deletion (including retained public users), creator and workspace deletion,
+byte-identical retained history, and a non-BYPASSRLS table owner. The separate race
+still requires one winner, one replay rejection, one subject and one consume audit.
+
+When the committed base type snapshot already lags its applied schema, generate
+both the clean base and candidate using the same CLI and formatter. Apply their
+generated delta to the committed base with a three-way merge, failing on conflicts;
+exclude unrelated baseline drift rather than manually editing generated objects.
+The SSO-only committed type delta intentionally excludes existing employee-profile
+objects absent from the base snapshot. The workflow artifact still contains the
+complete applied schema. Check `packages/users-core` as well as the types package
+after generation because new FK relationships affect nested select inference.
+
 The runner prints a schema snapshot digest and recovery directory for a failed
 cleanup. Use the existing isolated lifecycle cleanup procedure for that directory.
 The `SSO persistence database contract` CI workflow repeats this on the exact PR
