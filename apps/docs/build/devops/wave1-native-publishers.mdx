@@ -389,7 +389,18 @@ adapter for its default SQLite dialect, including applications with database
 inference disabled. Node compatibility does not define a global CommonJS `require`
 inside an emitted ESM chunk.
 
-Mail's build plugin resolves PostCSS's CommonJS `path`, `url` and `fs` imports in
+The Worker entry also includes `iconv-lite` through inbound group authentication ->
+`mailauth/lib/dkim/verify` -> `mailauth/lib/tools` -> `libmime/lib/charset`. Its
+streaming API initialization uses a bare CommonJS `require("stream")`. The conservative
+emitted-byte guard also matches that spelling in its fallback diagnostic. In a Linux
+preimage reproduction, the remaining emitted match was the diagnostic example rather
+than an executable call (the browser mapping disables its optional stream import).
+The workerd-only plugin adapts the stream import to native `node:stream` and rewrites
+only that diagnostic to describe passing the module without a CommonJS call example.
+The emitted-byte guard remains unchanged; tests execute the transformed installed
+iconv-lite entry and check charset decoding and stream construction.
+
+Mail's build plugin resolves CommonJS `path`, `url`, `fs` and `stream` imports in
 the workerd server build to native ESM adapters, matching Void's adapter protocol. Client, development,
 ESM and unrelated builtin imports keep their existing resolution. Both profiles use
 this same plugin. Before original or restored runtime acceptance, the artifact gate

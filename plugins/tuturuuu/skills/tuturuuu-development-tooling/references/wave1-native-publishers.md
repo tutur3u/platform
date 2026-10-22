@@ -26,6 +26,11 @@ TypeScript project and verify with the app's non-build type-check command.
 
 For Mail's CommonJS path startup failure, preserve the same compatibility flags/date
 for both profiles. Void 1.1.12 skips its builtin require adapter for the default
-SQLite dialect. Keep Mail's workerd-only PostCSS builtin adapters and pre-runtime emitted
+SQLite dialect. Keep Mail's workerd-only builtin adapters (PostCSS path/url/fs and iconv-lite stream) and pre-runtime emitted
 asset rejection; do not add a global require shim or claim local config tests prove
-emitted Worker startup. Both profile acceptances belong to exact-head CI.
+emitted Worker startup. Inbound group DKIM verification reaches iconv-lite through
+mailauth tools and libmime charset decoding; adapt its stream require to node:stream
+ESM rather than removing verification or installing a global require. Its fallback
+error message also contains a literal require example: rewrite only that diagnostic
+in the workerd build, keeping the conservative emitted-byte guard unchanged. Inspect
+emitted match context before claiming a require example is an executable call. Both profile acceptances belong to exact-head CI.

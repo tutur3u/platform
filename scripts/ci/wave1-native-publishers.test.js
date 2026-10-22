@@ -439,7 +439,7 @@ test('Worker build-info is public, read-only, exact-path and retains app identit
 });
 
 for (const environment of ['staging', 'production']) {
-  test(`Mail ${environment} refuses emitted CommonJS path requires before runtime startup`, async (t) => {
+  test(`Mail ${environment} refuses emitted CommonJS builtin requires before runtime startup`, async (t) => {
     const [, { prepare }] = await modules;
     for (const expression of [
       'require("path")',
@@ -447,6 +447,8 @@ for (const environment of ['staging', 'production']) {
       '__require$1("path")',
       'require("fs")',
       '__require("url")',
+      'require("stream")',
+      '__require$1("stream")',
       'require("node:stream")',
     ]) {
       const dir = fixture(t);
