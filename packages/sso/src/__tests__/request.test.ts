@@ -71,16 +71,26 @@ describe('AuthnRequest registered profile and bounded XML boundary', () => {
     expect(() =>
       parse(f.signedRedirect().replace('opaque-handle', 'other-handle'))
     ).toThrow('SAML_INVALID_SIGNATURE');
+    // A second fixture mints its certificate later (second-granularity
+    // notBefore); validate at its clock so only the pin mismatch can fail.
+    const unpinned = fixture();
     expect(() =>
-      parse(f.signedRedirect(), [
+      parseAuthnRequest(
+        { binding: 'redirect', rawQuery: f.signedRedirect() },
         {
-          ...profile,
-          requestSigning: {
-            mode: 'required',
-            certificate: fixture().certificate,
-          },
-        },
-      ])
+          profiles: [
+            {
+              ...profile,
+              requestSigning: {
+                mode: 'required',
+                certificate: unpinned.certificate,
+              },
+            },
+          ],
+          idp: f.idp,
+          now: () => unpinned.now,
+        }
+      )
     ).toThrow('SAML_INVALID_SIGNATURE');
     expect(() =>
       parse(
