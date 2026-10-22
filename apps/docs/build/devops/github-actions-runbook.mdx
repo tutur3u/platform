@@ -1179,11 +1179,11 @@ Run `node --test scripts/ci/qualify-sdk-package.test.js` for the diagnostic and
 fixture-cleanup regressions. Use the exact-head qualification receipt for new
 failures; hashes from older receipts cannot recover discarded npm output.
 
-Test, Coverage, Biome, and Type Check preserve immutable protected concurrency
-groups for main, production, and all generated Release Please refs.
+Test, Coverage, Biome, and Type Check supersede older main validation runs.
+Production and generated Release Please refs retain immutable concurrency groups.
 A rapid generated branch reset followed by its metadata commit must not cancel
 checks for a SHA also used by main or production. Ordinary feature refs retain
-branch push supersession; Type Check manual attempts remain independent. Cancellation is not a
+branch push supersession; manual validation attempts remain independent. Cancellation is not a
 successful validation or a valid duplicate skip. Resource-owning E2E and database
 workflows retain their own lifecycle policies.
 
@@ -1764,28 +1764,63 @@ standalone report-merge failure remains a failure. Test these lifecycle boundari
 with real owned child processes and synthetic failures; helper-only source checks
 are not proof that a stalled browser process exits.
 
-## Preserving protected-branch pending runs
+## Superseded validation and production runner admission
 
-Disabling `cancel-in-progress` protects the active run, but GitHub's default
-concurrency queue still replaces its single pending run. Validation on `main`,
-`production`, and generated Release Please refs therefore includes the source SHA,
-event name, and run ID in the workflow concurrency group. Existing duplicate-proof
-jobs decide whether validated work can be skipped; concurrency cancellation is not
-validation evidence. Ordinary PR and feature refs retain latest-run supersession.
+PR validation uses workflow, event and PR number with `cancel-in-progress` enabled.
+A new head replaces older queued or running validation for that PR. PR-target
+workflows use the PR identity because their Git ref is the base branch. Safe
+push-to-main validation uses workflow and ref rather than SHA, so newer main
+commits replace obsolete validation. Production, generated Release Please refs and
+manual validation attempts keep independent immutable groups.
 
-Mutating production planners, Vercel and Cloudflare deploys, database migrations,
-package publication, Release Please, and store deployments retain their shared
-serialization groups with `cancel-in-progress: false` and `queue: max`. The
-[GitHub concurrency reference](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-queueing-multiple-pending-runs)
-allows up to 100 pending runs. Queue overflow can still cancel excess runs; inspect
-that condition explicitly instead of interpreting a cancellation as a valid skip.
-Queue order follows when each run began waiting, not commit chronology; existing
-SHA relevance and deployment-marker guards remain responsible for target validity.
-`queue: max` must never be combined with cancellation enabled.
+Only the exact SHA selected for production promotion needs complete CI.
+Superseded main SHAs do not each need a full green receipt. A cancelled workflow
+is never a passing check or a valid duplicate proof. If an authorized pinned
+candidate lost required validation to a later main push, rerun the missing checks
+for that exact candidate before promotion. Newer-head green checks cannot replace
+that evidence. The existing exact-SHA promotion gate remains mandatory.
 
-Regression coverage: `scripts/ci/protected-workflow-concurrency.test.js` reads the
-actual workflow concurrency blocks, checks protected SHA/run separation and PR
-supersession, and enforces serialization with expanded queues.
+The explicit PR exceptions are `colab-cloudflare.yaml`,
+`coordination-cloudflare.yaml`, `cron-control-cloudflare.yaml`,
+`devbox-control-cloudflare.yaml`, `lettin-cloudflare.yaml`, `meet-cloudflare.yaml`
+and `parley-cloudflare.yaml`, which combine validation with production deployment;
+`playground-runtime-acceptance.yaml`, which must finish real sandbox cleanup; and
+the paused `docker-setup-check.yaml` and `rust-backend.yml`. The paused
+`tanstack-route-manifest.yaml` retains its existing PR supersession and protected
+main policy. Resuming a paused runtime requires a separate policy review.
+
+Mutating production planners, Vercel and Cloudflare deployments, database
+migrations, package publication, Release Please and store deployments retain their
+shared serialization groups with cancellation disabled and `queue: max`.
+[GitHub concurrency](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
+allows up to 100 pending runs in these groups. Queue overflow can still cancel
+excess runs. Queue order reflects when each run began waiting, so existing target
+relevance and deployment-marker guards remain authoritative. `queue: max` must
+never be combined with cancellation enabled.
+
+The production planner already uses a dedicated serialization group and resolves
+all app configurations in one process. Vercel app workflows run directly without
+separate config jobs. Cloudflare app workflows still check configuration and run
+validation before deployment. Meet, Lettin and Parley now fold PR release-only
+checks into that existing config job, removing up to three runner allocations per
+production plan. The check preserves PR base/head comparison and returns true for
+production and manual runs. No validation or deployment job is removed.
+
+Concurrency groups do not reserve runner capacity or prioritize production over
+PR jobs on GitHub-hosted runners. Removing obsolete validation and redundant gate
+jobs reduces demand but does not establish a queue-time improvement. Further
+consolidation needs equivalent per-app configuration outputs and failure handling.
+A dedicated runner pool or more account capacity needs separate infrastructure
+ownership. Upskii's Linux runners are not available for Tuturuuu jobs.
+
+These policies apply to new workflow runs after the change reaches the applicable
+workflow ref. They do not clean an already queued backlog or cancel merged PR runs
+without another event. Existing-run cleanup remains a separate authorized action.
+
+Regression coverage: `scripts/ci/protected-workflow-concurrency.test.js` discovers
+all PR and main-push workflows, checks supersession and explicit exceptions, and
+preserves mutating locks. `scripts/ci/production-preflight-consolidation.test.js`
+executes the shared PR release check and validates the reduced job graph.
 
 
 ### Calendar scheduling startup requests

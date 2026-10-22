@@ -77,7 +77,6 @@ test('validates exact committed notes delta against production, retaining all un
       false
     );
     for (const ref of [
-      'refs/heads/main',
       'refs/heads/production',
       'refs/heads/release-please--branches--production',
       'refs/heads/release-please--branches--main--release-notes',
@@ -130,6 +129,7 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     const policy = readWorkflow(name).concurrency;
     const base = {
       workflow: name,
+      event: { pull_request: {} },
       sha: 'a'.repeat(40),
       event_name: 'push',
       run_id: '100',
@@ -142,7 +142,6 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     ];
     for (const ref of [
       NOTES_REF,
-      'refs/heads/main',
       'refs/heads/production',
       'refs/heads/release-please--branches--production',
     ]) {
@@ -158,14 +157,17 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
         );
         assert.equal(
           group,
-          `${name}-${ref}-${github.sha}-${github.event_name}-${github.run_id}`,
+          `${name}-${github.event_name}-${ref}-${github.sha}-${github.run_id}`,
           `${name}: protected evidence retains SHA, event and run identity`
         );
         return group;
       });
       assert.equal(new Set(groups).size, variants.length);
     }
-    const featureGroups = variants.map((variant) => {
+    const featureVariants = variants.filter(
+      (variant) => variant.event_name === 'push'
+    );
+    const featureGroups = featureVariants.map((variant) => {
       const github = { ...variant, ref: 'refs/heads/fix/ordinary-feature' };
       assert.equal(evaluatePolicy(policy['cancel-in-progress'], github), true);
       return policy.group.replace(/\$\{\{([\s\S]*?)\}\}/gu, (_, expression) =>
@@ -174,7 +176,9 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     });
     assert.deepEqual(
       featureGroups,
-      variants.map(() => `${name}-refs/heads/fix/ordinary-feature-latest`)
+      featureVariants.map(
+        () => `${name}-push-refs/heads/fix/ordinary-feature-latest`
+      )
     );
   }
   assert.equal(readWorkflow('biome-check.yaml').on.push, null);

@@ -254,7 +254,7 @@ test('non-Vercel deployment cancellation policies remain environment-specific', 
   assert.match(discordWorkflow, /cancel-in-progress: true/);
 });
 
-test('external app validation preserves protected commits instead of passing a skipped build', () => {
+test('external app validation supersedes main and preserves production evidence', () => {
   const workflow = fs.readFileSync(
     path.join(
       repoRoot,
@@ -268,7 +268,7 @@ test('external app validation preserves protected commits instead of passing a s
 
   assert.match(
     header,
-    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main'.*github\.ref != 'refs\/heads\/production'/
+    /cancel-in-progress:.*github\.event_name == 'push'.*github\.ref != 'refs\/heads\/production'/
   );
   assert.doesNotMatch(
     workflow,

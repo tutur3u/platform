@@ -9,11 +9,11 @@ test('translation checks run once per PR update and still cover both protected b
   assert.deepEqual(workflow.on.push.branches, ['main', 'production']);
   assert.equal(workflow.on.pull_request, null);
   assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
-  // PR merge refs coalesce; protected and generated release runs retain exact evidence.
+  // PR and main runs coalesce; production and manual attempts retain exact evidence.
   assert.equal(
     workflow.concurrency.group,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-    "${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}"
+    "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--'))) && format('{0}-{1}', github.sha, github.run_id) || 'latest' }}"
   );
   for (const id of [
     'i18n-sort-check',
@@ -62,19 +62,19 @@ test('failed invitation cohorts retain distinct diagnostic artifacts', () => {
   assert.equal(new Set(names).size, names.length);
 });
 
-test('superseded PR runs cancel, protected release evidence does not', () => {
+test('superseded PR runs cancel, production release evidence does not', () => {
   for (const name of ['i18n-check.yaml', 'e2e-tests.yaml']) {
     const concurrency = readWorkflow(name).concurrency;
     const policy = concurrency['cancel-in-progress'];
     assert.equal(
       policy,
       // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-      "${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}"
+      "${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--')) }}"
     );
     assert.equal(
       concurrency.group,
       // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-      "${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}"
+      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--'))) && format('{0}-{1}', github.sha, github.run_id) || 'latest' }}"
     );
   }
 });

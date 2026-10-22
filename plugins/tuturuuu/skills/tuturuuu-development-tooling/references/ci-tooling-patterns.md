@@ -473,9 +473,31 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   shared caller-derived key can cancel sibling deploys and turn intended skips
   into red X statuses. Keep serialized deployment/publication groups on
   `cancel-in-progress: false` and `queue: max` so active and pending runs survive
-  newer pushes. Protected validation groups include SHA, event, and run identity;
-  job-level duplicate proofs decide valid skips. Never combine `queue: max` with
-  cancellation enabled.
+  newer pushes. PR validation groups use workflow, event and PR number, with
+  `cancel-in-progress` enabled. Safe push validation coalesces `main` by workflow
+  and ref. Production, generated Release Please refs and manual qualification
+  retain SHA/run identity. Never combine `queue: max` with cancellation enabled.
+- Only the exact SHA selected for promotion needs complete CI. Superseded `main`
+  validation may be cancelled, but cancellation is never passing evidence. If a
+  pinned candidate lost a required check to supersession, restore that exact-SHA
+  validation before promotion; do not credit a newer main SHA or weaken the gate.
+  Production deployment, migration and release workflows retain their locks.
+- Keep the PR exception list in `scripts/ci/protected-workflow-concurrency.test.js`
+  explicit. The seven mixed Cloudflare workflows retain their deployment locks;
+  gVisor acceptance retains bounded cleanup. Paused Docker/Rust workflows are
+  unchanged, and paused TanStack validation retains its existing policy. New
+  validation workflows must coalesce PR revisions, including `pull_request_target`
+  events whose `github.ref` points to the base branch.
+- Consolidate PR-only release checks into the reusable CI config job with
+  `check_pr_release_only: true`. Meet, Lettin and Parley compare the same PR base
+  and head as before; production/manual events always return `run_checks=true`.
+  Removing their separate release jobs saves up to three runner allocations per
+  production plan without bypassing app configuration, validation or deploy gates.
+  The planner already resolves all target configurations once. Further removal of
+  per-app config jobs needs equivalent output/failure coverage. A dedicated
+  concurrency group serializes work but cannot reserve GitHub-hosted capacity.
+  Runner pool or account capacity changes require separate admission; Upskii
+  runners are outside this repository's custody.
 - For explicitly authorized manual CI cleanup, inventory fresh protected refs
   and open PR heads, then protect `main` and `production` before testing merged
   PR branch membership. Historical promotion PRs can use `main` as their head;
