@@ -190,6 +190,15 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   hard-coded `apps/*/messages` lists to i18n scripts; use `bun i18n:add` and
   its bulk `--mode add|remove|replace` paths for translation key operations,
   and reserve manual JSON edits for broad prose rewrites or value-only updates.
+- For Mind shared-UI translation coverage, run
+  `bun scripts/i18n-rendered-keys.js` through the resource broker. Its import
+  graph covers both locales, including literal lazy imports and explicitly
+  bound translator props; the i18n workflow runs it before the existing
+  namespace checker. Use `apps/mind --json` for key-to-source evidence. Qualify
+  dynamic expressions and wrapper bindings before enabling another satellite;
+  never substitute package-wide requirements from unrelated screens. See
+  [shared UI translations](../../../../../apps/docs/platform/architecture/satellite-apps.mdx#shared-ui-translations)
+  and the real-source negative controls in `i18n-rendered-keys.test.js`.
 - Agent workflow helpers such as `bun git-commit-window` should use ignored
   runtime state under `tmp/agent-coordination/`, expose focused subcommands,
   enforce a short 5-10-minute claim TTL, and include `node:test` coverage for
@@ -512,8 +521,8 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   one short runner. The production workflow-run trigger and Actions API lookup
   must follow the production planner; the same-SHA platform deployment marker
   and successful staging checks remain mandatory.
-- Keep remote-cache values out of workflow/job environments and `GITHUB_ENV`.
-  Pass them only to the composite wrapper's command step. Repository
+- Keep [cache credentials and held publisher admission](wave1-production-credentials.md)
+  step scoped, outside workflow/job environments and `GITHUB_ENV`. Repository
   `TURBO_TOKEN` is for trusted jobs only; `TURBO_TEAM` is a repository variable
   with temporary secret fallback. Pull requests and Dependabot receive neither
   token nor team and use a task-family `.turbo` cache that only protected

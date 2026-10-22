@@ -31,6 +31,21 @@ preserve identity, storage, localization and API contracts before canonical traf
 changes. This does not resume the retained TanStack Start app or authorize cutover.
 See [Oxc and Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
 
+## Wave-1 production publication hold
+
+Meet, Calendar, Mail and Apps are **held for wave-1 cutover** in
+`productionPublicationHolds` in `tuturuuu.ci.ts`. The production planner reports
+**Held** with that reason and selects neither their native nor legacy publishers,
+including manual and package recovery selection. Native CI validation stays enabled.
+Meet's direct production job also checks the same policy before publication.
+
+A production sync therefore retains the currently deployed Meet frontend and realtime
+Worker versions and the existing Calendar/Mail/Apps Vercel deployments. Other apps
+and central API suppliers retain their normal production behavior; the hold is not
+an assertion of compatibility with newly published suppliers. Vercel Git deployment
+stays disabled; do not change framework, domains, bindings or scheduler ownership.
+See the [wave-1 cutover runbook](/build/devops/wave1-native-cutover).
+
 ## Runtime map
 
 | Boundary | Active source/owner | What to verify |

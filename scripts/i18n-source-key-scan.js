@@ -488,11 +488,8 @@ function scanSourceKeys(
   } = {}
 ) {
   const results = [];
-  const files = findSourceFiles(rootDir, sourceDir);
-
-  for (const filePath of files) {
+  for (const filePath of findSourceFiles(rootDir, sourceDir)) {
     const content = fs.readFileSync(filePath, 'utf-8');
-    const relPath = path.relative(rootDir, filePath);
     const bracePairs = buildBracePairs(content);
     const declarations = [];
     TRANSLATOR_DECLARATION_REGEX.lastIndex = 0;
@@ -592,7 +589,7 @@ function scanSourceKeys(
         results.push({
           namespace: declaration.namespace ?? '',
           key,
-          file: relPath,
+          file: path.relative(rootDir, filePath),
         });
       }
     }
@@ -705,5 +702,7 @@ function checkAppSourceKeys({ exceptions = {}, rootDir }) {
 
 module.exports = {
   checkAppSourceKeys,
+  findFirstArgumentEnd,
+  splitTopLevelTernary,
   scanSourceKeys,
 };

@@ -1,4 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -10,6 +9,12 @@ import {
   LegacyCalendarWriteError,
 } from '@/lib/calendar/legacy-provider-generation-guard';
 import { syncMicrosoftInbound } from '@/lib/calendar/microsoft-inbound-sync';
+import {
+  checkProviderSyncBudget,
+  createSyncAdminClient,
+  createSyncCompletionClient,
+  providerSyncSignal,
+} from '@/lib/calendar/provider-sync-budget';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import { classifyCalendarSyncError } from '@/lib/calendar/sync-errors';
 import {
@@ -313,7 +318,8 @@ export async function POST(
     // Background privileges come from verified server credentials, never JSON.
     const source = access.isCronAuth ? 'vercel_cron' : 'manual';
 
-    sbAdmin = (await createAdminClient()) as any;
+    checkProviderSyncBudget();
+    sbAdmin = (await createSyncAdminClient()) as any;
     await clearStaleRunningSyncRuns(sbAdmin, wsId);
     const recentState = await getRecentRunState(sbAdmin, wsId);
     const triggeredBy = await resolveSyncTriggerUserId({
@@ -440,21 +446,36 @@ export async function POST(
         };
 
     const partialFailure =
-      (googleSummary.failedConnections ?? 0) > 0 || outboundSummary.failed > 0;
+      (googleSummary.failedConnections ?? 0) > 0 ||
+      outboundSummary.failed > 0 ||
+      ('failedAccounts' in microsoftSummary &&
+        microsoftSummary.failedAccounts > 0);
+    const googleFailure =
+      'failureType' in googleSummary && googleSummary.failureType;
+    const microsoftFailure =
+      'failureType' in microsoftSummary && microsoftSummary.failureType;
     const failureType =
-      ('failureType' in googleSummary && googleSummary.failureType) ||
-      'partial_failure';
-    const { error: completionError } = await (sbAdmin as any)
+      googleFailure === 'auth' || microsoftFailure === 'auth'
+        ? 'auth'
+        : googleFailure || microsoftFailure || 'partial_failure';
+    const completionClient = providerSyncSignal()
+      ? await createSyncCompletionClient()
+      : sbAdmin;
+    const { error: completionError } = await completionClient
       .from('calendar_sync_dashboard')
       .update({
         status: partialFailure ? 'failed' : 'completed',
         error_type: partialFailure ? failureType : null,
         error_stack_trace: JSON.stringify({
           version: 1,
-          failedCalendars:
-            'failedCalendars' in googleSummary
+          failedCalendars: [
+            ...('failedCalendars' in googleSummary
               ? googleSummary.failedCalendars
-              : [],
+              : []),
+            ...('failedCalendars' in microsoftSummary
+              ? microsoftSummary.failedCalendars
+              : []),
+          ],
         }),
         error_message: partialFailure
           ? 'Some calendars or events could not be synchronized'
@@ -491,9 +512,14 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error('Error in workspace calendar sync route', { error });
+    console.error('Workspace calendar sync failed', {
+      code: classifyCalendarSyncError(error),
+    });
     if (sbAdmin && dashboardRunId) {
-      await sbAdmin
+      const completionClient = providerSyncSignal()
+        ? await createSyncCompletionClient()
+        : sbAdmin;
+      await completionClient
         .from('calendar_sync_dashboard')
         .update({
           status: 'failed',

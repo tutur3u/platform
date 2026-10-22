@@ -16,18 +16,30 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 
 import { GET } from './route';
 
+const filters = vi.fn();
+function cronRequest(signal?: AbortSignal) {
+  return new NextRequest(
+    'https://calendar.tuturuuu.com/api/cron/calendar/provider-sync',
+    {
+      headers: { Authorization: 'Bearer test-cron-secret' },
+      signal,
+    }
+  );
+}
+
 describe('Calendar provider cron ownership', () => {
   beforeEach(() => {
     vi.stubEnv('CRON_SECRET', 'test-cron-secret');
     vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://old-web.example');
     vi.stubEnv('VERCEL_URL', 'protected-preview.example');
-    admin.mockResolvedValue({
-      from: () => ({
-        select: () => ({
-          eq: () => ({ order: () => ({ range: page }) }),
-        }),
-      }),
-    });
+    const query = {
+      eq: (column: string, value: boolean) => {
+        filters(column, value);
+        return query;
+      },
+      order: () => ({ range: page }),
+    };
+    admin.mockResolvedValue({ from: () => ({ select: () => query }) });
     page.mockResolvedValue({
       data: [{ ws_id: 'workspace-a' }, { ws_id: 'workspace-a' }],
       error: null,
@@ -39,6 +51,7 @@ describe('Calendar provider cron ownership', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetAllMocks();
+    vi.restoreAllMocks();
   });
   it('uses the local owner and cron auth independently of stale Web or preview origins', async () => {
     const response = await GET(
@@ -61,6 +74,11 @@ describe('Calendar provider cron ownership', () => {
     });
     expect(await context.params).toEqual({ wsId: 'workspace-a' });
     expect(await response.json()).toMatchObject({ ok: true, processed: 1 });
+    expect(filters.mock.calls).toEqual([
+      ['is_active', true],
+      ['calendar_connections.is_enabled', true],
+      ['calendar_connections.sync_inbound_enabled', true],
+    ]);
   });
   it('rejects unauthorized calls before enumerating workspaces', async () => {
     expect(
@@ -120,7 +138,7 @@ describe('Calendar provider cron ownership', () => {
     expect(sync).not.toHaveBeenCalled();
   });
 
-  it('reports partial provider failures', async () => {
+  it('returns 200 with recorded partial provider failures', async () => {
     sync.mockResolvedValue(
       NextResponse.json({ ok: false, partialFailure: true, code: 'auth' })
     );
@@ -130,11 +148,145 @@ describe('Calendar provider cron ownership', () => {
         { headers: { Authorization: 'Bearer test-cron-secret' } }
       )
     );
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       ok: false,
       successful: 0,
       failed: 1,
     });
+  });
+  it('short circuits without dispatch when no active inbound connections are due', async () => {
+    page.mockResolvedValue({ data: [], error: null });
+    const response = await GET(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/api/cron/calendar/provider-sync',
+        { headers: { Authorization: 'Bearer test-cron-secret' } }
+      )
+    );
+    expect(response.status).toBe(200);
+    expect(sync).not.toHaveBeenCalled();
+    expect(await response.json()).toMatchObject({ ok: true, processed: 0 });
+  });
+
+  it('bounds each dispatch batch and reports deferred workspaces', async () => {
+    page.mockResolvedValue({
+      data: Array.from({ length: 31 }, (_, i) => ({ ws_id: `workspace-${i}` })),
+      error: null,
+    });
+    const response = await GET(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/api/cron/calendar/provider-sync',
+        { headers: { Authorization: 'Bearer test-cron-secret' } }
+      )
+    );
+    expect(sync).toHaveBeenCalledTimes(10);
+    expect(await response.json()).toMatchObject({
+      processed: 10,
+      deferred: 21,
+    });
+  });
+
+  it('isolates thrown workspace failures and completes other workspaces', async () => {
+    page.mockResolvedValue({
+      data: [{ ws_id: 'bad' }, { ws_id: 'good' }],
+      error: null,
+    });
+    sync.mockRejectedValueOnce(new Error('private-provider-detail'));
+    const response = await GET(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/api/cron/calendar/provider-sync',
+        { headers: { Authorization: 'Bearer test-cron-secret' } }
+      )
+    );
+    expect(response.status).toBe(200);
+    expect(sync).toHaveBeenCalledTimes(2);
+    const body = await response.json();
+    expect(body).toMatchObject({ ok: false, failed: 1, successful: 1 });
+    expect(JSON.stringify(body)).not.toContain('private-provider-detail');
+  });
+
+  it.each([10_000, 10_001])(
+    'probes the scan boundary for %i eligible rows',
+    async (rows) => {
+      page.mockImplementation(async (from: number, to: number) => ({
+        data: Array.from(
+          { length: Math.max(0, Math.min(rows - from, to - from + 1)) },
+          () => ({ ws_id: 'workspace' })
+        ),
+        error: null,
+      }));
+      sync.mockResolvedValue(NextResponse.json({ ok: true }));
+      const response = await GET(cronRequest());
+      expect(page).toHaveBeenLastCalledWith(10_000, 10_000);
+      expect(page).toHaveBeenCalledTimes(21);
+      expect(response.status).toBe(rows === 10_000 ? 200 : 500);
+      expect(sync).toHaveBeenCalledTimes(rows === 10_000 ? 1 : 0);
+    }
+  );
+
+  it('defers queued work after cancellation and retains in-flight failures', async () => {
+    const controller = new AbortController();
+    page.mockResolvedValue({
+      data: Array.from({ length: 10 }, (_, i) => ({ ws_id: `ws-${i}` })),
+      error: null,
+    });
+    sync.mockImplementation(async () => {
+      controller.abort(new DOMException('deadline', 'TimeoutError'));
+      controller.signal.throwIfAborted();
+    });
+    const response = await GET(cronRequest(controller.signal));
+    const body = await response.json();
+    expect(sync.mock.calls.length).toBeGreaterThan(0);
+    expect(sync.mock.calls.length).toBeLessThanOrEqual(3);
+    expect(body).toMatchObject({
+      ok: false,
+      processed: sync.mock.calls.length,
+      failed: sync.mock.calls.length,
+      deferred: 10 - sync.mock.calls.length,
+    });
+  });
+
+  it.each([502, null])(
+    'logs sanitized workspace diagnostics for status %s',
+    async (status) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      if (status)
+        sync.mockResolvedValue(
+          new NextResponse('private-provider-token email@example.test', {
+            status,
+          })
+        );
+      else
+        sync.mockRejectedValue(
+          new TypeError('private-provider-token email@example.test')
+        );
+      await GET(cronRequest());
+      expect(warn).toHaveBeenCalledWith(
+        'Calendar provider sync workspace failed',
+        {
+          wsId: 'workspace-a',
+          errorName: status ? 'WorkspaceSyncHttpError' : 'TypeError',
+          ...(status ? { httpStatus: status } : {}),
+        }
+      );
+      expect(JSON.stringify(warn.mock.calls)).not.toMatch(
+        /private-provider-token|email@example/
+      );
+    }
+  );
+
+  it('logs sanitized outer dispatch errors', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    admin.mockRejectedValue(
+      new TypeError('private-provider-token email@example.test')
+    );
+    expect((await GET(cronRequest())).status).toBe(500);
+    expect(error).toHaveBeenCalledWith(
+      'Calendar provider sync dispatch failed',
+      { errorName: 'TypeError' }
+    );
+    expect(JSON.stringify(error.mock.calls)).not.toMatch(
+      /private-provider-token|email@example/
+    );
   });
 });

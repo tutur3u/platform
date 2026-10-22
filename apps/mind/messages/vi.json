@@ -245,6 +245,7 @@
     "create_workspace_description": "Tạo workspace để tổ chức đội ngũ, dự án và dữ liệu lập kế hoạch.",
     "create_workspace_upgrade_notice": "Giới hạn workspace phụ thuộc vào gói hiện tại của bạn.",
     "current_workspace": "Không gian làm việc hiện tại",
+    "dark": "Tối",
     "dashboard": "Bảng điều khiển",
     "default_workspace": "Không gian làm việc mặc định",
     "error": "Đã xảy ra lỗi",
@@ -253,6 +254,8 @@
     "expanded": "Đã mở rộng",
     "feedback": "Phản hồi",
     "get-started": "Bắt đầu",
+    "guest_access": "Quyền khách",
+    "hidden": "Ẩn",
     "hidden_workspaces": "Không gian làm việc đã ẩn",
     "hidden_workspaces_description": "Chỉ bạn thấy danh sách này. Khôi phục để hiện lại trong danh sách không gian làm việc của bạn. Quyền truy cập của bạn và các thành viên khác không thay đổi.",
     "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
@@ -260,15 +263,19 @@
     "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
     "hide_sidebar": "Ẩn thanh bên",
     "hide_workspace": "Ẩn không gian làm việc",
+    "home": "Trang chủ",
     "join_workspace": "Tham gia workspace",
     "join_workspace_action": "Tham gia",
     "join_workspace_by_slug_description": "Nhập slug workspace để yêu cầu truy cập hoặc nhận lời mời.",
     "join_workspace_success": "Đã tham gia workspace",
     "language": "Ngôn ngữ",
+    "light": "Sáng",
     "loading": "Đang tải",
     "logout": "Đăng xuất",
     "media-alt": "Tệp {number}",
     "media-optional": "Tệp đính kèm tùy chọn",
+    "members": "Thành viên",
+    "no_results_found": "Không tìm thấy kết quả",
     "no_workspace_found": "Không tìm thấy không gian làm việc",
     "personal_account": "Tài khoản cá nhân",
     "public_profile": "Hồ sơ công khai",
@@ -279,6 +286,7 @@
     "retry": "Thử lại",
     "root": "Gốc",
     "search_workspace": "Tìm kiếm không gian làm việc",
+    "select_workspace": "Chọn không gian làm việc",
     "select-product-placeholder": "Chọn sản phẩm...",
     "settings": "Cài đặt",
     "sidebar": "Thanh bên",
@@ -788,7 +796,11 @@
     "read_only_description": "Bạn có thể xem các cài đặt này, nhưng cần quản lý không gian làm việc để thay đổi.",
     "title": "Không gian làm việc"
   },
+  "search": {
+    "search": "Tìm kiếm"
+  },
   "settings": {
+    "back_to_app": "Quay lại ứng dụng",
     "keyboard_shortcuts": {
       "calendar_agenda": "Xem lịch trình",
       "calendar_day": "Xem ngày",
@@ -812,11 +824,13 @@
       "settings_dialog": "Hộp thoại cài đặt",
       "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
     },
+    "manage_settings": "Quản lý cài đặt {label} của bạn",
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
       "sidebar_hidden": "Ẩn"
-    }
+    },
+    "search_settings_placeholder": "Tìm cài đặt..."
   },
   "version-badge": {
     "app": "Ứng dụng",

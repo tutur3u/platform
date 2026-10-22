@@ -327,6 +327,7 @@
                 "pages": [
                   "build/devops/overview",
                   "build/devops/active-runtime",
+                  "build/devops/wave1-native-cutover",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",

@@ -63,7 +63,7 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
       assert.equal(comparison.with.ref, undefined);
       assert.equal(
         workflow.jobs.deploy.if,
-        "github.ref == 'refs/heads/production'"
+        "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
       );
       const marker = workflow.jobs.deploy.steps.find(
         (item) => item.env?.DEPLOYMENT_MARKER_SHA
