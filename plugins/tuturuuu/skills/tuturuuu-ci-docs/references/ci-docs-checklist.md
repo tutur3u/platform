@@ -107,6 +107,26 @@ acceptance separately from static review. A file-only manifest passing cannot
 prove directory-layout acceptance. See the Meet application page for the owning
 artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 
+## Calendar Native Delivery Preparation
+
+- Keep Calendar validation in the registered `mail-calendar-tasks-builds.yaml`;
+  root selector/registry changes require parent ownership. Use exact PR-head or
+  push-SHA checkout, Bun 1.4.3 and Node 24.22.0.
+- Discover the official emitted Void deploy pointer (`configPath`, required empty
+  `auxiliaryWorkers`), then validate contained main/assets/config before Wrangler
+  type generation or dry-run. Generate `CloudflareEnv` with runtime types excluded;
+  type-check the native entry and affected Web/Tasks consumers.
+- Seal exact source and all emitted bytes, restore the same-run immutable artifact
+  without rebuilding, and repeat dry-run plus mandatory emitted-Worker and offline
+  acceptance. Keep `.runtime.mjs` artifact suites outside source-only discovery.
+- Never infer hosted identity from Calendar's proposed source name. Keep native
+  Cloudflare publication absent and Vercel native-source guards in place until
+  observed account/Worker/domain/bindings/secrets, signed-in EN/VI/permission/
+  offline/drain/provider acceptance and immutable Vercel rollback are recorded.
+  Parent alone selects one publisher; Calendar does not inherit Meet's exception.
+- Missing emitted schema, dependency or signed-in route fixture is an explicit
+  acceptance gap. Authored tests and source review do not qualify runtime.
+
 ## Docs
 
 - Add new docs pages to `apps/docs/docs.json`.

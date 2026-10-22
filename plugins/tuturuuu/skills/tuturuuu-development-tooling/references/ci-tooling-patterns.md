@@ -155,6 +155,16 @@ and main-SHA builds without deployment or production credentials. Keep the
 separate tests/type-check/lint gates; a skipped manual preview is not build
 evidence. Build-only workflows use placeholder public configuration and
 read-only permissions. Live provider consent/delivery remains a separate check.
+Calendar's `calendar-native-inventory.mjs` owns the finite emitted hidden-file
+contract: exact `.assetsignore` bytes, typed Vite manifest metadata and hashes for
+both files. Do not infer this contract from another app's output or permit
+`.dev.vars`. The shared runtime's explicit Calendar profile dispatches the same
+inventory across original/copy/finalization; default callers still reject hidden
+entries. `calendar-native-artifact.test.mjs` imports the profile controls so CI
+executes credential, metadata, copy and final-seal regressions without SDK loading.
+Debug archives require bounded name/type/escape/link inspection before private
+extraction; retain producer receipt hashes and source identity separately from
+runtime acceptance.
 
 Native Meet/Calendar/Apps source-bearing receipts must use the same PR-head-or-event
 selection as checkout, stamps, seals and runtime expectations. Preserve the actual
@@ -239,6 +249,16 @@ for the diagnostic collector's legacy comparison field and remaining gates.
 ## CI And Dependency Drift
 
 For native Wrangler lifecycle qualification, separate source/static review, runtime evidence and customer delivery; candidates do not clear caller adoption.
+Calendar's finite adapter profile delegates admission to its existing sealed
+artifact validator and preserves emitted config bytes. Its configured application
+Worker denies every outbound request; the hash-pinned SDK control plane, generated
+registry/core/debug helpers and Node networking are trusted tooling outside that
+boundary. Do not describe this as whole-runtime confinement. Preserve default
+unknown-field/external-worker rejection, lifecycle proofs and production
+cost/stop/access gates. See the Calendar emitted Worker caller section in
+`apps/docs/build/development-tools/without-docker.mdx` for source-only controls and
+the separate fresh-artifact, exact-head hosted acceptance sequence. The offline
+VM companion is not a second Miniflare constructor.
 Apply the narrow returned-Worker classification and independent closure gates in `apps/docs/build/development-tools/without-docker.mdx`;
 preserve the existing three-minute watchdog, 30-second boundary-test limit and old raw NOTPASS results.
 
@@ -742,3 +762,91 @@ upstream readiness, then publish only the exact SHA256-bound qualified tarball.
 Never accept a SOURCE receipt as public acceptance or rebuild after qualification.
 Run `node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/package-release-readiness.test.js packages/sdk/scripts/portable-build.test.cjs`
 for focused controls; builds and real consumer acceptance belong to exact-SHA CI.
+
+
+## Apps finite public SDK acceptance
+
+Apps owns `apps-native-runtime-plan.mjs`, `apps-native-runtime.mjs` and
+`apps-native-runtime-launcher.mjs`; shared Calendar evidence/lifecycle primitives
+remain read-only dependencies. Both existing HTTP and browser callers must use
+public `unstable_startWorker` with unchanged sealed Apps output and exact empty
+application topology. Keep the original assertions and 3/5-minute CI watchdogs.
+Pass the canonical artifact receipt to original and restored HTTP/browser steps;
+never inject compiled identity through runtime bindings.
+
+Admission requires Apps-owned Wrangler 4.151.2 and its owning Miniflare
+5.20261019.0-beta, with the exact entry hashes documented in the
+[Apps runbook](../../../../../apps/docs/build/development-tools/without-docker.mdx#apps-finite-emitted-worker-callers).
+Resolve through Apps ancestry before loading, reject preloads, and verify again
+after loading and teardown. Required pins are not local qualification evidence.
+Keep package-manager repair separate when a stale owning lock edge remains;
+reject unrelated lock churn rather than editing the lock by hand.
+
+Queue the focused `apps-native-runtime.test.mjs`,
+`apps-native-runtime-receipt.test.mjs` and
+`apps/apps/cloudflare/native-runtime-fence.test.mjs` pure tests. They exercise
+artifact/source admission, policy bounds, supplier doubles, acquisition-before-ready,
+reverse exactly-once disposal, natural child/pipe observation and independent
+snapshot/persistence gates without loading the SDK. Runtime qualification still
+requires both real callers on original and freshly restored exact-commit output.
+
+Queue `apps/apps/cloudflare/native-artifact-functions.test.mjs` for sealed RPC
+metadata discovery. The actual emitted fixture must retain its producer hash;
+accept only string literals or single-quasi, expression-free template literals
+with a string cooked value. Keep target predicates, exactly-one-distinct-ID,
+parse and symlink guards. Reject interpolation, tagged/dynamic/non-string values,
+zero/distinct-ID ambiguity and source-map fallback; leave aliases and shorthand
+unevaluated. Pure discovery coverage does not qualify actual RPC or browser wire
+behavior; the Apps runbook owns the remaining original/restored acceptance gates.
+
+Apps emitted `server/.vite` is a closed metadata directory, containing only a
+regular, bounded, typed `manifest.json`. Keep it hashed and copied; require sealed
+regular file references and own manifest import keys, preserving own `__proto__`
+entries safely. Existing assets-ignore/pointer admission stays unchanged. Never
+turn this into a generic hidden-directory exception or SDK-workdir exclusion.
+Queue `apps-native-runtime-hidden.test.mjs` for malformed, unknown, credential,
+symlink, escape, incomplete and original/copy mutation controls; the existing
+Apps runbook above owns the exact profile.
+
+Configured app/negative HTTP hooks admit only the bounded exact local fixture;
+SDK-generated helper/control actors are hash-pinned trusted tooling outside that
+confinement claim. Record account assurance separately from central forwarding:
+exact known-subject admin GET, captured generated service key in apikey/Bearer,
+no query, fragment,
+URL credentials, Cookie or body. HTTP app assurance is exactly four reads and
+negative exactly one, sharing the unchanged 32-operation ceiling; browser stays
+deny-all with zero assurance. Preserve the original compiled API 599 negative,
+its exact one-call denied counter and zero negative central forwarding. Require
+compiled-handler controls for required MFA (403), banned accounts (401) and
+unavailable policy (503), using the same session across policy changes, with no
+forwarding or cookie clearing, before the original PATCH/cookie assertions. Pure doubles do not prove those runtime
+controls. The Apps runbook above owns the exact fixture ledger and limits.
+CI must tar the full owned evidence directory, including hidden
+`.wrangler` data, before artifact upload. Never replace natural child closure,
+independent seals, verified snapshots or persistence readbacks with a fulfilled
+`dispose()`. Internal cleanup and descendant closure remain UNKNOWN.
+
+
+The Apps browser redirect fence owns one public page-target CDP session with
+Fetch.requestPaused attached before wildcard Request-stage enablement. Remove
+both page.route layers: owning Playwright 1.63.0 auto-continues redirected requests
+before user routing; context.route uses the same mechanism. Classify every hop
+against the fixed listener and existing fixture origins, continuing without
+request overrides, fulfilling constant HTML, or blocking. Preserve service-worker
+blocking, exact anchor/307/Location/final-URL/load assertions, deadlines, Worker
+policy budgets and strict residual rejection. No browser-wide/OOPIF/popup claim.
+Keep Fetch enabled until owned page closure, drain handler promises, observe
+session closure or detach, remove handlers, and aggregate failures with the primary.
+
+Queue `apps/apps/cloudflare/native-browser-fence.test.mjs` for pure protocol,
+setup, cap, drain and failure propagation controls. The separate finite
+`scripts/ci/apps-native-browser-fence.runtime.mjs` uses only two disposable
+127.0.0.1 listeners without SDK or external hosts. Require the real old-route RED
+bypass (zero fulfillment, one destination upstream), CDP GREEN (one fulfillment,
+zero upstream, exact URL/load), an independently classified intermediate hop,
+and unadmitted destination blocking (one block, zero upstream). CI runs it with
+owning bundled Chromium after existing browser setup. Explicit local `--chrome`
+selects existing Chrome via the public channel with headless ephemeral custody;
+it is separate evidence from CI Chromium and emitted Worker acceptance. See the
+Apps runbook above for cleanup and remaining qualification boundaries. Historical
+timeout causality remains UNKNOWN; the routing gap is a separate source finding.

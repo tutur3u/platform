@@ -186,6 +186,7 @@
     "devrs:tasks": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:tasks",
     "devrs:track": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:track",
     "test": "bun turbo:local run test --filter='!@tuturuuu/tanstack-web'",
+    "test:apps-native-browser": "node --test scripts/ci/apps-native-browser.runtime.mjs",
     "test:scripts": "node scripts/run-script-tests.js",
     "test:watch": "bun turbo:local run test:watch",
     "test:e2e": "bun run --cwd apps/web test:e2e",
