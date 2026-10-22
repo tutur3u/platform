@@ -35,4 +35,31 @@ if (mode !== '--plan') {
   });
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 1;
+  if (
+    process.exitCode === 0 &&
+    mode === '--coverage' &&
+    shards[Number(index)].packages.includes('@tuturuuu/meet')
+  ) {
+    const focused = spawnSync(
+      'bun',
+      [
+        'x',
+        '--no-install',
+        'vitest',
+        'run',
+        '--config',
+        'vitest.native-auth.config.ts',
+        '--maxWorkers=1',
+        '--coverage',
+        '--coverage.reportsDirectory=coverage/native-auth',
+      ],
+      {
+        cwd: path.join(root, 'apps/meet'),
+        stdio: 'inherit',
+        env: process.env,
+      }
+    );
+    if (focused.error) throw focused.error;
+    process.exitCode = focused.status ?? 1;
+  }
 }

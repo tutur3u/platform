@@ -190,6 +190,22 @@ catalogs/lockfiles. Do not run it for a single-app task. Review bounded dependen
 and configuration changes instead; use package-manager commands for dependencies.
 Verify Vite+/Vite/Vitest version compatibility before changing shared test runners.
 
+Use the package-manager-produced graph and its provenance to retain the minimal
+complete closure: workspace aliases plus required transitive and peer-context
+records. Keeping only Bun's workspace block while preserving the packages section
+can omit that closure. Preserve the root provider and every unchanged consumer;
+avoid wholesale unrelated lockfile churn. Change dependency manifests only through
+package-manager commands, never by hand.
+
+A frozen restore exiting zero without rewriting the lockfile does not prove the
+effective package identity. After an admitted restore, use `createRequire` from the
+owning app, CLI and plugin to resolve package JSON files; record their canonical
+paths and name/version identities, including required transitives. Distinguish an
+alias package's release version from its embedded Vite API version. Check plugin
+peer compatibility against that API; do not force a plain-Vite peer from a textual
+lockfile key alone. Preserve cold-restore admission, heavy-work holds, resource
+gates and CI-only builds. Require the owning app's actual exact-commit CI build.
+
 ## First-party portability contract
 
 Maintain domain rules and application services as ordinary TypeScript modules.

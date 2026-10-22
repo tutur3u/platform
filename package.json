@@ -36,7 +36,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7"
   },
-  "packageManager": "bun@1.4.1",
+  "packageManager": "bun@1.4.3",
   "private": true,
   "scripts": {
     "clean": "rm -rf bun.lock && find . -name node_modules -prune -o \\( -name .next -o -name .turbo \\) -type d -exec rm -rf {} + && bunx npkill --delete-all -y",

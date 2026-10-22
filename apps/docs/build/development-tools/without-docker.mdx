@@ -111,6 +111,12 @@ anonymous/protected snapshots; they do not prove live database access.
 
 ## Hosted profile await diagnostics
 
+The hosted fixture installs Chromium OS packages through a temporary APT
+configuration selecting the runner's signed Ubuntu sources. Unrelated vendor
+feeds do not participate; missing Ubuntu sources or package failures stop setup.
+Browser downloads run as the runner user. A setup failure before tests produces
+no profile acceptance result, even if the terminal artifact is absent.
+
 The disposable hosted Lettin profile fixture retains fixed server read-stage
 counts in its existing terminal receipt. Profile actor, bindings, creator and
 public-world reads, and workspace layout session, workspace, invitation, list
@@ -121,6 +127,14 @@ permission changes or navigation time.
 The collector uses its existing owned private log checks and 128-KiB tail. Only
 allowlisted stage names, capped started/completed/failed counts and last status
 leave the collector, with at most 256 events and explicit tail/event truncation.
+Completed and failed read durations retain observed/absent/invalid counts and
+maximum milliseconds; a real zero differs from an absent value. Recognized Next
+startup, compilation and type-checking display timings remain separate fixed
+categories. Display decimals convert exactly at their emitted precision. Missing
+compiler timing remains unknown, including webpack paths that emit none. These
+aggregate maxima have no request correlation and must not be added into a
+critical-path estimate. Each summary has an 8192-byte guard with explicit loss
+flags. Timing regressions cover malformed/overflow values and decimal precision.
 No raw log lines, paths, request IDs, user data or error messages are retained.
 Concurrent reads are not request-correlated: unmatched counts or last status
 cannot identify a stalled request, particularly after truncation. Missing stage
@@ -129,3 +143,266 @@ unfinished body is not navigation success. Use the bound receipt to narrow the
 next investigation; preserve the actual profile assertions, cleanup and exact-head
 runtime gate. These diagnostics alone establish neither a causal repair nor
 provider or production acceptance.
+
+Failed profile navigation also retains bounded browser observations in
+`terminal.results[].navigationDiagnostics`. Request starts, responses, finishes,
+failures and frame commits remain separate from body completion and page
+`DOMContentLoaded`/`load`. Read capped counts and truncation fields before drawing
+conclusions; unobserved requests and frame load stay unknown. The helper records
+only safe route classes, local ordinals, relative timings and fixed status fields.
+It retains no raw URLs, arbitrary headers, bodies or failure text. The result parser accepts
+one versioned text record from the failed profile attempt and preserves its status.
+These observations preserve the original navigation deadline and error. They do
+not prove a load blocker or justify a retry. Helper and result-summary regressions
+cover privacy, framing, limits, cleanup and late callbacks; actual runtime evidence
+still requires the exact-head fixture gate.
+
+## Native Wrangler prototype CI validation
+
+Meet SSR diagnostics distinguish `loader-import`, `loader-model`, `handler` and
+`render-boundary`. The owning router predicate identifies thrown router redirects;
+handler outcomes distinguish returned 500s, redirects and other responses. Original
+throws and responses retain their identity. Records contain only closed enums,
+allowlisted error names/codes and up to four known function names with bounded
+numeric locations. Accessor-backed inspection is unavailable; messages, causes,
+raw stacks, URLs, headers, cookies and environment values are never projected.
+Handler records add only `login`, `callback`, `other` or `UNKNOWN` request scope,
+classified from the three canonical locale variants of each public route. Local
+closures carry scope through the outer proxy pipeline and the Start handoff;
+`delegating` records precede each handoff, followed by its original outcome.
+Concurrent requests share no mutable correlation state. Loader/render observations
+remain scope/stage `UNKNOWN`; temporal proximity does not bind them to a request.
+A terminal login/proxy record may also contain one strict `loginRedirect`
+projection. A request-local closure classifies the actual navigation argument,
+constructed redirect, Start fetch result and final proxy result using fixed
+origin/path enums. It retains no raw target, query or request identifier. The
+same optional callback crosses both request contexts and is sealed at the outer
+outcome; multiple navigation calls saturate to an ambiguous classification and
+late callbacks cannot change the snapshot. Missing or unavailable cells do not
+prove a producer. Compare the first divergent boundary only after exact-source
+hosted capture; pure handler controls use a fixed Start port and do not qualify
+Start finalization or the shared login page. Coverage lives in
+`login-redirect-diagnostics.test.ts`, `handler-start-handoff.test.ts` and the
+existing bridge/parser suites. The navigation hook uses the owning server-only
+factory; the real build and emitted client inspection must confirm its removal
+from client code before delivery.
+The collector accepts the exact observed SDK ANSI `ERROR` prefix and closing reset,
+as well as the bare marker and Node TAP marker. It performs no general ANSI
+stripping or mid-line marker search. Foreign prefixes remain ordinary output,
+while recognized malformed or oversized diagnostic payloads are suppressed.
+Emission is limited to 64 records per Worker instance plus an overflow marker.
+The launcher suppresses marker lines from forwarded output, bounds candidates to
+64 lines of 2048 characters, sanitizes again after natural child close and pipe
+drainage, and includes the result in the existing private parent-finalization
+evidence. Missing or incomplete capture is `UNKNOWN`; dropped records are counted.
+These diagnostics add no request, retry, timer or runtime acceptance. A login 500
+remains unexplained until exact-source hosted evidence identifies its phase and
+outcome. Pure controls live in `ssr-diagnostics.test.ts`,
+`ssr-error-boundary.test.tsx` and `meet-ssr-capture.test.mjs`.
+
+Meet's finite `meet-emitted-v1` graph uses two public
+`unstable_startWorker` handles and one fresh private registry. Both the original
+and restored artifact gates run `node scripts/ci/meet-native-launcher.mjs
+"$SOURCE_SHA"`. Each launcher runs all ten original cases and three HTTP hook
+controls twice, with distinct private homes, registries, temporary roots and
+nonpersistent local storage. The existing three-minute CI watchdog and 30000 ms
+per-case deadlines stay in force; duration fit and real binding resolution need
+exact-commit CI evidence. Never run it without a fresh sealed emitted artifact.
+Pure checks use `node --test scripts/ci/meet-native-admission.test.mjs
+scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs`.
+
+Public SDK readiness can precede the real user-worker registry publication.
+After acquiring and starting both handles, the graph makes exactly one public
+GET to the canonical app `/.well-known/meeting-runtime` route (200, version 1)
+and one unauthenticated probe POST (403, `Forbidden`). Both bodies must drain
+and validate, with unchanged outbound-hook counters, before the unchanged strict
+registry admission. This uses neither private readiness nor retries. Failure
+retains bounded projected registry facts in the existing private lifecycle receipt
+before reverse disposal: role categories and shape, freshness, loopback, mapping
+and instance-reuse booleans only, without raw names, records or identifiers.
+The projection never grants admission. Deferred-response/body-drain regressions
+and empty, foreign, stale, reused and invalid-mapping registry controls remain
+pure checks; actual SDK linking and deadline fit require exact-head hosted CI.
+
+The app config remains byte-identical, including metadata/normalization paths,
+ordered compatibility flags, ESModule rules, self-reference service, local R2,
+Images and Live SQLite migration. Normalization paths are provenance, never
+ambient-config discovery authority. Meet's finite inventory hashes the exact emitted hidden files
+`client/.assetsignore`, `server/.vite/manifest.json` and `server/.dev.vars`, plus
+the `.vite` directory. The ignore file must contain exactly the producer's two
+rules (`wrangler.json` and `.dev.vars`); dev-vars must contain only the exact two
+public CI placeholder assignments. This file is inert sealed evidence: explicit
+empty environment-file selection prevents ambient loading, and fixture bindings remain injected.
+Nonfixture public values, private values, extra keys, unknown hidden paths,
+symlinks and incomplete layouts fail before SDK load. Vite metadata has a closed
+typed field set; output paths and import references must point into the sealed
+inventory. Source IDs remain provenance. The shared generic hidden-file rejection
+is unchanged. A valid archive manifest alone does not establish that a fixture
+profile admits every emitted file; preserve a positive actual-layout regression
+and unknown-hidden/credential negatives in `meet-native-hidden.test.mjs`.
+
+The authored probe uses an external Live
+namespace and the named `MeetingAIProvider` service binding. Acceptance requires
+the real emitted Live class's exact 401 and the real named provider's exact 403
+with zero HTTP attempts; a route or manually constructed class cannot replace
+these cases. Unsupported local resources, registry records or remote auth fail
+closed. Do not strip bindings to obtain startup success.
+
+The finite fixture also admits exactly eight app-role GETs to the synthetic
+`https://meet-ci.supabase.invalid/auth/v1/admin/users/be0e8f2e-c239-4e40-a1f4-d6881938cae4`
+account-assurance endpoint. `meet-native-assurance.mjs` defines the sole subject
+and deterministic confirmed, unbanned account with server-owned optional MFA.
+Both admin credential headers must match the generated disposable fixture key;
+URL credentials, cookies, query parameters, other subjects/methods/origins and
+excess reads are denied. These reads have their own counter, separate from the
+single central API forward: two for logout and three each for the authenticated
+forward and app denial control. Real production signature and current-account
+MFA guards still run; banned, MFA-required and unavailable account responses must
+fail in the real-proxy tests. No production auth fallback or provider access is
+introduced. The focused `vitest.native-auth.config.ts` retains real auth/locale
+code, uses the existing product Vite `bun` source-export condition for Node/SSR
+resolution, and transforms only `next-intl` for its extensionless Next import.
+Its include array selects only the public-callback/assurance test file. The
+ordinary app test config excludes that one file; the dedicated unconditional CI
+gate restores the standard exclusions and executes it with real auth and locale
+code. No test is replaced with a skip.
+
+Coverage shards also run this existing focused config after a successful ordinary
+suite, only when `run-test-shard.js` receives `--coverage` and its dynamic shard
+plan owns `@tuturuuu/meet`. The focused run keeps its one-worker cap and writes to
+`apps/meet/coverage/native-auth`, so its report cleanup cannot overwrite the
+ordinary coverage report. Existing coverage artifact collection includes both
+reports. Unit and plan modes, other shards and failed ordinary suites do not
+start it; focused failures remain shard failures. Verify actual focused coverage
+hits the public callback return, preserves the parent report inventory and keeps
+all 25 ordinary test files discoverable. Runner command-sink regressions live in
+`scripts/ci/meet-focused-coverage.test.mjs`; omitting the focused invocation must
+fail coverage verification. This does not qualify the emitted Worker runtime.
+
+
+HTTP500 fixture responses are consumed into bounded private receipt diagnostics
+before the original exact-status assertion fails. At most four projections retain
+only route/content/error/owning-frame categories and bounded lengths; no response
+bytes, headers, tokens, arbitrary errors or paths are persisted. The 64 KiB bound
+marks oversized cancellation or failed reads truthfully rather than claiming a
+complete drain. Unrecognized response errors remain UNKNOWN. These observations
+are response markers, not proof of an underlying server exception; product login
+routing must not change to conceal an unexplained HTTP500.
+
+The HTTP fixture claim covers trusted repository app/probe code through each
+configured role's outbound hook. App allows one exact bounded central API forward
+and the eight exact synthetic account-assurance reads above; probe allows none.
+Live controls exercise app default, app named-entrypoint and
+probe hooks, including private/loopback/lookalike targets. Hash-pinned SDK generated
+helpers, assets/registry/control-plane traffic and Node control paths are trusted
+tooling outside that claim. This is neither hostile-code isolation nor whole-process
+or TCP confinement. Production access, billing limits and durable stop guards are
+unchanged. The app's required provider binding gets only a disposable synthetic
+value; no ambient credentials or remote bindings enter the child environment.
+
+Runtime suppliers resolve from Meet's package and then Wrangler's ancestry:
+Wrangler 4.151.2 CLI SHA256
+`507cd3644d6a53f0d66922d79c04b03557b7d2d0a376d2d906b92ed20812bb30`
+and Miniflare 5.20261019.0-beta entry SHA256
+`309b8863f0f4c3050e173e945b4c696db8c330cdf3f35f0ecfd8417d75891eaa`.
+Both pins are checked before and after SDK load, with preloads rejected and
+ownership rechecked across the graph. These attest two entry files, not the
+entire transitive installation. Keep the independently pinned normalization
+producer separate. A missing or mismatched installation is a blocker; do not
+restore dependencies without determining cause and authority.
+
+The graph records each returned public handle before readiness, disposes in
+reverse order exactly once and attempts both disposals even when one fails.
+Startup/readiness/primary/disposal errors remain separate. The launcher observes
+natural child close and stdout/stderr drainage before independently checking
+original/copy seals, both SDK work directories, registry removal, foreign sentinel
+and temporary-root inventory. A verified retained snapshot precedes removal;
+any failed gate retains scratch. Finalization persistence has readback checks.
+Private seven-day CI artifacts retain a tar archive of the existing owned
+`meet-native-run-*` roots, including hidden `.wrangler` snapshot files, modes,
+links and empty directories. Upload only the archive, avoiding the upload action's
+hidden-file filter. `meet-native-evidence.test.mjs` executes both selected packaging
+commands and compares extracted inventories, including an omission negative;
+logs contain bounded statuses rather than fixture credentials. No sweeper, retry,
+forced exit or private SDK controller may manufacture closure. SDK internal
+cleanup and descendant closure remain UNKNOWN even after public disposal and
+natural owned-child close. Pure/source checks do not qualify the emitted graph.
+
+The original validation step also runs the synthetic native Wrangler prototype
+unit/runtime suites with file concurrency one and default Node process isolation.
+They retain their existing test limits and the same outer three-minute watchdog.
+Synthetic qualification is independent of Meet acceptance and does not qualify
+Calendar or Apps callers. Historical raw NOTPASS evidence stays unchanged.
+
+Public `Worker.ready` reports proxy readiness, not successful user-Worker linking.
+For the four allowlisted returned-Worker startup controls (WASM, logical import
+underflow, missing text export and Node builtin), classify the target error only
+if observed from a single public `dispose()`: require the exact public name
+`MiniflareCoreError [ERR_RUNTIME_FAILURE]`, code `ERR_RUNTIME_FAILURE`, and the
+case-specific user-service diagnostic predicate after observation, with fulfilled
+proxy readiness. Preserve the observed error C and all primary, ready and disposal failures separately. Do not
+invent a ready error or error-object identity, or infer generic disposal success.
+Executed evidence qualifies only this isolated harness; caller adoption still
+requires separate real-graph acceptance. Existing NOTPASS records stay unchanged.
+
+For the isolated harness, retain a parent-owned sealed cleanup plan. Observe
+natural child exit and its actual code/signal (require code 0 and null signal),
+then collect residual, original,
+copy and foreign-sentinel proofs independently, even when another phase fails.
+Before deletion, verify a complete diagnostic snapshot outside every removal
+target, including readback and preservation of partial failures. A surviving
+pathname or hash cannot recover deleted bytes. If snapshot verification fails,
+retain the source and stop deletion. Seal, snapshot, retention, persistence and
+removal closure must all pass independently; a receipt or error alone is not
+closure. Awaited disposal is not a filesystem fence: Miniflare can schedule
+removal through `fireAndForget`. Keep the current finite archives for parent
+collection and disposition; do not add automatic sweeps, retries, timeouts,
+controllers or private SDK hooks.
+
+The isolated public SDK harness has one intentional pre-return syntax case:
+`export default = ;` must produce exactly the owned copied-entry compiler
+error `Unexpected "="` at line 1, column 15, with no extra error graph. It may
+report `OBSERVABLE_SYNTAX_REJECTION_WITH_CLOSED_CHILD` only after the parent
+observes natural child `close`, exit 1 with no signal, drained stdout/stderr and
+no spawn/output failure or intervention. Original/copy seals, residual and foreign
+file guards, verified retained snapshot, successful owned-file removal and
+verified finalization persistence must all succeed first. A failed proof retains
+its errors and available evidence; a failed snapshot prevents removal and retains
+the source. Internal cleanup and descendant-process closure remain UNKNOWN.
+This is a distinct observable negative outcome, not ordinary SDK success or proof
+that Wrangler's unobservable internal disposal fulfilled. Every other startup
+failure still fails closed. The existing CI watchdog must continue to fail a
+stuck stage; no timeout, forced exit or retry can qualify this case.
+
+Synthetic controls live in `native-wrangler-observable.test.mjs`, imported by the
+workflow's explicitly named `native-wrangler-runtime.test.mjs` entry. Run that
+entry in CI before reviewing the isolated SDK syntax result. Existing Meet,
+Calendar and Apps application runtime callers require separate qualification
+before adopting this contract.
+
+The dedicated preload-control outcome has a different scope; it grants no generic
+missing-Worker waiver. The next bounded CI observation must retain the public
+cause chain and proof-phase states, explicit unknown/missing/truncated fields,
+and normalized path roles while preserving full diagnostics privately. Do not
+infer a parser route or closure from absent public fields. Existing raw NOTPASS
+results remain unchanged. Never stage sensitive transcripts; see the CI tooling
+reference for supplier evidence.
+
+### Profile request attribution
+
+Only the existing disposable hosted development profile diagnostic gate admits
+request attribution. GET HTML document requests receive a fresh 128-bit opaque
+`x-lettin-profile-request-id` at proxy entry, replacing any incoming value. The
+existing next-intl request-header forwarding carries it into the request context;
+the actual response exposes the same ID. Request-scoped memoization reads the
+context once for fixed read-stage events. Browser extraction retains only a
+validated ID, and `terminal.results[].readCorrelation` joins the single main
+profile document response to that ID's bounded events. Redirect IDs cannot stand
+in for the destination document. Missing, malformed, duplicate, ambiguous,
+cross-attempt or truncated evidence remains unknown; older unattributed aggregates
+remain intact. Attributed reads prove only read-stage observations, never renderer,
+HTML stream, DOM or page-load completion. Regression coverage lives in
+`profile-proxy-diagnostics.test.ts`, `read-diagnostics.test.ts`,
+`profile-request-identity.test.ts`, `mail-profile-correlation.test.mjs` and
+`mail-profile-result-summary.test.mjs`. Run them in the admitted CI environment;
+source inspection and syntax checks do not establish runtime acceptance.
