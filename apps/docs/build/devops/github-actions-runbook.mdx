@@ -528,7 +528,16 @@ exact profile keys without starting database contracts:
 gh workflow run supabase-baseline.yaml --ref main -f seed_images_only=true
 ```
 
-That main-only dispatch runs profiles sequentially, allows seven attempts within
+Seed profiles use `fail-fast: false`, so a throttled profile cannot cancel the
+remaining profiles. On an exact profile miss, seeds and normal PR jobs restore
+the exact contract key when its image set is a strict subset of the requested
+profile, load and inspect it, then pull only locally missing images. The subset
+key uses the same image/registry/OS/architecture identity; no prefix fallback is
+used. A trusted save still archives the complete requested image set. Serial
+matrix execution allows reuse of an already completed contract seed; matrix
+ordering is not a dependency guarantee, so rerun the dispatch after a partial seed.
+
+That main-only dispatch allows seven attempts within
 a ten-minute total pull budget per profile and retains 15-minute job limits. It
 still needs a runner with working registry access; if hosted IPs remain throttled,
 this seed cannot succeed there. Use an admitted trusted runner with registry

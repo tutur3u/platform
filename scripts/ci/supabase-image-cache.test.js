@@ -3,6 +3,8 @@ const fs = require('node:fs');
 const test = require('node:test');
 const {
   cacheKey,
+  subsetImages,
+  missingImages,
   imageList,
   trustedSave,
   pullBudget,
@@ -214,10 +216,30 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
   env.IMAGE_SAVE = 'true';
   run('pull');
   assert.equal(calls().filter((args) => args[0] === 'save').length, 1);
+  env.IMAGE_PROFILE = 'contract-http';
+  run('key');
+  assert.match(
+    fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'),
+    /subset-key=supabase-images-v1-/
+  );
+  assert.match(
+    run('load-subset'),
+    /Loaded and verified 5 cached Supabase images/
+  );
+  run('pull');
+  assert.deepEqual(
+    calls()
+      .filter((args) => args[0] === 'save')
+      .at(-1)
+      .slice(3),
+    imageList({ ...identity, profile: 'contract-http' })
+  );
+  env.IMAGE_PROFILE = 'contract';
+  run('key');
   const pulls = calls().filter((args) => args[0] === 'pull').length;
   assert.match(run('load'), /Loaded and verified 5 cached Supabase images/);
   assert.equal(calls().filter((args) => args[0] === 'pull').length, pulls);
-  assert.equal(calls().filter((args) => args[0] === 'load').length, 1);
+  assert.equal(calls().filter((args) => args[0] === 'load').length, 2);
 });
 
 test('deadline exhaustion retains the last registry classification and bootstrap instruction', async () => {
@@ -243,4 +265,57 @@ test('deadline exhaustion retains the last registry classification and bootstrap
   );
   assert.match(messages[1], /trusted main run/);
   assert.ok(messages.every((message) => !message.includes('secret-token')));
+});
+
+test('reuse admits only an exact strict contract subset', () => {
+  const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
+  assert.deepEqual(subsetImages(identity), []);
+  for (const profile of ['contract-http', 'full']) {
+    const options = { ...identity, profile, config };
+    assert.deepEqual(subsetImages(options), imageList(identity));
+    assert.equal(
+      cacheKey({
+        images: subsetImages(options),
+        registry: identity.registry,
+        platform: 'linux',
+        arch: 'x64',
+      }),
+      cacheKey({
+        images: imageList(identity),
+        registry: identity.registry,
+        platform: 'linux',
+        arch: 'x64',
+      })
+    );
+  }
+  assert.deepEqual(
+    subsetImages({
+      ...identity,
+      profile: 'full',
+      config: config.replace(
+        '[auth]\nenabled = true',
+        '[auth]\nenabled = false'
+      ),
+    }),
+    []
+  );
+});
+
+test('missing-only pull list inspects every exact tag and treats inspect failure as missing', () => {
+  const images = imageList({ ...identity, profile: 'contract-http' });
+  const present = new Set(imageList(identity));
+  const calls = [];
+  const missing = missingImages(images, (command, args, options) => {
+    calls.push(args.at(-1));
+    assert.equal(command, 'docker');
+    assert.deepEqual(args.slice(0, 2), ['image', 'inspect']);
+    assert.equal(options.timeout, 10000);
+    return { status: present.has(args.at(-1)) ? 0 : null };
+  });
+  assert.deepEqual(calls, images);
+  assert.deepEqual(
+    missing,
+    images.filter((image) => !present.has(image))
+  );
+  assert.equal(missing.length, 2);
 });

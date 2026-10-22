@@ -92,6 +92,25 @@ function cacheKey({ images, registry, platform, arch }) {
     .digest('hex')}`;
 }
 
+function subsetImages(options) {
+  const images = imageList(options);
+  const contract = imageList({ ...options, profile: 'contract' });
+  return contract.length < images.length &&
+    contract.every((image) => images.includes(image))
+    ? contract
+    : [];
+}
+
+function missingImages(images, inspect = spawnSync) {
+  return images.filter(
+    (image) =>
+      inspect('docker', ['image', 'inspect', image], {
+        stdio: 'ignore',
+        timeout: 10_000,
+      }).status !== 0
+  );
+}
+
 function trustedSave(eventName, ref) {
   return (
     ref === 'refs/heads/main' &&
@@ -210,7 +229,7 @@ async function main(mode) {
       );
     // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const registry = process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY;
-    const images = imageList({
+    const options = {
       services: JSON.parse(cli('services', '-o', 'json')),
       cliVersion: cli('--version'),
       registry,
@@ -220,7 +239,9 @@ async function main(mode) {
         path.join(database, 'supabase/config.toml'),
         'utf8'
       ),
-    });
+    };
+    const images = imageList(options);
+    const subset = subsetImages(options);
     fs.mkdirSync(directory, { recursive: true });
     fs.writeFileSync(manifest, JSON.stringify(images));
     output(
@@ -232,6 +253,21 @@ async function main(mode) {
         arch: process.arch,
       })
     );
+    if (subset.length) {
+      fs.writeFileSync(
+        path.join(directory, 'subset.json'),
+        JSON.stringify(subset)
+      );
+      output(
+        'subset-key',
+        cacheKey({
+          images: subset,
+          registry,
+          platform: process.platform,
+          arch: process.arch,
+        })
+      );
+    }
     output(
       'save',
       String(trustedSave(process.env.GITHUB_EVENT_NAME, process.env.GITHUB_REF))
@@ -239,15 +275,29 @@ async function main(mode) {
     return;
   }
   const images = JSON.parse(fs.readFileSync(manifest, 'utf8'));
-  if (mode === 'load') {
+  if (mode === 'load' || mode === 'load-subset') {
+    const loadedImages =
+      mode === 'load'
+        ? images
+        : JSON.parse(
+            fs.readFileSync(path.join(directory, 'subset.json'), 'utf8')
+          );
+    if (
+      !loadedImages.length ||
+      !loadedImages.every((image) => images.includes(image))
+    )
+      throw new Error('Invalid image subset');
     archiveSize(archive);
     command('docker', ['load', '--input', archive], { timeout: 180_000 });
-    for (const image of images) command('docker', ['image', 'inspect', image]);
-    console.log(`Loaded and verified ${images.length} cached Supabase images.`);
+    for (const image of loadedImages)
+      command('docker', ['image', 'inspect', image]);
+    console.log(
+      `Loaded and verified ${loadedImages.length} cached Supabase images.`
+    );
     return;
   }
   if (mode !== 'pull')
-    throw new Error('Usage: supabase-image-cache.js key|load|pull');
+    throw new Error('Usage: supabase-image-cache.js key|load|load-subset|pull');
   const budget = pullBudget(
     // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     process.env.IMAGE_PULL_BUDGET_SECONDS,
@@ -255,14 +305,7 @@ async function main(mode) {
     process.env.GITHUB_REF
   );
   const deadline = Date.now() + budget;
-  for (const image of images) {
-    if (
-      spawnSync('docker', ['image', 'inspect', image], {
-        stdio: 'ignore',
-        timeout: 10_000,
-      }).status === 0
-    )
-      continue;
+  for (const image of missingImages(images)) {
     const result = await pullImage(image, { deadline, budget });
     if (result.code !== 0) throw new Error('Supabase image cache miss');
   }
@@ -294,6 +337,8 @@ if (require.main === module)
 module.exports = {
   imageList,
   cacheKey,
+  subsetImages,
+  missingImages,
   trustedSave,
   pullBudget,
   pullImage,
