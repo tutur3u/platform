@@ -186,9 +186,12 @@ export async function queuedResourceCommand(
           TURBO_CONCURRENCY: '1',
         }
       : {};
-    const caps = laneResourceConfig(
-      (await readResourceConfig(home)) || defaultResourceConfig()
-    );
+    // The ancestor was admitted under its recorded limits; re-validating the
+    // host budget here would reject nested work on a smaller or busier host.
+    const config = (await readResourceConfig(home)) || defaultResourceConfig();
+    const caps = parent.limits
+      ? { ...config, turboConcurrency: 1 }
+      : laneResourceConfig(config);
     return spawnResourceCommand(
       command,
       limitCommand(command, originalArgs, { ...caps, ...parent.limits }),
