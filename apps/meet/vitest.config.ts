@@ -5,6 +5,7 @@ export default defineConfig({
   esbuild: { jsx: 'automatic' },
   oxc: false,
   resolve: {
+    conditions: ['bun', 'module', 'node', 'development|production'],
     alias: [
       { find: '@', replacement: path.resolve(__dirname, './src') },
       {
@@ -22,6 +23,11 @@ export default defineConfig({
         ),
       },
     ],
+  },
+  ssr: {
+    resolve: {
+      conditions: ['bun', 'module', 'node', 'development|production'],
+    },
   },
   test: {
     environment: 'node',

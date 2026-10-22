@@ -51,6 +51,7 @@ export async function dispatchThroughMeetProxy({
         !middleware.headers.has('x-middleware-next') &&
         !middleware.headers.has('x-middleware-rewrite')
       ) {
+        if (middleware.status >= 400) return middleware;
         appendCookies(responseHeaders, middleware.headers);
         return middleware;
       }

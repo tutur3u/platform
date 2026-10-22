@@ -14,6 +14,7 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
 }));
 vi.mock('@tuturuuu/auth/proxy', async () => ({
   ...(await vi.importActual('../../../packages/auth/src/proxy/redirect-path')),
+  ...(await vi.importActual('../../../packages/auth/src/proxy/mfa-failure')),
   refreshAppSessionForRequest: mocks.refresh,
   propagateAuthCookies: mocks.propagate,
 }));
@@ -106,18 +107,33 @@ it('forces central login for explicit refresh without trusting old claims', asyn
   expect(mocks.refresh).not.toHaveBeenCalled();
 });
 
-it.each(['MFA required', 'Account assurance unavailable'])(
-  'does not admit shared markers when verification fails: %s',
-  async (error) => {
+it.each([
+  {
+    error: 'MFA required',
+    status: 403,
+    code: 'MFA_REQUIRED',
+    message: 'MFA verification required',
+  },
+  {
+    error: 'Account assurance unavailable',
+    status: 503,
+    code: 'AUTH_UNAVAILABLE',
+    message: 'Unable to verify account security',
+  },
+])(
+  'returns a terminal assurance failure: $error',
+  async ({ error, status, code, message }) => {
     mocks.web.mockReturnValue(true);
     mocks.refresh.mockResolvedValue({ ok: false, error });
     const response = await getLoginRedirect(
       new NextRequest('https://lettin.synthetic.test/login')
     );
-    expect(response.status).toBe(307);
-    expect(new URL(response.headers.get('location')!).origin).toBe(
-      'https://web.synthetic.test'
-    );
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ code, error: message });
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('set-cookie')).toBeNull();
+    expect(mocks.propagate).not.toHaveBeenCalled();
   }
 );
 
@@ -163,9 +179,34 @@ it('preserves failure response cookie headers without assuming NextResponse', as
   const response = await getLoginRedirect(
     new NextRequest('https://lettin.synthetic.test/login')
   );
-  expect(response.status).toBe(307);
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({
+    code: 'MFA_REQUIRED',
+    error: 'MFA verification required',
+  });
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(response.headers.get('location')).toBeNull();
   expect(response.headers.getSetCookie()).toContain(
     'synthetic-recovery=ready; Path=/; HttpOnly'
   );
+  expect(mocks.propagate).not.toHaveBeenCalled();
+});
+
+it('keeps unavailable refresh distinct from a new login', async () => {
+  mocks.refresh.mockResolvedValue({
+    ok: false,
+    error: 'App session refresh unavailable',
+  });
+  const response = await getLoginRedirect(
+    new NextRequest('https://lettin.synthetic.test/login')
+  );
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({
+    code: 'APP_SESSION_REFRESH_UNAVAILABLE',
+    error: 'App session refresh temporarily unavailable',
+  });
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(response.headers.get('location')).toBeNull();
+  expect(response.headers.get('set-cookie')).toBeNull();
   expect(mocks.propagate).not.toHaveBeenCalled();
 });

@@ -1,5 +1,9 @@
 const assert = require('node:assert/strict');
+const {
+  installFetchFixture,
+} = require('./fixtures/staging-workflow-fixture.cjs');
 const { spawnSync } = require('node:child_process');
+const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -14,8 +18,8 @@ const productionSha = 'a'.repeat(40);
 const stagingSha = 'b'.repeat(40);
 const workflowSha = 'c'.repeat(40);
 
-function stepScript(name) {
-  const block = workflow.split(`      - name: ${name}\n`)[1];
+function stepScript(name, source = workflow) {
+  const block = source.split(`      - name: ${name}\n`)[1];
   assert.ok(block, `missing workflow step ${name}`);
   const script = block.split('        run: |\n')[1];
   assert.ok(script, `missing shell body for ${name}`);
@@ -40,6 +44,38 @@ function fixture(t, overrides = {}) {
   const environment = path.join(directory, 'environment');
   fs.writeFileSync(output, '');
   fs.writeFileSync(environment, '');
+  fs.symlinkSync(process.execPath, path.join(directory, 'node'));
+  const preload = path.join(directory, 'fetch.cjs');
+  const blobFile = path.join(directory, 'blobs.json');
+  const contracts = [
+    [
+      '.github/workflows/supabase-staging.yaml',
+      '70937258932e55cf611c2896b788da0392c09717',
+    ],
+    [
+      'scripts/ci/record-deployment-marker.ts',
+      '35eaf73931589cfe9dd62f7456a3dbe3c48c988c',
+    ],
+    [
+      '.github/workflows/supabase-staging.yaml',
+      'c80066e1cd038fcda3bd6c1a79c0b12993b94b49',
+      true,
+    ],
+  ].map(([file, sha, legacy = false]) => {
+    const bytes = fs.readFileSync(
+      legacy
+        ? path.join(__dirname, 'fixtures/supabase-staging-legacy.yaml')
+        : path.resolve(__dirname, '../..', file)
+    );
+    const actual = createHash('sha1')
+      .update(`blob ${bytes.length}\0`)
+      .update(bytes)
+      .digest('hex');
+    assert.equal(actual, sha, `shipped contract changed: ${file}`);
+    return { path: file, sha, bytes: bytes.toString('base64'), legacy };
+  });
+  fs.writeFileSync(blobFile, JSON.stringify(contracts));
+  fs.writeFileSync(preload, `(${installFetchFixture.toString()})();\n`);
   fs.writeFileSync(
     path.join(directory, 'gh'),
     `#!${process.execPath}
@@ -101,6 +137,16 @@ process.stdout.write(projection < 0 ? json : execFileSync('jq',
     REQUEST_LOG: log,
     GH_TOKEN: 'synthetic-test-only',
     REPOSITORY: 'example/platform',
+    GITHUB_REPOSITORY: 'example/platform',
+    GITHUB_API_URL: 'https://api.github.com',
+    GITHUB_SERVER_URL: 'https://github.com',
+    NODE_OPTIONS: `--require=${preload}`,
+    FIXTURE_BLOBS: blobFile,
+    TARGET_CONTRACT: 'new',
+    WRAPPER_CONTRACT: 'new',
+    FIXTURE_WRAPPER_SHA: workflowSha,
+    ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: 'false',
+    EXPECTED_SHA: '',
     CURRENT_SHA: productionSha,
     UNRELATED_SHA: stagingSha,
     CURRENT_REF_NAME: 'main',
@@ -148,12 +194,34 @@ test('newer unpromoted staging completion resolves and gates only current produc
   );
   assert.match(setup.output(), /should_deploy=true/);
   assert.doesNotMatch(setup.requests(), new RegExp(stagingSha));
-  assert.doesNotMatch(setup.requests(), new RegExp(workflowSha));
+  assert.doesNotMatch(
+    setup
+      .requests()
+      .split('\n')
+      .filter((line) => !line.startsWith('FETCH '))
+      .join('\n'),
+    new RegExp(workflowSha)
+  );
   assert.match(setup.requests(), /git\/ref\/heads\/production/);
   assert.match(
     setup.requests(),
-    /supabase-staging\.yaml\/runs\?branch=main&head_sha=aaaa/
+    /FETCH \/repos\/example\/platform\/deployments\?environment=supabase-staging&sha=aaaa/
   );
+  assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
+  const fetches = setup
+    .requests()
+    .split('\n')
+    .filter((line) => line.startsWith('FETCH '));
+  assert.equal(fetches.length, 16);
+  assert.match(fetches[6], new RegExp(`ref=${workflowSha}$`));
+  assert.match(fetches[9], new RegExp(`ref=${workflowSha}$`));
+  assert.match(fetches[11], /attempts\/1\/jobs\?per_page=100&page=1$/);
+  assert.deepEqual(fetches.slice(-4), [
+    fetches[2],
+    'FETCH /repos/example/platform/deployments/301',
+    fetches[4],
+    fetches[3],
+  ]);
 });
 
 for (const [label, overrides, target] of [
@@ -231,11 +299,33 @@ for (const overrides of [
 ]) {
   test(`current production prerequisites remain required: ${JSON.stringify(overrides)}`, (t) => {
     const setup = fixture(t, overrides);
-    assert.equal(
-      setup.run(evaluateStep, { TARGET_SHA: productionSha }).status,
-      0
+    const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
+    const stagingRejected = Object.keys(overrides).some((key) =>
+      key.startsWith('STAGING_')
     );
-    assert.equal(setup.output(), 'should_deploy=false\n');
+    if (stagingRejected) {
+      assert.notEqual(result.status, 0);
+      assert.match(
+        result.stderr,
+        /Exact-source staging proof unavailable or changed/
+      );
+      assert.equal(setup.output(), '');
+      assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
+      const fetches = setup
+        .requests()
+        .split('\n')
+        .filter((line) => line.startsWith('FETCH '));
+      assert.equal(fetches.length, overrides.STAGING_SHA ? 3 : 4);
+      assert.match(
+        fetches.at(-1),
+        overrides.STAGING_SHA ? /deployments\?/ : /actions\/runs\/201$/
+      );
+    } else {
+      assert.equal(result.status, 0);
+      assert.equal(setup.output(), 'should_deploy=false\n');
+      assert.doesNotMatch(setup.requests(), /FETCH /);
+    }
+    assert.doesNotMatch(setup.output(), /should_deploy=true/);
   });
 }
 
@@ -417,3 +507,93 @@ for (const [label, event] of [
     );
   });
 }
+
+for (const [target, wrapper] of [
+  ['old', 'old'],
+  ['new', 'old'],
+  ['old', 'new'],
+  ['unknown', 'new'],
+  ['new', 'unknown'],
+  ['unknown', 'unknown'],
+]) {
+  test(`producer contract target=${target} wrapper=${wrapper}`, (t) => {
+    const setup = fixture(t, {
+      TARGET_CONTRACT: target,
+      WRAPPER_CONTRACT: wrapper,
+    });
+    const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
+    const denied = [target, wrapper].includes('unknown');
+    assert.equal(result.status === 0, !denied);
+    assert.equal(setup.output(), denied ? '' : 'should_deploy=true\n');
+    assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
+    if (denied)
+      assert.match(
+        result.stderr,
+        /Exact-source staging proof unavailable or changed/
+      );
+    else
+      assert.equal(
+        setup
+          .requests()
+          .split('\n')
+          .filter((line) => line.startsWith('FETCH ')).length,
+        target === wrapper ? 16 : 17
+      );
+  });
+}
+
+test('staging config and admission execute on app-only checkouts without helpers', (t) => {
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '../../.github/workflows/supabase-staging.yaml'),
+    'utf8'
+  );
+  const config = stepScript('Check migration configuration', source);
+  const evaluate = stepScript('Evaluate staging prerequisites', source);
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'staging-config-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  for (const value of ['true', 'false', 'undefined', '"true"']) {
+    const output = path.join(directory, 'output');
+    fs.writeFileSync(output, '');
+    fs.writeFileSync(
+      path.join(directory, 'tuturuuu.ci.ts'),
+      `export const ci = { 'supabase-staging.yaml': ${value} };`
+    );
+    const env = {
+      ...process.env,
+      GITHUB_OUTPUT: output,
+      PATH: `${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH}`,
+    };
+    const result = spawnSync('bash', ['-c', config], {
+      cwd: directory,
+      env,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status === 0, ['true', 'false'].includes(value));
+    assert.equal(
+      fs.readFileSync(output, 'utf8'),
+      ['true', 'false'].includes(value) ? `should_run=${value}\n` : ''
+    );
+    if (result.status !== 0) continue;
+    for (const [event, conclusion] of [
+      ['workflow_run', 'success'],
+      ['workflow_run', 'failure'],
+      ['workflow_dispatch', ''],
+    ]) {
+      fs.writeFileSync(output, '');
+      const admission = spawnSync('bash', ['-c', evaluate], {
+        env: {
+          ...env,
+          STAGING_ENABLED: value,
+          EVENT_NAME: event,
+          TRIGGER_CONCLUSION: conclusion,
+        },
+        encoding: 'utf8',
+      });
+      assert.equal(admission.status, 0);
+      assert.equal(
+        fs.readFileSync(output, 'utf8'),
+        `should_deploy=${value === 'true' && (event === 'workflow_dispatch' || conclusion === 'success')}\n`
+      );
+    }
+  }
+});

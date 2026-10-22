@@ -4,13 +4,19 @@ import { constants, setPriority } from 'node:os';
 import { join } from 'node:path';
 import { Writable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
+import {
+  admissionResourceConfig,
+  burstEligibility,
+} from './resources-adaptive';
 import { limitCommand } from './resources-command';
 import {
   atomicJson,
   defaultResourceConfig,
+  effectiveResourceLanes,
   laneResourceConfig,
   readResourceConfig,
   resourceLanes,
+  resourceMaxLanes,
   resourcePolicyKey,
   type ValidationLanes,
 } from './resources-config';
@@ -37,11 +43,26 @@ export async function resourceQueueStatus(
   home: string,
   laneCount: ValidationLanes = 1
 ) {
+  const config = (await readResourceConfig(home)) || defaultResourceConfig();
+  const baseLanes = resourceLanes(config);
+  const maxLanes = resourceMaxLanes(config);
   const state = await occupancy(home);
+  const burst =
+    maxLanes === baseLanes
+      ? { eligible: false, reason: 'Burst lanes are not configured' }
+      : state.occupied.length >= effectiveResourceLanes(config)
+        ? {
+            eligible: false,
+            reason: 'Burst lanes or aggregate worker budgets are full',
+          }
+        : await burstEligibility(config);
   const waiting = (await tickets(home)).map((ticket) => ticket.owner);
   return {
     owners: state.owners,
     laneCount,
+    baseLanes,
+    maxLanes,
+    burst,
     // Preserve the old field without representing multiple owners as idle.
     owner: state.owners[0] ?? null,
     occupied: state.occupied.length,
@@ -150,7 +171,8 @@ export async function queuedResourceCommand(
   env: NodeJS.ProcessEnv,
   ignorePressure = false,
   lanes: ValidationLanes = 1,
-  pressureProbe: typeof memoryPressure = memoryPressure
+  pressureProbe: typeof memoryPressure = memoryPressure,
+  burstProbe: typeof burstEligibility = burstEligibility
 ) {
   if (process.platform === 'win32')
     throw new Error('Resource admission currently supports macOS and Linux.');
@@ -164,9 +186,12 @@ export async function queuedResourceCommand(
           TURBO_CONCURRENCY: '1',
         }
       : {};
-    const caps = laneResourceConfig(
-      (await readResourceConfig(home)) || defaultResourceConfig()
-    );
+    // The ancestor was admitted under its recorded limits; re-validating the
+    // host budget here would reject nested work on a smaller or busier host.
+    const config = (await readResourceConfig(home)) || defaultResourceConfig();
+    const caps = parent.limits
+      ? { ...config, turboConcurrency: 1 }
+      : laneResourceConfig(config);
     return spawnResourceCommand(
       command,
       limitCommand(command, originalArgs, { ...caps, ...parent.limits }),
@@ -219,12 +244,8 @@ export async function queuedResourceCommand(
               'Resource lane configuration changed; retry with current settings.'
             );
           const policy = resourcePolicyKey(config);
-          const caps = laneResourceConfig(config);
-          launchArgs = limitCommand(command, originalArgs, caps);
-          owner.limits = {
-            vitestWorkers: caps.vitestWorkers,
-            buildJobs: caps.buildJobs,
-          };
+          laneResourceConfig(config);
+          const maxLanes = resourceMaxLanes(config);
           const live = await tickets(home, true);
           const state = await occupancy(home, true);
           if (
@@ -232,7 +253,7 @@ export async function queuedResourceCommand(
             state.initializing ||
             live.some((ticket) => ticket.owner.scheduler !== 2) ||
             live[0]?.path !== ticket ||
-            state.occupied.length >= lanes
+            state.occupied.length >= maxLanes
           )
             return undefined;
           const pressure = ignorePressure
@@ -241,6 +262,16 @@ export async function queuedResourceCommand(
           pressureReason = pressure.reason;
           pressureBlocked = pressure.blocked;
           if (pressure.blocked || cancelled) return undefined;
+          const burst =
+            state.occupied.length >= lanes
+              ? await burstProbe(config)
+              : undefined;
+          if (burst && !burst.eligible) {
+            pressureBlocked = true;
+            pressureReason = burst.reason;
+            return undefined;
+          }
+          if (cancelled) return undefined;
           // Pressure probing is asynchronous. Recheck occupancy and policy before claim.
           const latest =
             (await readResourceConfig(home)) || defaultResourceConfig();
@@ -249,13 +280,27 @@ export async function queuedResourceCommand(
               'Resource worker policy changed during admission; retry with current settings.'
             );
           const current = await occupancy(home, true);
+          const currentTickets = await tickets(home, true);
           if (
             current.legacy ||
             current.initializing ||
-            current.occupied.length >= lanes
+            current.occupied.length >= maxLanes ||
+            currentTickets[0]?.path !== ticket ||
+            currentTickets.some((ticket) => ticket.owner.scheduler !== 2) ||
+            (current.occupied.length >= lanes && !burst?.eligible)
           )
             return undefined;
-          const path = Array.from({ length: lanes }, (_, i) =>
+          const caps =
+            maxLanes > lanes
+              ? admissionResourceConfig(config, current.owners)
+              : laneResourceConfig(config);
+          if (!caps) return undefined;
+          launchArgs = limitCommand(command, originalArgs, caps);
+          owner.limits = {
+            vitestWorkers: caps.vitestWorkers,
+            buildJobs: caps.buildJobs,
+          };
+          const path = Array.from({ length: maxLanes }, (_, i) =>
             join(home, 'slots', String(i))
           ).find((path) => !current.occupied.includes(path));
           if (!path) return undefined;

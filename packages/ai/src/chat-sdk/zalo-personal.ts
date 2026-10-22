@@ -28,6 +28,7 @@ import {
   Zalo,
   type Message as ZcaMessage,
 } from 'zca-js';
+import { fetchZaloPersonalAttachment } from './zalo-personal-attachment';
 
 export interface ZaloPersonalAdapterConfig {
   channelId: string;
@@ -2166,25 +2167,11 @@ function extractZaloPersonalAttachments(
 
   return [
     {
-      fetchData: async () => {
-        const response = await fetch(preferredUrl, {
-          headers: {
-            Cookie: zaloCookieHeader(config.cookieJson),
-            'User-Agent': config.userAgent,
-          },
-          signal: AbortSignal.timeout(30_000),
-        });
-        if (!response.ok) {
-          throw new Error(
-            `zalo_personal_media_fetch_failed_${response.status}`
-          );
-        }
-        const declaredSize = Number(response.headers.get('content-length'));
-        if (Number.isFinite(declaredSize) && declaredSize > 25 * 1024 * 1024) {
-          throw new Error('zalo_personal_media_too_large');
-        }
-        return Buffer.from(await response.arrayBuffer());
-      },
+      fetchData: () =>
+        fetchZaloPersonalAttachment({
+          url: preferredUrl,
+          userAgent: config.userAgent,
+        }),
       height: numericValue(content.height),
       mimeType,
       name,
@@ -2312,24 +2299,6 @@ function numericValue(value: unknown) {
         ? Number.parseInt(value, 10)
         : Number.NaN;
   return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
-}
-
-function zaloCookieHeader(cookieJson: string) {
-  try {
-    const parsed = JSON.parse(cookieJson) as unknown;
-    if (!Array.isArray(parsed)) return '';
-    return parsed
-      .filter(isRecord)
-      .map((cookie) => {
-        const name = stringValue(cookie.name);
-        const value = stringValue(cookie.value);
-        return name && value ? `${name}=${value}` : '';
-      })
-      .filter(Boolean)
-      .join('; ');
-  } catch {
-    return '';
-  }
 }
 
 function delay(ms: number, signal?: AbortSignal) {

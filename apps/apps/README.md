@@ -23,7 +23,9 @@ Use Bun 1.4.3. Restore with `bun install --frozen-lockfile --ignore-scripts` onl
 under current restore admission. `bun run dev:app` runs local development on
 port 7818; start a server only for authorized runtime verification. `bun run build` and
 `bun run build:cloudflare` both invoke `vp build`; release builds belong in CI.
-`bun run test` uses the isolated unit config. `bun run test:runtime` requires
+`bun run test` uses the isolated unit config. Its client and SSR resolvers select
+the workspace `bun` source exports, so cold focused tests need no dependency
+builds. Queue local tests with `ttr resources run -- bun run test`. `bun run test:runtime` requires
 `CI=true`, `CI_SOURCE_SHA` and an absolute `APPS_ARTIFACT_RECEIPT` after the
 native CI build. The receipt is the JSON written by
 `python3 scripts/ci/apps-native-artifact.py seal apps/apps --receipt <path>`

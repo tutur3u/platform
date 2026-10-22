@@ -20,6 +20,12 @@ unit/types/lint and invokes `build:cloudflare` once for the frontend. The offici
 Void SDK supplies the Cloudflare adapter; no separate adapter or RSC mode is added.
 No local release build is implied by this runbook.
 
+For cold local unit checks, restore with `bun install --frozen-lockfile`, then run
+`ttr resources run -- bun run test` from `apps/apps`. The isolated unit config
+selects workspace `bun` source exports in both client and SSR resolution;
+missing dependency `dist` exports must not trigger a local dependency build.
+This source-only check does not replace exact-commit CI or emitted acceptance.
+
 Shared Query public types require a single compatible materialized supplier
 identity. `@tuturuuu/hooks` declares React Query peer `^5.102.8` and exports
 `queryOptions` consumed by Web's `useQuery`. Cold CI exposed incompatible

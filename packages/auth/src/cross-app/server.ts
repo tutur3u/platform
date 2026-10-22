@@ -46,6 +46,12 @@ type CrossAppTokenValidation = {
   userId: string;
 };
 
+type RefreshValidation =
+  | { kind: 'verified'; validation: CrossAppTokenValidation }
+  | { kind: 'invalid' }
+  | { kind: 'unavailable' }
+  | { kind: 'mfa-required' };
+
 type CrossAppSessionKind = 'app-session' | 'cli-app-session';
 
 type CliSessionPolicy = {
@@ -198,7 +204,7 @@ async function refreshAppSessionWithCentralVerifier({
   baseUrl: string;
   refreshToken?: string | null;
   targetApp: AppName;
-}): Promise<CrossAppTokenValidation | null> {
+}): Promise<RefreshValidation> {
   const refreshUrl = new URL('/api/v1/auth/cross-app-session/refresh', baseUrl);
   const response = await fetch(refreshUrl, {
     body: JSON.stringify({ refreshToken, targetApp }),
@@ -210,9 +216,9 @@ async function refreshAppSessionWithCentralVerifier({
     method: 'POST',
   });
 
-  if (!response.ok) {
-    return null;
-  }
+  if (response.status === 503) return { kind: 'unavailable' };
+  if (response.status === 403) return { kind: 'mfa-required' };
+  if (!response.ok) return { kind: 'invalid' };
 
   const body = (await response.json().catch(() => null)) as {
     mfa?: unknown;
@@ -227,36 +233,39 @@ async function refreshAppSessionWithCentralVerifier({
   } | null;
 
   if (typeof body?.userId !== 'string') {
-    return null;
+    return { kind: 'invalid' };
   }
 
   return {
-    mfa: isMfaSessionProof(body.mfa) ? body.mfa : null,
-    appSessionExpiresAt:
-      typeof body.appSessionExpiresAt === 'string'
-        ? body.appSessionExpiresAt
+    kind: 'verified',
+    validation: {
+      mfa: isMfaSessionProof(body.mfa) ? body.mfa : null,
+      appSessionExpiresAt:
+        typeof body.appSessionExpiresAt === 'string'
+          ? body.appSessionExpiresAt
+          : null,
+      appSessionRefreshEarlySeconds:
+        typeof body.appSessionRefreshEarlySeconds === 'number'
+          ? body.appSessionRefreshEarlySeconds
+          : null,
+      appSessionRefreshExpiresAt:
+        typeof body.appSessionRefreshExpiresAt === 'string'
+          ? body.appSessionRefreshExpiresAt
+          : null,
+      appSessionRefreshToken:
+        typeof body.appSessionRefreshToken === 'string'
+          ? body.appSessionRefreshToken
+          : null,
+      appSessionToken:
+        typeof body.appSessionToken === 'string' ? body.appSessionToken : null,
+      internalAppSessionPolicy: isInternalAppSessionPolicy(
+        body.internalAppSessionPolicy
+      )
+        ? body.internalAppSessionPolicy
         : null,
-    appSessionRefreshEarlySeconds:
-      typeof body.appSessionRefreshEarlySeconds === 'number'
-        ? body.appSessionRefreshEarlySeconds
-        : null,
-    appSessionRefreshExpiresAt:
-      typeof body.appSessionRefreshExpiresAt === 'string'
-        ? body.appSessionRefreshExpiresAt
-        : null,
-    appSessionRefreshToken:
-      typeof body.appSessionRefreshToken === 'string'
-        ? body.appSessionRefreshToken
-        : null,
-    appSessionToken:
-      typeof body.appSessionToken === 'string' ? body.appSessionToken : null,
-    internalAppSessionPolicy: isInternalAppSessionPolicy(
-      body.internalAppSessionPolicy
-    )
-      ? body.internalAppSessionPolicy
-      : null,
-    sessionData: body.sessionData ?? null,
-    userId: body.userId,
+      sessionData: body.sessionData ?? null,
+      userId: body.userId,
+    },
   };
 }
 
@@ -392,20 +401,38 @@ export function createRefreshPOST(
       );
     }
 
-    const validation = await refreshAppSessionWithCentralVerifier({
+    const result = await refreshAppSessionWithCentralVerifier({
       baseUrl: options.verificationBaseUrl,
       refreshToken,
       targetApp: appName,
     });
 
-    if (!validation) {
-      return jsonNoStore(
-        { error: 'Invalid or expired app session refresh credentials' },
-        { status: 401 }
-      );
+    switch (result.kind) {
+      case 'verified':
+        return createAppSessionResponse(result.validation, appName, options);
+      case 'invalid':
+        return jsonNoStore(
+          { error: 'Invalid or expired app session refresh credentials' },
+          { status: 401 }
+        );
+      case 'unavailable':
+        return jsonNoStore(
+          {
+            code: 'APP_SESSION_REFRESH_UNAVAILABLE',
+            error: 'App session refresh temporarily unavailable',
+          },
+          { status: 503 }
+        );
+      case 'mfa-required':
+        return jsonNoStore(
+          { code: 'MFA_REQUIRED', error: 'MFA verification required' },
+          { status: 403 }
+        );
+      default: {
+        const exhaustive: never = result;
+        return exhaustive;
+      }
     }
-
-    return createAppSessionResponse(validation, appName, options);
   };
 }
 

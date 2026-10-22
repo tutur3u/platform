@@ -41,37 +41,34 @@ jobs:
         with:
           node-version: 24
 
-      - name: Compute pending migration changes
-        id: changed_files
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          WORKFLOW_NAME: supabase-staging.yaml
-        run: >-
-          node --experimental-strip-types scripts/ci/resolve-changed-files.ts
-          --head-sha "$TARGET_SHA" --ref-name main
-
       - name: Check migration configuration
         id: check_config
-        env:
-          CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
-          WORKFLOW_NAME: supabase-staging.yaml
-        run: node --experimental-strip-types scripts/ci/check-workflow-config.ts
+        run: |
+          node --experimental-strip-types --input-type=module <<'STAGING_CONFIG'
+          import { appendFileSync } from 'node:fs';
+          import { ci } from './tuturuuu.ci.ts';
+          const enabled = ci?.['supabase-staging.yaml'];
+          if (typeof enabled !== 'boolean') {
+            throw new Error('Staging migration configuration must be boolean');
+          }
+          appendFileSync(process.env.GITHUB_OUTPUT, `should_run=${enabled}\n`);
+          STAGING_CONFIG
 
       - name: Evaluate staging prerequisites
         id: evaluate
         env:
-          DATABASE_AFFECTED: ${{ steps.check_config.outputs.should_run }}
+          STAGING_ENABLED: ${{ steps.check_config.outputs.should_run }}
           EVENT_NAME: ${{ github.event_name }}
           TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           SHOULD_DEPLOY=false
 
-          if [ "$DATABASE_AFFECTED" != "true" ]; then
-            echo "::notice::Skipping staging migration because no database changes are pending."
+          if [ "$STAGING_ENABLED" != "true" ]; then
+            echo "::notice::Skipping staging migration because staging migration is explicitly disabled."
           elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             echo "Manual dispatch detected. Proceeding with staging migration."
             SHOULD_DEPLOY=true
-          elif [ "$TRIGGER_CONCLUSION" = "success" ]; then
+          elif [ "$EVENT_NAME" = "workflow_run" ] && [ "$TRIGGER_CONCLUSION" = "success" ]; then
             echo "Platform preview build completed successfully. Proceeding with staging migration."
             SHOULD_DEPLOY=true
           else
