@@ -263,6 +263,10 @@
       "component": "sdk",
       "package-name": "tuturuuu"
     },
+    "packages/sso": {
+      "component": "sso",
+      "package-name": "@tuturuuu/sso"
+    },
     "packages/storage-core": {
       "component": "storage-core",
       "package-name": "@tuturuuu/storage-core"
