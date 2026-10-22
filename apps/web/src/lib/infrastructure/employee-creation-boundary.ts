@@ -1,5 +1,6 @@
 import {
   type CreateInternalEmployeePayload,
+  EmployeeCreationNonAdmissionSchema,
   EmployeeCreationOperationSchema,
   EmployeeCreationPayloadSchema,
   EmployeeCreationReplySchema,
@@ -116,15 +117,26 @@ export function makeEmployeeCreationBoundary({
     } catch {
       return unavailable();
     }
-    // Once admitted, transport exceptions/malformed replies cannot be treated as safe retries.
+    // Claim invocation can be uncertain; only a bound preclaim result proves nonadmission.
     try {
-      const value = JournalResultSchema.safeParse(
-        await journal.claimAndRun({
-          actorUserId: actor.actorUserId,
-          operationId: operation.data,
-          payload: parsed.data,
-        })
-      );
+      const raw = await journal.claimAndRun({
+        actorUserId: actor.actorUserId,
+        operationId: operation.data,
+        payload: parsed.data,
+      });
+      const proof = EmployeeCreationNonAdmissionSchema.safeParse(raw);
+      if (
+        proof.success &&
+        proof.data.actorUserId === actor.actorUserId &&
+        proof.data.operationId === operation.data &&
+        proof.data.email === parsed.data.email &&
+        proof.data.displayName === parsed.data.displayName
+      )
+        return reply(
+          proof.data.reason === 'invalid_input' ? 400 : 503,
+          proof.data
+        );
+      const value = JournalResultSchema.safeParse(raw);
       if (!value.success || value.data.outcome.operationId !== operation.data)
         return pending(operation.data);
       const result = value.data.outcome;
