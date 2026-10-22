@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 const scope = new AsyncLocalStorage<AbortSignal>();
 export const CRON_BUDGET_MS = 210_000;
@@ -32,14 +33,14 @@ export const providerSyncFetch: typeof fetch = (input, init) => {
   return fetch(input, { ...init, signal });
 };
 
-export function createSyncAdminClient() {
+export function createSyncAdminClient(): Promise<TypedSupabaseClient> {
   return providerSyncSignal()
     ? createAdminClient({ noCookie: true, fetch: providerSyncFetch })
     : createAdminClient();
 }
 
 // Completion writes retain a short independent budget after provider cancellation.
-export function createSyncCompletionClient() {
+export function createSyncCompletionClient(): Promise<TypedSupabaseClient> {
   return createAdminClient({
     noCookie: true,
     fetch: (input: RequestInfo | URL, init?: RequestInit) =>
