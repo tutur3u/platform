@@ -1,0 +1,28 @@
+name: Native Mail Cloudflare
+on:
+  pull_request:
+    paths: ['apps/mail/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/mail-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json']
+  push:
+    branches: [main]
+    paths: ['apps/mail/**', 'packages/**', 'scripts/ci/wave1-*', '.github/workflows/wave1-*', '.github/workflows/mail-cloudflare.yaml', 'tuturuuu.ci.ts', 'tuturuuu.ts', 'bun.lock', 'turbo.json', 'package.json']
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+  actions: read
+  deployments: write
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: mail-cloudflare.yaml
+  native-profiles:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    uses: ./.github/workflows/wave1-native-app.yaml
+    with:
+      app: mail
+    secrets: inherit

@@ -1,0 +1,182 @@
+---
+title: "Wave-1 native publishers"
+description: "Owner-provisioned staging, sealed native publication profiles, production holds and rollback evidence."
+---
+
+## Scope and admission
+
+Land the production hold before these publisher changes. Meet, Calendar, Mail and
+Apps production publication remains **held for wave-1 cutover**. The production
+planner holds in `tuturuuu.ci.ts` remain authoritative. Native Calendar/Mail/Apps
+jobs additionally report the source hold in `scripts/ci/wave1-native-profiles.json`;
+removing either hold alone does not authorize publication. A later explicit cutover
+PR must reconcile both policies and its exact production promotion range.
+
+These workflows add no automatic schedule and perform no provider or DNS setup.
+Main pushes and trusted main dispatch can publish **staging only**, after provisioning
+and the repository enable flag. PRs and other branches qualify artifacts without
+publication. Existing Vercel deployments, project framework settings and disabled
+Git deployment remain unchanged. Existing central APIs and scheduler/provider owners
+stay authoritative; a native frontend is not a completed Vercel exit.
+
+## Identities and resource continuity
+
+The explicit Cloudflare account is `e8912e2867beecc673d171907bf09649`.
+`CLOUDFLARE_WORKERS_SUBDOMAIN` is the owner's actual account subdomain, not a guessed
+hostname. Configure it as a repository variable. Staging hosts are the corresponding
+Worker name followed by `.<CLOUDFLARE_WORKERS_SUBDOMAIN>.workers.dev`.
+
+| App | Staging Worker | Held production Worker / canonical host |
+| --- | --- | --- |
+| Calendar | `tuturuuu-calendar-wave1-staging` | `tuturuuu-calendar` / `calendar.tuturuuu.com` |
+| Mail | `tuturuuu-mail-wave1-staging` | `tuturuuu-mail` / `mail.tuturuuu.com` |
+| Apps | `tuturuuu-apps-wave1-staging` | `tuturuuu-apps` / `apps.tuturuuu.com` |
+
+Publication profiles are derived explicitly from the original Void-emitted config;
+the source configs are retained. The derived config, original modules/assets and
+manifest are sealed together, then restored without rebuilding. Nonempty source
+resource bindings, routes and unreviewed vars fail qualification rather than being
+dropped. Frontends have only ASSETS; Calendar and Mail preserve central API ownership.
+There is no new D1, KV, DO, queue or scheduler for these three frontends.
+
+Staging uses `https://staging.tuturuuu.com` and staging Supabase/public configuration.
+It does not activate production callbacks or processors. Mail's production R2 S3
+access continues to the existing `tuturuuu-mail` bucket; its staging descriptor names
+`tuturuuu-mail-wave1-staging` with separate credentials. Never repoint the existing
+`tuturuuu-mail-email-routing` ingestion Worker, signing identity, bucket, MX records
+or canonical webhook as part of frontend staging. Preserve optional SES credentials
+for legacy attachment reads before production admission.
+
+Apps staging has no canonical routes, `APPS_CANONICAL_HOST_ENABLED=0` and noindex.
+Its separately built production profile sets the fence to `1` and declares its
+canonical Custom Domain. That configuration is qualified by original/restored
+workerd checks while publication remains held. Merely attaching the staging profile
+to the canonical host would return 503 and is forbidden.
+
+## One-time owner provisioning
+
+1. Retain the production hold. Create protected GitHub environments
+   `wave1-<app>-staging` and `wave1-<app>-production` for Calendar, Mail and Apps.
+   Production needs explicit release-owner approval. Use a least-privilege
+   `CLOUDFLARE_API_TOKEN` for the stated account; never copy credentials into source
+   or evidence. Keep staging and production credentials separate by environment.
+   Provision `WAVE1_CONTROL_READ_TOKEN` with repository Variables read permission
+   for the fresh stop-fence observation. Do not assume `actions: read` supplies
+   that permission; see [GitHub's variable API permissions](https://docs.github.com/en/rest/actions/variables#get-a-repository-variable).
+2. Set the actual `CLOUDFLARE_WORKERS_SUBDOMAIN` repository variable. Provision the
+   three staging Workers off canonical traffic, with workers.dev enabled, no routes,
+   and an accepted initial version. The publisher intentionally refuses a missing
+   Worker or missing rollback deployment instead of bootstrapping resources.
+   Bootstrap through the owner's reviewed infrastructure procedure with the identities
+   and resource descriptors in `wave1-native-profiles.json`; do not use canonical configs.
+3. Provision Mail's isolated staging R2 bucket and scoped S3 credentials according to
+   that descriptor. Keep production storage/resource IDs and encryption/signing keys.
+   Grant only staging access to staging secrets. Confirm the existing staging central
+   issuer/API and Supabase instance are admitted for disposable acceptance.
+4. Provision Worker secret **names** from each app's `secrets` list in the profile
+   file. Values stay in the provider. The workflow checks names through the API and
+   never uploads secrets. Calendar additionally requires the registered Google and
+   Microsoft callback URLs declared in the profile vars. Mail's ingestion secret,
+   connected-account encryption key and storage credentials preserve the owning
+   environment's identity. Optional names are listed separately; provider acceptance
+   must identify which are required for the configured transports and old attachments.
+5. Supply GitHub build/publication secret names `STAGING_SUPABASE_URL`,
+   `STAGING_SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_SUPABASE_URL`, and
+   `PRODUCTION_SUPABASE_PUBLISHABLE_KEY`. Only public Supabase inputs reach builds.
+   Missing values allow source-only fixture artifacts, which cannot publish: the
+   publisher rejects fixture URLs, different public-input fingerprints or a different
+   account subdomain. Environment overrides must agree with the qualified artifact.
+6. After owner review, set repository variable `WAVE1_STAGING_PUBLISH_ENABLED=true`.
+   A new main push or trusted main dispatch can now publish accepted staging bytes.
+   Turning it off is the durable stop fence for subsequent writes; the publisher reads
+   it freshly immediately before its sole deployment. This cannot cancel a write
+   already accepted by Cloudflare. No resources, settings, secrets or DNS were created
+   by authoring these workflows.
+
+## Exact artifact and publication gates
+
+`wave1-native-app.yaml` builds staging and held production profiles in exact-source
+CI. Each runs original workerd acceptance, Wrangler dry-run, seal, bounded archive,
+separate-job restore, repeated workerd acceptance/dry-run and final seal verification.
+Mail has its own original/restored native Worker checks. Calendar and Apps keep their
+existing deeper SSR/offline/RPC/browser gates; the new checks do not replace them.
+
+The native public `/api/build-info` endpoint reports bundled full SHA, app and
+environment before session middleware, accepts only GET/HEAD/OPTIONS, and is no-store.
+It exposes release metadata only. Original/restored checks compare this identity,
+actual static asset bytes, anonymous private-page login handoff for Mail/Calendar,
+and Apps' staging canonical refusal versus admitted production fence behavior.
+Runtime credentials are disposable and network egress is denied. This finite fixture
+is not hosted provider, signed-in browser, or complete SDK descendant-cleanup proof.
+CI step/job timeouts fail a stuck runtime rather than relaxing assertions.
+
+The publisher restores the same-run archive and rechecks runtime before credentials
+are introduced. It observes [Cloudflare's deployment/version APIs](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/) and captures the existing deployment's weighted rollback versions,
+checks expected secret names, rechecks the fresh stop fence and seal, then invokes
+Wrangler once against the sealed config. The version tag is the complete artifact
+receipt digest and its message is the source SHA. Both the hosted active version/tag
+and actual HTTP build identity must match before recording a GitHub deployment marker.
+Staging and production marker environments remain distinct.
+
+There is no deployment retry or recurring producer. Reads have 15-second deadlines
+and 1 MiB limits. A run has at most one Wrangler publication, a 180-second publication
+command limit, and fewer than ten explicit control-plane/identity reads. Wrangler's
+asset API requests are additional; archive limits are 50,000 members / 1 GiB, and
+these bounds are not a total-spend guarantee. CI concurrency serializes each app and
+environment. An identical active SHA **and artifact tag** is accepted without another
+deploy. Failure after a write leaves an explicit pending/unknown receipt and no success
+marker. Never blindly replay an uncertain operation; inspect the retained receipt and
+matching provider version first.
+
+## Meet off-canonical profile
+
+`apps/meet/void.staging.config.ts` is selected only by
+`MEET_DEPLOYMENT_PROFILE=staging`; ordinary source CI retains its existing default.
+It uses `tuturuuu-meet-wave1-staging`, no routes, isolated `MEET_LIVE` namespaces,
+self-reference to that same staging Worker and bucket
+`tuturuuu-meet-wave1-staging-cache`. Realtime's separate
+`apps/meet-realtime/wrangler.staging.jsonc` uses
+`tuturuuu-meet-realtime-wave1-staging`, no canonical route and its own local DO
+namespaces/migration history. Its secret names retain the protocol contract but must
+refer to disposable staging SFU/TURN credentials, never production resources.
+
+The owner must provision those staging identities, the isolated cache bucket,
+self-service binding, Images access, stage Supabase/central issuer and disposable
+SFU/TURN app/key before CI building/qualifying/publishing this profile. Meet staging
+publication is not automated by these three frontend publishers. This is a defined
+profile, not a deployed or workerd-qualified Meet staging claim and not a no-staging
+exception. Before any canonical Meet release, retain original/restored gates, qualify
+this profile off canonical traffic and exercise hosted two-participant media/reconnect.
+Meet's production workflow captures rollback versions for both frontend and realtime.
+
+## Remaining cutover and rollback
+
+Require all applicable exact-main tests/type/lint/native builds, original/restored
+artifacts and shared-supplier checks. Then collect real signed-in EN/VI session,
+refresh/MFA/logout/privacy and app-specific hosted evidence: Calendar provider/
+recurrence/offline/Tasks; Mail provider sends with original-operation readback,
+webhook/attachments; Apps catalogue anchors/redirects/query/RPC; Meet real media/DO/
+SFU/TURN. workers.dev does not itself prove shared canonical-domain cookie continuity.
+
+Before a later cutover PR, capture authoritative DNS/proxy/Route/Custom Domain IDs,
+immutable Vercel fallbacks, current Worker versions, rollback operator, explicit
+promotion range and compatible secrets/state. Production configs currently declare
+Custom Domains: their eventual publication is a traffic switch, not just code upload.
+Do not enable `WAVE1_PRODUCTION_PUBLISH_ENABLED`, remove holds or attach routes until
+that later release is expressly approved. Retain Vercel framework/domain settings.
+
+Rollback uses the retained publication receipt's exact prior version(s), not a new
+build. Under release custody, restore frontend code and Meet realtime when changed.
+For Vercel exits, restoring code alone does not restore traffic: reverse the exact
+captured Route/Custom Domain and DNS/proxy topology to the saved deployment. Observe
+Apps for 14 days and Meet/Mail/provider-critical Calendar for 30 days and relevant
+business cycles. Provider side effects and persistent data do not roll back with code.
+
+## Source-only validation
+
+Run `ttr resources run -- node --test scripts/ci/wave1-native-publishers.test.js`
+for resource/profile isolation, exact bytes and relocation, unsafe archive rejection,
+production holds, source/ref admission, fresh-stop failure, one-write bounds, unknown
+outcome retention, rollback shape, identical-version identity and workflow gate order.
+Real app builds and workerd gates run only in CI. No local build or production
+workflow dispatch is part of this validation.

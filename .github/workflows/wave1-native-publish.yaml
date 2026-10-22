@@ -1,0 +1,79 @@
+name: Publish accepted wave-1 native artifact
+on:
+  workflow_call:
+    inputs:
+      app:
+        type: string
+        required: true
+      profile:
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+  deployments: write
+concurrency:
+  group: wave1-native-publish-${{ inputs.app }}-${{ inputs.profile }}
+  cancel-in-progress: false
+  queue: max
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: wave1-${{ inputs.app }}-${{ inputs.profile }}
+    env:
+      APP: ${{ inputs.app }}
+      PROFILE: ${{ inputs.profile }}
+      SOURCE_SHA: ${{ github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_WRITE_LOGS: 'false'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.3
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: wave1-${{ inputs.app }}-${{ inputs.profile }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/native-publish
+      - name: Restore and verify the exact qualified artifact
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/wave1-native-archive.py restore "apps/$APP" "$RUNNER_TEMP/native-publish/wave1-native.tar.gz"
+          node scripts/ci/wave1-native-artifact.mjs verify "$APP" "$PROFILE" "$SOURCE_SHA"
+      - name: Recheck restored workerd without provider credentials
+        timeout-minutes: 3
+        run: node scripts/ci/wave1-native-runtime.mjs "$APP" "$PROFILE" "$SOURCE_SHA"
+      - name: Capture rollback and secret names then publish once behind fresh stop fence
+        timeout-minutes: 5
+        env:
+          WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
+          CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+          WAVE1_CONTROL_READ_TOKEN: ${{ secrets.WAVE1_CONTROL_READ_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets[format('{0}_SUPABASE_URL', inputs.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets[format('{0}_SUPABASE_PUBLISHABLE_KEY', inputs.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
+        run: node scripts/ci/wave1-native-publish.mjs publish "$APP" "$PROFILE" "$SOURCE_SHA"
+      - name: Retain sanitized rollback and deployment identity even after failure
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: wave1-${{ inputs.app }}-${{ inputs.profile }}-publication-${{ github.sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/${{ inputs.app }}-${{ inputs.profile }}-publication.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Record deployment marker only after hosted identity acceptance
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: ${{ inputs.app }}-cloudflare.yaml
+          DEPLOYMENT_MARKER_ENVIRONMENT: wave1-${{ inputs.app }}-${{ inputs.profile }}
+        run: node scripts/ci/record-deployment-marker.ts

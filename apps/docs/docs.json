@@ -327,6 +327,7 @@
                   "build/devops/overview",
                   "build/devops/active-runtime",
                   "build/devops/apps-viteplus-cloudflare",
+                  "build/devops/wave1-native-publishers",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
                   "build/devops/tanstack-rust-local-deploy",

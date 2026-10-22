@@ -85,6 +85,24 @@ jobs:
     uses: ./.github/workflows/lettin-cloudflare.yaml
     secrets: inherit
 
+  deploy-calendar-native:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'calendar-cloudflare.yaml')
+    uses: ./.github/workflows/calendar-cloudflare.yaml
+    secrets: inherit
+
+  deploy-mail-native:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'mail-cloudflare.yaml')
+    uses: ./.github/workflows/mail-cloudflare.yaml
+    secrets: inherit
+
+  deploy-apps-native:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'apps-cloudflare.yaml')
+    uses: ./.github/workflows/apps-cloudflare.yaml
+    secrets: inherit
+
   deploy-meet-cloudflare:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'meet-cloudflare.yaml')

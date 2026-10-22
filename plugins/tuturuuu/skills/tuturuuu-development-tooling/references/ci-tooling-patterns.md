@@ -78,6 +78,28 @@ of native runner semantics. Do not claim speed without comparable measurements,
 extend this pilot to deployment workflows, or replace the shared local resource
 broker with shell fan-out. Revert the group to sequential children for rollback.
 
+
+## Wave-1 native publication profiles
+
+The admitted Meet/Calendar/Mail/Apps native source and CI are distinct from the
+paused `apps/tanstack-web` runtime; their publication remains subject to holds.
+
+Keep staging/production identity in `scripts/ci/wave1-native-profiles.json`; retain
+original Void output and seal the derived config with the unchanged modules/assets.
+The publisher consumes restored same-run bytes after original/restored workerd gates.
+Production remains visibly held, in addition to planner holds. Owner-provision staging
+Workers/secrets/resources before enabling the repository flag; no CI bootstrap or DNS
+setup. Keep public build-input fingerprints, hosted SHA/artifact tags, weighted
+rollback capture, one-write/fresh-stop checks and honest uncertain outcomes.
+
+Run `scripts/ci/wave1-native-publishers.test.js` through resource admission after changes.
+Root script discovery includes this `.test.js`; it does not require a manual package
+script list. Keep deployment credentials out of runtime/build steps. Meet has a separate
+isolated staging profile; existing canonical output must never stand in for staging.
+See the [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
+for provisioning, bounded-work limits and remaining hosted/cutover evidence.
+
+
 ## Inactive runtimes until further notice
 
 Docker setup, Rust, and TanStack Start are paused; the Docker cron runner is
@@ -333,8 +355,9 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   runner's. `scripts/setup-portless.test.js` injected `isTTY`/`log`/`runner` but
   let `env` default to `process.env`, so it passed locally and failed under
   `CI=true`. Pass an explicit `env`.
-- New `scripts/*.test.js` files must be added to the `test:scripts` list in
-  `package.json`; a test file that is not listed never runs and is not coverage.
+- `test:scripts` uses `scripts/run-script-tests.js` discovery for `.test.js` and
+  `.test.mjs` under `scripts/`, excluding paused implementation suites. New tests
+  under that scope need no manifest list; verify discovery for other locations.
 - Keep the Release Please token fallback ordered as
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
