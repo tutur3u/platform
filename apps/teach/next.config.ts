@@ -15,12 +15,8 @@ const nextConfig = createTuturuuuNextConfig({
       afterFiles: [],
       fallback: [
         {
-          source: '/api/ai/:path*',
-          destination: `${WEB_APP_URL}/api/ai/:path*`,
-        },
-        {
-          source: '/api/v1/:path*',
-          destination: `${WEB_APP_URL}/api/v1/:path*`,
+          source: '/api/:path*',
+          destination: `${WEB_APP_URL}/api/:path*`,
         },
       ],
     };

@@ -27,12 +27,8 @@ const nextConfig = createTuturuuuNextConfig({
           source: '/api/v1/infrastructure/:path*',
         },
         {
-          destination: `${WEB_APP_URL}/api/v1/:path*`,
-          source: '/api/v1/:path*',
-        },
-        {
-          destination: `${WEB_APP_URL}/api/ai/:path*`,
-          source: '/api/ai/:path*',
+          source: '/api/:path*',
+          destination: `${WEB_APP_URL}/api/:path*`,
         },
       ],
     };

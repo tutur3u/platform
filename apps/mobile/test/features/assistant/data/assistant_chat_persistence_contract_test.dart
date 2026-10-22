@@ -201,8 +201,16 @@ void main() {
     }
   });
   test(
-    'create send reopen follow-up reopen retains actual fixture storage IDs',
+    'create send reopen follow-up reopen retains replies and attachments',
     () async {
+      const attachment = AssistantAttachment(
+        id: '66666666-6666-4666-8666-000000000001',
+        name: 'context.txt',
+        size: 12,
+        type: 'text/plain',
+        storagePath: 'chats/$chat/context.txt',
+        uploadState: AssistantAttachmentUploadState.uploaded,
+      );
       final saved = <Map<String, dynamic>>[];
       var calls = 0;
       var requests = 0;
@@ -294,13 +302,29 @@ void main() {
           'kind': 'user',
           'content': body['content'],
           'metadata': {'clientRequestId': body['clientRequestId']},
+          'attachments': [
+            for (final draft in body['attachments'] as List<dynamic>)
+              {
+                ...draft as Map<String, dynamic>,
+                'id': '66666666-6666-4666-8666-000000000001',
+                'conversationId': chat,
+                'messageId': userId,
+                'storagePath': draft['path'],
+              },
+          ],
           'createdAt': '2026-10-12T00:00:00Z',
         });
         final reply = {
           'id': replyId,
           'conversationId': chat,
           'kind': 'assistant',
-          'metadata': <String, dynamic>{},
+          'metadata': {
+            'ai': {
+              'parts': [
+                {'type': 'text', 'text': 'Synthetic reply $calls'},
+              ],
+            },
+          },
           'content': 'Synthetic reply $calls',
           'createdAt': '2026-10-12T00:00:00Z',
         };
@@ -366,6 +390,7 @@ void main() {
               thinkingMode: AssistantThinkingMode.thinking,
               creditSource: AssistantCreditSource.workspace,
               timezone: 'UTC',
+              attachments: [attachment],
             )
             .toList();
         final reopened = await fresh().restoreChat(
@@ -378,6 +403,23 @@ void main() {
           saved.map((row) => row['id']),
         );
         expect(reopened.messages.length, turn * 2);
+        expect(
+          reopened.messages
+              .where((message) => message.role == 'assistant')
+              .map((message) => message.parts.single.text),
+          [
+            for (var index = 1; index <= turn; index++)
+              'Synthetic reply $index',
+          ],
+        );
+        for (final message in reopened.messages.where(
+          (m) => m.role == 'user',
+        )) {
+          final attachment =
+              reopened.attachmentsByMessageId[message.id]!.single;
+          expect(attachment.storagePath, 'chats/$chat/context.txt');
+          expect(attachment.name, 'context.txt');
+        }
         expect(saved[saved.length - 2]['metadata'], {
           'clientRequestId': requestId,
         });
@@ -398,6 +440,7 @@ void main() {
             workspaceContextId: ws,
             modelId: 'synthetic/model',
             messages: [reopened.messages.first],
+            attachments: [attachment],
             thinkingMode: AssistantThinkingMode.thinking,
             creditSource: AssistantCreditSource.workspace,
             timezone: 'UTC',

@@ -1,3 +1,7 @@
+import {
+  assistantMessageContentPreview,
+  restoreAssistantMessageContent,
+} from '@tuturuuu/ai/chat/assistant-message-content';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { SessionAuthContext } from '@/lib/api-auth';
@@ -279,7 +283,7 @@ export async function sendNativeAiConversationMessages({
       p_actor_user_id: auth.user.id,
       p_conversation_id: conversation.id,
       p_messages: assistantParts.map((content, index) => ({
-        content,
+        content: assistantMessageContentPreview(content),
         metadata: buildNativeAssistantMessageMetadata({
           aiMessage: assistantResponse,
           content,
@@ -316,7 +320,10 @@ export async function sendNativeAiConversationMessages({
 function getPersistableAssistantContent(
   response: AiAssistantMessageRow | null
 ) {
-  const content = response?.content?.trim();
+  const content = restoreAssistantMessageContent(
+    response?.content ?? null,
+    response?.metadata
+  ).trim();
   if (content) return content;
   const metadata = readRecord(response?.metadata);
   const ai = readRecord(metadata?.ai);
@@ -487,6 +494,7 @@ function buildNativeAssistantMessageMetadata({
     source: 'native-ai-chat',
     ai: {
       ...aiMetadata,
+      contentTruncated: assistantMessageContentPreview(content) !== content,
       aiChatMessageId: aiMessage.id,
       parts,
       split: {

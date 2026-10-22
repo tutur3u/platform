@@ -6817,6 +6817,7 @@
     "title": "Your workspace, right at home.",
     "unavailable": "Desktop beta is being prepared. You can use the web app now.",
     "windows": {
+      "installation": "Windows beta installers may be unsigned. Check the release notes and SHA-256 checksum. If SmartScreen warns, choose More info, then Run anyway only if you trust the download and Windows offers that option. If your device blocks it, use the web app.",
       "name": "Windows",
       "requirements": "Windows 10 or later · Intel / AMD 64-bit"
     }
@@ -13647,6 +13648,34 @@
     "usage": "Usage",
     "warehouse": "Warehouse",
     "warehouses": "warehouses"
+  },
+  "product-feedback": {
+    "all": "All reports",
+    "all-statuses": "All statuses",
+    "archive": "Archive",
+    "archived": "Archived",
+    "created": "Created",
+    "empty": "No reports in this view.",
+    "first": "First page",
+    "inbox": "Inbox",
+    "load-error": "Feedback could not be loaded. Please try again.",
+    "loading": "Loading feedback…",
+    "next": "Next page",
+    "none": "Not archived",
+    "not-found": "This report was not found or is no longer available.",
+    "open": "Open",
+    "private": "Private staff inbox. Report content stays within authorized staff access.",
+    "read-only": "Read only. Status and archive changes are not available.",
+    "refresh": "Refresh",
+    "resolved": "Resolved",
+    "revision": "Revision",
+    "search": "Search titles",
+    "select": "Select a report to read its private content.",
+    "status": "Status",
+    "title": "Feedback inbox",
+    "unavailable": "Feedback is unavailable or your staff access has changed.",
+    "updated": "Updated",
+    "view": "View"
   },
   "products": {
     "ai": {

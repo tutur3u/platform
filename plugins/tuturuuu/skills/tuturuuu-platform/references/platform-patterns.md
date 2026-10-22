@@ -13,6 +13,12 @@ shared-package changes.
   Defer unstarted work. Microsoft calendar errors continue siblings; auth/rate
   limits stop the account. See the [Calendar cron runbook](../../../../../apps/docs/platform/applications/calendar.mdx#bounded-cron-execution-and-revoked-consent)
   and focused regressions before changing limits or response policy.
+- Product feedback staff HTTP reads reuse the existing eligibility/list/detail
+  factories and `staff-service.ts`. Resolve the current Auth identity before the
+  service-only RPC, whose canonical registry assertion remains authoritative.
+  Map only explicit `PT403` to denial; missing schema and provider faults are
+  unavailable. Keep the operation transport and abort signal on the RPC, project
+  private detail separately from list metadata, and retain the default-off flag.
 
 - Private Studio membership facets use only roles returned in the current
   authorized overview. Combine them with existing search/publication facets,

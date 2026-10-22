@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -100,6 +100,40 @@ test('selected Linux publication still requires its exact receipt and asset set'
     );
     await assert.rejects(
       verifyPublication(root, 'b'.repeat(40), '123', 'linux'),
+      /does not match/
+    );
+  }));
+
+test('unsigned Windows receipt remains bound to platform, source, run and checksum', async () =>
+  fixture(async (root) => {
+    const path = join(root, 'verified-windows.json');
+    const receipt = JSON.parse(await readFile(path, 'utf8'));
+    receipt.verification = 'unsigned-windows';
+    await writeFile(path, JSON.stringify(receipt));
+    const files = await verifyPublication(root, source, '123');
+    assert.equal(files[0].verification, 'unsigned-windows');
+    for (const change of [
+      { verification: 'unsigned' },
+      { source: 'b'.repeat(40) },
+      { run: '124' },
+      { sha256: 'b'.repeat(64) },
+    ]) {
+      await writeFile(path, JSON.stringify({ ...receipt, ...change }));
+      await assert.rejects(
+        verifyPublication(root, source, '123'),
+        /does not match/
+      );
+    }
+    await writeFile(path, JSON.stringify(receipt));
+    const mac = JSON.parse(
+      await readFile(join(root, 'verified-macos.json'), 'utf8')
+    );
+    await writeFile(
+      join(root, 'verified-macos.json'),
+      JSON.stringify({ ...mac, verification: 'unsigned-windows' })
+    );
+    await assert.rejects(
+      verifyPublication(root, source, '123'),
       /does not match/
     );
   }));

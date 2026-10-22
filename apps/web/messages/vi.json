@@ -6817,6 +6817,7 @@
     "title": "Không gian làm việc ngay trên máy tính.",
     "unavailable": "Bản beta cho máy tính đang được chuẩn bị. Bạn có thể sử dụng ứng dụng web ngay.",
     "windows": {
+      "installation": "Bộ cài beta Windows có thể chưa được ký số. Hãy kiểm tra ghi chú phát hành và mã SHA-256. Nếu SmartScreen cảnh báo, chọn Thông tin thêm (More info), rồi Vẫn chạy (Run anyway) chỉ khi bạn tin cậy bản tải xuống và Windows cho phép. Nếu thiết bị chặn cài đặt, hãy dùng ứng dụng web.",
       "name": "Windows",
       "requirements": "Windows 10 trở lên · Intel / AMD 64-bit"
     }
@@ -13654,6 +13655,34 @@
     "usage": "Cách dùng",
     "warehouse": "Kho",
     "warehouses": "kho hàng"
+  },
+  "product-feedback": {
+    "all": "Tất cả báo cáo",
+    "all-statuses": "Mọi trạng thái",
+    "archive": "Lưu trữ",
+    "archived": "Lưu trữ lúc",
+    "created": "Đã tạo",
+    "empty": "Không có báo cáo trong chế độ xem này.",
+    "first": "Trang đầu",
+    "inbox": "Hộp thư",
+    "load-error": "Không thể tải phản hồi. Vui lòng thử lại.",
+    "loading": "Đang tải phản hồi…",
+    "next": "Trang tiếp",
+    "none": "Chưa lưu trữ",
+    "not-found": "Không tìm thấy báo cáo này hoặc báo cáo không còn khả dụng.",
+    "open": "Đang mở",
+    "private": "Hộp thư riêng cho nhân viên. Chỉ nhân viên được cấp quyền mới xem được nội dung.",
+    "read-only": "Chỉ đọc. Chưa hỗ trợ thay đổi trạng thái và lưu trữ.",
+    "refresh": "Làm mới",
+    "resolved": "Đã giải quyết",
+    "revision": "Phiên bản",
+    "search": "Tìm theo tiêu đề",
+    "select": "Chọn một báo cáo để đọc nội dung riêng tư.",
+    "status": "Trạng thái",
+    "title": "Hộp thư phản hồi",
+    "unavailable": "Phản hồi hiện không khả dụng hoặc quyền nhân viên của bạn đã thay đổi.",
+    "updated": "Cập nhật",
+    "view": "Chế độ xem"
   },
   "products": {
     "ai": {

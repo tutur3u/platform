@@ -22,6 +22,7 @@ import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
 import { getMindAppOrigin } from '@/lib/mind-app-url';
+import { getFeedbackStaffIdentity } from '@/lib/product-feedback-staff';
 import { getQrAppBaseUrl } from '@/lib/qr-app-url';
 import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 import { getTrackAppOrigin } from '@/lib/track-app-url';
@@ -113,14 +114,23 @@ export async function WorkspaceNavigationLinks({
   const tasksAppHref = `${getTasksAppOrigin()}/${personalOrWsId}`;
   const trackAppHref = `${getTrackAppOrigin()}/${personalOrWsId}`;
 
-  // Parallelize user-dependent queries
+  const workspacePermissionsPromise = getPermissions({
+    user,
+    wsId: resolvedWorkspaceId,
+  });
+  const feedbackStaffPromise = isMailUser
+    ? workspacePermissionsPromise.then((permissions) =>
+        permissions ? getFeedbackStaffIdentity() : null
+      )
+    : Promise.resolve(null);
   const [
     workspacePermissions,
     userInvoiceVisibilityConfig,
     userTaskNavigationConfigs,
     workspaceInvoiceVisibilityConfig,
+    feedbackStaff,
   ] = await Promise.all([
-    getPermissions({ user, wsId: resolvedWorkspaceId }),
+    workspacePermissionsPromise,
     // Get user's invoice visibility preference
     user
       ? supabase
@@ -144,6 +154,7 @@ export async function WorkspaceNavigationLinks({
       .eq('ws_id', resolvedWorkspaceId)
       .eq('id', 'finance_show_invoices')
       .maybeSingle(),
+    feedbackStaffPromise,
   ]);
   if (!workspacePermissions) {
     if (!user) notFound();
@@ -295,6 +306,20 @@ export async function WorkspaceNavigationLinks({
   ];
 
   const navLinks: (DashboardNavigationLink | null)[] = [
+    ...(feedbackStaff
+      ? [
+          {
+            id: 'product-feedback',
+            title: t('product-feedback.title'),
+            href: `/${personalOrWsId}/feedback`,
+            aliases: [`/${personalOrWsId}/feedback`],
+            icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
+            children: [],
+            matchExact: true,
+            preferenceSectionLabel: sidebarSections.utilities,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
     {
       id: 'dashboard',
       title: t('common.dashboard'),
