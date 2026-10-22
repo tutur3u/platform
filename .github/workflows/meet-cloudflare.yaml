@@ -529,13 +529,16 @@ jobs:
           bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
-      - name: Capture existing frontend rollback versions
-        working-directory: apps/meet
+      - name: Capture existing frontend and realtime rollback versions
         run: |
-          bun x --no-install wrangler versions list --name tuturuuu-meet --json > "$RUNNER_TEMP/meet-versions-raw.json"
-          bun x --no-install wrangler deployments list --name tuturuuu-meet --json > "$RUNNER_TEMP/meet-deployments-raw.json"
-          jq -e '[.[] | {id, created_on: .metadata.created_on}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.created_on | type == "string")))' "$RUNNER_TEMP/meet-versions-raw.json" > "$RUNNER_TEMP/meet-rollback-versions.json"
-          jq -e '[.[] | {id, created_on, versions}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.versions | length > 0)))' "$RUNNER_TEMP/meet-deployments-raw.json" > "$RUNNER_TEMP/meet-rollback-deployments.json"
+          for service in frontend realtime; do
+            worker=tuturuuu-meet
+            if [ "$service" = realtime ]; then worker=tuturuuu-meet-realtime; fi
+            bun x --no-install wrangler versions list --name "$worker" --json > "$RUNNER_TEMP/meet-$service-versions-raw.json"
+            bun x --no-install wrangler deployments list --name "$worker" --json > "$RUNNER_TEMP/meet-$service-deployments-raw.json"
+            jq -e '[.[] | {id, created_on: .metadata.created_on}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.created_on | type == "string")))' "$RUNNER_TEMP/meet-$service-versions-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-versions.json"
+            jq -e '[.[] | {id, created_on, versions}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.versions | length > 0)))' "$RUNNER_TEMP/meet-$service-deployments-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-deployments.json"
+          done
       - name: Retain rollback version evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

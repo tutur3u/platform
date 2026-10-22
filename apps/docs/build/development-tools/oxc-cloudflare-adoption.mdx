@@ -309,6 +309,26 @@ Existing tests and code must be inspected per service; this foundation establish
 review gates and does not assert that every deployed alarm is protected or that
 account alerts are configured.
 
+### Wave-1 staging publishers: publication and serving envelope
+
+Calendar, Mail and Apps staging publishers require an exact owner-reviewed
+source/artifact admission and authenticated D1 consumption state. PR GitHub tokens
+cannot write that staging-account ledger; missing/deleted/invalid state fails closed.
+Seven bounded D1 queries persist/read back three transitions on a fresh success;
+there is one upload invocation, no application retry and no automatic admission
+renewal. The real-entrypoint stop-fence negative control, forged/deleted-state
+fixtures and SQLite conditional-update races live in `scripts/ci/wave1-native-*.test.js`.
+
+Staging configs disable workers.dev and preview URLs and have no public routes,
+including Meet's prepared profiles. This removes public request amplification;
+rate limits, CPU caps and the publication flag alone would not cap serving costs.
+The owner must verify hosted topology before enablement. Disable publication and
+delete/disable only the staging Worker to stop unexpected execution, preserving
+consumption evidence. The [publisher runbook](../devops/wave1-native-publishers.mdx)
+owns provisioning, HMAC/token rotation, finite counts and the stop procedure.
+Hosted credential scope, private runtime acceptance and actual serving state remain
+separate release evidence. Production publication stays held for all four apps.
+
 ## Incident evidence
 
 Correlate scoped failing requests with authenticated Worker tail exceptions and

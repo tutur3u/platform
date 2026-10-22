@@ -1,0 +1,72 @@
+{
+  "accountId": "e8912e2867beecc673d171907bf09649",
+  "productionHold": "held for wave-1 cutover",
+  "apps": {
+    "calendar": {
+      "stagingWorker": "tuturuuu-calendar-wave1-staging",
+      "productionWorker": "tuturuuu-calendar",
+      "canonicalHost": "calendar.tuturuuu.com",
+      "secrets": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY",
+        "TUTURUUU_APP_COORDINATION_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "CRON_SECRET",
+        "MICROSOFT_TENANT_ID"
+      ]
+    },
+    "mail": {
+      "stagingWorker": "tuturuuu-mail-wave1-staging",
+      "productionWorker": "tuturuuu-mail",
+      "canonicalHost": "mail.tuturuuu.com",
+      "secrets": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY",
+        "TUTURUUU_APP_COORDINATION_SECRET",
+        "MAIL_CONNECTED_ACCOUNTS_KEY",
+        "MAIL_R2_ACCOUNT_ID",
+        "MAIL_R2_ACCESS_KEY_ID",
+        "MAIL_R2_SECRET_ACCESS_KEY",
+        "MAIL_CLOUDFLARE_ACCOUNT_ID",
+        "MAIL_CLOUDFLARE_API_TOKEN",
+        "MAIL_CLOUDFLARE_INGEST_SECRET"
+      ],
+      "ownerProvisionedResources": {
+        "stagingR2Bucket": "tuturuuu-mail-wave1-staging",
+        "retainedProductionR2Bucket": "tuturuuu-mail"
+      },
+      "optionalSecretNames": [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "MAIL_SES_REGION",
+        "MAIL_SES_INBOUND_TOPIC_ARN",
+        "MAIL_SES_INBOUND_BUCKET"
+      ]
+    },
+    "apps": {
+      "stagingWorker": "tuturuuu-apps-wave1-staging",
+      "productionWorker": "tuturuuu-apps",
+      "canonicalHost": "apps.tuturuuu.com",
+      "secrets": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY",
+        "TUTURUUU_APP_COORDINATION_SECRET"
+      ]
+    }
+  },
+  "stagingAdmission": {
+    "isolation": "same-account-staging-only",
+    "accountIdEnv": "CLOUDFLARE_STAGING_ACCOUNT_ID",
+    "tokenSecret": "CLOUDFLARE_STAGING_API_TOKEN",
+    "scopedTokenRequired": true,
+    "residualRisk": "shared-account",
+    "publicationVariable": "WAVE1_STAGING_PUBLICATION_ADMISSION",
+    "maxUploadsPerArtifact": 1
+  }
+}

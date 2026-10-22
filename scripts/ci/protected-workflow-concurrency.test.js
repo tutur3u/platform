@@ -78,6 +78,10 @@ const prExceptions = {
   'devbox-control-cloudflare.yaml':
     'Production deployment shares the workflow lock',
   'lettin-cloudflare.yaml': 'Production deployment shares the workflow lock',
+  'calendar-cloudflare.yaml':
+    'Staging publication consumes the durable attempt ledger',
+  'mail-cloudflare.yaml':
+    'Staging publication consumes the durable attempt ledger',
   'meet-cloudflare.yaml': 'Production deployment shares the workflow lock',
   'parley-cloudflare.yaml': 'Production deployment shares the workflow lock',
   'playground-runtime-acceptance.yaml':

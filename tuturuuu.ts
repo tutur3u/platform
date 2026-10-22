@@ -289,6 +289,13 @@ export const vercelWorkflowTargets = [
 ] satisfies VercelWorkflowTarget[];
 
 export const cloudflareProductionTargets = [
+  ...(['calendar', 'mail', 'apps'] as const).map((app) => ({
+    app,
+    appPath: `apps/${app}`,
+    packageName: `@tuturuuu/${app}`,
+    additionalPaths: ['scripts/ci/wave1-', '.github/workflows/wave1-'],
+    productionWorkflow: `${app}-cloudflare.yaml`,
+  })),
   {
     app: 'cron-control',
     appPath: 'apps/cron-control',
