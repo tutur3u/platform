@@ -9,9 +9,13 @@ description: "Publication hold, native staging acceptance, and explicit producti
 Apps. A production push reports **held for wave-1 cutover** in the planner log and
 summary and selects no publisher for those apps. Manual planner dispatch and
 package recovery honor the same hold. All four direct legacy Vercel publishers and
-Meet's native frontend/realtime publisher check it before publication setup.
-Build and original/restored runtime validation can continue. Other apps' deployment
-selection is unchanged. This allows ordinary fixes to ship without native cutover.
+Meet's native frontend/realtime publisher check it before any production credential
+use, including validation cache and public build configuration. A held direct
+production Meet invocation skips validation and publication. PR/main build and
+original/restored runtime validation continue. Native Calendar/Mail validation
+uses fixture configuration and empty Turbo cache inputs on production; native
+Apps validation uses no production secrets. Other apps' deployment selection is
+unchanged. This allows ordinary fixes to ship without native cutover.
 
 Meet keeps its existing frontend and realtime Worker versions. Calendar, Mail and
 Apps keep their existing Vercel deployments and canonical domains. Retain disabled
@@ -27,6 +31,9 @@ a hold never admits publication. Known unrelated publishers keep normal selectio
 and Supabase production migration eligibility keeps its existing gates. Root
 `production-publication-policy.test.js` covers policy mutations, planner outcomes,
 CLI outputs and the direct publishers' dependency on the policy job.
+`production-publisher-secrets.test.js` parses all legacy/native workflow jobs and
+checks secret-bearing environments and action inputs against admission, with a
+negative control for independent Meet validation.
 
 The hold applies to runs using this source. Rerunning an older workflow retains
 its original source and cannot acquire a later policy. The release owner retains

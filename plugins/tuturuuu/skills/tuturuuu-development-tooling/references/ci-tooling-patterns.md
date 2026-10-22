@@ -512,8 +512,8 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   one short runner. The production workflow-run trigger and Actions API lookup
   must follow the production planner; the same-SHA platform deployment marker
   and successful staging checks remain mandatory.
-- Keep remote-cache values out of workflow/job environments and `GITHUB_ENV`.
-  Pass them only to the composite wrapper's command step. Repository
+- Keep [cache credentials and held publisher admission](wave1-production-credentials.md)
+  step scoped, outside workflow/job environments and `GITHUB_ENV`. Repository
   `TURBO_TOKEN` is for trusted jobs only; `TURBO_TEAM` is a repository variable
   with temporary secret fallback. Pull requests and Dependabot receive neither
   token nor team and use a task-family `.turbo` cache that only protected

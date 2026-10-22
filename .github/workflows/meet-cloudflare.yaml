@@ -126,8 +126,14 @@ jobs:
           fi
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
   validate:
-    needs: [check-ci, release-relevance]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.release-relevance.outputs.run_checks == 'true'
+    needs: [check-ci, release-relevance, production-policy]
+    if: >-
+      ${{ !cancelled() && needs.check-ci.result == 'success' &&
+          needs.release-relevance.result == 'success' &&
+          needs.check-ci.outputs.should_run == 'true' &&
+          needs.release-relevance.outputs.run_checks == 'true' &&
+          (github.ref != 'refs/heads/production' ||
+           (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
