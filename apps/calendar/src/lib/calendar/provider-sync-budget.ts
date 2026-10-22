@@ -33,15 +33,15 @@ export const providerSyncFetch: typeof fetch = (input, init) => {
   return fetch(input, { ...init, signal });
 };
 
-export function createSyncAdminClient(): Promise<TypedSupabaseClient> {
+export async function createSyncAdminClient(): Promise<TypedSupabaseClient> {
   return providerSyncSignal()
-    ? createAdminClient({ noCookie: true, fetch: providerSyncFetch })
-    : createAdminClient();
+    ? await createAdminClient({ noCookie: true, fetch: providerSyncFetch })
+    : await createAdminClient();
 }
 
 // Completion writes retain a short independent budget after provider cancellation.
-export function createSyncCompletionClient(): Promise<TypedSupabaseClient> {
-  return createAdminClient({
+export async function createSyncCompletionClient(): Promise<TypedSupabaseClient> {
+  return await createAdminClient({
     noCookie: true,
     fetch: (input: RequestInfo | URL, init?: RequestInit) =>
       fetch(input, { ...init, signal: AbortSignal.timeout(5_000) }),
