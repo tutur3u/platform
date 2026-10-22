@@ -214,8 +214,10 @@ jobs:
         id: meet-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          # Only the production ref builds a deployable artifact; PRs and main pushes
+          # validate the sealed public CI fixture.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ github.ref != 'refs/heads/production' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref != 'refs/heads/production' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_APP_URL: https://meet.tuturuuu.com
           NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
         with:
