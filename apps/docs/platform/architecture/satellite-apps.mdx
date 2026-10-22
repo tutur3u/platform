@@ -130,8 +130,12 @@ session authority and never admits expired access. With no valid access, protect
 API and page paths return the same no-store **503**, without login redirects,
 credential minting or cookie changes. Custom page proxies and Lettin's login
 redirect preserve this distinction. Outer app proxies preserve terminal error
-responses before locale, workspace and invite handling. Existing anonymous API
-exceptions remain anonymous; a refresh outage does not create an authenticated
+responses before locale, workspace and invite handling. Native runtime proxy
+bridges also return terminal responses unchanged, including status, body and
+headers; pending request-context cookies must not be appended. Bridge regression
+coverage lives in each migrated app's `src/runtime/proxy-bridge.test.ts` and checks
+403/503 identity, no-store, no cookies, no redirect and no handler dispatch.
+Existing anonymous API exceptions remain anonymous; a refresh outage does not create an authenticated
 identity there. Healthy rotation and the existing shared-provider cookie cleanup
 policy are unchanged.
 

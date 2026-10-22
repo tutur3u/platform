@@ -7,7 +7,24 @@ export default defineConfig({
   esbuild: { jsx: 'automatic' },
   oxc: false,
   resolve: {
+    conditions: ['bun', 'module', 'node', 'development|production'],
     alias: [
+      {
+        find: /^next\/headers(?:\.js)?$/u,
+        replacement: resolve(__dirname, 'src/runtime/request-context.ts'),
+      },
+      {
+        find: /^next\/navigation(?:\.js)?$/u,
+        replacement: resolve(__dirname, 'src/runtime/next-navigation.tsx'),
+      },
+      {
+        find: /^next\/server(?:\.js)?$/u,
+        replacement: resolve(__dirname, 'src/runtime/next-server.ts'),
+      },
+      {
+        find: /^next-intl\/server$/u,
+        replacement: resolve(__dirname, 'src/runtime/intl-server.ts'),
+      },
       {
         find: /^@tuturuuu\/internal-api\/(calendar|client|mail)$/,
         replacement: `${resolve(__dirname, '../../packages/internal-api/src')}/$1`,
@@ -22,7 +39,13 @@ export default defineConfig({
       },
     ],
   },
+  ssr: {
+    resolve: {
+      conditions: ['bun', 'module', 'node', 'development|production'],
+    },
+  },
   test: {
+    server: { deps: { inline: ['next-intl'] } },
     environment: 'node',
     exclude: ['**/node_modules/**', '**/dist/**'],
     globals: true,

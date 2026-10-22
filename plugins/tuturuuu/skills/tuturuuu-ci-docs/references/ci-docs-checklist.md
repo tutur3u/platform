@@ -83,6 +83,50 @@ does not authorize promotion.
   platform deployment marker and successful staging prerequisite.
 - For repo-local Codex plugins, keep `.agents/plugins/marketplace.json` present and pointed at `./plugins/<plugin-name>`.
 
+## Meet Dry-Run Artifact Scratch
+
+Keep both frontend dry-runs in `meet-cloudflare.yaml` routed through
+`scripts/ci/meet-dry-run-scratch.mjs`, run from `apps/meet` with `"$SOURCE_SHA"`.
+It derives config from `verify-meet-start-output.js`, requires the manifest and
+strict canonical directory seal, and records preabsence of the emitted config
+parent's `.wrangler/tmp` and `.wrangler`. It retains the existing app-owned
+Bun/Wrangler arguments, cwd and environment and waits for child close.
+
+A successful Wrangler dry-run may leave only empty scratch ancestors. Admit no
+residue or exactly `.wrangler/tmp` with an empty leaf; verify the original files
+and complete directory layout before nonrecursive leaf/parent `rmdir`, then
+reverify the manifest and strict seal. Failed commands preserve status and
+residue; preexisting, partial, nonempty, symlink, special or unexpected layouts
+fail closed. Preserve evidence rather than retrying or recursively cleaning.
+Never widen the hidden allowlist, permit SDK working directories on originals,
+or exclude entries from the tar. Keep the credential-free restored gate free of
+new dry-runs/builds and retain all launcher assertions and deadlines.
+
+Require exact-commit producer dry-run, pack/restore and original/restored runtime
+acceptance separately from static review. A file-only manifest passing cannot
+prove directory-layout acceptance. See the Meet application page for the owning
+artifact procedure; this wrapper does not qualify hosted behavior or deployment.
+
+## Calendar Native Delivery Preparation
+
+- Keep Calendar validation in the registered `mail-calendar-tasks-builds.yaml`;
+  root selector/registry changes require parent ownership. Use exact PR-head or
+  push-SHA checkout, Bun 1.4.3 and Node 24.22.0.
+- Discover the official emitted Void deploy pointer (`configPath`, required empty
+  `auxiliaryWorkers`), then validate contained main/assets/config before Wrangler
+  type generation or dry-run. Generate `CloudflareEnv` with runtime types excluded;
+  type-check the native entry and affected Web/Tasks consumers.
+- Seal exact source and all emitted bytes, restore the same-run immutable artifact
+  without rebuilding, and repeat dry-run plus mandatory emitted-Worker and offline
+  acceptance. Keep `.runtime.mjs` artifact suites outside source-only discovery.
+- Never infer hosted identity from Calendar's proposed source name. Keep native
+  Cloudflare publication absent and Vercel native-source guards in place until
+  observed account/Worker/domain/bindings/secrets, signed-in EN/VI/permission/
+  offline/drain/provider acceptance and immutable Vercel rollback are recorded.
+  Parent alone selects one publisher; Calendar does not inherit Meet's exception.
+- Missing emitted schema, dependency or signed-in route fixture is an explicit
+  acceptance gap. Authored tests and source review do not qualify runtime.
+
 ## Docs
 
 - Add new docs pages to `apps/docs/docs.json`.

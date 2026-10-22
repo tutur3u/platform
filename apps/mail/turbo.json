@@ -1,0 +1,15 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "type-check": {
+      "outputs": [
+        "*.tsbuildinfo",
+        "dist/*.tsbuildinfo",
+        ".turbo/*.tsbuildinfo",
+        ".turbo/tsc-build-cache-key.json",
+        ".next/cache/.tsbuildinfo",
+        ".typecheck/**"
+      ]
+    }
+  }
+}
