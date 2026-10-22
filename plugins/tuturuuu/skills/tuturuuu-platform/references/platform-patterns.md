@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Calendar provider cron failures retain failed dashboard diagnostics while
+  isolating accounts and bounding work. Rejected Google credentials stop siblings
+  and become inactive only if storage still matches; transient failures retry.
+  Carry cancellation through refresh, reads and database clients; drain owned work.
+  Defer unstarted work. Microsoft calendar errors continue siblings; auth/rate
+  limits stop the account. See the [Calendar cron runbook](../../../../../apps/docs/platform/applications/calendar.mdx#bounded-cron-execution-and-revoked-consent)
+  and focused regressions before changing limits or response policy.
 - Product feedback staff HTTP reads reuse the existing eligibility/list/detail
   factories and `staff-service.ts`. Resolve the current Auth identity before the
   service-only RPC, whose canonical registry assertion remains authoritative.

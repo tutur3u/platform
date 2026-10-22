@@ -194,3 +194,25 @@ and `wave1-native-publishers.test.js`.
 
 Meet's app TypeScript project includes both Void configs because the default config
 imports the staging config; keep that imported tooling file in the same project.
+
+## Mail Node builtin startup compatibility
+
+Both Mail profiles preserve the source compatibility date `2026-10-19` and flags
+`nodejs_compat` and `global_fetch_strictly_public`. They share one Vite configuration;
+profile derivation changes routing and resource identity after bundling. A staging
+startup failure in a `failed-recipients` chunk exposed a CommonJS `require("path")` through
+`sanitizeMailHtml` -> `sanitize-html` -> PostCSS,
+not a difference in those compatibility flags. Void 1.1.12 skips its builtin require
+adapter for its default SQLite dialect, including applications with database
+inference disabled. Node compatibility does not define a global CommonJS `require`
+inside an emitted ESM chunk.
+
+Mail's build plugin resolves PostCSS's CommonJS `path`, `url` and `fs` imports in
+the workerd server build to native ESM adapters, matching Void's adapter protocol. Client, development,
+ESM and unrelated builtin imports keep their existing resolution. Both profiles use
+this same plugin. Before original or restored runtime acceptance, the artifact gate
+rejects emitted server assets containing static CommonJS Node builtin calls, including
+Rolldown's `__require` helper. Unit and profile tests cover the adapter, the unchanged
+compatibility settings and both profile rejection paths. Exact-head CI must still prove
+original/restored emitted Worker startup; config tests are not emitted-byte proof.
+The same unadapted dependency graph exists on main independently of this staging-publisher PR.

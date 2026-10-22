@@ -23,3 +23,9 @@ read the retired hold-map export. Held profile builds use fixture public inputs.
 Staging secrets require a trusted main event and staging profile, including in the
 reusable publisher itself. Include imported Void staging configs in their owning
 TypeScript project and verify with the app's non-build type-check command.
+
+For Mail's CommonJS path startup failure, preserve the same compatibility flags/date
+for both profiles. Void 1.1.12 skips its builtin require adapter for the default
+SQLite dialect. Keep Mail's workerd-only PostCSS builtin adapters and pre-runtime emitted
+asset rejection; do not add a global require shim or claim local config tests prove
+emitted Worker startup. Both profile acceptances belong to exact-head CI.

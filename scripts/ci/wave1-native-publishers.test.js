@@ -427,3 +427,52 @@ test('Worker build-info is public, read-only, exact-path and retains app identit
   assert.equal(value[1].body, '');
   assert.match(value[0].cache, /no-store/);
 });
+
+for (const environment of ['staging', 'production']) {
+  test(`Mail ${environment} refuses emitted CommonJS path requires before runtime startup`, async (t) => {
+    const [, { prepare }] = await modules;
+    for (const expression of [
+      'require("path")',
+      '__require("node:path")',
+      '__require$1("path")',
+      'require("fs")',
+      '__require("url")',
+      'require("node:stream")',
+    ]) {
+      const dir = fixture(t);
+      fs.mkdirSync(path.join(dir, 'dist/server/assets'));
+      fs.writeFileSync(
+        path.join(dir, 'dist/server/assets/failed-recipients.js'),
+        `const path = ${expression};`
+      );
+      assert.throws(
+        () => prepare(dir, 'mail', environment, 'owner-example', sha),
+        /CommonJS Node builtin require/
+      );
+    }
+  });
+}
+
+test('Mail staging and production preserve native compatibility and bundling unchanged', async (t) => {
+  const [, { prepare, verify }] = await modules;
+  const configs = ['staging', 'production'].map((environment) => {
+    const dir = fixture(t);
+    prepare(dir, 'mail', environment, 'owner-example', sha);
+    return JSON.parse(
+      fs.readFileSync(verify(dir, 'mail', environment, sha).config)
+    );
+  });
+  for (const key of [
+    'compatibility_date',
+    'compatibility_flags',
+    'no_bundle',
+    'rules',
+  ]) {
+    assert.deepEqual(configs[0][key], configs[1][key], key);
+  }
+  assert.deepEqual(configs[0].compatibility_flags, [
+    'nodejs_compat',
+    'global_fetch_strictly_public',
+  ]);
+  assert.equal(configs[0].compatibility_date, '2026-10-19');
+});
