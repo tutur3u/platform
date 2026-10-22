@@ -77,7 +77,9 @@ export async function syncGoogleInbound(args: {
   }
 
   const googleConnections = (
-    (connections ?? []) as CalendarConnectionRow[]
+    // The conditional column list defeats Supabase's typed select parser;
+    // CalendarConnectionRow declares the shape of both projections.
+    (connections ?? []) as unknown as CalendarConnectionRow[]
   ).filter(
     (connection) =>
       connection.auth_token_id && connection.sync_inbound_enabled !== false
