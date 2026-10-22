@@ -43,6 +43,9 @@ export async function gatewayFunctionId(directory) {
               .filter(
                 (property) =>
                   property.type === 'ObjectProperty' &&
+                  !property.computed &&
+                  (property.key.type === 'Identifier' ||
+                    property.key.type === 'StringLiteral') &&
                   typeof staticString(property.value) === 'string'
               )
               .map((property) => [

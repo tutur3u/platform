@@ -317,7 +317,7 @@ test('actual native Worker implements both pages, every app launch and the API b
         }
       }
       completed('redirects');
-      const functionId = await gatewayFunctionId(prepared.roles.app.root);
+      const functionId = await gatewayFunctionId(plan.root);
       const rpc = `${origin}/_serverFn/${encodeURIComponent(functionId)}`;
       const rpcCounters = () => ({
         fixtureCalls: calls.length,

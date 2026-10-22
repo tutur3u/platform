@@ -12,8 +12,9 @@ is predecessor source and cannot substitute for native acceptance.
 
 ## Owning validation
 
-`.github/workflows/apps-cloudflare.yaml` uses Bun1.4.3 and Node24.22.0. After the
-parent reconciles the frozen candidate and shared tooling, the owning job builds
+`.github/workflows/apps-cloudflare.yaml` uses Bun 1.4.3 and Node 24.22.0. Root
+Vitest, coverage and the Vitest override are pinned to 5.0.5; Apps pins Vite+
+and its Vite alias to 1.3.0. The owning job builds
 active dependencies, generates the exact checkout's build metadata, runs native
 unit/types/lint and invokes `build:cloudflare` once for the frontend. The official
 Void SDK supplies the Cloudflare adapter; no separate adapter or RSC mode is added.
@@ -34,7 +35,7 @@ and no SPA fallback. Static robots/sitemap bytes must match the checked-out publ
 sources. Added resources, routes, accounts, environments, secret declarations,
 unknown config fields and symlinks fail closed. A new adapter field needs review
 against its actual emitter; do not relax the contract to get a green job.
-Void1.1.12's owning Cloudflare Vite plugin1.64.0 unconditionally emits
+Void 1.1.12's owning Cloudflare Vite plugin 1.64.0 unconditionally emits
 `no_bundle: true` and one ESModule rule with exactly `**/*.js` and `**/*.mjs`.
 The source-derived fixture includes those fields and the exact serialized empty
 normalizer defaults. Producer `configPath`/`userConfigPath` metadata points to the
@@ -44,7 +45,7 @@ containment checks. The fixture is not observed build output or runtime evidence
 The Apps emitted-config contract also requires `upload_source_maps` to be exactly
 JSON `true`. This reviewed emitted normalizer value is not an authored Apps
 setting or proof of retained-state provenance. The regressions in
-`scripts/ci/apps-native-artifact.test.py` reject false, number1, null, string and
+`scripts/ci/apps-native-artifact.test.py` reject false, number 1, null, string and
 object substitutes and unrelated fields, and check raw emitted config bytes
 through sealing and restore. Artifact validation does not qualify source-map
 upload, dry-run, hosted runtime or publication.
@@ -52,11 +53,11 @@ upload, dry-run, hosted runtime or publication.
 The checked name `tuturuuu-apps-vite-staging` is the candidate's source-declared
 sandbox name. This check does not establish an existing hosted Worker, account,
 route, binding, credential, rollback version or provisioning authority. Staging
-keeps `TUTURUUU_NOINDEX=1` and the canonical host remains503 unless the separately
-admitted canonical-host flag is enabled. This lane has no no-staging override.
+keeps `TUTURUUU_NOINDEX=1`. The candidate returns HTTP 503 for the canonical host
+unless the separately admitted canonical-host flag is enabled. Apps has no no-staging override.
 
 Generated Worker binding declarations and their compatibility harness live in
-runner temporary storage. They must not overwrite the75-file frozen app source.
+runner temporary storage. They must not overwrite the checked-out app source.
 The owning `type-check` and applicable exact-source shared CI gates remain required.
 
 ## Actual emitted acceptance
@@ -65,12 +66,12 @@ The owning `type-check` and applicable exact-source shared CI gates remain requi
 local auth/API fixtures through the owning Wrangler/Miniflare emitted-module
 adapter. Every runtime Worker has an outbound deny service permitting only those
 exact fixture endpoints. A second instance of the same compiled Worker exercises
-its real API handler against an unadmitted origin and must receive599 without
+its real API handler against an unadmitted origin and must receive 599 without
 fixture forwarding; the primary HTTP/SSR/RPC suite must record zero unexpected
 requests. No runtime commit-hash override is supplied. It covers bilingual
 signed/anonymous SSR, the real
-compiled loader RPC, build identity, all30 registered redirects, guard/central
-status/method/body/cookie behavior and multiple response cookies. It includes120
+compiled loader RPC, build identity, all 30 registered redirects, guard/central
+status/method/body/cookie behavior and multiple response cookies. It includes 120
 query assertions: duplicate/interleaved/numeric names, `__proto__`, literal JSON,
 `next`, tracking, empty/repeated `source`, encoded slash, spaces and literal plus.
 The default `source=apps` is appended only when the name is absent.
@@ -79,11 +80,18 @@ The default `source=apps` is appended only when the name is absent.
 local workerd through the official Wrangler/Miniflare adapter and invokes the
 frozen `verifyNativeBrowserNavigation` helper. The helper loads the real catalogue,
 attaches each regression query to an actual card anchor and clicks it, checking
-Worker307 Location and final browser URL for all30 destinations. Only external
+Worker 307 Location and final browser URL for all 30 destinations. Only external
 destination HTML is fulfilled with a disposable fixture. Other browser/provider
 egress is denied. Existing Web Playwright owns the browser driver; this does not
 add an Apps dependency or change the lock. Its availability and Chromium setup
 must pass in the exact source job. Both new and restored artifacts run this gate.
+
+The qualified source baseline passed 9 HTTP/runtime groups and 6 browser groups
+on both original and restored artifacts. Each artifact passed 120 redirect and
+120 browser-anchor cases using finite fixtures. These results apply to that
+source and artifact only. They do not qualify a later HEAD, hosted runtime,
+canonical cutover, an exact Chromium binary hash, internal descendant-process
+closure or historical failure causes.
 
 The runtime filename is intentionally outside generic source-only test discovery;
 no artifact-dependent suite may silently run or skip in a job that never builds
