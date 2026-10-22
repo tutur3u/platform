@@ -35,23 +35,23 @@
     "@tuturuuu/vercel": "workspace:*",
     "bcrypt": "^6.0.0",
     "dayjs": "^1.11.23",
-    "nanoid": "^6.0.1",
+    "nanoid": "^6.0.2",
     "next": "^16.4.0",
-    "next-intl": "^4.14.4",
+    "next-intl": "^4.14.9",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "zod": "^4.6.2"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/bcrypt": "^6.0.0",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.5",
     "@types/react": "~19.2.18",
     "@types/react-dom": "~19.2.7",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "babel-plugin-react-compiler": "^1.0.0",
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.31",
     "typescript": "7.0.2"
   },
   "packageManager": "bun@1.4.3",
