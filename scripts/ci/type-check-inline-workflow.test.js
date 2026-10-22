@@ -393,13 +393,14 @@ function evaluateConcurrency(value, github) {
   return value.replace(/\$\{\{(.*?)\}\}/g, (_, body) => String(evaluate(body)));
 }
 
-test('obsolete branch pushes supersede while protected and manual attempts stay independent', () => {
+test('branch and main pushes supersede while production and manual attempts stay independent', () => {
   assert.ok(
     workflow.concurrency,
     'Type Check needs bounded branch supersession'
   );
   const context = {
     workflow: 'TypeScript Type Check',
+    event: { pull_request: {} },
     ref: 'refs/heads/fix/example',
     sha: 'old',
     event_name: 'push',
@@ -414,8 +415,12 @@ test('obsolete branch pushes supersede while protected and manual attempts stay 
     });
   assert.equal(group({}), group({ sha: 'latest', run_id: 2 }));
   assert.equal(cancel({}), true);
+  assert.equal(cancel({ ref: 'refs/heads/main' }), true);
+  assert.equal(
+    group({ ref: 'refs/heads/main' }),
+    group({ ref: 'refs/heads/main', sha: 'latest', run_id: 2 })
+  );
   for (const ref of [
-    'refs/heads/main',
     'refs/heads/production',
     'refs/heads/release-please--branches--production',
   ]) {

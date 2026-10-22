@@ -3,6 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { writeFileAtomically } from './atomic-file.js';
 
+import {
+  appendDiagnostic,
+  retryImagePull,
+} from './run-supabase-image-retry.js';
+
 export const APPROVED_TYPEGEN_OUTPUT = 'packages/types/src/supabase.ts';
 const MAX_TYPEGEN_OUTPUT_BYTES = 64 * 1024 * 1024;
 
@@ -53,6 +58,7 @@ export function runBufferedCommand(command, args, cwd) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     const chunks = [];
+    let diagnostics = '';
     let outputBytes = 0;
     let outputExceeded = false;
 
@@ -65,13 +71,16 @@ export function runBufferedCommand(command, args, cwd) {
       }
       chunks.push(chunk);
     });
-    // Drain diagnostics without retaining or logging potentially sensitive data.
-    child.stderr.resume();
+    // Retain a bounded diagnostic tail for classification without logging it.
+    child.stderr.on('data', (chunk) => {
+      diagnostics = appendDiagnostic(diagnostics, chunk);
+    });
     child.on('error', reject);
     child.on('close', (code, signal) => {
       resolve({
         code: outputExceeded ? 1 : (code ?? 1),
         signal: signal ?? null,
+        stderr: outputExceeded ? '' : diagnostics,
         stdout: outputExceeded ? Buffer.alloc(0) : Buffer.concat(chunks),
       });
     });
@@ -104,20 +113,25 @@ export async function generateTypesFromDisposableStack({
   metadata,
   runner = runBufferedCommand,
   writer = writeTypegenOutputAtomically,
+  retryOptions = {},
 }) {
-  const result = await runner(
-    binaryPath,
-    [
-      '--workdir',
-      metadata.disposableRoot,
-      'gen',
-      'types',
-      'typescript',
-      '--local',
-      '--schema',
-      'public,private,storage',
-    ],
-    metadata.disposableRoot
+  const result = await retryImagePull(
+    () =>
+      runner(
+        binaryPath,
+        [
+          '--workdir',
+          metadata.disposableRoot,
+          'gen',
+          'types',
+          'typescript',
+          '--local',
+          '--schema',
+          'public,private,storage',
+        ],
+        metadata.disposableRoot
+      ),
+    retryOptions
   );
   if (result.code !== 0) {
     const error = new Error(

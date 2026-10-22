@@ -34,7 +34,9 @@ github.sha` as their source identity. Checkout, build stamps, seals, runtime
 expectations and source-bearing artifact names must use that selection. Keep the
 merge-event `github.sha` and workflow supplier `github.workflow_sha` separate in
 debug receipts; the release-only comparison checkout and deployment markers retain
-their event roles. Meet passes the source SHA through command-scoped `GITHUB_SHA`
+their event roles. Meet's release-only comparison now runs through `ci-check.yml`;
+its checkout retains `github.sha` and compares the explicit PR base/head inputs.
+Meet passes the source SHA through command-scoped `GITHUB_SHA`
 for existing helpers and runtime probes; it does not change the job's event SHA.
 The diagnostic config collector's legacy `source.eventSha` field records its
 explicit comparison argument, which these jobs supply from the selected source.
@@ -484,6 +486,66 @@ existing Bun runtime keep the installer's runtime. Four attempts use 5, 10 and
 20-second backoff; a fourth failure still fails the job. Real installer and
 follow-on runtime behavior must pass the owning exact-commit CI jobs before
 integration; this does not authorize a migration dispatch.
+
+The Supabase baseline contract captures child output privately because startup
+can print local credentials. Its failure summary forwards only fixed categories:
+image pull throttling or transport exhaustion, migration failure, service health
+failure, timeout, or output-buffer exhaustion. Other failures retain the generic
+diagnostic instruction. Never print the raw child error, stdout, or stderr to CI.
+Active Supabase-starting jobs run `.github/actions/cache-supabase-images` after
+the owning dependency install. Image versions come from the installed pinned CLI's
+`services -o json`, which includes local version overrides. The CLI omits Kong,
+Mailpit and imgproxy there; the helper carries their reviewed 2.117.0 Dockerfile
+pins and rejects a different CLI until those pins are reviewed. Registry rewriting
+matches the CLI, including `postgrest/postgrest` becoming `supabase/postgrest`.
+
+The exact image list, registry, OS and architecture form the SHA256 cache key;
+there are no prefix restores. A hit loads the Docker archive and inspects every
+expected image before startup. The baseline restore also inspects its already
+loaded Postgres image instead of pulling it unconditionally. The CLI inspects
+local images before its pull path. A miss pulls each missing image with at most
+three attempts, 2/4-second backoff plus bounded jitter, 90-second command limits
+and a two-minute total pull deadline. Failure stops before database startup,
+including in the 15-minute cross-runner restore job. It never replays SQL tests,
+resets or pushes. Fixed exhaustion summaries include only the known registry host
+and untagged image name, never raw captured diagnostics or credentials.
+
+Contract jobs cache five images: Postgres, postgres-meta for type generation, and
+GoTrue/Realtime/Storage for fresh-database migration containers. The CLI runs those
+three bootstrap containers even with their long-running services excluded. The
+HTTP contract adds Kong and PostgREST; the full profile caches ten configured
+images, excluding disabled edge runtime, analytics and pooling. Archives have a
+6 GiB hard bound, checked before save from image sizes and again on the tar file
+before save/load. Missing images or an oversized archive fail visibly.
+
+Only `push` and `workflow_dispatch` on `refs/heads/main` save archives. PRs and
+other branches restore only; no PR-scoped uploads duplicate these large caches.
+Until a trusted cache exists, PR jobs still require successful registry pulls.
+Once this workflow is present on main, the release owner can bootstrap all three
+exact profile keys without starting database contracts:
+
+```sh
+gh workflow run supabase-baseline.yaml --ref main -f seed_images_only=true
+```
+
+That main-only dispatch runs profiles sequentially, allows seven attempts within
+a ten-minute total pull budget per profile and retains 15-minute job limits. It
+still needs a runner with working registry access; if hosted IPs remain throttled,
+this seed cannot succeed there. Use an admitted trusted runner with registry
+access to run the same seeding action, or wait for registry recovery. Do not treat
+a registry switch as a fix or upload unreviewed image archives to the main scope.
+GitHub's cache scope allows PRs to read main caches; eviction or a version/profile
+change requires another successful seed. Exact-head hosted CI remains required.
+
+For Linux reproduction, isolate the Supabase project ID and ports, use a
+scratch-local Bun matching the repository pin, and remove only that project's
+containers and volumes afterward. Supabase CLI 2.117.0 recognizes a missing volume
+only by Docker's `no such volume` diagnostic. Docker 29 can instead report
+`volume ... not found`, causing fresh startup to skip migrations as if restoring
+a backup. A command-scoped `DOCKER_API_VERSION=1.41` restores the expected missing
+volume diagnostic on that host. Verify the diagnostic first; do not change the
+daemon or global environment. This compatibility issue also reproduces on main
+and does not establish the cause of an unrelated CI failure.
 
 ### Rust dependency verification
 
@@ -1179,11 +1241,17 @@ Run `node --test scripts/ci/qualify-sdk-package.test.js` for the diagnostic and
 fixture-cleanup regressions. Use the exact-head qualification receipt for new
 failures; hashes from older receipts cannot recover discarded npm output.
 
-Test, Coverage, Biome, and Type Check preserve immutable protected concurrency
-groups for main, production, and all generated Release Please refs.
+SDK qualification concurrency identifies PRs by the positive PR number in the
+event payload, preserving per-PR supersession and independent rerun/manual groups.
+Its workflow remains limited to raw-head PR and manual qualification; keep the
+forbidden-trigger, secret, token-permission and publication assertions in
+`scripts/ci/qualify-sdk-package.test.js` intact when changing shared CI policy.
+
+Test, Coverage, Biome, and Type Check supersede older main validation runs.
+Production and generated Release Please refs retain immutable concurrency groups.
 A rapid generated branch reset followed by its metadata commit must not cancel
 checks for a SHA also used by main or production. Ordinary feature refs retain
-branch push supersession; Type Check manual attempts remain independent. Cancellation is not a
+branch push supersession; manual validation attempts remain independent. Cancellation is not a
 successful validation or a valid duplicate skip. Resource-owning E2E and database
 workflows retain their own lifecycle policies.
 
@@ -1764,28 +1832,111 @@ standalone report-merge failure remains a failure. Test these lifecycle boundari
 with real owned child processes and synthetic failures; helper-only source checks
 are not proof that a stalled browser process exits.
 
-## Preserving protected-branch pending runs
+## Superseded validation and production runner admission
 
-Disabling `cancel-in-progress` protects the active run, but GitHub's default
-concurrency queue still replaces its single pending run. Validation on `main`,
-`production`, and generated Release Please refs therefore includes the source SHA,
-event name, and run ID in the workflow concurrency group. Existing duplicate-proof
-jobs decide whether validated work can be skipped; concurrency cancellation is not
-validation evidence. Ordinary PR and feature refs retain latest-run supersession.
+PR validation uses workflow, event and PR number with `cancel-in-progress` enabled.
+A new head replaces older queued or running validation for that PR. PR-target
+workflows use the PR identity because their Git ref is the base branch. Safe
+push-to-main validation uses workflow and ref rather than SHA, so newer main
+commits replace obsolete validation. Production, generated Release Please refs and
+manual validation and rerun attempts keep independent immutable groups. Attempts
+with `github.run_attempt > 1` disable cancellation and include SHA, run ID and
+attempt in their group. Later main pushes cannot share that group; rerunning a
+candidate also cannot cancel current main validation.
 
-Mutating production planners, Vercel and Cloudflare deploys, database migrations,
-package publication, Release Please, and store deployments retain their shared
-serialization groups with `cancel-in-progress: false` and `queue: max`. The
-[GitHub concurrency reference](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-queueing-multiple-pending-runs)
-allows up to 100 pending runs. Queue overflow can still cancel excess runs; inspect
-that condition explicitly instead of interpreting a cancellation as a valid skip.
-Queue order follows when each run began waiting, not commit chronology; existing
-SHA relevance and deployment-marker guards remain responsible for target validity.
-`queue: max` must never be combined with cancellation enabled.
+Only the exact SHA selected for production promotion needs complete CI.
+Superseded main SHAs do not each need a full green receipt. A cancelled workflow
+is never a passing check or a valid duplicate proof. If an authorized pinned
+candidate lost required validation to a later main push, rerun the missing checks
+for that exact candidate before promotion. Newer-head green checks cannot replace
+that evidence. The existing exact-SHA promotion gate remains mandatory.
 
-Regression coverage: `scripts/ci/protected-workflow-concurrency.test.js` reads the
-actual workflow concurrency blocks, checks protected SHA/run separation and PR
-supersession, and enforces serialization with expanded queues.
+To qualify a pinned candidate, select the existing run by its exact full SHA and
+workflow, verify its identity, and rerun that run (all jobs, not only failures):
+
+```sh
+candidate_sha=<authorized-full-sha>
+gh run list --repo tutur3u/platform --commit "$candidate_sha" \
+  --workflow type-check.yaml --json databaseId,headSha,event,status,conclusion
+candidate_run=<verified-run-id>
+gh run view "$candidate_run" --repo tutur3u/platform \
+  --json headSha,headBranch,event,attempt,workflowName
+gh run rerun "$candidate_run" --repo tutur3u/platform
+```
+
+Repeat for every missing required workflow. Confirm the selected run's `headSha`
+equals the authorized candidate before rerunning, then inspect its new attempt and
+all required job conclusions after completion. GitHub reruns retain the original
+SHA/ref; they remain push events and use the protected rerun group. A workflow
+with `workflow_dispatch` also has an isolated SHA/run/attempt group, but dispatching
+`--ref main` resolves current main and does not qualify an older candidate.
+
+This protection requires the workflow revision used by the run to contain this
+policy. Rerunning an older workflow revision does not backport the policy. If the
+candidate has no run with this protection, stop promotion and obtain an authorized
+qualification path for that exact source; do not substitute newer-head evidence.
+
+The explicit PR exceptions are `desktop-beta.yaml`, `colab-cloudflare.yaml`,
+`coordination-cloudflare.yaml`, `cron-control-cloudflare.yaml`,
+`devbox-control-cloudflare.yaml`, `lettin-cloudflare.yaml`, `meet-cloudflare.yaml`
+and `parley-cloudflare.yaml`, which combine validation with production deployment;
+`playground-runtime-acceptance.yaml`, which must finish real sandbox cleanup; and
+the paused `docker-setup-check.yaml` and `rust-backend.yml`. The paused
+`tanstack-route-manifest.yaml` retains its existing PR supersession and protected
+main policy. Resuming a paused runtime requires a separate policy review.
+
+Mutating production planners, production Vercel and Cloudflare deployments, database
+migrations, package publication, Release Please and store deployments retain their
+shared serialization groups with cancellation disabled and `queue: max`.
+Discord Modal deployment holds its lock on the success/main-guarded deploy job;
+cancelled CI completions never enter that lock. Biome has no workflow-level
+cancelling parent: check/config/format/lint jobs cancel by job and ref, while
+format PR creation, PR closure/branch deletion and comment writes share a separate
+non-cancelling `biome-mutations-<ref>` job group with `queue: max`.
+[GitHub concurrency](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
+allows up to 100 pending runs in these groups. Queue overflow can still cancel
+excess runs. Queue order reflects when each run began waiting, so existing target
+relevance and deployment-marker guards remain authoritative. `queue: max` must
+never be combined with cancellation enabled.
+
+The production planner already uses a dedicated serialization group and resolves
+all app configurations in one process. Vercel app workflows run directly without
+separate config jobs. Cloudflare app workflows still check configuration and run
+validation before deployment. Meet, Lettin and Parley now fold PR release-only
+checks into that existing config job, removing up to three runner allocations per
+production plan. The check preserves PR base/head comparison and returns true for
+production and manual runs. No validation or deployment job is removed.
+
+Concurrency groups do not reserve runner capacity or prioritize production over
+PR jobs on GitHub-hosted runners. Removing obsolete validation and redundant gate
+jobs reduces demand but does not establish a queue-time improvement. Further
+consolidation needs equivalent per-app configuration outputs and failure handling.
+A dedicated runner pool or more account capacity needs separate infrastructure
+ownership. Upskii's Linux runners are not available for Tuturuuu jobs.
+
+These policies apply to new workflow runs after the change reaches the applicable
+workflow ref. They do not clean an already queued backlog or cancel merged PR runs
+without another event. Existing-run cleanup remains a separate authorized action.
+
+Regression coverage: `scripts/ci/protected-workflow-concurrency.test.js` discovers
+all PR and main-push workflows, checks supersession and explicit exceptions, and
+checks isolated rerun/dispatch groups, discovers workflow-run consumers and
+preserves mutating locks, including Biome jobs and Modal deployment. These are
+source/expression regressions, not a hosted scheduler or deployment experiment.
+Workflow-local contracts also inspect YAML outside `scripts/ci`; root script
+discovery does not cover every database suite. Run each workflow's Node contract
+tests after concurrency changes. For example,
+`node --test apps/database/scripts/topic-delivery-foundation-contract.test.mjs`
+checks main/PR supersession, non-cancelling production/release-please pushes,
+SHA/run/attempt isolation for protected pushes, reruns and dispatches, and negative
+controls for the former main policy and missing isolation guards.
+`scripts/ci/production-preflight-consolidation.test.js`
+executes the shared PR release check and validates the reduced job graph. Meet
+validation also depends on the production policy: consolidation reads both
+`should_run` and `run_checks` from `check-ci` while retaining explicit successful
+policy admission before production credentials can be used. A skipped policy on
+PR/main must not skip validation; a failed or held production policy must block it.
+Credential regressions live in `scripts/ci/production-publisher-secrets.test.js`.
 
 
 ### Calendar scheduling startup requests

@@ -97,10 +97,12 @@ jobs:
   schema:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success'
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:
-      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
       EMPLOYEE_SCHEMA_SOURCE_SHA: ${{ inputs.source_sha }}
       EMPLOYEE_SCHEMA_CONTROL_SHA: ${{ github.sha }}
       EMPLOYEE_SCHEMA_INCLUDE_PUBLIC_CONSUMER: ${{ inputs.include_public_consumer }}
@@ -181,6 +183,10 @@ jobs:
       - name: Install exact source dependencies
         working-directory: source
         run: bash ../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: ./.github/actions/cache-supabase-images
+        with:
+          database: source/apps/database
+          profile: ${{ inputs.include_http == true && 'contract-http' || 'contract' }}
       - name: Verify optional Google provider receipt gates
         if: inputs.include_google_destination_provider == true
         working-directory: source

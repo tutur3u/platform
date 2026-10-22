@@ -158,7 +158,7 @@ test('all matrix failures propagate through stable required check names', () => 
     execFileSync('bash', shell, { env: successful });
     assert.match(
       workflow.concurrency['cancel-in-progress'],
-      /refs\/heads\/main/
+      /github\.event_name == 'push'/
     );
   }
 });

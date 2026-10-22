@@ -629,3 +629,21 @@ test('Meet exact normalization helper and public probe changes select both workf
     )
   );
 });
+
+test('Meet builds with production Supabase values only on the production ref', () => {
+  // The validate gate admits only the sealed public CI fixture .dev.vars, so main
+  // pushes must build with the same placeholders as pull requests.
+  const build = workflow.jobs.validate.steps.find(
+    (step) => step.id === 'meet-frontend-build'
+  );
+  assert.deepEqual(
+    {
+      url: build.env.NEXT_PUBLIC_SUPABASE_URL,
+      key: build.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    },
+    {
+      url: "${{ github.ref != 'refs/heads/production' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}",
+      key: "${{ github.ref != 'refs/heads/production' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}",
+    }
+  );
+});
