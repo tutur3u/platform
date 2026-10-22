@@ -677,3 +677,16 @@ then passes with shared transition validation. Activation remains denied pending
 a reviewed grant/backend/transport adapter, exact-head CI and actual authorized
 runtime qualification. See the focused repository skill reference
 `plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/machine-sync.md`.
+
+## Pinned security audit skill
+
+The shared `.agents/skills/security-audit` directory vendors Cloudflare's MIT
+security audit skill. `UPSTREAM.json` pins its commit and file hashes; agent aliases
+resolve to this single copy. It is manually vendored, outside `skills-lock.json`.
+Keep upstream files unchanged when updating the pin and retain its license.
+
+Repository authority, inactive-runtime rules and resource admission still apply.
+Audit output stays private and unstaged. Target execution requires the skill's
+OS-enforced sandbox; missing controls produce validation gaps, not confirmed
+findings. Parent-owned JSON validators do not establish target security.
+Remediation, CI, integration and production verification remain separate gates.
