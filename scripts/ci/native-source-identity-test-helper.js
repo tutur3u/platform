@@ -59,8 +59,25 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
         step('Generate shared build metadata').env.PLATFORM_BUILD_COMMIT_HASH,
         selected
       );
-      const comparison = workflow.jobs['release-relevance'].steps[0];
-      assert.equal(comparison.with.ref, undefined);
+      const preflight = workflow.jobs['check-ci'];
+      assert.equal(preflight.uses, './.github/workflows/ci-check.yml');
+      assert.equal(preflight.with.check_pr_release_only, true);
+      const check = readWorkflow('ci-check.yml').jobs.check;
+      const comparison = check.steps.find((item) =>
+        item.uses?.startsWith('actions/checkout@')
+      );
+      assert.equal(comparison.with.ref, '${{ github.sha }}');
+      const relevance = check.steps.find(
+        (item) => item.id === 'pr_release_relevance'
+      );
+      assert.equal(
+        relevance.env.BASE_SHA,
+        '${{ github.event.pull_request.base.sha }}'
+      );
+      assert.equal(
+        relevance.env.HEAD_SHA,
+        '${{ github.event.pull_request.head.sha }}'
+      );
       assert.equal(
         workflow.jobs.deploy.if,
         "github.ref == 'refs/heads/production'"

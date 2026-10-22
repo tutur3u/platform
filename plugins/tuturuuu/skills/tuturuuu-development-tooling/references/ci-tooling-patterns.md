@@ -147,6 +147,13 @@ receipt rather than infer a dependency fix from a hash. See the
 [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx)
 for the allowlist, limits and cleanup behavior.
 
+When applying shared concurrency policy to SDK qualification, retain its
+forbidden-trigger/secret/publication assertions. Use the event payload's positive
+PR number for PR grouping without introducing privileged trigger names into this
+raw-head workflow. Run `qualify-sdk-package.test.js` together with
+`protected-workflow-concurrency.test.js` to verify both security and cancellation
+contracts; focused policy tests alone do not replace the complete root script suite.
+
 ## Satellite build evidence
 
 Automatic platform builds do not establish satellite build compatibility.
@@ -169,7 +176,10 @@ runtime acceptance.
 Native Meet/Calendar/Apps source-bearing receipts must use the same PR-head-or-event
 selection as checkout, stamps, seals and runtime expectations. Preserve the actual
 event and workflow supplier SHAs separately. Meet's existing `GITHUB_SHA` consumers
-receive the source value only on their individual commands. Run the three
+receive the source value only on their individual commands. Its release-only
+comparison uses the shared `ci-check.yml` event checkout and explicit PR base/head
+inputs; identity tests must follow that caller edge after job consolidation.
+Run the three
 `scripts/ci/*-native-source-identity.test.js` suites for mismatched head/event/supplier
 controls; shell command sinks prove wiring only, never Worker acceptance. See the
 [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence)
