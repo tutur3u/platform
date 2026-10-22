@@ -7,14 +7,25 @@ const { existsSync } = require('node:fs');
 const root = resolve(__dirname, '..');
 const mail = createRequire(resolve(root, 'apps/mail/package.json'));
 const mailauth = createRequire(mail.resolve('mailauth'));
-function dependencyRequire(parent, name) {
+function findDependency(parent, name) {
   const manifest = parent.resolve
     .paths(name)
     .map((directory) => resolve(directory, name, 'package.json'))
     .find(existsSync);
-  assert.ok(manifest, `Installed consumer dependency is missing: ${name}`);
-  return createRequire(manifest);
+  return manifest ? createRequire(manifest) : undefined;
 }
+function dependencyRequire(parent, name) {
+  const found = findDependency(parent, name);
+  assert.ok(found, `Installed consumer dependency is missing: ${name}`);
+  return found;
+}
+// The iMessage adapter's Photon chain (the only @grpc/grpc-js consumer) is
+// platform-specific and absent from Linux installs, where gRPC is unreachable.
+const ai = createRequire(resolve(root, 'packages/ai/package.json'));
+const imessage = findDependency(ai, 'chat-adapter-imessage');
+const spectrum = imessage && findDependency(imessage, 'spectrum-ts');
+const photon =
+  spectrum && findDependency(spectrum, '@photon-ai/advanced-imessage');
 test('security dependency overrides retain consumer behavior', async () => {
   const Joi = mailauth('joi');
   const schema = Joi.object({
@@ -50,10 +61,48 @@ test('security dependency overrides retain consumer behavior', async () => {
   console.log(
     'PASS mailauth Joi validation and Nodemailer MIME/envelope composition'
   );
-  const ai = createRequire(resolve(root, 'packages/ai/package.json'));
-  const adapter = dependencyRequire(ai, 'chat-adapter-imessage');
-  const spectrum = dependencyRequire(adapter, 'spectrum-ts');
-  const photon = dependencyRequire(spectrum, '@photon-ai/advanced-imessage');
+  const web = createRequire(resolve(root, 'apps/web/package.json'));
+  const excalidraw = createRequire(web.resolve('@excalidraw/excalidraw'));
+  const mermaid = dependencyRequire(
+    excalidraw,
+    '@excalidraw/mermaid-to-excalidraw'
+  );
+  const nanoid = await import(pathToFileURL(mermaid.resolve('nanoid')).href);
+  const id = nanoid.nanoid(21);
+  assert.equal(id.length, 21);
+  assert.match(id, /^[\w-]+$/);
+  console.log('PASS Excalidraw consumer resolves ESM Nanoid 5');
+  const ui = createRequire(resolve(root, 'packages/ui/package.json'));
+  const typography = createRequire(ui.resolve('@tailwindcss/typography'));
+  const parser = typography('postcss-selector-parser');
+  assert.equal(
+    parser((selectors) =>
+      selectors.walkClasses((c) => {
+        c.value = 'patched';
+      })
+    ).processSync('.old > a:hover'),
+    '.patched > a:hover'
+  );
+  console.log('PASS Tailwind typography selector-parser 7 mutation');
+  const math = dependencyRequire(web, '@streamdown/math');
+  const katex = math('katex');
+  assert.match(katex.renderToString('x^2', { throwOnError: true }), /katex/);
+  console.log('PASS Streamdown KaTeX consumer math rendering');
+  const firebase = createRequire(web.resolve('firebase-admin'));
+  const storage = createRequire(firebase.resolve('@google-cloud/storage'));
+  const gaxios = createRequire(storage.resolve('gaxios'));
+  const uuid = gaxios('uuid');
+  const value = uuid.v4();
+  assert.equal(uuid.validate(value), true);
+  assert.equal(uuid.version(value), 4);
+  console.log('PASS Google Storage gaxios UUID 11 consumer generation');
+});
+
+test('patched gRPC retains Photon consumer loopback behavior', {
+  skip: photon
+    ? false
+    : 'Photon iMessage chain is not installed on this platform',
+}, async () => {
   const grpc = photon('@grpc/grpc-js');
   const serialize = (x) => Buffer.from(JSON.stringify(x));
   const deserialize = (x) => JSON.parse(x.toString());
@@ -98,39 +147,4 @@ test('security dependency overrides retain consumer behavior', async () => {
     server.forceShutdown();
   }
   console.log('PASS Photon ancestry gRPC loopback unary roundtrip');
-  const web = createRequire(resolve(root, 'apps/web/package.json'));
-  const excalidraw = createRequire(web.resolve('@excalidraw/excalidraw'));
-  const mermaid = dependencyRequire(
-    excalidraw,
-    '@excalidraw/mermaid-to-excalidraw'
-  );
-  const nanoid = await import(pathToFileURL(mermaid.resolve('nanoid')).href);
-  const id = nanoid.nanoid(21);
-  assert.equal(id.length, 21);
-  assert.match(id, /^[\w-]+$/);
-  console.log('PASS Excalidraw consumer resolves ESM Nanoid 5');
-  const ui = createRequire(resolve(root, 'packages/ui/package.json'));
-  const typography = createRequire(ui.resolve('@tailwindcss/typography'));
-  const parser = typography('postcss-selector-parser');
-  assert.equal(
-    parser((selectors) =>
-      selectors.walkClasses((c) => {
-        c.value = 'patched';
-      })
-    ).processSync('.old > a:hover'),
-    '.patched > a:hover'
-  );
-  console.log('PASS Tailwind typography selector-parser 7 mutation');
-  const math = dependencyRequire(web, '@streamdown/math');
-  const katex = math('katex');
-  assert.match(katex.renderToString('x^2', { throwOnError: true }), /katex/);
-  console.log('PASS Streamdown KaTeX consumer math rendering');
-  const firebase = createRequire(web.resolve('firebase-admin'));
-  const storage = createRequire(firebase.resolve('@google-cloud/storage'));
-  const gaxios = createRequire(storage.resolve('gaxios'));
-  const uuid = gaxios('uuid');
-  const value = uuid.v4();
-  assert.equal(uuid.validate(value), true);
-  assert.equal(uuid.version(value), 4);
-  console.log('PASS Google Storage gaxios UUID 11 consumer generation');
 });
