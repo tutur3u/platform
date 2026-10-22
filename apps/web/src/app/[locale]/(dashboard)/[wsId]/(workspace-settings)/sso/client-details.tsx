@@ -9,6 +9,35 @@ import { useTranslations } from 'next-intl';
 import { SsoMutationError } from './mutation-error';
 import { PublicSetup } from './public-setup';
 
+type MessageKey = Parameters<
+  ReturnType<typeof useTranslations<'workspace-sso'>>
+>[0];
+
+function auditEventKey(eventType: string): MessageKey {
+  switch (eventType) {
+    case 'assignment.updated':
+      return 'events.assignment_updated';
+    case 'client.created':
+      return 'events.client_created';
+    case 'client.updated':
+      return 'events.client_updated';
+    case 'consent.approved':
+      return 'events.consent_approved';
+    case 'consent.denied':
+      return 'events.consent_denied';
+    case 'issuance.failed':
+      return 'events.issuance_failed';
+    case 'issuance.signed':
+      return 'events.issuance_signed';
+    case 'transaction.consumed':
+      return 'events.transaction_consumed';
+    case 'transaction.created':
+      return 'events.transaction_created';
+    default:
+      return 'events.unknown';
+  }
+}
+
 export const ssoKey = (wsId: string) => ['workspace-sso-management', wsId];
 export function ClientDetails({
   wsId,
@@ -95,7 +124,7 @@ export function ClientDetails({
           <ul className="space-y-2">
             {detail.data.audit.map((event) => (
               <li key={event.id} className="rounded-md border p-3 text-sm">
-                <p>{t(`events.${event.eventType.replaceAll('.', '_')}`)}</p>
+                <p>{t(auditEventKey(event.eventType))}</p>
                 <time dateTime={event.createdAt}>{event.createdAt}</time>
                 <p>{t('revision', { revision: event.revision })}</p>
               </li>

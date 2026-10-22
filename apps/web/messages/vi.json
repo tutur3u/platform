@@ -21463,7 +21463,8 @@
       "issuance_failed": "Phát hành thất bại",
       "issuance_signed": "Đã chuẩn bị phản hồi ký",
       "transaction_consumed": "Đã sử dụng yêu cầu đăng nhập",
-      "transaction_created": "Đã nhận yêu cầu đăng nhập"
+      "transaction_created": "Đã nhận yêu cầu đăng nhập",
+      "unknown": "Sự kiện kiểm toán không xác định"
     },
     "globalOff": "Cờ SAML trên máy chủ: tắt — không phát hành xác nhận",
     "globalOn": "Cờ SAML trên máy chủ: bật",

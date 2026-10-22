@@ -19,6 +19,20 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+type MessageKey = Parameters<
+  ReturnType<typeof useTranslations<'workspace-sso'>>
+>[0];
+type ClientField = keyof Pick<
+  SsoClientInput,
+  'displayName' | 'entityId' | 'acsUrl' | 'domains'
+>;
+const fieldKeys = {
+  displayName: 'displayName',
+  entityId: 'entityId',
+  acsUrl: 'acsUrl',
+  domains: 'domains',
+} satisfies Record<ClientField, MessageKey>;
+
 export function ClientEditor({
   client,
   busy,
@@ -39,7 +53,7 @@ export function ClientEditor({
     { name: 'entityId', value: client?.entityId, max: 2048 },
     { name: 'acsUrl', value: client?.acsUrl, max: 2048 },
     { name: 'domains', value: client?.domains.join(', '), max: 8192 },
-  ];
+  ] satisfies { name: ClientField; value: string | undefined; max: number }[];
   return (
     <form
       className="space-y-4 rounded-lg border p-4"
@@ -68,7 +82,9 @@ export function ClientEditor({
       </h2>
       {fields.map((field) => (
         <div key={field.name} className="space-y-2">
-          <Label htmlFor={`sso-${field.name}`}>{t(field.name)}</Label>
+          <Label htmlFor={`sso-${field.name}`}>
+            {t(fieldKeys[field.name])}
+          </Label>
           <Input
             id={`sso-${field.name}`}
             name={field.name}

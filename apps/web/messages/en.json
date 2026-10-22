@@ -21456,7 +21456,8 @@
       "issuance_failed": "Issuance failed",
       "issuance_signed": "Signed response prepared",
       "transaction_consumed": "Login request consumed",
-      "transaction_created": "Login request admitted"
+      "transaction_created": "Login request admitted",
+      "unknown": "Unknown audit event"
     },
     "globalOff": "Server SAML flag: off — issuance is disabled",
     "globalOn": "Server SAML flag: on",
