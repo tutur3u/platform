@@ -27,7 +27,13 @@ const EXCLUDED_COMPONENTS = new Set([
   'node_modules',
   'target',
 ]);
-const EXACT_EXCLUSIONS = new Set(['packages/types/src/supabase.ts']);
+const EXACT_EXCLUSIONS = new Set([
+  'packages/types/src/supabase.ts',
+  '.agents/skills/security-audit/validate-coverage-ledger.cjs',
+  '.agents/skills/security-audit/validate-coverage-ledger.test.cjs',
+  '.agents/skills/security-audit/validate-findings.cjs',
+  '.agents/skills/security-audit/validate-findings.test.cjs',
+]);
 const GENERATED_DART_SUFFIXES = ['.freezed.dart', '.g.dart', '.gen.dart'];
 const sourceSizeCheck = {
   name: 'source-size',

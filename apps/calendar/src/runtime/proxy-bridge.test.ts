@@ -14,6 +14,42 @@ const waitUntil = (promise: Promise<unknown>) => {
 };
 
 describe('Calendar request bridge', () => {
+  it.each([503, 403])(
+    'passes terminal %i through without cookies or dispatch',
+    async (status) => {
+      const terminal = NextResponse.json(
+        {
+          error:
+            status === 503 ? 'App session refresh unavailable' : 'MFA required',
+        },
+        { status, headers: { 'cache-control': 'no-store' } }
+      );
+      const response = await dispatchThroughCalendarProxy({
+        request: new Request(
+          'https://calendar.tuturuuu.com/en/personal/meetings'
+        ),
+        waitUntil,
+        proxy: async () => {
+          (await cookies()).set('pending', 'must-not-escape');
+          calendarRequest().responseHeaders.set('location', '/login');
+          return terminal;
+        },
+        dispatch: async () => {
+          throw new Error('Terminal auth response must stop dispatch');
+        },
+      });
+      expect(response).toBe(terminal);
+      expect(response.status).toBe(status);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(response.headers.get('location')).toBeNull();
+      expect(await response.json()).toEqual({
+        error:
+          status === 503 ? 'App session refresh unavailable' : 'MFA required',
+      });
+    }
+  );
+
   it('retains redirects, status, query and multiple response cookies', async () => {
     const response = await dispatchThroughCalendarProxy({
       request: new Request(

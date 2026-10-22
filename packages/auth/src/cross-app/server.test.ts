@@ -4,6 +4,7 @@ vi.mock('@tuturuuu/utils/required-mfa-app-session', () => ({
 
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as appSession from '../app-session';
 import { createPOST, createRefreshPOST } from './server';
 
 const mocks = vi.hoisted(() => ({
@@ -286,6 +287,72 @@ describe('cross-app server verification', () => {
       error: 'Missing app session refresh credentials',
     });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([503, 401, 400, 500, 403])(
+    'preserves refresh status classification for central %s without minting cookies',
+    async (status) => {
+      const mint = vi.spyOn(appSession, 'createAppSessionTokenPair');
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ unexpected: 'not forwarded' }, { status })
+        );
+      vi.stubGlobal('fetch', fetchMock);
+      const response = await createRefreshPOST('chat', {
+        verificationBaseUrl: 'https://central.example.test',
+      })(
+        new NextRequest(
+          'https://chat.example.test/api/auth/refresh-app-session',
+          {
+            method: 'POST',
+            body: JSON.stringify({ refreshToken: 'synthetic-refresh' }),
+            headers: { cookie: 'tuturuuu_app_session=existing' },
+          }
+        )
+      );
+      expect(response.status).toBe(
+        status === 503 || status === 403 ? status : 401
+      );
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(response.headers.get('set-cookie')).toBeNull();
+      expect(await response.json()).toEqual(
+        status === 503
+          ? {
+              code: 'APP_SESSION_REFRESH_UNAVAILABLE',
+              error: 'App session refresh temporarily unavailable',
+            }
+          : status === 403
+            ? {
+                code: 'MFA_REQUIRED',
+                error: 'MFA verification required',
+              }
+            : { error: 'Invalid or expired app session refresh credentials' }
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(mocks.createClient).not.toHaveBeenCalled();
+      expect(mint).not.toHaveBeenCalled();
+      mint.mockRestore();
+    }
+  );
+
+  it('does not relabel an unexpected fetch rejection as a replay-store outage', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('synthetic transport failure'))
+    );
+    const pending = createRefreshPOST('chat', {
+      verificationBaseUrl: 'https://central.example.test',
+    })(
+      new NextRequest(
+        'https://chat.example.test/api/auth/refresh-app-session',
+        {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken: 'synthetic-refresh' }),
+        }
+      )
+    );
+    await expect(pending).rejects.toThrow('synthetic transport failure');
   });
 
   it('mints app-session cookies in satellite deployments with only the existing server-side Supabase secret', async () => {

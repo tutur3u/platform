@@ -2,7 +2,6 @@ import {
   APP_SESSION_COOKIE_NAME,
   APP_SESSION_REFRESH_COOKIE_NAME,
   clearSupabaseAuthCookies,
-  getAppSessionClaimsFromRequest,
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
   WEB_APP_SESSION_COOKIE_NAME,
@@ -251,16 +250,24 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       sessionMode: 'supabase-first',
       targetApp: 'inventory',
     });
+    if (
+      !appSessionRefresh.ok &&
+      (appSessionRefresh.error === 'App session refresh unavailable' ||
+        appSessionRefresh.error === 'MFA required' ||
+        appSessionRefresh.error === 'Account assurance unavailable')
+    ) {
+      return appSessionFailureResponse(
+        request,
+        appSessionRefresh.error,
+        appSessionRefresh.response
+      );
+    }
     const requestWithRefresh = {
       headers: appSessionRefresh.ok
         ? (appSessionRefresh.requestHeaders ?? request.headers)
         : request.headers,
     };
-    const appSession = appSessionRefresh.ok
-      ? appSessionRefresh.claims
-      : getAppSessionClaimsFromRequest(requestWithRefresh, {
-          targetApp: 'inventory',
-        });
+    const appSession = appSessionRefresh.ok ? appSessionRefresh.claims : null;
     const hasWebAppSession =
       hasWebAppSessionTokenFromRequest(requestWithRefresh);
     const hasSupabaseSession =

@@ -24,7 +24,8 @@
       "!apps/mail/src/routeTree.gen.ts",
       "!apps/apps/src/routeTree.gen.ts",
       "!apps/mobile",
-      "!.worktrees"
+      "!.worktrees",
+      "!.agents/skills/security-audit"
     ]
   },
   "formatter": {

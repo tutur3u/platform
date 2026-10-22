@@ -4,6 +4,7 @@ import {
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
+  appSessionFailureResponse,
   normalizeAuthRedirectPath,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -27,6 +28,15 @@ export async function getLoginRedirect(request: NextRequest) {
           sessionMode: 'supabase-first',
           targetApp: 'lettin',
         });
+  if (
+    session &&
+    !session.ok &&
+    (session.error === 'App session refresh unavailable' ||
+      session.error === 'MFA required' ||
+      session.error === 'Account assurance unavailable')
+  ) {
+    return appSessionFailureResponse(request, session.error, session.response);
+  }
   const verifiedRequest = {
     headers: session?.ok
       ? (session.requestHeaders ?? request.headers)

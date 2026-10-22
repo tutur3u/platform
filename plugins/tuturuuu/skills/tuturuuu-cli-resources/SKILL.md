@@ -40,19 +40,43 @@ scope. Zsh/Bash hooks apply to new shells; `--shell none` avoids shell edits and
 supports explicit queue use. Installation backs up shell files. Setup does not
 modify repository source, Docker settings, credentials, or runner registrations.
 
-The queue defaults to one lane per user. Optional `setup --lanes 2` uses the same
-canonical FIFO queue, with one Turbo task per lane and Vitest/Cargo workers split
-from the configured aggregate total. Two lanes require a host budget of at least
-two workers; smaller or oversized totals fail closed. Explicit worker flags are
-capped per lane. Use `--workers` only for a justified aggregate budget.
+The queue defaults to one lane per user. `validationLanes` remains the base count,
+either `1` or `2`, configured with `setup --lanes`. Fixed-lane configurations split
+the aggregate Vitest/Cargo total across base lanes. Two base lanes require at
+least two workers within the host budget. Turbo runs one task per lane, and
+explicit worker flags are capped per lane.
 
-Lane or aggregate worker-budget changes require idle owners and zero waiters. Before replacing the installed
-scheduler or enabling two lanes, verify all old brokers and shim processes have
-exited and reconcile consumers of `status.owner` with `owners`/`laneCount`.
-Keep configuration at one while old FIFO waiters drain. Do not rewrite tickets,
-clear live locks, or operate mixed versions. Source review is not activation
-approval. Check all owners, not only the compatibility `owner` field. Unknown or
-malformed occupancy fails closed. Nested commands require a verified live
+Adaptive lanes require a CLI release before activation. Optional
+`maxValidationLanes` accepts integers from the base count through `8` and defaults to the
+base count. Host capacity never changes that default automatically. After release
+and a full idle drain, explicitly opt in with
+`ttr resources setup --max-lanes N`. Use a justified `--workers` value only when
+needed. Base-lane, maximum-lane, and aggregate worker-budget changes all require
+idle owners and zero waiters. The maximum is a ceiling, not a concurrency promise.
+
+Burst admission above the base requires load divided by CPU count below `0.7`.
+macOS must report normal memory pressure, `1`. Linux must have at least 25%
+available memory and enough for the estimated per-lane need. Missing telemetry
+refuses burst admission while preserving base behavior. Burst memory checks still
+apply with `--ignore-pressure`. Preserve FIFO order and never interrupt running
+jobs to shrink occupancy.
+
+Adaptive caps reserve aggregate budgets across the effective maximum lane count,
+`min(maxValidationLanes, Vitest total, Cargo total)`. Subtract recorded running
+allocations before admitting another lane. Unavailable worker budgets defer
+admission. For adaptive configurations, the host worker ceiling can rise to
+`min(8, floor(memory GiB / 8), floor(CPUs / 2))` if greater than the legacy budget.
+This permits a justified worker configuration without raising configured totals
+automatically.
+
+Before replacing the installed scheduler, fully drain old brokers, shim
+processes, and FIFO waiters. An old scheduler encountering `slots/2` fails closed.
+Do not rewrite tickets, clear live locks, or operate mixed versions. Source review
+is not activation approval; documentation changes do not activate the installed
+scheduler. Status retains `owner`, `owners`, `laneCount`, `waiting`, and `limits`,
+and adds `baseLanes`, `maxLanes`, `occupied`, and `burst: { eligible, reason }`.
+Reconcile legacy status consumers and check all owners, not only the compatibility
+`owner` field. Unknown or malformed occupancy fails closed. Nested commands require a verified live
 ancestor and inherit its caps. Cancellation releases only its own slot after the
 owned child group drains. Do not use separate
 `TTR_RESOURCES_HOME` values across projects: that creates independent queues.

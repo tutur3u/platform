@@ -15,6 +15,7 @@ import {
   resourceEnvironment,
   resourceHome,
   resourceLanes,
+  resourceMaxLanes,
   resourceScope,
   type ValidationLanes,
 } from './resources-config';
@@ -45,13 +46,15 @@ Usage: ttr resources <setup|status|monitor|run|enable|disable|uninstall> [option
 
 Setup options:
   --shell zsh|bash|none   shell hooks; defaults to the current shell
-  --lanes <1|2>           validation lanes; default 1, change only when idle
+  --lanes <1|2>           base lanes; default 1, change only when idle
+  --max-lanes <1..8>      adaptive ceiling; default base, change only when idle
   --workers <1..64>       Vitest/Cargo workers; default adapts to RAM and CPUs
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
 
-One validation lane is the default; opt in to two only after an idle migration.
+One base lane is the default; opt in to burst lanes only after an idle migration.
+Burst admission requires normal memory pressure, low CPU load and worker headroom.
 All lanes share one per-user FIFO queue and a bounded total worker budget.
 Turbo runs one task; Vitest and Cargo get bounded worker counts. Commands
 outside those projects are unchanged. Running processes are never interrupted.
@@ -144,15 +147,21 @@ export async function runResourcesCommand(argv: string[]) {
     let shell = basename(process.env.SHELL || 'none');
     let workers: number | undefined;
     let lanes: ValidationLanes | undefined;
+    let maxLanes: number | undefined;
     for (let i = 1; i < options.length; i++) {
       const arg = options[i]!;
-      if (['--root', '--shell', '--workers', '--lanes'].includes(arg)) {
+      if (
+        ['--root', '--shell', '--workers', '--lanes', '--max-lanes'].includes(
+          arg
+        )
+      ) {
         const value = options[++i];
         if (!value || value.startsWith('--'))
           throw new Error(`Missing value for ${arg}.`);
         if (arg === '--root') roots.push(value);
         if (arg === '--shell') shell = value;
         if (arg === '--workers') workers = Number(value);
+        if (arg === '--max-lanes') maxLanes = Number(value);
         if (arg === '--lanes') {
           if (value !== '1' && value !== '2')
             throw new Error('--lanes must be 1 or 2.');
@@ -167,13 +176,14 @@ export async function runResourcesCommand(argv: string[]) {
       shell,
       workers,
       lanes,
+      maxLanes,
       dryRun: options.includes('--dry-run'),
     });
     if (!plan) throw new Error('Resource setup was cancelled.');
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(plan, null, 2)}\n`
-        : `${options.includes('--dry-run') ? 'Planned' : 'Installed'} resource control: ${resourceLanes(plan.config)} lane(s), ${plan.config.vitestWorkers} total Vitest workers.\nProjects: ${plan.config.roots.join(', ')}\nShell hooks: ${plan.shellFiles.join(', ') || 'none'}\nOpen a new shell; existing jobs keep their current settings.\n`
+        : `${options.includes('--dry-run') ? 'Planned' : 'Installed'} resource control: ${resourceLanes(plan.config)} base lane(s), up to ${resourceMaxLanes(plan.config)} lane(s), ${plan.config.vitestWorkers} total Vitest workers.\nProjects: ${plan.config.roots.join(', ')}\nShell hooks: ${plan.shellFiles.join(', ') || 'none'}\nOpen a new shell; existing jobs keep their current settings.\n`
     );
     return;
   }
@@ -211,7 +221,7 @@ export async function runResourcesCommand(argv: string[]) {
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(result, null, 2)}\n`
-        : `${result.enabled ? 'Enabled' : 'Not enabled'}: ${result.machine.memoryGiB} GiB RAM, ${result.machine.cpus} CPUs\nLimits: ${state.laneCount} validation lane(s), Turbo ${result.limits.turboConcurrency}, Vitest ${result.limits.vitestWorkers}\nRunning: ${state.owners.length ? state.owners.map((owner) => `${owner.tool} (PID ${owner.pid}) in ${owner.cwd}`).join('; ') : state.occupied ? 'initializing or awaiting stale-owner inspection' : 'none'}\nWaiting: ${state.waiting.length}\n`
+        : `${result.enabled ? 'Enabled' : 'Not enabled'}: ${result.machine.memoryGiB} GiB RAM, ${result.machine.cpus} CPUs\nLimits: ${state.laneCount} base lane(s), max ${state.maxLanes}, burst ${state.burst.eligible ? 'eligible' : state.burst.reason}, Turbo ${result.limits.turboConcurrency}, Vitest ${result.limits.vitestWorkers}\nRunning: ${state.owners.length ? state.owners.map((owner) => `${owner.tool} (PID ${owner.pid}) in ${owner.cwd}`).join('; ') : state.occupied ? 'initializing or awaiting stale-owner inspection' : 'none'}\nWaiting: ${state.waiting.length}\n`
     );
     return;
   }

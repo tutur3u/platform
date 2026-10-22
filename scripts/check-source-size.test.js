@@ -86,6 +86,11 @@ test('excludes only the specified generated and vendor paths', () => {
     'coverage/report.js',
     '.worktrees/example/source.ts',
     'packages/types/src/supabase.ts',
+    '.agents/skills/security-audit/validate-coverage-ledger.cjs',
+    '.agents/skills/security-audit/validate-coverage-ledger.test.cjs',
+    '.agents/skills/security-audit/validate-findings.cjs',
+    '.agents/skills/security-audit/validate-findings.test.cjs',
+
     'apps/tanstack-web/src/routeTree.gen.ts',
     'apps/mobile/model.g.dart',
     'apps/mobile/model.freezed.dart',
@@ -98,6 +103,10 @@ test('excludes only the specified generated and vendor paths', () => {
 
   assert.equal(isAuthoredSourcePath('apps/database/migrations/001.sql'), true);
   assert.equal(isAuthoredSourcePath('scripts/example.test.js'), true);
+  assert.equal(
+    isAuthoredSourcePath('.agents/skills/security-audit/local-helper.js'),
+    true
+  );
   assert.equal(isAuthoredSourcePath('fixtures/authored-example.ts'), true);
   assert.equal(isAuthoredSourcePath('src/distinct/file.ts'), true);
   assert.equal(isAuthoredSourcePath('apps/mobile/lib/l10n/l10n.dart'), true);

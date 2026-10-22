@@ -22,6 +22,7 @@ import {
   readResourceConfig,
   repositoryIdentity,
   resourceLanes,
+  resourceMaxLanes,
   resourcePolicyKey,
   type ValidationLanes,
 } from './resources-config';
@@ -91,6 +92,7 @@ interface SetupOptions {
   shell: string;
   workers?: number;
   lanes?: ValidationLanes;
+  maxLanes?: number;
   dryRun?: boolean;
 }
 export async function setupResources(options: SetupOptions) {
@@ -132,6 +134,19 @@ async function prepareResources(options: SetupOptions) {
     config.buildJobs = options.workers;
   }
   config.validationLanes = options.lanes ?? resourceLanes(config);
+  config.maxValidationLanes =
+    options.maxLanes ??
+    (previous && resourceMaxLanes(previous) > resourceLanes(previous)
+      ? Math.max(resourceLanes(config), resourceMaxLanes(previous))
+      : resourceLanes(config));
+  if (
+    !Number.isInteger(config.maxValidationLanes) ||
+    config.maxValidationLanes < resourceLanes(config) ||
+    config.maxValidationLanes > 8
+  )
+    throw new Error(
+      '--max-lanes must be an integer between the base lane count and 8.'
+    );
   laneResourceConfig(config);
   const assertIdle = async () => {
     if (

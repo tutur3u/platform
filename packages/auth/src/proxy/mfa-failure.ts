@@ -8,6 +8,15 @@ export function appSessionFailureResponse(
   error: string,
   refreshed?: Response
 ) {
+  if (error === 'App session refresh unavailable') {
+    return NextResponse.json(
+      {
+        code: 'APP_SESSION_REFRESH_UNAVAILABLE',
+        error: 'App session refresh temporarily unavailable',
+      },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
   if (error === 'MFA required' || error === 'Account assurance unavailable') {
     const required = error === 'MFA required';
     const response = NextResponse.json(
