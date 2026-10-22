@@ -2,17 +2,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readBoundedResponseBytes } from './read-bounded-response';
 
-function source(chunks: Uint8Array[], contentLength?: string) {
+function source(chunks: Uint8Array<ArrayBuffer>[], contentLength?: string) {
   let index = 0;
   const cancel = vi.fn();
   const pull = vi.fn(
-    (controller: ReadableStreamDefaultController<Uint8Array>) => {
+    (controller: ReadableStreamDefaultController<Uint8Array<ArrayBuffer>>) => {
       const chunk = chunks[index++];
       if (chunk) controller.enqueue(chunk);
       else controller.close();
     }
   );
-  const body = new ReadableStream<Uint8Array>(
+  const body = new ReadableStream<Uint8Array<ArrayBuffer>>(
     { pull, cancel },
     { highWaterMark: 0 }
   );
@@ -93,7 +93,7 @@ describe('readBoundedResponseBytes', () => {
 
   it('attempts cancellation and releases the lock on a stream read error', async () => {
     const failure = new Error('read_failed');
-    const body = new ReadableStream<Uint8Array>(
+    const body = new ReadableStream<Uint8Array<ArrayBuffer>>(
       { pull: (controller) => controller.error(failure) },
       { highWaterMark: 0 }
     );
