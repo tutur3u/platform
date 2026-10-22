@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.71.0](https://github.com/tutur3u/platform/compare/platform-v0.70.0...platform-v0.71.0) (2026-10-22)
+
+
+### Features
+
+* **infrastructure:** support guarded managed profile edits ([603dee3](https://github.com/tutur3u/platform/commit/603dee3acf1c0240d90d797bb3d33bf2bf293cb6)) ([#6368](https://github.com/tutur3u/platform/issues/6368)) ([1b6376a](https://github.com/tutur3u/platform/commit/1b6376ae3dd0f65604fde8d575ab009bba999004))
+
+
+### Bug Fixes
+
+* **auth:** close employee CLI recovery review findings ([c16cc38](https://github.com/tutur3u/platform/commit/c16cc38bd05f56296221c16cc74d39b49092ca96))
+* **auth:** observe CLI recovery outcomes without replay ([376b9ab](https://github.com/tutur3u/platform/commit/376b9ab53c4ed4ba8cfa3199a44d66d6831b9e5d))
+* **ci:** isolate managed profile flags in feedback controls ([c1ea60b](https://github.com/tutur3u/platform/commit/c1ea60b13354aeef6d63bd7fa68ab90549d59a8c))
+* **database:** retain bounded managed packet failure evidence ([3234da2](https://github.com/tutur3u/platform/commit/3234da2aa340310539a4d5825c9301d1402ba130))
+* **database:** separate concurrent fixture remote commit ([c132ea6](https://github.com/tutur3u/platform/commit/c132ea66375aa1de97e6df9bec489e3c3cb93940))
+* **database:** suppress remote commit status rows in qualification ([d86bb48](https://github.com/tutur3u/platform/commit/d86bb48cc5b2d0292b2897589ca7f65b49f50065))
+* **finance:** preserve explicit subscription group selections ([6f5ad54](https://github.com/tutur3u/platform/commit/6f5ad541ed48abc27490774f03fdc693f4c2da4c)) ([#6369](https://github.com/tutur3u/platform/issues/6369)) ([38efa79](https://github.com/tutur3u/platform/commit/38efa79b894bb25de5305628ac2327c3030278dc))
+* **infra:** add operation-scoped CLI employee recovery ([533a78b](https://github.com/tutur3u/platform/commit/533a78b913b1346dec9d4a7a9e8626cc4da5fb70)) ([#6367](https://github.com/tutur3u/platform/issues/6367)) ([1d16f55](https://github.com/tutur3u/platform/commit/1d16f5508d3fa8f213cf9d0ca54ee0eed70f8bb3))
+* **infrastructure:** keep employee creation available on the root alias ([#6371](https://github.com/tutur3u/platform/issues/6371)) ([44aa531](https://github.com/tutur3u/platform/commit/44aa5310d7a014e6ff61f13c97e553a1ffbc69e9))
+* **infrastructure:** log internal profile failure stages ([f664d0e](https://github.com/tutur3u/platform/commit/f664d0eefe9e582fc4d1ce6d10ba972df5519db2)) ([#6366](https://github.com/tutur3u/platform/issues/6366)) ([09ef8d6](https://github.com/tutur3u/platform/commit/09ef8d69306bc27d68764b823236911a56a93e5c))
+* **infrastructure:** preserve profile errors during username cleanup ([5093bb4](https://github.com/tutur3u/platform/commit/5093bb4bdb12ab11ed07ad5d9fbd7f7deac9cd25))
+* **infrastructure:** resolve employee creation workspace aliases ([d8e3fd8](https://github.com/tutur3u/platform/commit/d8e3fd842733678155de855d9355e984c699f92f))
+
 ## [0.70.0](https://github.com/tutur3u/platform/compare/platform-v0.69.0...platform-v0.70.0) (2026-10-21)
 
 

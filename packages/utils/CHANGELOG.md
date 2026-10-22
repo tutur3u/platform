@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/utils-v0.37.0...utils-v0.38.0) (2026-10-22)
+
+
+### Features
+
+* **infrastructure:** support guarded managed profile edits ([603dee3](https://github.com/tutur3u/platform/commit/603dee3acf1c0240d90d797bb3d33bf2bf293cb6)) ([#6368](https://github.com/tutur3u/platform/issues/6368)) ([1b6376a](https://github.com/tutur3u/platform/commit/1b6376ae3dd0f65604fde8d575ab009bba999004))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/utils-v0.36.1...utils-v0.37.0) (2026-10-21)
 
 

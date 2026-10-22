@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.43.0](https://github.com/tutur3u/platform/compare/database-v1.42.0...database-v1.43.0) (2026-10-22)
+
+
+### Features
+
+* **infrastructure:** support guarded managed profile edits ([603dee3](https://github.com/tutur3u/platform/commit/603dee3acf1c0240d90d797bb3d33bf2bf293cb6)) ([#6368](https://github.com/tutur3u/platform/issues/6368)) ([1b6376a](https://github.com/tutur3u/platform/commit/1b6376ae3dd0f65604fde8d575ab009bba999004))
+
+
+### Bug Fixes
+
+* **ci:** isolate managed profile flags in feedback controls ([c1ea60b](https://github.com/tutur3u/platform/commit/c1ea60b13354aeef6d63bd7fa68ab90549d59a8c))
+* **database:** retain bounded managed packet failure evidence ([3234da2](https://github.com/tutur3u/platform/commit/3234da2aa340310539a4d5825c9301d1402ba130))
+* **database:** separate concurrent fixture remote commit ([c132ea6](https://github.com/tutur3u/platform/commit/c132ea66375aa1de97e6df9bec489e3c3cb93940))
+* **database:** suppress remote commit status rows in qualification ([d86bb48](https://github.com/tutur3u/platform/commit/d86bb48cc5b2d0292b2897589ca7f65b49f50065))
+
 ## [1.42.0](https://github.com/tutur3u/platform/compare/database-v1.41.3...database-v1.42.0) (2026-10-21)
 
 

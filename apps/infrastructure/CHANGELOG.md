@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/infra-v0.36.0...infra-v0.37.0) (2026-10-22)
+
+
+### Features
+
+* **infrastructure:** support guarded managed profile edits ([603dee3](https://github.com/tutur3u/platform/commit/603dee3acf1c0240d90d797bb3d33bf2bf293cb6)) ([#6368](https://github.com/tutur3u/platform/issues/6368)) ([1b6376a](https://github.com/tutur3u/platform/commit/1b6376ae3dd0f65604fde8d575ab009bba999004))
+
+
+### Bug Fixes
+
+* **infrastructure:** keep employee creation available on the root alias ([#6371](https://github.com/tutur3u/platform/issues/6371)) ([44aa531](https://github.com/tutur3u/platform/commit/44aa5310d7a014e6ff61f13c97e553a1ffbc69e9))
+* **infrastructure:** log internal profile failure stages ([f664d0e](https://github.com/tutur3u/platform/commit/f664d0eefe9e582fc4d1ce6d10ba972df5519db2)) ([#6366](https://github.com/tutur3u/platform/issues/6366)) ([09ef8d6](https://github.com/tutur3u/platform/commit/09ef8d69306bc27d68764b823236911a56a93e5c))
+* **infrastructure:** preserve profile errors during username cleanup ([5093bb4](https://github.com/tutur3u/platform/commit/5093bb4bdb12ab11ed07ad5d9fbd7f7deac9cd25))
+* **infrastructure:** resolve employee creation workspace aliases ([d8e3fd8](https://github.com/tutur3u/platform/commit/d8e3fd842733678155de855d9355e984c699f92f))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/infra-v0.35.0...infra-v0.36.0) (2026-10-21)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.2](https://github.com/tutur3u/platform/compare/ui-v0.39.1...ui-v0.39.2) (2026-10-22)
+
+
+### Bug Fixes
+
+* **finance:** preserve explicit subscription group selections ([6f5ad54](https://github.com/tutur3u/platform/commit/6f5ad541ed48abc27490774f03fdc693f4c2da4c)) ([#6369](https://github.com/tutur3u/platform/issues/6369)) ([38efa79](https://github.com/tutur3u/platform/commit/38efa79b894bb25de5305628ac2327c3030278dc))
+
 ## [0.39.1](https://github.com/tutur3u/platform/compare/ui-v0.39.0...ui-v0.39.1) (2026-10-17)
 
 

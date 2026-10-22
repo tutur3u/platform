@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/types-v0.35.0...types-v0.36.0) (2026-10-22)
+
+
+### Features
+
+* **infrastructure:** support guarded managed profile edits ([#6368](https://github.com/tutur3u/platform/issues/6368)) ([1b6376a](https://github.com/tutur3u/platform/commit/1b6376ae3dd0f65604fde8d575ab009bba999004))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/types-v0.34.0...types-v0.35.0) (2026-10-17)
 
 
