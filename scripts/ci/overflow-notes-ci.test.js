@@ -77,7 +77,6 @@ test('validates exact committed notes delta against production, retaining all un
       false
     );
     for (const ref of [
-      'refs/heads/main',
       'refs/heads/production',
       'refs/heads/release-please--branches--production',
       'refs/heads/release-please--branches--main--release-notes',
@@ -127,12 +126,16 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     'biome-check.yaml',
     'supabase-baseline.yaml',
   ]) {
-    const policy = readWorkflow(name).concurrency;
+    const workflow = readWorkflow(name);
+    const policy = workflow.concurrency || workflow.jobs.format.concurrency;
+    const policyName = name === 'biome-check.yaml' ? `${name}-format` : name;
     const base = {
       workflow: name,
+      event: { pull_request: {} },
       sha: 'a'.repeat(40),
       event_name: 'push',
       run_id: '100',
+      run_attempt: 1,
     };
     const variants = [
       base,
@@ -142,7 +145,6 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     ];
     for (const ref of [
       NOTES_REF,
-      'refs/heads/main',
       'refs/heads/production',
       'refs/heads/release-please--branches--production',
     ]) {
@@ -158,14 +160,17 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
         );
         assert.equal(
           group,
-          `${name}-${ref}-${github.sha}-${github.event_name}-${github.run_id}`,
+          `${policyName}-${github.event_name}-${ref}-${github.sha}-${github.run_id}-${github.run_attempt}`,
           `${name}: protected evidence retains SHA, event and run identity`
         );
         return group;
       });
       assert.equal(new Set(groups).size, variants.length);
     }
-    const featureGroups = variants.map((variant) => {
+    const featureVariants = variants.filter(
+      (variant) => variant.event_name === 'push'
+    );
+    const featureGroups = featureVariants.map((variant) => {
       const github = { ...variant, ref: 'refs/heads/fix/ordinary-feature' };
       assert.equal(evaluatePolicy(policy['cancel-in-progress'], github), true);
       return policy.group.replace(/\$\{\{([\s\S]*?)\}\}/gu, (_, expression) =>
@@ -174,7 +179,9 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
     });
     assert.deepEqual(
       featureGroups,
-      variants.map(() => `${name}-refs/heads/fix/ordinary-feature-latest`)
+      featureVariants.map(
+        () => `${policyName}-push-refs/heads/fix/ordinary-feature-latest`
+      )
     );
   }
   assert.equal(readWorkflow('biome-check.yaml').on.push, null);

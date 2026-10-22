@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -107,4 +108,36 @@ test('getSupabaseBinaryPath falls back to the package wrapper', async (t) => {
     }),
     wrapperPath
   );
+});
+
+test('startup drains large stderr under a piped parent and preserves exit codes', async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'supabase-piped-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  await writeFile(
+    path.join(root, 'start'),
+    `const fs = require('node:fs');
+fs.writeFileSync(2, 'x'.repeat(512 * 1024));
+fs.writeFileSync(1, 'complete');
+process.exitCode = Number(process.argv[2]);
+`
+  );
+  const wrapper = new URL('./run-supabase.js', import.meta.url).href;
+  for (const code of [0, 23]) {
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import { runCommand } from ${JSON.stringify(wrapper)};
+const result = await runCommand(process.execPath, ['start', '${code}'], ${JSON.stringify(root)});
+process.exitCode = result.code;`,
+      ],
+      { encoding: 'utf8', timeout: 5000, maxBuffer: 1024 * 1024 }
+    );
+    assert.equal(result.error, undefined);
+    assert.equal(result.signal, null);
+    assert.equal(result.status, code);
+    assert.equal(result.stdout, 'complete');
+    assert.equal(result.stderr, 'x'.repeat(512 * 1024));
+  }
 });

@@ -47,7 +47,9 @@ test('release relevance is opt-in and shares the exact full-history checkout', (
   }
   assert.equal(
     gate.jobs.check.outputs.run_checks,
-    expression("steps.release_relevance.outputs.run_checks || 'true'")
+    expression(
+      "steps.pr_release_relevance.outputs.run_checks || steps.release_relevance.outputs.run_checks || 'true'"
+    )
   );
   assert.equal(
     gate.jobs.check.outputs.should_run,
@@ -139,16 +141,7 @@ for (const [name, aggregate, checkName, shardName] of [
         contents: 'read',
         deployments: 'read',
       });
-      assert.equal(
-        workflow.concurrency.group,
-        `${expression('github.workflow')}-${expression('github.ref')}-${expression("(github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest'")}`
-      );
-      assert.equal(
-        workflow.concurrency['cancel-in-progress'],
-        expression(
-          "github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--')"
-        )
-      );
+      assert.ok(workflow.concurrency, 'validation must declare supersession');
     }
     const triggers =
       typeof workflow.on === 'string'

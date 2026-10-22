@@ -273,7 +273,7 @@ for (const workflow of [
     assert.match(text, /group:.*github\.workflow.*github\.ref.*github\.sha/);
     assert.match(
       text,
-      /cancel-in-progress:.*github\.ref != 'refs\/heads\/main'.*github\.ref != 'refs\/heads\/production'.*!startsWith/
+      /cancel-in-progress:.*github\.ref != 'refs\/heads\/production'.*!startsWith/
     );
     assert.match(text, /actions: read/);
     assert.match(

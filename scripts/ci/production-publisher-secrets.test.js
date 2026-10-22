@@ -30,7 +30,10 @@ function context(ref, allowed = 'false', event = 'workflow_dispatch') {
     github: { ref, event_name: event, actor: 'trusted-author' },
     needs: {
       'production-policy': { result: 'success', outputs: { allowed } },
-      'check-ci': { result: 'success', outputs: { should_run: 'true' } },
+      'check-ci': {
+        result: 'success',
+        outputs: { should_run: 'true', run_checks: 'true' },
+      },
       'release-relevance': {
         result: 'success',
         outputs: { run_checks: 'true' },
@@ -128,10 +131,19 @@ test('rejects the original Meet validate dependency/if at line 129', () => {
   );
 });
 
+test('rejects consolidated Meet validation without a policy dependency', () => {
+  const workflow = structuredClone(workflows['meet-cloudflare.yaml']);
+  workflow.jobs.validate.needs = ['check-ci'];
+  assert.throws(
+    () => assertProductionCredentialsAdmitted(workflow),
+    /validate references production secrets without needing admission/
+  );
+});
+
 test('rejects Meet validation that waits for policy but ignores a hold', () => {
   const workflow = structuredClone(workflows['meet-cloudflare.yaml']);
   workflow.jobs.validate.if =
-    "!cancelled() && needs.check-ci.outputs.should_run == 'true' && needs.release-relevance.outputs.run_checks == 'true'";
+    "!cancelled() && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'";
   assert.throws(
     () => assertProductionCredentialsAdmitted(workflow),
     /validate runs with production credentials/
@@ -191,10 +203,10 @@ test('Meet validation still runs on PR/main when the production gate is skipped'
     scope.needs['check-ci'].outputs.should_run = 'false';
     assert.equal(Boolean(evaluate(job.if, scope)), false);
     scope.needs['check-ci'].outputs.should_run = 'true';
-    scope.needs['release-relevance'].outputs.run_checks = 'false';
+    scope.needs['check-ci'].outputs.run_checks = 'false';
     assert.equal(Boolean(evaluate(job.if, scope)), false);
-    scope.needs['release-relevance'].outputs.run_checks = 'true';
-    for (const dependency of ['check-ci', 'release-relevance']) {
+    scope.needs['check-ci'].outputs.run_checks = 'true';
+    for (const dependency of ['check-ci']) {
       for (const result of ['failure', 'skipped', 'cancelled']) {
         scope.needs[dependency].result = result;
         assert.equal(Boolean(evaluate(job.if, scope)), false);
