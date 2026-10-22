@@ -13648,6 +13648,32 @@
     "warehouse": "Warehouse",
     "warehouses": "warehouses"
   },
+  "product-feedback": {
+    "all": "All reports",
+    "all-statuses": "All statuses",
+    "archive": "Archive",
+    "archived": "Archived",
+    "created": "Created",
+    "empty": "No reports in this view.",
+    "first": "First page",
+    "inbox": "Inbox",
+    "loading": "Loading feedback…",
+    "next": "Next page",
+    "none": "Not archived",
+    "open": "Open",
+    "private": "Private staff inbox. Report content stays within authorized staff access.",
+    "read-only": "Read only. Status and archive changes are not available.",
+    "refresh": "Refresh",
+    "resolved": "Resolved",
+    "revision": "Revision",
+    "search": "Search titles",
+    "select": "Select a report to read its private content.",
+    "status": "Status",
+    "title": "Feedback inbox",
+    "unavailable": "Feedback is unavailable or your staff access has changed.",
+    "updated": "Updated",
+    "view": "View"
+  },
   "products": {
     "ai": {
       "closing": {

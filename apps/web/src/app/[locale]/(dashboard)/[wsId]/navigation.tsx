@@ -22,6 +22,7 @@ import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
 import { getMindAppOrigin } from '@/lib/mind-app-url';
+import { getFeedbackStaffIdentity } from '@/lib/product-feedback-staff';
 import { getQrAppBaseUrl } from '@/lib/qr-app-url';
 import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 import { getTrackAppOrigin } from '@/lib/track-app-url';
@@ -294,7 +295,22 @@ export async function WorkspaceNavigationLinks({
       : []),
   ];
 
+  const feedbackStaff = isMailUser ? await getFeedbackStaffIdentity() : null;
   const navLinks: (DashboardNavigationLink | null)[] = [
+    ...(feedbackStaff
+      ? [
+          {
+            id: 'product-feedback',
+            title: t('product-feedback.title'),
+            href: `/${personalOrWsId}/feedback`,
+            aliases: [`/${personalOrWsId}/feedback`],
+            icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
+            children: [],
+            matchExact: true,
+            preferenceSectionLabel: sidebarSections.utilities,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
     {
       id: 'dashboard',
       title: t('common.dashboard'),

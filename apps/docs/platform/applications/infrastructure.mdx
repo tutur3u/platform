@@ -489,6 +489,22 @@ A domain match alone grants no access. Reports remain private; ordinary actors
 receive only their own content-free receipt, and staff reads grant no management
 capability. This schema scope does not change employee CREATE or RESTORE rules.
 
+The active Web routes `/api/v1/product-feedback`, `/{id}` and `/eligibility`
+now bind the existing read factories to the schema-backed service. The staff
+inbox at `/{workspace}/feedback` and its navigation entry require fresh eligibility;
+workspace permissions alone do not grant access. English and Vietnamese views
+support title search, bounded cursor pages, inbox/resolved/archive filters and
+revision/updated/archive state. Detail text is rendered as plain text. The current
+contract is intentionally read only; no status mutations, media URLs or reporter
+identities are disclosed by the metadata/detail RPCs.
+
+`PRODUCT_FEEDBACK_STAFF_INBOX_ENABLED` remains default off. Auth and RPC reads
+share a ten-second invocation allowance, with the existing SQL three-second
+statement and 500 ms lock limits; there are no retries. `PT403` maps to a sanitized
+403; schema/provider faults map to 503. Synthetic service composition regressions
+exercise current identity and SQL denials through the real PostgREST serializer;
+they do not establish hosted database or browser acceptance.
+
 Feedback availability remains off pending separate activation. The default-off
 hosted feedback profile retains the original105 rollback assertions plus correlation31, for106 after the canonical
 employee foundation. Its eligibility fixture constructs synthetic identities without
