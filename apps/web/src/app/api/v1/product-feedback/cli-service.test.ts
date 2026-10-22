@@ -1,5 +1,10 @@
 // @vitest-environment node
 import { createClient } from '@supabase/supabase-js';
+import {
+  getAppSessionTokenFromRequest,
+  getAppSessionUserFromRequest,
+} from '@tuturuuu/auth/app-session';
+import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runFeedbackCommand } from '../../../../../../../packages/sdk/src/cli/feedback';
 import { TuturuuuUserClient } from '../../../../../../../packages/sdk/src/platform';
@@ -24,6 +29,12 @@ const item = (n: number) => ({
   revision: 3,
 });
 function fixture(denial?: 'identity' | 'registry' | 'schema') {
+  const secret = 'synthetic-feedback-cli-test-signing-key';
+  vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', secret);
+  const token = createCliAppSession(
+    { userId: actor, email: 'stale-token-claim@example.test' },
+    { secret }
+  ).access.token;
   const rpc = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
     if (denial === 'registry' || denial === 'schema')
       return Response.json(
@@ -55,8 +66,9 @@ function fixture(denial?: 'identity' | 'registry' | 'schema') {
           : null,
       authError: null,
     }),
-    app: () => null,
-    hasApp: () => false,
+    app: (request) =>
+      getAppSessionUserFromRequest(request, { targetApp: 'platform' }),
+    hasApp: (request) => getAppSessionTokenFromRequest(request) !== null,
     current: async () => ({
       user: {
         id: actor,
@@ -97,7 +109,7 @@ function fixture(denial?: 'identity' | 'registry' | 'schema') {
       : service.detail(request, parts.at(-1) ?? '');
   });
   const client = new TuturuuuUserClient({
-    accessToken: 'PRIVATE_USER_TOKEN',
+    accessToken: token,
     baseUrl: 'https://web.example.test',
     fetch: http,
   });
@@ -109,8 +121,26 @@ function fixture(denial?: 'identity' | 'registry' | 'schema') {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 describe('CLI to guarded live staff service composition', () => {
+  it('rejects a tampered CLI token before current identity or SQL access', async () => {
+    const { http, rpc } = fixture();
+    const client = new TuturuuuUserClient({
+      accessToken: 'ttr_app_tampered',
+      baseUrl: 'https://web.example.test',
+      fetch: http,
+    });
+    await expect(
+      runFeedbackCommand({
+        client,
+        flags: {},
+        json: true,
+        positionals: ['feedback', 'list'],
+      })
+    ).rejects.toThrow('feedback_unauthorized (401)');
+    expect(rpc).not.toHaveBeenCalled();
+  });
   it('passes authenticated archive/status/search/cursor filters through one page at a time', async () => {
     const { client, write, rpc } = fixture();
     const flags = {
