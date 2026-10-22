@@ -79,6 +79,20 @@ generated type files.
 - Add a dependency to `apps/web` with `cd apps/web && bun add <package>`.
 - Add a dependency to `packages/ui` with `cd packages/ui && bun add <package>`.
 - Never manually edit package manifests for dependency changes.
+- For security patches, capture `bun audit --json` before changing dependencies,
+  then update direct dependencies from their owning workspace. Keep Vite+ and
+  its `vite` alias aligned; verify the upstream release's bundled Vite version.
+- Root `overrides` cover transitive-only fixes. Use `bun pm pkg set --json`
+  with the complete merged overrides object, preserving existing entries.
+  Scope version selectors to vulnerable releases when fixed copies already
+  exist, and pin the minimum safe version on each affected major. A cross-major
+  override needs consumer tests, including imports of dependency internals.
+- Re-audit after each resolution: the first fixed version can have a newer
+  advisory. Verify `bun install --frozen-lockfile` and preserve unsolved findings
+  with registry/advisory evidence; never suppress them to claim a clean audit.
+- Audit Python locks, Flutter's locked Pub packages, and external Actions refs
+  separately. Compare advisories to installed versions; a package having a
+  historical advisory does not establish that the current ref is affected.
 
 ### Tuturuuu CLI
 

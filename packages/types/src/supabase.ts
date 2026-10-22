@@ -4751,6 +4751,30 @@ export type Database = {
           },
         ];
       };
+      employee_profile_write_context: {
+        Row: {
+          actor_id: string;
+          backend_pid: number;
+          handle: string | null;
+          transaction_id: number;
+          user_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          backend_pid: number;
+          handle?: string | null;
+          transaction_id: number;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          backend_pid?: number;
+          handle?: string | null;
+          transaction_id?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       employee_restore_operations: {
         Row: {
           actor_id: string;
@@ -14982,6 +15006,35 @@ export type Database = {
           },
         ];
       };
+      product_feedback_media: {
+        Row: {
+          content: string;
+          content_hash: string;
+          created_at: string;
+          report_id: string;
+        };
+        Insert: {
+          content: string;
+          content_hash: string;
+          created_at?: string;
+          report_id: string;
+        };
+        Update: {
+          content?: string;
+          content_hash?: string;
+          created_at?: string;
+          report_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'product_feedback_media_report_id_fkey';
+            columns: ['report_id'];
+            isOneToOne: true;
+            referencedRelation: 'product_feedback_reports';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       product_feedback_receipts: {
         Row: {
           actor_id: string;
@@ -17023,6 +17076,71 @@ export type Database = {
           transaction_id?: number;
         };
         Relationships: [];
+      };
+      unmanaged_internal_profile_operations: {
+        Row: {
+          actor_id: string;
+          after_handle: string | null;
+          after_name: string;
+          created_at: string;
+          email: string;
+          expected_handle: string | null;
+          expected_name: string | null;
+          operation_id: string;
+          user_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          after_handle?: string | null;
+          after_name: string;
+          created_at?: string;
+          email: string;
+          expected_handle?: string | null;
+          expected_name?: string | null;
+          operation_id: string;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          after_handle?: string | null;
+          after_name?: string;
+          created_at?: string;
+          email?: string;
+          expected_handle?: string | null;
+          expected_name?: string | null;
+          operation_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'unmanaged_internal_profile_operations_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'unmanaged_internal_profile_operations_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'unmanaged_internal_profile_operations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'unmanaged_internal_profile_operations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       user_group_metric_categories: {
         Row: {
@@ -21055,6 +21173,10 @@ export type Database = {
         Args: { p_domain_id: string; p_email: string };
         Returns: Json;
       };
+      employee_profile_handle_write_allowed: {
+        Args: { p_handle: string; p_user_id: string };
+        Returns: boolean;
+      };
       employee_profile_lineage: {
         Args: {
           p_creation_actor: string;
@@ -22462,6 +22584,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      inspect_unmanaged_internal_profile_operation: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_operation_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       inventory_bundle_category_components_json: {
         Args: {
           p_bundle_id: string;
@@ -22873,6 +23004,10 @@ export type Database = {
       lock_tutoring_hours_teacher: {
         Args: { p_teacher: string; p_ws: string };
         Returns: undefined;
+      };
+      lock_unmanaged_internal_profile: {
+        Args: { p_actor_id: string; p_email: string; p_user_id: string };
+        Returns: Json;
       };
       mail_inbound_push_message_allowed: {
         Args: { p_message_id: string };
@@ -23781,6 +23916,12 @@ export type Database = {
         Args: { p_kind: string; p_row: Json };
         Returns: Json;
       };
+      unmanaged_internal_profile_receipt: {
+        Args: {
+          p: Database['private']['Tables']['unmanaged_internal_profile_operations']['Row'];
+        };
+        Returns: Json;
+      };
       update_employee_profile: {
         Args: {
           p_actor_id: string;
@@ -23875,6 +24016,19 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      update_unmanaged_internal_profile: {
+        Args: {
+          p_actor_id: string;
+          p_email: string;
+          p_expected_handle: string;
+          p_expected_name: string;
+          p_handle: string;
+          p_name: string;
+          p_operation_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
       };
       upsert_ai_memory_settings: {
         Args: {
@@ -48461,6 +48615,10 @@ export type Database = {
           username: string;
         }[];
       };
+      get_product_feedback_media_staff: {
+        Args: { p_actor: string; p_id: string };
+        Returns: Json;
+      };
       get_product_feedback_receipt: { Args: { p_key: string }; Returns: Json };
       get_product_feedback_staff: {
         Args: { p_actor: string; p_id: string };
@@ -50624,6 +50782,16 @@ export type Database = {
           p_actor: string;
           p_body: string;
           p_key: string;
+          p_title: string;
+        };
+        Returns: Json;
+      };
+      submit_product_feedback_with_media: {
+        Args: {
+          p_actor: string;
+          p_body: string;
+          p_key: string;
+          p_media?: string;
           p_title: string;
         };
         Returns: Json;

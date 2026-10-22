@@ -62,7 +62,7 @@
     "postal-mime": "3.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "sanitize-html": "^2.17.7",
+    "sanitize-html": "^2.18.1",
     "zod": "^4.6.2",
     "@tanstack/react-start": "1.169.3",
     "@tanstack/react-router": "1.170.45",

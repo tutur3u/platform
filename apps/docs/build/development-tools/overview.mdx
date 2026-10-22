@@ -100,6 +100,24 @@ Hive workspace constraints when Fiber supports the next React minor. Keep
 Other packages retain compatible consumer ranges so the repository overrides do
 not force a second React copy into published-package consumers.
 
+For a security patch, save the initial `bun audit --json` result and update direct
+dependencies with `bun update <package>@<fixed-version>` from the owning workspace.
+For transitive fixes, manage the root `overrides` with
+`bun pm pkg set --json 'overrides=<merged JSON object>'`, preserving existing
+entries. Prefer selectors restricted to vulnerable versions, with the minimum
+fixed release on each major; test the consumer before crossing a major version.
+Re-run the audit after resolution because an initial fix can itself have a newer
+advisory. Verify the resulting lock with `bun install --frozen-lockfile`, run
+focused tests through the resource queue, and require applicable exact-commit CI.
+Builds remain CI-only, and paused runtimes remain excluded.
+
+Keep Vite+ and its core alias on the same published version; check the upstream
+release's bundled Vite version separately from plain `vite` dependencies.
+Audit Python locks, Flutter/Pub advisories, and pinned Actions separately from Bun.
+An advisory without a published fix remains an explicit blocker, even when other
+packages are clean. Do not remove a used dependency or suppress an advisory merely
+to reduce the reported count.
+
 React-PDF 11 requires Node.js 22.13 or newer; CI uses Node.js 24. Its default
 Suspense behavior differs from version 10, so the shared PDF viewer explicitly
 keeps its existing loading and error handling with `suspense={false}`. Mermaid 12

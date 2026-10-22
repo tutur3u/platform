@@ -10717,4 +10717,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantPreviewPause => 'Pause preview';
+
+  @override
+  String get feedbackTitle => 'Send feedback';
+
+  @override
+  String get feedbackPrivate => 'Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.';
+
+  @override
+  String get feedbackSubject => 'Subject';
+
+  @override
+  String get feedbackDetails => 'Details';
+
+  @override
+  String get feedbackAttach => 'Attach screenshot';
+
+  @override
+  String get feedbackMediaSelected => 'Screenshot attached';
+
+  @override
+  String get feedbackRemoveMedia => 'Remove screenshot';
+
+  @override
+  String get feedbackMediaLimit => 'Choose one PNG, JPEG or WebP image up to 2 MB.';
+
+  @override
+  String get feedbackSend => 'Send feedback';
+
+  @override
+  String get feedbackSending => 'Sending…';
+
+  @override
+  String get feedbackSent => 'Feedback received. Your receipt:';
+
+  @override
+  String get feedbackFailure => 'Feedback could not be confirmed. Keep this screen and check your original receipt before trying again.';
+
+  @override
+  String get feedbackVerification => 'Complete the security check to send feedback.';
+
+  @override
+  String get feedbackLimited => 'The feedback limit has been reached. Try again later.';
+
+  @override
+  String get feedbackPending => 'An earlier submission is unconfirmed. Check its original receipt; a missing receipt does not confirm failure.';
+
+  @override
+  String get feedbackCheckReceipt => 'Check original receipt';
+
+  @override
+  String get feedbackRetry => 'Retry same submission';
+
+  @override
+  String get feedbackEditRejected => 'Edit rejected submission';
+
+  @override
+  String get feedbackSubjectRequired => 'Enter a subject of 1–160 characters.';
+
+  @override
+  String get feedbackDetailsRequired => 'Enter details of 1–8000 characters.';
 }

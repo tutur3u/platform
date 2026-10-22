@@ -7,6 +7,10 @@ export interface ProductFeedbackSubmission {
   body: string;
   idempotencyKey: string;
   turnstileToken: string;
+  media?: {
+    contentType: 'image/png' | 'image/jpeg' | 'image/webp';
+    data: string;
+  };
 }
 export interface ProductFeedbackReceipt {
   id: string;
@@ -106,4 +110,29 @@ export async function checkProductFeedbackEligibility(
   )
     throw unavailable();
   return { eligible: true };
+}
+
+export function getProductFeedbackMedia(
+  id: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    media: { contentType: 'image/webp'; data: string } | null;
+  }>(`/api/v1/product-feedback/${encodeURIComponent(id)}/media`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+  });
+}
+export function getProductFeedbackReceipt(
+  key: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    receipt: ProductFeedbackReceipt | null;
+  }>(`/api/v1/product-feedback/receipts/${encodeURIComponent(key)}`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+  });
 }

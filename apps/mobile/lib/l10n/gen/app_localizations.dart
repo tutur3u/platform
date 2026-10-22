@@ -20316,6 +20316,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pause preview'**
   String get assistantPreviewPause;
+
+  /// No description provided for @feedbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get feedbackTitle;
+
+  /// No description provided for @feedbackPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.'**
+  String get feedbackPrivate;
+
+  /// No description provided for @feedbackSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get feedbackSubject;
+
+  /// No description provided for @feedbackDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get feedbackDetails;
+
+  /// No description provided for @feedbackAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach screenshot'**
+  String get feedbackAttach;
+
+  /// No description provided for @feedbackMediaSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot attached'**
+  String get feedbackMediaSelected;
+
+  /// No description provided for @feedbackRemoveMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove screenshot'**
+  String get feedbackRemoveMedia;
+
+  /// No description provided for @feedbackMediaLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one PNG, JPEG or WebP image up to 2 MB.'**
+  String get feedbackMediaLimit;
+
+  /// No description provided for @feedbackSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get feedbackSend;
+
+  /// No description provided for @feedbackSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get feedbackSending;
+
+  /// No description provided for @feedbackSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback received. Your receipt:'**
+  String get feedbackSent;
+
+  /// No description provided for @feedbackFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback could not be confirmed. Keep this screen and check your original receipt before trying again.'**
+  String get feedbackFailure;
+
+  /// No description provided for @feedbackVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the security check to send feedback.'**
+  String get feedbackVerification;
+
+  /// No description provided for @feedbackLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'The feedback limit has been reached. Try again later.'**
+  String get feedbackLimited;
+
+  /// No description provided for @feedbackPending.
+  ///
+  /// In en, this message translates to:
+  /// **'An earlier submission is unconfirmed. Check its original receipt; a missing receipt does not confirm failure.'**
+  String get feedbackPending;
+
+  /// No description provided for @feedbackCheckReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Check original receipt'**
+  String get feedbackCheckReceipt;
+
+  /// No description provided for @feedbackRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry same submission'**
+  String get feedbackRetry;
+
+  /// No description provided for @feedbackEditRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit rejected submission'**
+  String get feedbackEditRejected;
+
+  /// No description provided for @feedbackSubjectRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a subject of 1–160 characters.'**
+  String get feedbackSubjectRequired;
+
+  /// No description provided for @feedbackDetailsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter details of 1–8000 characters.'**
+  String get feedbackDetailsRequired;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
