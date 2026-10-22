@@ -1,0 +1,89 @@
+---
+title: "Outbound SSO to Claude"
+description: "SAML identity-provider architecture, pilot decisions, and delivery boundaries"
+---
+
+Tuturuuu is the proposed SAML 2.0 identity provider: an invited Claude organization
+member signs into Claude through WorkOS using a Tuturuuu account. This is distinct
+from inbound enterprise sign-in to Tuturuuu and from internal cross-app sessions.
+No Supabase bearer token is shared with Claude.
+
+## Pilot decisions
+
+The pilot is SP-initiated and defaults to denied access. A future enabled client
+selects exactly one active nonpersonal workspace. Each user needs current MEMBER
+status, an explicit client assignment, a confirmed email in an approved domain,
+fresh verified MFA no older than ten minutes, and identity-sharing approval on
+every login. Guests, invitations and email-domain matches alone confer no access.
+No workspace or test population has been selected by the protocol fixture.
+
+Share only a stable random pairwise NameID/`id`, confirmed `email`, `firstName`
+and `lastName`. Persist subjects per client/Auth account; do not derive them from
+email or recycle them. An email change requires fresh verification and operator
+review of Claude linking behavior before restoring SSO. Names are presentation,
+never authorization. Claude owns roles, seats and invite-only provisioning.
+
+The pilot excludes OIDC, SCIM, groups, IdP-initiated login and single logout.
+Tuturuuu logout does not imply termination of an existing Claude session.
+These decisions apply to future outbound SSO Web/consent/management surfaces;
+ordinary Tuturuuu sign-in and cross-app session policy retain their own rules.
+
+## Phase 1 protocol boundary
+
+`packages/sso` provides strict Zod configuration/request/identity/assurance
+contracts, bounded Redirect and POST AuthnRequest decoding, pinned request
+signatures when required, signed response/assertion construction and public IdP
+metadata without SLO. Clock, signer and ID generation are injected. Portable
+entrypoints have no framework imports; the implementation targets Node crypto
+and zlib for the future Next.js Node runtime on Vercel.
+
+The selected libraries are `xml-crypto` 6.4.0 and `@xmldom/xmldom` 0.9.12.
+RSA-SHA256 signatures, SHA256 digests and exclusive canonicalization are supplied
+by the library. Request admission rejects unknown SPs, exact-URL mismatches,
+stale requests, unsupported NameID/authentication contexts, passive interactions,
+duplicate IDs/parameters, DTDs and oversized compressed/expanded XML. Unsigned
+requests require an explicitly unsigned profile and do not authenticate the SP.
+
+Assertions expire after two minutes and bind Audience, Recipient, Destination
+and InResponseTo. The only supported NameID format is persistent; the connection's
+actual requirements must be confirmed before enabling it. For both request
+bindings, NameIDPolicy or AllowCreate omission means false, including signed
+requests. Only explicit true/1 permits the future caller to allocate a subject;
+otherwise it must find an existing mapping or deny. These defaults apply to the
+portable protocol and future outbound SSO adapters, with no unsigned-request
+exception. See `packages/sso/src/__tests__/security-review.test.ts` for omission
+and invalid-boolean regression coverage. REFEDS MFA context
+requires a future adapter to prove primary authentication and current TOTP MFA;
+the package cannot establish assurance from a supplied timestamp alone.
+
+Phase 1 adds no routes, UI, migrations, live clients or hosted configuration.
+Metadata generation is a library function, not a published metadata endpoint.
+Do not expose the protocol functions as an issuance API without the later gates.
+
+## Verification and remaining work
+
+`packages/sso/src/__tests__` drives generated signatures through Node-SAML's SP
+consumer with disposable in-memory keys. Negative coverage includes wrapping,
+tampered claims, unsigned assertions, wrong audience/ACS, expiration, replayed
+InResponseTo, unknown SPs and deflate bombs. Node-SAML uses the same underlying
+signature library; independent SAML parsing is not independent crypto validation.
+Parser and XML-signature library failures expose fixed protocol error messages
+without request-derived diagnostics. Wrapping regressions retain an intact signed
+assertion beside a distinct unsigned attacker assertion, verify both original
+assertion and renewed outer signatures, and assert semantic rejection.
+The harness adds exact Destination/Recipient checks because Node-SAML 5.1.0 does
+not enforce them for login responses. See `packages/sso/README.md` for dependency
+advisories, limits, reproduction commands and the samlify evaluation.
+
+Phase 2 supplies private persistence, RLS, transactional request consumption and
+subject allocation. Phase 3 supplies authoritative Auth/MFA/eligibility reads,
+disclosure enforcement, key/policy revision fences, durable audit and disabled
+Web routes. Phase 4 supplies bilingual management and per-login consent UI.
+Phase 5 supplies rotation, compromise/disable procedures, an explicitly selected
+test workspace and connection, exact-commit CI/runtime acceptance and real Claude
+SSO tests. Runtime profile verification and actual Claude login remain unrun.
+
+Run focused tests through `ttr resources run -- bun run --cwd packages/sso test`
+and the package's `type-check` script. Require applicable exact-commit CI before
+integration; no local release builds or production configuration changes are
+part of this phase.
