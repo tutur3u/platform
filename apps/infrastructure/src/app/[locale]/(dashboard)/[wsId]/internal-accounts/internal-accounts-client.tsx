@@ -135,6 +135,16 @@ export function InternalAccountsClient() {
         verifiedOnly={verifiedOnly}
       />
 
+      {activeOnly ? (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setActiveOnly(false)}
+        >
+          {t('filters.include_disabled')}
+        </Button>
+      ) : null}
+
       {accountsQuery.isLoading ? <AccountsSkeleton /> : null}
 
       {accountsQuery.isError ? (

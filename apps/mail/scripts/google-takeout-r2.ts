@@ -19,6 +19,7 @@ function requiredEnv(name: string) {
 
 function bytes(value: Attachment['content']) {
   if (typeof value === 'string') return Buffer.from(value, 'utf8');
+  if (value instanceof ArrayBuffer) return Buffer.from(value);
   return Buffer.from(value);
 }
 

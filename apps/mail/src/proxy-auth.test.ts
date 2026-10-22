@@ -110,6 +110,29 @@ describe('Mail proxy auth handoff', () => {
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
   });
 
+  it.each([503, 403])(
+    'returns terminal auth %i before locale or workspace handling',
+    async (status) => {
+      const terminal = NextResponse.json(
+        { error: 'unavailable' },
+        {
+          status,
+          headers: { 'cache-control': 'no-store' },
+        }
+      );
+      mocks.authProxy.mockResolvedValue(terminal);
+      const response = await proxy(
+        new NextRequest('https://mail.tuturuuu.com/en/personal/inbox')
+      );
+      expect(response).toBe(terminal);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(response.headers.get('location')).toBeNull();
+      expect(mocks.getAppSessionClaimsFromRequest).not.toHaveBeenCalled();
+      expect(mocks.getRequestHeadersWithResponseCookies).not.toHaveBeenCalled();
+    }
+  );
+
   it('passes mobile Bearer requests through the API guard without cookie refresh', async () => {
     const request = new NextRequest(
       'https://mail.tuturuuu.localhost/api/v1/workspaces/personal/mail/bootstrap',

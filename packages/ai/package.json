@@ -110,5 +110,5 @@
   "exports": {
     "./*": "./src/*.ts"
   },
-  "packageManager": "bun@1.4.1"
+  "packageManager": "bun@1.4.3"
 }

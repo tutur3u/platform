@@ -79,7 +79,7 @@ export function EmployeeRestorationDialog({
   const id = useId();
   const t = useTranslations('internal-accounts.restoration');
   const view = consumer.view;
-  const action = consumer.action;
+  const action = consumer.action === 'restore' ? 'restore' : null;
   async function run(work: () => Promise<void>) {
     try {
       const wasRestored = consumer.view.outcome === 'restored';
@@ -107,19 +107,10 @@ export function EmployeeRestorationDialog({
   }
   function submit(event: FormEvent) {
     event.preventDefault();
-    const submittedAction = consumer.action;
-    void run(async () => {
-      await consumer.submit(confirmation);
-      session.assertActive();
-      // One recovery admission for the same retained operation; never replay RESTORE.
-      if (
-        submittedAction === 'restore' &&
-        consumer.view.retained?.operationId &&
-        consumer.action === 'reconcile'
-      )
-        await consumer.submit(confirmation);
-    });
+    if (action !== 'restore') return;
+    void run(() => consumer.submit(confirmation));
   }
+
   let active = actor !== null && actor === boundActor;
   try {
     actor?.assertActive();
@@ -162,9 +153,26 @@ export function EmployeeRestorationDialog({
         </Alert>
         {view.busy ? <output>{t('working')}</output> : null}
         {view.outcome !== 'idle' ? (
-          <output>{t(`outcomes.${view.outcome}`)}</output>
+          <output>
+            {t(
+              view.outcome === 'conflict' && view.retained
+                ? 'revision_conflict'
+                : `outcomes.${view.outcome}`
+            )}
+          </output>
         ) : null}
-        {detail ? (
+        {['pending', 'conflict', 'unavailable'].includes(view.outcome) ||
+        detail?.nextAction === 'inspect' ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={view.busy}
+            onClick={() => void run(() => consumer.inspect())}
+          >
+            {t('check_result')}
+          </Button>
+        ) : null}
+        {detail && view.outcome !== 'pending' && view.outcome !== 'conflict' ? (
           <p aria-live="polite">{t(`next.${detail.nextAction}`)}</p>
         ) : null}
         <EmployeeRestorationDetails

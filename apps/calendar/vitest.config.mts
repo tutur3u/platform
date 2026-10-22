@@ -12,7 +12,29 @@ export default defineConfig({
     },
     environment: 'jsdom',
   },
+  ssr: {
+    resolve: {
+      conditions: ['bun', 'module', 'node', 'development|production'],
+    },
+  },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    conditions: ['bun', 'module', 'node', 'development|production'],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/$1.ts'
+        ),
+      },
+    ],
   },
 });

@@ -74,6 +74,26 @@ node --test scripts/portless-config.test.js
 node --test scripts/ci/check-workflow-config.test.js scripts/ci/release-workflows.test.js
 ```
 
-Because the gateway touches TypeScript, workflow config, docs navigation, and
-translations, finish gateway changes with `bun check` when the shared worktree
-state allows it.
+Require the applicable test, type-check, lint and real application build workflows
+to pass for the exact commit. Follow the repository resource policy for focused
+local checks; release builds run in CI.
+
+## Native renderer verification
+
+The native renderer candidate uses an explicit Start entry. Its request middleware
+preserves the framework-default CSRF checks for server functions; an empty Start
+instance suppresses that fallback and must not replace this policy. The entry also
+lets the owning generator reference its configuration in the typed route footer.
+
+Generate route glue through the admitted CI build and retain the authentic supplier
+bytes. Commit the recovered output, then require fresh clean generation-drift,
+compiler, behavior and Worker artifact checks. Do not hand-edit generated imports
+or relax unused-code checks to make a bootstrap artifact pass. Source acceptance
+and a successful build do not establish canonical traffic or hosted acceptance.
+
+The native workflow retains `native-emitted-config-apps.json` even when emitted
+configuration qualification fails. The diagnostic records source HEAD separately
+from the event SHA, hashes and redacted field shapes. It contains no raw config,
+resource identifiers or secret values and grants no artifact acceptance. Review
+the actual receipt before changing a strict configuration predicate; retain the
+source, resource, archive, restore and deployment gates.

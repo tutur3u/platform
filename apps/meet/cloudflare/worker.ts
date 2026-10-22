@@ -1,23 +1,10 @@
-// OpenNext owns the web application; only the authenticated Live upgrade is intercepted.
-import nextWorker from '../.open-next/worker.js';
-
-export {
-  BucketCachePurge,
-  DOQueueHandler,
-  DOShardedTagCache,
-} from '../.open-next/worker.js';
-
 import { verifyLiveSession } from '../src/features/live-assistant/token';
-import type { LiveEnvironment } from './live/storage';
+import { handleMeetRequest } from '../src/runtime/handler';
 
 export { MeetLiveDurableObject } from './live/session';
 export { MeetingAIProvider } from './provider';
 export default {
-  async fetch(
-    request: Request,
-    env: LiveEnvironment & { MEET_LIVE: DurableObjectNamespace },
-    ctx: ExecutionContext
-  ) {
+  async fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
     const url = new URL(request.url);
     if (url.pathname === '/.well-known/meeting-runtime')
       return Response.json(
@@ -49,6 +36,6 @@ export default {
         headers: Object.fromEntries(request.headers),
       });
     }
-    return nextWorker.fetch(request, env, ctx);
+    return handleMeetRequest(request, env, ctx);
   },
 };

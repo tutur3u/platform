@@ -1,3 +1,4 @@
+import { Y } from '@tuturuuu/realtime/collaboration/server';
 import {
   channelBroadcastSchema as broadcast,
   CHANNEL_FRAME_BYTES,
@@ -5,7 +6,6 @@ import {
   channelTicketSchema,
   channelClientFrameSchema as frame,
 } from '../../../packages/realtime/src/channels/schema';
-import { Y } from '../../../packages/realtime/src/collaboration';
 import {
   signRealtimePayload,
   verifyRealtimePayload,
@@ -504,8 +504,9 @@ export class ChannelRoomDurableObject implements DurableObject {
       if (socket === exclude) continue;
       const a = socket.deserializeAttachment() as Attachment;
       if (!a.presence || a.ticket.exp * 1000 <= Date.now()) continue;
-      result[a.ticket.userId] ??= [];
-      result[a.ticket.userId].push({
+      const presence = result[a.ticket.userId] ?? [];
+      result[a.ticket.userId] = presence;
+      presence.push({
         ...a.presence,
         presence_ref: a.id,
       });

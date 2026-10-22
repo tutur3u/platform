@@ -1,6 +1,5 @@
 import { ArrowUpRight, LayoutGrid } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import Link from 'next/link';
 import { APP_ICONS, CATEGORY_TONES } from './apps-catalog-config';
 import type { CatalogApp } from './apps-catalog-types';
 
@@ -17,14 +16,13 @@ export function AppCatalogCard({
   const tone = CATEGORY_TONES[app.category];
 
   return (
-    <Link
+    <a
       aria-label={`${openLabel}: ${app.title}`}
       className={cn(
         'group relative flex min-h-60 flex-col overflow-hidden rounded-3xl border border-foreground/10 bg-gradient-to-b from-foreground/[0.045] to-transparent p-6 transition-[border-color,background-color,transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_-40px_rgb(0_0_0/0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0',
         tone.surface
       )}
       href={app.href}
-      prefetch={false}
     >
       <div className="flex items-start justify-between gap-4">
         <span
@@ -55,6 +53,6 @@ export function AppCatalogCard({
         aria-hidden
         className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
       />
-    </Link>
+    </a>
   );
 }
