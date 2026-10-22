@@ -1,4 +1,4 @@
-import type { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { performIncrementalActiveSync } from './incremental-active-sync';
 import {
@@ -26,7 +26,7 @@ type CalendarConnectionRow = {
 };
 
 export async function syncGoogleInbound(args: {
-  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>;
+  sbAdmin: TypedSupabaseClient;
   wsId: string;
   rangeStart: string;
   rangeEnd: string;
