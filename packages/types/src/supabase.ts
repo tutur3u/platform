@@ -15445,6 +15445,340 @@ export type Database = {
         };
         Relationships: [];
       };
+      sso_assignments: {
+        Row: {
+          active: boolean;
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          revision: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          revision?: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          active?: boolean;
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          revision?: number;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sso_assignments_ws_id_client_id_fkey';
+            columns: ['ws_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'sso_clients';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      sso_audit_events: {
+        Row: {
+          actor_id: string | null;
+          client_id: string;
+          created_at: string;
+          event_type: string;
+          id: string;
+          policy_revision: number;
+          transaction_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          client_id: string;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          policy_revision: number;
+          transaction_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          client_id?: string;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          policy_revision?: number;
+          transaction_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      sso_clients: {
+        Row: {
+          approved_email_domains: string[];
+          created_at: string;
+          created_by: string | null;
+          display_name: string;
+          enabled: boolean;
+          id: string;
+          policy_revision: number;
+          protocol: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          approved_email_domains: string[];
+          created_at?: string;
+          created_by?: string | null;
+          display_name: string;
+          enabled?: boolean;
+          id?: string;
+          policy_revision?: number;
+          protocol?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          approved_email_domains?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          display_name?: string;
+          enabled?: boolean;
+          id?: string;
+          policy_revision?: number;
+          protocol?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      sso_disclosure_grants: {
+        Row: {
+          actor_id: string;
+          approved: boolean;
+          attribute_names: string[];
+          client_id: string;
+          created_at: string;
+          id: string;
+          policy_revision: number;
+          transaction_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          approved: boolean;
+          attribute_names?: string[];
+          client_id: string;
+          created_at?: string;
+          id?: string;
+          policy_revision: number;
+          transaction_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          approved?: boolean;
+          attribute_names?: string[];
+          client_id?: string;
+          created_at?: string;
+          id?: string;
+          policy_revision?: number;
+          transaction_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      sso_saml_clients: {
+        Row: {
+          acs_urls: string[];
+          client_id: string;
+          entity_id: string;
+          name_id_format: string;
+          ws_id: string;
+        };
+        Insert: {
+          acs_urls: string[];
+          client_id: string;
+          entity_id: string;
+          name_id_format?: string;
+          ws_id: string;
+        };
+        Update: {
+          acs_urls?: string[];
+          client_id?: string;
+          entity_id?: string;
+          name_id_format?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sso_saml_clients_ws_id_client_id_fkey';
+            columns: ['ws_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'sso_clients';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      sso_signing_keys: {
+        Row: {
+          activated_at: string | null;
+          client_id: string;
+          created_at: string;
+          id: string;
+          kid: string;
+          not_after: string;
+          not_before: string;
+          public_certificate: string;
+          retired_at: string | null;
+          revision: number;
+          revoked_at: string | null;
+          status: string;
+          ws_id: string;
+        };
+        Insert: {
+          activated_at?: string | null;
+          client_id: string;
+          created_at?: string;
+          id?: string;
+          kid: string;
+          not_after: string;
+          not_before: string;
+          public_certificate: string;
+          retired_at?: string | null;
+          revision?: number;
+          revoked_at?: string | null;
+          status?: string;
+          ws_id: string;
+        };
+        Update: {
+          activated_at?: string | null;
+          client_id?: string;
+          created_at?: string;
+          id?: string;
+          kid?: string;
+          not_after?: string;
+          not_before?: string;
+          public_certificate?: string;
+          retired_at?: string | null;
+          revision?: number;
+          revoked_at?: string | null;
+          status?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sso_signing_keys_ws_id_client_id_fkey';
+            columns: ['ws_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'sso_clients';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      sso_subjects: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          subject: string;
+          user_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          subject?: string;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          subject?: string;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sso_subjects_ws_id_client_id_fkey';
+            columns: ['ws_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'sso_clients';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      sso_transactions: {
+        Row: {
+          acs_url: string;
+          actor_id: string | null;
+          allow_create: boolean;
+          browser_binding_hash: string;
+          client_id: string;
+          consumed_at: string | null;
+          created_at: string;
+          expires_at: string;
+          handle_hash: string;
+          id: string;
+          in_response_to: string;
+          outcome: string | null;
+          policy_revision: number;
+          relay_state_hash: string | null;
+          request_id_hash: string;
+          session_binding_hash: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          acs_url: string;
+          actor_id?: string | null;
+          allow_create?: boolean;
+          browser_binding_hash: string;
+          client_id: string;
+          consumed_at?: string | null;
+          created_at?: string;
+          expires_at: string;
+          handle_hash: string;
+          id?: string;
+          in_response_to: string;
+          outcome?: string | null;
+          policy_revision: number;
+          relay_state_hash?: string | null;
+          request_id_hash: string;
+          session_binding_hash?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          acs_url?: string;
+          actor_id?: string | null;
+          allow_create?: boolean;
+          browser_binding_hash?: string;
+          client_id?: string;
+          consumed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          handle_hash?: string;
+          id?: string;
+          in_response_to?: string;
+          outcome?: string | null;
+          policy_revision?: number;
+          relay_state_hash?: string | null;
+          request_id_hash?: string;
+          session_binding_hash?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sso_transactions_ws_id_client_id_fkey';
+            columns: ['ws_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'sso_clients';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
       task_description_chunk_sessions: {
         Row: {
           created_at: string;
@@ -23454,6 +23788,82 @@ export type Database = {
         Args: { p_created_before: string; p_ws_id: string };
         Returns: number;
       };
+      sso_assert_assigned: {
+        Args: { p_actor_id: string; p_client_id: string; p_ws_id: string };
+        Returns: undefined;
+      };
+      sso_assert_manager: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: undefined;
+      };
+      sso_audit: {
+        Args: {
+          p_actor_id: string;
+          p_client_id: string;
+          p_event_type: string;
+          p_revision: number;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      sso_lock_client: {
+        Args: { p_client_id: string; p_revision: number; p_ws_id: string };
+        Returns: {
+          approved_email_domains: string[];
+          created_at: string;
+          created_by: string | null;
+          display_name: string;
+          enabled: boolean;
+          id: string;
+          policy_revision: number;
+          protocol: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'sso_clients';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      sso_lock_transaction: {
+        Args: {
+          p_browser_binding_hash: string;
+          p_client_id: string;
+          p_revision: number;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          acs_url: string;
+          actor_id: string | null;
+          allow_create: boolean;
+          browser_binding_hash: string;
+          client_id: string;
+          consumed_at: string | null;
+          created_at: string;
+          expires_at: string;
+          handle_hash: string;
+          id: string;
+          in_response_to: string;
+          outcome: string | null;
+          policy_revision: number;
+          relay_state_hash: string | null;
+          request_id_hash: string;
+          session_binding_hash: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'sso_transactions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      sso_valid_acs: { Args: { p_urls: string[] }; Returns: boolean };
+      sso_valid_domains: { Args: { p_domains: string[] }; Returns: boolean };
       task_capacity_rule_usage: {
         Args: { p_rule_id: string };
         Returns: number;
@@ -50195,6 +50605,122 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { '': string }; Returns: string[] };
+      sso_append_audit: {
+        Args: {
+          p_actor_id: string;
+          p_client_id: string;
+          p_event_type: string;
+          p_policy_revision: number;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      sso_consume_transaction: {
+        Args: {
+          p_actor_id: string;
+          p_browser_binding_hash: string;
+          p_client_id: string;
+          p_policy_revision: number;
+          p_session_binding_hash: string;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['private']['Tables']['sso_subjects']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'sso_subjects';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      sso_create_transaction: {
+        Args: {
+          p_acs_url: string;
+          p_allow_create?: boolean;
+          p_browser_binding_hash: string;
+          p_client_id: string;
+          p_expires_at: string;
+          p_handle_hash: string;
+          p_policy_revision: number;
+          p_relay_state_hash: string;
+          p_request_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['private']['Tables']['sso_transactions']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'sso_transactions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      sso_manage_client: {
+        Args: {
+          p_acs_urls: string[];
+          p_actor_id: string;
+          p_approved_email_domains: string[];
+          p_client_id: string;
+          p_display_name: string;
+          p_enabled?: boolean;
+          p_entity_id: string;
+          p_expected_revision: number;
+          p_ws_id: string;
+        };
+        Returns: Database['private']['Tables']['sso_clients']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'sso_clients';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      sso_read_own_disclosures: {
+        Args: { p_ws_id: string };
+        Returns: Database['private']['Tables']['sso_disclosure_grants']['Row'][];
+        SetofOptions: {
+          from: '*';
+          to: 'sso_disclosure_grants';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      sso_record_consent: {
+        Args: {
+          p_actor_id: string;
+          p_approved: boolean;
+          p_browser_binding_hash: string;
+          p_client_id: string;
+          p_policy_revision: number;
+          p_session_binding_hash: string;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['private']['Tables']['sso_disclosure_grants']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'sso_disclosure_grants';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      sso_set_assignment: {
+        Args: {
+          p_active: boolean;
+          p_actor_id: string;
+          p_client_id: string;
+          p_expected_revision: number;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['private']['Tables']['sso_assignments']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'sso_assignments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       strict_payload_field_byte_limit: {
         Args: { _column_name: string; _table_name: string };
         Returns: number;
@@ -52776,7 +53302,8 @@ export type Database = {
         | 'view_ai_usage'
         | 'view_ai_logs'
         | 'manage_git_repositories'
-        | 'manage_desktop_deployment_vault';
+        | 'manage_desktop_deployment_vault'
+        | 'manage_sso_clients';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -55562,6 +56089,7 @@ export const Constants = {
         'view_ai_logs',
         'manage_git_repositories',
         'manage_desktop_deployment_vault',
+        'manage_sso_clients',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

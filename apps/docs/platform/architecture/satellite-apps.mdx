@@ -52,6 +52,43 @@ secret management, also have local Infrastructure handlers protected by the
 Infrastructure app session and root-workspace membership. Do not add a new
 Infrastructure UI call that depends on an `apps/web` fallback rewrite.
 
+## Shared UI translations
+
+Each satellite must ship English and Vietnamese messages for the shared UI it
+renders, including its sidebar, account menu, settings dialog, workspace picker,
+and lazy dialogs. A product-only namespace check does not cover that shell.
+Copy missing shared values from the corresponding `apps/web/messages` locale;
+preserve existing app-specific copy and scoped bundles rather than copying an
+unrelated app's entire `common` namespace.
+
+Mind's import-aware guard runs in the i18n workflow's namespace check:
+
+```bash
+bun scripts/i18n-rendered-keys.js
+bun scripts/i18n-rendered-keys.js apps/mind --json
+```
+
+The JSON report lists every traced module and each required key's source files.
+The guard follows runtime imports, re-exports and literal lazy imports from
+Mind's App Router entrypoints, excluding API routes and type-only imports. It
+checks both locales. It conservatively includes conditional branches and all
+runtime imports of a reached module; it does not simulate React props or tree
+shaking. Unimported screens and other apps do not contribute requirements.
+
+Template keys expand against Web's matching key family. Finite property keys
+such as autosave labels are collected from their literal definitions. Translator
+props in framework-independent children have explicit namespace bindings in
+`scripts/i18n-rendered-keys.js`; update these when adding another wrapper/child
+pair. Unknown dynamic expressions and unresolved workspace imports fail the
+guard and need a source trace. This check is currently enabled for Mind; other
+satellites retain their existing namespace checks until their translator bindings
+are qualified. It does not prove runtime behavior or replace an app's CI build.
+
+`scripts/i18n-rendered-keys.test.js` covers missing keys in either locale, dynamic
+families, forwarded translators, unrelated-screen exclusion and the real Mind
+closure with its pre-fix keys removed. After adding keys with `bun i18n:add`, run
+`bun i18n:sort` and retain only intentional bundle changes.
+
 ## Cache Components: `connection()`, not `dynamic`
 
 <Warning>

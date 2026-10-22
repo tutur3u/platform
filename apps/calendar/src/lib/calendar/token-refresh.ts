@@ -18,8 +18,9 @@ import {
   MICROSOFT_CALENDAR_SCOPES,
   type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
-
 import { microsoftRefreshCredential } from './microsoft-refresh-credential';
+import { providerSyncSignal } from './provider-sync-budget';
+import { providerSyncNetworkClient } from './provider-sync-network';
 
 export interface CalendarAuthToken {
   id: string;
@@ -94,6 +95,16 @@ async function refreshGoogleToken(
     const oauth2Client = new OAuth2Client({
       clientId,
       clientSecret,
+      ...(providerSyncSignal()
+        ? {
+            transporterOptions: {
+              signal: providerSyncSignal(),
+              timeout: 10_000,
+              retry: false,
+              retryConfig: { retry: 0 },
+            },
+          }
+        : {}),
     });
 
     oauth2Client.setCredentials({
@@ -144,6 +155,12 @@ async function refreshMicrosoftToken(
 
   try {
     const msalConfig = createMsalConfig(config);
+    if (providerSyncSignal())
+      msalConfig.system = {
+        ...msalConfig.system,
+        networkClient: providerSyncNetworkClient,
+        disableInternalRetries: true,
+      };
     const cca = new ConfidentialClientApplication(msalConfig);
 
     const result = await cca.acquireTokenByRefreshToken({

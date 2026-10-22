@@ -45,17 +45,12 @@ async function reconcileApprovedPostEmails(
   sbAdmin: TypedSupabaseClient,
   wsId: string
 ) {
-  const privateDb = sbAdmin.schema('private');
-  const rpc = privateDb.rpc.bind(privateDb) as unknown as (
-    name: string,
-    args: Record<string, unknown>
-  ) => Promise<{ error: unknown | null }>;
-  const { error } = await rpc('reconcile_orphaned_approved_post_email_queue', {
-    p_cutoff: null,
-    p_max_posts: null,
-    p_skip_posts: 0,
-    p_ws_id: wsId,
-  });
+  const { error } = await sbAdmin
+    .schema('private')
+    .rpc('reconcile_orphaned_approved_post_email_queue', {
+      p_skip_posts: 0,
+      p_ws_id: wsId,
+    });
   if (error) throw error;
 }
 

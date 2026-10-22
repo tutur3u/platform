@@ -35,6 +35,24 @@ export default defineConfig({
           '../../packages/internal-api/src/$1.ts'
         ),
       },
+      {
+        find: '@tuturuuu/supabase/next/server',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/server.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/client',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/client.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/types\/(.*)$/,
+        replacement: resolve(__dirname, '../../packages/types/src/$1'),
+      },
     ],
   },
 });
