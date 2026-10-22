@@ -101,7 +101,7 @@ describe('active feedback Web service boundaries', () => {
       p_key: key,
       p_title: 'Subject',
       p_body: 'Details',
-      p_media: null,
+      p_media: undefined,
     });
     const verify = vi.mocked(fetch).mock.calls[0]?.[1];
     expect(String(verify?.body)).not.toContain('remoteip');

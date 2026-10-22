@@ -104,7 +104,7 @@ export const submitProductFeedbackRequest = createFeedbackSubmissionHandler({
     const { data, error } = await client
       .rpc('submit_product_feedback_with_media', {
         ...args,
-        p_media: input.media ?? null,
+        p_media: input.media,
       })
       .abortSignal(operation.signal);
     operation.check();
