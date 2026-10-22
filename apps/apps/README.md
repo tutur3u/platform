@@ -24,7 +24,10 @@ under current restore admission. `bun run dev:app` runs local development on
 port 7818; start a server only for authorized runtime verification. `bun run build` and
 `bun run build:cloudflare` both invoke `vp build`; release builds belong in CI.
 `bun run test` uses the isolated unit config. `bun run test:runtime` requires
-`CI=true` and `CI_SOURCE_SHA` after the native CI build. The qualified source
+`CI=true`, `CI_SOURCE_SHA` and an absolute `APPS_ARTIFACT_RECEIPT` after the
+native CI build. The receipt is the JSON written by
+`python3 scripts/ci/apps-native-artifact.py seal apps/apps --receipt <path>`
+(CI uses `$RUNNER_TEMP/apps-native-artifact.json`). The qualified source
 baseline passed the owning CI acceptance gates.
 New commits require their own exact-source qualification.
 
