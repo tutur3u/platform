@@ -580,7 +580,7 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.match(supabaseStagingWorkflow, /\n {4}branches:\n {6}- main\n/);
   assert.match(
     supabaseProductionWorkflow,
-    /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
+    /deployments\?environment=\$\{environment\}&sha=\$\{target\}/
   );
   assert.match(
     supabaseProductionWorkflow,
@@ -1105,16 +1105,16 @@ test('Supabase production migration requires production platform deploy and succ
   assert.match(evaluateJob, /does not have a current success status/);
   assert.match(
     evaluateJob,
-    /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
+    /deployments\?environment=\$\{environment\}&sha=\$\{target\}/
   );
-  assert.match(evaluateJob, /STAGING_SHA" != "\$TARGET_SHA"/);
-  assert.match(evaluateJob, /STAGING_STATUS" != "completed"/);
-  assert.match(evaluateJob, /STAGING_CONCLUSION" != "success"/);
-  assert.doesNotMatch(
-    evaluateJob,
-    /STAGING_CONCLUSION" = "skipped"/,
-    'production migration must not accept skipped staging migration runs'
-  );
+  assert.match(evaluateJob, /d\.sha === target && d\.ref === target/);
+  assert.match(evaluateJob, /p\.sha === target && p\.markerKind/);
+  assert.match(evaluateJob, /run\.status === 'completed'/);
+  assert.match(evaluateJob, /run\.conclusion === 'success'/);
+  assert.match(evaluateJob, /run\.run_attempt === Number\(p\.runAttempt\)/);
+  assert.match(evaluateJob, /step\.status === 'completed'/);
+  assert.match(evaluateJob, /step\.conclusion === 'success'/);
+  assert.doesNotMatch(evaluateJob, /run\.conclusion === 'skipped'/);
   assert.match(
     evaluateJob,
     /Production platform deployment marker and staging migration are bound to \$TARGET_SHA/

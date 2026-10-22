@@ -21,7 +21,12 @@ does not authorize promotion.
 - Keep staging and production Supabase migration CI on
   `supabase db push --include-all`; production migration CI stays
   triggered by the production deployment planner and prerequisite-gated on the
-  production platform deployment marker plus same-SHA staging success. Database
+  production platform deployment marker plus exact-source staging proof. Bind the
+  newest canonical marker and latest status to the current successful producer
+  attempt and its successful checkout/apply/marker steps; wrapper heads may differ.
+  Verify pinned producer/emitter contracts at target and wrapper commits, use bounded
+  complete inventories, and reread after inspection. Unknown evidence denies migration.
+  Keep the verifier inline when old target checkouts lack new helpers. Database
   migration paths must select the platform deployment so that marker exists.
 - The production planner deploys app code before the production migration runs.
   Any app change that reads or writes a new column must remain compatible with

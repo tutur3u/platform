@@ -257,33 +257,230 @@ jobs:
                 if [ "$DEPLOYMENT_MARKER_HAS_SUCCESS" != "true" ]; then
                   echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA does not have a current success status. Latest state is '$DEPLOYMENT_MARKER_STATE'."
                 else
-                  echo "Checking staging migration status..."
-                  STAGING_RUN=$(gh api \
-                    "repos/${{ github.repository }}/actions/workflows/supabase-staging.yaml/runs?branch=main&head_sha=$TARGET_SHA&per_page=1" \
-                    --jq '.workflow_runs[0] // {} | {conclusion: .conclusion, status: .status, created_at: .created_at, head_branch: .head_branch, head_sha: .head_sha}')
+                  node --input-type=module <<'STAGING_SOURCE_PROOF'
+          // Inline Node 24 verifier; no checkout-local helpers or external packages.
+          const assert = (ok, code) => { if (!ok) throw new Error(code); };
+          const positive = value => Number.isSafeInteger(value) && value > 0;
+          const sha = value => typeof value === 'string' && /^[0-9a-f]{40}$/.test(value);
+          const stamp = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
+          const snapshot = value => JSON.stringify(value, (_key, item) =>
+            item && typeof item === 'object' && !Array.isArray(item)
+              ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
+          const repo = process.env.GITHUB_REPOSITORY;
+          const target = process.env.TARGET_SHA;
+          const token = process.env.GH_TOKEN;
+          const api = (process.env.GITHUB_API_URL || 'https://api.github.com').replace(/\/$/, '');
+          const server = (process.env.GITHUB_SERVER_URL || 'https://github.com').replace(/\/$/, '');
+          const workflowPath = '.github/workflows/supabase-staging.yaml';
+          const workflowName = 'supabase-staging.yaml';
+          const environment = 'supabase-staging';
+          const deadline = Date.now() + 120000;
+          let requests = 0;
 
-                  STAGING_CONCLUSION=$(echo "$STAGING_RUN" | jq -r '.conclusion // "missing"')
-                  STAGING_STATUS=$(echo "$STAGING_RUN" | jq -r '.status // "missing"')
-                  STAGING_BRANCH=$(echo "$STAGING_RUN" | jq -r '.head_branch // "missing"')
-                  STAGING_SHA=$(echo "$STAGING_RUN" | jq -r '.head_sha // "missing"')
+          async function get(route) {
+            assert(route.startsWith('/repos/') && ++requests <= 50, 'request-budget');
+            const remaining = deadline - Date.now();
+            assert(remaining > 0, 'proof-deadline');
+            const response = await fetch(`${api}${route}`, {
+              method: 'GET', redirect: 'error',
+              headers: {
+                Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`,
+                'X-GitHub-Api-Version': '2022-11-28',
+              },
+              signal: AbortSignal.timeout(Math.min(10000, remaining)),
+            });
+            assert(response.ok, 'api-response');
+            const reader = response.body.getReader();
+            const chunks = [];
+            let size = 0;
+            try {
+              for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                size += value.byteLength;
+                assert(size <= 2097152, 'response-size');
+                chunks.push(Buffer.from(value));
+              }
+            } finally {
+              await reader.cancel();
+            }
+            return {
+              data: JSON.parse(Buffer.concat(chunks).toString('utf8')),
+              next: /rel="next"/.test(response.headers.get('link') || ''),
+            };
+          }
 
-                  echo "Staging migration status: $STAGING_STATUS"
-                  echo "Staging migration conclusion: $STAGING_CONCLUSION"
-                  echo "Staging migration branch: $STAGING_BRANCH"
-                  echo "Staging migration SHA: $STAGING_SHA"
+          async function inventory(route, key) {
+            const result = [];
+            const ids = new Set();
+            let total;
+            for (let page = 1; page <= 5; page++) {
+              const { data, next } = await get(`${route}${route.includes('?') ? '&' : '?'}per_page=100&page=${page}`);
+              const rows = key ? data[key] : data;
+              assert(Array.isArray(rows) && rows.length <= 100, 'inventory-shape');
+              if (key) {
+                assert(Number.isSafeInteger(data.total_count) && data.total_count >= 0,
+                  'inventory-count');
+                total ??= data.total_count;
+                assert(total === data.total_count && total <= 499, 'inventory-overflow-or-change');
+              }
+              for (const row of rows) {
+                assert(positive(row.id) && !ids.has(row.id), 'inventory-identity');
+                ids.add(row.id);
+                result.push(row);
+              }
+              if (rows.length < 100 && !next) {
+                assert(!key || total === result.length, 'inventory-incomplete');
+                return result;
+              }
+            }
+            throw new Error('inventory-overflow');
+          }
 
-                  if [ "$STAGING_SHA" != "$TARGET_SHA" ]; then
-                    echo "::notice::Skipping production migration because no main staging migration was found for $TARGET_SHA."
-                  elif [ "$STAGING_BRANCH" != "main" ]; then
-                    echo "::notice::Skipping production migration because the matching staging migration ran on '$STAGING_BRANCH'."
-                  elif [ "$STAGING_STATUS" != "completed" ]; then
-                    echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA is '$STAGING_STATUS', not completed."
-                  elif [ "$STAGING_CONCLUSION" != "success" ]; then
-                    echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA has conclusion '$STAGING_CONCLUSION'."
-                  else
-                    echo "Production platform deployment marker and staging migration are bound to $TARGET_SHA. Proceeding with migration."
-                    SHOULD_DEPLOY=true
-                  fi
+          function payload(deployment) {
+            const p = typeof deployment.payload === 'string'
+              ? JSON.parse(deployment.payload) : deployment.payload;
+            assert(p && typeof p === 'object' && !Array.isArray(p), 'marker-payload');
+            return p;
+          }
+
+          async function latestMarker() {
+            const rows = await inventory(`${base}/deployments?environment=${environment}&sha=${target}`);
+            assert(rows.length > 0, 'marker-missing');
+            assert(rows.every(d => d.sha === target && d.environment === environment && stamp(d.created_at)),
+              'marker-inventory-source');
+            rows.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id);
+            // Never fall back to an older successful marker after the newest is rejected.
+            return rows[0];
+          }
+
+          function checkMarker(d) {
+            const p = payload(d);
+            assert(positive(d.id) && d.sha === target && d.ref === target &&
+              d.environment === environment && p.sha === target && p.markerKind === 'deployment' &&
+              p.workflowName === workflowName && p.refName === 'main' && p.ref === 'refs/heads/main',
+              'marker-source-contract');
+            assert(typeof p.runId === 'string' && /^[1-9][0-9]*$/.test(p.runId) &&
+              typeof p.runAttempt === 'string' && /^[1-9][0-9]*$/.test(p.runAttempt), 'marker-producer');
+            assert(positive(Number(p.runId)) && positive(Number(p.runAttempt)), 'marker-producer-range');
+            assert(p.runUrl === `${server}/${repo}/actions/runs/${p.runId}`, 'marker-run-url');
+            return p;
+          }
+
+          function checkRun(run, p, repository, workflow) {
+            assert(run.id === Number(p.runId) && run.run_attempt === Number(p.runAttempt) &&
+              run.workflow_id === workflow.id && run.path === workflowPath &&
+              run.head_branch === 'main' && sha(run.head_sha) &&
+              ['workflow_run', 'workflow_dispatch'].includes(run.event) &&
+              run.status === 'completed' && run.conclusion === 'success' &&
+              run.repository?.id === repository.id && run.repository?.full_name === repo &&
+              run.head_repository?.id === repository.id && run.head_repository?.full_name === repo,
+              'producer-current-attempt-contract');
+            // For workflow_run, the pinned emitting contract binds TARGET_SHA independently
+            // of the wrapper head. Manual main dispatch checks out its own head.
+            assert(run.event !== 'workflow_dispatch' || run.head_sha === target, 'manual-source');
+          }
+
+          const contracts = [
+            [workflowPath, 'c80066e1cd038fcda3bd6c1a79c0b12993b94b49'],
+            ['scripts/ci/record-deployment-marker.ts', '35eaf73931589cfe9dd62f7456a3dbe3c48c988c'],
+          ];
+          async function checkContracts(producerHead) {
+            for (const [path, expected] of contracts) {
+              for (const revision of new Set([target, producerHead])) {
+                const { data: entry } = await get(`${base}/contents/${path}?ref=${revision}`);
+                assert(entry.type === 'file' && entry.path === path && entry.sha === expected,
+                  'unknown-or-unequal-producer-contract');
+              }
+              // Resolve by immutable commit, then read and hash the immutable Git blob.
+              const { data: blob } = await get(`${base}/git/blobs/${expected}`);
+              assert(blob.sha === expected && blob.encoding === 'base64' &&
+                Number.isSafeInteger(blob.size) && blob.size > 0 && blob.size <= 65536 &&
+                typeof blob.content === 'string', 'contract-blob-shape');
+              const bytes = Buffer.from(blob.content.replace(/\s/g, ''), 'base64');
+              assert(bytes.length === blob.size, 'contract-blob-size');
+              const object = Buffer.concat([Buffer.from(`blob ${bytes.length}\0`), bytes]);
+              const digest = Buffer.from(await crypto.subtle.digest('SHA-1', object)).toString('hex');
+              assert(digest === expected, 'contract-blob-hash');
+            }
+          }
+
+          async function latestStatus(id, p) {
+            const { data } = await get(`${base}/deployments/${id}/statuses?per_page=1&page=1`);
+            assert(Array.isArray(data) && data.length === 1 && positive(data[0].id) &&
+              data[0].state === 'success' && data[0].environment === environment &&
+              data[0].log_url === p.runUrl, 'marker-latest-status');
+            return data[0];
+          }
+
+          let base;
+          async function main() {
+            assert(typeof repo === 'string' && /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo) &&
+              sha(target) && typeof token === 'string' && token.length > 0, 'proof-input');
+            for (const origin of [api, server]) {
+              const url = new URL(origin);
+              assert(url.protocol === 'https:' && !url.username && !url.password &&
+                !url.search && !url.hash, 'proof-origin');
+            }
+            base = `/repos/${repo}`;
+            const { data: repository } = await get(base);
+            assert(positive(repository.id) && repository.full_name === repo &&
+              repository.default_branch === 'main', 'repository-identity');
+            const { data: workflow } = await get(`${base}/actions/workflows/${workflowName}`);
+            assert(positive(workflow.id) && workflow.path === workflowPath &&
+              workflow.name === 'Supabase Staging Migration' && workflow.state === 'active',
+              'workflow-identity');
+            const marker = await latestMarker();
+            const p = checkMarker(marker);
+            const runRoute = `${base}/actions/runs/${p.runId}`;
+            const { data: run } = await get(runRoute);
+            checkRun(run, p, repository, workflow);
+            const status = await latestStatus(marker.id, p);
+            await checkContracts(run.head_sha);
+            const jobs = await inventory(`${runRoute}/attempts/${p.runAttempt}/jobs`, 'jobs');
+            assert(jobs.length === 1, 'migration-job-inventory');
+            const job = jobs[0];
+            assert(job.name === 'Migrate staging database' && job.run_id === run.id &&
+              job.run_attempt === run.run_attempt && job.head_sha === run.head_sha &&
+              job.status === 'completed' && job.conclusion === 'success' &&
+              stamp(job.started_at) && stamp(job.completed_at) &&
+              Date.parse(job.completed_at) >= Date.parse(job.started_at) && Array.isArray(job.steps),
+              'migration-job-contract');
+            const critical = ['Check out migration target', 'Deploy migrations to staging',
+              'Record successful staging migration marker'];
+            let previous = 0;
+            for (const name of critical) {
+              const steps = job.steps.filter(step => step.name === name);
+              assert(steps.length === 1, 'migration-step-identity');
+              const step = steps[0];
+              assert(positive(step.number) && step.number > previous &&
+                step.status === 'completed' && step.conclusion === 'success' &&
+                stamp(step.started_at) && stamp(step.completed_at) &&
+                Date.parse(step.completed_at) >= Date.parse(step.started_at), 'migration-step-success');
+              previous = step.number;
+            }
+            // Sequential re-reads bound the observation; they cannot make GitHub atomic.
+            const newest = await latestMarker();
+            assert(snapshot(newest) === snapshot(marker), 'marker-selection-changed');
+            const { data: rereadMarker } = await get(`${base}/deployments/${marker.id}`);
+            checkMarker(rereadMarker);
+            assert(snapshot(rereadMarker) === snapshot(marker), 'marker-changed');
+            const rereadStatus = await latestStatus(marker.id, p);
+            assert(snapshot(rereadStatus) === snapshot(status), 'marker-status-changed');
+            const { data: rereadRun } = await get(runRoute);
+            checkRun(rereadRun, p, repository, workflow);
+            assert(snapshot(rereadRun) === snapshot(run), 'producer-changed');
+            assert(Date.now() <= deadline, 'proof-deadline');
+            console.log(`Staging source proof: source=${target} producer=${run.id} attempt=${run.run_attempt} deployment=${marker.id}`);
+          }
+          main().catch(() => {
+            // Never echo API bodies, exceptions, credentials, or environment values.
+            console.error('::error::Exact-source staging proof unavailable or changed; refusing production migration.');
+            process.exitCode = 1;
+          });
+          STAGING_SOURCE_PROOF
+                  echo "Production platform deployment marker and staging migration are bound to $TARGET_SHA. Proceeding with migration."
+                  SHOULD_DEPLOY=true
                 fi
               fi
             fi

@@ -1434,12 +1434,12 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
   also re-evaluates the current immutable `production` commit after any successful
   `main` staging migration. The staging event's incoming SHA may be newer and
   unpromoted, so it does not become the production migration target. Target
-  resolution precedes checkout and the pending-migration range/configuration
-  checks. Manual dispatch remains restricted to `production`; planner completions
+  resolution precedes checkout. Staging proof binds the newest exact-source marker,
+  latest success, pinned contracts and current producer attempt's successful apply/marker steps; wrapper heads may differ. Manual dispatch stays on `production`; planner completions
   remain pinned to their successful production run's SHA. The workflow still
   requires that target's successful planner result, production platform deployment
-  marker, and completed successful `main` staging migration before running
-  `supabase db push --include-all`. Failed, cancelled and other non-success
+  marker, and source-bound staging proof before `supabase db push --include-all`.
+  Failed, cancelled and other non-success
   workflow callbacks skip before allocating the evaluation job and use a unique
   ignored-run concurrency group. Successful callbacks from mismatched workflow/branch
   pairs and manual dispatches outside `refs/heads/production` are isolated the same

@@ -260,9 +260,30 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
     /node --experimental-strip-types scripts\/ci\/check-production-migration-recovery.ts/
   );
   assert.match(yaml, /DEPLOYMENT_MARKER_HAS_SUCCESS.*!= "true"/);
-  assert.match(yaml, /STAGING_SHA.*!= "\$TARGET_SHA"/);
-  assert.match(yaml, /STAGING_STATUS.*!= "completed"/);
-  assert.match(yaml, /STAGING_CONCLUSION.*!= "success"/);
+  assert.match(
+    yaml,
+    /d\.sha === target && d\.ref === target &&[\s\S]*p\.sha === target/
+  );
+  assert.match(
+    yaml,
+    /run\.status === 'completed' && run\.conclusion === 'success'/
+  );
+  assert.match(yaml, /run\.run_attempt === Number\(p\.runAttempt\)/);
+  assert.match(yaml, /run\.head_branch === 'main'/);
+  assert.match(yaml, /job\.run_attempt === run\.run_attempt/);
+  assert.match(
+    yaml,
+    /'Deploy migrations to staging',[\s\S]*'Record successful staging migration marker'/
+  );
+  assert.match(
+    yaml,
+    /step\.status === 'completed' && step\.conclusion === 'success'/
+  );
+  assert.ok(
+    yaml.indexOf("node --input-type=module <<'STAGING_SOURCE_PROOF'") <
+      yaml.indexOf('SHOULD_DEPLOY=true')
+  );
+  assert.match(yaml, /process\.exitCode = 1/);
   assert.match(yaml, /supabase db push --include-all/);
   assert.match(yaml, /expected_project_ref:/);
   assert.match(yaml, /PRODUCTION_PROJECT_ID.*!= "\$EXPECTED_PROJECT_REF"/);

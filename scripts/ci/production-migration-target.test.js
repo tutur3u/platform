@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
+const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -32,6 +33,155 @@ function stepScript(name) {
     .replaceAll(/\$\{\{ github\.repository \}\}/g, 'example/platform');
 }
 
+function installFetchFixture() {
+  const fs = require('node:fs');
+  const env = process.env;
+  const target = env.PRODUCTION_SHA;
+  const wrapper = env.FIXTURE_WRAPPER_SHA;
+  const base = '/repos/example/platform';
+  const workflowPath = '.github/workflows/supabase-staging.yaml';
+  const runUrl = 'https://github.com/example/platform/actions/runs/201';
+  const started_at = '2026-01-01T00:00:00Z';
+  const completed_at = '2026-01-01T00:01:00Z';
+  const marker = {
+    id: 301,
+    sha: target,
+    ref: target,
+    environment: 'supabase-staging',
+    created_at: completed_at,
+    payload: {
+      sha: env.STAGING_SHA,
+      markerKind: 'deployment',
+      workflowName: 'supabase-staging.yaml',
+      refName: 'main',
+      ref: 'refs/heads/main',
+      runId: '201',
+      runAttempt: '1',
+      runUrl,
+    },
+  };
+  const repository = {
+    id: 101,
+    full_name: 'example/platform',
+    default_branch: 'main',
+  };
+  const run = {
+    id: 201,
+    run_attempt: 1,
+    workflow_id: 102,
+    path: workflowPath,
+    head_branch: env.STAGING_BRANCH,
+    head_sha: wrapper,
+    event: 'workflow_run',
+    status: env.STAGING_STATUS,
+    conclusion: env.STAGING_RESULT,
+    repository,
+    head_repository: repository,
+  };
+  const status = [
+    {
+      id: 401,
+      state: 'success',
+      environment: 'supabase-staging',
+      log_url: runUrl,
+    },
+  ];
+  const markersRoute = `${base}/deployments?environment=supabase-staging&sha=${target}&per_page=100&page=1`;
+  const runRoute = `${base}/actions/runs/201`;
+  const statusRoute = `${base}/deployments/301/statuses?per_page=1&page=1`;
+  const script = [
+    [base, repository],
+    [
+      `${base}/actions/workflows/supabase-staging.yaml`,
+      {
+        id: 102,
+        path: workflowPath,
+        name: 'Supabase Staging Migration',
+        state: 'active',
+      },
+    ],
+    [markersRoute, [marker]],
+    [runRoute, run],
+    [statusRoute, status],
+  ];
+  const blobs = JSON.parse(fs.readFileSync(env.FIXTURE_BLOBS, 'utf8'));
+  for (const { path, sha, bytes } of blobs) {
+    for (const revision of new Set([target, wrapper])) {
+      script.push([
+        `${base}/contents/${path}?ref=${revision}`,
+        { type: 'file', path, sha },
+      ]);
+    }
+    script.push([
+      `${base}/git/blobs/${sha}`,
+      {
+        sha,
+        encoding: 'base64',
+        size: Buffer.from(bytes, 'base64').length,
+        content: bytes,
+      },
+    ]);
+  }
+  script.push(
+    [
+      `${runRoute}/attempts/1/jobs?per_page=100&page=1`,
+      {
+        total_count: 1,
+        jobs: [
+          {
+            id: 501,
+            name: 'Migrate staging database',
+            run_id: 201,
+            run_attempt: 1,
+            head_sha: wrapper,
+            status: 'completed',
+            conclusion: 'success',
+            started_at,
+            completed_at,
+            steps: [
+              'Check out migration target',
+              'Deploy migrations to staging',
+              'Record successful staging migration marker',
+            ].map((name, index) => ({
+              name,
+              number: index + 1,
+              status: 'completed',
+              conclusion: 'success',
+              started_at,
+              completed_at,
+            })),
+          },
+        ],
+      },
+    ],
+    [markersRoute, [marker]],
+    [`${base}/deployments/301`, marker],
+    [statusRoute, status],
+    [runRoute, run]
+  );
+  let next = 0;
+  globalThis.fetch = async (input, options) => {
+    const url = new URL(input);
+    const route = url.pathname + url.search;
+    const expected = script[next++];
+    if (
+      url.origin !== 'https://api.github.com' ||
+      options?.method !== 'GET' ||
+      options.redirect !== 'error' ||
+      !expected ||
+      route !== expected[0]
+    ) {
+      fs.appendFileSync(env.REQUEST_LOG, 'FETCH_FIXTURE_UNEXPECTED\n');
+      throw new Error('unexpected fixture request');
+    }
+    fs.appendFileSync(env.REQUEST_LOG, `FETCH ${route}\n`);
+    return new Response(JSON.stringify(expected[1]), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+}
+
 function fixture(t, overrides = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'migration-target-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
@@ -40,6 +190,29 @@ function fixture(t, overrides = {}) {
   const environment = path.join(directory, 'environment');
   fs.writeFileSync(output, '');
   fs.writeFileSync(environment, '');
+  fs.symlinkSync(process.execPath, path.join(directory, 'node'));
+  const preload = path.join(directory, 'fetch.cjs');
+  const blobFile = path.join(directory, 'blobs.json');
+  const contracts = [
+    [
+      '.github/workflows/supabase-staging.yaml',
+      'c80066e1cd038fcda3bd6c1a79c0b12993b94b49',
+    ],
+    [
+      'scripts/ci/record-deployment-marker.ts',
+      '35eaf73931589cfe9dd62f7456a3dbe3c48c988c',
+    ],
+  ].map(([file, sha]) => {
+    const bytes = fs.readFileSync(path.resolve(__dirname, '../..', file));
+    const actual = createHash('sha1')
+      .update(`blob ${bytes.length}\0`)
+      .update(bytes)
+      .digest('hex');
+    assert.equal(actual, sha, `shipped contract changed: ${file}`);
+    return { path: file, sha, bytes: bytes.toString('base64') };
+  });
+  fs.writeFileSync(blobFile, JSON.stringify(contracts));
+  fs.writeFileSync(preload, `(${installFetchFixture.toString()})();\n`);
   fs.writeFileSync(
     path.join(directory, 'gh'),
     `#!${process.execPath}
@@ -101,6 +274,14 @@ process.stdout.write(projection < 0 ? json : execFileSync('jq',
     REQUEST_LOG: log,
     GH_TOKEN: 'synthetic-test-only',
     REPOSITORY: 'example/platform',
+    GITHUB_REPOSITORY: 'example/platform',
+    GITHUB_API_URL: 'https://api.github.com',
+    GITHUB_SERVER_URL: 'https://github.com',
+    NODE_OPTIONS: `--require=${preload}`,
+    FIXTURE_BLOBS: blobFile,
+    FIXTURE_WRAPPER_SHA: workflowSha,
+    ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: 'false',
+    EXPECTED_SHA: '',
     CURRENT_SHA: productionSha,
     UNRELATED_SHA: stagingSha,
     CURRENT_REF_NAME: 'main',
@@ -148,12 +329,34 @@ test('newer unpromoted staging completion resolves and gates only current produc
   );
   assert.match(setup.output(), /should_deploy=true/);
   assert.doesNotMatch(setup.requests(), new RegExp(stagingSha));
-  assert.doesNotMatch(setup.requests(), new RegExp(workflowSha));
+  assert.doesNotMatch(
+    setup
+      .requests()
+      .split('\n')
+      .filter((line) => !line.startsWith('FETCH '))
+      .join('\n'),
+    new RegExp(workflowSha)
+  );
   assert.match(setup.requests(), /git\/ref\/heads\/production/);
   assert.match(
     setup.requests(),
-    /supabase-staging\.yaml\/runs\?branch=main&head_sha=aaaa/
+    /FETCH \/repos\/example\/platform\/deployments\?environment=supabase-staging&sha=aaaa/
   );
+  assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
+  const fetches = setup
+    .requests()
+    .split('\n')
+    .filter((line) => line.startsWith('FETCH '));
+  assert.equal(fetches.length, 16);
+  assert.match(fetches[6], new RegExp(`ref=${workflowSha}$`));
+  assert.match(fetches[9], new RegExp(`ref=${workflowSha}$`));
+  assert.match(fetches[11], /attempts\/1\/jobs\?per_page=100&page=1$/);
+  assert.deepEqual(fetches.slice(-4), [
+    fetches[2],
+    'FETCH /repos/example/platform/deployments/301',
+    fetches[4],
+    fetches[3],
+  ]);
 });
 
 for (const [label, overrides, target] of [
@@ -231,11 +434,33 @@ for (const overrides of [
 ]) {
   test(`current production prerequisites remain required: ${JSON.stringify(overrides)}`, (t) => {
     const setup = fixture(t, overrides);
-    assert.equal(
-      setup.run(evaluateStep, { TARGET_SHA: productionSha }).status,
-      0
+    const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
+    const stagingRejected = Object.keys(overrides).some((key) =>
+      key.startsWith('STAGING_')
     );
-    assert.equal(setup.output(), 'should_deploy=false\n');
+    if (stagingRejected) {
+      assert.notEqual(result.status, 0);
+      assert.match(
+        result.stderr,
+        /Exact-source staging proof unavailable or changed/
+      );
+      assert.equal(setup.output(), '');
+      assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
+      const fetches = setup
+        .requests()
+        .split('\n')
+        .filter((line) => line.startsWith('FETCH '));
+      assert.equal(fetches.length, overrides.STAGING_SHA ? 3 : 4);
+      assert.match(
+        fetches.at(-1),
+        overrides.STAGING_SHA ? /deployments\?/ : /actions\/runs\/201$/
+      );
+    } else {
+      assert.equal(result.status, 0);
+      assert.equal(setup.output(), 'should_deploy=false\n');
+      assert.doesNotMatch(setup.requests(), /FETCH /);
+    }
+    assert.doesNotMatch(setup.output(), /should_deploy=true/);
   });
 }
 
