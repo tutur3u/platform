@@ -25,4 +25,5 @@ describe('Teach next config rewrites', () => {
         },
       ],
     });
-  });});
+  });
+});
