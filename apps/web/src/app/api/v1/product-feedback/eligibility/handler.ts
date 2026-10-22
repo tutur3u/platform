@@ -8,11 +8,11 @@ const headers = {
   Vary: 'Authorization, Cookie',
 };
 
-/** Unwired contract. No route or live RPC adapter is published by this module. */
+/** Shared eligibility factory; the live service supplies bounded Auth and RPC ports. */
 export interface StaffEligibilityDependencies {
   resolveActor: (request: Request) => Promise<string>;
   enabled?: () => boolean;
-  // A future typed adapter must translate PT403 to StaffReadError(403).
+  // The typed adapter translates PT403 to StaffReadError(403).
   // Missing RPC/schema and other faults must reject as dependency failures.
   // Unknown rejection values never establish a privilege denial or a grant.
   check: (actor: string) => Promise<unknown>;
