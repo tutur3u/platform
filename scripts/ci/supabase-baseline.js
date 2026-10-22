@@ -126,7 +126,11 @@ function prepare({ key, image }) {
   let createdVolume = false;
   let restorePhase = 'manifest validation';
   const start = () =>
-    cli('start', '--exclude', 'edge-runtime', '--exclude', 'functions');
+    cli(
+      'start',
+      '--exclude',
+      'realtime,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor'
+    );
   const cleanOwned = () => {
     cli('stop', '--no-backup');
     if (createdVolume && existsVolume(volume)) docker('volume', 'rm', volume);

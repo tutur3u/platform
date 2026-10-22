@@ -295,16 +295,16 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   directly. The local action downloads the pinned Bun release with bounded
   exponential backoff so GitHub release 5xx failures do not immediately fail
   deploys.
-- Workflows that need the Supabase CLI should use
-  `.github/actions/setup-supabase-cli-with-retry` after checkout. The wrapper pins
-  setup-cli v3.0.1 by commit SHA and resolves the database workspace's exact stable
-  CLI from the repository-root `bun.lock`; missing or invalid pins fail before
-  installation. An explicit override must also be an exact stable version.
-  No GitHub token input is needed by v3. Keep Node 20+ and npm available first.
-  The installer uses a runner-temporary home because its setup-bun ignores
-  `BUN_INSTALL`. After every attempted installation, the wrapper verifies any
-  pre-existing Bun binary and prepends its directory for subsequent steps.
-  Four attempts use 5/10/20-second backoff; exhausted retries fail the job.
+- Install the Supabase CLI through `.github/actions/setup-supabase-cli-with-retry`
+  after checkout with Node 20+ and npm. It pins setup-cli v3.0.1 by SHA and
+  resolves the exact stable CLI from root `bun.lock`; overrides must be exact.
+  No token input is needed. Its runner-temporary home isolates setup-bun;
+  verify and restore the existing Bun path after every installation attempt.
+  Four installation attempts use 5/10/20-second backoff and fail on exhaustion.
+- Contract startup and type generation share `run-supabase-image-retry.js`:
+  five attempts, 10/20/40/80-second waits plus 0-25% jitter for throttling or transient pull transport errors. Never retry SQL tests, resets or pushes. Keep bounded stderr separate from generated types and publish only
+  successful output. Baselines exclude optional services but retain Storage,
+  Auth and REST; existing SQL-only verifiers retain their narrower exclusions. Run `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`.
 - Release Please is the monorepo source of truth for version/changelog PRs.
   Keep `release-please-config.json`, `.release-please-manifest.json`,
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when

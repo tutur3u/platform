@@ -4,6 +4,7 @@ on:
     branches-ignore: [production]
     paths:
       - scripts/ci/supabase-baseline*
+      - apps/database/scripts/run-supabase*.js
       - .github/actions/setup-supabase-baseline/**
       - .github/workflows/supabase-baseline.yaml
   workflow_dispatch:
@@ -31,6 +32,8 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
+      - name: Verify image-pull retry boundaries
+        run: node --test apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js
       - name: Cold baseline from all migrations
         id: cold
         run: node scripts/ci/supabase-baseline.js prepare
