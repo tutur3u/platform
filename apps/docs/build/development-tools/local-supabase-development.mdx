@@ -13,7 +13,7 @@ updatedAt: '2026-10-22'
 
 Contract startup and type generation retry registry throttling and transient image-pull transport failures up to seven attempts, waiting 10/20/40/80/120/120 seconds plus 0-25% jitter. SQL tests, resets and pushes are never replayed. Authentication, missing-image and schema failures fail immediately; exhausted pulls remain failures. Type generation retains bounded private diagnostics and publishes only successful output.
 
-The baseline helper excludes Studio, Edge Runtime, Logflare, Vector and Supavisor; it retains Storage, Imgproxy, Mailpit, Realtime, Auth and REST for E2E consumers. SQL-only contracts keep their existing narrower service sets. GHCR remains the configured registry; no image archive cache or unverified mirror is introduced.
+The E2E baseline keeps its existing service set, excluding only Edge Runtime and Functions. SQL-only contracts keep their existing narrower service sets. GHCR remains the configured registry; no image archive cache or unverified mirror is introduced.
 
 Regression coverage: `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`. Real cold/warm/corrupt baseline and contract acceptance runs in exact-commit CI.
 
