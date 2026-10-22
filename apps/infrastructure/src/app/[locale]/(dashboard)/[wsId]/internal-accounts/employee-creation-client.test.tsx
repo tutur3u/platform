@@ -42,12 +42,15 @@ describe('employee creation through the public client barrel', () => {
       expect(url).toBe(endpoint);
       if (init?.method !== 'POST') return Response.json({ available: true });
       const operationId = new Headers(init.headers).get('Idempotency-Key');
-      return Response.json({
-        status: 'pending',
-        operationId,
-        code: 'account_creation_outcome_unknown',
-        nextAction: 'inspect',
-      });
+      return Response.json(
+        {
+          status: 'pending',
+          operationId,
+          code: 'account_creation_outcome_unknown',
+          nextAction: 'inspect',
+        },
+        { status: 202 }
+      );
     });
     vi.stubGlobal('fetch', transport);
     const client = createSatelliteQueryClient();
