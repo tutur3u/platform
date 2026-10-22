@@ -114,14 +114,23 @@ export async function WorkspaceNavigationLinks({
   const tasksAppHref = `${getTasksAppOrigin()}/${personalOrWsId}`;
   const trackAppHref = `${getTrackAppOrigin()}/${personalOrWsId}`;
 
-  // Parallelize user-dependent queries
+  const workspacePermissionsPromise = getPermissions({
+    user,
+    wsId: resolvedWorkspaceId,
+  });
+  const feedbackStaffPromise = isMailUser
+    ? workspacePermissionsPromise.then((permissions) =>
+        permissions ? getFeedbackStaffIdentity() : null
+      )
+    : Promise.resolve(null);
   const [
     workspacePermissions,
     userInvoiceVisibilityConfig,
     userTaskNavigationConfigs,
     workspaceInvoiceVisibilityConfig,
+    feedbackStaff,
   ] = await Promise.all([
-    getPermissions({ user, wsId: resolvedWorkspaceId }),
+    workspacePermissionsPromise,
     // Get user's invoice visibility preference
     user
       ? supabase
@@ -145,6 +154,7 @@ export async function WorkspaceNavigationLinks({
       .eq('ws_id', resolvedWorkspaceId)
       .eq('id', 'finance_show_invoices')
       .maybeSingle(),
+    feedbackStaffPromise,
   ]);
   if (!workspacePermissions) {
     if (!user) notFound();
@@ -295,7 +305,6 @@ export async function WorkspaceNavigationLinks({
       : []),
   ];
 
-  const feedbackStaff = isMailUser ? await getFeedbackStaffIdentity() : null;
   const navLinks: (DashboardNavigationLink | null)[] = [
     ...(feedbackStaff
       ? [
