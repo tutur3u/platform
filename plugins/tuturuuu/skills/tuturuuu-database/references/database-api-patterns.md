@@ -38,7 +38,12 @@ ordering and the unique request reservation. Consumption and audit/subject write
 must commit together. Validate changes with
 `node apps/database/scripts/verify-sso-persistence.mjs` through resource admission:
 it applies the full disposable schema, runs pgTAP plus an actual two-connection
-race, generates types from that database and performs owned cleanup. See
+replay race and membership/assignment revocation races in both commit orders,
+generates types from that database and performs owned cleanup. Observe the
+competitor blocked by the holder PID; a delay alone does not establish ordering.
+Use direct assignment DML to keep the management RPC's client lock from masking
+missing assignment locks. Confine lock-removal negative controls to the disposable
+database. See
 [SSO persistence](../../../../../apps/docs/platform/features/sso.mdx#phase-2-persistence-boundary)
 for the database versus future Auth/MFA/signer boundary. Bind live user links to
 `auth.users`, not the retained public user row. Membership deletion and demotion

@@ -139,10 +139,19 @@ consume race. It generates `packages/types/src/supabase.ts` from that same appli
 `public,private,storage` schema, then stops only the owned database without backup.
 Synthetic race rows are committed only inside the disposable database and vanish
 with its teardown; immutable audit rows are never bypassed for fixture cleanup.
+Each race uses fresh UUIDs so repeat runs preserve retained user/workspace history.
 The pgTAP packet covers membership removal/rejoin, demotion/promotion, real Auth
 deletion (including retained public users), creator and workspace deletion,
 byte-identical retained history, and a non-BYPASSRLS table owner. The separate race
-still requires one winner, one replay rejection, one subject and one consume audit.
+requires one winner, one replay rejection, one subject and one consume audit.
+It also races membership deletion and assignment deactivation against consume in
+both orders. The holder observes its own PID blocking the competitor before it
+commits: revocation first must deny consume without a subject or consume audit;
+consume first must commit before revocation can commit. Both orders deny a later
+consume. Assignment deactivation uses direct SQL so the management RPC's client
+lock cannot mask missing authorization-row locks. Keep lock-removal negative
+controls confined to a disposable database; never alter production migrations
+to make the harness pass.
 
 When the committed base type snapshot already lags its applied schema, generate
 both the clean base and candidate using the same CLI and formatter. Apply their
