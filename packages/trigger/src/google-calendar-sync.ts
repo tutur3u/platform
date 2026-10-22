@@ -1,5 +1,6 @@
 import { type calendar_v3, OAuth2Client } from '@tuturuuu/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { providerReadonlyProjection } from '@tuturuuu/utils/calendar-provider-readonly';
 import { convertGoogleAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import {
@@ -256,9 +257,10 @@ export const storeSyncToken = async (
   ws_id: string,
   syncToken: string,
   _lastSyncedAt: Date,
-  calendarId: string = 'primary'
+  calendarId: string = 'primary',
+  client?: TypedSupabaseClient
 ) => {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = client ?? (await createAdminClient({ noCookie: true }));
 
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,
@@ -283,9 +285,10 @@ export const storeSyncToken = async (
 
 export const getSyncToken = async (
   ws_id: string,
-  calendarId: string = 'primary'
+  calendarId: string = 'primary',
+  client?: TypedSupabaseClient
 ): Promise<string | null> => {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = client ?? (await createAdminClient({ noCookie: true }));
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,
     p_calendar_id: calendarId,
@@ -306,9 +309,10 @@ export const getSyncToken = async (
 
 export const clearSyncToken = async (
   ws_id: string,
-  calendarId: string = 'primary'
+  calendarId: string = 'primary',
+  client?: TypedSupabaseClient
 ) => {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = client ?? (await createAdminClient({ noCookie: true }));
 
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,

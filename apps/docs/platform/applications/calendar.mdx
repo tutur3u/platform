@@ -344,6 +344,56 @@ stuck at `running`. Provider rate limits and transient outages offer retry,
 while authentication failures offer reconnection. Operators should inspect the
 Calendar cron execution and dashboard run when retries continue to fail.
 
+### Bounded cron execution and revoked consent
+
+The provider cron returns HTTP 200 when dispatch completes, including recorded
+provider failures. Inspect `ok`, `failed`, `deferred`, and workspace summaries;
+HTTP 200 alone does not establish successful synchronization. Authentication and
+workspace-enumeration failures retain their 401/500 responses. Dashboard rows
+use `failed` only for actual provider failures; successful admitted work is
+`completed` even when summaries report deferred accounts or connections.
+
+Google `invalid_grant` disables only the rejected account, conditional on its
+saved refresh credential still matching the attempted credential. Sibling
+calendars skip further calls in that run; healthy accounts continue. Reconnecting
+reactivates consent through the normal OAuth flow. Transient errors do not disable
+accounts. Microsoft refresh failures are isolated by account and retain the
+existing revoked-consent disable behavior, including reconnect-required refresh
+classification. Calendar-scoped Microsoft errors retain failure diagnostics while
+sibling calendars continue; auth and rate-limit errors stop that account. Deletion
+runs only after successful fetching, reconciliation and upsert. These rules apply
+to manual and background inbound sync; stored events remain visible.
+
+Background runs admit at most 10 workspaces, 20 Google connections and 20
+Microsoft connections per workspace, with a rotating selection across ticks.
+Workspace enumeration stops at 10,000 active token rows and fails visibly if the
+scan is incomplete. Tokens without enabled inbound connections do not dispatch
+workspace sync. Google snapshots stop at 20 pages without applying an incomplete
+snapshot; Microsoft retains its existing pagination guards. Excess work is
+reported as deferred, rather than counted as synchronized or failed. The scan
+accepts exactly 10,000 rows and probes one additional row to reject overflow.
+
+A shared 210-second cancellation signal bounds provider work below the private
+Infrastructure gateway's 240-second timeout and the function's 300-second limit.
+Provider and database requests have a 10-second transport timeout; completion
+writes use a separate five-second budget so cancellation can still record a
+failed run. Queued workspaces and unattempted Google connections are deferred on
+cancellation; an in-flight Google failure remains failed. Microsoft stops without
+creating provider-failure entries for aborted calendars and defers the unfinished
+account plus later accounts. Earlier observed calendar failures remain failed.
+Google, Graph and Microsoft refresh transport do not retry within a cron invocation; the existing 15-minute schedule owns subsequent attempts. Never
+substitute a detached promise timeout that leaves provider work running, and do
+not log provider error objects, headers, tokens, or event payloads.
+
+Regression coverage lives in the provider cron route tests, the workspace sync
+route tests, and `google-inbound-sync`, `microsoft-inbound-sync`,
+`provider-sync-budget`, and `provider-sync-network` tests under Calendar. Use
+`ttr resources run -- bun run --cwd apps/calendar test <focused-test-paths>`;
+local verification does not require building workspace dependencies. Require the
+Calendar build, tests, lint and type checks in CI for the submitted commit before
+release. This policy does not change the cron cadence or authorize a native
+Worker cutover.
+
 ### Recovering individual calendar failures
 
 The warning names each failed Google calendar after a sync attempt. **Pause sync

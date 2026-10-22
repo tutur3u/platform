@@ -1,5 +1,4 @@
 import { type calendar_v3, google } from '@tuturuuu/google';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   clearSyncToken,
   formatEventForDb,
@@ -16,7 +15,13 @@ import { NextResponse } from 'next/server';
 import { encryptGoogleSyncEvents } from '@/lib/workspace-encryption';
 import { refreshGoogleColorContext } from './google-color-context';
 import { incrementalActiveSync } from './google-guarded-sync-writes';
+import {
+  checkProviderSyncBudget,
+  createSyncAdminClient,
+  providerSyncSignal,
+} from './provider-sync-budget';
 import { reconcileGoogleConnectionSeries } from './recurrence/provider/inbound/google-connection';
+import { classifyCalendarSyncError } from './sync-errors';
 import { sanitizeWorkspaceCalendarEventFields } from './sync-field-limits';
 
 type IncrementalSyncOptions = {
@@ -91,7 +96,8 @@ export async function performIncrementalActiveSync(
 
   const tokenOpStart = Date.now();
   console.debug('🔍 [DEBUG] Creating Supabase client...');
-  const supabase = await createAdminClient();
+  checkProviderSyncBudget();
+  const supabase = await createSyncAdminClient();
   console.debug('✅ [DEBUG] Supabase client created successfully');
 
   // Build token query based on whether we have a specific authTokenId
@@ -213,6 +219,15 @@ export async function performIncrementalActiveSync(
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token || undefined,
   });
+  const signal = providerSyncSignal();
+  if (signal)
+    auth.transporter.defaults = {
+      ...auth.transporter.defaults,
+      signal,
+      timeout: 10_000,
+      retry: false,
+      retryConfig: { retry: 0 },
+    };
   const calendar = google.calendar({ version: 'v3', auth });
   console.debug('✅ [DEBUG] Google Calendar client created successfully');
 
@@ -225,7 +240,7 @@ export async function performIncrementalActiveSync(
       authTokenId,
     });
     console.debug('🔍 [DEBUG] Getting active sync token...');
-    const syncToken = await getSyncToken(wsId, syncTokenKey);
+    const syncToken = await getSyncToken(wsId, syncTokenKey, supabase);
     console.debug('🔍 [DEBUG] Sync token result:', {
       hasSyncToken: !!syncToken,
       calendarId,
@@ -286,6 +301,9 @@ export async function performIncrementalActiveSync(
     }
 
     do {
+      checkProviderSyncBudget();
+      if (signal && pageCount >= 20)
+        throw new Error('Google calendar page limit exceeded');
       pageCount++;
       console.debug(`🔍 [DEBUG] Fetching page ${pageCount}...`);
 
@@ -315,8 +333,6 @@ export async function performIncrementalActiveSync(
         metrics.apiCallsCount++;
         const res = await calendar.events.list(requestParams);
         metrics.pagesFetched++;
-
-        console.debug('🔍 [DEBUG] Page', pageCount, 'results:', res.data);
 
         const events = res.data.items || [];
         metrics.eventsFetchedTotal += events.length;
@@ -350,7 +366,7 @@ export async function performIncrementalActiveSync(
 
           // Clear the sync token from database since it's invalid
           try {
-            await clearSyncToken(wsId, syncTokenKey);
+            await clearSyncToken(wsId, syncTokenKey, supabase);
             console.debug(
               '✅ [DEBUG] Invalid sync token cleared from database'
             );
@@ -418,7 +434,13 @@ export async function performIncrementalActiveSync(
 
         if (nextSyncToken) {
           console.debug('🔍 [DEBUG] Storing next sync token...');
-          await storeSyncToken(wsId, nextSyncToken, new Date(), syncTokenKey);
+          await storeSyncToken(
+            wsId,
+            nextSyncToken,
+            new Date(),
+            syncTokenKey,
+            supabase
+          );
           console.debug('✅ [DEBUG] Next sync token stored successfully');
         }
 
@@ -437,7 +459,13 @@ export async function performIncrementalActiveSync(
 
     if (nextSyncToken) {
       console.debug('🔍 [DEBUG] No events but storing next sync token...');
-      await storeSyncToken(wsId, nextSyncToken, new Date(), syncTokenKey);
+      await storeSyncToken(
+        wsId,
+        nextSyncToken,
+        new Date(),
+        syncTokenKey,
+        supabase
+      );
       console.debug('✅ [DEBUG] Next sync token stored successfully');
     }
 
@@ -455,10 +483,7 @@ export async function performIncrementalActiveSync(
     };
   } catch (error) {
     console.error('❌ [DEBUG] Error in performIncrementalActiveSync:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      wsId,
-      userId,
+      code: classifyCalendarSyncError(error),
     });
     throw error;
   }

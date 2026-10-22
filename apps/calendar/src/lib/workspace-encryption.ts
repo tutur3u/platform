@@ -8,7 +8,6 @@
  * Until then, encryption will be gracefully disabled.
  */
 
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { EncryptedCalendarEventFields } from '@tuturuuu/utils/encryption';
 import {
   decryptCalendarEvents,
@@ -22,6 +21,11 @@ import {
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
 import { clampWorkspaceCalendarPlaintextForEncryptedStorage } from '@/lib/calendar/sync-field-limits';
+import {
+  checkProviderSyncBudget,
+  createSyncAdminClient,
+  providerSyncSignal,
+} from './calendar/provider-sync-budget';
 
 // Type for events with optional is_encrypted field (backward compatible)
 interface CalendarEventMaybeEncrypted {
@@ -54,7 +58,7 @@ export async function getOrCreateWorkspaceKey(
 
   try {
     const masterKey = getMasterKey();
-    const supabase = await createAdminClient();
+    const supabase = await createSyncAdminClient();
 
     const { data: existingKey, error: selectError } = await supabase
       .from('workspace_encryption_keys')
@@ -63,6 +67,8 @@ export async function getOrCreateWorkspaceKey(
       .maybeSingle();
 
     if (selectError) {
+      if (providerSyncSignal())
+        throw new Error('Calendar encryption key lookup failed');
       // Table might not exist yet
       console.warn('Encryption keys table not available:', selectError.message);
       return null;
@@ -85,12 +91,15 @@ export async function getOrCreateWorkspaceKey(
       } as never);
 
     if (insertError) {
+      if (providerSyncSignal())
+        throw new Error('Calendar encryption key creation failed');
       console.error('Failed to create workspace encryption key:', insertError);
       return null;
     }
 
     return newKey;
   } catch (error) {
+    if (providerSyncSignal()) throw error;
     console.warn('Encryption not available:', error);
     return null;
   }
@@ -106,7 +115,7 @@ export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
 
   try {
     const masterKey = getMasterKey();
-    const supabase = await createAdminClient();
+    const supabase = await createSyncAdminClient();
 
     const { data, error } = await supabase
       .from('workspace_encryption_keys')
@@ -115,12 +124,15 @@ export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
       .maybeSingle();
 
     if (error || !data) {
+      if (error && providerSyncSignal())
+        throw new Error('Calendar encryption key lookup failed');
       return null;
     }
 
     const key = extractEncryptedKey(data);
     return await decryptWorkspaceKey(key, masterKey);
   } catch (error) {
+    if (providerSyncSignal()) throw error;
     console.warn('Failed to get workspace key:', error);
     return null;
   }
@@ -365,7 +377,7 @@ export async function encryptGoogleSyncEvents<
     return encryptEventsWithKnownIds(events, preCachedEncryptedIds, key);
   }
 
-  const supabase = await createAdminClient();
+  const supabase = await createSyncAdminClient();
 
   // Get all google_event_ids from incoming events
   const googleEventIds = events
@@ -385,6 +397,7 @@ export async function encryptGoogleSyncEvents<
   }> = [];
 
   for (let i = 0; i < googleEventIds.length; i += BATCH_SIZE) {
+    checkProviderSyncBudget();
     const batchIds = googleEventIds.slice(i, i + BATCH_SIZE);
     const { data: batchEvents, error } = await supabase
       .from('workspace_calendar_events')

@@ -22,10 +22,11 @@ export function classifyCalendarSyncError(
   if (error instanceof CalendarProviderSyncError) return error.syncErrorType;
   const value = error as {
     code?: unknown;
+    statusCode?: number;
     message?: string;
     response?: { status?: number; data?: { error?: unknown } };
   } | null;
-  const status = value?.response?.status ?? value?.code;
+  const status = value?.response?.status ?? value?.statusCode ?? value?.code;
   // Inspect only provider error fields, never headers or OAuth credentials.
   const message =
     `${value?.message ?? ''} ${JSON.stringify(value?.response?.data?.error ?? '')}`.toLowerCase();
@@ -56,4 +57,30 @@ export function classifyCalendarSyncError(
   )
     return 'network';
   return 'unknown';
+}
+
+export function isInvalidCalendarGrant(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  if (
+    'message' in error &&
+    typeof error.message === 'string' &&
+    /\binvalid_grant\b/.test(error.message)
+  )
+    return true;
+  if ('errorCode' in error && error.errorCode === 'invalid_grant') return true;
+  if (
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response
+  ) {
+    const data = error.response.data;
+    return (
+      !!data &&
+      typeof data === 'object' &&
+      'error' in data &&
+      data.error === 'invalid_grant'
+    );
+  }
+  return false;
 }
