@@ -33,7 +33,7 @@ test('Biome preserves canonical and generated commits without branch collisions'
   assert.match(workflow, /group:.*github\.workflow.*github\.ref.*github\.sha/);
   assert.match(
     workflow,
-    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main'.*github\.ref != 'refs\/heads\/production'.*!startsWith/
+    /cancel-in-progress:.*github\.ref != 'refs\/heads\/production'.*!startsWith/
   );
 });
 
@@ -48,7 +48,7 @@ test('Release Please owns formatting its generated branches', () => {
   for (const jobName of ['format', 'lint']) {
     assert.doesNotMatch(
       readWorkflowJobBlock('biome-check.yaml', jobName),
-      /release-please--/
+      /if:.*startsWith\(github.ref_name, 'release-please--'\)/
     );
   }
 });

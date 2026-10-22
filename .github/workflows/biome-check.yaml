@@ -4,22 +4,21 @@ on:
   push:
   workflow_dispatch:
 
-# Release Please pushes generated files, then amends them with Biome formatting.
-# Ordinary refs supersede stale commits; validated overflow notes finish the
-# shared no-work decision instead of cancelling an earlier production-SHA check.
-# Immutable canonical/generated commits must not cancel another check on the
-# same SHA. Ordinary feature refs still supersede their obsolete source commits.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && format('{0}-{1}-{2}', github.sha, github.event_name, github.run_id) || 'latest' }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--') }}
-
+# Validation jobs supersede independently; repository mutations finish under a
+# separate non-cancelling lock. Never add a cancelling workflow-level parent.
 jobs:
   check-ci:
+    concurrency:
+      group: ${{ github.workflow }}-check-ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+      cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: biome-check.yaml
 
   duplicate-validation:
+    concurrency:
+      group: ${{ github.workflow }}-duplicate-validation-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+      cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
     name: Check completed validation
     needs: [check-ci]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-please--branches--') && needs.check-ci.outputs.should_run == 'true'
@@ -49,6 +48,9 @@ jobs:
         run: node scripts/ci/check-completed-validation.js
 
   format:
+    concurrency:
+      group: ${{ github.workflow }}-format-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+      cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
     name: Biome Format Check
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -135,6 +137,9 @@ jobs:
           fi
 
   lint:
+    concurrency:
+      group: ${{ github.workflow }}-lint-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+      cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
     name: Biome Lint Check
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -221,6 +226,10 @@ jobs:
           fi
 
   apply-format:
+    concurrency:
+      group: biome-mutations-${{ github.ref }}
+      cancel-in-progress: false
+      queue: max
     name: Apply Format
     runs-on: ubuntu-latest
     needs: [format]
@@ -284,6 +293,10 @@ jobs:
           exit 1
 
   close-outdated-format-pr:
+    concurrency:
+      group: biome-mutations-${{ github.ref }}
+      cancel-in-progress: false
+      queue: max
     name: Close Outdated Format PR
     runs-on: ubuntu-latest
     needs: [format]
@@ -357,6 +370,10 @@ jobs:
             }
 
   comment:
+    concurrency:
+      group: biome-mutations-${{ github.ref }}
+      cancel-in-progress: false
+      queue: max
     name: Comment on PR
     runs-on: ubuntu-latest
     needs: [format, lint]
