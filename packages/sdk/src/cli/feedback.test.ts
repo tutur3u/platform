@@ -206,6 +206,30 @@ describe('feedback private output', () => {
       expect(stderr).not.toHaveBeenCalled();
     }
   );
+  it('sanitizes client construction errors without forwarding credentials', async () => {
+    const write = stdout();
+    const createClient = vi.fn(async () => {
+      throw new Error('Bearer PRIVATE_TOKEN refreshToken=PRIVATE_REFRESH');
+    });
+    await expect(
+      runFeedbackCommand({
+        createClient,
+        flags: {},
+        json: true,
+        positionals: ['feedback', 'list'],
+      })
+    ).rejects.toThrow(
+      JSON.stringify({
+        error: {
+          code: 'feedback_unavailable',
+          status: 503,
+          message: 'feedback_unavailable (503)',
+        },
+      })
+    );
+    expect(createClient).toHaveBeenCalledOnce();
+    expect(write).not.toHaveBeenCalled();
+  });
   it('maps transport/shape failures to generic unavailable', async () => {
     const { client } = clientFor({ body: 'private', providerError: 'raw' });
     stdout();

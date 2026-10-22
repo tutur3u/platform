@@ -528,6 +528,13 @@ statement and 500 ms lock limits; there are no retries. `PT403` maps to a saniti
 exercise current identity and SQL denials through the real PostgREST serializer;
 they do not establish hosted database or browser acceptance.
 
+Feedback CLI `--json` errors use one sanitized `{ error: { code, status,
+message } }` object on stderr, empty stdout and exit code 1, including invalid
+arguments and missing credentials. Argument validation precedes configuration
+and network work. Provider details and credentials never enter this projection.
+Regression coverage: `feedback-entry.test.ts` drives the actual source entrypoint;
+`feedback.test.ts` also covers client-construction and transport failures.
+
 Feedback availability remains off pending separate activation. The default-off
 hosted feedback profile retains the original105 rollback assertions plus correlation31, for106 after the canonical
 employee foundation. Its eligibility fixture constructs synthetic identities without
