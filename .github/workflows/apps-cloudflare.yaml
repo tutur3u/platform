@@ -425,4 +425,6 @@ jobs:
     uses: ./.github/workflows/wave1-native-app.yaml
     with:
       app: apps
-    secrets: inherit
+    secrets:
+      STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
+      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}

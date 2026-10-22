@@ -136,7 +136,7 @@ test('production planner evaluates every app from its deployment baseline in one
   ]);
 });
 
-test('production planner includes Cloudflare for shared Meet runtime changes', () => {
+test('production planner holds Cloudflare for shared Meet runtime changes', () => {
   const rootDir = createFixtureRoot();
   const baseSha = initializeGitRepo(rootDir);
   const headSha = commitFile(
@@ -147,13 +147,13 @@ test('production planner includes Cloudflare for shared Meet runtime changes', (
   );
 
   assert.deepEqual(resolveFixtureTargets({ baseSha, headSha, rootDir }), [
-    { shouldRun: true, workflowName: 'meet-cloudflare.yaml' },
+    { shouldRun: false, workflowName: 'meet-cloudflare.yaml' },
     { shouldRun: false, workflowName: 'vercel-production-calendar.yaml' },
     { shouldRun: false, workflowName: 'vercel-production-storefront.yaml' },
   ]);
 });
 
-test('production planner retries Cloudflare when no successful marker exists', () => {
+test('production hold overrides missing Cloudflare deployment markers', () => {
   const rootDir = createFixtureRoot();
   initializeGitRepo(rootDir);
   const headSha = commitFile(
@@ -165,7 +165,7 @@ test('production planner retries Cloudflare when no successful marker exists', (
 
   const decisions = resolveFixtureTargets({ baseSha: '', headSha, rootDir });
   assert.equal(decisions[0].workflowName, 'meet-cloudflare.yaml');
-  assert.equal(decisions[0].shouldRun, true);
+  assert.equal(decisions[0].shouldRun, false);
 });
 
 test('exact package recovery retains push subset while normal manual dispatch selects all', () => {
@@ -194,7 +194,7 @@ test('exact package recovery retains push subset while normal manual dispatch se
     rootDir,
     eventName: 'workflow_dispatch',
   });
-  assert.equal(manual.filter((decision) => decision.shouldRun).length, 3);
+  assert.equal(manual.filter((decision) => decision.shouldRun).length, 1);
 });
 
 test('recovery mode refuses an unpinned or mismatched SHA', () => {
@@ -434,7 +434,7 @@ test('disabled platform and ordinary all-enabled dispatch retain configuration s
     resolve(migrationBase, { eventName: 'workflow_dispatch' }).map(
       ({ shouldRun }) => shouldRun
     ),
-    [true, true, true, true]
+    [true, false, false, true]
   );
 });
 
@@ -560,4 +560,110 @@ test('test-only changes cannot close a missing production baseline', () => {
   assert.deepEqual(decisions, [
     { shouldRun: true, workflowName: 'vercel-production-tools.yaml' },
   ]);
+});
+
+for (const eventName of ['push', 'workflow_dispatch']) {
+  test(`wave-1 publication holds override ${eventName} including unknown baselines`, () => {
+    const rootDir = createFixtureRoot();
+    const headSha = initializeGitRepo(rootDir);
+    const workflows = [
+      'meet-cloudflare.yaml',
+      'calendar-cloudflare.yaml',
+      'mail-cloudflare.yaml',
+      'apps-cloudflare.yaml',
+      ...['meet', 'calendar', 'mail', 'apps'].map(
+        (app) => `vercel-production-${app}.yaml`
+      ),
+    ];
+    const decisions = resolveFixtureTargets({
+      baseSha: '',
+      headSha,
+      rootDir,
+      eventName,
+      targets: workflows.map((productionWorkflow) => ({ productionWorkflow })),
+      includeEvidence: true,
+    });
+    assert.equal(decisions.length, workflows.length);
+    for (const decision of decisions) {
+      assert.equal(decision.shouldRun, false);
+      assert.equal(decision.held, true);
+      assert.equal(decision.reason, 'held for wave-1 cutover');
+    }
+  });
+}
+
+test('planner summary visibly distinguishes publication holds from unchanged apps', () => {
+  const { mkdtempSync, readFileSync } = require('node:fs');
+  const { tmpdir } = require('node:os');
+  const { join } = require('node:path');
+  const summary = join(
+    mkdtempSync(join(tmpdir(), 'hold-summary-')),
+    'summary.md'
+  );
+  execFileSync(
+    'bun',
+    [
+      '--eval',
+      `
+    import { appendStepSummary } from './scripts/ci/resolve-production-vercel-targets.ts';
+    appendStepSummary([{ workflowName: 'meet-cloudflare.yaml', held: true,
+      shouldRun: false, reason: 'held for wave-1 cutover',
+      changeResult: { source: 'publication-hold' } }], ${JSON.stringify(summary)});
+  `,
+    ],
+    { cwd: repoRoot }
+  );
+  assert.match(readFileSync(summary, 'utf8'), /Held.*held for wave-1 cutover/);
+  const { readWorkflowJobBlock } = require('./workflow-config-test-helpers.js');
+  assert.match(
+    readWorkflowJobBlock('meet-cloudflare.yaml', 'deploy'),
+    /needs.production-policy.outputs.allowed == 'true'/
+  );
+});
+
+test('every other production app retains switchboard dispatch behavior', () => {
+  const rootDir = createFixtureRoot();
+  const headSha = initializeGitRepo(rootDir);
+  const decisions = resolveFixtureTargets({
+    baseSha: '',
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+    targets: undefined,
+    includeEvidence: true,
+  });
+  // Explicitly exercise the complete real production target inventory.
+  const output = execFileSync(
+    'bun',
+    [
+      '--eval',
+      `
+    import { cloudflareProductionTargets, vercelWorkflowTargets, getWorkflowDecision } from './tuturuuu.ts';
+    import { productionPublicationHold } from './scripts/ci/production-publication-policy.ts';
+    import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
+    const targets = [...vercelWorkflowTargets, ...cloudflareProductionTargets];
+    const decisions = await resolveProductionVercelTargets({ rootDir: ${JSON.stringify(rootDir)},
+      targets, eventName: 'workflow_dispatch', refName: 'production' });
+    for (const d of decisions) {
+      if (productionPublicationHold(d.workflowName)) continue;
+      const expected = getWorkflowDecision({ workflowName: d.workflowName,
+        eventName: 'workflow_dispatch', changedFiles: null, workspaceManifests: [] });
+      if (d.shouldRun !== expected.shouldRun) throw new Error(d.workflowName);
+    }
+    console.log('unchanged');
+  `,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GITHUB_TOKEN: '',
+        GITHUB_REPOSITORY: '',
+        GITHUB_EVENT_PATH: '',
+      },
+    }
+  );
+  assert.match(output, /unchanged/);
+  assert.ok(decisions.length);
 });

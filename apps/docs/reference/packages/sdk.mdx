@@ -223,8 +223,12 @@ file, or use `ttr host use <target>` to target a local, production, or explicit
 URL origin.
 
 The CLI checks the npm registry at most once per hour and writes a notice to
-stderr when a newer `tuturuuu` version is available. This keeps `--json` output
-machine-readable for agents. Use `ttr upgrade` to run `bun i -g tuturuuu`. Use
+stderr when a newer `tuturuuu` version is available. JSON invocations suppress
+this notice on both output streams while retaining the update check and cache.
+This covers `--json` and explicit JSON format/output flags; non-JSON commands
+retain the notice. The CLI entrypoint regression tests in
+`packages/sdk/src/cli/update-entry.test.ts` cover JSON success, feedback JSON
+errors, and non-JSON notices. Use `ttr upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` on a single command, or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`,
 to disable the check.
 
@@ -393,8 +397,8 @@ ttr tasks --json --no-update-check
 
 `ttr whoami` shows login state, account email, current workspace, selected
 board/list/task/label/project ids, base URL, config path, and the `Tuturuuu CLI`
-session label. Use `--json --no-update-check` when another agent is going to
-parse stdout.
+session label. Use `--json` when another agent is going to parse stdout;
+`--no-update-check` is optional and skips the registry check entirely.
 
 The v1 task surface covers workspaces, boards, lists, tasks, labels, projects,
 relationships, moves, and bulk task updates. Read-oriented groups list by
@@ -1529,3 +1533,24 @@ diagnostics add no timers, subprocesses, probes or retries. The 4000ms deadline
 and fail-closed capacity behavior remain unchanged. Focused pure mocks in
 `devbox-docker-metadata-diagnostic.test.ts` cover opt-in gating, bounded fields,
 event order, deadline/kill outcomes, errors, close timing, overflow and redaction.
+
+
+### Private staff feedback
+
+`ttr feedback list|show` uses the authenticated, host-scoped Web staff API; it
+never resolves a selected workspace or grants access from a local email claim.
+The service rechecks current exact-domain activated staff and the canonical
+registry for every list/detail operation. The default-off staff feature flag
+must be enabled by the release owner before live use.
+
+List returns one bounded metadata page and an explicit filter-bound next cursor.
+`show <uuid>` omits the private body unless `--include-content` is present.
+Status, archive timestamp and revision are read only. With `--json`, success
+goes to stdout; sanitized failures are one JSON object on stderr with
+`error.code`, `error.status` and a fixed `error.message`, and the CLI exits 1.
+Provider diagnostics, credentials and URLs are never forwarded.
+
+The CLI-to-staff-service composition fixture covers pagination, detail/content
+opt-in, status filters and denied current identities/registry reads through the
+real PostgREST serializer. These synthetic boundaries do not qualify a hosted
+Auth or database deployment.

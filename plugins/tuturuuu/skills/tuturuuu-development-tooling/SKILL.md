@@ -25,7 +25,10 @@ For prompt/skill maintenance, use `references/agent-guidance-review.md` for
 placement decisions and realistic routing checks.
 
 - For scripts and CI behavior, consult the relevant section of
-  `references/ci-tooling-patterns.md`.
+  `references/ci-tooling-patterns.md`; for protected production publication, use
+  `references/production-publication-policy.md`.
+- For explicit wave-1 production publication holds, use the
+  [cutover runbook](../../../../apps/docs/build/devops/wave1-native-cutover.mdx).
 - For shared-checkout ownership, use `$tuturuuu-agent-coordination`.
 - For a changed operating workflow, update the relevant `apps/docs` page.
 - For plugin edits, keep folder/frontmatter names aligned, retain

@@ -17,3 +17,9 @@ there need no manifest list. Keep deployment credentials out of runtime/build st
 Meet has a separate isolated staging profile; canonical output never stands in for
 staging. See the [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
 for provisioning, bounded-work limits and remaining hosted/cutover evidence.
+
+Use the shared validated production publication policy in native entrypoints; do not
+read the retired hold-map export. Held profile builds use fixture public inputs.
+Staging secrets require a trusted main event and staging profile, including in the
+reusable publisher itself. Include imported Void staging configs in their owning
+TypeScript project and verify with the app's non-build type-check command.

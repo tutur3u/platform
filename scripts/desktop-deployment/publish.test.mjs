@@ -16,21 +16,30 @@ const version = (
 ).match(/^version: (\d+\.\d+\.\d+)\+/m)[1];
 const tag = `desktop-v${version}-123`;
 
-async function runPublication(change = {}, view = { databaseId: 456 }) {
+async function runPublication(
+  change = {},
+  view = { databaseId: 456 },
+  platform = 'linux',
+  verification = 'deb-package-verified'
+) {
+  const name =
+    platform === 'windows'
+      ? 'Tuturuuu-windows-x64-setup.exe'
+      : 'Tuturuuu-linux-x64.deb';
   const temp = await mkdtemp(join(tmpdir(), 'desktop-draft-test-'));
   try {
     const directory = join(temp, 'desktop-artifacts');
     await mkdir(directory);
     await writeFile(join(directory, name), 'synthetic package');
     await writeFile(
-      join(directory, 'verified-linux.json'),
+      join(directory, `verified-${platform}.json`),
       JSON.stringify({
-        platform: 'linux',
+        platform,
         name,
         sha256,
         source,
         run: '123',
-        verification: 'deb-package-verified',
+        verification,
       })
     );
     const fixture = {
@@ -75,7 +84,7 @@ console.error('gh: Not Found (HTTP 404)'); process.exit(1);
           GITHUB_REPOSITORY: 'tutur3u/platform',
           GITHUB_SHA: source,
           GITHUB_RUN_ID: '123',
-          DESKTOP_BETA_PLATFORMS: 'linux',
+          DESKTOP_BETA_PLATFORMS: platform,
           TEST_FIXTURE: join(temp, 'fixture.json'),
           TEST_CALLS: join(temp, 'calls.jsonl'),
         },
@@ -85,7 +94,11 @@ console.error('gh: Not Found (HTTP 404)'); process.exit(1);
       .trim()
       .split('\n')
       .map(JSON.parse);
-    return { result, calls };
+    return {
+      result,
+      calls,
+      notes: await readFile(join(temp, 'desktop-release-notes.md'), 'utf8'),
+    };
   } finally {
     await rm(temp, { recursive: true, force: true });
   }
@@ -175,4 +188,35 @@ test('invalid database IDs are rejected before REST lookup or publication', asyn
     assert.notEqual(result.status, 0);
     assert.ok(!calls.some((args) => args[0] === 'api' || args[1] === 'edit'));
   }
+});
+
+test('actual Windows release notes disclose unsigned trust and checksum without claiming Authenticode', async () => {
+  const { result, notes } = await runPublication(
+    {},
+    undefined,
+    'windows',
+    'unsigned-windows'
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(notes, /Windows packages are UNSIGNED/);
+  assert.match(notes, /SmartScreen/);
+  assert.match(notes, /More info, then Run anyway/);
+  assert.match(notes, /in-app updater requires publisher signatures/);
+  assert.match(notes, new RegExp(sha256));
+  assert.doesNotMatch(
+    notes,
+    /Windows packages have timestamped Authenticode signatures/
+  );
+  const signed = await runPublication(
+    {},
+    undefined,
+    'windows',
+    'authenticode-timestamped'
+  );
+  assert.equal(signed.result.status, 0, signed.result.stderr);
+  assert.match(
+    signed.notes,
+    /Windows packages have timestamped Authenticode signatures/
+  );
+  assert.doesNotMatch(signed.notes, /Windows packages are UNSIGNED/);
 });

@@ -180,3 +180,17 @@ production holds, source/ref admission, fresh-stop failure, one-write bounds, un
 outcome retention, rollback shape, identical-version identity and workflow gate order.
 Real app builds and workerd gates run only in CI. No local build or production
 workflow dispatch is part of this validation.
+
+## Held validation and staging admission
+
+The shared fail-closed `production-publication-policy.ts` decision also applies to
+native publisher entrypoints, alongside the profile hold. Production profile builds
+use disposable public inputs and no production credentials. Staging build inputs are
+read only for a trusted main push or dispatch; PRs use fixture inputs. The reusable
+publisher itself admits only staging on those trusted events, even if a caller tries
+to pass a production profile. Publication remains non-cancelling. Regression evidence
+lives in `production-publication-policy.test.js`, `production-publisher-secrets.test.js`
+and `wave1-native-publishers.test.js`.
+
+Meet's app TypeScript project includes both Void configs because the default config
+imports the staging config; keep that imported tooling file in the same project.

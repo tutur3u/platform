@@ -66,6 +66,7 @@
                   "platform/features/mobile-workspace-tools",
                   "platform/features/mobile-settings-shell",
                   "platform/features/hidden-workspaces",
+                  "platform/features/sso",
                   "platform/features/inventory-stock-health",
                   "platform/features/inventory-season-pricing-mobile",
                   "platform/features/user-management",
@@ -327,6 +328,7 @@
                 "pages": [
                   "build/devops/overview",
                   "build/devops/active-runtime",
+                  "build/devops/wave1-native-cutover",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/wave1-native-publishers",
                   "build/devops/environments-release-flow",

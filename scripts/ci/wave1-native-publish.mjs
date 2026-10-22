@@ -119,8 +119,14 @@ export async function guardedPublication({
 }
 async function main() {
   const [mode, app, environment, sha] = process.argv.slice(2);
+  const { productionPublicationHold } = await import(
+    './production-publication-policy.ts'
+  );
   const admission = publicationAdmission({
     environment,
+    hold:
+      productionPublicationHold(`${app}-cloudflare.yaml`) ??
+      profiles.productionHold,
     ref: process.env.GITHUB_REF,
     event: process.env.GITHUB_EVENT_NAME,
     stagingEnabled: process.env.WAVE1_STAGING_PUBLISH_ENABLED,
@@ -169,17 +175,6 @@ async function main() {
       p.host,
       `${p.name}.${process.env.CLOUDFLARE_WORKERS_SUBDOMAIN}.workers.dev`
     );
-  else {
-    const sourcePolicy = await import('../../tuturuuu.ci.ts');
-    assert.ok(
-      Object.hasOwn(sourcePolicy, 'productionPublicationHolds'),
-      'PR A must land first'
-    );
-    assert.ok(
-      !sourcePolicy.productionPublicationHolds[app],
-      'Source production hold is still active'
-    );
-  }
   const flag =
     environment === 'staging'
       ? 'WAVE1_STAGING_PUBLISH_ENABLED'

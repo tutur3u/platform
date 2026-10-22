@@ -5,6 +5,11 @@ on:
       app:
         type: string
         required: true
+    secrets:
+      STAGING_SUPABASE_URL:
+        required: false
+      STAGING_SUPABASE_PUBLISHABLE_KEY:
+        required: false
 permissions:
   contents: read
   actions: read
@@ -59,8 +64,8 @@ jobs:
       PROFILE: ${{ matrix.profile }}
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN || 'wave1-ci-fixture' }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && 'https://wave1-ci.supabase.invalid' || secrets[format('{0}_SUPABASE_URL', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] || 'https://wave1-ci.supabase.invalid' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && 'sb_publishable_wave1_ci_placeholder' || secrets[format('{0}_SUPABASE_PUBLISHABLE_KEY', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] || 'sb_publishable_wave1_ci_placeholder' }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ matrix.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || 'https://wave1-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ matrix.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_wave1_ci_placeholder' }}
       WRANGLER_SEND_METRICS: 'false'
       WRANGLER_WRITE_LOGS: 'false'
       NODE_OPTIONS: --max-old-space-size=8192
@@ -165,7 +170,9 @@ jobs:
     with:
       app: ${{ inputs.app }}
       profile: staging
-    secrets: inherit
+    secrets:
+      STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
+      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
   publish-production:
     name: Native production publisher held for wave-1 cutover
     needs: [restored, policy-production]
@@ -174,4 +181,3 @@ jobs:
     with:
       app: ${{ inputs.app }}
       profile: production
-    secrets: inherit

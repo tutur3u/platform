@@ -94,8 +94,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/${{ matrix.app }}
-          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Capture generated Mail route tree evidence
         if: ${{ always() && matrix.app == 'mail' }}
@@ -183,8 +183,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --filter='@tuturuuu/calendar^...' --filter='@tuturuuu/web^...' --concurrency=2
-          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
       - name: Record Calendar route tree presence before frontend build
         id: calendar-route-tree-before
         run: |
@@ -284,8 +284,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run type-check --filter=@tuturuuu/calendar --filter=@tuturuuu/web --filter=@tuturuuu/tasks --filter=@tuturuuu/tasks-ui --concurrency=2
-          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
       - name: Validate actual Worker bundle without publication
         working-directory: apps/calendar
         run: bun x --no-install wrangler deploy --dry-run --config "${{ steps.output.outputs.config }}" --outdir "$RUNNER_TEMP/calendar-dry-run"

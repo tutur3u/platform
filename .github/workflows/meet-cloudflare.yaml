@@ -126,8 +126,14 @@ jobs:
           fi
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
   validate:
-    needs: [check-ci, release-relevance]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.release-relevance.outputs.run_checks == 'true'
+    needs: [check-ci, release-relevance, production-policy]
+    if: >-
+      ${{ !cancelled() && needs.check-ci.result == 'success' &&
+          needs.release-relevance.result == 'success' &&
+          needs.check-ci.outputs.should_run == 'true' &&
+          needs.release-relevance.outputs.run_checks == 'true' &&
+          (github.ref != 'refs/heads/production' ||
+           (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -455,9 +461,23 @@ jobs:
           if-no-files-found: warn
       - name: Recheck artifact after restored runtime qualification
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
-  deploy:
-    needs: validate
+  production-policy:
+    name: Report wave-1 production publication hold
     if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.policy.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - id: policy
+        run: node scripts/ci/production-publication-policy.ts meet-cloudflare.yaml "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: [validate, restored-artifact, production-policy]
+    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
     permissions:
       contents: read
       deployments: write

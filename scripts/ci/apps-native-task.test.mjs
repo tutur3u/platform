@@ -223,10 +223,15 @@ function assertWorkflow(source) {
     /^ {8}run: node --test scripts\/ci\/apps-native-browser\.runtime\.mjs$/mu,
     'workflow.runtime-bypass must remain absent'
   );
+  let credentialFreeSource = source;
+  for (const name of ['URL', 'PUBLISHABLE_KEY']) {
+    const admitted = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_${name} || '' }}`;
+    credentialFreeSource = credentialFreeSource.replaceAll(admitted, '');
+  }
   assert.doesNotMatch(
-    source,
-    /secrets\./u,
-    'workflow.secrets must remain absent'
+    credentialFreeSource,
+    /secrets(?:\.|\[)/u,
+    'workflow.secrets must remain absent outside explicit staging input admission'
   );
 }
 
@@ -541,4 +546,18 @@ test('metadata contract rejects caching, incorrect hashing and global allowances
       error instanceof assert.AssertionError &&
       error.message.startsWith('package.scripts.test:apps-native-browser ')
   );
+});
+
+test('staging input exception rejects production refs and production secret substitutions', () => {
+  for (const changed of [
+    workflow.replaceAll(
+      "github.ref == 'refs/heads/main'",
+      "github.ref == 'refs/heads/production'"
+    ),
+    workflow.replaceAll(
+      'secrets.STAGING_SUPABASE_',
+      'secrets.PRODUCTION_SUPABASE_'
+    ),
+  ])
+    assert.throws(() => assertWorkflow(changed), /workflow.secrets/);
 });

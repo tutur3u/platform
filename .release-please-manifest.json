@@ -60,6 +60,7 @@
   "packages/realtime": "0.10.2",
   "packages/satellite": "0.25.0",
   "packages/sdk": "0.28.0",
+  "packages/sso": "0.0.0",
   "packages/storage-core": "0.3.2",
   "packages/supabase": "0.6.0",
   "packages/tasks-api": "0.5.2",
