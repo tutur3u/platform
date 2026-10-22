@@ -1,7 +1,7 @@
 ---
 title: "Pay"
 description: "Workspace subscription billing, invoice views, seats, and billing return flows."
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-22'
 ---
 
 Pay (`pay.tuturuuu.com`, `apps/pay`) is the private workspace billing surface.
@@ -10,10 +10,22 @@ customer purchases.
 
 ## Open billing
 
-The app entry resolves a workspace through its dashboard flow, including
-pending invitations. The workspace destination is `/{wsId}/billing`; the
-provider return flow uses `/{wsId}/billing/success`. Central sign-in and the
-Pay app session establish the actor before billing access is checked.
+The app entry redirects to `/dashboard`, which shows pending invitations first.
+Without pending invitations, it lists only the signed-in user's workspaces with
+the `manage_subscription` permission used by the billing page. One eligible
+workspace opens billing directly; several show a workspace picker. With none,
+Pay explains how to request billing access and links to Tuturuuu to create or
+join a workspace. Workspace lookup failures use the page error boundary rather
+than appearing as an empty membership list. The workspace destination is
+`/{wsId}/billing`; the provider return flow uses `/{wsId}/billing/success`.
+Central sign-in and the Pay app session establish the actor before billing
+access is checked.
+
+This applies to Pay's root/dashboard entry for both personal and team workspaces.
+Direct billing URLs still enforce workspace membership and billing permission;
+the picker grants no access. Regression coverage lives in
+`apps/pay/src/app/[locale]/dashboard/page.test.tsx` (one/many/none, excluded
+workspaces, invitation precedence, authentication, and lookup failures).
 
 Billing surfaces can include subscriptions, seats, invoices, and provider
 payment methods according to the configured provider and workspace permissions.
