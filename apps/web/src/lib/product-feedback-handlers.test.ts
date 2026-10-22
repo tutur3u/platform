@@ -153,8 +153,17 @@ describe('secure product feedback intake', () => {
     const png = await sharp({
       create: { width: 12, height: 12, channels: 3, background: '#123456' },
     })
+      .withExif({
+        IFD0: { Make: 'SYNTHETIC_FEEDBACK_CAMERA' },
+        IFD3: { GPSLatitudeRef: 'N', GPSLatitude: '1/1 2/1 3/1' },
+      })
       .png()
       .toBuffer();
+    const sourceMetadata = await sharp(png).metadata();
+    expect(sourceMetadata.exif).toBeDefined();
+    expect(
+      sourceMetadata.exif?.includes(Buffer.from('SYNTHETIC_FEEDBACK_CAMERA'))
+    ).toBe(true);
     const deps = dependencies();
     expect(
       (
@@ -172,6 +181,11 @@ describe('secure product feedback intake', () => {
     const metadata = await sharp(bytes).metadata();
     expect(metadata.format).toBe('webp');
     expect(metadata.exif).toBeUndefined();
+    expect(metadata.xmp).toBeUndefined();
+    expect(metadata.iptc).toBeUndefined();
+    expect(bytes.includes(Buffer.from('SYNTHETIC_FEEDBACK_CAMERA'))).toBe(
+      false
+    );
     expect(JSON.stringify(submitted)).not.toContain('PRIVATE_TOKEN');
   });
   it.each(['<svg onload="alert(1)"/>', 'not image'])(

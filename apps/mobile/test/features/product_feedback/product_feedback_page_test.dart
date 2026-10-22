@@ -88,6 +88,110 @@ void main() {
     expect(identical(drafts.first, drafts.last), isTrue);
     expect(preferences.getKeys(), {pending});
   });
+  for (final unknown in [
+    const ApiException(message: 'unavailable', statusCode: 503),
+    Exception('transport acknowledgement lost'),
+  ]) {
+    for (final status in [400, 401, 403, 413, 429]) {
+      testWidgets('$unknown then rejected retry $status keeps the original '
+          'reference through absence and further dispatch', (tester) async {
+        final keys = <String>[];
+        final drafts = <ProductFeedbackDraft>[];
+        when(
+          () => repository.submit(
+            draft: any(named: 'draft'),
+            key: any(named: 'key'),
+            token: any(named: 'token'),
+          ),
+        ).thenAnswer((invocation) async {
+          keys.add(invocation.namedArguments[#key] as String);
+          drafts.add(invocation.namedArguments[#draft] as ProductFeedbackDraft);
+          if (keys.length == 1) throw unknown;
+          throw ApiException(message: 'retry denied', statusCode: status);
+        });
+        await pump(tester);
+        await fill(tester);
+        final original = keys.single;
+        final preferences = await SharedPreferences.getInstance();
+        when(() => repository.receipt(original)).thenAnswer((_) async => null);
+        Future<void> retry() async {
+          final button = find.widgetWithText(
+            FilledButton,
+            'Retry same submission',
+          );
+          await tester.ensureVisible(button);
+          await tester.pumpAndSettle();
+          await tester.tap(button);
+          await tester.pumpAndSettle();
+        }
+
+        await retry();
+        await tester.drag(find.byType(ListView), const Offset(0, -1000));
+        await tester.pumpAndSettle();
+        expect(find.text('Edit rejected submission'), findsNothing);
+        expect(preferences.getString(pending), original);
+        expect(
+          tester
+              .widget<TextFormField>(find.byType(TextFormField).first)
+              .enabled,
+          isFalse,
+        );
+        await tester.ensureVisible(find.text('Check original receipt'));
+        await tester.tap(find.text('Check original receipt'));
+        await tester.pumpAndSettle();
+        verify(() => repository.receipt(original)).called(1);
+        expect(preferences.getString(pending), original);
+        await retry();
+        expect(keys, [original, original, original]);
+        expect(drafts.every((draft) => identical(draft, drafts.first)), isTrue);
+        expect(find.text('Edit rejected submission'), findsNothing);
+        expect(preferences.getKeys(), {pending});
+      });
+    }
+  }
+  for (final status in [400, 401, 403, 413, 429]) {
+    testWidgets('initial definitive rejection $status still permits editing', (
+      tester,
+    ) async {
+      when(
+        () => repository.submit(
+          draft: any(named: 'draft'),
+          key: any(named: 'key'),
+          token: any(named: 'token'),
+        ),
+      ).thenThrow(ApiException(message: 'rejected', statusCode: status));
+      await pump(tester);
+      await fill(tester);
+      expect(
+        (await SharedPreferences.getInstance()).getString(pending),
+        isNotNull,
+      );
+      await tester.scrollUntilVisible(
+        find.text('Edit rejected submission'),
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(find.text('Edit rejected submission'));
+      await tester.pumpAndSettle();
+      expect(
+        (await SharedPreferences.getInstance()).getString(pending),
+        isNull,
+      );
+      expect(
+        tester.widget<TextFormField>(find.byType(TextFormField).first).enabled,
+        isTrue,
+      );
+      expect(
+        find.widgetWithText(FilledButton, 'Send feedback'),
+        findsOneWidget,
+      );
+    });
+  }
   testWidgets('restored pending reference only observes on explicit '
       'action; absence never creates another report', (tester) async {
     SharedPreferences.setMockInitialValues({pending: key});

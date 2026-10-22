@@ -79,8 +79,10 @@ pixels, strips metadata, fits within 1920×1920, and stores at most 512 KiB of W
 `PRODUCT_FEEDBACK_MEDIA_ENABLED=true` additionally requires the additive private
 media migration. The wrapper reuses the existing intake transaction and advisory
 lock: screenshot and receipt commit together, identical retries do not charge
-again, and changed media conflicts. Small normalized screenshots live in the
-RLS-protected private media table, one per report; originals, filenames, public
+again, and adding, changing or removing media conflicts. Every Web submission,
+including a screenshot-free replay, uses this wrapper. Omitting a previous
+screenshot still conflicts when media intake is disabled; missing media schema
+fails closed. Small normalized screenshots live in the RLS-protected private media table, one per report; originals, filenames, public
 URLs and general-purpose attachments are not stored. This bounded design does
 not create a public Storage bucket.
 
@@ -90,9 +92,11 @@ tokens stay in memory. After restart, recovery is receipt observation only. The
 owner-only `/receipts/{key}` route remains available with submission disabled,
 so stopping intake does not prevent recovery. A missing receipt remains unknown
 and never starts another POST. An explicit in-session retry uses the same
-immutable draft/key with a fresh token. Definitive pre-acceptance 400/401/403/413/429
-responses allow editing a rejected submission; uncertain 503/transport outcomes
-keep the original reference. There is no automatic polling or write replay.
+immutable draft/key with a fresh token. Initial definitive pre-acceptance
+400/401/403/413/429 responses allow editing only if no earlier attempt has an
+unknown outcome. After a 503/transport uncertainty, a later retry rejection cannot
+erase the original key or unlock editing. Only a confirmed receipt resolves that
+uncertainty. There is no automatic polling or write replay.
 
 Staff can explicitly open a private screenshot from the Web inbox when both
 staff and media gates are enabled. The media route rechecks the current Auth
@@ -102,8 +106,12 @@ storage path or bearer URL. Staff status/archive/revision metadata stays read on
 
 Regression coverage is in `product-feedback-{handlers,service}.test.ts`,
 `product-feedback-private-media.sql`, the internal-api feedback tests and
-`product_feedback_repository_test.dart`. The disposable database runner applies
-the full current migration history before the 17-assertion media packet and type
+`product_feedback_{page,repository}_test.dart`. The page tests exercise both
+503 and transport uncertainty followed by each supported retry rejection. The
+privacy fixture first verifies synthetic camera/GPS EXIF on the input, then
+requires the stored WebP to omit metadata. Web replay tests exercise the real
+dispatcher against modeled RPC contracts; they do not replace SQL qualification.
+The disposable database runner applies the full current migration history before the 17-assertion media packet and type
 generation. Run it with
 `bun run --cwd apps/database sb:validate:isolated --test supabase/tests/product-feedback-private-media.sql --typegen packages/types/src/supabase.ts`
 through `ttr resources run`; it owns and cleans a separate temporary Supabase

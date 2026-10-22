@@ -101,13 +101,12 @@ export const submitProductFeedbackRequest = createFeedbackSubmissionHandler({
       p_title: input.title,
       p_body: input.body,
     };
-    const { data, error } = await (input.media
-      ? client.rpc('submit_product_feedback_with_media', {
-          ...args,
-          p_media: input.media,
-        })
-      : client.rpc('submit_product_feedback', args)
-    ).abortSignal(operation.signal);
+    const { data, error } = await client
+      .rpc('submit_product_feedback_with_media', {
+        ...args,
+        p_media: input.media ?? null,
+      })
+      .abortSignal(operation.signal);
     operation.check();
     if (error) throw new StaffReadError(503);
     return data;

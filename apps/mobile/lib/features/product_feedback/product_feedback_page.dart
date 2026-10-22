@@ -61,6 +61,7 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
   ProductFeedbackReceipt? _receipt;
   bool _busy = false;
   bool _editableFailure = false;
+  bool _hasUnresolvedOutcome = false;
   String get _preferenceKey => 'product-feedback.pending.${widget.actor}';
   bool get _current => mounted && widget.isCurrent();
   @override
@@ -81,6 +82,7 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
     setState(() {
       _preferences = preferences;
       _pendingKey = preferences.getString(_preferenceKey);
+      _hasUnresolvedOutcome = _pendingKey != null;
     });
   }
 
@@ -127,6 +129,7 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
     if (!removed) throw const FormatException('feedback_reference_not_cleared');
     setState(() {
       _receipt = receipt;
+      _hasUnresolvedOutcome = false;
       _pendingKey = null;
       _draft = null;
       _image = null;
@@ -147,6 +150,7 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
       _message = null;
       _editableFailure = false;
     });
+    var dispatched = false;
     try {
       final draft =
           _draft ??
@@ -170,6 +174,7 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
       }
       if (!_current) return;
       setState(() => _pendingKey = key);
+      dispatched = true;
       final receipt = await _repository.submit(
         draft: draft,
         key: key,
@@ -179,20 +184,27 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
     } on ApiException catch (error) {
       if (_current) {
         setState(() {
-          _editableFailure = const [
+          final rejected = const [
             400,
             401,
             403,
             413,
             429,
           ].contains(error.statusCode);
+          _hasUnresolvedOutcome |= dispatched && !rejected;
+          _editableFailure = rejected && !_hasUnresolvedOutcome;
           _message = error.statusCode == 429
               ? context.l10n.feedbackLimited
               : context.l10n.feedbackFailure;
         });
       }
     } on Object {
-      if (_current) setState(() => _message = context.l10n.feedbackFailure);
+      if (_current) {
+        setState(() {
+          _hasUnresolvedOutcome |= dispatched;
+          _message = context.l10n.feedbackFailure;
+        });
+      }
     } finally {
       if (_current) setState(() => _busy = false);
     }
@@ -217,7 +229,7 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
   }
 
   Future<void> _editRejected() async {
-    if (!_editableFailure || _busy) return;
+    if (!_editableFailure || _hasUnresolvedOutcome || _busy) return;
     if (!await _preferences!.remove(_preferenceKey)) return;
     if (_current) {
       setState(() {

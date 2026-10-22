@@ -1,4 +1,5 @@
 // @vitest-environment node
+import sharp from 'sharp';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   readProductFeedbackReceipt,
@@ -49,9 +50,14 @@ const request = (
 let current = { id: actor, banned_until: null as string | null };
 let data: unknown;
 let error: { code: string; message: string } | null;
-const sql = vi.fn(() => ({
-  abortSignal: vi.fn(async () => ({ data, error })),
-}));
+const sql = vi.fn(
+  (
+    _name: string,
+    _args: { p_title?: string; p_body?: string; p_media?: string | null }
+  ) => ({
+    abortSignal: vi.fn(async () => ({ data, error })),
+  })
+);
 beforeEach(() => {
   current = { id: actor, banned_until: null };
   data = { status: 'accepted', receipt };
@@ -85,19 +91,123 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe('active feedback Web service boundaries', () => {
-  it('binds the authenticated actor to canonical text SQL and does not trust forwarded quota identity', async () => {
+  it('binds the authenticated actor to media-aware SQL even without media and does not trust forwarded quota identity', async () => {
     const req = request();
     req.headers.set('content-type', 'application/json');
     req.headers.set('x-forwarded-for', 'spoofed');
     expect((await submitProductFeedbackRequest(req)).status).toBe(201);
-    expect(sql).toHaveBeenCalledWith('submit_product_feedback', {
+    expect(sql).toHaveBeenCalledWith('submit_product_feedback_with_media', {
       p_actor: actor,
       p_key: key,
       p_title: 'Subject',
       p_body: 'Details',
+      p_media: null,
     });
     const verify = vi.mocked(fetch).mock.calls[0]?.[1];
     expect(String(verify?.body)).not.toContain('remoteip');
+  });
+  it.each([true, false])(
+    'keeps payload and quota when replay changes media presence (first has media=%s)',
+    async (firstHasMedia) => {
+      const png = await sharp({
+        create: { width: 12, height: 12, channels: 3, background: '#123456' },
+      })
+        .png()
+        .toBuffer();
+      const other = await sharp({
+        create: { width: 12, height: 12, channels: 3, background: '#654321' },
+      })
+        .png()
+        .toBuffer();
+      let stored:
+        | {
+            title: string | undefined;
+            body: string | undefined;
+            media: string | null;
+          }
+        | undefined;
+      let charges = 0;
+      // Model the two existing RPC replay contracts; exercise real Web dispatch.
+      sql.mockImplementation(
+        (
+          name: string,
+          args: { p_title?: string; p_body?: string; p_media?: string | null }
+        ) => ({
+          abortSignal: vi.fn(async () => {
+            const payload = {
+              title: args.p_title,
+              body: args.p_body,
+              media: args.p_media ?? null,
+            };
+            if (stored) {
+              return {
+                error: null,
+                data: {
+                  status:
+                    name === 'submit_product_feedback_with_media' &&
+                    stored.media !== payload.media
+                      ? 'conflict'
+                      : 'accepted',
+                  ...(name === 'submit_product_feedback_with_media' &&
+                  stored.media !== payload.media
+                    ? {}
+                    : { receipt }),
+                },
+              };
+            }
+            stored = payload;
+            charges++;
+            return { error: null, data: { status: 'accepted', receipt } };
+          }),
+        })
+      );
+      const submit = (image?: Buffer) =>
+        submitProductFeedbackRequest(
+          new Request(request(), {
+            headers: {
+              authorization: 'Bearer fixture-user',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              title: 'Subject',
+              body: 'Details',
+              idempotencyKey: key,
+              turnstileToken: 'PRIVATE_TOKEN',
+              ...(image
+                ? {
+                    media: {
+                      contentType: 'image/png',
+                      data: image.toString('base64'),
+                    },
+                  }
+                : {}),
+            }),
+          })
+        );
+      expect((await submit(firstHasMedia ? png : undefined)).status).toBe(201);
+      const original = structuredClone(stored);
+      if (firstHasMedia) vi.stubEnv('PRODUCT_FEEDBACK_MEDIA_ENABLED', 'false');
+      expect((await submit(firstHasMedia ? undefined : png)).status).toBe(409);
+      vi.stubEnv('PRODUCT_FEEDBACK_MEDIA_ENABLED', 'true');
+      expect((await submit(firstHasMedia ? png : undefined)).status).toBe(201);
+      if (firstHasMedia) expect((await submit(other)).status).toBe(409);
+      expect(stored).toEqual(original);
+      expect(charges).toBe(1);
+      for (const [name, args] of sql.mock.calls) {
+        expect(name).toBe('submit_product_feedback_with_media');
+        expect(args).toHaveProperty('p_media');
+      }
+    }
+  );
+  it('fails closed when the media-aware RPC is unavailable for a text-only submission', async () => {
+    error = { code: 'PGRST202', message: 'PRIVATE_SCHEMA_DETAILS' };
+    const req = request();
+    req.headers.set('content-type', 'application/json');
+    const response = await submitProductFeedbackRequest(req);
+    expect(response.status).toBe(503);
+    expect(await response.text()).not.toContain('PRIVATE');
+    expect(sql).toHaveBeenCalledOnce();
+    expect(sql.mock.calls[0]?.[0]).toBe('submit_product_feedback_with_media');
   });
   it.each(['Basic invalid', 'Bearer ttr_app_unaccepted'])(
     'rejects explicit %s without cookie fallback',
