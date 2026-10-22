@@ -6,6 +6,8 @@ on:
       - 'apps/database/supabase/tests/sso-persistence.sql'
       - 'apps/database/scripts/*sso*persistence*.mjs'
       - 'apps/database/scripts/run-supabase*.js'
+      - '.github/actions/cache-supabase-images/**'
+      - 'scripts/ci/supabase-image-cache*'
       - 'apps/database/scripts/programming-database-tap.mjs'
       - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'tuturuuu.ci.ts'
@@ -39,10 +41,12 @@ jobs:
   contract:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success'
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
     steps:
       - name: Require enabled contract gate
         env:
@@ -61,6 +65,7 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: ./.github/actions/cache-supabase-images
       - name: Apply full schema, qualify isolation and replay, generate applied types
         run: node apps/database/scripts/verify-sso-persistence.mjs
       - uses: actions/upload-artifact@v7

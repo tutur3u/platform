@@ -7,6 +7,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  appendDiagnostic,
+  isImagePullCommand,
+  retryImagePull,
+} from './run-supabase-image-retry.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 export const workspaceDir = path.resolve(__dirname, '..');
@@ -101,27 +107,48 @@ export function getSupabaseBinaryPath(
   );
 }
 
-export function runCommand(
+export async function runCommand(
   command,
   args,
   cwd,
-  { env = process.env, stdio = 'inherit' } = {}
+  { env = process.env, stdio = 'inherit', retryOptions = {} } = {}
 ) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd,
-      env,
-      stdio,
-    });
+  const retry = isImagePullCommand(args);
+  const result = await retryImagePull(
+    () =>
+      new Promise((resolve, reject) => {
+        let diagnostics = '';
+        const child = spawn(command, args, {
+          cwd,
+          env,
+          stdio: retry
+            ? Array.isArray(stdio)
+              ? [stdio[0], stdio[1], 'pipe']
+              : [stdio, stdio, 'pipe']
+            : stdio,
+        });
+        if (retry)
+          child.stderr.on('data', (chunk) => {
+            diagnostics = appendDiagnostic(diagnostics, chunk);
+            if (
+              stdio === 'inherit' ||
+              (Array.isArray(stdio) && stdio[2] === 'inherit')
+            )
+              process.stderr.write(chunk);
+          });
 
-    child.on('error', reject);
-    child.on('close', (code, signal) => {
-      resolve({
-        code: code ?? 1,
-        signal: signal ?? null,
-      });
-    });
-  });
+        child.on('error', reject);
+        child.on('close', (code, signal) => {
+          resolve({
+            code: code ?? 1,
+            signal: signal ?? null,
+            stderr: diagnostics,
+          });
+        });
+      }),
+    { ...retryOptions, enabled: retry }
+  );
+  return { code: result.code, signal: result.signal };
 }
 
 export async function ensureSupabaseBinary(

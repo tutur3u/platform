@@ -305,16 +305,23 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   directly. The local action downloads the pinned Bun release with bounded
   exponential backoff so GitHub release 5xx failures do not immediately fail
   deploys.
-- Workflows that need the Supabase CLI should use
-  `.github/actions/setup-supabase-cli-with-retry` after checkout. The wrapper pins
-  setup-cli v3.0.1 by commit SHA and resolves the database workspace's exact stable
-  CLI from the repository-root `bun.lock`; missing or invalid pins fail before
-  installation. An explicit override must also be an exact stable version.
-  No GitHub token input is needed by v3. Keep Node 20+ and npm available first.
-  The installer uses a runner-temporary home because its setup-bun ignores
-  `BUN_INSTALL`. After every attempted installation, the wrapper verifies any
-  pre-existing Bun binary and prepends its directory for subsequent steps.
-  Four attempts use 5/10/20-second backoff; exhausted retries fail the job.
+- Install the Supabase CLI through `.github/actions/setup-supabase-cli-with-retry`
+  after checkout with Node 20+ and npm. It pins setup-cli v3.0.1 by SHA and
+  resolves the exact stable CLI from root `bun.lock`; overrides must be exact.
+  No token input is needed. Its runner-temporary home isolates setup-bun;
+  verify and restore the existing Bun path after every installation attempt.
+  Four installation attempts use 5/10/20-second backoff and fail on exhaustion.
+- Contract startup and type generation share `run-supabase-image-retry.js`:
+  seven attempts, 10/20/40/80/120/120-second waits plus 0-25% jitter for throttling or transient pull transport errors. Never retry SQL tests, resets or pushes. Keep bounded stderr separate from generated types and publish only
+  successful output. The E2E baseline keeps its existing service set (excluding only Edge
+  Runtime and Functions); SQL-only verifiers retain their narrower exclusions. Run `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`.
+- Baseline startup captures child output because it can contain credentials.
+  Forward only fixed failure classifications, including the retry helper's
+  seven-attempt exhaustion marker; never dump a child-process error or raw
+  stdout/stderr into CI. Cover large stderr under a piped parent and preserve
+  nonzero exit codes. For Linux Docker volume-diagnostic compatibility and
+  isolated reproduction, see the database automation section of
+  `apps/docs/build/devops/github-actions-runbook.mdx`.
 - Release Please is the monorepo source of truth for version/changelog PRs.
   Keep `release-please-config.json`, `.release-please-manifest.json`,
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
@@ -911,3 +918,7 @@ selects existing Chrome via the public channel with headless ephemeral custody;
 it is separate evidence from CI Chromium and emitted Worker acceptance. See the
 Apps runbook above for cleanup and remaining qualification boundaries. Historical
 timeout causality remains UNKNOWN; the routing gap is a separate source finding.
+
+Active local-Supabase jobs use `.github/actions/cache-supabase-images` after the owning dependency install; employee-schema targets `source/apps/database`. Derive service versions from the pinned CLI's `services -o json`, with version-gated supplemental Dockerfile pins for Kong/Mailpit/imgproxy. Mirror registry rewriting exactly. Cache only each profile's required images, including GoTrue/Realtime/Storage bootstrap migrations even when long-running services are excluded, and postgres-meta for typegen. Exact SHA256 keys bind the list, registry, OS and arch; inspect loaded images and never unconditionally re-pull the baseline Postgres image. Archives are bounded to 6 GiB.
+
+Only main pushes/main dispatches save; PRs restore only. Normal misses have three attempts and a two-minute total pull deadline, keeping the 15-minute cross-runner restore budget useful. Throttling and classified transport errors retry; SQL never replays. Summaries expose only known registry hosts and untagged image names. Until main caches exist, hosted registry throttling can still block PRs. Main-only `supabase-baseline.yaml` dispatch with `seed_images_only=true` seeds contract/HTTP/full keys sequentially with seven attempts within ten minutes each; it requires working registry access. See the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx) for bootstrap, scope, eviction and Linux reproduction. Run `TMPDIR=/private/tmp node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-registry.test.js scripts/ci/supabase-baseline-key.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js`; local checks do not establish exact-head hosted cache acceptance.
