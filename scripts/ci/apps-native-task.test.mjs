@@ -207,10 +207,34 @@ function assertWorkflow(source) {
     /^ {8}run: node --test scripts\/ci\/apps-native-browser\.runtime\.mjs$/mu,
     'workflow.runtime-bypass must remain absent'
   );
+  let credentialFreeSource = source;
+  for (const id of ['native-publication-profiles', 'native-publish-staging']) {
+    const publisher = job(source, id);
+    let admittedPublisher = publisher;
+    for (const name of [
+      'STAGING_SUPABASE_URL',
+      'STAGING_SUPABASE_PUBLISHABLE_KEY',
+      'CLOUDFLARE_STAGING_API_TOKEN',
+      'WAVE1_CONTROL_READ_TOKEN',
+    ]) {
+      const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.${name} || '' }}`;
+      const field = `      ${name}: ${expression}`;
+      assert.equal(
+        publisher.split(field).length - 1,
+        1,
+        'workflow.secrets exact staging field'
+      );
+      admittedPublisher = admittedPublisher.replace(field, '');
+    }
+    credentialFreeSource = credentialFreeSource.replace(
+      publisher,
+      admittedPublisher
+    );
+  }
   assert.doesNotMatch(
-    source,
-    /secrets\./u,
-    'workflow.secrets must remain absent'
+    credentialFreeSource,
+    /secrets(?:\.|\[)/u,
+    'workflow.secrets must remain absent outside explicit staging input admission'
   );
 }
 
@@ -511,4 +535,43 @@ test('metadata contract rejects caching, incorrect hashing and global allowances
       error instanceof assert.AssertionError &&
       error.message.startsWith('package.scripts.test:apps-native-browser ')
   );
+});
+
+test('staging input exception rejects production refs and production secret substitutions', () => {
+  for (const changed of [
+    workflow.replaceAll(
+      "github.ref == 'refs/heads/main'",
+      "github.ref == 'refs/heads/production'"
+    ),
+    workflow.replaceAll(
+      'secrets.STAGING_SUPABASE_',
+      'secrets.PRODUCTION_SUPABASE_'
+    ),
+  ])
+    assert.throws(() => assertWorkflow(changed), /workflow.secrets/);
+});
+
+test('staging deploy/control secrets are allowed only in the explicit publisher call', () => {
+  for (const name of [
+    'CLOUDFLARE_STAGING_API_TOKEN',
+    'WAVE1_CONTROL_READ_TOKEN',
+  ]) {
+    const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.${name} || '' }}`;
+    const leak = workflow.replace("token: ''", `token: ${expression}`);
+    assert.notEqual(leak, workflow);
+    assert.throws(() => assertWorkflow(leak), /token|workflow.secrets/);
+    const production = workflow.replace(
+      `secrets.${name}`,
+      'secrets.CLOUDFLARE_API_TOKEN'
+    );
+    assert.throws(() => assertWorkflow(production), /workflow.secrets/);
+  }
+});
+
+test('staging Supabase expressions are rejected in another job', () => {
+  for (const name of ['URL', 'PUBLISHABLE_KEY']) {
+    const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_${name} || '' }}`;
+    const changed = `${workflow}\n  leaked-input:\n    env:\n      INPUT: ${expression}\n`;
+    assert.throws(() => assertWorkflow(changed), /workflow.secrets/);
+  }
 });

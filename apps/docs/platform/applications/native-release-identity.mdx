@@ -1,0 +1,26 @@
+---
+title: "Native Worker release identity"
+description: "Public, read-only build identity for the admitted Calendar, Mail and Apps native Workers."
+---
+
+## Scope and default
+
+The admitted native Calendar, Mail and Apps Workers expose `/api/build-info` before
+session middleware. The endpoint reports public bundled release metadata: app name,
+full source SHA and environment. It is no-store, accepts GET/HEAD/OPTIONS, returns
+405 for other methods, and matches only that exact path. It exposes no session or
+secret values. Other API routes retain their existing authentication and authorization.
+
+Apps evaluates its canonical-host fence before build identity as well. The staging
+profile returns 503 at `apps.tuturuuu.com`; its held production profile explicitly
+admits that host. Legacy Vercel deployments retain their existing behavior until
+explicit cutover. This decision does not enable production publication or routing.
+
+## Evidence and operating procedure
+
+`scripts/ci/wave1-native-publishers.test.js` covers endpoint path/method/cache behavior.
+Original/restored CI workerd acceptance checks the actual bundled SHA, app and
+environment, along with assets and the Apps fence. A hosted build-info receipt is
+release identity, not signed-in/provider acceptance. See the
+[native publisher runbook](/build/devops/wave1-native-publishers) for staging setup,
+publication holds, rollback evidence and remaining cutover requirements.

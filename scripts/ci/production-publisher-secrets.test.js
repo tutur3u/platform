@@ -40,6 +40,7 @@ function context(ref, allowed = 'false', event = 'workflow_dispatch') {
       },
     },
     vars: { TURBO_TEAM: '' },
+    matrix: { profile: 'staging' },
     secrets: new Proxy({}, { get: (_, name) => `credential:${String(name)}` }),
     env: {},
     always: () => true,
@@ -264,4 +265,166 @@ test('native Calendar/Mail validation receives no cache credentials on productio
       }
     }
   }
+});
+
+const stagingSecretNames = [
+  'CLOUDFLARE_STAGING_API_TOKEN',
+  'WAVE1_CONTROL_READ_TOKEN',
+  'STAGING_SUPABASE_URL',
+  'STAGING_SUPABASE_PUBLISHABLE_KEY',
+];
+
+function assertStagingCallerSecrets(workflow) {
+  const expected = Object.fromEntries(
+    stagingSecretNames.map((name) => [
+      name,
+      '$' +
+        "{{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets." +
+        name +
+        " || '' }}",
+    ])
+  );
+  for (const name of ['native-profiles', 'native-publish-staging']) {
+    assert.deepEqual(
+      workflow.jobs[name].secrets,
+      expected,
+      'caller staging secrets must match exactly'
+    );
+  }
+  for (const [name, otherJob] of Object.entries(workflow.jobs)) {
+    if (['native-profiles', 'native-publish-staging'].includes(name)) continue;
+    assert.equal(
+      otherJob.secrets,
+      undefined,
+      `${name} must not receive secrets`
+    );
+  }
+}
+
+for (const name of ['calendar-cloudflare.yaml', 'mail-cloudflare.yaml']) {
+  test(`${name}: caller passes exactly the admitted staging secrets`, () => {
+    assertStagingCallerSecrets(readWorkflow(name));
+  });
+
+  test(`${name}: rejects changed caller secret names and expressions`, () => {
+    for (const mutate of [
+      (secrets) => {
+        secrets.CLOUDFLARE_API_TOKEN = secrets.CLOUDFLARE_STAGING_API_TOKEN;
+        delete secrets.CLOUDFLARE_STAGING_API_TOKEN;
+      },
+      (secrets) => {
+        secrets.CLOUDFLARE_STAGING_API_TOKEN =
+          secrets.CLOUDFLARE_STAGING_API_TOKEN.replace(
+            'secrets.CLOUDFLARE_STAGING_API_TOKEN',
+            'secrets.CLOUDFLARE_API_TOKEN'
+          );
+      },
+      (secrets) => {
+        secrets.STAGING_SUPABASE_URL =
+          '$' + '{{ secrets.STAGING_SUPABASE_URL }}';
+      },
+    ]) {
+      for (const jobName of ['native-profiles', 'native-publish-staging']) {
+        const workflow = readWorkflow(name);
+        mutate(workflow.jobs[jobName].secrets);
+        assert.throws(
+          () => assertStagingCallerSecrets(workflow),
+          /caller staging secrets/
+        );
+      }
+    }
+  });
+}
+
+function assertPublisherSecrets(job) {
+  const expected = {
+    '.steps.7.env.CLOUDFLARE_STAGING_API_TOKEN':
+      '$' + '{{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}',
+    '.steps.7.env.WAVE1_CONTROL_READ_TOKEN':
+      '$' + '{{ secrets.WAVE1_CONTROL_READ_TOKEN }}',
+    '.steps.7.env.NEXT_PUBLIC_SUPABASE_URL':
+      '$' + '{{ secrets.STAGING_SUPABASE_URL }}',
+    '.steps.7.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY':
+      '$' + '{{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}',
+  };
+  assert.deepEqual(
+    Object.fromEntries(
+      strings(job).filter(([, value]) => secretReference.test(value))
+    ),
+    expected,
+    'publisher secret fields must match exactly'
+  );
+}
+
+test('publisher rejects production and indirect secret references', () => {
+  for (const value of [
+    '$' + '{{ secrets.CLOUDFLARE_API_TOKEN }}',
+    '$' + "{{ secrets['CLOUDFLARE_STAGING_API_TOKEN'] }}",
+    '$' + "{{ format('{0}', secrets.CLOUDFLARE_STAGING_API_TOKEN) }}",
+  ]) {
+    const workflow = readWorkflow('wave1-native-publish.yaml');
+    workflow.jobs.publish.steps[7].env.CLOUDFLARE_STAGING_API_TOKEN = value;
+    assert.throws(
+      () => assertPublisherSecrets(workflow.jobs.publish),
+      /publisher secret fields/
+    );
+  }
+});
+
+test('native staging callers and held profile builds withhold production credentials', () => {
+  for (const name of [
+    'calendar-cloudflare.yaml',
+    'mail-cloudflare.yaml',
+    'wave1-native-app.yaml',
+  ]) {
+    const workflow = readWorkflow(name);
+    assertProductionCredentialsAdmitted(workflow);
+    for (const profile of ['staging', 'production']) {
+      for (const [ref, event] of [
+        ['refs/heads/production', 'push'],
+        ['refs/heads/main', 'push'],
+        ['refs/heads/main', 'workflow_dispatch'],
+        ['refs/pull/6399/merge', 'pull_request'],
+      ]) {
+        const scope = { ...context(ref, 'false', event), matrix: { profile } };
+        for (const [field, value] of strings(workflow.jobs.build?.env)) {
+          if (!secretReference.test(value)) continue;
+          const result = String(evaluate(value, scope));
+          if (profile === 'staging' && ref === 'refs/heads/main') {
+            assert.match(result, /^credential:STAGING_SUPABASE_/);
+          } else {
+            assert.doesNotMatch(result, /credential:/, `${name}${field}`);
+          }
+        }
+      }
+    }
+  }
+});
+
+test('reusable publisher admits staging main events and rejects production independently of callers', () => {
+  const workflow = readWorkflow('wave1-native-publish.yaml');
+  const job = workflow.jobs.publish;
+  assert.equal(job.environment, 'wave1-$' + '{{ inputs.app }}-staging');
+  assert.equal(workflow.concurrency['cancel-in-progress'], false);
+  for (const profile of ['staging', 'production']) {
+    for (const ref of [
+      'refs/heads/main',
+      'refs/heads/production',
+      'refs/pull/6399/merge',
+    ]) {
+      for (const event of ['push', 'workflow_dispatch', 'pull_request']) {
+        const scope = {
+          ...context(ref, 'false', event),
+          inputs: { app: 'mail', profile },
+        };
+        assert.equal(
+          Boolean(evaluate(job.if, scope)),
+          profile === 'staging' &&
+            ref === 'refs/heads/main' &&
+            event !== 'pull_request'
+        );
+      }
+    }
+  }
+  assertPublisherSecrets(job);
 });

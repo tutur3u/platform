@@ -1,4 +1,5 @@
 import handler from '@tanstack/react-start/server-entry';
+import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { apiRequest } from '../src/native/api.server';
 import {
   canonicalLocaleRedirect,
@@ -37,6 +38,8 @@ export async function appsRequest(request: Request, env: AppsEnvironment) {
           'X-Robots-Tag': 'noindex, nofollow, nosnippet',
         },
       });
+    const identity = workerBuildInfo(request, 'apps');
+    if (identity) return identity;
     let response: Response;
     if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
       response = await apiRequest(

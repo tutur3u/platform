@@ -31,6 +31,7 @@
     "messages/vi.json",
     "vite.config.ts",
     "void.config.ts",
+    "void.staging.config.ts",
     "src/start.ts",
     "src/app/[locale]/(auth)/login/page.tsx",
     "src/app/[locale]/[wsId]/actions.ts",

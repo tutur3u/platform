@@ -6,12 +6,14 @@ import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
 import { mailActionPorts } from './src/runtime/action-port-plugin';
 import { MAIL_FUNCTION_BASE } from './src/runtime/mail-api-policy';
+import { mailWorkerBuiltins } from './src/runtime/worker-builtins-plugin';
 
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig(({ command }) => ({
   plugins: [
     mailActionPorts(),
+    mailWorkerBuiltins(),
     voidPlugin(),
     tanstackStart({
       serverFns: { base: MAIL_FUNCTION_BASE },

@@ -32,6 +32,14 @@ function fixture(t, policy) {
     'tuturuuu.ts',
     'tuturuuu.ci.ts',
     'scripts/ci/production-publication-policy.ts',
+    'scripts/ci/wave1-native-publish.mjs',
+    'scripts/ci/wave1-native-admission.mjs',
+    'scripts/ci/wave1-native-attempt.mjs',
+    'scripts/ci/wave1-native-profile.mjs',
+    'scripts/ci/wave1-native-profiles.json',
+    'scripts/ci/wave1-native-artifact.mjs',
+    'scripts/ci/mail-node-imports.mjs',
+    'scripts/ci/calendar-native-inventory.mjs',
     'scripts/ci/production-test-only-paths.ts',
     'scripts/ci/workspace-dependency-closure.ts',
     'scripts/ci/resolve-production-vercel-targets.ts',
@@ -315,3 +323,59 @@ test('all unrelated real production targets retain planner selection with invali
   assert.deepEqual(invalid, original);
   assert.ok(original.some(({ shouldRun }) => shouldRun));
 });
+
+for (const app of ['calendar', 'mail', 'apps']) {
+  test(`${app}: native staging policy allows trusted staging while shared production policy holds`, (t) => {
+    const directory = fixture(t);
+    assert.equal(
+      runPolicy(directory, `${app}-cloudflare.yaml`).output,
+      'allowed=false\n'
+    );
+    const profilesPath = join(
+      directory,
+      'scripts/ci/wave1-native-profiles.json'
+    );
+    const profiles = JSON.parse(readFileSync(profilesPath, 'utf8'));
+    profiles.productionHold = null;
+    writeFileSync(profilesPath, JSON.stringify(profiles));
+    const output = join(directory, 'staging-output');
+    for (const [profile, ref, event, enabled, allowed] of [
+      ['staging', 'refs/heads/main', 'push', 'true', true],
+      ['staging', 'refs/heads/main', 'workflow_dispatch', 'true', true],
+      ['staging', 'refs/heads/main', 'push', '', false],
+      ['staging', 'refs/heads/production', 'push', 'true', false],
+      ['production', 'refs/heads/production', 'push', 'true', false],
+    ]) {
+      writeFileSync(output, '');
+      execFileSync(
+        process.execPath,
+        [
+          'scripts/ci/wave1-native-publish.mjs',
+          'policy',
+          app,
+          profile,
+          'a'.repeat(40),
+        ],
+        {
+          cwd: directory,
+          env: {
+            ...process.env,
+            GITHUB_OUTPUT: output,
+            GITHUB_REF: ref,
+            GITHUB_EVENT_NAME: event,
+            WAVE1_STAGING_PUBLISH_ENABLED: enabled,
+            WAVE1_STAGING_PUBLICATION_ADMISSION: JSON.stringify({
+              schema: 1,
+              app,
+              sourceSha: 'a'.repeat(40),
+              artifactSha256: 'b'.repeat(64),
+              ...profiles.stagingAdmission,
+            }),
+          },
+          timeout: 10000,
+        }
+      );
+      assert.equal(readFileSync(output, 'utf8'), `allowed=${allowed}\n`);
+    }
+  });
+}

@@ -602,6 +602,18 @@ export async function WorkspaceNavigationLinks({
       qrAppHref,
       isPersonal,
     }),
+    !isPersonal &&
+    workspacePermissions.membershipType === 'MEMBER' &&
+    !withoutPermission('manage_sso_clients')
+      ? {
+          id: 'workspace-sso-settings',
+          title: t('workspace-sso.title'),
+          href: `/${personalOrWsId}/sso`,
+          aliases: [`/${resolvedWorkspaceId}/sso`],
+          icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),
+          preferenceSectionLabel: sidebarSections.utilities,
+        }
+      : null,
     createWorkspaceMembersNavigationLink({
       canManageMembers: !withoutPermission('manage_workspace_members'),
       isPersonal,

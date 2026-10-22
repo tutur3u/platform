@@ -1,5 +1,7 @@
 name: Apps Cloudflare Source
 on:
+  workflow_call:
+  workflow_dispatch:
   pull_request:
     paths:
       [
@@ -24,6 +26,8 @@ on:
         'packages/typescript-config/**',
         'apps/web/package.json',
         'scripts/ci/apps-native-*',
+        'scripts/ci/wave1-*',
+        '.github/workflows/wave1-*',
         'scripts/ci/native-wrangler-*.mjs',
         'scripts/ci/native-emitted-config-receipt.mjs',
         'scripts/ci/calendar-native-runtime-profile.mjs',
@@ -69,6 +73,8 @@ on:
         'packages/typescript-config/**',
         'apps/web/package.json',
         'scripts/ci/apps-native-*',
+        'scripts/ci/wave1-*',
+        '.github/workflows/wave1-*',
         'scripts/ci/native-wrangler-*.mjs',
         'scripts/ci/native-emitted-config-receipt.mjs',
         'scripts/ci/calendar-native-runtime-profile.mjs',
@@ -408,3 +414,35 @@ jobs:
           path: ${{ runner.temp }}/apps-native-evidence.tar.gz
           retention-days: 7
           if-no-files-found: ignore
+
+  native-publication-profiles:
+    needs: restore-acceptance
+    permissions:
+      contents: read
+      actions: read
+      deployments: read
+    uses: ./.github/workflows/wave1-native-app.yaml
+    with:
+      app: apps
+    secrets:
+      CLOUDFLARE_STAGING_API_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.CLOUDFLARE_STAGING_API_TOKEN || '' }}
+      WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}
+      STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
+      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
+
+  native-publish-staging:
+    needs: native-publication-profiles
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-publication-profiles.outputs.staging_allowed == 'true'
+    permissions:
+      contents: read
+      actions: read
+      deployments: write
+    uses: ./.github/workflows/wave1-native-publish.yaml
+    with:
+      app: apps
+      profile: staging
+    secrets:
+      CLOUDFLARE_STAGING_API_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.CLOUDFLARE_STAGING_API_TOKEN || '' }}
+      WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}
+      STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
+      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}

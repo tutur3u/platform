@@ -922,3 +922,38 @@ timeout causality remains UNKNOWN; the routing gap is a separate source finding.
 Active local-Supabase jobs use `.github/actions/cache-supabase-images` after the owning dependency install; employee-schema targets `source/apps/database`. Derive service versions from the pinned CLI's `services -o json`, with version-gated supplemental Dockerfile pins for Kong/Mailpit/imgproxy. Mirror registry rewriting exactly. Cache only each profile's required images, including GoTrue/Realtime/Storage bootstrap migrations even when long-running services are excluded, and postgres-meta for typegen. Exact SHA256 keys bind the list, registry, OS and arch; inspect loaded images and never unconditionally re-pull the baseline Postgres image. Archives are bounded to 6 GiB.
 
 Only main pushes/main dispatches save; PRs restore only. Normal misses have three attempts and a two-minute total pull deadline, keeping the 15-minute cross-runner restore budget useful. Throttling and classified transport errors retry; SQL never replays. Summaries expose only known registry hosts and untagged image names. Until main caches exist, hosted registry throttling can still block PRs. Main-only `supabase-baseline.yaml` dispatch with `seed_images_only=true` seeds contract/HTTP/full keys with serial execution and fail-fast disabled, with seven attempts within ten minutes each; it requires working registry access. On a profile miss, restore the exact contract key only if its image set is a strict subset, load/inspect it and pull only missing local images. Apply this to PR misses too; save the complete requested set under its unchanged exact key. Matrix ordering is not guaranteed; rerun a partial seed to reuse completed keys. See the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx) for bootstrap, scope, eviction and Linux reproduction. Run `TMPDIR=/private/tmp node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-registry.test.js scripts/ci/supabase-baseline-key.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js`; local checks do not establish exact-head hosted cache acceptance.
+
+## Wave-1 staging publication admission
+
+Keep the four-app production hold independent of staging. Same-account staging
+requires the reviewed `stagingAdmission` profile, only the named staging deploy
+secret, isolated resource identities and the exact app/source/artifact repository
+admission variable. Read the stop and admission records again immediately before
+upload. Consume admission in the owner-provisioned staging D1 ledger before invoking
+Wrangler. Authenticate its scoped HMAC and run identity with the staging deploy
+credential, use a conditional SQL update and readback, and fail closed on missing
+or deleted rows. PR job tokens must have no write authority over this ledger.
+Explicitly forward only staging deploy/control credentials and public inputs through
+every reusable-workflow boundary; never inherit production secrets. Staging has no
+workers.dev, preview URL or public route; success observes provider identity and
+private-serving state rather than issuing a public HTTP probe. Preserve CI workerd
+acceptance and obtain a separately approved private ingress plan for hosted UX.
+Never delete consumption history to renew admission or infer retry permission from a
+missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
+The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
+owns the schema, bounded operation counts, residual account risk and recovery.
+Run `wave1-native-publication.test.js` for the real entrypoint transport tests and
+its final-fence removal negative control, alongside publisher/policy/credential
+and workflow suites. Source-only tests do not establish hosted token permissions
+or emitted Worker acceptance.
+
+## Reusable staging publisher permissions
+
+Keep PR artifact qualification read-only and call staging publishers from separate
+main push/dispatch jobs with explicit deployment-write permission. A skipped nested
+publisher is still a reusable permission contract; remove that call from the
+read-only qualification workflow. Assert exact staging secret maps and expressions
+at each caller boundary and reject references elsewhere, including the actual
+production token name `CLOUDFLARE_API_TOKEN`. The wave-1 permission and publisher
+secret tests cover these boundaries; protected concurrency tests preserve the
+non-cancelling durable-attempt publication queue.
