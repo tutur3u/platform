@@ -6817,6 +6817,7 @@
     "title": "Không gian làm việc ngay trên máy tính.",
     "unavailable": "Bản beta cho máy tính đang được chuẩn bị. Bạn có thể sử dụng ứng dụng web ngay.",
     "windows": {
+      "installation": "Bộ cài beta Windows có thể chưa được ký số. Hãy kiểm tra ghi chú phát hành và mã SHA-256. Nếu SmartScreen cảnh báo, chọn Thông tin thêm (More info), rồi Vẫn chạy (Run anyway) chỉ khi bạn tin cậy bản tải xuống và Windows cho phép. Nếu thiết bị chặn cài đặt, hãy dùng ứng dụng web.",
       "name": "Windows",
       "requirements": "Windows 10 trở lên · Intel / AMD 64-bit"
     }

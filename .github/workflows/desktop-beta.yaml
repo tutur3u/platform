@@ -8,7 +8,16 @@ on:
       - "scripts/desktop-deployment/**"
       - "packages/utils/src/desktop-signing-profiles.ts"
       - ".github/workflows/desktop-beta.yaml"
+  pull_request:
+    paths:
+      - "scripts/desktop-deployment/**"
+      - ".github/workflows/desktop-beta.yaml"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build unsigned Windows artifacts only, without publishing"
+        type: boolean
+        default: true
 
 concurrency:
   group: desktop-beta-${{ github.ref }}
@@ -25,10 +34,74 @@ jobs:
     with:
       workflow_name: desktop-beta.yaml
 
+  validate:
+    name: Desktop distribution tests
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - run: node --test scripts/desktop-deployment/*.test.mjs
+
+  windows-dry-run:
+    name: Windows x64 installer dry run
+    needs: [check-ci, validate]
+    if: needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.dry_run
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+          cache: true
+          pub-cache: true
+      - name: Write dry-run public configuration
+        env:
+          DESKTOP_PUBLIC_CONFIG: '{"NEXT_PUBLIC_SUPABASE_URL":"https://desktop-ci.supabase.co","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY":"sb_publishable_desktop_ci_placeholder","API_BASE_URL":"https://tuturuuu.com"}'
+        run: node scripts/desktop-deployment/write-ci-config.mjs
+      - name: Install Flutter dependencies
+        working-directory: apps/mobile
+        run: flutter pub get --enforce-lockfile
+      - name: Build Windows dry run
+        working-directory: apps/mobile
+        run: flutter build windows --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+      - name: Audit and package unsigned Windows dry run
+        env:
+          DESKTOP_PLATFORM: windows
+        run: node scripts/desktop-deployment/package-ci.mjs
+      - name: Verify Windows dry-run receipt
+        env:
+          DESKTOP_BETA_PLATFORMS: windows
+        run: node scripts/desktop-deployment/verify-publication.mjs
+      - name: Upload Windows dry-run installer and checksum receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: desktop-windows-x64-dry-run
+          path: ${{ runner.temp }}/desktop-artifacts/*
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - name: Remove dry-run public configuration
+        if: always()
+        run: Remove-Item "$env:RUNNER_TEMP/desktop-public.json" -Force -ErrorAction SilentlyContinue
+
   release-status:
     name: Desktop beta availability
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production'
+    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.status.outputs.enabled }}
@@ -54,7 +127,7 @@ jobs:
 
   build:
     name: Desktop beta (${{ matrix.platform }})
-    needs: [check-ci, release-status]
+    needs: [check-ci, validate, release-status]
     if: needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production'
     environment: desktop-beta
     permissions:
@@ -93,7 +166,6 @@ jobs:
           DESKTOP_PUBLIC_CONFIG: ${{ vars.DESKTOP_PUBLIC_CONFIG }}
         run: |
           node scripts/desktop-deployment/write-ci-config.mjs
-          node --test scripts/desktop-deployment/*.test.mjs
       - name: Install Linux build dependencies
         if: matrix.platform == 'linux'
         run: |
@@ -109,16 +181,15 @@ jobs:
         if: matrix.platform == 'windows'
         working-directory: apps/mobile
         run: flutter build windows --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
-      - name: Require Windows signing configuration
+      - name: Select Windows signing mode
+        id: windows-signing
         if: matrix.platform == 'windows'
-        shell: bash
         env:
-          SIGNING_READY: ${{ matrix.platform == 'linux' || (vars.DESKTOP_SIGNING_SOURCE == 'vault' && ((matrix.platform == 'windows' && secrets.DESKTOP_WINDOWS_VAULT_CI_TOKEN != '') || (matrix.platform == 'macos' && secrets.DESKTOP_MACOS_VAULT_CI_TOKEN != ''))) || (vars.DESKTOP_SIGNING_SOURCE != 'vault' && ((matrix.platform == 'windows' && secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 != '' && secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD != '') || (matrix.platform == 'macos' && secrets.MACOS_CERTIFICATE_P12_B64 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' && vars.MACOS_SIGNING_IDENTITY != '' && vars.APPLE_TEAM_ID != '' && secrets.APP_STORE_CONNECT_API_KEY_ID != '' && secrets.APP_STORE_CONNECT_ISSUER_ID != '' && secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 != ''))) }}
-        run: |
-          if [ "$SIGNING_READY" != true ]; then
-            echo "::error::Desktop signing credentials are not configured. Public beta publication is blocked."
-            exit 1
-          fi
+          DESKTOP_SIGNING_SOURCE: ${{ vars.DESKTOP_SIGNING_SOURCE }}
+          WINDOWS_PFX_PRESENT: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 != '' }}
+          WINDOWS_PASSWORD_PRESENT: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD != '' }}
+          WINDOWS_VAULT_PRESENT: ${{ secrets.DESKTOP_WINDOWS_VAULT_CI_TOKEN != '' }}
+        run: node scripts/desktop-deployment/windows-signing.mjs
       - name: Build macOS beta
         if: matrix.platform == 'macos'
         working-directory: apps/mobile
@@ -140,7 +211,7 @@ jobs:
           sudo update-desktop-database
           xvfb-run -a dbus-run-session -- node scripts/desktop-deployment/smoke-linux.mjs
       - name: Sign Windows beta with Infrastructure vault
-        if: matrix.platform == 'windows' && vars.DESKTOP_SIGNING_SOURCE == 'vault'
+        if: matrix.platform == 'windows' && vars.DESKTOP_SIGNING_SOURCE == 'vault' && steps.windows-signing.outputs.mode == 'vault'
         env:
           DESKTOP_PLATFORM: windows
           DESKTOP_SIGNING_SOURCE: vault
@@ -153,7 +224,7 @@ jobs:
           DESKTOP_SIGNING_SOURCE: vault
           DESKTOP_VAULT_CI_TOKEN: ${{ secrets.DESKTOP_MACOS_VAULT_CI_TOKEN }}
         run: node scripts/desktop-deployment/package-vault-ci.mjs
-      - name: Sign and package Windows beta
+      - name: Package Windows beta
         if: matrix.platform == 'windows' && vars.DESKTOP_SIGNING_SOURCE != 'vault'
         env:
           DESKTOP_PLATFORM: windows

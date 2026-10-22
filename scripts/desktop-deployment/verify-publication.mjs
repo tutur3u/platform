@@ -51,6 +51,7 @@ export async function verifyPublication(directory, source, run, selected) {
       .update(await readFile(file))
       .digest('hex');
   }
+  const verifications = {};
   for (const platform of platforms.filter((item) => item in RECEIPTS)) {
     const requirement = RECEIPTS[platform];
     const receipt = JSON.parse(
@@ -61,15 +62,23 @@ export async function verifyPublication(directory, source, run, selected) {
       receipt.source !== source ||
       receipt.run !== run ||
       receipt.name !== requirement.name ||
-      receipt.verification !== requirement.verification ||
+      (receipt.verification !== requirement.verification &&
+        !(
+          platform === 'windows' && receipt.verification === 'unsigned-windows'
+        )) ||
       receipt.sha256 !== hashes[requirement.name]
     ) {
       throw new Error(
         'Signing verification does not match the release package'
       );
     }
+    verifications[requirement.name] = receipt.verification;
   }
-  return releaseFiles.map((name) => ({ name, sha256: hashes[name] }));
+  return releaseFiles.map((name) => ({
+    name,
+    sha256: hashes[name],
+    verification: verifications[name],
+  }));
 }
 
 if (

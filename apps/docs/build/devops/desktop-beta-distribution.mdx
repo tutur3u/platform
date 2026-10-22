@@ -11,18 +11,24 @@ Apple or Google account; installing TestFlight alone does not grant access.
 ## Release workflow
 
 `.github/workflows/desktop-beta.yaml` runs on relevant production pushes or an
-explicit dispatch from `production`. Desktop publication is opt-in: keep the
-repository variable `DESKTOP_BETA_ENABLED` unset until signing and platform
-verification are ready. While disabled, the workflow reports **coming soon** and
+explicit dispatch from `production` with `dry_run=false`. The default manual
+dispatch is a Windows-only dry run with no publication. Desktop publication is opt-in: keep the
+repository variable `DESKTOP_BETA_ENABLED` unset until the selected platforms
+complete native verification. Windows signing may remain unconfigured under the
+unsigned-beta policy below. While disabled, the workflow reports **coming soon** and
 does not publish; this is a deferred release, not a successful desktop rollout.
-Set it to `true` only after completing the prerequisites below.
+Set it to `true` only after completing the platform prerequisites below.
 Set repository variable `DESKTOP_BETA_PLATFORMS` to a comma-separated subset of
 `windows,macos,linux` (default: all three). Selected platforms build concurrently.
-Linux can ship while another platform completes signing setup.
+To include Windows alongside the existing macOS/Linux channel, set the release
+variable to `windows,macos,linux` after this workflow reaches production. A retained
+`macos,linux` setting still excludes Windows. Linux and unsigned Windows can ship
+while another platform completes signing setup.
 The `desktop-beta` GitHub environment owns the release configuration. Publication
 can publish the successfully verified selected-platform subset; failed platforms
 remain unavailable. Present invalid assets block publication rather than being
-dropped. Missing certificates never permit unsigned Windows or macOS packages.
+dropped. Windows packages may be explicitly unsigned under the decision below. macOS
+still requires its certificate and notarization credentials.
 
 Build inputs contain only allowlisted public URLs, publishable Supabase keys,
 OAuth client IDs, and feature flags. `DESKTOP_PUBLIC_CONFIG` is a JSON environment
@@ -34,18 +40,85 @@ Signing credentials are available only to their OS-specific packaging step,
 after Flutter compilation. They are never passed into Turbo, Flutter, a source
 archive, or an artifact path.
 
-Windows compilation precedes the same strict signing-readiness check; missing
-credentials fail the job before signing, packaging or artifact upload, and never
-permit an unsigned public package. A successful compile step is not a signed
-release. macOS preflight admits only one distinct valid code-signing fingerprint
-matching the configured Developer ID name and team in its owned temporary
-keychain; missing or ambiguous results block signing. This listing does not prove
-private-key usability or certificate trust, cannot repair missing or invalid
-material, and preserves strict signature, team and notarization verification.
-The existing verified-platform subset policy can still publish a successful
-Linux package when another platform fails; release dispatch and credential
-configuration remain operator-owned. Regression coverage is in
-`desktop-beta-workflow.test.mjs` and `sign-macos.test.mjs`.
+Windows builds select unsigned packaging only when both direct-signing secrets
+are absent. Configuring just one secret fails the job. Configured signing failures
+never retry as unsigned. An explicit vault source requires its Windows token;
+missing or rejected vault credentials cannot fall back to unsigned packaging.
+macOS preflight and signature, team, and notarization verification remain strict.
+The existing verified-platform subset policy can publish successful platforms
+when another fails. Regression coverage is in `desktop-beta-workflow.test.mjs`,
+`windows-signing.test.mjs`, and `verify-publication.test.mjs`.
+
+### Windows signing decision and costs
+
+The 2026-10-22 decision permits **UNSIGNED Windows x64 beta installers** until
+trusted signing is available without a new paid account or purchase. This applies
+to direct GitHub beta downloads, not the Microsoft Store channel. Checksums,
+bundle auditing, exact-source receipts, and GitHub provenance remain mandatory.
+No self-signed certificate is presented as trusted publisher signing.
+
+Options checked on 2026-10-22:
+
+- [CA-issued Authenticode certificates](https://www.digicert.com/signing/code-signing-certificates)
+  require a paid certificate subscription. OV/EV pricing and key storage depend on
+  the provider. No certificate was purchased.
+- [Azure Artifact Signing, formerly Trusted Signing](https://azure.microsoft.com/en-us/products/artifact-signing/)
+  lists USD 9.99/month for 5,000 signatures and USD 0.005 per additional signature.
+  It requires Azure provisioning and identity validation. No paid account was created.
+- [SignPath Foundation](https://signpath.org/terms.html) is free for qualifying
+  OSS projects. This repository is public and Apache-2.0 licensed, satisfying the
+  public-source/license starting point. Eligibility still requires review of all
+  bundled components, existing releases, an application, a public signing policy,
+  MFA, and assigned author/reviewer/approver roles. Approval and signing credentials
+  are not available, so this is not an immediately usable signing option.
+
+To enable the retained direct Authenticode path later, add both
+`WINDOWS_SIGNING_CERTIFICATE_PFX_B64` and `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`
+to the protected `desktop-beta` environment and leave `DESKTOP_SIGNING_SOURCE`
+unset or set to `environment`. Both the app binaries and completed installer
+are signed, timestamped, and verified. The PFX path requires a trusted certificate
+with a private key usable by the existing Windows signer. Hardware-backed or
+cloud-only CA keys need a compatible signing integration; buying an OV/EV
+certificate alone does not make it usable as a PFX.
+
+For the existing Infrastructure vault path, set `DESKTOP_SIGNING_SOURCE=vault`
+and provide `DESKTOP_WINDOWS_VAULT_CI_TOKEN` after approving the matching Windows
+signing material in the vault. SignPath or Azure integration requires a separate
+reviewed change after provisioning; their credentials are not PFX replacements.
+
+### Install an unsigned Windows beta
+
+The download page includes the x64 installer and installation guidance in English
+and Vietnamese. Unsigned installers can trigger SmartScreen's **Windows protected
+your PC** warning or show **Unknown publisher**.
+
+1. Download the installer only through the official download page or its GitHub release.
+2. Compare `Get-FileHash .\Tuturuuu-windows-x64-setup.exe -Algorithm SHA256`
+   with the checksum in the release notes. The notes explicitly identify unsigned builds.
+3. If you trust the release and SmartScreen offers the choice, select **More info**,
+   then **Run anyway**. Follow the per-user installer.
+
+Organization policy or Smart App Control may prevent that option. Use the web app
+instead of disabling Windows protections. A checksum verifies the downloaded bytes;
+it is not a publisher signature. Unsigned Windows updates require manually running
+a verified installer. The existing in-app Windows updater still requires valid,
+matching publisher signatures and rejects unsigned installers.
+
+### Build Windows artifacts without publishing
+
+Dispatch `desktop-beta.yaml` on the implementation branch with `dry_run=true`.
+This job runs on `windows-latest`, uses placeholder public configuration, and has
+only `contents: read`. It does not enter the protected `desktop-beta` environment,
+receive signing credentials, attest a release, or run the publisher. Its installer
+is for CI inspection, not a working production client. The release jobs are skipped
+even if the dry run is dispatched on `production`.
+
+The `desktop-windows-x64-dry-run` artifact contains the Inno Setup installer and
+`verified-windows.json`, including its SHA-256 checksum, exact source SHA, workflow
+run ID, and `unsigned-windows` status. Artifacts expire after seven days. A successful
+build is not installation, sign-in, or update acceptance on a Windows device.
+The packaging and updater currently use x64 paths and filenames. ARM64 needs
+separate native-plugin, installer, and updater qualification before advertising it.
 
 | Platform | Configuration |
 | --- | --- |
@@ -63,7 +136,8 @@ prerequisites for a real release.
 
 ## Packages and trust
 
-- Windows: per-user Inno Setup installer with timestamped Authenticode signatures.
+- Windows: per-user Inno Setup x64 installer, unsigned by default when no signing
+  credentials are configured. Configured signing produces timestamped Authenticode signatures.
   The installer registers and removes the browser-login callback protocol.
 - macOS: universal Apple silicon/Intel DMG. The app and image are Developer ID
   signed, notarized, stapled, and assessed. Temporary keychain/P12/API-key files
@@ -75,7 +149,7 @@ prerequisites for a real release.
 `audit-bundle.mjs` scans the built app before packaging for credential files,
 private-key/token markers, service-role JWTs, and links escaping the bundle.
 This is an additional check, not a substitute for keeping secrets out of builds.
-Signing receipts bind the Windows and macOS verification to the package hash,
+Package receipts bind the Windows and macOS verification status to the package hash,
 source SHA, and workflow run. Publication rejects extra files, missing selected platforms,
 or mismatched receipts.
 
@@ -223,7 +297,8 @@ This permits investigation of certification blockers before production sync;
 a diagnostics run is not evidence that production or Store distribution changed.
 
 Store builds omit `DESKTOP_RELEASE_RUN_ID`: the Store manages their updates,
-while the direct EXE installer remains a separate certificate-backed channel.
+while the direct EXE installer remains a separate beta channel with optional
+Authenticode signing.
 The MSIX package version uses major/minor plus the dedicated workflow run number,
 with a zero revision required by Store submissions; app display versions remain
 managed by Release Please. The run number must fit the MSIX 16-bit component.
@@ -243,7 +318,8 @@ can compromise an accepted Linux update. Polkit asks for installation consent. T
 root-owned packaged helper copies the selected archive into a private root-owned
 staging directory, rechecks its digest and package identity there, and installs it
 with apt so dependencies are resolved. It never installs the user-writable cache
-path directly. macOS and Windows additionally require OS publisher signatures.
+path directly. macOS and the Windows in-app updater additionally require OS
+publisher signatures. Unsigned Windows betas require manual installer updates.
 
 ### Verify downloaded desktop packages
 
@@ -265,16 +341,15 @@ runs the same verification before publication and blocks the whole selected
 release if any signature, artifact digest, or workflow identity fails.
 Linux's signed provenance covers the exact Debian archive; it is not an embedded
 Debian publisher signature and the current Linux updater does not independently
-verify provenance. Windows and macOS additionally enforce native publisher trust.
+verify provenance. macOS and the Windows in-app updater additionally enforce
+native publisher trust; unsigned Windows installation is a manual trust decision.
 Do not describe receipt hashes alone as cryptographic signature verification.
 
-Windows direct distribution requires a trusted Authenticode certificate. A
-Microsoft account or Store registration alone is insufficient. Microsoft Artifact
-Signing is an alternative managed signing provider: it requires an accessible
-Azure subscription, completed identity validation, and a certificate profile,
-plus a narrowly scoped CI workload identity. Its non-exportable signing key is
-not a PFX to retrieve from an account. Keep Windows unavailable until a supported
-signing provider is configured and CI verifies the actual installer signature.
+Signed Windows direct distribution requires a trusted Authenticode certificate.
+A Microsoft account or Store registration alone is insufficient. Microsoft Artifact
+Signing requires an Azure subscription, identity validation, a certificate profile,
+and a CI workload identity. Its non-exportable key cannot be retrieved as a PFX.
+The unsigned beta exception above applies until a supported signer is provisioned.
 
 ## Failed platform builds
 

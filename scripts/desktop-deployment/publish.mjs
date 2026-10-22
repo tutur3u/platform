@@ -25,10 +25,21 @@ const version = (await readFile('apps/mobile/pubspec.yaml', 'utf8')).match(
 )?.[1];
 if (!version) throw new Error('Invalid release version');
 const tag = `desktop-v${version}-${process.env.GITHUB_RUN_ID}`;
+function packageTrust({ name, verification }) {
+  if (name.endsWith('.exe')) {
+    if (verification === 'unsigned-windows')
+      return 'Windows packages are UNSIGNED. SmartScreen may show Windows protected your PC or Unknown publisher. After verifying the SHA-256 checksum below, choose More info, then Run anyway if you trust this release and Windows offers that option. Organization policy or Smart App Control may block unsigned apps; use the web app instead of disabling security protections. Unsigned beta updates require manually installing a verified package; the in-app updater requires publisher signatures.';
+    return 'Windows packages have timestamped Authenticode signatures.';
+  }
+  if (name.endsWith('.dmg'))
+    return 'macOS packages are Developer ID signed, notarized, and stapled.';
+  return 'Linux packages are unsigned Debian archives with CI installation and launch checks.';
+}
+
 const notes = join(process.env.RUNNER_TEMP, 'desktop-release-notes.md');
 await writeFile(
   notes,
-  `Early-access desktop beta for the platforms attached to this release. These builds may not be production-ready.\n\nSource: ${process.env.GITHUB_SHA}\n\n${files.map(({ name }) => (name.endsWith('.exe') ? 'Windows packages have timestamped Authenticode signatures.' : name.endsWith('.dmg') ? 'macOS packages are Developer ID signed, notarized, and stapled.' : 'Linux packages are unsigned Debian archives with CI installation and launch checks.')).join(' ')} All packages have cryptographically signed GitHub build provenance verified against this workflow, production ref, and exact source SHA before publication.\n\n## Verify signed provenance\n\nWith GitHub CLI, run for each downloaded package:\n\n\`\`\`sh\ngh attestation verify <downloaded-package> --repo tutur3u/platform --signer-workflow tutur3u/platform/.github/workflows/desktop-beta.yaml --source-ref refs/heads/production --source-digest ${process.env.GITHUB_SHA} --deny-self-hosted-runners\n\`\`\`\n\nLinux provenance signing authenticates the package bytes and build identity; it is separate from an embedded Debian publisher signature.\n\n## SHA-256\n\n${files.map(({ name, sha256 }) => `- \`${name}\`: \`${sha256}\``).join('\n')}\n`
+  `Early-access desktop beta for the platforms attached to this release. These builds may not be production-ready.\n\nSource: ${process.env.GITHUB_SHA}\n\n${files.map(packageTrust).join(' ')} All packages have cryptographically signed GitHub build provenance verified against this workflow, production ref, and exact source SHA before publication.\n\n## Verify signed provenance\n\nWith GitHub CLI, run for each downloaded package:\n\n\`\`\`sh\ngh attestation verify <downloaded-package> --repo tutur3u/platform --signer-workflow tutur3u/platform/.github/workflows/desktop-beta.yaml --source-ref refs/heads/production --source-digest ${process.env.GITHUB_SHA} --deny-self-hosted-runners\n\`\`\`\n\nLinux provenance signing authenticates the package bytes and build identity; it is separate from an embedded Debian publisher signature.\n\n## SHA-256\n\n${files.map(({ name, sha256 }) => `- \`${name}\`: \`${sha256}\``).join('\n')}\n`
 );
 // Publish as a draft first. No partially uploaded release appears on /download.
 // No --clobber: immutable release tags cannot silently replace an installed build.

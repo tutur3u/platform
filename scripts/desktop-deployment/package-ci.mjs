@@ -10,6 +10,7 @@ import {
 } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { auditBundle } from './audit-bundle.mjs';
+import { packageWindows } from './package-windows.mjs';
 import { withMacosSigning } from './sign-macos.mjs';
 import { stageLocalInferenceMacos } from './stage-local-inference-macos.mjs';
 
@@ -58,35 +59,13 @@ if (platform === 'linux') {
 } else if (platform === 'windows') {
   const bundle = resolve('apps/mobile/build/windows/x64/runner/Release');
   await auditBundle(bundle);
-  const sign = (path) =>
-    execFileSync(
-      'pwsh',
-      [
-        '-NoProfile',
-        '-File',
-        'scripts/desktop-deployment/sign-windows.ps1',
-        '-Path',
-        path,
-      ],
-      { stdio: 'inherit' }
-    );
-  sign(bundle);
-  const compiler = join(
-    process.env['ProgramFiles(x86)'] ?? 'C:\\Program Files (x86)',
-    'Inno Setup 6/ISCC.exe'
-  );
-  execFileSync(
-    compiler,
-    [
-      `/DAppVersion=${version}`,
-      `/DBuildRoot=${bundle}`,
-      `/DOutputRoot=${output}`,
-      'scripts/desktop-deployment/windows-installer.iss',
-    ],
-    { stdio: 'inherit' }
-  );
-  sign(join(output, 'Tuturuuu-windows-x64-setup.exe'));
-  await receipt('Tuturuuu-windows-x64-setup.exe', 'authenticode-timestamped');
+  const verification = packageWindows({
+    bundle,
+    output,
+    version,
+    env: process.env,
+  });
+  await receipt('Tuturuuu-windows-x64-setup.exe', verification);
 } else if (platform === 'macos') {
   const bundle = resolve(
     'apps/mobile/build/macos/Build/Products/Release-production/Tuturuuu.app'
