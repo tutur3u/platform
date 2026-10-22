@@ -117,6 +117,7 @@ describe('issuance contract without application authorization', () => {
       'https://sp.example.test:444/acs',
       'https://user:password@sp.example.test/acs',
       'https://sp.example.test/acs#fragment',
+      'https://sp.example.test/acs#',
       'https://*.example.test/acs',
       'https://SP.example.test/acs',
     ]) {

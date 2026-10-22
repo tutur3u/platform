@@ -150,7 +150,7 @@ export function parseAuthnRequest(
     (n) => n.namespaceURI === SAML.protocol && n.localName === 'NameIDPolicy'
   );
   requireProtocol(policy.length <= 1, 'NAME_ID_POLICY');
-  let allowCreate = true;
+  let allowCreate = false;
   if (policy[0]) {
     restrictAttributes(policy[0], ['Format', 'AllowCreate']);
     requireProtocol(

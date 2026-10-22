@@ -14,11 +14,16 @@ export function parseXml(xml: string) {
   requireProtocol(Buffer.byteLength(xml) <= MAX_XML_BYTES, 'XML_TOO_LARGE');
   // Requests have no reason to contain DTDs, entities, comments, CDATA or PIs.
   requireProtocol(!/<!|<\?(?!xml\s)/i.test(xml), 'XML_DECLARATION');
-  const doc = new DOMParser({
-    onError: () => {
-      throw new Error('SAML_XML_INVALID');
-    },
-  }).parseFromString(xml, 'application/xml');
+  let doc: Document;
+  try {
+    doc = new DOMParser({
+      onError: () => {
+        throw new Error('SAML_XML_INVALID');
+      },
+    }).parseFromString(xml, 'application/xml');
+  } catch {
+    throw new Error('SAML_XML_INVALID');
+  }
   const ids = new Set<string>();
   let count = 0;
   function visit(node: Node, depth: number) {

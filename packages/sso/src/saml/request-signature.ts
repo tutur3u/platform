@@ -74,16 +74,21 @@ export function verifyRequestSignature(input: {
       transforms[1]?.getAttribute('Algorithm') === SAML.exclusive,
     'SIGNATURE_ALGORITHM'
   );
-  const verifier = new SignedXml({
-    publicCert: certificate,
-    getCertFromKeyInfo: () => null,
-  });
-  verifier.loadSignature(serialize(signature));
-  requireProtocol(
-    verifier.checkSignature(serialize(root)),
-    'INVALID_SIGNATURE'
-  );
-  const verified = verifier.getSignedReferences();
+  let verified: string[];
+  try {
+    const verifier = new SignedXml({
+      publicCert: certificate,
+      getCertFromKeyInfo: () => null,
+    });
+    verifier.loadSignature(serialize(signature));
+    requireProtocol(
+      verifier.checkSignature(serialize(root)),
+      'INVALID_SIGNATURE'
+    );
+    verified = verifier.getSignedReferences();
+  } catch {
+    throw new Error('SAML_INVALID_SIGNATURE');
+  }
   requireProtocol(verified.length === 1 && verified[0], 'SIGNATURE_REFERENCE');
   // Only authenticated bytes become the request domain object.
   return documentRoot(parseXml(verified[0]));

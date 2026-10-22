@@ -1,9 +1,8 @@
 import { deflateRawSync } from 'node:zlib';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { SignedXml } from 'xml-crypto';
 import { SAML } from '../contracts';
 import { parseAuthnRequest } from '../saml/request';
-import { type Fixture, fixture } from './fixture';
+import { type Fixture, fixture, signPostRequest } from './fixture';
 
 let f: Fixture;
 beforeAll(() => {
@@ -197,7 +196,7 @@ describe('AuthnRequest registered profile and bounded XML boundary', () => {
     ).toThrow();
   });
 
-  it('rejects signed POST wrapping, tampering, and duplicate IDs', () => {
+  it('rejects signed POST reference changes, tampering, and duplicate IDs', () => {
     const signed = signPostRequest(f);
     const profile = {
       ...f.profile,
@@ -264,21 +263,3 @@ describe('AuthnRequest registered profile and bounded XML boundary', () => {
     );
   });
 });
-
-function signPostRequest(f: Fixture) {
-  const signature = new SignedXml({
-    privateKey: f.privateKey,
-    publicCert: f.certificate,
-    signatureAlgorithm: SAML.rsaSha256,
-    canonicalizationAlgorithm: SAML.exclusive,
-  });
-  signature.addReference({
-    xpath: "/*[local-name()='AuthnRequest']",
-    transforms: [SAML.enveloped, SAML.exclusive],
-    digestAlgorithm: SAML.sha256,
-  });
-  signature.computeSignature(f.requestXml(), {
-    location: { reference: "//*[local-name()='Issuer']", action: 'after' },
-  });
-  return signature.getSignedXml();
-}

@@ -16,3 +16,17 @@ Do not remove those checks because signature-only tests pass. Real WorkOS
 acceptance, verified MFA lineage, current membership/assignment/disclosure,
 atomic transaction consumption, signer custody and durable audit remain separate
 gates before any live issuance route.
+
+For both request bindings, omitted NameIDPolicy or AllowCreate means false;
+only an explicit true XML boolean permits later subject allocation. Preserve
+this default for authenticated requests too. Parser and signature-library
+exceptions must leave the package as fixed SAML_XML_INVALID or
+SAML_INVALID_SIGNATURE errors, without diagnostic text or attached raw causes.
+Keep explicit structural/reference errors outside those library catch boundaries.
+
+Wrapping regressions must retain a valid original assertion signature and use a
+distinct-ID unsigned attacker assertion with different claims. Re-sign the outer
+response in the test so a broken outer digest cannot satisfy the negative check;
+verify the intended signatures before expecting semantic rejection. Duplicate-ID
+and digest-tamper controls remain separate. The focused security-review suite
+covers these invariants and nested-request signed-target selection.

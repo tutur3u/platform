@@ -4,6 +4,7 @@ import { generateKeyPairSync, randomUUID, sign } from 'node:crypto';
 import { deflateRawSync } from 'node:zlib';
 import { SAML as NodeSaml, ValidateInResponseTo } from '@node-saml/node-saml';
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
+import { SignedXml } from 'xml-crypto';
 import { SAML, samlIdSchema, spProfileSchema } from '../contracts';
 import { createNodeSigner } from '../saml/node-signer';
 import { parseAuthnRequest } from '../saml/request';
@@ -208,4 +209,26 @@ export function resign(
     id: samlIdSchema.parse(doc.documentElement.getAttribute('ID')),
     kind: 'Response',
   });
+}
+
+export function signPostRequest(
+  f: Fixture,
+  xml = f.requestXml(),
+  target = "/*[local-name()='AuthnRequest']"
+) {
+  const signature = new SignedXml({
+    privateKey: f.privateKey,
+    publicCert: f.certificate,
+    signatureAlgorithm: SAML.rsaSha256,
+    canonicalizationAlgorithm: SAML.exclusive,
+  });
+  signature.addReference({
+    xpath: target,
+    transforms: [SAML.enveloped, SAML.exclusive],
+    digestAlgorithm: SAML.sha256,
+  });
+  signature.computeSignature(xml, {
+    location: { reference: "//*[local-name()='Issuer']", action: 'after' },
+  });
+  return signature.getSignedXml();
 }

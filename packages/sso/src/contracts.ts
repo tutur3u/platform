@@ -55,7 +55,7 @@ export const endpointSchema = z
         u.protocol === 'https:' &&
         !u.username &&
         !u.password &&
-        !u.hash &&
+        !s.includes('#') &&
         !u.port &&
         !s.includes('*') &&
         u.href === s

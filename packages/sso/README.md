@@ -50,7 +50,9 @@ failing a digest. This harness does not substitute for Claude/WorkOS acceptance.
   namespace/root/structure checks, unique IDs/parameters, five-minute freshness,
   30-second future skew, exact destination/issuer/ACS, persistent NameID and only
   exact REFEDS MFA requested context. Unsupported contexts, indices, extensions,
-  `SPNameQualifier`, email NameID and passive requests fail closed.
+  `SPNameQualifier`, email NameID and passive requests fail closed. Omitted
+  NameIDPolicy or AllowCreate defaults to false for both bindings, including
+  signed requests; only explicit true/1 allows later subject allocation.
 - Request-signature policy is explicit: `required` pins an RSA certificate and
   accepts only RSA-SHA256 (POST additionally SHA256 digests and exclusive c14n).
   `unsigned` permits only unsigned requests and conveys no authenticated SP
@@ -63,6 +65,9 @@ failing a digest. This harness does not substitute for Claude/WorkOS acceptance.
   returning a response after five seconds is forbidden. This check does not
   preempt an arbitrary injected signer; bounded/cancellable remote signing is
   future service-adapter work. No retries or background operations exist.
+  The future generateId adapter must use a CSPRNG and ensure cross-issuance
+  uniqueness (for example, an underscore plus 20 random bytes encoded as hex);
+  the protocol only checks syntax and collisions within one issuance.
 - Identity input contains an **already allocated**, stable, random pairwise UUID
   for `(client, Auth user)`, confirmed email, validated first/last names. Only
   `id`, `email`, `firstName`, `lastName` are shared. Subject allocation/persistence
@@ -96,7 +101,10 @@ expanded XML, 80-byte RelayState, depth 16, 256 DOM nodes, 24 attributes per
 element. DTDs/entities, comments, CDATA and non-XML processing instructions are
 rejected. Patched parsing plus hard input/output caps bounds synchronous work;
 there is no claim of a preemptive XML parser wall-clock timeout. Future ingress
-must bound streamed body reads before invoking these functions.
+must bound streamed body reads before invoking these functions. Parser and
+XML-signature library failures expose only fixed `SAML_XML_INVALID` /
+`SAML_INVALID_SIGNATURE` messages, with no raw diagnostic cause attached.
+Explicit protocol structure/reference errors retain their own bounded codes.
 
 Run from the repository root (OpenSSL must be on PATH for disposable test certs):
 
@@ -112,6 +120,11 @@ They cover signed and explicitly unsigned request bindings, signature tampering,
 wrapping/duplicate IDs, unsigned assertions inside signed responses, wrong trust
 anchors/audience/ACS, expiry, SP request replay and malicious compressed XML.
 Issuance tests exercise fresh MFA, ForceAuthn, ID collisions and signing deadlines.
+`security-review.test.ts` covers omitted/explicit/invalid AllowCreate, authenticated
+omissions, sanitized library errors, nested signed request targets, and an intact
+signed assertion beside a distinct unsigned attacker assertion. The wrapping
+fixture verifies both intended signatures and re-signs the outer response before
+checking raw Node-SAML and the local SP harness reject multiple assertions.
 
 ## Deferred authorization and delivery
 

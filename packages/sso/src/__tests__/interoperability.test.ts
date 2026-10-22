@@ -49,6 +49,16 @@ describe('real signed IdP response to independent Node-SAML SP', () => {
     expect(Date.parse(result.expiresAt) - f.now.getTime()).toBe(120_000);
   });
 
+  it.each(['text ]]> suffix', 'Supplementary \u{1f680}', '<tag>& "quoted"'])(
+    'round-trips XML-sensitive and Unicode names: %s',
+    async (firstName) => {
+      const result = f.response({ identity: { ...f.identity, firstName } });
+      const profile = await (await serviceProvider(f)).accept(result.xml);
+      expect(profile.attributes).toMatchObject({ firstName });
+      expect(profile.nameID).toBe(f.identity.pairwiseSubject);
+    }
+  );
+
   it('keeps a caller-allocated pairwise subject stable across email changes', async () => {
     const one = f.response();
     const two = f.response({
@@ -137,7 +147,7 @@ describe('real signed IdP response to independent Node-SAML SP', () => {
     );
   });
 
-  it('rejects signature wrapping with an injected unsigned assertion', async () => {
+  it('rejects a duplicated signed assertion with a duplicate ID and broken outer digest', async () => {
     const doc = new DOMParser().parseFromString(
       f.response().xml,
       'application/xml'
