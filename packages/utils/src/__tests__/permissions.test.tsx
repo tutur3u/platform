@@ -22,6 +22,41 @@ describe('workspace permission catalog', () => {
     'view_inventory_stock',
   ];
 
+  it('exposes the outbound SSO management permission with translations', () => {
+    expect(
+      permissions({ wsId: workspaceId, user: null }).map((entry) => entry.id)
+    ).toContain('manage_sso_clients');
+    for (const app of [
+      'ai',
+      'calendar',
+      'cms',
+      'drive',
+      'finance',
+      'infrastructure',
+      'inventory',
+      'meet',
+      'nova',
+      'parley',
+      'rewise',
+      'tasks',
+      'track',
+      'web',
+    ]) {
+      for (const locale of ['en', 'vi']) {
+        const messages = JSON.parse(
+          readFileSync(
+            resolve(repoRoot, `apps/${app}/messages/${locale}.json`),
+            'utf8'
+          )
+        );
+        expect(messages['ws-roles'].manage_sso_clients).toBeTruthy();
+        expect(
+          messages['ws-roles'].manage_sso_clients_description
+        ).toBeTruthy();
+      }
+    }
+  });
+
   it('keeps workspace role forms scoped by default', () => {
     const permissionIds = permissions({
       wsId: workspaceId,

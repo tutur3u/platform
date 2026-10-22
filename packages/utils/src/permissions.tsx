@@ -40,7 +40,6 @@ import {
   ShieldCheck,
   Sparkles,
   Trash,
-  UserCheck,
   UserCog,
   UserMinus,
   UserPen,
@@ -54,6 +53,7 @@ import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
 import { deploymentVaultPermissions } from './deployment-vault-permissions';
+import { workspaceAccessPermissions } from './workspace-access-permissions';
 
 export type RolePermission = {
   id: PermissionId;
@@ -228,30 +228,7 @@ export const permissionGroups = ({
             disableOnProduction: false,
             disabled: false,
           },
-          {
-            id: 'manage_workspace_roles',
-            icon: <UserCog />,
-            title: t('ws-roles.manage_workspace_roles'),
-            description: t('ws-roles.manage_workspace_roles_description'),
-            disableOnProduction: false,
-            disabled: false,
-          },
-          {
-            id: 'manage_workspace_members',
-            icon: <UserCheck />,
-            title: t('ws-roles.manage_workspace_members'),
-            description: t('ws-roles.manage_workspace_members_description'),
-            disableOnProduction: false,
-            disabled: false,
-          },
-          {
-            id: 'manage_workspace_settings',
-            icon: <Settings2 />,
-            title: t('ws-roles.manage_workspace_settings'),
-            description: t('ws-roles.manage_workspace_settings_description'),
-            disableOnProduction: false,
-            disabled: false,
-          },
+          ...workspaceAccessPermissions(t),
           {
             id: 'manage_workspace_integrations',
             icon: <CircuitBoard />,

@@ -13715,6 +13715,8 @@
     "manage_payroll_description": "Allows members to create, approve, and finalize payroll runs.",
     "manage_projects": "Manage Projects",
     "manage_projects_description": "Allows members to view, create, edit, and delete projects in the workspace.",
+    "manage_sso_clients": "Manage outbound SSO applications",
+    "manage_sso_clients_description": "Configure workspace SAML applications and assign members who may sign in.",
     "manage_subscription": "Manage subscription",
     "manage_subscription_description": "Allows members to view, manage, and update workspace subscription and billing information.",
     "manage_time_tracking_requests": "Manage Time Tracking Requests",
