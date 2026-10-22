@@ -396,6 +396,11 @@
       "types": "./dist/product-feedback.d.ts",
       "import": "./dist/product-feedback.js",
       "require": "./dist/product-feedback.js"
+    },
+    "./sso": {
+      "types": "./dist/sso.d.ts",
+      "import": "./dist/sso.js",
+      "require": "./dist/sso.js"
     }
   },
   "devDependencies": {

@@ -21,6 +21,11 @@ const snapshotSchema = z.object({
     entity_id: z.string(),
     acs_urls: z.array(z.string()).length(1),
     name_id_format: spProfileSchema.unwrap().shape.nameIdFormat,
+    request_signing_mode: z
+      .enum(['unsigned', 'required'])
+      .nullable()
+      .optional(),
+    sp_certificate: z.string().nullable().optional(),
   }),
   key: z.object({
     id: z.uuid(),
@@ -76,7 +81,12 @@ export async function snapshot(
       entityId: row.saml.entity_id,
       acsUrl: row.saml.acs_urls[0],
       nameIdFormat: row.saml.name_id_format,
-      requestSigning: config.requestSigning,
+      requestSigning:
+        row.saml.request_signing_mode === 'required'
+          ? { mode: 'required', certificate: row.saml.sp_certificate }
+          : row.saml.request_signing_mode === 'unsigned'
+            ? { mode: 'unsigned' }
+            : config.requestSigning,
     }),
     idp: idpConfigSchema.parse({
       entityId: `${base}/metadata`,

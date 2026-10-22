@@ -53,3 +53,15 @@ sessions. Re-evaluate verified MFA age after the finalization RPC before releasi
 the signed response, preserving the inclusive ten-minute limit. Keep negative
 factor/recovery fixtures otherwise valid and assert their exact error branch;
 retain a successful fixture and a clock-crossing positive control.
+
+Workspace SSO management uses service-only projection RPCs, not direct private
+schema access. Keep current MEMBER plus `manage_sso_clients` checks at both HTTP
+and transactional SQL boundaries; require fresh factor-bound TOTP for trust,
+activation and assignment changes. Create disabled, use revision preconditions,
+and make enable a separate explicit dialog action. Never retry a write after an
+unknown outcome. The global flag and deployment-selected pilot remain server
+operator controls. Project key certificates/timestamps only and audit event
+id/type/revision/time; do not widen reads to private material or transaction data.
+Persist request-signature policy with the atomic trust update and revision/audit;
+unchanged legacy clients keep deployment-pinned policy until explicitly saved.
+See the SSO feature page's workspace administration and transport sections.

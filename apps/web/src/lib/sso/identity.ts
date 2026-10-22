@@ -63,7 +63,7 @@ export async function bindSession(
   if (result.data !== true) throw new SsoError({ code: 'unavailable' });
 }
 
-export async function principal(request: Request, admin: SsoAdmin) {
+async function verifiedActor(request: Request, admin: SsoAdmin) {
   const client = await cookieClient(request);
   const authenticated = await client.auth.getUser();
   if (authenticated.error || !authenticated.data.user)
@@ -122,8 +122,26 @@ export async function principal(request: Request, admin: SsoAdmin) {
     throw new SsoError({ code: 'mfa_required' });
   const bound = await bindCurrentMfaFactor(admin, userId, proof, true);
   if (!bound) throw new SsoError({ code: 'mfa_required' });
+  return { user, proof, primaryAt };
+}
+
+/** Management needs assurance, not the names shared with the external SP. */
+export async function managementPrincipal(request: Request, admin: SsoAdmin) {
+  const { user, proof } = await verifiedActor(request, admin);
+  if (
+    user.is_anonymous ||
+    !user.email_confirmed_at ||
+    (user.banned_until && Date.parse(user.banned_until) > Date.now())
+  ) {
+    throw new SsoError({ code: 'forbidden' });
+  }
+  return { userId: user.id, mfaAt: proof.verifiedAt };
+}
+
+export async function principal(request: Request, admin: SsoAdmin) {
+  const { user, proof, primaryAt } = await verifiedActor(request, admin);
   return principalSchema.parse({
-    userId,
+    userId: user.id,
     sessionId: proof.sessionId,
     email: user.email,
     emailConfirmed: Boolean(user.email_confirmed_at),

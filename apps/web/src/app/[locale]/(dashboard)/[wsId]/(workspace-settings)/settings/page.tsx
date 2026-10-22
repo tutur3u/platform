@@ -107,6 +107,15 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
       />
       <Separator className="my-4" />
 
+      {!ws.personal &&
+        permissions.membershipType === 'MEMBER' &&
+        containsPermission('manage_sso_clients') && (
+          <div className="mb-4">
+            <Button variant="outline" asChild>
+              <Link href={`/${wsId}/sso`}>{t('workspace-sso.title')}</Link>
+            </Button>
+          </div>
+        )}
       <div className="grid gap-4 lg:grid-cols-2">
         <BasicInfo
           workspace={{
