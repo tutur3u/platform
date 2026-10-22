@@ -335,7 +335,7 @@ test('vault workflow only fetches after compilation with explicit opt-in and sep
     /secrets.DESKTOP_WINDOWS_VAULT_CI_TOKEN/
   );
   assert.match(
-    workflow.slice(mac, workflow.indexOf('Sign and package Windows beta')),
+    workflow.slice(mac, workflow.indexOf('Package Windows beta')),
     /secrets.DESKTOP_MACOS_VAULT_CI_TOKEN/
   );
   assert.match(

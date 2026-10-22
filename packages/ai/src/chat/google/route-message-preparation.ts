@@ -7,6 +7,7 @@ import type {
   UIMessage,
 } from 'ai';
 import { convertToModelMessages } from 'ai';
+import { normalizeAssistantModelMessages } from '../assistant-message-content';
 import { processMessagesWithFiles } from './message-file-processing';
 
 export const MAX_CONTEXT_MESSAGES = 10;
@@ -234,7 +235,9 @@ export async function prepareProcessedMessages(
     excludeAudioVideoFiles?: boolean;
   }
 ): Promise<{ processedMessages: ModelMessage[] } | { error: Response }> {
-  const modelMessages = await convertToModelMessages(normalizedMessages);
+  const modelMessages = normalizeAssistantModelMessages(
+    await convertToModelMessages(normalizedMessages)
+  );
   const validationError = validateModelMessages(modelMessages);
   if (validationError) {
     return { error: validationError };

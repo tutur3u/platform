@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { restoreAssistantMessageContent } from '@tuturuuu/ai/chat/assistant-message-content';
 import { createPOST as createAiChatPost } from '@tuturuuu/ai/chat/google/route';
 import {
   GEMINI_31_FLASH_LITE_GATEWAY_MODEL,
@@ -502,6 +503,13 @@ function escapeRegExp(value: string) {
 
 export function toAiChatUiMessages(messages: ChatMessage[]): UiMessageForAi[] {
   const uiMessages = messages
+    .map((message) => ({
+      ...message,
+      content:
+        message.kind === 'assistant'
+          ? restoreAssistantMessageContent(message.content, message.metadata)
+          : message.content,
+    }))
     .filter((message) => message.content.trim())
     .map(
       (message): UiMessageForAi => ({
@@ -534,7 +542,10 @@ export function toNativeAiUiMessages(
   const uiMessages = messages.flatMap((message): UiMessageForAi[] => {
     if (message.kind !== 'assistant' && message.kind !== 'user') return [];
     const content =
-      message.content.trim() ||
+      (message.kind === 'assistant'
+        ? restoreAssistantMessageContent(message.content, message.metadata)
+        : message.content
+      ).trim() ||
       getAiChatAttachmentPlaceholderContent(
         message.attachments.map((attachment) => ({
           contentType: attachment.contentType,

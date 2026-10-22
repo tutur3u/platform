@@ -6817,6 +6817,7 @@
     "title": "Your workspace, right at home.",
     "unavailable": "Desktop beta is being prepared. You can use the web app now.",
     "windows": {
+      "installation": "Windows beta installers may be unsigned. Check the release notes and SHA-256 checksum. If SmartScreen warns, choose More info, then Run anyway only if you trust the download and Windows offers that option. If your device blocks it, use the web app.",
       "name": "Windows",
       "requirements": "Windows 10 or later · Intel / AMD 64-bit"
     }

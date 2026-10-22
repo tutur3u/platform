@@ -763,6 +763,11 @@ Never accept a SOURCE receipt as public acceptance or rebuild after qualificatio
 Run `node --test scripts/ci/qualify-sdk-package.test.js scripts/ci/package-release-readiness.test.js packages/sdk/scripts/portable-build.test.cjs`
 for focused controls; builds and real consumer acceptance belong to exact-SHA CI.
 
+## Windows desktop beta packaging
+
+Unsigned Windows x64 is allowed only with both direct-signing secrets absent. Partial credentials, missing vault tokens, and signer failures block that platform; macOS signing stays strict. Keep source/run/hash receipts and GitHub provenance, and retain signature checks in the Windows updater.
+Manual `desktop-beta.yaml` dispatch defaults to a read-only Windows dry run with placeholder inputs, no signing credentials or protected environment, and no publication. Run POSIX command-shim tests on Linux.
+See the [desktop runbook](../../../../../apps/docs/build/devops/desktop-beta-distribution.mdx) for costs, secret names, SmartScreen guidance, manual unsigned updates, and native acceptance.
 
 ## Apps finite public SDK acceptance
 
