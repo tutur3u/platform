@@ -1,4 +1,3 @@
-import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -26,12 +25,15 @@ import {
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
-import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
-import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { type Locale, supportedLocales } from './i18n/routing';
+import {
+  preferredCalendarLocale,
+  resolveCalendarLocale,
+} from './runtime/request-locale';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -95,9 +97,13 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
+  const publicCompletion =
+    (req.method === 'GET' || req.method === 'HEAD') &&
+    PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
+    !req.nextUrl.searchParams.has('token');
+  const verifyTokenResponse = publicCompletion
+    ? null
+    : await consumeVerifyTokenRequest(req, { locales: supportedLocales });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }
@@ -112,6 +118,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
+  if (publicCompletion) {
+    authRequestHeaders.set('x-next-intl-locale', resolveCalendarLocale(req));
+    const completion = clearSupabaseAuthCookies(
+      req,
+      NextResponse.next({ request: { headers: authRequestHeaders } })
+    );
+    propagateAuthCookies(authRes, completion);
+    return completion;
+  }
   const authRequest = { headers: authRequestHeaders };
   const appSession = getAppSessionClaimsFromRequest(authRequest, {
     targetApp: 'calendar',
@@ -333,18 +348,8 @@ const getDefaultLocale = (
 ): {
   locale: Locale;
 } => {
-  // Get browser languages
-  const headers = {
-    'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
-  };
-
-  const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, supportedLocales, defaultLocale);
-
   return {
-    locale: supportedLocales.includes(detectedLocale as Locale)
-      ? (detectedLocale as Locale)
-      : defaultLocale,
+    locale: preferredCalendarLocale(req.headers.get('accept-language')),
   };
 };
 

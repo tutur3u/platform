@@ -46,7 +46,7 @@ import type {
 } from '../data/use-filtered-resources';
 
 interface BulkActionsMenuProps {
-  workspace: Workspace;
+  workspace: Pick<Workspace, 'id' | 'personal'>;
   boardConfig: BoardConfig | null | undefined;
   columns: TaskList[];
   bulkWorking: boolean;

@@ -29,7 +29,7 @@ export function useBulkResources({
   boardId?: string | null;
   canUseBoardAssignees?: boolean;
   assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
-  workspace: Workspace;
+  workspace: Pick<Workspace, 'id' | 'personal'>;
   isMultiSelectMode: boolean;
   selectedCount: number;
 }) {

@@ -85,6 +85,11 @@
     "./types": {
       "types": "./dist/types.d.ts",
       "default": "./dist/types.js"
+    },
+    "./next/realtime-log-actions": {
+      "types": "./dist/next/realtime-log-actions.d.ts",
+      "bun": "./src/next/realtime-log-actions.ts",
+      "default": "./dist/next/realtime-log-actions.js"
     }
   },
   "publishConfig": {
@@ -123,7 +128,7 @@
     "react": ">=19.2.7",
     "react-dom": ">=19.2.7"
   },
-  "packageManager": "bun@1.4.1",
+  "packageManager": "bun@1.4.3",
   "engines": {
     "node": ">=18.0.0"
   }

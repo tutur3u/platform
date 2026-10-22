@@ -36,6 +36,12 @@ const AUTH_PUBLIC_PATHS = [
   ...supportedLocales.map((locale) => `/${locale}/native-collaboration`),
   ...supportedLocales.map((locale) => `/${locale}/login`),
 ];
+const publicCallbackLocale = createIntlMiddleware({
+  locales: supportedLocales,
+  defaultLocale,
+  localeDetection: false,
+  localePrefix: 'as-needed',
+});
 const LEGACY_PLAN_ID_PATTERN = /^[0-9a-f]{32}$/iu;
 
 function getPathSegments(pathname: string) {
@@ -191,6 +197,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  if (
+    (req.method === 'GET' || req.method === 'HEAD') &&
+    PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
+    !req.nextUrl.searchParams.has('token')
+  ) {
+    return publicCallbackLocale(req);
+  }
+
   const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
     locales: supportedLocales,
   });
@@ -334,7 +348,14 @@ const getDefaultLocale = (
     'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
   };
 
-  const languages = new Negotiator({ headers }).languages();
+  const languages = new Negotiator({ headers }).languages().flatMap((range) => {
+    try {
+      return Intl.getCanonicalLocales(range);
+    } catch (error) {
+      if (error instanceof RangeError) return [];
+      throw error;
+    }
+  });
   const detectedLocale = match(languages, supportedLocales, defaultLocale);
 
   return {
@@ -379,10 +400,13 @@ const getLocale = (
 const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
   // Get locale from cookie or browser languages
   const { locale } = getLocale(req);
+  const isPrefixedPublicLogin = supportedLocales.some(
+    (locale) => req.nextUrl.pathname === `/${locale}/login`
+  );
 
   const nextIntlMiddleware = createIntlMiddleware({
     locales: supportedLocales,
-    defaultLocale: locale as Locale,
+    defaultLocale: isPrefixedPublicLogin ? defaultLocale : (locale as Locale),
     localeDetection: false,
     localePrefix: 'as-needed',
   });

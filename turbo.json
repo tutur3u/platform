@@ -5,6 +5,10 @@
     "TMP",
     "TEMP",
     "TUTURUUU_CHECK_CHILD_TEMP_ACTIVE",
+    "NATIVE_FIXTURE_CASE",
+    "NATIVE_SDK_TEMP_ROOT",
+    "NATIVE_PLAN_FILE",
+    "NATIVE_RECEIPT_FILE",
     "VITEST_MAX_WORKERS",
     "BASE_REF",
     "CHANGED_FILES",
@@ -121,6 +125,11 @@
     "USERPROFILE"
   ],
   "tasks": {
+    "//#test:apps-native-browser": {
+      "cache": false,
+      "env": ["APPS_SOURCE_SHA", "CI"],
+      "passThroughEnv": ["APPS_ARTIFACT_RECEIPT"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "env": [

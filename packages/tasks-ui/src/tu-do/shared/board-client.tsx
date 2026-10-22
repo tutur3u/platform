@@ -41,7 +41,7 @@ const RELATION_REVALIDATE_DELAY_MS = 5_000;
 interface Props {
   boardId: string;
   initialBoard?: WorkspaceTaskBoard;
-  workspace: Workspace;
+  workspace: Pick<Workspace, 'id' | 'personal'>;
   workspaceTier?: WorkspaceProductTier | null;
   currentUserId?: string;
   routePrefix?: string;

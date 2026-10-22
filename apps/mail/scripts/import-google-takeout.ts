@@ -217,11 +217,17 @@ async function importMailbox({
 
   const flush = async () => {
     if (!(admin && objectStore) || pending.length === 0) return;
-    const labelIds = await ensureImportLabels({
+    const importedLabelIds = await ensureImportLabels({
       admin,
       customLabels: labelNames,
       mailboxId: mailbox.id,
     });
+    const labelIds = new Map<string, string>();
+    for (const [slug, id] of importedLabelIds) {
+      if (typeof slug !== 'string' || typeof id !== 'string')
+        throw new Error('Invalid imported label mapping');
+      labelIds.set(slug, id);
+    }
     const ready = await Promise.all(
       pending.map(async (message) => ({
         ...message,
