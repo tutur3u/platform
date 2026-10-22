@@ -223,8 +223,12 @@ file, or use `ttr host use <target>` to target a local, production, or explicit
 URL origin.
 
 The CLI checks the npm registry at most once per hour and writes a notice to
-stderr when a newer `tuturuuu` version is available. This keeps `--json` output
-machine-readable for agents. Use `ttr upgrade` to run `bun i -g tuturuuu`. Use
+stderr when a newer `tuturuuu` version is available. JSON invocations suppress
+this notice on both output streams while retaining the update check and cache.
+This covers `--json` and explicit JSON format/output flags; non-JSON commands
+retain the notice. The CLI entrypoint regression tests in
+`packages/sdk/src/cli/update-entry.test.ts` cover JSON success, feedback JSON
+errors, and non-JSON notices. Use `ttr upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` on a single command, or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`,
 to disable the check.
 
@@ -393,8 +397,8 @@ ttr tasks --json --no-update-check
 
 `ttr whoami` shows login state, account email, current workspace, selected
 board/list/task/label/project ids, base URL, config path, and the `Tuturuuu CLI`
-session label. Use `--json --no-update-check` when another agent is going to
-parse stdout.
+session label. Use `--json` when another agent is going to parse stdout;
+`--no-update-check` is optional and skips the registry check entirely.
 
 The v1 task surface covers workspaces, boards, lists, tasks, labels, projects,
 relationships, moves, and bulk task updates. Read-oriented groups list by
