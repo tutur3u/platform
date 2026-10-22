@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import type { EmployeeCreationNonAdmission } from '@tuturuuu/internal-api/infrastructure';
 import { z } from 'zod';
-// Root composes the existing HTTP boundary; its absence on the pinned base is a gate.
 import type { EmployeeCreationJournal } from './employee-creation-boundary';
 import {
   type EmployeeCreationOperationStore,
   EmployeeOperationIdentitySchema,
   type EmployeeOperationSnapshot,
-  EmployeeOperationStoreError,
   EmployeePhaseReceiptSchema,
 } from './employee-creation-operation-store';
 import {
@@ -106,20 +105,41 @@ export function createEmployeeCreationJournal(dependencies: {
       }
     },
     async claimAndRun(input) {
-      if (!store || !provider?.beginInvocation)
-        throw new EmployeeOperationStoreError('unavailable');
-      const payload = PayloadSchema.parse(input.payload);
-      const identity = EmployeeOperationIdentitySchema.parse({
+      const notAdmitted = (reason: EmployeeCreationNonAdmission['reason']) =>
+        ({
+          status: 'not_admitted',
+          code: 'employee_creation_not_admitted',
+          reason,
+          phase: 'before_claim',
+          targetUserId: null,
+          actorUserId: input.actorUserId,
+          operationId: input.operationId,
+          email: input.payload.email,
+          displayName: input.payload.displayName,
+        }) satisfies EmployeeCreationNonAdmission;
+      const parsedPayload = PayloadSchema.safeParse(input.payload);
+      const parsedIdentity = EmployeeOperationIdentitySchema.safeParse({
         actorUserId: input.actorUserId,
         operationId: input.operationId,
-        email: payload.email,
-        displayName: payload.displayName,
+        email: input.payload.email,
+        displayName: input.payload.displayName,
       });
-      if (
-        !(await store.available(identity.actorUserId)) ||
-        !(await provider.available(identity.actorUserId))
-      )
-        throw new EmployeeOperationStoreError('unavailable');
+      if (!parsedPayload.success || !parsedIdentity.success)
+        return notAdmitted('invalid_input');
+      if (!store || !provider?.beginInvocation)
+        return notAdmitted('unavailable');
+      const payload = parsedPayload.data;
+      const identity = parsedIdentity.data;
+      try {
+        if (
+          !(await store.available(identity.actorUserId)) ||
+          !(await provider.available(identity.actorUserId))
+        )
+          return notAdmitted('unavailable');
+      } catch {
+        return notAdmitted('unavailable');
+      }
+      // Invocation of claim is the uncertainty fence, even if its ACK is lost.
       const claim = await store.claim(identity);
       const boundStore = store;
       const session = provider.beginInvocation({
