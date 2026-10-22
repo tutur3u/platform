@@ -35,6 +35,10 @@ require a full shell audit.
 - Put shared app API clients behind `packages/internal-api/src/*` when code is
   reused outside one route.
 - Do not add raw client-side app API fetches.
+- Check shared clients' actual paths when configuring API fallbacks. Mind's
+  workspace selector uses Web-owned `/api/workspaces/*` as well as `/api/v1/*`;
+  its `/api/*` fallback preserves local product and auth handlers. Regression:
+  `apps/mind/src/next-config.test.ts` exercises Next's rewrite matcher.
 - Keep protected data reads and writes behind server-owned APIs. Do not expose
   privileged Supabase access to satellite clients.
 
