@@ -12,6 +12,7 @@ on:
       - 'apps/database/scripts/periodic-report-delivery-types.ts'
       - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'apps/database/scripts/run-supabase*.js'
+      - .github/actions/login-supabase-registry/**
       - 'apps/database/scripts/programming-database-tap.mjs'
       - '.github/workflows/periodic-report-delivery-contract.yaml'
   push:
@@ -25,6 +26,7 @@ on:
       - 'apps/database/scripts/periodic-report-delivery-types.ts'
       - 'apps/database/scripts/time-tracker-control-concurrency.mjs'
       - 'apps/database/scripts/run-supabase*.js'
+      - .github/actions/login-supabase-registry/**
       - 'apps/database/scripts/programming-database-tap.mjs'
       - '.github/workflows/periodic-report-delivery-contract.yaml'
       - 'tuturuuu.ci.ts'
@@ -45,6 +47,9 @@ jobs:
   contract:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success'
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -58,6 +63,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - uses: ./.github/actions/login-supabase-registry
+        with:
+          username: ${{ github.actor }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3

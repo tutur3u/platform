@@ -60,10 +60,10 @@ test('only startup and type generation are replayable', () => {
     assert.equal(isImagePullCommand(args), false);
 });
 
-test('exhaustion returns final failure after five attempts with bounded exponential jitter', async () => {
+test('exhaustion returns final failure after seven attempts with bounded exponential jitter', async () => {
   for (const [random, expected] of [
-    [0, [10000, 20000, 40000, 80000]],
-    [1, [12500, 25000, 50000, 100000]],
+    [0, [10000, 20000, 40000, 80000, 120000, 120000]],
+    [1, [12500, 25000, 50000, 100000, 150000, 150000]],
   ]) {
     let calls = 0;
     const waits = [];
@@ -79,7 +79,7 @@ test('exhaustion returns final failure after five attempts with bounded exponent
       }
     );
     assert.equal(result, failure);
-    assert.equal(calls, 5);
+    assert.equal(calls, 7);
     assert.deepEqual(waits, expected);
   }
 });

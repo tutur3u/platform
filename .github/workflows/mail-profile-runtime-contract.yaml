@@ -11,6 +11,7 @@ on:
       - "apps/web/e2e/helpers/**"
       - "apps/database/supabase/**"
       - "apps/database/scripts/run-supabase*.js"
+      - .github/actions/login-supabase-registry/**
       - "packages/auth/**"
       - "packages/satellite/**"
       - "packages/sdk/src/cli/resources*"
@@ -37,6 +38,9 @@ jobs:
   runtime:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true'
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -52,6 +56,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+      - uses: ./.github/actions/login-supabase-registry
+        with:
+          username: ${{ github.actor }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3

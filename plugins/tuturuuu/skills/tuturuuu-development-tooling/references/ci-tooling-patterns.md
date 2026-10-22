@@ -302,7 +302,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   verify and restore the existing Bun path after every installation attempt.
   Four installation attempts use 5/10/20-second backoff and fail on exhaustion.
 - Contract startup and type generation share `run-supabase-image-retry.js`:
-  five attempts, 10/20/40/80-second waits plus 0-25% jitter for throttling or transient pull transport errors. Never retry SQL tests, resets or pushes. Keep bounded stderr separate from generated types and publish only
+  seven attempts, 10/20/40/80/120/120-second waits plus 0-25% jitter for throttling or transient pull transport errors. Never retry SQL tests, resets or pushes. Keep bounded stderr separate from generated types and publish only
   successful output. Baselines exclude Studio, Edge Runtime, Logflare, Vector and Supavisor;
   retain Storage, Imgproxy, Mailpit, Realtime, Auth and REST for E2E; existing SQL-only verifiers retain their narrower exclusions. Run `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`.
 - Release Please is the monorepo source of truth for version/changelog PRs.
@@ -864,3 +864,5 @@ selects existing Chrome via the public channel with headless ephemeral custody;
 it is separate evidence from CI Chromium and emitted Worker acceptance. See the
 Apps runbook above for cleanup and remaining qualification boundaries. Historical
 timeout causality remains UNKNOWN; the routing gap is a separate source finding.
+
+Contract jobs authenticate public GHCR pulls through `.github/actions/login-supabase-registry` with `github.actor` and `GITHUB_TOKEN`, granting only `contents: read` and `packages: read`. Missing or rejected credentials (including restricted fork tokens) retain anonymous pulls without failing login; credentials and registry diagnostics are suppressed. The shell uses Docker's `--password-stdin` directly, so no third-party login action is required. Seven attempts allow at most 487.5 seconds of backoff, excluding command runtime. Only throttling and classified transient pull transport errors retry; SQL never replays. No alternate registry fallback is configured because image parity has not been qualified.

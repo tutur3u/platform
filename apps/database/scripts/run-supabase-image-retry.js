@@ -42,16 +42,16 @@ export async function retryImagePull(
       !enabled ||
       result.code === 0 ||
       result.signal ||
-      attempt === 5 ||
+      attempt === 7 ||
       !isTransientImagePullFailure(result.stderr ?? '')
     )
       return result;
-    // Four bounded waits: 10/20/40/80 seconds plus up to 25% jitter.
+    // Six bounded waits: 10/20/40/80/120/120 seconds plus up to 25% jitter.
     const delay = Math.round(
-      10_000 * 2 ** (attempt - 1) * (1 + random() * 0.25)
+      Math.min(120_000, 10_000 * 2 ** (attempt - 1)) * (1 + random() * 0.25)
     );
     stderr.write(
-      `Supabase image pull failed; retry ${attempt + 1}/5 in ${delay}ms.\n`
+      `Supabase image pull failed; retry ${attempt + 1}/7 in ${delay}ms.\n`
     );
     await sleepMs(delay);
   }

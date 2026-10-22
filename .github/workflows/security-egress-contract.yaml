@@ -6,6 +6,7 @@ on:
       - 'apps/database/supabase/tests/security-*.sql'
       - 'apps/database/scripts/verify-security-egress-contract.mjs'
       - 'apps/database/scripts/run-supabase*.js'
+      - .github/actions/login-supabase-registry/**
       - '.github/workflows/security-egress-contract.yaml'
   workflow_dispatch:
 permissions:
@@ -24,6 +25,9 @@ jobs:
   contract:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success'
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -37,6 +41,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - uses: ./.github/actions/login-supabase-registry
+        with:
+          username: ${{ github.actor }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3

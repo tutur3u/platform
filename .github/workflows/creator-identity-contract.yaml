@@ -11,6 +11,7 @@ on:
       - 'packages/utils/src/__tests__/username-policy.test.ts'
       - 'apps/database/scripts/verify-creator-identity-contract.mjs'
       - 'apps/database/scripts/run-supabase*.js'
+      - .github/actions/login-supabase-registry/**
       - '.github/workflows/creator-identity-contract.yaml'
       - 'apps/backend/src/contact/**'
       - 'apps/backend/src/contact.rs'
@@ -33,6 +34,9 @@ jobs:
   contract:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success'
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -46,6 +50,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - uses: ./.github/actions/login-supabase-registry
+        with:
+          username: ${{ github.actor }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3

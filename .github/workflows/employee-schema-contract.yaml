@@ -97,6 +97,9 @@ jobs:
   schema:
     needs: check-ci
     if: always() && needs.check-ci.result == 'success'
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:
@@ -137,6 +140,10 @@ jobs:
           ref: ${{ inputs.source_sha }}
           path: source
           persist-credentials: false
+      - uses: ./.github/actions/login-supabase-registry
+        with:
+          username: ${{ github.actor }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.3
