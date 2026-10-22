@@ -79,7 +79,7 @@
     "postcss": "^8.5.28",
     "typescript": "7.0.2"
   },
-  "packageManager": "bun@1.4.1",
+  "packageManager": "bun@1.4.3",
   "portless": {
     "name": "tasks.tuturuuu",
     "script": "dev:app"

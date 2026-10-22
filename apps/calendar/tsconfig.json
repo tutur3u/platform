@@ -2,17 +2,36 @@
   "extends": "@tuturuuu/typescript-config/nextjs.json",
   "compilerOptions": {
     "module": "ESNext",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@tuturuuu/tasks-ui/tu-do/boards/boardId/task-board-page-model": [
+        "../../packages/tasks-ui/src/tu-do/boards/boardId/task-board-page-model.ts"
+      ]
     },
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["vite/client", "node"],
+    "noEmit": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false
   },
-  "include": ["src", ".next/types/**/*.ts", "global.d.ts", "messages"],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "include": [
+    "src",
+    "vite.config.mts",
+    "void.config.ts",
+    "global.d.ts",
+    "messages"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".turbo",
+    ".typecheck",
+    "src/app/sw.ts",
+    "src/runtime/offline-worker.ts",
+    "src/runtime/offline-assets.test.ts"
+  ]
 }

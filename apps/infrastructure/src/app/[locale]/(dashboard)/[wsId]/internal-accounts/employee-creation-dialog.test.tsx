@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
-  act,
   fireEvent,
-  render,
+  render as renderView,
   screen,
   waitFor,
 } from '@testing-library/react';
-import { EmployeeCreationPasswordSchema } from '@tuturuuu/internal-api/infrastructure';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { NextIntlClientProvider } from 'next-intl';
+import type { ReactElement, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import en from '../../../../../../messages/en.json';
+import viMessages from '../../../../../../messages/vi.json';
 
 const api = vi.hoisted(() => ({
   create: vi.fn(),
@@ -25,35 +26,49 @@ vi.mock('@tuturuuu/internal-api/infrastructure', async (original) => ({
   inspectEmployeeRejection: api.inspectRejection,
   adjudicateEmployeeRejection: api.adjudicateRejection,
 }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+function TranslationContext({ children }: { children: ReactNode }) {
+  return (
+    <NextIntlClientProvider locale="en" messages={en}>
+      {children}
+    </NextIntlClientProvider>
+  );
+}
+function render(ui: ReactElement) {
+  return renderView(ui, { wrapper: TranslationContext });
+}
+
+const language = vi.hoisted(() => ({ real: false }));
+vi.mock('next-intl', async (original) => {
+  const actual = await original<typeof import('next-intl')>();
+  return {
+    ...actual,
+    useTranslations: (namespace: string) => {
+      const translate = actual.useTranslations(namespace);
+      return language.real ? translate : (key: string) => key;
+    },
+  };
+});
 
 const scope = vi.hoisted(() => ({
   actorId: '10000000-0000-4000-8000-000000000001',
   lifetime: { active: true },
   assertActive: vi.fn(),
 }));
-const ports = vi.hoisted<{
-  wsId: string;
-  actor: typeof scope | null | undefined;
-}>(() => ({
-  wsId: '00000000-0000-0000-0000-000000000000',
-  actor: undefined,
-}));
 vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
-  useWorkspaceActor: () => (ports.actor === undefined ? scope : ports.actor),
+  useWorkspaceActor: () => scope,
 }));
 vi.mock('next/navigation', () => ({
-  useParams: () => ({ wsId: ports.wsId }),
+  useParams: () => ({ wsId: '00000000-0000-0000-0000-000000000000' }),
 }));
 
+import { InternalApiError } from '@tuturuuu/internal-api/client';
+import { EmployeeCreationNotAdmittedError } from '@tuturuuu/internal-api/infrastructure';
 import { EmployeeCreationDialog } from './employee-creation-dialog';
 
 beforeEach(() => {
+  language.real = false;
   vi.clearAllMocks();
   sessionStorage.clear();
-  ports.wsId = ROOT_WORKSPACE_ID;
-  ports.actor = undefined;
-  scope.lifetime = { active: true };
   scope.assertActive.mockImplementation(() => undefined);
   api.observe.mockImplementation(async (value) => ({
     status: 'stopped',
@@ -62,26 +77,22 @@ beforeEach(() => {
   }));
   api.availability.mockResolvedValue({ available: true });
 });
-function renderDialog() {
+async function mount() {
   const refresh = vi.fn().mockResolvedValue(undefined);
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  const tree = () => (
-    <QueryClientProvider client={client}>
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({
+          defaultOptions: {
+            queries: { retry: false },
+            mutations: { retry: false },
+          },
+        })
+      }
+    >
       <EmployeeCreationDialog onDirectoryRefresh={refresh} />
     </QueryClientProvider>
   );
-  const view = render(tree());
-  return {
-    refresh,
-    client,
-    ...view,
-    rerenderDialog: () => view.rerender(tree()),
-  };
-}
-async function mount() {
-  const { refresh } = renderDialog();
   fireEvent.click(screen.getByRole('button', { name: 'open' }));
   await waitFor(() => expect(api.availability).toHaveBeenCalled());
   fireEvent.change(screen.getByLabelText('email'), {
@@ -291,7 +302,7 @@ it('recovers precommit adjudication failure through explicit same-event retry be
   expect(screen.getByRole('button', { name: 'adjudicate' })).toBeDisabled();
   fireEvent.click(screen.getByRole('checkbox', { name: 'attestation' }));
   fireEvent.click(screen.getByRole('button', { name: 'adjudicate' }));
-  await screen.findByRole('alert');
+  await screen.findByText('unconfirmed');
   expect(screen.queryByLabelText('evidence')).not.toBeInTheDocument();
   expect(api.adjudicateRejection).toHaveBeenCalledTimes(1);
   expect(screen.getByText('fenced')).toBeInTheDocument();
@@ -340,222 +351,245 @@ it('recovers precommit adjudication failure through explicit same-event retry be
   expect(sessionStorage.getItem(key)).toBeNull();
 });
 
-describe('canonical root workspace creation', () => {
-  const recoveryKey = () =>
-    `infra:employee-create:v1:${scope.actorId}:${ROOT_WORKSPACE_ID}`;
-  const identity = { email: 'staff@tuturuuu.com', displayName: 'Staff' };
-  const password = 'Synthetic-Pass-123!';
-  async function fillAndSubmit() {
-    fireEvent.click(screen.getByRole('button', { name: 'open' }));
-    await waitFor(() => expect(api.availability).toHaveBeenCalled());
-    fireEvent.change(screen.getByLabelText('email'), {
-      target: { value: identity.email },
-    });
-    fireEvent.change(screen.getByLabelText('name'), {
-      target: { value: identity.displayName },
-    });
-    expect(EmployeeCreationPasswordSchema.safeParse(password).success).toBe(
-      true
+describe('CREATE recovery presentation', () => {
+  const key = `infra:employee-create:v1:${scope.actorId}:00000000-0000-0000-0000-000000000000`;
+  const submit = () => {
+    const form = screen.getByLabelText('password').closest('form');
+    if (!form) throw new Error('Missing CREATE form');
+    fireEvent.submit(form);
+  };
+  it('distinguishes a failed readiness read and retries GET without admitting a request', async () => {
+    api.availability.mockRejectedValueOnce(
+      new Error('private readiness detail')
     );
-    fireEvent.change(screen.getByLabelText('password'), {
-      target: { value: password },
-    });
+    await mount();
+    expect(
+      await screen.findByText('problems.readiness_read_failed')
+    ).toBeVisible();
+    expect(screen.queryByText('unavailable')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'submit' })).toBeDisabled();
+    api.availability.mockResolvedValue({ available: false });
+    fireEvent.click(screen.getByRole('button', { name: 'retry_readiness' }));
+    expect(await screen.findByText('unavailable')).toBeVisible();
+    submit();
+    expect(api.create).not.toHaveBeenCalled();
+    expect(sessionStorage.length).toBe(0);
+    api.availability.mockResolvedValue({ available: true });
+    fireEvent.click(screen.getByRole('button', { name: 'retry_readiness' }));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'submit' })).toBeEnabled()
     );
-    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-  }
-  function deferCreate() {
-    let finish: (value: unknown) => void = () => {
-      throw new Error('POST not started');
-    };
-    api.create.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        })
+    expect(api.availability).toHaveBeenCalledTimes(3);
+    expect(api.create).not.toHaveBeenCalled();
+    expect(sessionStorage.length).toBe(0);
+  });
+  it('does not trust a cached available result after a failed fresh readiness read', async () => {
+    await mount();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'submit' })).toBeEnabled()
     );
-    return (value: unknown) =>
-      act(async () => {
-        finish(value);
+    fireEvent.click(screen.getByRole('button', { name: 'close' }));
+    api.availability.mockRejectedValueOnce(new Error('Fresh read unavailable'));
+    fireEvent.click(screen.getByRole('button', { name: 'open' }));
+    await screen.findByText('problems.readiness_read_failed');
+    fireEvent.change(screen.getByLabelText('email'), {
+      target: { value: 'staff@tuturuuu.com' },
+    });
+    fireEvent.change(screen.getByLabelText('name'), {
+      target: { value: 'Staff' },
+    });
+    fireEvent.change(screen.getByLabelText('password'), {
+      target: { value: 'Synthetic-Pass-123!' },
+    });
+    expect(screen.getByRole('button', { name: 'submit' })).toBeDisabled();
+    submit();
+    expect(api.create).not.toHaveBeenCalled();
+    expect(sessionStorage.length).toBe(0);
+  });
+  it.each([
+    'UPPERCASEONLY123!',
+    'lowercaseonly123!',
+    'NoDigitsHere!!',
+    'NoSymbolHere123',
+    'Aa1!',
+    `Aa1!${'a'.repeat(69)}`,
+    'UnicodePunctuation123—',
+  ])(
+    'rejects malformed password %s even through direct form submission',
+    async (password) => {
+      await mount();
+      fireEvent.change(screen.getByLabelText('password'), {
+        target: { value: password },
       });
-  }
-  it.each(['internal', 'INTERNAL', 'InTeRnAl', ROOT_WORKSPACE_ID])(
-    'offers the same control and canonical query/recovery scope for %s',
-    async (wsId) => {
-      ports.wsId = wsId;
-      const finish = deferCreate();
-      const { client } = renderDialog();
-      await fillAndSubmit();
-      expect(api.create).toHaveBeenCalledExactlyOnceWith(
-        { ...identity, temporaryPassword: password },
-        { operationId: expect.any(String) }
-      );
-      const saved = JSON.parse(sessionStorage.getItem(recoveryKey()) ?? '{}');
-      expect(saved).toMatchObject({
-        ...identity,
-        actorId: scope.actorId,
-        workspaceId: ROOT_WORKSPACE_ID,
-        operationId: api.create.mock.calls[0]?.[1].operationId,
-      });
-      expect(sessionStorage.length).toBe(1);
-      expect(sessionStorage.getItem(recoveryKey())).not.toContain(password);
-      expect(
-        client
-          .getQueryCache()
-          .getAll()
-          .map((query) => query.queryKey)
-      ).toEqual([
-        [
-          'employee-create-observation',
-          scope.actorId,
-          ROOT_WORKSPACE_ID,
-          undefined,
-        ],
-        [
-          'infrastructure',
-          'employee-creation-availability',
-          scope.actorId,
-          ROOT_WORKSPACE_ID,
-        ],
-        [
-          'employee-create-observation',
-          scope.actorId,
-          ROOT_WORKSPACE_ID,
-          saved.operationId,
-        ],
-      ]);
-      await finish({ status: 'created' });
-      await screen.findByText('created');
-    }
-  );
-  it.each(['10000000-0000-4000-8000-000000000009', 'personal', 'PERSONAL'])(
-    'does not offer creation or dispatch availability/POST for %s',
-    (wsId) => {
-      ports.wsId = wsId;
-      renderDialog();
-      expect(
-        screen.queryByRole('button', { name: 'open' })
-      ).not.toBeInTheDocument();
-      expect(api.availability).not.toHaveBeenCalled();
+      submit();
+      expect(await screen.findByText('problems.invalid_input')).toBeVisible();
       expect(api.create).not.toHaveBeenCalled();
       expect(sessionStorage.length).toBe(0);
     }
   );
-  it('does not offer creation or dispatch without an actor', () => {
-    ports.wsId = 'internal';
-    ports.actor = null;
-    renderDialog();
-    expect(
-      screen.queryByRole('button', { name: 'open' })
-    ).not.toBeInTheDocument();
-    expect(api.availability).not.toHaveBeenCalled();
-    expect(api.create).not.toHaveBeenCalled();
+  it('separates storage refusal from authorization without dispatch', async () => {
+    await mount();
+    const storage = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('private storage detail');
+      });
+    try {
+      submit();
+      expect(await screen.findByText('problems.storage')).toBeVisible();
+      expect(screen.queryByText('denied')).not.toBeInTheDocument();
+      expect(api.create).not.toHaveBeenCalled();
+    } finally {
+      storage.mockRestore();
+    }
   });
-  it.each([
-    ['internal', ROOT_WORKSPACE_ID],
-    [ROOT_WORKSPACE_ID, 'internal'],
-  ])(
-    'retains the unknown original tuple across %s to %s without a second POST',
-    async (from, to) => {
-      ports.wsId = from;
-      api.create.mockRejectedValue(new Error('response lost'));
-      const { rerenderDialog } = renderDialog();
-      await fillAndSubmit();
+  it.each(['invalid_input', 'unavailable'] as const)(
+    'retains bound non-admission for %s without claiming absence or replay',
+    async (reason) => {
+      api.create.mockImplementation(async (input, options) => {
+        throw new EmployeeCreationNotAdmittedError({
+          status: 'not_admitted',
+          code: 'employee_creation_not_admitted',
+          reason,
+          phase: 'before_claim',
+          targetUserId: null,
+          actorUserId: scope.actorId,
+          operationId: options.operationId,
+          email: input.email,
+          displayName: input.displayName,
+        });
+      });
+      await mount();
+      submit();
+      expect(await screen.findByText('problems.not_admitted')).toBeVisible();
       await screen.findByText('stopped');
-      const original = sessionStorage.getItem(recoveryKey());
-      const saved = JSON.parse(original ?? '{}');
-      ports.wsId = to;
-      rerenderDialog();
-      expect(screen.getByText('stopped')).toBeVisible();
-      expect(screen.getByLabelText('email')).toHaveValue(identity.email);
-      expect(screen.getByLabelText('name')).toHaveValue(identity.displayName);
+      const saved = JSON.parse(sessionStorage.getItem(key) ?? '{}');
+      expect(api.create.mock.calls[0]?.[1]).toEqual({
+        operationId: saved.operationId,
+        actorUserId: scope.actorId,
+      });
+      expect(saved).toMatchObject({
+        actorId: scope.actorId,
+        email: 'staff@tuturuuu.com',
+        displayName: 'Staff',
+      });
+      expect(saved.operationId).toMatch(/^[a-f0-9-]{36}$/);
       expect(screen.getByLabelText('password')).toHaveValue('');
       fireEvent.click(screen.getByRole('button', { name: 'close' }));
       fireEvent.click(screen.getByRole('button', { name: 'open' }));
-      expect(screen.getByRole('button', { name: 'submit' })).toBeDisabled();
-      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-      expect(sessionStorage.getItem(recoveryKey())).toBe(original);
-      expect(api.observe).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({
-          operationId: saved.operationId,
-          actorId: scope.actorId,
-          workspaceId: ROOT_WORKSPACE_ID,
-          ...identity,
-        }),
-        { signal: expect.any(AbortSignal) }
+      expect(screen.getByLabelText('email')).toHaveValue(saved.email);
+      submit();
+      expect(api.create).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(sessionStorage.getItem(key) ?? '{}').operationId).toBe(
+        saved.operationId
       );
-      expect(api.create).toHaveBeenCalledTimes(1);
     }
   );
-  it.each([
-    ['replacement', 'POST'],
-    ['retired', 'POST'],
-    ['renewed', 'POST'],
-    ['replacement', 'observation'],
-    ['retired', 'observation'],
-    ['renewed', 'observation'],
-  ])(
-    'ignores a deferred %s actor lifetime result from %s',
-    async (kind, transport) => {
-      ports.wsId = 'internal';
-      let finish: (value: unknown) => Promise<void>;
-      if (transport === 'POST') finish = deferCreate();
-      else {
-        api.create.mockRejectedValue(new Error('response lost'));
-        let resolveObservation: (value: unknown) => void = () => {
-          throw new Error('Read not started');
-        };
-        api.observe.mockImplementation(
-          () =>
-            new Promise((resolve) => {
-              resolveObservation = resolve;
-            })
-        );
-        finish = (value) =>
-          act(async () => {
-            resolveObservation(value);
-          });
-      }
-      const view = renderDialog();
-      await fillAndSubmit();
-      if (transport === 'observation')
-        await waitFor(() => expect(api.observe).toHaveBeenCalledTimes(1));
-      const refreshCount = view.refresh.mock.calls.length;
-      const original = sessionStorage.getItem(recoveryKey());
-      const saved = JSON.parse(original ?? '{}');
-      if (kind === 'replacement' || kind === 'renewed') {
-        ports.actor = {
-          actorId:
-            kind === 'renewed'
-              ? scope.actorId
-              : '10000000-0000-4000-8000-000000000002',
-          lifetime: { active: true },
-          assertActive: vi.fn(),
-        };
-        view.rerenderDialog();
-        if (kind === 'replacement')
-          fireEvent.click(screen.getByRole('button', { name: 'open' }));
-      } else {
-        scope.assertActive.mockImplementation(() => {
-          throw new Error('Actor retired');
-        });
-      }
-      await finish({
-        status: 'created',
-        operationId: saved.operationId,
-        account: { id: '10000000-0000-4000-8000-000000000003', ...identity },
-      });
-      expect(screen.queryByText('created')).not.toBeInTheDocument();
-      expect(view.refresh).toHaveBeenCalledTimes(refreshCount);
-      expect(sessionStorage.getItem(recoveryKey())).toBe(original);
+  it.each([400, 401, 403, 503])(
+    'retains intent after generic HTTP %s without trusting the code or raw message',
+    async (status) => {
+      api.create.mockRejectedValue(
+        new InternalApiError(
+          'PRIVATE provider message',
+          status,
+          'employee_creation_unavailable'
+        )
+      );
+      await mount();
+      submit();
+      expect(
+        await screen.findByText(
+          status === 401 || status === 403
+            ? 'problems.authorization'
+            : 'problems.unknown'
+        )
+      ).toBeVisible();
+      await screen.findByText('stopped');
+      expect(
+        screen.queryByText('PRIVATE provider message')
+      ).not.toBeInTheDocument();
+      const saved = sessionStorage.getItem(key);
+      expect(saved).not.toBeNull();
+      expect(saved).not.toContain('Synthetic-Pass-123!');
+      submit();
       expect(api.create).toHaveBeenCalledTimes(1);
-      expect(api.observe).toHaveBeenCalledTimes(transport === 'POST' ? 0 : 1);
-      if (kind === 'replacement') {
-        expect(screen.getByLabelText('email')).toHaveValue('');
-        expect(screen.getByLabelText('name')).toHaveValue('');
-        expect(screen.getByLabelText('password')).toHaveValue('');
-      }
+      expect(sessionStorage.getItem(key)).toBe(saved);
     }
   );
+  it('keeps ordinary confirmed success to one POST with no sequential observation', async () => {
+    api.create.mockResolvedValue({ status: 'created' });
+    await mount();
+    submit();
+    await screen.findByText('created');
+    expect(api.create).toHaveBeenCalledTimes(1);
+    expect(api.observe).not.toHaveBeenCalled();
+    expect(sessionStorage.length).toBe(0);
+  });
 });
+
+it.each(['en', 'vi'] as const)(
+  'renders saved-request uncertainty and manual-password guidance in %s',
+  async (locale) => {
+    language.real = true;
+    const labels = (locale === 'en' ? en : viMessages)['internal-accounts'];
+    api.create.mockRejectedValue(new Error('PRIVATE response loss'));
+    render(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <NextIntlClientProvider
+          locale={locale}
+          messages={locale === 'en' ? en : viMessages}
+        >
+          <EmployeeCreationDialog
+            onDirectoryRefresh={vi.fn().mockResolvedValue(undefined)}
+          />
+        </NextIntlClientProvider>
+      </QueryClientProvider>
+    );
+    fireEvent.click(screen.getByRole('button', { name: labels.creation.open }));
+    await waitFor(() => expect(api.availability).toHaveBeenCalled());
+    const entropy = vi
+      .spyOn(crypto, 'getRandomValues')
+      .mockImplementation(() => {
+        throw new Error('Entropy unavailable');
+      });
+    try {
+      fireEvent.click(
+        screen.getByRole('button', { name: labels.dialog.generate_password })
+      );
+      expect(
+        screen.getByText(labels.dialog.generate_password_failed)
+      ).toBeVisible();
+      expect(screen.getByLabelText(labels.creation.password)).toHaveValue('');
+      expect(api.create).not.toHaveBeenCalled();
+      expect(sessionStorage.length).toBe(0);
+    } finally {
+      entropy.mockRestore();
+    }
+    fireEvent.change(screen.getByLabelText(labels.creation.email), {
+      target: { value: 'staff@tuturuuu.com' },
+    });
+    fireEvent.change(screen.getByLabelText(labels.creation.name), {
+      target: { value: 'Staff' },
+    });
+    fireEvent.change(screen.getByLabelText(labels.creation.password), {
+      target: { value: 'Manual-Password-123!' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: labels.creation.submit })
+    );
+    const uncertainty =
+      locale === 'en'
+        ? 'We couldn’t confirm the result. Your original request is saved. Do not create another request.'
+        : 'Chưa thể xác nhận kết quả. Yêu cầu ban đầu của bạn đã được lưu. Không tạo yêu cầu khác.';
+    expect(await screen.findByText(uncertainty)).toBeVisible();
+    expect(screen.queryByText('PRIVATE response loss')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: labels.creation.submit })
+    ).toBeDisabled();
+    expect(api.create).toHaveBeenCalledTimes(1);
+  }
+);

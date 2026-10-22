@@ -6,8 +6,9 @@ updatedAt: "2026-10-03"
 
 <Note>
 Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
-the Docker cron runner is retired. Rust and TanStack Start are not in use and
-must not be run, tested, or updated until further notice. Retained Docker and
+the Docker cron runner is retired. Rust and `apps/tanstack-web` remain paused.
+Calendar native candidate CI is a separately admitted application scope; it does
+not resume the retained migration runtime. Retained Docker and
 migration sections below are historical procedures. Current hosted Next.js,
 package, Worker, database, and mobile workflows retain their own gates. See the
 [active runtime map](/build/devops/active-runtime).
@@ -28,14 +29,113 @@ in a disposable fixture with only app-level dependency links and no root
 then run the focused behavior tests separately. The Lettin SWC test transforms
 config source in memory; it does not run a Next release build.
 
-`mail-calendar-tasks-builds.yaml` builds Mail, Calendar and Tasks, including
-their shared dependencies, on relevant PRs and `main` commits. These hosted CI
-jobs check out the immutable PR head (or exact push SHA), use placeholder public
-Supabase configuration, and do not deploy or access production credentials.
-Require all three matrix builds when changes affect these applications or their
-shared packages; type-check results and preview skip statuses do not replace
-real app-build evidence. Mail provider OAuth and real delivery/RSVP acceptance
-still require separately configured test accounts.
+Meet, native Calendar and Apps select `github.event.pull_request.head.sha ||
+github.sha` as their source identity. Checkout, build stamps, seals, runtime
+expectations and source-bearing artifact names must use that selection. Keep the
+merge-event `github.sha` and workflow supplier `github.workflow_sha` separate in
+debug receipts; the release-only comparison checkout and deployment markers retain
+their event roles. Meet passes the source SHA through command-scoped `GITHUB_SHA`
+for existing helpers and runtime probes; it does not change the job's event SHA.
+The diagnostic config collector's legacy `source.eventSha` field records its
+explicit comparison argument, which these jobs supply from the selected source.
+Route and debug receipts retain the actual event SHA separately. Run
+`node --test scripts/ci/{meet,calendar,apps}-native-source-identity.test.js` for
+source/event/supplier mismatch controls using shell fixtures and command sinks.
+These tests exercise workflow wiring without running a build or Worker; hosted
+exact-source CI and admitted runtime acceptance remain separate evidence.
+
+`mail-calendar-tasks-builds.yaml` checks out the exact PR head or push SHA.
+Its Mail, Tasks and affected Web builds retain real app-build evidence. Calendar
+uses a separate native job on Bun 1.4.3 and Node 24.22.0: build shared dependencies,
+run owning Calendar/Web/Tasks UI tests, build with the official Void plugin,
+discover `.wrangler/deploy/config.json`, then generate emitted `CloudflareEnv` bindings in fresh runner scratch because Wrangler rejects the handwritten stub.
+Only successful, regular, nonempty, nonsymlink output replaces stable `cloudflare-env.d.ts`; own scratch is cleaned on success/failure.
+Then type-check Calendar plus affected Web/Tasks consumers. Tasks has no owning test script; shared tests do not establish a Tasks app suite.
+Root lint and the existing affected-app workflows remain required exact-head gates.
+
+The Calendar pointer requires `configPath` and empty `auxiliaryWorkers`. `scripts/ci/calendar-native-artifact.mjs`
+rejects escaping/symlink paths, legacy output, unexpected resources/hooks, private environment files and client
+canaries. Live qualification checks exact defaults and materialized input against pinned supplier/parser profiles. The
+seal retains that input relationship as historical metadata; restore never opens or rebases the old absolute path.
+Retained-state provenance stays unknown; raw config bytes stay unchanged.
+
+Calendar's finite inventory hashes the emitted `client/.assetsignore` and
+`server/.vite/manifest.json`, including the hidden directory entry. The ignore
+file must contain exactly `wrangler.json\n.dev.vars\n`; Vite records have closed,
+typed fields and references to existing emitted files/records. Source identifiers
+in metadata are never opened. Credential files (including `.dev.vars`), links,
+unknown hidden entries and extra ignore values fail admission. The producer seal,
+original/copy checks and finalization use this same Calendar inventory. Only the
+SDK-owned `server/.wrangler` directory is excluded during copy finalization.
+The shared helper selects it only for the explicit Calendar profile; its default
+hidden-entry rejection is unchanged. Test the actual sealed artifact statically
+before SDK execution; a successful inventory is not Worker or restore acceptance.
+
+The seal binds SHA, emitted main/config, all `dist` bytes, pointer and generated declarations. The second job restores
+without rebuilding and checks the seal before/after dry-run/runtime. Both jobs run `node --test
+scripts/ci/calendar-native-worker.runtime.mjs` and, from Calendar, `node --test
+src/runtime/offline-artifact.runtime.mjs`. Artifact suites stay outside source-only discovery. Boundary regressions:
+`scripts/ci/calendar-native-artifact.test.mjs`, `scripts/ci/calendar-emitted-defaults.test.mjs` and `scripts/ci/calendar-native-typegen.test.mjs` (actual shell step:
+fresh output, replacement bytes, failure/invalid-output stub preservation, scratch cleanup and unrelated-file retention). Skips and continued-on-error steps never count as acceptance.
+
+The local Worker suite resolves Wrangler/Miniflare from Calendar's own dependency
+links, uses the discovered emitted main/config and denies outbound network calls.
+It checks public EN/VI completion HTML, emitted hydration assets and the exact
+`/serwist/sw.js` root scope. Tokenless GET/HEAD completion requests exercise the existing
+public verifier page through Calendar's auth proxy and native locale resolver;
+no actor or workspace data is loaded by its page model. A present token parameter
+retains shared verification redirects, so supplying a fixture token cannot replace
+this SSR check. The 200 assertions remain strict; failures report bounded request
+and Location paths without query/fragment values. Run
+`src/runtime/public-completion.test.ts` for real-proxy/model regressions before
+requiring exact-source CI and original/restored Worker acceptance.
+
+Calendar SSR diagnostics keep normal server logs to an allowlisted category, with
+at most 16 reports per Worker instance. The isolated fixture enables detailed
+sanitized records using its `CALENDAR_SSR_DIAGNOSTICS` binding. Handler failures
+are rethrown unchanged; the server error boundary keeps the same fallback/error.
+Records contain only allowlisted error names/codes/categories, known function
+identifiers and numeric stack locations. Unknown data stays `UNKNOWN`; raw
+messages, paths, URLs, environment, credentials and response bodies are excluded.
+On HTTP 500 the fixture registers the original status assertion and publishes a
+bounded initial record synchronously, before observing any stream work. It
+requests at most eight stream reads or 64 KiB before cancelling; a single oversized
+chunk is counted truthfully and immediately discarded. Cancellation/read/release
+outcomes and pending flags remain explicit. Underlying cancellation stays `UNKNOWN`,
+even if the cancel promise settles or the reader lock is released. Neither read nor
+cancellation is awaited on the assertion or teardown path. The existing
+test abort signal stops further reads and requests cancellation; stalled operations
+remain pending with underlying cleanup UNKNOWN. Late rejections are observed.
+There is no extra timer, retry, race-based closure claim or relaxed 200 gate.
+The exact original status assertion is thrown immediately even if diagnostics fail.
+
+Only after natural child close and stdout/stderr drainage does the parent validate
+and persist a source SHA/run/attempt/job-key-bound, exclusive mode-0600 JSON packet.
+The job key is the GitHub job identifier; numeric job IDs require the run metadata.
+The artifact step receives only the verified sanitized packet's exact step-output
+path. It never uploads case roots, raw snapshots or SDK logs. Missing owning errors
+remain `UNKNOWN`, even with a captured 500. Tests run through the existing Calendar
+artifact suite and owning Vitest discovery; a diagnostic artifact is not runtime
+acceptance or proof that another app's 500 has the same cause.
+
+The separate offline suite exercises the emitted
+classic worker's static-only caching and entry bound. These checks do not prove
+signed-in RPC/navigation/refresh, browser hydration, workspace permissions,
+provider callbacks or enabled SQL drain retention. Those need an admitted fixture
+and separate exact-artifact acceptance. Config-schema or missing dependency/fixture
+failures are blockers to investigate, never permission to substitute legacy output.
+
+Calendar publication is disabled for native source. The existing Vercel workflows
+reject a checkout containing `apps/calendar/void.config.ts` before setup or publish;
+legacy source and the previous Vercel production deployment retain rollback
+ownership. There is no Cloudflare publication job or canonical traffic change.
+The source name `tuturuuu-calendar` is a proposal, not an observed account/Worker
+binding. Before cutover, the parent must record actual account, existing Worker,
+domain, bindings, environment-secret names, callback URLs, immutable Vercel rollback
+deployment and rollback procedure; qualify signed-in EN/VI, permissions, offline,
+log-drain and provider outcomes; and atomically choose one publisher in the root
+registry/planner. Calendar has no Meet immediate/no-staging exception. Do not use
+raw Void deploy, create resources, or add a second provider scheduler.
 
 For standalone chat initial-settings qualification, launch the source-owned Vitest entry
 directly with verified Node 24.21.0. Require primary exit zero, no signal or timeout,
@@ -1178,7 +1278,7 @@ and the script reports `blocked` and leaves the run green rather than failing.
 Use `--dry-run` to see the decision without posting a review.
 
 Generated release formatting also refreshes Bun workspace-version metadata with
-pinned Bun 1.4.1 using `--lockfile-only --ignore-scripts`. The shared
+pinned Bun 1.4.3 using `--lockfile-only --ignore-scripts`. The shared
 `release-workspace-lock.js` validator accepts only workspace `version` string
 changes matching the generated package manifests. It rejects dependency,
 resolution, workspace identity, root version and unrelated formatting changes;
