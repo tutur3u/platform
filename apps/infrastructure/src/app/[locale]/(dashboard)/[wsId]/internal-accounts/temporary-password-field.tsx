@@ -31,13 +31,13 @@ export function TemporaryPasswordField({
 }: Props) {
   const t = useTranslations('internal-accounts.dialog');
   const [showPassword, setShowPassword] = useState(false);
-  const [copyFailed, setCopyFailed] = useState(false);
+  const [failure, setFailure] = useState<'copy' | 'generation' | null>(null);
   const copyAttempt = useRef(0);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Changing the controlled secret invalidates clipboard feedback without retaining its previous value.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Changing the controlled secret invalidates transient feedback without retaining its previous value.
   useLayoutEffect(() => {
-    // oxlint-disable-next-line react/set-state-in-effect -- Clear external clipboard feedback before a replacement secret is painted.
-    setCopyFailed(false);
+    // oxlint-disable-next-line react/set-state-in-effect -- Clear transient feedback before a replacement secret is painted.
+    setFailure(null);
     return () => {
       copyAttempt.current += 1;
     };
@@ -58,7 +58,10 @@ export function TemporaryPasswordField({
             className="pr-10 font-mono"
             id={id}
             minLength={minLength}
-            onChange={(event) => onChange(event.target.value)}
+            onChange={(event) => {
+              setFailure(null);
+              onChange(event.target.value);
+            }}
             type={showPassword ? 'text' : 'password'}
             value={value}
           />
@@ -82,8 +85,14 @@ export function TemporaryPasswordField({
           disabled={disabled}
           aria-label={t('generate_password')}
           onClick={() => {
-            onChange(generateSecureTemporaryPassword());
-            setShowPassword(true);
+            try {
+              const generated = generateSecureTemporaryPassword();
+              onChange(generated);
+              setFailure(null);
+              setShowPassword(true);
+            } catch {
+              setFailure('generation');
+            }
           }}
           size="icon"
           type="button"
@@ -96,7 +105,7 @@ export function TemporaryPasswordField({
           disabled={disabled || !value}
           onClick={async () => {
             const attempt = ++copyAttempt.current;
-            setCopyFailed(false);
+            setFailure(null);
             try {
               if (
                 !globalThis.isSecureContext ||
@@ -105,7 +114,7 @@ export function TemporaryPasswordField({
                 throw new Error('Clipboard unavailable');
               await navigator.clipboard.writeText(value);
             } catch {
-              if (copyAttempt.current === attempt) setCopyFailed(true);
+              if (copyAttempt.current === attempt) setFailure('copy');
             }
           }}
           size="icon"
@@ -115,7 +124,12 @@ export function TemporaryPasswordField({
           <Copy className="size-4" />
         </Button>
       </div>
-      {copyFailed ? (
+      {failure === 'generation' ? (
+        <p role="alert" className="text-destructive text-sm">
+          {t('generate_password_failed')}
+        </p>
+      ) : null}
+      {failure === 'copy' ? (
         <p role="alert" className="text-destructive text-sm">
           {t('copy_password_failed')}
         </p>
