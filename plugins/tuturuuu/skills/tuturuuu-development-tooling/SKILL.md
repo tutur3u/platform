@@ -32,6 +32,9 @@ placement decisions and realistic routing checks.
   `agents/openai.yaml`, and update `apps/docs/build/development-tools/codex-plugin.mdx`.
   Release Please owns version bumps.
 
+For wave-1 native publication profiles, use
+`references/wave1-native-publishers.md` alongside the normal CI guidance.
+
 Run `python3 plugins/tuturuuu/scripts/validate_plugin.py` for plugin edits, then
 focused non-build tests for changed scripts/configuration. Do not run local
 `bun check`, setup or builds; require applicable exact-commit CI checks/builds.

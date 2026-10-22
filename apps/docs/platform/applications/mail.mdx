@@ -1035,16 +1035,3 @@ After TAP succeeds, it generates actual `public`, `private` and `storage` schema
 Scope: Mail's native frontend defaults to strict noncomposite noemit app checking, then genuine Mail-only declarations, then the actual noDOM Worker check. Both app programs retain all current roots and imported-source checking; shared package export/build/check owners remain authoritative. `bun run type-check` sequences app, boundary and Worker. The boundary emits into `.typecheck/app` with rootDir `.`, noEmitOnError and incremental false. The Worker resolves only emitted `#mail-handler` declarations; Vite resolves that exact alias to the real source. Inherited Turbo prerequisites and `.typecheck/**` outputs are preserved. Direct Mail production/test imports use package exports: the narrow Supabase realtime-log-actions entry follows its existing dist-types/source-Bun/dist-JS convention and build roots; Satellite workspace/invitation entries already exist. The app-local resolver exempts server suppliers when porting client calls, avoiding recursive transport aliases. No supplier or shared producer is changed. Static edge regressions remain authored UNRUN; real compiler external-source classification still requires exact-source CI.
 
 Limits: generated binding-only declarations must come from the qualified emitted deployment config. Pinned compiler workspace-external classification/rootDir behavior, declaration closure and clean/restored-cache acceptance remain unproven. Missing bridge/ambient isolation regressions are authored UNRUN in `apps/mail/src/runtime/type-programs.test.ts`; source assertions do not establish compiler or workerd acceptance. Unexpected foreign emission or incompatible contracts stop qualification without source exclusions. Logger timer/buffer lifetime and all provider/runtime delivery gates remain parent-owned; this decision adds no scheduler or resource.
-
-## Native Worker release identity
-
-On the admitted native Worker, `/api/build-info` exposes public bundled release
-metadata (app, full source SHA and environment) before session middleware. It is
-no-store and accepts GET/HEAD/OPTIONS only; other methods return 405. Other API
-routes retain their existing authentication/authorization policies. Apps checks
-its canonical-host fence before this endpoint as well. Legacy Vercel deployments
-retain their existing behavior until explicit cutover.
-
-`scripts/ci/wave1-native-publishers.test.js` covers path/method/cache behavior;
-CI original/restored workerd acceptance checks the actual bundled identity.
-See the [native publisher runbook](/build/devops/wave1-native-publishers).

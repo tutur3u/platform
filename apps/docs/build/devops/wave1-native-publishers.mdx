@@ -103,7 +103,7 @@ existing deeper SSR/offline/RPC/browser gates; the new checks do not replace the
 
 The native public `/api/build-info` endpoint reports bundled full SHA, app and
 environment before session middleware, accepts only GET/HEAD/OPTIONS, and is no-store.
-It exposes release metadata only. Original/restored checks compare this identity,
+It exposes release metadata only; the shared [product contract](/platform/applications/native-release-identity) records scope and exceptions. Original/restored checks compare this identity,
 actual static asset bytes, anonymous private-page login handoff for Mail/Calendar,
 and Apps' staging canonical refusal versus admitted production fence behavior.
 Runtime credentials are disposable and network egress is denied. This finite fixture
