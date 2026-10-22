@@ -1,6 +1,5 @@
 import {
   clearSupabaseAuthCookies,
-  getAppSessionClaimsFromRequest,
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
@@ -163,16 +162,24 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       sessionMode: 'supabase-first',
       targetApp: 'infra',
     });
+    if (
+      !appSessionRefresh.ok &&
+      (appSessionRefresh.error === 'App session refresh unavailable' ||
+        appSessionRefresh.error === 'MFA required' ||
+        appSessionRefresh.error === 'Account assurance unavailable')
+    ) {
+      return appSessionFailureResponse(
+        request,
+        appSessionRefresh.error,
+        appSessionRefresh.response
+      );
+    }
     const requestWithRefresh = {
       headers: appSessionRefresh.ok
         ? (appSessionRefresh.requestHeaders ?? request.headers)
         : request.headers,
     };
-    const appSession = appSessionRefresh.ok
-      ? appSessionRefresh.claims
-      : getAppSessionClaimsFromRequest(requestWithRefresh, {
-          targetApp: 'infra',
-        });
+    const appSession = appSessionRefresh.ok ? appSessionRefresh.claims : null;
     const hasWebAppSession =
       hasWebAppSessionTokenFromRequest(requestWithRefresh);
     const hasSupabaseSession =

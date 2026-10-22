@@ -158,6 +158,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   const authRes = await authProxy(req);
+  if (authRes.status >= 400) return authRes;
 
   if (authRes.headers.has('Location')) {
     return authRes;
