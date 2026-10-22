@@ -232,7 +232,14 @@ export async function runFeedbackCommand(input: FeedbackCommandInput) {
     };
     const code = codes[status] ?? 'feedback_unavailable';
     // Never forward provider messages, bodies, URLs, stack traces or debug packets.
-    throw new Error(`${code} (${status})`);
+    const message = `${code} (${status})`;
+    // The CLI entrypoint writes the error message once to stderr and exits 1.
+    // JSON errors use the same fixed projection as human errors.
+    throw new Error(
+      input.json
+        ? JSON.stringify({ error: { code, status, message } })
+        : message
+    );
   }
   process.stdout.write(
     `${input.json ? JSON.stringify(output, null, 2) : formatFeedbackOutput(output)}\n`

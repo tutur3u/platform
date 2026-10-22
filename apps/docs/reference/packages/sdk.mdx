@@ -1529,3 +1529,24 @@ diagnostics add no timers, subprocesses, probes or retries. The 4000ms deadline
 and fail-closed capacity behavior remain unchanged. Focused pure mocks in
 `devbox-docker-metadata-diagnostic.test.ts` cover opt-in gating, bounded fields,
 event order, deadline/kill outcomes, errors, close timing, overflow and redaction.
+
+
+### Private staff feedback
+
+`ttr feedback list|show` uses the authenticated, host-scoped Web staff API; it
+never resolves a selected workspace or grants access from a local email claim.
+The service rechecks current exact-domain activated staff and the canonical
+registry for every list/detail operation. The default-off staff feature flag
+must be enabled by the release owner before live use.
+
+List returns one bounded metadata page and an explicit filter-bound next cursor.
+`show <uuid>` omits the private body unless `--include-content` is present.
+Status, archive timestamp and revision are read only. With `--json`, success
+goes to stdout; sanitized failures are one JSON object on stderr with
+`error.code`, `error.status` and a fixed `error.message`, and the CLI exits 1.
+Provider diagnostics, credentials and URLs are never forwarded.
+
+The CLI-to-staff-service composition fixture covers pagination, detail/content
+opt-in, status filters and denied current identities/registry reads through the
+real PostgREST serializer. These synthetic boundaries do not qualify a hosted
+Auth or database deployment.
