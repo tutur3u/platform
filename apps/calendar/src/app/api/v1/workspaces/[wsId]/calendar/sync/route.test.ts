@@ -143,6 +143,7 @@ function createAdminSupabaseMock({
         });
       },
       error: null,
+      update: () => createAwaitableQuery({ data: null, error: null }),
       in: (column: string, values: unknown[]) => {
         inFilters.set(column, values);
         return query;
@@ -252,13 +253,13 @@ function createAdminSupabaseMock({
 
 describe('workspace calendar sync route', () => {
   beforeEach(() => {
+    vi.resetAllMocks();
     ensureValidTokenMock.mockResolvedValue({
       accessToken: 'refreshed-microsoft-token',
       refreshed: true,
       expiresAt: null,
     });
     process.env.CRON_SECRET = 'cron-secret';
-    vi.clearAllMocks();
     createAdminClientMock.mockResolvedValue(createAdminSupabaseMock());
     createGraphClientMock.mockReturnValue('graph-client');
     fetchMicrosoftEventsMock.mockResolvedValue([]);
@@ -389,7 +390,15 @@ describe('workspace calendar sync route', () => {
       }) as never,
       { params: Promise.resolve({ wsId: WS_ID }) }
     );
-    expect(response.status).toBeGreaterThanOrEqual(400);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ok: false,
+      code: 'auth',
+      summary: { google: { inserted: 1 }, microsoft: { failedAccounts: 1 } },
+    });
+    expect(dashboardUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'failed', error_type: 'auth' })
+    );
     expect(createGraphClientMock).not.toHaveBeenCalled();
     expect(fetchMicrosoftEventsMock).not.toHaveBeenCalled();
   });

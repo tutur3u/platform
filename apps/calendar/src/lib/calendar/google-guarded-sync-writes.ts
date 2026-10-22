@@ -1,5 +1,4 @@
 import type { calendar_v3 } from '@tuturuuu/google';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { formatEventForDb } from '@tuturuuu/trigger/google-calendar-sync';
 import type { GoogleColorContext } from '@tuturuuu/utils/google-calendar-colors';
 import {
@@ -11,6 +10,7 @@ import {
   filterEventsByStatus,
   getCancelledGoogleEventIds,
 } from './google-sync-events';
+import { createSyncAdminClient } from './provider-sync-budget';
 import { sanitizeWorkspaceCalendarEventFields } from './sync-field-limits';
 
 type IncrementalSyncOptions = {
@@ -30,7 +30,7 @@ export async function incrementalActiveSync(
   options: IncrementalSyncOptions
 ) {
   const processingStart = Date.now();
-  const supabase = await createAdminClient();
+  const supabase = await createSyncAdminClient();
 
   // Convert string dates to Date objects if needed
   const startDateObj =

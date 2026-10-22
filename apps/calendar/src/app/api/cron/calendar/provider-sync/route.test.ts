@@ -24,7 +24,9 @@ describe('Calendar provider cron ownership', () => {
     admin.mockResolvedValue({
       from: () => ({
         select: () => ({
-          eq: () => ({ order: () => ({ range: page }) }),
+          eq: () => ({
+            eq: () => ({ eq: () => ({ order: () => ({ range: page }) }) }),
+          }),
         }),
       }),
     });
@@ -120,7 +122,7 @@ describe('Calendar provider cron ownership', () => {
     expect(sync).not.toHaveBeenCalled();
   });
 
-  it('reports partial provider failures', async () => {
+  it('returns 200 with recorded partial provider failures', async () => {
     sync.mockResolvedValue(
       NextResponse.json({ ok: false, partialFailure: true, code: 'auth' })
     );
@@ -130,11 +132,60 @@ describe('Calendar provider cron ownership', () => {
         { headers: { Authorization: 'Bearer test-cron-secret' } }
       )
     );
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       ok: false,
       successful: 0,
       failed: 1,
     });
+  });
+  it('short circuits without dispatch when no active inbound connections are due', async () => {
+    page.mockResolvedValue({ data: [], error: null });
+    const response = await GET(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/api/cron/calendar/provider-sync',
+        { headers: { Authorization: 'Bearer test-cron-secret' } }
+      )
+    );
+    expect(response.status).toBe(200);
+    expect(sync).not.toHaveBeenCalled();
+    expect(await response.json()).toMatchObject({ ok: true, processed: 0 });
+  });
+
+  it('bounds each dispatch batch and reports deferred workspaces', async () => {
+    page.mockResolvedValue({
+      data: Array.from({ length: 31 }, (_, i) => ({ ws_id: `workspace-${i}` })),
+      error: null,
+    });
+    const response = await GET(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/api/cron/calendar/provider-sync',
+        { headers: { Authorization: 'Bearer test-cron-secret' } }
+      )
+    );
+    expect(sync).toHaveBeenCalledTimes(10);
+    expect(await response.json()).toMatchObject({
+      processed: 10,
+      deferred: 21,
+    });
+  });
+
+  it('isolates thrown workspace failures and completes other workspaces', async () => {
+    page.mockResolvedValue({
+      data: [{ ws_id: 'bad' }, { ws_id: 'good' }],
+      error: null,
+    });
+    sync.mockRejectedValueOnce(new Error('private-provider-detail'));
+    const response = await GET(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/api/cron/calendar/provider-sync',
+        { headers: { Authorization: 'Bearer test-cron-secret' } }
+      )
+    );
+    expect(response.status).toBe(200);
+    expect(sync).toHaveBeenCalledTimes(2);
+    const body = await response.json();
+    expect(body).toMatchObject({ ok: false, failed: 1, successful: 1 });
+    expect(JSON.stringify(body)).not.toContain('private-provider-detail');
   });
 });

@@ -1,13 +1,20 @@
 import type { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { performIncrementalActiveSync } from './incremental-active-sync';
+import {
+  checkProviderSyncBudget,
+  MAX_SYNC_CONNECTIONS,
+  providerSyncSignal,
+  rotatingSyncBatch,
+} from './provider-sync-budget';
 import type { CalendarSyncFailure } from './sync-diagnostics';
 import {
   CalendarProviderSyncError,
   classifyCalendarSyncError,
+  isInvalidCalendarGrant,
 } from './sync-errors';
 
-type GoogleTokenRow = { id: string };
+type GoogleTokenRow = { id: string; refresh_token: string };
 type CalendarConnectionRow = {
   id: string;
   calendar_name: string;
@@ -28,7 +35,7 @@ export async function syncGoogleInbound(args: {
 }) {
   const { data: tokenRows, error: tokenError } = await args.sbAdmin
     .from('calendar_auth_tokens')
-    .select('id')
+    .select('id, refresh_token')
     .eq('ws_id', args.wsId)
     .eq('provider', 'google')
     .eq('is_active', true);
@@ -48,6 +55,7 @@ export async function syncGoogleInbound(args: {
       deleted: 0,
       processedConnections: 0,
       failedConnections: 0,
+      deferredConnections: 0,
       failureType: null,
       failedCalendars: [] as CalendarSyncFailure[],
     };
@@ -83,8 +91,25 @@ export async function syncGoogleInbound(args: {
   let firstConnectionError: unknown;
   let authError: unknown;
 
-  for (const connection of googleConnections) {
+  const rejectedAccounts = new Set<string>();
+  const batch = providerSyncSignal()
+    ? rotatingSyncBatch(
+        [...googleConnections].sort((a, b) => a.id.localeCompare(b.id)),
+        MAX_SYNC_CONNECTIONS
+      )
+    : googleConnections;
+  for (const connection of batch) {
     try {
+      checkProviderSyncBudget();
+      if (
+        connection.auth_token_id &&
+        rejectedAccounts.has(connection.auth_token_id)
+      ) {
+        throw new CalendarProviderSyncError(
+          'Reconnect Google calendar',
+          'auth'
+        );
+      }
       const result = await performIncrementalActiveSync(
         args.wsId,
         args.userIdForFallback,
@@ -114,6 +139,24 @@ export async function syncGoogleInbound(args: {
       updated += result.eventsUpdated;
       deleted += result.eventsDeleted;
     } catch (error) {
+      if (isInvalidCalendarGrant(error) && connection.auth_token_id) {
+        rejectedAccounts.add(connection.auth_token_id);
+        const token = (tokenRows as GoogleTokenRow[]).find(
+          (row) => row.id === connection.auth_token_id
+        );
+        if (token) {
+          const { error: disableError } = await args.sbAdmin
+            .from('calendar_auth_tokens')
+            .update({ is_active: false })
+            .eq('id', token.id)
+            .eq('ws_id', args.wsId)
+            .eq('refresh_token', token.refresh_token);
+          if (disableError)
+            console.error(
+              'Failed to disable revoked Google calendar credential'
+            );
+        }
+      }
       failedConnections += 1;
       failedCalendars.push({
         connectionId: connection.id,
@@ -125,8 +168,8 @@ export async function syncGoogleInbound(args: {
       console.warn('Google calendar connection sync failed', {
         wsId: args.wsId,
         authTokenId: connection.auth_token_id,
-        calendarId: connection.calendar_id,
-        error,
+        connectionId: connection.id,
+        code: classifyCalendarSyncError(error),
       });
     }
   }
@@ -135,7 +178,8 @@ export async function syncGoogleInbound(args: {
     inserted,
     updated,
     deleted,
-    processedConnections: googleConnections.length - failedConnections,
+    processedConnections: batch.length - failedConnections,
+    deferredConnections: googleConnections.length - batch.length,
     failedConnections,
     failedCalendars,
     failureType: firstConnectionError

@@ -256,9 +256,10 @@ export const storeSyncToken = async (
   ws_id: string,
   syncToken: string,
   _lastSyncedAt: Date,
-  calendarId: string = 'primary'
+  calendarId: string = 'primary',
+  client?: Awaited<ReturnType<typeof createAdminClient>>
 ) => {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = client ?? (await createAdminClient({ noCookie: true }));
 
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,
@@ -283,9 +284,10 @@ export const storeSyncToken = async (
 
 export const getSyncToken = async (
   ws_id: string,
-  calendarId: string = 'primary'
+  calendarId: string = 'primary',
+  client?: Awaited<ReturnType<typeof createAdminClient>>
 ): Promise<string | null> => {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = client ?? (await createAdminClient({ noCookie: true }));
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,
     p_calendar_id: calendarId,
@@ -306,9 +308,10 @@ export const getSyncToken = async (
 
 export const clearSyncToken = async (
   ws_id: string,
-  calendarId: string = 'primary'
+  calendarId: string = 'primary',
+  client?: Awaited<ReturnType<typeof createAdminClient>>
 ) => {
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = client ?? (await createAdminClient({ noCookie: true }));
 
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,

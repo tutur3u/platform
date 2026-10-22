@@ -13,6 +13,26 @@ export default defineConfig({
     environment: 'jsdom',
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      {
+        find: '@tuturuuu/supabase/next/server',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/server.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/client',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/client.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/types\/(.*)$/,
+        replacement: resolve(__dirname, '../../packages/types/src/$1'),
+      },
+      { find: '@', replacement: resolve(__dirname, './src') },
+    ],
   },
 });
