@@ -659,6 +659,13 @@
     "step_try_description": "Practice in context. You can skip or close the guide at any time.",
     "title": "Guidance and learning"
   },
+  "pay-dashboard": {
+    "choose-workspace": "Choose a workspace to manage billing, subscriptions, seats, and payment methods.",
+    "create-or-join": "Create or join a workspace",
+    "no-workspaces": "You do not have billing access to any workspace. Ask a workspace administrator for billing access, or create or join a workspace on Tuturuuu.",
+    "title": "Pay",
+    "unnamed-workspace": "Unnamed workspace"
+  },
   "quiz-set-data-table": {
     "linked_modules": "Linked Modules"
   },

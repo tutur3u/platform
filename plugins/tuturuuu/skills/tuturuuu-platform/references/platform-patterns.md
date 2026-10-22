@@ -136,6 +136,12 @@ shared-package changes.
   drifted that way. Either add the route or pass
   `<OfflineProvider register={false}>`. `bun check` → `offline-worker-wiring`
   enforces it.
+- Central-login app identity comes from `packages/utils/src/internal-domains.ts`,
+  not the infrastructure project's reserved-host list or shared-cookie domains.
+  Rewise (`https://rewise.me`) and Nova (`https://nova.ai.vn`) are internal
+  satellites with exact HTTPS production origins outside `tuturuuu.com`.
+  Preserve their registrations when changing canonical SEO hosts; verify the
+  domain, cross-app mapping, and web return-validation regression suites.
 - **Never copy the multi-account vault into another app.**
   `apps/web/src/lib/auth/multi-account` (device cookies, encrypted Supabase
   sessions, the account-switch handover) belongs to the app that serves
@@ -328,12 +334,21 @@ Rules:
 
 ## Satellite Apps (contacts, pay, tasks, …)
 
+- Cold satellite unit checks should select workspace `bun` source exports in both
+  Vitest `resolve.conditions` and `ssr.resolve.conditions`. Keep existing source
+  aliases for dist-only packages and inline `next-intl` where its extensionless
+  Next imports require adapter resolution. Do not build dependencies locally to
+  make focused tests load; retain the app's exact-commit CI build gate.
+
 - Custom page proxies must consume claims only from a successful
   `refreshAppSessionForRequest` result. Never reconstruct authority from raw
   cookies after a failed result: a required MFA proof can expire during refresh
   while the access signature and expiry still verify. Return terminal MFA and
   availability responses before locale, workspace or deployment-cookie handling;
-  use the existing unauthenticated redirect for other failures. Preserve explicit
+  native runtime bridges must return these responses unchanged before merging
+  response headers or request-context cookies. Cover this with a pending-cookie
+  negative control in `src/runtime/proxy-bridge.test.ts`. For other failures,
+  use the existing unauthenticated redirect. Preserve explicit
   anonymous routes. See the [browser refresh policy](../../../../../apps/docs/platform/architecture/satellite-apps.mdx#browser-refresh-replay-store-outages)
   and each custom adapter's `proxy-refresh.test.ts` for denial, composed deadline,
   outage and healthy controls.

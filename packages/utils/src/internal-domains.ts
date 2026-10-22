@@ -59,6 +59,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'nova',
     url: 'https://nova.tuturuuu.com',
   },
+  { name: 'nova', url: 'https://nova.ai.vn', requiresExactOrigin: true },
   {
     name: 'mira',
     url: 'https://mira.tuturuuu.com',
@@ -67,6 +68,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'rewise',
     url: 'https://rewise.tuturuuu.com',
   },
+  { name: 'rewise', url: 'https://rewise.me', requiresExactOrigin: true },
   {
     name: 'tasks',
     url: 'https://tasks.tuturuuu.com',
@@ -388,6 +390,7 @@ export type AppName = (typeof APP_DOMAIN_MAP)[number]['name'];
 export type AppDomain = {
   kind?: 'external' | 'internal';
   name: string;
+  requiresExactOrigin?: boolean;
   url: string;
 };
 
@@ -470,6 +473,8 @@ function parseHttpUrl(value: string) {
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       return null;
     }
+
+    if (url.username || url.password) return null;
 
     return url;
   } catch {
@@ -589,6 +594,8 @@ function matchesAppDomainUrl(value: URL, domain: AppDomain) {
   if (value.origin === registeredUrl.origin) {
     return true;
   }
+
+  if (domain.requiresExactOrigin) return false;
 
   if (
     domain.kind === 'internal' &&

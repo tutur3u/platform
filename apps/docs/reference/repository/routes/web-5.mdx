@@ -11,6 +11,12 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/users/[userId]/emails` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/emails/route.ts) |
+| `/api/v1/workspaces/[wsId]/users/[userId]/follow-up` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/follow-up/route.ts) |
+| `/api/v1/workspaces/[wsId]/users/[userId]/referral-discounts` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/referral-discounts/route.ts) |
+| `/api/v1/workspaces/[wsId]/users/[userId]/referrals` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/referrals/route.ts) |
+| `/api/v1/workspaces/[wsId]/users/[userId]` | DELETE, GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/users/[userId]/user-groups` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/%5BuserId%5D/user-groups/route.ts) |
 | `/api/v1/workspaces/[wsId]/users/approvals/logs` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/approvals/logs/route.ts) |
 | `/api/v1/workspaces/[wsId]/users/approvals` | GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/approvals/route.ts) |
 | `/api/v1/workspaces/[wsId]/users/attendance/export` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/users/attendance/export/route.ts) |

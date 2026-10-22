@@ -21,20 +21,20 @@ import {
   receiveTokenFromBrowser,
 } from './auth';
 import { runCalendarFeedbackDispatch } from './calendar-feedback-dispatch';
+import { readCommandConfig } from './command-config';
 import {
   type CliConfig,
   clearHostScopedConfig,
   DEFAULT_BASE_URL,
   getDefaultConfigPath,
   normalizeHostBaseUrl,
-  readCliConfig,
   resolveCliHostBaseUrl,
   resolveCliTasksBaseUrl,
   writeCliConfig,
 } from './config';
 import { runDevboxCommandWithSession } from './devbox-session';
 import { runExternalCommand } from './external-admin';
-import { validateFeedbackCommand } from './feedback';
+import { runFeedbackCli } from './feedback';
 import { runFinanceCommand } from './finance';
 import { getGlobalHelp, getHelpOutput } from './help';
 import {
@@ -71,7 +71,6 @@ import {
   resolveLocalTaskTemplatePath,
 } from './task-templates';
 import { runTiptapCommand } from './tiptap';
-import { checkForCliUpdate, isCliUpdateCheckDisabled } from './update';
 import { upgradeCli } from './upgrade';
 
 const doneActions = new Set(['complete', 'completed', 'done', 'mark-done']);
@@ -2049,18 +2048,9 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
-  if (group === 'feedback') validateFeedbackCommand(positionals, flags, argv);
-  let config = await readCliConfig();
-  if (flags['no-update-check'] !== true && !isCliUpdateCheckDisabled()) {
-    const nextConfig = await checkForCliUpdate({
-      config,
-      currentVersion: packageJson.version,
-    });
-    if (nextConfig !== config) {
-      await writeCliConfig(nextConfig);
-      config = nextConfig;
-    }
-  }
+  if (group === 'feedback')
+    return runFeedbackCli({ positionals, flags, json, argv }, getClient);
+  let config = await readCommandConfig(flags);
 
   if (group === 'login') {
     await login(flags, config);

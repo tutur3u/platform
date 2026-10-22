@@ -19,6 +19,13 @@ import {
   toMailbox,
 } from './shared';
 
+type MailboxAccess = {
+  admin: Awaited<ReturnType<typeof getAdminClient>>;
+  metadata: AnyRecord['metadata'];
+  mailbox: MailMailbox;
+  role: MailMailboxRole;
+};
+
 type MailMessageRowsQuery = typeof queryMailMessageRows;
 
 export async function getUnreadInboxCounts(
@@ -262,7 +269,7 @@ export async function requireMailboxAccess(
   ctx: MailRouteContext,
   mailboxId: string,
   roles?: readonly MailMailboxRole[]
-) {
+): Promise<MailboxAccess | null> {
   const admin = await getAdminClient();
   const { data: member, error: memberError } = await privateTable(
     admin,

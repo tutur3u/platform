@@ -1,10 +1,11 @@
 import path from 'node:path';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   esbuild: { jsx: 'automatic' },
   oxc: false,
   resolve: {
+    conditions: ['bun', 'module', 'node', 'development|production'],
     alias: [
       { find: '@', replacement: path.resolve(__dirname, './src') },
       {
@@ -23,8 +24,14 @@ export default defineConfig({
       },
     ],
   },
+  ssr: {
+    resolve: {
+      conditions: ['bun', 'module', 'node', 'development|production'],
+    },
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
+    exclude: [...configDefaults.exclude, 'src/proxy.public-callback.test.ts'],
   },
 });

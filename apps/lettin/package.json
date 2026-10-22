@@ -58,5 +58,5 @@
     "vitest": "^5.0.0",
     "wrangler": "4.130.0"
   },
-  "packageManager": "bun@1.4.1"
+  "packageManager": "bun@1.4.3"
 }

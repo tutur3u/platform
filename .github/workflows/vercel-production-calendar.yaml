@@ -25,10 +25,18 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Keep native Calendar outside Vercel publication
+        shell: bash
+        run: |
+          if [ -f apps/calendar/void.config.ts ]; then
+            echo 'Native Calendar publication is disabled. Retain the previous Vercel deployment for rollback; require separately admitted Cloudflare identity and acceptance before cutover.' >&2
+            exit 1
+          fi
+
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.1
+          bun-version: 1.4.3
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
