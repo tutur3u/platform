@@ -349,3 +349,93 @@ and rejection contracts and retains the real consume/revocation races. These
 fixtures do not establish hosted Auth/cookies/PostgREST or Claude behavior.
 Browser accessibility/layout, actual login/MFA return, hosted custody, rotation
 and real WorkOS acceptance remain pilot gates.
+
+## Workspace administration (phase 4)
+
+Open **Single sign-on** in the workspace navigation, or follow its link from
+workspace settings (`/{locale}/{wsId}/sso`). This is outbound SSO application
+management, separate from incoming enterprise sign-in. Only current MEMBERs of
+an active nonpersonal workspace with `manage_sso_clients` can open it. The same
+permission and MEMBER checks apply to every management API and service RPC.
+
+1. Select **Add SSO application**. Give it the Claude organization name, the
+   exact SP entity ID and canonical HTTPS ACS from that WorkOS connection, and
+   comma-separated lowercase approved email domains. The current pilot supports
+   one exact ACS and persistent pairwise NameID. Choose the actual request-signing
+   policy explicitly; required signatures need the SP's RSA public certificate.
+   Unsigned requests are a deliberate configuration choice. No remote metadata or
+   certificate URL is fetched.
+2. Complete current factor-bound TOTP verification when prompted. All trust,
+   enable/disable and assignment writes require a verified proof no older than
+   ten minutes, including optional-MFA accounts. Verification does not replay a
+   failed mutation: submit again after checking its current state.
+3. Save the application. Creation is always disabled. Saving edited trust also
+   disables the application in the UI; review and enable it as a separate action.
+   Legacy applications retain the deployment-pinned request-signature policy
+   until saved with an explicit policy. They can always be disabled without
+   resubmitting trust settings. Revisions prevent stale edits from overwriting
+   concurrent administrator changes. On a conflict or unknown result, refresh
+   before making another change; mutations are never retried automatically.
+   After an editor conflict, Refresh explicitly discards unsaved edits, reloads
+   the latest revision and trust fields, and confirms that values were reloaded.
+   Ordinary background refreshes preserve editor values. The conflict-refresh-save
+   regression in `sso-management.test.tsx` verifies the next intentional save
+   uses the refreshed revision and trust values.
+4. Select the application and assign named test MEMBERs. Guests and invitations
+   do not appear. The assignment RPC rechecks current membership atomically;
+   stale roster entries cannot assign a demoted member. Revocation prevents future
+   issuance but does not end existing Claude sessions, invite a user to Claude,
+   purchase seats or change Claude roles.
+5. Copy the IdP entity ID, SSO URL and active **public** certificate into the
+   Claude custom SAML provider setup, or use its metadata URL if the portal
+   supports import. Setup URLs come only from `SSO_SAML_ORIGIN`, never the request
+   Host. A missing canonical origin is shown explicitly. The deployment-selected
+   client, global flag and provisioned active key remain separate requirements;
+   metadata itself remains unavailable while the global/client gate is off.
+6. After separately authorized pilot verification, select **Enable** and confirm
+   in the application dialog. The UI shows the current server-side
+   `SSO_SAML_ENABLED` state and has no control that can change it. A client enabled
+   while the flag is off remains inert. The phase-3 deployment still selects one
+   client through `SSO_SAML_CLIENT_ID`; other configured clients cannot issue.
+
+The public-key panel shows kid, status, public certificate, validity and creation,
+activation, retirement and revocation timestamps. It offers no private-key import,
+creation or rotation control. Dedicated private-key provisioning and SP trust
+rotation remain trusted operator operations. The latest 50 audit events expose
+only event id/type, policy revision and time, excluding raw assertions, email,
+actor/session/transaction identifiers and private material. A prepared signed
+response is not a successful Claude-login receipt.
+
+### Management transport and regression boundaries
+
+`@tuturuuu/internal-api/sso` owns the typed browser transport; the Web UI uses
+TanStack Query with workspace/client query keys and no automatic write retries.
+All new handlers live in `apps/web/src/app/api/v1/workspaces/[wsId]/sso/`:
+
+| Method and path (relative to `/api/v1/workspaces/{wsId}/sso`) | Behavior |
+| --- | --- |
+| `GET /clients` | Authorized clients and current server global flag |
+| `POST /clients` | Validated, disabled application creation |
+| `GET /clients/{clientId}` | MEMBER assignment roster, public keys, 50 sanitized audit events and canonical setup URLs |
+| `PATCH /clients/{clientId}` | Revision-checked SP trust update; explicit confirmation required if enabled |
+| `PUT /clients/{clientId}/activation` | Revision-checked enable or disable; enable requires explicit confirmation |
+| `PUT /clients/{clientId}/assignments` | Revision-checked MEMBER assignment or revocation |
+
+The additive migration keeps private table access revoked. New read projections
+and trust/activation writes are service-only definers with an empty search path,
+canonical workspace/client predicates and the phase-2 manager assertion. The
+trust writer composes the existing client RPC in one transaction so policy
+revision, SP settings and audit either all commit or all roll back. New clients
+persist their signature policy; issuance uses it, while unchanged legacy profiles
+retain the deployment setting as a compatibility boundary. Server configuration
+still needs the phase-3 deployment variables above.
+
+`management.test.ts` calls the real HTTP exports against mocked Auth/RPC transport
+for unauthenticated, non-manager, guest and foreign-workspace denial, confirmation,
+MFA age, exact ACS validation and sanitized disclosure. Guest mutation authority
+is independently covered in the applied-schema `sso-persistence.sql` fixture.
+`sso-management.test.tsx` drives creation, disabled trust edits, confirmation,
+assignment/revocation and public copy controls using the shared dialog components.
+`packages/internal-api/src/sso.test.ts` verifies the actual transport contract.
+These checks do not establish hosted Auth/PostgREST, browser layout, production
+configuration or real Claude/WorkOS acceptance; those remain pilot gates.

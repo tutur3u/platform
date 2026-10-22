@@ -54,6 +54,53 @@ SELECT throws_ok($$SELECT public.sso_manage_client(f.ws,f.actor,c.id,1,'Stale',A
 SELECT public.sso_set_assignment(f.ws,c.id,f.actor,f.actor,0,true) FROM fixture f,clients c;
 SELECT throws_ok($$SELECT public.sso_set_assignment(f.ws,c.id,f.actor,f.other_actor,0,true) FROM fixture f,clients c$$,
  '42501','sso_forbidden','outsider cannot be assigned');
+-- Management UI projection and trust writer remain tenant-bound and service-only.
+SELECT is((public.sso_management_overview(f.ws,f.actor)->'clients'->0->>'id'),c.id::text,
+ 'management overview includes own client') FROM fixture f,clients c;
+SELECT throws_ok($$SELECT public.sso_management_overview(ws,other_actor) FROM fixture$$,
+ '42501','sso_forbidden','management overview denies other-workspace actor');
+SELECT throws_ok($$SELECT public.sso_management_detail(f.other_ws,f.other_actor,c.id) FROM fixture f,clients c$$,
+ '42501','sso_forbidden','management detail binds client to workspace');
+SELECT ok(NOT has_function_privilege('authenticated','public.sso_management_overview(uuid,uuid)','EXECUTE'),
+ 'browser cannot invoke management read with an arbitrary actor');
+SELECT ok(NOT has_function_privilege('anon','public.sso_save_saml_client(uuid,uuid,bigint,text,text[],text,text,text,text,boolean,uuid)','EXECUTE'),
+ 'anonymous cannot invoke management writes');
+CREATE TEMP TABLE ui_clients AS SELECT (public.sso_save_saml_client(f.ws,f.actor,0,'UI client',
+ ARRAY['example.test'],'urn:ui:sp','https://sp.example.test/acs','unsigned')->>'id')::uuid id FROM fixture f;
+SELECT is((SELECT enabled FROM private.sso_clients WHERE id=(SELECT id FROM ui_clients)),false,
+ 'UI writer creates disabled clients');
+SELECT is((SELECT request_signing_mode FROM private.sso_saml_clients WHERE client_id=(SELECT id FROM ui_clients)),
+ 'unsigned','UI writer persists request-signature policy');
+SELECT throws_ok($$SELECT public.sso_save_saml_client(f.ws,f.actor,0,'Enabled',ARRAY['example.test'],
+ 'urn:ui:sp','https://sp.example.test/acs','unsigned',NULL,true) FROM fixture f$$,
+ '22023','sso_create_disabled','UI writer cannot create enabled client');
+SELECT throws_ok($$SELECT public.sso_save_saml_client(f.ws,f.actor,1,'Invalid cert',ARRAY['example.test'],
+ 'urn:ui:sp','https://sp.example.test/acs','required',NULL,false,c.id) FROM fixture f,ui_clients c$$,
+ '23514',NULL,'required signatures need certificate atomically');
+SELECT is((SELECT policy_revision FROM private.sso_clients WHERE id=(SELECT id FROM ui_clients)),1::bigint,
+ 'failed trust write rolls back revision');
+SELECT is((public.sso_set_client_enabled(f.ws,f.actor,c.id,1,true)->>'revision')::integer,2,
+ 'activation increments policy revision') FROM fixture f,ui_clients c;
+SELECT is((public.sso_set_client_enabled(f.ws,f.actor,c.id,2,false)->>'revision')::integer,3,
+ 'disable increments policy revision') FROM fixture f,ui_clients c;
+SELECT is((SELECT enabled FROM private.sso_clients WHERE id=(SELECT id FROM ui_clients)),false,
+ 'disable fences subsequent issuance');
+SELECT throws_ok($$SELECT public.sso_set_client_enabled(f.ws,f.actor,c.id,2,true) FROM fixture f,ui_clients c$$,
+ '40001','sso_revision_conflict','stale activation cannot resurrect disabled client');
+SELECT throws_ok($$SELECT public.sso_set_client_enabled(f.other_ws,f.other_actor,c.id,3,true) FROM fixture f,ui_clients c$$,
+ '42501','sso_forbidden','foreign workspace cannot activate client');
+SELECT ok(NOT has_function_privilege('authenticated','public.sso_set_client_enabled(uuid,uuid,uuid,bigint,boolean)','EXECUTE'),
+ 'activation RPC remains service-only');
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000009101',true);
+UPDATE public.workspace_members SET type='GUEST' WHERE ws_id=(SELECT ws FROM fixture) AND user_id=(SELECT member FROM fixture);
+SELECT ok(NOT EXISTS (SELECT 1 FROM jsonb_array_elements(public.sso_management_detail(f.ws,f.actor,c.id)->'members') m
+ WHERE m->>'userId'=f.member::text),'management roster excludes guests') FROM fixture f,ui_clients c;
+SELECT throws_ok($$SELECT public.sso_set_assignment(f.ws,c.id,f.actor,f.member,0,true) FROM fixture f,ui_clients c$$,
+ '42501','sso_forbidden','UI cannot assign guests');
+SELECT ok(NOT EXISTS (SELECT 1 FROM jsonb_array_elements(public.sso_management_detail(f.ws,f.actor,c.id)->'audit') a
+ WHERE a ? 'actor_id' OR a ? 'transaction_id'),'audit projection excludes actor and transaction identifiers') FROM fixture f,ui_clients c;
+UPDATE public.workspace_members SET type='MEMBER' WHERE ws_id=(SELECT ws FROM fixture) AND user_id=(SELECT member FROM fixture);
+
 CREATE FUNCTION pg_temp.start_login(p_request text, p_handle text) RETURNS uuid LANGUAGE sql AS $$
  SELECT (public.sso_create_transaction(f.ws,c.id,2,p_request,encode(extensions.digest(p_handle,'sha256'),'hex'),repeat('b',64),repeat('c',64),
  'https://sp.example.test/acs',clock_timestamp()+interval '4 minutes',true)).id FROM fixture f,clients c;

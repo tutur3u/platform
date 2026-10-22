@@ -15597,6 +15597,8 @@ export type Database = {
           client_id: string;
           entity_id: string;
           name_id_format: string;
+          request_signing_mode: string | null;
+          sp_certificate: string | null;
           ws_id: string;
         };
         Insert: {
@@ -15604,6 +15606,8 @@ export type Database = {
           client_id: string;
           entity_id: string;
           name_id_format?: string;
+          request_signing_mode?: string | null;
+          sp_certificate?: string | null;
           ws_id: string;
         };
         Update: {
@@ -15611,6 +15615,8 @@ export type Database = {
           client_id?: string;
           entity_id?: string;
           name_id_format?: string;
+          request_signing_mode?: string | null;
+          sp_certificate?: string | null;
           ws_id?: string;
         };
         Relationships: [
@@ -50708,6 +50714,14 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      sso_management_detail: {
+        Args: { p_actor_id: string; p_client_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      sso_management_overview: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       sso_read_own_disclosures: {
         Args: { p_ws_id: string };
         Returns: Database['private']['Tables']['sso_disclosure_grants']['Row'][];
@@ -50748,6 +50762,22 @@ export type Database = {
         };
         Returns: string;
       };
+      sso_save_saml_client: {
+        Args: {
+          p_acs_url: string;
+          p_actor_id: string;
+          p_approved_email_domains: string[];
+          p_client_id?: string;
+          p_display_name: string;
+          p_enabled?: boolean;
+          p_entity_id: string;
+          p_expected_revision: number;
+          p_request_signing_mode: string;
+          p_sp_certificate?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       sso_set_assignment: {
         Args: {
           p_active: boolean;
@@ -50764,6 +50794,16 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      sso_set_client_enabled: {
+        Args: {
+          p_actor_id: string;
+          p_client_id: string;
+          p_enabled: boolean;
+          p_expected_revision: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       strict_payload_field_byte_limit: {
         Args: { _column_name: string; _table_name: string };

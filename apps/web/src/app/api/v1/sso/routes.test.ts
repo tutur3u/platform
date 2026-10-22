@@ -14,6 +14,8 @@ import {
   unseal,
 } from '@/lib/sso/browser-state';
 import { configuration, hash } from '@/lib/sso/config';
+import { managementPrincipal } from '@/lib/sso/identity';
+import { adminClient, snapshot } from '@/lib/sso/store';
 import {
   type Fixture,
   fixture,
@@ -579,6 +581,83 @@ describe('browser decisions and signed response', () => {
     expect((await decide(b)).status).toBe(503);
     await expect(
       unseal(await seal(b.state, configuration()), opaque(), configuration())
+    ).rejects.toThrow();
+  });
+});
+
+describe('management assurance and persisted SP trust', () => {
+  it('allows verified managers without external identity display names', async () => {
+    const live = (await mocks.getUserById()).data.user;
+    mocks.getUserById.mockResolvedValue({
+      data: { user: { ...live, user_metadata: {} } },
+      error: null,
+    });
+    await expect(
+      managementPrincipal(new NextRequest(origin), await adminClient())
+    ).resolves.toEqual({ userId: actorId, mfaAt: mfaTime });
+  });
+  it('denies a manager after removing the verified factor', async () => {
+    factor = null;
+    await expect(
+      managementPrincipal(new NextRequest(origin), await adminClient())
+    ).rejects.toMatchObject({ code: 'mfa_required' });
+  });
+  it('uses stored required signatures instead of the deployment unsigned policy', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: {
+        ...row(),
+        saml: {
+          ...row().saml,
+          request_signing_mode: 'required',
+          sp_certificate: f.certificate,
+        },
+      },
+      error: null,
+    });
+    const current = await snapshot(await adminClient(), configuration());
+    expect(current.profile.requestSigning).toEqual({
+      mode: 'required',
+      certificate: f.certificate,
+    });
+  });
+  it('uses explicitly stored unsigned policy with legacy deployment fallback intact', async () => {
+    vi.stubEnv('SSO_SAML_REQUEST_SIGNING', 'required');
+    vi.stubEnv('SSO_SAML_SP_CERTIFICATE', f.certificate);
+    mocks.rpc.mockResolvedValue({
+      data: {
+        ...row(),
+        saml: {
+          ...row().saml,
+          request_signing_mode: 'unsigned',
+          sp_certificate: null,
+        },
+      },
+      error: null,
+    });
+    expect(
+      (await snapshot(await adminClient(), configuration())).profile
+        .requestSigning
+    ).toEqual({ mode: 'unsigned' });
+    mocks.rpc.mockResolvedValue({ data: row(), error: null });
+    expect(
+      (await snapshot(await adminClient(), configuration())).profile
+        .requestSigning
+    ).toEqual({ mode: 'required', certificate: f.certificate });
+  });
+  it('fails closed on a required stored signature policy without a valid certificate', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: {
+        ...row(),
+        saml: {
+          ...row().saml,
+          request_signing_mode: 'required',
+          sp_certificate: null,
+        },
+      },
+      error: null,
+    });
+    await expect(
+      snapshot(await adminClient(), configuration())
     ).rejects.toThrow();
   });
 });
