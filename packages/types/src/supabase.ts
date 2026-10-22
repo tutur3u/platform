@@ -15729,6 +15729,7 @@ export type Database = {
           relay_state_hash: string | null;
           request_id_hash: string;
           session_binding_hash: string | null;
+          starter_binding_hash: string | null;
           ws_id: string;
         };
         Insert: {
@@ -15748,6 +15749,7 @@ export type Database = {
           relay_state_hash?: string | null;
           request_id_hash: string;
           session_binding_hash?: string | null;
+          starter_binding_hash?: string | null;
           ws_id: string;
         };
         Update: {
@@ -15767,6 +15769,7 @@ export type Database = {
           relay_state_hash?: string | null;
           request_id_hash?: string;
           session_binding_hash?: string | null;
+          starter_binding_hash?: string | null;
           ws_id?: string;
         };
         Relationships: [
@@ -23853,6 +23856,7 @@ export type Database = {
           relay_state_hash: string | null;
           request_id_hash: string;
           session_binding_hash: string | null;
+          starter_binding_hash: string | null;
           ws_id: string;
         };
         SetofOptions: {
@@ -50616,6 +50620,18 @@ export type Database = {
         };
         Returns: string;
       };
+      sso_bind_transaction: {
+        Args: {
+          p_actor_id: string;
+          p_browser_binding_hash: string;
+          p_client_id: string;
+          p_policy_revision: number;
+          p_session_binding_hash: string;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
       sso_consume_transaction: {
         Args: {
           p_actor_id: string;
@@ -50645,6 +50661,7 @@ export type Database = {
           p_policy_revision: number;
           p_relay_state_hash: string;
           p_request_id: string;
+          p_starter_binding_hash?: string;
           p_ws_id: string;
         };
         Returns: Database['private']['Tables']['sso_transactions']['Row'];
@@ -50654,6 +50671,22 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      sso_finalize_issuance: {
+        Args: {
+          p_actor_id: string;
+          p_client_id: string;
+          p_key_id: string;
+          p_key_revision: number;
+          p_policy_revision: number;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      sso_issuance_snapshot: {
+        Args: { p_actor_id?: string; p_client_id: string };
+        Returns: Json;
       };
       sso_manage_client: {
         Args: {
@@ -50703,6 +50736,17 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      sso_reject_transaction: {
+        Args: {
+          p_actor_id?: string;
+          p_browser_binding_hash: string;
+          p_client_id: string;
+          p_policy_revision?: number;
+          p_transaction_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       sso_set_assignment: {
         Args: {

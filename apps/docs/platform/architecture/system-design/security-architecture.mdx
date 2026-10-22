@@ -1,7 +1,7 @@
 ---
 title: "Security Architecture"
 description: "Comprehensive security justification and architectural security patterns in Tuturuuu"
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-22'
 ---
 
 Security is a foundational architectural concern in Tuturuuu, embedded at every level of the system design. This document explains the core architectural patterns that provide comprehensive security coverage.
@@ -22,6 +22,49 @@ use. Docker setup is inactive and the Docker cron runner is retired. Retained
 migration designs describe a possible future, not live traffic or a current
 setup requirement. See the [active runtime map](/build/devops/active-runtime).
 </Warning>
+
+## Residual dependency advisories
+
+`@tuturuuu/ai` no longer declares `bash-tool`. Source inspection found no
+static/dynamic imports, require calls, re-exports, test consumers or string-based
+tool registrations in the repository. The Chat SDK dynamic loader selects from
+its static adapter definitions, which contain no bash/glob packages. Removing
+the unused dependency removes the AI installation edge to
+`bash-tool → fast-glob → micromatch → braces`; adding an unused validator would
+not protect an existing call. Customer-facing AI behavior is unchanged.
+
+[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
+still affects `braces@3.0.3`, with no patched release at this review. After removal,
+`bun why braces` resolves these remaining paths:
+
+- Root development dependency `@lingual/i18n-check → @formatjs/cli-lib →
+  fast-glob → micromatch → braces`: translation source scanning, development/CI only.
+- `apps/web → @excalidraw/excalidraw → sass@1.51.0 → chokidar@3.6.0 → braces`:
+  retained installation edge through a runtime-declared editor dependency, but
+  Sass compilation/watch tooling rather than editor request processing.
+- Next, Vite and Vite+ optional Sass peer edges converge on that same Sass/watch
+  chain: development/build tooling. No first-party server-side Sass/watch or
+  untrusted-pattern caller was found.
+
+`bun audit` also reports `transactional → react-email → chokidar → braces` and
+`apps → @tanstack/react-start → @tanstack/start-plugin-core →
+@tanstack/router-plugin → chokidar → braces`. These are email preview and route
+build tooling respectively; installed `react-email` declares Chokidar 4 and
+router-plugin declares Chokidar 5, neither of which depends on braces. Treat
+these audit paths as reported graph associations, not verified Chokidar 3 call
+chains. Manifest dependency classification alone does not prove runtime exposure.
+
+The separate [node-forge advisory](https://github.com/advisories/GHSA-86w9-cpqp-85rv)
+remains tracked at `1.4.0`. Its observed use is Infrastructure admin-only desktop
+certificate PKCS12 inspection in `certificate-readiness.ts`, not a public
+signature-verification endpoint; the current scope is judged low risk and is
+unchanged. The audit also retains the moderate esbuild development-server
+advisory. This removal does not claim a clean audit or remediate those packages.
+
+Recheck with `bun why braces --depth 4` and `bun audit` after dependency changes.
+Before introducing an actual bash/glob runtime consumer, validate untrusted
+patterns before expansion, including length, nesting, alternatives and ranges;
+cover that real boundary with regression tests.
 
 ## Calendar description parsing
 

@@ -92,6 +92,14 @@ interface CachedCredential<T> {
 }
 
 const credentialCache = new Map<string, CachedCredential<unknown>>();
+let nextCredentialCleanupAt = 0;
+function pruneCredentialCache(now: number): void {
+  if (now < nextCredentialCleanupAt) return;
+  nextCredentialCleanupAt = now + 60_000;
+  for (const [key, value] of credentialCache) {
+    if (now >= value.expiresAt) credentialCache.delete(key);
+  }
+}
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -103,6 +111,7 @@ export async function getCachedCredential<T>(
   ttlMs: number = DEFAULT_CACHE_TTL_MS
 ): Promise<T> {
   const now = Date.now();
+  pruneCredentialCache(now);
   const cached = credentialCache.get(key) as CachedCredential<T> | undefined;
 
   if (cached && now < cached.expiresAt) {
@@ -135,19 +144,6 @@ export function clearCredentialCache(): void {
 export function getWorkspaceCredentialKey(wsId: string): string {
   return `ws-cred:${wsId}`;
 }
-
-// Clean up expired entries periodically
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, value] of credentialCache.entries()) {
-      if (now >= value.expiresAt) {
-        credentialCache.delete(key);
-      }
-    }
-  },
-  60 * 1000 // Every minute
-);
 
 // =============================================================================
 // Domain Security

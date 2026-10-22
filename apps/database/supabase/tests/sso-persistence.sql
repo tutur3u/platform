@@ -185,6 +185,78 @@ INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,stat
 SELECT throws_ok($$INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,status,activated_at,not_before,not_after)
  SELECT f.ws,c.id,'key-two',E'-----BEGIN CERTIFICATE-----\nBBBB\n-----END CERTIFICATE-----','active',now(),now(),now()+interval '1 day' FROM fixture f,clients c$$,
  '23505',NULL,'at most one active signing key per client');
+-- Phase-3 projections and post-signing authorization fences.
+SELECT ok(public.sso_issuance_snapshot(c.id,f.actor)->>'member' = 'true',
+ 'snapshot requires current member projection') FROM fixture f,clients c;
+SELECT ok(public.sso_issuance_snapshot(c.id,f.actor)->>'assigned' = 'true',
+ 'snapshot carries explicit assignment') FROM fixture f,clients c;
+SELECT ok(public.sso_issuance_snapshot(c.id,f.other_actor)->>'assigned' = 'false',
+ 'foreign account has no assignment') FROM fixture f,clients c;
+SELECT is(public.sso_issuance_snapshot('00000000-0000-4000-8000-000000000000'),NULL::jsonb,
+ 'unknown client has no snapshot');
+CREATE TEMP TABLE final_login AS SELECT pg_temp.start_login('_final','final-handle') id;
+SELECT public.sso_record_consent(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2,true)
+ FROM fixture f,clients c,final_login t;
+SELECT throws_ok($$SELECT public.sso_reject_transaction(f.ws,c.id,t.id,repeat('b',64),f.actor,2)
+ FROM fixture f,clients c,final_login t$$,'40001','sso_transaction_unavailable',
+ 'a losing decision cannot burn another already-consented decision');
+SELECT is((SELECT consumed_at FROM private.sso_transactions WHERE id=(SELECT id FROM final_login)),NULL::timestamptz,
+ 'rejection leaves the consent winner consumable');
+SELECT public.sso_consume_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2)
+ FROM fixture f,clients c,final_login t;
+SELECT throws_ok($$SELECT public.sso_finalize_issuance(f.ws,c.id,t.id,f.actor,2,k.id,999)
+ FROM fixture f,clients c,final_login t,private.sso_signing_keys k$$,
+ '42501','sso_forbidden','changed key revision rejects finalization');
+UPDATE private.sso_assignments SET active=false WHERE user_id=(SELECT actor FROM fixture);
+SELECT throws_ok($$SELECT public.sso_finalize_issuance(f.ws,c.id,t.id,f.actor,2,k.id,k.revision)
+ FROM fixture f,clients c,final_login t,private.sso_signing_keys k$$,
+ '42501','sso_forbidden','revoked assignment after consume rejects finalization');
+UPDATE private.sso_assignments SET active=true WHERE user_id=(SELECT actor FROM fixture);
+SELECT lives_ok($$SELECT public.sso_finalize_issuance(f.ws,c.id,t.id,f.actor,2,k.id,k.revision)
+ FROM fixture f,clients c,final_login t,private.sso_signing_keys k$$,
+ 'current consumed transaction can finalize with durable audit');
+SELECT throws_ok($$SELECT public.sso_finalize_issuance(f.ws,c.id,t.id,f.actor,2,k.id,k.revision)
+ FROM fixture f,clients c,final_login t,private.sso_signing_keys k$$,
+ '40001','sso_transaction_unavailable','finalization cannot be replayed');
+CREATE TEMP TABLE reject_login AS SELECT pg_temp.start_login('_reject','reject-handle') id;
+SELECT throws_ok($$SELECT public.sso_reject_transaction(f.ws,c.id,t.id,repeat('a',64),NULL,2)
+ FROM fixture f,clients c,reject_login t$$,'40001','sso_transaction_unavailable','reject binds browser');
+SELECT lives_ok($$SELECT public.sso_reject_transaction(f.ws,c.id,t.id,repeat('b',64),NULL,2)
+ FROM fixture f,clients c,reject_login t$$,'unassigned rejection burns transaction and audits');
+SELECT is((SELECT outcome FROM private.sso_transactions WHERE id=(SELECT id FROM reject_login)),'denied',
+ 'rejected transaction is consumed');
+-- Bind the known starter at creation, before either account can load consent.
+CREATE TEMP TABLE starter_login AS SELECT t.id FROM fixture f,clients c,LATERAL public.sso_create_transaction(
+ f.ws,c.id,2,'_starter',repeat('6',64),repeat('b',64),NULL,'https://sp.example.test/acs',
+ clock_timestamp()+interval '4 minutes',true,repeat('e',64)) t;
+SELECT ok((SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2)
+ FROM fixture f,clients c,starter_login t),'the starting user and session can load consent');
+SELECT throws_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.member,repeat('b',64),repeat('f',64),2,true)
+ FROM fixture f,clients c,starter_login t$$,'42501','sso_forbidden','unassigned account still fails authorization');
+SELECT throws_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('f',64),2,true)
+ FROM fixture f,clients c,starter_login t$$,'42501','sso_session_changed','direct consent cannot bypass the starter binding');
+SELECT is((SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('f',64),2)
+ FROM fixture f,clients c,starter_login t),false,'replacement session is rejected');
+SELECT is((SELECT outcome FROM private.sso_transactions WHERE id=(SELECT id FROM starter_login)),'denied',
+ 'session mismatch commits transaction invalidation');
+SELECT is((SELECT count(*)::integer FROM private.sso_audit_events WHERE transaction_id=(SELECT id FROM starter_login)
+ AND event_type='issuance.failed'),1,'session mismatch durably audits one failure');
+SELECT throws_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2,true)
+ FROM fixture f,clients c,starter_login t$$,'40001','sso_transaction_unavailable','original session cannot revive a burned transaction');
+CREATE TEMP TABLE unbound_login AS SELECT pg_temp.start_login('_unbound','unbound-handle') id;
+SELECT ok((SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2)
+ FROM fixture f,clients c,unbound_login t),'signed-out admission claims its first authenticated session');
+SELECT ok((SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2)
+ FROM fixture f,clients c,unbound_login t),'same-session reload is idempotent');
+SELECT lives_ok($$SELECT public.sso_record_consent(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('e',64),2,true)
+ FROM fixture f,clients c,unbound_login t$$,'bound session can still approve');
+SELECT throws_ok($$SELECT public.sso_bind_transaction(f.ws,c.id,t.id,f.actor,repeat('b',64),repeat('f',64),2)
+ FROM fixture f,clients c,unbound_login t$$,'40001','sso_consent_recorded','a losing bind cannot burn committed consent');
+SELECT is((SELECT consumed_at FROM private.sso_transactions WHERE id=(SELECT id FROM unbound_login)),NULL::timestamptz,
+ 'a concurrent bind preserves the consent winner');
+UPDATE private.sso_clients SET enabled=false WHERE id=(SELECT id FROM clients);
+SELECT is((SELECT public.sso_issuance_snapshot(id) FROM clients),NULL::jsonb,'disabled client has no snapshot');
+UPDATE private.sso_clients SET enabled=true WHERE id=(SELECT id FROM clients);
 CREATE TEMP TABLE other_client AS SELECT c.* FROM fixture f,LATERAL public.sso_manage_client(
  f.ws,f.actor,NULL,0,'Second SP',ARRAY['example.test'],'urn:other:sp',ARRAY['https://sp.example.test/acs']) c;
 SELECT public.sso_manage_client(f.ws,f.actor,c.id,1,'Second SP',ARRAY['example.test'],'urn:other:sp',ARRAY['https://sp.example.test/acs'],true) FROM fixture f,other_client c;

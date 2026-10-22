@@ -97,3 +97,16 @@ from the event SHA, hashes and redacted field shapes. It contains no raw config,
 resource identifiers or secret values and grants no artifact acceptance. Review
 the actual receipt before changing a strict configuration predicate; retain the
 source, resource, archive, restore and deployment gates.
+
+## Native Worker release identity
+
+On the admitted native Worker, `/api/build-info` exposes public bundled release
+metadata (app, full source SHA and environment) before session middleware. It is
+no-store and accepts GET/HEAD/OPTIONS only; other methods return 405. Other API
+routes retain their existing authentication/authorization policies. Apps checks
+its canonical-host fence before this endpoint as well. Legacy Vercel deployments
+retain their existing behavior until explicit cutover.
+
+`scripts/ci/wave1-native-publishers.test.js` covers path/method/cache behavior;
+CI original/restored workerd acceptance checks the actual bundled identity.
+See the [native publisher runbook](/build/devops/wave1-native-publishers).

@@ -148,11 +148,17 @@ export async function getRedisClient() {
  */
 export async function checkRateLimitRedis(
   keyId: string,
-  config: RateLimitConfig
+  config: RateLimitConfig,
+  options: { failClosed?: boolean } = {}
 ): Promise<RateLimitResult> {
+  const unavailable = () => ({
+    ...buildFailOpenRateLimitResult(config),
+    allowed: !options.failClosed,
+    ...(options.failClosed ? { remaining: 0 } : {}),
+  });
   const redis = await getRedisClient();
   if (!redis) {
-    return buildFailOpenRateLimitResult(config);
+    return unavailable();
   }
 
   const key = `ratelimit:${keyId}`;
@@ -176,8 +182,9 @@ export async function checkRateLimitRedis(
       reset: resetTime,
     };
   } catch (error) {
-    console.error('Redis rate limit error, allowing request:', error);
-    return buildFailOpenRateLimitResult(config);
+    if (options.failClosed) console.error('Redis rate limit unavailable');
+    else console.error('Redis rate limit error, allowing request:', error);
+    return unavailable();
   }
 }
 

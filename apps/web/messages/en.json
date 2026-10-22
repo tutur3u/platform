@@ -17168,6 +17168,22 @@
     "join_waitlist": "Join waitlist",
     "title": "Ready to get started?"
   },
+  "sso_consent": {
+    "approve": "Approve and continue",
+    "authentication_required": "Sign in again and verify a current authenticator before continuing. Access also requires current workspace membership and an explicit assignment.",
+    "continue": "Continue to the service",
+    "denied": "Identity sharing was denied.",
+    "deny": "Deny",
+    "description": "This service will receive the following identity attributes:",
+    "destination": "Sign in to {name}",
+    "each_login": "Approval applies to this sign-in only. No Tuturuuu access token is shared.",
+    "email": "Your verified email address (email)",
+    "first_name": "Your given name (firstName)",
+    "last_name": "Your family name (lastName)",
+    "sign_in": "Sign in and verify MFA",
+    "subject": "A stable identifier unique to this service (id)",
+    "title": "Share your identity"
+  },
   "storage-object-data-table": {
     "clear_files": "Clear files",
     "created_at": "Created at",

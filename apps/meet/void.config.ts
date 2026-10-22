@@ -1,6 +1,7 @@
 import { defineConfig } from 'void/config';
+import { meetStagingConfig } from './void.staging.config';
 
-export default defineConfig({
+const production = defineConfig({
   target: 'cloudflare',
   inference: {
     bindings: { db: false, kv: false, storage: false, ai: false, email: false },
@@ -79,3 +80,7 @@ export default defineConfig({
     ],
   },
 });
+
+export default process.env.MEET_DEPLOYMENT_PROFILE === 'staging'
+  ? meetStagingConfig()
+  : production;

@@ -150,6 +150,21 @@ const nextConfig = createTuturuuuNextConfig({
         source,
         headers: authShellHeaders,
       })),
+      ...['/sso/consent', '/:locale/sso/consent'].map((source) => ({
+        source,
+        headers: [
+          { key: 'Cache-Control', value: 'no-store' },
+          { key: 'CDN-Cache-Control', value: 'no-store' },
+          { key: 'Vercel-CDN-Cache-Control', value: 'no-store' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "frame-ancestors 'none'; form-action 'self'; base-uri 'self'",
+          },
+        ],
+      })),
     ];
   },
   async rewrites() {
