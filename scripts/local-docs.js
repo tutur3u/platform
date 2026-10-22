@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
+const { tmpdir } = require('node:os');
 const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -58,12 +59,18 @@ function main(argv = process.argv.slice(2)) {
     console.log(JSON.stringify(plan));
     return;
   }
-  const result = spawnSync(plan.executable, plan.args, {
-    cwd: plan.cwd,
-    stdio: 'inherit',
-  });
-  if (result.error) throw result.error;
-  process.exitCode = result.status ?? 1;
+  const prefix = fs.mkdtempSync(path.join(tmpdir(), 'mintlify-npm-'));
+  try {
+    const result = spawnSync(
+      plan.executable,
+      ['--prefix', prefix, ...plan.args],
+      { cwd: plan.cwd, stdio: 'inherit' }
+    );
+    if (result.error) throw result.error;
+    process.exitCode = result.status ?? 1;
+  } finally {
+    fs.rmSync(prefix, { recursive: true, force: true });
+  }
 }
 
 module.exports = { command, main };

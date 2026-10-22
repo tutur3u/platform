@@ -138,6 +138,8 @@ it('restores recovery for stalled muted video and clears it when frames resume',
 it('cancels frame observation on unmount', () => {
   const { unmount } = render(tile(makeStream()));
   expect(frames.size).toBe(1);
+  // jsdom queues the media element volumechange event with setImmediate.
+  act(() => vi.advanceTimersByTime(0));
   unmount();
   expect(frames.size).toBe(0);
   expect(vi.getTimerCount()).toBe(0);
