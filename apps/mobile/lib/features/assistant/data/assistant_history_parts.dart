@@ -11,7 +11,11 @@ List<AssistantMessagePart> restoreAssistantHistoryParts(
           metadata?['metadata'] is Map<String, dynamic>
       ? metadata!['metadata'] as Map<String, dynamic>
       : metadata;
-  final ordered = historyMetadata?['parts'];
+  final ai = historyMetadata?['ai'];
+  final canonical = ai is Map<String, dynamic> ? ai['parts'] : null;
+  final ordered = canonical is List && canonical.isNotEmpty
+      ? canonical
+      : historyMetadata?['parts'];
   if (ordered is List && ordered.isNotEmpty) {
     final parsed = <AssistantMessagePart>[];
     for (final raw in ordered) {
@@ -20,6 +24,25 @@ List<AssistantMessagePart> restoreAssistantHistoryParts(
         break;
       }
       final map = Map<String, dynamic>.from(raw);
+      if (map['type'] == 'text' &&
+          (map.containsKey('textStart') || map.containsKey('textLength'))) {
+        if (map['textStart'] is! int ||
+            map['textLength'] is! int ||
+            content == null) {
+          parsed.clear();
+          break;
+        }
+        final start = map['textStart'] as int;
+        final length = map['textLength'] as int;
+        if (start < 0 ||
+            length < 0 ||
+            start > content.length ||
+            length > content.length - start) {
+          parsed.clear();
+          break;
+        }
+        map['text'] = content.substring(start, start + length);
+      }
       const stringFields = [
         'text',
         'toolName',

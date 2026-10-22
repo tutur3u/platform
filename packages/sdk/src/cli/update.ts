@@ -71,12 +71,14 @@ export async function checkForCliUpdate({
   fetch = globalThis.fetch,
   now = new Date(),
   stderr = process.stderr,
+  quiet = false,
 }: {
   config: CliConfig;
   currentVersion: string;
   fetch?: typeof globalThis.fetch;
   now?: Date;
   stderr?: StderrLike;
+  quiet?: boolean;
 }): Promise<CliConfig> {
   const checkedAt = now.toISOString();
 
@@ -111,7 +113,11 @@ export async function checkForCliUpdate({
     const payload = (await response.json()) as NpmLatestPayload;
     const latestVersion = payload.version;
 
-    if (latestVersion && compareVersions(latestVersion, currentVersion) > 0) {
+    if (
+      !quiet &&
+      latestVersion &&
+      compareVersions(latestVersion, currentVersion) > 0
+    ) {
       stderr.write(
         [
           `A new Tuturuuu CLI version is available: ${currentVersion} -> ${latestVersion}`,

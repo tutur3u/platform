@@ -1816,7 +1816,7 @@ policy. Rerunning an older workflow revision does not backport the policy. If th
 candidate has no run with this protection, stop promotion and obtain an authorized
 qualification path for that exact source; do not substitute newer-head evidence.
 
-The explicit PR exceptions are `colab-cloudflare.yaml`,
+The explicit PR exceptions are `desktop-beta.yaml`, `colab-cloudflare.yaml`,
 `coordination-cloudflare.yaml`, `cron-control-cloudflare.yaml`,
 `devbox-control-cloudflare.yaml`, `lettin-cloudflare.yaml`, `meet-cloudflare.yaml`
 and `parley-cloudflare.yaml`, which combine validation with production deployment;
@@ -1871,7 +1871,12 @@ checks main/PR supersession, non-cancelling production/release-please pushes,
 SHA/run/attempt isolation for protected pushes, reruns and dispatches, and negative
 controls for the former main policy and missing isolation guards.
 `scripts/ci/production-preflight-consolidation.test.js`
-executes the shared PR release check and validates the reduced job graph.
+executes the shared PR release check and validates the reduced job graph. Meet
+validation also depends on the production policy: consolidation reads both
+`should_run` and `run_checks` from `check-ci` while retaining explicit successful
+policy admission before production credentials can be used. A skipped policy on
+PR/main must not skip validation; a failed or held production policy must block it.
+Credential regressions live in `scripts/ci/production-publisher-secrets.test.js`.
 
 
 ### Calendar scheduling startup requests

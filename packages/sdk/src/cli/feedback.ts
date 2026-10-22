@@ -7,6 +7,8 @@ import {
 import { z } from 'zod';
 import type { TuturuuuUserClient } from '../platform';
 import type { FlagValue } from './args';
+import { readCommandConfig } from './command-config';
+import type { CliConfig } from './config';
 import type { HelpTopic } from './help-format';
 
 export const feedbackHelp: HelpTopic = {
@@ -48,8 +50,14 @@ const detail = metadata.extend({
   updatedAt: z.iso.datetime({ offset: true }),
   capabilities: z.object({ canManage: z.literal(false) }),
 });
-const invalid = () =>
-  new Error('feedback_invalid_arguments: use ttr feedback --help');
+class FeedbackPreflightError extends Error {
+  constructor(readonly status: 400 | 401) {
+    super(
+      status === 400 ? 'feedback_invalid_arguments' : 'feedback_unauthorized'
+    );
+  }
+}
+const invalid = () => new FeedbackPreflightError(400);
 
 export function validateFeedbackCommand(
   positionals: string[],
@@ -179,18 +187,45 @@ function safeMetadata(item: z.infer<typeof metadata>) {
     revision: item.revision,
   };
 }
-export interface FeedbackCommandInput {
-  client: Pick<TuturuuuUserClient, 'getClientOptions'>;
+interface FeedbackCommandArguments {
   positionals: string[];
   flags: Record<string, FlagValue>;
   json: boolean;
+  argv?: string[];
+}
+type FeedbackClient = Pick<TuturuuuUserClient, 'getClientOptions'>;
+export type FeedbackCommandInput = FeedbackCommandArguments &
+  (
+    | { client: FeedbackClient }
+    | { createClient: () => Promise<FeedbackClient> }
+  );
+
+export async function runFeedbackCli(
+  input: FeedbackCommandArguments,
+  createClient: (config: CliConfig) => FeedbackClient
+) {
+  return runFeedbackCommand({
+    ...input,
+    createClient: async () => {
+      const config = await readCommandConfig(input.flags);
+      if (!config.session?.accessToken || !config.session.refreshToken)
+        throw new FeedbackPreflightError(401);
+      return createClient(config);
+    },
+  });
 }
 export async function runFeedbackCommand(input: FeedbackCommandInput) {
-  const parsed = validateFeedbackCommand(input.positionals, input.flags);
   let output: unknown;
   try {
+    const parsed = validateFeedbackCommand(
+      input.positionals,
+      input.flags,
+      input.argv
+    );
+    const client =
+      'client' in input ? input.client : await input.createClient();
     // Public host/refresh/Bearer transport. No local eligibility or workspace gate.
-    const options = input.client.getClientOptions();
+    const options = client.getClientOptions();
     if (parsed.action === 'list') {
       const page = z
         .object({
@@ -219,7 +254,8 @@ export async function runFeedbackCommand(input: FeedbackCommandInput) {
     }
   } catch (error) {
     const status =
-      error instanceof InternalApiError &&
+      (error instanceof FeedbackPreflightError ||
+        error instanceof InternalApiError) &&
       [400, 401, 403, 404, 503].includes(error.status)
         ? error.status
         : 503;
@@ -230,9 +266,19 @@ export async function runFeedbackCommand(input: FeedbackCommandInput) {
       404: 'feedback_not_found',
       503: 'feedback_unavailable',
     };
-    const code = codes[status] ?? 'feedback_unavailable';
+    const code =
+      error instanceof FeedbackPreflightError
+        ? error.message
+        : (codes[status] ?? 'feedback_unavailable');
     // Never forward provider messages, bodies, URLs, stack traces or debug packets.
-    throw new Error(`${code} (${status})`);
+    const message = `${code} (${status})`;
+    // The CLI entrypoint writes the error message once to stderr and exits 1.
+    // JSON errors use the same fixed projection as human errors.
+    throw new Error(
+      input.json
+        ? JSON.stringify({ error: { code, status, message } })
+        : message
+    );
   }
   process.stdout.write(
     `${input.json ? JSON.stringify(output, null, 2) : formatFeedbackOutput(output)}\n`

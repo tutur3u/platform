@@ -177,11 +177,16 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Setup Bun for rendered translation tracing
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.3
+
       - name: Run namespace check
         id: namespace-check
         run: |
           set +e
-          namespace_output=$(node scripts/i18n-namespace-check.js 2>&1)
+          namespace_output=$({ bun scripts/i18n-rendered-keys.js && node scripts/i18n-namespace-check.js; } 2>&1)
           namespace_exit_code=$?
           set -e
 

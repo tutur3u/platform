@@ -304,14 +304,33 @@ authentication dependency; a gateway 403 does not mean Google search is down.
 Assistant history stores the ordered provider content for every generation step in
 `metadata.ai.parts`. Tool results update their original call slot, including failed
 and unfinished calls; they do not move to completion order. The message content
-column contains all text segments in order. History loading prefers these canonical
-parts over legacy text/tool arrays, and only adjacent tool activity is grouped.
-When metadata must be compacted, text spans reference the content column and tool
-payload previews shrink while later timeline entries remain present. The fallback
-omits the detailed context breakdown to prioritize conversation history. The
-current schema allows 10 MiB of AI message metadata and exempts message content
-from generic short-text limits. Old records
-that already lost interleaving cannot have their original chronology reconstructed.
+column contains text segments in order, up to its database limit of 10,000 Unicode
+characters and 40,000 bytes. Longer completed replies retain their full text in
+`metadata.ai.parts`, with `metadata.ai.contentTruncated=true` marking the bounded
+column as a preview. This applies to Web Mira and native mobile Assistant text
+conversations. Native Chat copies retain the same full parts and preview marker.
+History loading prefers canonical parts over legacy text/tool arrays, and only
+adjacent tool activity is grouped. Follow-ups restore the full assistant text;
+model preparation splits long assistant text into bounded parts without raising
+the user prompt limit. User message content never comes from this preview marker.
+
+When metadata must be compacted, text spans reference the content column only if
+that column contains the complete reply. Overflow text stays inline. Tool payload
+previews shrink while later timeline entries remain present; the fallback omits
+the detailed context breakdown. The current schema allows 10 MiB of AI message
+metadata. Persistence errors still fail the send; an emitted terminal event alone
+is not evidence of a saved reply. Old records that already lost text or
+interleaving cannot have their original content reconstructed.
+
+Regression evidence: `stream-finish-reopen.test.ts` enforces the content limits;
+`assistant-followup-context.test.ts` retains full generated context and rejects an
+oversized user prompt. `native-ai-reopen.test.ts` exercises save, history GET,
+follow-up, and history GET with the real finish saver and model preparation.
+Mobile `assistant_history_ai_parts_test.dart` covers canonical parts and compact
+offsets; `assistant_chat_persistence_contract_test.dart` covers creation, two sends,
+fresh-repository reloads, saved replies, attachment ownership, and request identity.
+These use database/provider fixtures. Authenticated Web and installed Android/iOS
+verification with real attachments and a provider remains a release check.
 
 Explicit requests to show tasks, calendar, finance, or meetings activate the native
 artifact opener directly. Follow-ups such as "show it in an artifact" use recent

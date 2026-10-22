@@ -1,4 +1,7 @@
+import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
+
 export const ci = {
+  'sso-persistence-contract.yaml': true,
   'employee-schema-contract.yaml': true,
   'actions-storage-report.yaml': true,
   'biome-check.yaml': true,
@@ -106,3 +109,12 @@ export const ci = {
   'desktop-store-draft.yaml': true,
   'mobile-build-linux.yaml': true,
 };
+
+// Publication only: native build and original/restored acceptance remain enabled.
+// Admit each app only in an explicitly reviewed wave-1 cutover PR.
+export const productionPublicationPolicy = {
+  meet: { state: 'held', reason: 'held for wave-1 cutover' },
+  calendar: { state: 'held', reason: 'held for wave-1 cutover' },
+  mail: { state: 'held', reason: 'held for wave-1 cutover' },
+  apps: { state: 'held', reason: 'held for wave-1 cutover' },
+} satisfies ProductionPublicationPolicy;

@@ -20733,6 +20733,8 @@
     "manage_payroll_description": "Cho phép thành viên tạo, phê duyệt và hoàn tất các đợt thanh toán lương.",
     "manage_projects": "Quản lý dự án",
     "manage_projects_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa dự án trong không gian làm việc.",
+    "manage_sso_clients": "Quản lý ứng dụng SSO bên ngoài",
+    "manage_sso_clients_description": "Cấu hình ứng dụng SAML của không gian làm việc và chỉ định thành viên được đăng nhập.",
     "manage_subscription": "Quản lý đăng ký",
     "manage_subscription_description": "Cho phép thành viên xem, quản lý và cập nhật thông tin đăng ký và thanh toán của không gian làm việc.",
     "manage_time_tracking_requests": "Quản lý các yêu cầu theo dõi thời gian",

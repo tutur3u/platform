@@ -84,6 +84,11 @@ export default async function DownloadPage() {
                     <Download className="size-4" aria-hidden="true" />
                     {t('download_for', { platform: t(`${platform}.name`) })}
                   </a>
+                  {platform === 'windows' && (
+                    <p className="mt-3 text-muted-foreground text-xs">
+                      {t('windows.installation')}
+                    </p>
+                  )}
                   <p className="mt-3 text-muted-foreground text-xs">
                     {t('package_size', {
                       size: Math.ceil(download.size / 1024 / 1024),

@@ -69,6 +69,7 @@ const serialized = [
 ];
 // Exceptions retain environment locks, bounded sandbox cleanup, or paused runtimes.
 const prExceptions = {
+  'desktop-beta.yaml': 'Production publication shares the workflow lock',
   'colab-cloudflare.yaml': 'Production deployment shares the workflow lock',
   'coordination-cloudflare.yaml':
     'Production deployment shares the workflow lock',

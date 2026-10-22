@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const gate = readWorkflow('ci-check.yml');
@@ -40,36 +41,66 @@ test('Cloudflare release relevance shares the existing config job and gates vali
     );
     assert.equal(workflow.jobs['check-ci'].with.check_pr_release_only, true);
     assert.equal(workflow.jobs['check-ci'].with.workflow_name, file);
-    assert.deepEqual(workflow.jobs.validate.needs, ['check-ci']);
-    assert.equal(
+    assert.deepEqual(
+      workflow.jobs.validate.needs,
+      app === 'meet' ? ['check-ci', 'production-policy'] : ['check-ci']
+    );
+    assert.match(
       workflow.jobs.validate.if,
-      "needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'"
+      /needs\.check-ci\.outputs\.should_run == 'true'/
     );
-    const condition = workflow.jobs.validate.if.replaceAll(
-      'needs.check-ci',
-      "needs['check-ci']"
+    assert.match(
+      workflow.jobs.validate.if,
+      /needs\.check-ci\.outputs\.run_checks == 'true'/
     );
+    const condition = workflow.jobs.validate.if
+      .replace(/^\s*\$\{\{\s*|\s*\}\}\s*$/g, '')
+      .replace(/needs\.([\w-]+)/g, 'needs["$1"]');
     for (const [shouldRun, runChecks, expected] of [
       ['true', 'true', true],
       ['false', 'true', false],
       ['true', 'false', false],
     ]) {
-      assert.equal(
-        Function(
-          'needs',
-          `return (${condition})`
-        )({
-          'check-ci': {
-            outputs: { should_run: shouldRun, run_checks: runChecks },
-          },
-        }),
-        expected
-      );
+      for (const ref of ['refs/heads/main', 'refs/heads/production']) {
+        for (const allowed of ['true', 'false', '', undefined]) {
+          assert.equal(
+            vm.runInNewContext(
+              condition,
+              {
+                github: { ref },
+                cancelled: () => false,
+                needs: {
+                  'check-ci': {
+                    result: 'success',
+                    outputs: { should_run: shouldRun, run_checks: runChecks },
+                  },
+                  'production-policy': {
+                    result: 'success',
+                    outputs: { allowed },
+                  },
+                },
+              },
+              { timeout: 100 }
+            ),
+            expected &&
+              (app !== 'meet' ||
+                ref !== 'refs/heads/production' ||
+                allowed === 'true')
+          );
+        }
+      }
     }
-    assert.equal(workflow.jobs.deploy.needs, 'validate');
+    assert.deepEqual(
+      workflow.jobs.deploy.needs,
+      app === 'meet'
+        ? ['validate', 'restored-artifact', 'production-policy']
+        : 'validate'
+    );
     assert.equal(
       workflow.jobs.deploy.if,
-      "github.ref == 'refs/heads/production'"
+      app === 'meet'
+        ? "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
+        : "github.ref == 'refs/heads/production'"
     );
     assert.equal(
       planner.jobs[`deploy-${app}-cloudflare`].uses,

@@ -245,6 +245,7 @@
     "create_workspace_description": "Create a workspace to organize your team, projects, and planning data.",
     "create_workspace_upgrade_notice": "Workspace limits depend on your current plan.",
     "current_workspace": "Current workspace",
+    "dark": "Dark",
     "dashboard": "Dashboard",
     "default_workspace": "Default workspace",
     "error": "Something went wrong",
@@ -253,6 +254,8 @@
     "expanded": "Expanded",
     "feedback": "Feedback",
     "get-started": "Get started",
+    "guest_access": "Guest access",
+    "hidden": "Hidden",
     "hidden_workspaces": "Hidden workspaces",
     "hidden_workspaces_description": "Only you can see this list. Restore a workspace to show it in your workspace lists. Your access and other members are unchanged.",
     "hidden_workspaces_empty": "You have no Hidden workspaces",
@@ -260,15 +263,19 @@
     "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
     "hide_sidebar": "Hide sidebar",
     "hide_workspace": "Hide workspace",
+    "home": "Home",
     "join_workspace": "Join workspace",
     "join_workspace_action": "Join",
     "join_workspace_by_slug_description": "Enter a workspace slug to request access or accept an invitation.",
     "join_workspace_success": "Joined workspace",
     "language": "Language",
+    "light": "Light",
     "loading": "Loading",
     "logout": "Log out",
     "media-alt": "Media {number}",
     "media-optional": "Media optional",
+    "members": "Members",
+    "no_results_found": "No results found",
     "no_workspace_found": "No workspaces found",
     "personal_account": "Personal account",
     "public_profile": "Public profile",
@@ -279,6 +286,7 @@
     "retry": "Retry",
     "root": "Root",
     "search_workspace": "Search workspaces",
+    "select_workspace": "Select workspace",
     "select-product-placeholder": "Select product...",
     "settings": "Settings",
     "sidebar": "Sidebar",
@@ -788,7 +796,11 @@
     "read_only_description": "You can review these settings, but a workspace manager is required to change them.",
     "title": "Workspace"
   },
+  "search": {
+    "search": "Search"
+  },
   "settings": {
+    "back_to_app": "Back to app",
     "keyboard_shortcuts": {
       "calendar_agenda": "Agenda view",
       "calendar_day": "Day view",
@@ -812,11 +824,13 @@
       "settings_dialog": "Settings dialog",
       "toggle_sidebar": "Expand or collapse sidebar"
     },
+    "manage_settings": "Manage your {label} settings",
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "sidebar_hidden": "Hidden"
-    }
+    },
+    "search_settings_placeholder": "Search settings..."
   },
   "version-badge": {
     "app": "App",

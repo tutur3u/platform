@@ -49,3 +49,16 @@ Developers changing translations regenerate localization before analysis/tests.
 Native app work does not require the paused Rust/TanStack Start runtime or the
 retired Docker cron runner. Database-dependent test fixtures still need an
 appropriate isolated environment; see [Without Docker](/build/development-tools/without-docker).
+
+## Desktop beta downloads
+
+The same Flutter app ships through the [desktop beta channel](/build/devops/desktop-beta-distribution)
+for Windows x64, macOS, and Linux. The 2026-10-22 policy permits unsigned Windows
+direct-download installers when both signing secrets are absent. The download
+page and release notes disclose SmartScreen warnings and checksum verification.
+Configured signing failures block the Windows package. macOS still requires
+Developer ID signing and notarization; the Microsoft Store channel is separate.
+Windows in-app updates retain their publisher-signature checks, so unsigned
+betas use manual verified-installer updates. Packaging and receipt regressions
+are covered by `scripts/desktop-deployment/windows-signing.test.mjs` and
+`verify-publication.test.mjs`; native Windows acceptance remains a release gate.
