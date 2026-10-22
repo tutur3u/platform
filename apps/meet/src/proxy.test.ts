@@ -146,6 +146,32 @@ describe('Meet proxy auth handoff', () => {
     );
   });
 
+  it.each([503, 403])(
+    'returns terminal auth %i before locale, workspace or invite handling',
+    async (status) => {
+      const terminal = NextResponse.json(
+        { error: 'unavailable' },
+        {
+          status,
+          headers: { 'cache-control': 'no-store' },
+        }
+      );
+      mocks.authProxy.mockResolvedValue(terminal);
+      const response = await proxy(
+        new NextRequest('https://meet.tuturuuu.com/en/personal/meetings', {
+          headers: { cookie: 'meet_pending_invite=/r/invite' },
+        })
+      );
+      expect(response).toBe(terminal);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(response.headers.get('location')).toBeNull();
+      expect(mocks.getAppSessionClaimsFromRequest).not.toHaveBeenCalled();
+      expect(mocks.getCurrentUserDefaultWorkspace).not.toHaveBeenCalled();
+      expect(mocks.getRequestHeadersWithResponseCookies).not.toHaveBeenCalled();
+    }
+  );
+
   it('resumes a pending invite when authentication returns to the home page', async () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue({ sub: 'user' });
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);

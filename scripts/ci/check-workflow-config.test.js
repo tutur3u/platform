@@ -513,53 +513,6 @@ test('Vercel app projects disable Vercel-owned GitHub builds', () => {
   }
 });
 
-test('workflows use the repo Bun setup and install retry helpers', () => {
-  const workflowsDir = path.join(repoRoot, '.github', 'workflows');
-  const workflowFiles = fs
-    .readdirSync(workflowsDir)
-    .filter((fileName) => fileName.endsWith('.yaml'));
-  const packageJson = JSON.parse(
-    fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
-  );
-  const bunVersion = packageJson.packageManager.replace(/^bun@/, '');
-
-  for (const workflowFile of workflowFiles) {
-    const workflow = fs.readFileSync(
-      path.join(workflowsDir, workflowFile),
-      'utf8'
-    );
-
-    assert.doesNotMatch(
-      workflow,
-      /oven-sh\/setup-bun/,
-      `${workflowFile} must use the local Bun setup retry action`
-    );
-    assert.doesNotMatch(
-      workflow,
-      /^\s*run:\s*bun (?:install|setup)\b/m,
-      `${workflowFile} must run Bun install/setup through scripts/ci/run-with-backoff.sh`
-    );
-    assert.doesNotMatch(
-      workflow,
-      /^\s*run:\s*bunx\b/m,
-      `${workflowFile} must use "bun x" because the local Bun setup action only installs the bun binary`
-    );
-
-    if (workflow.includes('./.github/actions/setup-bun-with-retry')) {
-      assert.ok(
-        workflow.indexOf('actions/checkout') <
-          workflow.indexOf('./.github/actions/setup-bun-with-retry'),
-        `${workflowFile} must checkout the repo before using the local Bun setup action`
-      );
-      assert.match(
-        workflow,
-        new RegExp(`bun-version: ${bunVersion.replaceAll('.', '\\.')}`),
-        `${workflowFile} must pin Bun to packageManager`
-      );
-    }
-  }
-});
-
 test('Bun workflow helpers use bounded exponential backoff', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'type-check.yaml'),

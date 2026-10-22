@@ -69,7 +69,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.1
+          bun-version: 1.4.3
 
       - name: Restore Turbo fallback cache
         uses: ./.github/actions/setup-turbo-fallback-cache

@@ -1,4 +1,4 @@
-import { collaborationTicketSchema } from '../../../packages/realtime/src/collaboration';
+import { collaborationTicketSchema } from '@tuturuuu/realtime/collaboration/server';
 import { verifyRealtimePayload } from '../../../packages/realtime/src/core/token';
 import type { CollaborationRoomEnv } from './collaboration-room-do';
 export async function collaborationRequest(

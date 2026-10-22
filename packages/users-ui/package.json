@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
-  "packageManager": "bun@1.4.1",
+  "packageManager": "bun@1.4.3",
   "dependencies": {
     "@tanstack/react-query": "^5.102.8",
     "@tuturuuu/icons": "workspace:*",

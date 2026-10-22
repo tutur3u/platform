@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import { safeFixtureFailure } from './mail-profile-runtime.mjs';
 import {
+  nextTimingObservations,
   observeFixtureFailure,
   privateStartupDiagnostics,
   readStageObservations,
@@ -188,6 +189,12 @@ test('read stages retain fixed observations without private log text', () => {
       completed: 1,
       failed: 0,
       lastStatus: 'completed',
+      elapsedMs: {
+        observedCount: 1,
+        maxMs: 2,
+        absentCount: 0,
+        invalidCount: 0,
+      },
     },
     {
       stage: 'layout workspace',
@@ -195,6 +202,12 @@ test('read stages retain fixed observations without private log text', () => {
       completed: 0,
       failed: 1,
       lastStatus: 'failed',
+      elapsedMs: {
+        observedCount: 1,
+        maxMs: 3,
+        absentCount: 0,
+        invalidCount: 0,
+      },
     },
   ]);
   for (const secret of ['private-value', '/secret/path', 'private.invalid']) {
@@ -259,3 +272,284 @@ test('owned Lettin log projects only safe stage counts', async () => {
     await fs.rm(reports, { recursive: true });
   }
 });
+
+test('terminal read timing distinguishes zero, absent, invalid and large values', () => {
+  const output = readStageObservations(
+    [
+      '[lettin-read] profile actor completed { elapsedMs: 0 }',
+      '[lettin-read] profile actor completed { elapsedMs: 999999999999 }',
+      '[lettin-read] profile actor completed',
+      ...['-1', '1000000000000', 'NaN', '1.5', '1e3', '1.0'].map(
+        (value) => `[lettin-read] profile actor failed { elapsedMs: ${value} }`
+      ),
+    ].join('\n')
+  );
+  assert.equal(output.events, 9);
+  assert.equal(output.stages[0].failed, 6);
+  assert.equal(output.stages[0].lastStatus, 'failed');
+  assert.deepEqual(output.stages[0].elapsedMs, {
+    observedCount: 2,
+    maxMs: 999999999999,
+    absentCount: 1,
+    invalidCount: 6,
+  });
+  const zero = readStageObservations(
+    '[lettin-read] profile worlds failed { elapsedMs: 0 }'
+  );
+  assert.equal(zero.stages[0].elapsedMs.maxMs, 0);
+  assert.equal(zero.stages[0].failed, 1);
+  const missing = readStageObservations('[lettin-read] profile worlds failed');
+  assert.equal(missing.stages[0].elapsedMs.maxMs, null);
+  assert.equal(missing.stages[0].elapsedMs.absentCount, 1);
+});
+
+test('interleaved reads retain independent maxima without correlation or sums', () => {
+  const output = readStageObservations(
+    [
+      '[lettin-read] profile actor started',
+      '[lettin-read] layout session started',
+      '[lettin-read] profile actor started',
+      '[lettin-read] layout session completed { elapsedMs: 30 }',
+      '[lettin-read] profile actor failed { elapsedMs: 40 }',
+      '[lettin-read] profile actor completed { elapsedMs: 20 }',
+    ].join('\n')
+  );
+  assert.equal(output.requestAttribution, 'unavailable');
+  assert.equal(output.stages[0].elapsedMs.maxMs, 40);
+  assert.equal(output.stages[0].elapsedMs.observedCount, 2);
+  assert.equal(output.stages[0].failed, 1);
+  assert.equal(output.stages[1].elapsedMs.maxMs, 30);
+  for (const stage of output.stages) {
+    assert.equal('totalMs' in stage.elapsedMs, false);
+    assert.equal('requestId' in stage, false);
+  }
+});
+
+test('Next emitter grammar distinguishes compiler duration, readiness and prose', () => {
+  const output = nextTimingObservations(
+    [
+      '○ Compiling /[locale]/[wsId]/profile ...',
+      '✓ Compiled in 51.4s',
+      '\x1b[32m\x1b[1m✓\x1b[22m\x1b[39m Ready in 1500ms',
+      '✓ Ready in 2.5min',
+      '✓ Compiled in 0ms',
+      'incidental prose: Compiled in 52s',
+      ' GET /profile 200 in 51s',
+      'Ready',
+    ].join('\n')
+  );
+  assert.equal(output.events, 5);
+  assert.equal(output.state, 'observed');
+  assert.equal(output.requestAttribution, 'unavailable');
+  assert.equal(output.profileAttribution, 'unavailable');
+  assert.equal(output.stages[0].stage, 'compilation-started');
+  assert.equal(output.stages[0].elapsedMs.maxMs, null);
+  assert.equal(output.stages[1].elapsedMs.observedCount, 2);
+  assert.equal(output.stages[1].elapsedMs.maxMs, 51400);
+  assert.equal(output.stages[2].stage, 'framework-ready');
+  assert.equal(output.stages[2].elapsedMs.maxMs, 150000);
+  assert.equal(JSON.stringify(output).includes('/profile'), false);
+});
+
+test('timing parsers reject unknown stages, adjacent payloads and unknown formats', () => {
+  const secret = 'https://private.invalid/?token=private-value';
+  const reads = readStageObservations(
+    [
+      '[lettin-read] secret stage completed { elapsedMs: 51 }',
+      `[lettin-read] profile actor completed { elapsedMs: 51 } ${secret}`,
+      `[lettin-read] profile actor failed { elapsedMs: 1, token: '${secret}' }`,
+    ].join('\n')
+  );
+  const next = nextTimingObservations(
+    [
+      `✓ Compiled in 51s ${secret}`,
+      `✓ Ready in 1ms ${secret}`,
+      `○ Compiling ${secret} ...`,
+      `prefix ${secret} ✓ Compiled in 51s`,
+      'Compiled profile in 51s',
+      '✓ Compiled in -1ms',
+      '✓ Compiled in NaNs',
+      '✓ Compiled in 9999999999999ms',
+      ' GET /profile 200 in 51s',
+    ].join('\n')
+  );
+  assert.equal(reads.events, 0);
+  assert.equal(next.events, 0);
+  assert.equal(next.state, 'unknown');
+  assert.deepEqual(next.stages, []);
+  for (const output of [reads, next]) {
+    for (const value of ['private-value', 'private.invalid', 'secret stage']) {
+      assert.equal(JSON.stringify(output).includes(value), false);
+    }
+  }
+  const overflow = nextTimingObservations('✓ Compiled in 999999999999s');
+  assert.equal(overflow.stages[0].elapsedMs.invalidCount, 1);
+  assert.equal(overflow.stages[0].elapsedMs.maxMs, null);
+});
+
+test('compiler and read observations preserve both explanations without assigning blame', () => {
+  for (const [readMs, compilerLine, compileMs] of [
+    [2, '✓ Compiled in 51.4s', 51400],
+    [51400, ' GET /profile 200 in 52s', null],
+  ]) {
+    const input = `[lettin-read] profile actor completed { elapsedMs: ${readMs} }\n${compilerLine}`;
+    const read = readStageObservations(input);
+    const next = nextTimingObservations(input);
+    assert.equal(read.stages[0].elapsedMs.maxMs, readMs);
+    assert.equal(next.stages[0]?.elapsedMs.maxMs ?? null, compileMs);
+    assert.equal(next.state, compileMs === null ? 'unknown' : 'observed');
+    assert.equal(read.requestAttribution, 'unavailable');
+    assert.equal(next.profileAttribution, 'unavailable');
+    assert.equal('causeProven' in next, false);
+  }
+});
+
+test('fixed timing summaries retain tail and event limits within the byte cap', () => {
+  const read = readStageObservations(
+    Array(257)
+      .fill('[lettin-read] profile actor failed { elapsedMs: 999999999999 }')
+      .join('\n')
+  );
+  const next = nextTimingObservations(
+    Array(257).fill('✓ Compiled in 1ms').join('\n')
+  );
+  for (const output of [read, next]) {
+    assert.equal(output.events, 256);
+    assert.equal(output.eventsTruncated, true);
+    assert.equal(output.truncated, true);
+    assert.equal(output.summaryTruncated, false);
+    assert.ok(
+      Buffer.byteLength(JSON.stringify(output)) <= output.summaryByteLimit
+    );
+  }
+  assert.equal(read.stages[0].elapsedMs.observedCount, 256);
+  const partial = nextTimingObservations(
+    '✓ Compiled in 51s\n✓ Ready in 0ms',
+    true
+  );
+  assert.equal(partial.events, 1);
+  assert.equal(partial.stages[0].stage, 'framework-ready');
+  assert.equal(partial.tailTruncated, true);
+  const clipped = nextTimingObservations(
+    `${'x'.repeat(150000)}\n✓ Compiled in 1ms`
+  );
+  assert.equal(clipped.events, 1);
+  assert.equal(clipped.tailTruncated, true);
+});
+
+test('collector preserves safe missing, mode and hardlink outcomes', async () => {
+  const reports = await fs.mkdtemp(
+    path.join(os.tmpdir(), 'timing-input-gates-')
+  );
+  try {
+    let records = await privateStartupDiagnostics(reports, []);
+    assert.deepEqual(
+      records.map((record) => record.logRead),
+      ['not-created', 'not-created']
+    );
+    const web = path.join(reports, 'web-private.log');
+    await fs.writeFile(web, '✓ Compiled in 51s', { mode: 0o644 });
+    await fs.chmod(web, 0o644);
+    await fs.writeFile(
+      path.join(reports, 'lettin-private.log'),
+      '✓ Ready in 1ms',
+      { mode: 0o600 }
+    );
+    await fs.link(
+      path.join(reports, 'lettin-private.log'),
+      path.join(reports, 'linked')
+    );
+    records = await privateStartupDiagnostics(reports, []);
+    for (const record of records) {
+      assert.equal(record.logRead, 'unsafe-file-retained');
+      assert.equal(record.nextTiming, undefined);
+    }
+    await fs.chmod(web, 0o600);
+    records = await privateStartupDiagnostics(reports, []);
+    assert.equal(records[0].nextTiming.stages[0].elapsedMs.maxMs, 51000);
+    assert.equal(records[0].causeProven, false);
+  } finally {
+    await fs.rm(reports, { recursive: true });
+  }
+});
+
+test('unsafe owner and read failure never expose timing or error text', async () => {
+  for (const unsafeOwner of [true, false]) {
+    let reads = 0;
+    let closes = 0;
+    const opened = mock.method(fs, 'open', async () => ({
+      stat: async () => ({
+        isFile: () => true,
+        nlink: 1,
+        uid: process.getuid() + Number(unsafeOwner),
+        mode: 0o600,
+        size: 20,
+      }),
+      read: async () => {
+        reads += 1;
+        throw new Error('token=private-value');
+      },
+      close: async () => {
+        closes += 1;
+      },
+    }));
+    try {
+      const records = await privateStartupDiagnostics('/unused', []);
+      assert.equal(reads, unsafeOwner ? 0 : 2);
+      assert.equal(closes, 2);
+      for (const record of records) {
+        assert.equal(
+          record.logRead,
+          unsafeOwner ? 'unsafe-file-retained' : 'private-read-failed'
+        );
+        assert.equal(record.nextTiming, undefined);
+        assert.equal(record.readStages, undefined);
+      }
+      assert.equal(JSON.stringify(records).includes('private-value'), false);
+    } finally {
+      opened.mock.restore();
+    }
+  }
+});
+
+test('installed webpack bundled timing remains distinct from compilation completion', () => {
+  const output = nextTimingObservations(
+    [
+      '  bundled /profile in 51.4s (123 modules), type checking...',
+      '  bundled /login in 2ms, type checking...',
+      '  bundled /secret?token=private-value in 1ms, type checking...',
+      '  bundled /profile in 1ms (123 modules), type checking... private-value',
+    ].join('\n')
+  );
+  assert.equal(output.events, 2);
+  assert.equal(output.stages.length, 1);
+  assert.equal(output.stages[0].stage, 'bundled-typechecking');
+  assert.equal(output.stages[0].elapsedMs.maxMs, 51400);
+  assert.equal(output.profileAttribution, 'unavailable');
+  assert.equal(JSON.stringify(output).includes('private-value'), false);
+  assert.equal(JSON.stringify(output).includes('/profile'), false);
+});
+
+for (const [stage, prefix, suffix] of [
+  ['compilation-completed', '✓ Compiled in ', ''],
+  ['framework-ready', '✓ Ready in ', ''],
+  ['bundled-typechecking', '  bundled /profile in ', ', type checking...'],
+]) {
+  test(`${stage} retains exact decimal seconds and advances a preceding maximum`, () => {
+    for (const preceding of [[], [`${prefix}2ms${suffix}`]]) {
+      const output = nextTimingObservations(
+        [...preceding, `${prefix}32.3s${suffix}`].join('\n')
+      );
+      assert.equal(output.events, preceding.length + 1);
+      assert.equal(output.stages.length, 1);
+      assert.equal(output.stages[0].stage, stage);
+      assert.equal(output.stages[0].count, preceding.length + 1);
+      assert.deepEqual(output.stages[0].elapsedMs, {
+        observedCount: preceding.length + 1,
+        maxMs: 32300,
+        absentCount: 0,
+        invalidCount: 0,
+      });
+    }
+  });
+}

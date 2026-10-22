@@ -8,7 +8,7 @@ import {
   mergeRunnerFiles,
   programmingDocumentSnapshot,
   Y,
-} from '../../../packages/realtime/src/collaboration';
+} from '@tuturuuu/realtime/collaboration/server';
 import {
   planRetryReservation,
   type RetryBudget,

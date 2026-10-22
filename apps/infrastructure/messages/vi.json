@@ -8793,7 +8793,7 @@
       "advanced": "Khôi phục nâng cao",
       "checking": "Đang kiểm tra khả năng tạo tài khoản…",
       "close": "Đóng",
-      "confirming": "Đang tạo tài khoản. Vui lòng đợi xác nhận tài khoản sẵn sàng…",
+      "confirming": "Đang kiểm tra kết quả của yêu cầu ban đầu…",
       "conflict": "Địa chỉ hoặc yêu cầu này cần quản trị viên xem xét. Liên hệ quản trị viên trước khi thử lại.",
       "created": "Tài khoản nhân viên đã được xác nhận và sẵn sàng đăng nhập.",
       "denied": "Chưa thể hoàn tất yêu cầu này. Kiểm tra thông tin bên dưới hoặc liên hệ quản trị viên để được hỗ trợ.",
@@ -8806,7 +8806,16 @@
       "password": "Mật khẩu tạm thời",
       "password_help": "Dùng 12–72 ký tự gồm chữ thường, chữ hoa, số và ký hiệu. Lưu hoặc sao chép an toàn trước khi tạo; trường này sẽ được xóa sau khi gửi.",
       "password_strength": "Bổ sung đủ chữ thường, chữ hoa, chữ số và ký hiệu; dùng 12–72 ký tự.",
+      "problems": {
+        "authorization": "Chưa thể xác nhận quyền của bạn. Yêu cầu ban đầu đã được lưu. Dùng phiên hiện có quyền để kiểm tra; không gửi yêu cầu khác.",
+        "invalid_input": "Kiểm tra email nhân viên, họ tên và các yêu cầu về mật khẩu trước khi gửi.",
+        "not_admitted": "Lần thử này chưa bắt đầu tạo tài khoản. Yêu cầu ban đầu đã được lưu; các lần thử trước vẫn có thể cần xác nhận. Kiểm tra yêu cầu ban đầu trước khi thực hiện thao tác khác.",
+        "readiness_read_failed": "Chưa thể kiểm tra khả năng tạo tài khoản. Thử kiểm tra lại; thao tác này sẽ không gửi yêu cầu tạo tài khoản.",
+        "storage": "Chưa thể lưu hoặc đọc thông tin khôi phục yêu cầu. Thao tác tạo đã bị chặn. Giữ biểu mẫu này mở và liên hệ quản trị viên; không bắt đầu yêu cầu khác.",
+        "unknown": "Chưa thể xác nhận kết quả. Yêu cầu ban đầu của bạn đã được lưu. Không tạo yêu cầu khác."
+      },
       "refresh": "Làm mới danh bạ",
+      "retry_readiness": "Kiểm tra lại khả năng tạo",
       "stopped": "Chưa thể hoàn tất xác nhận tài khoản. Liên hệ quản trị viên trước khi thử lại.",
       "submit": "Tạo tài khoản",
       "submitting": "Đang gửi…",
@@ -8836,6 +8845,7 @@
         "title": "Khôi phục quyền truy cập?"
       },
       "generate_password": "Tạo mật khẩu",
+      "generate_password_failed": "Chưa thể tạo mật khẩu an toàn. Hãy nhập mật khẩu thủ công theo các yêu cầu bên dưới.",
       "hide_password": "Ẩn mật khẩu",
       "new_password": "Mật khẩu tạm thời mới",
       "optional_mfa": {
@@ -8884,6 +8894,7 @@
       "active_description": "Ẩn các tài khoản đã bị vô hiệu hóa quyền đăng nhập.",
       "active_only": "Chỉ tài khoản đang hoạt động",
       "description": "Cả hai bộ lọc an toàn đều được bật mặc định.",
+      "include_disabled": "Hiển thị cả tài khoản bị vô hiệu hóa",
       "title": "Lọc tài khoản",
       "verified_description": "Ẩn các tài khoản chưa xác nhận email.",
       "verified_only": "Chỉ tài khoản đã xác minh"
@@ -8932,6 +8943,7 @@
     },
     "restoration": {
       "advanced": "Khôi phục nâng cao",
+      "check_result": "Kiểm tra kết quả yêu cầu ban đầu",
       "close": "Đóng",
       "confirmation": "Xác nhận email tài khoản",
       "confirmation_help": "Nhập chính xác {email} để xác nhận tài khoản này.",
@@ -8941,7 +8953,7 @@
       "next": {
         "adoption_required": "Tài khoản cũ này cần quản trị viên hoàn tất chuyển đổi địa chỉ.",
         "creation_reconciliation_required": "Việc thiết lập tài khoản cần quản trị viên hỗ trợ trước khi khôi phục truy cập.",
-        "inspect": "Đang kiểm tra yêu cầu khôi phục trước đó. Xác nhận email để tiếp tục an toàn.",
+        "inspect": "Một yêu cầu khôi phục trước đó cần được kiểm tra. Đọc trạng thái hiện tại; không bắt đầu thao tác khôi phục khác.",
         "manual_review": "Liên hệ quản trị viên để xử lý tài khoản trước khi khôi phục truy cập.",
         "none": "Không cần khôi phục quyền truy cập.",
         "restore": "Xác nhận email bên dưới rồi khôi phục quyền truy cập."
@@ -8952,7 +8964,7 @@
       "outcomes": {
         "conflict": "Chưa thể xác minh tài khoản này. Đóng rồi mở lại biểu mẫu để kiểm tra. Nếu vẫn gặp lỗi, hãy liên hệ quản trị viên.",
         "denied": "Không thể xác nhận quyền của bạn. Mở lại trang bằng phiên hiện có quyền truy cập.",
-        "pending": "Chưa thể xác nhận quyền truy cập đã được khôi phục. Liên hệ quản trị viên nếu bạn vẫn không đăng nhập được.",
+        "pending": "Chưa thể xác nhận quyền truy cập đã được khôi phục. Đọc trạng thái hiện tại để kiểm tra yêu cầu ban đầu. Không bắt đầu thao tác khôi phục khác.",
         "restored": "Đã khôi phục truy cập. Tài khoản này có thể đăng nhập lại.",
         "unavailable": "Tạm thời không thể khôi phục truy cập. Liên hệ quản trị viên để được hỗ trợ."
       },
@@ -8981,6 +8993,7 @@
       },
       "restore": "Khôi phục truy cập",
       "retained_operation": "Thao tác đã lưu: {operationId}",
+      "revision_conflict": "Phiên bản tài khoản hoặc thao tác đã thay đổi. Yêu cầu ban đầu của bạn vẫn được giữ lại. Đọc trạng thái hiện tại; biểu mẫu này không thể gửi thêm thao tác khôi phục.",
       "title": "Quyền truy cập nhân viên được quản lý",
       "working": "Đang kiểm tra quyền truy cập…"
     },
