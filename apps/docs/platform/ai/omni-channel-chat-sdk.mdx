@@ -133,3 +133,26 @@ also normalizes supported media messages into Chat SDK attachments. The mirror
 stores those binaries in the workspace Drive provider, records only private
 attachment metadata, and serves authenticated links from the same conversation
 API used by native Chat attachments.
+
+## Inbound Attachment Download Limits
+
+External chat mirroring selects at most 10 attachments per message, processes them
+sequentially, and accepts at most 25 MiB of actual bytes per attachment. Generic
+attachment URL downloads and the concrete personal Zalo media callback enforce the
+limit while reading the response stream, including when Content-Length is missing
+or understates the body. Existing response-status checks and 30-second fetch
+signals remain in place. Empty bodies remain zero-byte attachment data.
+
+In-memory Buffer and Blob sizes are checked before copying or materializing their
+bytes. Other injected attachment callbacks are checked after returning; their
+internal work and allocations are outside this streamed-reader guarantee.
+
+Personal Zalo attachment downloads retain User-Agent but do not forward channel
+cookies to message-selected media URLs. Media that requires those cookies can fail
+closed. Provider/channel login remains unchanged. This policy does not establish a
+URL allowlist, redirect policy, DNS pinning or general SSRF protection; those need
+separate product admission.
+
+Regression coverage lives in `packages/utils/src/read-bounded-response.test.ts`,
+`packages/ai/src/chat-sdk/zalo-personal-attachment.test.ts` and
+`apps/web/src/lib/ai-agents/external-chat-attachment-limits.test.ts`.

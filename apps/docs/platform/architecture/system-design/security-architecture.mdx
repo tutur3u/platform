@@ -23,6 +23,20 @@ migration designs describe a possible future, not live traffic or a current
 setup requirement. See the [active runtime map](/build/devops/active-runtime).
 </Warning>
 
+## Calendar description parsing
+
+Shared browser Calendar descriptions use `sanitizeHtml` to parse input inside
+inert template content, then reconstruct only allowed tags, attributes and URLs.
+Original input nodes are never attached or returned. This applies wherever the
+shared sanitizer is called; permitted formatting and rejected-element text
+fallback remain the default, with no event-source exception.
+
+The custom-element regression in `html-sanitizer.test.ts` checks that parsing
+cannot run a rejected element's constructor and includes a working positive
+control. This is parser hardening, not proof of a reproduced stored-XSS exploit
+or deployed browser policy. Browser resource/error-handler behavior still needs
+its own contained verification.
+
 ## Plan-aware egress and abuse allowances
 
 When `SECURITY_EGRESS_ENFORCEMENT_ENABLED=true`, live Next.js uses Postgres-backed
