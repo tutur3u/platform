@@ -7,6 +7,7 @@ const {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } = require('node:fs');
 const { tmpdir } = require('node:os');
@@ -38,6 +39,7 @@ function fixture(t, policy) {
     'scripts/ci/wave1-native-profile.mjs',
     'scripts/ci/wave1-native-profiles.json',
     'scripts/ci/wave1-native-artifact.mjs',
+    'scripts/ci/mail-node-imports.mjs',
     'scripts/ci/calendar-native-inventory.mjs',
     'scripts/ci/production-test-only-paths.ts',
     'scripts/ci/workspace-dependency-closure.ts',
@@ -49,6 +51,12 @@ function fixture(t, policy) {
     mkdirSync(dirname(join(root, file)), { recursive: true });
     copyFileSync(join(repoRoot, file), join(root, file));
   }
+  // The Mail import scanner parses with the root acorn dependency.
+  symlinkSync(
+    join(repoRoot, 'node_modules'),
+    join(root, 'node_modules'),
+    'dir'
+  );
   if (policy !== undefined) {
     const config = join(root, 'tuturuuu.ci.ts');
     writeFileSync(
