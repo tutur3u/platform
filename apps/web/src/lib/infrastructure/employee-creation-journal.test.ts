@@ -404,17 +404,16 @@ describe('durable employee journal', () => {
     expect(
       await createEmployeeCreationJournal({ store: f.store }).available(actor)
     ).toBe(false);
-    await expect(run(createEmployeeCreationJournal({}))).rejects.toMatchObject({
-      code: 'unavailable',
+    expect(await run(createEmployeeCreationJournal({}))).toMatchObject({
+      status: 'not_admitted',
+      reason: 'unavailable',
     });
   });
   it('keeps unavailable provider from claiming or dispatching', async () => {
     const f = fixture();
     f.provider.available = async () => false;
     expect(await f.journal().available(actor)).toBe(false);
-    await expect(run(f.journal())).rejects.toMatchObject({
-      code: 'unavailable',
-    });
+    expect(await run(f.journal())).toHaveProperty('reason', 'unavailable');
     expect(f.snapshot()).toBeNull();
     expect(f.counts()).toEqual({ creates: 0, finalizes: 0, activates: 0 });
   });
@@ -474,16 +473,16 @@ describe('durable employee journal', () => {
     f.provider.available = async () => false;
     const first = observe(run(f.journal()));
     try {
-      await expect(admitted(gate.entered, first)).rejects.toMatchObject({
-        code: 'unavailable',
-      });
+      await expect(admitted(gate.entered, first)).rejects.toThrow(
+        'operation completed before admission'
+      );
     } finally {
       gate.release();
       await bounded(first);
     }
     expect(await first).toMatchObject({
-      kind: 'failure',
-      error: { code: 'unavailable' },
+      kind: 'success',
+      value: { status: 'not_admitted', reason: 'unavailable' },
     });
     expect(f.counts()).toEqual({ creates: 0, finalizes: 0, activates: 0 });
   });
