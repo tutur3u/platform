@@ -110,6 +110,7 @@
     "@tuturuuu/payment-core": "workspace:*",
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/sso": "workspace:*",
     "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/tasks-api": "workspace:*",
