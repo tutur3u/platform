@@ -20,7 +20,8 @@
       "!apps/tanstack-web",
       "!apps/tanstack-web/src/routeTree.gen.ts",
       "!apps/mobile",
-      "!.worktrees"
+      "!.worktrees",
+      "!.agents/skills/security-audit"
     ]
   },
   "formatter": {
