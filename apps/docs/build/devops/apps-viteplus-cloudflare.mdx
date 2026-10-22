@@ -20,6 +20,19 @@ unit/types/lint and invokes `build:cloudflare` once for the frontend. The offici
 Void SDK supplies the Cloudflare adapter; no separate adapter or RSC mode is added.
 No local release build is implied by this runbook.
 
+Shared Query public types require a single compatible materialized supplier
+identity. `@tuturuuu/hooks` declares React Query peer `^5.102.8` and exports
+`queryOptions` consumed by Web's `useQuery`. Cold CI exposed incompatible
+`QueryClient` private fields between 5.104.4 and 5.102.8 despite preservation of
+all prior static dependency graph edges. Align Apps' requested React Query
+5.102.8 and `use-intl` 4.14.4 with the qualified shared materialized versions
+through the owning package manager. Keep this repair scoped to Apps rather than
+use a global version bump, cast, or suppression. Static graph equality and a
+frozen dry-run do not prove materialized peer compatibility. After dependency
+changes, require cold CI for the exact commit and acceptance of its emitted
+runtime. An intl context split is an inferred risk, not an observed failure:
+Apps' bare `next-intl` alias can unify the provider.
+
 The artifact helper discovers the actual config through
 exactly one native `.wrangler/deploy/config.json` or Void-saved
 `.void/preview-deploy-config.json`. Both runtime harnesses use the shared
