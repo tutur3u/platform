@@ -871,9 +871,17 @@ Keep the four-app production hold independent of staging. Same-account staging
 requires the reviewed `stagingAdmission` profile, only the named staging deploy
 secret, isolated resource identities and the exact app/source/artifact repository
 admission variable. Read the stop and admission records again immediately before
-upload. Consume admission in the existing GitHub deployment API before invoking
-Wrangler; never infer retry permission from a missing local receipt or inactive
-version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
+upload. Consume admission in the owner-provisioned staging D1 ledger before invoking
+Wrangler. Authenticate its scoped HMAC and run identity with the staging deploy
+credential, use a conditional SQL update and readback, and fail closed on missing
+or deleted rows. PR job tokens must have no write authority over this ledger.
+Explicitly forward only staging deploy/control credentials and public inputs through
+every reusable-workflow boundary; never inherit production secrets. Staging has no
+workers.dev, preview URL or public route; success observes provider identity and
+private-serving state rather than issuing a public HTTP probe. Preserve CI workerd
+acceptance and obtain a separately approved private ingress plan for hosted UX.
+Never delete consumption history to renew admission or infer retry permission from a
+missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
 The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
 owns the schema, bounded operation counts, residual account risk and recovery.
 Run `wave1-native-publication.test.js` for the real entrypoint transport tests and

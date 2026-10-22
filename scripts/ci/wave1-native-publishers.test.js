@@ -23,7 +23,7 @@ for (const app of ['calendar', 'mail', 'apps']) {
       const emitted = JSON.parse(fs.readFileSync(config));
       assert.equal(p.accountId, 'e8912e2867beecc673d171907bf09649');
       assert.equal(emitted.name, p.name);
-      assert.equal(emitted.workers_dev, env === 'staging');
+      assert.equal(emitted.workers_dev, false);
       assert.deepEqual(
         emitted.routes,
         env === 'staging' ? [] : [{ pattern: p.host, custom_domain: true }]
@@ -342,6 +342,8 @@ test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', (
     'Account-level production Images access is not admitted'
   );
   assert.deepEqual(result.routes, []);
+  assert.equal(result.workers_dev, false);
+  assert.equal(result.preview_urls, false);
   assert.equal(result.services[0].service, result.name);
   assert.equal(
     result.r2_buckets[0].bucket_name,
@@ -359,6 +361,8 @@ test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', (
   );
   assert.equal(realtime.name, 'tuturuuu-meet-realtime-wave1-staging');
   assert.deepEqual(realtime.routes, []);
+  assert.equal(realtime.workers_dev, false);
+  assert.equal(realtime.preview_urls, false);
   assert.ok(
     realtime.durable_objects.bindings.every((binding) => !binding.script_name)
   );

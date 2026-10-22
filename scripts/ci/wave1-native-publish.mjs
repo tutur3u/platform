@@ -201,7 +201,6 @@ export async function main({
     !env.CLOUDFLARE_API_TOKEN,
     'Production deploy token exposed to staging'
   );
-  assert.ok(env.GITHUB_TOKEN, 'Missing durable attempt credential');
   assert.ok(ghToken && cfToken, 'Missing named publication credential');
   assert.equal(
     env[admitted.accountIdEnv],
@@ -237,13 +236,18 @@ export async function main({
   await assertEnabled();
   const ledger = await attemptLedger({
     request,
-    base: `https://api.github.com/repos/${env.GITHUB_REPOSITORY}`,
-    token: env.GITHUB_TOKEN,
+    base: `https://api.cloudflare.com/client/v4/accounts/${p.accountId}`,
+    token: cfToken,
+    databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
+    repository: env.GITHUB_REPOSITORY,
+    runId: env.GITHUB_RUN_ID,
+    runAttempt: env.GITHUB_RUN_ATTEMPT,
     app,
     identity: {
       sha,
       digest,
       worker: p.name,
+      accountId: p.accountId,
       accountIdEnv: admitted.accountIdEnv,
       admission: admitted,
     },
@@ -293,10 +297,18 @@ export async function main({
       matchesVersion(version.result, sha, digest),
       'Hosted artifact identity differs'
     );
-    const identity = await request(`https://${p.host}/api/build-info`, '');
-    assert.equal(identity.appName, app);
-    assert.equal(identity.commitHash, sha);
-    assert.equal(identity.environment, environment);
+    const serving = await request(`${cfBase}/subdomain`, cfToken);
+    assert.equal(serving.success, true);
+    assert.equal(
+      serving.result.enabled,
+      false,
+      'Staging workers.dev must be disabled'
+    );
+    assert.equal(
+      serving.result.previews_enabled,
+      false,
+      'Staging preview URLs must be disabled'
+    );
     validate();
   };
   // Inspect uploaded versions as well as active deployments, including an upload
@@ -409,7 +421,7 @@ export async function main({
   save();
   await ledger.save('activated', record.versionId);
   console.log(
-    `Accepted ${p.name} version ${record.versionId} at https://${p.host}`
+    `Accepted ${p.name} version ${record.versionId} (private staging; public serving disabled)`
   );
 }
 if (

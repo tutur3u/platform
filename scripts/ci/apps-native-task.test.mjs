@@ -228,6 +228,22 @@ function assertWorkflow(source) {
     const admitted = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_${name} || '' }}`;
     credentialFreeSource = credentialFreeSource.replaceAll(admitted, '');
   }
+  const publisher = job(credentialFreeSource, 'native-publication-profiles');
+  let admittedPublisher = publisher;
+  for (const name of [
+    'CLOUDFLARE_STAGING_API_TOKEN',
+    'WAVE1_CONTROL_READ_TOKEN',
+  ]) {
+    const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.${name} || '' }}`;
+    admittedPublisher = admittedPublisher.replace(
+      `      ${name}: ${expression}`,
+      ''
+    );
+  }
+  credentialFreeSource = credentialFreeSource.replace(
+    publisher,
+    admittedPublisher
+  );
   assert.doesNotMatch(
     credentialFreeSource,
     /secrets(?:\.|\[)/u,
@@ -560,4 +576,21 @@ test('staging input exception rejects production refs and production secret subs
     ),
   ])
     assert.throws(() => assertWorkflow(changed), /workflow.secrets/);
+});
+
+test('staging deploy/control secrets are allowed only in the explicit publisher call', () => {
+  for (const name of [
+    'CLOUDFLARE_STAGING_API_TOKEN',
+    'WAVE1_CONTROL_READ_TOKEN',
+  ]) {
+    const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.${name} || '' }}`;
+    const leak = workflow.replace("token: ''", `token: ${expression}`);
+    assert.notEqual(leak, workflow);
+    assert.throws(() => assertWorkflow(leak), /token|workflow.secrets/);
+    const production = workflow.replace(
+      `secrets.${name}`,
+      'secrets.CLOUDFLARE_API_TOKEN'
+    );
+    assert.throws(() => assertWorkflow(production), /workflow.secrets/);
+  }
 });

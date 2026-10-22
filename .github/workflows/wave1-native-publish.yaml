@@ -9,6 +9,10 @@ on:
         type: string
         required: true
     secrets:
+      CLOUDFLARE_STAGING_API_TOKEN:
+        required: false
+      WAVE1_CONTROL_READ_TOKEN:
+        required: false
       STAGING_SUPABASE_URL:
         required: false
       STAGING_SUPABASE_PUBLISHABLE_KEY:
@@ -60,7 +64,7 @@ jobs:
       - name: Capture rollback and secret names then publish once behind fresh stop fence
         timeout-minutes: 5
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
           WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
           WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
           CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
@@ -78,7 +82,7 @@ jobs:
           path: ${{ runner.temp }}/${{ inputs.app }}-${{ inputs.profile }}-publication.json
           retention-days: 30
           if-no-files-found: warn
-      - name: Record deployment marker only after hosted identity acceptance
+      - name: Record deployment marker only after provider identity and private-serving acceptance
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DEPLOYMENT_MARKER_SHA: ${{ github.sha }}

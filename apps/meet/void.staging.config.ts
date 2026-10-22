@@ -27,7 +27,7 @@ export function meetStagingConfig() {
       main: 'cloudflare/worker.ts',
       compatibility_date: '2026-09-06',
       compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
-      workers_dev: true,
+      workers_dev: false,
       preview_urls: false,
       routes: [],
       assets: {

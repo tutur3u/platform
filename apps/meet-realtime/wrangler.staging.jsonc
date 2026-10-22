@@ -56,6 +56,6 @@
   },
   "account_id": "e8912e2867beecc673d171907bf09649",
   "routes": [],
-  "workers_dev": true,
+  "workers_dev": false,
   "preview_urls": false
 }

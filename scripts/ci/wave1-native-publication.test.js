@@ -33,7 +33,9 @@ async function publisher(t) {
     GITHUB_REF: 'refs/heads/main',
     GITHUB_EVENT_NAME: 'push',
     GITHUB_REPOSITORY: 'fixture/repo',
-    GITHUB_TOKEN: 'marker-fixture',
+    GITHUB_RUN_ID: '12345',
+    GITHUB_RUN_ATTEMPT: '1',
+    WAVE1_STAGING_ATTEMPT_D1_ID: '33333333-3333-3333-3333-333333333333',
     WAVE1_STAGING_PUBLISH_ENABLED: 'true',
     WAVE1_STAGING_PUBLICATION_ADMISSION: JSON.stringify(admission),
     CLOUDFLARE_STAGING_API_TOKEN: 'staging-fixture',
@@ -47,8 +49,8 @@ async function publisher(t) {
     flagReads: 0,
     admissionReads: 0,
     reads: 0,
-    entries: [],
-    statuses: {},
+    ledgerQueries: 0,
+    ledgerWrites: 0,
     versions: [],
     active: oldId,
     failUpload: false,
@@ -82,29 +84,53 @@ async function publisher(t) {
               : env.WAVE1_STAGING_PUBLICATION_ADMISSION,
         });
       }
-      if (options.method === 'POST') {
-        const body = JSON.parse(options.body);
-        if (u.pathname.endsWith('/deployments')) {
-          const entry = { id: state.entries.length + 1, payload: body.payload };
-          state.entries.unshift(entry);
-          if (state.loseMarkerReceipt) throw new Error('lost marker receipt');
-          return response(entry);
-        }
-        const id = Number(u.pathname.split('/').at(-2));
-        state.statuses[id] ??= [];
-        state.statuses[id].unshift(body);
-        return response(body);
-      }
-      if (u.pathname.endsWith('/statuses'))
-        return response(
-          state.statuses[Number(u.pathname.split('/').at(-2))] ?? []
-        );
-      if (u.pathname.endsWith('/deployments')) return response(state.entries);
     }
     if (u.hostname === 'api.cloudflare.com') {
-      state.reads++;
-      assert.equal(options.method, 'GET', 'No direct provider write transport');
       assert.equal(options.headers.Authorization, 'Bearer staging-fixture');
+      if (u.pathname.endsWith('/query')) {
+        state.ledgerQueries++;
+        const { sql, params } = JSON.parse(options.body);
+        if (sql.startsWith('SELECT'))
+          return response({
+            success: true,
+            result: [
+              {
+                success: true,
+                results:
+                  state.record === undefined ? [] : [{ record: state.record }],
+              },
+            ],
+          });
+        assert.equal(
+          sql,
+          'UPDATE wave1_attempts SET record = ? WHERE app = ? AND record = ?'
+        );
+        if (state.deleteOnWrite) state.record = undefined;
+        const changes = state.record === params[2] ? 1 : 0;
+        if (changes) {
+          state.ledgerWrites++;
+          state.record = params[0];
+        }
+        if (state.loseMarkerReceipt) throw new Error('lost marker receipt');
+        return response({
+          success: true,
+          result: [{ success: true, meta: { changes } }],
+        });
+      }
+      state.reads++;
+      assert.equal(
+        options.method,
+        'GET',
+        'No provider write outside attempt D1'
+      );
+      if (u.pathname.endsWith('/subdomain'))
+        return response({
+          success: true,
+          result: {
+            enabled: state.publicServing === 'workers.dev',
+            previews_enabled: state.publicServing === 'preview',
+          },
+        });
       if (u.pathname.endsWith('/deployments'))
         return response({
           success: true,
@@ -132,12 +158,6 @@ async function publisher(t) {
       );
       if (version) return response({ success: true, result: version });
     }
-    if (u.hostname === receipt.profile.host)
-      return response({
-        appName: 'mail',
-        commitHash: sha,
-        environment: 'staging',
-      });
     throw new Error(`Unexpected test transport ${url}`);
   };
   const exec = (command, args, options) => {
@@ -173,6 +193,23 @@ async function publisher(t) {
         })
       );
   };
+  const { signAttemptState } = await import('./wave1-native-attempt.mjs');
+  const ledgerData = {
+    schema: 1,
+    scope: {
+      databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
+      repository: env.GITHUB_REPOSITORY,
+      app: 'mail',
+      worker: receipt.profile.name,
+      accountId: receipt.profile.accountId,
+    },
+    entries: [],
+  };
+  const setLedger = (data) => {
+    state.record = signAttemptState(data, env.CLOUDFLARE_STAGING_API_TOKEN);
+  };
+  const getLedger = () => JSON.parse(JSON.parse(state.record).data);
+  setLedger(ledgerData);
   const { main } = await import('./wave1-native-publish.mjs');
   const options = {
     argv: ['publish', 'mail', 'staging', sha],
@@ -181,7 +218,16 @@ async function publisher(t) {
     fetcher,
     exec,
   };
-  return { run: () => main(options), options, state, env, admission, dir };
+  return {
+    run: () => main(options),
+    options,
+    state,
+    env,
+    admission,
+    dir,
+    setLedger,
+    getLedger,
+  };
 }
 
 async function assertStopped(p, main) {
@@ -251,7 +297,7 @@ for (const outcome of [
     if (outcome === 'lost-receipt') await p.run();
     else await assert.rejects(p.run);
     assert.equal(p.state.writes, writes);
-    assert.equal(p.state.entries.length, 1);
+    assert.equal(p.getLedger().entries.length, 1);
   });
 }
 test('inactive matching uploaded version blocks reupload and reconciles only after activation', async (t) => {
@@ -259,11 +305,11 @@ test('inactive matching uploaded version blocks reupload and reconciles only aft
   p.state.failUpload = true;
   await assert.rejects(p.run);
   await assert.rejects(p.run);
-  assert.equal(p.state.statuses[1][0].description, `wave1:uploaded:${newId}`);
+  assert.equal(p.getLedger().entries[0].state, 'uploaded');
   p.state.active = newId;
   await p.run();
   assert.equal(p.state.writes, 1);
-  assert.equal(p.state.statuses[1][0].description, `wave1:activated:${newId}`);
+  assert.equal(p.getLedger().entries[0].state, 'activated');
 });
 test('finite admission rejects later main pushes, changed bytes, and consumed identities', async (t) => {
   const p = await publisher(t);
@@ -281,12 +327,13 @@ test('finite admission rejects later main pushes, changed bytes, and consumed id
   });
   await assert.rejects(p.run, /artifact digest/);
   assert.equal(p.state.writes, 1);
-  assert.equal(p.state.entries.length, 1);
+  assert.equal(p.getLedger().entries.length, 1);
 });
 for (const field of [
   'CLOUDFLARE_STAGING_API_TOKEN',
   'CLOUDFLARE_STAGING_ACCOUNT_ID',
   'WAVE1_STAGING_PUBLICATION_ADMISSION',
+  'WAVE1_STAGING_ATTEMPT_D1_ID',
 ]) {
   test(`missing ${field} fails closed before provider reads or uploads`, async (t) => {
     const p = await publisher(t);
@@ -326,7 +373,11 @@ test('workflow routes only staging credentials and exact admission into the test
     step.env.WAVE1_STAGING_PUBLICATION_ADMISSION,
     '$' + '{{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}'
   );
-  assert.equal(step.env.GITHUB_TOKEN, '$' + '{{ github.token }}');
+  assert.equal(step.env.GITHUB_TOKEN, undefined);
+  assert.equal(
+    step.env.WAVE1_STAGING_ATTEMPT_D1_ID,
+    '$' + '{{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}'
+  );
   assert.doesNotMatch(
     JSON.stringify(job),
     /secrets\.CLOUDFLARE_API_TOKEN|secrets:.*inherit|secrets\[/
@@ -397,29 +448,31 @@ test('admission rejects alternate credential names, shared resources, and missin
 });
 test('an unresolved preceding artifact blocks a newly admitted artifact', async (t) => {
   const p = await publisher(t);
-  p.state.entries.push({
-    id: 1,
-    payload: {
-      kind: 'wave1-publication-attempt',
-      app: 'mail',
-      sha: 'b'.repeat(40),
-      digest: 'c'.repeat(64),
-    },
+  p.setLedger({
+    ...p.getLedger(),
+    entries: [
+      {
+        runId: '10',
+        runAttempt: '1',
+        state: 'pending',
+        payload: { sha: 'b'.repeat(40), digest: 'c'.repeat(64) },
+      },
+    ],
   });
   await assert.rejects(p.run, /Earlier publication attempt is unresolved/);
   assert.equal(p.state.writes, 0);
 });
-test('a lost/expired status remains unresolved and full history refuses publication', async (t) => {
+test('full authenticated history refuses publication', async (t) => {
   const p = await publisher(t);
-  p.state.entries = Array.from({ length: 100 }, (_, i) => ({
-    id: i + 1,
-    payload: {
-      kind: 'wave1-publication-attempt',
-      app: 'mail',
-      sha,
-      digest: p.admission.artifactSha256,
-    },
-  }));
+  p.setLedger({
+    ...p.getLedger(),
+    entries: Array.from({ length: 100 }, () => ({
+      runId: '10',
+      runAttempt: '1',
+      state: 'pending',
+      payload: { sha, digest: p.admission.artifactSha256 },
+    })),
+  });
   await assert.rejects(p.run, /history incomplete/);
   assert.equal(p.state.writes, 0);
 });
@@ -427,22 +480,136 @@ test('a failed pre-upload admission stays consumed after the stop fence is re-en
   const p = await publisher(t);
   p.state.stop = 'disabled';
   await assert.rejects(p.run, /stop fence/);
-  assert.equal(p.state.statuses[1][0].description, 'wave1:failed');
+  assert.equal(p.getLedger().entries[0].state, 'failed');
   p.state.stop = undefined;
   await assert.rejects(p.run, /unresolved or consumed/);
   assert.equal(p.state.writes, 0);
-  assert.equal(p.state.entries.length, 1);
+  assert.equal(p.getLedger().entries.length, 1);
 });
 test('a new publication uses one upload and bounded ledger/control observations', async (t) => {
   const p = await publisher(t);
   await p.run();
   assert.equal(p.state.writes, 1);
-  assert.equal(p.state.reads, 5);
+  assert.equal(p.state.reads, 6);
   assert.equal(p.state.flagReads, 2);
   assert.equal(p.state.admissionReads, 2);
-  assert.equal(p.state.entries.length, 1);
-  assert.deepEqual(
-    p.state.statuses[1].map((s) => s.description),
-    [`wave1:activated:${newId}`, `wave1:uploaded:${newId}`, 'wave1:pending']
-  );
+  assert.equal(p.getLedger().entries.length, 1);
+  assert.equal(p.state.ledgerWrites, 3);
+  assert.equal(p.state.ledgerQueries, 7);
+  assert.equal(p.getLedger().entries[0].state, 'activated');
+  assert.equal(p.getLedger().entries[0].versionId, newId);
+  assert.equal(p.getLedger().entries[0].runId, p.env.GITHUB_RUN_ID);
 });
+
+for (const attack of [
+  'missing',
+  'deleted',
+  'forged-failed',
+  'forged-newest',
+  'wrong-scope',
+  'delete-on-consume',
+]) {
+  test(`unauthentic or missing D1 state blocks upload: ${attack}`, async (t) => {
+    const p = await publisher(t);
+    if (attack !== 'missing') {
+      p.options.exec = () => {
+        throw new Error('crash before provider upload');
+      };
+      await assert.rejects(p.run);
+    }
+    if (['missing', 'deleted'].includes(attack)) p.state.record = undefined;
+    else if (attack === 'delete-on-consume') {
+      // A second independent runner loses its authenticated preimage during CAS.
+      p.setLedger({ ...p.getLedger(), entries: [] });
+      p.state.deleteOnWrite = true;
+    } else if (attack === 'wrong-scope') {
+      const data = p.getLedger();
+      data.scope.repository = 'attacker/repo';
+      p.setLedger(data);
+    } else {
+      const envelope = JSON.parse(p.state.record);
+      const data = JSON.parse(envelope.data);
+      if (attack === 'forged-failed') data.entries[0].state = 'failed';
+      else
+        data.entries.unshift({
+          ...data.entries[0],
+          state: 'failed',
+          payload: { sha: 'b'.repeat(40), digest: 'c'.repeat(64) },
+        });
+      envelope.data = JSON.stringify(data);
+      p.state.record = JSON.stringify(envelope);
+    }
+    await assert.rejects(
+      p.run,
+      /Missing durable|Invalid attempt signature|scope mismatch|changed or deleted/
+    );
+    assert.equal(p.state.writes, 0);
+  });
+}
+test('a PR GitHub token cannot authenticate the ledger or settle uncertainty', async (t) => {
+  const p = await publisher(t);
+  const { signAttemptState } = await import('./wave1-native-attempt.mjs');
+  p.state.record = signAttemptState(p.getLedger(), 'pr-github-token');
+  await assert.rejects(p.run, /Invalid attempt signature/);
+  assert.equal(p.state.writes, 0);
+});
+
+test('every reusable boundary forwards exactly staging credentials and public inputs', () => {
+  const names = [
+    'CLOUDFLARE_STAGING_API_TOKEN',
+    'WAVE1_CONTROL_READ_TOKEN',
+    'STAGING_SUPABASE_URL',
+    'STAGING_SUPABASE_PUBLISHABLE_KEY',
+  ].sort();
+  for (const file of ['wave1-native-app.yaml', 'wave1-native-publish.yaml']) {
+    const workflow = readWorkflow(file);
+    assert.deepEqual(
+      Object.keys(workflow.on.workflow_call.secrets).sort(),
+      names
+    );
+  }
+  for (const [file, jobId] of [
+    ['calendar-cloudflare.yaml', 'native-profiles'],
+    ['mail-cloudflare.yaml', 'native-profiles'],
+    ['apps-cloudflare.yaml', 'native-publication-profiles'],
+    ['wave1-native-app.yaml', 'publish-staging'],
+  ]) {
+    const job = readWorkflow(file).jobs[jobId];
+    assert.deepEqual(Object.keys(job.secrets).sort(), names, file);
+    for (const name of names)
+      assert.equal(
+        job.secrets[name],
+        '$' +
+          `{{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.${name} || '' }}`,
+        `${file}: ${name}`
+      );
+  }
+  assert.equal(
+    readWorkflow('wave1-native-app.yaml').jobs['publish-production'].secrets,
+    undefined
+  );
+  const job = readWorkflow('wave1-native-publish.yaml').jobs.publish;
+  const step = job.steps.find((s) =>
+    s.run?.includes('wave1-native-publish.mjs publish')
+  );
+  for (const name of [
+    'CLOUDFLARE_STAGING_API_TOKEN',
+    'WAVE1_CONTROL_READ_TOKEN',
+  ]) {
+    assert.equal(step.env[name], `\${{ secrets.${name} }}`);
+    assert.equal(job.env[name], undefined);
+    for (const other of job.steps.filter((s) => s !== step))
+      assert.ok(!JSON.stringify(other).includes(`secrets.${name}`));
+  }
+});
+
+for (const publicServing of ['workers.dev', 'preview']) {
+  test(`enabled ${publicServing} cannot be accepted or trigger another upload`, async (t) => {
+    const p = await publisher(t);
+    p.state.publicServing = publicServing;
+    await assert.rejects(p.run, /must be disabled/);
+    await assert.rejects(p.run, /must be disabled/);
+    assert.equal(p.state.writes, 1);
+    assert.equal(p.getLedger().entries[0].state, 'uploaded');
+  });
+}

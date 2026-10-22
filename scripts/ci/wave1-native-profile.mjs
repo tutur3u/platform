@@ -45,6 +45,16 @@ function empty(value) {
   return false;
 }
 export function assertStagingIsolation(config) {
+  assert.equal(
+    config.workers_dev,
+    false,
+    'Staging workers.dev must be disabled'
+  );
+  assert.equal(
+    config.preview_urls,
+    false,
+    'Staging preview URLs must be disabled'
+  );
   assert.deepEqual(
     config.routes,
     [],
@@ -124,7 +134,7 @@ export function publicationConfig(base, profile, { main, assets }) {
     compatibility_flags: base.compatibility_flags,
     rules: base.rules,
     assets: { ...base.assets, directory: assets },
-    workers_dev: !production,
+    workers_dev: false,
     preview_urls: false,
     routes: production ? [{ pattern: profile.host, custom_domain: true }] : [],
     secrets: { required: profile.secrets },
