@@ -1,5 +1,6 @@
 import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import type { CreditDeductionResult } from '../../credits/types';
+import { assistantMessageContentPreview } from '../assistant-message-content';
 import { collectAssistantMessageParts } from './assistant-message-parts';
 import { countGoogleSearchQueries } from './google-search-usage';
 
@@ -362,6 +363,7 @@ function buildAssistantMessageMetadata({
   allToolResults,
   cachedInputTokens,
   cachedOutputTokens,
+  contentTruncated,
   effectiveSource,
   inputTokens,
   model,
@@ -378,6 +380,7 @@ function buildAssistantMessageMetadata({
   allToolResults: ToolResultLike[];
   cachedInputTokens: number;
   cachedOutputTokens: number;
+  contentTruncated: boolean;
   effectiveSource: 'Mira' | 'Rewise';
   inputTokens: number;
   model: string;
@@ -394,6 +397,7 @@ function buildAssistantMessageMetadata({
     source: effectiveSource,
     ...(persistenceRequestId ? { requestId: persistenceRequestId } : {}),
     ai: {
+      ...(contentTruncated ? { contentTruncated: true } : {}),
       finishReason: response.finishReason,
       model,
       observability: {
@@ -425,7 +429,11 @@ function compactAssistantMessageMetadata(
   const ai = metadata.ai;
   let textOffset = 0;
   const compactParts = ai.parts.map((part) => {
-    if (part.type === 'text' && typeof part.text === 'string') {
+    if (
+      !ai.contentTruncated &&
+      part.type === 'text' &&
+      typeof part.text === 'string'
+    ) {
       const result = {
         type: 'text',
         textStart: textOffset,
@@ -434,6 +442,7 @@ function compactAssistantMessageMetadata(
       textOffset += part.text.length + 2;
       return result;
     }
+    if (ai.contentTruncated && part.type === 'text') return part;
     return compactAiMessagePart(
       part,
       Math.max(20, Math.min(400, Math.floor(1500 / ai.parts.length)))
@@ -443,6 +452,7 @@ function compactAssistantMessageMetadata(
     source: metadata.source,
     ...(metadata.requestId ? { requestId: metadata.requestId } : {}),
     ai: {
+      ...(ai.contentTruncated ? { contentTruncated: true } : {}),
       finishReason: ai.finishReason,
       metadataCompacted: true,
       model: ai.model,
@@ -494,11 +504,17 @@ export async function persistAssistantResponse({
     return false;
   }
 
+  const content = parts
+    .filter((part) => part.type === 'text')
+    .map((part) => part.text)
+    .join('\n\n');
+  const contentPreview = assistantMessageContentPreview(content);
   const metadata = buildAssistantMessageMetadata({
     allToolCalls,
     allToolResults,
     cachedInputTokens,
     cachedOutputTokens,
+    contentTruncated: contentPreview !== content,
     effectiveSource,
     inputTokens,
     model,
@@ -515,10 +531,7 @@ export async function persistAssistantResponse({
   const insertPayload = {
     chat_id: chatId,
     creator_id: userId,
-    content: parts
-      .filter((part) => part.type === 'text')
-      .map((part) => part.text)
-      .join('\n\n'),
+    content: contentPreview,
     role: 'ASSISTANT',
     model: skipCreditDeduction
       ? model

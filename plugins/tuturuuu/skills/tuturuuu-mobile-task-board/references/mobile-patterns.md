@@ -92,6 +92,11 @@ localization changes.
 - Keep the Assistant center tab, but create new Assistant text conversations as
   native Chat `type="ai"` conversations and send text through the chat message
   stream. Live mode remains an explicit Assistant Live entry.
+- Restore text history from `metadata.ai.parts`, including bounded text offsets,
+  before legacy `parts` or content fallbacks. Long completed replies keep full
+  structured text with a bounded content preview. Use the save/reopen/follow-up
+  cases in the [Assistant chronology guide](../../../../../apps/docs/platform/features/assistant-live.mdx#conversation-chronology-and-native-presentation);
+  terminal parser fixtures alone do not exercise server persistence.
 
 - For real Assistant host fixtures, use the canonical
   [mobile state and lifecycle guide](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-asynchronous-assistant-fixtures-in-their-owning-zone).
