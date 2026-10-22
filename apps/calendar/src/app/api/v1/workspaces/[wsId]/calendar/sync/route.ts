@@ -459,7 +459,7 @@ export async function POST(
         ? 'auth'
         : googleFailure || microsoftFailure || 'partial_failure';
     const completionClient = providerSyncSignal()
-      ? createSyncCompletionClient()
+      ? await createSyncCompletionClient()
       : sbAdmin;
     const { error: completionError } = await completionClient
       .from('calendar_sync_dashboard')
@@ -517,7 +517,7 @@ export async function POST(
     });
     if (sbAdmin && dashboardRunId) {
       const completionClient = providerSyncSignal()
-        ? createSyncCompletionClient()
+        ? await createSyncCompletionClient()
         : sbAdmin;
       await completionClient
         .from('calendar_sync_dashboard')
