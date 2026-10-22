@@ -260,6 +260,7 @@
     "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
     "hide_sidebar": "Hide sidebar",
     "hide_workspace": "Hide workspace",
+    "home": "Home",
     "join_workspace": "Join workspace",
     "join_workspace_action": "Join",
     "join_workspace_by_slug_description": "Enter a workspace slug to request access or accept an invitation.",
