@@ -26,6 +26,19 @@ review prove baseline equivalence. Existing migration history stays immutable.
   checks internally, then revoke broad execution and grant only required roles.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
+## Outbound SSO persistence
+
+The phase 2 SSO tables deny direct browser and service-role access. Use the
+service-only tenant-scoped RPCs after resolving the real actor; consent reads
+bind `auth.uid()` internally. Preserve client-before-assignment/transaction lock
+ordering and the unique request reservation. Consumption and audit/subject writes
+must commit together. Validate changes with
+`node apps/database/scripts/verify-sso-persistence.mjs` through resource admission:
+it applies the full disposable schema, runs pgTAP plus an actual two-connection
+race, generates types from that database and performs owned cleanup. See
+[SSO persistence](../../../../../apps/docs/platform/features/sso.mdx#phase-2-persistence-boundary)
+for the database versus future Auth/MFA/signer boundary.
+
 ## Workspace-Scoped Writes
 
 - Authenticate before normalizing workspace aliases when possible.

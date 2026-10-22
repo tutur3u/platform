@@ -1,4 +1,5 @@
 export const ci = {
+  'sso-persistence-contract.yaml': true,
   'employee-schema-contract.yaml': true,
   'actions-storage-report.yaml': true,
   'biome-check.yaml': true,

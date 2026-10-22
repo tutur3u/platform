@@ -60,6 +60,82 @@ Phase 1 adds no routes, UI, migrations, live clients or hosted configuration.
 Metadata generation is a library function, not a published metadata endpoint.
 Do not expose the protocol functions as an issuance API without the later gates.
 
+## Phase 2 persistence boundary
+
+Six additive migrations (`20261022100000` through `20261022100005`) introduce
+`manage_sso_clients` and eight RLS-enabled private tables: `sso_clients`,
+`sso_saml_clients`, `sso_assignments`, `sso_subjects`, `sso_disclosure_grants`,
+`sso_transactions`, `sso_signing_keys` and `sso_audit_events`. All children carry
+`ws_id` and composite tenant foreign keys. Creation always starts disabled;
+client changes require an expected policy revision. The initial profile supports
+only persistent NameID and one to eight exact HTTPS ACS destinations, without
+credentials, fragments or custom ports. Configuration stores approved email
+domains; authoritative email/domain enforcement belongs to phase 3.
+
+Browser roles and `service_role` have no direct table privileges. Management is
+through service-only `sso_manage_client` and `sso_set_assignment` RPCs. Both require
+a current MEMBER in an active nonpersonal workspace with effective
+`manage_sso_clients` permission (including the existing creator/admin semantics).
+The server must resolve the authenticated actor before calling them; an actor ID
+is a trusted server input, never a browser authorization claim.
+
+Service-only `sso_create_transaction` reserves a request hash uniquely per client,
+stores InResponseTo and an exact configured ACS, and caps expiry at five minutes.
+Opaque handles, browser/session bindings and RelayState are hashes; raw RelayState
+and assertions are absent. `sso_record_consent` records one immutable per-login
+approval or denial for the fixed identity attribute list, binding actor, policy,
+browser and session. Denial burns the transaction. `sso_consume_transaction` takes
+row locks, rejects expired/used transactions, rechecks enabled client, policy,
+current MEMBER and active assignment, and requires the matching approval and
+bindings. The validated request's `allow_create` is persisted with default false;
+allocation requires explicit true, while false can reuse an existing mapping.
+Consumption, random 256-bit pairwise subject allocation and audit append
+commit together. Concurrent consumers yield one winner and a replay error.
+
+`authenticated` users can call `sso_read_own_disclosures(ws_id)` to read up to 100
+of their own receipts. Its actor comes exclusively from `auth.uid()`. Other users
+and anonymous callers cannot read those receipts. Disclosure receipts and audit
+rows reject updates and deletes; audit appends expose only bounded event codes
+and correlation IDs. `sso_append_audit` is service-only and requires a consumed,
+approved transaction for issuance events. A signed event records the issuer's
+observation; it does not prove Claude accepted the response.
+
+Signing-key rows contain only a public certificate, kid, status, revision and
+validity/rotation timestamps. A partial unique index permits at most one active
+key per client. Certificate syntax constraints reject private-key PEM; the future
+signer must validate the actual X.509 certificate and key match. No private key,
+secret reference, key import/rotation RPC or signer route is added by this phase.
+Subjects keep their random value when account deletion clears the user link.
+Receipt/audit actors are UUID-only correlation values without deletion-blocking
+user foreign keys; retention and pseudonymization require the phase 5 operating
+policy. There is no automatic retention job in this phase.
+
+### Database verification
+
+From the repository root, run:
+
+```sh
+ttr resources run -- node apps/database/scripts/verify-sso-persistence.mjs
+```
+
+The runner stages the complete migration history into an owned disposable
+Supabase project, applies it with `supabase start` and `supabase db reset`, runs
+`sso-persistence.sql` with strict pgTAP parsing, and drives a real two-connection
+consume race. It generates `packages/types/src/supabase.ts` from that same applied
+`public,private,storage` schema, then stops only the owned database without backup.
+Synthetic race rows are committed only inside the disposable database and vanish
+with its teardown; immutable audit rows are never bypassed for fixture cleanup.
+The runner prints a schema snapshot digest and recovery directory for a failed
+cleanup. Use the existing isolated lifecycle cleanup procedure for that directory.
+The `SSO persistence database contract` CI workflow repeats this on the exact PR
+head. No application stack or build is needed for this check.
+
+These primitives do not establish Auth account status, confirmed email, MFA,
+request XML validation, key selection or an issuance permit. Phase 3 must provide
+those checks, recheck current key/policy state after signing, and burn the original
+transaction on an unknown signing outcome. Never interpret a consumed database
+row as permission to retry or emit an assertion without those service gates.
+
 ## Verification and remaining work
 
 `packages/sso/src/__tests__` drives generated signatures through Node-SAML's SP
@@ -75,8 +151,8 @@ The harness adds exact Destination/Recipient checks because Node-SAML 5.1.0 does
 not enforce them for login responses. See `packages/sso/README.md` for dependency
 advisories, limits, reproduction commands and the samlify evaluation.
 
-Phase 2 supplies private persistence, RLS, transactional request consumption and
-subject allocation. Phase 3 supplies authoritative Auth/MFA/eligibility reads,
+Phase 2 supplies the private database primitives described above. Phase 3 supplies
+authoritative Auth/MFA/eligibility reads,
 disclosure enforcement, key/policy revision fences, durable audit and disabled
 Web routes. Phase 4 supplies bilingual management and per-login consent UI.
 Phase 5 supplies rotation, compromise/disable procedures, an explicitly selected
