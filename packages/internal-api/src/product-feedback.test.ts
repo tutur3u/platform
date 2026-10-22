@@ -3,6 +3,8 @@ import { InternalApiError } from './internal-api-error';
 import {
   checkProductFeedbackEligibility,
   getProductFeedback,
+  getProductFeedbackMedia,
+  getProductFeedbackReceipt,
   listProductFeedback,
   submitProductFeedback,
 } from './product-feedback';
@@ -347,4 +349,25 @@ describe('strict product feedback eligibility consumer', () => {
       }
     }
   );
+});
+
+describe('private feedback media and original receipt transport', () => {
+  it('uses separate uncached authenticated staff-media and owner-receipt paths', async () => {
+    const fetch = vi
+      .fn()
+      .mockImplementation(async () => Response.json({ media: null }));
+    const options = { baseUrl: 'https://feedback.example.test', fetch };
+    await getProductFeedbackMedia('safe/id', options);
+    await getProductFeedbackReceipt('original/key', options);
+    expect(fetch.mock.calls.map(([url]) => String(url))).toEqual([
+      'https://feedback.example.test/api/v1/product-feedback/safe%2Fid/media',
+      'https://feedback.example.test/api/v1/product-feedback/receipts/original%2Fkey',
+    ]);
+    for (const [, init] of fetch.mock.calls)
+      expect(init).toMatchObject({
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+      });
+  });
 });
