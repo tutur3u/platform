@@ -119,6 +119,12 @@ shared-package changes.
   drifted that way. Either add the route or pass
   `<OfflineProvider register={false}>`. `bun check` → `offline-worker-wiring`
   enforces it.
+- Central-login app identity comes from `packages/utils/src/internal-domains.ts`,
+  not the infrastructure project's reserved-host list or shared-cookie domains.
+  Rewise (`https://rewise.me`) and Nova (`https://nova.ai.vn`) are internal
+  satellites with exact HTTPS production origins outside `tuturuuu.com`.
+  Preserve their registrations when changing canonical SEO hosts; verify the
+  domain, cross-app mapping, and web return-validation regression suites.
 - **Never copy the multi-account vault into another app.**
   `apps/web/src/lib/auth/multi-account` (device cookies, encrypted Supabase
   sessions, the account-switch handover) belongs to the app that serves
