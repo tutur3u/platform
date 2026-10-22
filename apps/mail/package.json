@@ -3,17 +3,24 @@
   "version": "0.30.0",
   "private": true,
   "scripts": {
-    "type-check": "node ../../scripts/run-tsc-build.js --build",
+    "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker",
     "dev": "node ../../scripts/portless-safe-dev.js",
-    "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7820} --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "preview": "next build --turbopack && next start -p 7820 --turbopack",
+    "dev:app": "node ../../scripts/portless-dev-banner.js -- vp dev --host 127.0.0.1 --port 7820",
+    "build": "vp build",
+    "start": "vp preview --host 127.0.0.1 --port 7820",
+    "preview": "vp preview --host 127.0.0.1 --port 7820",
     "sb:status": "cd ../database && bun sb:status",
     "sb:start": "cd ../database && bun sb:start",
     "sb:stop": "cd ../database && bun sb:stop",
     "sb:up": "cd ../database && bun sb:up",
-    "sb:typegen": "cd ../database && bun sb:typegen"
+    "sb:typegen": "cd ../database && bun sb:typegen",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv --include-runtime=false cloudflare-env.d.ts",
+    "build:legacy": "next build --turbopack",
+    "dev:legacy": "next dev -p 7820 --turbopack",
+    "start:legacy": "next start -p 7820",
+    "type-check:app": "tsc --noEmit --project tsconfig.json",
+    "type-check:worker": "tsc --noEmit --project tsconfig.worker.json",
+    "type-check:boundary": "tsc --project tsconfig.boundary.json"
   },
   "packageManager": "bun@1.4.3",
   "portless": {
@@ -56,7 +63,10 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sanitize-html": "^2.17.7",
-    "zod": "^4.6.2"
+    "zod": "^4.6.2",
+    "@tanstack/react-start": "1.169.3",
+    "@tanstack/react-router": "1.170.45",
+    "use-intl": "4.14.4"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.1",
@@ -70,11 +80,18 @@
     "@types/react": "~19.2.18",
     "@types/react-dom": "~19.2.7",
     "@types/sanitize-html": "^2.16.1",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2",
-    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-react": "6.1.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "postcss": "^8.5.28",
     "typescript": "7.0.2",
-    "vitest": "^5.0.0"
-  }
+    "vitest": "^5.0.0",
+    "vite-plus": "1.3.0",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+    "void": "1.1.12",
+    "@tailwindcss/vite": "4.3.3",
+    "@cloudflare/workers-types": "5.20261019.1",
+    "wrangler": "4.151.2",
+    "@fontsource-variable/noto-sans": "5.3.0"
+  },
+  "type": "module"
 }
