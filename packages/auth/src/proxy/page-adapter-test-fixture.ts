@@ -32,12 +32,8 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   hasAuthenticatedBearerToken: () => false,
   isTrustedProxyBypassRequest: () => false,
 }));
-vi.mock('next-intl/middleware', () => ({
-  default: () => mocks.continuation,
-}));
-vi.mock('next-intl/navigation', () => ({
-  createNavigation: () => ({}),
-}));
+// App-local mocks must resolve next-intl from the same workspace as the proxy.
+export const pageAdapterMocks = mocks;
 
 const start = new Date('2026-01-01T00:00:00Z');
 const seconds = start.getTime() / 1000;

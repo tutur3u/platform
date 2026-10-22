@@ -1,5 +1,8 @@
 import { vi } from 'vitest';
-import { definePageAdapterTests } from '../../../packages/auth/src/proxy/page-adapter-test-fixture';
+import {
+  definePageAdapterTests,
+  pageAdapterMocks,
+} from '../../../packages/auth/src/proxy/page-adapter-test-fixture';
 
 vi.mock('@/constants/common', () => ({
   LOCALE_COOKIE_NAME: 'NEXT_LOCALE',
@@ -8,6 +11,13 @@ vi.mock('@/constants/common', () => ({
 vi.mock('@/i18n/routing', () => ({
   routing: {},
   supportedLocales: ['en', 'vi'],
+}));
+
+vi.mock('next-intl/middleware', () => ({
+  default: () => pageAdapterMocks.continuation,
+}));
+vi.mock('next-intl/navigation', () => ({
+  createNavigation: () => ({}),
 }));
 
 import { proxy } from './proxy';
