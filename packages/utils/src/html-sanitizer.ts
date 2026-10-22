@@ -66,8 +66,10 @@ function sanitizeUrl(url: string): string | null {
 export function sanitizeHtml(html: string): string {
   if (!html) return '';
 
-  // Create a temporary DOM element to parse HTML
-  const temp = document.createElement('div');
+  // Parse untrusted nodes in inert template content before rebuilding them.
+  const template = document.createElement('template');
+  const temp = template.content.ownerDocument.createElement('div');
+  template.content.appendChild(temp);
   temp.innerHTML = html;
 
   // Recursive function to sanitize nodes

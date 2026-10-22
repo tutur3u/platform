@@ -26,6 +26,37 @@ describe('sanitizeHtml', () => {
     });
   });
 
+  it('keeps rejected custom elements inert during parsing', () => {
+    let constructions = 0;
+    class SanitizerProbe extends HTMLElement {
+      constructor() {
+        super();
+        constructions += 1;
+      }
+    }
+    customElements.define('audit-sanitizer-probe', SanitizerProbe);
+
+    document.createElement('audit-sanitizer-probe');
+    expect(constructions).toBe(1);
+    constructions = 0;
+
+    expect(
+      sanitizeHtml(
+        '<audit-sanitizer-probe><strong>Retained text</strong></audit-sanitizer-probe>'
+      )
+    ).toBe('Retained text');
+    expect(constructions).toBe(0);
+  });
+
+  it('preserves div-context formatting in bare table fragments', () => {
+    expect(sanitizeHtml('<tr><td><strong>Bold</strong></td></tr>')).toBe(
+      '<strong>Bold</strong>'
+    );
+    expect(
+      sanitizeHtml('<tr><td><a href="/calendar">Calendar</a></td></tr>')
+    ).toBe('<a href="/calendar">Calendar</a>');
+  });
+
   describe('allowed tags', () => {
     it('should allow <p> tags', () => {
       expect(sanitizeHtml('<p>Paragraph</p>')).toBe('<p>Paragraph</p>');
