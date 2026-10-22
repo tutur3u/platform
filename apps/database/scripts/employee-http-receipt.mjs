@@ -164,11 +164,35 @@ function rejectionFailure(value) {
     ...(Object.hasOwn(value, 'actual') ? { actual: value.actual } : {}),
   };
 }
+function unmanagedProfileReceipt(value) {
+  if (
+    value?.version !== 1 ||
+    value.qualified !== true ||
+    value.assertions !== 75 ||
+    value.writes !== 6 ||
+    value.lostAcknowledgements !== 6 ||
+    JSON.stringify(value.usernameLengths) !== '[1,4,33,65,81,1001]' ||
+    value.routeAuthorizationProof !== false ||
+    value.productionProof !== false
+  )
+    throw new Error('Unmanaged profile HTTP receipt invalid');
+  return {
+    version: 1,
+    qualified: true,
+    assertions: 75,
+    writes: 6,
+    lostAcknowledgements: 6,
+    usernameLengths: [1, 4, 33, 65, 81, 1001],
+    routeAuthorizationProof: false,
+    productionProof: false,
+  };
+}
 function managedProfileReceipt(value) {
   if (
     value?.qualified !== true ||
-    value.assertions !== 11 ||
+    value.assertions !== 47 ||
     value.writes !== 1 ||
+    JSON.stringify(value.usernameLengths) !== '[4,1,33,65,81,1001]' ||
     value.lostAcknowledgementReadback !== true ||
     value.routeAuthorizationProof !== false ||
     value.productionProof !== false
@@ -176,8 +200,12 @@ function managedProfileReceipt(value) {
     throw new Error('Managed profile HTTP receipt invalid');
   return {
     qualified: true,
-    assertions: 11,
+    assertions: 47,
     writes: 1,
+    unmanagedProfileQualification: unmanagedProfileReceipt(
+      value.unmanagedProfileQualification
+    ),
+    usernameLengths: [4, 1, 33, 65, 81, 1001],
     lostAcknowledgementReadback: true,
     routeAuthorizationProof: false,
     productionProof: false,

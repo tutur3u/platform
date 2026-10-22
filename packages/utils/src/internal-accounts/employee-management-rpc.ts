@@ -58,6 +58,8 @@ export function createEmployeeManagementTransport(input: {
       | 'inspect_employee_profile'
       | 'update_employee_profile'
       | 'inspect_employee_profile_operation'
+      | 'update_unmanaged_internal_profile'
+      | 'inspect_unmanaged_internal_profile_operation'
       | 'begin_employee_restore'
       | 'mark_employee_restore_attempt'
       | 'confirm_employee_restore'

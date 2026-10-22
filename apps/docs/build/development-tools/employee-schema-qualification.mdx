@@ -755,19 +755,31 @@ source-only gate enabled; do not build locally or bypass type errors.
 
 ## Managed profile qualification
 
-Select `include_managed_profile=true` together with `include_journal=true` on the
-same reviewed control/source commit. This adds `employee-managed-profile.sql`
-(53 rollback assertions) and `employee-managed-profile-concurrency.sql`
-(10 assertions using real independent database sessions) to the journal profile
-and generates types from that full-migration disposable database. Existing
-optional defaults and packet counts remain unchanged when the selection is off.
-`managedProfileQualified` requires both exact packets, the same-run artifact
-digest, base packet success and positive owned cleanup.
-
-When `include_http=true` is also selected, the actual disposable PostgREST fixture
-calls `qualifyManagedProfileHttp`. The HTTP gate requires
-`managedProfileQualification.qualified=true` and its exact 11-assertion receipt,
-including one write and lost-acknowledgement readback. These executed SQL and HTTP
-checks do not establish browser behavior, Web request authorization or production
-acceptance. The managed profile product contract is recorded in
-[Infrastructure](/platform/applications/infrastructure#managed-employee-profile-edits).
+Select `include_managed_profile=true` with `include_journal=true` on the same reviewed control/source commit.
+The runner selects rollback packets `employee-managed-profile.sql` (53), `employee-admin-profile-usernames.sql` (74),
+then `employee-unmanaged-profile-usernames.sql` (100), before the committed `employee-managed-profile-concurrency.sql` (10).
+Types come from the same disposable database. Username packets exercise changed 1/4/33/65/81/1001-character handles,
+null clear, exact ownership, duplicate/CAS/replay denials, unchanged public 5–32 policy and preserved account data.
+The legacy packet additionally rejects partial/historical managed evidence, revoked actors and wrong identity/domain;
+it preserves disabled/unconfirmed target eligibility, nullable preimages and atomic owned old-handle release.
+Only exact protected contexts admit length exceptions; other generic limits and B-tree physical bounds remain.
+Optional defaults remain unchanged. `managedProfileQualified` requires all four exact packets, same-run types digest,
+base packet success and positive owned cleanup. Missing packets and old receipts cannot qualify.
+With `include_http=true`, the managed receipt remains exactly 47 assertions and one lost-ACK write.
+Its required `unmanagedProfileQualification` v1 adds 75 assertions, lengths 1/4/33/65/81/1001, six single writes with
+lost-ACK independent inspection, exact replay, stale-CAS/duplicate/managed-bypass/ordinary-actor and public-policy denials.
+These SQL/PostgREST checks do not establish authenticated Web route composition, browser or production acceptance.
+Select the separate default-off `include_profile_route=true` with journal, HTTP and managed profile enabled;
+`include_web_session` is not required and its existing creation/restoration matrix is unchanged. The hosted fixture
+builds and starts exact Infrastructure source on loopback under the owned process/deadline helpers. Anonymous PATCH
+readiness must return 401; GET 405 is not readiness. Real GoTrue sessions traverse the Infrastructure proxy, required-MFA
+guard, route authorization, service and managed/null-fallback SQL writers. Each managed and unmanaged target already
+owns `hehe`: a name-only PATCH must return 200 with SQL readback and exactly one correctly bound writer RPC;
+a competing target must return 409 without SQL state changes. Retained credentials after root revocation or ban,
+AAL1 after policy activation, and an invalidated real TOTP proof must be denied without writer calls; real TOTP
+verification must pass. Anonymous and malformed Bearer requests cannot borrow a valid cookie. Private SQL snapshots
+compare identity, credentials, access, mailbox ownership and creation provenance; receipts publish only fixed diagnostics.
+`profileRouteQualification` is independent of the 47/75 transport counts and requires exact source, all 18 cases,
+process-group drainage and owned database cleanup. Its `routeAuthorizationProof=true` remains disposable route evidence;
+`productionProof=false` always. Direct PATCH imports and mocked authentication cannot qualify this receipt.
+See the [Infrastructure contract](/platform/applications/infrastructure#managed-employee-profile-edits).

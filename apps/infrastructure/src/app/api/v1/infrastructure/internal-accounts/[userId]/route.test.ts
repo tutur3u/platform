@@ -136,4 +136,53 @@ describe('internal account mutation route', () => {
       })
     );
   });
+  it.each([1, 4, 33, 65, 81, 1001])(
+    'passes %i character normalized usernames to fresh-preimage validation',
+    async (length) => {
+      const username = 'a'.repeat(length);
+      const response = await PATCH(
+        request({
+          action: 'update_profile',
+          displayName: 'Local Operator',
+          username: ` ${username.toUpperCase()} `,
+        }),
+        params()
+      );
+      expect(response.status).toBe(200);
+      expect(mocks.mutateInternalAccount).toHaveBeenCalledWith(
+        expect.objectContaining({ username })
+      );
+    }
+  );
+  it.each(['old-name', 'old.name', 'a_', null, '  '])(
+    'defers username %s to the service with its current preimage',
+    async (username) => {
+      const response = await PATCH(
+        request({
+          action: 'update_profile',
+          displayName: 'Local Operator',
+          username,
+        }),
+        params()
+      );
+      expect(response.status).toBe(200);
+      expect(mocks.mutateInternalAccount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: username?.trim() || null,
+        })
+      );
+    }
+  );
+  it.each([12, {}, []])('rejects non-string username %j', async (username) => {
+    const response = await PATCH(
+      request({
+        action: 'update_profile',
+        displayName: 'Local Operator',
+        username,
+      }),
+      params()
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.mutateInternalAccount).not.toHaveBeenCalled();
+  });
 });

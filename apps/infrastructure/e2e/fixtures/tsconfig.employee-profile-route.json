@@ -1,0 +1,13 @@
+{
+  "extends": "../../../web/e2e/fixtures/tsconfig.employee-http.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "composite": false
+  },
+  "include": [
+    "employee-profile-route-runtime.ts",
+    "employee-profile-route-cases.ts"
+  ],
+  "exclude": ["node_modules"]
+}

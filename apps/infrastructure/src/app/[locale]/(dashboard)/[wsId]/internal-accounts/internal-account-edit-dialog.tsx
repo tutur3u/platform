@@ -16,7 +16,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { WORKSPACE_HANDLE_REGEX } from '@tuturuuu/utils/workspace-handle';
+import { isValidAdminProfileHandle } from '@tuturuuu/utils/internal-accounts/employee-profile-handle';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -40,8 +40,10 @@ export function InternalAccountEditDialog({
   const [username, setUsername] = useState(account.username ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const normalizedUsername = username.trim().toLowerCase();
-  const usernameIsValid =
-    !normalizedUsername || WORKSPACE_HANDLE_REGEX.test(normalizedUsername);
+  const usernameIsValid = isValidAdminProfileHandle({
+    username: normalizedUsername || null,
+    currentUsername: account.username,
+  });
   const canSubmit =
     Boolean(displayName.trim()) && usernameIsValid && !isSubmitting;
 
@@ -98,7 +100,6 @@ export function InternalAccountEditDialog({
                 autoComplete="username"
                 className="pl-9"
                 id={`username-${account.id}`}
-                maxLength={64}
                 onChange={(event) => setUsername(event.target.value)}
                 value={username}
               />

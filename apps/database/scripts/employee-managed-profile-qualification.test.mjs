@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { httpQualificationReceipt } from './employee-http-receipt.mjs';
 import {
   managedProfilePackets,
   schemaFailureDiagnostic,
@@ -29,7 +30,7 @@ test('managed profile selection preserves defaults and requires journal/typegen/
       assertions,
     }));
     assert.deepEqual(
-      selectSchemaPackets(true).slice(-2),
+      selectSchemaPackets(true).slice(-managedProfilePackets.length),
       managedProfilePackets
     );
     const input = {
@@ -66,6 +67,7 @@ test('feedback profile and causal matrices isolate managed selection inherited f
   const env = {
     ...process.env,
     EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE: 'true',
+    EMPLOYEE_SCHEMA_INCLUDE_PROFILE_ROUTE: 'true',
     EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: 'true',
     EMPLOYEE_SCHEMA_INCLUDE_HTTP: 'true',
     EMPLOYEE_SCHEMA_INCLUDE_RESTORE: 'true',
@@ -129,7 +131,11 @@ test('the original embedded setup COMMIT remains RED while dedicated remote cont
 
 function managedDiagnostic(
   result,
-  ordinal = basePackets(true).length + 2,
+  ordinal = basePackets(true).length +
+    managedProfilePackets.findIndex(
+      ([file]) => file === 'employee-managed-profile-concurrency.sql'
+    ) +
+    1,
   phase = 'packet-tap'
 ) {
   const previous = process.env.EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE;
@@ -203,7 +209,11 @@ test('managed diagnostics bound hostile output, reject invalid packet binding, a
     false
   );
   assert.throws(
-    () => managedDiagnostic({}, basePackets(true).length + 3),
+    () =>
+      managedDiagnostic(
+        {},
+        basePackets(true).length + managedProfilePackets.length + 1
+      ),
     /Invalid managed profile diagnostic binding/u
   );
   assert.throws(
@@ -388,4 +398,130 @@ test('pure wait model accepts a delayed owned waiter before the deadline, never 
     modelPoll(() => ({ ...absent, busy: false })),
     { observed: false, elapsedMs: 0 }
   );
+});
+
+test('managed HTTP receipt rejects the old length-limited fixture and missing length cases', () => {
+  const receipt = {
+    qualified: true,
+    phase: 'complete',
+    assertions: 30,
+    routeAuthorizationProof: false,
+    productionProof: false,
+    managedProfileQualification: {
+      qualified: true,
+      assertions: 47,
+      writes: 1,
+      usernameLengths: [4, 1, 33, 65, 81, 1001],
+      unmanagedProfileQualification: {
+        version: 1,
+        qualified: true,
+        assertions: 75,
+        writes: 6,
+        lostAcknowledgements: 6,
+        usernameLengths: [1, 4, 33, 65, 81, 1001],
+        routeAuthorizationProof: false,
+        productionProof: false,
+      },
+      lostAcknowledgementReadback: true,
+      routeAuthorizationProof: false,
+      productionProof: false,
+    },
+  };
+  const parse = (managedProfileQualification) =>
+    httpQualificationReceipt(
+      JSON.stringify({
+        ...receipt,
+        managedProfileQualification,
+      })
+    );
+  assert.deepEqual(parse(receipt.managedProfileQualification), receipt);
+  const { unmanagedProfileQualification, ...oldManagedOnly } =
+    receipt.managedProfileQualification;
+  assert.throws(
+    () => parse(oldManagedOnly),
+    /Unmanaged profile HTTP receipt invalid/u
+  );
+  for (const incomplete of [
+    { ...unmanagedProfileQualification, version: 0 },
+    { ...unmanagedProfileQualification, assertions: 74 },
+    { ...unmanagedProfileQualification, writes: 5 },
+    { ...unmanagedProfileQualification, lostAcknowledgements: 5 },
+    ...unmanagedProfileQualification.usernameLengths.map((length) => ({
+      ...unmanagedProfileQualification,
+      usernameLengths: unmanagedProfileQualification.usernameLengths.filter(
+        (value) => value !== length
+      ),
+    })),
+  ])
+    assert.throws(
+      () =>
+        parse({
+          ...receipt.managedProfileQualification,
+          unmanagedProfileQualification: incomplete,
+        }),
+      /Unmanaged profile HTTP receipt invalid/u
+    );
+
+  assert.throws(
+    () => parse({ ...receipt.managedProfileQualification, assertions: 11 }),
+    /Managed profile HTTP receipt invalid/u
+  );
+  for (const length of receipt.managedProfileQualification.usernameLengths) {
+    assert.throws(
+      () =>
+        parse({
+          ...receipt.managedProfileQualification,
+          usernameLengths:
+            receipt.managedProfileQualification.usernameLengths.filter(
+              (value) => value !== length
+            ),
+        }),
+      /Managed profile HTTP receipt invalid/u
+    );
+  }
+});
+
+test('administrator username packet has an exact closed rollback plan', () => {
+  const file = 'employee-admin-profile-usernames.sql';
+  const sql = readFileSync(
+    new URL(`../supabase/tests/${file}`, import.meta.url),
+    'utf8'
+  );
+  const count = sql.match(/^select (?:is|ok|throws_ok)\(/gmu)?.length;
+  assert.equal(count, 74);
+  assert.deepEqual(
+    managedProfilePackets.find(([name]) => name === file),
+    [file, count]
+  );
+  assert.doesNotThrow(() => assertRollbackSource(sql));
+});
+
+test('rollback username packet precedes committed concurrency fixtures', () => {
+  const username = managedProfilePackets.findIndex(
+    ([file]) => file === 'employee-admin-profile-usernames.sql'
+  );
+  const concurrency = managedProfilePackets.findIndex(
+    ([file]) => file === 'employee-managed-profile-concurrency.sql'
+  );
+  assert.ok(username >= 0 && concurrency >= 0 && username < concurrency);
+});
+
+test('unmanaged packet has a closed exact rollback plan before committed sessions', () => {
+  const file = 'employee-unmanaged-profile-usernames.sql';
+  const sql = readFileSync(
+    new URL(`../supabase/tests/${file}`, import.meta.url),
+    'utf8'
+  );
+  const count = sql.match(/^select (?:is|ok|throws_ok)\(/gmu)?.length;
+  assert.equal(count, 100);
+  assert.deepEqual(
+    managedProfilePackets.find(([name]) => name === file),
+    [file, count]
+  );
+  assert.doesNotThrow(() => assertRollbackSource(sql));
+  const position = managedProfilePackets.findIndex(([name]) => name === file);
+  const committed = managedProfilePackets.findIndex(
+    ([name]) => name === 'employee-managed-profile-concurrency.sql'
+  );
+  assert.ok(position >= 0 && position < committed);
 });

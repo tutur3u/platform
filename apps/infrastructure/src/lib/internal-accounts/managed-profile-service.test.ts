@@ -182,3 +182,70 @@ it('revocation before write prevents mutation', async () => {
   });
   expect(f.fetcher).toHaveBeenCalledTimes(1);
 });
+
+it.each(['bad-name', '_bad', 'bad.name', 'naïve', 'two words', 'a\n'])(
+  'rejects changed invalid username %s after inspection without write or receipt RPC',
+  async (username) => {
+    const f = fixture();
+    await expect(
+      updateManagedEmployeeProfile({ ...f.input, username })
+    ).rejects.toMatchObject({ status: 400 });
+    expect(f.fetcher).toHaveBeenCalledTimes(1);
+    expect(String(f.fetcher.mock.calls[0]?.[0])).toContain(
+      '/rpc/inspect_employee_profile'
+    );
+  }
+);
+it.each([
+  'a',
+  'abcd',
+  'hehe',
+  ...[33, 65, 81, 1001].map((length) => 'a'.repeat(length)),
+  'a_',
+  null,
+  'old-name',
+])(
+  'writes username %s once and verifies an independent receipt',
+  async (username) => {
+    const f = fixture();
+    const before = {
+      ...current,
+      username:
+        username === null
+          ? 'old-name'
+          : username === 'old-name' || username === 'hehe'
+            ? username
+            : null,
+    };
+    const after = { ...receipt, username };
+    f.fetcher
+      .mockReset()
+      .mockResolvedValueOnce(Response.json(before))
+      .mockResolvedValueOnce(Response.json(after))
+      .mockResolvedValueOnce(
+        Response.json({
+          current: {
+            ...before,
+            revision: 1,
+            displayName: after.displayName,
+            username,
+          },
+          receipt: after,
+        })
+      );
+    await expect(
+      updateManagedEmployeeProfile({ ...f.input, username })
+    ).resolves.toEqual({ displayName: after.displayName, username });
+    expect(f.fetcher).toHaveBeenCalledTimes(3);
+    expect(
+      JSON.parse(String(f.fetcher.mock.calls[1]?.[1]?.body))
+    ).toMatchObject({
+      p_handle: username,
+      p_expected_revision: 0,
+      p_operation_id: operationId,
+    });
+    expect(String(f.fetcher.mock.calls[2]?.[0])).toContain(
+      '/rpc/inspect_employee_profile_operation'
+    );
+  }
+);

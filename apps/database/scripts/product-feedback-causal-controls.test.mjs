@@ -508,6 +508,7 @@ test('real runner validates causal selection before hosted setup without spoofin
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK: feedback,
           EMPLOYEE_SCHEMA_INCLUDE_FEEDBACK_CAUSAL: causal,
           EMPLOYEE_SCHEMA_INCLUDE_MANAGED_PROFILE: 'false',
+          EMPLOYEE_SCHEMA_INCLUDE_PROFILE_ROUTE: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_JOURNAL: journal,
           EMPLOYEE_SCHEMA_INCLUDE_PERSONAL_JOURNAL: 'false',
           EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: 'false',

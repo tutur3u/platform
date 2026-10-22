@@ -1,6 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import { createEmployeeManagementTransport } from './employee-management-rpc';
+import { isValidAdminProfileHandle } from './employee-profile-handle';
 import { InternalAccountAdminError } from './errors';
 
 const CurrentSchema = z.discriminatedUnion('managed', [
@@ -92,6 +93,13 @@ export async function updateManagedEmployeeProfile(
     preimage.email !== input.email
   )
     sqlFailure('23514');
+  if (
+    !isValidAdminProfileHandle({
+      username: input.username,
+      currentUsername: preimage.username,
+    })
+  )
+    sqlFailure('22023');
   const payload = {
     ...tuple,
     p_expected_revision: preimage.revision,

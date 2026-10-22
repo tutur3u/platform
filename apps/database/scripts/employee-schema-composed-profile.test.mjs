@@ -326,3 +326,43 @@ test('the unchanged foundation profile still reports exactly its original172 con
   assert.equal(after.assertions, 172);
   assert.equal(after.scope, 'employee-creation-restoration');
 });
+
+test('authenticated Infrastructure profile fixture composes the real runtime without importing PATCH or mocked authentication', () => {
+  const runtime = readFileSync(
+    new URL(
+      '../../infrastructure/e2e/fixtures/employee-profile-route-runtime.ts',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const cases = readFileSync(
+    new URL(
+      '../../infrastructure/e2e/fixtures/employee-profile-route-cases.ts',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const verifier = readFileSync(
+    new URL('./verify-employee-schema-contract.mjs', import.meta.url),
+    'utf8'
+  );
+  assert.match(runtime, /--filter=@tuturuuu\/infrastructure\^/u);
+  assert.match(runtime, /completeBuild\('bun'/u);
+  assert.match(runtime, /method: 'PATCH'/u);
+  assert.match(runtime, /response.status === 401/u);
+  assert.doesNotMatch(runtime, /response.status === 405/u);
+  assert.match(cases, /client.auth.mfa.enroll/u);
+  assert.match(cases, /client.auth.mfa.challenge/u);
+  assert.match(cases, /client.auth.mfa.verify/u);
+  assert.match(cases, /assertRpcs/u);
+  assert.match(cases, /assert.deepEqual\(snapshot\(deniedTarget\), before\)/u);
+  assert.doesNotMatch(
+    runtime + cases,
+    /from ['"][^'"]*\/route['"]|vi\.mock|mockResolvedValue/u
+  );
+  assert.match(
+    verifier,
+    /await profile.run\(\{ root, status, metadata, sourceSha \}\)/u
+  );
+  assert.match(verifier, /profileRouteQualification: profile.receipt/u);
+});

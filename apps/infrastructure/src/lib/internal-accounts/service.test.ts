@@ -1,7 +1,7 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resetInternalAccountAuthenticators } from './mfa-service';
 import {
   type InternalAccountAdminError,
@@ -12,6 +12,13 @@ import {
 } from './service';
 
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/supabase/next/common', () => ({
+  checkEnvVariables: () => ({
+    url: 'https://synthetic.supabase.co',
+    key: 'synthetic-key',
+  }),
+}));
+afterEach(() => vi.unstubAllGlobals());
 vi.mock('./managed-profile-service', () => ({
   updateManagedInternalAccountProfile: vi.fn().mockResolvedValue(null),
 }));
@@ -322,50 +329,65 @@ describe('internal account service', () => {
   });
 
   it('updates a public profile without blocking the acting user', async () => {
-    const target = authUser({
-      email: 'local@tuturuuu.com',
-      id: 'local-user',
-    });
-    const getUserById = vi.fn().mockResolvedValue({
-      data: { user: target },
-      error: null,
-    });
-    const deleteHandle = vi.fn().mockResolvedValue({ error: null });
-    const from = vi.fn((table: string) => {
-      if (table === 'users') {
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              maybeSingle: vi
-                .fn()
-                .mockResolvedValue({ data: { handle: 'old' }, error: null }),
-            })),
-          })),
-          update: vi.fn(() => ({
-            eq: vi.fn().mockResolvedValue({ error: null }),
-          })),
-        };
-      }
-      return {
-        delete: vi.fn(() => ({
-          eq: vi.fn(() => ({ eq: deleteHandle })),
+    const id = '00000000-0000-4000-8000-000000012002';
+    const target = authUser({ email: 'local@tuturuuu.com', id });
+    const getUserById = vi
+      .fn()
+      .mockResolvedValue({ data: { user: target }, error: null });
+    const from = vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { display_name: 'Old', handle: 'old' },
+            error: null,
+          }),
         })),
-        insert: vi.fn().mockResolvedValue({ error: null }),
-      };
-    });
-
+      })),
+    }));
+    let receipt: object | null = null;
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async (url, options) => {
+        const body = JSON.parse(String(options?.body));
+        if (String(url).endsWith('/update_unmanaged_internal_profile')) {
+          receipt = {
+            operationId: body.p_operation_id,
+            actorUserId: id,
+            id,
+            email: target.email,
+            expectedDisplayName: 'Old',
+            expectedUsername: 'old',
+            displayName: 'Local Operator',
+            username: 'operator',
+          };
+          return Response.json(receipt);
+        }
+        return Response.json({
+          current: {
+            managed: false,
+            id,
+            email: target.email,
+            displayName: 'Local Operator',
+            username: 'operator',
+          },
+          receipt,
+        });
+      });
+    vi.stubGlobal('fetch', fetcher);
     const updated = await mutateInternalAccount({
       action: 'update_profile',
-      actorUserId: 'local-user',
+      actorUserId: id,
       displayName: 'Local Operator',
       sbAdmin: adminClient({ getUserById }, { from }),
-      targetUserId: 'local-user',
+      targetUserId: id,
       username: 'operator',
     });
-
-    expect(updated.displayName).toBe('Local Operator');
-    expect(updated.username).toBe('operator');
-    expect(from).toHaveBeenCalledWith('handles');
+    expect(updated).toMatchObject({
+      displayName: 'Local Operator',
+      username: 'operator',
+    });
+    expect(from).toHaveBeenCalledExactlyOnceWith('users');
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
   it('resets an external account password by exact normalized email', async () => {

@@ -53,6 +53,16 @@ record is not authority to execute it.
 
 ## Account passwords and access
 
+Infrastructure internal-account API requests require fresh persisted root-workspace
+`MEMBER` membership for the authoritative current actor before any account-service
+RPC, in addition to the existing exact corporate email, permission, confirmed and
+unbanned Auth identity, and MFA checks. The global workspace creator permission
+override does not replace this membership requirement. Each request rechecks
+membership without caching: removal returns 403 even for a creator; a membership
+query error or transport exception returns 503 without exposing diagnostics.
+Regression coverage: `authorization.test.ts`. The separately guarded CLI recovery
+exception retains its documented authentication boundary below.
+
 Administrators with root-workspace `manage_internal_accounts` permission use
 **Reset any password** to select an account by email, or **Reset password** in
 an internal account's menu. Both dialogs accept a chosen password or generate a
@@ -82,6 +92,21 @@ self-target controls; `service.test.ts` verifies exact confirmation and provider
 ban changes, managed-subdomain disable/enable UUID preservation, unmanaged-target
 rejection, and unchanged root-only profile/password/MFA eligibility. Route authorization and password-boundary suites cover the existing
 Infrastructure API contracts. These synthetic tests do not establish provider or
+production acceptance.
+
+## Administrator profile username input
+
+The Infrastructure internal-account profile dialog accepts administrator usernames
+without product minimum or maximum length limits. Input is trimmed and lowercased;
+empty input clears the username. Changed nonempty usernames start with an ASCII
+letter or digit and contain only lowercase ASCII letters, digits, and underscores.
+An unchanged legacy username can be retained while editing the display name.
+Usernames must be unique; reserved names and availability are checked by the server
+when saving. This administrator input policy does not change ordinary self-service
+username rules or workspace handles. Transport and storage safety limits remain
+separate from product input policy. UI and service regression coverage lives in
+`internal-account-edit-dialog.test.tsx`, `profile-service.test.ts`, and
+`managed-profile-service.test.ts`; these tests do not establish database or
 production acceptance.
 
 ## Diagnose an internal profile save failure
@@ -551,13 +576,32 @@ name and canonical personal mailbox display/sender names, advancing the registry
 revision and appending an immutable rename receipt. It never changes UUID, email,
 Auth credentials, grants, membership or account access.
 
-Managed edits follow the public-profile username validation, exact reservation
-ownership and cooldown rules. Previously owned handles remain reserved by that
-user, matching the public-profile RPC. This is an intentional exception to the
-legacy Infrastructure unmanaged writer's old-handle release behavior. Unmanaged
-eligibility and writes retain their existing path. NULL or foreign reservations
-are never adopted. Any failed write rolls back all profile, mailbox, handle,
-quota, revision and receipt changes.
+Administrator Infrastructure profile edits allow any nonempty username length;
+public self-service remains 5–32 characters. The guarded managed and unmanaged
+SQL entrypoints provide this exception. Changed usernames retain lowercase
+letters, digits and underscores, must start with a letter or digit, and reject
+reserved names. NULL clears the username. PostgreSQL B-tree key size and storage
+limits still apply; this is not a guarantee that arbitrarily large values fit.
+The managed SQL writer uses an ungranted backend/transaction/actor/target/handle
+capability with fresh root authority. Only `users.handle` and `handles.value`
+length enforcement admits that exception; bare service writes cannot mint it.
+Exact reservation ownership, uniqueness and cooldowns remain enforced. Previously
+owned handles stay reserved, unlike the legacy unmanaged writer's release of old
+handles. NULL or foreign reservations are never adopted. Failed writes roll back profile, mailbox, handle,
+quota, revision, capability and receipt changes.
+
+Legacy unmanaged Infrastructure edits use a separate private atomic SQL entrypoint
+with fresh root authority, exact target/email admission and nullable name/username
+preimage comparison. Exact `@tuturuuu.com` eligibility includes disabled and
+unconfirmed targets. Managed registry, intent, onboarding, CREATE, RESTORE or
+address-migration evidence excludes this path. Its protected transaction context
+admits the same username length exception without bypassing syntax, reservations
+or quotas. The transaction releases only the target's previous owned handle and
+appends an immutable operation receipt; failures roll everything back. Independent
+operation inspection verifies committed current state after success or a lost
+acknowledgement, without another write. Legacy edits do not change managed names,
+mailbox state or employee provenance. Regression coverage includes
+`employee-unmanaged-profile-usernames.sql` and the versioned legacy HTTP packet.
 
 Pending/inconsistent employees and unresolved CREATE, RESTORE or address
 operations cannot be renamed. Original CREATE names, intent and journal remain
@@ -569,6 +613,7 @@ stale; a new RESTORE uses the new revision and current name. Lost acknowledgemen
 are inspected by their original internal operation reference, without a second
 write or a new confirmation step.
 
-Regression coverage: `employee-managed-profile.sql`, managed-profile transport
+Regression coverage: `employee-managed-profile.sql`,
+`employee-admin-profile-usernames.sql`, managed-profile transport
 checks, and read-only CREATE observation/client negative controls. Hosted
 qualification and production acceptance are separate delivery gates.

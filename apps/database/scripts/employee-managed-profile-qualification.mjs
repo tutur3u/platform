@@ -10,6 +10,8 @@ import {
 
 export const managedProfilePackets = [
   ['employee-managed-profile.sql', 53],
+  ['employee-admin-profile-usernames.sql', 74],
+  ['employee-unmanaged-profile-usernames.sql', 100],
   ['employee-managed-profile-concurrency.sql', 10],
 ];
 function selected(journal) {
@@ -27,7 +29,7 @@ export function selectSchemaPackets(...args) {
 }
 export function schemaReceipt(input) {
   if (!selected(input.journal)) return baseReceipt(input);
-  const tail = input.packets.slice(-2);
+  const tail = input.packets.slice(-managedProfilePackets.length);
   const complete =
     JSON.stringify(tail) ===
     JSON.stringify(
@@ -35,7 +37,7 @@ export function schemaReceipt(input) {
     );
   const receipt = baseReceipt({
     ...input,
-    packets: input.packets.slice(0, -2),
+    packets: input.packets.slice(0, -managedProfilePackets.length),
   });
   return {
     ...receipt,
@@ -131,6 +133,13 @@ export function schemaFailureDiagnostic(phase, ordinal, result = {}, ...args) {
 
 export function assertQualifiedHttp(value, status, restore) {
   baseHttp(value, status, restore);
-  if (selected(true) && value.managedProfileQualification?.qualified !== true)
+  if (
+    selected(true) &&
+    (value.managedProfileQualification?.qualified !== true ||
+      value.managedProfileQualification.unmanagedProfileQualification
+        ?.qualified !== true ||
+      value.managedProfileQualification.unmanagedProfileQualification
+        .version !== 1)
+  )
     throw new Error('Managed profile HTTP qualification incomplete');
 }
