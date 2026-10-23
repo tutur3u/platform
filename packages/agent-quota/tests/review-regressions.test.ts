@@ -262,7 +262,17 @@ describe('independent review regressions', () => {
         );
         const account = await collectSnapshot(
           { ...pool(instanceId, 'claude'), models: ['claude-opus-4-6'] },
-          dir
+          dir,
+          {
+            providerInstances: {
+              [instanceId]: {
+                driver: 'claudeAgent',
+                config: {
+                  homePath: `/fixture/${instanceId === 'claudeAgent' ? 'claude_skora' : instanceId}`,
+                },
+              },
+            },
+          }
         );
         identities.add(account.accountIdentityHash);
         accounts.push(account);
@@ -305,6 +315,32 @@ describe('independent review regressions', () => {
       reroutePlan([entry], request, context, { child: proof })[0]?.status
     ).toBe('block');
   });
+  it('blocks a reservation belonging to a different requesting thread', () => {
+    const { request, context } = fixture();
+    applyDescendantReceipts(snapshot, context);
+    admit({ ...request, requestId: rerouteKey('child', 'run4') }, context);
+    context.ledger.reservations[0]!.threadId = 'another-owner';
+    expect(
+      reroutePlan([entry], request, context, { child: proof })[0]
+    ).toMatchObject({
+      status: 'block',
+      blockers: expect.arrayContaining(['reservation-owner-mismatch']),
+    });
+  });
+  it('does not substitute another candidate when the reserved model is removed', () => {
+    const { request, context } = fixture();
+    applyDescendantReceipts(snapshot, context);
+    admit({ ...request, requestId: rerouteKey('child', 'run4') }, context);
+    request.requirements.candidates = request.requirements.candidates.map(
+      (c) => ({ ...c, model: 'replacement-model' })
+    );
+    context.accounts.forEach((a) => {
+      a.models?.push('replacement-model');
+    });
+    expect(
+      reroutePlan([entry], request, context, { child: proof })[0]
+    ).toMatchObject({ status: 'block', success: false });
+  });
   it('requires a real matching running task and makes blockers win over caller claims', () => {
     const { request, context } = fixture();
     const resumed = {
@@ -335,6 +371,21 @@ describe('independent review regressions', () => {
     expect(
       reroutePlan([entry], request, context, evidence, live)[0]
     ).toMatchObject({ status: 'resumed-on-provider', success: true });
+    for (const mismatch of [
+      { model: 'wrong-model' },
+      { instanceId: 'wrong-provider' },
+      { taskId: 'wrong-task' },
+      { threadId: 'wrong-child' },
+      { status: 'completed' },
+    ]) {
+      expect(
+        reroutePlan([entry], request, context, evidence, {
+          ...live,
+          runs: [{ ...live.runs[0]!, ...mismatch }],
+        })[0]
+      ).toMatchObject({ status: 'block', success: false });
+    }
+
     expect(
       reroutePlan(
         [{ ...entry, switchBlockers: ['unfinished-writers'] }],
@@ -366,7 +417,24 @@ describe('independent review regressions', () => {
         (await collectSnapshot(pool('antigravity', 'antigravity'), dir)).windows
       ).toEqual([]);
       await rm(join(dir, 'antigravity.json'));
-      await writeFile(join(dir, 'antigravity.json'), ' '.repeat(2_000_001));
+      await writeFile(
+        join(dir, 'antigravity.json'),
+        JSON.stringify({
+          instanceId: 'antigravity',
+          driver: 'antigravity',
+          usageLimits: {
+            checkedAt: now.toISOString(),
+            windows: [
+              {
+                id: 'gemini-5h',
+                usedPercent: 0,
+                resetsAt: '2026-10-24T04:00:00Z',
+              },
+            ],
+          },
+          padding: ' '.repeat(2_000_001),
+        })
+      );
       expect(
         (await collectSnapshot(pool('antigravity', 'antigravity'), dir)).windows
       ).toEqual([]);

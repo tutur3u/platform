@@ -25,7 +25,26 @@ export function collapseAccounts(
     return {
       ...first,
       instanceIds: ordered.map((account) => account.instanceId),
-      windows: ordered.flatMap((account) => account.windows),
+      windows: [
+        ...ordered
+          .flatMap((account) => account.windows)
+          .reduce((windows, window) => {
+            const key = JSON.stringify([
+              window.id ?? window.kind,
+              window.scope ?? { kind: 'account' },
+            ]);
+            const previous = windows.get(key);
+            if (
+              !previous ||
+              Date.parse(window.observedAt) > Date.parse(previous.observedAt) ||
+              (window.observedAt === previous.observedAt &&
+                (window.usedPercent ?? -1) > (previous.usedPercent ?? -1))
+            )
+              windows.set(key, window);
+            return windows;
+          }, new Map<string, AccountUsage['windows'][number]>())
+          .values(),
+      ],
       alias:
         ordered.length > 1
           ? `Shared account identity: ${ordered.map((account) => account.instanceId).join(', ')}; reservations combined.`

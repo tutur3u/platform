@@ -7,6 +7,7 @@ import {
 import { HookError } from './hook-ledger';
 import type { AdmissionContext } from './hooks-types';
 import type { ChildSnapshot } from './reconcile-children';
+import { receiptWindowScope } from './window-scope';
 
 // Apply verified failures before choosing a pool, even when snapshots lag.
 export function applyRecoveryReceipt(
@@ -14,11 +15,6 @@ export function applyRecoveryReceipt(
   context: AdmissionContext
 ) {
   if (entry.failureClass !== 'usage-limit' && entry.failureClass !== 'capacity')
-    return;
-  if (
-    typeof entry.resetAt === 'string' &&
-    Date.parse(entry.resetAt) <= context.now.getTime()
-  )
     return;
   if (
     entry.failureClass === 'capacity' &&
@@ -44,6 +40,11 @@ export function applyRecoveryReceipt(
   recordObservation(context.ledger, {
     eventId: `${entry.recoveryAdmissionKey}:receipt`,
     model: typeof entry.model === 'string' ? entry.model : undefined,
+    windowScope: receiptWindowScope(
+      account.provider,
+      typeof entry.model === 'string' ? entry.model : undefined,
+      typeof entry.receipt === 'string' ? entry.receipt : ''
+    ),
     instanceId: account.instanceId,
     accountKey: accountKey(account),
     outcome:
@@ -77,6 +78,7 @@ export function applyDescendantReceipts(
       {
         providerInstanceId: run.instanceId,
         model: run.model,
+        receipt: receipt.message,
         failureClass: kind,
         failureObservedAt: receipt.observedAt,
         resetAt:

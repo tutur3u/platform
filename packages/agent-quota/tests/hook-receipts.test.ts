@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
+import { processStartedAt } from '../src/process-identity';
 
 const fixture = vi.hoisted(() => ({
   input: {} as Record<string, unknown>,
@@ -21,6 +22,7 @@ vi.mock('../src/collectors', () => ({
 }));
 vi.mock('../src/collectors/children', () => ({
   collectChildren: vi.fn(() => fixture.snapshot),
+  collectPoolReceipts: vi.fn(() => fixture.snapshot),
 }));
 
 import { collectChildren } from '../src/collectors/children';
@@ -95,6 +97,9 @@ it('plain admit automatically imports completed receipts and never prints accoun
       },
     };
     await runHook('admit');
+    expect(
+      log.mock.calls.map((call) => String(call[0])).join('')
+    ).not.toContain('codex'.padEnd(64, '0'));
     expect(collectChildren).toHaveBeenCalledWith('parent');
     const result = JSON.parse(String(log.mock.calls.at(-1)?.[0]));
     expect(result.chosen?.providerInstanceId).toBe('codex');
@@ -106,6 +111,41 @@ it('plain admit automatically imports completed receipts and never prints accoun
     expect(replay).toContain('admission-already-reserved');
     expect(replay).not.toContain('accountKey');
     expect(replay).not.toContain('codex'.padEnd(64, '0'));
+  } finally {
+    log.mockRestore();
+    process.env.HOME = previous;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+it('redacts the account fingerprint in switch-lease stdout', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'quota-redaction-'));
+  const previous = process.env.HOME;
+  process.env.HOME = dir;
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+  try {
+    fixture.accounts = [
+      {
+        instanceId: 'codex',
+        provider: 'codex',
+        label: 'fixture',
+        windows: [],
+        accountIdentityHash: 'a'.repeat(64),
+      },
+    ];
+    fixture.input = {
+      instanceId: 'codex',
+      threadId: 'thread',
+      attemptId: 'attempt',
+      pid: process.pid,
+      processStartedAt: processStartedAt(process.pid),
+      ttlMs: 1000,
+    };
+    await runHook('switch-lease', 'acquire');
+    const output = String(log.mock.calls.at(-1)?.[0]);
+    expect(JSON.parse(output).status).toBe('acquired');
+    expect(output).not.toContain('accountKey');
+    expect(output).not.toContain('a'.repeat(64));
   } finally {
     log.mockRestore();
     process.env.HOME = previous;

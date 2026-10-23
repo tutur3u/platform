@@ -128,6 +128,13 @@ describe('one-shot quota admission', () => {
     });
     expect(
       admit(input, { ...context, now: new Date('2026-10-23T01:01:01Z') })
+    ).toMatchObject({ status: 'block' });
+    worker.windows.forEach((window) => {
+      window.observedAt = '2026-10-23T01:01:01Z';
+      window.resetsAt = '2026-10-23T06:01:00Z';
+    });
+    expect(
+      admit(input, { ...context, now: new Date('2026-10-23T01:01:01Z') })
     ).toMatchObject({
       status: 'admit',
       chosen: { providerInstanceId: 'worker' },

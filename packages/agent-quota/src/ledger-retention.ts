@@ -28,7 +28,7 @@ export function pruneLedger(
     if (event.clearedAt) return time - Date.parse(event.clearedAt) <= RETENTION;
     const expired =
       event.outcome === 'usage-limit'
-        ? Boolean(event.resetsAt && Date.parse(event.resetsAt) <= time)
+        ? false
         : event.outcome === 'capacity-error'
           ? time - Date.parse(event.observedAt) >= 60_000
           : time - Date.parse(event.observedAt) > RETENTION;

@@ -10,8 +10,9 @@ import type {
 } from './hooks-types';
 import { pruneLedger } from './ledger-retention';
 import { recommend } from './policy';
+import { poolPolicyReasons, settingsFor } from './pool-settings';
 import { clearRecoveredLimits } from './receipt-expiry';
-import { coversModel } from './window-scope';
+import { coversModel, receiptCovers } from './window-scope';
 
 export { accountKey } from './accounts';
 
@@ -215,11 +216,8 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         (event) =>
           (event.accountKey === key || ids.includes(event.instanceId)) &&
           event.outcome === 'usage-limit' &&
-          (pool.provider !== 'antigravity' ||
-            !event.model ||
-            event.model === candidate?.model) &&
-          !event.clearedAt &&
-          (!event.resetsAt || Date.parse(event.resetsAt) > now.getTime())
+          receiptCovers(event, pool.provider, candidate?.model) &&
+          !event.clearedAt
       );
       if (failures.length) {
         state = 'EXHAUSTED';
@@ -249,6 +247,9 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
             total + (active.find((item) => item.instanceId === id)?.count ?? 0),
           0
         ) + reserved;
+      reasons.push(
+        ...poolPolicyReasons(pool, candidate?.model, count, context)
+      );
       if (
         (state === 'UNKNOWN' || state === 'STALE') &&
         count >= request.policy.unknownMaxConcurrent
@@ -298,6 +299,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         ...ids.map(
           (id) =>
             request.policy.preferenceWeights?.[id] ??
+            settingsFor(pool, context)?.preference ??
             (pool.provider === 'codex' ? 4 : 1)
         )
       );

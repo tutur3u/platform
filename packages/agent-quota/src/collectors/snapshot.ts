@@ -1,16 +1,16 @@
-import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { open } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { AccountUsage, UsageWindow } from '../types';
+import { homeIdentity } from '../usage-import';
 import { windowScope } from '../window-scope';
-import { claudeProjectsRoot } from './paths';
 
 // Provider status caches are distinct from provider profiles and authentication files.
 export async function collectSnapshot(
   account: AccountUsage,
-  cacheDir = join(homedir(), '.t3', 'caches')
+  cacheDir = join(homedir(), '.t3', 'caches'),
+  settings?: unknown
 ): Promise<AccountUsage> {
   if (!/^[a-zA-Z0-9_-]+$/.test(account.instanceId)) return account;
   try {
@@ -28,13 +28,11 @@ export async function collectSnapshot(
         await file.close();
       }
     })();
-    const home =
-      account.provider === 'claude'
-        ? claudeProjectsRoot(account.instanceId)
-        : undefined;
-    const homeIdentity = home
-      ? createHash('sha256').update(`claude-home:${home}`).digest('hex')
-      : undefined;
+    const identityFromHome = homeIdentity(
+      settings,
+      account.instanceId,
+      account.provider
+    );
     const driver =
       account.provider === 'claude' ? 'claudeAgent' : account.provider;
     if (value.instanceId !== account.instanceId || value.driver !== driver)
@@ -46,7 +44,7 @@ export async function collectSnapshot(
         typeof limits?.credentialFingerprint === 'string' &&
         /^[a-f0-9]{64}$/i.test(limits.credentialFingerprint)
           ? limits.credentialFingerprint
-          : homeIdentity,
+          : identityFromHome,
     };
     if (
       !limits ||
@@ -94,6 +92,7 @@ export async function collectSnapshot(
             resetsAt:
               typeof window.resetsAt === 'string' ? window.resetsAt : undefined,
             source: 'T3 provider status cache usageLimits',
+            confidence: 'provider',
             observedAt: limits.checkedAt,
             authoritative: true,
           },
@@ -107,7 +106,7 @@ export async function collectSnapshot(
         typeof limits.credentialFingerprint === 'string' &&
         /^[a-f0-9]{64}$/i.test(limits.credentialFingerprint)
           ? limits.credentialFingerprint
-          : homeIdentity,
+          : identityFromHome,
       lastError: windows.length ? undefined : 'no-usage-signal',
     };
   } catch {

@@ -27,6 +27,7 @@ export interface AdmissionRequest {
 }
 export interface Observation {
   model?: string;
+  windowScope?: import('./types').UsageWindow['scope'];
   clearedAt?: string;
   eventId: string;
   instanceId: string;
@@ -57,6 +58,8 @@ export interface SwitchLease {
   expiresAt: string;
 }
 export interface HookLedger {
+  poolHolds?: Record<string, boolean>;
+  lastAdmissions?: Record<string, number>;
   version: 1;
   observations: Observation[];
   retiredRequests?: { requestId: string; retiredAt: string }[];
@@ -69,6 +72,7 @@ export interface HookLedger {
   }[];
 }
 export interface AdmissionContext {
+  poolSettings?: Record<string, import('./pool-settings').PoolSettings>;
   blocks?: QuotaBlock[];
   accounts: AccountUsage[];
   active: ActiveAssignment[];

@@ -46,3 +46,13 @@ same protection. This positional command is a preflight; use JSON `admit` for
 transactional task reservations and full task requirements. No native callback
 is installed: the orchestrator must invoke the gate before `delegate_task` and
 record provider failures with `block`.
+
+Usage parity and r2 corrections: `status`, `explain --pool ID --model MODEL`, and
+`dry-run route --model MODEL` are cache-only and read-only. `import-usage` accepts
+narrow supported usage/home-path exports or typed manual observations on stdin;
+`configure` validates per-pool reserve, near threshold, hysteresis, pacing,
+concurrency and preference and records a receipt without changing the writer.
+Positional `admit POOL MODEL` returns 0 admitted, 3 blocked, 2 malformed or
+unverifiable. Global usage-limit receipts cross orchestrator trees and preserve
+model-window scope. See the owning docs page for the dated five-account
+comparison, exact JSON schemas, supported source and native API boundary.

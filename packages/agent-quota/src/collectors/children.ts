@@ -20,27 +20,58 @@ const scope = `WITH RECURSIVE descendants(thread_id) AS (
 ) `;
 export function collectChildren(
   parentId: string,
-  databasePath = t3StateDatabase()
+  databasePath = t3StateDatabase(),
+  poolScan?: { instanceIds: string[]; now: Date }
 ): ChildSnapshot {
   const db = new DatabaseSync(databasePath, { readOnly: true });
   try {
     db.exec('BEGIN');
+    const since = new Date(
+      (poolScan?.now ?? new Date()).getTime() - 30 * 86400_000
+    ).toISOString();
+    const queryScope = poolScan
+      ? `WITH recent_runs AS (
+      SELECT r.run_id,r.thread_id FROM orchestration_v2_projection_runs r
+      WHERE provider_instance_id IN (SELECT value FROM json_each(?))
+      AND julianday(completed_at) >= julianday(?) AND julianday(completed_at) <= julianday(?)
+      AND r.status IN ('failed','completed')
+      AND EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items receipt WHERE receipt.run_id=r.run_id
+        AND ((receipt.type='error' AND (lower(json_extract(receipt.payload_json,'$.failure.message')) LIKE '%limit%' OR json_extract(receipt.payload_json,'$.failure.class')='usage_limit' OR lower(json_extract(receipt.payload_json,'$.failure.message')) LIKE '%capacity%'))
+          OR (receipt.type='assistant_message' AND (lower(json_extract(receipt.payload_json,'$.text')) LIKE '%limit%' OR lower(json_extract(receipt.payload_json,'$.text')) LIKE '%capacity%' OR lower(json_extract(receipt.payload_json,'$.text')) LIKE '%temporarily unavailable%'))))
+    ), descendants(thread_id) AS (
+      SELECT DISTINCT thread_id FROM recent_runs
+    ) `
+      : scope;
+    const bindings = poolScan
+      ? [
+          JSON.stringify(poolScan.instanceIds),
+          since,
+          poolScan.now.toISOString(),
+        ]
+      : [parentId];
     const rows = <T>(sql: string): T[] => {
+      if (poolScan) {
+        if (sql.includes('FROM orchestration_v2_projection_runs r'))
+          sql += ' WHERE r.run_id IN (SELECT run_id FROM recent_runs)';
+        if (sql.includes('FROM orchestration_v2_projection_turn_items i'))
+          sql += ' AND i.run_id IN (SELECT run_id FROM recent_runs)';
+      }
       const result = db
-        .prepare(`${scope}${sql} LIMIT 5001`)
-        .all(parentId) as T[];
+        .prepare(`${queryScope}${sql} LIMIT 5001`)
+        .all(...bindings) as T[];
       if (result.length > 5000)
         throw new HookError('descendant-snapshot-too-large');
       return result;
     };
-    const threads =
-      rows<ChildThread>(`SELECT t.thread_id AS id, json_extract(t.payload_json,'$.lineage.parentThreadId') AS parentId,
+    const threads = poolScan
+      ? []
+      : rows<ChildThread>(`SELECT t.thread_id AS id, json_extract(t.payload_json,'$.lineage.parentThreadId') AS parentId,
    json_extract(t.payload_json,'$.snoozedUntil') AS snoozedUntil,
    EXISTS(SELECT 1 FROM orchestration_v2_projection_runtime_requests q WHERE q.thread_id=t.thread_id AND q.status='pending' AND q.kind='user_input') AS pendingQuestion,
    EXISTS(SELECT 1 FROM orchestration_v2_projection_runtime_requests q WHERE q.thread_id=t.thread_id AND q.status='pending' AND q.kind IN ('command','file-read','file-change','mcp-elicitation','permission')) AS pendingApproval,
    (SELECT COUNT(*) FROM orchestration_v2_projection_nodes n WHERE n.thread_id=t.thread_id AND n.status IN ('running','pending','waiting')) AS activeWriterNodes
    FROM orchestration_v2_projection_threads t JOIN descendants d ON d.thread_id=t.thread_id`);
-    if (!threads.some((thread) => thread.id === parentId))
+    if (!poolScan && !threads.some((thread) => thread.id === parentId))
       throw new HookError('parent-thread-not-found');
     const runs =
       rows<ChildRun>(`SELECT r.run_id AS id,r.thread_id AS threadId,r.ordinal,r.status,r.completed_at AS completedAt,
@@ -50,8 +81,9 @@ export function collectChildren(
    (SELECT CASE WHEN m.message_id GLOB 'limit-resume:*' AND json_extract(m.payload_json,'$.createdBy')='user' AND json_extract(m.payload_json,'$.creationSource')='server' THEN m.message_id END FROM orchestration_v2_projection_messages m WHERE m.message_id=json_extract(r.payload_json,'$.userMessageId')) AS limitResumeMessageId,
    COALESCE((SELECT json_extract(m.payload_json,'$.notification.source.kind')='monitor' FROM orchestration_v2_projection_messages m WHERE m.message_id=json_extract(r.payload_json,'$.userMessageId')),0) AS monitor
    FROM orchestration_v2_projection_runs r JOIN descendants d ON d.thread_id=r.thread_id`);
-    const tasks =
-      rows<ChildTask>(`SELECT s.subagent_id AS id,s.thread_id AS parentId,s.child_thread_id AS childId,s.status,s.origin,s.provider_instance_id AS instanceId,
+    const tasks = poolScan
+      ? []
+      : rows<ChildTask>(`SELECT s.subagent_id AS id,s.thread_id AS parentId,s.child_thread_id AS childId,s.status,s.origin,s.provider_instance_id AS instanceId,
    json_extract(s.payload_json,'$.completionDelivery.state') AS deliveryState,json_extract(s.payload_json,'$.completionDelivery.observedByRunId') AS observedByRunId
    FROM orchestration_v2_projection_subagents s JOIN descendants d ON d.thread_id=s.thread_id`);
     const failures =
@@ -69,8 +101,7 @@ export function collectChildren(
       JOIN orchestration_v2_projection_runs r ON r.run_id=i.run_id
       JOIN (SELECT j.run_id,MAX(j.updated_at) AS finalAt FROM orchestration_v2_projection_turn_items j JOIN descendants dj ON dj.thread_id=j.thread_id WHERE j.type='assistant_message' GROUP BY j.run_id) final ON final.run_id=i.run_id AND final.finalAt=i.updated_at
       WHERE r.status='completed' AND i.type='assistant_message'
-      AND (lower(json_extract(i.payload_json,'$.text')) LIKE '%usage limit reached%'
-        OR lower(json_extract(i.payload_json,'$.text')) LIKE '%hit your session limit%'
+      AND (lower(json_extract(i.payload_json,'$.text')) LIKE '%limit%'
         OR lower(json_extract(i.payload_json,'$.text')) LIKE '%capacity%'
         OR lower(json_extract(i.payload_json,'$.text')) LIKE '%temporarily unavailable%')`);
     for (const receipt of completedReceipts) {
@@ -81,8 +112,9 @@ export function collectChildren(
           message: safeReceipt(receipt.message, kind).text,
         });
     }
-    const transfers =
-      rows<ChildTransfer>(`SELECT c.source_thread_id AS sourceId,c.target_thread_id AS parentId,json_extract(c.payload_json,'$.sourcePoint.runId') AS runId,
+    const transfers = poolScan
+      ? []
+      : rows<ChildTransfer>(`SELECT c.source_thread_id AS sourceId,c.target_thread_id AS parentId,json_extract(c.payload_json,'$.sourcePoint.runId') AS runId,
    json_extract(c.payload_json,'$.consumedAt') AS consumedAt
    FROM orchestration_v2_projection_context_transfers c JOIN descendants d ON d.thread_id=c.source_thread_id WHERE c.type='subagent_result'`);
     return {
@@ -103,4 +135,14 @@ export function collectChildren(
   } finally {
     db.close();
   }
+}
+
+// Shared quota facts cross orchestrator trees; the same projection reader bounds time and catalog IDs.
+export function collectPoolReceipts(
+  instanceIds: string[],
+  now: Date,
+  databasePath = t3StateDatabase()
+) {
+  if (!instanceIds.length) throw new HookError('receipt-catalog-unavailable');
+  return collectChildren('', databasePath, { instanceIds, now });
 }

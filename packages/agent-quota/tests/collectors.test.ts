@@ -345,6 +345,7 @@ describe('local collectors', () => {
       collectClaude: async () => ({ ...account, provider: 'claude' as const }),
       collectCodex: async () => account,
       collectSnapshot: async (value) => value,
+      readBlockLedger: async () => ({ version: 1 as const, blocks: [] }),
     });
     expect(result.accounts).toHaveLength(8);
     expect(result.active).toBeUndefined();

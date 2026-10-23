@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
-import { collectChildren } from '../src/collectors/children';
+import {
+  collectChildren,
+  collectPoolReceipts,
+} from '../src/collectors/children';
 import { reconcileChildren } from '../src/reconcile-children';
 
 it('projects descendant metadata and structured errors without reading message content', async () => {
@@ -160,7 +163,56 @@ it('projects descendant metadata and structured errors without reading message c
           text: 'Usage Limit Reached. reset in 6 days, 23 hours',
         })
       );
+    completed
+      .prepare('INSERT INTO orchestration_v2_projection_threads VALUES (?,?)')
+      .run('unrelated-root', '{}');
+    const otherRun = completed.prepare(
+      'INSERT INTO orchestration_v2_projection_runs VALUES (?,?,?,?,?,?,?)'
+    );
+    const otherItem = completed.prepare(
+      'INSERT INTO orchestration_v2_projection_turn_items VALUES (?,?,?,?,?,?,?)'
+    );
+    for (const [id, provider, at] of [
+      ['other', 'antigravity', '2026-10-23T03:58:00Z'],
+      ['old', 'antigravity', '2026-01-01T00:00:00Z'],
+      ['foreign', 'unknown-provider', '2026-10-23T03:58:00Z'],
+    ] as const) {
+      otherRun.run(
+        id,
+        'unrelated-root',
+        1,
+        'completed',
+        at,
+        provider,
+        JSON.stringify({
+          rootNodeId: id,
+          modelSelection: { model: 'gemini-4-argon-high' },
+        })
+      );
+      otherItem.run(
+        'unrelated-root',
+        id,
+        id,
+        'assistant_message',
+        'completed',
+        at,
+        JSON.stringify({ text: 'Rate limit reached. resets in 7 days' })
+      );
+    }
     completed.close();
+    const global = collectPoolReceipts(
+      ['antigravity'],
+      new Date('2026-10-23T04:00:00Z'),
+      path
+    );
+    expect(global.failures.map((f) => f.runId)).toEqual(
+      expect.arrayContaining(['run6', 'other'])
+    );
+    expect(global.failures.map((f) => f.runId)).not.toContain('old');
+    expect(global.failures.map((f) => f.runId)).not.toContain('foreign');
+    expect(
+      collectChildren('root', path).failures.map((f) => f.runId)
+    ).not.toContain('other');
     const limit = reconcileChildren(
       collectChildren('root', path),
       'root',

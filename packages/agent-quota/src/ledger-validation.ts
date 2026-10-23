@@ -28,6 +28,19 @@ export function validLedger(value: unknown): value is HookLedger {
     return false;
   return (
     optional(
+      value.poolHolds,
+      (item) =>
+        record(item) && Object.values(item).every((v) => typeof v === 'boolean')
+    ) &&
+    optional(
+      value.lastAdmissions,
+      (item) =>
+        record(item) &&
+        Object.values(item).every(
+          (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0
+        )
+    ) &&
+    optional(
       value.retiredRequests,
       (items) =>
         Array.isArray(items) &&
@@ -46,6 +59,16 @@ export function validLedger(value: unknown): value is HookLedger {
         ) &&
         date(item.observedAt) &&
         optional(item.model, text) &&
+        optional(
+          item.windowScope,
+          (scope) =>
+            record(scope) &&
+            ['account', 'models', 'unknown'].includes(String(scope.kind)) &&
+            (scope.kind !== 'models' ||
+              (Array.isArray(scope.modelPrefixes) &&
+                scope.modelPrefixes.length > 0 &&
+                scope.modelPrefixes.every(text)))
+        ) &&
         optional(item.clearedAt, date) &&
         optional(item.resetsAt, date) &&
         optional(item.requestId, text) &&

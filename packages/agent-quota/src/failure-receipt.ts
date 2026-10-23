@@ -49,7 +49,7 @@ export function safeReceipt(
     );
   return { text, redacted: text !== message };
 }
-export function receiptReset(
+function oneReceiptReset(
   message: string,
   observedAt: string,
   timezone?: string
@@ -129,11 +129,25 @@ export function receiptReset(
   }
 }
 
+export function receiptReset(
+  message: string,
+  observedAt: string,
+  timezone?: string
+): string | null {
+  const matches = [...message.matchAll(/\bresets?\b/gi)];
+  const resets = matches.flatMap((match, index) => {
+    const phrase = message.slice(match.index, matches[index + 1]?.index);
+    const value = oneReceiptReset(phrase, observedAt, timezone);
+    return value ? [Date.parse(value)] : [];
+  });
+  return resets.length ? new Date(Math.max(...resets)).toISOString() : null;
+}
+
 // Completed assistant prose is not an error unless it starts with a provider receipt.
 export function completedFailureClass(message: string): FailureClass | null {
   const text = message.trimStart().replace(/^[#*_>\s]+/, '');
   if (
-    /^(?:usage limit reached\b|you['’]ve hit your (?:session|usage) limit\b|you have reached (?:your |the )?usage limit\b)/i.test(
+    /^(?:rate limit reached\b|you['’]ve hit your limit\b|usage limit reached\b|you['’]ve hit your (?:session|usage) limit\b|you have reached (?:your |the )?usage limit\b)/i.test(
       text
     )
   )

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { collectAll } from './collectors';
-import { collectChildren } from './collectors/children';
+import { collectChildren, collectPoolReceipts } from './collectors/children';
 import {
   admissionInput,
   bool,
@@ -100,7 +100,10 @@ export async function runReroute(args: string[]) {
     );
     const context = { ...collected, ledger: await readLedger(), now };
     applyDescendantReceipts(
-      snapshot,
+      collectPoolReceipts(
+        collected.accounts.map((account) => account.instanceId),
+        now
+      ),
       context,
       typeof input.recoveryTimezone === 'string'
         ? input.recoveryTimezone

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { accountKey, admit, recordObservation } from './admission';
 import { collectAll } from './collectors';
-import { collectChildren } from './collectors/children';
+import { collectChildren, collectPoolReceipts } from './collectors/children';
 import { checkHandover } from './handover';
 import {
   admissionInput,
@@ -77,7 +77,10 @@ export async function runHook(command: string, action?: string): Promise<void> {
       result = await transactLedger((ledger) => {
         const context = { ...collected, ledger, now };
         applyDescendantReceipts(
-          descendants,
+          collectPoolReceipts(
+            collected.accounts.map((account) => account.instanceId),
+            now
+          ),
           context,
           typeof input.recoveryTimezone === 'string'
             ? input.recoveryTimezone

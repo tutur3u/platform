@@ -4,7 +4,11 @@ import { SIGNAL_TTL_MS } from './policy';
 import { coversModel } from './window-scope';
 export function clearRecoveredLimits(context: AdmissionContext) {
   for (const event of context.ledger.observations) {
-    if (event.outcome !== 'usage-limit' || event.resetsAt || event.clearedAt)
+    if (
+      event.outcome !== 'usage-limit' ||
+      event.clearedAt ||
+      (event.resetsAt && Date.parse(event.resetsAt) > context.now.getTime())
+    )
       continue;
     const account = context.accounts.find(
       (account) =>
@@ -23,6 +27,8 @@ export function clearRecoveredLimits(context: AdmissionContext) {
           typeof window.usedPercent === 'number' &&
           window.usedPercent < 100 &&
           Date.parse(window.observedAt) > Date.parse(event.observedAt) &&
+          (!event.resetsAt ||
+            Date.parse(window.observedAt) >= Date.parse(event.resetsAt)) &&
           Date.parse(window.observedAt) <= context.now.getTime() &&
           context.now.getTime() - Date.parse(window.observedAt) <=
             SIGNAL_TTL_MS[account.provider] &&

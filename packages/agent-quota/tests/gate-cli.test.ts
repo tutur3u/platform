@@ -18,16 +18,26 @@ vi.mock('../src/block-ledger', async (original) => ({
       : [],
   }),
 }));
+vi.mock('../src/collectors/children', () => ({
+  collectPoolReceipts: () => ({
+    threads: [],
+    runs: [],
+    tasks: [],
+    failures: [],
+    transfers: [],
+  }),
+}));
 vi.mock('../src/collectors', () => ({ collectAll: fixture.collect }));
 vi.mock('../src/hook-ledger', async (original) => ({
   ...(await original<typeof import('../src/hook-ledger')>()),
-  readLedger: async () => ({
-    version: 1,
-    observations: [],
-    reservations: [],
-    leases: [],
-    leaseHistory: [],
-  }),
+  transactLedger: async (operation: (ledger: unknown) => unknown) =>
+    operation({
+      version: 1,
+      observations: [],
+      reservations: [],
+      leases: [],
+      leaseHistory: [],
+    }),
 }));
 
 import { runPositionalAdmit } from '../src/positional-admit';
@@ -80,6 +90,21 @@ it('sets exit 0 for an unblocked healthy pool, but exit 3 when owner reserve is 
     expect(process.exitCode).toBe(0);
     await runPositionalAdmit(['codex', 'gpt-model', '--reserve-owner']);
     expect(process.exitCode).toBe(3);
+  } finally {
+    process.exitCode = previous;
+    log.mockRestore();
+  }
+});
+
+it('returns malformed/fail-closed exit 2, distinct from policy blocks', async () => {
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+  const previous = process.exitCode;
+  try {
+    await runPositionalAdmit(['codex']);
+    expect(process.exitCode).toBe(2);
+    expect(String(log.mock.calls.at(-1)?.[0])).toContain(
+      'admit-pool-model-invalid'
+    );
   } finally {
     process.exitCode = previous;
     log.mockRestore();

@@ -490,3 +490,117 @@ model scope and reset timestamps in `orchestrator_capabilities` would supply the
 corresponding telemetry. This change installs neither API nor any controller.
 
 An existing interim block without either deadline remains blocked until its evidence is corrected; it does not invalidate unrelated pools. Newly recorded blocks always receive a deadline.
+
+### Usage UI parity, shared receipts and operator commands
+
+The Usage view reads `server.getConfig.providers[].usageLimits`. The application
+also publishes `subscribeServerConfig` snapshots and `providerStatuses` events.
+These are normal T3 application RPC surfaces; there is currently no narrow
+MCP/CLI endpoint exporting only quota windows and account home paths to this
+router. The router reads the existing non-credential `~/.t3/caches/<instance>.json`
+provider status snapshots. It does not refresh a provider, read authentication
+files, or write SQLite. A fresh RPC response does not refresh an old
+`usageLimits.checkedAt`.
+
+Each window reports **used percent**; remaining is `100 - usedPercent`. Session,
+weekly and model-specific windows remain separate. Scope comes from window IDs
+and labels: Claude `five_hour` is account-wide, `seven_day_fable` is Fable-only;
+Codex primary/secondary windows cover its account; Antigravity `3p-*` covers
+Claude/GPT, not Gemini. Uncovered Gemini models are UNKNOWN. Receipt scope follows
+the corresponding model family, so Argon effort variants share a limit without
+blocking Flash. The latest reset phrase wins. Every admission scans terminal
+receipts across all catalog instances and orchestrator trees, limited to 30 days
+and 5,000 rows per projection; overflow or unreadable state fails closed. An
+expired receipt requires fresh covering usage after its reset before clearing.
+
+Account identity uses provider metadata when available. Otherwise it is the
+SHA-256 hash of the normalized, explicitly supplied account home path (including
+provider kind), **not the display name**. Read the path-only projection of
+`settings.providerInstances.<id>.config.homePath` from the supported, redacted
+`server.getSettings`/`server.getConfig` response. Do not read raw settings files:
+they can contain credentials. Missing paths remain unknown; there is no static
+Claude home table. The current mapping supplied for verification is claudeAgent
+→ claude_skora, claude_mira → claude_mira, claude_kv → claude_kv, claude_hehe →
+claude_hehe, claude_dd → claude_dd. These names are a comparison receipt, not
+fallback routing configuration. Identical identities collapse before aggregation,
+and shared reservations are non-exclusive. Home separation is configuration
+identity evidence, not proof that two independently configured homes can never
+contain the same provider login.
+
+Run from the repository (the package script exposes the same commands):
+
+```sh
+bun packages/agent-quota/src/cli.ts status --json
+bun packages/agent-quota/src/cli.ts explain --pool claude_dd --model claude-opus-4-6
+bun packages/agent-quota/src/cli.ts dry-run route --model gpt-6.1-sol
+bun packages/agent-quota/src/cli.ts admit codex_ai4ed gpt-6.1-sol
+```
+
+`status`, `explain` and `dry-run route` are read-only and report individual
+windows, remaining/used units, source, confidence, age, reset and routing reasons.
+For a review recommendation, pass `--task-kind review --author-pool INSTANCE`;
+shared or unverified same-provider identity cannot satisfy reviewer independence.
+`--catalog-stdin` accepts the current `orchestrator_capabilities` catalog when the
+ACP transport is unavailable. Positional admission retains exit **0** for admit,
+**3** for policy/exhaustion block, and **2** for malformed input or unverifiable
+state. It records pacing/hysteresis state in the existing hook ledger but does
+not reserve a task or switch an active writer. Full JSON admission remains the
+transactional reservation interface.
+
+For a supported manual observation, pipe a narrow JSON document into
+`bun packages/agent-quota/src/cli.ts import-usage`. Include the current catalog
+as `catalog` if needed:
+
+```json
+{
+  "provenance": "operator transcription of the individual T3 Usage window",
+  "observations": [{
+    "pool": "claude_dd", "measure": "remaining", "units": "percent",
+    "value": 97, "observedAt": "2026-10-23T05:33:00Z",
+    "windowId": "five_hour", "windowLabel": "Session",
+    "provenance": "user screenshot at 12:33 Asia/Saigon"
+  }]
+}
+```
+
+This dated example is evidence, not a default percentage. Supply `resetAt` only
+when observed. Without a reset or after the TTL, the reading cannot establish
+fresh headroom. Existing `.observations[]` with `kind: manual-screenshot` and
+`sessionRemainingPercent` are normalized explicitly to remaining percent. Names
+and ordering do not identify accounts. For app-side exports, `providers[]` accepts
+only `instanceId`, `driver`, and `usageLimits` (`checkedAt`, `windows`,
+`unavailable`); windows accept `id`, `kind`, `label`, `usedPercent`, `resetsAt`,
+`windowDurationMins`. Optional `settings.providerInstances` accepts only driver
+and config homePath/shadowHomePath. Never pipe a full config or auth document.
+Newer provider observations supersede older manual readings for the same window.
+
+`configure` takes JSON stdin with `pool`, `policy`, `evidence` and optionally
+`catalog`. Policy requires `reservePercent` (0–100), `nearUsedPercent` (1–100),
+`hysteresisPercent` (0–50 and less than near), `pacingMs` (0–86400000),
+`maxConcurrent` (integer 1–100), and `preference` (0–100). It validates and records
+a dated receipt with an evidence digest. Near depletion latches until fresh used
+percent falls to `nearUsedPercent - hysteresisPercent`; pacing limits time between
+admissions. Aliases use the strictest reserve/concurrency/pacing thresholds and a
+single preference, never multiplied capacity. Preference cannot override safety
+gates. Adjusting these values never changes the active thread's model/account.
+
+At 05:58:05Z on 2026-10-23, existing provider caches yielded the following
+individual **session remaining** comparison. Snapshot `checkedAt` values were
+05:56:08–05:56:12Z, within the 15-minute Claude TTL; these are cache observations,
+not a newly invoked provider probe. Drift after the 05:33Z screenshot is expected.
+
+| Catalog ID | Screenshot 05:33Z | Snapshot ~05:56Z | Session reset (UTC) |
+| --- | ---: | ---: | --- |
+| claudeAgent | 0% | 0% | 06:00:00 |
+| claude_kv | 12% | 8% | 05:59:59 |
+| claude_hehe | 57% | 45% | 08:29:59 |
+| claude_dd | 97% | 93% | 09:20:00 |
+| claude_mira | 100% | 94% | 10:30:00 |
+
+All five had session and Fable weekly windows. Codex `codex` reported 0% remaining
+in its primary Monthly window; `codex_ai4ed` reported 75% in primary Weekly.
+Antigravity exposed only third-party `3p-5h` and `3p-weekly` windows; those do not
+prove Gemini headroom. These dated observations are not configuration and expire
+normally. The native gaps remain a narrow read-only usage/home-path export and a
+veto-capable pre-admission callback on `delegate_task`. No native automatic
+account transition or failover is implemented.

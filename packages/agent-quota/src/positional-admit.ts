@@ -1,12 +1,15 @@
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, readBlockLedger } from './block-ledger';
 import { collectAll } from './collectors';
-import { HookError, readLedger } from './hook-ledger';
+import { collectPoolReceipts } from './collectors/children';
+import { HookError, transactLedger } from './hook-ledger';
 import type { AdmissionContext } from './hooks-types';
 import { pruneLedger } from './ledger-retention';
 import { recommend } from './policy';
+import { poolPolicyReasons } from './pool-settings';
 import { clearRecoveredLimits } from './receipt-expiry';
-import { coversModel } from './window-scope';
+import { applyDescendantReceipts } from './recovery';
+import { coversModel, receiptCovers } from './window-scope';
 export function gateDecision(
   pool: string,
   model: string,
@@ -27,12 +30,12 @@ export function gateDecision(
       reasons: ['observed-block-ledger'],
     };
   if (!account)
-    return { status: 'BLOCKED', exitCode: 3, reasons: ['pool-unverified'] };
+    return { status: 'BLOCKED', exitCode: 2, reasons: ['pool-unverified'] };
   const member = context.accounts.find((item) => item.instanceId === pool);
   if (member?.available !== true || !member.models?.includes(model))
     return {
       status: 'BLOCKED',
-      exitCode: 3,
+      exitCode: 2,
       reasons: ['model-unavailable-or-unverified'],
     };
   const ledger = structuredClone(context.ledger);
@@ -67,8 +70,13 @@ export function gateDecision(
     blocks: context.blocks,
   }).ranked[0];
   if (!rank)
-    return { status: 'BLOCKED', exitCode: 3, reasons: ['pool-unverified'] };
-  const reasons: string[] = [];
+    return { status: 'BLOCKED', exitCode: 2, reasons: ['pool-unverified'] };
+  const reasons: string[] = poolPolicyReasons(
+    account,
+    model,
+    rank.activeCount,
+    context
+  );
   clearRecoveredLimits({ ...context, ledger });
   if (
     ledger.observations.some(
@@ -76,11 +84,7 @@ export function gateDecision(
         ids.includes(event.instanceId) &&
         event.outcome === 'usage-limit' &&
         !event.clearedAt &&
-        (!event.resetsAt ||
-          Date.parse(event.resetsAt) > context.now.getTime()) &&
-        (account.provider !== 'antigravity' ||
-          !event.model ||
-          event.model === model)
+        receiptCovers(event, account.provider, model)
     )
   )
     reasons.push('observed-usage-limit');
@@ -178,17 +182,28 @@ export async function runPositionalAdmit(args: string[]) {
     const reserveOwner =
       args.includes('--reserve-owner') ||
       Boolean(owner && (account?.instanceIds ?? [pool]).includes(owner));
-    const result = gateDecision(
-      pool,
-      model,
-      {
+    const result = await transactLedger((ledger) => {
+      const context = {
         ...collected,
         blocks: collected.blocks ?? blocks,
-        ledger: await readLedger(),
+        ledger,
         now: new Date(),
-      },
-      reserveOwner
-    );
+      };
+      applyDescendantReceipts(
+        collectPoolReceipts(
+          collected.accounts.map((account) => account.instanceId),
+          context.now
+        ),
+        context,
+        Intl.DateTimeFormat().resolvedOptions().timeZone
+      );
+      const result = gateDecision(pool, model, context, reserveOwner);
+      if (result.exitCode === 0) {
+        ledger.lastAdmissions ??= {};
+        ledger.lastAdmissions[pool] = context.now.getTime();
+      }
+      return result;
+    });
     console.log(JSON.stringify({ pool, model, ...result }));
     process.exitCode = result.exitCode;
   } catch (error) {
@@ -202,6 +217,6 @@ export async function runPositionalAdmit(args: string[]) {
         ],
       })
     );
-    process.exitCode = 3;
+    process.exitCode = 2;
   }
 }

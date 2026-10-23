@@ -20,7 +20,7 @@ export interface QuotaBlock {
   id?: string;
   [key: string]: unknown;
 }
-interface BlockLedger {
+export interface BlockLedger {
   version: 1;
   blocks: QuotaBlock[];
   [key: string]: unknown;
@@ -177,7 +177,10 @@ function blockId(block: QuotaBlock) {
     )
     .digest('hex');
 }
-export async function writeBlock(block: QuotaBlock, path = blockLedgerPath()) {
+export async function updateBlockLedger<T>(
+  operation: (ledger: BlockLedger) => T,
+  path = blockLedgerPath()
+) {
   const directory = dirname(path);
   await mkdir(directory, { recursive: true, mode: 0o700 });
   if (!(await lstat(directory)).isDirectory())
@@ -187,20 +190,7 @@ export async function writeBlock(block: QuotaBlock, path = blockLedgerPath()) {
   const temporary = join(directory, `blocks-${randomUUID()}.tmp`);
   try {
     const ledger = await readBlockLedger(path);
-    const previous = ledger.blocks.find(
-      (item) => (item.id ?? blockId(item)) === block.id
-    );
-    if (previous)
-      return {
-        status: 'recorded',
-        replay: true,
-        pool: previous.pool,
-        modelScope: previous.modelScope,
-        eligibleAt: Number.isFinite(blockUntil(previous))
-          ? new Date(blockUntil(previous)).toISOString()
-          : null,
-      };
-    ledger.blocks.push(block);
+    const result = operation(ledger);
     const content = `${JSON.stringify(ledger, null, 2)}\n`;
     if (Buffer.byteLength(content) > 2_000_000)
       throw new HookError('block-ledger-full');
@@ -225,6 +215,29 @@ export async function writeBlock(block: QuotaBlock, path = blockLedgerPath()) {
     } finally {
       await dir.close();
     }
+    return result;
+  } finally {
+    await unlink(temporary).catch(() => {});
+    await releaseTransactionLock(lockPath, lock);
+  }
+}
+
+export async function writeBlock(block: QuotaBlock, path = blockLedgerPath()) {
+  return updateBlockLedger((ledger) => {
+    const previous = ledger.blocks.find(
+      (item) => (item.id ?? blockId(item)) === block.id
+    );
+    if (previous)
+      return {
+        status: 'recorded',
+        replay: true,
+        pool: previous.pool,
+        modelScope: previous.modelScope,
+        eligibleAt: Number.isFinite(blockUntil(previous))
+          ? new Date(blockUntil(previous)).toISOString()
+          : null,
+      };
+    ledger.blocks.push(block);
     return {
       status: 'recorded',
       replay: false,
@@ -232,8 +245,5 @@ export async function writeBlock(block: QuotaBlock, path = blockLedgerPath()) {
       modelScope: block.modelScope,
       eligibleAt: new Date(blockUntil(block)).toISOString(),
     };
-  } finally {
-    await unlink(temporary).catch(() => {});
-    await releaseTransactionLock(lockPath, lock);
-  }
+  }, path);
 }

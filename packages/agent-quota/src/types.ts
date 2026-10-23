@@ -10,6 +10,7 @@ export interface UsageWindow {
   estimated?: number;
   resetsAt?: string;
   source: string;
+  confidence?: 'provider' | 'manual';
   observedAt: string;
   authoritative: boolean;
 }
