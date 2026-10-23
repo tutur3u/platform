@@ -11,6 +11,7 @@ import {
 import { checkHandover, type HandoverEvidence } from '../src/handover';
 import { emptyLedger, readLedger, transactLedger } from '../src/hook-ledger';
 import type { SwitchEvidence } from '../src/hooks-types';
+import { pruneLedger } from '../src/ledger-retention';
 import { validLedger } from '../src/ledger-validation';
 import { applyRecoveryReceipt } from '../src/recovery';
 import type { AccountUsage, UsageWindow } from '../src/types';
@@ -64,6 +65,51 @@ const handover: HandoverEvidence = {
 };
 
 describe('future quarantine follow-ups', () => {
+  it('retains the 30-day pruning window when future-quarantine is imported first', () => {
+    const ledger = emptyLedger();
+    const old = new Date(now.getTime() - 31 * 86400_000).toISOString();
+    const lease = {
+      threadId: 'thread',
+      accountKey: 'account',
+      attemptId: 'attempt',
+      pid: 123,
+      processStartedAt: old,
+      acquiredAt: old,
+      expiresAt: old,
+    };
+    ledger.observations.push({
+      eventId: 'old-cleared',
+      instanceId: 'claude_hehe',
+      accountKey: 'account',
+      outcome: 'usage-limit',
+      observedAt: old,
+      clearedAt: old,
+    });
+    ledger.leaseHistory.push({ action: 'release', at: old, lease });
+    ledger.retiredRequests = [{ requestId: 'old-request', retiredAt: old }];
+
+    pruneLedger(ledger, now);
+
+    expect(ledger.observations).toHaveLength(0);
+    expect(ledger.leaseHistory).toHaveLength(0);
+    expect(ledger.retiredRequests).toHaveLength(0);
+  });
+
+  it('treats an invalid long receipt model as account-wide', () => {
+    const ledger = emptyLedger();
+    const invalidModel = 'x'.repeat(513);
+    recordFutureQuarantine(ledger, accountKey(current), now, {
+      observedAt: now.toISOString(),
+      model: invalidModel,
+    });
+
+    expect(ledger.futureQuarantines?.[accountKey(current)]).toMatchObject({
+      models: [],
+      accountWide: true,
+    });
+    expect(validLedger(ledger)).toBe(true);
+  });
+
   it('keeps a pool quarantined while a future descendant receipt still exceeds the skew', () => {
     const ledger = emptyLedger();
     const receiptAt = new Date(now.getTime() + 86400_000).toISOString();

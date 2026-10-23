@@ -1,5 +1,6 @@
 import { accountKey } from './accounts';
 import { MAX_FUTURE_OBSERVATION_SKEW_MS } from './failure-receipt';
+import { FUTURE_QUARANTINE_TTL_MS } from './future-quarantine-constants';
 import type {
   AdmissionContext,
   FutureQuarantine,
@@ -8,7 +9,7 @@ import type {
 import { SIGNAL_TTL_MS } from './policy';
 import { coversModel } from './window-scope';
 
-export const FUTURE_QUARANTINE_TTL_MS = 30 * 86400_000;
+export { FUTURE_QUARANTINE_TTL_MS } from './future-quarantine-constants';
 
 function quarantineRecord(value: FutureQuarantine | string): FutureQuarantine {
   if (typeof value === 'string')
@@ -44,7 +45,7 @@ export function recordFutureQuarantine(
       quarantine.latestReceiptAt = trustedTimestamp;
     if (!Number.isFinite(receiptTime)) {
       quarantine.accountWide = true;
-    } else if (receipt.model) {
+    } else if (isValidModel(receipt.model)) {
       quarantine.models = [
         ...new Set([...quarantine.models, receipt.model]),
       ].slice(-64);
@@ -53,6 +54,10 @@ export function recordFutureQuarantine(
     }
   }
   ledger.futureQuarantines[key] = quarantine;
+}
+
+function isValidModel(model: string | undefined): model is string {
+  return typeof model === 'string' && model.length > 0 && model.length <= 512;
 }
 
 function hasFreshWindowAfter(

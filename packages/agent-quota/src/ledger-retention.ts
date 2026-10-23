@@ -3,10 +3,8 @@ import {
   MAX_FUTURE_OBSERVATION_SKEW_MS,
   usageLimitReceiptActive,
 } from './failure-receipt';
-import {
-  FUTURE_QUARANTINE_TTL_MS,
-  recordFutureQuarantine,
-} from './future-quarantine';
+import { recordFutureQuarantine } from './future-quarantine';
+import { FUTURE_QUARANTINE_TTL_MS } from './future-quarantine-constants';
 import type { HookLedger } from './hooks-types';
 import { processState } from './process-identity';
 
