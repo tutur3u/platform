@@ -62,8 +62,9 @@ refuses burst admission while preserving base behavior. Burst memory checks stil
 apply with `--ignore-pressure`. Preserve FIFO order and never interrupt running
 jobs to shrink occupancy.
 
-Effective lanes are `min(maxValidationLanes, max(base, host lane ceiling))`, with
-a host lane ceiling of `min(8, floor(memory GiB / 4), CPUs - 2)`. Worker totals
+Effective lanes are `max(1, min(maxValidationLanes, host lane ceiling))`, with
+a host lane ceiling of `min(8, floor(memory GiB / 4), CPUs - 2)`. Base lanes
+above the ceiling are capped too, and `status` warns about them. Worker totals
 no longer cap lanes. After the aggregate budget is spent, each pressure-gated
 burst lane gets exactly one worker. Multi-lane worker totals clamp to the host
 worker ceiling, `min(8, floor(memory GiB / 8), floor(CPUs / 2))`.
@@ -79,10 +80,13 @@ Reconcile legacy status consumers and check all owners, not only the compatibili
 export `TTR_RESOURCES_ADMITTED=<token>`. Nested `run` calls and shims pass straight
 through with the owner's caps when that marker names a live owner inside their
 process tree (ancestor or owned process group), or when ancestry alone finds an
-admitted ancestor (filtered env). Stale or copied markers queue normally. Waiters
+admitted ancestor (filtered env). Stale or copied markers queue normally, and
+so does any marker when `ps` cannot read the process tree. Waiters
 recheck ancestry about once per second, so they never deadlock behind their own
-ancestor. Version/help probes and read-only commands such as `ls` and `git status`
-skip the queue. Cancellation releases only its own slot after the
+ancestor. Per-tool version/help probes (`node --version`, not `make help`) and
+read-only commands such as `ls` (not `-R`) and `git status` skip the queue;
+`git diff|log|show`, any git option before the subcommand, and
+`-c`/`--config-env`/`--git-dir`/`--work-tree`/`-C`/`-p` always queue. Cancellation releases only its own slot after the
 owned child group drains. Do not use separate
 `TTR_RESOURCES_HOME` values across projects: that creates independent queues.
 
@@ -120,6 +124,8 @@ serialize with admission and read the latest policy inside the mutex. `uninstall
 idle queue and removes only owned hooks/shims, preserving shell content and
 backups. Existing processes, absolute binary paths, and replaced PATH values can
 bypass automatic shims; explicitly wrap unrecognized commands. Admission caps apply only when enabled; disabled/out-of-scope/bypass commands
-retain argv/env. Invalid config errors name the field and range but omit values. The queue is cooperative scheduling.
+retain argv/env. Invalid config errors name the field and range but omit values; `status` still
+reports (`config.state`: `invalid`, `disabled`, `enabled` or `missing`, with
+warnings) and exits 1 for an invalid config. The queue is cooperative scheduling.
 
 Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read subprocess diagnostics after pipes close; use a separate exit barrier for surviving-descendant tests. Pass a custom script as the launcher target, keeping its working directory a directory. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.
