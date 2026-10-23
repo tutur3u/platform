@@ -835,12 +835,10 @@ test('tanstack migration README block renders badges, tables, and next routes', 
       targetOwner: 'rust-backend',
     },
   ]);
-  const block = formatReadmeProgress(
-    progress,
-    '/repo/apps/tanstack-web/migration/route-manifest.json'
-  );
+  const manifestPath = '/repo/apps/tanstack-web/migration/route-manifest.json';
+  const block = formatReadmeProgress(progress, manifestPath);
 
-  assert.match(block, /img\.shields\.io\/static\/v1/u);
+  assert.ok(block.includes('img.shields.io/static/v1'));
   assert.match(block, /\| Rust backend \| `\[--------------------\]` 0%/u);
   assert.match(block, /\| TanStack Start \| `\[####################\]` 100%/u);
   assert.match(block, /<summary>Remaining work by route kind<\/summary>/u);

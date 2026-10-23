@@ -294,11 +294,13 @@ test('deadline verifies group disappearance for a descendant that outlives its l
 });
 
 test('leader close waits for descendants that closed their output streams', async (t) => {
-  const root = fixture(t),
-    marker = path.join(root, 'closed-stream-group');
-  const child = `require('node:fs').writeFileSync(${JSON.stringify(marker)},process.argv[1]);setInterval(()=>{},1000)`;
-  const leader = `const fs=require('node:fs');require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(child)},String(process.pid)],{stdio:'ignore'});setInterval(()=>{if(fs.existsSync(${JSON.stringify(marker)}))process.exit(0)},10)`;
-  const completed = await runProcess(process.execPath, ['-e', leader], {
+  const marker = path.join(fixture(t), 'closed-stream-group');
+  const child =
+    "require('node:fs').writeFileSync(process.argv[1],process.argv[2]);setInterval(()=>{},1000)";
+  const leader =
+    "const fs=require('node:fs');require('node:child_process').spawn(process.execPath,['-e',process.argv[1],process.argv[2],String(process.pid)],{stdio:'ignore'});setInterval(()=>{if(fs.existsSync(process.argv[2]))process.exit(0)},10)";
+  const args = ['-e', leader, child, marker];
+  const completed = await runProcess(process.execPath, args, {
     env: { PATH: process.env.PATH },
     timeoutMs: 3000,
   });

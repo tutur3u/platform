@@ -11,6 +11,7 @@
  */
 
 const fs = require('node:fs');
+const { atomicWriteFileSync } = require('./safe-fs');
 const path = require('node:path');
 const {
   discoverTranslationDirs,
@@ -56,10 +57,9 @@ function processDirectory(dir) {
     if (addedCount > 0) {
       // Sort before saving
       const sortedContent = sortObjectKeysDeep(viContent);
-      fs.writeFileSync(
+      atomicWriteFileSync(
         viPath,
-        `${JSON.stringify(sortedContent, null, 2)}\n`,
-        'utf-8'
+        `${JSON.stringify(sortedContent, null, 2)}\n`
       );
     }
 

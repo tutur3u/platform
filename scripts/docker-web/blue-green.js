@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const { readFileSnapshotSync } = require('../safe-fs');
 const crypto = require('node:crypto');
 const os = require('node:os');
 const path = require('node:path');
@@ -1859,11 +1860,10 @@ function hashBlueGreenBuildInputFiles(
         continue;
       }
 
+      const { data, stat } = readFileSnapshotSync(resolvedPath, { fsImpl });
       hash.update(filePath);
-      hash.update('\0');
-      hash.update(String(stats.size));
-      hash.update('\0');
-      hash.update(fsImpl.readFileSync(resolvedPath));
+      hash.update(`\0${stat.size}\0`);
+      hash.update(data);
       hash.update('\0');
     } catch {
       hash.update(filePath);

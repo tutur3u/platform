@@ -584,18 +584,14 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   assert.match(retryScript, /--minimum-release-age=0/);
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
 
+  const retryScriptPath = path.join(repoRoot, 'scripts/ci/run-with-backoff.sh');
   const failedCommand = spawnSync(
     'bash',
-    [
-      path.join(repoRoot, 'scripts', 'ci', 'run-with-backoff.sh'),
-      'bash',
-      '-c',
-      'exit 37',
-    ],
+    [retryScriptPath, 'bash', '-c', 'exit 37'],
     {
       encoding: 'utf8',
       env: {
-        ...process.env,
+        PATH: process.env.PATH,
         CI_RETRY_MAX_ATTEMPTS: '1',
       },
     }

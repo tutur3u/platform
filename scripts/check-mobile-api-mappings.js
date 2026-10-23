@@ -138,8 +138,17 @@ function collectOwnedApiRoutesByApp({ rootDir = ROOT_DIR } = {}) {
 
 function collectConfiguredMobileApiApps(source) {
   return new Set(
-    [...source.matchAll(/https:\/\/([a-z0-9-]+)\.tuturuuu\.com/gu)].map(
-      (match) => match[1]
+    [...source.matchAll(/(['"])(https:\/\/[^'"\r\n]+)\1/gu)].flatMap(
+      ([, , url]) => {
+        try {
+          const hostname = new URL(url).hostname;
+          return (
+            hostname.match(/^([a-z0-9-]+)\.tuturuuu\.com$/u)?.slice(1) ?? []
+          );
+        } catch {
+          return [];
+        }
+      }
     )
   );
 }

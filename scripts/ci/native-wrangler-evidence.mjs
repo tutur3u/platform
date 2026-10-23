@@ -15,6 +15,7 @@ import {
 } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, relative } from 'node:path';
+import { readFileSnapshot, readRegularFile } from '../safe-fs.js';
 import {
   causes,
   diagnosticError,
@@ -56,11 +57,11 @@ async function tree(root) {
         await visit(join(path, child), name ? `${name}/${child}` : child);
     } else {
       assert.ok(info.isFile(), 'Unsupported diagnostic entry type');
-      const bytes = await readFile(path);
+      const { data: bytes, stat } = await readFileSnapshot(path);
       entries.push({
         name,
         type: 'file',
-        mode,
+        mode: stat.mode & 0o7777,
         bytes: bytes.length,
         sha256: digest(bytes),
       });
@@ -90,7 +91,7 @@ export async function captureDiagnosticSnapshot(plan, records) {
     } else if (entry.type === 'link') {
       await symlink(entry.target, target);
     } else {
-      const bytes = await readFile(original);
+      const bytes = await readRegularFile(original);
       assert.equal(
         digest(bytes),
         entry.sha256,
@@ -507,8 +508,8 @@ export async function persistCaseFinalization(plan, result, context, summary) {
 }
 
 export async function readReceipt(path, name) {
-  assert.ok((await stat(path)).size <= 8192, 'Oversized child receipt');
-  return validateReceipt(JSON.parse(await readFile(path, 'utf8')), name);
+  const bytes = await readRegularFile(path, { maxBytes: 8192 });
+  return validateReceipt(JSON.parse(bytes), name);
 }
 
 export async function observeCaseReceipt(
