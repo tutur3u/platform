@@ -661,7 +661,18 @@ also stops active trusted jobs through their process groups. Generated systemd
 units use `KillMode=mixed` (only the agent receives the stop signal) and
 `TimeoutStopSec=600`; launchd plists use `ExitTimeOut` 600. Re-render existing
 units with `ttr box repair` to pick these up. Regression coverage lives in
-`devbox-job-process.test.ts` and `devbox-agent-stop.test.ts`.
+`devbox-job-process.test.ts` and `devbox-agent-stop.test.ts`. Signals only ever
+target the job's process group. Once the group is gone the agent does not signal
+the bare PID, because the operating system may have reused it for an unrelated
+process.
+
+Judge sandboxes carry a `dev.tuturuuu.devbox.judge=1` label and an owner label
+derived from a hash of the runner token. Docker keeps a container running after
+the agent dies (watchdog exit, `SIGKILL`, crash). So when an agent with
+`TUTURUUU_JUDGE_IMAGES` configured starts, it removes up to 100 of its own
+runner's labelled containers before claiming work. Dedicated playground pool
+processes skip this step, and other runners on the same host keep their
+containers. Regression coverage lives in `devbox-judge-containers.test.ts`.
 
 Platform-managed playground workers opt in through operator configuration. They
 require gVisor and pinned language image digests, run unprivileged without host

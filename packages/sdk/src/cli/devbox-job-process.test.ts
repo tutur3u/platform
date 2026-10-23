@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { processGroupExists, runProcessGroup } from './devbox-job-process';
+import {
+  processGroupExists,
+  runProcessGroup,
+  signalProcessGroup,
+} from './devbox-job-process';
 import { executeDevboxAgentJob } from './devbox-runner';
 
 const env = { PATH: process.env.PATH ?? '/usr/bin:/bin' };
@@ -124,4 +128,17 @@ describe('remote stop through the runner', { timeout: 15_000 }, () => {
 
 it('reports a missing group as gone', () => {
   expect(processGroupExists(2 ** 22 - 3)).toBe(false);
+});
+
+it('never signals a bare pid once its process group is gone', () => {
+  const kill = vi.spyOn(process, 'kill').mockImplementation(() => {
+    throw Object.assign(new Error('gone'), { code: 'ESRCH' });
+  });
+  try {
+    expect(signalProcessGroup(4242, 'SIGKILL')).toBe(false);
+    expect(kill).toHaveBeenCalledTimes(1);
+    expect(kill).toHaveBeenCalledWith(-4242, 'SIGKILL');
+  } finally {
+    kill.mockRestore();
+  }
 });
