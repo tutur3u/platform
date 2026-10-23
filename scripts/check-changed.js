@@ -333,6 +333,9 @@ function main(argv = process.argv.slice(2), deps = {}) {
       ...new Set(
         [
           ...changes.map((change) => workspaceOf(change.file)),
+          ...(steps.some((step) => step.id === 'script-tests')
+            ? ['scripts', 'plugins', '.github/actions']
+            : []),
           ...steps.map((step) => step.typeCheck?.workspace ?? step.cwd),
           ...steps
             .filter((step) => step.id === 'script-tests')
