@@ -110,6 +110,34 @@ Treat relative plan size and reset credit as planning inputs, not measured
 headroom. Keep Claude and Antigravity for task fit, parallel capacity and
 reviewer independence, and do not migrate healthy running writers.
 
+Give each lane a bounded end-to-end chunk under the shared
+[decision rights](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#autonomous-ownership-and-decision-rights),
+and record reusable lessons through
+[shared learning](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-learning-and-supervisory-support).
+Tuturuuu procedures that follow from them:
+
+- Send follow-up scope as a task-bound message (one that returns a task id) or a
+  fresh delegated round. A queued follow-up turn without a task id can fail, for
+  example on a usage limit, without notifying the parent, so reconcile such turns
+  explicitly.
+- To move a child that waits only on a usage reset: save and cancel its queued
+  old-account runs, confirm the native session is idle and preserve uncommitted
+  files, configure the new account, send a task-bound resume with a state
+  readback, then confirm the run is running on the new provider. A configured
+  account alone is not a resumed child.
+- Early merge needs an independent review accept plus an exact-head local or
+  admitted-Linux equivalent of every job the change triggers, recorded with
+  commands, versions and exit codes, then a head-checked merge. App builds run on
+  an admitted Linux host, never this Mac. Database-contract jobs wait for CI unless
+  an isolated database daemon is admitted. Never forge or skip a required check.
+- Stage toolchains for validation in project-private paths and call them by
+  absolute path. Installing under an nvm major alias silently changes the default
+  runtime for every shell on the host.
+- A failed-jobs-only rerun cannot reuse artifacts that its successful producer
+  uploaded in an earlier attempt. `scripts/ci/workflow-failed-rerun-artifacts.test.js`
+  requires every workflow that reruns another run to declare its target and mode;
+  partial reruns may only target workflows without artifact handoff.
+
 For observed slow admission, repeated handovers or two fixes failing on one
 premise, assign a bounded workflow audit at a safe checkpoint. Read actual
 actor/lifecycle and gate receipts, identify the causal bottleneck, and return one
