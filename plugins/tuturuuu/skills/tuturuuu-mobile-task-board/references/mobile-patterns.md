@@ -87,6 +87,16 @@ localization changes.
   padding inside scroll content. Verify geometry and scroll-end clearance with
   `settings_compact_navigation_test.dart`; presentation changes must not alter
   timezone cubits or repositories.
+- Settings groups are rounded cards (`SettingsGroup`, `SettingsCaption`) with
+  dividers at `SettingsRowLayout.textColumn`. Use `SettingsRowLayout.groupFill`
+  for grouped fills so ambient appearances get the translucent card.
+- Appearance colours live only in `core/theme/appearance/appearance_palettes.dart`.
+  Read derived tokens via the shad/Material theme, and keep
+  `appearance_contrast_test.dart` green when adding a palette or accent.
+  `AppearanceBackdrop` makes shad scaffolds transparent for Gradient/Blobs;
+  full-screen modal content must use the adaptive sheet helpers or
+  `AppearanceScope.opaqueScaffolds`. Ambient motion must stay opt-in, timer-driven
+  and painter-only, and must stop under reduced motion.
 
 ## Task Board
 

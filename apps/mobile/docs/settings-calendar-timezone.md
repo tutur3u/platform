@@ -5,8 +5,10 @@ screen. Workspace and You are nested navigation rows; App preferences are compac
 items on that root. Preferences, General, and Support use quiet grouped surfaces
 and current-value summaries. Expanded preferences retain two grouped columns
 at widths of at least 840dp.
-Theme, language, first day, timezone, Finance visibility, haptics, and default
-Task board behavior open nested adaptive choice editors. Root rows do not contain
+Language, first day, timezone, Finance visibility, haptics, and default Task
+board behavior open nested adaptive choice editors. Appearance (mode, theme,
+accent and background) opens its `/settings/appearance` child page, whose
+choices apply instantly. Root rows do not contain
 switches and tapping, opening, canceling, dismissing, or returning from an editor
 never changes a preference. An explicit choice is required. Editors cancel on an
 account/workspace switch, including switching away and back before selecting.

@@ -219,7 +219,7 @@ void main() {
       verify(
         () => permissions.getPermissions(wsId: 'ws', userId: 'user-1'),
       ).called(1);
-      expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Appearance'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Experiments'),
@@ -316,7 +316,7 @@ void main() {
       expect(find.text('Calendar & timezone'), findsOneWidget);
       expect(find.text('Notifications & interaction'), findsOneWidget);
       expect(find.text('App preferences'), findsOneWidget);
-      expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Appearance'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('Boards'), findsOneWidget);
       expect(find.text('About the app'), findsNothing);

@@ -77,6 +77,7 @@ class ShellChromeConfig {
       Routes.settingsQrLoginScan => l10n.qrLoginSettingsTitle,
       Routes.settings => l10n.settingsTitle,
       Routes.settingsPreferences => l10n.settingsPreferencesSectionTitle,
+      Routes.settingsAppearance => l10n.settingsAppearance,
       Routes.settingsExperiments => l10n.settingsExperimentalAppsSectionTitle,
       Routes.settingsInfrastructure => l10n.settingsInfrastructureSectionTitle,
       Routes.settingsFeedback => l10n.feedbackTitle,
