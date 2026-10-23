@@ -476,6 +476,13 @@ ttr box logs <run-id>
 ttr box stop <run-id>
 ```
 
+`ttr box stop`, `ttr box logs`, and lease release act only on runs and leases
+created by the signed-in user; another member's ids return 404. Stopping a queued
+run cancels it immediately, a running run moves to `cancel_requested` for its
+agent, and finished runs are never changed. Infrastructure administrators can
+stop any active run from the dashboard. Regression coverage lives in
+`apps/web/src/lib/devboxes/store-scoping.test.ts`.
+
 `ttr box build`, `ttr box serve`, and `ttr box tunnel` do not set a remote
 command timeout by default. Pass `--timeout <duration>` only when the run should
 be killed automatically.
