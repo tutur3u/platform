@@ -14,6 +14,7 @@ on:
       - "packages/realtime/**"
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
     paths:
       - "apps/mobile/**"
@@ -21,6 +22,7 @@ on:
       - "packages/realtime/**"
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
 
 permissions:
   contents: read
@@ -51,15 +53,11 @@ jobs:
     steps:
       - name: 📚 Git Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
       - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
-          cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
 
       - name: 📦 Install Dependencies
         run: flutter pub get --enforce-lockfile
@@ -370,13 +368,10 @@ jobs:
         working-directory: apps/mobile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
-          cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
       - name: Install dependencies
         run: flutter pub get
       - name: Run test shard
@@ -422,11 +417,10 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
       - run: bun install --frozen-lockfile
       - run: flutter pub get
         working-directory: apps/mobile

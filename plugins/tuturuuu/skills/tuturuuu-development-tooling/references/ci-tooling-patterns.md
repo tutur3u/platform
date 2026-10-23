@@ -23,6 +23,32 @@ for parity and Worker acceptance gates; builds stay in exact-commit CI.
 
 ## cf CLI migration boundaries
 
+Target: cf + Void (Vite+), adopted per verified operation while retaining existing
+commands until parity. Wrangler gaps remain in the shrink-only
+`scripts/ci/wrangler-usage-allowlist.json`, enforced by
+`scripts/ci/wrangler-usage-guard.test.js`. Lower or delete an entry in the change
+that removes usage. Count executable occurrences separately from mention lines,
+including multiple invocations per line. Changed Wrangler-line hashes, growth and
+changed gap scope need a fresh structured `admitted` PR decision and reason. Native Workers
+use `cloudflare.config.ts` + `@cloudflare/vite-plugin` `newConfig.cfBuildOutput`,
+Build Output identity parity (`scripts/ci/cf-worker-parity.mjs`), runtime checks via
+`scripts/ci/cf-vite-worker.mjs`, and `cf deploy --prebuilt --no-provision`
+(`--provision` defaults to true). See the
+[parity matrix](../../../../../apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx)
+for per-operation verdicts, rollback and the cutover checklist. Run
+`node --test scripts/ci/cf-vite-worker.test.mjs` for disposable-secret refusal
+and environment-restoration regressions without starting a real Worker. Require
+fixtures for all declared secrets, mask declared text bindings from the shell and
+retain only the first prior environment value. Deploy settings snapshots must
+pass before publication and after it; DO publication remains Wrangler until a
+separately reviewed rehearsal receipt permits cf.
+
+Settings preflight tokens need Workers Scripts read coverage on the pinned account,
+plus Zone and Workers Routes read coverage on every target-account zone; narrower
+visibility can hide unexpected routes. Keep the bounded fail-closed checks and see
+the parity runbook's permission table. The usage inventory scans tracked executable
+files in `tmp/` but excludes `.md`/`.mdx`/`.txt` everywhere, including runnable docs.
+
 Prefer cf for operations with demonstrated parity, beginning with bounded read-only
 inventory/observability and a Vite-native Worker pilot. Pin dependencies through
 package-manager commands; verify cf authentication/account independently of Wrangler.
@@ -995,3 +1021,9 @@ at each caller boundary and reject references elsewhere, including the actual
 production token name `CLOUDFLARE_API_TOKEN`. The wave-1 permission and publisher
 secret tests cover these boundaries; protected concurrency tests preserve the
 non-cancelling durable-attempt publication queue.
+
+Include `.cloudflare/output/**` in Turbo build outputs. Validate a real cache-hit
+replay after deleting emitted files; replayed logs alone do not qualify an artifact.
+Keep `.cloudflare/state` outside cache outputs. cf prerelease pins remain held by
+Renovate until an owner qualifies a scoped upgrade. Production jobs require the
+Actions repository variable `CLOUDFLARE_ACCOUNT_ID` to match emitted account identity.

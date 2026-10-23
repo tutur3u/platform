@@ -10,6 +10,7 @@ import {
   type DevboxAgentJob,
   recordDevboxAgentEvents,
 } from '../platform-devbox';
+import { agentRequest, withAgentRetries } from './devbox-agent-network';
 import {
   parseJudgeImages,
   parseJudgePayload,
@@ -74,15 +75,19 @@ async function postAgentEvents({
 }) {
   if (events.length === 0) return;
 
-  const response = await recordDevboxAgentEvents({
-    baseUrl,
-    fetch,
-    payload: {
-      events,
-      runId,
-    },
-    token,
-  });
+  const response = await withAgentRetries(() =>
+    agentRequest('Devbox agent event upload', () =>
+      recordDevboxAgentEvents({
+        baseUrl,
+        fetch,
+        payload: {
+          events,
+          runId,
+        },
+        token,
+      })
+    )
+  );
   if (!response.ok) {
     throw new Error(
       `Devbox agent event upload failed: ${formatResponseStatus(response)}`
@@ -102,18 +107,27 @@ async function postAgentCompletion({
   runId: string;
   status: DevboxAgentCompletionStatus;
 }) {
-  const response = await recordDevboxAgentEvents({
-    baseUrl,
-    fetch,
-    payload: {
-      completion: {
-        exitCode,
-        status,
-      },
-      runId,
-    },
-    token,
-  });
+  // A retry after a lost response finds the run already finished; the
+  // completion RPC then reports 404, which is success for a replay.
+  let attempts = 0;
+  const response = await withAgentRetries(() =>
+    agentRequest('Devbox agent completion upload', () => {
+      attempts += 1;
+      return recordDevboxAgentEvents({
+        baseUrl,
+        fetch,
+        payload: {
+          completion: {
+            exitCode,
+            status,
+          },
+          runId,
+        },
+        token,
+      });
+    })
+  );
+  if (response.status === 404 && attempts > 1) return;
   if (!response.ok) {
     throw new Error(
       `Devbox agent completion upload failed: ${formatResponseStatus(response)}`

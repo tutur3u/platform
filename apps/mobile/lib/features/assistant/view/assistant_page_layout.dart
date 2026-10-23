@@ -68,18 +68,18 @@ extension _AssistantPageLayout on _AssistantPageState {
               BlocListener<AssistantLocalChatCubit, AssistantLocalChatState>(
                 listenWhen: (previous, current) =>
                     previous.chat.messages != current.chat.messages,
-                listener: (_, _) => _scheduleScrollToBottom(),
+                listener: (_, _) => _transcriptFollower.followUpdate(),
               ),
               BlocListener<AssistantChatCubit, AssistantChatState>(
                 listenWhen: (previous, current) =>
-                    previous.messages.length != current.messages.length ||
+                    previous.messages != current.messages ||
                     previous.history.length != current.history.length,
                 listener: (context, state) {
                   if (!_hasTranscript(state, _liveCubit.state)) {
                     _scheduleScrollToTop();
                     return;
                   }
-                  _scheduleScrollToBottom();
+                  _transcriptFollower.followUpdate();
                 },
               ),
               BlocListener<AssistantChatCubit, AssistantChatState>(
@@ -87,6 +87,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                     _activeConversationKey(previous) !=
                     _activeConversationKey(current),
                 listener: (context, state) {
+                  _transcriptFollower.resume();
                   _collapseComposerToFab();
                 },
               ),
@@ -111,14 +112,19 @@ extension _AssistantPageLayout on _AssistantPageState {
               ),
               BlocListener<AssistantLiveCubit, AssistantLiveState>(
                 listenWhen: (previous, current) =>
-                    previous.hasDraft != current.hasDraft ||
+                    previous.userDraft != current.userDraft ||
+                    previous.userTranscript != current.userTranscript ||
+                    previous.assistantDraft != current.assistantDraft ||
+                    previous.assistantTranscript !=
+                        current.assistantTranscript ||
+                    previous.assistantParts != current.assistantParts ||
                     previous.status != current.status,
                 listener: (context, state) {
                   if (!_hasTranscript(_chatCubit.state, state)) {
                     _scheduleScrollToTop();
                     return;
                   }
-                  _scheduleScrollToBottom();
+                  _transcriptFollower.followUpdate();
                 },
               ),
               BlocListener<AssistantChromeCubit, AssistantChromeState>(
@@ -181,6 +187,29 @@ extension _AssistantPageLayout on _AssistantPageState {
                           chatState,
                           liveState,
                         );
+                        final showTranscript =
+                            hasTranscript ||
+                            chatState.isBusy ||
+                            chatState.status == AssistantChatStatus.error;
+                        final starterPrompts = AssistantStarterPrompts(
+                          onPromptSelected: _applyStarterPrompt,
+                          replayToken: widget.replayToken,
+                        );
+                        bool onTranscriptNotification(
+                          Notification notification,
+                        ) {
+                          if (notification is ScrollNotification) {
+                            return _transcriptFollower.observeNotification(
+                              notification,
+                            );
+                          }
+                          if (notification is ScrollMetricsNotification &&
+                              hasTranscript) {
+                            _transcriptFollower.followUpdate();
+                          }
+                          return false;
+                        }
+
                         final keyboardVisible =
                             MediaQuery.viewInsetsOf(context).bottom > 0;
                         final hasLiveAccess =
@@ -244,67 +273,72 @@ extension _AssistantPageLayout on _AssistantPageState {
                                     else ...[
                                       Stack(
                                         children: [
-                                          CustomScrollView(
-                                            controller: _scrollController,
-                                            keyboardDismissBehavior:
-                                                scrollDismissBehavior,
-                                            physics: _AssistantPageState
-                                                ._assistantScrollPhysics,
-                                            slivers: [
-                                              SliverPadding(
-                                                padding: EdgeInsets.fromLTRB(
-                                                  _horizontalPadding(context),
-                                                  floatingShellHeaderInset(
-                                                        context,
-                                                        minimumContentHeight:
-                                                            headerHeight,
-                                                      ) +
-                                                      12,
-                                                  _horizontalPadding(context),
-                                                  _composerReservedSpace(
-                                                    context,
-                                                    isComposerVisible:
-                                                        _isComposerVisible,
+                                          NotificationListener<Notification>(
+                                            onNotification:
+                                                onTranscriptNotification,
+                                            child: CustomScrollView(
+                                              controller: _scrollController,
+                                              keyboardDismissBehavior:
+                                                  scrollDismissBehavior,
+                                              physics: _AssistantPageState
+                                                  ._assistantScrollPhysics,
+                                              slivers: [
+                                                SliverPadding(
+                                                  padding: EdgeInsets.fromLTRB(
+                                                    _horizontalPadding(context),
+                                                    floatingShellHeaderInset(
+                                                          context,
+                                                          minimumContentHeight:
+                                                              headerHeight,
+                                                        ) +
+                                                        12,
+                                                    _horizontalPadding(context),
+                                                    _composerReservedSpace(
+                                                      context,
+                                                      isComposerVisible:
+                                                          _isComposerVisible,
+                                                    ),
+                                                  ),
+                                                  sliver: SliverList.list(
+                                                    children: [
+                                                      if (showLiveStrip) ...[
+                                                        _buildLiveStageCard(
+                                                          currentWorkspace.id,
+                                                          chatState,
+                                                          liveState,
+                                                          liveCameraController,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 12,
+                                                        ),
+                                                      ],
+                                                      if (showTranscript)
+                                                        _buildTranscriptSection(
+                                                          chatState,
+                                                          liveState,
+                                                          shellState,
+                                                        )
+                                                      else
+                                                        starterPrompts,
+                                                    ],
                                                   ),
                                                 ),
-                                                sliver: SliverList.list(
-                                                  children: [
-                                                    if (showLiveStrip) ...[
-                                                      _buildLiveStageCard(
-                                                        currentWorkspace.id,
-                                                        chatState,
-                                                        liveState,
-                                                        liveCameraController,
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                    ],
-                                                    if (hasTranscript)
-                                                      _buildTranscriptSection(
-                                                        chatState,
-                                                        liveState,
-                                                        shellState,
-                                                      )
-                                                    else
-                                                      AssistantStarterPrompts(
-                                                        onPromptSelected:
-                                                            _applyStarterPrompt,
-                                                        replayToken:
-                                                            widget.replayToken,
-                                                      ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                           if (chatState.status ==
                                               AssistantChatStatus.restoring)
-                                            const Positioned(
-                                              top: 0,
+                                            Positioned(
+                                              top:
+                                                  floatingShellHeaderInset(
+                                                    context,
+                                                    minimumContentHeight:
+                                                        headerHeight,
+                                                  ) +
+                                                  12,
                                               left: 0,
                                               right: 0,
-                                              child: NovaLoadingIndicator(
+                                              child: const NovaLoadingIndicator(
                                                 size: 20,
                                               ),
                                             ),

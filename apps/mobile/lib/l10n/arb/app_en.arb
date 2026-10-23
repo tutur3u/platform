@@ -1445,6 +1445,8 @@
   "assistantMermaidZoomIn": "Zoom in",
   "assistantMermaidZoomOut": "Zoom out",
   "assistantMermaidZoomReset": "Reset zoom",
+  "assistantMessageDelivered": "Delivered",
+  "assistantMessageRead": "Read",
   "assistantMessageActionsTitle": "Message actions",
   "assistantMicrophoneUnavailable": "Microphone unavailable. Check microphone access or reconnect your headset, then try again.",
   "assistantModeFast": "Fast",
@@ -1481,7 +1483,7 @@
   "assistantSeeMoreLabel": "See more",
   "assistantSelectWorkspace": "Select a workspace",
   "assistantSendAction": "Send message",
-  "assistantSettingsTitle": "Assistant settings",
+  "assistantSettingsTitle": "Assistant Settings",
   "assistantShowBottomNavLabel": "Show bottom nav",
   "assistantSourceLabel": "Source",
   "assistantSourcePersonal": "Personal",
@@ -4579,5 +4581,7 @@
   "feedbackRetry": "Retry same submission",
   "feedbackEditRejected": "Edit rejected submission",
   "feedbackSubjectRequired": "Enter a subject of 1–160 characters.",
-  "feedbackDetailsRequired": "Enter details of 1–8000 characters."
+  "feedbackDetailsRequired": "Enter details of 1–8000 characters.",
+  "profileMediaNetworkError": "Could not connect. Check your connection and try again.",
+  "profileMediaUploadExpired": "The upload link expired or is invalid. Select the image again."
 }

@@ -1448,6 +1448,8 @@
   "assistantMermaidZoomIn": "Phóng to",
   "assistantMermaidZoomOut": "Thu nhỏ",
   "assistantMermaidZoomReset": "Đặt lại thu phóng",
+  "assistantMessageDelivered": "Đã gửi",
+  "assistantMessageRead": "Đã đọc",
   "assistantMessageActionsTitle": "Thao tác tin nhắn",
   "assistantMicrophoneUnavailable": "Không thể sử dụng micrô. Hãy kiểm tra quyền truy cập hoặc kết nối lại tai nghe rồi thử lại.",
   "assistantModeFast": "Nhanh",
@@ -1484,7 +1486,7 @@
   "assistantSeeMoreLabel": "Xem thêm",
   "assistantSelectWorkspace": "Chọn một không gian làm việc",
   "assistantSendAction": "Gửi tin nhắn",
-  "assistantSettingsTitle": "Cài đặt Mira",
+  "assistantSettingsTitle": "Cài đặt Trợ lý",
   "assistantShowBottomNavLabel": "Hiện thanh điều hướng dưới",
   "assistantSourceLabel": "Nguồn",
   "assistantSourcePersonal": "Cá nhân",
@@ -4582,5 +4584,7 @@
   "feedbackRetry": "Gửi lại cùng phản hồi",
   "feedbackEditRejected": "Sửa phản hồi bị từ chối",
   "feedbackSubjectRequired": "Nhập tiêu đề từ 1–160 ký tự.",
-  "feedbackDetailsRequired": "Nhập chi tiết từ 1–8000 ký tự."
+  "feedbackDetailsRequired": "Nhập chi tiết từ 1–8000 ký tự.",
+  "profileMediaNetworkError": "Không thể kết nối. Kiểm tra kết nối và thử lại.",
+  "profileMediaUploadExpired": "Liên kết tải lên đã hết hạn hoặc không hợp lệ. Hãy chọn lại ảnh."
 }

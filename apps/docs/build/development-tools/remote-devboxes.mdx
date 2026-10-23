@@ -481,6 +481,18 @@ ttr box logs <run-id>
 ttr box stop <run-id>
 ```
 
+`ttr box stop`, `ttr box logs`, and lease release act only on runs and leases
+created by the signed-in user; another member's ids return 404. Stopping a queued
+run cancels it immediately, a running run moves to `cancel_requested` for its
+agent, and finished runs are never changed. Repeating an owner stop on a
+`cancel_requested` or `cancelled` run returns its current cancellation without
+rewriting timestamps; retries cannot postpone stale-run reaping. Foreign ids
+still return 404, including cancelled or finished runs. Owner stops that race
+completion return the observed final status without a write. Infrastructure
+administrators use the same stable retry and final-status behavior and can
+stop any active run from the dashboard. Regression coverage lives in
+`apps/web/src/lib/devboxes/store-scoping.test.ts`.
+
 `ttr box build`, `ttr box serve`, and `ttr box tunnel` do not set a remote
 command timeout by default. Pass `--timeout <duration>` only when the run should
 be killed automatically.
@@ -570,6 +582,22 @@ they are stored for operators and later claim matching, never used to grant
 features or authorize a runner. Agents send them only after both handlers are
 deployed. Judge readiness probes are cached for ten minutes and refreshed in the background; execution still fails
 closed if required isolation or language images are unavailable.
+
+Agent HTTP calls are bounded. Heartbeat, claim, event, completion and shutdown
+requests time out after 15 seconds (playground file sync after 30 seconds), and
+the timeout also covers reading the response body. Network errors, timeouts,
+`408`, `425`, `429` and `5xx` responses are transient: heartbeats retry with
+jittered exponential backoff (never slower than the 20-second heartbeat
+interval), and claims back off up to 60 seconds without crashing. Event and
+completion uploads retry up to three times. A replayed completion that finds the
+run already finished (`404` on a retry) counts as delivered. Rejected tokens and
+other `4xx` responses still stop the agent for operator action. If no heartbeat
+succeeds for six intervals (two minutes), the agent drains active jobs and exits
+non-zero. A separate timer exits the process with code `75` after twice that
+window if an await stays wedged, so the service manager's `Restart=always`
+recovers the agent instead of leaving it hung with a stale heartbeat. Regression
+coverage, including a real socket that never answers, lives in
+`devbox-agent-network.test.ts`.
 
 Platform-managed playground workers opt in through operator configuration. They
 require gVisor and pinned language image digests, run unprivileged without host

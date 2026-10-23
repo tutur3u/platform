@@ -177,7 +177,11 @@ test('release merge pins the same Flutter version as the mobile workflow', () =>
       source: fs.readFileSync(path.join(workflowsDir, workflowName), 'utf8'),
       workflowName,
     }))
-    .filter(({ source }) => source.includes('subosito/flutter-action@'));
+    .filter(
+      ({ source }) =>
+        source.includes('subosito/flutter-action@') ||
+        source.includes('./.github/actions/setup-flutter-with-cache')
+    );
   const mobileWorkflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'mobile.yaml'),
     'utf8'
