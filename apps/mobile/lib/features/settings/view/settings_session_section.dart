@@ -222,18 +222,18 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
               : _approvalError ?? l10n.mfaApprovalSettingsIdle,
           showChevron: false,
           trailing: pendingApproval != null
-              ? shad.PrimaryButton(
-                  enabled: _approvingChallengeId == null,
-                  size: shad.ButtonSize.small,
-                  onPressed: () =>
-                      unawaited(_approveMfaRequest(pendingApproval)),
-                  child: _approvingChallengeId == pendingApproval.id
+              ? IconButton(
+                  tooltip: l10n.deviceMfaReview,
+                  onPressed: _approvingChallengeId == null
+                      ? () => unawaited(_approveMfaRequest(pendingApproval))
+                      : null,
+                  icon: _approvingChallengeId == pendingApproval.id
                       ? const SizedBox(
                           width: 16,
                           height: 16,
                           child: NovaLoadingIndicator(size: 20),
                         )
-                      : Text(l10n.deviceMfaReview),
+                      : const Icon(Icons.verified_user_outlined),
                 )
               : (_approvalLoading || _approvalRefreshing)
               ? const SizedBox(

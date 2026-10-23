@@ -55,6 +55,14 @@ localization changes.
 - Full-surface loaders should use `NovaLoadingIndicator`; native/spinner
   variants are for compact inline affordances.
 
+- Settings rows use `SettingsRowLayout` and `SettingsTile` (re-exported from
+  `settings_widgets.dart`) for consistent heading/icon insets, text slots and
+  trailing controls. Stack multiple actions in the fixed 44px trailing column;
+  keep each action's localized tooltip and touch target. Consume inherited dock
+  padding inside scroll content. Verify geometry and scroll-end clearance with
+  `settings_compact_navigation_test.dart`; presentation changes must not alter
+  timezone cubits or repositories.
+
 ## Task Board
 
 - Preserve external/personal task semantics when changing board views.
