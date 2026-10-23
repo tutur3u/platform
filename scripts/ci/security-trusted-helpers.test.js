@@ -10,6 +10,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
+const severityCases = require('./fixtures/codeql-severity-cases.js');
 
 const workflowsDir = path.resolve(__dirname, '../../.github/workflows');
 const token = ['TTR', 'SYNTHETIC', 'TEST', 'TOKEN', '12345678'].join('_');
@@ -210,70 +211,32 @@ test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
     'codeql.yml',
     'Fail on new high or critical results'
   );
-  const gate = (results) => {
+  const shared = JSON.parse(fs.readFileSync(severityCases.fixture, 'utf8'));
+  const gate = (ruleId) => {
     fs.rmSync(sarifDir, { force: true, recursive: true });
     fs.mkdirSync(sarifDir);
-    if (results) {
+    if (ruleId) {
+      const sarif = structuredClone(shared);
+      sarif.runs[0].results = [{ ruleId }];
       fs.writeFileSync(
         path.join(sarifDir, 'javascript.sarif'),
-        JSON.stringify({
-          runs: [
-            {
-              results,
-              tool: {
-                driver: {
-                  rules: [
-                    {
-                      id: 'js/high',
-                      properties: { 'security-severity': '8.8' },
-                    },
-                    {
-                      id: 'js/low',
-                      properties: { 'security-severity': '2.0' },
-                    },
-                    {
-                      id: 'js/number',
-                      properties: { 'security-severity': 8.8 },
-                    },
-                    {
-                      id: 'js/low-number',
-                      properties: { 'security-severity': 2 },
-                    },
-                    { id: 'js/missing', properties: {} },
-                    { id: 'js/no-properties' },
-                    {
-                      id: 'js/non-numeric',
-                      properties: { 'security-severity': 'high' },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        })
+        JSON.stringify(sarif)
       );
     }
     return run(script, box, { CATEGORY: '/language:javascript' });
   };
 
-  assert.notEqual(gate([{ ruleId: 'js/high' }]).status, 0);
-  // REV-6456-12: numeric 8.8 fails; a known rule whose severity is missing or
-  // not numeric fails closed instead of reading as 0.
-  for (const ruleId of [
-    'js/number',
-    'js/missing',
-    'js/no-properties',
-    'js/non-numeric',
-  ]) {
-    assert.notEqual(gate([{ ruleId }]).status, 0, ruleId);
+  // REV-6456-12/14: the shared fixture's expectations hold for the bootstrap
+  // jq gate exactly as for codeql-new-alerts.js (security-scanners.test.js).
+  for (const [ruleId, blocks] of Object.entries(severityCases.blocking)) {
+    const result = gate(ruleId);
+    assert.equal(
+      result.status !== 0,
+      blocks,
+      `${ruleId}: ${result.stdout}${result.stderr}`
+    );
   }
-  const lowNumber = gate([{ ruleId: 'js/low-number' }]);
-  assert.equal(lowNumber.status, 0, lowNumber.stdout + lowNumber.stderr);
-  // A result whose rule severity cannot be resolved counts as high.
-  assert.notEqual(gate([{ ruleId: 'js/unlisted' }]).status, 0);
   assert.notEqual(gate(null).status, 0, 'missing SARIF output fails');
-  const low = gate([{ ruleId: 'js/low' }]);
-  assert.equal(low.status, 0, low.stdout + low.stderr);
 });
 
 function outputs(temp) {

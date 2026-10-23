@@ -1,6 +1,11 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { findings, newHighFindings } = require('./codeql-new-alerts.js');
+const {
+  findings,
+  highSeverity,
+  newHighFindings,
+} = require('./codeql-new-alerts.js');
+const severityCases = require('./fixtures/codeql-severity-cases.js');
 const {
   auditAdvisories,
   newBlockingAdvisories,
@@ -62,6 +67,21 @@ const advisory = (url, severity) => ({
   title: 't',
   url,
   vulnerable_versions: '<1',
+});
+
+test('CodeQL rules with unreadable severities count as high', () => {
+  // REV-6456-14: missing, null, empty or non-numeric security-severity (and
+  // unknown rules) are high, never 0; the jq bootstrap gate shares the fixture.
+  const sarif = JSON.parse(
+    require('node:fs').readFileSync(severityCases.fixture, 'utf8')
+  );
+  const actual = Object.fromEntries(
+    findings(sarif).map(({ ruleId, severity }) => [
+      ruleId,
+      severity >= highSeverity,
+    ])
+  );
+  assert.deepEqual(actual, severityCases.blocking);
 });
 
 test('dependency audit fails only on new high/critical advisories', () => {

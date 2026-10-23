@@ -9,6 +9,18 @@ const path = require('node:path');
 const { env } = process;
 
 const highSeverity = 7;
+// A result whose rule is unknown, or whose security-severity is missing, null,
+// empty or not a plain number, is treated as critical: an unreadable severity
+// must never pass as 0. The bootstrap jq gate in codeql.yml uses the same rule.
+const unresolvedSeverity = 10;
+
+function parseSeverity(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string' && /^[0-9]+(?:\.[0-9]+)?$/u.test(value)) {
+    return Number(value);
+  }
+  return null;
+}
 
 function ruleSeverity(run, result) {
   const rules = [
@@ -20,8 +32,9 @@ function ruleSeverity(run, result) {
   const rule =
     rules.find((candidate) => candidate.id === result.ruleId) ??
     run.tool?.driver?.rules?.[result.ruleIndex ?? result.rule?.index];
-  const value = Number(rule?.properties?.['security-severity']);
-  return Number.isFinite(value) ? value : 0;
+  return (
+    parseSeverity(rule?.properties?.['security-severity']) ?? unresolvedSeverity
+  );
 }
 
 function findings(sarif) {
@@ -135,4 +148,9 @@ if (require.main === module) {
   });
 }
 
-module.exports = { findings, highSeverity, newHighFindings };
+module.exports = {
+  findings,
+  highSeverity,
+  newHighFindings,
+  unresolvedSeverity,
+};
