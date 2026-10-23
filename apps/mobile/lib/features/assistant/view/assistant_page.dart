@@ -9,10 +9,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/core/utils/timezone.dart';
@@ -571,9 +569,6 @@ class _AssistantPageState extends State<AssistantPage>
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
-
-  double _horizontalPadding(BuildContext context) =>
-      context.isCompact ? 16 : 24;
 
   double _composerReservedSpace(
     BuildContext context, {

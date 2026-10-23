@@ -10,6 +10,7 @@ import 'package:mobile/features/settings/view/timezone_rate_limit_message.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/internal_diagnostics_copy.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimezoneSettingsTile extends StatefulWidget {
   const TimezoneSettingsTile({
@@ -136,7 +137,7 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
     listener: (_, state) => _syncCooldown(state.retryAt),
     builder: (context, state) => SettingsTile(
       grouped: widget.grouped,
-      icon: Icons.public_rounded,
+      icon: shad.LucideIcons.earth,
       title: widget.workspace
           ? context.l10n.settingsWorkspaceTimezone
           : context.l10n.settingsTimezone,
@@ -181,7 +182,7 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
                   onPressed: _coolingDown || state.loading || state.saving
                       ? null
                       : () => unawaited(_retry()),
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const Icon(shad.LucideIcons.rotateCw),
                 ),
                 if (state.diagnostics case final diagnostics?)
                   InternalDiagnosticsCopy(

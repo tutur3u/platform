@@ -160,9 +160,44 @@ Before this foundation:
   floating dock.
 - Root pages added `floatingShellHeaderInset` with ad-hoc +8/+10 offsets.
 
-Migrated so far: Documents list (`AppPageListView`), document editor
-(`AppPageBody`, reading), and Calendar (`AppPageBody.fullBleed`). The
-remaining screens move to the primitives in a later sweep.
+## Page kinds by screen
+
+Feature screens use the primitives with these page kinds:
+
+| Kind | Screens |
+| --- | --- |
+| `root` | Apps hub, Assistant transcript and start state, Drive, Meet lobby, Chat surface (two panes), Notes (list and editor), CMS overview, Mobile versions, board timeline, calendar year grid |
+| `detail` | Task lists, boards, planning, portfolio, estimates, habits, time tracker tabs and requests; finance, inventory and storefront lists and overviews; education, CMS library and CRM; mail organization; Meet ended review; workspace select, accounts, security, reminders |
+| `form` | Auth screens (`AuthScaffold`), inventory editors (`InventoryFormScaffold`), mail composer and settings, product feedback, MFA request, required-update gate, Assistant memory and personality editors |
+| `reading` | Documents editor, mail reader |
+
+Full-bleed screens: calendar day/multi-day/month views, the task board kanban
+canvas, chat threads and composers, Assistant Live, the Meet call grid, and
+media/attachment viewers. Their headers, empty states and loading states still
+use the gutter. When a page passes the dock clearance through
+(`consumeBottomClearance: false`), a scrolling canvas pads its own scroll end.
+A fixed, non-scrolling canvas such as the month grid must stop above the dock
+by reserving `MediaQuery.paddingOf(context).bottom` below itself.
+
+Shell detail routes that are not mini-app nav items, such as a portfolio
+project, register `ShellTitleOverride` and a `ShellMiniNav` with a
+`deepLinkBackRoute`, so the dock or rail Back returns to their parent list.
+
+Documented exceptions:
+
+- Modal sheets and dialogs keep their own internal padding; they are not
+  page bodies.
+- Mail swipe rows stay edge to edge on phones and centre at the detail width
+  on wider windows. The mail reader keeps a larger named end gap so long
+  messages clear the Mail dock.
+- Standalone (non-shell) forms with their own footer reserve the system inset
+  in that footer instead of consuming dock clearance.
+- Settings, Home, Notifications and Profile migrate in their own lanes. The
+  full-screen task detail view keeps its own inset math until it is reworked.
+
+Layout widths should come from the constraints a widget receives
+(`LayoutBuilder`), not `MediaQuery.sizeOf(context)`. Beside the rail, the
+window is wider than the body.
 
 ## Regression coverage
 
@@ -181,4 +216,10 @@ remaining screens move to the primitives in a later sweep.
 - `shell_rail_layout_test.dart`: no remount across rotation, resize, or
   immersive toggles, rail-mode clearance, RTL through `ShellPage`, and
   hover-only tooltips.
-- `shell_viewport_checks.dart`: the dock/rail viewport matrix.
+- `shell_viewport_checks.dart`: the dock/rail viewport matrix, including the
+  root page's first content one `pageTop` gap below the floating header.
+- `test/core/layout/page_padding_matrix_test.dart`: representative detail and
+  form screens at phone, portrait/landscape tablet and desktop widths. It
+  checks that the page list uses the resolved insets, the scrollable stays
+  full width, and content stays within the page kind's max width.
+  `DESIGN_RENDER_DIR` writes PNG captures.

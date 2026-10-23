@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -8,7 +10,7 @@ Widget buildMeetDeviceChoice(BuildContext context, MeetCallController call) {
   final l10n = context.l10n;
   return Center(
     child: Padding(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(AppLayout.gutter(context.deviceClass)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

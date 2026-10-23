@@ -359,6 +359,12 @@ The dedicated preload control has a different scope, with no generic missing-Wor
 and independent proof-phase observations, normalize path roles, mark unknowns/missing fields/truncation and retain full private evidence.
 Preserve primary errors; receipts or observed errors alone never establish closure. Source assertions do not clear runtime NOTPASS.
 
+- Pin every remote `uses:` in workflows and composite actions to a full commit
+  SHA with a trailing `# vX.Y.Z` comment so Dependabot can bump it;
+  `scripts/ci/workflow-action-pins.test.js` enforces this. Resolve a tag with
+  `git ls-remote --tags <repo>` (use the peeled `^{}` SHA). The exception is
+  `supabase-staging.yaml`: Supabase Production authenticates its exact Git
+  blob, so pin it only together with the producer-contract allowlist.
 - Keep workflow Bun versions aligned with the repo `packageManager` pin.
 - Workflows that need Bun should use
   `.github/actions/setup-bun-with-retry` instead of `oven-sh/setup-bun`
