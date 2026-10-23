@@ -103,4 +103,6 @@ exact-commit SDK package qualification workflow's compile, isolated public insta
 and compiled CLI probes. See `packages/sdk/PUBLISHING.md`.
 
 Run focused non-build tests locally and require applicable exact-commit CI test,
-type-check, lint, and build results. Do not run local `bun check` or builds.
+type-check, lint, and build results. Do not run local `bun validate` or builds.
+
+For SDK package process-drain failures on macOS, inspect the first signal-zero probe after `SIGKILL`. An exiting group can briefly return `EPERM` before disappearing. Continue bounded polling inside the existing deadline; only `ESRCH` establishes disappearance. Do not suppress persistent permission failures or weaken descendant assertions. Use `scripts/ci/sdk-package-process.test.js` for deterministic transient/persistent probe controls, alongside `qualify-sdk-package.test.js` for real descendants.

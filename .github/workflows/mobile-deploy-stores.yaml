@@ -12,6 +12,7 @@ on:
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-deploy-stores.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
       - ".github/workflows/ci-check.yml"
       - "scripts/mobile-deployment/**"
       - "scripts/ci/normalize-release-notes.js"
@@ -62,7 +63,7 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -131,7 +132,7 @@ jobs:
         run: node ../../scripts/mobile-deployment/release-history.mjs
 
       - name: Share beta release history with both stores
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mobile-beta-release-history
           path: apps/mobile/assets/release_history.json
@@ -166,12 +167,12 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
       - name: Use prepared beta release history
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: mobile-beta-release-history
           path: apps/mobile/assets
@@ -179,25 +180,31 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Java
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
-          cache-dependency-path: |
-            apps/mobile/android/**/*.gradle*
-            apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
+
+      # Production jobs read caches populated by trusted main builds.
+      - name: Restore Gradle dependencies without saving
+        id: gradle-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-v1-${{ runner.os }}-${{ runner.arch }}-java17-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-v1-${{ runner.os }}-${{ runner.arch }}-java17-
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       - name: Fetch Android deployment bundle from Tuturuuu
         shell: bash
@@ -250,7 +257,7 @@ jobs:
           command: bun build:android --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
 
       - name: Upload Android App Bundle artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: android-production-aab
           path: apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
@@ -270,7 +277,7 @@ jobs:
           echo "MOBILE_PLAY_NOTES=$notes_dir" >> "$GITHUB_ENV"
 
       - name: Publish Android App Bundle to Google Play internal
-        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
         with:
           packageName: com.tuturuuu.app.mobile
           releaseFiles: apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
@@ -292,6 +299,7 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-android.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-android-oidc.json"
 
+
   publish-ios-testflight:
     permissions:
       actions: read
@@ -309,26 +317,26 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
       - name: Use prepared beta release history
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: mobile-beta-release-history
           path: apps/mobile/assets
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
-      - name: Cache CocoaPods downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      # Production jobs read caches populated by trusted main builds.
+      - name: Restore CocoaPods downloads without saving
+        id: pods-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             /Users/runner/Library/Caches/CocoaPods
@@ -498,7 +506,7 @@ jobs:
       - name: Preserve iOS dSYM artifact
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ios-production-dsyms
           path: apps/mobile/build/ios/archive/Runner.xcarchive/dSYMs
@@ -510,7 +518,7 @@ jobs:
         # TestFlight uses the verified local IPA. GitHub artifact storage is
         # diagnostic only and must not block distribution when it times out.
         continue-on-error: true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ios-production-ipa
           path: ${{ steps.ios-ipa.outputs.path }}
@@ -561,6 +569,7 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
 
+
   retry-ios-testflight-review:
     permissions:
       actions: read
@@ -575,7 +584,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout production code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 

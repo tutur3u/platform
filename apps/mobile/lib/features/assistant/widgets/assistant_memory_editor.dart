@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/assistant/cubit/assistant_memory_editor_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -75,11 +77,14 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
       builder: (context, state) => SafeArea(
         top: false,
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            MediaQuery.viewInsetsOf(context).bottom + 20,
+          // A full-screen routed form above the shell (no dock clearance).
+          padding: AppPageInsets.of(
+            context,
+            width: MediaQuery.sizeOf(context).width,
+            kind: AppPageKind.form,
+            endGap:
+                AppLayout.scrollEndGap +
+                MediaQuery.viewInsetsOf(context).bottom,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

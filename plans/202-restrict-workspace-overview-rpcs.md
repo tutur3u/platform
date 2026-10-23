@@ -57,7 +57,7 @@ Stop if any supported direct caller requires `anon` or `authenticated` execute.
 | No type drift | `git diff --exit-code -- packages/types/src/supabase.ts` | no output; ACL-only migration changes no generated type |
 | Infrastructure | `bun --cwd apps/infrastructure vitest run 'src/app/[locale]/(dashboard)/[wsId]/workspaces/data-fetching.test.ts'` | new caller test proves both RPCs use the injected admin client and preserve success/error mapping |
 | Typecheck | `bun run --cwd apps/infrastructure type-check` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -87,7 +87,7 @@ logic, route migration, generated-type edits, or production apply.
    and bounded fixture rows/summary.
 4. Run focused/full isolated database validation, isolated typegen plus the
    mandatory no-diff assertion, Infrastructure characterization/typecheck,
-   `bun check`, and whitespace verification.
+   `bun validate`, and whitespace verification.
 
 ## Done criteria
 

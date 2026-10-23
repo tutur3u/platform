@@ -84,7 +84,7 @@ stack for every edit.
   broad deletion as a substitute for branch/worktree lifecycle checks.
 - Format touched files with the repo-preferred command.
 - Run focused tests for changed behavior.
-- Run focused non-build checks locally and require applicable exact-commit CI lint, type-check, tests, and real app builds. Do not run local builds or `bun check`.
+- Run focused non-build checks locally and require applicable exact-commit CI lint, type-check, tests, and real app builds. Do not run local builds or `bun validate`.
 - Update `apps/docs` for durable workflow, deployment, architecture, debugging, or operations knowledge.
 - Update the Tuturuuu plugin when agent-facing CLI, validation, setup, or workflow knowledge changes.
 - Keep release-please annotations on platform version lines intact; the

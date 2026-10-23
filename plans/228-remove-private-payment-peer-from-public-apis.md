@@ -77,7 +77,7 @@ the Pay handoff; no active note currently owns the exact APIs/member files.
 | Artifact smoke | `node scripts/ci/package-release-readiness.js verify-packed-import packages/apis @tuturuuu/apis/members/route` | clean isolated install/import succeeds without private workspace packages |
 | Types | `bun run --cwd packages/apis type-check && bun run --cwd packages/payment-core type-check && bun run --cwd apps/web type-check && bun run --cwd apps/tasks type-check` | exit 0 |
 | Builds | `bun run --cwd apps/web build && bun run --cwd apps/tasks build` | both production builds exit 0 |
-| Plugin/repository | `python3 plugins/tuturuuu/scripts/validate_plugin.py && bun check && git diff --check` | all gates pass |
+| Plugin/repository | `python3 plugins/tuturuuu/scripts/validate_plugin.py && bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

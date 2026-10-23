@@ -74,6 +74,7 @@ env:
   E2E_IMAGE_BUNDLE_TAG_PREFIX: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
   E2E_IMAGE_BUNDLE_WAIT_SECONDS: "10"
   E2E_DOCKER_SUPABASE_RESET: "0"
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
   E2E_SUPABASE_IMAGE_TRANSPORT: ${{ inputs.supabase_image_transport || 'cache' }}
 
 jobs:
@@ -91,7 +92,7 @@ jobs:
       runner_context: ${{ steps.plan.outputs.runner_context }}
     steps:
       - name: Check out code and comparison history
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           sparse-checkout: scripts/ci
@@ -147,7 +148,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -157,18 +158,17 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
       - name: Setup Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v4
-
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Select Docker Buildx builder
         run: echo "BUILDX_BUILDER=${{ steps.buildx.outputs.name }}" >> "$GITHUB_ENV"
 
@@ -269,47 +269,27 @@ jobs:
         run: echo "E2E_JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
 
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Free runner disk for Dockerized E2E
         run: bash scripts/ci/e2e-free-disk.sh
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
 
-      - name: Get Supabase CLI version
-        id: supabase-version
-        run: echo "version=$(supabase --version)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore cached Docker images
-        id: cache-supabase
-        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
-        uses: actions/cache/restore@v6
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
-          restore-keys: |
-            supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-
-
-      - name: Load cached Docker images
-        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && steps.cache-supabase.outputs.cache-matched-key != ''
-        run: docker load -i /tmp/supabase-docker/images.tar || true
-
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
       - name: Setup Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v4
-
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Select Docker Buildx builder
         run: echo "BUILDX_BUILDER=${{ steps.buildx.outputs.name }}" >> "$GITHUB_ENV"
 
@@ -341,6 +321,13 @@ jobs:
 
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Restore shared Supabase images
+        continue-on-error: true
+        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
+        uses: ./.github/actions/cache-supabase-images
+        with:
+          profile: full
 
       - name: Reuse migrated Supabase baseline
         uses: ./.github/actions/setup-supabase-baseline
@@ -383,29 +370,8 @@ jobs:
         if: ${{ failure() }}
         run: node scripts/ci/e2e-diagnostics-redact.js
 
-      - name: Save Supabase Docker images for cache
-        id: prepare-supabase-docker-cache
-        # Only the general first shard uploads the multi-GB cache, not invitation shards.
-        if: ${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.mode == 'shard' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
-        run: |
-          mkdir -p /tmp/supabase-docker
-          docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
-          if [ -s /tmp/supabase-docker/images.tar ]; then
-            echo "cache-ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No Supabase Docker images were available to cache."
-            echo "cache-ready=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Cache Supabase Docker images
-        if: ${{ always() && steps.prepare-supabase-docker-cache.outputs.cache-ready == 'true' }}
-        uses: actions/cache/save@v6
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
-
       - name: Upload E2E failure artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() && steps.redact-diagnostics.outcome == 'success' }}
         with:
           name: e2e-failure-${{ matrix.id }}
@@ -435,7 +401,7 @@ jobs:
 
       - name: Cache successful E2E proof
         if: success() && steps.proof.outputs.reusable == 'true'
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tmp/e2e-proof-receipt.json
           key: ${{ matrix.cache_key }}
@@ -455,39 +421,20 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Free runner disk for cross-app cache E2E
         run: bash scripts/ci/e2e-free-disk.sh
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
 
-      - name: Get Supabase CLI version
-        id: supabase-version
-        run: echo "version=$(supabase --version)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore cached Supabase Docker images
-        id: cache-supabase
-        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
-        uses: actions/cache/restore@v6
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
-          restore-keys: |
-            supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-
-
-      - name: Load cached Supabase Docker images
-        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && steps.cache-supabase.outputs.cache-matched-key != ''
-        run: docker load -i /tmp/supabase-docker/images.tar || true
-
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -501,6 +448,13 @@ jobs:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/inventory^... --filter=@tuturuuu/storefront^...
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
+      - name: Restore shared Supabase images
+        continue-on-error: true
+        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
+        uses: ./.github/actions/cache-supabase-images
+        with:
+          profile: full
 
       - name: Reuse migrated Supabase baseline
         uses: ./.github/actions/setup-supabase-baseline
@@ -521,7 +475,7 @@ jobs:
         run: node scripts/ci/e2e-diagnostics-redact.js --report tmp/e2e-inventory-results.json --output tmp/e2e-diagnostics/inventory-results.json
 
       - name: Upload cache E2E failure artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() && steps.redact-inventory.outcome == 'success' }}
         with:
           name: inventory-storefront-cache-e2e
@@ -545,7 +499,7 @@ jobs:
 
       - name: Cache successful E2E proof
         if: success() && steps.proof.outputs.reusable == 'true'
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tmp/e2e-proof-receipt.json
           key: ${{ needs.relevance.outputs.inventory_key }}
@@ -595,8 +549,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Free runner disk for Dockerized migration E2E
         run: bash scripts/ci/e2e-free-disk.sh
 
@@ -607,18 +560,17 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
       - name: Setup Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v4
-
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Select Docker Buildx builder
         run: echo "BUILDX_BUILDER=${{ steps.buildx.outputs.name }}" >> "$GITHUB_ENV"
 
@@ -669,7 +621,7 @@ jobs:
         run: ${{ matrix.command }}
 
       - name: Upload migration E2E artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() }}
         with:
           name: migration-e2e-${{ matrix.mode }}
@@ -704,7 +656,7 @@ jobs:
       packages: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 

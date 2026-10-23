@@ -44,6 +44,31 @@ localization changes.
   mobile satellite origin. It verifies canonical route ownership and ensures
   each satellite proxy preserves bearer-authenticated mobile API access.
 
+## Layout And Spacing
+
+- Build page bodies with the `core/layout/layout.dart` primitives
+  (`AppPageListView`, `AppPageScrollView`, `SliverAppPage`, `AppPageBody`) and
+  `AppSpacing`/`AppLayout` tokens. Do not hand-write page gutters, wrap a
+  scrollable in `ResponsiveWrapper`, or add ad-hoc scroll-end constants to
+  `MediaQuery.paddingOf(context).bottom`.
+- Use `AppPageBody.fullBleed` only for listed screen types: calendar views,
+  kanban/board and planner canvases, chat/Assistant threads and Live, Meet call
+  stages, and media/map viewers or full-canvas editors.
+- Pick the page kind per screen (`root` grids and multi-pane, `detail` lists,
+  `form` data entry, `reading` long text); the design-system page lists current
+  assignments. Size grids and cards from `LayoutBuilder` constraints, not the
+  window width, and drop widget-level 16dp side margins once the page pads.
+  Sheets and dialogs keep their own padding. For `ListView.separated` or grids,
+  pass `AppPageInsets.of(context, width: constraints.maxWidth)` as padding.
+- Group rows with `AppGroupedSection`/`AppGroupedCard`; row layout stays with
+  the owning feature. Expanded tablet/desktop windows use the leading
+  `ShellNavigationRail`, which must keep the mini-app Back item. Switching
+  dock and rail must not change the shell body's tree shape; regressions
+  assert a visited root tab is not remounted, because routed pages survive
+  through the navigator key.
+- See the [mobile design system](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx)
+  and its layout/rail regression tests.
+
 ## Overlays And Shell
 
 - Do not call `shad.openDrawer`, `shad.showDialog` for full-screen content, or
@@ -62,6 +87,16 @@ localization changes.
   padding inside scroll content. Verify geometry and scroll-end clearance with
   `settings_compact_navigation_test.dart`; presentation changes must not alter
   timezone cubits or repositories.
+- Settings groups are rounded cards (`SettingsGroup`, `SettingsCaption`) with
+  dividers at `SettingsRowLayout.textColumn`. Use `SettingsRowLayout.groupFill`
+  for grouped fills so ambient appearances get the translucent card.
+- Appearance colours live only in `core/theme/appearance/appearance_palettes.dart`.
+  Read derived tokens via the shad/Material theme, and keep
+  `appearance_contrast_test.dart` green when adding a palette or accent.
+  `AppearanceBackdrop` makes shad scaffolds transparent for Gradient/Blobs;
+  full-screen modal content must use the adaptive sheet helpers or
+  `AppearanceScope.opaqueScaffolds`. Ambient motion must stay opt-in, timer-driven
+  and painter-only, and must stop under reduced motion.
 
 ## Task Board
 
@@ -119,6 +154,15 @@ localization changes.
   It covers scheduling ownership, creation admission, native attachment wire
   shapes, shell publication and subscription handshakes. Fixture success does
   not establish installed-device, provider or customer delivery.
+
+- Assistant receipt labels are presentation evidence: only a saved-user identity
+  transition permits Delivered; following response content permits Read. Never
+  infer delivery from a spinner ending, a local timestamp, or restored history
+  without acknowledgement provenance. Keep dock geometry tests on the actual
+  persistent shell dock, and exercise streaming follow with large output chunks
+  and a reader scrolled into history. Coalesced post-frame followers must request
+  a visual update when scheduled while idle; adding a post-frame callback alone
+  does not request a frame. Cover idle resume as well as content-driven rebuilds.
 
 ### Calendar description display
 

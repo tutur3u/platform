@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { lstat, readdir, readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, open, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from '@babel/parser';
 
@@ -32,9 +33,19 @@ export async function gatewayFunctionId(directory) {
         continue;
       }
       if (!/\.[cm]?js$/.test(entry.name)) continue;
-      const ast = parse(await readFile(path, 'utf8'), {
-        sourceType: 'unambiguous',
-      });
+      const file = await open(
+        path,
+        constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
+      );
+      let source;
+      try {
+        if (!(await file.stat()).isFile())
+          throw new Error('Runtime artifact is not a regular file');
+        source = await file.readFile('utf8');
+      } finally {
+        await file.close();
+      }
+      const ast = parse(source, { sourceType: 'unambiguous' });
       function visit(node) {
         if (!node || typeof node !== 'object') return;
         if (node.type === 'ObjectExpression') {

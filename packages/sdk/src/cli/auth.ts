@@ -1,7 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import { openBrowser } from './browser';
-import { type CliSession, normalizeBaseUrl } from './config';
+import {
+  type CliSession,
+  isSafeLocalBaseUrl,
+  normalizeBaseUrl,
+} from './config';
 
 export interface CliTokenExchangeResponse {
   session: {
@@ -28,6 +32,15 @@ function escapeHtml(value: string) {
     .replace(/'/gu, '&#39;');
 }
 
+function getAuthBaseUrl(value: string) {
+  const baseUrl = normalizeBaseUrl(value);
+  const url = new URL(baseUrl);
+  if (url.protocol !== 'https:' && !isSafeLocalBaseUrl(baseUrl)) {
+    throw new Error('CLI authentication requires HTTPS except on localhost.');
+  }
+  return baseUrl;
+}
+
 export async function exchangeCliToken({
   baseUrl,
   fetch = globalThis.fetch,
@@ -38,7 +51,7 @@ export async function exchangeCliToken({
   token: string;
 }) {
   const response = await fetch(
-    `${normalizeBaseUrl(baseUrl)}/api/cli/auth/verify`,
+    `${getAuthBaseUrl(baseUrl)}/api/cli/auth/verify`,
     {
       body: JSON.stringify({ token }),
       headers: {
@@ -71,7 +84,7 @@ export async function refreshCliSession({
   refreshToken: string;
 }): Promise<CliSession> {
   const response = await fetch(
-    `${normalizeBaseUrl(baseUrl)}/api/cli/auth/refresh`,
+    `${getAuthBaseUrl(baseUrl)}/api/cli/auth/refresh`,
     {
       body: JSON.stringify({ refreshToken }),
       headers: {

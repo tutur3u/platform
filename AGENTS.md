@@ -56,6 +56,7 @@ for roles, independent review, publication, receipts and retirement.
   emitted artifacts and rollback parity are established; retain Wrangler for gaps.
   Do not run global configuration migration or infer production authorization from
   CLI adoption. See the adoption guidance linked above.
+  The target toolchain is cf + Void (Vite+), adopted operation by operation.
 - For Cloudflare work that adds or amplifies billable operations, require bounded
   work/retries, idempotent progress, terminal-state scheduling and a tested durable
   stop fence. Verify operation-count and failure/restart regressions; ingress rate
@@ -77,7 +78,7 @@ for roles, independent review, publication, receipts and retirement.
   `@tuturuuu/utils/user-helper` (`getCurrentUser`, `getCurrentWorkspaceUser`) —
   those read Supabase auth directly. Use `getSatelliteAppSessionUser('<app>')`
   and pass the id into an injectable helper (e.g.
-  `@tuturuuu/utils/workspace-user-link`). `bun check` enforces this via the
+  `@tuturuuu/utils/workspace-user-link`). `bun validate` enforces this via the
   `internal-app-auth` guard.
 - Do not add a catch-all page (`[...slug]`) under `[locale]/[wsId]` in a
   satellite that proxies `/api/*` to web. Next checks `fallback` rewrites only
@@ -224,10 +225,13 @@ for roles, independent review, publication, receipts and retirement.
   [recording decisions](apps/docs/build/development-tools/documenting.mdx#product-decisions-and-regression-evidence).
 - For TypeScript, JavaScript, root script, or repo config changes, run focused
   non-build tests locally, then require the applicable test, type-check, lint,
-  and build workflows to pass in CI for the exact commit. Do not run `bun check`
+  and build workflows to pass in CI for the exact commit. Do not run `bun validate`
   on this machine: its Turbo task graph can build workspace dependencies.
+  Native `bun check` runs only as `ttr resources run -- bun check --no-script -p <project>` and does not replace `bun validate` or CI.
   Report any unrelated pre-existing CI blocker.
-- `bun check` does NOT compile Next apps or run migrations, so it cannot see
+- Before every push, run the build-free `bun check:changed` gate; see
+  [pre-push checks](apps/docs/build/development-tools/pre-push-checks.mdx).
+- `bun validate` does NOT compile Next apps or run migrations, so it cannot see
   `cacheComponents` violations, unresolved dynamic/side-effect imports, or a
   broken FK in a new migration. When you change an app's routes, pages, or
   dependencies, require that app's real build to pass in CI for the exact commit;

@@ -57,7 +57,7 @@ its client role, including the caller-token Infrastructure export handlers.
 | Contacts | `bun run --cwd apps/contacts type-check` | exit 0 |
 | Teach | `bun run --cwd apps/teach type-check` | exit 0 |
 | Backend | `bun check:backend` | caller-token export tests and full backend checks pass |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

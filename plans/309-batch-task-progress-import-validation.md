@@ -73,7 +73,7 @@ edit unrelated task-progress leaderboard work.
 | Database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/task-progress-import.test.sql --typegen packages/types/src/supabase.ts` | 500-row, tenant, ACL, ordering, preview, rollback tests pass |
 | Typegen determinism | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | second isolated type generation is byte-identical |
 | Tasks | `bun run --cwd apps/tasks type-check && bun run --cwd apps/tasks build` | Tasks compiles and builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

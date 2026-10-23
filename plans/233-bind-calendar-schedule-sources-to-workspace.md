@@ -70,7 +70,7 @@ touch event policies/database tests.
 | Focused/full DB | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/calendar-schedule-source-binding.sql && bun --cwd apps/database sb:validate:isolated` | both junctions reject foreign parents and atomic RPC/ACL tests pass; full suite green |
 | Typegen | `bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/calendar-schedule-source-binding.sql` | generated types include the trusted RPC with no unrelated drift |
 | Calendar | `bun run --cwd apps/calendar type-check && bun run --cwd apps/calendar build` | both exit 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

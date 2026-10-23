@@ -3,6 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
+import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
@@ -236,8 +239,13 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 600;
+        final gutter = AppLayout.gutter(
+          Breakpoints.fromWidth(constraints.maxWidth),
+        );
         final previewWidth = math.min(
-          wide ? (constraints.maxWidth - 56) * 0.55 : constraints.maxWidth - 48,
+          wide
+              ? (constraints.maxWidth - 56) * 0.55
+              : constraints.maxWidth - 2 * gutter - AppSpacing.lg,
           constraints.maxHeight * (wide ? 0.72 : 0.34) * 16 / 9,
         );
         final intro = Column(
@@ -254,7 +262,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
         );
         if (wide) {
           return Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(gutter),
             child: Row(
               children: [
                 Expanded(child: Center(child: preview(previewWidth))),
@@ -275,7 +283,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
         }
         return Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(gutter),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -422,7 +430,9 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
                                     _call.status != 'open' =>
                               Center(
                                 child: Padding(
-                                  padding: const EdgeInsets.all(24),
+                                  padding: EdgeInsets.all(
+                                    AppLayout.gutter(context.deviceClass),
+                                  ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [

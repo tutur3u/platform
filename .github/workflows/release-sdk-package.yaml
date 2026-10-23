@@ -60,11 +60,11 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
           registry-url: "https://registry.npmjs.org"
@@ -82,14 +82,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
-
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
 
@@ -121,14 +120,13 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
-
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
           registry-url: "https://registry.npmjs.org"
@@ -173,7 +171,7 @@ jobs:
 
       - name: Upload publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
           name: tuturuuu-sdk-npm-package
@@ -198,7 +196,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
           registry-url: "https://registry.npmjs.org"
@@ -228,7 +226,7 @@ jobs:
           NODE
 
       - name: Download publish artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: tuturuuu-sdk-npm-package
           path: sdk-package
@@ -266,21 +264,30 @@ jobs:
               pkg?.version !== version ||
               archives.length !== 1 ||
               pkg.archive !== archives[0] ||
+              typeof pkg.archive !== 'string' ||
+              pkg.archive.length > 255 ||
+              !/^[a-z0-9][a-z0-9_-]*(?:\.[0-9][a-z0-9_-]*)*\.tgz$/.test(pkg.archive) ||
               path.basename(pkg.archive) !== pkg.archive
             ) {
               throw new Error('PUBLIC_QUALIFICATION_RECEIPT_MISMATCH');
             }
             const archive = path.join(directory, pkg.archive);
-            const stat = fs.lstatSync(archive);
-            if (
-              !stat.isFile() ||
-              stat.isSymbolicLink() ||
-              createHash('sha256').update(fs.readFileSync(archive)).digest('hex') !==
-                pkg.sha256
-            ) {
-              throw new Error('PUBLIC_QUALIFICATION_ARTIFACT_MISMATCH');
+            const fd = fs.openSync(
+              archive,
+              fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
+            );
+            try {
+              if (
+                !fs.fstatSync(fd).isFile() ||
+                createHash('sha256').update(fs.readFileSync(fd)).digest('hex') !==
+                  pkg.sha256
+              ) {
+                throw new Error('PUBLIC_QUALIFICATION_ARTIFACT_MISMATCH');
+              }
+              return archive;
+            } finally {
+              fs.closeSync(fd);
             }
-            return archive;
           }
           console.log(verifyPublishReceipt({ directory: 'sdk-package', sourceSha: process.env.GITHUB_SHA, name: process.env.EXPECTED_PACKAGE_NAME, version: process.env.EXPECTED_PACKAGE_VERSION }));
           NODE
@@ -294,13 +301,14 @@ jobs:
       # in public repositories when publishing via trusted publishing.
       - name: Publish package
         env:
+          PACKAGE_TARBALL: ${{ steps.artifact.outputs.path }}
           EXPECTED_PACKAGE_NAME: "tuturuuu"
           EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
         run: |
           set -o pipefail
           PUBLISH_LOG="${RUNNER_TEMP}/npm-publish.log"
 
-          if ! npm publish "${{ steps.artifact.outputs.path }}" --ignore-scripts 2>&1 | tee "$PUBLISH_LOG"; then
+          if ! npm publish "${PACKAGE_TARBALL}" --ignore-scripts 2>&1 | tee "$PUBLISH_LOG"; then
             if grep -Eiq 'E404|404 Not Found|not have permission|ENEEDAUTH' "$PUBLISH_LOG"; then
               echo "::error::npm could not publish ${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION}. Ensure the npm package exists when npm requires first-publish setup, package access is public, and the trusted publisher is configured for this repository, workflow filename, and environment."
             fi
@@ -334,7 +342,7 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
           package-manager-cache: false

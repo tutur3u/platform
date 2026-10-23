@@ -1,6 +1,7 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { generateEmailSubaddressing } from '@tuturuuu/utils/email/client';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 import { convertWorkspaceIDToExternalID } from './subscription-helper';
 
 interface CreateCustomerSessionOptions {
@@ -70,14 +71,14 @@ export async function getOrCreatePolarCustomer({
     });
 
     console.log(
-      `Found existing Polar customer for workspace ${wsId} (personal: ${isPersonalWorkspace})`
+      `Found existing Polar customer for workspace ${sanitizeLogValue(wsId)} (personal: ${isPersonalWorkspace})`
     );
 
     return customer;
   } catch (_error) {
     // Customer not found, will create new one
     console.log(
-      `No existing Polar customer found for workspace ${wsId}, creating new one`
+      `No existing Polar customer found for workspace ${sanitizeLogValue(wsId)}, creating new one`
     );
   }
 
@@ -89,7 +90,7 @@ export async function getOrCreatePolarCustomer({
   }
 
   console.log(
-    `Creating Polar customer for workspace ${wsId} (personal: ${isPersonalWorkspace})`
+    `Creating Polar customer for workspace ${sanitizeLogValue(wsId)} (personal: ${isPersonalWorkspace})`
   );
 
   const newCustomer = await polar.customers.create({

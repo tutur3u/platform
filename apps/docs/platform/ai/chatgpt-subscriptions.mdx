@@ -112,7 +112,7 @@ ttr resources run -- bun run --cwd packages/ai test src/chat/google/stream-finis
 ```
 
 Require type-check, lint, test, and the owning web build in CI for the exact
-commit; do not run `bun check` or builds locally.
+commit; do not run `bun validate` or builds locally.
 
 Mocked tests and a successful CI build do not establish real subscription eligibility.
 Complete a real OAuth connection, choose an account-specific model, receive a

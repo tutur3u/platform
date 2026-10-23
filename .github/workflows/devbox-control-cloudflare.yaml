@@ -7,6 +7,12 @@ on:
       - 'packages/sdk/src/platform-devbox.ts'
       - 'packages/utils/src/devbox-control.ts'
       - '.github/workflows/devbox-control-cloudflare.yaml'
+      - 'scripts/ci/cf-worker-settings.mjs'
+      - 'scripts/ci/cf-vite-worker.mjs'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/cf-wrangler-publication.mjs'
+      - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
+      - 'scripts/ci/fixtures/cf-worker-parity/devbox-control.json'
       - 'bun.lock'
       - 'package.json'
       - 'tuturuuu.ts'
@@ -18,6 +24,12 @@ on:
       - 'packages/sdk/src/platform-devbox.ts'
       - 'packages/utils/src/devbox-control.ts'
       - '.github/workflows/devbox-control-cloudflare.yaml'
+      - 'scripts/ci/cf-worker-settings.mjs'
+      - 'scripts/ci/cf-vite-worker.mjs'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/cf-wrangler-publication.mjs'
+      - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
+      - 'scripts/ci/fixtures/cf-worker-parity/devbox-control.json'
       - 'bun.lock'
       - 'package.json'
       - 'tuturuuu.ts'
@@ -48,13 +60,11 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - run: bun x --no-install wrangler types --env-interface DevboxControlEnv worker-configuration.d.ts -c wrangler.jsonc
-        working-directory: apps/devbox-control
       - name: Check Devbox Control types
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -78,12 +88,36 @@ jobs:
           command: bun turbo:local run build --filter=@tuturuuu/devbox-control --concurrency=2
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Compare emitted Build Output with the recorded deployment identity
+        run: node scripts/ci/cf-worker-parity.mjs apps/devbox-control scripts/ci/fixtures/cf-worker-parity/devbox-control.json
       - name: Verify the emitted Worker with disposable credentials
         env:
-          DEVBOX_TEST_CONFIG: ${{ github.workspace }}/apps/devbox-control/dist/worker/wrangler.json
+          DEVBOX_TEST_BUILD_OUTPUT: '1'
         run: node --test apps/devbox-control/scripts/verify-worker-runtime.mjs
-      - run: bun x --no-install wrangler deploy --dry-run -c dist/worker/wrangler.json
+      - name: Check the prebuilt artifact without credentials
+        run: bun x --no-install cf deploy --prebuilt --mode production --dry-run --no-provision
         working-directory: apps/devbox-control
+        env:
+          CF_SEND_TELEMETRY: 'false'
+      - name: Verify publication against real Vite output
+        env:
+          CF_PUBLICATION_TEST_APP: devbox-control
+        run: node --test scripts/ci/cf-wrangler-publication.runtime.mjs
+      - name: Prepare the retained Wrangler publication profile
+        run: node scripts/ci/cf-wrangler-publication.mjs apps/devbox-control scripts/ci/fixtures/cf-worker-parity/devbox-control.json apps/devbox-control/wrangler.publish.jsonc
+      - name: Check Wrangler publication without credentials
+        run: bun x --no-install wrangler deploy --dry-run --no-bundle -c .cloudflare/wrangler-publication.json
+        working-directory: apps/devbox-control
+      # upload-artifact skips hidden paths, so stage the Build Output first.
+      - name: Stage the cf Build Output artifact
+        run: cp -R apps/devbox-control/.cloudflare/output "$RUNNER_TEMP/devbox-control-build-output"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: devbox-control-worker-${{ github.sha }}
+          path: ${{ runner.temp }}/devbox-control-build-output
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
@@ -93,27 +127,34 @@ jobs:
     runs-on: ubuntu-latest
     environment: devbox-control-production
     env:
-      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - name: Build the Vite-native Worker
-        uses: ./.github/actions/run-with-turbo-remote-cache
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          command: bun turbo:local run build --filter=@tuturuuu/devbox-control --concurrency=2
-          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
-      - name: Require provisioned secrets
+          name: devbox-control-worker-${{ github.sha }}
+          path: apps/devbox-control/.cloudflare/output
+      - name: Recheck the downloaded artifact identity
+        run: node scripts/ci/cf-worker-parity.mjs apps/devbox-control scripts/ci/fixtures/cf-worker-parity/devbox-control.json "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Capture and verify settings before publication
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs before scripts/ci/fixtures/cf-worker-parity/devbox-control.json "$RUNNER_TEMP/devbox-control-settings-before.json"
+      - name: Prepare the retained Wrangler production publisher
+        run: node scripts/ci/cf-wrangler-publication.mjs apps/devbox-control scripts/ci/fixtures/cf-worker-parity/devbox-control.json apps/devbox-control/wrangler.publish.jsonc "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Publish the exact artifact with retained migration tags and secrets
         working-directory: apps/devbox-control
         env:
+          CF_SEND_TELEMETRY: 'false'
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
           SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
@@ -121,12 +162,23 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           test -n "$SUPABASE_URL" && test -n "$SUPABASE_SECRET_KEY" && test -n "$DEVBOX_CONTROL_INTERNAL_TOKEN" || { echo 'Missing Worker runtime secret'; exit 1; }
-          node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "DEVBOX_CONTROL_INTERNAL_TOKEN"]; fs.writeFileSync(process.env.RUNNER_TEMP + "/devbox-control-secrets.json", JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });'
-          bun x --no-install wrangler secret bulk "$RUNNER_TEMP/devbox-control-secrets.json" -c wrangler.jsonc
-      - run: bun x --no-install wrangler deploy -c dist/worker/wrangler.json --message "$GITHUB_SHA"
-        working-directory: apps/devbox-control
+          secrets_file="$RUNNER_TEMP/devbox-control-secrets.json"
+          trap 'rm -f "$secrets_file"' EXIT
+          node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "DEVBOX_CONTROL_INTERNAL_TOKEN"]; fs.writeFileSync(process.argv[1], JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });' "$secrets_file"
+          bun x --no-install wrangler secret bulk "$secrets_file" -c .cloudflare/wrangler-publication.json
+          bun x --no-install wrangler deploy --no-bundle -c .cloudflare/wrangler-publication.json --message "$GITHUB_SHA"
+      - name: Capture and compare settings after publication
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/devbox-control.json "$RUNNER_TEMP/devbox-control-settings-before.json" "$RUNNER_TEMP/devbox-control-settings-after.json"
+      - name: Retain settings and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: devbox-control-settings-${{ github.sha }}
+          path: ${{ runner.temp }}/devbox-control-settings-*.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Record successful Cloudflare deployment
         continue-on-error: true
         env:

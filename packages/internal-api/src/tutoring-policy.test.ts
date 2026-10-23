@@ -110,6 +110,21 @@ describe('Easy Center tutoring shifts', () => {
       getTutoringCampus(EASY_CENTER_TUTORING_POLICY, groupId, 'Class 246')
     ).toBeNull();
     expect(
+      getTutoringCampus(EASY_CENTER_TUTORING_POLICY, groupId, 'CS - 1')
+    ).toBe('CS1');
+    expect(
+      getTutoringCampus(EASY_CENTER_TUTORING_POLICY, groupId, 'Lớp (CƠ SỞ:2)')
+    ).toBe('CS2');
+    const startedAt = performance.now();
+    expect(
+      getTutoringCampus(
+        EASY_CENTER_TUTORING_POLICY,
+        groupId,
+        `CS${' '.repeat(100_000)}x`
+      )
+    ).toBeNull();
+    expect(performance.now() - startedAt).toBeLessThan(500);
+    expect(
       getTutoringCampus(
         {
           ...EASY_CENTER_TUTORING_POLICY,

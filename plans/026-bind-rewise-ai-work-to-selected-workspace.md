@@ -63,7 +63,7 @@ active Rewise or shared-chat owner overlaps the listed paths.
 | Rewise tests | `bun --cwd apps/rewise vitest run` | workspace propagation cases pass |
 | AI tests | `bun --cwd packages/ai vitest run src/chat/google` | membership and attribution cases pass |
 | Typechecks | `bun run --cwd apps/rewise type-check && bun run --cwd packages/ai type-check` | both exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Rewise build | `bun run --cwd apps/rewise build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
@@ -138,7 +138,7 @@ Run every command in the table, including the Rewise build.
 - [ ] Shared routes independently reject a selected workspace the actor cannot
       access before provider or privileged operations.
 - [ ] Existing chat visibility and response shapes remain unchanged.
-- [ ] Focused tests, package tests/typechecks, `bun check`, build, and
+- [ ] Focused tests, package tests/typechecks, `bun validate`, build, and
       whitespace pass.
 
 ## STOP conditions

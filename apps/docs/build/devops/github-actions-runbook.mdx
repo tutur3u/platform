@@ -48,7 +48,7 @@ exact-source CI and admitted runtime acceptance remain separate evidence.
 
 `mail-calendar-tasks-builds.yaml` checks out the exact PR head or push SHA.
 Its Mail, Tasks and affected Web builds retain real app-build evidence. Calendar
-uses a separate native job on Bun 1.4.3 and Node 24.22.0: build shared dependencies,
+uses a separate native job on Bun 1.4.4 and Node 24.22.0: build shared dependencies,
 run owning Calendar/Web/Tasks UI tests, build with the official Void plugin,
 discover `.wrangler/deploy/config.json`, then generate emitted `CloudflareEnv` bindings in fresh runner scratch because Wrangler rejects the handwritten stub.
 Only successful, regular, nonempty, nonsymlink output replaces stable `cloudflare-env.d.ts`; own scratch is cleaned on success/failure.
@@ -335,7 +335,7 @@ changing product tests. `df` can show free space while an individual `/tmp`
 write fails with `Disk quota exceeded`. A private writable `TMPDIR` under the
 owning program directory can isolate direct validation from that failure. Set
 `TMPDIR` only in the child payload after resource-broker admission. Do not set it
-before `bun check`: its `os.tmpdir()`-based check queue would move shared state.
+before `bun validate`: its `os.tmpdir()`-based check queue would move shared state.
 Verify the destination quota and retain the original failure before one bounded
 validation attempt. Preserve unknown files and active jobs. Thread-pool retries passed focused Vitest suites,
 but a private `TMPDIR` was also needed for the observed D1 fixture failure;
@@ -597,6 +597,74 @@ requires exact producer key/ref/size evidence, a fresh consumer's exact hit and
 successful runtime contracts, then retained entries after the ordinary CI wave.
 Source tests and registry metadata parity do not establish hosted alternate
 transport reachability or runtime success. Exact-head hosted CI remains required.
+
+### Repository cache budget
+
+The repository's 10 GiB Actions cache budget uses least-recently-used eviction.
+Cache misses can make Supabase contracts depend on throttled public ECR pulls.
+Keep heavyweight writes on trusted refs; PRs restore the main cache rather than
+creating a copy under every merge ref. This reduces eviction pressure but does
+not reserve capacity or guarantee image retention.
+
+| Cache family | Observed pressure | Save policy |
+| --- | --- | --- |
+| Supabase images | About 1.1 GiB and 717 MiB per observed profile | Main push/dispatch only; exact image keys |
+| Android Gradle | About 3.6 GiB plus 366 MiB wrapper in one PR | Explicit restore everywhere; save only on main pushes |
+| Flutter SDK/pub | SDK archives can exceed 1 GiB | Shared wrapper restores on every ref and saves on main push/dispatch, including desktop, release and employee jobs |
+| Bun downloads | About 1 GiB per observed Linux archive | Main push/dispatch only; one v2 archive per OS, architecture and pinned Bun version |
+| CocoaPods | About 82 MiB per observed iOS PR copy | Explicit restore everywhere; save only on main pushes, including macOS pods |
+
+These are incident measurements, not fixed sizes or a guaranteed total. New
+Gradle keys use the `gradle-v1-` namespace; their first main push must populate
+them. PRs cannot warm missing heavyweight caches. The static budget gate is
+`node --test scripts/ci/heavyweight-cache-budget.test.js`, also discovered by
+`bun test:scripts`. It inventories every save-capable cache action and setup cache input in
+workflows and composites, checking trusted and untrusted events/refs. Combined `actions/cache` still registers a post-job save when
+`lookup-only` is enabled, so it remains in the inventory. Unknown keys and paths
+have no implicit exemption. The explicit exceptions compare the complete input
+set and workflow/job: small E2E proof JSON, the MCP tooling pip download cache,
+Discord's pruned, lockfile-scoped uv downloads, and Buildx executable binaries.
+Rust Cargo saves and BuildKit layer exports are explicitly inventoried as paused
+source, with switchboard or job-fence checks and an exact scope list. These are
+not claims that retained archives are small or safe to reactivate. Each exception
+has a recorded reason; expanding paths, inputs or export scopes requires review.
+
+Production mobile jobs only restore the Gradle/Pods caches populated by main
+builds. They register no unreachable main-push saves. The paused Docker E2E jobs
+reuse the exact shared `full` Supabase image profile instead of writing a second
+`supabase-docker-v2` archive of every locally present tag. The registry benchmark
+choice and all pause gates remain in place; this source change does not resume
+Docker or establish hosted runtime acceptance. Only these E2E image-warming
+steps continue after a cache or bounded pull failure, allowing baseline/startup
+to pull any missing images. Contract workflows keep strict image-cache setup.
+
+Bun dependencies use `bun-deps-v2-<OS>-<architecture>-<pinned Bun version>`
+without a lockfile hash or prefix fallback. This chooses a coarser immutable
+archive over automatic deletion: lockfile changes cannot create new multi-GiB
+archives or race a cleanup job, and no write-scoped API token or cleanup loop is
+needed. Bun still resolves the current lockfile and fetches missing packages;
+newly added downloads do not enter the archive until the pinned Bun version
+changes. This limits reuse of new packages but preserves install correctness.
+The runtime binary uses `bun-runtime-v2-<OS>-<architecture>-<pinned Bun version>`
+with no lockfile hash or restore prefix: a lockfile change does not change the
+pinned executable. Old v1 archives receive no
+restores from v2 and age out under LRU; the first trusted v2 warmup and coexistence
+with old entries can still cause eviction. No immediate space reclamation is
+claimed. After confirming that no workflow or action pins Bun 1.4.3, the release owner can perform this
+one-time cleanup without adding a scheduled maintenance loop:
+
+```sh
+rg -n '1\.4\.3' .github/workflows .github/actions --glob '*.yml' --glob '*.yaml'
+gh cache list --repo tutur3u/platform --key bun-deps-v1- --limit 1000 --json id,key,ref,sizeInBytes
+# Review the inventory, then delete each exact retired-version cache ID:
+gh cache delete <cache-id> --repo tutur3u/platform
+```
+
+The search must return no pins. Delete only inventory rows whose keys match
+`bun-deps-v1-*-1.4.3-*`; repeat inventory if its limit is reached. Deleting an
+already absent ID needs no retry. Do not delete Supabase image keys or add cache
+write permissions to PR jobs. Old PR-scoped Gradle/Pods entries will otherwise
+age out; source gating does not remove existing archives.
 
 For Linux reproduction, isolate the Supabase project ID and ports, use a
 scratch-local Bun matching the repository pin, and remove only that project's
@@ -1135,6 +1203,25 @@ explicit workflow file without duplicating managed push or pull-request scans.
 Do not add automatic or cron triggers to the fallback; `bun git-sync` mirrors
 the already-scanned `main` commit to `production`.
 
+`scripts/ci/codeql-new-alerts.js` is the trusted new-alert gate for a
+repository-owned pull request CodeQL workflow. That workflow reads it from the
+pull request's base commit (`HEAD^1` of the merge ref, so never from pull
+request code). It fails only on high/critical results that are absent from
+`main`'s latest analysis of the same category. It pages through `main`'s
+analyses within a fixed bound to find that baseline. A category with no `main`
+analysis fails closed, as does a rule whose severity is unknown or unreadable.
+The public log carries counts only; triage results by alert number in the
+maintainer-only Security tab. A category such as `/language:actions` needs a
+`main` analysis, from default setup or a trusted `main` run, before pull
+requests can pass on pre-existing findings.
+
+`scripts/ci/security-scan-diff.js` is the matching trusted differ for the
+repository-owned dependency audit and secret scan. They load it from the base
+commit as well. A pull request fails only on high/critical advisories absent
+at the base commit, and the public log shows counts by severity. Pre-existing
+advisories are tracked in the findings register, not on unrelated pull
+requests.
+
 E2E suites reuse only exact same-day success proofs from protected `main`.
 See [E2E proof reuse](/build/devops/e2e-proof-reuse) for suite inputs, conservative
 fallbacks, diagnostics safety, and inactive database proposal handling.
@@ -1407,7 +1494,7 @@ and the script reports `blocked` and leaves the run green rather than failing.
 Use `--dry-run` to see the decision without posting a review.
 
 Generated release formatting also refreshes Bun workspace-version metadata with
-pinned Bun 1.4.3 using `--lockfile-only --ignore-scripts`. The shared
+pinned Bun 1.4.4 using `--lockfile-only --ignore-scripts`. The shared
 `release-workspace-lock.js` validator accepts only workspace `version` string
 changes matching the generated package manifests. It rejects dependency,
 resolution, workspace identity, root version and unrelated formatting changes;
@@ -1435,7 +1522,7 @@ runs daily at 00:00 UTC (`cron: "0 0 * * *"`), which is 07:00 in Vietnam
 runs `bun git-release-please` and then `bun git-sync`, the same two commands the
 release flow uses locally, so the scheduled path and the manual path cannot
 drift. Those scripts own the merge rules — platform version sync, conflict
-detection, `bun check`, and fast-forward safety — and are covered by
+detection, `bun validate`, and fast-forward safety — and are covered by
 `scripts/git-release-please.test.js` and `scripts/git-sync.test.js`.
 
 The generated PR must have passing checks, no unresolved active review threads,
@@ -1457,7 +1544,7 @@ use the same step-scoped Turbo remote-cache wrapper.
 
 If another PR lands on `main` during release validation, the push step fetches
 and merges the new head, reinstalls its frozen dependency graph and rebuilds the
-dist-only setup packages before rerunning `bun check`. Affected mobile changes
+dist-only setup packages before rerunning `bun validate`. Affected mobile changes
 also refresh `flutter pub get` before mobile checks. The push retries up to four
 times. An install or setup failure stops the retry; checks must never validate a
 new source commit against dependencies installed for an older checkout. A merge conflict or a push error unrelated to
@@ -1497,12 +1584,12 @@ workflows, so the `production` push would silently skip
 `Production Deployment Planner` and the next `Release Please` run and
 stall the release chain. A run that would need to push checks for the secret up
 front and fails with an actionable error, rather than discovering it after
-`bun check`.
+`bun validate`.
 
 The job also installs Flutter (`3.47.x`, the same pin as `mobile.yaml`) and runs
 `flutter pub get` in `apps/mobile` before the merge. When a release includes
 mobile changes, `touchesMobile()` in `scripts/git-release-please.js` follows
-`bun check` with `bun check:mobile`; without a toolchain `dart-format`,
+`bun validate` with `bun check:mobile`; without a toolchain `dart-format`,
 `flutter-analyze` and `flutter-test` all exit `127`.
 
 Keep every mobile build/deploy workflow on that same Flutter minor. The mobile
@@ -1656,12 +1743,21 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 ### Prerequisite guards
 
 - `supabase-staging.yaml` requires a successful same-repository `push` platform
-  preview build on `main` unless manually dispatched; its checkout-local `ci`
-  boolean must enable it. Changing the file changes its Git blob, so add the new
-  blob to the producer-contract allowlist in `supabase-production.yaml` and
-  `scripts/ci/production-migration-target.test.js` in the same change.
+  preview build on `main` unless manually dispatched from `main`; its checkout-local `ci`
+  boolean must enable it. Changing the file changes its Git blob. In the same
+  change, update every pin of that blob:
+  - the producer-contract allowlist in `supabase-production.yaml`;
+  - `scripts/ci/production-migration-target.test.js`;
+  - `scripts/ci/staging-contract-allowlist.test.js`, which pins the exact list
+    and requires the current blob as the last entry.
+
+  Keep the list to the current blob plus blobs from `main`'s history, and drop
+  blobs from rejected or intermediate branch heads.
 - Every enabled admitted target, including app-only commits, links staging and runs
-  `supabase db push --include-all` before emitting its exact-target marker.
+  `supabase db push --include-all` before emitting its exact-target marker. The
+  exception is a target whose migrations a descendant `main` commit has already
+  applied, with staging ahead only by `main`'s versions. It records the marker
+  without pushing. A staging version that is not on `main` fails closed.
 - `supabase-production.yaml` runs after the production deployment planner and
   also re-evaluates the current immutable `production` commit after any successful
   `main` staging migration. The staging event's incoming SHA may be newer and
@@ -1681,8 +1777,26 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 
 ### Mobile iOS native assets
 
-Mobile workflows cache the Flutter SDK/pub downloads through the Flutter setup
-action. Android workflows also use the toolchain-aware Gradle cache, and iOS or
+Mobile workflows use `.github/actions/setup-flutter-with-cache` for Flutter
+SDK/pub downloads (Windows retains its deliberate cache-off setup). The wrapper
+resolves identity through the SHA-pinned upstream action before restoring the
+exact cache, then installs that resolved version. SDK keys bind upstream OS,
+channel, version, architecture and release hash; they exclude `pubspec.lock` so
+analysis, test and build jobs share main's SDK archive. Pub download keys still
+include the lock hash. Every ref can restore; only main push/manual runs attach
+the cache save post-step, so mobile runs on PRs, feature branches and
+production do not upload duplicate archives. Desktop beta/store-draft and the
+employee schema contract still set up Flutter with upstream caching on their own
+triggers; move them to the wrapper before relying on main-only Flutter saves
+repository-wide. Pub downloads save after job work, preserving `pub get`
+results. Bun's existing setup helper already uses trusted main saves.
+
+These caches share repository capacity with Supabase image archives. This policy
+reduces duplicate writes; it does not remove existing entries, raise the storage
+limit or guarantee image retention. Observe exact main image-cache keys and sizes
+after seeding and again after the normal CI wave.
+
+Android workflows also use the toolchain-aware Gradle cache, and iOS or
 macOS workflows cache CocoaPods downloads plus the trunk repository. They do
 not cache `apps/mobile/build`, final APK/AAB/IPA/app bundles, `Pods`, or
 `apps/mobile/.dart_tool`. Flutter native asset hook outputs can become stale
@@ -1953,7 +2067,10 @@ Mutating production planners, production Vercel and Cloudflare deployments, data
 migrations, package publication, Release Please and store deployments retain their
 shared serialization groups with cancellation disabled and `queue: max`.
 Discord Modal deployment holds its lock on the success/main-guarded deploy job;
-cancelled CI completions never enter that lock. Biome has no workflow-level
+cancelled CI completions never enter that lock. It accepts only same-repository
+`push` completions on `main` or manual dispatch from `main`, and runs in the
+`discord-production` environment (give it a `main`-only branch policy and the
+Modal secrets). Biome has no workflow-level
 cancelling parent: check/config/format/lint jobs cancel by job and ref, while
 format PR creation, PR closure/branch deletion and comment writes share a separate
 non-cancelling `biome-mutations-<ref>` job group with `queue: max`.

@@ -62,7 +62,7 @@ in practice; the UI and source should state that truthfully.
 | No dead files | `test ! -e 'apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/executions/form.tsx' && test ! -e 'apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/executions/row-actions.tsx' && test ! -e 'apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/executions/executions.tsx'` | exit 0 |
 | Web | `bun type-check:web && bun run build:web` | typecheck and production build pass |
 | Migration guard | `bun migration:tanstack:check` | existing route tracking remains current without artifact edits |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Scope | `git status --short` | only in-scope Cron files/test and plan status changed |
 
 ## Suggested executor toolkit
@@ -133,7 +133,7 @@ their only consumer is dead mock code.
 
 ### Step 4: Run Web and route-tracking gates
 
-Run Web typecheck/build, migration tracking, `bun check`, scope inspection, and
+Run Web typecheck/build, migration tracking, `bun validate`, scope inspection, and
 whitespace checks. The existing top-level and job-detail routes must remain in
 place, so aggregate TanStack artifacts must not change.
 
@@ -151,7 +151,7 @@ place, so aggregate TanStack artifacts must not change.
 - [ ] No nonexistent execution-detail link or no-op Edit action remains.
 - [ ] No workspace-user request or dead copied form/mock/action file remains in this surface.
 - [ ] Existing routes, tabs, translations, queries, and migration artifacts remain unchanged.
-- [ ] Focused test, Web typecheck/build, migration check, `bun check`, scope, and whitespace pass.
+- [ ] Focused test, Web typecheck/build, migration check, `bun validate`, scope, and whitespace pass.
 - [ ] `plans/README.md` status is updated.
 
 ## STOP conditions

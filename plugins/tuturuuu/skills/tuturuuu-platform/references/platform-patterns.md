@@ -141,7 +141,7 @@ shared-package changes.
   `src/app/serwist/[path]/route.ts` (`createOfflineRoute`). Copying a layout
   without that route logs a failed registration on every page load; seven apps had
   drifted that way. Either add the route or pass
-  `<OfflineProvider register={false}>`. `bun check` → `offline-worker-wiring`
+  `<OfflineProvider register={false}>`. `bun validate` → `offline-worker-wiring`
   enforces it.
 - Central-login app identity comes from `packages/utils/src/internal-domains.ts`,
   not the infrastructure project's reserved-host list or shared-cookie domains.
@@ -157,7 +157,7 @@ shared-package changes.
   nothing tested it and nothing broke when it drifted — it was hand-synced once
   during a cross-app change and then missed two production auth fixes while
   still reading as live code. If another app needs the behavior, extract it into
-  a shared package. `bun check` → `multi-account-vault-owner` enforces it.
+  a shared package. `bun validate` → `multi-account-vault-owner` enforces it.
 - If a file exceeds about 400 LOC or a component/widget exceeds about 200 LOC
   after significant edits, split it by concern and keep import paths stable
   with a thin barrel when needed.
@@ -256,17 +256,10 @@ protocol and its explicitly in-memory regression boundary.
   default or placed external cards. Guest source membership is not sufficient
   for personal-board task data.
 - Forward request auth when server-side loaders call internal API helpers.
-- Keep password login, OTP send, OTP verify, MFA verify, and reauth verify on
-  throttles that do not write hard IP blocks for shared-IP classrooms and
-  centers. Do not route human auth or backend-service `429`s into
-  `recordSuspiciousApiRequestEdge`/`blockIPEdge`; preserve `Retry-After`, retry
-  only idempotent `GET`/`HEAD` `429`s in the fetch interceptor, and rely on
-  per-email cooldown/failed-attempt controls for account-specific abuse. Generic
-  anonymous scanner traffic, malformed auth-cookie abuse, `api_auth_failed`, and
-  manual blocks can still hard-block IPs. For a live incident, check the
-  customer public IP in Abuse Intelligence, clear confirmed false-positive
-  blocks, and add a time-bound IP/CIDR trust or rate-limit uplift only when
-  traffic is organic.
+- Keep password login, OTP send, OTP verify, MFA verify, and reauth verify on throttles that do not write hard IP blocks for shared-IP classrooms and centers. Do not route human auth or backend-service `429`s into
+`recordSuspiciousApiRequestEdge`/`blockIPEdge`; preserve `Retry-After`, retry only idempotent `GET`/`HEAD` `429`s in the fetch interceptor, and rely on per-email cooldown/failed-attempt controls for account-specific abuse. Generic anonymous
+scanner traffic, malformed auth-cookie abuse, `api_auth_failed`, and manual blocks can still hard-block IPs. For a live incident, check the customer public IP in Abuse Intelligence, clear confirmed false-positive blocks, and add a
+time-bound IP/CIDR trust or rate-limit uplift only when traffic is organic.
 - Treat workspace/resource IDs embedded in rich-text documents, Yjs payloads,
   mention nodes, or other user-authored content as untrusted hints. Resolve
   stale content through the current route/document workspace or a server-returned
@@ -336,7 +329,7 @@ Rules:
 - Unit tests invoke pages/handlers outside a request scope, where `connection()`
   throws. Stub it in the app's vitest setup, keeping the real module:
   `vi.mock('next/server', async (o) => ({ ...(await o()), connection: vi.fn() }))`.
-- `bun check` cannot see any of this. Require the app's real CI build on the
+- `bun validate` cannot see any of this. Require the app's real CI build on the
   exact PR head; do not run builds on this machine.
 
 ## Satellite Apps (contacts, pay, tasks, …)
@@ -366,7 +359,7 @@ Rules:
   a shared helper needs the actor, give it an injectable `userId` rather than
   letting it resolve one — `@tuturuuu/utils/workspace-user-link` is the pattern
   (`getCurrentWorkspaceUser` delegates to it, so web is unchanged). The
-  `internal-app-auth` guard in `bun check` enforces this.
+  `internal-app-auth` guard in `bun validate` enforces this.
 - **Never** add a catch-all page under `[locale]/[wsId]`. Next checks `fallback`
   rewrites only AFTER dynamic routes, so `[wsId]/[...slug]` matches
   `/api/v1/workspaces/...` as `locale="api"`, `wsId="v1"` and shadows the
@@ -432,7 +425,7 @@ Rules:
   Resolve the actor with the app-session-aware helper and authorize with the
   client it returns, or with an admin client filtered by the authenticated user id
   (then keep explicit `ws_id`/owner predicates on the data queries, since admin
-  bypasses RLS). `bun check` → `satellite-cookie-auth` enforces it.
+  bypasses RLS). `bun validate` → `satellite-cookie-auth` enforces it.
 - **A satellite must not use `@tuturuuu/ui/custom/workspace-wrapper`** — it calls
   bare `getWorkspace(wsId)` internally, so every page rendering it inherits the
   bug above (it broke all 20 contacts users pages). Use an app-local wrapper built
@@ -1192,3 +1185,9 @@ exclusive ends. Test browser/calendar timezone disagreement and both DST changes
 Tracker completion notifications need effect-owned timeout cleanup in addition
 to the elapsed-time interval cleanup. Fake-timer regressions must unmount before
 restoring real timers; see the Calendar application decision and tracker tests.
+
+### Native timezone preference throttling
+
+Trace mobile preference requests through `ApiOrigins.baseUrlForPath`, not only `ownerForPath`: production calls pass through Infrastructure before Calendar. Reuse the Bearer actor already verified by the MFA guard for exact preference GET/PATCH quotas; do not add an authentication request or rely on a warm trust cache.
+Keep preferences bounded and separate from unrelated gateway traffic. Retain anonymous quotas, MFA, IP blocks and route permissions. Test cold-cache/shared-IP rejection, token rotation, actor isolation, forged credentials and Settings mount request counts.
+Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`.

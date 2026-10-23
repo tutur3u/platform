@@ -46,7 +46,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout release automation
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: production
           fetch-depth: 0
@@ -72,7 +72,7 @@ jobs:
 
       - name: Create or update release PR
         id: release
-        uses: googleapis/release-please-action@v5
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           target-branch: production
@@ -93,7 +93,7 @@ jobs:
       - name: Setup pinned Bun for generated lock metadata
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Normalize generated release formatting
         shell: bash

@@ -33,14 +33,14 @@ jobs:
       deployments: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.event.inputs.preview_ref || github.sha }}
           persist-credentials: false
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -92,7 +92,7 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'

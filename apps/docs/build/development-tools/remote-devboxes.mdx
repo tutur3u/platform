@@ -189,6 +189,123 @@ JSON for tooling extensions. These commands do not enable arbitrary shell access
 or change runner workload permissions. Custom SDK deployments use their own
 origin rather than forwarding credentials to hosted Infrastructure.
 
+### Runner trust pools and drain
+
+Trusted workloads (`run`, `build`, `serve`, `tunnel`) and untrusted Judge or
+playground work never share a runner identity. Give each trust tier its own
+runner token, OS user, token file, service unit and Docker socket.
+`set_devbox_runner_feature` refuses to enable trusted features on a runner with
+Judge or playground enabled, or one that reports `executionMode: judge-only`, and
+the reverse for Judge and playground. A reported mode can only narrow what may be
+enabled; it never grants a feature. The function locks the runner row before
+checking, so concurrent toggles or a concurrent heartbeat cannot leave a runner
+with both tiers enabled. Newly registered runners start with every feature off,
+so an operator must enable features explicitly. This includes runners a non-root
+user registers with `ttr box register` or `ttr box connect`: they accept no work,
+not even trusted `run` jobs from their owner, until a root Infrastructure admin
+enables a feature through the dashboard or the features endpoint below. Existing
+runners keep their features, including legacy runners that already mix tiers.
+
+Draining a runner stops all new claims on it except maintenance (restart or
+upgrade). New Judge and playground enqueues skip draining runners, and creating a
+non-maintenance run pinned to one (`--runner`, or a lease on it) fails with
+`Runner is draining`; a database trigger enforces this for every insert path.
+Queued Judge work pinned to it is requeued to another Judge runner that enqueue
+would also choose: it must support the submission's language, report no
+`trusted` mode, and have no trusted feature enabled. Its lease moves with it.
+Queued Judge work whose lease has expired, and other queued work pinned to it
+(explicit `--runner` pins, playground environments), is cancelled with a run
+event, and its idle non-kept leases are released. In-flight jobs finish
+normally. Requesting a drain again re-runs these sweeps. Judge work that no
+other runner can take stays queued until its lease expires.
+
+The Infrastructure snapshot (`ttr box runners --json`) reports per-runner
+`drain_requested_at`, uncapped `activity` counts and `drained`. `active_leases`
+counts unexpired non-kept leases; `kept_leases` counts persistent leases, which a
+drain never releases and which do not block `drained`. Release kept leases
+separately before retiring the runner. `drained` is true once a draining runner
+has no queued or running work and no active leases.
+These fields are `null` until the migration is applied. Operators with the
+dashboard's root secrets or roles permission can call:
+
+```bash
+POST /api/v1/infrastructure/devboxes/runners/<runner-id>/features  {"feature":"judge","enabled":false}
+POST /api/v1/infrastructure/devboxes/runners/<runner-id>/drain     {"draining":true}
+```
+
+Both use the same guarded database functions as the dashboard. Regression
+coverage lives in `apps/database/supabase/tests/devbox-runner-trust-pools.sql`
+and `devbox-runner-drain-hardening.sql` (pgTAP), and the Infrastructure route
+and store tests.
+
+### Several runner identities on one host
+
+Keep each trust tier on its own runner identity: a separate runner token, OS
+user, token file, service unit and Docker socket. Pass `--service-name <name>`
+to `ttr box setup`, `ttr box connect` and `ttr box repair` to give an identity
+its own systemd unit (`tuturuuu-devbox-runner-<name>.service`), launchd label
+(`com.tuturuuu.devbox-runner.<name>`), token file (`devbox-runner-<name>.env`)
+and wrapper. Without a name the legacy single-runner paths are used, so existing
+installations and `repair` keep working. `setup`, `connect` and `repair` refuse
+to overwrite a token file, wrapper or unit that belongs to a different execution
+mode (for example adding a Judge runner without a name on a host whose legacy
+unit is trusted). Use `--service-name` for the new identity; pass `--force` only
+to deliberately replace the existing one. `repair --execution-mode` still
+requires `--force` when the installed service belongs to another mode.
+
+The agent enforces the tiers locally as well. A `trusted` runner never executes
+Judge or playground envelopes. A playground pool process
+(`TUTURUUU_PLAYGROUND_POOL_ID`) accepts only playground envelopes and
+maintenance. A `judge-only` runner accepts only Judge envelopes and maintenance.
+Judge hosts therefore run in `judge-only` mode, which `--judge-images` selects
+automatically. When a trusted runner refuses a Judge or playground envelope it
+posts `trusted_runner_fence refused a <judge|playground> envelope` as the job
+error and logs `[devbox] trusted_runner_fence` locally. That means untrusted work
+was routed to a credentialed host: audit run events for it before enabling
+trusted-mode admission.
+
+`ttr box doctor --isolation` prints read-only evidence about the identity it
+runs as: dedicated user, private token directory, systemd `ProtectHome`,
+dedicated Docker socket, gVisor default runtime, and no `docker` group
+membership. Each check is `pass`, `FAIL` or `unknown`. The command exits `1`
+unless every check the execution mode requires is proven and no other
+non-advisory check fails. `trusted` requires a dedicated user and a private
+token directory; `judge-only` also requires a dedicated Docker socket, gVisor
+by default and no `docker` group. An unset `DOCKER_HOST` with a reachable
+daemon counts as the general socket. `protectedService` is advisory: it is
+self-reported and an unreadable `/home` is reported as `unknown`, never a pass.
+The mode comes from `--execution-mode` or `TUTURUUU_DEVBOX_EXECUTION_MODE`.
+Add `--other-user <judge-user>` to prove that user cannot reach this runner's
+secrets. It fails when that user is root or in `docker`, `sudo`, `wheel`,
+`admin`, `root` or `lxd`; when the credential file or directory is a symlink,
+or grants it owner, group or other access. It checks `$HOME`, the checkout
+(`--checkout-dir`, default cwd), checkout `.env*` files other than examples,
+and every ancestor using modes and ACLs (`getfacl` on Linux, `ls -le` on macOS).
+Effective extended ACL grants conservatively fail even for unrelated identities;
+missing tools or indeterminate ACLs are required `unknown` failures. Agents
+report `executionMode` and the isolation summary in heartbeats only when
+`TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE=true` is set. Enable it only after both
+heartbeat handlers accept those fields.
+
+### Running an exact commit
+
+Trusted runners accept a typed `__ttr_commit_run_v1__` envelope that carries
+only a full commit SHA, a clean relative directory, and an argv. The runner
+checks the argv against the execution policy before any git work, then fetches
+`origin` branches (`refs/heads/*` into `refs/remotes/origin/*`) and requires
+the SHA to be reachable from one of them. A commit that GitHub would serve by
+SHA from elsewhere in a fork network is rejected. The detached worktree is
+created inside a fresh `mkdtemp` directory (mode `0700`) under the runner-private
+`commit-runs` directory beside the CLI config, never in shared `/tmp`. The argv
+then runs from that directory through the normal execution policy,
+process-group timeout and stop handling, and the worktree is removed on every
+exit path. Agent startup removes any `ttr-commit-run-*` worktree a crashed agent
+left behind and prunes git's records. Local edits on the requesting machine and
+on the runner never reach the run. Unknown commits and missing directories fail
+before anything runs. Git error output is not forwarded, because remote URLs can contain
+credentials. `judge-only` runners and playground pools reject the envelope.
+`ttr resources run --offload` uses it.
+
 ### Protecting hosts with existing critical files
 
 Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
@@ -442,7 +559,7 @@ agent process.
 Run heavy commands remotely:
 
 ```bash
-ttr box run -- bun check
+ttr box run -- bun validate
 ttr box run -- bun sb:reset
 ttr box run -- bun test:e2e
 ttr box build --cwd apps/web
@@ -481,6 +598,18 @@ ttr box logs <run-id>
 ttr box stop <run-id>
 ```
 
+`ttr box stop`, `ttr box logs`, and lease release act only on runs and leases
+created by the signed-in user; another member's ids return 404. Stopping a queued
+run cancels it immediately, a running run moves to `cancel_requested` for its
+agent, and finished runs are never changed. Repeating an owner stop on a
+`cancel_requested` or `cancelled` run returns its current cancellation without
+rewriting timestamps; retries cannot postpone stale-run reaping. Foreign ids
+still return 404, including cancelled or finished runs. Owner stops that race
+completion return the observed final status without a write. Infrastructure
+administrators use the same stable retry and final-status behavior and can
+stop any active run from the dashboard. Regression coverage lives in
+`apps/web/src/lib/devboxes/store-scoping.test.ts`.
+
 `ttr box build`, `ttr box serve`, and `ttr box tunnel` do not set a remote
 command timeout by default. Pass `--timeout <duration>` only when the run should
 be killed automatically.
@@ -511,7 +640,7 @@ create their own containers only when the requested command does so.
 
 Allowed remote workflows include:
 
-- `bun check`, `bun test`, and package-local Bun commands
+- `bun validate`, `bun test`, and package-local Bun commands
 - `bun test:e2e` and Docker-backed Playwright workflows
 - `bun sb:start`, `bun sb:reset`, `bun sb:up`, and `bun sb:typegen`
 
@@ -527,8 +656,8 @@ checkout so local Supabase-backed apps and E2E workflows can use that runner's
 own Supabase stack.
 
 ```bash
-ttr box run --env DATABASE_URL=postgres://remote -- bun check
-ttr box run --database-url-env DEVBOX_DATABASE_URL -- bun check
+ttr box run --env DATABASE_URL=postgres://remote -- bun validate
+ttr box run --database-url-env DEVBOX_DATABASE_URL -- bun validate
 ttr box serve --database-url-env DEVBOX_DATABASE_URL
 ttr box run --env-file .env.remote -- bun test:e2e
 ttr box env set --lease <lease-id> API_TOKEN=value
@@ -570,6 +699,48 @@ they are stored for operators and later claim matching, never used to grant
 features or authorize a runner. Agents send them only after both handlers are
 deployed. Judge readiness probes are cached for ten minutes and refreshed in the background; execution still fails
 closed if required isolation or language images are unavailable.
+
+Agent HTTP calls are bounded. Heartbeat, claim, event, completion and shutdown
+requests time out after 15 seconds (playground file sync after 30 seconds), and
+the timeout also covers reading the response body. Network errors, timeouts,
+`408`, `425`, `429` and `5xx` responses are transient: heartbeats retry with
+jittered exponential backoff (never slower than the 20-second heartbeat
+interval), and claims back off up to 60 seconds without crashing. Event and
+completion uploads retry up to three times. A replayed completion that finds the
+run already finished (`404` on a retry) counts as delivered. Rejected tokens and
+other `4xx` responses still stop the agent for operator action. If no heartbeat
+succeeds for six intervals (two minutes), the agent drains active jobs and exits
+non-zero. A separate timer exits the process with code `75` after twice that
+window if an await stays wedged, so the service manager's `Restart=always`
+recovers the agent instead of leaving it hung with a stale heartbeat. Regression
+coverage, including a real socket that never answers, lives in
+`devbox-agent-network.test.ts`.
+
+Trusted jobs run as the leader of their own process group. A timeout
+(`--timeout`) or a remote stop (`ttr box stop <run-id>`) sends `SIGTERM` to the
+whole group: shells, Docker CLIs and test workers, not only the direct child.
+Anything still running after a 10-second grace period gets `SIGKILL`. The
+claiming agent observes a stop through the events endpoint, which returns
+`cancelRequested` to the runner that owns the run, about every 10 seconds per
+job. A stopped run completes as `cancelled` with exit `143`; a timeout completes
+as `failed` with exit `124`. On `SIGTERM` or `SIGINT` the agent claims nothing
+new, finishes its active jobs while heartbeating, and exits `0`. A second signal
+also stops active trusted jobs through their process groups. Generated systemd
+units use `KillMode=mixed` (only the agent receives the stop signal) and
+`TimeoutStopSec=600`; launchd plists use `ExitTimeOut` 600. Re-render existing
+units with `ttr box repair` to pick these up. Regression coverage lives in
+`devbox-job-process.test.ts` and `devbox-agent-stop.test.ts`. Signals only ever
+target the job's process group. Once the group is gone the agent does not signal
+the bare PID, because the operating system may have reused it for an unrelated
+process.
+
+Judge sandboxes carry a `dev.tuturuuu.devbox.judge=1` label and an owner label
+derived from a hash of the runner token. Docker keeps a container running after
+the agent dies (watchdog exit, `SIGKILL`, crash). So when an agent with
+`TUTURUUU_JUDGE_IMAGES` configured starts, it removes up to 100 of its own
+runner's labelled containers before claiming work. Dedicated playground pool
+processes skip this step, and other runners on the same host keep their
+containers. Regression coverage lives in `devbox-judge-containers.test.ts`.
 
 Platform-managed playground workers opt in through operator configuration. They
 require gVisor and pinned language image digests, run unprivileged without host

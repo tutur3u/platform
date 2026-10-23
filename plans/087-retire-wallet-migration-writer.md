@@ -49,7 +49,7 @@ its migration to the maintained wallet API first.
 | Finance typecheck | `bun run --cwd apps/finance type-check` | exit 0 |
 | Finance build | `bun run --cwd apps/finance build` | exit 0 |
 | Rust contract test | `cd apps/backend && cargo test --locked --lib g15 -- --nocapture` | existing parity remains green and nonzero matching tests run |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -92,7 +92,7 @@ is created in any case.
 ### Step 4: Verify parity
 
 Run the Finance test/typecheck/build, the focused Rust contract test, and
-`bun check`. Do not edit OpenAPI or Rust solely to create churn when parity
+`bun validate`. Do not edit OpenAPI or Rust solely to create churn when parity
 already exists.
 
 ## Done criteria
