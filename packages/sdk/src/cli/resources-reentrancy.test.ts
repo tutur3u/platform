@@ -152,7 +152,7 @@ describe('nested admission', { timeout: 45_000 }, () => {
 describe('parallelism hygiene', { timeout: 45_000 }, () => {
   it('classifies only trusted read-only system tools as trivial', () => {
     for (const [name, args] of [
-      ['ls', ['-la']],
+      ['cat', ['package.json']],
       ['echo', ['ok']],
       ['pwd', []],
     ] as const)
@@ -167,6 +167,7 @@ describe('parallelism hygiene', { timeout: 45_000 }, () => {
       ['git', ['rev-parse', 'HEAD']],
       ['git', ['commit']],
       ['sh', ['-c', 'ls']],
+      ['ls', ['-la']],
     ] as const)
       expect(isTrivialCommand(name, [...args]), name).toBe(false);
   });

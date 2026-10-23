@@ -146,10 +146,9 @@ describe('ancestry ignores a fake ps on PATH (REV-6492-3)', () => {
 
 describe('trivial command exemptions (REV-6431-2, REV-6492-1/2/4)', () => {
   it.each([
-    ['ls', ['-la']],
     ['cat', ['package.json']],
     ['echo', ['ok']],
-    ['/bin/ls', ['-l']],
+    ['/bin/cat', ['package.json']],
   ] as const)('%s %j stays trivial', (name, args) => {
     expect(isTrivialCommand(name, [...args])).toBe(true);
   });
@@ -176,10 +175,12 @@ describe('trivial command exemptions (REV-6431-2, REV-6492-1/2/4)', () => {
     ['git', ['--config-env=core.pager=PAGER', 'status']],
     ['git', ['diff']],
     ['git', ['show', 'HEAD']],
-    // Recursive listings can be arbitrarily large.
-    ['ls', ['-R']],
-    ['ls', ['-laR', '/']],
+    // `ls` always queues: recursion hides in `-1R` and `--rec` abbreviations.
+    ['ls', ['-la']],
+    ['ls', ['-1R']],
+    ['ls', ['--rec']],
     ['ls', ['--recursive']],
+    ['/bin/ls', ['-l']],
   ] as const)('%s %j queues', (name, args) => {
     expect(isTrivialCommand(name, [...args])).toBe(false);
   });
@@ -194,7 +195,7 @@ describe('trivial command exemptions (REV-6431-2, REV-6492-1/2/4)', () => {
       await chmod(join(dir, tool), 0o755);
     }
     await symlink('/bin/echo', join(dir, 'pwd'));
-    expect(isTrivialCommand(join(dir, 'ls'), ['-l'])).toBe(false);
+    expect(isTrivialCommand(join(dir, 'cat'), ['x'])).toBe(false);
     expect(isTrivialCommand(join(dir, 'node'), ['--version'])).toBe(false);
     // PATH lookup decides on the first match, as spawning would.
     const env = { PATH: `${dir}${delimiter}/bin${delimiter}/usr/bin` };

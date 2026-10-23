@@ -84,10 +84,11 @@ admitted ancestor (filtered env). Stale or copied markers queue normally, and
 so does any marker when `ps` cannot read the process tree. Waiters
 recheck ancestry about once per second, so they never deadlock behind their own
 ancestor. Ancestry uses only `/bin/ps` or `/usr/bin/ps` with an empty
-environment, never PATH. Only read-only coreutils (`ls` without `-R`, `cat`,
-`echo`, ...) skip the queue, and only when the executable that would run is the
-root-owned binary under `/bin` or `/usr/bin` and no `LD_*`/`DYLD_*` loader
-variable is set. Runtimes and package managers (even `--version`, since
+environment, never PATH. Only read-only coreutils (`cat`, `echo`, ...; never
+`ls`) skip the queue, and only when the executable that would run canonicalizes
+to a root-locked binary under `/bin` or `/usr/bin` (every path component
+root-owned, not group/other writable) and no `LD_*`/`DYLD_*` loader variable is
+set. The CLI spawns that canonical path, never the original symlink. Runtimes and package managers (even `--version`, since
 `NODE_OPTIONS` can preload code) and every git command (fsmonitor, hooks,
 pager, textconv) always queue. Cancellation releases only its own slot after the
 owned child group drains. Do not use separate

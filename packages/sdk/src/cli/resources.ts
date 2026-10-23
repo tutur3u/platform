@@ -6,9 +6,9 @@ import { parseDurationSeconds } from './devbox-duration';
 import {
   commandCwd,
   isHeavyCommand,
-  isTrivialCommand,
   limitCommand,
   realExecutable,
+  trivialExecutable,
 } from './resources-command';
 import {
   atomicJson,
@@ -76,7 +76,7 @@ All lanes share one per-user FIFO queue. Out-of-range config values are clamped
 with a warning; an unreadable config makes shims run commands unmanaged.
 Commands inside an admitted job (TTR_RESOURCES_ADMITTED, or a process-tree
 ancestor holding a lane) run immediately instead of queueing again.
-Only read-only system tools (ls, cat, echo...) skip the queue; git and runtimes queue.
+Only read-only system tools (cat, echo...) skip the queue; ls, git and runtimes queue.
 Turbo runs one task; Vitest and Cargo get bounded worker counts. Commands
 outside those projects are unchanged. Running processes are never interrupted.
 macOS/Linux supported. Shell hooks cover new shells, not existing processes.
@@ -166,9 +166,11 @@ export async function runResourcesCommand(argv: string[]) {
       ? limitCommand(basename(name), command, settings)
       : command;
     const env = enabled ? resourceEnvironment(settings) : { ...process.env };
+    // Classify on the child's environment and spawn exactly the canonical
+    // executable that was validated, never the swappable original name.
+    const trivial = enabled && !shim ? trivialExecutable(name, env) : undefined;
     const queued =
-      enabled &&
-      (shim ? isHeavyCommand(name, command) : !isTrivialCommand(name, command));
+      enabled && (shim ? isHeavyCommand(name, command) : trivial === undefined);
     const offload = optionValue(options, '--offload');
     if (!shim && queued && offload && !parent) {
       const code = await offloadRun({
@@ -196,7 +198,7 @@ export async function runResourcesCommand(argv: string[]) {
           !shim && options.includes('--ignore-pressure'),
           resourceLanes(total)
         )
-      : await spawnResourceCommand(real, args, env);
+      : await spawnResourceCommand(trivial ?? real, args, env);
     return;
   }
   if (action === 'offload') {

@@ -7,7 +7,7 @@ import {
   realpathSync,
   statSync,
 } from 'node:fs';
-import { basename, delimiter, join, resolve } from 'node:path';
+import { basename, delimiter, dirname, join, resolve } from 'node:path';
 import type { ResourceConfig } from './resources-config';
 
 const heavyTask = /^(test|build|check|check-types|type-check|lint|tc)(:.*)?$/;
@@ -115,6 +115,8 @@ export function isHeavyCommand(name: string, args: string[]) {
 // (NODE_OPTIONS, npm_config_* and preload settings load code before any flag
 // is read), and so is every git subcommand: fsmonitor, hooks, pagers, textconv
 // and GIT_CONFIG_* injection all run programs from read-only-looking commands.
+// `ls` is excluded: recursive listings hide behind bundled short flags (`-1R`)
+// and GNU long-option abbreviations (`--rec`).
 const readOnly = new Set([
   'echo',
   'pwd',
@@ -124,7 +126,6 @@ const readOnly = new Set([
   'uname',
   'date',
   'printenv',
-  'ls',
   'cat',
   'head',
   'tail',
@@ -134,10 +135,15 @@ const readOnly = new Set([
 const trustedDirectories = ['/bin/', '/usr/bin/'];
 // Dynamic-loader and glibc module variables run code inside any binary.
 const loaderVariable = /^(LD_|DYLD_)|^(GCONV_PATH|LOCPATH)$/u;
-const recursiveLs = (arg: string) =>
-  arg === '--recursive' || /^-[A-Za-z]*R/u.test(arg);
+// Root-owned and not writable by group/others, so no other user can replace it.
+function rootLocked(path: string) {
+  const info = statSync(path);
+  return info.uid === 0 && (info.mode & 0o022) === 0;
+}
 // Classify by the executable that would actually run, not by its basename: an
-// arbitrary script named `cat` (or `/any/path/ls`) must queue.
+// arbitrary script named `cat` (or `/any/path/node`) must queue. Returns the
+// canonical path, and callers must spawn exactly that path: the original name
+// or symlink can be swapped between classification and spawn.
 export function trustedSystemExecutable(
   name: string,
   path = process.env.PATH || ''
@@ -156,30 +162,41 @@ export function trustedSystemExecutable(
     // it alone rather than searching on for a trusted one.
     try {
       const real = realpathSync(candidate);
-      const info = statSync(real);
-      return (
-        trustedDirectories.some((directory) => real.startsWith(directory)) &&
-        basename(real) === basename(name) &&
-        info.isFile() &&
-        info.uid === 0 &&
-        (info.mode & 0o022) === 0
-      );
+      if (
+        !trustedDirectories.some((directory) => real.startsWith(directory)) ||
+        basename(real) !== basename(name) ||
+        !statSync(real).isFile()
+      )
+        return undefined;
+      // Every component of the canonical path must be locked too.
+      for (let part = real; ; part = dirname(part)) {
+        if (!rootLocked(part)) return undefined;
+        if (part === dirname(part)) break;
+      }
+      return real;
     } catch {
-      return false;
+      return undefined;
     }
   }
-  return false;
+  return undefined;
+}
+// The canonical executable to spawn without admission, or undefined to queue.
+export function trivialExecutable(
+  name: string,
+  env: NodeJS.ProcessEnv = process.env
+) {
+  if (!readOnly.has(basename(name))) return undefined;
+  if (Object.keys(env).some((key) => loaderVariable.test(key)))
+    return undefined;
+  return trustedSystemExecutable(name, env.PATH || '');
 }
 export function isTrivialCommand(
   name: string,
   args: string[],
   env: NodeJS.ProcessEnv = process.env
 ) {
-  const tool = basename(name);
-  if (!readOnly.has(tool)) return false;
-  if (tool === 'ls' && args.some(recursiveLs)) return false;
-  if (Object.keys(env).some((key) => loaderVariable.test(key))) return false;
-  return trustedSystemExecutable(name, env.PATH || '');
+  void args;
+  return trivialExecutable(name, env) !== undefined;
 }
 
 export function limitCommand(
