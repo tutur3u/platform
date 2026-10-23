@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const {
+  applyAcceptances,
   buildRegister,
   fromBunAudit,
   fromCodeScanning,
@@ -138,4 +139,79 @@ test('summaries never claim a clearance and report coverage gaps', () => {
       /all clear|no vulnerabilities|is secure|clean bill/iu
     );
   }
+});
+
+test('risk acceptances apply only when approved and unexpired', () => {
+  const nodeForge = fromBunAudit({
+    'node-forge': [
+      {
+        id: 1,
+        severity: 'high',
+        title: 'synthetic',
+        url: 'https://github.com/advisories/GHSA-86w9-cpqp-85rv',
+        vulnerable_versions: '<=1.4.0',
+      },
+    ],
+  });
+  const now = Date.parse('2026-11-01T00:00:00Z');
+  const base = {
+    advisory: 'GHSA-86w9-cpqp-85rv',
+    expiresAt: '2027-01-21',
+  };
+  const build = (acceptance) =>
+    buildRegister({
+      coverage: [],
+      entries: applyAcceptances(nodeForge, [{ ...base, ...acceptance }], now),
+      generatedAt: 'now',
+      sha: 'a'.repeat(40),
+    });
+
+  // Pending (the shipped state): still open and still a release blocker.
+  const pending = build({ status: 'pending', approvedBy: null });
+  assert.equal(pending.entries[0].status, 'open');
+  assert.equal(pending.entries[0].acceptance.status, 'pending');
+  assert.equal(pending.blockers.length, 1);
+  // A status flip without a recorded approver changes nothing.
+  assert.equal(build({ status: 'accepted' }).blockers.length, 1);
+  // Approved by the release authority and unexpired: accepted, not blocking.
+  const accepted = build({
+    approvedAt: '2026-10-30',
+    approvedBy: 'release-authority',
+    status: 'accepted',
+  });
+  assert.equal(accepted.entries[0].status, 'accepted');
+  assert.equal(accepted.blockers.length, 0);
+  assert.equal(accepted.entries[0].remediation.at(-1).kind, 'risk-accepted');
+  // Expired: open and blocking again.
+  const expired = build({
+    approvedAt: '2026-10-30',
+    approvedBy: 'release-authority',
+    expiresAt: '2026-10-31',
+    status: 'accepted',
+  });
+  assert.equal(expired.entries[0].acceptance.status, 'expired');
+  assert.equal(expired.blockers.length, 1);
+});
+
+test('the shipped node-forge acceptance is pending the release authority', () => {
+  const file = require('node:path').resolve(
+    __dirname,
+    '../../.github/security/risk-acceptances.json'
+  );
+  const { acceptances } = JSON.parse(
+    require('node:fs').readFileSync(file, 'utf8')
+  );
+  const forge = acceptances.find(
+    ({ advisory }) => advisory === 'GHSA-86w9-cpqp-85rv'
+  );
+  assert.equal(forge.status, 'pending');
+  assert.equal(forge.approvedBy, null);
+  assert.equal(forge.approvedAt, null);
+  // At most 90 days from the proposal.
+  assert.ok(
+    Date.parse(forge.expiresAt) - Date.parse(forge.proposedAt) <=
+      90 * 24 * 60 * 60 * 1000
+  );
+  assert.match(forge.scope, /PKCS#12\/ASN\.1/u);
+  assert.match(forge.guards.join(' '), /#6425/u);
 });

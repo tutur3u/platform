@@ -298,6 +298,31 @@ Each register entry (`tuturuuu-security-register/v1`) has:
   output.
 - `remediation`: receipts such as fix or dismissal time and reason.
 - `reference`: advisory or alert URL.
+- `acceptance`: present when a risk acceptance matches (`pending`, `accepted`
+  or `expired`).
+
+### Risk acceptances
+
+`.github/security/risk-acceptances.json` lists proposed risk acceptances for
+dependency advisories (matched by advisory ID). Each entry records:
+- the scope;
+- the guards that keep the vulnerable path unreachable;
+- the owner role;
+- `proposedAt`;
+- `expiresAt`, at most 90 days after the proposal;
+- what ends the acceptance earlier (for example the first patched release).
+
+Agents add entries as `pending`. Only the release authority approves one, in a
+reviewed PR that sets `status: accepted`, `approvedBy` and `approvedAt`. A
+pending, unapproved or expired acceptance leaves the finding `open`, so a
+confirmed high or critical finding still blocks the release. An unreadable
+file accepts nothing and is reported as a coverage gap.
+
+Current proposal: node-forge GHSA-86w9-cpqp-85rv (RSA PKCS#1 v1.5 signature
+verification, no patched release). node-forge is used only to parse PKCS#12
+and ASN.1 data. #6425 guards against its verify paths in code and proves with
+a test that they are never reached. The proposal is pending the release
+authority's approval.
 
 Actions logs and artifacts of a public repository are public, so the register is
 redacted. It omits secret values and locations, and the rule IDs and paths of

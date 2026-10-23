@@ -1,0 +1,24 @@
+{
+  "format": "tuturuuu-risk-acceptances/v1",
+  "acceptances": [
+    {
+      "advisory": "GHSA-86w9-cpqp-85rv",
+      "package": "node-forge",
+      "affectedVersions": "<=1.4.0",
+      "severity": "high",
+      "scope": "node-forge is used only to parse PKCS#12/ASN.1 certificate bundles in apps/infrastructure/src/lib/desktop-deployment/certificate-readiness.ts. Its RSA PKCS#1 v1.5 signature verification is never called.",
+      "guards": [
+        "#6425: certificate-readiness.ts limits node-forge to PKCS12/ASN.1 parsing and forbids its verify paths",
+        "#6425: certificate-readiness.test.ts proves the RSA verification path is never reached"
+      ],
+      "reason": "No patched node-forge release exists, and the vulnerable verification path is unreachable in the guarded usage.",
+      "owner": "dependencies",
+      "proposedAt": "2026-10-23",
+      "expiresAt": "2027-01-21",
+      "expiresEarlier": "first patched node-forge release, or any new node-forge call site",
+      "status": "pending",
+      "approvedBy": null,
+      "approvedAt": null
+    }
+  ]
+}

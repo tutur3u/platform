@@ -121,6 +121,68 @@ function fromGitleaks(findings) {
   }));
 }
 
+// Risk acceptances (.github/security/risk-acceptances.json) are reviewed in
+// pull requests. One changes a finding's status only when the release
+// authority recorded approvedBy/approvedAt and it has not expired; a pending
+// or expired acceptance is annotated but leaves the finding open (and a
+// confirmed critical/high finding still blocks).
+function applyAcceptances(entries, acceptances, now = Date.now()) {
+  return entries.map((entry) => {
+    const match = acceptances.find(
+      (item) =>
+        typeof item?.advisory === 'string' &&
+        item.advisory.length > 0 &&
+        ['bun-audit', 'dependabot'].includes(entry.source) &&
+        `${entry.detail} ${entry.reference}`.includes(item.advisory)
+    );
+    if (!match) return entry;
+    const expires = Date.parse(match.expiresAt ?? '');
+    const approved =
+      match.status === 'accepted' &&
+      typeof match.approvedBy === 'string' &&
+      match.approvedBy.length > 0 &&
+      Number.isFinite(Date.parse(match.approvedAt ?? ''));
+    const live = Number.isFinite(expires) && now < expires;
+    const acceptance = {
+      advisory: match.advisory,
+      expiresAt: match.expiresAt ?? null,
+      status: approved ? (live ? 'accepted' : 'expired') : 'pending',
+    };
+    if (!(approved && live)) return { ...entry, acceptance };
+    return {
+      ...entry,
+      acceptance,
+      remediation: [
+        ...entry.remediation,
+        {
+          at: match.approvedAt,
+          by: match.approvedBy,
+          expiresAt: match.expiresAt,
+          kind: 'risk-accepted',
+        },
+      ],
+      status: 'accepted',
+    };
+  });
+}
+
+function readAcceptances(file, coverage) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (!Array.isArray(parsed?.acceptances)) throw new Error('bad format');
+    coverage.push({ source: 'risk-acceptances', status: 'scanned' });
+    return parsed.acceptances;
+  } catch (error) {
+    // An unreadable list accepts nothing; it never hides a finding.
+    coverage.push({
+      reason: error.message,
+      source: 'risk-acceptances',
+      status: 'unavailable',
+    });
+    return [];
+  }
+}
+
 function buildRegister({ coverage, entries, generatedAt, sha }) {
   const sorted = [...entries].sort(
     (a, b) =>
@@ -270,9 +332,13 @@ async function main() {
     source: 'secret-scanning',
     status: 'unavailable',
   });
+  const acceptances = readAcceptances(
+    env.RISK_ACCEPTANCES_FILE || '.github/security/risk-acceptances.json',
+    coverage
+  );
   const register = buildRegister({
     coverage,
-    entries,
+    entries: applyAcceptances(entries, acceptances),
     generatedAt: new Date().toISOString(),
     sha: env.GITHUB_SHA,
   });
@@ -293,6 +359,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  applyAcceptances,
   buildRegister,
   fromBunAudit,
   fromCodeScanning,
