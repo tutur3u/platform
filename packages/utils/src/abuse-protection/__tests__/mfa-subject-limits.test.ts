@@ -44,44 +44,56 @@ function limiterWith(redis: ReturnType<typeof createMemoryRedis>) {
 }
 
 describe('MFA subject limits', () => {
-  it('blocks a factor after the per-factor budget regardless of source IP', async () => {
+  it('allows the per-factor budget and then refuses regardless of source IP', async () => {
     const redis = createMemoryRedis();
     const limiter = limiterWith(redis);
     const subject = { userId: USER_A, factorId: FACTOR_1 };
 
-    for (let i = 0; i < MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX - 1; i += 1) {
-      await limiter.recordFailure(subject);
+    for (let i = 1; i <= MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX; i += 1) {
+      await expect(limiter.reserve(subject)).resolves.toMatchObject({
+        allowed: true,
+        remainingAttempts: MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX - i,
+      });
     }
-    await expect(limiter.check(subject)).resolves.toMatchObject({
-      allowed: true,
-      remainingAttempts: 1,
-    });
 
-    await limiter.recordFailure(subject);
-    await expect(limiter.check(subject)).resolves.toMatchObject({
+    await expect(limiter.reserve(subject)).resolves.toMatchObject({
       allowed: false,
       remainingAttempts: 0,
       retryAfter: MFA_SUBJECT_LIMITS.FACTOR_WINDOW_MS / 1000,
     });
   });
 
-  it('caps failures across all factors of one user', async () => {
+  it('admits exactly the budget when attempts arrive in parallel', async () => {
+    const redis = createMemoryRedis();
+    const limiter = limiterWith(redis);
+    const subject = { userId: USER_A, factorId: FACTOR_1 };
+
+    const results = await Promise.all(
+      Array.from({ length: 50 }, () => limiter.reserve(subject))
+    );
+
+    expect(results.filter((result) => result.allowed)).toHaveLength(
+      MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX
+    );
+  });
+
+  it('caps attempts across all factors of one user', async () => {
     const redis = createMemoryRedis();
     const limiter = limiterWith(redis);
 
     const perFactor = MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX - 1;
     for (let i = 0; i < perFactor; i += 1) {
-      await limiter.recordFailure({ userId: USER_A, factorId: FACTOR_1 });
-      await limiter.recordFailure({ userId: USER_A, factorId: FACTOR_2 });
+      await limiter.reserve({ userId: USER_A, factorId: FACTOR_1 });
+      await limiter.reserve({ userId: USER_A, factorId: FACTOR_2 });
     }
     const third = '00000000-0000-4000-8000-0000000000f3';
     const remaining = MFA_SUBJECT_LIMITS.USER_FAILED_MAX - perFactor * 2;
     for (let i = 0; i < remaining; i += 1) {
-      await limiter.recordFailure({ userId: USER_A, factorId: third });
+      await limiter.reserve({ userId: USER_A, factorId: third });
     }
 
     await expect(
-      limiter.check({
+      limiter.reserve({
         userId: USER_A,
         factorId: '00000000-0000-4000-8000-0000000000f4',
       })
@@ -95,12 +107,12 @@ describe('MFA subject limits', () => {
     const redis = createMemoryRedis();
     const limiter = limiterWith(redis);
 
-    for (let i = 0; i < MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX; i += 1) {
-      await limiter.recordFailure({ userId: USER_A, factorId: FACTOR_1 });
+    for (let i = 0; i <= MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX; i += 1) {
+      await limiter.reserve({ userId: USER_A, factorId: FACTOR_1 });
     }
 
     await expect(
-      limiter.check({ userId: USER_B, factorId: FACTOR_1 })
+      limiter.reserve({ userId: USER_B, factorId: FACTOR_1 })
     ).resolves.toMatchObject({ allowed: true });
   });
 
@@ -109,14 +121,14 @@ describe('MFA subject limits', () => {
     const limiter = limiterWith(redis);
     const subject = { userId: USER_A, factorId: FACTOR_1 };
 
-    for (let i = 0; i < MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX; i += 1) {
-      await limiter.recordFailure(subject);
+    for (let i = 0; i <= MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX; i += 1) {
+      await limiter.reserve(subject);
     }
     await limiter.clear(subject);
 
-    await expect(limiter.check(subject)).resolves.toMatchObject({
+    await expect(limiter.reserve(subject)).resolves.toMatchObject({
       allowed: true,
-      remainingAttempts: MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX,
+      remainingAttempts: MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX - 1,
     });
   });
 
@@ -133,7 +145,7 @@ describe('MFA subject limits', () => {
   it('fails open when Redis is unavailable or errors', async () => {
     const unavailable = createMFASubjectLimiter(async () => null);
     await expect(
-      unavailable.check({ userId: USER_A, factorId: FACTOR_1 })
+      unavailable.reserve({ userId: USER_A, factorId: FACTOR_1 })
     ).resolves.toEqual({ allowed: true });
 
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -152,10 +164,10 @@ describe('MFA subject limits', () => {
     };
     const failing = createMFASubjectLimiter(async () => failingRedis as any);
     await expect(
-      failing.check({ userId: USER_A, factorId: FACTOR_1 })
+      failing.reserve({ userId: USER_A, factorId: FACTOR_1 })
     ).resolves.toEqual({ allowed: true });
     await expect(
-      failing.recordFailure({ userId: USER_A, factorId: FACTOR_1 })
+      failing.clear({ userId: USER_A, factorId: FACTOR_1 })
     ).resolves.toBeUndefined();
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();

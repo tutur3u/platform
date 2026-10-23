@@ -7,9 +7,8 @@ import {
   recordMFAVerifyFailure,
 } from '@tuturuuu/utils/abuse-protection';
 import {
-  checkMFAVerifySubjectLimit,
   clearMFAVerifySubjectFailures,
-  recordMFAVerifySubjectFailure,
+  reserveMFAVerifySubjectAttempt,
 } from '@tuturuuu/utils/abuse-protection/mfa-subject-limits';
 import { NextResponse } from 'next/server';
 
@@ -57,8 +56,10 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     // Per-account budget: follows the user and factor across source IPs.
+    // The attempt is reserved before contacting Auth so parallel requests
+    // cannot outrun the counter; a valid code clears it.
     const subject = { userId: user.id, factorId: String(factorId) };
-    const subjectCheck = await checkMFAVerifySubjectLimit(subject);
+    const subjectCheck = await reserveMFAVerifySubjectAttempt(subject);
     if (!subjectCheck.allowed) {
       return NextResponse.json(
         {
@@ -78,7 +79,6 @@ export async function POST(request: Request, { params }: Params) {
     if (error) {
       // Record the failure for abuse tracking
       void recordMFAVerifyFailure(ipAddress);
-      await recordMFAVerifySubjectFailure(subject);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

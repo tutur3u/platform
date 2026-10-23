@@ -32,7 +32,7 @@ export interface MFAVerifySubject {
 
 type CounterClient = Pick<
   UpstashRestRedisClient,
-  'del' | 'expire' | 'get' | 'incr' | 'ttl'
+  'del' | 'expire' | 'incr' | 'ttl'
 >;
 
 const UUID_PATTERN =
@@ -72,20 +72,33 @@ export function createMFASubjectLimiter(
     return ttl > 0 ? ttl : Math.ceil(windowMs / 1000);
   }
 
-  async function check(subject: MFAVerifySubject): Promise<AbuseCheckResult> {
+  async function increment(
+    redis: CounterClient,
+    key: string,
+    windowMs: number
+  ) {
+    const count = await redis.incr(key);
+    if (count === 1) await redis.expire(key, Math.ceil(windowMs / 1000));
+    return count;
+  }
+
+  /**
+   * Atomically spend one attempt before contacting Auth. Each concurrent
+   * request increments first and compares afterwards, so parallel requests
+   * cannot all observe a stale count. A successful code clears the budget.
+   */
+  async function reserve(subject: MFAVerifySubject): Promise<AbuseCheckResult> {
     const redis = await getRedis().catch(() => null);
     if (!redis) return { allowed: true };
 
     const keys = getMFASubjectKeys(subject);
     try {
-      const [factorCount, userCount] = await Promise.all([
-        redis.get<number>(keys.factor),
-        redis.get<number>(keys.user),
+      const [factorAttempts, userAttempts] = await Promise.all([
+        increment(redis, keys.factor, MFA_SUBJECT_LIMITS.FACTOR_WINDOW_MS),
+        increment(redis, keys.user, MFA_SUBJECT_LIMITS.USER_WINDOW_MS),
       ]);
-      const factorFailures = Number(factorCount) || 0;
-      const userFailures = Number(userCount) || 0;
 
-      if (userFailures >= MFA_SUBJECT_LIMITS.USER_FAILED_MAX) {
+      if (userAttempts > MFA_SUBJECT_LIMITS.USER_FAILED_MAX) {
         return {
           allowed: false,
           reason: 'Too many failed MFA verification attempts',
@@ -98,7 +111,7 @@ export function createMFASubjectLimiter(
         };
       }
 
-      if (factorFailures >= MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX) {
+      if (factorAttempts > MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX) {
         return {
           allowed: false,
           reason: 'Too many failed MFA verification attempts',
@@ -114,38 +127,13 @@ export function createMFASubjectLimiter(
       return {
         allowed: true,
         remainingAttempts: Math.min(
-          MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX - factorFailures,
-          MFA_SUBJECT_LIMITS.USER_FAILED_MAX - userFailures
+          MFA_SUBJECT_LIMITS.FACTOR_FAILED_MAX - factorAttempts,
+          MFA_SUBJECT_LIMITS.USER_FAILED_MAX - userAttempts
         ),
       };
     } catch (error) {
-      failOpen('MFA subject limit read failed:', error);
+      failOpen('MFA subject limit reservation failed:', error);
       return { allowed: true };
-    }
-  }
-
-  async function increment(
-    redis: CounterClient,
-    key: string,
-    windowMs: number
-  ) {
-    const count = await redis.incr(key);
-    if (count === 1) await redis.expire(key, Math.ceil(windowMs / 1000));
-    return count;
-  }
-
-  async function recordFailure(subject: MFAVerifySubject): Promise<void> {
-    const redis = await getRedis().catch(() => null);
-    if (!redis) return;
-
-    const keys = getMFASubjectKeys(subject);
-    try {
-      await Promise.all([
-        increment(redis, keys.factor, MFA_SUBJECT_LIMITS.FACTOR_WINDOW_MS),
-        increment(redis, keys.user, MFA_SUBJECT_LIMITS.USER_WINDOW_MS),
-      ]);
-    } catch (error) {
-      failOpen('MFA subject limit write failed:', error);
     }
   }
 
@@ -162,11 +150,10 @@ export function createMFASubjectLimiter(
     }
   }
 
-  return { check, clear, recordFailure };
+  return { clear, reserve };
 }
 
 const defaultLimiter = createMFASubjectLimiter();
 
-export const checkMFAVerifySubjectLimit = defaultLimiter.check;
-export const recordMFAVerifySubjectFailure = defaultLimiter.recordFailure;
+export const reserveMFAVerifySubjectAttempt = defaultLimiter.reserve;
 export const clearMFAVerifySubjectFailures = defaultLimiter.clear;

@@ -129,8 +129,10 @@ $$;
 comment on function public.hook_mfa_verification_attempt(jsonb) is
   'Supabase Auth MFA verification attempt hook: per-factor and per-account failure budget. Executable by supabase_auth_admin only.';
 
+-- Only Auth may run the hook: the service role would otherwise be able to spend
+-- any account's budget over RPC.
 revoke all on function public.hook_mfa_verification_attempt(jsonb)
-  from public, anon, authenticated;
+  from public, anon, authenticated, service_role;
 
 grant execute on function public.hook_mfa_verification_attempt(jsonb)
   to supabase_auth_admin;

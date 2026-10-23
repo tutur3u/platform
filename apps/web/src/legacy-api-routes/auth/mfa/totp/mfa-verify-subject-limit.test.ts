@@ -3,12 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   challengeAndVerify: vi.fn(),
   checkMFAVerifyLimit: vi.fn(),
-  checkMFAVerifySubjectLimit: vi.fn(),
   clearMFAVerifyFailures: vi.fn(),
   clearMFAVerifySubjectFailures: vi.fn(),
   createClient: vi.fn(),
   recordMFAVerifyFailure: vi.fn(),
-  recordMFAVerifySubjectFailure: vi.fn(),
+  reserveMFAVerifySubjectAttempt: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   verify: vi.fn(),
 }));
@@ -29,9 +28,8 @@ vi.mock('@tuturuuu/utils/abuse-protection', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/abuse-protection/mfa-subject-limits', () => ({
-  checkMFAVerifySubjectLimit: mocks.checkMFAVerifySubjectLimit,
   clearMFAVerifySubjectFailures: mocks.clearMFAVerifySubjectFailures,
-  recordMFAVerifySubjectFailure: mocks.recordMFAVerifySubjectFailure,
+  reserveMFAVerifySubjectAttempt: mocks.reserveMFAVerifySubjectAttempt,
 }));
 
 import { POST as verifyChallenge } from './challenge/verify/route';
@@ -75,7 +73,7 @@ describe.each(routes)('MFA $name per-account limit', ({ call, authCall }) => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.checkMFAVerifyLimit.mockResolvedValue({ allowed: true });
-    mocks.checkMFAVerifySubjectLimit.mockResolvedValue({ allowed: true });
+    mocks.reserveMFAVerifySubjectAttempt.mockResolvedValue({ allowed: true });
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: USER_ID },
       authError: null,
@@ -91,7 +89,7 @@ describe.each(routes)('MFA $name per-account limit', ({ call, authCall }) => {
   });
 
   it('rejects before contacting Auth when the account budget is spent', async () => {
-    mocks.checkMFAVerifySubjectLimit.mockResolvedValue({
+    mocks.reserveMFAVerifySubjectAttempt.mockResolvedValue({
       allowed: false,
       reason: 'Too many failed MFA verification attempts',
       retryAfter: 600,
@@ -101,11 +99,11 @@ describe.each(routes)('MFA $name per-account limit', ({ call, authCall }) => {
 
     expect(response.status).toBe(429);
     await expect(response.json()).resolves.toMatchObject({ retryAfter: 600 });
-    expect(mocks.checkMFAVerifySubjectLimit).toHaveBeenCalledWith(subject);
+    expect(mocks.reserveMFAVerifySubjectAttempt).toHaveBeenCalledWith(subject);
     expect(authCall()).not.toHaveBeenCalled();
   });
 
-  it('records a failed code against the account', async () => {
+  it('keeps the reserved attempt when the code is wrong', async () => {
     authCall().mockResolvedValue({
       data: null,
       error: { message: 'Invalid TOTP code entered' },
@@ -114,7 +112,7 @@ describe.each(routes)('MFA $name per-account limit', ({ call, authCall }) => {
     const response = await call();
 
     expect(response.status).toBe(400);
-    expect(mocks.recordMFAVerifySubjectFailure).toHaveBeenCalledWith(subject);
+    expect(mocks.reserveMFAVerifySubjectAttempt).toHaveBeenCalledWith(subject);
     expect(mocks.clearMFAVerifySubjectFailures).not.toHaveBeenCalled();
   });
 
@@ -125,6 +123,5 @@ describe.each(routes)('MFA $name per-account limit', ({ call, authCall }) => {
 
     expect(response.status).toBe(200);
     expect(mocks.clearMFAVerifySubjectFailures).toHaveBeenCalledWith(subject);
-    expect(mocks.recordMFAVerifySubjectFailure).not.toHaveBeenCalled();
   });
 });

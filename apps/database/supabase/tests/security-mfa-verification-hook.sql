@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(14);
+select plan(18);
 
 select ok(
   not has_function_privilege(
@@ -18,6 +18,15 @@ select ok(
     'execute'
   ),
   'API roles cannot call the MFA verification hook'
+);
+
+select ok(
+  not has_function_privilege(
+    'service_role',
+    'public.hook_mfa_verification_attempt(jsonb)',
+    'execute'
+  ),
+  'The service role cannot call the MFA verification hook'
 );
 
 select ok(
@@ -158,6 +167,47 @@ select throws_ok(
   '42501',
   null,
   'authenticated is denied the hook over RPC'
+);
+
+reset role;
+
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+set local role anon;
+
+select throws_ok(
+  $$select public.hook_mfa_verification_attempt('{}'::jsonb)$$,
+  '42501',
+  null,
+  'anon is denied the hook over RPC'
+);
+
+reset role;
+
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+set local role service_role;
+
+select throws_ok(
+  $$select public.hook_mfa_verification_attempt('{}'::jsonb)$$,
+  '42501',
+  null,
+  'service_role is denied the hook over RPC'
+);
+
+reset role;
+
+set local role supabase_auth_admin;
+
+select is(
+  public.hook_mfa_verification_attempt(
+    jsonb_build_object(
+      'user_id', 'e3000000-0000-0000-0000-000000000001',
+      'factor_id', 'e3000000-0000-0000-0000-0000000000f9',
+      'factor_type', 'totp',
+      'valid', true
+    )
+  ) ->> 'decision',
+  'continue',
+  'Supabase Auth runs the hook under its own role'
 );
 
 reset role;
