@@ -382,7 +382,7 @@ export async function stopDevboxRun(input: { actorId: string; runId: string }) {
   })
     .eq('id', input.runId)
     .eq('actor_id', input.actorId)
-    .in('status', ['running', 'cancel_requested'])
+    .eq('status', 'running')
     .select('id');
 
   if (running.error) {
@@ -390,7 +390,20 @@ export async function stopDevboxRun(input: { actorId: string; runId: string }) {
   }
 
   if (!running.data?.length) {
-    throw new DevboxStoreError('Active devbox run not found.', 404);
+    const existing = await selectOwnedRow(privateClient, 'devbox_runs', {
+      actorId: input.actorId,
+      columns: 'id,status',
+      id: input.runId,
+    });
+    if (existing?.status === 'cancelled') {
+      return {
+        message: `Devbox run ${input.runId} cancelled.`,
+        status: 'cancelled' as const,
+      };
+    }
+    if (existing?.status !== 'cancel_requested') {
+      throw new DevboxStoreError('Active devbox run not found.', 404);
+    }
   }
 
   return {

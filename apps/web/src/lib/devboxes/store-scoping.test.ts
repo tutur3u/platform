@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { createAdminClientMock } = vi.hoisted(() => ({
   createAdminClientMock: vi.fn(),
@@ -66,6 +66,8 @@ describe('devbox store actor scoping', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-23T00:00:00Z'));
     tables = {
       devbox_leases: [
         { actor_id: 'owner', id: 'lease-active', status: 'active' },
@@ -87,6 +89,8 @@ describe('devbox store actor scoping', () => {
       schema: () => createPrivateSchema(tables),
     });
   });
+
+  afterEach(() => vi.useRealTimers());
 
   const runStatus = (id: string) =>
     tables.devbox_runs?.find((row) => row.id === id)?.status;
@@ -113,12 +117,42 @@ describe('devbox store actor scoping', () => {
     await expect(stopDevboxRun(input)).resolves.toMatchObject({
       status: 'cancel_requested',
     });
+    const requested = structuredClone(tables.devbox_runs);
+    vi.advanceTimersByTime(60_000);
     await expect(stopDevboxRun(input)).resolves.toMatchObject({
       status: 'cancel_requested',
     });
 
     expect(runStatus('run-running')).toBe('cancel_requested');
+    expect(tables.devbox_runs).toEqual(requested);
   });
+
+  it('returns an unchanged cancellation when a queued stop is retried', async () => {
+    const input = { actorId: 'owner', runId: 'run-queued' };
+    await expect(stopDevboxRun(input)).resolves.toMatchObject({
+      status: 'cancelled',
+    });
+    const cancelled = structuredClone(tables.devbox_runs);
+    vi.advanceTimersByTime(60_000);
+    await expect(stopDevboxRun(input)).resolves.toMatchObject({
+      status: 'cancelled',
+    });
+    expect(tables.devbox_runs).toEqual(cancelled);
+  });
+
+  it.each(['cancel_requested', 'cancelled'])(
+    'does not disclose a foreign %s run on retry',
+    async (status) => {
+      const foreign = tables.devbox_runs?.find((row) => row.id === 'run-other');
+      if (!foreign) throw new Error('missing foreign fixture');
+      foreign.status = status;
+      const unchanged = structuredClone(tables.devbox_runs);
+      await expectNotFound(
+        stopDevboxRun({ actorId: 'owner', runId: 'run-other' })
+      );
+      expect(tables.devbox_runs).toEqual(unchanged);
+    }
+  );
 
   it("does not stop another member's run", async () => {
     await expectNotFound(
