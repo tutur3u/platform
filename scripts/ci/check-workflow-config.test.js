@@ -562,11 +562,11 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   );
   assert.match(
     setupAction,
-    /bun-runtime-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+    /bun-runtime-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}/
   );
   assert.match(
     setupAction,
-    /bun-deps-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+    /bun-deps-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}/
   );
   for (const saveStep of [runtimeSaveStep, packageSaveStep]) {
     assert.match(saveStep, /github\.ref == 'refs\/heads\/main'/);
@@ -631,7 +631,7 @@ test('secretless Turbo fallback caches are task-scoped and trusted-write only', 
   assert.match(setupAction, /runner\.arch/);
   assert.match(setupAction, /github\.event\.pull_request\.base\.sha/);
   assert.match(setupAction, /github\.event\.repository\.default_branch/);
-  assert.match(setupAction, /github\.event_name == 'pull_request'/);
+  assert.match(setupAction, /github\.event_name != 'push'/);
   assert.match(setupAction, /github\.actor == 'dependabot\[bot\]'/);
   assert.doesNotMatch(setupAction, /TURBO_TOKEN|TURBO_TEAM|node_modules/);
 });
@@ -750,14 +750,13 @@ test('Inventory and Storefront retain their paused E2E contract', () => {
     stepNamed('Setup Supabase CLI')?.uses,
     './.github/actions/setup-supabase-cli-with-retry'
   );
-  assert.match(
-    stepNamed('Restore cached Supabase Docker images')?.uses || '',
-    /^actions\/cache\/restore@[0-9a-f]{40}$/u
+  assert.equal(
+    stepNamed('Restore shared Supabase images')?.uses,
+    './.github/actions/cache-supabase-images'
   );
-  assert.match(
-    stepNamed('Restore cached Supabase Docker images')?.with?.key || '',
-    /supabase-docker-v2-/u
-  );
+  assert.deepEqual(stepNamed('Restore shared Supabase images')?.with, {
+    profile: 'full',
+  });
   assert.equal(
     stepNamed('Install Playwright browser')?.['working-directory'],
     'apps/inventory'
