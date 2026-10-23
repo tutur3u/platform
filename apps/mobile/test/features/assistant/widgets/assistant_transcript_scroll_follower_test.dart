@@ -23,9 +23,14 @@ void main() {
           body: StatefulBuilder(
             builder: (context, setState) {
               update = setState;
-              return NotificationListener<ScrollMetricsNotification>(
-                onNotification: (_) {
-                  follower.followUpdate();
+              return NotificationListener<Notification>(
+                onNotification: (notification) {
+                  if (notification is ScrollNotification) {
+                    return follower.observeNotification(notification);
+                  }
+                  if (notification is ScrollMetricsNotification) {
+                    follower.followUpdate();
+                  }
                   return false;
                 },
                 child: ListView(
@@ -62,8 +67,9 @@ void main() {
     expect(controller.offset, readingOffset);
     expect(jumpVisible, isTrue);
     expect(tester.binding.hasScheduledFrame, isFalse);
-    follower.resume();
-    follower.followUpdate();
+    follower
+      ..resume()
+      ..followUpdate();
     expect(tester.binding.hasScheduledFrame, isTrue);
     await tester.pumpAndSettle();
     expect(controller.position.extentAfter, 0);
@@ -78,8 +84,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.offset, flungOffset);
     expect(jumpVisible, isTrue);
-    follower.followUpdate();
-    follower.dispose();
+    follower
+      ..followUpdate()
+      ..dispose();
     await tester.pumpWidget(const SizedBox.shrink());
     expect(tester.takeException(), isNull);
   });

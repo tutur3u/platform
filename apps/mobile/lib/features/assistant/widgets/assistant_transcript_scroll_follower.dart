@@ -21,16 +21,23 @@ class AssistantTranscriptScrollFollower {
     _userScrolling = false;
   }
 
+  bool observeNotification(ScrollNotification notification) {
+    if (_disposed || notification.depth != 0) return false;
+    if (notification is ScrollStartNotification &&
+        notification.dragDetails != null) {
+      _userScrolling = true;
+    }
+    if (notification is ScrollEndNotification) {
+      observeScroll();
+      _userScrolling = false;
+    }
+    return false;
+  }
+
   void observeScroll() {
     if (_disposed || !controller.hasClients) return;
-    final position = controller.position;
-    if (position.activity is DragScrollActivity) _userScrolling = true;
     if (_userScrolling) {
-      _following = position.extentAfter < threshold;
-      if (position.activity is! DragScrollActivity &&
-          position.activity is! BallisticScrollActivity) {
-        _userScrolling = false;
-      }
+      _following = controller.position.extentAfter < threshold;
     }
   }
 
@@ -42,9 +49,7 @@ class AssistantTranscriptScrollFollower {
       if (_disposed || !controller.hasClients) return;
       final position = controller.position;
       // A drag wins even when it starts after output scheduled this frame.
-      final userMotion =
-          position.activity is DragScrollActivity ||
-          (_userScrolling && position.activity is BallisticScrollActivity);
+      final userMotion = _userScrolling && position.isScrollingNotifier.value;
       if (_following && !userMotion) {
         controller.jumpTo(position.maxScrollExtent);
       }

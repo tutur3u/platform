@@ -16,7 +16,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
         final semantics = tester.ensureSemantics();
         var taps = 0;
-        Future<void> mount(bool visible) async {
+        Future<void> mount({required bool visible}) async {
           await tester.pumpWidget(
             MaterialApp(
               localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -56,14 +56,14 @@ void main() {
           await tester.pumpAndSettle();
         }
 
-        await mount(true);
+        await mount(visible: true);
         final button = find.byIcon(Icons.arrow_downward_rounded);
         final rect = tester.getRect(button);
         final dockTop = 844 - (keyboard ? 300 : safe) - 96;
         expect(rect.bottom, lessThanOrEqualTo(dockTop - 16));
         await tester.tap(button);
         expect(taps, 1);
-        await mount(false);
+        await mount(visible: false);
         expect(button.hitTestable(), findsNothing);
         final tree = tester.getSemantics(find.byType(Scaffold)).toStringDeep();
         expect(tree, isNot(contains('Scroll to bottom')));

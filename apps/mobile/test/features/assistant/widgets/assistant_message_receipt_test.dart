@@ -76,7 +76,7 @@ void main() {
       expect(find.text('09:08'), findsNothing);
       // Reopened legacy history has no acknowledgement provenance.
       await mount([
-        AssistantMessage.fromJson({
+        AssistantMessage.fromJson(const {
           'id': 'history',
           'role': 'user',
           'created_at': '2026-10-23T09:07:00',

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/widgets/assistant_source_link.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_source_link.dart';
 import 'package:mobile/features/assistant/widgets/assistant_thinking_accordion.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
 

@@ -187,6 +187,29 @@ extension _AssistantPageLayout on _AssistantPageState {
                           chatState,
                           liveState,
                         );
+                        final showTranscript =
+                            hasTranscript ||
+                            chatState.isBusy ||
+                            chatState.status == AssistantChatStatus.error;
+                        final starterPrompts = AssistantStarterPrompts(
+                          onPromptSelected: _applyStarterPrompt,
+                          replayToken: widget.replayToken,
+                        );
+                        bool onTranscriptNotification(
+                          Notification notification,
+                        ) {
+                          if (notification is ScrollNotification) {
+                            return _transcriptFollower.observeNotification(
+                              notification,
+                            );
+                          }
+                          if (notification is ScrollMetricsNotification &&
+                              hasTranscript) {
+                            _transcriptFollower.followUpdate();
+                          }
+                          return false;
+                        }
+
                         final keyboardVisible =
                             MediaQuery.viewInsetsOf(context).bottom > 0;
                         final hasLiveAccess =
@@ -250,16 +273,9 @@ extension _AssistantPageLayout on _AssistantPageState {
                                     else ...[
                                       Stack(
                                         children: [
-                                          NotificationListener<
-                                            ScrollMetricsNotification
-                                          >(
-                                            onNotification: (_) {
-                                              if (hasTranscript) {
-                                                _transcriptFollower
-                                                    .followUpdate();
-                                              }
-                                              return false;
-                                            },
+                                          NotificationListener<Notification>(
+                                            onNotification:
+                                                onTranscriptNotification,
                                             child: CustomScrollView(
                                               controller: _scrollController,
                                               keyboardDismissBehavior:
@@ -296,23 +312,14 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                           height: 12,
                                                         ),
                                                       ],
-                                                      if (hasTranscript ||
-                                                          chatState.isBusy ||
-                                                          chatState.status ==
-                                                              AssistantChatStatus
-                                                                  .error)
+                                                      if (showTranscript)
                                                         _buildTranscriptSection(
                                                           chatState,
                                                           liveState,
                                                           shellState,
                                                         )
                                                       else
-                                                        AssistantStarterPrompts(
-                                                          onPromptSelected:
-                                                              _applyStarterPrompt,
-                                                          replayToken: widget
-                                                              .replayToken,
-                                                        ),
+                                                        starterPrompts,
                                                     ],
                                                   ),
                                                 ),
