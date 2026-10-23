@@ -8,6 +8,7 @@ import { collectClaude } from '../src/collectors/claude';
 import { collectCodex } from '../src/collectors/codex';
 import { readCodexAppServerLimits } from '../src/collectors/codex-app-server';
 import { collectT3State } from '../src/collectors/t3';
+import { recommend } from '../src/policy';
 
 const temporary: string[] = [];
 async function tempDir(): Promise<string> {
@@ -70,6 +71,105 @@ describe('local collectors', () => {
     expect(
       result.windows.filter((window) => window.authoritative)
     ).toHaveLength(2);
+    expect(
+      result.windows.find((window) => window.kind === 'short')?.observedAt
+    ).toBe(observedAt);
+  });
+
+  it('uses root timestamps for payload samples and chooses newest token usage', async () => {
+    const root = await tempDir();
+    const sessions = join(root, 'sessions');
+    await mkdir(sessions);
+    const newest = new Date().toISOString();
+    const older = new Date(Date.parse(newest) - 60 * 60_000).toISOString();
+    const row = (timestamp: string, used: number, input: number) => ({
+      timestamp,
+      type: 'event_msg',
+      payload: {
+        type: 'token_count',
+        info: { last_token_usage: { input_tokens: input, output_tokens: 9 } },
+        rate_limits: {
+          primary: {
+            used_percent: used,
+            window_minutes: 300,
+            resets_at: Math.floor(Date.now() / 1000) + 3600,
+          },
+        },
+      },
+    });
+    await writeFile(
+      join(sessions, 'fixture.jsonl'),
+      `${JSON.stringify(row(newest, 31, 100))}\n${JSON.stringify(row(older, 72, 1))}\n`
+    );
+
+    const result = await collectCodex('codex', 'test-account', [root]);
+    const ranking = recommend({
+      task: { provider: 'codex' },
+      active: [],
+      accounts: [result],
+      now: new Date(),
+    });
+    expect(
+      result.windows.find((window) => window.kind === 'short')
+    ).toMatchObject({
+      usedPercent: 31,
+      observedAt: newest,
+      authoritative: true,
+    });
+    expect(
+      result.windows.find((window) => window.kind === 'session')?.estimated
+    ).toBe(109);
+    expect(ranking.ranked[0]?.eligible).toBe(true);
+  });
+
+  it('keeps old and missing session timestamps stale or unknown', async () => {
+    const root = await tempDir();
+    const sessions = join(root, 'sessions');
+    await mkdir(sessions);
+    const old = new Date(Date.now() - 60 * 60_000).toISOString();
+    const reset = Math.floor(Date.now() / 1000) + 3600;
+    const base = {
+      type: 'event_msg',
+      payload: {
+        type: 'token_count',
+        rate_limits: {
+          primary: {
+            used_percent: 100,
+            window_minutes: 300,
+            resets_at: reset,
+          },
+        },
+      },
+    };
+    await writeFile(
+      join(sessions, 'fixture.jsonl'),
+      `${JSON.stringify({ ...base, timestamp: old })}\n${JSON.stringify(base)}\n`
+    );
+
+    const result = await collectCodex('codex', 'test-account', [root]);
+    const window = result.windows.find((item) => item.kind === 'short');
+    expect(window?.observedAt).toBe(old);
+    expect(window?.authoritative).toBe(true);
+    const ranking = recommend({
+      task: { provider: 'codex' },
+      active: [],
+      accounts: [result],
+      now: new Date(),
+    });
+    expect(ranking.ranked[0]?.eligible).toBe(false);
+    expect(
+      ranking.ranked[0]?.reasons.some((reason) => reason.code === 'stale')
+    ).toBe(true);
+
+    await writeFile(join(sessions, 'fixture.jsonl'), JSON.stringify(base));
+    const missingTimestamp = await collectCodex('codex', 'test-account', [
+      root,
+    ]);
+    const unknownWindow = missingTimestamp.windows.find(
+      (item) => item.kind === 'short'
+    );
+    expect(unknownWindow?.authoritative).toBe(false);
+    expect(unknownWindow?.observedAt).toBe('');
   });
 
   it('prefers the bounded Codex app-server rate limit snapshot', async () => {

@@ -7,20 +7,13 @@ import {
 } from './codex-app-server';
 import { listJsonlFiles } from './files';
 import { allowedSessionFile, codexRoot, codexRoots } from './paths';
+import { resetTimestamp, windowKind } from './codex-rate-limits';
 
 interface LimitSample {
   usedPercent: number;
   windowMinutes?: number;
   resetsAt?: string;
-  observedAt: string;
-}
-
-function resetTimestamp(value: unknown): string | undefined {
-  if (typeof value === 'string') return value;
-  if (typeof value !== 'number' || !Number.isFinite(value)) return;
-  const milliseconds = value > 1_000_000_000_000 ? value : value * 1000;
-  const date = new Date(milliseconds);
-  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  observedAt?: string;
 }
 
 function recordObjects(value: unknown): Record<string, unknown>[] {
@@ -51,6 +44,10 @@ function parseLimits(line: string): {
   } catch {
     return empty;
   }
+  const rootTimestamp =
+    row && typeof row === 'object'
+      ? resetTimestamp((row as Record<string, unknown>).timestamp)
+      : undefined;
   for (const object of recordObjects(row)) {
     const limits = object.rate_limits;
     if (!limits || typeof limits !== 'object') continue;
@@ -67,10 +64,7 @@ function parseLimits(line: string): {
             ? fields.window_minutes
             : undefined,
         resetsAt: resetTimestamp(fields.resets_at),
-        observedAt:
-          typeof object.timestamp === 'string'
-            ? object.timestamp
-            : new Date().toISOString(),
+        observedAt: resetTimestamp(object.timestamp) ?? rootTimestamp,
       });
     }
     const info =
@@ -89,17 +83,11 @@ function parseLimits(line: string): {
       tokens: {
         input,
         output,
-        observedAt:
-          typeof object.timestamp === 'string' ? object.timestamp : undefined,
+        observedAt: resetTimestamp(object.timestamp) ?? rootTimestamp,
       },
     };
   }
   return empty;
-}
-
-function windowKind(minutes?: number, index = 0): WindowKind {
-  if (typeof minutes === 'number') return minutes <= 1440 ? 'short' : 'long';
-  return index === 0 ? 'short' : 'long';
 }
 
 export async function collectCodex(
@@ -141,10 +129,10 @@ export async function collectCodex(
           samples.push(...parsed.samples);
           if (
             (parsed.tokens.input || parsed.tokens.output) &&
+            parsed.tokens.observedAt !== undefined &&
             (!tokens.observedAt ||
-              (parsed.tokens.observedAt &&
-                Date.parse(parsed.tokens.observedAt) >
-                  Date.parse(tokens.observedAt)))
+              Date.parse(parsed.tokens.observedAt) >
+                Date.parse(tokens.observedAt))
           ) {
             tokens = parsed.tokens;
           }
@@ -158,9 +146,16 @@ export async function collectCodex(
   for (const [index, sample] of samples.entries()) {
     const kind = windowKind(sample.windowMinutes, index);
     const previous = latest.get(kind);
+    const sampleTime = sample.observedAt
+      ? Date.parse(sample.observedAt)
+      : Number.NaN;
+    const previousTime = previous?.observedAt
+      ? Date.parse(previous.observedAt)
+      : Number.NaN;
     if (
       !previous ||
-      Date.parse(sample.observedAt) >= Date.parse(previous.observedAt)
+      (Number.isFinite(sampleTime) &&
+        (!Number.isFinite(previousTime) || sampleTime >= previousTime))
     )
       latest.set(kind, sample);
   }
@@ -170,8 +165,8 @@ export async function collectCodex(
       usedPercent: sample.usedPercent,
       resetsAt: sample.resetsAt,
       source: 'Codex local token_count rate_limits',
-      observedAt: sample.observedAt,
-      authoritative: true,
+      observedAt: sample.observedAt ?? '',
+      authoritative: sample.observedAt !== undefined,
     })
   );
   const windows = appServerWindows.length ? appServerWindows : sessionWindows;

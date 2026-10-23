@@ -3,11 +3,9 @@ import { collectAll } from './collectors';
 import { recommend, recommendAssignments } from './policy';
 import { parseReserves } from './reserves';
 import type { Provider } from './types';
+import { argumentValue } from './cli-args';
 
-function arg(flag: string): string | undefined {
-  const index = process.argv.indexOf(flag);
-  return index >= 0 ? process.argv[index + 1] : undefined;
-}
+const arg = (flag: string) => argumentValue(flag);
 
 function outputJson(): boolean {
   return process.argv.includes('--json');

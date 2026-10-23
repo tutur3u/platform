@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
-import type { UsageWindow, WindowKind } from '../types';
+import type { UsageWindow } from '../types';
+import { resetTimestamp, windowKind } from './codex-rate-limits';
 
 interface RateLimitWindow {
   usedPercent: number;
@@ -22,23 +23,6 @@ export interface CodexAppServerOptions {
   command?: string;
   timeoutMs?: number;
   now?: () => Date;
-}
-
-function resetTimestamp(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? new Date(parsed).toISOString() : undefined;
-  }
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0)
-    return;
-  const milliseconds = value > 1_000_000_000_000 ? value : value * 1000;
-  const date = new Date(milliseconds);
-  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
-}
-
-function windowKind(minutes: number | undefined, index: number): WindowKind {
-  if (typeof minutes === 'number') return minutes <= 1440 ? 'short' : 'long';
-  return index === 0 ? 'short' : 'long';
 }
 
 function toWindows(response: RateLimitsResponse, now: Date): UsageWindow[] {
