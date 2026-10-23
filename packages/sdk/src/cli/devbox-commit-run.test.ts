@@ -5,12 +5,17 @@ import {
   readdir,
   realpath,
   rm,
+  stat,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { decodeCommitRun, encodeCommitRun } from './devbox-commit-run';
+import {
+  decodeCommitRun,
+  encodeCommitRun,
+  sweepStaleCommitWorktrees,
+} from './devbox-commit-run';
 import { executeDevboxAgentJob } from './devbox-runner';
 
 const dirs: string[] = [];
@@ -52,13 +57,22 @@ async function repositories() {
   await writeFile(join(author, 'pkg', 'value.txt'), 'second\n');
   git(author, 'commit', '--quiet', '-am', 'second');
   git(author, 'push', '--quiet', 'origin', 'HEAD:main');
-  return { runner, sha: git(author, 'rev-parse', 'HEAD') };
+  const sha = git(author, 'rev-parse', 'HEAD');
+  // A commit the server can serve by SHA but no origin branch contains, as
+  // with commits from another repository in a GitHub fork network.
+  await writeFile(join(author, 'pkg', 'value.txt'), 'fork only\n');
+  git(author, 'commit', '--quiet', '-am', 'fork');
+  const forkSha = git(author, 'rev-parse', 'HEAD');
+  git(author, 'push', '--quiet', 'origin', `${forkSha}:refs/pull/1/head`);
+  const stateDir = join(root, 'config', 'commit-runs');
+  return { root, runner, sha, forkSha, stateDir };
 }
 
 async function run(
   command: string[],
   cwd: string,
-  mode: 'trusted' | 'judge-only' = 'trusted'
+  mode: 'trusted' | 'judge-only' = 'trusted',
+  stateDir = join(cwd, '..', 'config', 'commit-runs')
 ) {
   const bodies: {
     events?: { message?: string }[];
@@ -76,6 +90,7 @@ async function run(
       env: {
         PATH: process.env.PATH ?? '/usr/bin:/bin',
         TUTURUUU_DEVBOX_EXECUTION_MODE: mode,
+        TUTURUUU_CONFIG: join(stateDir, '..', 'config.json'),
       },
       fetch: fetch as typeof globalThis.fetch,
       token: 'fixture',
@@ -129,11 +144,86 @@ describe('commit run on a trusted runner', { timeout: 30_000 }, () => {
     expect(messages).toContain('second');
     expect(messages).not.toContain('dirty runner state');
     expect(git(runner, 'worktree', 'list').split('\n')).toHaveLength(1);
+    expect(await readdir(join(runner, '..', 'config', 'commit-runs'))).toEqual(
+      []
+    );
+  });
+
+  it('never uses a pre-created shared /tmp path', async () => {
+    const { runner, sha, stateDir } = await repositories();
+    // The old predictable path another local account could pre-create.
+    const planted = join(tmpdir(), 'ttr-commit-run-run-commit');
+    await mkdir(planted, { recursive: true });
+    await writeFile(join(planted, 'value.txt'), 'attacker\n');
+    try {
+      const { result, messages } = await run(
+        encodeCommitRun({
+          sha,
+          prefix: 'pkg',
+          command: ['sh', '-c', 'pwd; cat value.txt'],
+        }),
+        runner
+      );
+      expect(result).toEqual({ exitCode: 0, status: 'succeeded' });
+      expect(messages).not.toContain('attacker');
+      expect(messages).not.toContain(planted);
+      expect(messages).toContain(stateDir);
+      expect((await stat(stateDir)).mode & 0o777).toBe(0o700);
+    } finally {
+      await rm(planted, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a commit that no origin branch contains', async () => {
+    const { runner, forkSha } = await repositories();
+    // Even with the object present locally (fetched by SHA or via another
+    // ref), it must be reachable from an origin branch.
+    git(runner, 'fetch', '--quiet', 'origin', 'refs/pull/1/head');
+    const { result, messages } = await run(
+      encodeCommitRun({ sha: forkSha, prefix: '', command: ['true'] }),
+      runner
+    );
+    expect(result).toEqual({ exitCode: 1, status: 'failed' });
+    expect(messages).toContain('is not on any origin branch');
+    expect(git(runner, 'worktree', 'list').split('\n')).toHaveLength(1);
+  });
+
+  it('checks the inner command policy before fetching', async () => {
+    const { runner } = await repositories();
+    const before = git(runner, 'for-each-ref', 'refs/remotes/origin/');
+    const { result, messages } = await run(
+      encodeCommitRun({
+        sha: 'f'.repeat(40),
+        prefix: '',
+        command: ['sudo', 'true'],
+      }),
+      runner
+    );
+    expect(result).toEqual({ exitCode: 1, status: 'failed' });
+    expect(messages).not.toContain('Could not fetch');
+    expect(git(runner, 'for-each-ref', 'refs/remotes/origin/')).toBe(before);
+  });
+
+  it('sweeps stale commit worktrees at agent startup', async () => {
+    const { runner, sha, stateDir } = await repositories();
+    git(runner, 'fetch', '--quiet', 'origin');
+    const stale = join(stateDir, 'ttr-commit-run-crashed-abc');
+    await mkdir(stale, { recursive: true });
+    git(
+      runner,
+      'worktree',
+      'add',
+      '--detach',
+      '--quiet',
+      join(stale, 'tree'),
+      sha
+    );
+    expect(git(runner, 'worktree', 'list').split('\n')).toHaveLength(2);
     expect(
-      (await readdir(tmpdir())).filter((name) =>
-        name.startsWith('ttr-commit-run-run-commit')
-      )
-    ).toEqual([]);
+      await sweepStaleCommitWorktrees({ checkout: runner, stateDir })
+    ).toBe(1);
+    expect(await readdir(stateDir)).toEqual([]);
+    expect(git(runner, 'worktree', 'list').split('\n')).toHaveLength(1);
   });
 
   it('fails cleanly for an unknown commit or missing directory', async () => {

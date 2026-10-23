@@ -13,6 +13,7 @@ import { agentRequest, withAgentRetries } from './devbox-agent-network';
 import {
   COMMIT_RUN_ENVELOPE,
   decodeCommitRun,
+  getCommitRunStateDir,
   prepareCommitWorktree,
 } from './devbox-commit-run';
 import { runProcessGroup } from './devbox-job-process';
@@ -282,10 +283,17 @@ export async function executeDevboxAgentJob(
     let runCwd: string;
     try {
       spec = decodeCommitRun(command);
+      // Refuse a blocked inner command before any fetch or checkout work.
+      const innerPolicy = evaluateDevboxCommandPolicy(spec.command);
+      if (!innerPolicy.allowed)
+        throw new Error(
+          innerPolicy.reason ?? 'Command is blocked in devboxes.'
+        );
       prepared = await prepareCommitWorktree({
         checkout: cwd,
         sha: spec.sha,
         runId: job.runId,
+        stateDir: getCommitRunStateDir(options.env ?? process.env),
       });
       runCwd = join(prepared.path, spec.prefix);
       if (!(await stat(runCwd).catch(() => undefined))?.isDirectory()) {
