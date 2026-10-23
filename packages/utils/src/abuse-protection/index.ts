@@ -10,6 +10,11 @@ import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database, Json } from '@tuturuuu/types';
 import { getUpstashRestRedisClient, hasUpstashRestEnv } from '../upstash-rest';
 import {
+  type ClientIpConfig,
+  type ClientIpHeaders,
+  resolveClientIp,
+} from './client-ip';
+import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
   MAX_BLOCK_LEVEL,
@@ -26,6 +31,7 @@ import type {
 } from './types';
 
 // Re-export types and constants
+export * from './client-ip';
 export * from './constants';
 export * from './reputation';
 export * from './types';
@@ -125,59 +131,17 @@ async function getRedisClient(): Promise<RedisClient | null> {
 }
 
 /**
- * Validate IP address format
- */
-function isValidIP(ip: string): boolean {
-  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-  const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
-  return ipv4Regex.test(ip) || ipv6Regex.test(ip);
-}
-
-/**
- * Extract client IP address from request headers
- * Works with Next.js headers() in Server Actions
+ * Extract the client IP address from request headers.
+ *
+ * Only headers set by the proxy this deployment is configured to trust are
+ * read (see `client-ip.ts`). Returns `'unknown'` when no trusted address is
+ * available; callers should still rate-limit and block-check that bucket.
  */
 export function extractIPFromHeaders(
-  headers: Headers | Map<string, string> | Record<string, string | null>
+  headers: ClientIpHeaders,
+  config?: ClientIpConfig
 ): string {
-  const getHeader = (name: string): string | null => {
-    if (headers instanceof Headers) {
-      return headers.get(name);
-    }
-    if (headers instanceof Map) {
-      return headers.get(name) || null;
-    }
-    return headers[name] || null;
-  };
-
-  // Check cf-connecting-ip (Cloudflare)
-  const cfIP = getHeader('cf-connecting-ip');
-  if (cfIP && isValidIP(cfIP)) {
-    return cfIP;
-  }
-
-  // Check true-client-ip (some Cloudflare/enterprise proxy setups)
-  const trueClientIP = getHeader('true-client-ip');
-  if (trueClientIP && isValidIP(trueClientIP)) {
-    return trueClientIP;
-  }
-
-  // Check x-forwarded-for after explicit client IP headers
-  const forwardedFor = getHeader('x-forwarded-for');
-  if (forwardedFor) {
-    const firstIP = forwardedFor.split(',')[0]?.trim();
-    if (firstIP && isValidIP(firstIP)) {
-      return firstIP;
-    }
-  }
-
-  // Check x-real-ip (Nginx)
-  const realIP = getHeader('x-real-ip');
-  if (realIP && isValidIP(realIP)) {
-    return realIP;
-  }
-
-  return 'unknown';
+  return resolveClientIp(headers, config);
 }
 
 /**

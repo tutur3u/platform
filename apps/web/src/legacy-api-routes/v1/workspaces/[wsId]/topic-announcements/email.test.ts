@@ -72,6 +72,7 @@ describe('topic announcement email helpers', () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    vi.stubEnv('TRUSTED_PROXY', 'forwarded');
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-19T00:00:00.000Z'));
     emailServiceMocks.fromWorkspace.mockReset();
