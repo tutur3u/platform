@@ -6,7 +6,8 @@ updatedAt: '2026-10-23'
 
 Tuturuuu is open source and a high-value target, so security review is a default
 part of delivery rather than an occasional audit. Three workflows carry the
-automated part. People and agents carry the review part, on the cadence below.
+automated part, with two small helpers that recompute the review check when a
+review changes. People and agents carry the review part, on the cadence below.
 No automated result is a security clearance. Each run is evidence for the listed
 sources at one commit.
 
@@ -19,7 +20,7 @@ sources at one commit.
 | Dependency audit (`bun audit`) | `security-checks.yaml` → **Dependency audit** | PRs and pushes that change a manifest or lockfile | High/critical advisory present at head but not at base |
 | Workflow trust boundaries | `security-checks.yaml` → **Workflow trust boundaries** | Changes under `.github/` or `scripts/ci/` | Any failing workflow security suite (`scripts/ci/workflow-*.test.js`, `security-*.test.js`, protected concurrency, workflow config) |
 | CodeQL (`security-extended`) | `codeql.yml` → **Analyze (language)** | PRs and `main` pushes; only languages the diff touches (`javascript-typescript`, `python`, `actions`) | High/critical result absent from the latest `main` analysis |
-| Security review classification | `security-review-classifier.yaml` → **Security review** check and `security-review-required` label | Every PR event | Reports `action_required` until an independent security review is recorded |
+| Security review classification | `security-review-classifier.yaml` → **Security review** check and `security-review-required` label; recomputed by `security-review-reclassify.yaml` | Every PR event (no path filter) and every review submission or dismissal | Reports `action_required` until an independent security review is recorded; `success` when no sensitive path changed |
 
 Path gating uses the same changed-file resolution as the `ci-check` switchboard
 (`tuturuuu.ci.ts` keys `security-checks.yaml` and `codeql.yml`). Unknown change
@@ -38,9 +39,17 @@ findings are tracked in the findings register instead of blocking unrelated work
 - `security-checks.yaml` and `codeql.yml` use `pull_request`, so fork runs get a
   read-only token and no secrets. Jobs install no packages and run no package
   scripts. `bun audit` reads only manifests and the lockfile.
-- Gitleaks configuration (`.github/security/gitleaks.toml`) and the scan
-  summarizers are read from the base commit, so a PR cannot allowlist or hide its
-  own finding. Allowlists are path-scoped with a reason; never allowlist by value.
+- Gitleaks configuration (`.github/security/gitleaks.toml`), the ignore list
+  (`.gitleaksignore`) and the scan summarizers are read from the base commit, so
+  a PR cannot allowlist or hide its own finding. The scan passes
+  `--ignore-gitleaks-allow`, so inline `gitleaks:allow` comments suppress
+  nothing, and it deletes the checkout's `.gitleaksignore` and `.gitleaks.toml`
+  first: gitleaks loads both from the scanned directory even when explicit paths
+  are given. To accept a finding, merge its fingerprint into `.gitleaksignore`
+  through a reviewed PR; it applies to later scans. Allowlists are path-scoped
+  with a reason; never allowlist by value. `scripts/ci/security-gitleaks-suppression.test.js`
+  proves this with a synthetic token, and the **Secret scan** job runs it against
+  the installed gitleaks release before scanning.
 - Fork CodeQL results are not uploaded. They feed only the new-alert gate.
 - Do not enable GitHub CodeQL default setup while `codeql.yml` exists. Code
   scanning rejects advanced-setup uploads when default setup is on.
@@ -68,17 +77,55 @@ Docs (`.md`, `.mdx`) and translation bundles are exempt. A file list at GitHub's
 When a PR matches, the workflow adds the `security-review-required` label and
 records a **Security review** check run on the head commit. The check concludes
 `success` only when a user listed in the repository variable `SECURITY_REVIEWERS`
-(comma separated, set by an admin) has approved that exact head commit and is not
-the PR author. After the review, re-run the classification run. A new commit
-requires a new approval.
+has approved that exact head commit and is not the PR author. A new commit
+requires a new approval. PRs that touch no sensitive path also get a
+**Security review** check, concluding `success`, so the check can be required.
+
+### `SECURITY_REVIEWERS`
+
+An admin sets this repository Actions variable (Settings → Secrets and
+variables → Actions → Variables). The value is a list of GitHub **user logins**,
+separated by commas and/or whitespace and matched case-insensitively, for
+example `vhpx` or `vhpx, another-reviewer`. Team slugs such as
+`tutur3u/security` are not expanded: they never match a reviewer login, so they
+behave like an empty list.
+
+The classifier fails closed. If the variable is unset or empty, or no listed user
+has approved the current head, a sensitive PR's check stays `action_required`
+(titled "SECURITY_REVIEWERS is not configured" when the list is empty). Approvals
+by the PR author, bots, unlisted users or of an older head never count.
+
+### Re-evaluation after reviews
+
+Submitting or dismissing a review starts `security-review-recheck.yaml`. That
+workflow runs on `pull_request_review` from the PR itself, has no permissions and
+only signals. `security-review-reclassify.yaml` (`workflow_run`, always the
+default-branch file) then checks out only the default-branch classifier. It finds
+the open PR whose live head matches the signal through the API, and recomputes
+the check from the current file list and reviews. The latest submitted review per
+reviewer decides, so a dismissed approval (`DISMISSED`) withdraws the success.
+Comments and draft reviews are ignored. Event fields serve only as lookup keys, so
+a spoofed signal can only cause an honest recomputation. A fork contributor's
+first workflow runs may wait for maintainer approval. Until then, re-run the
+latest classifier run or remove the label to recompute.
 
 The control cannot be bypassed by the PR author:
 
-- The workflow file and classifier come from the base/default branch.
+- The workflow files that hold write tokens and the classifier come from the
+  base/default branch.
 - Removing the label triggers a new run, which re-adds it.
 - Changing the classifier is itself a `ci` change that requires review.
 
-The integration owner must not merge a PR with a pending **Security review**
+### Enforcement
+
+The check is enforced only when a ruleset requires the **Security review** status
+check from the GitHub Actions app (integration ID `15368`). Pinning the app stops
+a same-named commit status or another app's check from satisfying it. It cannot
+stop a same-repository workflow holding `checks: write` from posting a same-named
+check, so keep the repository's default workflow token read-only. Treat a PR that
+adds such a workflow as a security review case. Organization admins with an
+`always` bypass skip the requirement, and GitHub records the bypass. Without that
+rule, the integration owner must not merge a PR with a pending **Security review**
 check. Before merging, re-derive the decision from `main`:
 `node -e "console.log(require('./scripts/ci/security-paths.js').classifyReview(process.argv.slice(1)))" <paths>`.
 
