@@ -1,6 +1,10 @@
 {
   "$comment": "Namespaces from shared packages that specific apps intentionally do not use. Remove entries as apps add the missing translations.",
-  "apps/web": ["certificates", "inventory-finance-reconciliation"],
+  "apps/web": [
+    "certificates",
+    "inventory-finance-reconciliation",
+    "satellite-account-settings"
+  ],
   "apps/tasks": [
     "invoice-subscriptions",
     "certificates",
@@ -91,7 +95,8 @@
     "ws-polls",
     "ws-presence",
     "ws-tasks",
-    "ws-tasks-labels"
+    "ws-tasks-labels",
+    "satellite-account-settings"
   ],
   "apps/rewise": [
     "invoice-subscriptions",

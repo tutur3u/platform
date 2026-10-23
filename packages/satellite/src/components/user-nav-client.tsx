@@ -13,6 +13,7 @@ import {
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getPublicProfileUrl } from '@tuturuuu/utils/public-profile-url';
 import { useTranslations } from 'next-intl';
 import {
@@ -25,9 +26,9 @@ import {
   useState,
 } from 'react';
 import { SidebarContext } from '../context/sidebar-context';
+import { SatelliteDefaultSettingsDialog } from './account-settings/default-settings-dialog';
 import { SatelliteAccountSwitcherMenu } from './account-switcher-menu';
 import { AppGuideOverlay } from './app-guide-overlay';
-import { GuidanceSettingsDialog } from './guidance-settings-dialog';
 import { LanguageWrapper } from './language-wrapper';
 import { claimSettingsDialogIntent } from './settings-dialog-intent';
 import { shouldOwnSettingsDialog } from './settings-dialog-ownership';
@@ -64,13 +65,13 @@ export default function UserNavClient({
   const sidebar = useContext(SidebarContext);
   const workspaceSelector = useWorkspaceSelector();
   const [reportOpen, setReportOpen] = useState(false);
+  const { modKey } = usePlatform();
   const {
     closeSettings,
     open: settingsOpen,
     openSettings: openSettingsTab,
     tab: settingsTab,
   } = useSettingsDialogUrlState();
-  const effectiveSettingsDialog = settingsDialog ?? <GuidanceSettingsDialog />;
   const ownsSettingsDialog = shouldOwnSettingsDialog(externalSettingsHost);
 
   // Cmd/Ctrl+, opens the app settings dialog — platform-wide convention, wired
@@ -125,6 +126,15 @@ export default function UserNavClient({
     };
   }, [closeSettings]);
 
+  const centralUrl =
+    ttrUrl ??
+    (process.env.NODE_ENV === 'production'
+      ? 'https://tuturuuu.com'
+      : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
+  // Apps without their own dialog still get the shared account tabs.
+  const effectiveSettingsDialog = settingsDialog ?? (
+    <SatelliteDefaultSettingsDialog centralUrl={centralUrl} user={user} />
+  );
   const renderedSettingsDialog = isValidElement(effectiveSettingsDialog)
     ? cloneElement(effectiveSettingsDialog, {
         defaultTab: settingsTab ?? undefined,
@@ -132,11 +142,6 @@ export default function UserNavClient({
       } as Record<string, unknown>)
     : effectiveSettingsDialog;
 
-  const centralUrl =
-    ttrUrl ??
-    (process.env.NODE_ENV === 'production'
-      ? 'https://tuturuuu.com'
-      : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
   const publicProfileUrl = getPublicProfileUrl(user?.handle, centralUrl);
   const secondaryLabel = resolveUserNavSecondaryLabel({
     email: user?.email,
@@ -190,6 +195,15 @@ export default function UserNavClient({
           t={t}
           sidebar={sidebar}
           signedIn={Boolean(user)}
+          settings={
+            user
+              ? {
+                  label: t('common.settings'),
+                  onOpen: openSettings,
+                  shortcut: `${modKey},`,
+                }
+              : undefined
+          }
           publicProfile={
             publicProfileUrl
               ? { href: publicProfileUrl, label: t('common.public_profile') }

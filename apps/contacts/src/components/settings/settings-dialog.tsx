@@ -7,7 +7,6 @@ import {
   Paintbrush,
   PanelLeft,
   Star,
-  User,
   Users,
 } from '@tuturuuu/icons';
 import {
@@ -18,8 +17,11 @@ import {
   parseWorkspaceConfigIdList,
 } from '@tuturuuu/internal-api/workspace-configs';
 import {
+  createAccountSettingsNavGroup,
+  SatelliteAccountSettingsPanel,
+} from '@tuturuuu/satellite/account-settings';
+import {
   createWorkspaceSettingsNavGroup,
-  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
@@ -45,12 +47,14 @@ import UsersManagementSettings from './users/users-management-settings';
 interface SettingsDialogProps {
   wsId?: string;
   user: WorkspaceUser | null;
+  centralUrl: string;
   defaultTab?: string;
 }
 
 export function SettingsDialog({
   wsId,
   user,
+  centralUrl,
   defaultTab = 'database_filters',
 }: SettingsDialogProps) {
   const t = useTranslations();
@@ -165,18 +169,7 @@ export function SettingsDialog({
         ]
       : []),
     ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
-    {
-      label: t('settings.user.title'),
-      items: [
-        {
-          name: 'profile',
-          label: t('settings.user.profile'),
-          icon: User,
-          description: t('settings.user.profile_description'),
-          keywords: ['Profile'],
-        },
-      ],
-    },
+    createAccountSettingsNavGroup(t),
     {
       label: t('settings.preferences.title'),
       items: [
@@ -269,9 +262,11 @@ export function SettingsDialog({
         <ReportDefaultTitleSettings workspaceId={wsId} />
       )}
 
-      {activeTab === 'profile' && user && (
-        <SatelliteProfileSettingsPanel user={user} />
-      )}
+      <SatelliteAccountSettingsPanel
+        activeTab={activeTab}
+        centralUrl={centralUrl}
+        user={user}
+      />
 
       {activeTab === 'appearance' && (
         <div className="h-full">

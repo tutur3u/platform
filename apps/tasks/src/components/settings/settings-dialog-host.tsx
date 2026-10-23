@@ -8,6 +8,7 @@ import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-d
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { useCallback, useEffect } from 'react';
+import { TTR_URL } from '@/constants/common';
 import { SettingsDialog } from './settings-dialog';
 
 interface SettingsDialogHostProps {
@@ -94,6 +95,7 @@ export function SettingsDialogHost({
     <Dialog open={settingsOpen} onOpenChange={handleOpenChange}>
       {settingsOpen && (
         <SettingsDialog
+          centralUrl={TTR_URL}
           boardId={extras.settingsBoardId ?? undefined}
           defaultTab={tab ?? undefined}
           onBoardSettingsOpen={handleBoardSettingsOpen}

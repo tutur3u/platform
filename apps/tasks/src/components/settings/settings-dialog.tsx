@@ -21,12 +21,14 @@ import {
   Share2,
   Sparkle,
   Tags,
-  User,
 } from '@tuturuuu/icons';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import {
+  createAccountSettingsNavGroup,
+  SatelliteAccountSettingsPanel,
+} from '@tuturuuu/satellite/account-settings';
+import {
   createWorkspaceSettingsNavGroup,
-  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
@@ -66,6 +68,7 @@ interface SettingsDialogProps {
   boardId?: string;
   wsId?: string;
   user: WorkspaceUser | null;
+  centralUrl: string;
   defaultTab?: string;
   onBoardSettingsOpen?: (boardId: string) => void;
   workspace?: Workspace | null;
@@ -83,6 +86,7 @@ export function SettingsDialog({
   boardId,
   wsId,
   user,
+  centralUrl,
   defaultTab = 'tasks_general',
   onBoardSettingsOpen,
   workspace: workspaceProp,
@@ -239,18 +243,7 @@ export function SettingsDialog({
         ],
       },
       ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
-      {
-        label: t('settings.user.title'),
-        items: [
-          {
-            name: 'profile',
-            label: t('settings.user.profile'),
-            icon: User,
-            description: t('settings.user.profile_description'),
-            keywords: ['Profile'],
-          },
-        ],
-      },
+      createAccountSettingsNavGroup(t),
       {
         label: t('settings.preferences.title'),
         items: [
@@ -392,9 +385,11 @@ export function SettingsDialog({
         <TaskDraftsSettings wsId={wsId} />
       )}
 
-      {activeTab === 'profile' && user && (
-        <SatelliteProfileSettingsPanel user={user} />
-      )}
+      <SatelliteAccountSettingsPanel
+        activeTab={activeTab}
+        centralUrl={centralUrl}
+        user={user}
+      />
 
       {activeTab === 'app_install' && (
         <PwaStatus

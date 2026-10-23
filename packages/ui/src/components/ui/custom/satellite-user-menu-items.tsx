@@ -10,6 +10,7 @@ import {
   PanelLeft,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
   SquareMousePointer,
 } from '@tuturuuu/icons';
 import {
@@ -17,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -39,6 +41,7 @@ export function SatelliteUserMenuItems({
   workspaceSelect,
   signedIn,
   publicProfile,
+  settings,
   onReport,
   onLogout,
 }: {
@@ -66,6 +69,8 @@ export function SatelliteUserMenuItems({
   workspaceSelect?: ReactNode;
   signedIn: boolean;
   publicProfile?: { href: string; label: string };
+  /** Opens the in-app settings dialog (shared `?settingsTab=` contract). */
+  settings?: { label: string; onOpen: () => void; shortcut?: string };
   onReport: () => void;
   onLogout: () => void;
 }) {
@@ -82,6 +87,21 @@ export function SatelliteUserMenuItems({
       <DropdownMenuGroup>
         {signedIn && publicProfile && (
           <PublicProfileMenuItem {...publicProfile} />
+        )}
+        {signedIn && settings && (
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={(event) => {
+              event.preventDefault();
+              settings.onOpen();
+            }}
+          >
+            <Settings className="h-4 w-4 text-dynamic-blue" />
+            <span>{settings.label}</span>
+            {settings.shortcut && (
+              <DropdownMenuShortcut>{settings.shortcut}</DropdownMenuShortcut>
+            )}
+          </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>
           <a

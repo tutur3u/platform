@@ -1,7 +1,10 @@
 'use client';
 
-import { Paintbrush, PanelLeft, User } from '@tuturuuu/icons';
-import { SatelliteProfileSettingsPanel } from '@tuturuuu/satellite/workspace-settings';
+import { Paintbrush, PanelLeft } from '@tuturuuu/icons';
+import {
+  createAccountSettingsNavGroup,
+  SatelliteAccountSettingsPanel,
+} from '@tuturuuu/satellite/account-settings';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
@@ -11,27 +14,18 @@ import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
 
 export function SettingsDialog({
+  centralUrl,
   defaultTab = 'profile',
   user,
 }: {
+  centralUrl: string;
   defaultTab?: string;
   user: WorkspaceUser | null;
   wsId?: string;
 }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const navItems = [
-    {
-      items: [
-        {
-          description: 'Manage your account profile',
-          icon: User,
-          keywords: ['Profile'],
-          label: 'Profile',
-          name: 'profile',
-        },
-      ],
-      label: 'Account',
-    },
+    createAccountSettingsNavGroup(t),
     {
       items: [
         {
@@ -60,9 +54,11 @@ export function SettingsDialog({
       navItems={navItems}
       onActiveTabChange={setActiveTab}
     >
-      {activeTab === 'profile' && user && (
-        <SatelliteProfileSettingsPanel user={user} />
-      )}
+      <SatelliteAccountSettingsPanel
+        activeTab={activeTab}
+        centralUrl={centralUrl}
+        user={user}
+      />
       {activeTab === 'appearance' && (
         <AppearanceSettings
           canManageVersionBadge={isExactTuturuuuDotComEmail(user?.email)}

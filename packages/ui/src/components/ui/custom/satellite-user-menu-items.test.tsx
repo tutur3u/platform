@@ -11,6 +11,7 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => {
       'DropdownMenuItem',
       'DropdownMenuPortal',
       'DropdownMenuSeparator',
+      'DropdownMenuShortcut',
       'DropdownMenuSub',
       'DropdownMenuSubContent',
       'DropdownMenuSubTrigger',
@@ -58,4 +59,24 @@ it('does not expose a profile link in a signed-out menu even if an adapter suppl
     />
   );
   expect(html).not.toContain('/u/creator');
+});
+it('offers a Settings entry for signed-in users that opens the settings dialog', () => {
+  const html = renderToStaticMarkup(
+    <SatelliteUserMenuItems
+      {...props}
+      settings={{ label: 'Settings', onOpen: vi.fn(), shortcut: '⌘,' }}
+    />
+  );
+  expect(html).toContain('Settings');
+  expect(html).toContain('⌘,');
+});
+it('hides the Settings entry in a signed-out menu', () => {
+  const html = renderToStaticMarkup(
+    <SatelliteUserMenuItems
+      {...props}
+      signedIn={false}
+      settings={{ label: 'Settings', onOpen: vi.fn() }}
+    />
+  );
+  expect(html).not.toContain('Settings');
 });

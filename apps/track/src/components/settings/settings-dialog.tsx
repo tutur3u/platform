@@ -10,11 +10,13 @@ import {
   LayoutGrid,
   Paintbrush,
   PanelLeft,
-  User,
 } from '@tuturuuu/icons';
 import {
+  createAccountSettingsNavGroup,
+  SatelliteAccountSettingsPanel,
+} from '@tuturuuu/satellite/account-settings';
+import {
   createWorkspaceSettingsNavGroup,
-  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
@@ -38,12 +40,14 @@ import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-type
 interface SettingsDialogProps {
   wsId?: string;
   user: WorkspaceUser | null;
+  centralUrl: string;
   defaultTab?: string;
 }
 
 export function SettingsDialog({
   wsId,
   user,
+  centralUrl,
   defaultTab = 'profile',
 }: SettingsDialogProps) {
   const t = useTranslations();
@@ -112,18 +116,7 @@ export function SettingsDialog({
       ],
     },
     ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
-    {
-      label: t('settings.user.title'),
-      items: [
-        {
-          name: 'profile',
-          label: t('settings.user.profile'),
-          icon: User,
-          description: t('settings.user.profile_description'),
-          keywords: ['Profile'],
-        },
-      ],
-    },
+    createAccountSettingsNavGroup(t),
     {
       label: t('settings.preferences.title'),
       items: [
@@ -196,9 +189,11 @@ export function SettingsDialog({
         </div>
       )}
 
-      {activeTab === 'profile' && user && (
-        <SatelliteProfileSettingsPanel user={user} />
-      )}
+      <SatelliteAccountSettingsPanel
+        activeTab={activeTab}
+        centralUrl={centralUrl}
+        user={user}
+      />
 
       {activeTab === 'appearance' && (
         <div className="h-full">

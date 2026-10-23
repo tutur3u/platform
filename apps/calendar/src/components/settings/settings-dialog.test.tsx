@@ -150,6 +150,7 @@ function renderSettingsDialog(wsId = 'workspace-1') {
   return render(
     <QueryClientProvider client={queryClient}>
       <SettingsDialog
+        centralUrl="https://tuturuuu.com"
         wsId={wsId}
         user={
           {
@@ -164,6 +165,19 @@ function renderSettingsDialog(wsId = 'workspace-1') {
 }
 
 describe('Calendar settings dialog', () => {
+  it('includes the shared account tabs', () => {
+    getWorkspaceMock.mockResolvedValue({ id: 'workspace-1' });
+    listCalendarConnectionsMock.mockResolvedValue([]);
+
+    renderSettingsDialog();
+
+    for (const tab of ['profile', 'accounts', 'security', 'sessions']) {
+      expect(
+        screen.getAllByText(`satellite-account-settings.${tab}`).length
+      ).toBeGreaterThan(0);
+    }
+  });
+
   it('shows lunar settings and the integrations tab', () => {
     getWorkspaceMock.mockResolvedValue({ id: 'workspace-1' });
     listCalendarConnectionsMock.mockResolvedValue([]);
