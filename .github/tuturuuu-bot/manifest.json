@@ -1,0 +1,18 @@
+{
+  "name": "tuturuuu-bot",
+  "description": "Dedicated least-privilege automation and agent identity for tutur3u/platform.",
+  "url": "https://github.com/tutur3u/platform",
+  "hook_attributes": {
+    "active": false,
+    "url": "https://github.com/tutur3u/platform"
+  },
+  "public": false,
+  "default_permissions": {
+    "actions": "write",
+    "contents": "write",
+    "issues": "write",
+    "metadata": "read",
+    "pull_requests": "write"
+  },
+  "default_events": []
+}

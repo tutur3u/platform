@@ -1,0 +1,418 @@
+---
+title: 'Tuturuuu Bot'
+description: 'Owner setup, scoped automation identity and credential boundaries for tuturuuu-bot.'
+---
+
+`tuturuuu-bot` is a private GitHub App owned by `tutur3u`, installed only on
+`tutur3u/platform`. Its webhook is inactive and it subscribes to no events.
+The App separates automation authorship from `vhpx`'s human review identity.
+This change supplies configuration; it does not create or install the App.
+
+## Owner setup
+
+Only the owner performs credential setup, outside agent sessions and recordings.
+
+1. Review `.github/tuturuuu-bot/manifest.json`. Start the
+   [GitHub manifest flow](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest)
+   by submitting that JSON as the `manifest` form field in a **POST** to
+   `https://github.com/organizations/tutur3u/settings/apps/new`.
+   A GET link alone does not submit the manifest. Use an owner-controlled form
+   and callback, set a random `state`, add its `redirect_url` to a local copy of
+   the manifest, and verify the callback state. Exchange the returned temporary
+   code using `POST https://api.github.com/app-manifests/{code}/conversions`
+   within one hour. This response contains credentials: route it directly to the
+   owner's credential manager, never terminal output, git, chat or an agent.
+   If no trusted manifest callback exists, use **Organization settings →
+   Developer settings → GitHub Apps → New GitHub App**, transcribe this manifest's
+   fields, disable the webhook and choose **Only on this account**. Generate the
+   private key there as the owner. No callback service is deployed by this PR.
+2. Confirm the available slug is exactly `tuturuuu-bot`; GitHub App names are
+   globally unique. Confirm private visibility and the permission table below.
+3. Click **Install App → tutur3u → Only select repositories → platform → Install**.
+   Do not select all repositories. Record the installation ID from the install URL.
+4. In **platform → Settings → Secrets and variables → Actions → Variables**, add
+   `TUTURUUU_BOT_APP_ID` using the numeric App ID. Stage the private key first:
+   save it as Actions secret `TUTURUUU_BOT_PRIVATE_KEY`, then enable the variable.
+   Prefer a dedicated protected environment after migrating each minting job to
+   that environment and testing its approval/branch restrictions. The current jobs
+   use a repository secret; an environment-only secret will not be available yet.
+   Do not add broad environment access just to make a skipped job run.
+5. For local agents, the owner imports the key using Keychain Access into a generic
+   password named `tuturuuu-bot-private-key`. Restrict access to the trusted launcher
+   and owner session. Set non-secret `TUTURUUU_BOT_APP_ID` and
+   `TUTURUUU_BOT_INSTALLATION_ID` in that session. Agents never receive or inspect
+   the key. The helper reads it only in process memory using macOS `security`.
+6. After reviewed code reaches its existing release branches, run one eligible
+   release/dispatch job. Confirm the actor, repository restriction, requested
+   permissions and automatic revocation. Check that resulting PR authors are
+   `tuturuuu-bot[bot]` and all existing review/CI gates remain required. Test a local
+   push to an owned feature branch and PR creation before retiring the old PAT.
+   Do not dispatch production publication merely to test authentication.
+
+## Permissions
+
+| App permission | Why it is needed | Token restriction |
+| --- | --- | --- |
+| Contents: write | Release Please creates tags/releases and generated branches; local agents push owned branches. | Release job only; explicitly requested local tokens. |
+| Pull requests: write | Release Please creates/updates release PRs; local agents create PRs. | Release job only; explicitly requested local tokens. |
+| Issues: write | Release Please manages release labels and issue comments. | Release job only; explicitly requested local tokens. |
+| Actions: write | Dispatch dependent package releases and TestFlight review retries. | Dispatch jobs only; explicitly requested local tokens. |
+| Metadata: read | Required repository/installation metadata. | Implicit GitHub App baseline. |
+
+No migrated consumer creates check runs: **checks:write is omitted**. There is
+no workflows, administration, deployment, secrets or ruleset bypass permission.
+No migrated job intentionally writes workflow files. Release formatting validates
+its generated-file set; a future workflow-writing use requires a separate review.
+The App must never approve PRs or be added as a ruleset bypass actor. GitHub's
+pull-request permission also permits review APIs, so this is an operational
+constraint, not a permission-level prohibition.
+
+## Workflow trust and fallback
+
+App minting uses SHA-pinned `actions/create-github-app-token`, with explicit
+`permission-*` inputs and repository `platform`. The action revokes its token at
+job cleanup. See the [action documentation](https://github.com/actions/create-github-app-token/tree/fee1f7d63c2ff003460e3d139729b119787bc349).
+Only trusted main/production refs in this repository can mint. No App minting job
+accepts fork events, `pull_request_target`, or untrusted checkout/code.
+
+While `vars.TUTURUUU_BOT_APP_ID` is empty, the mint step skips and the consumer
+uses its original token expression, including `RELEASE_PLEASE_TOKEN` for Release
+Please. When the variable is set but the key/installation is invalid, minting
+fails closed. It does not silently fall back after an authentication failure.
+All workflow permissions, triggers, setup-node lines and existing gates remain
+unchanged. Existing unpinned actions outside the inserted steps belong to the
+separate action-pinning lane; this change introduces only a pinned action.
+
+Release auto-merge retains its current PAT/GITHUB_TOKEN because it synchronizes
+protected branches, including workflow files. Do not give the App bypass or
+workflows authority to preserve that legacy path. Retire the PAT only after a
+separate redesign and owner acceptance. Fork-visible comments, deployment
+markers, OIDC attestations and job-scoped checks keep their existing tokens.
+External Vercel, Cloudflare, Supabase, Modal, Turbo, Codecov and store/vault tokens
+are service credentials, not GitHub PATs, and must not be replaced with App tokens.
+
+## Local agent usage
+
+Run commands from trusted code on an owner-controlled macOS host:
+
+```sh
+node scripts/tuturuuu-bot-token.js --permissions contents=write -- git push origin HEAD
+node scripts/tuturuuu-bot-token.js --permissions contents=read,pull_requests=write -- gh pr create --repo tutur3u/platform
+```
+
+The helper accepts only `gh pr create` or `git push` children, explicit allowed permission names,
+a numeric installation ID and the fixed GitHub API origin. It always requests
+only repository `platform`. It signs RS256 JWTs in memory, rejects file/env keys,
+does not offer token-printing modes and gives `GH_TOKEN`/`GITHUB_TOKEN` to the
+child environment. Git receives temporary credential-helper config; the helper
+never invokes `gh auth login`, `gh auth setup-git` or writes credentials/config.
+Use an HTTPS GitHub remote; SSH uses the host's SSH identity instead of this token.
+Use `--repo tutur3u/platform` for gh operations. Workflows cannot be pushed with
+this helper's permission allowlist. No 1Password adapter is implemented.
+
+The child exit status is preserved and the token is revoked on normal completion,
+child failure or wrapper error after minting. Requests have 15-second deadlines;
+the child has a 50-minute deadline. Abrupt termination, host failure or network
+failure may prevent revocation; GitHub installation tokens expire within an hour.
+The owner must monitor and revoke unknown outcomes instead of blindly replaying
+writes. Authentication failures do not prove an earlier push/PR did not complete.
+
+### Threat model and revocation
+
+The trusted boundary includes the host user, Keychain ACLs, wrapper source, Node,
+Git, gh, PATH, repository hooks/config and the child command. Do not run this helper
+from an unreviewed checkout or expose its process/environment through diagnostics.
+Malicious same-user code, child commands, hooks or debuggers can steal in-memory
+keys/tokens. Child output is inherited: a deliberately hostile gh/git command can
+print environment-derived credentials; the wrapper cannot sandbox trusted tools.
+Never use verbose HTTP tracing, shell tracing, credential inspection, commands
+that print tokens, or commands that persist auth. Keychain-only storage prevents
+accidental repository/env-file leaks, not a compromised host. Child env receives
+no App configuration or key; errors from signing, Keychain and API are replaced
+with fixed messages so response bodies and exception text cannot leak secrets.
+The helper performs no automatic retries and follows no API redirects.
+
+For rotation, the owner creates a second private key in App settings, replaces
+Actions/Keychain credentials privately, validates a narrowly scoped operation,
+then deletes the old App key. Do not commit downloaded PEMs. Delete any temporary
+owner download after secure import. Removing a key does not reliably revoke every
+already-issued installation token: revoke those tokens explicitly or suspend the
+installation. For emergency revocation, **Organization settings → GitHub Apps →
+tuturuuu-bot → Suspend/Uninstall**; delete compromised App keys and Keychain items,
+remove the Actions secret and clear the App ID variable. Clearing the variable
+alone re-enables the old fallback and is not credential revocation. Revoke any old
+PAT independently. Review the org audit log and affected writes before resuming.
+
+## Human review
+
+PRs authored by `tuturuuu-bot[bot]` are normal PRs. `vhpx` is a different principal,
+so vhpx's approval counts as independent human review, subject to the repository's
+rules. Commit coauthor trailers do not determine the PR author; authentication at
+`gh pr create` does. This bootstrap PR may still be created by the existing
+identity because the App is not provisioned yet. The bot never approves PRs.
+The classifier remains owned by #6456 and is unchanged. Validate the live ruleset
+and classifier after installation; source configuration is not runtime acceptance.
+
+## Inventory and follow-up
+
+The inventory includes workflows with write permissions, dispatch triggers, token
+references, comments or release automation, and matching non-test scripts under
+`scripts/`. Explicit job scopes are reported below. Read-only jobs and service
+credential references are retained to make the audit boundary visible.
+Regenerate after upstream workflow changes:
+
+```sh
+node scripts/ci/tuturuuu-bot-inventory.js --write
+node --test scripts/ci/tuturuuu-bot-token.test.js scripts/ci/tuturuuu-bot-workflows.test.js
+```
+
+Reserved files: `discord-modal-deploy.yml`, `supabase-staging.yaml`,
+`supabase-production.yaml`, `production-package-resume.yaml`,
+`release-please-transient-retry.yaml`, security-checks and security-review-classifier
+workflows, plus classifier code (#6459/#6456). They require owner-led follow-up
+migration after their current PRs land. No setup-node or action-hardening changes
+are included. CI on the exact PR commit and independent credential/security review
+remain integration gates; mocked helper tests do not prove a live installation.
+
+<!-- bot-inventory:start -->
+| Workflow | Decision | Scope and reason |
+| --- | --- | --- |
+| `actions-storage-report.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read, deployments=read; actions=read, contents=read. |
+| `apps-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read; contents=read, actions=read, deployments=read; contents=read, actions=read, deployments=write. |
+| `biome-check.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, actions=read; contents=read, pull-requests=read; contents=write, pull-requests=write. |
+| `branch-name-check.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: inherited repository default (not inferred). |
+| `calendar-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read, actions=read, deployments=read; contents=read, actions=read, deployments=write. |
+| `calendar-generation-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `check-and-bump-versions.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: inherited repository default (not inferred). |
+| `check-migration-timestamps.yml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `check-migrations.yml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `ci-check.yml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read, deployments=read. |
+| `codecov.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read, deployments=read; contents=read, actions=read; contents=read. |
+| `codeql.yml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: actions=read, contents=read, packages=read, security-events=write. |
+| `codex-plugin.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read. |
+| `colab-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read, deployments=write. |
+| `connected-mail-accounts-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `coordination-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read, deployments=write. |
+| `creator-identity-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `cron-control-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read, deployments=write. |
+| `desktop-beta.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read; contents=read, deployments=read, id-token=write; contents=write, id-token=write, attestations=write. |
+| `desktop-store-draft.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read, deployments=read. |
+| `devbox-control-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read, deployments=write. |
+| `discord-modal-deploy.yml` | b: follow-up | Reserved by #6459/#6456 or the owning release lane; no edits here. Current job scopes: contents=read. |
+| `discord-python-ci.yml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `docker-setup-check.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `docs-seo-check.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `e2e-tests.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=read, actions=read, packages=read; contents=read, packages=write; contents=read, packages=read; contents=read. |
+| `employee-schema-contract.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read, deployments=read; contents=read. |
+| `external-internal-packages.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read. |
+| `external-project-storage-analytics-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `i18n-check.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read; contents=read, pull-requests=write. |
+| `inventory-offline-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `lettin-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read, deployments=write. |
+| `mail-calendar-tasks-builds.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `mail-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read, actions=read, deployments=read; contents=read, actions=read, deployments=write. |
+| `meet-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read; contents=read, deployments=write. |
+| `mobile-api-mappings.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `mobile-build-android.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `mobile-build-ios.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `mobile-build-linux.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read. |
+| `mobile-build-macos.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `mobile-build-windows.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `mobile-deploy-stores.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: actions=read, contents=read, deployments=read, id-token=write. |
+| `mobile-testflight-review-queue.yaml` | a: App + existing fallback | dispatch: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read, deployments=read. |
+| `mobile.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `parley-cloudflare.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read, deployments=write. |
+| `parley-offline-diagnostic.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read, actions=read. |
+| `periodic-report-delivery-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `playground-runtime-acceptance.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `production-package-resume.yaml` | b: follow-up | Reserved by #6459/#6456 or the owning release lane; no edits here. Current job scopes: contents=read, actions=write, deployments=write. |
+| `programming-app-builds.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `programming-database-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `release-ai-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-apis-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-devbox-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-editor-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-google-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-hooks-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-icons-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-internal-api-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-please-auto-merge.yaml` | b: retain current PAT/GITHUB_TOKEN | Protected main/production sync can push workflow files; App has no workflows permission or bypass. Requires separate redesign, never grant bypass. Current job scopes: contents=write, actions=read, pull-requests=read. |
+| `release-please-transient-retry.yaml` | b: follow-up | Reserved by #6459/#6456 or the owning release lane; no edits here. Current job scopes: actions=write, contents=read. |
+| `release-please.yaml` | a: App + existing fallback | release-please: contents=write, issues=write, pull-requests=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: contents=write, issues=write, pull-requests=write. |
+| `release-sdk-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-supabase-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-types-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-typescript-config-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-ui-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `release-utils-package.yaml` | a: App + existing fallback | dispatch-dependent-releases: actions=write. Other jobs retain job-bound read/OIDC/lifecycle tokens. Current job scopes: actions=write, contents=read; contents=read; contents=read, id-token=write. |
+| `report-review-receipts-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `rust-backend.yml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `rust-verify.yml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read. |
+| `sdk-package-qualification.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read. |
+| `sdk-version-bump.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: inherited repository default (not inferred). |
+| `security-egress-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `sso-persistence-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `supabase-baseline.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read. |
+| `supabase-production.yaml` | b: follow-up | Reserved by #6459/#6456 or the owning release lane; no edits here. Current job scopes: actions=read, contents=read, deployments=read; contents=read, deployments=write. |
+| `supabase-staging.yaml` | b: follow-up | Reserved by #6459/#6456 or the owning release lane; no edits here. Current job scopes: contents=read, deployments=write. |
+| `tanstack-route-manifest.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: inherited repository default (not inferred). |
+| `time-tracker-control-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `topic-delivery-foundation-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `turbo-unit-tests.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read, deployments=read; contents=read, actions=read; contents=read. |
+| `tutoring-absence-credit-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `tutoring-teacher-hours-contract.yaml` | b: keep GITHUB_TOKEN | Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers. Current job scopes: contents=read, deployments=read; contents=read. |
+| `type-check.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read. |
+| `vercel-preview-ai.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-apps.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-calendar.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-chat.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-cms.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-contacts.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-drive.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-finance.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-forms.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-git.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-infrastructure.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-inventory.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-learn.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-mail.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-meet.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-mind.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-nova.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-pay.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-platform.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-rewise.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-shortener.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-storefront.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-tanstack-web.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-tasks.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-teach.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-tools.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-preview-track.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-ai.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-apps.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read; contents=read, deployments=write. |
+| `vercel-production-calendar.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read; contents=read, deployments=write. |
+| `vercel-production-chat.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-cms.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-contacts.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-drive.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-finance.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-forms.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-git.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-infrastructure.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-inventory.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-learn.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-mail.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read; contents=read, deployments=write. |
+| `vercel-production-meet.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read; contents=read, deployments=write. |
+| `vercel-production-mind.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-nova.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-pay.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-platform.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: actions=write, contents=read, deployments=write. |
+| `vercel-production-rewise.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-shortener.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-storefront.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-tanstack-web.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-tasks.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-teach.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-tools.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production-track.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, deployments=write. |
+| `vercel-production.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: actions=write, contents=read, deployments=write. |
+| `wave1-native-app.yaml` | b: keep GITHUB_TOKEN | No explicit GitHub write scope; retain the current job/default token. External service secrets are not GitHub identities. Current job scopes: contents=read, actions=read, deployments=read. |
+| `wave1-native-publish.yaml` | b: keep GITHUB_TOKEN | Job-bound deployment, OIDC, package/attestation, security or Actions lifecycle capability; outside this App identity scope. Current job scopes: contents=read, actions=read, deployments=write. |
+
+### Scripts
+
+| Script | Decision and scope |
+| --- | --- |
+| `scripts/apple-p8-jwt-signer.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/benchmark-web-setups.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/chatgpt-connect.ts` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/check-cloudflare-workers.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/check-docker-web.js` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/check-internal-app-auth.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/check-mobile-api-mappings.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/check-mobile.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/check-satellite-cookie-auth.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/check.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/actions-storage-report.ts` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/ci/build-release-setup.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/check-completed-validation.js` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/ci/check-production-migration-recovery.ts` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/e2e-diagnostics-redact.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/e2e-image-bundle-ghcr.js` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/ci/e2e-image-bundle-registry.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/e2e-result-plan.js` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/ci/e2e-result-receipt.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/github-deployment-markers.ts` | b: job-bound deployments write; App deliberately has no deployment authority. |
+| `scripts/ci/mail-calendar-tasks-affected.ts` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/mail-profile-result-summary.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/mail-profile-runtime-preflight.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/meet-native-graph.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/meet-native-probe.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/meet-native-profile.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/meet-native-response-diagnostics.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/normalize-release-description.js` | a: release-please caller now injects App token (contents/issues/pull-requests write); other callers retain their existing token. No token lookup API change. |
+| `scripts/ci/overflow-notes-ci.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/package-release-readiness.js` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/ci/record-deployment-marker.ts` | b: job-bound deployments write; App deliberately has no deployment authority. |
+| `scripts/ci/record-vercel-deployment.ts` | b: job-bound deployments write; App deliberately has no deployment authority. |
+| `scripts/ci/release-docs-inventory.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/release-only-changes.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/release-please-auto-approve-core.js` | b: approval identity remains GITHUB_TOKEN; never pass the App token. |
+| `scripts/ci/release-please-auto-approve.js` | b: approval identity remains GITHUB_TOKEN; never pass the App token. |
+| `scripts/ci/release-please-overflow-recovery-core.js` | a: release-please caller now injects App token (contents/issues/pull-requests write); other callers retain their existing token. No token lookup API change. |
+| `scripts/ci/release-please-overflow-recovery.js` | a: release-please caller now injects App token (contents/issues/pull-requests write); other callers retain their existing token. No token lookup API change. |
+| `scripts/ci/release-workspace-lock.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/replay-parley-worker.py` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/resolve-changed-files-core.ts` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/resolve-production-vercel-targets.ts` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/resume-production-package-deployment-test-fixture.js` | b: reserved follow-up with production-package-resume. |
+| `scripts/ci/resume-production-package-deployment.js` | b: reserved follow-up with production-package-resume. |
+| `scripts/ci/sdk-qualification-phase.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/supabase-image-cache.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/verify-meet-start-output.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/verify-staged-critical-app.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/wait-release-pr.mjs` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/ci/wave1-native-admission.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/wave1-native-attempt.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/wave1-native-publish.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/wave1-native-runtime.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/ci/workflow-config-test-helpers.js` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/desktop-deployment/draft-release.mjs` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/desktop-deployment/package-vault-ci.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/desktop-deployment/publish.mjs` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/desktop-deployment/vault-fetch.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/desktop-deployment/verify-provenance.mjs` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/desktop-deployment/windows-signing.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/devbox-cli-upgrades.ts` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/docker-web/blue-green.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/docker-web/env.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/docker-web.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/doctor.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/e2e-local-environment.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/generate-app-seo.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/git-commit-window.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/git-release-please.js` | b: protected-branch/workflow sync retains owner credentials; App has no bypass or workflow permission. |
+| `scripts/mobile-deployment/build-name.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/mobile-deployment/build-test-notes.mjs` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/mobile-deployment/release-history.mjs` | b: retain job-bound/caller credential for reads and existing gates; local authorized feature-branch writes use the bot wrapper. No embedded PAT. |
+| `scripts/mobile-deployment/test_firebase_service_config.py` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/mobile-deployment/verify-store.mjs` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/run-i18n-check.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/run-web-docker-next-build.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/run-web-e2e-docker.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/setup-redis.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/smoke-cloudflare-workers.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/sync-platform-release-version.js` | b: protected-branch/workflow sync retains owner credentials; App has no bypass or workflow permission. |
+| `scripts/sync-polar-catalog.ts` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/tanstack-cutover-gates.js` | b: service credential or validation reference; retain the existing caller/job token. No new GitHub write identity. |
+| `scripts/tuturuuu-bot-token.js` | a: Keychain wrapper; explicit platform-only scopes, ephemeral child environment. |
+| `scripts/watch-blue-green/build-lock.js` | b: existing scoped broker or explicit caller credential for read-only deployment observation; no App key in this observer. |
+| `scripts/watch-blue-green/deploy-watcher-lock-status.js` | b: existing scoped broker or explicit caller credential for read-only deployment observation; no App key in this observer. |
+| `scripts/watch-blue-green/deploy-watcher-watched-paths.js` | b: existing scoped broker or explicit caller credential for read-only deployment observation; no App key in this observer. |
+| `scripts/watch-blue-green/deploy-watcher.impl.js` | b: existing scoped broker or explicit caller credential for read-only deployment observation; no App key in this observer. |
+| `scripts/watch-blue-green/github-checks.js` | b: existing scoped broker or explicit caller credential for read-only deployment observation; no App key in this observer. |
+| `scripts/watch-blue-green/github-token-provider.js` | b: existing scoped broker or explicit caller credential for read-only deployment observation; no App key in this observer. |
+| `scripts/watch-blue-green/projects.js` | b: existing scoped broker or explicit caller credential for read-only deployment observation; no App key in this observer. |
+| `scripts/watch-blue-green/telemetry.js` | b: existing scoped broker or explicit caller credential for read-only deployment observation; no App key in this observer. |
+<!-- bot-inventory:end -->

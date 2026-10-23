@@ -842,7 +842,6 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
     'release-please.yaml',
     'release-please'
   );
-
   assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
   assert.match(workflow, /\n {2}workflow_dispatch:\n/);
   assert.match(
@@ -873,7 +872,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   );
   assert.match(
     releaseJob,
-    /GITHUB_TOKEN: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
+    /GITHUB_TOKEN: \$\{\{ steps\.bot-token\.outputs\.token \|\| secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
   );
   assert.match(releaseJob, /uses: googleapis\/release-please-action@v5/);
   assert.match(
@@ -886,7 +885,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   );
   assert.match(
     releaseJob,
-    /token: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
+    /token: \$\{\{ steps\.bot-token\.outputs\.token \|\| secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
   );
   assert.match(releaseJob, /target-branch: production/);
   assert.match(releaseJob, /config-file: release-please-config\.json/);
@@ -1762,7 +1761,6 @@ test('package publish workflows release from production version bumps', () => {
       workflowName,
       'dispatch-dependent-releases'
     );
-
     for (const [jobName, jobBlock] of Object.entries({
       build: buildJob,
       'check-ci': checkCiJob,
@@ -1775,7 +1773,6 @@ test('package publish workflows release from production version bumps', () => {
     })) {
       assertNeedsReferencesAreDeclared({ jobBlock, jobName, workflowName });
     }
-
     assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
     assert.match(workflow, new RegExp(`"${packagePath}/package\\.json"`));
     assert.match(workflow, new RegExp(`"\\.github/workflows/${workflowName}"`));
@@ -1866,7 +1863,10 @@ test('package publish workflows release from production version bumps', () => {
     assert.doesNotMatch(dispatchJob, /actions\/checkout@/);
     assert.doesNotMatch(dispatchJob, /npm publish/);
     assert.doesNotMatch(dispatchJob, /NODE_AUTH_TOKEN/);
-    assert.doesNotMatch(dispatchJob, /\bsecrets\./);
+    assert.doesNotMatch(
+      dispatchJob,
+      /\bsecrets\.(?!TUTURUUU_BOT_PRIVATE_KEY\b)/
+    );
   }
 });
 
