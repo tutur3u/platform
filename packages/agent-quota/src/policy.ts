@@ -102,7 +102,12 @@ function rankOne(
 			const soonest = Math.min(...reset);
 			const delay = Math.max(0, soonest - now.getTime());
 			const minutes = Math.round(delay / 60_000);
-			if (delay <= 15 * 60_000) {
+			if (soonest <= now.getTime()) {
+				reasons.push({
+					code: "reset-expired",
+					message: "Reported reset time has passed; reset timing is uncertain.",
+				});
+			} else if (delay <= 15 * 60_000) {
 				score += 4;
 				reasons.push({
 					code: "reset-soon",
@@ -136,17 +141,27 @@ function rankOne(
 		}
 	}
 
+	const resetExpired = windows.some(
+		(window) => window.resetsAt && Date.parse(window.resetsAt) <= now.getTime(),
+	);
+	if (resetExpired) score = Math.min(score, 30);
 	const freshest = windows
 		.map((window) => Date.parse(window.observedAt))
 		.filter(Number.isFinite)
 		.reduce((latest, value) => Math.max(latest, value), 0);
-	if (freshest === 0 || now.getTime() - freshest > staleAfterMs) {
+	if (
+		resetExpired ||
+		freshest === 0 ||
+		now.getTime() - freshest > staleAfterMs
+	) {
 		score = Math.min(score, 30);
 		reasons.push({
 			code: "stale",
-			message: freshest
-				? "Quota percentage is stale and counts as uncertain."
-				: "No quota percentage has been observed.",
+			message: resetExpired
+				? "A quota reset timestamp has passed; this signal is uncertain."
+				: freshest
+					? "Quota percentage is stale and counts as uncertain."
+					: "No quota percentage has been observed.",
 		});
 	} else {
 		reasons.push({ code: "fresh", message: "Quota percentage is current." });

@@ -76,6 +76,27 @@ describe("routing policy", () => {
 		).toBe(true);
 	});
 
+	it("treats a passed reset timestamp as stale instead of imminent", () => {
+		const expired = account("codex", 10, now.toISOString());
+		const window = expired.windows[0];
+		if (window) window.resetsAt = "2026-10-22T00:00:00.000Z";
+		const result = recommend({
+			task: { provider: "codex" },
+			active: [],
+			accounts: [expired],
+			now,
+		});
+		expect(
+			result.ranked[0]?.reasons.some(
+				(reason) => reason.code === "reset-expired",
+			),
+		).toBe(true);
+		expect(
+			result.ranked[0]?.reasons.some((reason) => reason.code === "stale"),
+		).toBe(true);
+		expect(result.ranked[0]?.score).toBe(30);
+	});
+
 	it("keeps the configured orchestrator reserve and respects active concurrency", () => {
 		const orchestrator = account("claude_hehe", 20);
 		const result = recommend({
