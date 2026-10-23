@@ -117,6 +117,7 @@ function context(
 ) {
   return {
     workflow: 'workflow',
+    repository: 'tutur3u/platform',
     ref,
     sha,
     run_id,
@@ -127,8 +128,10 @@ function context(
       workflow_run: {
         id: 7,
         conclusion: 'success',
+        event: 'push',
         name: 'Production Deployment Planner',
         head_branch: 'production',
+        head_repository: { full_name: 'tutur3u/platform' },
       },
       ...(['pull_request', 'pull_request_target'].includes(event_name)
         ? { pull_request: { number, head: { sha } } }
