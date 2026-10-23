@@ -1123,6 +1123,13 @@ maintainer-only Security tab. A category such as `/language:actions` needs a
 `main` analysis, from default setup or a trusted `main` run, before pull
 requests can pass on pre-existing findings.
 
+`scripts/ci/security-scan-diff.js` is the matching trusted differ for the
+repository-owned dependency audit and secret scan. They load it from the base
+commit as well. A pull request fails only on high/critical advisories absent
+at the base commit, and the public log shows counts by severity. Pre-existing
+advisories are tracked in the findings register, not on unrelated pull
+requests.
+
 E2E suites reuse only exact same-day success proofs from protected `main`.
 See [E2E proof reuse](/build/devops/e2e-proof-reuse) for suite inputs, conservative
 fallbacks, diagnostics safety, and inactive database proposal handling.
