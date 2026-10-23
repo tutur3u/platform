@@ -305,28 +305,39 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
   };
   const known = new Set(ARTIFACT_RULES.map((rule) => rule.category));
 
+  const valueFlags = new Set([
+    '--base',
+    '--worktree',
+    '--holds-file',
+    '--max-remove',
+    '--min-idle-hours',
+    '--category',
+  ]);
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
+    let value;
+    if (valueFlags.has(arg)) {
+      value = args[++index];
+      if (!value || value.startsWith('--'))
+        throw new Error(`${arg} requires a value.`);
+    }
     if (arg === '--apply') options.apply = true;
     else if (arg === '--json') options.json = true;
-    else if (arg === '--base') options.baseRef = args[++index];
+    else if (arg === '--base') options.baseRef = value;
     else if (arg === '--holds-file') {
-      const value = args[++index];
-      if (!value || value.startsWith('--'))
-        throw new Error('--holds-file requires a path.');
       options.holdsFile = value;
       options.optionalHoldsFile = false;
     } else if (arg === '--max-remove')
-      options.maxRemoveBytes = parseBytes(args[++index]);
+      options.maxRemoveBytes = parseBytes(value);
     else if (arg === '--min-idle-hours') {
-      options.minIdleHours = Number(args[++index]);
+      options.minIdleHours = Number(value);
       if (!Number.isFinite(options.minIdleHours) || options.minIdleHours < 0) {
         throw new Error('--min-idle-hours must be a non-negative number.');
       }
     } else if (arg === '--worktree') {
-      options.only = [...(options.only ?? []), args[++index]];
+      options.only = [...(options.only ?? []), value];
     } else if (arg === '--category') {
-      const category = args[++index];
+      const category = value;
       if (!known.has(category)) {
         throw new Error(
           `Unknown category ${category}; expected one of ${[...known].join(', ')}`

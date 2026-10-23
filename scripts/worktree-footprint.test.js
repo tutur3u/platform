@@ -322,7 +322,7 @@ test('holds inputs fail closed and aliases protect worktrees', () => {
     ['prune', '--holds-file'],
     ['prune', '--holds-file', '--apply'],
   ])
-    assert.throws(() => parseArgs(args, {}), /requires a path/);
+    assert.throws(() => parseArgs(args, {}), /requires a value/);
   assert.throws(() =>
     parseArgs(['prune'], { TUTURUUU_WORKTREE_HOLDS_FILE: '' })
   );
@@ -459,3 +459,20 @@ test('HEAD change between planning and apply preserves artifacts', () => {
   assert.equal(result.removed.length, 0);
   assert.ok(fs.existsSync(path.join(wt, '.turbo')));
 });
+
+for (const flag of [
+  '--base',
+  '--worktree',
+  '--holds-file',
+  '--max-remove',
+  '--min-idle-hours',
+  '--category',
+]) {
+  for (const suffix of [[], ['--apply']]) {
+    test(`parseArgs rejects ${flag} with ${suffix.length ? 'another option' : 'no value'}`, () => {
+      assert.throws(() => parseArgs(['prune', flag, ...suffix], {}), {
+        message: `${flag} requires a value.`,
+      });
+    });
+  }
+}
