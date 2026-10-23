@@ -103,12 +103,14 @@ jobs:
         run: |
           # A missing lockfile would be regenerated as an untracked file that
           # `git diff` ignores, so require a tracked one before comparing.
-          if ! git ls-files --error-unmatch bun.lock >/dev/null 2>&1; then
+          if [ ! -f bun.lock ] || ! git ls-files --error-unmatch bun.lock >/dev/null 2>&1; then
             echo "::error file=bun.lock::bun.lock must be committed."
             exit 1
           fi
           bun install --lockfile-only
-          if [ -n "$(git status --porcelain -- bun.lock)" ]; then
+          # Assign separately so a failing `git status` aborts under `-e`.
+          lock_status="$(git status --porcelain -- bun.lock)"
+          if [ -n "$lock_status" ]; then
             git diff --stat HEAD -- bun.lock
             echo "::error file=bun.lock::bun.lock is not canonical. Run 'bun install' locally and commit the resulting bun.lock."
             exit 1
