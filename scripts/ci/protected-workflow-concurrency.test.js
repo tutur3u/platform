@@ -120,6 +120,7 @@ function context(
 ) {
   return {
     workflow: 'workflow',
+    repository: 'tutur3u/platform',
     ref,
     sha,
     run_id,
@@ -130,8 +131,10 @@ function context(
       workflow_run: {
         id: 7,
         conclusion: 'success',
+        event: 'push',
         name: 'Production Deployment Planner',
         head_branch: 'production',
+        head_repository: { full_name: 'tutur3u/platform' },
       },
       ...(['pull_request', 'pull_request_target'].includes(event_name)
         ? { pull_request: { number, head: { sha } } }
@@ -507,7 +510,12 @@ test('cancelled Discord PR/main completions never enter the active Modal deploym
   assert.equal(workflow.concurrency, undefined);
   const deploy = workflow.jobs.deploy;
   const active = context('refs/heads/main', 'trusted', 1, 'workflow_run');
-  active.event.workflow_run.head_branch = 'main';
+  active.repository = 'tutur3u/platform';
+  Object.assign(active.event.workflow_run, {
+    event: 'push',
+    head_branch: 'main',
+    head_repository: { full_name: 'tutur3u/platform' },
+  });
   assert.equal(expression(deploy.if, active), true);
   for (const branch of ['main', 'fix/example']) {
     const cancelled = structuredClone(active);

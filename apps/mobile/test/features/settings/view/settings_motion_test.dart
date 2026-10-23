@@ -386,9 +386,28 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(StaggeredEntry), findsAtLeastNWidgets(2));
+      // The 3:1 banner header keeps later sections below the first frame, so
+      // check each top-level section's stagger wrapper once it is built.
       expect(find.text('Alex Nguyen'), findsWidgets);
-      expect(find.text('Identity'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('Alex Nguyen').first,
+          matching: find.byType(StaggeredEntry),
+        ),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.text('Identity'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(
+        find.ancestor(
+          of: find.text('Identity'),
+          matching: find.byType(StaggeredEntry),
+        ),
+        findsOneWidget,
+      );
       await tester.scrollUntilVisible(
         find.text('Avatar'),
         200,

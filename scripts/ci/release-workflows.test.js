@@ -635,7 +635,7 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
     path.join(repoRoot, '.github', 'workflows', 'codecov.yaml'),
     'utf8'
   );
-  const testJob = readWorkflowJobBlock('codecov.yaml', 'test-shards');
+  const testJob = readWorkflowJobBlock('turbo-unit-tests.yaml', 'test-shards');
 
   assert.match(
     testJob,
@@ -643,12 +643,15 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
   );
   assert.match(
     testJob,
-    /command: bash scripts\/ci\/run-with-backoff\.sh node scripts\/ci\/run-test-shard\.js .* 4 --coverage/u
+    /command: node scripts\/ci\/run-test-shard\.js .* 4 --coverage/u
   );
-  assert.match(testJob, /family: coverage/u);
+  assert.match(testJob, /family: unit-tests/u);
   assert.match(testJob, /github\.event_name != 'pull_request'/u);
   assert.match(testJob, /github\.actor != 'dependabot\[bot\]'/u);
-  assert.match(testJob, /CI_RETRY_MAX_ATTEMPTS: "2"/u);
+  assert.doesNotMatch(
+    testJob,
+    /CI_RETRY_MAX_ATTEMPTS|run-with-backoff\.sh node/u
+  );
   assert.doesNotMatch(testJob, /^\s+run:.*turbo:local run test/mu);
   assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
 });

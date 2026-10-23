@@ -21,27 +21,43 @@ class ProfileBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = profile.bannerUrl;
-    if (url == null || url.isEmpty) return const SizedBox.shrink();
+    final hasImage = url != null && url.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
         child: AspectRatio(
           aspectRatio: 3,
-          child: Image(
-            image: profileMediaImage(url, profile.id),
-            key: ValueKey('${profile.id}:$url'),
-            fit: BoxFit.cover,
-            semanticLabel: context.l10n.profileBanner,
-            errorBuilder: (_, _, _) => ColoredBox(
-              color: shad.Theme.of(context).colorScheme.muted,
-              child: const Center(child: Icon(Icons.panorama_outlined)),
-            ),
-          ),
+          child: !hasImage
+              ? _placeholder(context)
+              : Image(
+                  image: profileMediaImage(url, profile.id),
+                  key: ValueKey('${profile.id}:$url'),
+                  fit: BoxFit.cover,
+                  semanticLabel: context.l10n.profileBanner,
+                  frameBuilder: (context, child, frame, synchronous) =>
+                      synchronous || frame != null
+                      ? child
+                      : _placeholder(context, loading: true),
+                  errorBuilder: (_, _, _) => _placeholder(context),
+                ),
         ),
       ),
     );
   }
+
+  Widget _placeholder(BuildContext context, {bool loading = false}) =>
+      ColoredBox(
+        color: shad.Theme.of(context).colorScheme.muted,
+        child: Center(
+          child: loading
+              ? const CircularProgressIndicator()
+              : Icon(
+                  Icons.panorama_outlined,
+                  semanticLabel: context.l10n.profileBanner,
+                ),
+        ),
+      );
 }
 
 class ProfileBannerSettings extends StatelessWidget {
@@ -67,7 +83,7 @@ class ProfileBannerSettings extends StatelessWidget {
           const SizedBox(height: 6),
           Text(l10n.profileBannerDescription),
           const SizedBox(height: 12),
-          ProfileBanner(profile: profile),
+          if (exists) ProfileBanner(profile: profile),
           Wrap(
             spacing: 12,
             runSpacing: 8,

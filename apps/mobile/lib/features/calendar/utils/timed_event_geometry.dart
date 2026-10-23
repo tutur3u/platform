@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 /// Short event cards retain a readable label. Use this same minimum for both
-/// painting and overlap grouping, including when the timeline is zoomed.
+/// painting, including when the timeline is zoomed. Overlap uses event times.
 double timedEventMinimumHeight(double hourHeight, double labelHeight) =>
     math.max(hourHeight / 4, math.max(22, labelHeight));
 

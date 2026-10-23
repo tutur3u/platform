@@ -22,6 +22,7 @@ const ownerSchema = z.object({
   token: z.string().min(1),
   cwd: z.string(),
   tool: z.string(),
+  command: z.string().optional(),
   queuedAt: z.string(),
   startedAt: z.string().optional(),
   limits: z
@@ -93,38 +94,66 @@ export async function readOwner(path: string) {
   const state = await ownerState(path);
   return state.kind === 'owner' ? state.owner : undefined;
 }
-export function isAncestor(pid: number) {
-  try {
-    const rows = execFileSync('ps', ['-axo', 'pid=,ppid='], {
-      encoding: 'utf8',
-      timeout: 3000,
-    })
-      .trim()
-      .split('\n');
-    const table = new Map<number, number>();
-    for (const row of rows) {
-      const [child, parent] = row.trim().split(/\s+/).map(Number);
-      if (child && parent) table.set(child, parent);
-    }
-    const seen = new Set<number>();
-    let parent = process.ppid;
-    while (parent > 1 && !seen.has(parent)) {
-      if (parent === pid) return true;
-      seen.add(parent);
-      parent = table.get(parent) || 1;
-    }
-  } catch {
-    /* Missing ancestry evidence never permits nesting. */
-  }
-  return false;
+export const admittedMarker = 'TTR_RESOURCES_ADMITTED';
+export interface ProcessLineage {
+  pids: Set<number>;
+  group?: number;
 }
-export function newOwner(tool: string): ResourceOwner {
+let lineage: ProcessLineage | undefined;
+// Ancestors only change when they exit, so a successful snapshot is reused.
+// Failed snapshots are not cached; callers retry on their next check.
+export function processLineage(refresh = false): ProcessLineage | undefined {
+  if (lineage && !refresh) return lineage;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const rows = execFileSync('ps', ['-axo', 'pid=,ppid=,pgid='], {
+        encoding: 'utf8',
+        timeout: 5000,
+        maxBuffer: 16 * 1024 * 1024,
+      })
+        .trim()
+        .split('\n');
+      const table = new Map<number, { parent: number; group: number }>();
+      for (const row of rows) {
+        const [child, parent, group] = row.trim().split(/\s+/).map(Number);
+        if (child && parent) table.set(child, { parent, group: group || 0 });
+      }
+      const pids = new Set<number>();
+      let parent = process.ppid;
+      while (parent > 1 && !pids.has(parent)) {
+        pids.add(parent);
+        parent = table.get(parent)?.parent || 1;
+      }
+      lineage = { pids, group: table.get(process.pid)?.group || undefined };
+      return lineage;
+    } catch {
+      /* Retry once; missing evidence never permits nesting by itself. */
+    }
+  }
+  return undefined;
+}
+export function isAncestor(pid: number) {
+  return processLineage()?.pids.has(pid) ?? false;
+}
+// The owned launcher is a detached session and group leader, so a process in
+// its group descends from the admitted job even after an intermediate parent
+// exits and the process is reparented.
+function descendsFrom(owner: ResourceOwner, evidence: ProcessLineage) {
+  return (
+    (processAlive(owner.pid) && evidence.pids.has(owner.pid)) ||
+    (owner.childPid !== undefined &&
+      processAlive(owner.childPid) &&
+      (evidence.pids.has(owner.childPid) || evidence.group === owner.childPid))
+  );
+}
+export function newOwner(tool: string, command?: string): ResourceOwner {
   return {
     scheduler: 2,
     pid: process.pid,
     token: randomUUID(),
     cwd: process.cwd(),
     tool,
+    ...(command ? { command } : {}),
     queuedAt: new Date().toISOString(),
   };
 }
@@ -279,6 +308,7 @@ export async function occupancy(home: string, reclaim = false) {
   )
     throw new Error('Unknown resource slot; admission is closed.');
   const owners: ResourceOwner[] = [];
+  const ownerSlots: string[] = [];
   const occupied: string[] = [];
   let legacy = false;
   let initializing = false;
@@ -292,6 +322,7 @@ export async function occupancy(home: string, reclaim = false) {
       throw new Error('Malformed resource owner; admission is closed.');
     if (state.kind === 'owner' && ownerAlive(state.owner)) {
       owners.push(state.owner);
+      ownerSlots.push(path);
       occupied.push(path);
     } else if (
       state.kind === 'missing' &&
@@ -317,7 +348,7 @@ export async function occupancy(home: string, reclaim = false) {
   }
   if (legacy && occupied.some((path) => path !== join(home, 'lock')))
     throw new Error('Mixed legacy and slot owners; admission is closed.');
-  return { owners, occupied, legacy, initializing };
+  return { owners, ownerSlots, occupied, legacy, initializing };
 }
 export async function tickets(home: string, prune = false) {
   const queue = join(home, 'queue');
@@ -341,15 +372,37 @@ export async function tickets(home: string, prune = false) {
   }
   return live;
 }
-export async function nestedOwner(home: string) {
+const ignoredMarkers = new Set<string>();
+// An admitted job exports its owner token. A marker counts only while it names
+// a live owner, and, when ancestry evidence exists, only inside that owner's
+// process tree, so stale or copied markers cannot bypass admission. Ancestry
+// alone still covers children whose environment was filtered (Turbo strict).
+export async function nestedOwner(
+  home: string,
+  env: NodeJS.ProcessEnv = process.env,
+  refresh = false
+) {
   const state = await occupancy(home);
-  return state.owners.find(
-    (owner) =>
-      (processAlive(owner.pid) && isAncestor(owner.pid)) ||
-      (processAlive(owner.childPid) &&
-        owner.childPid !== undefined &&
-        isAncestor(owner.childPid))
-  );
+  const marker = env[admittedMarker] || env.TTR_RESOURCE_OWNER;
+  const marked = marker
+    ? state.owners.find((owner) => owner.token === marker)
+    : undefined;
+  if (!state.owners.length && !marker) return undefined;
+  const evidence = state.owners.length ? processLineage(refresh) : undefined;
+  if (!evidence) {
+    if (marked) return marked;
+  } else {
+    if (marked && descendsFrom(marked, evidence)) return marked;
+    const related = state.owners.find((owner) => descendsFrom(owner, evidence));
+    if (related) return related;
+  }
+  if (marker && !ignoredMarkers.has(marker)) {
+    ignoredMarkers.add(marker);
+    process.stderr.write(
+      `[ttr resources] ignoring ${admittedMarker}: it does not belong to a live admitted job in this process tree; queueing normally.\n`
+    );
+  }
+  return undefined;
 }
 export async function releaseSlot(home: string, path: string, token: string) {
   await withAdmission(home, async () => {

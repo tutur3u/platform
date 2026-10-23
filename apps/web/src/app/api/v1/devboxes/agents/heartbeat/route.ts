@@ -72,6 +72,21 @@ const RunnerCapabilitiesSchema = z
         type: z.string().trim().max(100).optional(),
       })
       .optional(),
+    // Self-reported and advisory: stored for operators and later claim
+    // matching, never used to grant a feature or authorize a runner.
+    executionMode: z.enum(['trusted', 'judge-only']).optional(),
+    isolation: z
+      .object({
+        checkedAt: z.string().trim().max(100).optional(),
+        dedicatedUser: z.boolean().optional(),
+        privateTokenDirectory: z.boolean().optional(),
+        protectedService: z.boolean().optional(),
+        dedicatedDockerSocket: z.boolean().optional(),
+        gvisorDefault: z.boolean().optional(),
+        noGeneralDockerGroup: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
     reportedAt: z.string().trim().max(100).optional(),
     resources: z
       .object({

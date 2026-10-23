@@ -388,7 +388,6 @@ jobs:
     permissions:
       actions: read
       contents: read
-      deployments: read
       packages: read
       security-events: write
     uses: ./.github/workflows/codeql.yml

@@ -359,6 +359,7 @@
               "build/development-tools/development",
               "build/development-tools/without-docker",
               "build/development-tools/codex-plugin",
+              "build/development-tools/agent-operating-model",
               "build/development-tools/chatgpt-mcp",
               "build/development-tools/monorepo-architecture",
               "build/development-tools/oxc-cloudflare-adoption",

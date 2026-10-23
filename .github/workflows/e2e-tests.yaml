@@ -148,6 +148,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Free runner disk for E2E image bundle
         run: bash scripts/ci/e2e-free-disk.sh
@@ -703,6 +705,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Delete this run's E2E image bundle
         env:

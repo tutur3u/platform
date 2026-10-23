@@ -6,17 +6,23 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
   contents: read
   deployments: read
 
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: mobile-testflight-review-queue.yaml
 
   dispatch:
+    permissions:
+      actions: write
+      contents: read
+      deployments: read
     name: Ask the production workflow to retry review
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
@@ -26,6 +32,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Require promoted retry code
         id: promoted
@@ -33,7 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin production
-          if git cat-file -e FETCH_HEAD:.github/workflows/mobile-testflight-review-queue.yaml; then
+          if git cat-file -e FETCH_HEAD:.github/workflows/mobile-testflight-review-queue.yaml &&
+             git cat-file -e FETCH_HEAD:scripts/ci/normalize-release-notes.js; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "Retry code is not on production; skipping dispatch."

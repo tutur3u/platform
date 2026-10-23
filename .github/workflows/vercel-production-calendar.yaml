@@ -39,6 +39,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Keep native Calendar outside Vercel publication
         shell: bash

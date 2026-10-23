@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { calendarDayBoundary } from '../../../../lib/calendar-day';
 import { calculateAllDayEventLayout } from './all-day-event-layout';
-import { pastEventTreatment } from './past-event-treatment';
+import {
+  calendarEventDisplayEnd,
+  pastEventTreatment,
+} from './past-event-treatment';
 
 const event = {
   id: 'past',
@@ -40,7 +43,7 @@ describe('past calendar treatment', () => {
     }
     expect(
       pastEventTreatment(event, false, false, Date.parse(event.end_at))
-    ).toBeUndefined();
+    ).toContain('after:bg-background/50');
   });
 });
 
@@ -63,9 +66,9 @@ it('all-day fading follows displayed exclusive civil end rather than legacy UTC 
       civilEnd
     )
   ).toBeUndefined();
-  expect(
-    pastEventTreatment(event, false, false, civilEnd, civilEnd)
-  ).toBeUndefined();
+  expect(pastEventTreatment(event, false, false, civilEnd, civilEnd)).toContain(
+    'after:bg-background/50'
+  );
   expect(
     pastEventTreatment(event, false, false, civilEnd + 1, civilEnd)
   ).toContain('after:bg-background/50');
@@ -93,7 +96,9 @@ it.each([
       'America/New_York'
     ).getTime();
     expect(end).toBe(Date.parse(event.end_at));
-    expect(pastEventTreatment(event, false, false, end, end)).toBeUndefined();
+    expect(pastEventTreatment(event, false, false, end, end)).toContain(
+      'after:bg-background/50'
+    );
     expect(pastEventTreatment(event, false, false, end + 1, end)).toContain(
       'after:bg-background/50'
     );
@@ -135,3 +140,32 @@ it('merged all-day span stays unfaded through its last civil day', () => {
     )
   ).toBeUndefined();
 });
+
+it.each(['tuturuuu', 'google', 'microsoft'] as const)(
+  'uses the end boundary for %s timed and all-day events',
+  (provider) => {
+    const now = Date.parse('2030-01-16T04:00:00Z');
+    const ended = { ...event, provider, end_at: '2030-01-16T04:00:00Z' };
+    expect(pastEventTreatment(ended, false, false, now)).toContain(
+      'after:bg-background/50'
+    );
+    const spanning = {
+      ...ended,
+      start_at: '2030-01-15T16:00:00Z',
+      end_at: '2030-01-17T16:00:00Z',
+    };
+    expect(pastEventTreatment(spanning, false, false, now)).toBeUndefined();
+    const today = {
+      ...event,
+      provider,
+      start_at: '2030-01-15T00:00:00Z',
+      end_at: '2030-01-16T00:00:00Z',
+    };
+    const end = calendarEventDisplayEnd(today, 'America/Los_Angeles');
+    expect(end).toBe(Date.parse('2030-01-16T08:00:00Z'));
+    expect(pastEventTreatment(today, false, false, now, end)).toBeUndefined();
+    expect(pastEventTreatment(today, false, false, end, end)).toContain(
+      'after:bg-background/50'
+    );
+  }
+);

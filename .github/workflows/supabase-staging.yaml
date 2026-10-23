@@ -21,13 +21,22 @@ permissions:
 jobs:
   migrate:
     name: Migrate staging database
+    # workflow_run matches upstreams by name, and a fork PR can define a
+    # workflow with the same name on a branch called main. Only same-repository
+    # push completions may select the migration target, and nothing from the
+    # target checkout runs before this gate.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      )
     timeout-minutes: 15
     runs-on: ubuntu-latest
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
-      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
-      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
       TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - name: Check out migration target
@@ -35,6 +44,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ env.TARGET_SHA }}
+          persist-credentials: false
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
@@ -83,9 +93,13 @@ jobs:
 
       - name: Deploy migrations to staging
         if: steps.evaluate.outputs.should_deploy == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
         run: |
           cd apps/database
-          supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
+          supabase link --project-ref "$STAGING_PROJECT_ID"
           supabase db push --include-all
 
       - name: Record successful staging migration marker
