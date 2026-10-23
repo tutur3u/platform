@@ -103,6 +103,12 @@ pool usage, reservations and reset rather than locking an account. Serialize
 each owner thread's account transitions. If a safe in-thread switch is
 impossible, one top-level successor may take over through the
 [replacement-thread handover](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover).
+Prefer Codex pools for suitable new or disjoint implementation, analysis and
+independent review, following the
+[capacity-aware provider preference](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#capacity-aware-provider-preference).
+Treat relative plan size and reset credit as planning inputs, not measured
+headroom. Keep Claude and Antigravity for task fit, parallel capacity and
+reviewer independence, and do not migrate healthy running writers.
 
 For observed slow admission, repeated handovers or two fixes failing on one
 premise, assign a bounded workflow audit at a safe checkpoint. Read actual
