@@ -2,14 +2,15 @@ import { google, OAuth2Client } from '@tuturuuu/google';
 import { NextResponse } from 'next/server';
 import { authorizeCalendarOAuthCallback } from '@/lib/calendar/calendar-oauth-callback-guard';
 import {
+  buildCalendarPostAuthRedirectUrl,
+  checkCalendarOAuthRuntime,
+} from '@/lib/calendar/calendar-oauth-runtime';
+import {
   deriveCalendarOAuthPkce,
   verifyCalendarOAuthState,
 } from '@/lib/calendar/calendar-oauth-state';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
-import {
-  buildGoogleCalendarPostAuthRedirectUrl,
-  resolveGoogleCalendarOAuthRedirectUri,
-} from '@/lib/calendar/google-oauth-urls';
+import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import {
   calendarOAuthDebug,
   calendarOAuthError,
@@ -56,6 +57,9 @@ export async function GET(request: Request) {
       { status: 503 }
     );
   }
+
+  const runtime = checkCalendarOAuthRuntime();
+  if (!runtime.ok) return runtime.response;
 
   // The state is signed at initiation and binds this flow to the initiating
   // user and workspace; never trust a workspace taken from the URL alone.
@@ -407,7 +411,10 @@ export async function GET(request: Request) {
     calendarOAuthDebug('🔍 [DEBUG] Redirecting to calendar page...');
     // Redirect to the calendar page with success indicator
     return NextResponse.redirect(
-      buildGoogleCalendarPostAuthRedirectUrl(wsId),
+      buildCalendarPostAuthRedirectUrl(runtime.publicOrigin, wsId, {
+        provider: 'google',
+        connected: 'true',
+      }),
       302
     );
   } catch (error) {

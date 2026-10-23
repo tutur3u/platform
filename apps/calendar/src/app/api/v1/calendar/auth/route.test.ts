@@ -68,6 +68,9 @@ describe('Google Calendar auth route', () => {
     oauthConstructors.length = 0;
     vi.stubEnv('GOOGLE_CLIENT_ID', 'google-client-id');
     vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
+    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '');
     normalizeWorkspaceIdMock.mockResolvedValue('workspace-1');
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,
@@ -96,6 +99,43 @@ describe('Google Calendar auth route', () => {
       expect(oauthConstructors).toHaveLength(0);
     }
   );
+
+  it('fails closed in production without the single-use state store', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const response = await GET(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/api/v1/calendar/auth?wsId=personal'
+      )
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Calendar connection is temporarily unavailable',
+    });
+    expect(oauthConstructors).toHaveLength(0);
+    expect(consoleError.mock.calls.flat().join(' ')).toContain(
+      'UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN'
+    );
+    consoleError.mockRestore();
+  });
+
+  it('starts in production once the state store and Calendar origin are configured', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://store.example');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+
+    const response = await GET(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/api/v1/calendar/auth?wsId=personal'
+      )
+    );
+
+    expect(response.status).toBe(200);
+  });
 
   it('does not emit 0.0.0.0 in the Google redirect URI', async () => {
     vi.stubEnv(

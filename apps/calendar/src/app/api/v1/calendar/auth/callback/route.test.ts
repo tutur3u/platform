@@ -186,9 +186,11 @@ describe('Google Calendar OAuth callback route', () => {
       'COOLIFY_FQDN',
       'UPSTASH_REDIS_REST_URL',
       'UPSTASH_REDIS_REST_TOKEN',
+      'NEXT_PUBLIC_CALENDAR_APP_URL',
     ]) {
       vi.stubEnv(key, '');
     }
+    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
     vi.stubEnv('GOOGLE_CLIENT_ID', 'google-client-id');
     vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -222,7 +224,7 @@ describe('Google Calendar OAuth callback route', () => {
     }
   );
 
-  it('redirects wildcard listener callbacks back to the public Web origin', async () => {
+  it('redirects wildcard listener callbacks to the Calendar workspace page', async () => {
     vi.stubEnv('GOOGLE_REDIRECT_URI', '');
 
     const response = await GET(
@@ -231,8 +233,35 @@ describe('Google Calendar OAuth callback route', () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe(
-      'https://tuturuuu.com/workspace-1/calendar?provider=google&connected=true'
+      'https://calendar.tuturuuu.com/workspace-1?provider=google&connected=true'
     );
+  });
+
+  it.each([
+    [
+      'the single-use state store',
+      { CALENDAR_APP_URL: 'https://calendar.tuturuuu.com' },
+    ],
+    [
+      'a Calendar public origin',
+      {
+        CALENDAR_APP_URL: '',
+        UPSTASH_REDIS_REST_TOKEN: 'token',
+        UPSTASH_REDIS_REST_URL: 'https://store.example',
+      },
+    ],
+  ])('fails closed in production without %s', async (_label, env) => {
+    vi.stubEnv('NODE_ENV', 'production');
+    for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
+
+    const response = await GET(callbackRequest(signedState()));
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Calendar connection is temporarily unavailable',
+    });
+    expect(resolveSessionAuthContextMock).not.toHaveBeenCalled();
+    expect(getTokenMock).not.toHaveBeenCalled();
   });
 
   it('preserves an existing refresh token when Google omits one on reconnect', async () => {
@@ -354,7 +383,7 @@ describe('Google Calendar OAuth callback route', () => {
     expect(fullSyncMock).not.toHaveBeenCalled();
   });
 
-  it('redirects to the canonical Web origin regardless of request host headers', async () => {
+  it('redirects to the configured Calendar origin regardless of request host headers', async () => {
     const response = await GET(
       callbackRequest(signedState(), 'https://attacker.example', {
         host: 'attacker.example',
@@ -365,8 +394,8 @@ describe('Google Calendar OAuth callback route', () => {
     const location = new URL(response.headers.get('location') ?? '');
 
     expect(response.status).toBe(302);
-    expect(location.origin).toBe('https://tuturuuu.com');
-    expect(location.pathname).toBe('/workspace-1/calendar');
+    expect(location.origin).toBe('https://calendar.tuturuuu.com');
+    expect(location.pathname).toBe('/workspace-1');
   });
 
   it('exchanges the code with the PKCE verifier bound to the state', async () => {

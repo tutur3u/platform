@@ -55,6 +55,7 @@ import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
 
 const SECRET = 'microsoft-client-secret';
+const CALENDAR_ORIGIN = 'https://calendar.tuturuuu.com';
 const ATTACKER_HEADERS = {
   host: 'attacker.example',
   'x-forwarded-host': 'attacker.example',
@@ -122,9 +123,11 @@ describe('Microsoft Calendar OAuth callback route', () => {
       'COOLIFY_FQDN',
       'UPSTASH_REDIS_REST_URL',
       'UPSTASH_REDIS_REST_TOKEN',
+      'NEXT_PUBLIC_CALENDAR_APP_URL',
     ]) {
       vi.stubEnv(key, '');
     }
+    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
     vi.stubEnv('MICROSOFT_CLIENT_ID', 'microsoft-client-id');
     vi.stubEnv('MICROSOFT_CLIENT_SECRET', SECRET);
     vi.stubEnv(
@@ -162,7 +165,7 @@ describe('Microsoft Calendar OAuth callback route', () => {
       );
 
       expect(response.status).toBe(302);
-      expect(locationOf(response).origin).toBe('https://tuturuuu.com');
+      expect(locationOf(response).origin).toBe(CALENDAR_ORIGIN);
       expect(locationOf(response).pathname).toBe('/');
     }
   );
@@ -172,8 +175,8 @@ describe('Microsoft Calendar OAuth callback route', () => {
       callback(`error=access_denied&state=${signedState()}`)
     );
 
-    expect(locationOf(response).origin).toBe('https://tuturuuu.com');
-    expect(locationOf(response).pathname).toBe('/workspace-1/calendar');
+    expect(locationOf(response).origin).toBe(CALENDAR_ORIGIN);
+    expect(locationOf(response).pathname).toBe('/workspace-1');
   });
 
   it.each([
@@ -190,8 +193,8 @@ describe('Microsoft Calendar OAuth callback route', () => {
       );
 
       expect(response.status).toBe(302);
-      expect(locationOf(response).origin).toBe('https://tuturuuu.com');
-      expect(locationOf(response).pathname).toBe('/workspace-1/calendar');
+      expect(locationOf(response).origin).toBe(CALENDAR_ORIGIN);
+      expect(locationOf(response).pathname).toBe('/workspace-1');
     }
   );
 
@@ -205,9 +208,28 @@ describe('Microsoft Calendar OAuth callback route', () => {
       })
     );
 
-    expect(locationOf(response).origin).toBe('https://tuturuuu.com');
+    expect(locationOf(response).origin).toBe(CALENDAR_ORIGIN);
     expect(acquireTokenByCodeMock).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['provider error', () => `error=access_denied&state=${signedState()}`],
+    ['code', () => `code=abc&state=${signedState()}`],
+  ])(
+    'fails closed in production without the state store for a %s callback',
+    async (_label, query) => {
+      vi.stubEnv('NODE_ENV', 'production');
+
+      const response = await GET(callback(query()));
+
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toEqual({
+        error: 'Calendar connection is temporarily unavailable',
+      });
+      expect(resolveSessionAuthContextMock).not.toHaveBeenCalled();
+      expect(acquireTokenByCodeMock).not.toHaveBeenCalled();
+    }
+  );
 
   it('rejects an unsigned workspace state before exchanging the code', async () => {
     const response = await GET(callback('code=abc&state=workspace-1'));

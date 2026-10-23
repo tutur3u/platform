@@ -1,24 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  buildCalendarPostAuthRedirectUrl,
-  buildGoogleCalendarPostAuthRedirectUrl,
-  resolveGoogleCalendarOAuthRedirectUri,
-  resolveGoogleCalendarWebOrigin,
-} from './google-oauth-urls';
-
-const WEB_ORIGIN_ENV_KEYS = [
-  'WEB_APP_URL',
-  'NEXT_PUBLIC_WEB_APP_URL',
-  'NEXT_PUBLIC_APP_URL',
-  'COOLIFY_URL',
-  'COOLIFY_FQDN',
-] as const;
-
-function clearWebOriginEnvs() {
-  for (const key of WEB_ORIGIN_ENV_KEYS) {
-    vi.stubEnv(key, '');
-  }
-}
+import { resolveGoogleCalendarOAuthRedirectUri } from './google-oauth-urls';
 
 describe('Google Calendar OAuth URLs', () => {
   afterEach(() => {
@@ -46,50 +27,5 @@ describe('Google Calendar OAuth URLs', () => {
     expect(resolveGoogleCalendarOAuthRedirectUri()).toBe(
       'http://localhost:7803/api/v1/calendar/auth/callback'
     );
-  });
-
-  it('redirects post-auth callback traffic away from wildcard listener origins', () => {
-    clearWebOriginEnvs();
-    vi.stubEnv('GOOGLE_REDIRECT_URI', '');
-
-    const url = buildGoogleCalendarPostAuthRedirectUrl('workspace-1');
-
-    expect(url.toString()).toBe(
-      'https://tuturuuu.com/workspace-1/calendar?provider=google&connected=true'
-    );
-  });
-
-  it('never takes post-auth redirect origins from request headers', () => {
-    clearWebOriginEnvs();
-    vi.stubEnv('GOOGLE_REDIRECT_URI', '');
-
-    expect(buildGoogleCalendarPostAuthRedirectUrl('workspace-1').origin).toBe(
-      'https://tuturuuu.com'
-    );
-    expect(buildCalendarPostAuthRedirectUrl(null, {}).origin).toBe(
-      'https://tuturuuu.com'
-    );
-  });
-
-  it('keeps the forwarded-host fallback only for the Google redirect_uri', () => {
-    clearWebOriginEnvs();
-
-    expect(
-      resolveGoogleCalendarWebOrigin({
-        headers: new Headers({
-          'x-forwarded-host': 'localhost:7803',
-          'x-forwarded-proto': 'http',
-        }),
-      })
-    ).toBe('http://localhost:7803');
-  });
-
-  it('uses the configured Web origin for post-auth redirects', () => {
-    clearWebOriginEnvs();
-    vi.stubEnv('WEB_APP_URL', 'https://staging.tuturuuu.com');
-
-    expect(
-      buildCalendarPostAuthRedirectUrl(null, { error: 'x' }).toString()
-    ).toBe('https://staging.tuturuuu.com/?error=x');
   });
 });

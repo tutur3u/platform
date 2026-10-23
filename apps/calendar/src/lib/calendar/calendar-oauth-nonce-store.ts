@@ -1,4 +1,5 @@
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { isCalendarOAuthProductionRuntime } from './calendar-oauth-runtime';
 import type { CalendarOAuthProvider } from './calendar-oauth-state';
 
 export type CalendarOAuthNonceConsumption =
@@ -9,8 +10,9 @@ export type CalendarOAuthNonceConsumption =
 const KEY_PREFIX = 'calendar:oauth-state:v1';
 const MAX_LOCAL_ENTRIES = 10_000;
 
-// Process-local fallback for environments without Upstash (local development
-// and tests). Production uses Redis so replay protection spans instances.
+// Process-local fallback for non-production environments without Upstash
+// (local development and tests). Production must use Redis so replay
+// protection spans instances; without it consumption fails closed.
 const locallyConsumed = new Map<string, number>();
 
 function consumeLocally(key: string, expiresAt: number, now: number) {
@@ -46,7 +48,11 @@ export async function consumeCalendarOAuthNonce({
 
   try {
     const redis = await getUpstashRestRedisClient();
-    if (!redis) return consumeLocally(key, expiresAt, now);
+    if (!redis) {
+      return isCalendarOAuthProductionRuntime()
+        ? 'unavailable'
+        : consumeLocally(key, expiresAt, now);
+    }
 
     const result = await redis.set(key, '1', { ex: ttlSeconds, nx: true });
     return result === 'OK' ? 'consumed' : 'replayed';

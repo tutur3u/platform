@@ -2,6 +2,7 @@ import { OAuth2Client } from '@tuturuuu/google';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { checkCalendarOAuthRuntime } from '@/lib/calendar/calendar-oauth-runtime';
 import {
   createCalendarOAuthState,
   deriveCalendarOAuthPkce,
@@ -58,6 +59,9 @@ export async function GET(request: NextRequest) {
       { status: 503 }
     );
   }
+
+  const runtime = checkCalendarOAuthRuntime();
+  if (!runtime.ok) return runtime.response;
 
   const auth = new OAuth2Client({
     clientId: oauthConfig.config.clientId,

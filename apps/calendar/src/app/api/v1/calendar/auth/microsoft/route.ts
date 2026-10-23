@@ -16,6 +16,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { checkCalendarOAuthRuntime } from '@/lib/calendar/calendar-oauth-runtime';
 import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import {
   getMicrosoftOAuthConfig,
@@ -88,6 +89,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
+
+  const runtime = checkCalendarOAuthRuntime();
+  if (!runtime.ok) return runtime.response;
 
   try {
     // Generate PKCE code verifier and challenge

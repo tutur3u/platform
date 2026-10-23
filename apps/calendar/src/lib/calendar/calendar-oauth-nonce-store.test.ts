@@ -49,6 +49,14 @@ describe('calendar OAuth nonce store', () => {
     await expect(consumeCalendarOAuthNonce(input)).resolves.toBe('unavailable');
   });
 
+  it('refuses the process-local fallback in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    getUpstashRestRedisClientMock.mockResolvedValue(null);
+
+    await expect(consumeCalendarOAuthNonce(input)).resolves.toBe('unavailable');
+    vi.unstubAllEnvs();
+  });
+
   it('falls back to a process-local single-use store without Redis', async () => {
     getUpstashRestRedisClientMock.mockResolvedValue(null);
 

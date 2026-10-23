@@ -13,8 +13,11 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeCalendarOAuthCallback } from '@/lib/calendar/calendar-oauth-callback-guard';
+import {
+  buildCalendarPostAuthRedirectUrl,
+  checkCalendarOAuthRuntime,
+} from '@/lib/calendar/calendar-oauth-runtime';
 import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
-import { buildCalendarPostAuthRedirectUrl } from '@/lib/calendar/google-oauth-urls';
 import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
@@ -47,6 +50,8 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   const { code, state, error, error_description } = result.data;
+  const runtime = checkCalendarOAuthRuntime();
+  if (!runtime.ok) return runtime.response;
   const config = getMicrosoftOAuthConfig();
   const configComplete = isMicrosoftConfigComplete(config);
   // The state is signed at initiation and binds this flow to the initiating
@@ -54,7 +59,8 @@ export async function GET(request: Request): Promise<NextResponse> {
   const verifiedState = configComplete
     ? verifyCalendarOAuthState('microsoft', state, config.clientSecret)
     : null;
-  // Browser redirects use the canonical Web origin, never the request host.
+  // Browser redirects use the configured Calendar origin, never the request
+  // host.
   const redirectWsId = verifiedState?.ok ? verifiedState.wsId : null;
 
   if (error) {
@@ -63,10 +69,14 @@ export async function GET(request: Request): Promise<NextResponse> {
       error,
       error_description
     );
-    const redirectUrl = buildCalendarPostAuthRedirectUrl(redirectWsId, {
-      error: 'microsoft_auth_failed',
-      message: error_description || error || 'Unknown error',
-    });
+    const redirectUrl = buildCalendarPostAuthRedirectUrl(
+      runtime.publicOrigin,
+      redirectWsId,
+      {
+        error: 'microsoft_auth_failed',
+        message: error_description || error || 'Unknown error',
+      }
+    );
 
     return NextResponse.redirect(redirectUrl, 302);
   }
@@ -102,10 +112,14 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   if (!codeVerifier) {
     calendarOAuthError('❌ [DEBUG] Missing PKCE code verifier');
-    const redirectUrl = buildCalendarPostAuthRedirectUrl(redirectWsId, {
-      error: 'microsoft_auth_failed',
-      message: 'PKCE verification failed. Please try again.',
-    });
+    const redirectUrl = buildCalendarPostAuthRedirectUrl(
+      runtime.publicOrigin,
+      redirectWsId,
+      {
+        error: 'microsoft_auth_failed',
+        message: 'PKCE verification failed. Please try again.',
+      }
+    );
     return NextResponse.redirect(redirectUrl, 302);
   }
 
@@ -319,10 +333,14 @@ export async function GET(request: Request): Promise<NextResponse> {
     calendarOAuthDebug('🔍 [DEBUG] Redirecting to calendar page...');
 
     // Create redirect response and clear the PKCE cookie
-    const redirectUrl = buildCalendarPostAuthRedirectUrl(wsId, {
-      provider: 'microsoft',
-      connected: 'true',
-    });
+    const redirectUrl = buildCalendarPostAuthRedirectUrl(
+      runtime.publicOrigin,
+      wsId,
+      {
+        provider: 'microsoft',
+        connected: 'true',
+      }
+    );
 
     const redirectResponse = NextResponse.redirect(redirectUrl, 302);
 
