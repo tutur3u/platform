@@ -12,6 +12,7 @@ on:
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-deploy-stores.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
       - ".github/workflows/ci-check.yml"
       - "scripts/mobile-deployment/**"
       - "scripts/ci/normalize-release-notes.js"
@@ -179,7 +180,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Java
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
@@ -192,12 +193,10 @@ jobs:
             apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       - name: Fetch Android deployment bundle from Tuturuuu
         shell: bash
@@ -320,12 +319,10 @@ jobs:
           path: apps/mobile/assets
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       - name: Cache CocoaPods downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6

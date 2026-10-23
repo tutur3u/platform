@@ -311,9 +311,11 @@ for (const file of serialized) {
       workflows[file].concurrency || workflows[file].jobs.deploy.concurrency;
     assert.equal(c['cancel-in-progress'], false);
     assert.equal(c.queue, 'max');
-    const ref = file.endsWith('-cloudflare.yaml')
-      ? 'refs/heads/main'
-      : 'refs/heads/production';
+    // Staging migrations and Cloudflare deploys are dispatched from main.
+    const ref =
+      file.endsWith('-cloudflare.yaml') || file === 'supabase-staging.yaml'
+        ? 'refs/heads/main'
+        : 'refs/heads/production';
     const first = context(ref, 'first', 1, 'workflow_dispatch');
     assert.equal(
       render(c.group, first),
@@ -509,6 +511,10 @@ test('cancelled Discord PR/main completions never enter the active Modal deploym
   const workflow = workflows['discord-modal-deploy.yml'];
   assert.equal(workflow.concurrency, undefined);
   const deploy = workflow.jobs.deploy;
+  // deploy (and its lock) only runs after the trigger job admitted the event.
+  assert.equal(deploy.needs, 'trigger');
+  assert.equal(deploy.if, "needs.trigger.outputs.trusted == 'true'");
+  const admission = workflow.jobs.trigger.if;
   const active = context('refs/heads/main', 'trusted', 1, 'workflow_run');
   active.repository = 'tutur3u/platform';
   Object.assign(active.event.workflow_run, {
@@ -516,19 +522,19 @@ test('cancelled Discord PR/main completions never enter the active Modal deploym
     head_branch: 'main',
     head_repository: { full_name: 'tutur3u/platform' },
   });
-  assert.equal(expression(deploy.if, active), true);
+  assert.equal(expression(admission, active), true);
   for (const branch of ['main', 'fix/example']) {
     const cancelled = structuredClone(active);
     cancelled.event.workflow_run = {
       conclusion: 'cancelled',
       head_branch: branch,
     };
-    assert.equal(expression(deploy.if, cancelled), false);
+    assert.equal(expression(admission, cancelled), false);
   }
   assert.equal(deploy.concurrency['cancel-in-progress'], false);
   assert.equal(deploy.concurrency.queue, 'max');
   assert.equal(
-    expression(deploy.if, { ...active, event_name: 'workflow_dispatch' }),
+    expression(admission, { ...active, event_name: 'workflow_dispatch' }),
     true
   );
 });

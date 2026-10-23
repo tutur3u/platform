@@ -5,6 +5,7 @@ const {
   claimNextDevboxRunMock,
   completeDevboxRunMock,
   heartbeatDevboxRunnerMock,
+  readDevboxRunControlMock,
   recordDevboxRunEventsMock,
   shutdownDevboxRunnerMock,
 } = vi.hoisted(() => ({
@@ -12,6 +13,7 @@ const {
   claimNextDevboxRunMock: vi.fn(),
   completeDevboxRunMock: vi.fn(),
   heartbeatDevboxRunnerMock: vi.fn(),
+  readDevboxRunControlMock: vi.fn(),
   recordDevboxRunEventsMock: vi.fn(),
   shutdownDevboxRunnerMock: vi.fn(),
 }));
@@ -24,6 +26,7 @@ vi.mock('@/lib/devboxes/agent-store', () => ({
   claimNextDevboxRun: claimNextDevboxRunMock,
   completeDevboxRun: completeDevboxRunMock,
   heartbeatDevboxRunner: heartbeatDevboxRunnerMock,
+  readDevboxRunControl: readDevboxRunControlMock,
   recordDevboxRunEvents: recordDevboxRunEventsMock,
   shutdownDevboxRunner: shutdownDevboxRunnerMock,
 }));
@@ -344,8 +347,28 @@ describe('devbox agent routes', () => {
       status: 'succeeded',
     });
     await expect(response.json()).resolves.toMatchObject({
+      cancelRequested: false,
       events: 1,
       message: 'events accepted',
+    });
+    // A completed run needs no stop check.
+    expect(readDevboxRunControlMock).not.toHaveBeenCalled();
+  });
+
+  it('reports a remote stop request to the claiming runner', async () => {
+    readDevboxRunControlMock.mockResolvedValue({ cancelRequested: true });
+
+    const response = await events(createRequest({ runId: 'run-1' }));
+
+    expect(response.status).toBe(200);
+    expect(recordDevboxRunEventsMock).not.toHaveBeenCalled();
+    expect(readDevboxRunControlMock).toHaveBeenCalledWith({
+      runId: 'run-1',
+      runnerId: 'runner-1',
+    });
+    await expect(response.json()).resolves.toMatchObject({
+      cancelRequested: true,
+      events: 0,
     });
   });
 });

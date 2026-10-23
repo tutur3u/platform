@@ -333,6 +333,44 @@ exercise two actors through the production session wrapper and signed satellite
 tokens, with cookie identity and database/Storage fixtures. Hosted Storage
 acceptance remains a separate gate.
 
+### Workspace avatar ownership
+
+Web and registered satellite workspace-avatar PATCH and DELETE retain
+`manage_workspace_settings` authorization on the resolved workspace. PATCH
+accepts only the upload ticket's exact
+`workspaces/<workspace UUID>/avatar-<lowercase ticket UUID>.webp` path. It does not
+trim, decode or normalize the submitted path. DELETE first clears that workspace's
+field, then best-effort removes only a stored URL whose unparsed string matches
+either exact configured Supabase origin (`SUPABASE_SERVER_URL` or
+`NEXT_PUBLIC_SUPABASE_URL`), `avatars` bucket, workspace prefix and
+exact ticket filename. The DELETE-time ownership check remains authoritative even
+for values written directly to the workspace row. Traversal, encodings, extra
+segments, backslashes, repeated slashes, query strings, fragments, noncanonical
+host/port spellings, other buckets and other owners never authorize removal.
+Older filenames and external URLs are cleared without deleting objects.
+
+The central web PATCH and DELETE routes accept existing web/mobile Supabase
+sessions; they do not opt into satellite app-session bearer authentication.
+Satellites keep their dedicated authenticated workspace handlers. Their central
+upload-ticket delegation retains its existing app-session support; a future
+workspace-settings-specific scope should replace its profile-write scope.
+
+Web field reads and updates retain the session's RLS client. Only after permission,
+field-clear and exact stored-URL ownership checks succeed does web cleanup create
+an admin client to remove that one object. Satellite cleanup uses its existing
+server client after the same checks. No `avatars` DELETE policy was found in
+migrations, so ordinary cookie RLS cleanup would leave objects behind; this
+bounded privileged call avoids that policy-denied cleanup without broadening
+Storage policy. Failed Storage operations still leave orphans because cleanup is
+best effort. Existing images, tickets, public API paths and response shapes are
+unchanged.
+
+Regression coverage: [web workspace avatar route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/avatar/route.test.ts)
+and [satellite workspace avatar ownership tests](https://github.com/tutur3u/platform/blob/main/packages/satellite/src/routes/workspace-avatar-ownership.test.ts)
+exercise two actors and workspaces, direct stored-URL injection, rejected PATCH
+paths, permission denial and legitimate set/remove. These use database and
+Storage fixtures; hosted Storage policy acceptance is separate.
+
 Avatar uploads are automatically optimized to at most **1 MB (1,000,000 bytes)**;
 banners to **2 MB (2,000,000 bytes)**. Source PNG, JPEG, WebP and GIF files may be
 up to 2 MiB for avatars or 5 MiB for banners. This rule covers canonical personal

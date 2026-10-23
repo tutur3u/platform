@@ -22,7 +22,7 @@
     "type-check:worker": "tsc --noEmit --project tsconfig.worker.json",
     "type-check:boundary": "tsc --project tsconfig.boundary.json"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "mail.tuturuuu",
     "script": "dev:app"

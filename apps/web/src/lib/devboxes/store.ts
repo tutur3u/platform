@@ -44,12 +44,6 @@ type PrivateTableClient = {
       };
     };
   };
-  update: (value: unknown) => {
-    eq: (
-      column: string,
-      value: string
-    ) => Promise<{ error: DevboxStorageErrorLike }>;
-  };
 };
 
 const DEVBOX_RUNNER_AUTHORIZED_STATUSES = new Set(['online', 'registered']);
@@ -98,6 +92,60 @@ function getPrivateTable(
   table: string
 ): PrivateTableClient {
   return client.from(table) as PrivateTableClient;
+}
+
+type ScopedUpdateBuilder = {
+  eq: (column: string, value: string) => ScopedUpdateBuilder;
+  in: (column: string, values: string[]) => ScopedUpdateBuilder;
+  select: (columns: string) => Promise<{
+    data: unknown[] | null;
+    error: DevboxStorageErrorLike;
+  }>;
+};
+
+type OwnedRowSelectBuilder = {
+  eq: (column: string, value: string) => OwnedRowSelectBuilder;
+  limit: (count: number) => Promise<{
+    data: unknown[] | null;
+    error: DevboxStorageErrorLike;
+  }>;
+};
+
+function getScopedUpdate(
+  client: DevboxPrivateSchemaClient,
+  table: string,
+  value: Record<string, unknown>
+) {
+  return (
+    client.from(table) as {
+      update: (value: unknown) => ScopedUpdateBuilder;
+    }
+  ).update(value);
+}
+
+async function selectOwnedRow(
+  client: DevboxPrivateSchemaClient,
+  table: string,
+  input: { actorId: string; columns: string; id: string }
+) {
+  const { data, error } = await (
+    client.from(table) as {
+      select: (columns: string) => OwnedRowSelectBuilder;
+    }
+  )
+    .select(input.columns)
+    .eq('id', input.id)
+    .eq('actor_id', input.actorId)
+    .limit(1);
+
+  if (error) {
+    throw getDevboxStorageError(error);
+  }
+
+  const row = data?.[0];
+  return row && typeof row === 'object'
+    ? (row as Record<string, unknown>)
+    : null;
 }
 
 function isMissingHeartbeatEnabledColumn(error: DevboxStorageErrorLike) {
@@ -256,53 +304,143 @@ export async function createDevboxLease(input: CreateDevboxLeaseInput) {
   };
 }
 
-export async function releaseDevboxLease(leaseId: string) {
+export async function releaseDevboxLease(input: {
+  actorId: string;
+  leaseId: string;
+}) {
   const privateClient = getPrivateSchemaClient(
     await createPrivateDevboxClient()
   );
-  const { error } = await getPrivateTable(privateClient, 'devbox_leases')
-    .update({
-      released_at: new Date().toISOString(),
+  const now = new Date().toISOString();
+  const { data, error } = await getScopedUpdate(
+    privateClient,
+    'devbox_leases',
+    {
+      released_at: now,
       status: 'released',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', leaseId);
+      updated_at: now,
+    }
+  )
+    .eq('id', input.leaseId)
+    .eq('actor_id', input.actorId)
+    .eq('status', 'active')
+    .select('id');
 
   if (error) {
     throw getDevboxStorageError(error);
   }
 
-  return { message: `Devbox lease ${leaseId} released.` };
-}
-
-export async function stopDevboxRun(runId: string) {
-  const privateClient = getPrivateSchemaClient(
-    await createPrivateDevboxClient()
-  );
-  const { error } = await getPrivateTable(privateClient, 'devbox_runs')
-    .update({
-      status: 'cancel_requested',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', runId);
-
-  if (error) {
-    throw getDevboxStorageError(error);
+  if (!data?.length) {
+    // Repeated releases stay idempotent for the owner without rewriting
+    // released_at; leases owned by another actor are indistinguishable from
+    // unknown ids.
+    const existing = await selectOwnedRow(privateClient, 'devbox_leases', {
+      actorId: input.actorId,
+      columns: 'id,status',
+      id: input.leaseId,
+    });
+    if (existing?.status !== 'released') {
+      throw new DevboxStoreError('Devbox lease not found.', 404);
+    }
   }
 
-  return { message: `Devbox run ${runId} cancellation requested.` };
+  return { message: `Devbox lease ${input.leaseId} released.` };
 }
 
-export async function listDevboxRunLogs(runId: string) {
+export async function stopDevboxRun(input: { actorId: string; runId: string }) {
   const privateClient = getPrivateSchemaClient(
     await createPrivateDevboxClient()
   );
+  const now = new Date().toISOString();
+
+  // Queued runs have no process to signal, so they finish immediately.
+  const queued = await getScopedUpdate(privateClient, 'devbox_runs', {
+    completed_at: now,
+    status: 'cancelled',
+    updated_at: now,
+  })
+    .eq('id', input.runId)
+    .eq('actor_id', input.actorId)
+    .eq('status', 'queued')
+    .select('id');
+
+  if (queued.error) {
+    throw getDevboxStorageError(queued.error);
+  }
+
+  if (queued.data?.length) {
+    return {
+      message: `Devbox run ${input.runId} cancelled.`,
+      status: 'cancelled' as const,
+    };
+  }
+
+  // Running runs are signalled through the agent; terminal runs never change.
+  const running = await getScopedUpdate(privateClient, 'devbox_runs', {
+    status: 'cancel_requested',
+    updated_at: now,
+  })
+    .eq('id', input.runId)
+    .eq('actor_id', input.actorId)
+    .eq('status', 'running')
+    .select('id');
+
+  if (running.error) {
+    throw getDevboxStorageError(running.error);
+  }
+
+  if (!running.data?.length) {
+    const existing = await selectOwnedRow(privateClient, 'devbox_runs', {
+      actorId: input.actorId,
+      columns: 'id,status',
+      id: input.runId,
+    });
+    if (existing?.status === 'cancelled') {
+      return {
+        message: `Devbox run ${input.runId} cancelled.`,
+        status: 'cancelled' as const,
+      };
+    }
+    if (existing?.status === 'succeeded' || existing?.status === 'failed') {
+      return {
+        message: `Devbox run ${input.runId} ${existing.status}.`,
+        status: existing.status,
+      };
+    }
+    if (existing?.status !== 'cancel_requested') {
+      throw new DevboxStoreError('Active devbox run not found.', 404);
+    }
+  }
+
+  return {
+    message: `Devbox run ${input.runId} cancellation requested.`,
+    status: 'cancel_requested' as const,
+  };
+}
+
+export async function listDevboxRunLogs(input: {
+  actorId: string;
+  runId: string;
+}) {
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
+  const run = await selectOwnedRow(privateClient, 'devbox_runs', {
+    actorId: input.actorId,
+    columns: 'id',
+    id: input.runId,
+  });
+
+  if (!run) {
+    throw new DevboxStoreError('Devbox run not found.', 404);
+  }
+
   const { data, error } = await getPrivateTable(
     privateClient,
     'devbox_run_events'
   )
     .select('message')
-    .eq('run_id', runId)
+    .eq('run_id', input.runId)
     .order('created_at', { ascending: true })
     .limit(1000);
 

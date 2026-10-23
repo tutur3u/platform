@@ -62,7 +62,7 @@
     "lodash-es@<4.18.0": "4.18.0",
     "nanoid@>=3.0.0 <3.3.18": "3.3.18"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "private": true,
   "scripts": {
     "clean": "rm -rf bun.lock && find . -name node_modules -prune -o \\( -name .next -o -name .turbo \\) -type d -exec rm -rf {} + && bunx npkill --delete-all -y",
