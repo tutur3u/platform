@@ -2105,7 +2105,7 @@ class CommandHandler:
 
         except Exception as e:
             print(f"Error in board selection: {e}")
-            return {"content": f"❌ **Error:** Failed to load lists: {e!s}", "components": []}
+            return {"content": "❌ **Error:** Could not load lists.", "components": []}
 
     def create_ticket_form_modal(self, list_id: str, _user_info: dict | None = None) -> dict:
         """Create ticket form modal data."""
@@ -2155,7 +2155,7 @@ class CommandHandler:
             return {
                 "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                 "data": {
-                    "content": f"❌ **Error:** Failed to create ticket form: {e!s}",
+                    "content": "❌ **Error:** Could not create the ticket form.",
                     "flags": 64,  # EPHEMERAL flag
                 },
             }

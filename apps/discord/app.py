@@ -1060,7 +1060,7 @@ def web_app():
                     return {
                         "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                         "data": {
-                            "content": f"❌ **Error:** Failed to create ticket form: {e!s}",
+                            "content": "❌ **Error:** Could not create the ticket form.",
                             "flags": 64,  # EPHEMERAL flag
                         },
                     }
