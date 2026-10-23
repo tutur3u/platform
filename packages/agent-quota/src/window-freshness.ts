@@ -16,12 +16,15 @@ export function windowFreshnessTtlMs(
 export function windowObservationIsFresh(
   window: Pick<UsageWindow, 'observedAt' | 'freshnessTtlMs'>,
   now: Date,
-  providerTtlMs: number
+  providerTtlMs: number,
+  maxFutureSkewMs = 5 * 60_000
 ) {
   const observedAt = Date.parse(window.observedAt);
+  const ttlMs = windowFreshnessTtlMs(window, providerTtlMs);
   return (
     Number.isFinite(observedAt) &&
-    observedAt <= now.getTime() + 5 * 60_000 &&
-    now.getTime() - observedAt <= windowFreshnessTtlMs(window, providerTtlMs)
+    observedAt <= now.getTime() + maxFutureSkewMs &&
+    ttlMs > 0 &&
+    now.getTime() - observedAt <= ttlMs
   );
 }

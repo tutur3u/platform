@@ -289,4 +289,48 @@ describe('routing policy', () => {
       'codex_z',
     ]);
   });
+
+  it('orders UNKNOWN pools by bounded signal diagnostic and ignores elapsed resets', () => {
+    const at = new Date('2026-10-23T20:52:25.000Z');
+    const unknownPool = (
+      instanceId: string,
+      usedPercent: number,
+      resetsAt: string
+    ): AccountUsage => ({
+      instanceId,
+      provider: 'claude',
+      label: instanceId,
+      models: ['claude-opus-5-5'],
+      windows: [
+        {
+          id: 'five_hour',
+          kind: 'short',
+          usedPercent,
+          observedAt: '2026-10-23T20:30:00.000Z',
+          resetsAt,
+          source: 'sanitized ordering fixture',
+          authoritative: true,
+        },
+      ],
+    });
+    const result = recommend({
+      accounts: [
+        unknownPool('claudeAgent', 80, '2026-10-23T23:00:00Z'),
+        unknownPool('claude_kv', 20, '2026-10-23T23:00:00Z'),
+        unknownPool('claude_dd', 10, '2026-10-23T20:00:00Z'),
+      ],
+      active: [],
+      task: { model: 'claude-opus-5-5' },
+      now: at,
+    });
+    expect(result.ranked.map((item) => item.instanceId)).toEqual([
+      'claude_kv',
+      'claudeAgent',
+      'claude_dd',
+    ]);
+    expect(
+      result.ranked.map((item) => item.signalOrderRemainingPercent)
+    ).toEqual([80, 20, null]);
+    expect(result.ranked.every((item) => item.state === 'UNKNOWN')).toBe(true);
+  });
 });

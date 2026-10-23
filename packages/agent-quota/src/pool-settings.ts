@@ -90,7 +90,8 @@ export function poolPolicyReasons(
         windowObservationIsFresh(
           w,
           context.now,
-          SIGNAL_TTL_MS[account.provider]
+          SIGNAL_TTL_MS[account.provider],
+          0
         ) &&
         !!w.resetsAt &&
         Date.parse(w.resetsAt) > context.now.getTime()

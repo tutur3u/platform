@@ -1,7 +1,7 @@
 import { constants } from 'node:fs';
 import { open } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { stateRoot } from '../state-root';
 import type { AccountUsage, UsageWindow } from '../types';
 import { homeIdentity } from '../usage-import';
 import { PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS } from '../window-freshness';
@@ -10,7 +10,7 @@ import { windowScope } from '../window-scope';
 // Provider status caches are distinct from provider profiles and authentication files.
 export async function collectSnapshot(
   account: AccountUsage,
-  cacheDir = join(homedir(), '.t3', 'caches'),
+  cacheDir = stateRoot('.t3', 'caches'),
   settings?: unknown
 ): Promise<AccountUsage> {
   if (!/^[a-zA-Z0-9_-]+$/.test(account.instanceId)) return account;
@@ -106,7 +106,7 @@ export async function collectSnapshot(
               window.windowDurationMins > 0
                 ? window.windowDurationMins
                 : undefined,
-            usedPercent: kindKnown ? window.usedPercent : undefined,
+            usedPercent: window.usedPercent,
             resetsAt:
               typeof window.resetsAt === 'string' ? window.resetsAt : undefined,
             source: 'T3 provider status cache usageLimits',

@@ -46,7 +46,8 @@ export function clearRecoveredLimits(context: AdmissionContext) {
           windowObservationIsFresh(
             window,
             context.now,
-            SIGNAL_TTL_MS[account.provider]
+            SIGNAL_TTL_MS[account.provider],
+            0
           ) &&
           (!event.resetsAt ||
             Boolean(

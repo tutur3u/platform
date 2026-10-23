@@ -58,6 +58,11 @@ describe('model-only provider capacity cooldown', () => {
     expect(
       completedFailureClass('Native Claude handoff exceeded context allowance')
     ).toBeNull();
+    expect(
+      executionFailureKind(
+        'Usage Limit Reached; context window resets in 6 days'
+      )
+    ).toBeNull();
   });
   it('records an exact model block with a default thirty-minute next eligibility', () => {
     const block = createBlock({

@@ -1,5 +1,9 @@
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, type QuotaBlock } from './block-ledger';
+import {
+  compareSignalOrder,
+  signalOrderRemainingPercent,
+} from './signal-order';
 import type {
   AccountReserve,
   AccountUsage,
@@ -58,7 +62,6 @@ function rankOne(
   const reasons: RecommendationReason[] = [];
   const windows = account.windows.filter(
     (window): window is typeof window & { usedPercent: number } =>
-      window.authoritative &&
       typeof window.usedPercent === 'number' &&
       Number.isFinite(window.usedPercent) &&
       window.usedPercent >= 0 &&
@@ -73,8 +76,12 @@ function rankOne(
       resetAt > now.getTime()
     );
   };
-  const freshWindows = windows.filter(isFresh);
-  const staleWindows = windows.filter((window) => !isFresh(window));
+  const freshWindows = windows.filter(
+    (window) => window.authoritative && isFresh(window)
+  );
+  const staleWindows = windows.filter(
+    (window) => !window.authoritative || !isFresh(window)
+  );
   const count = (account.instanceIds ?? [account.instanceId]).reduce(
     (sum, id) => sum + activeCount(id, active),
     0
@@ -86,7 +93,7 @@ function rankOne(
   const known =
     freshWindows.length > 0 &&
     staleWindows.length === 0 &&
-    account.windows.filter((window) => window.usedPercent !== undefined)
+    account.windows.filter((window) => typeof window.usedPercent === 'number')
       .length === windows.length;
   const maximum = Math.max(...freshWindows.map((window) => window.usedPercent));
   const state = !known
@@ -318,6 +325,11 @@ function rankOne(
           : 'wait',
     instanceIds: account.instanceIds ?? [account.instanceId],
     score,
+    signalOrderRemainingPercent: signalOrderRemainingPercent(
+      account.windows,
+      task.model,
+      now
+    ),
     eligible,
     reasons,
   };
@@ -369,6 +381,12 @@ export function recommend(options: RecommendOptions): Recommendation {
       (a, b) =>
         Number(b.eligible) - Number(a.eligible) ||
         Number(b.state === 'healthy') - Number(a.state === 'healthy') ||
+        (a.state === 'UNKNOWN' && b.state === 'UNKNOWN'
+          ? compareSignalOrder(
+              a.signalOrderRemainingPercent,
+              b.signalOrderRemainingPercent
+            )
+          : 0) ||
         b.score - a.score ||
         a.instanceId.localeCompare(b.instanceId)
     );

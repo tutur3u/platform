@@ -295,7 +295,7 @@ export function snapshotWindows(
         window.windowDurationMins > 0
           ? window.windowDurationMins
           : undefined,
-      usedPercent: kindKnown ? window.usedPercent : undefined,
+      usedPercent: window.usedPercent,
       resetsAt:
         typeof window.resetsAt === 'string' ? window.resetsAt : undefined,
       observedAt: data.checkedAt as string,
@@ -323,7 +323,14 @@ export function applyImportedUsage(
     const windows = provider
       ? snapshotWindows(account, provider.usageLimits)
       : [];
-    if (provider && windows.length === 0) return { ...account, windows: [] };
+    if (provider && windows.length === 0)
+      return {
+        ...account,
+        windows: account.windows.map((window) => ({
+          ...window,
+          freshnessTtlMs: 0,
+        })),
+      };
     const newer =
       windows.length &&
       (!account.windows.length ||
@@ -341,7 +348,11 @@ export function applyImportedUsage(
   });
 }
 
-export function mergeUsageImport(previous: unknown, next: unknown) {
+export function mergeUsageImport(
+  previous: unknown,
+  next: unknown,
+  now = new Date()
+) {
   const old = record(previous),
     update = record(next);
   const providers = new Map<string, Record<string, unknown>>();
@@ -351,6 +362,10 @@ export function mergeUsageImport(previous: unknown, next: unknown) {
   ]) {
     const provider = record(item);
     if (typeof provider.instanceId !== 'string') continue;
+    const checkedAt = Date.parse(
+      String(record(provider.usageLimits).checkedAt)
+    );
+    if (!Number.isFinite(checkedAt) || checkedAt > now.getTime()) continue;
     const existing = providers.get(provider.instanceId);
     if (
       !existing ||
@@ -359,6 +374,9 @@ export function mergeUsageImport(previous: unknown, next: unknown) {
     )
       providers.set(provider.instanceId, provider);
   }
+  const provenance = [update.provenance, old.provenance].find(
+    (value): value is string => typeof value === 'string'
+  );
   return {
     providers: [...providers.values()],
     settings: {
@@ -367,6 +385,8 @@ export function mergeUsageImport(previous: unknown, next: unknown) {
         ...record(record(update.settings).providerInstances),
       },
     },
-    provenance: update.provenance ?? old.provenance,
+    provenance: provenance
+      ? safeReceipt(provenance, failureClass(provenance)).text
+      : undefined,
   };
 }

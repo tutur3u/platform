@@ -102,8 +102,10 @@ describe('passive T3 Usage registry parity import', () => {
         )
     ).toBe(false);
     expect(
-      coversModel(byId.get('antigravity')!.windows[0]!, 'gemini-4-argon-high')
-    ).toBe(false);
+      byId
+        .get('antigravity')!
+        .windows.every((window) => !coversModel(window, 'gemini-4-argon-high'))
+    ).toBe(true);
   });
 
   it('uses checkedAt freshness and keeps stale snapshots UNKNOWN', () => {
@@ -184,11 +186,151 @@ describe('passive T3 Usage registry parity import', () => {
       ],
     });
     expect(noTelemetry).toEqual([]);
-    expect(missingRegistrySignal[0]?.windows).toEqual([]);
+    expect(missingRegistrySignal[0]?.windows).toHaveLength(1);
+    expect(missingRegistrySignal[0]?.windows[0]?.freshnessTtlMs).toBe(0);
     expect(unknownKind[0]).toMatchObject({
-      usedPercent: undefined,
+      usedPercent: 0,
       authoritative: false,
       freshnessTtlMs: 300_000,
     });
+  });
+
+  it('keeps unknown-kind account exhaustion binding beside fresh session data', () => {
+    const imported = snapshotWindows(accounts[2]!, {
+      checkedAt: now.toISOString(),
+      windows: [
+        {
+          id: 'session',
+          kind: 'session',
+          usedPercent: 10,
+          resetsAt: '2026-10-24T00:00:00Z',
+        },
+        {
+          id: 'account-future-kind',
+          kind: 'provider-added-kind',
+          usedPercent: 100,
+          resetsAt: '2026-10-24T00:00:00Z',
+        },
+      ],
+    });
+    const ranked = recommend({
+      accounts: [{ ...accounts[2]!, windows: imported }],
+      active: [],
+      task: { model: 'claude-opus-5-5' },
+      now,
+    }).ranked[0];
+    expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
+    expect(ranked?.reasons.map((reason) => reason.code)).toContain(
+      'near-limit-stale'
+    );
+  });
+
+  it('blocks a stale unknown-kind exhausted window until its reset', () => {
+    const windows = snapshotWindows(accounts[2]!, {
+      checkedAt: '2026-10-23T20:00:00.000Z',
+      windows: [
+        {
+          id: 'five_hour',
+          kind: 'provider-added-kind',
+          usedPercent: 100,
+          resetsAt: '2026-10-24T00:00:00Z',
+        },
+      ],
+    });
+    const ranked = recommend({
+      accounts: [{ ...accounts[2]!, windows }],
+      active: [],
+      task: { model: 'claude-opus-5-5' },
+      now,
+    }).ranked[0];
+    expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
+    expect(ranked?.reasons.map((reason) => reason.code)).toContain(
+      'near-limit-stale'
+    );
+  });
+
+  it('demotes exhausted cache windows instead of deleting them when registry usage is absent', () => {
+    const exhausted: AccountUsage = {
+      ...accounts[2]!,
+      windows: [
+        {
+          id: 'five_hour',
+          kind: 'short',
+          usedPercent: 100,
+          resetsAt: '2026-10-24T00:00:00Z',
+          observedAt: now.toISOString(),
+          source: 'sanitized cache fixture',
+          authoritative: true,
+        },
+      ],
+    };
+    const demoted = applyImportedUsage([exhausted], {
+      providers: [
+        {
+          instanceId: 'claudeAgent',
+          driver: 'claudeAgent',
+          usageLimits: { unavailable: true },
+        },
+      ],
+    })[0]!;
+    expect(demoted.windows).toHaveLength(1);
+    expect(demoted.windows[0]?.freshnessTtlMs).toBe(0);
+    const ranked = recommend({
+      accounts: [demoted],
+      active: [],
+      task: { model: 'claude-opus-5-5' },
+      now,
+    }).ranked[0];
+    expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
+    expect(ranked?.reasons.map((reason) => reason.code)).toContain(
+      'near-limit-stale'
+    );
+  });
+
+  it('keeps a fresh zero-used Antigravity third-party window UNKNOWN for Gemini', () => {
+    const antigravity = accounts.find(
+      (item) => item.instanceId === 'antigravity'
+    )!;
+    const windows = snapshotWindows(antigravity, {
+      checkedAt: now.toISOString(),
+      windows: [
+        {
+          id: '3p-5h',
+          kind: 'session',
+          usedPercent: 0,
+          resetsAt: '2026-10-23T21:00:00Z',
+        },
+      ],
+    });
+    const ranked = recommend({
+      accounts: [{ ...antigravity, windows }],
+      active: [],
+      task: { model: 'gemini-4-argon-high' },
+      now,
+    }).ranked[0];
+    expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
+    expect(ranked?.signalOrderRemainingPercent).toBeNull();
+  });
+
+  it('does not use fresh Fable-only remaining as Opus headroom', () => {
+    const fable = snapshotWindows(accounts[2]!, {
+      checkedAt: now.toISOString(),
+      windows: [
+        {
+          id: 'seven_day_fable',
+          kind: 'weekly',
+          label: 'Weekly · Fable',
+          usedPercent: 5,
+          resetsAt: '2026-10-30T20:34:00Z',
+        },
+      ],
+    });
+    const ranked = recommend({
+      accounts: [{ ...accounts[2]!, windows: fable }],
+      active: [],
+      task: { model: 'claude-opus-5-5' },
+      now,
+    }).ranked[0];
+    expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
   });
 });

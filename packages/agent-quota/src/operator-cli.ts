@@ -4,11 +4,16 @@ import { collapseAccounts } from './accounts';
 import { updateBlockLedger } from './block-ledger';
 import { collectAll } from './collectors';
 import { collectPoolReceipts } from './collectors/children';
+import { MAX_FUTURE_OBSERVATION_SKEW_MS } from './failure-receipt';
 import { HookError, readLedger } from './hook-ledger';
 import { SIGNAL_TTL_MS } from './policy';
 import { settingsFor, validatePoolSettings } from './pool-settings';
 import { gateDecision } from './positional-admit';
 import { applyDescendantReceipts } from './recovery';
+import {
+  compareSignalOrder,
+  signalOrderRemainingPercent,
+} from './signal-order';
 import {
   applyImportedUsage,
   mergeUsageImport,
@@ -29,7 +34,10 @@ function input(): Record<string, unknown> {
   return value;
 }
 // Import only a deliberately narrow app-side export, never a full settings/auth document.
-export function validateUsageImport(value: Record<string, unknown>) {
+export function validateUsageImport(
+  value: Record<string, unknown>,
+  now = new Date()
+) {
   if (
     Object.keys(value).some(
       (k) =>
@@ -86,6 +94,25 @@ export function validateUsageImport(value: Record<string, unknown>) {
         !Array.isArray(limits.windows))
     )
       throw new HookError('usage-import-limits-not-narrow');
+    if (limits) {
+      const checkedAt = Date.parse(String(limits.checkedAt));
+      if (
+        !Number.isFinite(checkedAt) ||
+        checkedAt > now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS
+      )
+        throw new HookError('usage-import-checked-at-invalid');
+      for (const window of (limits.windows ?? []) as Record<
+        string,
+        unknown
+      >[]) {
+        if (
+          typeof window.resetsAt === 'string' &&
+          (!Number.isFinite(Date.parse(window.resetsAt)) ||
+            Date.parse(window.resetsAt) <= checkedAt)
+        )
+          throw new HookError('usage-import-reset-invalid');
+      }
+    }
     for (const w of (limits?.windows ?? []) as Record<string, unknown>[])
       if (
         Object.keys(w).some(
@@ -169,7 +196,7 @@ export async function runOperator(command: string, args: string[]) {
           })
         );
       } else {
-        const imported = validateUsageImport(value);
+        const imported = validateUsageImport(value, new Date(at));
         const providers = imported.providers as { instanceId: string }[];
         if (
           [
@@ -303,6 +330,11 @@ export async function runOperator(command: string, args: string[]) {
             settingsFor(account, context)?.preference ??
             (account.provider === 'codex' ? 4 : 1),
           identity: account.accountIdentityHash ? 'established' : 'UNKNOWN',
+          signalOrderRemainingPercent: signalOrderRemainingPercent(
+            account.windows,
+            model,
+            context.now
+          ),
           windows: account.windows.map((w) => ({
             id: w.id,
             label: w.label,
@@ -335,6 +367,12 @@ export async function runOperator(command: string, args: string[]) {
         Number(b.exitCode === 0) - Number(a.exitCode === 0) ||
         Number('state' in b && b.state === 'healthy') -
           Number('state' in a && a.state === 'healthy') ||
+        (a.state === 'UNKNOWN' && b.state === 'UNKNOWN'
+          ? compareSignalOrder(
+              a.signalOrderRemainingPercent,
+              b.signalOrderRemainingPercent
+            )
+          : 0) ||
         b.preference - a.preference ||
         a.pool.localeCompare(b.pool)
     );

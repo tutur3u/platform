@@ -41,6 +41,7 @@ export function executionFailureKind(
   )
     return 'provider-start-failure';
   if (
+    failureClass(message) !== 'usage-limit' &&
     /context (?:allowance|window|length)|context limit|prompt (?:is )?too long|maximum context/i.test(
       message
     )

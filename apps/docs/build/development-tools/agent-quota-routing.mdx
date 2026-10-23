@@ -86,6 +86,11 @@ when a provider omits it. Missing or unavailable cached usage produces
 `UNKNOWN` with `no-usage-signal`. This is a snapshot consumer; refreshing T3's
 Limits tab remains T3's responsibility.
 
+An unrecognized provider window kind keeps its reported percentage but is marked
+non-authoritative. It cannot establish headroom. If it reports a near-limit or
+exhausted value with a pending reset, the pool stays blocked until reset evidence
+changes.
+
 Models and display names come from `orchestrator_capabilities`, through the
 supported T3 ACP command transport when available. A caller using native MCP
 can pipe that tool's JSON response to `--catalog-stdin`. No Antigravity model
