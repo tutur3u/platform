@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import { notificationDisplayCopy } from './display-copy';
+import { mailPushPreview } from './mail-push-preview';
 import { buildPushData } from './push-delivery';
 
 const notification = {
@@ -49,6 +50,19 @@ describe('Mail push plain safe previews', () => {
       body: 'Subject …',
     });
     expect(JSON.stringify(buildPushData(relative))).not.toContain('private');
+  });
+  it('leaves no markup delimiters behind for nested or unterminated tags', () => {
+    for (const input of [
+      '<<b>script>alert(1)',
+      '<scr<b>ipt>Hi</scr</b>ipt>',
+      'Sender <img src=x',
+      'a > b',
+    ]) {
+      const preview = mailPushPreview(input);
+      expect(preview).not.toMatch(/[<>]/u);
+    }
+    expect(mailPushPreview('<<b>script>Hello')).toBe('scriptHello');
+    expect(mailPushPreview('<b>Sender</b> Subject')).toBe('Sender Subject');
   });
   it('preserves other app copy and valid Mail navigation identities', () => {
     expect(

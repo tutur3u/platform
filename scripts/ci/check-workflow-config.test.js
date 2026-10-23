@@ -574,7 +574,7 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   }
   for (const restoreStep of [runtimeRestoreStep, packageRestoreStep]) {
     assert.match(restoreStep, /github\.ref != 'refs\/heads\/main'/);
-    assert.match(restoreStep, /github\.event_name == 'pull_request'/);
+    assert.match(restoreStep, /github\.event_name != 'push'/);
     assert.match(restoreStep, /github\.actor == 'dependabot\[bot\]'/);
   }
   assert.doesNotMatch(setupAction, /node_modules/);
@@ -620,8 +620,11 @@ test('secretless Turbo fallback caches are task-scoped and trusted-write only', 
     'utf8'
   );
 
-  assert.match(setupAction, /uses: actions\/cache@v6/);
-  assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
+  assert.match(setupAction, /uses: actions\/cache@[0-9a-f]{40} # v6\b/);
+  assert.match(
+    setupAction,
+    /uses: actions\/cache\/restore@[0-9a-f]{40} # v6\b/
+  );
   assert.match(setupAction, /\$\{\{ inputs\.family \}\}/);
   assert.match(setupAction, /hashFiles\('(bun\.lock|turbo\.json)'\)/);
   assert.match(setupAction, /runner\.os/);
@@ -682,7 +685,7 @@ test('paused TanStack migration E2E retains its restartable matrix', () => {
     (step) => step.name === 'Upload migration E2E artifacts'
   );
   assert.ok(artifactStep, 'migration-e2e must upload diagnostics artifacts');
-  assert.equal(artifactStep.uses, 'actions/upload-artifact@v7');
+  assert.match(artifactStep.uses, /^actions\/upload-artifact@[0-9a-f]{40}$/u);
   assert.equal(artifactStep.if, githubExpression('failure()'));
   assert.equal(
     artifactStep.with?.name,
@@ -747,9 +750,9 @@ test('Inventory and Storefront retain their paused E2E contract', () => {
     stepNamed('Setup Supabase CLI')?.uses,
     './.github/actions/setup-supabase-cli-with-retry'
   );
-  assert.equal(
-    stepNamed('Restore cached Supabase Docker images')?.uses,
-    'actions/cache/restore@v6'
+  assert.match(
+    stepNamed('Restore cached Supabase Docker images')?.uses || '',
+    /^actions\/cache\/restore@[0-9a-f]{40}$/u
   );
   assert.match(
     stepNamed('Restore cached Supabase Docker images')?.with?.key || '',
@@ -781,7 +784,10 @@ test('Inventory and Storefront retain their paused E2E contract', () => {
     'node scripts/ci/e2e-diagnostics-redact.js --report tmp/e2e-inventory-results.json --output tmp/e2e-diagnostics/inventory-results.json'
   );
   const artifactStep = stepNamed('Upload cache E2E failure artifact');
-  assert.equal(artifactStep?.uses, 'actions/upload-artifact@v7');
+  assert.match(
+    artifactStep?.uses || '',
+    /^actions\/upload-artifact@[0-9a-f]{40}$/u
+  );
   assert.equal(
     artifactStep?.if,
     githubExpression("failure() && steps.redact-inventory.outcome == 'success'")

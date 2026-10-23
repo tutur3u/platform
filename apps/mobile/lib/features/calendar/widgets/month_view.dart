@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
@@ -74,10 +75,18 @@ class MonthView extends StatelessWidget {
     final now = calendarNowInContext(context);
     final today = calendarDate(now.year, now.month, now.day);
 
+    // The page passes the dock clearance through to full-bleed canvases. The
+    // fixed six-row grid cannot scroll, so it stops above the dock.
+    final dockClearance = MediaQuery.paddingOf(context).bottom;
+
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+          // No side inset: labels centre over the full-bleed grid columns.
+          padding: const EdgeInsets.only(
+            top: AppSpacing.sm,
+            bottom: AppSpacing.md - AppSpacing.xxs,
+          ),
           child: Row(
             children: weekdayLabels
                 .map(
@@ -98,41 +107,44 @@ class MonthView extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final cellHeight = constraints.maxHeight / 6;
+          child: Padding(
+            padding: EdgeInsets.only(bottom: dockClearance),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final cellHeight = constraints.maxHeight / 6;
 
-              return GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemCount: visibleDates.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  mainAxisExtent: cellHeight,
-                ),
-                itemBuilder: (context, index) {
-                  final date = visibleDates[index];
-                  final isInFocusedMonth = date.month == month.month;
-                  final isToday = date == today;
-                  final isSelected =
-                      date.year == selectedDate.year &&
-                      date.month == selectedDate.month &&
-                      date.day == selectedDate.day;
-                  final dayEvents = _eventsForDay(date);
+                return GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: visibleDates.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    mainAxisExtent: cellHeight,
+                  ),
+                  itemBuilder: (context, index) {
+                    final date = visibleDates[index];
+                    final isInFocusedMonth = date.month == month.month;
+                    final isToday = date == today;
+                    final isSelected =
+                        date.year == selectedDate.year &&
+                        date.month == selectedDate.month &&
+                        date.day == selectedDate.day;
+                    final dayEvents = _eventsForDay(date);
 
-                  return _MonthDayCell(
-                    date: date,
-                    events: dayEvents,
-                    isToday: isToday,
-                    isSelected: isSelected,
-                    isInFocusedMonth: isInFocusedMonth,
-                    isFirstRow: index < 7,
-                    isFirstColumn: index % 7 == 0,
-                    onTap: () => onDaySelected(date),
-                  );
-                },
-              );
-            },
+                    return _MonthDayCell(
+                      date: date,
+                      events: dayEvents,
+                      isToday: isToday,
+                      isSelected: isSelected,
+                      isInFocusedMonth: isInFocusedMonth,
+                      isFirstRow: index < 7,
+                      isFirstColumn: index % 7 == 0,
+                      onTap: () => onDaySelected(date),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ),
       ],

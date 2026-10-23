@@ -6823,6 +6823,133 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsAppVersion => 'Phiên bản ứng dụng';
 
   @override
+  String get appearanceAccentAmber => 'Hổ phách';
+
+  @override
+  String get appearanceAccentBlue => 'Xanh dương';
+
+  @override
+  String get appearanceAccentGreen => 'Xanh lá';
+
+  @override
+  String get appearanceAccentIndigo => 'Chàm';
+
+  @override
+  String get appearanceAccentNeutral => 'Trung tính';
+
+  @override
+  String get appearanceAccentOrange => 'Cam';
+
+  @override
+  String get appearanceAccentRose => 'Hồng';
+
+  @override
+  String get appearanceAccentTeal => 'Xanh mòng két';
+
+  @override
+  String get appearanceAccentTheme => 'Theo chủ đề';
+
+  @override
+  String get appearanceAccentTitle => 'Màu nhấn';
+
+  @override
+  String get appearanceAccentViolet => 'Tím';
+
+  @override
+  String get appearanceAnimate => 'Nền chuyển động';
+
+  @override
+  String get appearanceAnimateDescription => 'Các đốm màu trôi chậm. Tốn thêm một chút pin.';
+
+  @override
+  String get appearanceAnimateReducedMotion => 'Tùy chọn Giảm chuyển động đang bật nên nền sẽ đứng yên.';
+
+  @override
+  String get appearanceBackgroundBlobs => 'Đốm màu';
+
+  @override
+  String get appearanceBackgroundGradient => 'Dải màu';
+
+  @override
+  String get appearanceBackgroundSolid => 'Trơn';
+
+  @override
+  String get appearanceBackgroundTitle => 'Nền';
+
+  @override
+  String get appearanceIntensity => 'Cường độ';
+
+  @override
+  String get appearanceModeTitle => 'Chế độ';
+
+  @override
+  String get appearanceNew => 'Mới';
+
+  @override
+  String get appearancePreviewTitle => 'Xem trước';
+
+  @override
+  String get appearanceReset => 'Khôi phục mặc định';
+
+  @override
+  String get appearanceResetDone => 'Đã khôi phục giao diện mặc định';
+
+  @override
+  String get appearanceSoftness => 'Độ mềm';
+
+  @override
+  String get appearanceSurfaceOpacity => 'Độ đục của thẻ';
+
+  @override
+  String get appearanceSurfacesTitle => 'Bề mặt';
+
+  @override
+  String get appearanceThemeAurora => 'Cực quang';
+
+  @override
+  String get appearanceThemeBlossom => 'Hoa đào';
+
+  @override
+  String get appearanceThemeClassic => 'Cổ điển';
+
+  @override
+  String get appearanceThemeEmber => 'Than hồng';
+
+  @override
+  String get appearanceThemeForest => 'Rừng xanh';
+
+  @override
+  String get appearanceThemeMono => 'Đơn sắc';
+
+  @override
+  String get appearanceThemeOcean => 'Đại dương';
+
+  @override
+  String get appearanceThemeSunset => 'Hoàng hôn';
+
+  @override
+  String get appearanceThemesTitle => 'Chủ đề';
+
+  @override
+  String get settingsAppearance => 'Giao diện';
+
+  @override
+  String get settingsProfileEdit => 'Sửa hồ sơ';
+
+  @override
+  String get settingsProfileManageWorkspace => 'Không gian';
+
+  @override
+  String settingsProfileWorkspaceCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'không gian',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get settingsAppearanceLanguage => 'Giao diện và ngôn ngữ';
 
   @override

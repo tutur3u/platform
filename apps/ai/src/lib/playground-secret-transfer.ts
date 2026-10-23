@@ -1,14 +1,15 @@
-const PREFIX = 'tuturuuu.ai-studio.playground-key.';
+// One-time handoff of a freshly created key from the API keys panel to the
+// playground. The key stays in this module's memory only: it is never written
+// to Web Storage, survives client-side navigation, and disappears on reload.
+const stagedSecrets = new Map<string, string>();
 
 export function stagePlaygroundSecret(workspaceId: string, secret: string) {
-  if (typeof sessionStorage === 'undefined') return;
-  sessionStorage.setItem(`${PREFIX}${workspaceId}`, secret);
+  stagedSecrets.clear();
+  stagedSecrets.set(workspaceId, secret);
 }
 
 export function takePlaygroundSecret(workspaceId: string) {
-  if (typeof sessionStorage === 'undefined') return '';
-  const key = `${PREFIX}${workspaceId}`;
-  const secret = sessionStorage.getItem(key) ?? '';
-  sessionStorage.removeItem(key);
+  const secret = stagedSecrets.get(workspaceId) ?? '';
+  stagedSecrets.delete(workspaceId);
   return secret;
 }

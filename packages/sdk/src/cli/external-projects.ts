@@ -1,8 +1,9 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import type { ExternalProjectSyncManifest } from '@tuturuuu/internal-api/external-projects';
 import type { TuturuuuUserClient } from '../platform';
 import { type FlagValue, getFlag } from './args';
+import { writeFileAtomically } from './atomic-file';
 
 const APPLY_CONFIRMATION = 'APPLY_EXTERNAL_PROJECT_SYNC';
 
@@ -56,7 +57,10 @@ async function readManifest(flags: Record<string, FlagValue>) {
 async function writeJsonFile(path: string, payload: unknown) {
   const resolvedPath = resolve(path);
   await mkdir(dirname(resolvedPath), { recursive: true });
-  await writeFile(resolvedPath, `${JSON.stringify(payload, null, 2)}\n`);
+  await writeFileAtomically(
+    resolvedPath,
+    `${JSON.stringify(payload, null, 2)}\n`
+  );
   return resolvedPath;
 }
 

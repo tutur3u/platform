@@ -669,7 +669,7 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
   );
 
   for (const job of [formatJob, lintJob]) {
-    assert.match(job, /uses: actions\/setup-node@v7/u);
+    assert.match(job, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/u);
     assert.match(job, /node-version: 24/u);
     assert.match(job, /printf '%s\\n' "\$biome_output"/u);
     assert.match(job, /Biome exit code \$biome_exit_code/u);
@@ -883,7 +883,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   assert.match(releaseJob, /contents:\s*write/);
   assert.match(releaseJob, /issues:\s*write/);
   assert.match(releaseJob, /pull-requests:\s*write/);
-  assert.match(releaseJob, /uses: actions\/checkout@v7/);
+  assert.match(releaseJob, /uses: actions\/checkout@[0-9a-f]{40} # v7\b/);
   assert.match(releaseJob, /ref: production/);
   assert.match(
     releaseJob,
@@ -893,7 +893,10 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
     releaseJob,
     /GITHUB_TOKEN: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
   );
-  assert.match(releaseJob, /uses: googleapis\/release-please-action@v5/);
+  assert.match(
+    releaseJob,
+    /uses: googleapis\/release-please-action@[0-9a-f]{40} # v5\b/
+  );
   assert.match(
     releaseJob,
     /- name: Create or update release PR\n {8}id: release/
@@ -1907,7 +1910,6 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
       'prepare-publish-npm'
     );
     const publishJob = readWorkflowJobBlock(workflowName, 'publish-npm');
-
     assert.doesNotMatch(workflow, /github\.event\.pull_request/);
     assert.doesNotMatch(workflow, /pull_request\.title/);
 
@@ -1956,7 +1958,6 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
       /steps\.version-check\.outputs\.should_publish == 'true'/
     );
     assert.doesNotMatch(prepareJob, /id-token:\s*write/);
-
     assert.match(publishJob, new RegExp(`environment: ${environment}`));
     assert.match(publishJob, /id-token:\s*write/);
     assert.match(publishJob, /actions\/download-artifact@/);
@@ -1978,7 +1979,9 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
     );
     assert.match(
       publishJob,
-      /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
+      packagePath === 'packages/sdk'
+        ? /npm publish "\$\{PACKAGE_TARBALL\}" --ignore-scripts/
+        : /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
     );
     assert.match(publishJob, /trusted publisher is configured/);
     assert.match(publishJob, /Wait for npm publication/);

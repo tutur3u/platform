@@ -33,6 +33,15 @@ export const fixturePath = [
 ].join(delimiter);
 export const entry = resolve('src/cli/resources-entry.ts');
 export const processTimeout = 15_000;
+export function jsLiteral(value: unknown) {
+  const serialized = JSON.stringify(value);
+  if (serialized === undefined)
+    throw new TypeError('JavaScript literals must be JSON-serializable.');
+  return serialized.replace(
+    /[<>&/\u2028\u2029]/gu,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`
+  );
+}
 export const exists = (path: string) =>
   readFile(path).then(
     () => true,
@@ -78,7 +87,7 @@ export function privateFixtures(ignorePressure = false) {
     return script(
       path,
       name,
-      `const fs=require('fs');const base=${JSON.stringify(join(path, name))};fs.writeFileSync(base+'.ready','');${drain ? "process.on('SIGTERM',()=>fs.writeFileSync(base+'.signal',''));" : ''}const timer=setInterval(()=>{if(fs.existsSync(base+'.release')){clearInterval(timer);process.exit(0)}},10);`
+      `const fs=require('fs');const base=${jsLiteral(join(path, name))};fs.writeFileSync(base+'.ready','');${drain ? "process.on('SIGTERM',()=>fs.writeFileSync(base+'.signal',''));" : ''}const timer=setInterval(()=>{if(fs.existsSync(base+'.release')){clearInterval(timer);process.exit(0)}},10);`
     );
   }
   function launch(
@@ -92,16 +101,14 @@ export function privateFixtures(ignorePressure = false) {
     const shimEntry = join(home, 'fixture-shim.ts');
     const setup = resolve('src/cli/resources-setup.ts');
     // Only disposable test loaders mock the host. No production env switch/API.
-    const prefix = `import {mock} from 'bun:test';import * as os from 'node:os';import {appendFileSync} from 'node:fs';mock.module('node:os',()=>({...os,totalmem:()=>${budget.memory},availableParallelism:()=>${budget.cpus}}));appendFileSync(${JSON.stringify(join(home, 'fixture-host.jsonl'))},JSON.stringify({pid:process.pid,memory:os.totalmem(),cpus:os.availableParallelism(),shim:process.argv[1]===${JSON.stringify(shimEntry)}})+'\\n');const actual=await import(${JSON.stringify(setup)});const install=actual.installResourceShims;const prepare=actual.setupResources;const validate=actual.installedResourceShims;mock.module(${JSON.stringify(setup)},()=>({...actual,installedResourceShims:(home)=>validate(home,${JSON.stringify(shimEntry)}),installResourceShims:(home)=>install(home,${JSON.stringify(shimEntry)}),setupResources:async(options)=>{const result=await prepare(options);if(!options.dryRun)await install(options.home,${JSON.stringify(shimEntry)});return result;}}));`;
-    writeFileSync(
-      shimEntry,
-      `${prefix}await import(${JSON.stringify(entry)});`,
-      { mode: 0o600 }
-    );
+    const prefix = `import {mock} from 'bun:test';import * as os from 'node:os';import {appendFileSync} from 'node:fs';mock.module('node:os',()=>({...os,totalmem:()=>${budget.memory},availableParallelism:()=>${budget.cpus}}));appendFileSync(${jsLiteral(join(home, 'fixture-host.jsonl'))},JSON.stringify({pid:process.pid,memory:os.totalmem(),cpus:os.availableParallelism(),shim:process.argv[1]===${jsLiteral(shimEntry)}})+'\\n');const actual=await import(${jsLiteral(setup)});const install=actual.installResourceShims;const prepare=actual.setupResources;const validate=actual.installedResourceShims;mock.module(${jsLiteral(setup)},()=>({...actual,installedResourceShims:(home)=>validate(home,${jsLiteral(shimEntry)}),installResourceShims:(home)=>install(home,${jsLiteral(shimEntry)}),setupResources:async(options)=>{const result=await prepare(options);if(!options.dryRun)await install(options.home,${jsLiteral(shimEntry)});return result;}}));`;
+    writeFileSync(shimEntry, `${prefix}await import(${jsLiteral(entry)});`, {
+      mode: 0o600,
+    });
     const loader = join(home, `fixture-launch-${children.length}.ts`);
     writeFileSync(
       loader,
-      `${prefix}if(process.argv[2]==='run')await install(${JSON.stringify(home)},${JSON.stringify(shimEntry)});await import(${JSON.stringify(target)});`,
+      `${prefix}if(process.argv[2]==='run')await install(${jsLiteral(home)},${jsLiteral(shimEntry)});await import(${jsLiteral(target)});`,
       {
         mode: 0o600,
       }
@@ -205,7 +212,7 @@ export async function workerProbe(
   await writeFile(
     path,
     `#!${realNode}
-const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(join(home, `${name}.json`))},JSON.stringify({args:process.argv.slice(2),vitest:process.env.VITEST_MAX_WORKERS,cargo:process.env.CARGO_BUILD_JOBS,turbo:process.env.TURBO_CONCURRENCY}));const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(home, `${name}.release`))})){clearInterval(timer)}},10);`
+const fs=require('node:fs');fs.writeFileSync(${jsLiteral(join(home, `${name}.json`))},JSON.stringify({args:process.argv.slice(2),vitest:process.env.VITEST_MAX_WORKERS,cargo:process.env.CARGO_BUILD_JOBS,turbo:process.env.TURBO_CONCURRENCY}));const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(join(home, `${name}.release`))})){clearInterval(timer)}},10);`
   );
   await chmod(path, 0o700);
   return path;

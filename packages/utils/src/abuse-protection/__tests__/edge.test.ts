@@ -42,7 +42,12 @@ describe('abuse-protection edge', () => {
   });
 
   describe('extractIPFromRequest', () => {
-    it('prefers cf-connecting-ip over x-forwarded-for', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('reads cf-connecting-ip only when Cloudflare is the trusted proxy', () => {
+      vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
       const headers = new Headers();
       headers.set('cf-connecting-ip', '203.0.113.10');
       headers.set('x-forwarded-for', '198.51.100.10, 10.0.0.1');
@@ -50,19 +55,22 @@ describe('abuse-protection edge', () => {
       expect(extractIPFromRequest(headers)).toBe('203.0.113.10');
     });
 
-    it('falls back to true-client-ip before generic proxy headers', () => {
+    it('ignores client-supplied proxy headers when no proxy is trusted', () => {
+      vi.stubEnv('TRUSTED_PROXY', 'none');
       const headers = new Headers();
-      headers.set('true-client-ip', '203.0.113.20');
+      headers.set('cf-connecting-ip', '203.0.113.20');
+      headers.set('true-client-ip', '203.0.113.21');
       headers.set('x-forwarded-for', '198.51.100.20, 10.0.0.1');
 
-      expect(extractIPFromRequest(headers)).toBe('203.0.113.20');
+      expect(extractIPFromRequest(headers)).toBe('unknown');
     });
 
-    it('falls back to x-forwarded-for when cloud proxy headers are absent', () => {
+    it('uses the right-most trusted hop of x-forwarded-for', () => {
+      vi.stubEnv('TRUSTED_PROXY', 'forwarded');
       const headers = new Headers();
       headers.set('x-forwarded-for', '198.51.100.30, 10.0.0.1');
 
-      expect(extractIPFromRequest(headers)).toBe('198.51.100.30');
+      expect(extractIPFromRequest(headers)).toBe('10.0.0.1');
     });
   });
 

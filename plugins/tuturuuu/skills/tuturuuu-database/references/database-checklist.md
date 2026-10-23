@@ -29,5 +29,20 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 ## Verification
 
 - Run local migration checks or focused pgTAP tests where available.
+- Verify role contracts against the full migration chain, including existing
+  grants. Assert intended permission denials with SQLSTATE `42501` and exercise
+  supported RPCs as their caller roles; reduced schemas cannot prove this boundary.
+- Clear transaction-local JWT claims before privileged signup fixture inserts.
+  `RESET ROLE` preserves `request.jwt.claims`, which signup/workspace triggers read.
 - Run focused API/helper tests for affected code.
 - Run `bun check` for TypeScript changes.
+
+### Isolated lifecycle recovery
+
+Metadata transitions replace the previous regular record atomically at mode `0600`.
+Keep `O_EXCL` on temporary creation; use destination exclusivity only for actual
+create-only callers. Inject interrupted writes at the file descriptor in tests,
+and verify partial bytes, the last complete record and identical retry behavior.
+Run the retained proposal metadata suite explicitly from the repo root using the
+[local recovery command](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#validating-an-exact-worktree-in-isolation).
+It is outside active CI and root script discovery; database scripts globs do not cover it.

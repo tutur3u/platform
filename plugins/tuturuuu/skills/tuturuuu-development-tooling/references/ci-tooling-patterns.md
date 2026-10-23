@@ -156,6 +156,8 @@ fleet versions; verify those separately before claiming runtime acceptance.
 
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.
 - For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun check`.
+- Run `bun check:changed` before every push. It maps changed paths to Biome, branch-name, generated-inventory, guard, related-test, affected type-check and Flutter checks without builds, queues heavy steps through ttr, and treats cold-`dist` type errors outside changed files as advisory. Missing imports never demote real changed-file errors such as TS2322; only implicit-any follow-ons may be softened. Shared packages select reverse dependents; root/shared configs explicitly require CI. Hook mode refuses dirty tracked content and untracked inputs in selected workspaces/reverse dependents and parent directories of selected script tests. Git paths are NUL-delimited; reject only option-like repository/workspace-relative prefixes, preserving internal dash route directories. Shared config coverage notices include Bun/npm, root Vitest and Oxc configs. Extend `scripts/check-changed/plan.js` with tests when a new cheap CI failure class appears; see [pre-push checks](../../../../../apps/docs/build/development-tools/pre-push-checks.mdx).
+- tsrs (Rust TypeScript port) is advisory only: the gate defaults to tsc until seeded-error qualification, and explicit tsrs runs always retain tsc confirmation. Gate each project through TSRS_PROJECTS and print exact diagnostic-key differences as advisory output even when tsc passes. Resolve tsrs only for plans including a qualified project, disable npm lifecycle scripts, and use only an existing TSRS_BIN in hook mode, and `tsrs-shadow.yaml` records main-push parity. Keep `tsc` as the required gate until the [promotion criteria](../../../../../apps/docs/build/development-tools/tsrs-shadow-type-check.mdx#promotion-criteria) hold; tsrs currently tracks TypeScript 7.1 semantics and lacks `--showConfig`.
 - Use focused package-local tests, then applicable exact-commit CI checks.
 - Standalone chat qualification uses verified Node 24.21.0 plus the source Vitest entry directly. Preserve original exit/signal/timeout/group and report gates; passing Web reports or an optional diagnostic comparison never override failure. Require fresh exact-source SQL197/Web9/Dart9 with fixture/database cleanup; see the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx).
 - Normally run the applicable check, lint, test, and build workflows in CI for the exact authored commit, then inspect their terminal results. A demonstrably stuck queue can defer this proof; record pending jobs and local evidence, and finish exact-commit CI before calling the change release-ready.
@@ -357,6 +359,12 @@ The dedicated preload control has a different scope, with no generic missing-Wor
 and independent proof-phase observations, normalize path roles, mark unknowns/missing fields/truncation and retain full private evidence.
 Preserve primary errors; receipts or observed errors alone never establish closure. Source assertions do not clear runtime NOTPASS.
 
+- Pin every remote `uses:` in workflows and composite actions to a full commit
+  SHA with a trailing `# vX.Y.Z` comment so Dependabot can bump it;
+  `scripts/ci/workflow-action-pins.test.js` enforces this. Resolve a tag with
+  `git ls-remote --tags <repo>` (use the peeled `^{}` SHA). The exception is
+  `supabase-staging.yaml`: Supabase Production authenticates its exact Git
+  blob, so pin it only together with the producer-contract allowlist.
 - Keep workflow Bun versions aligned with the repo `packageManager` pin.
 - Workflows that need Bun should use
   `.github/actions/setup-bun-with-retry` instead of `oven-sh/setup-bun`
@@ -1028,3 +1036,14 @@ replay after deleting emitted files; replayed logs alone do not qualify an artif
 Keep `.cloudflare/state` outside cache outputs. cf prerelease pins remain held by
 Renovate until an owner qualifies a scoped upgrade. Production jobs require the
 Actions repository variable `CLOUDFLARE_ACCOUNT_ID` to match emitted account identity.
+
+## Canonical bun.lock
+
+`bun install --frozen-lockfile` accepts orphan entries that a plain `bun install`
+prunes. When main carries them, every fresh worktree's setup rewrites `bun.lock`,
+leaving orphan worktrees that differ only in the lockfile. Type Check therefore
+requires a tracked `bun.lock`, runs `bun install --lockfile-only` after the frozen
+install, and fails if `git status` reports any `bun.lock` change (an untracked
+regenerated file would slip past `git diff`). Fix a failure by running `bun install` locally and committing the result.
+Worktree setup scripts should install with `--frozen-lockfile` or `--no-save` so
+they never write the lockfile.

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -13,9 +14,8 @@ class TaskPortfolioAccessDenied extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+    return AppPageBody(
+      child: Center(
         child: TaskSurfaceMessageCard(
           icon: Icons.lock_outline,
           title: context.l10n.taskPortfolioAccessDeniedTitle,
@@ -34,9 +34,8 @@ class TaskPortfolioErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+    return AppPageBody(
+      child: Center(
         child: TaskSurfaceMessageCard(
           icon: Icons.error_outline,
           title: context.l10n.commonSomethingWentWrong,

@@ -18,7 +18,7 @@ async function getContext(request: Request) {
   const admin = (await createAdminClient({
     noCookie: true,
   })) as TypedSupabaseClient;
-  const access = await getNotificationAccessContext(admin, user);
+  const access = await getNotificationAccessContext(admin, user, admin);
   return { admin, filter: buildNotificationAccessFilter(access) };
 }
 
