@@ -224,7 +224,9 @@ it('reconnects pending admission immediately once, then throttles repeats and ca
   third.open();
   third.message({ type: 'ready', userId: 'self', admission: 'waiting' });
   drop(third);
+  expect(vi.getTimerCount()).toBeGreaterThan(0);
   signaling.close();
+  expect(vi.getTimerCount()).toBe(0);
   await vi.advanceTimersByTimeAsync(120_000);
   expect(Socket.instances).toHaveLength(3);
 });
