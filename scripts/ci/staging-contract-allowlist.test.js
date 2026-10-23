@@ -34,8 +34,10 @@ test('the staging contract allowlist is exactly current plus main history', () =
     'c80066e1cd038fcda3bd6c1a79c0b12993b94b49',
     // main: preserve exact-target staging evidence
     '70937258932e55cf611c2896b788da0392c09717',
-    // #6453 (stack base): same-repository push for workflow_run consumers
+    // main: #6453 same-repository push for workflow_run consumers
     '68449e684d33ca9608e6c873563ca3092543ca6c',
+    // main: #6459 accepts any SHA reachable from main
+    'ec2f81d196eff45ba05d2b87ad5bd1bb98b194da',
     current,
   ]);
   for (const rejected of [

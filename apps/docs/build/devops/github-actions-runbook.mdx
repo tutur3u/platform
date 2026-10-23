@@ -1643,7 +1643,10 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
   Keep the list to the current blob plus blobs from `main`'s history, and drop
   blobs from rejected or intermediate branch heads.
 - Every enabled admitted target, including app-only commits, links staging and runs
-  `supabase db push --include-all` before emitting its exact-target marker.
+  `supabase db push --include-all` before emitting its exact-target marker. The
+  exception is a target whose migrations a descendant `main` commit has already
+  applied, with staging ahead only by `main`'s versions. It records the marker
+  without pushing. A staging version that is not on `main` fails closed.
 - `supabase-production.yaml` runs after the production deployment planner and
   also re-evaluates the current immutable `production` commit after any successful
   `main` staging migration. The staging event's incoming SHA may be newer and
