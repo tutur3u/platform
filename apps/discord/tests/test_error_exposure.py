@@ -2,6 +2,7 @@
 
 import ast
 import asyncio
+import logging
 import textwrap
 from pathlib import Path
 
@@ -429,19 +430,22 @@ def test_handlers_do_not_expose_exception_text(filename: str) -> None:
     assert exception_exposures(source) == [], filename
 
 
-def test_report_error_logs_one_escaped_line_with_correlation_id(capsys) -> None:
+def test_report_error_logs_one_escaped_line_with_correlation_id(caplog) -> None:
+    caplog.set_level(logging.ERROR, logger="error_reporting")
     try:
         raise RuntimeError(f"line one\r\n[forged] {SYNTHETIC_DETAIL}\x1b[31m")
     except RuntimeError as error:
         error_id = report_error("unit test\ncontext", error=error)
 
-    output = capsys.readouterr().out
-    assert output.count("\n") == 1
-    assert "\r" not in output
-    assert "\x1b" not in output
-    assert f"[error_id={error_id}]" in output
-    assert "unit test\\ncontext failed" in output
-    assert "RuntimeError" in output
+    record = caplog.records[-1]
+    message = record.getMessage()
+    assert record.name == "error_reporting"
+    assert record.levelno == logging.ERROR
+    assert "\r" not in message
+    assert "\n" not in message
+    assert "\x1b" not in message
+    prefix = f"🤖: unit test\\ncontext failed [error_id={error_id}] RuntimeError: "
+    assert message.startswith(prefix)
     assert len(error_id) == 8
 
 
@@ -452,7 +456,8 @@ def test_user_error_never_contains_exception_text() -> None:
     )
 
 
-def test_reply_error_sends_fixed_text_with_correlation_id(capsys) -> None:
+def test_reply_error_sends_fixed_text_with_correlation_id(caplog) -> None:
+    caplog.set_level(logging.ERROR, logger="error_reporting")
     sent: list[dict] = []
 
     class RecordingClient:
@@ -472,7 +477,10 @@ def test_reply_error_sends_fixed_text_with_correlation_id(capsys) -> None:
     assert SYNTHETIC_DETAIL not in content
     assert content.startswith("❌ **Error:** Failed. Please try again. (Error ID: `")
     error_id = content.rsplit("`", 2)[1]
-    assert f"[error_id={error_id}]" in capsys.readouterr().out
+    message = caplog.records[-1].getMessage()
+    assert f"[error_id={error_id}]" in message
+    assert "\r" not in message
+    assert "\n" not in message
 
 
 def test_ticket_form_failure_returns_generic_message(monkeypatch) -> None:

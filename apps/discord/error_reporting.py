@@ -6,8 +6,11 @@ single escaped line server-side under a short correlation ID and show users
 fixed text that includes only that ID.
 """
 
+import logging
 import secrets
 import traceback
+
+logger = logging.getLogger(__name__)
 
 MAX_LOGGED_MESSAGE_LENGTH = 500
 MAX_LOGGED_FRAMES = 5
@@ -29,9 +32,13 @@ def report_error(context: str, *, error: BaseException) -> str:
     message = repr(str(error)[:MAX_LOGGED_MESSAGE_LENGTH])
     context_text = repr(context)[1:-1]
     frames = _frame_summary(error) or "no traceback"
-    print(
-        f"🤖: {context_text} failed [error_id={error_id}] "
-        f"{type(error).__name__}: {message} at {frames}"
+    logger.error(
+        "🤖: %s failed [error_id=%s] %s: %s at %s",
+        context_text,
+        error_id,
+        type(error).__name__,
+        message,
+        frames,
     )
     return error_id
 
