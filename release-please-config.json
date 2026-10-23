@@ -155,6 +155,10 @@
       "component": "track",
       "package-name": "@tuturuuu/track"
     },
+    "packages/agent-quota": {
+      "component": "agent-quota",
+      "package-name": "@tuturuuu/agent-quota"
+    },
     "packages/ai": {
       "component": "ai",
       "package-name": "@tuturuuu/ai"

@@ -29,6 +29,14 @@ Consult only the section relevant to the current task. Paths are repository-rela
 - `apps/database`: Supabase migrations, configuration, reset scripts, and tests.
 - `apps/docs`: Mintlify docs and operational runbooks.
 - `apps/discord`: Python Discord utilities.
+  For MarkItDown changes, read both `/markitdown` adapters (`app.py` and
+  `local_server.py`) and the download/conversion boundaries in
+  `markitdown_service.py`. Follow the focused no-install Python commands in
+  `apps/discord/TESTING.md`; use fixtures instead of real signed URLs or remote
+  services. Preserve configured-origin validation before requests, disabled
+  redirects, constant temporary suffixes, and download limits. The URL policy
+  and DNS trust boundary are documented in
+  `apps/docs/platform/ai/structured-data.mdx#attachment-conversion-url-policy`.
 - `packages/*`: shared UI, AI, types, internal API clients, auth, payment,
   Supabase helpers, and utilities.
 - `plugins/tuturuuu`: repo-local Codex plugin and skill references that carry

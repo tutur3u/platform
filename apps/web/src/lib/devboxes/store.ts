@@ -4,6 +4,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { assertDevboxRunnerAcceptsRun } from './runner-drain-guard';
 import {
   createPrivateDevboxClient,
   type DevboxPrivateSchemaClient,
@@ -195,6 +196,12 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
   const leaseId = input.leaseId ?? randomUUID();
   const runId = randomUUID();
   const leaseMode = input.leaseId ? 'existing' : (input.leaseMode ?? 'auto');
+
+  await assertDevboxRunnerAcceptsRun(privateClient, {
+    leaseId: input.leaseId,
+    runnerId: input.runnerId,
+    workload: input.workload,
+  });
 
   if (leaseMode === 'auto') {
     const { error } = await getPrivateTable(

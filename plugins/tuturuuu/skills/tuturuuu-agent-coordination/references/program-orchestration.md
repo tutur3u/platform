@@ -417,3 +417,33 @@ credential handling and production gates. Do not import Cursor-only Task/Graphit
 commands, a cloud-first policy, mandatory cross-model review, an absolute ban on
 coordinator implementation or third-party scripts. Managed plugin caches remain
 installer-owned; this reference ships through the canonical Tuturuuu plugin.
+
+## Quota-aware delegation
+
+Use the existing `packages/agent-quota` router and its
+[runbook](../../../../../apps/docs/build/development-tools/agent-quota-routing.mdx)
+for provider headroom. Pass the current `orchestrator_capabilities` response via
+`--catalog-stdin` when ACP transport is unavailable. Prefer `--snapshots-only`
+for cached provider usage plus active T3 reservations without transcript reads.
+Availability is not quota: stale or missing usage/reset evidence is UNKNOWN.
+Near/exhausted pools drain; never infer recovery from an elapsed reset. Keep
+provider instance IDs distinct from display aliases and deduplicate only with
+exposed opaque account identity. These read-only recommendations are not atomic
+reservation locks; the dispatch owner still coordinates concurrent launches.
+
+The same router now offers opt-in single-shot `admit`, `observe`, thread-scoped
+`switch-lease`, read-only `switch-check`, and `handover-check` commands for every
+orchestrator on the host. Follow the runbook's JSON contract and the installed
+[shared-account handover guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover)
+and [planning preference guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#capacity-aware-provider-preference).
+Accounts are shared; only a thread's transition is leased. Preference is planning
+input, never quota. These hooks require owner integration and independent review;
+they do not install automatic failover, spend reset credits, or create successors.
+
+For unbound `thread_send` follow-up failures, use read-only `reconcile-children
+--parent <threadId>` and preserve original-task versus latest-turn evidence.
+Never duplicate an already queued resume. Pass the reported run/failure identity
+to `admit` recovery input for idempotent admission; provider-native delivery of
+all descendant terminal failures remains a separate T3 integration gap.
+
+Use the read-only `agent-quota reroute-plan --parent THREAD_ID` for reset-only child waits under the [shared rerouting contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#reset-wait-rerouting-and-equivalent-local-validation). Preserve queued text and dirty files, cancel old queued selections, require fresh admission and the thread lease, and verify a task-bound running continuation. Configuration alone is not successful resumption.

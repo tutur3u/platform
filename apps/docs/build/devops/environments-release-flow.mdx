@@ -108,9 +108,19 @@ No package version, dependency resolution or published changelog is rewritten.
     branch. Supabase Staging deliberately accepts any SHA reachable from
     `refs/heads/main`. Production sync may promote a `main` SHA that is no
     longer the tip, and that SHA's production migration needs its staging
-    marker. Re-applying an older `main` checkout is idempotent for
-    `db push --include-all`, and the marker binds the trust step's verified
-    SHA, never the raw event;
+    marker, which binds the trust step's verified SHA, never the raw event.
+    An older SHA can run after a descendant already applied newer
+    migrations, and `db push` refuses migration versions that exist only on
+    the remote. The deploy step therefore compares versions first:
+    - a staging version that is not on `main` fails closed (no push, no
+      marker);
+    - if every local version is applied and staging is ahead only with
+      `main`'s versions, it skips the push and records the marker with an
+      "already applied by a descendant" notice;
+    - otherwise it pushes as before, including when the remote listing cannot
+      be read.
+
+    `scripts/ci/staging-descendant-marker.test.js` covers these cases;
   - manual runs start from exactly `TRUSTED_DISPATCH_REF`.
 
   Checkouts use the step's verified `head_sha`, and secret-bearing steps and jobs

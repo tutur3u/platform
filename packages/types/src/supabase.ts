@@ -4098,6 +4098,7 @@ export type Database = {
           actor_id: string;
           capabilities: Json;
           created_at: string;
+          drain_requested_at: string | null;
           enabled_features: Json;
           heartbeat_enabled: boolean;
           id: string;
@@ -4111,6 +4112,7 @@ export type Database = {
           actor_id: string;
           capabilities?: Json;
           created_at?: string;
+          drain_requested_at?: string | null;
           enabled_features?: Json;
           heartbeat_enabled?: boolean;
           id?: string;
@@ -4124,6 +4126,7 @@ export type Database = {
           actor_id?: string;
           capabilities?: Json;
           created_at?: string;
+          drain_requested_at?: string | null;
           enabled_features?: Json;
           heartbeat_enabled?: boolean;
           id?: string;
@@ -21073,6 +21076,16 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      devbox_runner_activity: {
+        Args: never;
+        Returns: {
+          active_leases: number;
+          kept_leases: number;
+          queued_runs: number;
+          runner_id: string;
+          running_runs: number;
+        }[];
+      };
       discard_uninitialized_playground: {
         Args: { p_actor_id: string; p_id: string };
         Returns: boolean;
@@ -23692,6 +23705,10 @@ export type Database = {
           pending_count: number;
           rejected_count: number;
         }[];
+      };
+      set_devbox_runner_drain: {
+        Args: { p_draining: boolean; p_runner_id: string };
+        Returns: string;
       };
       set_devbox_runner_feature: {
         Args: { p_enabled: boolean; p_feature: string; p_runner_id: string };

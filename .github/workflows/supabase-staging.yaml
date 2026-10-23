@@ -50,8 +50,9 @@ jobs:
           # Deliberately no REQUIRE_BRANCH_TIP: production sync may promote a
           # main SHA that is no longer the tip, and its production migration
           # needs that SHA's staging marker. Any SHA reachable from
-          # refs/heads/main is accepted; re-applying an older main checkout is
-          # idempotent for `db push --include-all`.
+          # refs/heads/main is accepted. When a descendant already migrated
+          # staging further, the deploy step records the marker without
+          # pushing (see "Deploy migrations to staging").
           TRUSTED_DISPATCH_REF: refs/heads/main
           # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
           TRUSTED_PRODUCERS: |
@@ -210,8 +211,43 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
           STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
         run: |
+          set -euo pipefail
           cd apps/database
           supabase link --project-ref "$STAGING_PROJECT_ID"
+          # An older main SHA can run after a descendant already applied newer
+          # migrations; `db push` then refuses the remote-only versions. Compare
+          # first. A remote-only version that is not on main fails closed. When
+          # every local version is applied and staging is only ahead with main's
+          # versions, skip the push so this SHA still gets its marker.
+          versions() { sed -n 's/^\([0-9][0-9]*\)_.*\.sql$/\1/p' | sort -u; }
+          nonblank() { printf '%s\n' "$1" | sed '/^$/d'; }
+          local_versions="$(ls supabase/migrations | versions)"
+          # An unreadable listing leaves remote_versions empty, so the step
+          # falls back to today's push.
+          listing="$(supabase migration list --linked)" || listing=""
+          remote_versions="$(printf '%s\n' "$listing" |
+            awk -F'|' 'NF >= 3 { gsub(/[[:space:]]/, "", $2); if ($2 ~ /^[0-9]+$/) print $2 }' | sort -u)"
+          pending="$(comm -23 <(nonblank "$local_versions") <(nonblank "$remote_versions"))"
+          remote_only="$(comm -13 <(nonblank "$local_versions") <(nonblank "$remote_versions"))"
+          if [ -n "$remote_only" ]; then
+            git rev-parse --verify --quiet refs/remotes/origin/main > /dev/null ||
+              git fetch --quiet --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+            main_versions="$(git ls-tree --full-tree --name-only refs/remotes/origin/main:apps/database/supabase/migrations | versions)"
+            [ -n "$main_versions" ] || { echo "::error::Cannot read main's migrations."; exit 1; }
+            unknown="$(comm -23 <(nonblank "$remote_only") <(nonblank "$main_versions"))"
+            if [ -n "$unknown" ]; then
+              echo "::error::Staging has $(nonblank "$unknown" | wc -l | tr -d ' ') applied migration version(s) that are not on main; refusing to migrate or mark."
+              exit 1
+            fi
+            if [ -z "$pending" ]; then
+              ahead="$(nonblank "$remote_only" | wc -l | tr -d ' ')"
+              echo "::notice::Already applied by a descendant: every migration at this SHA is on staging, which is $ahead version(s) ahead with migrations from main. Skipping db push and recording this SHA's marker."
+              if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+                printf '### Staging migration\n\nAlready applied by a descendant (%s version(s) ahead on main); no push.\n' "$ahead" >> "$GITHUB_STEP_SUMMARY"
+              fi
+              exit 0
+            fi
+          fi
           supabase db push --include-all
 
       # The marker binds the SHA the trust step verified, never the raw event.

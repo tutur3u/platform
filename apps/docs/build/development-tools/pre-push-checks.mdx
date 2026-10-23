@@ -1,0 +1,124 @@
+---
+title: "Pre-push checks"
+description: "Run the build-free changed-files gate before pushing so cheap CI failures are caught locally in seconds."
+updatedAt: "2026-10-23"
+---
+
+## Why this gate exists
+
+Most avoidable CI failures come from cheap checks skipped before pushing: Biome
+formatting, `flutter analyze` infos (fatal in CI), TypeScript errors such as
+`TS6059` (a package importing app source outside its `rootDir`), stale generated
+inventories and branch names the checker rejects. `bun check` is too heavy for
+agent machines because its Turbo graph can build workspace dependencies, so it
+is not run locally. `bun check:changed` is the replacement before every push.
+
+```bash
+bun check:changed                 # working tree vs merge base with origin/main
+bun check:changed --dry-run       # print the planned steps only
+bun check:changed --only biome    # one step (ids or prefixes such as type-check)
+bun check:changed --skip vitest   # skip a step family
+bun check:changed --committed     # committed changes only (the hook's mode)
+bun check:changed --files a.ts b.ts
+```
+
+It never runs builds, `bun check` or Turbo. Small repository scripts run directly;
+Vitest, type-check and `flutter analyze` are queued through `ttr resources run`
+when resource control is installed and enabled (`--no-ttr` opts out). Without
+ttr, steps run sequentially with Vitest capped at two workers.
+
+## What runs for which paths
+
+| Changed paths | Steps |
+| --- | --- |
+| Any | Branch name (same pattern as `branch-name-check.yaml`), source-size ceiling, docs inventory and app SEO `--check` |
+| JS/TS/JSON/CSS outside `apps/mobile` | Biome `check --error-on-warnings` on those files (pinned 2.5.13); Oxlint on JS/TS files as an **advisory** step |
+| `apps/*` or `packages/*` source | App-session, satellite cookie and server-console guards |
+| A workspace's source, `tsconfig*.json` or `package.json` | Type-check of the projects its `type-check` script checks |
+| A workspace with a Vitest config | Changed tests plus colocated `foo.test.ts(x)` and `__tests__/foo.test.ts(x)` siblings |
+| `scripts/`, `.github/actions/`, `plugins/` | Changed and sibling `node --test` files |
+| `.github/workflows/` or `.github/actions/` | Workflow concurrency, Bun pin and workflow-config policy tests |
+| `apps/mobile/` | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it |
+| `apps/*/messages/*.json` | i18n sort and en/vi key parity |
+| Migrations, docs, web API routes | Migration timestamps, docs audit, legacy route wrappers, mobile API mappings |
+
+Oxlint stays advisory until a scope records Biome parity under the
+[Oxc adoption rules](/build/development-tools/oxc-cloudflare-adoption); Biome
+remains the blocking formatter and linter. Paused runtimes are excluded.
+
+## Type-checking without built declarations
+
+CI builds `@tuturuuu/types`, `supabase`, `internal-api` and `masonry` before
+type-checking. Local checkouts usually lack those `dist` declarations, which
+produces thousands of missing-module errors and implicit-`any` cascades. The
+gate runs `-p <project> --noEmit --incremental false --composite false` per
+project and classifies diagnostics:
+
+- With every workspace declaration present, all diagnostics block.
+- When declarations are cold, missing-module errors citing an unbuilt workspace
+  package are ignored. Configuration errors (`TS5xxx`/`TS6xxx`, including
+  `TS6059`) and errors in changed files that do not import an unbuilt package
+  block. A changed file importing a missing package still blocks on real type
+  errors such as TS2322; only implicit-any follow-ons (7005/7006/7031/7034)
+  in that file are advisory. Diagnostics in unchanged files remain advisory.
+
+Shared-package changes also select transitive reverse dependents from workspace
+manifests. Root/shared configuration changes (`package.json`, `bun.lock`, root
+`tsconfig.json`, `biome.json`, `turbo.json`, `bunfig.toml`, `.npmrc`,
+root `vitest.config.ts`, `.oxlintrc.json`, `.oxfmtrc.json`, and
+`packages/typescript-config`)
+print **not covered; CI only** because this focused gate cannot prove their full
+repository effect. CI type-checking remains authoritative.
+
+### Optional tsrs shadow
+
+`--checker auto` and `--checker tsc` use tsc only. Existing clean-source
+qualification does not establish that tsrs catches seeded errors, so a tsrs
+pass cannot replace tsc. `--checker tsrs` requests advisory comparisons, always
+followed by tsc regardless of success, failure or crash. Only tsc can block.
+The resolver runs only if at least one planned project is in the recorded
+qualification set; unqualified-only plans fall back to tsc. Hook mode uses only
+an existing `TSRS_BIN`, with no network fetch. Outside hooks, pinned npm
+resolution disables install lifecycle scripts. See the
+[qualification limits](/build/development-tools/tsrs-shadow-type-check).
+
+## Optional pre-push hook
+
+`bun install` already points `core.hooksPath` at `.githooks`. The pre-push hook
+is inert until you opt in:
+
+```bash
+git config tuturuuu.prePush true   # every push in this clone and its worktrees
+TUTURUUU_PRE_PUSH=1 git push       # a single push
+TUTURUUU_PRE_PUSH=0 git push       # skip once while opted in
+```
+
+The hook refuses tracked staged or unstaged edits so it can check the exact
+pushed HEAD. It also refuses untracked files in changed workspaces and selected
+reverse dependents because those files can affect type-checking and test discovery.
+When script tests are selected, the fence covers `scripts/`, `plugins/` and
+`.github/actions/` as well as the tests' own parent directories, so nested tests
+cannot depend on untracked helpers in a parent or sibling directory.
+Ignored files are excluded from this check. NUL-delimited Git paths preserve
+whitespace; only option-like repository/workspace-relative prefixes are rejected
+before file tools run. Internal dash directories, including Git app routes, are valid. The hook checks committed changes only and skips deletions or pushes of refs
+other than `HEAD`. Agents should run `bun check:changed` explicitly before
+pushing whether or not the hook is enabled.
+
+### Bun upgrade and lock normalization
+
+Until the Bun 1.4.4 upgrade in #6427 lands, a normal `bun install` with installed
+Bun 1.4.4 can normalize the 1.4.3-era `bun.lock`. The resulting tracked change
+makes the opted-in hook refuse a push. Prefer `bun install --frozen-lockfile`
+for the existing lock or the repository-pinned Bun version; do not commit
+incidental normalization into an unrelated PR. If drift already exists, preserve
+its provenance and use a clean isolated checkout. #6427 owns the normalized lock;
+a passing frozen install alone does not prove a normal install leaves it stable.
+
+## Regression coverage
+
+`scripts/check-changed.test.js`, `scripts/check-changed/plan.test.js`,
+`scripts/check-changed/type-check.test.js`, `scripts/check-changed/tsrs.test.js`
+and `scripts/ts-diagnostics.test.js` cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
+ttr queueing, cold-declaration classification and tsc confirmation of tsrs
+failures.
