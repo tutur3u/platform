@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -11,7 +9,6 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/settings/view/apps/app_settings_group.dart';
 import 'package:mobile/features/settings/view/apps/app_settings_sections.dart';
 import 'package:mobile/features/settings/view/apps/timer_app_settings.dart';
-import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -43,7 +40,6 @@ class AppSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final horizontal = ResponsivePadding.horizontal(context.deviceClass);
     final groups = switch (appId) {
       'tasks' => [TasksAppSettings(settingsRepository: settingsRepository)],
       'calendar' => const [CalendarAppSettings()],
@@ -59,36 +55,33 @@ class AppSettingsPage extends StatelessWidget {
       _ => const <Widget>[],
     };
     return shad.Scaffold(
-      child: ResponsiveWrapper(
-        maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
-        child: ListView(
-          key: ValueKey('app-settings-$appId'),
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          padding: SettingsRowLayout.scrollPadding(context, horizontal),
-          children: [
-            ...groups,
-            if (_offlineModules.contains(appId)) ...[
-              const SizedBox(height: SettingsRowLayout.groupGap),
-              AppSettingsGroup(
-                title: context.l10n.offlineSectionTitle,
-                footer: context.l10n.settingsFooterOffline,
-                children: [
-                  SettingsTile(
-                    key: ValueKey('app-settings-$appId-offline'),
-                    grouped: true,
-                    icon: shad.LucideIcons.hardDriveDownload,
-                    title: context.l10n.settingsAppOfflineData,
-                    value: context.l10n.settingsAppOfflineDataDescription,
-                    onTap: () =>
-                        context.push(Routes.settingsOfflineModulePath(appId)),
-                  ),
-                ],
-              ),
-            ],
-          ],
+      child: AppPageListView(
+        key: ValueKey('app-settings-$appId'),
+        kind: AppPageKind.root,
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
+        children: [
+          ...groups,
+          if (_offlineModules.contains(appId)) ...[
+            const SizedBox(height: AppLayout.sectionGap),
+            AppSettingsGroup(
+              title: context.l10n.offlineSectionTitle,
+              footer: context.l10n.settingsFooterOffline,
+              children: [
+                SettingsTile(
+                  key: ValueKey('app-settings-$appId-offline'),
+                  grouped: true,
+                  icon: shad.LucideIcons.hardDriveDownload,
+                  title: context.l10n.settingsAppOfflineData,
+                  value: context.l10n.settingsAppOfflineDataDescription,
+                  onTap: () =>
+                      context.push(Routes.settingsOfflineModulePath(appId)),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
