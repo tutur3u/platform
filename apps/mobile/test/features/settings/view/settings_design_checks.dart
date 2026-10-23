@@ -6,6 +6,7 @@ void registerSettingsDesignChecks() {
   ) async {
     _viewport(tester, const Size(390, 844));
     final h = _SettingsHarness();
+    when(() => h.auth.isClosed).thenReturn(false);
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
