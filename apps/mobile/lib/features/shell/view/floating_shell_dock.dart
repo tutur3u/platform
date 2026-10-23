@@ -48,10 +48,14 @@ class FloatingShellDock extends StatefulWidget {
     this.composerVisible = false,
     this.navigationWidth = 264,
     this.allowDockSlot = true,
+    this.hideIdleNavigation = false,
     super.key,
   });
 
   final double navigationBottomOffset;
+
+  /// Set when a leading rail owns navigation; see [PersistentShellDock].
+  final bool hideIdleNavigation;
   final bool reserveNavigationClearance;
   final bool reclaimNavigationClearanceWhenHidden;
   final bool keepNavigationVisible;
@@ -78,10 +82,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   double _travel = 0;
   late double _headerInset;
   late bool _accessibleNavigation;
+  ShellDockSlotController? _slots;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final slots = ShellDockScope.maybeOf(context);
+    if (!identical(slots, _slots)) {
+      _slots?.removeListener(_onSlotChanged);
+      _slots = slots?..addListener(_onSlotChanged);
+    }
     // Theme, default text style, text scale, direction and safe-area changes
     // invalidate this measurement; scroll frames only read the cached value.
     _headerInset = floatingShellHeaderInset(
@@ -116,7 +126,26 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   @override
   void dispose() {
     _returnTimer?.cancel();
+    _slots?.removeListener(_onSlotChanged);
     super.dispose();
+  }
+
+  void _onSlotChanged() {
+    // Only the rail layout sizes clearance from the dock's contents.
+    if (mounted && widget.hideIdleNavigation) setState(() {});
+  }
+
+  /// With a leading rail the dock holds only composers and page actions, so
+  /// scroll content reserves its clearance only while one of them is shown.
+  bool _dockHasContent(BuildContext context) {
+    final slot = _slots?.slot;
+    if (widget.allowDockSlot && slot?.location == widget.location) return true;
+    final actions = context.watch<ShellChromeActionsCubit?>();
+    if (actions == null) return false;
+    return actions.state
+            .resolveForLocation(widget.location)
+            .any((action) => action.inDock) ||
+        actions.dockPreviewForLocation(widget.location).isNotEmpty;
   }
 
   void _reveal() {
@@ -176,6 +205,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     final navigationHidden = _hidden && !widget.keepNavigationVisible;
     final reserveClearance =
         widget.reserveNavigationClearance &&
+        (!widget.hideIdleNavigation || _dockHasContent(context)) &&
         !(widget.reclaimNavigationClearanceWhenHidden &&
             (navigationHidden || widget.keyboardVisible));
     final clearance = active && reserveClearance
@@ -265,6 +295,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                                   location: widget.location,
                                   navigationWidth: widget.navigationWidth,
                                   allowDockSlot: widget.allowDockSlot,
+                                  hideIdleNavigation: widget.hideIdleNavigation,
                                   navigation: widget.navigation,
                                 ),
                               ),
@@ -287,7 +318,9 @@ class _DockActions extends StatefulWidget {
     required this.navigation,
     required this.navigationWidth,
     required this.allowDockSlot,
+    required this.hideIdleNavigation,
   });
+  final bool hideIdleNavigation;
   final String location;
   final Widget navigation;
   final double navigationWidth;
@@ -347,6 +380,7 @@ class _DockActionsState extends State<_DockActions> {
         content: active && slot!.composing ? slot.content : navigation,
         composing: active && slot!.composing,
         expandContent: !active || slot!.expandContent,
+        hideIdleNavigation: widget.hideIdleNavigation,
         navigationWidth: widget.navigationWidth,
         primary: active ? slot!.primary : primary,
         secondary: active && slot!.composing ? null : secondary,

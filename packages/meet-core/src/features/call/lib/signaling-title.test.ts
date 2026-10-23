@@ -16,6 +16,15 @@ class Socket extends EventTarget {
   open() {
     this.readyState = 1;
     this.dispatchEvent(new Event('open'));
+    this.dispatchEvent(
+      new MessageEvent('message', {
+        data: JSON.stringify({
+          type: 'ready',
+          userId: 'self',
+          admission: 'admitted',
+        }),
+      })
+    );
   }
   close() {
     this.readyState = 3;

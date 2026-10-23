@@ -6,6 +6,7 @@ import 'package:mobile/core/utils/supported_timezones.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/settings/view/timezone_rate_limit_message.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/internal_diagnostics_copy.dart';
@@ -140,8 +141,13 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
           ? context.l10n.settingsWorkspaceTimezone
           : context.l10n.settingsTimezone,
       wrapSupportingText: true,
-      subtitle: _coolingDown
-          ? context.l10n.settingsTimezoneRateLimited
+      subtitle:
+          _coolingDown || (state.failed && state.diagnostics?.status == 429)
+          ? timezoneRateLimitMessage(
+              context.l10n,
+              state.diagnostics,
+              coolingDown: _coolingDown,
+            )
           : state.failed
           ? state.errorMessage == null
                 ? context.l10n.settingsTimezoneError

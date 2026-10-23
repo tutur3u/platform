@@ -12,6 +12,10 @@ import {
   uptime,
 } from 'node:os';
 import packageJson from '../../package.json';
+import {
+  collectDevboxIsolation,
+  type DevboxIsolationSummary,
+} from './devbox-isolation';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
 import {
   getPlaygroundReadiness,
@@ -46,6 +50,25 @@ let readinessSnapshot: {
   playground: Awaited<ReturnType<typeof getPlaygroundReadiness>>;
 } | null = null;
 let refreshing: Promise<void> | null = null;
+let isolationSnapshot: DevboxIsolationSummary | null = null;
+let isolationAt = 0;
+
+// Opt-in until both heartbeat handlers accept these advisory fields; strict
+// handlers reject unknown keys and older servers would fail every heartbeat.
+async function reportedTrust() {
+  if (process.env.TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE !== 'true') return {};
+  const mode = process.env.TUTURUUU_DEVBOX_EXECUTION_MODE ?? 'trusted';
+  if (!isolationSnapshot || Date.now() - isolationAt > 600_000) {
+    isolationSnapshot = (await collectDevboxIsolation()).summary;
+    isolationAt = Date.now();
+  }
+  return {
+    ...(['trusted', 'judge-only'].includes(mode)
+      ? { executionMode: mode as 'trusted' | 'judge-only' }
+      : {}),
+    isolation: isolationSnapshot,
+  };
+}
 
 function firstLine(value: string) {
   return value.trim().split(/\r?\n/u)[0]?.trim() || null;
@@ -154,6 +177,7 @@ export async function createDevboxAgentCapabilities() {
 
   return {
     ...staticCapabilities,
+    ...(await reportedTrust()),
     judge,
     ...(reportPlayground
       ? {

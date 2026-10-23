@@ -4,6 +4,7 @@ import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
 void registerShellViewportChecks(
   Future<void> Function(WidgetTester tester) pumpShell,
@@ -20,8 +21,11 @@ void registerShellViewportChecks(
     const Size(744, 500),
     const Size(874, 402),
   ]) {
+    final rail = shellNavigationModeFor(size) == ShellNavigationMode.rail;
     testWidgets(
-      'shell overlays full-height content with a compact dock at $size',
+      rail
+          ? 'shell places a leading rail beside full-height content at $size'
+          : 'shell overlays full-height content with a compact dock at $size',
       (tester) async {
         tester.view
           ..devicePixelRatio = 1
@@ -40,6 +44,10 @@ void registerShellViewportChecks(
           addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
         }
         await pumpShell(tester);
+        if (rail) {
+          await _expectRailViewport(tester, size);
+          return;
+        }
         expect(
           find.descendant(
             of: find.byType(MorphingNavigationBar),
@@ -125,6 +133,35 @@ void registerShellViewportChecks(
     );
   }
 
+  testWidgets('landscape phones keep the dock; tablets switch to the rail', (
+    tester,
+  ) async {
+    expect(
+      shellNavigationModeFor(const Size(844, 390)),
+      ShellNavigationMode.dock,
+    );
+    expect(
+      shellNavigationModeFor(const Size(932, 430)),
+      ShellNavigationMode.dock,
+    );
+    expect(
+      shellNavigationModeFor(const Size(768, 1024)),
+      ShellNavigationMode.dock,
+    );
+    expect(
+      shellNavigationModeFor(const Size(839, 1000)),
+      ShellNavigationMode.dock,
+    );
+    expect(
+      shellNavigationModeFor(const Size(840, 600)),
+      ShellNavigationMode.rail,
+    );
+    expect(
+      shellNavigationModeFor(const Size(1440, 900)),
+      ShellNavigationMode.rail,
+    );
+  });
+
   testWidgets('root content clears the floating header and status bar', (
     tester,
   ) async {
@@ -163,4 +200,56 @@ void registerShellViewportChecks(
     );
     expect((firstSliver.child! as SizedBox).height, closeTo(header.bottom, 1));
   });
+}
+
+Future<void> _expectRailViewport(WidgetTester tester, Size size) async {
+  const railKey = ValueKey('shell-navigation-rail');
+  expect(find.byKey(railKey), findsOneWidget);
+  expect(find.byType(MorphingNavigationBar), findsNothing);
+  expect(find.byKey(const ValueKey('compact-shell-footer')), findsNothing);
+  expect(
+    find.descendant(
+      of: find.byType(ShellNavigationRail),
+      matching: find.bySemanticsLabel('Home'),
+    ),
+    findsOneWidget,
+  );
+  expect(find.bySemanticsLabel('Assistant'), findsOneWidget);
+  // The idle dock paints no second navigation surface beside the rail.
+  expect(
+    find.descendant(
+      of: find.byType(PersistentShellDock),
+      matching: find.byType(BackdropFilter),
+    ),
+    findsNothing,
+  );
+  final railRect = tester.getRect(find.byKey(railKey));
+  final body = tester.getRect(find.byType(AppsHubPage));
+  expect(railRect.left, lessThan(body.left));
+  expect(body.left, greaterThanOrEqualTo(railRect.right));
+  expect(body.left, closeTo(shellNavigationRailExtent, 0.5));
+  expect(body.bottom, closeTo(size.height, 1));
+  expect(railRect.height, lessThan(size.height));
+  // The same header brand and Apps destination as the dock layout.
+  expect(
+    find.byWidgetPredicate(
+      (widget) =>
+          widget is Image &&
+          widget.image == const AssetImage('assets/logos/nova-transparent.png'),
+    ),
+    findsOneWidget,
+  );
+  expect(find.bySemanticsLabel('Apps'), findsWidgets);
+  final bodyState = tester.state(find.byType(AppsHubPage));
+  tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+  expect(find.byKey(railKey), findsOneWidget);
+  tester.view.resetViewInsets();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+  expect(find.byKey(railKey), findsOneWidget);
+  expect(tester.takeException(), isNull);
 }

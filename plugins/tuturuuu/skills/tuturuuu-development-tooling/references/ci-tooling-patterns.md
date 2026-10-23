@@ -579,6 +579,13 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   lock. Guard Modal deployment before its job lock; cancelled validation
   completions must never cancel active provider work. Discover `workflow_run`
   consumers in regression tests rather than protecting producers in isolation.
+- Never trust expression `==` for protected refs; it ignores case (`Main`).
+  Every `workflow_run` consumer starts with the canonical inline "Verify trusted
+  trigger" step: it checks the exact producer path, ID, branch and head
+  repository, and confirms `head_sha` is reachable from the branch. It binds
+  checkouts to the verified SHA and gates secrets on its output. Keep the step
+  byte-identical across consumers (`workflow-run-trigger-gate.test.js`), and
+  re-allowlist the staging blob in Supabase Production after editing staging.
 - Keep the PR exception list in `scripts/ci/protected-workflow-concurrency.test.js`
   explicit. Desktop Beta and the seven mixed Cloudflare workflows retain their deployment locks;
   gVisor acceptance retains bounded cleanup. Paused Docker/Rust workflows are
@@ -1073,3 +1080,14 @@ The native-check inventory reads existing declaration generators, including
 Its compatibility detector and data-only fixture use the `producer-inventory`
 gap admission in the Wrangler allowlist. Retain the visible legacy token and
 remove that admission when no legacy producer needs recognition.
+
+## Canonical bun.lock
+
+`bun install --frozen-lockfile` accepts orphan entries that a plain `bun install`
+prunes. When main carries them, every fresh worktree's setup rewrites `bun.lock`,
+leaving orphan worktrees that differ only in the lockfile. Type Check therefore
+requires a tracked `bun.lock`, runs `bun install --lockfile-only` after the frozen
+install, and fails if `git status` reports any `bun.lock` change (an untracked
+regenerated file would slip past `git diff`). Fix a failure by running `bun install` locally and committing the result.
+Worktree setup scripts should install with `--frozen-lockfile` or `--no-save` so
+they never write the lockfile.

@@ -23,6 +23,7 @@ import {
   entry,
   exists,
   fixturePath,
+  jsLiteral,
   privateFixtures,
   processTimeout,
   realNode,
@@ -154,7 +155,7 @@ describe('resource policy', () => {
         await mkdir(join(path!, 'dist/cli'), { recursive: true });
         await writeFile(
           join(path!, 'dist/cli/resources-entry.js'),
-          `process.stdout.write(${JSON.stringify(version)});`
+          `process.stdout.write(${jsLiteral(version)});`
         );
       }
       const alias = join(modules, 'tuturuuu');
@@ -197,12 +198,12 @@ describe('resource admission', { timeout: 45_000 }, () => {
     const firstScript = await script(
       home,
       'first',
-      `const fs=require('fs');fs.writeFileSync(${JSON.stringify(ready)},'');const t=setInterval(()=>{if(fs.existsSync(${JSON.stringify(release)})){clearInterval(t)}},25);`
+      `const fs=require('fs');fs.writeFileSync(${jsLiteral(ready)},'');const t=setInterval(()=>{if(fs.existsSync(${jsLiteral(release)})){clearInterval(t)}},25);`
     );
     const nextScript = await script(
       home,
       'next',
-      `require('fs').writeFileSync(${JSON.stringify(second)},'');process.exit(7);`
+      `require('fs').writeFileSync(${jsLiteral(second)},'');process.exit(7);`
     );
     const first = launch(home, ['run', '--', 'node', firstScript], a);
     await until(() => exists(ready));
@@ -316,7 +317,7 @@ describe('resource admission', { timeout: 45_000 }, () => {
     const source = await script(
       home,
       'nested',
-      `delete process.env.TTR_RESOURCE_OWNER;delete process.env.TTR_RESOURCES_ADMITTED;require('child_process').execFileSync(${JSON.stringify(bun)},[${JSON.stringify(join(home, 'fixture-shim.ts'))},'run','--','node','-e','console.log(42)'],{stdio:'inherit',timeout:${processTimeout}});`
+      `delete process.env.TTR_RESOURCE_OWNER;delete process.env.TTR_RESOURCES_ADMITTED;require('child_process').execFileSync(${jsLiteral(bun)},[${jsLiteral(join(home, 'fixture-shim.ts'))},'run','--','node','-e','console.log(42)'],{stdio:'inherit',timeout:${processTimeout}});`
     );
     const result = await launch(home, ['run', '--', 'node', source]).done;
     expect(result.code, result.err).toBe(0);
@@ -328,7 +329,7 @@ describe('resource admission', { timeout: 45_000 }, () => {
     const source = await script(
       home,
       'long',
-      `require('fs').writeFileSync(${JSON.stringify(ready)},'');setTimeout(()=>{},60000);`
+      `require('fs').writeFileSync(${jsLiteral(ready)},'');setTimeout(()=>{},60000);`
     );
     const first = launch(home, ['run', '--', 'node', source]);
     await until(() => exists(ready));
@@ -344,7 +345,7 @@ describe('resource admission', { timeout: 45_000 }, () => {
     const source = await script(
       home,
       'survivor',
-      `const fs=require('fs');fs.writeFileSync(${JSON.stringify(ready)},'');const t=setInterval(()=>{if(fs.existsSync(${JSON.stringify(release)})){clearInterval(t)}},25);`
+      `const fs=require('fs');fs.writeFileSync(${jsLiteral(ready)},'');const t=setInterval(()=>{if(fs.existsSync(${jsLiteral(release)})){clearInterval(t)}},25);`
     );
     const first = launch(home, ['run', '--', 'node', source]);
     await until(() => exists(ready));
@@ -379,7 +380,7 @@ describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
       await script(
         home,
         'active',
-        `const fs=require('fs');fs.writeFileSync(${JSON.stringify(ready)},'');const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(release)}))clearInterval(timer)},10);`
+        `const fs=require('fs');fs.writeFileSync(${jsLiteral(ready)},'');const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(release)}))clearInterval(timer)},10);`
       ),
     ]);
     await until(() => exists(ready));
@@ -422,7 +423,7 @@ describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
     const runner = join(home, 'waiter.ts');
     await writeFile(
       runner,
-      `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {writeFileSync} from 'node:fs';process.exitCode=await queuedResourceCommand(${JSON.stringify(home)},'node',['-e','process.exit(9)'],process.env,false,1,async()=>{writeFileSync(${JSON.stringify(join(home, 'pressure.ready'))},'');return {blocked:true,reason:'private fixture'};});`
+      `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {writeFileSync} from 'node:fs';process.exitCode=await queuedResourceCommand(${jsLiteral(home)},'node',['-e','process.exit(9)'],process.env,false,1,async()=>{writeFileSync(${jsLiteral(join(home, 'pressure.ready'))},'');return {blocked:true,reason:'private fixture'};});`
     );
     const waiter = launch(home, [], undefined, runner);
     await until(() => exists(join(home, 'pressure.ready')));
@@ -441,7 +442,7 @@ describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
     const runner = join(home, 'race.ts');
     await writeFile(
       runner,
-      `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {readResourceConfig,laneResourceConfig,resourceEnvironment} from ${JSON.stringify(configModule)};import {limitCommand} from ${JSON.stringify(resolve('src/cli/resources-command.ts'))};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const config=laneResourceConfig(await readResourceConfig(${JSON.stringify(home)}));const args=limitCommand('cargo',['test','--jobs=16'],config);writeFileSync(${JSON.stringify(join(home, 'initial.json'))},JSON.stringify(args));while(!existsSync(${JSON.stringify(join(home, 'initial.release'))}))await setTimeout(10);process.exitCode=await queuedResourceCommand(${JSON.stringify(home)},${JSON.stringify(probe)},args,resourceEnvironment(config),true,1);`
+      `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {readResourceConfig,laneResourceConfig,resourceEnvironment} from ${jsLiteral(configModule)};import {limitCommand} from ${jsLiteral(resolve('src/cli/resources-command.ts'))};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const config=laneResourceConfig(await readResourceConfig(${jsLiteral(home)}));const args=limitCommand('cargo',['test','--jobs=16'],config);writeFileSync(${jsLiteral(join(home, 'initial.json'))},JSON.stringify(args));while(!existsSync(${jsLiteral(join(home, 'initial.release'))}))await setTimeout(10);process.exitCode=await queuedResourceCommand(${jsLiteral(home)},${jsLiteral(probe)},args,resourceEnvironment(config),true,1);`
     );
     const broker = launch(home, [], undefined, runner);
     await until(() => exists(join(home, 'initial.json')));
@@ -473,7 +474,7 @@ describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
     const runner = join(home, 'pressure-race.ts');
     await writeFile(
       runner,
-      `import {queuedResourceCommand} from ${JSON.stringify(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';try{process.exitCode=await queuedResourceCommand(${JSON.stringify(home)},${JSON.stringify(probe)},['run','--maxWorkers=16'],process.env,false,1,async()=>{writeFileSync(${JSON.stringify(join(home, 'pressure.ready'))},'');while(!existsSync(${JSON.stringify(join(home, 'pressure.release'))}))await setTimeout(10);return {blocked:false,reason:null};});}catch(error){console.error(error.message);process.exitCode=1;}`
+      `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';try{process.exitCode=await queuedResourceCommand(${jsLiteral(home)},${jsLiteral(probe)},['run','--maxWorkers=16'],process.env,false,1,async()=>{writeFileSync(${jsLiteral(join(home, 'pressure.ready'))},'');while(!existsSync(${jsLiteral(join(home, 'pressure.release'))}))await setTimeout(10);return {blocked:false,reason:null};});}catch(error){console.error(error.message);process.exitCode=1;}`
     );
     const broker = launch(home, [], undefined, runner);
     await until(() => exists(join(home, 'pressure.ready')));
@@ -494,7 +495,7 @@ describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
     const child = await script(
       home,
       'hup',
-      `const fs=require('fs');process.on('SIGHUP',()=>fs.writeFileSync(${JSON.stringify(join(home, 'signal'))},'SIGHUP'));process.on('SIGTERM',()=>fs.writeFileSync(${JSON.stringify(join(home, 'signal'))},'SIGTERM'));fs.writeFileSync(${JSON.stringify(join(home, 'ready'))},'');const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(join(home, 'release'))})){clearInterval(timer);process.exit(0)}},10);`
+      `const fs=require('fs');process.on('SIGHUP',()=>fs.writeFileSync(${jsLiteral(join(home, 'signal'))},'SIGHUP'));process.on('SIGTERM',()=>fs.writeFileSync(${jsLiteral(join(home, 'signal'))},'SIGTERM'));fs.writeFileSync(${jsLiteral(join(home, 'ready'))},'');const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(join(home, 'release'))})){clearInterval(timer);process.exit(0)}},10);`
     );
     const broker = launch(home, ['run', '--', 'node', child]);
     await until(() => exists(join(home, 'ready')));
@@ -523,7 +524,7 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
     // Delay a real filesystem read in this private process, not the scheduler.
     await writeFile(
       readerFile,
-      `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const original=fs.readFile;let paused=false;mock.module('node:fs/promises',()=>({...fs,readFile:async(path,...args)=>{const value=await original(path,...args);if(String(path)===${JSON.stringify(join(home, 'config.json'))}&&!paused){paused=true;await fs.writeFile(${JSON.stringify(join(home, 'read.ready'))},'');while(!existsSync(${JSON.stringify(join(home, 'read.release'))}))await setTimeout(10);}return value;}}));const {runResourcesCommand}=await import(${JSON.stringify(resolve('src/cli/resources.ts'))});await runResourcesCommand([${JSON.stringify(action)}]);`
+      `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const original=fs.readFile;let paused=false;mock.module('node:fs/promises',()=>({...fs,readFile:async(path,...args)=>{const value=await original(path,...args);if(String(path)===${jsLiteral(join(home, 'config.json'))}&&!paused){paused=true;await fs.writeFile(${jsLiteral(join(home, 'read.ready'))},'');while(!existsSync(${jsLiteral(join(home, 'read.release'))}))await setTimeout(10);}return value;}}));const {runResourcesCommand}=await import(${jsLiteral(resolve('src/cli/resources.ts'))});await runResourcesCommand([${jsLiteral(action)}]);`
     );
     const reader = launch(home, [], undefined, readerFile);
     await until(() => exists(join(home, 'read.ready')));
@@ -534,7 +535,7 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
     const setupFile = join(home, 'setup.ts');
     await writeFile(
       setupFile,
-      `import {setupResources} from ${JSON.stringify(resolve('src/cli/resources-setup.ts'))};import {writeFileSync} from 'node:fs';const result=setupResources({home:${JSON.stringify(home)},roots:[${JSON.stringify(extra)}],shell:'none',workers:2,lanes:2});writeFileSync(${JSON.stringify(join(home, 'setup.ready'))},'');await result;writeFileSync(${JSON.stringify(join(home, 'setup.done'))},'');`
+      `import {setupResources} from ${jsLiteral(resolve('src/cli/resources-setup.ts'))};import {writeFileSync} from 'node:fs';const result=setupResources({home:${jsLiteral(home)},roots:[${jsLiteral(extra)}],shell:'none',workers:2,lanes:2});writeFileSync(${jsLiteral(join(home, 'setup.ready'))},'');await result;writeFileSync(${jsLiteral(join(home, 'setup.done'))},'');`
     );
     const setup = launch(home, [], undefined, setupFile);
     await until(() => exists(join(home, 'setup.ready')));
@@ -600,7 +601,7 @@ it('retains subprocess diagnostics until inherited pipes close', async () => {
   const runner = await script(
     path,
     'late-diagnostic',
-    `const {spawn}=require('node:child_process');spawn(${JSON.stringify(realNode)},['-e',"setTimeout(()=>process.stderr.write('fixture child diagnostic\\n'),100)"],{stdio:['ignore',process.stdout,process.stderr]}).unref();process.exit(7);`
+    `const {spawn}=require('node:child_process');spawn(${jsLiteral(realNode)},['-e',"setTimeout(()=>process.stderr.write('fixture child diagnostic\\n'),100)"],{stdio:['ignore',process.stdout,process.stderr]}).unref();process.exit(7);`
   );
   const result = await launch(path, [], path, runner).done;
   expect(result.code).toBe(7);
@@ -656,7 +657,7 @@ it('proves absent groups with ESRCH while permissions and unknown errors fail cl
   const runner = join(path, 'group.ts');
   await writeFile(
     runner,
-    `import {mock} from 'bun:test';import * as cp from 'node:child_process';let error='ESRCH';let output;let ps=0;const calls=[];process.kill=(...args)=>{calls.push(args);if(error)throw Object.assign(new Error('fixture'),{code:error});return true};mock.module('node:child_process',()=>({...cp,execFileSync:()=>{ps++;if(output===undefined)throw new Error('ps unavailable');return output}}));const {processGroupAlive}=await import(${JSON.stringify(resolve('src/cli/resources-slots.ts'))});const results=[];for(error of ['ESRCH','EPERM','EIO',''])results.push(processGroupAlive(12345));output='12345 Z';results.push(processGroupAlive(12345));output='12345 S';results.push(processGroupAlive(12345));console.log(JSON.stringify({results,calls,ps}));`
+    `import {mock} from 'bun:test';import * as cp from 'node:child_process';let error='ESRCH';let output;let ps=0;const calls=[];process.kill=(...args)=>{calls.push(args);if(error)throw Object.assign(new Error('fixture'),{code:error});return true};mock.module('node:child_process',()=>({...cp,execFileSync:()=>{ps++;if(output===undefined)throw new Error('ps unavailable');return output}}));const {processGroupAlive}=await import(${jsLiteral(resolve('src/cli/resources-slots.ts'))});const results=[];for(error of ['ESRCH','EPERM','EIO',''])results.push(processGroupAlive(12345));output='12345 Z';results.push(processGroupAlive(12345));output='12345 S';results.push(processGroupAlive(12345));console.log(JSON.stringify({results,calls,ps}));`
   );
   const result = await launch(path, [], path, runner).done;
   expect(result.code, result.err).toBe(0);

@@ -7296,6 +7296,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
 
   @override
+  String settingsTimezoneRateLimitedDetails(Object details) {
+    return 'Limit details: $details';
+  }
+
+  @override
+  String get settingsTimezoneRateLimitedChallenge => 'The response indicates a Vercel security challenge. Please contact support if this continues.';
+
+  @override
+  String get settingsTimezoneRateLimitedUpstream => 'This response did not identify an application limit. It may come from an upstream service or network edge; its exact source is unknown.';
+
+  @override
+  String settingsTimezoneRateLimitedRetryAfter(int seconds) {
+    return 'The server asks you to wait $seconds seconds before retrying.';
+  }
+
+  @override
   String get settingsTimezoneRetry => 'Retry timezone';
 
   @override
