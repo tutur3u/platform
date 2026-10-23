@@ -543,7 +543,7 @@ export async function runDevboxCommand({
   }
 
   if (
-    ['runners', 'inspect'].includes(resolvedAction) ||
+    ['runners', 'inspect', 'feature', 'drain'].includes(resolvedAction) ||
     (['upgrade', 'restart'].includes(resolvedAction) &&
       (flags.all === true ||
         flags.runners !== undefined ||

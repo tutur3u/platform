@@ -1,5 +1,8 @@
 import type { TuturuuuUserClient } from '../platform';
-import { runnerMaintenanceBlocker } from '../platform-devbox-fleet';
+import {
+  evaluateTrustedRunner,
+  runnerMaintenanceBlocker,
+} from '../platform-devbox-fleet';
 import { type FlagValue, getFlag } from './args';
 import {
   createDevboxRestartPayload,
@@ -24,7 +27,38 @@ export async function runDevboxFleetCommand({
       `${JSON.stringify(value, null, json ? undefined : 2)}\n`
     );
   if (action === 'runners') {
-    output({ runners: snapshot.runners });
+    // `status` alone is not freshness; report trusted-work eligibility.
+    output({
+      runners: snapshot.runners.map((runner) => ({
+        ...runner,
+        trustedWork: evaluateTrustedRunner(runner),
+      })),
+    });
+    return;
+  }
+  if (action === 'feature' || action === 'drain') {
+    const runnerId = getFlag(flags, 'runner');
+    if (!runnerId) throw new Error(`Use ttr box ${action} --runner <id>.`);
+    if (!snapshot.runners.some((runner) => runner.id === runnerId))
+      throw new Error(`Runner not found: ${runnerId}`);
+    if (action === 'drain') {
+      output(
+        await client.devboxes.fleet.setDrain(runnerId, flags.undo !== true)
+      );
+      return;
+    }
+    const feature = getFlag(flags, 'feature');
+    if (!feature || (flags.enable === true) === (flags.disable === true))
+      throw new Error(
+        'Use ttr box feature --runner <id> --feature <name> with exactly one of --enable or --disable.'
+      );
+    output(
+      await client.devboxes.fleet.setFeature(
+        runnerId,
+        feature,
+        flags.enable === true
+      )
+    );
     return;
   }
   const ids =

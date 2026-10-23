@@ -2,6 +2,8 @@ export const boxHelp = {
   commands: [
     'runners                     list platform-owned runner capabilities',
     'inspect                     inspect selected runners and maintenance eligibility',
+    'feature --runner <id> --feature <f> --enable|--disable  root admin: toggle a runner feature',
+    'drain --runner <id> [--undo]  root admin: drain a runner (see runners --json drained)',
     'run -- <command>             auto-lease a remote devbox and run a command',
     'build                       run a build command on a remote devbox',
     'serve                       build and serve an app from a remote devbox',

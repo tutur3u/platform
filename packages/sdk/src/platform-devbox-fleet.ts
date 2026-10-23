@@ -3,26 +3,18 @@ import {
   type InternalApiClientOptions,
 } from '@tuturuuu/internal-api/client';
 
-/** Capability reports remain extensible as platform-owned services evolve. */
-export interface DevboxFleetRunner {
-  id: string;
-  name: string;
-  status: string;
-  last_heartbeat_at: string | null;
-  heartbeat_enabled: boolean;
-  enabled_features: Record<string, boolean> | null;
-  resource_limits: Record<string, number> | null;
-  capabilities: {
-    cli?: { version?: string };
-    os?: { hostname?: string; platform?: string; arch?: string };
-    [key: string]: unknown;
-  } | null;
-}
-export interface DevboxFleetSnapshot {
-  runners: DevboxFleetRunner[];
-  runs: { id: string; runner_id: string | null; status: string }[];
-  leases: { id: string; runner_id: string | null; status: string }[];
-}
+export {
+  DEVBOX_HEARTBEAT_FRESH_MS,
+  type DevboxFleetRunner,
+  type DevboxFleetSnapshot,
+  type DevboxRunnerBlocker,
+  evaluateTrustedRunner,
+} from './devbox-fleet-types';
+
+import type {
+  DevboxFleetRunner,
+  DevboxFleetSnapshot,
+} from './devbox-fleet-types';
 
 /** Uses the existing root-member Infrastructure authorization boundary. */
 export class DevboxFleetClient {
@@ -33,6 +25,34 @@ export class DevboxFleetClient {
   snapshot() {
     return this.api.json<DevboxFleetSnapshot>(
       '/api/v1/infrastructure/devboxes'
+    );
+  }
+  /** Root admin only; the server enforces trust-pool exclusion. */
+  setFeature(runnerId: string, feature: string, enabled: boolean) {
+    return this.api.json<{
+      runnerId: string;
+      feature: string;
+      enabled: boolean;
+    }>(
+      `/api/v1/infrastructure/devboxes/runners/${encodeURIComponent(runnerId)}/features`,
+      {
+        body: JSON.stringify({ feature, enabled }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      }
+    );
+  }
+  setDrain(runnerId: string, draining: boolean) {
+    return this.api.json<{
+      runnerId: string;
+      drain_requested_at: string | null;
+    }>(
+      `/api/v1/infrastructure/devboxes/runners/${encodeURIComponent(runnerId)}/drain`,
+      {
+        body: JSON.stringify({ draining }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      }
     );
   }
 }
