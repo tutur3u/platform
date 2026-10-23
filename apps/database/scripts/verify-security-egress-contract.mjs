@@ -55,6 +55,8 @@ const fixtures = [
   'security-notification-email-access.sql',
   'security-definer-function-grants.sql',
   'security-definer-search-paths.sql',
+  'security-definer-policy-callers.sql',
+  'security-definer-chat-access.sql',
 ];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({

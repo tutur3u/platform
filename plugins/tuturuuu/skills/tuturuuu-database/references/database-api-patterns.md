@@ -37,11 +37,18 @@ review prove baseline equivalence. Existing migration history stays immutable.
 - Definer path trust comes from current schema privileges: `PUBLIC`, `anon` and
   `authenticated` must lack effective `CREATE`. Require explicit `pg_temp` last
   for every path; empty and catalog-only paths are unsafe for TEMP types too. Reject inherited paths,
-  `$user` and nonexistent schemas. Run `security-definer-search-paths.sql` across
+  `$user`, nonexistent schemas and explicit `pg_temp_N`/`pg_toast_temp_N` names. Run `security-definer-search-paths.sql` across
   every configured exposed schema and retain its negative controls. Prefer ALTER
   to body replacement; check nested invoker dependencies before narrowing lookup
   to `pg_catalog, pg_temp`. Limit application DDL and assertions to ownable,
-  non-provider functions; report other owners and managed schemas. See the RPC
+  non-provider functions; report other owners and managed schemas with the
+  `security-definer-skip` marker. Unowned first-party functions in public/private
+  require an explicit signature/owner/reason allowlist entry in the path contract
+  (currently empty); provider ownership is not inferred from a role name.
+  Verify final catalog policy dependencies, views, invoker functions, triggers,
+  defaults and user-client RPC callers before revoking EXECUTE. Run
+  `security-definer-policy-callers.sql` to enforce policy-role EXECUTE, including
+  PUBLIC policies and its failing privilege control. See the RPC
   hardening section of `apps/docs/build/devops/secrets-and-configuration.mdx`.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 

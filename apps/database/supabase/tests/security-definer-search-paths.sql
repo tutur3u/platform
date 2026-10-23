@@ -11,7 +11,7 @@ begin;
 set local role :"security_migration_role";
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(25);
+select plan(28);
 select set_config('security.exposed_schemas', :'security_exposed_schemas', true);
 create function pg_temp.security_definer_path_is_safe(path_setting text)
 returns boolean
@@ -43,7 +43,8 @@ begin
       if position <> cardinality(schemas) then return false; end if;
       continue;
     end if;
-    if schema_name = '$user' or schema_name = '' then return false; end if;
+    if schema_name = '$user' or schema_name = ''
+      or schema_name ~ '^pg_(toast_)?temp_' then return false; end if;
     select n.oid into schema_oid from pg_namespace n where n.nspname = schema_name;
     if schema_oid is null then return false; end if;
     if coalesce(has_schema_privilege(to_regrole('anon'), schema_oid, 'CREATE'), true)
@@ -64,17 +65,33 @@ select json_build_object('excluded_definer', p.oid::regprocedure::text,
   'owner', pg_get_userbyid(p.proowner), 'proconfig', p.proconfig)
 from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
 where n.nspname=any(string_to_array(current_setting('security.exposed_schemas'), ','))
-  and p.prosecdef and (not pg_has_role(current_user,p.proowner,'USAGE')
+  and p.prosecdef and p.prokind='f' and (not pg_has_role(current_user,p.proowner,'USAGE')
     or n.nspname in ('storage','graphql_public')
     or exists(select 1 from pg_catalog.pg_depend d
       where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e'));
+-- Explicit first-party ownership exceptions: NONE. Add a reviewed signature,
+-- owner and reason here only when its migration custody is deliberately external.
+-- Provider namespaces and extension members are excluded separately by identity.
+create temp table security_definer_owner_allowlist(
+  signature text, owner_name name, reason text not null
+) on commit drop;
+select is((select count(*)::integer
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname in ('public','private') and p.prosecdef and p.prokind='f'
+    and not pg_has_role(current_user,p.proowner,'USAGE')
+    and not exists(select 1 from pg_depend d where d.classid='pg_proc'::regclass
+      and d.objid=p.oid and d.deptype='e')
+    and not exists(select 1 from security_definer_owner_allowlist a
+      where a.signature=p.oid::regprocedure::text
+        and a.owner_name=pg_get_userbyid(p.proowner))), 0,
+  'no unallowlisted first-party definer is skipped because of ownership');
 select ok(exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='storage'), 'Storage functions are bootstrapped for managed ownership inventory');
 select is((
   select count(*)::integer from pg_catalog.pg_proc p
   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
   where n.nspname = any(string_to_array(current_setting('security.exposed_schemas'), ','))
-    and p.prosecdef
+    and p.prosecdef and p.prokind='f'
     and pg_has_role(current_user, p.proowner, 'USAGE')
     and n.nspname not in ('storage', 'graphql_public')
     and not exists (select 1 from pg_catalog.pg_depend d
@@ -124,7 +141,7 @@ select is((
   select count(*)::integer from pg_catalog.pg_proc p
   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
   where n.nspname = any(string_to_array(current_setting('security.exposed_schemas'), ','))
-    and p.prosecdef
+    and p.prosecdef and p.prokind='f'
     and pg_has_role(current_user, p.proowner, 'USAGE')
     and n.nspname not in ('storage', 'graphql_public')
     and not exists (select 1 from pg_catalog.pg_depend d
@@ -140,6 +157,14 @@ select ok(not pg_temp.security_definer_path_is_safe('"$user", public, pg_temp'),
   'negative control: user-dependent schema is rejected');
 select ok(not pg_temp.security_definer_path_is_safe('""'), 'negative control: empty path permits implicit temp type lookup');
 select ok(not pg_temp.security_definer_path_is_safe('pg_catalog'), 'negative control: catalog-only path permits implicit temp type lookup');
+-- Use the real session namespaces, whose ACLs alone would appear trusted.
+select ok((select not pg_temp.security_definer_path_is_safe(format('%I, pg_temp', nspname))
+  from pg_namespace where oid=pg_my_temp_schema()),
+  'negative control: explicit pg_temp_N namespace is untrusted');
+select ok((select not pg_temp.security_definer_path_is_safe(format('%I, pg_temp',
+  replace(nspname, 'pg_temp_', 'pg_toast_temp_')))
+  from pg_namespace where oid=pg_my_temp_schema()),
+  'negative control: explicit pg_toast_temp_N namespace is untrusted');
 select ok(pg_temp.security_definer_path_is_safe('public, pg_temp'),
   'a trusted schema with pg_temp last is safe');
 revoke create on schema security_path_writable_fixture from authenticated;

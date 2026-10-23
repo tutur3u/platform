@@ -694,17 +694,15 @@ Columns within boards (e.g., "To Do", "In Progress", "Done").
 
 Task boards may contain multiple `closed` lists when teams need distinct terminal buckets such as `Abandoned`, `Not Planned`, or `Duplicate`. Treat `closed` as a status group for sorting/reporting, not a singleton board column.
 
-**Access rule:** request-scoped clients can read or write a task list only when
-the signed-in user has a `workspace_members` row (any member type) in the
-workspace that owns the list's board. Because the `tasks` policy delegates to
-list visibility, the same rule scopes list-bound tasks. Tasks without a list
-(`list_id` null, created by the calendar scheduling route
-`POST /api/{wsId}/task/create`) have no workspace link, so only their creator
-(`creator_id`) can read, update, delete or insert them through a
-request-scoped client. Board shares, task shares, and public share links do
-not grant direct list or task access; their routes verify the share and then
-read through the admin client. Regression coverage:
-`apps/database/supabase/tests/security-definer-function-grants.sql`.
+**Access rule:** direct task-table access is server-owned; request-scoped
+clients have no task read or write grants. Authorized routes verify the actor,
+workspace membership or share before using the admin client. Task-list RLS
+requires a `workspace_members` row in the board's workspace. Task RLS adds a
+defence-in-depth fence: list-bound tasks require list visibility, and list-less
+tasks require the actor to match `creator_id`. The calendar scheduling route
+`POST /api/{wsId}/task/create` creates list-less tasks. Board shares, task shares
+and public share links do not grant direct list or task access. Regression
+coverage: `apps/database/supabase/tests/security-definer-function-grants.sql`.
 
 ```sql
 CREATE TABLE task_lists (

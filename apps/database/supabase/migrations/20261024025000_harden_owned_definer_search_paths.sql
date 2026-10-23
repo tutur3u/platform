@@ -114,7 +114,8 @@ begin
       if position <> cardinality(schemas) then return false; end if;
       continue;
     end if;
-    if schema_name = '$user' or schema_name = '' then return false; end if;
+    if schema_name = '$user' or schema_name = ''
+      or schema_name ~ '^pg_(toast_)?temp_' then return false; end if;
     select n.oid into schema_oid from pg_namespace n where n.nspname = schema_name;
     if schema_oid is null then return false; end if;
     if coalesce(has_schema_privilege(to_regrole('anon'), schema_oid, 'CREATE'), true)
@@ -139,7 +140,8 @@ declare
 begin
   -- Supabase-managed namespaces and extension functions remain provider-owned.
   for fn in
-    select n.nspname, p.proname, pg_get_userbyid(p.proowner) as owner, p.proconfig
+    select n.nspname, p.oid::regprocedure::text as signature,
+      pg_get_userbyid(p.proowner) as owner, p.proconfig
     from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
     where n.nspname in ('public','private','storage','graphql_public')
       and p.prosecdef and p.prokind='f'
@@ -148,8 +150,8 @@ begin
         or exists (select 1 from pg_catalog.pg_depend d where d.classid='pg_proc'::regclass
           and d.objid=p.oid and d.deptype='e'))
   loop
-    raise notice 'Provider-owned definer left unchanged: %.% owner=% proconfig=%',
-      fn.nspname,fn.proname,fn.owner,fn.proconfig;
+    raise notice 'security-definer-skip schema=% fn=% owner=% proconfig=%',
+      fn.nspname,fn.signature,fn.owner,fn.proconfig;
   end loop;
   for fn in
     select p.oid, n.nspname, p.proname, p.prosrc,

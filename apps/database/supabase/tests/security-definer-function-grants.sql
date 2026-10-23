@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(94);
+select plan(96);
 
 create temp table definer_service_only(fn regprocedure) on commit drop;
 insert into definer_service_only values
@@ -95,13 +95,24 @@ select ok(has_function_privilege('authenticated', 'public.user_is_in_channel(uui
 select ok(not has_function_privilege('anon', 'public.award_mira_xp(uuid,integer,text)', 'EXECUTE'), 'anon: award XP');
 select ok(has_function_privilege('authenticated', 'public.award_mira_xp(uuid,integer,text)', 'EXECUTE'), 'authenticated: award XP');
 
--- Policy and search_path pins (24-33).
+-- Policy and search_path pins (24-35).
 select ok((select relrowsecurity from pg_class
-  where oid='public.workspace_chat_messages'::regclass)
-  and not exists(select 1 from pg_policies where schemaname='public'
-    and tablename='workspace_chat_messages' and cmd='SELECT'
-    and roles && array['public','anon']::name[]),
-  'chat message reads enforce RLS without PUBLIC or anon SELECT policies');
+  where oid='public.workspace_chat_messages'::regclass),
+  'legacy chat messages keep RLS enabled');
+select is((select coalesce(jsonb_agg(jsonb_build_object(
+    'name',policyname,'kind',permissive,'command',cmd,'roles',roles,
+    'using',qual,'check',with_check) order by policyname),'[]'::jsonb)
+  from pg_policies where schemaname='public' and tablename='workspace_chat_messages'),
+  '[{"name":"account_required_mfa","kind":"RESTRICTIVE","command":"ALL",
+    "roles":["authenticated"],
+    "using":"( SELECT account_required_mfa_satisfied() AS account_required_mfa_satisfied)",
+    "check":"( SELECT account_required_mfa_satisfied() AS account_required_mfa_satisfied)"}]'::jsonb,
+  'legacy chat has exactly the authenticated restrictive ALL MFA policy with USING and CHECK');
+select is((select count(*)::int from pg_policies
+  where schemaname='public' and tablename='workspace_chat_messages'
+    and permissive='PERMISSIVE' and cmd in ('SELECT', 'ALL')
+    and roles && array['public','anon','authenticated']::name[]), 0,
+  'legacy chat has no permissive SELECT or ALL policy for client roles');
 select is((select proconfig::text from pg_proc where oid = 'public.award_mira_xp(uuid,integer,text)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'award XP pinned catalog and temp');
 select is((select proconfig::text from pg_proc where oid = 'public.complete_mira_focus_session(uuid,text)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'focus completion pinned catalog and temp');
 select is((select proconfig::text from pg_proc where oid = 'public.is_task_board_member(uuid,uuid)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'board membership pinned catalog and temp');
@@ -133,7 +144,7 @@ insert into public.mira_focus_sessions(id, user_id, started_at, planned_duration
   ('00000000-0000-4000-8000-00000000a241', '00000000-0000-4000-8000-00000000a201', now() - interval '10 minutes', 5),
   ('00000000-0000-4000-8000-00000000a242', '00000000-0000-4000-8000-00000000a202', now() - interval '10 minutes', 5);
 
--- Task list membership (34-41).
+-- Task list membership (36-45).
 select ok(public.is_task_board_member('00000000-0000-4000-8000-00000000a201', '00000000-0000-4000-8000-00000000a221'), 'helper admits a workspace member');
 select ok(not public.is_task_board_member('00000000-0000-4000-8000-00000000a202', '00000000-0000-4000-8000-00000000a221'), 'helper rejects a non-member');
 set local role authenticated;
@@ -182,7 +193,7 @@ select is((select count(*)::int from public.tasks where id = '00000000-0000-4000
 select lives_ok($$update public.tasks set name = 'Creator edit' where id = '00000000-0000-4000-8000-00000000a251'$$, 'creator updates own list-less task');
 select is((select name from public.tasks where id = '00000000-0000-4000-8000-00000000a251'), 'Creator edit', 'creator update applied');
 
--- Mira actor checks (52-58). Authenticated as A.
+-- Mira actor checks (58-64). Authenticated as A.
 select throws_ok($$select public.award_mira_xp('00000000-0000-4000-8000-00000000a202', 5, 'contract')$$,
   '42501', 'Not allowed to award XP to another user', 'user A cannot award XP to user B');
 select is((public.award_mira_xp('00000000-0000-4000-8000-00000000a201', 5, 'contract')).user_id, '00000000-0000-4000-8000-00000000a201'::uuid, 'user A can award XP to self');
@@ -198,7 +209,7 @@ reset role;
 select set_config('request.jwt.claims', '', true);
 select lives_ok($$select public.award_mira_xp('00000000-0000-4000-8000-00000000a202', 1, 'contract')$$, 'no-JWT server context can award XP');
 
--- Pinned bodies still resolve their objects when called by the server (59-90).
+-- Pinned bodies still resolve their objects when called by the server (65-96).
 set local role service_role;
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select lives_ok($$select public.get_platform_ai_credit_overview()$$, 'call: platform credit overview');

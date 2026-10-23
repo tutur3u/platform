@@ -21,7 +21,7 @@ select role_name, schema_name,
     ) else has_schema_privilege(to_regrole(role_name),n.oid,'CREATE')
   end as has_create -- All existing schema/role combinations must be false.
 from (values ('anon'),('authenticated'),('PUBLIC')) roles(role_name)
-cross join (values ('public'),('extensions'),('audit')) schemas(schema_name)
+cross join (values ('public'),('private'),('extensions'),('audit')) schemas(schema_name)
 left join pg_namespace n on n.nspname=schemas.schema_name
 order by schema_name, role_name;
 rollback;
