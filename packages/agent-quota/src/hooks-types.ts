@@ -23,6 +23,8 @@ export interface AdmissionRequest {
     nearUsedPercent: number;
     unknownMaxConcurrent: number;
     preferenceWeights?: Record<string, number>;
+    orchestratorRole?: 'main' | 'child';
+    allowNonClaudeFallback?: boolean;
   };
 }
 export interface Observation {

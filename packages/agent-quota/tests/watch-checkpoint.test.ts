@@ -84,6 +84,59 @@ describe('quota turn-boundary watch', () => {
     );
     expect(chosen).toBe('good');
   });
+
+  it('prefers Claude only for main successor selection and requires explicit fallback', () => {
+    const rank = (
+      instanceId: string,
+      provider: RankedInstance['provider'],
+      state: RankedInstance['state'] = 'healthy'
+    ): RankedInstance => ({
+      instanceId,
+      provider,
+      label: instanceId,
+      state,
+      ageMs: 0,
+      ttlMs: 900_000,
+      activeCount: 0,
+      action: state === 'healthy' ? 'delegate' : 'drain',
+      instanceIds: [instanceId],
+      score: 80,
+      eligible: state === 'healthy',
+      reasons: [],
+    });
+    const ranking = [rank('codex', 'codex'), rank('claude', 'claude')];
+    expect(
+      selectSuccessor([], ranking, [], [], at, {}, {}, [], {}, 'main')
+    ).toBe('claude');
+    expect(
+      selectSuccessor([], ranking, [], [], at, {}, {}, [], {}, 'child')
+    ).toBe('codex');
+    const exhaustedClaude = [
+      rank('claude', 'claude', 'exhausted'),
+      rank('codex', 'codex'),
+    ];
+    expect(
+      selectSuccessor([], exhaustedClaude, [], [], at, {}, {}, [], {}, 'main')
+    ).toBeUndefined();
+    expect(
+      selectSuccessor([], ranking, [], ['claude'], at, {}, {}, [], {}, 'main')
+    ).toBeUndefined();
+    expect(
+      selectSuccessor(
+        [],
+        exhaustedClaude,
+        [],
+        [],
+        at,
+        {},
+        {},
+        [],
+        {},
+        'main',
+        true
+      )
+    ).toBe('codex');
+  });
 });
 
 function checkpointFixture(): ChildSnapshot {

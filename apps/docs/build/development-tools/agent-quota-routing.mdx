@@ -633,7 +633,7 @@ verdict to preserve hysteresis across invocations; callers own that small piece
 of turn state, so the command needs no timer or writable watch ledger:
 
 ```sh
-bun packages/agent-quota/src/cli.ts watch --owner claude_hehe \
+bun packages/agent-quota/src/cli.ts watch --owner claude_hehe --role main \
   --previous-verdict warn --warn-percent 25 --critical-percent 12 \
   --hysteresis-percent 3
 ```
@@ -667,3 +667,14 @@ The check does not acquire a lease, cancel queued work, or configure the thread.
 The owner must preserve and drain any work before retrying it. T3 still has no
 native pre-delegation admission callback on `delegate_task` and no automatic
 account failover; these one-shot commands are orchestrator-invoked safeguards.
+
+Main orchestrators can pass `--role main` to prefer an eligible, fresh, healthy
+Claude successor; child/subagent callers use `--role child` (the default) and
+retain task/provider/model-driven ranking. A main-role non-Claude fallback is
+blocked unless the caller explicitly opts in with
+`--allow-non-claude-fallback`; an exhausted, stale, reserved, or otherwise
+ineligible Claude pool is never promoted by the role preference. The JSON
+admission request carries the same choice as `policy.orchestratorRole`, with
+`policy.allowNonClaudeFallback` defaulting to false. Main role changes ordering
+among eligible pools only and does not bypass quota, block, reserve, capability,
+privacy, authorization, concurrency, reviewer-independence, or drainage gates.

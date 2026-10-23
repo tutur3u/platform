@@ -5,6 +5,7 @@ import { readLedger } from './hook-ledger';
 import { RESERVATION_TTL } from './ledger-retention';
 import { recommend } from './policy';
 import type { PoolSettings } from './pool-settings';
+import { chooseRoleCandidate } from './role-policy';
 import type { RankedInstance, UsageWindow } from './types';
 
 export type WatchVerdict = 'ok' | 'warn' | 'switch-now';
@@ -13,6 +14,8 @@ export interface WatchOptions {
   criticalPercent?: number;
   hysteresisPercent?: number;
   previous?: WatchVerdict;
+  role?: 'main' | 'child';
+  allowNonClaudeFallback?: boolean;
   now?: Date;
 }
 
@@ -87,9 +90,11 @@ export function selectSuccessor(
   poolSettings: Record<string, PoolSettings> = {},
   lastAdmissions: Record<string, number> = {},
   accounts: Awaited<ReturnType<typeof collectAll>>['accounts'] = [],
-  poolHolds: Record<string, boolean> = {}
+  poolHolds: Record<string, boolean> = {},
+  role: 'main' | 'child' = 'child',
+  allowNonClaudeFallback = false
 ): string | undefined {
-  return ranking.find((rank) => {
+  const eligible = ranking.filter((rank) => {
     if (
       !rank.eligible ||
       rank.state !== 'healthy' ||
@@ -144,7 +149,9 @@ export function selectSuccessor(
         return false;
     }
     return true;
-  })?.instanceId;
+  });
+  return chooseRoleCandidate(role, eligible, allowNonClaudeFallback).candidate
+    ?.instanceId;
 }
 
 export async function evaluateWatch(owner: string, options: WatchOptions = {}) {
@@ -203,7 +210,9 @@ export async function evaluateWatch(owner: string, options: WatchOptions = {}) {
       data.poolSettings,
       ledger.lastAdmissions,
       data.accounts,
-      ledger.poolHolds
+      ledger.poolHolds,
+      options.role ?? 'child',
+      options.allowNonClaudeFallback ?? false
     );
   }
   return {
@@ -212,5 +221,15 @@ export async function evaluateWatch(owner: string, options: WatchOptions = {}) {
     state: remaining === undefined ? 'UNKNOWN' : 'FRESH',
     remainingPercent: remaining === undefined ? null : Math.round(remaining),
     successor: successor ?? null,
+    successorReason:
+      options.role === 'main' && !successor
+        ? 'main-role-no-eligible-claude'
+        : options.role === 'main' && successor
+          ? collapseAccounts(data.accounts).find(
+              (candidate) => candidate.instanceId === successor
+            )?.provider === 'claude'
+            ? 'healthy-claude-preferred'
+            : 'explicit-non-claude-fallback'
+          : undefined,
   };
 }

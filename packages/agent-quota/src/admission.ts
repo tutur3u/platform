@@ -13,6 +13,7 @@ import { pruneLedger } from './ledger-retention';
 import { recommend } from './policy';
 import { poolPolicyReasons, settingsFor } from './pool-settings';
 import { clearRecoveredLimits } from './receipt-expiry';
+import { chooseRoleCandidate, rolePreferenceRank } from './role-policy';
 import { coversModel, receiptCovers } from './window-scope';
 
 export { accountKey } from './accounts';
@@ -316,6 +317,15 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
       );
       return {
         preferenceWeight,
+        provider: pool.provider,
+        rolePreference: rolePreferenceRank(
+          request.policy.orchestratorRole,
+          pool.provider,
+          state === 'FRESH' &&
+            ranking.state === 'healthy' &&
+            reasons.length === 0 &&
+            Boolean(candidate)
+        ),
         orderingScore: ranking.score + preferenceWeight,
         pool: pool.instanceId,
         instanceIds: ids,
@@ -336,20 +346,38 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
     })
     .sort(
       (a, b) =>
+        b.rolePreference - a.rolePreference ||
         Number(b.state === 'FRESH') - Number(a.state === 'FRESH') ||
         b.orderingScore - a.orderingScore ||
         a.pool.localeCompare(b.pool)
     );
-  const selected = pools.find(
+  const eligiblePools = pools.filter(
     (pool) => pool.reasons.length === 0 && pool.candidate
   );
+  const eligibleClaude = eligiblePools.filter(
+    (pool) => pool.provider === 'claude'
+  );
+  const selected = chooseRoleCandidate(
+    request.policy.orchestratorRole,
+    eligiblePools,
+    request.policy.allowNonClaudeFallback
+  ).candidate;
   const publicPools = pools.map(
-    ({ accountKey: _key, candidate: _candidate, ...pool }) => pool
+    ({
+      accountKey: _key,
+      candidate: _candidate,
+      rolePreference: _role,
+      ...pool
+    }) => pool
   );
   if (!selected?.candidate)
     return {
       status: 'block',
-      reasons: ['no-eligible-pool'],
+      reasons: [
+        request.policy.orchestratorRole === 'main' && !eligibleClaude.length
+          ? 'main-role-no-eligible-claude'
+          : 'no-eligible-pool',
+      ],
       pools: publicPools,
     };
   ledger.reservations.push({
@@ -391,6 +419,10 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         ? 'fresh-headroom'
         : 'bounded-unknown-admission',
       'capability-privacy-authorization-approved',
+      ...(request.policy.orchestratorRole === 'main' &&
+      selected.provider !== 'claude'
+        ? ['main-role-explicit-non-claude-fallback']
+        : []),
       'reservation-recorded',
     ],
     pools: publicPools,

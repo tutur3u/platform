@@ -84,6 +84,14 @@ export function admissionInput(input: Input): AdmissionRequest {
   const unknownMaxConcurrent = number(policy.unknownMaxConcurrent, 0, 20);
   if (!Number.isInteger(unknownMaxConcurrent))
     throw new HookError('unknown-cap-invalid');
+  const orchestratorRole = policy.orchestratorRole ?? 'child';
+  if (orchestratorRole !== 'main' && orchestratorRole !== 'child')
+    throw new HookError('orchestrator-role-invalid');
+  if (
+    policy.allowNonClaudeFallback !== undefined &&
+    typeof policy.allowNonClaudeFallback !== 'boolean'
+  )
+    throw new HookError('fallback-policy-invalid');
   return {
     requestId: id(input.requestId),
     recovery,
@@ -116,6 +124,8 @@ export function admissionInput(input: Input): AdmissionRequest {
         100
       ),
       nearUsedPercent: number(policy.nearUsedPercent, 1, 100),
+      orchestratorRole,
+      allowNonClaudeFallback: policy.allowNonClaudeFallback === true,
     },
   };
 }

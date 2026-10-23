@@ -59,6 +59,9 @@ async function main(): Promise<void> {
       return number;
     };
     const previous = arg('--previous-verdict');
+    const role = arg('--role') ?? 'child';
+    if (role !== 'main' && role !== 'child')
+      throw new Error('watch-option-invalid:--role');
     if (
       previous !== undefined &&
       !['ok', 'warn', 'switch-now'].includes(previous)
@@ -70,6 +73,10 @@ async function main(): Promise<void> {
         criticalPercent: numberArg('--critical-percent', 12),
         hysteresisPercent: numberArg('--hysteresis-percent', 3),
         previous: previous as WatchVerdict | undefined,
+        role,
+        allowNonClaudeFallback: process.argv.includes(
+          '--allow-non-claude-fallback'
+        ),
       });
       console.log(JSON.stringify(result));
       process.exitCode =

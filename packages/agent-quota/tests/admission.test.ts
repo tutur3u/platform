@@ -52,6 +52,94 @@ function setup(pool = account('worker')) {
   return { accounts, active: [], ledger: emptyLedger(), now };
 }
 describe('one-shot quota admission', () => {
+  it('prefers healthy Claude for main orchestrators while children stay flexible', () => {
+    const owner = account('owner', 80);
+    const codex = { ...account('codex-pool'), provider: 'codex' as const };
+    const claude = { ...account('claude-pool'), provider: 'claude' as const };
+    const accounts = [owner, codex, claude];
+    const context = {
+      accounts,
+      active: [],
+      ledger: emptyLedger(),
+      now,
+    };
+    const input = request(accounts);
+    expect(
+      admit(
+        {
+          ...input,
+          policy: { ...input.policy, orchestratorRole: 'main' },
+        },
+        context
+      )
+    ).toMatchObject({
+      status: 'admit',
+      chosen: { providerInstanceId: 'claude-pool' },
+    });
+
+    const childContext = {
+      accounts,
+      active: [],
+      ledger: emptyLedger(),
+      now,
+    };
+    expect(
+      admit(
+        {
+          ...input,
+          requestId: 'child-request',
+          policy: { ...input.policy, orchestratorRole: 'child' },
+        },
+        childContext
+      )
+    ).toMatchObject({
+      status: 'admit',
+      chosen: { providerInstanceId: 'codex-pool' },
+    });
+  });
+
+  it('blocks when main role has no eligible Claude and labels an authorized healthy fallback', () => {
+    const owner = account('owner', 80);
+    const codex = { ...account('codex-pool'), provider: 'codex' as const };
+    const exhaustedClaude = {
+      ...account('claude-pool', 100),
+      provider: 'claude' as const,
+    };
+    const accounts = [owner, codex, exhaustedClaude];
+    const input = request(accounts);
+    const blocked = admit(
+      {
+        ...input,
+        policy: { ...input.policy, orchestratorRole: 'main' },
+      },
+      { accounts, active: [], ledger: emptyLedger(), now }
+    );
+    expect(blocked).toMatchObject({
+      status: 'block',
+      reasons: ['main-role-no-eligible-claude'],
+    });
+
+    const fallback = admit(
+      {
+        ...input,
+        requestId: 'authorized-fallback',
+        policy: {
+          ...input.policy,
+          orchestratorRole: 'main',
+          allowNonClaudeFallback: true,
+        },
+      },
+      { accounts, active: [], ledger: emptyLedger(), now }
+    );
+    expect(fallback).toMatchObject({
+      status: 'admit',
+      chosen: { providerInstanceId: 'codex-pool' },
+      reasons: expect.arrayContaining([
+        'main-role-explicit-non-claude-fallback',
+      ]),
+    });
+  });
+
   it('maps stale quota to unknown capacity and bounds reservations', () => {
     const context = setup();
     const worker = context.accounts[1];
