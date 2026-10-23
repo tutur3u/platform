@@ -65,6 +65,22 @@ void main() {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
   });
+  // ShellPage reports back-button state on this channel; without a handler
+  // the call fails once a capture's runAsync lets real async work complete.
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('mobile/shell_back'),
+          (_) async => null,
+        );
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('mobile/shell_back'),
+            null,
+          ),
+    );
+  });
 
   for (final sample in [
     ('classic-light', const AppearanceSettings(), shad.ThemeMode.light),

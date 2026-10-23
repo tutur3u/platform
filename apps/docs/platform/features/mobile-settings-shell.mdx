@@ -13,8 +13,11 @@ use Lucide icons only. Inset dividers start at the title column (54px), not unde
 the icon. Rows have a 56px minimum height and expand for translated or enlarged
 text. A row shows its current value as a muted summary under the title, or as a
 short trailing value before the chevron (for example, the Appearance theme name).
-It does not show both. Full-size controls such as switches widen the trailing
-column and centre vertically instead of scaling down. Multiple timezone actions
+It does not show both. A trailing value keeps its natural width, flush right,
+while the title still fits on one line; otherwise it moves under the title, so
+titles never break mid-word at enlarged text. Full-size controls such as
+switches widen the trailing column and centre vertically instead of scaling
+down. Multiple timezone actions
 stack in the trailing column, keeping the text width and action centers
 consistent with chevrons. Existing English and Vietnamese labels and tooltips
 remain unchanged.
@@ -356,7 +359,7 @@ product decision.
 | Mode | System, Light, Dark | System (an existing `theme-mode` preference is kept) |
 | Theme | Aurora, Classic, Sunset, Ocean, Forest, Ember, Blossom, Mono | Classic |
 | Accent | Match theme, Neutral, Indigo, Blue, Teal, Green, Amber, Orange, Rose, Violet | Match theme (Classic: Neutral) |
-| Background | Solid, Gradient, Blobs | Solid |
+| Background | Solid, Gradient, Blobs (Vietnamese: Trơn, Dải màu, Đốm màu) | Solid |
 | Intensity / Softness / Card opacity | Sliders; softness only for Blobs | 60% / 60% / 78% (min 40%) |
 | Animate background | Blobs only, opt-in | Off |
 
@@ -378,9 +381,17 @@ colours are derived per theme: each is stepped toward black or white until it
 reaches 4.5:1 against that worst-case blend. Labels on primary, secondary, accent
 and muted fills, and Material `onError`/`onPrimary`, also reach 4.5:1. Non-neutral
 accents also drive Material primary/secondary/tertiary containers and surface
-tint, so chips, FABs and indicators follow the accent. Known gap: shad's built-in
-destructive button paints a fixed white label on a 50% destructive fill
-regardless of theme, and is outside this contrast guarantee.
+tint, so chips, FABs and indicators follow the accent.
+
+`AppearanceBackdrop` also installs `accessibleDestructiveButtonTheme` for every
+appearance. shad's built-in destructive button paints a fixed white label on a
+50% destructive fill (about 2.5:1 on light pages). The override uses the
+theme's solid `destructive` fill with the `labelOn` label instead, so it reaches
+4.5:1. Hover and press shift the fill slightly toward the label without losing
+AA, and disabled buttons keep shad's styling. Default Classic dark uses the base
+scheme, so its destructive buttons also change from a translucent to a solid
+fill. Segmented-control labels (Mode, Background) scale down to fit rather than
+truncate.
 
 ### App-wide application and cost
 
@@ -420,8 +431,10 @@ covers migration, restart persistence, preview, write fencing, reset and decodin
 `settings_appearance_shell_checks.dart` runs the real shell for Classic
 light/dark, Aurora blobs and Sunset gradient. It also covers instant
 apply/persist/reset, reduced and full motion, the New chip and Aurora highlight,
-the one-line workspace stat, and 320px pages at 2x text in English and
-Vietnamese. `settings_design_checks.dart` covers the row grid. These are
-widget-level checks. Device visual, battery and frame-time acceptance on the
-exact CI-built artifact remain separate gates.
+the one-line workspace stat, 320px pages at 2x text in English and
+Vietnamese, and screen-reader activation of theme tiles and accent swatches.
+`appearance_root_tabs_render_test.dart` renders the Home and Apps root tabs in
+Classic light and dark Aurora blobs. `settings_design_checks.dart` covers the row
+grid. These are widget-level checks. Device visual, battery and frame-time
+acceptance on the exact CI-built artifact remain separate gates.
 

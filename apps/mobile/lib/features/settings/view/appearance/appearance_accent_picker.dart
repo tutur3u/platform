@@ -35,6 +35,8 @@ class AppearanceAccentPicker extends StatelessWidget {
               button: true,
               selected: id == settings.accent,
               label: l10n.appearanceAccent(id),
+              // Excluded child semantics drop the InkResponse tap action.
+              onTap: () => onSelected(id),
               excludeSemantics: true,
               child: InkResponse(
                 key: ValueKey('appearance-accent-${id.name}'),

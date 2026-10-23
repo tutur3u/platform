@@ -189,6 +189,35 @@ void registerSettingsAppearanceShellChecks() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('theme tiles and accent swatches activate from a screen reader', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final h = await _pumpAppearance(tester, const AppearanceSettings());
+    await _tapRow(tester, const ValueKey('settings-appearance-row'));
+    // The tiles exclude child semantics, so the tap action must live on the
+    // labelled node itself; SemanticsController.tap throws without it.
+    Future<void> activate(String key) async {
+      final target = find.byKey(ValueKey(key));
+      await tester.scrollUntilVisible(
+        target,
+        160,
+        scrollable: _appearanceScrollable,
+      );
+      await _settle(tester);
+      final id = tester.getSemantics(target).id;
+      tester.semantics.tap(find.semantics.byPredicate((node) => node.id == id));
+      await _settle(tester);
+    }
+
+    await activate('appearance-theme-aurora');
+    expect(h.theme.state.appearance.theme, AppearanceThemeId.aurora);
+    await activate('appearance-accent-violet');
+    expect(h.theme.state.appearance.accent, AppearanceAccentId.violet);
+    semantics.dispose();
+    expect(tester.takeException(), isNull);
+  });
+
   for (final reduced in [false, true]) {
     testWidgets('animated blobs ${reduced ? 'stay still' : 'drift'} '
         '${reduced ? 'with' : 'without'} reduced motion', (tester) async {

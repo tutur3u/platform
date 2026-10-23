@@ -102,6 +102,8 @@ class _ThemeTile extends StatelessWidget {
       button: true,
       selected: selected,
       label: badge == null ? label : '$label, $badge',
+      // Excluded child semantics drop the InkWell tap action.
+      onTap: onTap,
       excludeSemantics: true,
       child: Material(
         key: ValueKey('appearance-theme-${id.name}'),

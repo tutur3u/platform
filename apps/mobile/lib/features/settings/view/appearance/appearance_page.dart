@@ -180,11 +180,15 @@ class _ResetButton extends StatelessWidget {
         onPressed: isDefault
             ? null
             : () async {
+                final toastContext = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).context;
                 unawaited(AppHaptics.success());
                 await cubit.resetAppearance();
-                if (!context.mounted) return;
+                if (!toastContext.mounted) return;
                 shad.showToast(
-                  context: context,
+                  context: toastContext,
                   builder: (_, _) =>
                       shad.SurfaceCard(child: Text(l10n.appearanceResetDone)),
                 );
