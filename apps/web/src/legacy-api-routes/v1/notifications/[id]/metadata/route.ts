@@ -24,7 +24,11 @@ export const PATCH = withSessionAuth<{ id: string }>(
     try {
       const sbAdmin = await createAdminClient();
 
-      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessContext = await getNotificationAccessContext(
+        supabase,
+        user,
+        sbAdmin
+      );
       const accessFilter = buildNotificationAccessFilter(accessContext);
 
       // Validate notification ID
@@ -114,5 +118,8 @@ export const PATCH = withSessionAuth<{ id: string }>(
       );
     }
   },
-  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+  {
+    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    preferSupabaseSessionAuth: true,
+  }
 );

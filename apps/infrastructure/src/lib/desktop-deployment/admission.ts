@@ -19,8 +19,8 @@ type DeliveryMutation = Extract<
   DesktopVaultMutation,
   { action: 'enable_delivery' | 'disable_delivery' }
 >;
-const notReady = () => {
-  throw new DesktopAdminStoreError(409, 'desktop_material_not_ready');
+const notReady = (code = 'desktop_material_not_ready', status = 409) => {
+  throw new DesktopAdminStoreError(status, code);
 };
 
 /** No browser-supplied readiness receipt or raw credential can authorize admission. */
@@ -85,7 +85,7 @@ export async function inspectActiveDesktopMaterial(
       ])
     );
     assertDesktopSigningResources(input.platform, profile.files, scalars);
-    const certificate = inspectDesktopCertificate({
+    const certificate = await inspectDesktopCertificate({
       platform: input.platform,
       bytes: values.get(profile.files[0])!,
       password:
@@ -97,6 +97,12 @@ export async function inspectActiveDesktopMaterial(
       identity: scalars.MACOS_SIGNING_IDENTITY,
       teamId: scalars.APPLE_TEAM_ID,
     });
+    if (
+      !certificate.ok &&
+      certificate.code === 'certificate_inspection_unavailable'
+    ) {
+      notReady('certificate_inspection_unavailable', 503);
+    }
     if (
       !certificate.ok ||
       (input.platform === 'macos' &&

@@ -49,7 +49,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout main
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           # The merge needs real history, and the push needs credentials that
@@ -63,7 +63,7 @@ jobs:
           bun-version: 1.4.4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -178,12 +178,12 @@ jobs:
       # step with mobile.yaml.
       - name: Setup Flutter
         if: steps.plan.outputs.should_merge == 'true'
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
+          cache: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          pub-cache: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
 
       # `generate: true` in pubspec.yaml means this also runs gen-l10n, which
       # flutter-analyze needs before it can resolve lib/l10n/gen.

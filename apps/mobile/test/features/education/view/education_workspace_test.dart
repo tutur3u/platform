@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/repositories/education_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -352,5 +353,27 @@ void main() {
           .searchController,
       isNull,
     );
+  });
+
+  testWidgets('list uses page gutters and centres detail width on desktop', (
+    tester,
+  ) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    EdgeInsets listPadding() =>
+        tester.widget<ListView>(find.byType(ListView).first).padding!
+            as EdgeInsets;
+
+    await tester.binding.setSurfaceSize(const Size(390, 800));
+    await tester.pumpApp(page());
+    await tester.pumpAndSettle();
+    expect(listPadding().left, 16);
+    expect(listPadding().right, 16);
+    expect(listPadding().top, AppLayout.pageTop);
+
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    await tester.pumpAndSettle();
+    // Expanded detail pages centre a 720 box with a 32 gutter inside it.
+    expect(listPadding().left, (1200 - 720) / 2 + 32);
+    expect(listPadding().right, (1200 - 720) / 2 + 32);
   });
 }

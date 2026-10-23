@@ -7,6 +7,7 @@ import {
   SsoError,
 } from '@tuturuuu/sso';
 import { createNodeSigner } from '@tuturuuu/sso/node-signer';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import { type NextRequest, NextResponse } from 'next/server';
 import { checkRateLimitRedis } from '@/lib/rate-limit';
 import {
@@ -48,7 +49,7 @@ export async function metadata(request: NextRequest, clientId: string) {
     const config = configuration();
     if (clientId !== config.clientId) throw new SsoError({ code: 'forbidden' });
     await rateLimit(
-      `metadata:${clientId}:${request.headers.get('x-forwarded-for') ?? 'unknown'}`,
+      `metadata:${clientId}:${extractIPFromRequest(request.headers)}`,
       20
     );
     const current = await snapshot(await adminClient(), config);
@@ -94,7 +95,7 @@ export async function start(request: NextRequest, clientId: string) {
     if (clientId !== config.clientId) throw new SsoError({ code: 'forbidden' });
     await rateLimit(`start:${clientId}`, 100);
     await rateLimit(
-      `start:${clientId}:${request.headers.get('x-forwarded-for') ?? 'unknown'}`,
+      `start:${clientId}:${extractIPFromRequest(request.headers)}`,
       20
     );
     const admin = await adminClient();

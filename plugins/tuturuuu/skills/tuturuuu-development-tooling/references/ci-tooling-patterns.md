@@ -359,6 +359,12 @@ The dedicated preload control has a different scope, with no generic missing-Wor
 and independent proof-phase observations, normalize path roles, mark unknowns/missing fields/truncation and retain full private evidence.
 Preserve primary errors; receipts or observed errors alone never establish closure. Source assertions do not clear runtime NOTPASS.
 
+- Pin every remote `uses:` in workflows and composite actions to a full commit
+  SHA with a trailing `# vX.Y.Z` comment so Dependabot can bump it;
+  `scripts/ci/workflow-action-pins.test.js` enforces this. Resolve a tag with
+  `git ls-remote --tags <repo>` (use the peeled `^{}` SHA). The exception is
+  `supabase-staging.yaml`: Supabase Production authenticates its exact Git
+  blob, so pin it only together with the producer-contract allowlist.
 - Keep workflow Bun versions aligned with the repo `packageManager` pin.
 - Workflows that need Bun should use
   `.github/actions/setup-bun-with-retry` instead of `oven-sh/setup-bun`
@@ -1030,3 +1036,14 @@ replay after deleting emitted files; replayed logs alone do not qualify an artif
 Keep `.cloudflare/state` outside cache outputs. cf prerelease pins remain held by
 Renovate until an owner qualifies a scoped upgrade. Production jobs require the
 Actions repository variable `CLOUDFLARE_ACCOUNT_ID` to match emitted account identity.
+
+## Canonical bun.lock
+
+`bun install --frozen-lockfile` accepts orphan entries that a plain `bun install`
+prunes. When main carries them, every fresh worktree's setup rewrites `bun.lock`,
+leaving orphan worktrees that differ only in the lockfile. Type Check therefore
+requires a tracked `bun.lock`, runs `bun install --lockfile-only` after the frozen
+install, and fails if `git status` reports any `bun.lock` change (an untracked
+regenerated file would slip past `git diff`). Fix a failure by running `bun install` locally and committing the result.
+Worktree setup scripts should install with `--frozen-lockfile` or `--no-save` so
+they never write the lockfile.

@@ -37,7 +37,7 @@ jobs:
       workflow_name: mobile.yaml
 
   semantic-pull-request:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@v2
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@bf86fc749b907c6cc60e655f7f2ef619287b1b15 # v2.0.3
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
 
@@ -52,8 +52,7 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 🐦 Setup Flutter
         uses: ./.github/actions/setup-flutter-with-cache
         with:
@@ -368,7 +367,7 @@ jobs:
       run:
         working-directory: apps/mobile
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
@@ -411,7 +410,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4

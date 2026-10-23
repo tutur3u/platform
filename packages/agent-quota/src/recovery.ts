@@ -33,7 +33,14 @@ export function applyRecoveryReceipt(
     const futureAccount = context.accounts.find(
       (item) => item.instanceId === entry.providerInstanceId
     );
-    if (futureAccount) quarantineFuturePool(futureAccount, context);
+    if (futureAccount)
+      quarantineFuturePool(futureAccount, context, {
+        observedAt:
+          typeof entry.failureObservedAt === 'string'
+            ? entry.failureObservedAt
+            : context.now.toISOString(),
+        model: typeof entry.model === 'string' ? entry.model : undefined,
+      });
     return;
   }
   if (
@@ -110,7 +117,10 @@ export function applyDescendantReceipts(
     );
     if (!account) continue;
     if (observedAt > context.now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS) {
-      quarantineFuturePool(account, context);
+      quarantineFuturePool(account, context, {
+        observedAt: receipt.observedAt,
+        model: typeof run.model === 'string' ? run.model : undefined,
+      });
       continue;
     }
     applyRecoveryReceipt(

@@ -97,6 +97,8 @@ Similarity candidates remain uncertain and never authorize closure or merge.
 Source tests and review qualify this reuse behavior separately from real engine
 execution, installed CLI availability, and hosted SDK packaging.
 
+SDK package qualification drains each owned process group after termination. On Darwin, a group containing only exiting or zombie members can briefly return `EPERM` to a signal-zero probe. The drain keeps polling within its existing 1500 ms budget and succeeds only after `ESRCH`; persistent permission or unknown errors remain `PROCESS_GROUP_UNDRAINED`. Regression coverage lives in `scripts/ci/sdk-package-process.test.js` and the unchanged real-descendant assertions in `qualify-sdk-package.test.js`. Apple’s [process-group implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_sig.c) filters zombies and can return `EPERM` when no eligible member remains.
+
 <CardGroup cols={2}>
   <Card title="Bun CLI" icon="terminal">
     Use `ttr` for browser login, workspace discovery, and task workflows

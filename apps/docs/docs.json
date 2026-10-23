@@ -66,6 +66,7 @@
                   "platform/features/mobile-workspace-tools",
                   "platform/features/mobile-settings-shell",
                   "platform/features/hidden-workspaces",
+                  "platform/features/notification-access",
                   "platform/features/sso",
                   "platform/features/inventory-stock-health",
                   "platform/features/inventory-season-pricing-mobile",
@@ -381,6 +382,7 @@
               "build/development-tools/agent-quota-routing",
               "build/development-tools/documenting",
               "build/development-tools/mobile-state-regressions",
+              "build/development-tools/mobile-design-system",
               "build/development-tools/public-seo",
               "build/development-tools/seo-strategy",
               {

@@ -1,8 +1,9 @@
-import { chmod, mkdir, writeFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { hostname, platform, userInfo } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import type { TuturuuuUserClient } from '../platform';
 import type { DevboxAgentRegistrationResponse } from '../platform-devbox';
+import { writeFileAtomically } from './atomic-file';
 import { getDefaultConfigPath } from './config';
 import {
   type DevboxExecutionMode,
@@ -172,14 +173,11 @@ export async function writeRunnerTokenFile({
   );
 
   await mkdir(dirname(resolvedTokenFile), { mode: 0o700, recursive: true });
-  await writeFile(
+  await writeFileAtomically(
     resolvedTokenFile,
     `TUTURUUU_DEVBOX_RUNNER_TOKEN=${shellQuote(token)}\nTUTURUUU_DEVBOX_EXECUTION_MODE=${shellQuote(mode)}\n${dockerHost ? `DOCKER_HOST=${shellQuote(dockerHost)}\n` : ''}${controlUrl ? `TUTURUUU_DEVBOX_CONTROL_URL=${shellQuote(controlUrl)}\n` : ''}${serviceUser ? `TUTURUUU_DEVBOX_SERVICE_USER=${shellQuote(serviceUser)}\n` : ''}${judgeImages ? `TUTURUUU_JUDGE_IMAGES=${shellQuote(judgeImages)}\n` : ''}`,
-    {
-      mode: 0o600,
-    }
+    { mode: 0o600, createDirectory: true, directoryMode: 0o700 }
   );
-  await chmod(resolvedTokenFile, 0o600);
 
   return resolvedTokenFile;
 }
@@ -240,8 +238,7 @@ async function writeRunnerWrapper({
   ].join('\n');
 
   await mkdir(dirname(wrapperPath), { mode: 0o700, recursive: true });
-  await writeFile(wrapperPath, script, { mode: 0o700 });
-  await chmod(wrapperPath, 0o700);
+  await writeFileAtomically(wrapperPath, script, { mode: 0o700 });
 
   return wrapperPath;
 }
@@ -332,7 +329,7 @@ export async function installDevboxRunnerService({
           wrapperPath,
         });
 
-  await writeFile(definitionPath, definition, { mode: 0o644 });
+  await writeFileAtomically(definitionPath, definition, { mode: 0o644 });
 
   if (executionMode === 'judge-only') {
     await runRequiredServiceCommand({

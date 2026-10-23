@@ -1,5 +1,6 @@
 import { accountKey } from './admission';
 import { usageLimitReceiptActive } from './failure-receipt';
+import { applyFutureQuarantines } from './future-quarantine';
 import type { HookLedger, SwitchEvidence } from './hooks-types';
 import { recommend } from './policy';
 import { checkSwitch } from './switch-safety';
@@ -28,6 +29,7 @@ export function checkHandover(
   evidence: HandoverEvidence,
   now: Date
 ) {
+  applyFutureQuarantines({ accounts: [current], active: [], ledger, now });
   const ranking = recommend({
     accounts: [current],
     active: [],

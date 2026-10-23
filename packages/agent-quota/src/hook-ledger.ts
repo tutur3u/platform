@@ -8,18 +8,17 @@ import {
   rename,
   unlink,
 } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { HookLedger } from './hooks-types';
 import { pruneLedger } from './ledger-retention';
 import { validLedger } from './ledger-validation';
+import { assertSafeStateWrite, stateRoot } from './state-root';
 import {
   acquireTransactionLock,
   releaseTransactionLock,
 } from './transaction-lock';
 
-export const hookDirectory = () =>
-  join(homedir(), '.t3', 'caches', 'agent-quota');
+export const hookDirectory = () => stateRoot('.t3', 'caches', 'agent-quota');
 export const emptyLedger = (): HookLedger => ({
   version: 1,
   observations: [],
@@ -58,6 +57,7 @@ export async function transactLedger<T>(
   operation: (ledger: HookLedger) => T | Promise<T>,
   directory = hookDirectory()
 ): Promise<T> {
+  assertSafeStateWrite(join(directory, 'hooks.json'));
   await mkdir(directory, { recursive: true, mode: 0o700 });
   if (!(await lstat(directory)).isDirectory())
     throw new HookError('ledger-directory-invalid');
@@ -92,6 +92,7 @@ export async function transactLedger<T>(
       )
     );
     const result = await operation(ledger);
+    if (!validLedger(ledger)) throw new HookError('ledger-invalid');
     const content = JSON.stringify(ledger);
     if (Buffer.byteLength(content) > 2_000_000)
       throw new HookError('ledger-full');

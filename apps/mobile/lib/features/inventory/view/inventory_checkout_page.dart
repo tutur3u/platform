@@ -8,6 +8,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -387,6 +388,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     if (_loading) {
       return InventoryFormScaffold(
         embedded: widget.embedded,
+        kind: AppPageKind.detail,
         title: pageTitle,
         primaryActionLabel: primaryActionLabel,
         onPrimaryPressed: null,
@@ -396,6 +398,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
 
     return InventoryFormScaffold(
       embedded: widget.embedded,
+      kind: AppPageKind.detail,
       title: pageTitle,
       primaryActionLabel: primaryActionLabel,
       onPrimaryPressed:
@@ -432,7 +435,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       searchController: _searchController,
       onSearchChanged: (_) => setState(() {}),
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
         children: [
           if (_scheduled && widget.sale == null)
             InventorySeasonPriceStatus(controller: _season),
@@ -505,7 +508,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             if (_visibleRows.isNotEmpty)
               ..._visibleRows.map(
                 (row) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: AppLayout.itemGap),
                   child: _CheckoutProductCard(
                     row: row,
                     price: _priceFor(row),

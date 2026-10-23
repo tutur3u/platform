@@ -25,13 +25,7 @@ class _CrmUserDetail extends StatelessWidget {
         (Icons.notes_rounded, l10n.crmNote, user.note),
       ],
     ].where((field) => field.$3?.trim().isNotEmpty ?? false).toList();
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        16,
-        20,
-        24 + MediaQuery.paddingOf(context).bottom,
-      ),
+    return AppPageListView(
       children: [
         Center(
           child: NetworkAvatar(
@@ -40,13 +34,13 @@ class _CrmUserDetail extends StatelessWidget {
             child: Text(user.label.characters.firstOrNull ?? '?'),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         Text(
           user.label,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
         for (final field in fields)
           ListTile(
             contentPadding: EdgeInsets.zero,

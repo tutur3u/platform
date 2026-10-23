@@ -46,14 +46,14 @@ jobs:
         env:
           CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
         run: test "$CONTRACT_ENABLED" = true
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -62,7 +62,7 @@ jobs:
       - uses: ./.github/actions/cache-supabase-images
       - name: Apply complete schema, run strict pgTAP, generate actual RPC types
         run: node apps/database/scripts/verify-creator-identity-contract.mjs
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: creator-identity-types-${{ github.event.pull_request.head.sha || github.sha }}
           path: packages/types/src/supabase.ts
@@ -77,11 +77,11 @@ jobs:
       CARGO_BUILD_JOBS: "2"
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       - name: Validate backend profile parity and dispatcher
         working-directory: apps/backend
         run: cargo test --lib --locked

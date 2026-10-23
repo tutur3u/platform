@@ -20,13 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -94,6 +94,27 @@ jobs:
       - name: Install dependencies
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+
+      # --frozen-lockfile accepts orphan entries that a plain install prunes,
+      # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.
+      - name: Verify bun.lock is canonical
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        shell: bash
+        run: |
+          # A missing lockfile would be regenerated as an untracked file that
+          # `git diff` ignores, so require a tracked one before comparing.
+          if [ ! -f bun.lock ] || ! git ls-files --error-unmatch bun.lock >/dev/null 2>&1; then
+            echo "::error file=bun.lock::bun.lock must be committed."
+            exit 1
+          fi
+          bun install --lockfile-only
+          # Assign separately so a failing `git status` aborts under `-e`.
+          lock_status="$(git status --porcelain -- bun.lock)"
+          if [ -n "$lock_status" ]; then
+            git diff --stat HEAD -- bun.lock
+            echo "::error file=bun.lock::bun.lock is not canonical. Run 'bun install' locally and commit the resulting bun.lock."
+            exit 1
+          fi
 
       - name: Build workspace dependencies
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'

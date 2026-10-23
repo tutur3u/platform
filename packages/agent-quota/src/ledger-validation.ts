@@ -2,10 +2,7 @@ import type { HookLedger } from './hooks-types';
 import { RESERVATION_TTL } from './ledger-retention';
 import { MODEL_FAMILIES } from './window-scope';
 
-export function validLedger(
-  value: unknown,
-  _now = new Date()
-): value is HookLedger {
+export function validLedger(value: unknown): value is HookLedger {
   const record = (item: unknown): item is Record<string, unknown> =>
     Boolean(item && typeof item === 'object' && !Array.isArray(item));
   const text = (item: unknown) =>
@@ -47,7 +44,18 @@ export function validLedger(
     ) &&
     optional(
       value.futureQuarantines,
-      (item) => record(item) && Object.values(item).every(date)
+      (item) =>
+        record(item) &&
+        Object.values(item).every(
+          (entry) =>
+            date(entry) ||
+            (record(entry) &&
+              date(entry.quarantinedAt) &&
+              optional(entry.latestReceiptAt, date) &&
+              Array.isArray(entry.models) &&
+              entry.models.every(text) &&
+              typeof entry.accountWide === 'boolean')
+        )
     ) &&
     optional(
       value.retiredRequests,

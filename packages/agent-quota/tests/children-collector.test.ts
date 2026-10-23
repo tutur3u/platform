@@ -97,6 +97,19 @@ it('projects descendant metadata and structured errors without reading message c
       'claude_dd',
       JSON.stringify({ modelSelection: { model: 'opus' }, queueHeld: false })
     );
+    run.run(
+      'run3',
+      'child',
+      3,
+      'failed',
+      '2026-10-23T03:20:00Z',
+      'claude_dd',
+      JSON.stringify({
+        startedAt: '2026-10-23T03:19:00Z',
+        rootNodeId: 'node3',
+        modelSelection: { model: 'opus' },
+      })
+    );
     const node = db.prepare(
       'INSERT INTO orchestration_v2_projection_nodes VALUES (?,?,?,?)'
     );
@@ -126,9 +139,31 @@ it('projects descendant metadata and structured errors without reading message c
         },
       })
     );
+    db.prepare(
+      'INSERT INTO orchestration_v2_projection_turn_items VALUES (?,?,?,?,?,?,?)'
+    ).run(
+      'child',
+      'run3',
+      'node3',
+      'error',
+      'failed',
+      '2026-10-23T03:20:00Z',
+      JSON.stringify({
+        failure: {
+          class: 'context_allowance',
+          message: 'Native Claude handoff exceeded context allowance',
+        },
+      })
+    );
     db.close();
     const queryStarted = performance.now();
     const snapshot = collectChildren('root', path);
+    expect(snapshot.failures).toContainEqual(
+      expect.objectContaining({
+        runId: 'run3',
+        classification: 'context_allowance',
+      })
+    );
     expect(performance.now() - queryStarted).toBeLessThan(1000);
     expect(
       snapshot.threads.find((item) => item.id === 'child')?.activeWriterNodes
@@ -170,6 +205,13 @@ it('projects descendant metadata and structured errors without reading message c
       new Date('2026-10-23T03:38:00Z'),
       'Asia/Ho_Chi_Minh'
     );
+    expect(
+      result.entries.find((entry) => entry.runId === 'run3')
+    ).toMatchObject({
+      failureClass: 'other',
+      executionOutcome: 'context-allowance-failure',
+      recoveryAdmissionKey: null,
+    });
     expect(result.entries[0]).toMatchObject({
       originalTaskStatus: 'completed',
       latestTurnStatus: 'failed',

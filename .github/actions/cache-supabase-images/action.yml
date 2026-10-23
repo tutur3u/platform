@@ -22,7 +22,7 @@ runs:
       run: node scripts/ci/supabase-image-cache.js key
     - name: Restore exact image archive
       id: cache
-      uses: actions/cache/restore@v6
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/supabase-images/images.tar
         key: ${{ steps.identity.outputs.key }}
@@ -33,7 +33,7 @@ runs:
     - name: Restore exact smaller profile archive
       id: subset
       if: steps.cache.outputs.cache-hit != 'true' && steps.identity.outputs.subset-key != ''
-      uses: actions/cache/restore@v6
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/supabase-images/images.tar
         key: ${{ steps.identity.outputs.subset-key }}
@@ -49,8 +49,8 @@ runs:
         IMAGE_SAVE: ${{ steps.identity.outputs.save }}
       run: node scripts/ci/supabase-image-cache.js pull
     - name: Save trusted image archive
-      if: steps.cache.outputs.cache-hit != 'true' && steps.identity.outputs.save == 'true'
-      uses: actions/cache/save@v6
+      if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.cache.outputs.cache-hit != 'true' && steps.identity.outputs.save == 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/supabase-images/images.tar
         key: ${{ steps.identity.outputs.key }}

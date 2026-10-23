@@ -12,7 +12,10 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/router/settings_routes.dart';
-import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/theme/appearance/ambient_background.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/utils/supported_timezones.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -44,6 +47,7 @@ import 'package:mobile/features/settings/view/offline_page.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/settings/view/settings_route_frame.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
@@ -80,6 +84,7 @@ part 'settings_design_checks.dart';
 part 'settings_assistant_shell_checks.dart';
 part 'settings_assistant_entrypoint_checks.dart';
 part 'settings_secrets_shell_checks.dart';
+part 'settings_appearance_shell_checks.dart';
 
 void main() {
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
@@ -90,22 +95,27 @@ void main() {
   registerSettingsAssistantShellChecks();
   registerSettingsAssistantEntrypointChecks();
   registerSettingsSecretsShellChecks();
+  registerSettingsAppearanceShellChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(
       url: 'https://example.supabase.co',
       publishableKey: 'test-anon-key',
     );
+    // Real proportional glyphs for the Material default family, so text
+    // geometry (wrapping, trailing values) matches devices instead of Ahem.
     final materialFont = Platform.environment['SETTINGS_MATERIAL_FONT'];
-    if (materialFont != null) {
-      await (FontLoader('Roboto')..addFont(
-            File(materialFont).readAsBytes().then(ByteData.sublistView),
-          ))
-          .load();
-    }
+    await (FontLoader('Roboto')..addFont(
+          materialFont == null
+              ? rootBundle.load('assets/fonts/NotoSans.ttf')
+              : File(materialFont).readAsBytes().then(ByteData.sublistView),
+        ))
+        .load();
     for (final font in {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
+      'packages/shadcn_flutter/LucideIcons':
+          'packages/shadcn_flutter/lib/icons/LucideIcons.ttf',
     }.entries) {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
@@ -264,14 +274,19 @@ void main() {
         await h.dispose();
       });
       await h.pump(tester);
-      await tester.tap(find.text('Theme'));
-      await _settle(tester);
-      expect(find.text('Light'), findsOneWidget);
+      // Appearance is a child page; visiting it and returning writes nothing.
+      await _tapRow(tester, const ValueKey('settings-appearance-row'));
+      expect(h.router.state.matchedLocation, Routes.settingsAppearance);
+      expect(find.byKey(const ValueKey('appearance-page')), findsOneWidget);
       await tester.binding.handlePopRoute();
       await _settle(tester);
-      expect(find.text('Light'), findsNothing);
+      expect(find.byKey(const ValueKey('appearance-page')), findsNothing);
       expect(h.router.state.matchedLocation, Routes.settings);
-      expect((await SharedPreferences.getInstance()).get('theme-mode'), isNull);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.get('theme-mode'), isNull);
+      expect(prefs.get('appearance-v1'), isNull);
+      await tester.ensureVisible(find.text('Language'));
+      await _settle(tester);
       await tester.tap(find.text('Language'));
       await _settle(tester);
       await tester.tapAt(const Offset(10, 300));
@@ -300,6 +315,9 @@ void main() {
         ),
       );
       expect(workspaceTile().onTap, isNull);
+      // The profile header now precedes Preferences; bring the row on screen.
+      await tester.ensureVisible(find.text('Workspace timezone'));
+      await _settle(tester);
       await tester.tap(find.text('Workspace timezone'));
       await _settle(tester);
       expect(find.byType(TextField), findsNothing);
@@ -307,6 +325,8 @@ void main() {
       h.accounts.add(_account('admin'));
       await _settle(tester);
       expect(workspaceTile().onTap, isNotNull);
+      await tester.ensureVisible(find.text('Workspace timezone'));
+      await _settle(tester);
       await tester.tap(find.text('Workspace timezone'));
       await _settle(tester);
       expect(find.byType(TextField), findsOneWidget);
@@ -540,7 +560,7 @@ void main() {
     );
     expect(
       tester.getRect(find.byKey(const ValueKey('settings-haptics-row'))).left,
-      greaterThan(tester.getRect(find.text('Theme')).left),
+      greaterThan(tester.getRect(find.text('Appearance')).left),
     );
     expect(find.byType(shad.Switch), findsNothing);
     await _capture(tester, 'settings-root-expanded');

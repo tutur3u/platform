@@ -1,5 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
@@ -46,6 +48,8 @@ class AssistantLiveModeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final shortViewport = MediaQuery.sizeOf(context).height < 500;
+    // Live is a full-bleed canvas; its header and stage still use the gutter.
+    final gutter = AppLayout.gutter(context.deviceClass);
     final userBlobCaption = liveState.isMicrophoneActive
         ? context.l10n.assistantLiveStageYouListening
         : context.l10n.assistantLiveStageYouMuted;
@@ -68,10 +72,11 @@ class AssistantLiveModeView extends StatelessWidget {
         if (needsRecovery && !liveState.isBusy)
           Padding(
             padding: EdgeInsets.fromLTRB(
-              12,
-              floatingShellHeaderInset(context) + (shortViewport ? 0 : 8),
-              12,
-              shortViewport ? 0 : 12,
+              gutter,
+              floatingShellHeaderInset(context) +
+                  (shortViewport ? 0 : AppLayout.pageTop),
+              gutter,
+              shortViewport ? 0 : AppSpacing.md,
             ),
             child: _LiveModeHeader(
               liveState: liveState,
@@ -118,7 +123,7 @@ class AssistantLiveModeView extends StatelessWidget {
                       scrollController: scrollController,
                     );
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: gutter),
                       child: wide
                           ? Row(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
