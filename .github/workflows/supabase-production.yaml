@@ -30,6 +30,9 @@ concurrency:
   cancel-in-progress: false
   queue: max
 
+permissions:
+  contents: read
+
 jobs:
   evaluate-prerequisites:
     name: Evaluate production prerequisites

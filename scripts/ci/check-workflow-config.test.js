@@ -939,7 +939,7 @@ test('restricted ci-check callers grant deployment marker read access', () => {
 
     assert.match(
       workflow,
-      /^ {2}check-ci:\n(?: {4}.*\n)* {4}permissions:\n(?: {6}.*\n)* {6}deployments:\s*read\b/m,
+      /^( +)check-ci:\n(?:\1 +.*\n)*\1( +)permissions:\n(?:\1\2 +.*\n)*\1\2 +deployments:\s*read\b/m,
       `${workflowFile} check-ci job must grant deployments: read when top-level permissions restrict the token`
     );
   }

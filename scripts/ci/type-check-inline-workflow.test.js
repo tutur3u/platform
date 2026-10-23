@@ -28,7 +28,7 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.equal(job.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
   assert.equal(job.concurrency, undefined);
-  assert.equal(workflow.permissions, undefined);
+  assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(job.permissions, { contents: 'read' });
   assert.equal(job.needs, undefined);
   assert.equal(job.if, undefined);
