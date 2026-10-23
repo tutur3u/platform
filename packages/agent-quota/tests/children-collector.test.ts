@@ -424,7 +424,7 @@ it('reads checkpoint state directly for one thread within its latency budget', a
     expect(elapsed).toBeLessThan(CHECKPOINT_READ_BUDGET_MS);
     expect(snapshot.threads).toEqual([{ id: 'owner', activeWriterNodes: 1 }]);
     expect(snapshot.runs).toEqual([
-      { threadId: 'owner', status: 'active' },
+      { threadId: 'owner', status: 'running' },
       { threadId: 'owner', status: 'queued' },
     ]);
   } finally {
