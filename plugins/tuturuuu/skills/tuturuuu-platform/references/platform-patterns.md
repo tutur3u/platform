@@ -256,17 +256,10 @@ protocol and its explicitly in-memory regression boundary.
   default or placed external cards. Guest source membership is not sufficient
   for personal-board task data.
 - Forward request auth when server-side loaders call internal API helpers.
-- Keep password login, OTP send, OTP verify, MFA verify, and reauth verify on
-  throttles that do not write hard IP blocks for shared-IP classrooms and
-  centers. Do not route human auth or backend-service `429`s into
-  `recordSuspiciousApiRequestEdge`/`blockIPEdge`; preserve `Retry-After`, retry
-  only idempotent `GET`/`HEAD` `429`s in the fetch interceptor, and rely on
-  per-email cooldown/failed-attempt controls for account-specific abuse. Generic
-  anonymous scanner traffic, malformed auth-cookie abuse, `api_auth_failed`, and
-  manual blocks can still hard-block IPs. For a live incident, check the
-  customer public IP in Abuse Intelligence, clear confirmed false-positive
-  blocks, and add a time-bound IP/CIDR trust or rate-limit uplift only when
-  traffic is organic.
+- Keep password login, OTP send, OTP verify, MFA verify, and reauth verify on throttles that do not write hard IP blocks for shared-IP classrooms and centers. Do not route human auth or backend-service `429`s into
+`recordSuspiciousApiRequestEdge`/`blockIPEdge`; preserve `Retry-After`, retry only idempotent `GET`/`HEAD` `429`s in the fetch interceptor, and rely on per-email cooldown/failed-attempt controls for account-specific abuse. Generic anonymous
+scanner traffic, malformed auth-cookie abuse, `api_auth_failed`, and manual blocks can still hard-block IPs. For a live incident, check the customer public IP in Abuse Intelligence, clear confirmed false-positive blocks, and add a
+time-bound IP/CIDR trust or rate-limit uplift only when traffic is organic.
 - Treat workspace/resource IDs embedded in rich-text documents, Yjs payloads,
   mention nodes, or other user-authored content as untrusted hints. Resolve
   stale content through the current route/document workspace or a server-returned
@@ -1192,3 +1185,9 @@ exclusive ends. Test browser/calendar timezone disagreement and both DST changes
 Tracker completion notifications need effect-owned timeout cleanup in addition
 to the elapsed-time interval cleanup. Fake-timer regressions must unmount before
 restoring real timers; see the Calendar application decision and tracker tests.
+
+### Native timezone preference throttling
+
+Trace mobile preference requests through `ApiOrigins.baseUrlForPath`, not only `ownerForPath`: production calls pass through Infrastructure before Calendar. Reuse the Bearer actor already verified by the MFA guard for exact preference GET/PATCH quotas; do not add an authentication request or rely on a warm trust cache.
+Keep preferences bounded and separate from unrelated gateway traffic. Retain anonymous quotas, MFA, IP blocks and route permissions. Test cold-cache/shared-IP rejection, token rotation, actor isolation, forged credentials and Settings mount request counts.
+Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`.

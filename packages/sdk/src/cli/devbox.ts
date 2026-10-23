@@ -30,6 +30,7 @@ import {
   createDevboxRestartPayload,
   createDevboxUpgradePayload,
 } from './devbox-maintenance';
+import { runDevboxIsolationDoctor } from './devbox-isolation-command';
 import { runDevboxRepairCommand } from './devbox-repair';
 import { runDevboxSetupCommand } from './devbox-setup';
 
@@ -457,6 +458,11 @@ export async function runDevboxCommand({
       ),
       supportedModes: ['trusted', 'judge-only'],
     });
+    return;
+  }
+
+  if (resolvedAction === 'doctor' && flags.isolation === true) {
+    await runDevboxIsolationDoctor({ flags, json });
     return;
   }
 

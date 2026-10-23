@@ -100,7 +100,7 @@
     "void": "1.1.12",
     "wrangler": "4.151.2"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "calendar.tuturuuu",
     "script": "dev:app"

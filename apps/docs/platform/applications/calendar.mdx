@@ -222,23 +222,23 @@ The settings allowlist permits only GET and PATCH on
 `/api/v1/workspaces/:wsId/calendar-settings`; upstream ownership, workspace
 permission checks, credential isolation and response limits remain enforced.
 
-Native preference GETs use a dedicated Infrastructure guard bucket so calendar
-event/account fan-out cannot consume their read allowance. The shared guard
-still enforces the same default anonymous/authenticated limits, verified-session
-keying, MFA, and IP blocks; PATCH and other gateway requests retain the existing
-bucket. A preferences 429 emits only policy/caller/window/reason diagnostics,
-without actor, workspace, IP, credentials or response bodies. This does not
-bypass an IP block or make an exhausted preferences bucket unlimited.
-Regression coverage: `preference-guard.test.ts` exact route/method boundaries
-and `gateway.test.ts` upstream diagnostic isolation. Actual authenticated
-mobile recovery must be verified after deployment. Mobile's API error retains
-only fixed known reason, policy, caller and window values from a 429 response,
-and includes those safe fields in its diagnostic log. Unknown values become
-`unknown`; URLs, actor/workspace identifiers, IPs, cookies, credentials and
-response bodies are never included in that diagnostic. This preserves the
-server rejection and cooldown rather than treating an unavailable preference as
-success. Regression: `api_client_error_contract_test.dart` exercises the HTTP
-boundary and rejects private or arbitrary header values.
+Native preference GETs and PATCHes use the actor already verified by the shared MFA guard, without another authentication request. Their quota must not depend on a warm session
+trust cache: a cold/rotated credential previously fell into the shared anonymous IP bucket
+and could receive 429 before Calendar authenticated it. Actor keys also survive token rotation. The exact preference routes use a dedicated bucket, separate from unrelated gateway traffic. Personal/workspace GETs share 600/minute, 6,000/hour, 40,000/day by default; saves share
+60/minute, 300/hour, 2,000/day. Anonymous IP limits and existing overrides remain unchanged.
+MFA, IP blocks, downstream authentication and workspace permissions remain enforced.
+`api-proxy-calendar-preference-reads.test.ts` covers a cold-cache Settings open after shared-IP
+exhaustion, forged credentials, MFA rejection, actor isolation and rotation; the mutation
+regression covers independent bounded save budgets. Fixtures use the real shared guard/MFA
+adapter with synthetic provider/quota boundaries. `preference-guard.test.ts` checks route
+boundaries; `gateway.test.ts` checks upstream diagnostics. Mobile makes one personal and one
+workspace GET on scope mount; tile rebuilds do not load. `timezone_resolution_scope_test.dart`
+covers request counts, rebuilds and cooldown. English/Vietnamese notices retain Retry-After
+and known safe limiter details, without private bodies or arbitrary headers. Retry is explicit
+and preserves the timezone/endpoint (`timezone_settings_http_widget_test.dart`).
+See [Native Calendar API protection](/build/devops/calendar-native-api-protection) for the full limiter inventory,
+read-only WAF policy audit and scoped hosting correction. An unclassified device 429 does not prove the cold-cache mechanism.
+Correlate owning host/path and safe metadata; never log credentials, bodies, actor/workspace IDs or IPs here.
 
 ## OAuth Token Safety
 
@@ -789,8 +789,8 @@ failed authenticated request without runtime evidence.
 Calendar's local authentication rejections classify existing IP blocks as
 `ip-already-blocked` and upstream authentication backpressure as
 `backend-auth-rate-limit`. The native gateway preserves these fixed categories
-for safe timezone diagnostics. Neither branch invents a limiter policy, caller
-class or exhausted window; unavailable fields remain Unknown. Status 429,
+for safe timezone diagnostics. Each branch names its policy; unknown caller/window fields stay Unknown.
+Unclassified responses distinguish absent metadata from unsupported values. Status 429,
 Retry-After, authentication, bans and quotas retain their existing behavior.
 `api-auth-rate-diagnostics.test.ts` exercises the real personal preference GET
 and gateway; `api_rate_limit_local_auth_test.dart` checks the safe mobile copy.

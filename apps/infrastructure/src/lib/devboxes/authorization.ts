@@ -84,3 +84,34 @@ export async function authorizeDevboxRootMember(request: Request) {
     user: resolvedUser.user,
   };
 }
+
+// Runner trust changes (features, drain) match the Infrastructure dashboard
+// gate: root membership plus a root secrets/roles management permission.
+export async function authorizeDevboxRootAdmin(request: Request) {
+  const resolvedUser = await resolveDevboxRequestUser(request);
+  if (!resolvedUser.ok) {
+    return resolvedUser;
+  }
+
+  const permissions = await getPermissions({
+    request,
+    user: resolvedUser.user,
+    wsId: ROOT_WORKSPACE_ID,
+  });
+
+  if (
+    permissions?.membershipType !== 'MEMBER' ||
+    (permissions.withoutPermission('manage_workspace_secrets') &&
+      permissions.withoutPermission('manage_workspace_roles'))
+  ) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true as const,
+    user: resolvedUser.user,
+  };
+}

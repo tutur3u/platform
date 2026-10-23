@@ -6,6 +6,7 @@ on:
       - 'packages/utils/src/coordination*'
       - 'bun.lock'
       - '.github/workflows/coordination-cloudflare.yaml'
+      - 'scripts/ci/cf-worker-settings.mjs'
       - 'tuturuuu.ci.ts'
   push:
     branches: [main]
@@ -14,6 +15,7 @@ on:
       - 'packages/utils/src/coordination*'
       - 'bun.lock'
       - '.github/workflows/coordination-cloudflare.yaml'
+      - 'scripts/ci/cf-worker-settings.mjs'
       - 'tuturuuu.ci.ts'
   workflow_dispatch:
   workflow_call:
@@ -42,7 +44,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
@@ -76,18 +78,22 @@ jobs:
     runs-on: ubuntu-latest
     environment: coordination-production
     env:
-      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+      - name: Capture and verify settings before publication
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs before scripts/ci/fixtures/cf-worker-parity/coordination.json "$RUNNER_TEMP/coordination-settings-before.json"
       - name: Require pre-provisioned server credentials
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
@@ -104,6 +110,18 @@ jobs:
       - run: bun x --no-install wrangler deploy -c apps/coordination/dist/worker/wrangler.json --message "$GITHUB_SHA"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+      - name: Capture and compare settings after publication
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/coordination.json "$RUNNER_TEMP/coordination-settings-before.json" "$RUNNER_TEMP/coordination-settings-after.json"
+      - name: Retain settings and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coordination-settings-${{ github.sha }}
+          path: ${{ runner.temp }}/coordination-settings-*.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Record successful Cloudflare deployment
         continue-on-error: true
         env:

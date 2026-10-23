@@ -46,9 +46,115 @@ jobs:
     outputs:
       should_deploy: ${{ steps.evaluate.outputs.should_deploy }}
       target_sha: ${{ steps.resolve_target.outputs.target_sha }}
+      trusted_trigger: ${{ steps.trigger.outputs.trusted }}
     steps:
+      - name: Verify trusted trigger
+        id: trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRUSTED_DISPATCH_REF: refs/heads/production
+          # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
+          TRUSTED_PRODUCERS: |
+            vercel-production.yaml 317228637 production push,workflow_dispatch success
+            supabase-staging.yaml 47180097 main workflow_run,workflow_dispatch success
+        run: |
+          set -euo pipefail
+          # Expression `==` ignores case and workflow_run matches producers by name, so
+          # re-prove the trigger with exact comparisons before any privileged step runs.
+          # Values come from the event file and runner variables, never interpolation.
+          reject() {
+            echo "::error::Untrusted trigger: $1"
+            exit 1
+          }
+          field() {
+            jq -r "$1 // \"\" | tostring" "$GITHUB_EVENT_PATH"
+          }
+          listed() {
+            local item
+            local -a items
+            IFS=',' read -r -a items <<< "$2"
+            for item in "${items[@]}"; do
+              if [ "$item" = "$1" ] || [ "$item" = any ]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          case "$GITHUB_EVENT_NAME" in
+            workflow_dispatch)
+              if [ -z "${TRUSTED_DISPATCH_REF:-}" ] || [ "$GITHUB_REF" != "$TRUSTED_DISPATCH_REF" ]; then
+                reject "manual runs must start from ${TRUSTED_DISPATCH_REF:-a trusted producer}"
+              fi
+              branch="${TRUSTED_DISPATCH_REF#refs/heads/}"
+              head_sha="$GITHUB_SHA"
+              ;;
+            workflow_run)
+              run_path="$(field .workflow_run.path)"
+              file=""
+              while read -r candidate workflow_id branch events conclusions; do
+                if [ -n "$candidate" ] && [ "$run_path" = ".github/workflows/$candidate" ]; then
+                  file="$candidate"
+                  break
+                fi
+              done <<< "${TRUSTED_PRODUCERS:-}"
+              [ -n "$file" ] || reject "producer path '$run_path' is not trusted"
+              [ -n "$workflow_id" ] && [ "$(field .workflow_run.workflow_id)" = "$workflow_id" ] ||
+                reject "producer workflow ID is not $file's ID $workflow_id"
+              [ "$(field .workflow_run.head_branch)" = "$branch" ] ||
+                reject "producer branch is not exactly '$branch'"
+              listed "$(field .workflow_run.event)" "$events" ||
+                reject "producer event is not one of $events"
+              listed "$(field .workflow_run.conclusion)" "$conclusions" ||
+                reject "producer conclusion is not one of $conclusions"
+              [ "$(field .workflow_run.head_repository.full_name)" = "$GITHUB_REPOSITORY" ] &&
+                [ "$(field .workflow_run.head_repository.id)" = "$GITHUB_REPOSITORY_ID" ] ||
+                reject "producer head repository is not $GITHUB_REPOSITORY"
+              head_sha="$(field .workflow_run.head_sha)"
+              ;;
+            *)
+              reject "unsupported event '$GITHUB_EVENT_NAME'"
+              ;;
+          esac
+
+          [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]] || reject "head SHA is not a full commit SHA"
+          # Compare against the fully qualified branch ref: a bare name resolves a
+          # same-named tag (refs/tags/<branch>) first. identical: the head SHA is the
+          # live branch tip; behind: it is reachable from the branch. Deploy
+          # consumers set REQUIRE_BRANCH_TIP so a re-run cannot redeploy an old commit.
+          # With TIP_TREE_PATH, a head behind the tip is still current when that
+          # directory's tree is unchanged at the tip (unrelated commits landed).
+          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/refs/heads/$branch...$head_sha" --jq .status)"
+          if [ "${REQUIRE_BRANCH_TIP:-false}" = true ]; then
+            if [ "$status" = behind ] && [ -n "${TIP_TREE_PATH:-}" ]; then
+              [[ "$TIP_TREE_PATH" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)+$ ]] ||
+                reject "TIP_TREE_PATH is not a nested repository path"
+              tree_sha() {
+                gh api "repos/$GITHUB_REPOSITORY/contents/${TIP_TREE_PATH%/*}?ref=$1" \
+                  --jq ".[] | select(.type == \"dir\" and .name == \"${TIP_TREE_PATH##*/}\") | .sha"
+              }
+              tip_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" --jq .object.sha)"
+              [[ "$tip_sha" =~ ^[0-9a-f]{40}$ ]] || reject "cannot resolve the tip of $branch"
+              head_tree="$(tree_sha "$head_sha")"
+              [[ "$head_tree" =~ ^[0-9a-f]{40}$ ]] && [ "$head_tree" = "$(tree_sha "$tip_sha")" ] ||
+                reject "head SHA is behind $branch and $TIP_TREE_PATH changed since"
+            else
+              [ "$status" = identical ] || reject "head SHA is not the live tip of $branch"
+            fi
+          else
+            [ "$status" = identical ] || [ "$status" = behind ] ||
+              reject "head SHA is not reachable from $branch"
+          fi
+          {
+            echo "trusted=true"
+            echo "head_sha=$head_sha"
+            echo "branch=$branch"
+          } >> "$GITHUB_OUTPUT"
+          echo "Trusted trigger: $head_sha on $branch"
+
       - name: Resolve immutable production migration target
         id: resolve_target
+        if: steps.trigger.outputs.trusted == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -57,7 +163,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           TRIGGER_BRANCH: ${{ github.event.workflow_run.head_branch }}
           TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-          TRIGGER_SHA: ${{ github.event.workflow_run.head_sha }}
+          TRIGGER_SHA: ${{ steps.trigger.outputs.head_sha }}
           TRIGGER_WORKFLOW: ${{ github.event.workflow_run.name }}
           ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: ${{ inputs.allow_cloudflare_verification_failures }}
           EXPECTED_SHA: ${{ inputs.expected_sha }}
@@ -118,14 +224,15 @@ jobs:
 
       - name: Check out migration target
         if: steps.resolve_target.outputs.target_sha != ''
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ env.TARGET_SHA }}
+          persist-credentials: false
 
       - name: Use Node.js 24
         if: steps.resolve_target.outputs.target_sha != ''
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -385,7 +492,7 @@ jobs:
           }
 
           const contracts = [
-            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c']],
+            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', 'ec2f81d196eff45ba05d2b87ad5bd1bb98b194da', 'd880c279f37b63628706b195e5397be1cf25acd5']],
             ['scripts/ci/record-deployment-marker.ts', ['35eaf73931589cfe9dd62f7456a3dbe3c48c988c']],
           ];
           async function checkContracts(producerHead) {
@@ -500,13 +607,13 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: [evaluate-prerequisites]
-    if: needs.evaluate-prerequisites.outputs.should_deploy == 'true'
+    if: needs.evaluate-prerequisites.outputs.trusted_trigger == 'true' && needs.evaluate-prerequisites.outputs.should_deploy == 'true'
     permissions:
       contents: read
       deployments: write
     steps:
       - name: Check out approved migration target
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
           persist-credentials: false
