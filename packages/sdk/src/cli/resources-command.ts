@@ -209,6 +209,9 @@ export function commandTool(name: string, args: string[]) {
       for (const tool of tools) {
         if (
           [tool, `${tool}.js`, `${tool}.mjs`].includes(file) ||
+          (tool === 'playwright' &&
+            arg.includes('/@playwright/test/') &&
+            file === 'cli.js') ||
           (arg.includes(`/${tool}/`) &&
             ['cli.js', 'index.js', 'vitest.mjs'].includes(file))
         ) {

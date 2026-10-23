@@ -25,12 +25,17 @@ describe('budget worker enforcement', () => {
         'test',
         '--workers=2',
       ]);
-      expect(
-        limitCommand('node', ['node_modules/playwright/cli.js', ...args], {
-          ...config,
-          vitestWorkers: 1,
-        })
-      ).toEqual(['node_modules/playwright/cli.js', 'test', '--workers=1']);
+      for (const entry of [
+        'node_modules/playwright/cli.js',
+        'node_modules/@playwright/test/cli.js',
+      ]) {
+        expect(
+          limitCommand('node', [entry, ...args], {
+            ...config,
+            vitestWorkers: 1,
+          })
+        ).toEqual([entry, 'test', '--workers=1']);
+      }
     }
   );
 });
