@@ -58,7 +58,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .node-version
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
@@ -93,7 +93,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .node-version
 
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
@@ -124,7 +124,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .node-version
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
@@ -184,7 +184,7 @@ jobs:
     steps:
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26.12.1
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
@@ -306,7 +306,7 @@ jobs:
     steps:
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26.12.1
           package-manager-cache: false
 
       - name: Dispatch dependent package releases

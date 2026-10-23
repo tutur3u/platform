@@ -124,7 +124,7 @@ jobs:
         if: steps.resolve_target.outputs.target_sha != ''
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26.12.1
 
       - name: Compute pending migration changes
         if: steps.resolve_target.outputs.target_sha != ''

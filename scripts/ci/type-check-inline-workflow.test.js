@@ -42,7 +42,8 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   const setupNode = job.steps.find((step) =>
     step.uses?.startsWith('actions/setup-node@')
   );
-  assert.equal(setupNode.with['node-version'], 24);
+  assert.equal(setupNode.with['node-version'], undefined);
+  assert.equal(setupNode.with['node-version-file'], '.node-version');
   assert.ok(
     job.steps.indexOf(setupNode) <
       job.steps.findIndex((step) => step.id === 'changed_files')

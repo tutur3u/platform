@@ -979,3 +979,17 @@ at each caller boundary and reject references elsewhere, including the actual
 production token name `CLOUDFLARE_API_TOKEN`. The wave-1 permission and publisher
 secret tests cover these boundaries; protected concurrency tests preserve the
 non-cancelling durable-attempt publication queue.
+
+## Node.js runtime pin
+
+The root `.node-version` is the only Node release source. A `setup-node` step
+uses `node-version-file` only when its checkout is the workflow's own commit and
+is not sparse. Other steps use the literal pin: pre-checkout jobs, sparse
+checkouts, and checkouts of a PR head, `production`, a workflow-run head or an
+input SHA, all of which may predate the file.
+
+Vercel build/deploy jobs stay on Node 24 because that is their function runtime.
+The input-SHA employee schema qualification also stays on 24, because it binds
+a Node 24 identity. `node-version-pin.test.js` enforces the literals and the
+exception list. Receipts record the runtime they actually used, never a
+hard-coded version. See [Node.js runtime pin](../../../../../apps/docs/build/development-tools/node-runtime.mdx).

@@ -61,7 +61,7 @@ jobs:
           bun-version: 1.4.3
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26.12.1
           package-manager-cache: false
       - name: Install frozen dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile

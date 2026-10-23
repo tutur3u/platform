@@ -131,7 +131,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version-file: .node-version
 
       - name: Run key parity check
         id: parity-check
@@ -175,7 +175,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version-file: .node-version
 
       - name: Setup Bun for rendered translation tracing
         uses: ./.github/actions/setup-bun-with-retry

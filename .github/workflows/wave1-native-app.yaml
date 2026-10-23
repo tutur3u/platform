@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26.12.1
       - id: policy
         env:
           WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
@@ -54,7 +54,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26.12.1
       - id: policy
         env:
           APP: ${{ inputs.app }}
@@ -87,7 +87,7 @@ jobs:
           bun-version: 1.4.3
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.22.0
+          node-version: 26.12.1
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Configure public build inputs and exact source identity
         run: |
@@ -153,7 +153,7 @@ jobs:
           bun-version: 1.4.3
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.22.0
+          node-version: 26.12.1
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: actions/download-artifact@v8
         with:

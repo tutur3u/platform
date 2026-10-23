@@ -45,7 +45,7 @@ jobs:
           bun-version: 1.4.3
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: bun install --frozen-lockfile
       - run: bun x --no-install wrangler types --env-interface CoordinationEnv apps/coordination/worker-configuration.d.ts -c apps/coordination/wrangler.jsonc
       - run: bun x --no-install tsc --project apps/coordination/tsconfig.json
@@ -86,7 +86,7 @@ jobs:
           bun-version: 1.4.3
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - run: bun install --frozen-lockfile
       - name: Require pre-provisioned server credentials
         env:

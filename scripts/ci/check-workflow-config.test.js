@@ -887,7 +887,10 @@ test('ci configuration gate runs TypeScript scripts with Node strip-types', () =
   );
 
   assert.match(workflow, /uses: actions\/setup-node@v7/);
-  assert.match(workflow, /node-version: 24/);
+  const nodeVersion = fs
+    .readFileSync(path.join(repoRoot, '.node-version'), 'utf8')
+    .trim();
+  assert.ok(workflow.includes(`node-version: ${nodeVersion}\n`));
   assert.match(
     workflow,
     /node --experimental-strip-types scripts\/ci\/resolve-changed-files\.ts/

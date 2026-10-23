@@ -45,7 +45,7 @@ jobs:
       - name: Use Node.js 24
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .node-version
 
       - name: Resolve affected production apps
         id: plan

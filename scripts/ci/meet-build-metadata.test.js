@@ -97,7 +97,10 @@ test('Meet qualifies the native artifact and restored runtime before publication
     const node = steps.find((step) =>
       step.uses?.startsWith('actions/setup-node@')
     );
-    assert.equal(String(node.with['node-version']), '24.22.0');
+    assert.equal(
+      String(node.with['node-version']),
+      readFileSync(join(root, '.node-version'), 'utf8').trim()
+    );
   }
   const validate = workflow.jobs.validate.steps;
   assertMeetArtifactActors(validate);
@@ -563,6 +566,7 @@ test('Meet workflow contracts run in a clean snapshot without Node dependencies'
       'scripts/ci/meet-cloudflare-render.runtime.mjs',
       'scripts/ci/meet-native-launcher.mjs',
       '.github/workflows/meet-cloudflare.yaml',
+      '.node-version',
       'turbo.json',
       'packages/utils/src/generated/platform-build-metadata.ts',
     ]) {
