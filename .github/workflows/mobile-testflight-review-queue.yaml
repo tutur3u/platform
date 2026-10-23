@@ -33,7 +33,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin production
-          if git cat-file -e FETCH_HEAD:.github/workflows/mobile-testflight-review-queue.yaml; then
+          if git cat-file -e FETCH_HEAD:.github/workflows/mobile-testflight-review-queue.yaml &&
+             git cat-file -e FETCH_HEAD:scripts/ci/normalize-release-notes.js; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "Retry code is not on production; skipping dispatch."

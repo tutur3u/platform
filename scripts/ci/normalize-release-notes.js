@@ -33,6 +33,49 @@ function equivalentMobileEntry(entries, description, hashes) {
   return existing;
 }
 
+/** Store summaries contain product changes, without repository bookkeeping. */
+function normalizeMobileReleaseNotes(content) {
+  const entries = content.split('\n').flatMap((line) => {
+    let text = line.replace(/^\s*[-*]\s+/u, '').trim();
+    const typed = /^(\w+)(?:\(([^)]*)\))?!?:\s*/u.exec(text);
+    if (typed && /^(?:chore|ci|test|docs|refactor)$/iu.test(typed[1]))
+      return [];
+    if (
+      isReleaseBookkeeping(text) ||
+      /^merge\s+(?:main|master|production|develop)\s+into\s/iu.test(text)
+    )
+      return [];
+    const preferred =
+      typed &&
+      /^(?:feat|fix)$/iu.test(typed[1]) &&
+      /mobile/iu.test(typed[2] || '');
+    text = text
+      .replace(/^\w+(?:\([^)]*\))?!?:\s*/u, '')
+      .replace(referencePattern, '')
+      .replace(/\s*\(#\d+\)/gu, '')
+      .replace(/(?:\bPR\s*)?#\d+\b/giu, '')
+      .replace(
+        /\b(?:feat|feature|fix|bugfix|hotfix|release|chore|ci|test|docs|style|refactor|perf|dependabot|claude)\/[\w./-]+/giu,
+        ''
+      )
+      .replace(/\s+/gu, ' ')
+      .trim();
+    if (!text) return [];
+    return [{ text: text[0].toUpperCase() + text.slice(1), preferred }];
+  });
+  const seen = new Set();
+  return entries
+    .sort((a, b) => Number(b.preferred) - Number(a.preferred))
+    .filter(({ text }) => {
+      const key = text.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map(({ text }) => `- ${text}`)
+    .join('\n');
+}
+
 /** Only normalize unpublished additions; published release text is immutable. */
 function normalizeReleaseNotes(
   content,
@@ -155,5 +198,5 @@ function main(base = 'origin/production') {
   );
 }
 
-module.exports = { normalizeReleaseNotes };
+module.exports = { normalizeReleaseNotes, normalizeMobileReleaseNotes };
 if (require.main === module) main(process.argv[2]);

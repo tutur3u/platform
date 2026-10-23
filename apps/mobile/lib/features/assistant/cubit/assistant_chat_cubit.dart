@@ -329,6 +329,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         }
         _completeSubmissionAcknowledgment(payload, matched: saved != null);
         break;
+      case 'saved-messages':
+        _reconcileSavedMessages(payload);
+        break;
       case 'saved-message':
         _reconcileSavedMessage(payload);
         break;
@@ -428,19 +431,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       default:
         break;
     }
-  }
-
-  void _reconcileSavedMessage(Map<String, dynamic> payload) {
-    final savedId = payload['messageId'] as String?;
-    if (savedId == null || savedId.isEmpty) return;
-    final result = _reconcileSavedAssistantMessage(
-      state.messages,
-      streamedId: _activeAssistantMessageId,
-      savedId: savedId,
-      savedText: payload['text'] as String? ?? '',
-    );
-    _activeAssistantMessageId = savedId;
-    emit(state.copyWith(messages: result));
   }
 
   void _ensureAssistantMessage(String messageId) {

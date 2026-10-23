@@ -91,6 +91,7 @@ Use the repo-local Tuturuuu Codex plugin for detailed pattern catalogs:
 ## Collaboration Protocol
 
 - Roles: Execution (ship code/docs), Review (verify lint/type/test/build), Architecture (cross-cutting improvements), Knowledge (docs & schema sync).
+- Hierarchy and budget: director, project integration owner (sole main/release writer), team leads and workers share one subagent allocation; see the [agent operating model](/build/development-tools/agent-operating-model).
 - Only one agent modifies a file set at a time; reviewers work read-only unless paired.
 - Prefer linear history (rebases) and group commits by concern (schema vs code vs docs).
 - For behavior spanning apps, assign one owner to the product decision and its feature page. Each implementation lane reports the surfaces it checked and any intentional difference; the integrator compares those reports with the live apps before merging; do not update paused migration paths.

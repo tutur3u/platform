@@ -274,6 +274,34 @@ commits and manual recovery dispatches must not cancel the active deployment.
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
 
+### Mail, Calendar and Tasks validation relevance
+
+`mail-calendar-tasks-builds.yaml` keeps the `build (mail)`, `build (tasks)`,
+`build (web)`, `calendar-native` and `calendar-artifact-restore` checks. The shared
+`ci-check` switchboard emits `affected_jobs` before runner allocation. Each build
+runs for its app or transitive workspace dependencies; Calendar qualification
+covers Calendar, Web, Tasks and Tasks UI together, plus Infrastructure for the
+directly imported mobile-calendar gateway diagnostics, including the original and
+restored Worker checks. Validation commands, timeouts and publication holds stay
+the same. Skipped checks indicate proven irrelevance, not executed validation.
+
+Skill Markdown under `plugins/tuturuuu/skills` and documentation Markdown/MDX
+under `apps/docs` are inert for these app builds. Root/tooling inputs, patches,
+shared actions, missing change ranges, unknown or
+missing workspace manifests and manual dispatch retain all jobs. Both sides of a
+cross-workspace rename participate in the PR/deployment-marker diff. Only an
+explicit JSON boolean `false` skips a job; missing outputs retain validation.
+A failed configuration job still blocks dependent jobs. Regression coverage:
+`node --test scripts/ci/mail-calendar-tasks-affected.test.js`.
+
+Measure scheduling separately from execution when assessing this optimization:
+run-created to job-start includes prerequisite work; job-created to job-start
+more closely measures job scheduling. Count incomplete jobs separately and do
+not treat cancelled or skipped jobs as zero-duration successful validation.
+Cache archive restoration is separate from Turbo task reuse. Compare exact-head
+hosted runs before claiming push-to-green savings; removing runner demand does
+not promise a particular hosted queue delay.
+
 ## Coordination native Worker toolchain
 
 Coordination is a Vite+ workspace using the Cloudflare Vite plugin. The input
@@ -1603,8 +1631,11 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 
 ### Prerequisite guards
 
-- `supabase-staging.yaml` requires a successful `main` platform preview build
-  trigger unless manually dispatched; its checkout-local `ci` boolean must enable it.
+- `supabase-staging.yaml` requires a successful same-repository `push` platform
+  preview build on `main` unless manually dispatched; its checkout-local `ci`
+  boolean must enable it. Changing the file changes its Git blob, so add the new
+  blob to the producer-contract allowlist in `supabase-production.yaml` and
+  `scripts/ci/production-migration-target.test.js` in the same change.
 - Every enabled admitted target, including app-only commits, links staging and runs
   `supabase db push --include-all` before emitting its exact-target marker.
 - `supabase-production.yaml` runs after the production deployment planner and
