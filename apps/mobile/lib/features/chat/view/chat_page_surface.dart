@@ -5,28 +5,37 @@ class _ChatSurface extends StatelessWidget {
 
   final ChatState state;
 
+  /// Body width at which the conversation list and thread sit side by side.
+  static const double twoPaneMinWidth = 700;
+
   @override
-  Widget build(BuildContext context) {
-    final isWide = MediaQuery.sizeOf(context).width >= 700;
-    // The list and thread panes read the dock clearance themselves so they
-    // can run beneath the dock.
-    return AppPageBody(
-      kind: AppPageKind.root,
-      consumeBottomClearance: false,
-      child: isWide
-          ? Row(
-              children: [
-                SizedBox(
-                  width: MediaQuery.sizeOf(context).width < 900 ? 260 : 340,
-                  child: _ConversationPane(state: state),
-                ),
-                const SizedBox(width: AppLayout.itemGap),
-                Expanded(child: _ThreadPane(state: state)),
-              ],
-            )
-          : _CompactChatSurface(state: state),
-    );
-  }
+  Widget build(BuildContext context) => LayoutBuilder(
+    // Pane decisions use the body width, which is narrower than the window
+    // beside the navigation rail.
+    builder: (context, constraints) {
+      final bodyWidth = constraints.maxWidth;
+      final isWide = bodyWidth >= twoPaneMinWidth;
+      // The list and thread panes read the dock clearance themselves so they
+      // can run beneath the dock.
+      return AppPageBody(
+        kind: AppPageKind.root,
+        consumeBottomClearance: false,
+        child: isWide
+            ? Row(
+                children: [
+                  SizedBox(
+                    key: const ValueKey('chat-conversation-pane'),
+                    width: bodyWidth < 900 ? 260 : 340,
+                    child: _ConversationPane(state: state),
+                  ),
+                  const SizedBox(width: AppLayout.itemGap),
+                  Expanded(child: _ThreadPane(state: state)),
+                ],
+              )
+            : _CompactChatSurface(state: state),
+      );
+    },
+  );
 }
 
 class _CompactChatSurface extends StatelessWidget {
