@@ -273,3 +273,18 @@ environment variables. Existing jobs and absolute executable paths may bypass
 new shell configuration. This is cooperative scheduling, not a memory cgroup.
 Prefer remote `ttr box` validation for broad checks; verify the runner's actual
 host because same-machine runners and containers are not resource offload.
+
+
+### Resource offload failure boundary
+
+For `resources run --offload`, permit local fallback only before creation or
+following an explicit server rejection that proves no run was created. Preserve
+SIGINT/SIGTERM through every creation outcome (130/143), including 403 responses.
+Validate success acknowledgements inside the remote-follow boundary; retain any
+known run ID for cancellation and never replay an uncertain write locally.
+Bound each control-plane request, propagate its AbortSignal through the SDK, and
+check cancellation and the overall deadline between log pages. Keep stop requests
+bounded independently of an already-aborted follow signal. A failed stop remains
+unconfirmed; direct the operator to inspect the original run before retrying.
+Use `resources-offload-interruption.test.ts` for these regressions and
+`store-run-logs.test.ts` for stable ordering and raw-row paging offsets.

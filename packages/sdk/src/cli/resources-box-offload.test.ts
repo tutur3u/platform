@@ -185,7 +185,9 @@ describe('streamed box offload', () => {
       });
       vi.setSystemTime(Date.now() + 120_000);
       expect(await run).toBe(124);
-      expect(devboxes.stopRun).toHaveBeenCalledWith('run-1');
+      expect(devboxes.stopRun).toHaveBeenCalledWith('run-1', {
+        signal: expect.any(AbortSignal),
+      });
     } finally {
       vi.useRealTimers();
     }

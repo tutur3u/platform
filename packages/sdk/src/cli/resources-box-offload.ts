@@ -7,6 +7,16 @@ import {
   fleetSnapshotNow,
 } from '../devbox-fleet-types';
 import type { TuturuuuUserClient } from '../platform';
+import {
+  OFFLOAD_REQUEST_TIMEOUT_MS,
+  offloadLogsSchema,
+  offloadPause,
+  offloadRequest,
+  offloadRunIdSchema,
+  offloadRunSchema,
+} from './resources-offload-control';
+
+export { offloadRequest } from './resources-offload-control';
 
 export type OffloadBlocker =
   | 'local_saturated'
@@ -22,7 +32,7 @@ const MAX_FOLLOW_FAILURES = 5;
 
 /**
  * The run was never confirmed created. `rejected` means the server refused it
- * (4xx), so no remote run exists and `--offload auto` may queue locally; any
+ * (a definite client rejection), so no remote run exists and `--offload auto` may queue locally; any
  * other failure is ambiguous and must not fall back, or the command could run
  * twice.
  */
@@ -181,96 +191,163 @@ export async function runBoxOffload({
   log?: (text: string) => void;
   pollMs?: number;
 }) {
-  // The bound covers queueing, execution and log drain from this moment.
   const deadline = Date.now() + (timeoutSeconds + 60) * 1000;
-  // Installed before createRun so an interrupt while the run is being created
-  // still stops it instead of orphaning it.
   let interrupted: number | undefined;
+  const cancellation = new AbortController();
   const handlers = (['SIGINT', 'SIGTERM'] as const).map((signal) => {
     const handler = () => {
-      interrupted = signal === 'SIGINT' ? 130 : 143;
+      interrupted ??= signal === 'SIGINT' ? 130 : 143;
+      cancellation.abort(new Error('offload interrupted'));
     };
     process.on(signal, handler);
     return [signal, handler] as const;
   });
-  try {
-    let created: Awaited<ReturnType<typeof client.devboxes.createRun>>;
+  const terminalCode = () =>
+    interrupted ?? (Date.now() >= deadline ? 124 : undefined);
+  const request = <T>(operation: (signal: AbortSignal) => Promise<T>) =>
+    offloadRequest(operation, {
+      signal: cancellation.signal,
+      timeoutMs: Math.min(
+        OFFLOAD_REQUEST_TIMEOUT_MS,
+        Math.max(1, deadline - Date.now())
+      ),
+    });
+  let runId: string | undefined;
+  const stop = async (reason: string) => {
+    if (!runId) return;
+    const id = runId;
     try {
-      created = await client.devboxes.createRun({
-        command: commitRunCommand(sha, prefix, argv),
-        leaseMode: 'auto',
-        runnerId,
-        timeoutSeconds,
-        workload: 'run',
-      });
-    } catch (error) {
-      const status = (error as { status?: unknown })?.status;
-      throw new OffloadNotCreatedError(
-        error,
-        typeof status === 'number' && status >= 400 && status < 500
+      await offloadRequest((signal) => client.devboxes.stopRun(id, { signal }));
+      log(`${reason}; stop requested for run ${id}`);
+    } catch {
+      log(
+        `${reason}; stop could not be confirmed for run ${id}; check ttr box list`
       );
     }
-    const runId = created.run.id;
-    log(
-      `offloaded to runner ${runnerId} as run ${runId} at ${sha.slice(0, 12)}`
-    );
-    const stop = async (reason: string) => {
-      await client.devboxes.stopRun(runId).catch(() => undefined);
-      log(`${reason}; stop requested for run ${runId}`);
-    };
-
-    // Pages forward from the last offset; a server without paging (no
-    // `next`) returns its first page each time, so print only new lines.
-    let offset = 0;
-    let legacyPrinted = 0;
-    const drainLogs = async () => {
-      for (;;) {
-        const page = await client.devboxes.getRunLogs(runId, { offset });
-        if (typeof page.next !== 'number' || page.next < offset) {
-          for (const line of page.logs.slice(legacyPrinted)) write(`${line}\n`);
-          legacyPrinted = Math.max(legacyPrinted, page.logs.length);
-          return;
+  };
+  try {
+    let created: unknown;
+    try {
+      // Keep creation bounded, but allow it to acknowledge an id after Ctrl-C
+      // so that cancellation can stop the original run instead of orphaning it.
+      created = await offloadRequest(
+        (signal) =>
+          client.devboxes.createRun(
+            {
+              command: commitRunCommand(sha, prefix, argv),
+              leaseMode: 'auto',
+              runnerId,
+              timeoutSeconds,
+              workload: 'run',
+            },
+            { signal }
+          ),
+        {
+          timeoutMs: Math.min(
+            OFFLOAD_REQUEST_TIMEOUT_MS,
+            Math.max(1, deadline - Date.now())
+          ),
         }
-        for (const line of page.logs) write(`${line}\n`);
-        const rows = page.next - offset;
-        offset = page.next;
-        if (rows < LOG_PAGE_SIZE) return;
-      }
-    };
-
-    let status = created.run.status;
-    let exitCode = created.run.exitCode;
-    let failures = 0;
-    for (;;) {
-      try {
-        await drainLogs();
-        if (['succeeded', 'failed', 'cancelled'].includes(status)) break;
-        if (interrupted || Date.now() >= deadline) {
-          await stop(interrupted ? 'interrupted' : 'timed out');
-          return interrupted ?? 124;
-        }
-        await new Promise((resolve) => setTimeout(resolve, pollMs));
-        const latest = await client.devboxes.getRun(runId);
-        status = latest.run.status;
-        exitCode = latest.run.exitCode;
-        failures = 0;
-      } catch (error) {
-        failures += 1;
-        if (
-          failures >= MAX_FOLLOW_FAILURES ||
-          interrupted ||
-          Date.now() >= deadline
-        ) {
-          await stop(
-            `lost contact with run ${runId} (${error instanceof Error ? error.message : String(error)})`
-          );
-          return interrupted ?? 1;
-        }
-        await new Promise((resolve) => setTimeout(resolve, pollMs));
-      }
+      );
+    } catch (error) {
+      const code = terminalCode();
+      if (code !== undefined) return code;
+      const status =
+        error && typeof error === 'object' && 'status' in error
+          ? error.status
+          : undefined;
+      throw new OffloadNotCreatedError(
+        error,
+        typeof status === 'number' &&
+          [400, 401, 403, 404, 405, 409, 413, 415, 422, 429].includes(status)
+      );
     }
-    if (typeof exitCode === 'number') return exitCode;
-    return status === 'succeeded' ? 0 : status === 'cancelled' ? 143 : 1;
+    try {
+      const identity = offloadRunIdSchema.safeParse(created);
+      if (identity.success) runId = identity.data.run.id;
+      else
+        log(
+          'Remote creation has no usable run ID; check ttr box list before retrying.'
+        );
+      const initial = offloadRunSchema.parse(created);
+      runId = initial.run.id;
+      log(
+        `offloaded to runner ${runnerId} as run ${runId} at ${sha.slice(0, 12)}`
+      );
+      let offset = 0;
+      let legacyPrinted = 0;
+      const checkTerminal = () => {
+        if (terminalCode() !== undefined)
+          throw new Error('offload interrupted or timed out');
+      };
+      const drainLogs = async () => {
+        for (;;) {
+          checkTerminal();
+          const page = offloadLogsSchema.parse(
+            await request((signal) =>
+              client.devboxes.getRunLogs(initial.run.id, { offset, signal })
+            )
+          );
+          checkTerminal();
+          if (typeof page.next !== 'number' || page.next < offset) {
+            for (const line of page.logs.slice(legacyPrinted))
+              write(`${line}\n`);
+            legacyPrinted = Math.max(legacyPrinted, page.logs.length);
+            return;
+          }
+          for (const line of page.logs) write(`${line}\n`);
+          const rows = page.next - offset;
+          offset = page.next;
+          if (rows < LOG_PAGE_SIZE) return;
+        }
+      };
+      let { status, exitCode } = initial.run;
+      let failures = 0;
+      for (;;) {
+        try {
+          checkTerminal();
+          await drainLogs();
+          checkTerminal();
+          if (['succeeded', 'failed', 'cancelled'].includes(status)) break;
+          await offloadPause(pollMs, cancellation.signal);
+          checkTerminal();
+          const latest = offloadRunSchema.parse(
+            await request((signal) =>
+              client.devboxes.getRun(initial.run.id, { signal })
+            )
+          );
+          if (latest.run.id !== runId)
+            throw new Error('offload run identity changed');
+          ({ status, exitCode } = latest.run);
+          failures = 0;
+        } catch (error) {
+          failures += 1;
+          const code = terminalCode();
+          if (failures >= MAX_FOLLOW_FAILURES || code !== undefined) {
+            await stop(
+              `lost contact (${error instanceof Error ? error.message : String(error)})`
+            );
+            return interrupted ?? code ?? 1;
+          }
+          await offloadPause(pollMs, cancellation.signal);
+        }
+      }
+      return (
+        interrupted ??
+        (typeof exitCode === 'number'
+          ? exitCode
+          : status === 'succeeded'
+            ? 0
+            : status === 'cancelled'
+              ? 143
+              : 1)
+      );
+    } catch (error) {
+      await stop(
+        `invalid acknowledgement or follow failure (${error instanceof Error ? error.message : String(error)})`
+      );
+      return terminalCode() ?? 1;
+    }
   } finally {
     for (const [signal, handler] of handlers)
       process.removeListener(signal, handler);

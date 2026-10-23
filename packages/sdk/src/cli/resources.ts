@@ -385,11 +385,14 @@ export async function offloadRun({
       return undefined;
   }
   const box = await loadBox();
+  let creationStarted = false;
   try {
     const plan = box.offloadCommitPlan(cwd);
     const client = await box.createSessionClient();
     const selection = box.selectOffloadRunner(
-      await client.devboxes.fleet.snapshot(),
+      await box.offloadRequest((signal) =>
+        client.devboxes.fleet.snapshot({ signal })
+      ),
       target
     );
     if (!('runner' in selection)) {
@@ -402,6 +405,7 @@ export async function offloadRun({
       );
       return undefined;
     }
+    creationStarted = true;
     return await box.runBoxOffload({
       client,
       runnerId: selection.runner.id,
@@ -414,9 +418,12 @@ export async function offloadRun({
     });
   } catch (error) {
     if (explicit) throw error;
-    if (error instanceof box.OffloadNotCreatedError && !error.rejected) {
+    if (
+      creationStarted &&
+      !(error instanceof box.OffloadNotCreatedError && error.rejected)
+    ) {
       log(
-        `${error.message}. The run may exist remotely, so it is not repeated locally; check \`ttr box list\` and stop it with \`ttr box stop <run-id>\`.`
+        `${error instanceof Error ? error.message : String(error)}. The run may exist remotely, so it is not repeated locally; check \`ttr box list\` and stop it with \`ttr box stop <run-id>\`.`
       );
       return 1;
     }

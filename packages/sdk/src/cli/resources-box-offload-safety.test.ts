@@ -66,7 +66,9 @@ describe('offload never repeats a created run locally (REV-6454-1)', () => {
       ...quiet,
     });
     expect(code).toBe(1);
-    expect(devboxes.stopRun).toHaveBeenCalledWith('run-1');
+    expect(devboxes.stopRun).toHaveBeenCalledWith('run-1', {
+      signal: expect.any(AbortSignal),
+    });
   });
 
   it('classifies creation failures as rejected (4xx) or ambiguous', async () => {
@@ -130,7 +132,9 @@ describe('offload never repeats a created run locally (REV-6454-1)', () => {
         log.mockRestore();
       }
       expect(devboxes.createRun).toHaveBeenCalledTimes(1);
-      expect(devboxes.stopRun).toHaveBeenCalledWith('run-1');
+      expect(devboxes.stopRun).toHaveBeenCalledWith('run-1', {
+        signal: expect.any(AbortSignal),
+      });
     }
   );
 
@@ -184,7 +188,9 @@ describe('offload follow-through (REV-6454-4)', () => {
         ...quiet,
       });
       expect(code).toBe(130);
-      expect(devboxes.stopRun).toHaveBeenCalledWith('run-1');
+      expect(devboxes.stopRun).toHaveBeenCalledWith('run-1', {
+        signal: expect.any(AbortSignal),
+      });
     } finally {
       on.mockRestore();
     }

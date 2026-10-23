@@ -29,8 +29,12 @@ export class DevboxFleetClient {
    * the response `Date` header, so heartbeat freshness never depends on the
    * caller's clock.
    */
-  async snapshot(): Promise<DevboxFleetSnapshot> {
-    const response = await this.api.fetch('/api/v1/infrastructure/devboxes');
+  async snapshot(
+    options: { signal?: AbortSignal } = {}
+  ): Promise<DevboxFleetSnapshot> {
+    const response = await this.api.fetch('/api/v1/infrastructure/devboxes', {
+      signal: options.signal,
+    });
     if (!response.ok) {
       const data = (await response.json().catch(() => ({}))) as {
         code?: string;

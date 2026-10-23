@@ -598,6 +598,30 @@ passing mock test does not establish real sandbox startup latency; measure cold
 and warm execution on a configured gVisor runner before advertising timings.
 Do not fall back to ordinary Docker isolation when gVisor is missing.
 
+## Resource queue offload cancellation
+
+`ttr resources run --offload auto -- <command>` may queue locally only before
+remote creation starts, or after a definite server rejection. A lost response,
+malformed success acknowledgement, or unexpected error after creation starts
+exits nonzero and never repeats the command locally. When the acknowledgement
+contains a run ID, the CLI requests cancellation of that same run. If the ID or
+stop acknowledgement is unavailable, inspect `ttr box list` before retrying;
+a stop request alone does not prove the remote process has exited.
+
+SIGINT and SIGTERM remain terminal through every creation outcome, including a
+later rejection, and return 130 and 143 respectively. Cancellation or the overall
+deadline is checked before each log page and status request. Fleet, creation,
+status, log and stop requests each have a 15-second bound; follow requests also
+respect the remaining overall deadline. Repeated control-plane failures request
+a remote stop and exit nonzero. A stalled stop request cannot hold the CLI open
+indefinitely.
+
+The focused `resources-offload-interruption.test.ts` suite covers rejected and
+malformed creation after interruption, ambiguous acknowledgements, stalled log
+pages, cancellation between full pages, and SDK transport abort signals.
+`store-run-logs.test.ts` verifies stable log ordering and raw-row offsets.
+These fixtures do not establish hosted runner acceptance.
+
 ## Cache Policy
 
 Runners use named cache volumes for Bun installs, Turbo, Playwright browsers,

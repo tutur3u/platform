@@ -11,6 +11,18 @@ import {
   getDevboxStorageError,
 } from './store-utils';
 
+type PrivateQueryResult = Promise<{
+  data: unknown[] | null;
+  error: DevboxStorageErrorLike;
+}>;
+type PrivateOrderedQuery = {
+  order: (
+    column: string,
+    options?: { ascending?: boolean }
+  ) => PrivateOrderedQuery;
+  limit: (count: number) => PrivateQueryResult;
+  range: (from: number, to: number) => PrivateQueryResult;
+};
 type PrivateTableClient = {
   insert: (value: unknown) => Promise<{ error: DevboxStorageErrorLike }>;
   select: (columns?: string) => {
@@ -18,30 +30,8 @@ type PrivateTableClient = {
       column: string,
       value: string
     ) => {
-      is: (
-        column: string,
-        value: null
-      ) => {
-        order: (
-          column: string,
-          options?: { ascending?: boolean }
-        ) => {
-          limit: (count: number) => Promise<{
-            data: unknown[] | null;
-            error: DevboxStorageErrorLike;
-          }>;
-        };
-      };
-      order: (
-        column: string,
-        options?: { ascending?: boolean }
-      ) => {
-        limit: (count: number) => Promise<{
-          data: unknown[] | null;
-          error: DevboxStorageErrorLike;
-        }>;
-      };
-    };
+      is: (column: string, value: null) => Pick<PrivateOrderedQuery, 'order'>;
+    } & Pick<PrivateOrderedQuery, 'order'>;
   };
   update: (value: unknown) => {
     eq: (

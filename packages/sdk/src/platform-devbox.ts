@@ -97,11 +97,12 @@ export class DevboxesClient {
     this.fleet = new DevboxFleetClient(fleetOptions);
   }
 
-  createRun(payload: DevboxRunPayload) {
+  createRun(payload: DevboxRunPayload, options: { signal?: AbortSignal } = {}) {
     return this.api.json<DevboxRunResponse>('/api/v1/devboxes/runs', {
       body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
+      signal: options.signal,
     });
   }
 
@@ -126,16 +127,17 @@ export class DevboxesClient {
     );
   }
 
-  getRun(runId: string) {
+  getRun(runId: string, options: { signal?: AbortSignal } = {}) {
     return this.api.json<DevboxRunResponse>(
-      `/api/v1/devboxes/runs/${encodePathSegment(runId)}`
+      `/api/v1/devboxes/runs/${encodePathSegment(runId)}`,
+      { signal: options.signal }
     );
   }
 
-  stopRun(runId: string) {
+  stopRun(runId: string, options: { signal?: AbortSignal } = {}) {
     return this.api.json<{ message: string }>(
       `/api/v1/devboxes/runs/${encodePathSegment(runId)}/stop`,
-      { method: 'POST' }
+      { method: 'POST', signal: options.signal }
     );
   }
 
@@ -143,10 +145,13 @@ export class DevboxesClient {
    * One page of run log lines. `next` is the offset for the following page;
    * servers that predate paging omit it and return only the first page.
    */
-  getRunLogs(runId: string, options: { offset?: number } = {}) {
+  getRunLogs(
+    runId: string,
+    options: { offset?: number; signal?: AbortSignal } = {}
+  ) {
     return this.api.json<{ logs: string[]; next?: number }>(
       `/api/v1/devboxes/runs/${encodePathSegment(runId)}/logs`,
-      options.offset ? { query: { offset: options.offset } } : {}
+      { query: { offset: options.offset }, signal: options.signal }
     );
   }
 
