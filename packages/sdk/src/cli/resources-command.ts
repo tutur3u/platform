@@ -46,6 +46,77 @@ const valueFlags: Record<string, readonly string[]> = {
     '--input-type',
     '--env-file',
     '--title',
+    '--allow-fs-read',
+    '--allow-fs-write',
+    '--build-sea',
+    '--build-snapshot-config',
+    '--cpu-prof-dir',
+    '--cpu-prof-interval',
+    '--cpu-prof-name',
+    '--diagnostic-dir',
+    '--disable-proto',
+    '--disable-warning',
+    '--dns-result-order',
+    '--env-file-if-exists',
+    '--experimental-config-file',
+    '--experimental-default-type',
+    '--experimental-specifier-resolution',
+    '--experimental-package-map',
+    '--experimental-sea-config',
+    '--experimental-test-tag-filter',
+    '--heap-prof-dir',
+    '--heap-prof-interval',
+    '--heap-prof-name',
+    '--heapsnapshot-near-heap-limit',
+    '--heapsnapshot-signal',
+    '--icu-data-dir',
+    '--debug-port',
+    '--inspect-port',
+    '--inspect-publish-uid',
+    '--localstorage-file',
+    '--max-http-header-size',
+    '--max-old-space-size',
+    '--max-old-space-size-percentage',
+    '--max-semi-space-size',
+    '--stack-size',
+    '--network-family-autoselection-attempt-timeout',
+    '--openssl-config',
+    '--redirect-warnings',
+    '--report-directory',
+    '--report-dir',
+    '--report-filename',
+    '--report-signal',
+    '--run',
+    '--secure-heap',
+    '--secure-heap-min',
+    '--snapshot-blob',
+    '--test-concurrency',
+    '--test-coverage-branches',
+    '--test-coverage-exclude',
+    '--test-coverage-functions',
+    '--test-coverage-include',
+    '--test-coverage-lines',
+    '--test-global-setup',
+    '--experimental-test-isolation',
+    '--test-isolation',
+    '--test-name-pattern',
+    '--test-random-seed',
+    '--test-reporter',
+    '--test-reporter-destination',
+    '--test-rerun-failures',
+    '--test-shard',
+    '--test-skip-pattern',
+    '--test-timeout',
+    '--tls-cipher-list',
+    '--tls-keylog',
+    '--trace-event-categories',
+    '--trace-event-file-pattern',
+    '--trace-require-module',
+    '--unhandled-rejections',
+    '--use-largepages',
+    '--v8-pool-size',
+    '--watch-kill-signal',
+    '--watch-path',
   ],
   bun: [
     '--cwd',
@@ -63,6 +134,27 @@ const valueFlags: Record<string, readonly string[]> = {
   bunx: ['-p', '--package'],
   npx: ['-p', '--package', '-c', '--call'],
 };
+// Only known switches can be skipped without risking a value becoming the program.
+const nodeSwitches = new Set([
+  '--help',
+  '-h',
+  '--version',
+  '-v',
+  '--no-warnings',
+  '--enable-source-maps',
+  '--experimental-strip-types',
+  '--experimental-transform-types',
+  '--experimental-vm-modules',
+  '--expose-gc',
+  '--inspect',
+  '--inspect-brk',
+  '--inspect-wait',
+  '--no-deprecation',
+  '--trace-deprecation',
+  '--trace-warnings',
+  '--no-experimental-fetch',
+  '--experimental-default-config-file',
+]);
 // The ttr CLI (`#!/usr/bin/env bun`) starts through the bun shim whenever the
 // shims are on PATH. It does its own admission, so a shim must never admit it.
 const ttrLaunchers = new Set([
@@ -74,17 +166,37 @@ const ttrLaunchers = new Set([
 ]);
 export function commandTool(name: string, args: string[]) {
   if (['node', 'bun', 'bunx', 'npx'].includes(name)) {
+    let optionsEnded = false;
     for (let i = 0; i < args.length; i++) {
       const arg = args[i]!;
       if (
+        !optionsEnded &&
         ['-e', '-p', '--eval', '--print'].some(
           (flag) => arg === flag || arg.startsWith(`${flag}=`)
         ) &&
         (name === 'node' || name === 'bun')
       )
         break;
-      if (arg.startsWith('-')) {
-        if (valueFlags[name]?.includes(arg)) i++;
+      if (!optionsEnded && arg.startsWith('-')) {
+        if (arg === '--') {
+          optionsEnded = true;
+          continue;
+        }
+        const flag = arg.split('=')[0]!;
+        if (name === 'node' && flag === '--run')
+          return { tool: 'ambiguous', tail: args, offset: 0 };
+        if (valueFlags[name]?.includes(flag)) {
+          if (!arg.includes('=')) {
+            if (!args[i + 1] || args[i + 1]!.startsWith('-'))
+              return { tool: 'ambiguous', tail: args, offset: 0 };
+            i++;
+          }
+        } else if (
+          name === 'node' &&
+          !nodeSwitches.has(flag) &&
+          !/^-[rC].+/u.test(arg)
+        )
+          return { tool: 'ambiguous', tail: args, offset: 0 };
         continue;
       }
       if (name === 'bun' && ['run', 'x', 'exec'].includes(arg)) continue;
@@ -113,6 +225,7 @@ export function commandTool(name: string, args: string[]) {
 
 export function isHeavyCommand(name: string, args: string[]) {
   const { tool, tail } = commandTool(basename(name), args);
+  if (tool === 'ambiguous') return true;
   const flags = tail.includes('--') ? tail.slice(0, tail.indexOf('--')) : tail;
   if (
     flags.some(
