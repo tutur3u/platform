@@ -13,7 +13,7 @@
 /packages/sso/                     @vhpx
 /packages/turnstile/               @vhpx
 /packages/utils/src/api-proxy-guard.ts     @vhpx
-/packages/utils/src/required-mfa-runtime.ts @vhpx
+/packages/utils/src/required-mfa*.ts @vhpx
 /packages/satellite/src/auth.ts    @vhpx
 /packages/supabase/                @vhpx
 /apps/web/src/app/api/auth/        @vhpx
@@ -28,6 +28,14 @@
 /apps/web/src/lib/api-middleware.ts @vhpx
 /apps/tasks/src/lib/api-middleware.ts @vhpx
 /packages/realtime/src/core/token.ts @vhpx
+/packages/realtime/src/chat/token.ts @vhpx
+/apps/chat-realtime/src/token.ts   @vhpx
+/apps/hive-realtime/src/token.ts   @vhpx
+/apps/hive/src/app/api/v1/hive/_realtime-token.ts @vhpx
+/packages/meet-core/src/features/live-assistant/token.ts @vhpx
+/apps/web/src/lib/mcp/authorization.ts @vhpx
+/apps/web/src/lib/chatgpt/oauth.ts @vhpx
+/apps/web/src/app/api/notifications/send-immediate/route.ts @vhpx
 /packages/utils/src/app-coordination-token.ts @vhpx
 /apps/discord/auth.py              @vhpx
 /apps/*/src/proxy.ts               @vhpx
@@ -46,6 +54,7 @@
 /apps/inventory/src/app/api/v1/inventory/polar/webhook/ @vhpx
 /apps/inventory/src/app/api/v1/inventory/square/webhook/ @vhpx
 /packages/inventory-core/src/lib/inventory/commerce/square/webhooks.ts @vhpx
+/apps/mail/src/lib/mail/inbound/   @vhpx
 
 # Database schema, migrations and RLS
 /apps/database/supabase/migrations/ @vhpx
@@ -58,8 +67,7 @@
 /packages/payment/                 @vhpx
 /packages/payment-core/            @vhpx
 /apps/pay/src/app/api/payment/     @vhpx
-/apps/web/src/lib/sepay.ts         @vhpx
-/apps/web/src/lib/sepay-oauth.ts   @vhpx
+/apps/*/src/lib/sepay*.ts          @vhpx
 
 # Code ownership itself
 /.github/CODEOWNERS                @vhpx
