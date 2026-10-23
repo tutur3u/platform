@@ -4,12 +4,12 @@ const { spawnSync } = require('node:child_process');
 const { mkdtempSync, readdirSync, rmSync, readFileSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const { join } = require('node:path');
-const { assertKnownCheckArgs } = require('./check-cli-options.js');
+const { checkCliArgs } = require('./check-cli-options.js');
 
 test('aggregate accepts only its documented execution flags', () => {
-  assert.doesNotThrow(() => assertKnownCheckArgs([]));
+  assert.doesNotThrow(() => checkCliArgs([]));
   assert.doesNotThrow(() =>
-    assertKnownCheckArgs([
+    checkCliArgs([
       '--table',
       '--timing',
       '--details',
@@ -26,6 +26,7 @@ for (const flag of [
   '--version',
   '--unknown',
   'unexpected',
+  'unexpected\nsecond line',
 ]) {
   test(`aggregate rejects ${flag} before starting work or creating a queue`, () => {
     const directory = mkdtempSync(join(tmpdir(), 'validate-cli-'));
@@ -47,7 +48,10 @@ for (const flag of [
       assert.equal(result.error, undefined);
       assert.equal(result.status, 1);
       assert.match(result.stderr, /Unknown bun validate argument:/);
-      assert.ok(result.stderr.includes(flag));
+      assert.ok(result.stderr.includes(JSON.stringify(flag)));
+      assert.match(result.stderr, /^Usage: bun validate /);
+      assert.equal(result.stderr.trimEnd().split('\n').length, 1);
+      assert.doesNotMatch(result.stderr, /\n\s+at |Error:/);
       assert.equal(result.stdout, '');
       assert.deepEqual(readdirSync(directory), []);
     } finally {

@@ -207,17 +207,30 @@ export function limitCommand(
     return [...args.slice(0, offset), ...limited];
   }
   if (tool === 'bun' && tail[bunTaskIndex(tail)] === 'check') {
-    const divider = tail.indexOf('--');
-    const before = divider < 0 ? tail : tail.slice(0, divider);
-    if (
-      before.some((arg) => arg === '--threads' || arg.startsWith('--threads='))
-    )
-      return args;
-    const limited = [...tail];
+    let budget = config.buildJobs;
+    const limited: string[] = [];
+    for (let i = 0; i < tail.length; i++) {
+      const arg = tail[i]!;
+      if (arg === '--') {
+        limited.push(...tail.slice(i));
+        break;
+      }
+      if (arg === '--threads' || arg.startsWith('--threads=')) {
+        const value =
+          arg === '--threads' ? tail[++i] : arg.slice('--threads='.length);
+        const requested = Number(value);
+        if (!Number.isSafeInteger(requested) || requested < 1)
+          throw new Error('bun check --threads requires a positive integer.');
+        budget = Math.min(budget, requested);
+        continue;
+      }
+      limited.push(arg);
+    }
+    const divider = limited.indexOf('--');
     limited.splice(
       divider < 0 ? limited.length : divider,
       0,
-      `--threads=${config.buildJobs}`
+      `--threads=${budget}`
     );
     return [...args.slice(0, offset), ...limited];
   }

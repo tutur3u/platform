@@ -47,13 +47,54 @@ describe('native Bun checker thread budget', () => {
   });
 
   it.each([
-    ['check', '--threads', '2', '-p', 'tsconfig.json'],
-    ['check', '--threads=2'],
     ['check', '--help'],
     ['validate'],
     ['run', 'validate:now'],
     ['check:changed'],
-  ])('preserves explicit budgets and other commands: %j', (...args) => {
+  ])('preserves other commands: %j', (...args) => {
     expect(limitCommand('bun', args, config)).toEqual(args);
   });
 });
+
+it.each([
+  [
+    ['check', '--threads', '20'],
+    ['check', '--threads=3'],
+  ],
+  [
+    ['check', '--threads=20'],
+    ['check', '--threads=3'],
+  ],
+  [
+    ['check', '--threads', '2', '-p', 'tsconfig.json'],
+    ['check', '-p', 'tsconfig.json', '--threads=2'],
+  ],
+  [
+    ['check', '--threads=1'],
+    ['check', '--threads=1'],
+  ],
+  [
+    ['check', '--threads=1', '--threads', '30'],
+    ['check', '--threads=1'],
+  ],
+  [
+    ['check', '--threads=20', '--', '--threads=99'],
+    ['check', '--threads=3', '--', '--threads=99'],
+  ],
+])('clamps explicit native budgets to the lane limit: %j', (args, expected) => {
+  expect(
+    limitCommand('bun', args, { ...defaultResourceConfig(), buildJobs: 3 })
+  ).toEqual(expected);
+});
+
+it.each(['0', '-1', 'Infinity', 'invalid', '1.5', ''])(
+  'rejects invalid native thread budgets: %j',
+  (value) => {
+    expect(() =>
+      limitCommand('bun', ['check', `--threads=${value}`], {
+        ...defaultResourceConfig(),
+        buildJobs: 3,
+      })
+    ).toThrow(/positive integer/);
+  }
+);

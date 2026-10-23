@@ -231,7 +231,7 @@ runs for Discord changes. No component was replaced with a type-only command.
 `bun check:changed` remains the separate build-free pre-push gate; other
 `check:*` commands retain their roles.
 
-`ttr resources run -- bun check --no-script --threads 6 -p <project>` explicitly invokes Bun's native type-only
+`ttr resources run -- bun check --no-script -p <project>` explicitly invokes Bun's native type-only
 checker. A package script named `check` takes precedence over native checking;
 `scripts/validate-command.test.js` rejects that name in the root and every
 workspace, including retained inactive workspaces. The test is discovered by
@@ -239,9 +239,10 @@ the existing script-test gate. Native checking is not a substitute for
 `bun validate`, app builds, guards, tests, or declaration generation. The ban on
 local aggregate/build execution applies to `bun validate`; native qualification
 still requires resource admission and a bounded thread count. The resource wrapper
-injects `--threads=<lane buildJobs>` when native checking has no explicit thread
-limit. The aggregate rejects unknown arguments, including `--help` and
-`--dry-run`, before starting work; neither flag provides an aggregate preview.
+injects `--threads=<lane buildJobs>` when absent and clamps explicit values to
+that lane limit, preserving smaller requests. The aggregate rejects unknown arguments, including `--help` and
+`--dry-run`, before starting work, prints one usage line to stderr and exits 1; neither flag
+provides an aggregate preview.
 
 ### Native checker qualification
 

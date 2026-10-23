@@ -12,7 +12,7 @@
  */
 
 if (require.main === module)
-  require('./check-cli-options.js').assertKnownCheckArgs(process.argv.slice(2));
+  require('./check-cli-options.js').checkCliArgs(process.argv.slice(2));
 
 const crypto = require('node:crypto');
 const { execFileSync, spawn } = require('node:child_process');
