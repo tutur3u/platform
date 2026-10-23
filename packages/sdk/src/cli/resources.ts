@@ -63,6 +63,8 @@ Setup options:
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
+Run options: --tokens N and --memory-gib N declare this job's worker tokens and
+memory under a cross-project budget (default: inferred from the tool).
 Run option: --offload auto|<runner-id> runs the exact pushed commit on a fresh,
 attested trusted-development devbox runner (ttr box) when local lanes are
 saturated (auto) or always (runner id). Dirty or unpushed trees are refused and
@@ -111,7 +113,15 @@ export async function runResourcesCommand(argv: string[]) {
     return;
   }
   const allowed: Record<string, string[]> = {
-    run: ['--ignore-pressure', '--offload', '--timeout', '--hosts', '--class'],
+    run: [
+      '--ignore-pressure',
+      '--offload',
+      '--timeout',
+      '--hosts',
+      '--class',
+      '--tokens',
+      '--memory-gib',
+    ],
     hosts: ['--json', '--simulate'],
     offload: ['--json', '--runner'],
     shim: [],
@@ -129,9 +139,15 @@ export async function runResourcesCommand(argv: string[]) {
       if (!allowed[action]!.includes(option))
         throw new Error(`Unknown ${action} option: ${option}`);
       if (
-        ['--seconds', '--offload', '--timeout', '--runner', '--class'].includes(
-          option
-        )
+        [
+          '--seconds',
+          '--offload',
+          '--timeout',
+          '--runner',
+          '--class',
+          '--tokens',
+          '--memory-gib',
+        ].includes(option)
       ) {
         const value = options[++i];
         if (!value || value.startsWith('--'))
@@ -220,6 +236,21 @@ export async function runResourcesCommand(argv: string[]) {
         }),
       });
       return;
+    }
+    // Explicit budget demand for this ticket (otherwise inferred from the
+    // classified tool); exported so shims and CI can declare it too.
+    for (const [flag, variable] of [
+      ['--tokens', 'TTR_RESOURCES_TOKENS'],
+      ['--memory-gib', 'TTR_RESOURCES_MEMORY_GIB'],
+    ] as const) {
+      const value = optionValue(options, flag);
+      if (value === undefined) continue;
+      const number = Number(value);
+      if (!(number > 0) || (flag === '--tokens' && !Number.isInteger(number)))
+        throw new Error(
+          `${flag} must be a positive ${flag === '--tokens' ? 'integer' : 'number'}.`
+        );
+      env[variable] = String(number);
     }
     process.exitCode = queued
       ? await queuedResourceCommand(

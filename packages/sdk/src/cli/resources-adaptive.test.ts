@@ -139,7 +139,7 @@ describe('adaptive configuration and budgets', () => {
     expect(resourceMaxLanes(config)).toBe(2);
     for (const [maxValidationLanes, expected] of [
       [1, 2],
-      [9, 8],
+      [17, 16],
       [2.5, 2],
     ] as const) {
       await atomicJson(join(path, 'config.json'), {
@@ -156,7 +156,7 @@ describe('adaptive configuration and budgets', () => {
         maxValidationLanes,
       });
       await expect(readResourceConfig(path)).rejects.toThrow(
-        'maxValidationLanes must be an integer from 1 to 8'
+        'maxValidationLanes must be an integer from 1 to 16'
       );
     }
     await atomicJson(join(path, 'config.json'), {

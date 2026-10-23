@@ -141,7 +141,7 @@ describe('lane policy', () => {
     expect(await readFile(join(path, 'config.json'), 'utf8')).toBe(before);
     expect(await readdir(path)).toEqual(names);
     for (const args of [
-      ['setup', '--lanes', '9'],
+      ['setup', '--lanes', '17'],
       ['run', '--surprise', '--', 'node', '-e', '0'],
       ['status', '--surprise'],
     ])

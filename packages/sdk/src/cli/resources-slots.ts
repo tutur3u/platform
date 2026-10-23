@@ -36,6 +36,15 @@ const ownerSchema = z.object({
       buildJobs: z.number().int().positive(),
     })
     .optional(),
+  // Declared budget demand (project share, worker tokens, memory). Older
+  // schedulers strip it; owners without it count as one unassigned token.
+  demand: z
+    .object({
+      project: z.string().min(1),
+      tokens: z.number().int().positive(),
+      memoryGiB: z.number().nonnegative(),
+    })
+    .optional(),
 });
 export type ResourceOwner = z.infer<typeof ownerSchema>;
 export type OwnerState =
@@ -355,7 +364,9 @@ export async function occupancy(
     throw error;
   });
   if (
-    names.some((name) => !/^(0|[1-7])$/.test(name) || Number(name) >= maxLanes)
+    names.some(
+      (name) => !/^(0|[1-9]|1[0-5])$/.test(name) || Number(name) >= maxLanes
+    )
   )
     throw new Error('Unknown resource slot; admission is closed.');
   const owners: ResourceOwner[] = [];

@@ -201,13 +201,13 @@ describe('parallelism hygiene', { timeout: 45_000 }, () => {
     await atomicJson(join(path, 'config.json'), {
       ...config,
       validationLanes: 3,
-      maxValidationLanes: 12,
+      maxValidationLanes: 20,
     });
     const clamped = await shim();
     expect(clamped.code, clamped.err).toBe(0);
     expect(clamped.out.trim()).toBe('42');
     expect(clamped.err).toContain(
-      'maxValidationLanes must be an integer from 1 to 8; using 8.'
+      'maxValidationLanes must be an integer from 1 to 16; using 16.'
     );
     await atomicJson(join(path, 'config.json'), { ...config, enabled: 'yes' });
     const open = await shim();
