@@ -9,6 +9,7 @@ import type {
   RecommendationReason,
   TaskRequest,
 } from './types';
+import { windowObservationIsFresh } from './window-freshness';
 import { coversModel, noResetWindowMaxAgeMs } from './window-scope';
 
 export interface RecommendOptions {
@@ -64,12 +65,9 @@ function rankOne(
       window.usedPercent <= 100
   );
   const isFresh = (window: (typeof windows)[number]): boolean => {
-    const observedAt = Date.parse(window.observedAt);
     const resetAt = window.resetsAt ? Date.parse(window.resetsAt) : undefined;
     return (
-      Number.isFinite(observedAt) &&
-      observedAt <= now.getTime() + 5 * 60_000 &&
-      now.getTime() - observedAt <= staleAfterMs &&
+      windowObservationIsFresh(window, now, staleAfterMs) &&
       resetAt !== undefined &&
       Number.isFinite(resetAt) &&
       resetAt > now.getTime()
@@ -303,7 +301,14 @@ function rankOne(
     label: account.label,
     state,
     ageMs,
-    ttlMs: staleAfterMs,
+    ttlMs: Math.min(
+      staleAfterMs,
+      ...windows.map((window) =>
+        window.freshnessTtlMs === undefined
+          ? staleAfterMs
+          : Math.min(staleAfterMs, window.freshnessTtlMs)
+      )
+    ),
     activeCount: count,
     action:
       state === 'near' || state === 'exhausted'

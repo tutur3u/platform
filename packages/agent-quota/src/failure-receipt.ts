@@ -18,6 +18,42 @@ export function usageLimitReceiptActive(
   return now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS;
 }
 export type FailureClass = 'usage-limit' | 'capacity' | 'auth' | 'other';
+export type ExecutionFailureKind =
+  | 'context-allowance-failure'
+  | 'provider-start-failure';
+
+export function executionFailureKind(
+  message: string,
+  classification?: string | null
+): ExecutionFailureKind | null {
+  if (
+    classification &&
+    /^(?:context[-_]allowance(?:[-_]failure)?|context[-_]limit)$/.test(
+      classification.toLowerCase()
+    )
+  )
+    return 'context-allowance-failure';
+  if (
+    classification &&
+    /^(?:provider[-_]start(?:[-_]failure)?|provider[-_]startup[-_]failure)$/.test(
+      classification.toLowerCase()
+    )
+  )
+    return 'provider-start-failure';
+  if (
+    /context (?:allowance|window|length)|context limit|prompt (?:is )?too long|maximum context/i.test(
+      message
+    )
+  )
+    return 'context-allowance-failure';
+  if (
+    /provider (?:failed|failure) to start|failed to start (?:provider|model|run)|could not start (?:provider|model|run)|provider startup failed/i.test(
+      message
+    )
+  )
+    return 'provider-start-failure';
+  return null;
+}
 export function recoveryAdmissionKey(
   threadId: string,
   runId: string,

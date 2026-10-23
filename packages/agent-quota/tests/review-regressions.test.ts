@@ -451,7 +451,11 @@ describe('independent review regressions', () => {
     };
     expect(
       reroutePlan([entry], request, context, evidence, live)[0]
-    ).toMatchObject({ status: 'resumed-on-provider', success: true });
+    ).toMatchObject({
+      status: 'resumed-on-provider',
+      success: true,
+      executionOutcome: 'verified-resumed-execution',
+    });
     for (const mismatch of [
       { model: 'wrong-model' },
       { instanceId: 'wrong-provider' },

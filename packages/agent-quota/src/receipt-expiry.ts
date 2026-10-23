@@ -2,6 +2,7 @@ import { accountKey } from './accounts';
 import { NO_RESET_RECEIPT_MAX_AGE_MS } from './failure-receipt';
 import type { AdmissionContext } from './hooks-types';
 import { SIGNAL_TTL_MS } from './policy';
+import { windowObservationIsFresh } from './window-freshness';
 import { coversModel } from './window-scope';
 export function clearRecoveredLimits(context: AdmissionContext) {
   for (const event of context.ledger.observations) {
@@ -42,9 +43,11 @@ export function clearRecoveredLimits(context: AdmissionContext) {
           Date.parse(window.observedAt) > Date.parse(event.observedAt) &&
           (!event.resetsAt ||
             Date.parse(window.observedAt) >= Date.parse(event.resetsAt)) &&
-          Date.parse(window.observedAt) <= context.now.getTime() &&
-          context.now.getTime() - Date.parse(window.observedAt) <=
-            SIGNAL_TTL_MS[account.provider] &&
+          windowObservationIsFresh(
+            window,
+            context.now,
+            SIGNAL_TTL_MS[account.provider]
+          ) &&
           (!event.resetsAt ||
             Boolean(
               window.resetsAt &&

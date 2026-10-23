@@ -4,6 +4,8 @@ export type ModelFamily = 'opus' | 'sonnet' | 'haiku' | 'fable';
 
 export interface UsageWindow {
   kind: WindowKind;
+  providerWindowKind?: 'session' | 'weekly' | 'monthly' | 'other';
+  freshnessTtlMs?: number;
   id?: string;
   label?: string;
   scope?: {

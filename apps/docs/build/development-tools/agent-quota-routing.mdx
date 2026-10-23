@@ -535,6 +535,17 @@ provider status snapshots. It does not refresh a provider, read authentication
 files, or write SQLite. A fresh RPC response does not refresh an old
 `usageLimits.checkedAt`.
 
+The qualified passive registry reader uses one `server.getConfig` call with an
+empty input through T3's supported `orchestration:read` WebSocket protocol. It
+does not call `server.refreshProviders`. Registry memory is the Usage view's
+source; the cache reader is secondary because startup hydration omits
+`usageLimits`. Each imported window uses its enclosing snapshot's `checkedAt`
+as `observedAt` and is limited to a five-minute age. An unchanged `checkedAt`,
+an RPC response, or a successful provider refresh does not establish fresh
+quota. Missing `usageLimits`, stale snapshots, or unknown window kinds remain
+UNKNOWN. The candidate does not claim exact equality between persisted caches
+and the UI's in-memory snapshot.
+
 Each window reports **used percent**; remaining is `100 - usedPercent`. Session,
 weekly and model-specific windows remain separate. Scope comes from window IDs
 and labels: Claude `five_hour` is account-wide, `seven_day_fable` is Fable-only;
@@ -545,6 +556,23 @@ blocking Flash. The latest reset phrase wins. Every admission scans terminal
 receipts across all catalog instances and orchestrator trees, limited to 30 days
 and 5,000 rows per projection; overflow or unreadable state fails closed. An
 expired receipt is cleared at its recorded reset unless a newer receipt exists.
+
+The UI aggregates only after deduplicating accounts by provider driver and
+normalized email, falling back to the provider identity fingerprint, within a
+workspace. It rounds the mean of deduplicated remaining percentages; Codex
+windows group by kind, while other providers group by kind and window ID. The
+bridge deliberately omits email and fingerprints, so this candidate retains
+per-instance rows unless a separate supported identity hash is already
+available; it does not invent a cross-account UI aggregate. Claude's displayed
+effective session can also reflect an exhausted weekly window, while this
+router keeps provider windows separate and applies only model-covering windows
+to the requested model.
+
+Quota headroom only makes a target eligible. It does not establish that a
+provider accepted or started the continuation. Reconciliation records context
+allowance failures and provider-start failures separately. A reroute is called
+verified resumed execution only after the resumed run reports the expected
+provider and model as running; admission or configuration alone is not success.
 
 Account identity uses provider metadata when available. Otherwise it is the
 SHA-256 hash of the normalized, explicitly supplied account home path (including

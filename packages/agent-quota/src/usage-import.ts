@@ -8,6 +8,7 @@ import {
 } from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type { AccountUsage, UsageWindow } from './types';
+import { PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS } from './window-freshness';
 import {
   coversModel,
   noResetWindowMaxAgeMs,
@@ -263,6 +264,14 @@ export function snapshotWindows(
       typeof window.id !== 'string'
     )
       throw new HookError('usage-window-invalid');
+    const providerWindowKind =
+      window.kind === 'session' ||
+      window.kind === 'weekly' ||
+      window.kind === 'monthly' ||
+      window.kind === 'other'
+        ? window.kind
+        : undefined;
+    const kindKnown = providerWindowKind !== undefined;
     return {
       id: window.id,
       label: typeof window.label === 'string' ? window.label : '',
@@ -272,24 +281,27 @@ export function snapshotWindows(
         typeof window.label === 'string' ? window.label : ''
       ),
       kind:
-        window.kind === 'weekly' ||
+        providerWindowKind === 'weekly' ||
+        providerWindowKind === 'monthly' ||
         (typeof window.windowDurationMins === 'number' &&
           window.windowDurationMins > 1440)
           ? 'long'
           : 'short',
+      providerWindowKind,
+      freshnessTtlMs: PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS,
       windowDurationMins:
         typeof window.windowDurationMins === 'number' &&
         Number.isFinite(window.windowDurationMins) &&
         window.windowDurationMins > 0
           ? window.windowDurationMins
           : undefined,
-      usedPercent: window.usedPercent,
+      usedPercent: kindKnown ? window.usedPercent : undefined,
       resetsAt:
         typeof window.resetsAt === 'string' ? window.resetsAt : undefined,
       observedAt: data.checkedAt as string,
       source: 'T3 server.getConfig usageLimits import',
       confidence: 'provider',
-      authoritative: true,
+      authoritative: kindKnown,
     } satisfies UsageWindow;
   });
 }
@@ -311,6 +323,7 @@ export function applyImportedUsage(
     const windows = provider
       ? snapshotWindows(account, provider.usageLimits)
       : [];
+    if (provider && windows.length === 0) return { ...account, windows: [] };
     const newer =
       windows.length &&
       (!account.windows.length ||

@@ -14,6 +14,10 @@ import {
   mergeUsageImport,
   parseManualUsage,
 } from './usage-import';
+import {
+  windowFreshnessTtlMs,
+  windowObservationIsFresh,
+} from './window-freshness';
 
 function input(): Record<string, unknown> {
   const text = readFileSync(0, 'utf8');
@@ -302,6 +306,9 @@ export async function runOperator(command: string, args: string[]) {
           windows: account.windows.map((w) => ({
             id: w.id,
             label: w.label,
+            providerWindowKind: w.providerWindowKind ?? 'unknown',
+            routingKind: w.kind,
+            windowDurationMins: w.windowDurationMins ?? null,
             scope: w.scope,
             remainingPercent:
               w.usedPercent === undefined ? null : 100 - w.usedPercent,
@@ -309,7 +316,14 @@ export async function runOperator(command: string, args: string[]) {
             units: 'percent',
             observedAt: w.observedAt,
             ageMs: context.now.getTime() - Date.parse(w.observedAt),
-            ttlMs: SIGNAL_TTL_MS[account.provider],
+            ttlMs: windowFreshnessTtlMs(w, SIGNAL_TTL_MS[account.provider]),
+            freshness: windowObservationIsFresh(
+              w,
+              context.now,
+              SIGNAL_TTL_MS[account.provider]
+            )
+              ? 'FRESH'
+              : 'STALE',
             resetAt: w.resetsAt ?? null,
             source: w.source,
             confidence: w.confidence ?? 'provider',

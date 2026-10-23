@@ -366,6 +366,7 @@ describe('Usage UI and typed manual observations', () => {
             windows: [
               {
                 id: 'seven_day_fable',
+                kind: 'weekly',
                 label: 'Weekly · Fable',
                 usedPercent: 100,
                 resetsAt: '2026-10-30T05:33:00Z',
