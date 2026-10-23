@@ -57,12 +57,15 @@ rejected before content is downloaded. HTTPS is the default. Local development
 may use HTTP only when the selected Supabase URL explicitly configures HTTP on
 `localhost`, `127.0.0.1`, `::1`, or `host.docker.internal`, with its matching port.
 The existing Supabase environment-variable precedence remains unchanged.
+Signed paths must retain the raw Storage signing prefix and contain no encoded
+slash/backslash or literal/encoded dot segments, including before URL normalization.
 
 This policy trusts the operator-configured hostname and its DNS; it does not
 resolve and filter private addresses. Keep that configuration and DNS under
 operator control. Signed downloads retain the 60-second timeout, Content-Length
-check, 50 MiB streaming cap, and temporary-file cleanup. Temporary-file suffixes
-come from supported extension constants; unknown or unsafe suffixes are omitted.
+check, 50 MiB streaming cap, and temporary-file cleanup, including cancellation.
+Temporary-file suffixes come from supported extension constants; unknown or
+unsafe suffixes are omitted.
 
 The retained direct YouTube conversion path accepts video links on the existing
 YouTube host allowlist, extracts an 11-character video ID, and fetches a canonical

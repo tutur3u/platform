@@ -76,6 +76,11 @@ def download_response(monkeypatch, tmp_path):
         "https://project-ref.supabase.co.",
         "https://project-ref.supabase.co\\@attacker.example",
         "https://project-ref.supabase.co\n",
+        "https://%70roject-ref.supabase.co",
+        "https://project-ref%2esupabase.co",
+        "https://project-ref.supabase.co%2fattacker.example",
+        "https://project-ref.supabase\u3002co.attacker.example",
+        "https://project-ref.supabase\uff0eco.attacker.example",
     ],
 )
 @pytest.mark.asyncio
@@ -94,6 +99,9 @@ async def test_download_rejects_untrusted_authority_before_session(origin, downl
     [
         ("https://PROJECT-REF.SUPABASE.CO", ORIGIN),
         ("https://project-ref.supabase.co:443", ORIGIN),
+        (ORIGIN, "https://PROJECT-REF.SUPABASE.CO:443"),
+        ("https://project-ref.supabase\u3002co", ORIGIN),
+        ("https://project-ref.supabase\uff0eco", ORIGIN),
         ("https://bücher.example", "https://xn--bcher-kva.example"),
         ("https://XN--BCHER-KVA.EXAMPLE", "https://BÜCHER.example"),
         ("https://project-ref.supabase.co:8443", ORIGIN + ":8443"),
@@ -112,7 +120,16 @@ async def test_download_accepts_only_configured_origin(origin, configured, downl
         assert Path(path).suffix == ".pdf"
         assert size == len(b"document")
         get.assert_called_once()
-        assert str(get.call_args.args[0]) == str(URL(origin + SIGNED_PATH))
+        fetched_url = get.call_args.args[0]
+        configured_url = URL(configured)
+        assert fetched_url.scheme == configured_url.scheme
+        assert fetched_url.raw_host == configured_url.raw_host
+        assert fetched_url.port == configured_url.port
+        assert fetched_url.explicit_port == configured_url.explicit_port
+        assert fetched_url.raw_authority == configured_url.raw_authority
+        assert fetched_url.raw_path == SIGNED_PATH.partition("?")[0]
+        assert fetched_url.raw_query_string == SIGNED_PATH.partition("?")[2]
+        assert fetched_url.fragment == ""
         assert get.call_args.kwargs == {"allow_redirects": False}
         assert session.call_args.kwargs["timeout"].total == 60
     finally:
@@ -134,6 +151,94 @@ async def test_local_http_requires_explicit_scheme_and_port(origin, configured, 
         await service._download_signed_url_to_temp(origin + SIGNED_PATH, ".pdf", configured)
     assert error.value.status_code == 400
     session.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "raw_path",
+    [
+        "/storage/v1/object/sign/..%2F..%2F..%2F..%2Frest/v1/users",
+        "/storage/v1/object/sign/workspaces/file%2fname.pdf",
+        "/storage/v1/object/sign/workspaces/file%2Fname.pdf",
+        "/storage/v1/object/sign/workspaces/file%5cname.pdf",
+        "/storage/v1/object/sign/workspaces/file%5Cname.pdf",
+        "/storage/v1/object/sign/workspaces/./file.pdf",
+        "/storage/v1/object/sign/workspaces/../file.pdf",
+        "/storage/v1/object/sign/workspaces/%2e/file.pdf",
+        "/storage/v1/object/sign/workspaces/%2E/file.pdf",
+        "/storage/v1/object/sign/workspaces/%2e%2e/file.pdf",
+        "/storage/v1/object/sign/workspaces/%2E%2E/file.pdf",
+        "/storage/v1/object/sign/workspaces/.%2e/file.pdf",
+        "/storage/v1/object/sign/workspaces/%2e./file.pdf",
+        "/storage/v1/object/sign/workspaces/.",
+        "/storage/v1/object/sign/workspaces/..",
+        "/storage/v1/object/sign/workspaces/%2e",
+        "/storage/v1/object/sign/workspaces/%2e%2e",
+        "/storage/v1/object/./sign/workspaces/file.pdf",
+        "/storage/v1/object/%2e/sign/workspaces/file.pdf",
+        "/storage%2fv1/object/sign/workspaces/file.pdf",
+        "/%73torage/v1/object/sign/workspaces/file.pdf",
+    ],
+)
+@pytest.mark.asyncio
+async def test_download_rejects_ambiguous_raw_path_before_session(raw_path, download_response):
+    response, session, get = download_response
+    with pytest.raises(HTTPException) as error:
+        await service._download_signed_url_to_temp(
+            ORIGIN + raw_path + "?token=test-fixture", ".pdf", ORIGIN
+        )
+    assert error.value.status_code == 400
+    session.assert_not_called()
+    get.assert_not_called()
+    assert response.read_count == 0
+
+
+@pytest.mark.parametrize(
+    "raw_path",
+    [
+        "/storage/v1/object/sign/workspaces/file%20name.pdf",
+        "/storage/v1/object/sign/workspaces/%23file.pdf",
+        "/storage/v1/object/sign/workspaces/.hidden/file..pdf",
+        "/storage/v1/object/sign/workspaces/%E6%96%87%E4%BB%B6.pdf",
+    ],
+)
+@pytest.mark.asyncio
+async def test_download_sends_validated_raw_path_without_fragment(raw_path, download_response):
+    _response, _session, get = download_response
+    path, _size = await service._download_signed_url_to_temp(
+        ORIGIN + raw_path + "?token=test-fixture#@attacker.example", ".pdf", ORIGIN
+    )
+    try:
+        fetched_url = get.call_args.args[0]
+        assert fetched_url.raw_path == raw_path
+        assert fetched_url.raw_authority == URL(ORIGIN).raw_authority
+        assert fetched_url.raw_query_string == "token=test-fixture"
+        assert fetched_url.fragment == ""
+    finally:
+        service._cleanup_temp_file(path)
+
+
+@pytest.mark.asyncio
+async def test_cancelled_download_cleans_partial_file(monkeypatch, download_response, tmp_path):
+    response, _session, _get = download_response
+    partial_written = asyncio.Event()
+
+    async def chunks(_size):
+        yield b"partial document"
+        partial_written.set()
+        await asyncio.Future()
+
+    monkeypatch.setattr(response, "iter_chunked", chunks)
+    task = asyncio.create_task(
+        service._download_signed_url_to_temp(ORIGIN + SIGNED_PATH, ".pdf", ORIGIN)
+    )
+    try:
+        await asyncio.wait_for(partial_written.wait(), timeout=1)
+        assert len(list(tmp_path.iterdir())) == 1
+    finally:
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    assert list(tmp_path.iterdir()) == []
 
 
 @pytest.mark.parametrize("status", [301, 302, 303, 307, 308])

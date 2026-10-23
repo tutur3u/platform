@@ -6,7 +6,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 import aiohttp
 import requests
@@ -95,6 +95,15 @@ def _parse_url(value: str) -> URL:
     return parsed
 
 
+def _validate_signed_path(raw_path: str) -> None:
+    if (
+        not raw_path.startswith("/storage/v1/object/sign/")
+        or re.search(r"%(?:2f|5c)", raw_path, re.IGNORECASE)
+        or any(segment in {".", ".."} for segment in unquote(raw_path).split("/"))
+    ):
+        raise HTTPException(status_code=400, detail="Invalid Supabase signed URL path")
+
+
 def _validate_signed_url(signed_url: str, configured_supabase_url: str) -> URL:
     try:
         configured = _parse_url(configured_supabase_url)
@@ -110,8 +119,10 @@ def _validate_signed_url(signed_url: str, configured_supabase_url: str) -> URL:
         raise HTTPException(status_code=400, detail="Invalid signed URL scheme")
     if parsed.raw_host != configured.raw_host or parsed.port != configured.port:
         raise HTTPException(status_code=400, detail="Invalid signed URL host or port")
-    if not parsed.path.startswith("/storage/v1/object/sign/"):
-        raise HTTPException(status_code=400, detail="Invalid Supabase signed URL")
+    # Check before normalization too: URL parsing removes literal/encoded dot segments.
+    _validate_signed_path(urlsplit(signed_url).path)
+    raw_path = parsed.raw_path
+    _validate_signed_path(raw_path)
     if not any(token.strip() for token in parsed.query.getall("token", [])):
         raise HTTPException(status_code=400, detail="Invalid signed URL token")
 
@@ -119,7 +130,7 @@ def _validate_signed_url(signed_url: str, configured_supabase_url: str) -> URL:
     return URL.build(
         scheme=configured.scheme,
         authority=configured.raw_authority,
-        path=parsed.raw_path,
+        path=raw_path,
         query_string=parsed.raw_query_string,
         encoded=True,
     )
@@ -203,7 +214,7 @@ async def _download_signed_url_to_temp(
                     tmp.write(chunk)
 
         return temp_path, downloaded_bytes
-    except Exception:
+    except BaseException:
         _cleanup_temp_file(temp_path)
         raise
 
