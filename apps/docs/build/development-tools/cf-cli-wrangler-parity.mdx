@@ -6,12 +6,12 @@ updatedAt: '2026-10-23'
 
 ## Decision
 
-Active Worker-backed apps and services are developed, built, deployed and rolled
-back with **Cloudflare's cf CLI** and **VoidZero's toolchain** (Vite+ and, for
-framework apps, the Void SDK). Wrangler survives only for a recorded capability
-gap that has an owner and a removal condition. `scripts/ci/wrangler-usage-guard.test.js`
-enforces this: any new Wrangler usage outside `scripts/ci/wrangler-usage-allowlist.json`
-fails, and the allowlist may only shrink.
+The target toolchain for active Worker-backed apps and services is **cf + Void**.
+Adopt it per verified operation. Preserve existing commands and configuration until
+authentication, target identity, bindings and migrations, emitted artifacts and
+rollback parity are established. Wrangler remains for recorded gaps with an owner
+and removal condition. The shrink-only usage guard requires structured admission
+for expansion, changed Wrangler lines, or changed gap scope.
 
 This page refines the cf adoption gates in [Oxc and Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
 A merged tooling switch is CI-verified, not production-delivered: every deploy
@@ -22,7 +22,8 @@ and the cutover checklist below.
 
 | Surface | Build | Deploy artifact | Publisher |
 | --- | --- | --- | --- |
-| Native Workers (fetch, scheduled, Durable Objects) | Vite+ with `@cloudflare/vite-plugin` reading `cloudflare.config.ts` (`experimental.newConfig.cfBuildOutput`) | cf Build Output Specification, `.cloudflare/output/v0` | `cf deploy --prebuilt` |
+| Native Workers (fetch, scheduled) | Vite+ with `@cloudflare/vite-plugin` reading `cloudflare.config.ts` (`experimental.newConfig.cfBuildOutput`) | cf Build Output Specification, `.cloudflare/output/v0` | `cf deploy --prebuilt` |
+| Durable Object Workers | Vite+ with the cf config | Same emitted bundle, with retained `v1` migration metadata | Wrangler until a separate rehearsal-backed publication change |
 | Framework apps (TanStack Start on Void) | Void SDK plugin on Vite+ | Void-emitted Worker config | Wrangler until the Void publication gap closes |
 | OpenNext apps (Parley, Lettin) | OpenNext Cloudflare adapter | OpenNext Worker | Wrangler (adapter-owned) until the app moves to Start on Void |
 
@@ -74,7 +75,7 @@ Applied first to Cron Control. Each migrated Worker has:
   Object `migrations` become `exports: { Class: exports.durableObject({ storage: 'sqlite' }) }`
   for every live class.
 - `vite.config.ts` with `cloudflare({ experimental: { newConfig: { cfBuildOutput: true } } })`,
-  no `configPath`, loopback dev server settings, `persistState` under `.cloudflare/state`,
+  no `configPath`, explicit preview URL and observability/log settings, loopback dev server settings, `persistState` under a disposable directory for runtime tests (normal dev uses `.cloudflare/state`),
   and the Worker environment's `build.sourcemap: false` (Wrangler did not upload source maps).
 - Scripts: `dev: vp dev` (host/port in `vite.config.ts`), `build: vp build`,
   `type-check: cf workers types && tsc`.
@@ -105,21 +106,25 @@ rollback; inspect the error before using `--bypass-deployment-checks`. Retained 
 artifacts (`<app>-worker-<sha>`) allow re-publishing an exact earlier build.
 
 The local harness rejects `.dev.vars*` and `.env*` files in both the app root and
-working directory (template `.example` files are allowed). It enables process-env
-loading for disposable secrets and restores the previous environment after startup
+working directory (template `.example` files are allowed). Every declared secret
+needs a nonempty disposable fixture. Undeclared/control-key fixtures are rejected,
+and declared text vars are masked from the shell before process-env loading. It
+restores the first prior environment value after startup
 failure or close. `cf-vite-worker.test.mjs` covers both source and artifact modes
 using a disposable Vite fixture; real Worker runtime acceptance remains a CI gate.
 
 ## Wrangler usage guard
 
 `node scripts/ci/wrangler-usage.js` prints the inventory. The guard scans tracked
-files (excluding docs, Markdown, lockfiles and skills) and records two exact counts
-per allowlisted file: lines mentioning Wrangler, and executable uses (CLI subcommands,
-module imports, dependency entries and config files), so a mention cannot be swapped
-for an invocation. Each occurrence counts, including multiple invocations on one line.
-When you migrate usage away, lower or delete the entry in the same
-change. A new entry or a higher count needs a fresh `admitted` field naming the
-orchestrator decision; this includes reverting a migration back to Wrangler. CI
+files, including executables under `plugins/`, `.agents/` and `tmp/`; Markdown,
+text, lockfiles and binary assets are excluded. It counts mention lines and all
+Wrangler token occurrences conservatively, including comments and strings. A SHA-256
+digest also covers each file's Wrangler lines (all content for config files), so
+same-count substitutions require admission. Lower or remove counts when usage falls.
+An `admitted` record must be `{ "decision": "https://github.com/tutur3u/platform/pull/<id>",
+"reason": "<specific reviewed change>" }`. New entries, growth, changed digests and
+changed gap scope need a fresh record; reverting a migration follows the same rule.
+CI
 compares the allowlist with its base commit (`HEAD^1` of the pull request merge ref)
 and fails if that commit is unavailable.
 
@@ -152,13 +157,24 @@ For each service, the orchestrator verifies before promotion:
    `<app>-worker-<sha>` artifact.
 2. The production job publishes that artifact with `cf deploy --prebuilt` (no rebuild) and
    the same `--message` SHA.
-3. Before the first cf deploy, capture the active deployment and version IDs
+3. The deploy job runs `cf-worker-settings.mjs before` before any publication or
+   secret mutation, then `after` before recording success. It checks the pinned
+   account, compatibility, preview URLs, observability/logs, cron schedules and
+   declared secret names; snapshots routes/custom domains and hashes remaining
+   settings without persisting text bindings. It captures the active deployment and version IDs
    (`cf workers deployments list`) as the rollback target. Also capture `cf workers get <name>`,
    `cf workers secrets list` and, with the Cloudflare API, the script's cron schedules
    (`/workers/scripts/<name>/schedules`), routes or custom domains, and `workers.dev`/preview
-   URL state. Capture them again after the deploy and diff; any unexplained change blocks
-   acceptance. cf has no raw API command, so use the authenticated REST API for the rest.
-4. For Durable Object Workers, rehearse the first cf deploy on a disposable Worker created
+   URL state. The job captures them again after deployment and compares; unexplained changes
+   fail the job before its success marker. Evidence is retained even on failure.
+   This route-free pilot supports at most 20 account zones and one API list page,
+   uses at most 28 GET requests per snapshot, and fails closed on missing read
+   permissions, truncated results or unsupported scope. It never retries writes.
+   The expected preview setting is explicitly true; this is unverified against
+   current production until the preflight runs. A mismatch stops before mutation.
+4. Production publication for Devbox Control and Coordination remains Wrangler
+   with their applied `v1` migration metadata. A separate reviewed change must
+   carry the rehearsal receipt before enabling cf publication. For these Workers, rehearse the first cf deploy on a disposable Worker created
    with the same Wrangler migration history and data, and confirm object data survives the
    switch to `exports`. Do not promote until that rehearsal passes.
 5. Health checks pass on the canonical host, and the deployment marker records the SHA.

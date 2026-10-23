@@ -10,7 +10,7 @@
 // compares the app's emitted .cloudflare/output/v0 tree with the baseline.
 
 import assert from 'node:assert/strict';
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -106,6 +106,7 @@ function storageClasses(migrations = []) {
     for (const name of migration.new_classes ?? [])
       classes.set(name, 'legacy-kv');
     for (const { from, to } of migration.renamed_classes ?? []) {
+      assert.ok(classes.has(from), `missing source class ${from} in rename`);
       classes.set(to, classes.get(from));
       classes.delete(from);
     }
@@ -135,6 +136,36 @@ function emptyIdentity() {
 }
 
 function finish(identity) {
+  assert.equal(
+    typeof identity.previewUrls,
+    'boolean',
+    'pin preview URL behavior explicitly'
+  );
+  assert.equal(
+    typeof identity.observability?.enabled,
+    'boolean',
+    'pin observability.enabled'
+  );
+  assert.equal(
+    typeof identity.observability?.headSamplingRate,
+    'number',
+    'pin observability.headSamplingRate'
+  );
+  assert.equal(
+    typeof identity.observability?.logs?.enabled,
+    'boolean',
+    'pin observability.logs.enabled'
+  );
+  assert.equal(
+    typeof identity.observability?.logs?.headSamplingRate,
+    'number',
+    'pin observability.logs.headSamplingRate'
+  );
+  assert.equal(
+    typeof identity.observability?.logs?.invocationLogs,
+    'boolean',
+    'pin observability.logs.invocationLogs'
+  );
   identity.crons.sort();
   identity.secrets.sort();
   identity.routes.sort((left, right) =>
@@ -408,6 +439,11 @@ function readJson(file) {
 export function readBuildOutputConfig(appDir) {
   const root = realpathSync(resolve(appDir));
   const output = join(root, '.cloudflare', 'output', 'v0');
+  assert.deepEqual(
+    readdirSync(join(output, 'workers')).sort(),
+    ['default'],
+    'Build Output must contain only the default Worker'
+  );
   const workerConfigPath = join(
     output,
     'workers',
@@ -426,9 +462,17 @@ export function readBuildOutputConfig(appDir) {
   return { ...rootConfig, worker, buildContext: rootConfig.buildContext };
 }
 
-export function assertBuildOutputParity(appDir, baselinePath) {
+export function assertBuildOutputParity(appDir, baselinePath, accountId) {
   const baseline = readJson(baselinePath);
   const emitted = readBuildOutputConfig(appDir);
+  if (accountId !== undefined) {
+    assert.ok(accountId.trim(), 'CLOUDFLARE_ACCOUNT_ID is required');
+    assert.equal(
+      emitted.accountId,
+      accountId,
+      'deployment account must match emitted accountId'
+    );
+  }
   assert.equal(emitted.buildContext?.mode, 'production', 'production build');
   assert.equal(emitted.buildContext?.isPreview, false, 'non-preview build');
   assert.deepEqual(normalizeCfConfig(emitted), baseline.identity);
@@ -436,9 +480,9 @@ export function assertBuildOutputParity(appDir, baselinePath) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const [appDir, baselinePath] = process.argv.slice(2);
+  const [appDir, baselinePath, accountId] = process.argv.slice(2);
   assert.ok(appDir && baselinePath, 'usage: <app-dir> <baseline.json>');
-  const identity = assertBuildOutputParity(appDir, baselinePath);
+  const identity = assertBuildOutputParity(appDir, baselinePath, accountId);
   console.log(
     `${relative(REPO_ROOT, resolve(appDir))}: emitted Build Output matches ` +
       `${identity.name} deployment identity`

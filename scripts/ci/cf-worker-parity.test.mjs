@@ -1,16 +1,130 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  normalizeCfConfig,
-  normalizeWranglerConfig,
+  assertBuildOutputParity,
+  normalizeCfConfig as normalizeCfRaw,
+  normalizeWranglerConfig as normalizeWranglerRaw,
   parseJsonc,
+  readBuildOutputConfig,
 } from './cf-worker-parity.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const FIXTURES = join(REPO_ROOT, 'scripts/ci/fixtures/cf-worker-parity');
+
+const observability = {
+  enabled: true,
+  headSamplingRate: 0.05,
+  logs: { enabled: true, headSamplingRate: 0.05, invocationLogs: true },
+};
+const legacyObservability = {
+  enabled: true,
+  head_sampling_rate: 0.05,
+  logs: { enabled: true, head_sampling_rate: 0.05, invocation_logs: true },
+};
+const normalizeCfConfig = (config) =>
+  normalizeCfRaw({
+    ...config,
+    worker: {
+      previewUrls: true,
+      ...config.worker,
+      observability: {
+        ...observability,
+        ...config.worker?.observability,
+        logs: { ...observability.logs, ...config.worker?.observability?.logs },
+      },
+    },
+  });
+const normalizeWranglerConfig = (raw) =>
+  normalizeWranglerRaw({
+    preview_urls: true,
+    ...raw,
+    observability: {
+      ...legacyObservability,
+      ...raw.observability,
+      logs: { ...legacyObservability.logs, ...raw.observability?.logs },
+    },
+  });
+
+test('effective runtime settings must be explicitly pinned', () => {
+  assert.throws(() => normalizeCfRaw({ worker: {} }), /pin preview/);
+  assert.throws(() => normalizeWranglerRaw({}), /pin preview/);
+  assert.throws(
+    () => normalizeCfRaw({ worker: { previewUrls: true } }),
+    /pin observability/
+  );
+  assert.throws(
+    () =>
+      normalizeCfRaw({
+        worker: {
+          previewUrls: true,
+          observability: { enabled: true, headSamplingRate: 0.05 },
+        },
+      }),
+    /pin observability.logs/
+  );
+});
+
+test('unknown source class in a rename is rejected', () => {
+  assert.throws(
+    () =>
+      normalizeWranglerConfig({
+        migrations: [
+          { tag: 'v1', renamed_classes: [{ from: 'Missing', to: 'Target' }] },
+        ],
+      }),
+    /missing source class Missing/
+  );
+});
+
+test('Build Output permits only the default Worker and pins deployment account', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'cf-parity-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const output = join(root, '.cloudflare/output/v0');
+  mkdirSync(join(output, 'workers/default'), { recursive: true });
+  const rootConfig = {
+    accountId: 'fixture-account',
+    buildContext: { mode: 'production', isPreview: false },
+  };
+  const worker = {
+    name: 'fixture',
+    previewUrls: true,
+    observability,
+    manifest: { type: 'complete', mainModule: 'index.js', modules: {} },
+  };
+  writeFileSync(join(output, 'config.json'), JSON.stringify(rootConfig));
+  writeFileSync(
+    join(output, 'workers/default/worker.config.json'),
+    JSON.stringify(worker)
+  );
+  const baseline = join(root, 'baseline.json');
+  writeFileSync(
+    baseline,
+    JSON.stringify({ identity: normalizeCfRaw({ ...rootConfig, worker }) })
+  );
+  assertBuildOutputParity(root, baseline, 'fixture-account');
+  assert.throws(
+    () => assertBuildOutputParity(root, baseline, 'wrong-account'),
+    /deployment account/
+  );
+  assert.throws(
+    () => assertBuildOutputParity(root, baseline, ''),
+    /ACCOUNT_ID is required/
+  );
+  mkdirSync(join(output, 'workers/extra'));
+  assert.throws(() => readBuildOutputConfig(root), /only the default Worker/);
+});
 
 test('unmapped settings stay visible so they fail parity', () => {
   const wrangler = normalizeWranglerConfig({
@@ -246,7 +360,7 @@ for (const fixture of readdirSync(FIXTURES).filter((f) =>
     );
     if (existsSync(wranglerConfig)) {
       const raw = parseJsonc(readFileSync(wranglerConfig, 'utf8'));
-      assert.deepEqual(normalizeWranglerConfig(raw), baseline.identity);
+      assert.deepEqual(normalizeWranglerRaw(raw), baseline.identity);
       return;
     }
     const { default: config } = await import(pathToFileURL(cfConfig).href);
@@ -254,6 +368,6 @@ for (const fixture of readdirSync(FIXTURES).filter((f) =>
       typeof config === 'function'
         ? await config({ mode: 'production', isPreview: false })
         : await config;
-    assert.deepEqual(normalizeCfConfig(resolved), baseline.identity);
+    assert.deepEqual(normalizeCfRaw(resolved), baseline.identity);
   });
 }

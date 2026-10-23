@@ -8,7 +8,12 @@
     "workersDev": true,
     "observability": {
       "enabled": true,
-      "headSamplingRate": 0.05
+      "headSamplingRate": 0.05,
+      "logs": {
+        "enabled": true,
+        "headSamplingRate": 0.05,
+        "invocationLogs": true
+      }
     },
     "crons": [],
     "routes": [],
@@ -26,6 +31,8 @@
     "durableObjectClasses": {
       "RunnerWake": "sqlite"
     },
-    "unmapped": {}
-  }
+    "unmapped": {},
+    "previewUrls": true
+  },
+  "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."
 }
