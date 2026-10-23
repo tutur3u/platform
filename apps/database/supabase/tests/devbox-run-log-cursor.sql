@@ -1,11 +1,11 @@
--- Devbox run log cursor and create idempotency (migration 20261024030000).
+-- Devbox run log cursor and create idempotency (migrations 20261024030000-030350).
 -- Commit-order serialization across concurrent writers needs two sessions;
 -- see the delayed-insertion procedure in the remote devboxes runbook.
 begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(9);
+select plan(12);
 
 create temp table results (name text, ok boolean);
 create temp table fx as select id as actor from public.users limit 1;
@@ -34,8 +34,13 @@ insert into results select 'writer_cannot_choose_seq',
   (select seq = 3 from private.devbox_run_events where message = 'forged');
 insert into results select 'cursor_tracks_last_seq',
   (select last_seq = 3 from private.devbox_run_event_cursors where run_id = 'f2222222-2222-4222-8222-222222222222');
-insert into results select 'seq_required',
-  (select attnotnull from pg_attribute where attrelid = 'private.devbox_run_events'::regclass and attname = 'seq');
+insert into results select 'seq_constraint_validated',
+  (select convalidated from pg_constraint where conname = 'devbox_run_events_seq_present');
+insert into results select 'new_run_reads_by_seq',
+  (select legacy_rows = 0 and legacy_numbered = 0 from private.devbox_run_event_cursors
+   where run_id = 'f2222222-2222-4222-8222-222222222222');
+insert into results select 'idempotency_ready', private.devbox_run_idempotency_ready();
+insert into results select 'backfill_idle', private.backfill_devbox_run_event_seq(10) = 0;
 
 -- Idempotency keys are unique per actor and well formed.
 update private.devbox_runs set idempotency_key = '7d0c3a9e-1f3b-4c55-9f1e-2a3b4c5d6e7f'

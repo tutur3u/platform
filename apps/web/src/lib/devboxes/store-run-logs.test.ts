@@ -22,7 +22,13 @@ type Event = {
 // In-memory PostgREST builder over the rows a reader can currently see
 // (committed rows). It honours both the cursor query and the legacy
 // created_at/id offset query, so tests compare real paging behaviour.
-function createEventsTable(options: { seqColumn: boolean }) {
+type Cursor = { legacy_numbered: number; legacy_rows: number } | null;
+
+function createEventsTable(options: { seqColumn: boolean; cursor?: Cursor }) {
+  const cursor =
+    options.cursor === undefined
+      ? { legacy_numbered: 0, legacy_rows: 0 }
+      : options.cursor;
   const committed: Event[] = [];
   const calls: string[] = [];
   const from = (table: string) => {
@@ -30,11 +36,17 @@ function createEventsTable(options: { seqColumn: boolean }) {
     const orders: string[] = [];
     let columns = '';
     const visible = () => {
-      const rows = (
+      const source =
         table === 'devbox_runs'
           ? [{ actor_id: 'owner', id: 'run-1' } as unknown as Event]
-          : committed
-      ).filter((row) => filters.every((filter) => filter(row)));
+          : table === 'devbox_run_event_cursors'
+            ? cursor
+              ? [{ run_id: 'run-1', ...cursor } as unknown as Event]
+              : []
+            : committed;
+      const rows = source.filter((row) =>
+        filters.every((filter) => filter(row))
+      );
       return rows.sort((a, b) => {
         for (const column of orders) {
           const left = a[column as keyof Event] ?? '';
@@ -46,9 +58,10 @@ function createEventsTable(options: { seqColumn: boolean }) {
       });
     };
     const missingSeq = () =>
-      table === 'devbox_run_events' &&
       !options.seqColumn &&
-      (columns.includes('seq') || orders.includes('seq'));
+      (table === 'devbox_run_event_cursors' ||
+        (table === 'devbox_run_events' &&
+          (columns.includes('seq') || orders.includes('seq'))));
     const result = (data: unknown[]) =>
       Promise.resolve(
         missingSeq()
@@ -109,8 +122,8 @@ describe('devbox run log paging', () => {
     run_id: 'run-1',
     ...(seq === undefined ? {} : { seq }),
   });
-  const useTable = (seqColumn: boolean) => {
-    table = createEventsTable({ seqColumn });
+  const useTable = (seqColumn: boolean, cursor?: Cursor) => {
+    table = createEventsTable({ seqColumn, cursor });
     createAdminClientMock.mockResolvedValue({
       schema: vi.fn().mockReturnValue(table.client),
     });
@@ -156,6 +169,38 @@ describe('devbox run log paging', () => {
     );
     await expect(drain(0)).resolves.toEqual({ logs: ['a', 'b'], next: 2 });
     expect(table.calls).toContain('devbox_run_events:range');
+  });
+
+  it('keeps legacy paging until the backfill numbers a run, then switches', async () => {
+    // Two events written before the migration (numbered 1..2 by the backfill
+    // in created_at order) and one after it (seq 3).
+    const legacyA = event('a', '2026-10-24T00:00:01Z');
+    const legacyB = event('b', '2026-10-24T00:00:02Z');
+    useTable(true, { legacy_numbered: 0, legacy_rows: 2 });
+    table.committed.push(
+      legacyB,
+      legacyA,
+      event('c', '2026-10-24T00:00:03Z', 3)
+    );
+    const first = await drain(0);
+    expect(first).toEqual({ logs: ['a', 'b', 'c'], next: 3 });
+    expect(table.calls).toContain('devbox_run_events:range');
+
+    useTable(true, { legacy_numbered: 2, legacy_rows: 2 });
+    table.committed.push(
+      { ...legacyA, seq: 1 },
+      { ...legacyB, seq: 2 },
+      event('c', '2026-10-24T00:00:03Z', 3),
+      event('d', '2026-10-24T00:00:04Z', 4)
+    );
+    await expect(drain(first.next)).resolves.toEqual({ logs: ['d'], next: 4 });
+    expect(table.calls).not.toContain('devbox_run_events:range');
+  });
+
+  it('uses legacy paging for a run without a cursor row', async () => {
+    useTable(true, null);
+    table.committed.push(event('x', '2026-10-24T00:00:01Z'));
+    await expect(drain(0)).resolves.toEqual({ logs: ['x'], next: 1 });
   });
 
   it('caps a page at the shared page size', async () => {

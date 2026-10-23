@@ -4029,14 +4029,20 @@ export type Database = {
       devbox_run_event_cursors: {
         Row: {
           last_seq: number;
+          legacy_numbered: number;
+          legacy_rows: number;
           run_id: string;
         };
         Insert: {
           last_seq?: number;
+          legacy_numbered?: number;
+          legacy_rows?: number;
           run_id: string;
         };
         Update: {
           last_seq?: number;
+          legacy_numbered?: number;
+          legacy_rows?: number;
           run_id?: string;
         };
         Relationships: [
@@ -4057,7 +4063,7 @@ export type Database = {
           message: string | null;
           metadata: Json;
           run_id: string;
-          seq: number;
+          seq: number | null;
         };
         Insert: {
           created_at?: string;
@@ -4066,7 +4072,7 @@ export type Database = {
           message?: string | null;
           metadata?: Json;
           run_id: string;
-          seq?: number;
+          seq?: number | null;
         };
         Update: {
           created_at?: string;
@@ -4075,7 +4081,7 @@ export type Database = {
           message?: string | null;
           metadata?: Json;
           run_id?: string;
-          seq?: number;
+          seq?: number | null;
         };
         Relationships: [
           {
@@ -19995,6 +20001,10 @@ export type Database = {
         Returns: Json;
       };
       available_playground_languages: { Args: never; Returns: Json };
+      backfill_devbox_run_event_seq: {
+        Args: { p_max_rows?: number };
+        Returns: number;
+      };
       backfill_inventory_finance_sales: {
         Args: { p_ws_id?: string };
         Returns: number;
@@ -21105,6 +21115,10 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      devbox_run_idempotency_ready: {
+        Args: never;
+        Returns: boolean;
+      };
       devbox_runner_activity: {
         Args: never;
         Returns: {
@@ -21114,6 +21128,10 @@ export type Database = {
           runner_id: string;
           running_runs: number;
         }[];
+      };
+      devbox_runner_supports_commit_run: {
+        Args: { p_capabilities: Json; p_features: Json };
+        Returns: boolean;
       };
       discard_uninitialized_playground: {
         Args: { p_actor_id: string; p_id: string };
