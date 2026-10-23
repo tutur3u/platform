@@ -175,6 +175,15 @@ ledger, cancel only proven-redundant items, and steer still-relevant corrections
 once. Hold one coalesced correction for a child that is not yet steerable. Follow
 the [steering contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#steering-active-children).
 
+Completion notifications can be lost, so never treat silence as "still running".
+On every substantive wake, and before reporting status, list your unsettled
+children and read each one's task status. Any child that is `completed` or
+`result_available` without a report you have processed is a lost result: read its
+terminal summary, record it, and act on it in the same turn. Confirm that
+`running` or `waiting_for_children` children have advanced since the previous
+audit; if not, ask for or relay the blocker. Briefs for children that delegate
+must carry this audit rule.
+
 ## Autonomy and asynchronous waits
 
 Use [the shared T3 autonomy contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
