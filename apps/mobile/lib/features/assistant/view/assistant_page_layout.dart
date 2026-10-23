@@ -252,276 +252,255 @@ extension _AssistantPageLayout on _AssistantPageState {
                           child: SafeArea(
                             top: false,
                             bottom: false,
-                            child: ResponsiveWrapper(
-                              maxWidth: ResponsivePadding.rootContentWidth(
-                                context.deviceClass,
-                              ),
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.translucent,
-                                onTap: _dismissKeyboard,
-                                child: Stack(
-                                  children: [
-                                    if (isLiveMode)
-                                      _buildLiveModeView(
-                                        currentWorkspace.id,
-                                        chatState,
-                                        liveState,
-                                        liveUiState,
-                                        shellState,
-                                        liveCameraController,
-                                      )
-                                    else ...[
-                                      Stack(
-                                        children: [
-                                          NotificationListener<Notification>(
-                                            onNotification:
-                                                onTranscriptNotification,
-                                            child: CustomScrollView(
-                                              controller: _scrollController,
-                                              keyboardDismissBehavior:
-                                                  scrollDismissBehavior,
-                                              physics: _AssistantPageState
-                                                  ._assistantScrollPhysics,
-                                              slivers: [
-                                                SliverPadding(
-                                                  padding: EdgeInsets.fromLTRB(
-                                                    _horizontalPadding(context),
-                                                    floatingShellHeaderInset(
-                                                          context,
-                                                          minimumContentHeight:
-                                                              headerHeight,
-                                                        ) +
-                                                        12,
-                                                    _horizontalPadding(context),
-                                                    _composerReservedSpace(
-                                                      context,
-                                                      isComposerVisible:
-                                                          _isComposerVisible,
-                                                    ),
-                                                  ),
-                                                  sliver: SliverList.list(
-                                                    children: [
-                                                      if (showLiveStrip) ...[
-                                                        _buildLiveStageCard(
-                                                          currentWorkspace.id,
-                                                          chatState,
-                                                          liveState,
-                                                          liveCameraController,
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 12,
-                                                        ),
-                                                      ],
-                                                      if (showTranscript)
-                                                        _buildTranscriptSection(
-                                                          chatState,
-                                                          liveState,
-                                                          shellState,
-                                                        )
-                                                      else
-                                                        starterPrompts,
+                            // The thread is a full-width scrollable; its
+                            // content is centred by the root page insets.
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onTap: _dismissKeyboard,
+                              child: Stack(
+                                children: [
+                                  if (isLiveMode)
+                                    _buildLiveModeView(
+                                      currentWorkspace.id,
+                                      chatState,
+                                      liveState,
+                                      liveUiState,
+                                      shellState,
+                                      liveCameraController,
+                                    )
+                                  else ...[
+                                    Stack(
+                                      children: [
+                                        NotificationListener<Notification>(
+                                          onNotification:
+                                              onTranscriptNotification,
+                                          child: CustomScrollView(
+                                            controller: _scrollController,
+                                            keyboardDismissBehavior:
+                                                scrollDismissBehavior,
+                                            physics: _AssistantPageState
+                                                ._assistantScrollPhysics,
+                                            slivers: [
+                                              _transcriptPage(
+                                                headerHeight: headerHeight,
+                                                sliver: SliverList.list(
+                                                  children: [
+                                                    if (showLiveStrip) ...[
+                                                      _buildLiveStageCard(
+                                                        currentWorkspace.id,
+                                                        chatState,
+                                                        liveState,
+                                                        liveCameraController,
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 12,
+                                                      ),
                                                     ],
-                                                  ),
+                                                    if (showTranscript)
+                                                      _buildTranscriptSection(
+                                                        chatState,
+                                                        liveState,
+                                                        shellState,
+                                                      )
+                                                    else
+                                                      starterPrompts,
+                                                  ],
                                                 ),
-                                              ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (chatState.status ==
+                                            AssistantChatStatus.restoring)
+                                          Positioned(
+                                            top:
+                                                floatingShellHeaderInset(
+                                                  context,
+                                                  minimumContentHeight:
+                                                      headerHeight,
+                                                ) +
+                                                12,
+                                            left: 0,
+                                            right: 0,
+                                            child: const NovaLoadingIndicator(
+                                              size: 20,
                                             ),
                                           ),
-                                          if (chatState.status ==
-                                              AssistantChatStatus.restoring)
-                                            Positioned(
-                                              top:
-                                                  floatingShellHeaderInset(
-                                                    context,
-                                                    minimumContentHeight:
-                                                        headerHeight,
-                                                  ) +
-                                                  12,
-                                              left: 0,
-                                              right: 0,
-                                              child: const NovaLoadingIndicator(
-                                                size: 20,
-                                              ),
-                                            ),
-                                        ],
+                                      ],
+                                    ),
+                                    if (hasTranscript)
+                                      AssistantScrollToBottomOverlay(
+                                        composerVisible: _isComposerVisible,
+                                        composerHeight: _composerHeight,
+                                        isFullscreen: isFullscreen,
+                                        navigationExpanded:
+                                            chrome.navigationExpanded,
+                                        visible: _showScrollToBottomFab,
+                                        onPressed: _handleScrollToBottomPressed,
                                       ),
-                                      if (hasTranscript)
-                                        AssistantScrollToBottomOverlay(
-                                          composerVisible: _isComposerVisible,
-                                          composerHeight: _composerHeight,
-                                          isFullscreen: isFullscreen,
-                                          navigationExpanded:
-                                              chrome.navigationExpanded,
-                                          visible: _showScrollToBottomFab,
-                                          onPressed:
-                                              _handleScrollToBottomPressed,
-                                        ),
-                                    ],
-                                    ShellDockPublisher(
-                                      slot: ShellDockSlot(
-                                        location: Routes.assistant,
-                                        workspaceId: currentWorkspace.id,
-                                        expandContent: !isLiveMode,
-                                        composing: isLiveMode
-                                            ? liveConnected &&
-                                                  !chrome.navigationExpanded
-                                            : _isComposerVisible,
-                                        content: isLiveMode
-                                            ? liveConnected
-                                                  ? _liveCallDock(
-                                                      currentWorkspace.id,
-                                                      chatState,
-                                                      liveState,
-                                                    )
-                                                  : const SizedBox.shrink()
-                                            : AssistantComposerDock(
-                                                embedded: true,
-                                                onHeightChanged:
-                                                    _setComposerHeight,
-                                                localOnly: localLane,
-                                                localBlocked:
-                                                    localLane &&
-                                                    (!local.ready ||
-                                                        local.phase !=
-                                                            LocalChatPhase
-                                                                .idle),
-                                                localGenerating:
-                                                    local.phase ==
-                                                    LocalChatPhase.generating,
-                                                localModelLabel:
-                                                    _localModelLabel(
-                                                      local.selectedModelId,
-                                                    ),
-                                                onOpenLocalModels:
-                                                    _showLiveSettings,
-                                                onStopLocal: _localCubit.stop,
-                                                voiceCapture: localLane
-                                                    ? null
-                                                    : _voiceCapture,
-                                                onAttachVoice: () =>
-                                                    _finishVoiceRecording(
-                                                      sendNow: false,
-                                                    ),
-                                                onSendVoice: () =>
-                                                    _finishVoiceRecording(
-                                                      sendNow: true,
-                                                    ),
-                                                repository: _repository,
-                                                chatState: chatState,
-                                                liveState: liveState,
-                                                liveUiState: liveUiState,
-                                                shellState: shellState,
-                                                navigationExpanded:
-                                                    chrome.navigationExpanded,
-                                                bottomInset: 0,
-                                                isPersonalWorkspace:
-                                                    isPersonalWorkspace,
-                                                onModelSelected:
-                                                    _selectRemoteModel,
-                                                onOpenCreditSourceSheet: () =>
-                                                    _showCreditSourceSheet(
-                                                      context,
-                                                      shellState: shellState,
-                                                      isPersonalWorkspace:
-                                                          isPersonalWorkspace,
-                                                    ),
-                                                onThinkingModeChanged:
-                                                    _shellCubit.setThinkingMode,
-                                                controller: _inputController,
-                                                focusNode: _inputFocusNode,
-                                                onOpenAttachments: () =>
-                                                    _showAttachmentSheet(
-                                                      context,
-                                                      currentWorkspace.id,
-                                                    ),
-                                                onCloseComposer:
-                                                    _collapseComposerToFab,
-                                                onToggleNavigation:
-                                                    _toggleComposerNavigation,
-                                                onMicrophoneTap: () =>
-                                                    _recordVoiceMessage(
-                                                      currentWorkspace.id,
-                                                    ),
-                                                onSend: () => _handleSend(
-                                                  currentWorkspace.id,
-                                                  shellState,
-                                                  chatState,
-                                                  liveState,
-                                                ),
-                                                onRemoveAttachment:
-                                                    removeComposerAttachment,
+                                  ],
+                                  ShellDockPublisher(
+                                    slot: ShellDockSlot(
+                                      location: Routes.assistant,
+                                      workspaceId: currentWorkspace.id,
+                                      expandContent: !isLiveMode,
+                                      composing: isLiveMode
+                                          ? liveConnected &&
+                                                !chrome.navigationExpanded
+                                          : _isComposerVisible,
+                                      content: isLiveMode
+                                          ? liveConnected
+                                                ? _liveCallDock(
+                                                    currentWorkspace.id,
+                                                    chatState,
+                                                    liveState,
+                                                  )
+                                                : const SizedBox.shrink()
+                                          : AssistantComposerDock(
+                                              embedded: true,
+                                              onHeightChanged:
+                                                  _setComposerHeight,
+                                              localOnly: localLane,
+                                              localBlocked:
+                                                  localLane &&
+                                                  (!local.ready ||
+                                                      local.phase !=
+                                                          LocalChatPhase.idle),
+                                              localGenerating:
+                                                  local.phase ==
+                                                  LocalChatPhase.generating,
+                                              localModelLabel: _localModelLabel(
+                                                local.selectedModelId,
                                               ),
-                                        primary: isLiveMode
-                                            ? _livePrimaryAction(
+                                              onOpenLocalModels:
+                                                  _showLiveSettings,
+                                              onStopLocal: _localCubit.stop,
+                                              voiceCapture: localLane
+                                                  ? null
+                                                  : _voiceCapture,
+                                              onAttachVoice: () =>
+                                                  _finishVoiceRecording(
+                                                    sendNow: false,
+                                                  ),
+                                              onSendVoice: () =>
+                                                  _finishVoiceRecording(
+                                                    sendNow: true,
+                                                  ),
+                                              repository: _repository,
+                                              chatState: chatState,
+                                              liveState: liveState,
+                                              liveUiState: liveUiState,
+                                              shellState: shellState,
+                                              navigationExpanded:
+                                                  chrome.navigationExpanded,
+                                              bottomInset: 0,
+                                              isPersonalWorkspace:
+                                                  isPersonalWorkspace,
+                                              onModelSelected:
+                                                  _selectRemoteModel,
+                                              onOpenCreditSourceSheet: () =>
+                                                  _showCreditSourceSheet(
+                                                    context,
+                                                    shellState: shellState,
+                                                    isPersonalWorkspace:
+                                                        isPersonalWorkspace,
+                                                  ),
+                                              onThinkingModeChanged:
+                                                  _shellCubit.setThinkingMode,
+                                              controller: _inputController,
+                                              focusNode: _inputFocusNode,
+                                              onOpenAttachments: () =>
+                                                  _showAttachmentSheet(
+                                                    context,
+                                                    currentWorkspace.id,
+                                                  ),
+                                              onCloseComposer:
+                                                  _collapseComposerToFab,
+                                              onToggleNavigation:
+                                                  _toggleComposerNavigation,
+                                              onMicrophoneTap: () =>
+                                                  _recordVoiceMessage(
+                                                    currentWorkspace.id,
+                                                  ),
+                                              onSend: () => _handleSend(
                                                 currentWorkspace.id,
+                                                shellState,
                                                 chatState,
                                                 liveState,
-                                              )
-                                            : _isComposerVisible
-                                            ? AssistantComposerPrimaryAction(
-                                                controller: _inputController,
-                                                attachments: chatState
-                                                    .composerAttachments,
-                                                onRemoveAttachment:
-                                                    removeComposerAttachment,
-                                                focusNode: _inputFocusNode,
-                                                onToggleNavigation:
-                                                    _toggleComposerNavigation,
-                                                onSend: () => _handleSend(
-                                                  currentWorkspace.id,
-                                                  shellState,
-                                                  chatState,
-                                                  liveState,
-                                                ),
-                                                voiceCapture: localLane
-                                                    ? null
-                                                    : _voiceCapture,
-                                                onSendVoice: () =>
-                                                    _finishVoiceRecording(
-                                                      sendNow: true,
-                                                    ),
-                                                hasAttachments: chatState
-                                                    .composerAttachments
-                                                    .isNotEmpty,
-                                                blocked:
-                                                    (localLane &&
-                                                        (!local.ready ||
-                                                            local.phase !=
-                                                                LocalChatPhase
-                                                                    .idle)) ||
-                                                    chatState.status ==
-                                                        AssistantChatStatus
-                                                            .restoring,
-                                                localGenerating:
-                                                    localLane &&
-                                                    local.phase ==
-                                                        LocalChatPhase
-                                                            .generating,
-                                                onStopLocal: _localCubit.stop,
-                                              )
-                                            : AssistantComposerFab(
-                                                label: context
-                                                    .l10n
-                                                    .assistantAskPlaceholder,
-                                                onPressed:
-                                                    _restoreComposerAndFocus,
                                               ),
-                                      ),
+                                              onRemoveAttachment:
+                                                  removeComposerAttachment,
+                                            ),
+                                      primary: isLiveMode
+                                          ? _livePrimaryAction(
+                                              currentWorkspace.id,
+                                              chatState,
+                                              liveState,
+                                            )
+                                          : _isComposerVisible
+                                          ? AssistantComposerPrimaryAction(
+                                              controller: _inputController,
+                                              attachments:
+                                                  chatState.composerAttachments,
+                                              onRemoveAttachment:
+                                                  removeComposerAttachment,
+                                              focusNode: _inputFocusNode,
+                                              onToggleNavigation:
+                                                  _toggleComposerNavigation,
+                                              onSend: () => _handleSend(
+                                                currentWorkspace.id,
+                                                shellState,
+                                                chatState,
+                                                liveState,
+                                              ),
+                                              voiceCapture: localLane
+                                                  ? null
+                                                  : _voiceCapture,
+                                              onSendVoice: () =>
+                                                  _finishVoiceRecording(
+                                                    sendNow: true,
+                                                  ),
+                                              hasAttachments: chatState
+                                                  .composerAttachments
+                                                  .isNotEmpty,
+                                              blocked:
+                                                  (localLane &&
+                                                      (!local.ready ||
+                                                          local.phase !=
+                                                              LocalChatPhase
+                                                                  .idle)) ||
+                                                  chatState.status ==
+                                                      AssistantChatStatus
+                                                          .restoring,
+                                              localGenerating:
+                                                  localLane &&
+                                                  local.phase ==
+                                                      LocalChatPhase.generating,
+                                              onStopLocal: _localCubit.stop,
+                                            )
+                                          : AssistantComposerFab(
+                                              label: context
+                                                  .l10n
+                                                  .assistantAskPlaceholder,
+                                              onPressed:
+                                                  _restoreComposerAndFocus,
+                                            ),
                                     ),
-                                    _localHeader(shellState, local),
-                                    ShellChromeActions(
-                                      ownerId: 'assistant-root',
-                                      locations: const {Routes.assistant},
-                                      actions: _buildChromeActions(
-                                        context,
-                                        wsId: currentWorkspace.id,
-                                        shellState: shellState,
-                                        chatState: chatState,
-                                        liveState: liveState,
-                                        isLiveMode: isLiveMode,
-                                      ),
+                                  ),
+                                  _localHeader(shellState, local),
+                                  ShellChromeActions(
+                                    ownerId: 'assistant-root',
+                                    locations: const {Routes.assistant},
+                                    actions: _buildChromeActions(
+                                      context,
+                                      wsId: currentWorkspace.id,
+                                      shellState: shellState,
+                                      chatState: chatState,
+                                      liveState: liveState,
+                                      isLiveMode: isLiveMode,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -537,6 +516,35 @@ extension _AssistantPageLayout on _AssistantPageState {
       ),
     );
   }
+
+  /// Root page gutters and centring for the full-width thread scrollable;
+  /// the bottom reserves the composer instead of the plain dock clearance.
+  Widget _transcriptPage({
+    required double headerHeight,
+    required Widget sliver,
+  }) => SliverLayoutBuilder(
+    builder: (context, constraints) => SliverPadding(
+      padding:
+          AppPageInsets.of(
+            context,
+            width: constraints.crossAxisExtent,
+            kind: AppPageKind.root,
+            topInset:
+                floatingShellHeaderInset(
+                  context,
+                  minimumContentHeight: headerHeight,
+                ) +
+                AppSpacing.xs,
+            consumeBottomClearance: false,
+          ).copyWith(
+            bottom: _composerReservedSpace(
+              context,
+              isComposerVisible: _isComposerVisible,
+            ),
+          ),
+      sliver: sliver,
+    ),
+  );
 
   Widget _buildTranscriptSection(
     AssistantChatState chatState,

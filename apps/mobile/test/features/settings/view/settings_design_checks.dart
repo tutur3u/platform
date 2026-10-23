@@ -24,11 +24,24 @@ void registerSettingsDesignChecks() {
     final title = tester.widget<SettingsTile>(first).title;
     final icon = find.descendant(
       of: first,
-      matching: find.byIcon(Icons.palette_outlined),
+      matching: find.byIcon(shad.LucideIcons.palette),
     );
+    // Captions sit just inside the rounded card; icons and titles keep a
+    // fixed grid inside it.
     final heading = find.text('Appearance & language');
-    expect(tester.getTopLeft(heading).dx, tester.getTopLeft(icon).dx);
+    final card = tester.getRect(
+      find.descendant(of: section, matching: find.byType(SettingsGroup)).first,
+    );
+    expect(
+      tester.getTopLeft(heading).dx,
+      closeTo(card.left + SettingsRowLayout.captionInset, 0.1),
+    );
+    expect(
+      tester.getTopLeft(icon).dx,
+      closeTo(card.left + SettingsRowLayout.inset, 0.1),
+    );
     final titleX = tester.getTopLeft(find.text(title)).dx;
+    expect(titleX, closeTo(card.left + SettingsRowLayout.textColumn, 0.1));
     for (final row in tiles.evaluate()) {
       final tile = row.widget as SettingsTile;
       final finder = find.byWidget(tile);
@@ -44,7 +57,7 @@ void registerSettingsDesignChecks() {
     }
     final chevron = find.descendant(
       of: first,
-      matching: find.byIcon(Icons.chevron_right),
+      matching: find.byIcon(shad.LucideIcons.chevronRight),
     );
     h.accounts.add(
       const AuthState.authenticated(
@@ -91,8 +104,9 @@ void registerSettingsDesignChecks() {
     final divider = tester.widget<Divider>(
       find.descendant(of: section, matching: find.byType(Divider)).first,
     );
-    expect(divider.indent, 12);
-    expect(divider.endIndent, 12);
+    // Inset dividers align with the title column.
+    expect(divider.indent, SettingsRowLayout.textColumn);
+    expect(divider.endIndent, SettingsRowLayout.inset);
     expect(tester.takeException(), isNull);
   });
 
@@ -163,14 +177,15 @@ void registerSettingsDesignChecks() {
         await h.theme.setThemeMode(mode);
         await h.pump(tester, scale: 2);
         final rows = find.byType(SettingsTile);
-        expect(
-          find.byKey(const ValueKey('settings-haptics-row')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('settings-finance-row')),
-          findsOneWidget,
-        );
+        // The profile header precedes Preferences; scroll each row in.
+        for (final key in ['settings-haptics-row', 'settings-finance-row']) {
+          await tester.scrollUntilVisible(
+            find.byKey(ValueKey(key)),
+            160,
+            scrollable: find.byType(Scrollable).first,
+          );
+          expect(find.byKey(ValueKey(key)), findsOneWidget);
+        }
         expect(
           Localizations.localeOf(tester.element(rows.first)).languageCode,
           locale,

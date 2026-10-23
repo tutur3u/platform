@@ -55,6 +55,7 @@ abstract final class Routes {
       '$settingsOffline/${Uri.encodeComponent(moduleId)}';
 
   static const settingsPreferences = '/settings/preferences';
+  static const settingsAppearance = '/settings/appearance';
   static const settingsExperiments = '/settings/experiments';
   static const settingsInfrastructure = '/settings/infrastructure';
   static const settingsFeedback = '/settings/feedback';

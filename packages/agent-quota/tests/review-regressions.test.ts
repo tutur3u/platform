@@ -164,6 +164,12 @@ describe('independent review regressions', () => {
   it('quarantines a future descendant receipt without trusting its reset', () => {
     const { request, context } = fixture();
     const future = new Date(context.now.getTime() + 86400_000).toISOString();
+    const codex = context.accounts.find((item) => item.instanceId === 'codex')!;
+    codex.windows[0] = {
+      ...codex.windows[0]!,
+      observedAt: new Date(context.now.getTime() + 1000).toISOString(),
+      scope: { kind: 'models', modelPrefixes: ['gpt-'] },
+    };
     const futureSnapshot: ChildSnapshot = {
       ...snapshot,
       runs: [
@@ -191,9 +197,14 @@ describe('independent review regressions', () => {
 
     applyDescendantReceipts(futureSnapshot, context);
     expect(context.ledger.observations).toEqual([]);
-    expect(context.ledger.futureQuarantines).toHaveProperty(
-      accountKey(context.accounts.find((item) => item.instanceId === 'codex')!)
+    expect(context.ledger.futureQuarantines?.[accountKey(codex)]).toMatchObject(
+      {
+        latestReceiptAt: future,
+        models: ['gpt-6.1-sol'],
+        accountWide: false,
+      }
     );
+    expect(codex.windows).toEqual([]);
     const result = admit(request, context);
     expect(result.pools.find((pool) => pool.pool === 'codex')?.state).toBe(
       'UNKNOWN'
