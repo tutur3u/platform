@@ -555,7 +555,15 @@ stops new dispatch and drains already active work before the agent exits. Heartb
 continue during that drain, and local completions wake idle claim polling. The
 parent scheduling client omits Playground capabilities until both heartbeat
 contracts support them; `devbox-agent-capabilities.test.ts` exercises its emitted
-body against both current handlers. Judge readiness probes are cached for ten minutes and refreshed in the background; execution still fails
+body against both current handlers. Both heartbeat handlers (`apps/web` and the
+`devbox-control` Worker) also accept an optional `executionMode`
+(`trusted` or `judge-only`) and an optional `isolation` summary: `checkedAt` plus
+the boolean checks `dedicatedUser`, `privateTokenDirectory`, `protectedService`,
+`dedicatedDockerSocket`, `gvisorDefault` and `noGeneralDockerGroup`. Unknown keys
+and wrong types are still rejected. These fields are self-reported and advisory:
+they are stored for operators and later claim matching, never used to grant
+features or authorize a runner. Agents send them only after both handlers are
+deployed. Judge readiness probes are cached for ten minutes and refreshed in the background; execution still fails
 closed if required isolation or language images are unavailable.
 
 Platform-managed playground workers opt in through operator configuration. They
