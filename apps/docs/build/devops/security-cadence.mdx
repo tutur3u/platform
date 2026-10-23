@@ -20,11 +20,15 @@ sources at one commit.
 | Dependency audit (`bun audit`) | `security-checks.yaml` → **Dependency audit** | PRs and pushes that change a manifest or lockfile | High/critical advisory present at head but not at base |
 | Workflow trust boundaries | `security-checks.yaml` → **Workflow trust boundaries** | Changes under `.github/` or `scripts/ci/` | Any failing workflow security suite (`scripts/ci/workflow-*.test.js`, `security-*.test.js`, protected concurrency, workflow config) |
 | CodeQL (`security-extended`) | `codeql.yml` → **Analyze (language)** | PRs and `main` pushes; only languages the diff touches (`javascript-typescript`, `python`, `actions`) | High/critical result absent from the latest `main` analysis |
-| Security review classification | `security-review-classifier.yaml` → **Security review** check and `security-review-required` label; recomputed by `security-review-reclassify.yaml` and `security-review-sweep.yaml` | Every PR event (no path filter), auto-merge or merge-queue entry, every review submission or dismissal, and a trusted sweep every 30 minutes | Reports `action_required` until an independent security review is recorded; `success` when no sensitive path changed |
+| Security review classification | `security-review-classifier.yaml` → **Security review** check and `security-review-required` label; recomputed by `security-review-reclassify.yaml` and `security-review-sweep.yaml` | Every PR event (no path filter), auto-merge or merge-queue entry, every review submission or dismissal, and an hourly trusted sweep | Reports `action_required` until an independent security review is recorded; `success` when no sensitive path changed |
 
-Path gating uses the same changed-file resolution as the `ci-check` switchboard
-(`tuturuuu.ci.ts` keys `security-checks.yaml` and `codeql.yml`). Unknown change
-sets scan everything.
+Path gating uses the same changed-file resolution as the rest of CI, but
+`security-checks.yaml` and `codeql.yml` deliberately do not call the `ci-check`
+switchboard and have no `tuturuuu.ci.ts` keys. The switchboard's selectors run
+from the pull request checkout, so a hostile copy could report `should_run=false`
+and skip every scan. Instead, each scope job reads `resolve-changed-files.ts` and
+`security-paths.js` from the base commit. Unknown change sets, or a base without
+those scripts, scan everything.
 
 ### Pre-existing findings
 
@@ -39,11 +43,15 @@ findings are tracked in the findings register instead of blocking unrelated work
 - `security-checks.yaml` and `codeql.yml` use `pull_request`, so fork runs get a
   read-only token and no secrets. Jobs install no packages and run no package
   scripts.
-- Pull request code never decides a gate. The scan summarizer, the audit differ
-  and the CodeQL new-alert gate come only from the base commit. Without them, for
+- Pull request code does not select or decide a scanner verdict: no switchboard,
+  scope selector, summarizer, differ, gate script, local action or setup script
+  from the checkout runs before a scan job's verdict is final.
+  `security-workflows.test.js` enforces this for every job. The scan summarizer,
+  the audit differ and the CodeQL new-alert gate come only from the base commit. Without them, for
   example while the PR that introduces them is open, the gate fails closed with
   an inline `jq` check: any gitleaks finding, any high/critical advisory, or any
-  high/critical (or unresolvable) CodeQL result fails. The register refuses to
+  high/critical CodeQL result fails. A result whose rule is unknown, or whose
+  `security-severity` is missing or not numeric, counts as high. The register refuses to
   build. The checkout's copy is never executed. The scope scripts that choose
   which scans run (`resolve-changed-files.ts`, `security-paths.js`) are also read
   from the base commit. Without them, every scan runs.
@@ -52,7 +60,22 @@ findings are tracked in the findings register instead of blocking unrelated work
   release (`BUN_VERSION`/`BUN_SHA256`) called by absolute path, and head and base
   manifests are copied out of git into empty directories with the registry pinned
   to `registry.npmjs.org`. A checkout-local `bunfig.toml` or `.npmrc` cannot
-  redirect the advisory lookup.
+  redirect the advisory lookup. This scanner pin is independent of the
+  repository's development Bun version. To upgrade it, change `BUN_VERSION` and
+  `BUN_SHA256` together in one reviewed PR. Take the SHA-256 for
+  `bun-linux-x64.zip` from the release's `SHASUMS256.txt` and confirm that it
+  matches the release asset digest
+  (`gh release view bun-v<version> -R oven-sh/bun --json assets`). Run
+  `security-trusted-helpers.test.js` and `security-workflows.test.js`, and
+  confirm that the **Dependency audit** job's install step passes the checksum
+  check in CI.
+- **Limits.** Under `pull_request`, the workflow files themselves come from the
+  PR. A PR can still edit or delete `security-checks.yaml` or `codeql.yml`, and
+  the job runs whatever the PR defines. The **Workflow trust boundaries** job is
+  a test run of the change itself, like unit tests. These cases are covered only
+  by the **Security review** classification (`.github/**` and `scripts/ci/**`
+  are sensitive), code-owner review, and a required **Security review** check.
+  Scans are not tamper-proof against a PR that edits them.
 - Gitleaks configuration (`.github/security/gitleaks.toml`), the ignore list
   (`.gitleaksignore`) and the scan summarizers are read from the base commit, so
   a PR cannot allowlist or hide its own finding. The scan passes
@@ -86,6 +109,7 @@ and classifies them with `scripts/ci/security-paths.js`:
 | `tenant-isolation` | permission, RBAC, tenant and workspace-membership helpers | `platform` |
 | `runner-sandbox` | devbox, cron, coordination, playground, Dockerfiles, Wrangler config | `runtime` |
 | `tokens-secrets` | token, secret, credential, crypto, JWT and API-key paths, `.env*` | `platform-auth` |
+| `payments` | `packages/payment*`, Pay payment/billing APIs (including `apps/pay/src/app/api/payment/webhooks`), every `webhook(s)` path | `payments` |
 | `storage` | `packages/storage-core`, Drive, upload/bucket/signed-URL paths | `storage` |
 
 Docs (`.md`, `.mdx`) and translation bundles are exempt. A file list at GitHub's
@@ -125,7 +149,10 @@ Comments and draft reviews are ignored. At most 1,000 reviews are read. GitHub
 lists them oldest first, so a later change request could sit beyond that bound.
 A history that does not end inside the bound reports `action_required`. A file
 or review listing that cannot be read records `action_required` ("could not be
-evaluated") instead of leaving an earlier success standing. Event fields serve only as lookup keys, so
+evaluated") instead of leaving an earlier success standing. The revocation is
+always posted first. Duplicate suppression (sweep only) and labeling are
+best-effort, so a failed check lookup or label write cannot suppress it. A
+rejected check post fails the run. Event fields serve only as lookup keys, so
 a spoofed signal can only cause an honest recomputation. A fork contributor's
 first workflow runs may wait for maintainer approval. Until then, re-run the
 latest classifier run or remove the label to recompute.
@@ -137,17 +164,42 @@ A later dismissal would then never be signalled, and an earlier success would go
 stale. Revocation is therefore enforced in layers that the PR does not own:
 
 1. **Native code-owner review (primary).** The `main` ruleset requires code-owner
-   review and dismisses stale approvals on push. With `.github/CODEOWNERS`
-   naming the security reviewer on sensitive paths (#6491), GitHub itself
-   withholds the merge when an approval is dismissed or a new commit lands. Until
-   `CODEOWNERS` merges, that setting has no effect, and the layers below are the
-   only revocation controls.
+   review and dismisses stale approvals on push. GitHub then withholds the merge
+   when a code owner's approval is dismissed or a new commit lands. This covers
+   only paths that `.github/CODEOWNERS` assigns. #6491 adds the file with the
+   security reviewer on `.github/`, auth, migrations, devbox and payments,
+   including `apps/web/src/app/api/auth/**`, `packages/satellite/src/auth.ts`,
+   `packages/supabase/src/next/server.ts` and `apps/pay/src/app/api/payment/**`.
+   Classifier categories outside CODEOWNERS paths, and every path until
+   `CODEOWNERS` merges, rely on the layers below.
 2. **Trusted recomputes.** The classifier (`pull_request_target`, default-branch
    file) also runs when auto-merge is enabled or the PR enters a merge queue.
-   `security-review-sweep.yaml` runs every 30 minutes on a schedule from the
-   default branch. It recomputes every open PR labeled `security-review-required`
-   from its live reviews and posts a check only when the decision changed, so a
-   stale success lasts at most one sweep interval.
+   `security-review-sweep.yaml` runs hourly on a schedule from the default
+   branch (`scripts/ci/security-review-sweep.js`):
+   - It lists open pull requests (never plain issues) and keeps those labeled
+     `security-review-required`.
+   - Its cursor is the start of the last successful scheduled sweep, read from
+     GitHub's run history, so it keeps no state of its own. PRs updated since
+     then (pushes, reviews, labels, comments) are evaluated, oldest change
+     first.
+   - Every other labeled PR is re-evaluated in a fixed hourly rotation (PR
+     number modulo 24). A revocation that does not move `updated_at` is still
+     caught within about 24 successful hourly runs.
+   - It posts a check only when the decision changed, and never writes labels.
+     Its token has `actions: read` (run history), `checks: write`,
+     `pull-requests: read` and `contents: read`.
+   - Call budget: `SWEEP_CALL_BUDGET` (300) REST calls per run, plus at most
+     one PR's calls past the budget (about 4 for a typical PR).
+     - A typical run costs one run-history call and one listing call per 100
+       open PRs, plus about 4 calls per changed or rotated PR. At 200 labeled
+       PRs with ten changes an hour, that is about 80 calls.
+     - Work left over fails the run, so the cursor does not advance and the
+       backlog leads the next run.
+     - The repository's `GITHUB_TOKEN` allowance (1,000 calls an hour, shared
+       by all workflows) bounds this.
+
+   GitHub may delay or drop scheduled runs, so the sweep bounds staleness only
+   loosely. It is a backstop, not a guarantee.
 3. **The relay** remains the fast path for honest PRs.
 
 The **Security review** check is therefore stricter, but it is not the only

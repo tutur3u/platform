@@ -1111,7 +1111,9 @@ execute during install/build.
 
 CodeQL runs from the repository-owned `codeql.yml` (GitHub default setup is not
 configured; do not enable both). It scans pull requests and `main` pushes for the
-languages the diff touches, and `security-checks.yaml` runs it daily. Pull requests
+languages the diff touches, and `security-checks.yaml` runs it daily. Neither
+workflow calls the `ci-check` switchboard: its selectors run from the PR checkout,
+so the scope jobs read their selectors from the base commit instead. Pull requests
 fail only on new high/critical results; `bun git-sync` mirrors the already-scanned
 `main` commit to `production`. See [Security review cadence](/build/devops/security-cadence).
 
