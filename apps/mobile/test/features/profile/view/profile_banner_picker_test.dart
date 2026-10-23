@@ -157,6 +157,14 @@ Future<(_Auth, _Repository, ProfileCubit)> _pump(
 }
 
 void main() {
+  testWidgets('empty editor keeps upload controls without a duplicate header', (
+    tester,
+  ) async {
+    await _pump(tester, _Picker('none'));
+    expect(find.byType(ProfileBanner), findsNothing);
+    expect(find.text('Add banner'), findsOneWidget);
+  });
+
   testWidgets('native permission denial remains scoped to the banner', (
     tester,
   ) async {

@@ -83,7 +83,7 @@ class ProfileBannerSettings extends StatelessWidget {
           const SizedBox(height: 6),
           Text(l10n.profileBannerDescription),
           const SizedBox(height: 12),
-          ProfileBanner(profile: profile),
+          if (exists) ProfileBanner(profile: profile),
           Wrap(
             spacing: 12,
             runSpacing: 8,
