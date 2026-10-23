@@ -43,7 +43,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
           SettingsTile(
             key: const ValueKey('profile-display-name-row'),
             grouped: true,
-            icon: Icons.person_outline_rounded,
+            icon: shad.LucideIcons.userRound,
             title: l10n.profileDisplayName,
             value: profile.displayName ?? l10n.profileMissingValue,
             onTap: () => editField(
@@ -60,7 +60,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
           SettingsTile(
             key: const ValueKey('profile-full-name-row'),
             grouped: true,
-            icon: Icons.badge_outlined,
+            icon: shad.LucideIcons.idCard,
             title: l10n.profileFullName,
             value: profile.fullName ?? l10n.profileMissingValue,
             onTap: () => editField(
@@ -78,7 +78,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
             key: const ValueKey('profile-email-row'),
             grouped: true,
             wrapSupportingText: true,
-            icon: Icons.alternate_email_rounded,
+            icon: shad.LucideIcons.atSign,
             title: l10n.profileEmail,
             value: profile.email ?? l10n.profileMissingValue,
             subtitle: pendingEmail.isEmpty
@@ -110,7 +110,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
             SettingsTile(
               key: const ValueKey('profile-avatar-row'),
               grouped: true,
-              icon: Icons.photo_camera_back_outlined,
+              icon: shad.LucideIcons.imageUp,
               title: profile.avatarUrl != null
                   ? l10n.profileChangeAvatar
                   : l10n.profileUploadAvatar,
@@ -125,7 +125,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
                 key: const ValueKey('profile-avatar-remove-row'),
                 grouped: true,
                 isDestructive: true,
-                icon: Icons.delete_outline_rounded,
+                icon: shad.LucideIcons.trash2,
                 title: l10n.profileRemoveAvatar,
                 onTap: () => confirmRemoveProfileAvatar(context),
               ),
@@ -146,14 +146,14 @@ class _ProfileSettingsGroups extends StatelessWidget {
         SettingsTile(
           key: const ValueKey('profile-accounts-row'),
           grouped: true,
-          icon: Icons.manage_accounts_outlined,
+          icon: shad.LucideIcons.userCog,
           title: l10n.authManageAccounts,
           onTap: () => context.push(Routes.settingsAccounts),
         ),
         SettingsTile(
           key: const ValueKey('profile-sessions-row'),
           grouped: true,
-          icon: Icons.devices_outlined,
+          icon: shad.LucideIcons.monitorSmartphone,
           title: l10n.securitySessionsTitle,
           onTap: () => context.push(Routes.settingsAccountSecurity),
         ),
@@ -169,16 +169,16 @@ class _ProfileSettingsGroups extends StatelessWidget {
       children: [
         for (final (icon, label, value) in [
           (
-            Icons.verified_user_outlined,
+            shad.LucideIcons.shieldCheck,
             l10n.profileStatus,
             l10n.profileActive,
           ),
           (
-            Icons.verified_outlined,
+            shad.LucideIcons.badgeCheck,
             l10n.profileVerification,
             l10n.profileVerified,
           ),
-          (Icons.event_outlined, l10n.profileMemberSince, joined),
+          (shad.LucideIcons.calendarDays, l10n.profileMemberSince, joined),
         ])
           SettingsTile(
             grouped: true,
