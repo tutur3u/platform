@@ -100,10 +100,10 @@ jobs:
         working-directory: ./apps/backend
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           components: clippy, rustfmt
           targets: wasm32-unknown-unknown
@@ -157,7 +157,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -165,7 +165,7 @@ jobs:
           bun-version: 1.4.1
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -204,10 +204,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Expose GitHub cache runtime to BuildKit
         uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
@@ -328,7 +328,7 @@ jobs:
       can_deploy_tanstack_web: ${{ steps.worker-secrets.outputs.can_deploy_tanstack_web }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -336,7 +336,7 @@ jobs:
           bun-version: 1.4.1
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -482,7 +482,7 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -490,7 +490,7 @@ jobs:
           bun-version: 1.4.1
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -498,7 +498,7 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           components: clippy, rustfmt
           targets: wasm32-unknown-unknown
@@ -543,7 +543,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -551,7 +551,7 @@ jobs:
           bun-version: 1.4.1
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -589,7 +589,7 @@ jobs:
       CLOUDFLARE_SMOKE_REPORT_PATH: tmp/benchmarks/web-migration/${{ github.run_id }}-${{ github.run_attempt }}/cloudflare-smoke.json
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -597,7 +597,7 @@ jobs:
           bun-version: 1.4.1
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -661,7 +661,7 @@ jobs:
 
       - name: Upload Cloudflare smoke report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cloudflare-smoke-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.CLOUDFLARE_SMOKE_REPORT_PATH }}

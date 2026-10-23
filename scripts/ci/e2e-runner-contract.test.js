@@ -153,8 +153,14 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(bundleJob, /DOCKER_WEB_CACHE_WEB_FROM: type=gha/u);
   assert.doesNotMatch(bundleJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
   assert.doesNotMatch(bundleJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
-  assert.match(e2eJob, /uses: docker\/setup-buildx-action@v4/u);
-  assert.match(bundleJob, /uses: docker\/setup-buildx-action@v4/u);
+  assert.match(
+    e2eJob,
+    /uses: docker\/setup-buildx-action@[0-9a-f]{40} # v4\b/u
+  );
+  assert.match(
+    bundleJob,
+    /uses: docker\/setup-buildx-action@[0-9a-f]{40} # v4\b/u
+  );
   assert.match(
     e2eJob,
     /BUILDX_BUILDER=\$\{\{ steps\.buildx\.outputs\.name \}\}/u
@@ -260,7 +266,10 @@ test('E2E workflow retains the paused migration restart contract', () => {
   assert.match(migrationJob, /if: \$\{\{ failure\(\) \}\}/u);
   assert.match(migrationJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
   assert.match(migrationJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
-  assert.match(migrationJob, /uses: docker\/setup-buildx-action@v4/u);
+  assert.match(
+    migrationJob,
+    /uses: docker\/setup-buildx-action@[0-9a-f]{40} # v4\b/u
+  );
   assert.match(
     migrationJob,
     /BUILDX_BUILDER=\$\{\{ steps\.buildx\.outputs\.name \}\}/u
@@ -320,7 +329,7 @@ test('paused E2E jobs retain trusted proof rules without allocating runners', ()
       /success\(\).*event_name == 'push'.*ref == 'refs\/heads\/main'/u
     );
     assert.match(save.if, /success\(\).*outputs\.reusable == 'true'/u);
-    assert.equal(save.uses, 'actions/cache/save@v6');
+    assert.match(save.uses, /^actions\/cache\/save@[0-9a-f]{40}$/u);
     assert.equal(save.with.path, 'tmp/e2e-proof-receipt.json');
     assert.equal(save.with['restore-keys'], undefined);
     const proofIndex = steps.indexOf(proof);
