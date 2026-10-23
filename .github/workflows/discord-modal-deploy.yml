@@ -11,8 +11,6 @@ permissions:
 
 env:
   PYTHON_VERSION: "3.13"
-  MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
-  MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
   MODAL_ENVIRONMENT: ${{ vars.MODAL_ENVIRONMENT }}
 
 jobs:
@@ -22,7 +20,9 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (
         github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'main'
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
       )
     concurrency:
       group: discord-modal-deploy
@@ -54,6 +54,9 @@ jobs:
         run: uv sync --locked
 
       - name: Verify Modal credentials
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
         run: |
           if [ -z "${MODAL_TOKEN_ID}" ] || [ -z "${MODAL_TOKEN_SECRET}" ]; then
             echo "MODAL_TOKEN_ID and MODAL_TOKEN_SECRET must be configured as GitHub Actions secrets."
@@ -61,6 +64,9 @@ jobs:
           fi
 
       - name: Deploy app
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
         run: |
           if [ -n "${MODAL_ENVIRONMENT}" ]; then
             uv run modal deploy --env "${MODAL_ENVIRONMENT}" app.py

@@ -504,7 +504,12 @@ test('cancelled Discord PR/main completions never enter the active Modal deploym
   assert.equal(workflow.concurrency, undefined);
   const deploy = workflow.jobs.deploy;
   const active = context('refs/heads/main', 'trusted', 1, 'workflow_run');
-  active.event.workflow_run.head_branch = 'main';
+  active.repository = 'tutur3u/platform';
+  Object.assign(active.event.workflow_run, {
+    event: 'push',
+    head_branch: 'main',
+    head_repository: { full_name: 'tutur3u/platform' },
+  });
   assert.equal(expression(deploy.if, active), true);
   for (const branch of ['main', 'fix/example']) {
     const cancelled = structuredClone(active);
