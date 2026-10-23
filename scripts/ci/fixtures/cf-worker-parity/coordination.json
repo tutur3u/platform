@@ -1,0 +1,27 @@
+{
+  "source": "apps/coordination/wrangler.jsonc@948f9fdf2f",
+  "identity": {
+    "name": "tuturuuu-coordination",
+    "accountId": "e8912e2867beecc673d171907bf09649",
+    "compatibilityDate": "2026-06-20",
+    "compatibilityFlags": ["nodejs_compat"],
+    "workersDev": true,
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.05
+    },
+    "crons": [],
+    "routes": [],
+    "vars": {},
+    "secrets": ["COORDINATION_TOKEN"],
+    "durableObjects": {
+      "COORDINATION": {
+        "className": "CoordinationObject"
+      }
+    },
+    "durableObjectClasses": {
+      "CoordinationObject": "sqlite"
+    },
+    "unmapped": {}
+  }
+}

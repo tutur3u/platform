@@ -1,0 +1,802 @@
+{
+  "$comment": "Shrink-only allowlist enforced by scripts/ci/wrangler-usage-guard.test.js. Lower counts as usage is removed; a new entry or growth needs an \"admitted\" orchestrator decision reference. See apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx.",
+  "gaps": {
+    "opennext-adapter": {
+      "reason": "Parley and Lettin publish through @opennextjs/cloudflare, which reads wrangler.jsonc and invokes Wrangler; cf has no OpenNext adapter.",
+      "owner": "Parley/Lettin TanStack Start on Void migration lane (orchestrator assigns)",
+      "removal": "Delete when the app runs on Start + Void and publishes its exact artifact with cf deploy --prebuilt."
+    },
+    "parity-tooling": {
+      "reason": "Migration tooling reads former wrangler.jsonc files and their normalized baselines to prove cf deployment-identity parity; it runs no Wrangler CLI and ships no Wrangler config.",
+      "owner": "cf/Void Wrangler-exit lane",
+      "removal": "Delete with the tooling once every native Worker is on cf and its production cutover is verified."
+    },
+    "paused-runtime": {
+      "reason": "Retained paused runtimes (apps/backend, apps/tanstack-web) and their paused CI/tests; AGENTS.md forbids updating them during active work.",
+      "owner": "Runtime resumption owner (orchestrator), see apps/docs/build/devops/active-runtime.mdx",
+      "removal": "Migrate to cf + Void when the runtime resumes, or delete with the runtime when it is retired."
+    },
+    "pending-migration": {
+      "reason": "Native Worker with no cf capability gap for its operations, awaiting its per-service parity PR (Durable Object migrations need manual exports conversion and a disposable rehearsal).",
+      "owner": "cf/Void Wrangler-exit lane",
+      "removal": "Delete in the service PR that moves it to cloudflare.config.ts, cf types, Build Output parity and cf deploy --prebuilt."
+    },
+    "shared-toolchain": {
+      "reason": "Root wrangler devDependency supplies the CLI for every remaining gap; trustedDependencies, .wrangler ignores and policy tests cover @cloudflare/vite-plugin 1.x, which depends on the wrangler library.",
+      "owner": "cf/Void Wrangler-exit lane",
+      "removal": "Delete when no other allowlist entry needs the Wrangler CLI and @cloudflare/vite-plugin 2.x (no wrangler dependency) is adopted."
+    },
+    "void-wave1-publication": {
+      "reason": "Void deploy always rebuilds and provisions (--skip-build is static-only in Void 1.1.12 and 1.2.1), so Wave 1 Start + Void apps publish the exact Void-emitted config with Wrangler.",
+      "owner": "Wave 1 native Start + Void lane",
+      "removal": "Delete when Void builds emit a cf Build Output (or Void ships a prebuilt Worker deploy) and cf deploy --prebuilt publication is proven byte-identical."
+    }
+  },
+  "files": {
+    ".github/workflows/apps-cloudflare.yaml": {
+      "lines": 9,
+      "uses": 3,
+      "gap": "void-wave1-publication"
+    },
+    ".github/workflows/colab-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration"
+    },
+    ".github/workflows/coordination-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 4,
+      "gap": "pending-migration"
+    },
+    ".github/workflows/cron-control-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 4,
+      "gap": "pending-migration"
+    },
+    ".github/workflows/devbox-control-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 4,
+      "gap": "pending-migration"
+    },
+    ".github/workflows/lettin-cloudflare.yaml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter"
+    },
+    ".github/workflows/mail-calendar-tasks-builds.yaml": {
+      "lines": 8,
+      "uses": 3,
+      "gap": "void-wave1-publication"
+    },
+    ".github/workflows/meet-cloudflare.yaml": {
+      "lines": 30,
+      "uses": 8,
+      "gap": "void-wave1-publication"
+    },
+    ".github/workflows/parley-cloudflare.yaml": {
+      "lines": 3,
+      "uses": 2,
+      "gap": "opennext-adapter"
+    },
+    ".github/workflows/rust-backend.yml": {
+      "lines": 14,
+      "uses": 7,
+      "gap": "paused-runtime"
+    },
+    ".github/workflows/rust-verify.yml": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "paused-runtime"
+    },
+    ".github/workflows/wave1-native-app.yaml": {
+      "lines": 6,
+      "uses": 2,
+      "gap": "void-wave1-publication"
+    },
+    ".github/workflows/wave1-native-publish.yaml": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    ".gitignore": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "shared-toolchain"
+    },
+    "apps/apps/cloudflare/gateway-built-worker.test.mjs": {
+      "lines": 3,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "apps/apps/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication"
+    },
+    "apps/apps/wrangler.staging.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "void-wave1-publication"
+    },
+    "apps/backend/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "paused-runtime"
+    },
+    "apps/calendar/package.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication"
+    },
+    "apps/colab/package.json": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "pending-migration"
+    },
+    "apps/colab/scripts/verify-expiry-runtime.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/colab/test-fixtures/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/colab/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/coordination/.gitignore": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/coordination/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/coordination/src/worker.test.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/coordination/vite.config.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/coordination/vitest.config.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/coordination/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/cron-control/.gitignore": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/cron-control/package.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration"
+    },
+    "apps/cron-control/scripts/verify-worker-runtime.mjs": {
+      "lines": 3,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/cron-control/vite.config.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/cron-control/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/devbox-control/package.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration"
+    },
+    "apps/devbox-control/scripts/verify-worker-runtime.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/devbox-control/vite.config.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/devbox-control/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/lettin/.gitignore": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "opennext-adapter"
+    },
+    "apps/lettin/cloudflare-env.d.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter"
+    },
+    "apps/lettin/package.json": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "opennext-adapter"
+    },
+    "apps/lettin/scripts/configure-identity.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "opennext-adapter"
+    },
+    "apps/lettin/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "opennext-adapter"
+    },
+    "apps/mail/package.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication"
+    },
+    "apps/mail/wrangler.email-routing.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/.gitignore": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/scripts/verify-worker-runtime.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/test-fixtures/channel-retry/verify.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/test-fixtures/channel-retry/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/test-fixtures/collaboration-retry/verify.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/test-fixtures/collaboration-retry/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/tests/channels-local-check.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/tests/local-worker-check.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/tests/local-worker.ts": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/tests/mobile-local-check.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/tests/programming-local-check.ts": {
+      "lines": 3,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/vite.config.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet-realtime/wrangler.staging.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "apps/meet/.gitignore": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "apps/meet/cloudflare-env.d.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication"
+    },
+    "apps/meet/package.json": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication"
+    },
+    "apps/meet/wrangler.legacy.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "void-wave1-publication"
+    },
+    "apps/parley/.gitignore": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "opennext-adapter"
+    },
+    "apps/parley/cloudflare-env.d.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter"
+    },
+    "apps/parley/package.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "opennext-adapter"
+    },
+    "apps/parley/scripts/configure-realtime.ts": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "opennext-adapter"
+    },
+    "apps/parley/test-fixtures/built-worker/verify.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "opennext-adapter"
+    },
+    "apps/parley/test-fixtures/built-worker/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-adapter"
+    },
+    "apps/parley/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "opennext-adapter"
+    },
+    "apps/tanstack-web/package.json": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "paused-runtime"
+    },
+    "apps/tanstack-web/wrangler.jsonc": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "paused-runtime"
+    },
+    "apps/web/e2e/lettin-wiki.noauth.spec.ts": {
+      "lines": 3,
+      "uses": 0,
+      "gap": "opennext-adapter"
+    },
+    "apps/web/src/__tests__/lettin-fixture-diagnostics.test.ts": {
+      "lines": 3,
+      "uses": 0,
+      "gap": "opennext-adapter"
+    },
+    "bunfig.toml": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "shared-toolchain"
+    },
+    "package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain"
+    },
+    "packages/meet-core/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "packages/meet-core/test-fixtures/live-finalization/verify.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "packages/meet-core/test-fixtures/live-finalization/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "opennext-adapter"
+    },
+    "scripts/check-cloudflare-workers.js": {
+      "lines": 54,
+      "uses": 14,
+      "gap": "paused-runtime"
+    },
+    "scripts/check-cloudflare-workers.test.js": {
+      "lines": 48,
+      "uses": 5,
+      "gap": "paused-runtime"
+    },
+    "scripts/ci/apps-native-artifact.py": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-artifact.test.py": {
+      "lines": 17,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-runtime-hidden.test.mjs": {
+      "lines": 11,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-runtime-launcher.mjs": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-runtime-plan.mjs": {
+      "lines": 8,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-runtime-pointer.mjs": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-runtime-pointer.test.mjs": {
+      "lines": 11,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-runtime-receipt.test.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-runtime.mjs": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/apps-native-runtime.test.mjs": {
+      "lines": 20,
+      "uses": 1,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-emitted-defaults.mjs": {
+      "lines": 6,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-emitted-defaults.test.mjs": {
+      "lines": 14,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-native-artifact.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-native-artifact.test.mjs": {
+      "lines": 22,
+      "uses": 3,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-native-inventory.mjs": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-native-runtime-profile.test.mjs": {
+      "lines": 8,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-native-typegen.test.mjs": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-native-worker.runtime.mjs": {
+      "lines": 5,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/calendar-ssr-diagnostics.test.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/cf-worker-parity.mjs": {
+      "lines": 9,
+      "uses": 0,
+      "gap": "parity-tooling"
+    },
+    "scripts/ci/cf-worker-parity.test.mjs": {
+      "lines": 18,
+      "uses": 0,
+      "gap": "parity-tooling"
+    },
+    "scripts/ci/ci-cache-policy.test.js": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "shared-toolchain"
+    },
+    "scripts/ci/cron-control-vite-artifact.test.js": {
+      "lines": 3,
+      "uses": 1,
+      "gap": "pending-migration"
+    },
+    "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "parity-tooling"
+    },
+    "scripts/ci/fixtures/cf-worker-parity/cron-control.json": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "parity-tooling"
+    },
+    "scripts/ci/fixtures/cf-worker-parity/devbox-control.json": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "parity-tooling"
+    },
+    "scripts/ci/meet-build-metadata.test.js": {
+      "lines": 14,
+      "uses": 4,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-cloudflare-render.runtime.mjs": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-dry-run-scratch.mjs": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-emitted-defaults.mjs": {
+      "lines": 8,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-admission.test.mjs": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-evidence.test.mjs": {
+      "lines": 3,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-fixture.mjs": {
+      "lines": 7,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-graph-files.mjs": {
+      "lines": 7,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-graph.mjs": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-hidden.test.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-inventory.mjs": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-launcher.mjs": {
+      "lines": 3,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-lifecycle.test.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-profile.mjs": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-native-supplier.test.mjs": {
+      "lines": 14,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/meet-ssr-capture.test.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-config-default-probe.mjs": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-emitted-config-receipt.mjs": {
+      "lines": 7,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-emitted-config-receipt.test.mjs": {
+      "lines": 18,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-receipt-layout.test.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-evidence.mjs": {
+      "lines": 17,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-finalizer.fixture.mjs": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-fixture.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-observable.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-observable.test.mjs": {
+      "lines": 10,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-runtime.mjs": {
+      "lines": 15,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-runtime.runtime.mjs": {
+      "lines": 22,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-runtime.test.mjs": {
+      "lines": 14,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/native-wrangler-summary.mjs": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/production-publication-policy.test.js": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "shared-toolchain"
+    },
+    "scripts/ci/replay-parley-worker.py": {
+      "lines": 16,
+      "uses": 0,
+      "gap": "opennext-adapter"
+    },
+    "scripts/ci/replay-parley-worker.test.py": {
+      "lines": 15,
+      "uses": 1,
+      "gap": "opennext-adapter"
+    },
+    "scripts/ci/rust-verification-workflow.test.js": {
+      "lines": 8,
+      "uses": 1,
+      "gap": "paused-runtime"
+    },
+    "scripts/ci/verify-meet-start-output.js": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/verify-meet-start-output.test.js": {
+      "lines": 24,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/wave1-native-artifact.mjs": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/wave1-native-publication.test.js": {
+      "lines": 2,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/wave1-native-publish.mjs": {
+      "lines": 5,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/wave1-native-publishers.test.js": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/wave1-native-runtime.mjs": {
+      "lines": 2,
+      "uses": 1,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/ci/wave1-native-test-fixture.cjs": {
+      "lines": 4,
+      "uses": 0,
+      "gap": "void-wave1-publication"
+    },
+    "scripts/generate-docs-inventory.js": {
+      "lines": 1,
+      "uses": 0,
+      "gap": "shared-toolchain"
+    },
+    "scripts/smoke-cloudflare-workers.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "paused-runtime"
+    },
+    "scripts/smoke-cloudflare-workers.test.js": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "paused-runtime"
+    }
+  }
+}

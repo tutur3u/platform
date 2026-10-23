@@ -46,11 +46,12 @@ Route and switch accounts per its [account-balancing guidance](~/.codex/skills/p
   each scope records rule/formatting parity and migrates CI, editors and generators
   together. Do not run global formatters or Vite+ monorepo migrators for scoped
   work. See [adoption guidance](apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx).
-- Plan cf CLI adoption over Wrangler per verified operation. Preserve existing
-  commands/configuration until authentication, target identity, bindings/migrations,
-  emitted artifacts and rollback parity are established; retain Wrangler for gaps.
-  Do not run global configuration migration or infer production authorization from
-  CLI adoption. See the adoption guidance linked above.
+- Workers default to cf + Void (Vite+); Wrangler only for gaps recorded in the
+  shrink-only `scripts/ci/wrangler-usage-allowlist.json` (guarded). Switch an
+  operation only after authentication, target identity, bindings/migrations,
+  emitted artifacts and rollback parity are established. Do not run global
+  configuration migration or infer production authorization from CLI adoption.
+  See the [parity matrix](apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx).
 - For Cloudflare work that adds or amplifies billable operations, require bounded
   work/retries, idempotent progress, terminal-state scheduling and a tested durable
   stop fence. Verify operation-count and failure/restart regressions; ingress rate

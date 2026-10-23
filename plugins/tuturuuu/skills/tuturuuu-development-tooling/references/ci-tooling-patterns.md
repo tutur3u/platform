@@ -23,6 +23,17 @@ for parity and Worker acceptance gates; builds stay in exact-commit CI.
 
 ## cf CLI migration boundaries
 
+Default: cf + Void (Vite+); Wrangler only for gaps in the shrink-only
+`scripts/ci/wrangler-usage-allowlist.json`, enforced by
+`scripts/ci/wrangler-usage-guard.test.js`. Lower or delete an entry in the change
+that removes usage; growth needs an `admitted` orchestrator decision. Native Workers
+use `cloudflare.config.ts` + `@cloudflare/vite-plugin` `newConfig.cfBuildOutput`,
+Build Output identity parity (`scripts/ci/cf-worker-parity.mjs`), runtime checks via
+`scripts/ci/cf-vite-worker.mjs`, and `cf deploy --prebuilt --no-provision`
+(`--provision` defaults to true). See the
+[parity matrix](../../../../../apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx)
+for per-operation verdicts, rollback and the cutover checklist.
+
 Prefer cf for operations with demonstrated parity, beginning with bounded read-only
 inventory/observability and a Vite-native Worker pilot. Pin dependencies through
 package-manager commands; verify cf authentication/account independently of Wrangler.
