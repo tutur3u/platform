@@ -1,6 +1,5 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
   createSsoClient,
   listSsoClients,
@@ -49,11 +48,7 @@ export function SsoManagement({ wsId }: { wsId: string }) {
     },
   });
   const refreshEditor = async () => {
-    if (
-      editor?.kind !== 'edit' ||
-      !(save.error instanceof InternalApiError) ||
-      save.error.status !== 409
-    ) {
+    if (editor?.kind !== 'edit') {
       await refresh();
       return;
     }
