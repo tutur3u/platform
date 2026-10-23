@@ -356,7 +356,7 @@ export async function runBoxOffload({
 
 export async function createSessionClient() {
   const [{ readCliConfig, resolveCliTasksBaseUrl, writeCliConfig }, platform] =
-    await Promise.all([import('./config'), import('../platform')]);
+    await Promise.all([import('./config.js'), import('../platform.js')]);
   const config = await readCliConfig();
   if (!config.session?.accessToken || !config.session.refreshToken)
     throw new Error('Offload needs a devbox session. Run `ttr login` first.');

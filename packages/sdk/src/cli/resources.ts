@@ -199,7 +199,7 @@ export async function runResourcesCommand(argv: string[]) {
     return;
   }
   if (action === 'offload') {
-    const box = await import('./resources-box-offload');
+    const box = await import('./resources-box-offload.js');
     const config = await readResourceConfig(home);
     const state = await resourceQueueStatus(
       home,
@@ -364,7 +364,7 @@ export async function offloadRun({
   argv,
   timeout,
   cwd = process.cwd(),
-  loadBox = () => import('./resources-box-offload'),
+  loadBox = () => import('./resources-box-offload.js'),
   queueStatus = resourceQueueStatus,
 }: {
   home: string;
@@ -373,7 +373,7 @@ export async function offloadRun({
   argv: string[];
   timeout?: string;
   cwd?: string;
-  loadBox?: () => Promise<typeof import('./resources-box-offload')>;
+  loadBox?: () => Promise<typeof import('./resources-box-offload.js')>;
   queueStatus?: typeof resourceQueueStatus;
 }) {
   const log = (text: string) =>
