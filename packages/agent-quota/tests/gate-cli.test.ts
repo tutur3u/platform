@@ -140,6 +140,49 @@ it('sets exit 0 for an unblocked healthy pool, but exit 3 when owner reserve is 
   }
 });
 
+it('blocks positional admission for a stale near-limit window with a future reset', async () => {
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+  const previous = process.exitCode;
+  fixture.blocked = false;
+  const now = new Date('2026-10-23T08:00:00Z');
+  fixture.collect.mockResolvedValue({
+    accounts: [
+      {
+        instanceId: 'claudeAgent',
+        provider: 'claude',
+        label: 'claudeAgent',
+        available: true,
+        models: ['claude-opus-4-6'],
+        windows: [
+          {
+            kind: 'weekly',
+            label: 'Weekly limit',
+            scope: { kind: 'account' },
+            usedPercent: 95,
+            source: 'sanitized-fixture',
+            authoritative: true,
+            observedAt: '2026-10-20T08:00:00Z',
+            resetsAt: '2026-10-26T08:00:00Z',
+          },
+        ],
+      },
+    ],
+    blocks: [],
+    active: [],
+    t3ObservedAt: now.toISOString(),
+  });
+  try {
+    await runPositionalAdmit(['claudeAgent', 'claude-opus-4-6']);
+    expect(process.exitCode).toBe(3);
+    expect(JSON.parse(String(log.mock.calls.at(-1)?.[0])).reasons).toContain(
+      'pool-near-or-exhausted'
+    );
+  } finally {
+    process.exitCode = previous;
+    log.mockRestore();
+  }
+});
+
 it('returns malformed/fail-closed exit 2, distinct from policy blocks', async () => {
   const log = vi.spyOn(console, 'log').mockImplementation(() => {});
   const previous = process.exitCode;

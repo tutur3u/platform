@@ -1,18 +1,43 @@
 import { readFileSync } from 'node:fs';
 import { collapseAccounts } from './accounts';
-import { matchingBlocks, readBlockLedger } from './block-ledger';
+import {
+  type BlockLedger,
+  matchingBlocks,
+  readBlockLedger,
+} from './block-ledger';
 import { capacityCooldownActive } from './capacity';
 import { collectAll } from './collectors';
 import { collectPoolReceipts } from './collectors/children';
 import { usageLimitReceiptActive } from './failure-receipt';
 import { HookError, transactLedger } from './hook-ledger';
-import type { AdmissionContext } from './hooks-types';
+import type { AdmissionContext, HookLedger } from './hooks-types';
 import { pruneLedger } from './ledger-retention';
 import { recommend } from './policy';
 import { poolPolicyReasons } from './pool-settings';
 import { clearRecoveredLimits } from './receipt-expiry';
+import type { ChildSnapshot } from './reconcile-children';
 import { applyDescendantReceipts } from './recovery';
 import { coversModel, receiptCovers } from './window-scope';
+
+type LedgerTransaction = <T>(
+  operation: (ledger: HookLedger) => T | Promise<T>
+) => Promise<T>;
+
+export interface PositionalAdmitDependencies {
+  readBlockLedger: () => Promise<BlockLedger>;
+  collectAll: typeof collectAll;
+  collectPoolReceipts: (instanceIds: string[], now: Date) => ChildSnapshot;
+  transactLedger: LedgerTransaction;
+  now: () => Date;
+}
+
+const DEFAULT_DEPENDENCIES: PositionalAdmitDependencies = {
+  readBlockLedger,
+  collectAll,
+  collectPoolReceipts,
+  transactLedger,
+  now: () => new Date(),
+};
 export function gateDecision(
   pool: string,
   model: string,
@@ -100,7 +125,11 @@ export function gateDecision(
     )
   )
     reasons.push('capacity-cooldown');
-  if (rank.state === 'exhausted' || rank.state === 'near')
+  if (
+    rank.state === 'exhausted' ||
+    rank.state === 'near' ||
+    rank.reasons.some((reason) => reason.code === 'near-limit-stale')
+  )
     reasons.push('pool-near-or-exhausted');
   if (
     rank.reasons.some((reason) =>
@@ -150,8 +179,10 @@ export function parseCatalogStdin(raw: string): unknown {
 }
 export async function runPositionalAdmit(
   args: string[],
-  readCatalogInput: () => string = () => readFileSync(0, 'utf8')
+  readCatalogInput: () => string = () => readFileSync(0, 'utf8'),
+  overrides: Partial<PositionalAdmitDependencies> = {}
 ) {
+  const dependencies = { ...DEFAULT_DEPENDENCIES, ...overrides };
   try {
     const [pool, model] = args;
     if (
@@ -169,9 +200,10 @@ export async function runPositionalAdmit(
       !/^[A-Za-z0-9_./:%-]{1,256}$/.test(model)
     )
       throw new HookError('admit-pool-model-invalid');
-    const { blocks } = await readBlockLedger();
+    const now = dependencies.now();
+    const { blocks } = await dependencies.readBlockLedger();
     // Hard deny before even reading the catalog or snapshots.
-    if (matchingBlocks(blocks, [pool], model, new Date()).length) {
+    if (matchingBlocks(blocks, [pool], model, now).length) {
       console.log(
         JSON.stringify({
           status: 'BLOCKED',
@@ -187,7 +219,10 @@ export async function runPositionalAdmit(
     if (args.includes('--catalog-stdin')) {
       catalog = parseCatalogStdin(readCatalogInput());
     }
-    const collected = await collectAll({ snapshotsOnly: true, catalog });
+    const collected = await dependencies.collectAll({
+      snapshotsOnly: true,
+      catalog,
+    });
     if (!collected.t3ObservedAt)
       throw new HookError('reservation-state-unavailable');
     const owner = process.env.AGENT_QUOTA_OWNER_POOL;
@@ -199,15 +234,14 @@ export async function runPositionalAdmit(
     const account = collapseAccounts(collected.accounts).find((item) =>
       (item.instanceIds ?? [item.instanceId]).includes(pool)
     );
-    const now = new Date();
-    const poolReceipts = collectPoolReceipts(
+    const poolReceipts = dependencies.collectPoolReceipts(
       collected.accounts.map((account) => account.instanceId),
       now
     );
     const reserveOwner =
       args.includes('--reserve-owner') ||
       Boolean(owner && (account?.instanceIds ?? [pool]).includes(owner));
-    const result = await transactLedger((ledger) => {
+    const result = await dependencies.transactLedger((ledger) => {
       const context = {
         ...collected,
         blocks: collected.blocks ?? blocks,

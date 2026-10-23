@@ -1,4 +1,5 @@
 import type { HookLedger } from './hooks-types';
+import { MODEL_FAMILIES } from './window-scope';
 
 export function validLedger(value: unknown): value is HookLedger {
   const record = (item: unknown): item is Record<string, unknown> =>
@@ -70,7 +71,13 @@ export function validLedger(value: unknown): value is HookLedger {
                 scope.modelPrefixes.every(text)) ||
               (Array.isArray(scope.modelFamilies) &&
                 scope.modelFamilies.length > 0 &&
-                scope.modelFamilies.every(text)))
+                scope.modelFamilies.every(
+                  (family) =>
+                    typeof family === 'string' &&
+                    MODEL_FAMILIES.includes(
+                      family as (typeof MODEL_FAMILIES)[number]
+                    )
+                )))
         ) &&
         optional(item.clearedAt, date) &&
         optional(item.resetsAt, date) &&

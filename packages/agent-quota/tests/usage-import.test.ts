@@ -8,7 +8,7 @@ import { recommend } from '../src/policy';
 import { poolPolicyReasons, validatePoolSettings } from '../src/pool-settings';
 import { gateDecision } from '../src/positional-admit';
 import { clearRecoveredLimits } from '../src/receipt-expiry';
-import type { AccountUsage } from '../src/types';
+import type { AccountUsage, UsageWindow } from '../src/types';
 import {
   applyImportedUsage,
   applyManualUsage,
@@ -44,6 +44,57 @@ const observed = (pool: string, value: number) => ({
   resetAt: '2026-10-23T06:00:00Z',
 });
 describe('Usage UI and typed manual observations', () => {
+  it.each([
+    'Weekly limit',
+    'Weekly usage',
+    'Weekly total',
+    'Current week',
+    'Current week (Opus)',
+    'Current week (Sonnet only)',
+  ])('assigns a safe scope for Claude metric label %s', (label) => {
+    const scope = windowScope('claude', 'weekly', label);
+    if (label.endsWith('(Opus)')) {
+      expect(scope).toEqual({ kind: 'models', modelFamilies: ['opus'] });
+      expect(coversModel({ scope } as UsageWindow, 'claude-opus-4-6')).toBe(
+        true
+      );
+      expect(coversModel({ scope } as UsageWindow, 'claude-sonnet-4-5')).toBe(
+        false
+      );
+    } else if (label.endsWith('(Sonnet only)')) {
+      expect(scope).toEqual({ kind: 'models', modelFamilies: ['sonnet'] });
+      expect(coversModel({ scope } as UsageWindow, 'claude-sonnet-4-5')).toBe(
+        true
+      );
+      expect(coversModel({ scope } as UsageWindow, 'claude-opus-4-6')).toBe(
+        false
+      );
+    } else {
+      expect(scope).toEqual({ kind: 'account' });
+    }
+  });
+  it('collects every supported family, normalizes model variants, and scopes negation account-wide', () => {
+    expect(windowScope('claude', 'weekly', 'Weekly · Opus and Sonnet')).toEqual(
+      { kind: 'models', modelFamilies: ['opus', 'sonnet'] }
+    );
+    expect(
+      windowScope('claude', 'weekly', 'Weekly · Opus except Sonnet')
+    ).toEqual({ kind: 'account' });
+    expect(
+      coversModel(
+        {
+          scope: { kind: 'models', modelFamilies: ['sonnet'] },
+        } as UsageWindow,
+        'claude-sonnet-4-5[1m]'
+      )
+    ).toBe(true);
+    expect(
+      coversModel(
+        { scope: { kind: 'models', modelFamilies: ['opus'] } } as UsageWindow,
+        'claude-opusplan'
+      )
+    ).toBe(true);
+  });
   it('converts remaining once, keeps explicit used unchanged, and preserves provenance', () => {
     const a = applyManualUsage(
       [account('claudeAgent'), account('claude_kv')],

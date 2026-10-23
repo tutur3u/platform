@@ -1,4 +1,30 @@
-import type { Provider, UsageWindow } from './types';
+import type { ModelFamily, Provider, UsageWindow } from './types';
+
+export const MODEL_FAMILIES = ['opus', 'sonnet', 'haiku', 'fable'] as const;
+
+function modelFamiliesInLabel(label: string): ModelFamily[] {
+  if (/\bexcept\b|\bnon-/i.test(label)) return [];
+  const found = [...label.matchAll(/\b(opusplan|opus|sonnet|haiku|fable)\b/gi)]
+    .map((match) =>
+      match[1]?.toLowerCase() === 'opusplan' ? 'opus' : match[1]?.toLowerCase()
+    )
+    .filter((family): family is ModelFamily =>
+      MODEL_FAMILIES.includes(family as ModelFamily)
+    );
+  return [...new Set(found)];
+}
+
+export function normalizeModelId(model: string): string {
+  return model
+    .toLowerCase()
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/opusplan/g, 'opus');
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function windowScope(
   provider: Provider,
   id: string,
@@ -21,24 +47,29 @@ export function windowScope(
     return { kind: 'unknown' };
   }
   if (provider === 'claude') {
-    const family = label.match(/\b(opus|sonnet|haiku|fable)\b/i)?.[1];
-    if (family)
-      return { kind: 'models', modelFamilies: [family.toLowerCase()] };
+    const modelFamilies = modelFamiliesInLabel(label);
+    if (modelFamilies.length) return { kind: 'models', modelFamilies };
   }
   return { kind: 'account' };
 }
 export function coversModel(window: UsageWindow, model?: string): boolean {
   if (!window.scope || window.scope.kind === 'account') return true;
+  if (!model) return false;
+  const normalizedModel = normalizeModelId(model);
   return (
     window.scope.kind === 'models' &&
     Boolean(
-      model &&
-        (window.scope.modelPrefixes?.some((prefix) =>
-          model.toLowerCase().startsWith(prefix.toLowerCase())
-        ) ||
-          window.scope.modelFamilies?.some((family) =>
-            new RegExp(`(?:^|[-_/])${family}(?:$|[-_/])`, 'i').test(model)
-          ))
+      window.scope.modelPrefixes?.some((prefix) =>
+        normalizedModel.startsWith(normalizeModelId(prefix))
+      ) ||
+        window.scope.modelFamilies?.some(
+          (family) =>
+            MODEL_FAMILIES.includes(family) &&
+            new RegExp(
+              `(?:^|[-_/])${escapeRegExp(family)}(?:$|[-_/])`,
+              'i'
+            ).test(normalizedModel)
+        )
     )
   );
 }

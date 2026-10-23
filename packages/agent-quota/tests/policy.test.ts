@@ -98,6 +98,24 @@ describe('routing policy', () => {
     ).toBe(true);
   });
 
+  it('keeps a stale hard-limit window binding through a bounded no-reset age', () => {
+    const staleNoReset = account('claudeAgent', 95, '2026-10-20T00:00:00.000Z');
+    delete staleNoReset.windows[0]!.resetsAt;
+    const result = recommend({
+      task: { model: 'claude-opus-4-6' },
+      active: [],
+      accounts: [staleNoReset],
+      now,
+    });
+    expect(result.ranked[0]?.state).toBe('UNKNOWN');
+    expect(result.ranked[0]?.eligible).toBe(false);
+    expect(
+      result.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'near-limit-stale'
+      )
+    ).toBe(true);
+  });
+
   it('treats a passed reset timestamp as stale instead of imminent', () => {
     const expired = account('codex', 10, now.toISOString());
     const window = expired.windows[0];

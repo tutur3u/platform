@@ -6,6 +6,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { checkpointDecision } from '../src/checkpoint-ready';
 import {
+  CHECKPOINT_READ_BUDGET_MS,
+  collectCheckpointThread,
   collectChildren,
   collectPoolReceipts,
 } from '../src/collectors/children';
@@ -390,6 +392,41 @@ it('projects descendant metadata and structured errors without reading message c
     expect(() => collectChildren('absent', path)).toThrow(
       'parent-thread-not-found'
     );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+it('reads checkpoint state directly for one thread within its latency budget', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'quota-checkpoint-read-'));
+  const path = join(dir, 'state.sqlite');
+  try {
+    const db = new DatabaseSync(path);
+    db.exec(`
+      CREATE TABLE orchestration_v2_projection_threads(thread_id TEXT,payload_json TEXT);
+      CREATE TABLE orchestration_v2_projection_runs(run_id TEXT,thread_id TEXT,status TEXT);
+      CREATE TABLE orchestration_v2_projection_nodes(node_id TEXT,thread_id TEXT,run_id TEXT,status TEXT);
+      INSERT INTO orchestration_v2_projection_threads VALUES ('owner', '{}'), ('other', '{}');
+      INSERT INTO orchestration_v2_projection_runs VALUES
+        ('done', 'owner', 'completed'),
+        ('active', 'owner', 'running'),
+        ('queued', 'owner', 'queued'),
+        ('other-run', 'other', 'running');
+      INSERT INTO orchestration_v2_projection_nodes VALUES
+        ('stale-node', 'owner', 'done', 'running'),
+        ('active-node', 'owner', 'active', 'running'),
+        ('foreign-node', 'other', 'other-run', 'running');
+    `);
+    db.close();
+    const startedAt = performance.now();
+    const snapshot = collectCheckpointThread('owner', path);
+    const elapsed = performance.now() - startedAt;
+    expect(elapsed).toBeLessThan(CHECKPOINT_READ_BUDGET_MS);
+    expect(snapshot.threads).toEqual([{ id: 'owner', activeWriterNodes: 1 }]);
+    expect(snapshot.runs).toEqual([
+      { threadId: 'owner', status: 'active' },
+      { threadId: 'owner', status: 'queued' },
+    ]);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

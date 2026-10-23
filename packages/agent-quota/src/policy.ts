@@ -1,7 +1,6 @@
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, type QuotaBlock } from './block-ledger';
-
-const NO_RESET_HIGH_LIMIT_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
+import { NO_RESET_RECEIPT_MAX_AGE_MS } from './failure-receipt';
 import type {
   AccountReserve,
   AccountUsage,
@@ -251,7 +250,7 @@ function rankOne(
         return (
           Number.isFinite(observed) &&
           observed <= now.getTime() &&
-          now.getTime() - observed <= NO_RESET_HIGH_LIMIT_MAX_AGE_MS
+          now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS
         );
       })
     ) {

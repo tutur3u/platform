@@ -46,6 +46,12 @@ const receiptPrefixes = [
 const terminalPrefixPredicate = (expression: string) =>
   `(${receiptPrefixes.map((prefix) => `${expression} ${prefix}`).join(' OR ')})`;
 const ACTIVE_WRITER_NODE_SCAN_LIMIT = 1001;
+export const CHECKPOINT_READ_BUDGET_MS = 250;
+export interface CheckpointThreadSnapshot {
+  threads: Pick<ChildThread, 'id' | 'activeWriterNodes'>[];
+  runs: Pick<ChildRun, 'threadId' | 'status'>[];
+}
+
 export function collectChildren(
   parentId: string,
   databasePath = t3StateDatabase(),
@@ -178,6 +184,46 @@ export function collectChildren(
       failures,
       transfers,
     };
+  } finally {
+    db.close();
+  }
+}
+
+export function collectCheckpointThread(
+  threadId: string,
+  databasePath = t3StateDatabase()
+): CheckpointThreadSnapshot {
+  const db = new DatabaseSync(databasePath, { readOnly: true });
+  try {
+    db.exec('PRAGMA busy_timeout=1000');
+    const threads = db
+      .prepare(
+        `SELECT t.thread_id AS id,
+          (SELECT COUNT(*) FROM (
+            SELECT 1
+            FROM orchestration_v2_projection_nodes n
+            JOIN orchestration_v2_projection_runs active_run
+              ON active_run.run_id=n.run_id AND active_run.thread_id=n.thread_id
+            WHERE n.thread_id=t.thread_id
+              AND n.status IN ('running','pending','waiting')
+              AND active_run.status IN ('running','starting','preparing','waiting')
+            LIMIT ${ACTIVE_WRITER_NODE_SCAN_LIMIT}
+          )) AS activeWriterNodes
+         FROM orchestration_v2_projection_threads t
+         WHERE t.thread_id=?
+         LIMIT 1`
+      )
+      .all(threadId) as CheckpointThreadSnapshot['threads'];
+    if (!threads.length) throw new HookError('checkpoint-thread-unavailable');
+    const runs = db
+      .prepare(
+        `SELECT thread_id AS threadId,status
+         FROM orchestration_v2_projection_runs
+         WHERE thread_id=?
+           AND status IN ('queued','running','starting','preparing','waiting')`
+      )
+      .all(threadId) as CheckpointThreadSnapshot['runs'];
+    return { threads, runs };
   } finally {
     db.close();
   }

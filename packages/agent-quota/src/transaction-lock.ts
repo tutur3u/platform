@@ -24,6 +24,17 @@ async function create(path: string): Promise<FileHandle> {
     throw error;
   }
 }
+
+async function createAfterReclamation(path: string): Promise<FileHandle> {
+  try {
+    return await create(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST')
+      throw Error('transaction-lock-changed');
+    throw error;
+  }
+}
+
 export async function acquireTransactionLock(
   path: string,
   depth = 0
@@ -56,7 +67,7 @@ export async function acquireTransactionLock(
         if (current.ino !== stat.ino || current.dev !== stat.dev)
           throw Error('transaction-lock-changed');
         await unlink(path);
-        return create(path);
+        return createAfterReclamation(path);
       };
       let owner: { pid?: unknown; processStartedAt?: unknown };
       try {
@@ -84,7 +95,7 @@ export async function acquireTransactionLock(
       if (current.ino !== stat.ino || current.dev !== stat.dev)
         throw Error('transaction-lock-changed');
       await unlink(path);
-      return await create(path);
+      return await createAfterReclamation(path);
     } finally {
       await old.close();
     }

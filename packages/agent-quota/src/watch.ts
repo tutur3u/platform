@@ -2,7 +2,10 @@ import { accountKey, collapseAccounts } from './accounts';
 import { matchingBlocks, type QuotaBlock } from './block-ledger';
 import { capacityCooldownActive } from './capacity';
 import { collectAll } from './collectors';
-import { usageLimitReceiptActive } from './failure-receipt';
+import {
+  NO_RESET_RECEIPT_MAX_AGE_MS,
+  usageLimitReceiptActive,
+} from './failure-receipt';
 import { readLedger } from './hook-ledger';
 import type { Observation } from './hooks-types';
 import { RESERVATION_TTL } from './ledger-retention';
@@ -87,7 +90,9 @@ export function freshRemainingPercent(
       Number.isFinite(observed) &&
       observed <= now.getTime() + 5 * 60_000 &&
       now.getTime() - observed <= ttlMs &&
-      (!window.resetsAt || (Number.isFinite(reset) && reset > now.getTime()))
+      Boolean(window.resetsAt) &&
+      Number.isFinite(reset) &&
+      reset > now.getTime()
     );
   };
   if (scoped.some((window) => !isFresh(window))) return;
@@ -137,13 +142,33 @@ export function ownerWatchStatus(
     SIGNAL_TTL_MS[account.provider],
     options.model
   );
-  const reason = ownerFenceReason(
+  const fence = ownerFenceReason(
     account,
     blocks,
     observations,
     now,
     options.model
   );
+  const knownExhaustion = account.windows.some((window) => {
+    if (
+      !window.authoritative ||
+      window.usedPercent !== 100 ||
+      (options.model && !coversModel(window, options.model))
+    )
+      return false;
+    if (window.resetsAt) {
+      const reset = Date.parse(window.resetsAt);
+      return Number.isFinite(reset) && reset > now.getTime();
+    }
+    const observed = Date.parse(window.observedAt);
+    return (
+      Number.isFinite(observed) &&
+      observed <= now.getTime() &&
+      now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS
+    );
+  });
+  const reason =
+    fence ?? (knownExhaustion ? 'reported-limit-not-reset' : undefined);
   return {
     remaining,
     reason,

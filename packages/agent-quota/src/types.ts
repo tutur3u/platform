@@ -1,5 +1,6 @@
 export type Provider = 'codex' | 'claude' | 'antigravity';
 export type WindowKind = 'short' | 'long' | 'session' | 'weekly';
+export type ModelFamily = 'opus' | 'sonnet' | 'haiku' | 'fable';
 
 export interface UsageWindow {
   kind: WindowKind;
@@ -8,7 +9,7 @@ export interface UsageWindow {
   scope?: {
     kind: 'account' | 'models' | 'unknown';
     modelPrefixes?: string[];
-    modelFamilies?: string[];
+    modelFamilies?: ModelFamily[];
   };
   usedPercent?: number;
   estimated?: number;

@@ -64,6 +64,7 @@ describe('quota turn-boundary watch', () => {
         {
           kind: 'session',
           usedPercent: 90,
+          resetsAt: '2026-10-24T08:00:00Z',
           source: 'fixture',
           observedAt: at.toISOString(),
           authoritative: true,
@@ -71,6 +72,7 @@ describe('quota turn-boundary watch', () => {
         {
           kind: 'weekly',
           usedPercent: 100,
+          resetsAt: '2026-10-30T08:00:00Z',
           source: 'fixture',
           observedAt: at.toISOString(),
           authoritative: true,
@@ -104,7 +106,45 @@ describe('quota turn-boundary watch', () => {
       at,
       { model: 'gpt-6.1-sol' }
     );
-    expect(status).toMatchObject({ remaining: 0, verdict: 'switch-now' });
+    expect(status).toMatchObject({
+      remaining: undefined,
+      verdict: 'switch-now',
+    });
+  });
+
+  it('switches on a stale exhausted weekly window despite a fresh session window', () => {
+    const status = ownerWatchStatus(
+      {
+        ...pool('claude_kv'),
+        windows: [
+          {
+            kind: 'session',
+            usedPercent: 10,
+            resetsAt: '2026-10-23T09:00:00Z',
+            source: 'fixture',
+            observedAt: at.toISOString(),
+            authoritative: true,
+          },
+          {
+            kind: 'weekly',
+            usedPercent: 100,
+            resetsAt: '2026-10-26T08:00:00Z',
+            source: 'fixture',
+            observedAt: '2026-10-22T08:00:00Z',
+            authoritative: true,
+          },
+        ],
+      },
+      [],
+      [],
+      at,
+      { model: 'claude-opus-4-6' }
+    );
+    expect(status).toMatchObject({
+      remaining: undefined,
+      verdict: 'switch-now',
+      reason: 'reported-limit-not-reset',
+    });
   });
 
   it.each(['claude_kv', 'claude_mira'])(

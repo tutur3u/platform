@@ -1,6 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { collectChildren } from './collectors/children';
+import {
+  type CheckpointThreadSnapshot,
+  collectCheckpointThread,
+} from './collectors/children';
 
 export interface ProcessMetadata {
   pid: number;
@@ -20,7 +23,7 @@ export function parseWatcherPids(contents: string): number[] {
 
 export function checkpointDecision(
   threadId: string,
-  snapshot: ReturnType<typeof collectChildren>,
+  snapshot: CheckpointThreadSnapshot,
   watcherPids: number[],
   processes: ProcessMetadata[]
 ) {
@@ -88,7 +91,7 @@ export function runCheckpointReady(args: string[]) {
     const pidPath = valueAfter(args, '--watcher-pids-file');
     if (!threadId || !pidPath) throw new Error('checkpoint-arguments-invalid');
     const pids = parseWatcherPids(readFileSync(pidPath, 'utf8'));
-    const snapshot = collectChildren(threadId);
+    const snapshot = collectCheckpointThread(threadId);
     const result = checkpointDecision(
       threadId,
       snapshot,
