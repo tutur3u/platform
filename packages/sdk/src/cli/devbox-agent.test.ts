@@ -136,6 +136,7 @@ describe('Devbox agent upgrade handoff', () => {
     expect(pollJobs).toHaveBeenCalledWith({
       baseUrl: 'https://control.example.test',
       path: '/v1/poll',
+      timeoutMs: 15_000,
       token: 'runner-token',
     });
   });

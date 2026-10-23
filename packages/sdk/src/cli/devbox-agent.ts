@@ -2,6 +2,15 @@ import { pollDevboxAgentJobs } from '../platform-devbox';
 import { normalizeBaseUrl } from './config';
 import { createDevboxAgentCapabilities } from './devbox-agent-capabilities';
 import {
+  agentRequest,
+  backoffDelay,
+  type DevboxAgentTiming,
+  DevboxAgentTransientError,
+  DevboxAgentWatchdogError,
+  defaultDevboxAgentTiming,
+  isTransientStatus,
+} from './devbox-agent-network';
+import {
   DEVBOX_UPGRADE_BUSY_RETRY_MS,
   DEVBOX_UPGRADE_CHECK_INTERVAL_MS,
   DevboxCliRepairRequiredError,
@@ -64,10 +73,16 @@ export async function runDevboxAgentLoop({
   baseUrl,
   once,
   token,
+  timing: timingOverrides,
+  exit = (code: number) => process.exit(code),
+  random = Math.random,
 }: {
   baseUrl?: string;
   once?: boolean;
   token?: string;
+  timing?: Partial<DevboxAgentTiming>;
+  exit?: (code: number) => void;
+  random?: () => number;
 }) {
   if (!token) {
     throw new Error(
@@ -82,6 +97,24 @@ export async function runDevboxAgentLoop({
   };
 
   process.stdout.write('Starting Tuturuuu devbox agent.\n');
+  const timing = { ...defaultDevboxAgentTiming, ...timingOverrides };
+  const watchdogMs = timing.heartbeatIntervalMs * timing.watchdogIntervals;
+  let lastHeartbeatOkAt = Date.now();
+  let heartbeatFailures = 0;
+  let pollFailures = 0;
+  // Last resort for an await that is still wedged despite request timeouts:
+  // exit non-zero so the service manager (Restart=always) recovers the agent.
+  const hardWatchdog = setInterval(
+    () => {
+      if (Date.now() - lastHeartbeatOkAt <= watchdogMs * 2) return;
+      console.error(
+        `Devbox agent made no heartbeat progress for ${Math.round((watchdogMs * 2) / 1000)}s; exiting for service manager restart.`
+      );
+      exit(75);
+    },
+    Math.min(timing.heartbeatIntervalMs, 10_000)
+  );
+  (hardWatchdog as { unref?: () => void }).unref?.();
 
   let running = true;
   let wakeSocket: WebSocket | null = null;
@@ -114,31 +147,59 @@ export async function runDevboxAgentLoop({
   };
   const heartbeat = async () => {
     const capabilities = await createDevboxAgentCapabilities();
-    const heartbeatResponse = await fetch(
-      new URL(
-        controlOrigin ? '/v1/heartbeat' : '/api/v1/devboxes/agents/heartbeat',
-        controlOrigin ?? origin
-      ),
-      {
-        body: JSON.stringify({ capabilities }),
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      }
+    const heartbeatResponse = await agentRequest('Devbox agent heartbeat', () =>
+      fetch(
+        new URL(
+          controlOrigin ? '/v1/heartbeat' : '/api/v1/devboxes/agents/heartbeat',
+          controlOrigin ?? origin
+        ),
+        {
+          body: JSON.stringify({ capabilities }),
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          signal: AbortSignal.timeout(timing.httpTimeoutMs),
+        }
+      )
     );
     if (!heartbeatResponse.ok) {
+      // Auth and contract rejections are not retried; the operator must act.
       throw new Error(
         `Devbox agent heartbeat failed: ${formatResponseStatus(heartbeatResponse)}`
       );
     }
 
-    nextHeartbeatAt = Date.now() + 20_000;
+    lastHeartbeatOkAt = Date.now();
+    heartbeatFailures = 0;
+    nextHeartbeatAt = Date.now() + timing.heartbeatIntervalMs;
+  };
+  // Transient failures retry with jittered backoff (never slower than the
+  // heartbeat interval); the watchdog bounds the total outage.
+  const tryHeartbeat = async () => {
+    try {
+      await heartbeat();
+    } catch (error) {
+      if (!(error instanceof DevboxAgentTransientError) || once) throw error;
+      heartbeatFailures += 1;
+      const delay = Math.min(
+        backoffDelay(heartbeatFailures, timing, random),
+        timing.heartbeatIntervalMs
+      );
+      console.warn(
+        `${error.message}; retrying in ${Math.ceil(delay / 1000)}s.`
+      );
+      nextHeartbeatAt = Date.now() + delay;
+    }
+    if (Date.now() - lastHeartbeatOkAt > watchdogMs)
+      throw new DevboxAgentWatchdogError(
+        `No successful devbox heartbeat for ${Math.round(watchdogMs / 1000)}s; exiting for service manager restart.`
+      );
   };
   try {
     while (running) {
-      if (Date.now() >= nextHeartbeatAt) await heartbeat();
+      if (Date.now() >= nextHeartbeatAt) await tryHeartbeat();
       if (failure) throw failure;
       if (restartRequested) break;
       if (upgrading) {
@@ -168,17 +229,36 @@ export async function runDevboxAgentLoop({
         continue;
       }
       pendingWake = false;
-      const pollResponse = await pollDevboxAgentJobs({
-        baseUrl: controlOrigin ?? origin,
-        path: controlOrigin ? '/v1/poll' : undefined,
-        token,
-      });
+      let pollResponse: Awaited<ReturnType<typeof pollDevboxAgentJobs>>;
+      let pollError: string | undefined;
+      try {
+        pollResponse = await pollDevboxAgentJobs({
+          baseUrl: controlOrigin ?? origin,
+          path: controlOrigin ? '/v1/poll' : undefined,
+          timeoutMs: timing.httpTimeoutMs,
+          token,
+        });
+        if (!pollResponse.ok && isTransientStatus(pollResponse.response.status))
+          pollError = `Devbox agent poll failed: ${formatResponseStatus(pollResponse.response)}`;
+      } catch (error) {
+        if (once) throw error;
+        pollResponse = { jobs: [], ok: true };
+        pollError = `Devbox agent poll failed: ${error instanceof Error ? `${error.name}: ${error.message}` : 'network error'}`;
+      }
       if (failure) throw failure;
+      if (pollError && !once) {
+        pollFailures += 1;
+        const delay = backoffDelay(pollFailures, timing, random);
+        console.warn(`${pollError}; retrying in ${Math.ceil(delay / 1000)}s.`);
+        nextPollAt = Date.now() + delay;
+        continue;
+      }
       if (!pollResponse.ok) {
         throw new Error(
           `Devbox agent poll failed: ${formatResponseStatus(pollResponse.response)}`
         );
       }
+      pollFailures = 0;
 
       if (pollResponse.jobs.length) {
         process.stdout.write(
@@ -194,7 +274,7 @@ export async function runDevboxAgentLoop({
           const maintenance = restart || update;
           while (active.size >= 8 || (maintenance && active.size > 0)) {
             await waitForJobs();
-            if (Date.now() >= nextHeartbeatAt) await heartbeat();
+            if (Date.now() >= nextHeartbeatAt) await tryHeartbeat();
             if (failure) throw failure;
           }
           if (failure) throw failure;
@@ -217,7 +297,7 @@ export async function runDevboxAgentLoop({
           if (maintenance) {
             while (active.has(task)) {
               await waitForJobs();
-              if (Date.now() >= nextHeartbeatAt) await heartbeat();
+              if (Date.now() >= nextHeartbeatAt) await tryHeartbeat();
             }
             if (restartRequested || failure) break;
           }
@@ -284,15 +364,16 @@ export async function runDevboxAgentLoop({
       await waitForJobs();
       if (active.size > 0 && Date.now() >= nextHeartbeatAt) {
         try {
-          await heartbeat();
+          await tryHeartbeat();
         } catch (error) {
           failure ??= error;
-          nextHeartbeatAt = Date.now() + 20_000;
+          nextHeartbeatAt = Date.now() + timing.heartbeatIntervalMs;
           console.warn('Devbox heartbeat failed while draining active jobs.');
         }
       }
     }
     wakeSocket?.close();
+    clearInterval(hardWatchdog);
   }
   if (failure) throw failure;
   if (restartRequested)
