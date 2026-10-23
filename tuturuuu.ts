@@ -20,6 +20,9 @@ export type WorkflowDecisionInput = {
   changedFiles?: string[] | null;
   ciConfig?: Record<string, boolean | undefined>;
   eventName?: string;
+  // Workspaces whose bun.lock resolution changed; null or absent keeps
+  // bun.lock global (unknown base, parse failure or shared resolution).
+  lockfileWorkspaces?: readonly string[] | null;
   workflowName: string;
   workspaceManifests?: readonly WorkspaceManifest[];
 };
@@ -455,10 +458,38 @@ function getChangedWorkspaceName(
   );
 }
 
+// Workspaces whose installed dependencies a target can observe: its own
+// closure plus the closures of workspaces it reads through additionalPaths.
+// Null keeps bun.lock global.
+function getLockfileClosure(
+  target: VercelWorkflowTarget | (typeof cloudflareProductionTargets)[number],
+  manifests: readonly WorkspaceManifest[]
+): Set<string> | null {
+  const owners = [
+    'packageName' in target
+      ? target.packageName
+      : getChangedWorkspaceName(target.appPath, manifests),
+    ...('additionalPaths' in target
+      ? target.additionalPaths.map((prefix) =>
+          getChangedWorkspaceName(prefix, manifests)
+        )
+      : []),
+  ];
+  const closure = new Set<string>();
+  for (const owner of owners) {
+    if (!owner) return null;
+    const dependencies = buildWorkspaceDependencyClosure(owner, manifests);
+    if (!dependencies) return null;
+    for (const name of dependencies) closure.add(name);
+  }
+  return closure;
+}
+
 export function getWorkflowDecision({
   changedFiles,
   ciConfig = ci,
   eventName,
+  lockfileWorkspaces = null,
   workflowName,
   workspaceManifests = [],
 }: WorkflowDecisionInput): WorkflowDecision {
@@ -564,7 +595,12 @@ export function getWorkflowDecision({
     };
   }
 
+  const lockfileClosure = getLockfileClosure(target, workspaceManifests);
+
   const matchedPaths = normalizedChangedFiles.filter((filePath) => {
+    if (filePath === 'bun.lock' && lockfileWorkspaces && lockfileClosure) {
+      return lockfileWorkspaces.some((name) => lockfileClosure.has(name));
+    }
     if (
       workflowName === target.productionWorkflow &&
       isVerifiedProductionTestPath(filePath)

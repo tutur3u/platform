@@ -294,6 +294,31 @@ explicit JSON boolean `false` skips a job; missing outputs retain validation.
 A failed configuration job still blocks dependent jobs. Regression coverage:
 `node --test scripts/ci/mail-calendar-tasks-affected.test.js`.
 
+### Lockfile relevance for Worker and Vercel app workflows
+
+`bun.lock` used to be a global input for every Cloudflare app workflow, so adding
+an unrelated workspace (for example a new tooling package) ran Meet, Parley,
+Lettin, Colab, Coordination, Cron Control and Devbox Control validation on every
+push. `ci-check` now passes the resolver's base and head SHAs to
+`check-workflow-config.ts`, which compares the two lockfiles structurally with
+`scripts/ci/lockfile-workspace-delta.ts`. A `bun.lock` change matches a target
+only when an affected workspace is in the target's dependency closure, which
+includes the workspaces behind its `additionalPaths`.
+
+A change is scoped to a workspace only for its `workspaces` entry, its workspace
+link, nested resolutions under it (`@scope/app/dep`), or brand-new top-level
+packages that nothing could have resolved before. Root workspace edits,
+`overrides` and other top-level settings, any modified or removed third-party
+resolution, an unparseable lockfile and a missing base or head keep `bun.lock`
+global, so the workflow runs. Skipped checks still report through the existing
+`check-ci` gate. Regression coverage:
+`node --experimental-strip-types --test scripts/ci/worker-lockfile-relevance.test.mjs`.
+
+The paused `docker-setup-check.yaml` and `rust-backend.yml` workflows trigger
+only on their own runtime inputs. Shared manifests, `bun.lock`, root config and
+documentation no longer allocate a check runner merely to report a disabled
+runtime. Restore the broader triggers when resuming either runtime.
+
 Measure scheduling separately from execution when assessing this optimization:
 run-created to job-start includes prerequisite work; job-created to job-start
 more closely measures job scheduling. Count incomplete jobs separately and do
