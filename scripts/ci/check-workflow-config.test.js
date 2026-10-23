@@ -555,8 +555,11 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
 
   assert.match(workflow, /run-with-backoff\.sh bun install --frozen-lockfile/);
   assert.match(setupAction, /setup-bun-with-backoff\.sh/);
-  assert.match(setupAction, /uses: actions\/cache@v6/);
-  assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
+  assert.match(setupAction, /uses: actions\/cache@[0-9a-f]{40} # v6\b/);
+  assert.match(
+    setupAction,
+    /uses: actions\/cache\/restore@[0-9a-f]{40} # v6\b/
+  );
   assert.match(
     setupAction,
     /bun-runtime-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
@@ -886,7 +889,7 @@ test('ci configuration gate runs TypeScript scripts with Node strip-types', () =
     'utf8'
   );
 
-  assert.match(workflow, /uses: actions\/setup-node@v7/);
+  assert.match(workflow, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/);
   assert.match(workflow, /node-version: 24/);
   assert.match(
     workflow,
