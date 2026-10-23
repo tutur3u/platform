@@ -1632,10 +1632,16 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 ### Prerequisite guards
 
 - `supabase-staging.yaml` requires a successful same-repository `push` platform
-  preview build on `main` unless manually dispatched; its checkout-local `ci`
-  boolean must enable it. Changing the file changes its Git blob, so add the new
-  blob to the producer-contract allowlist in `supabase-production.yaml` and
-  `scripts/ci/production-migration-target.test.js` in the same change.
+  preview build on `main` unless manually dispatched from `main`; its checkout-local `ci`
+  boolean must enable it. Changing the file changes its Git blob. In the same
+  change, update every pin of that blob:
+  - the producer-contract allowlist in `supabase-production.yaml`;
+  - `scripts/ci/production-migration-target.test.js`;
+  - `scripts/ci/staging-contract-allowlist.test.js`, which pins the exact list
+    and requires the current blob as the last entry.
+
+  Keep the list to the current blob plus blobs from `main`'s history, and drop
+  blobs from rejected or intermediate branch heads.
 - Every enabled admitted target, including app-only commits, links staging and runs
   `supabase db push --include-all` before emitting its exact-target marker.
 - `supabase-production.yaml` runs after the production deployment planner and
@@ -1947,7 +1953,10 @@ Mutating production planners, production Vercel and Cloudflare deployments, data
 migrations, package publication, Release Please and store deployments retain their
 shared serialization groups with cancellation disabled and `queue: max`.
 Discord Modal deployment holds its lock on the success/main-guarded deploy job;
-cancelled CI completions never enter that lock. Biome has no workflow-level
+cancelled CI completions never enter that lock. It accepts only same-repository
+`push` completions on `main` or manual dispatch from `main`, and runs in the
+`discord-production` environment (give it a `main`-only branch policy and the
+Modal secrets). Biome has no workflow-level
 cancelling parent: check/config/format/lint jobs cancel by job and ref, while
 format PR creation, PR closure/branch deletion and comment writes share a separate
 non-cancelling `biome-mutations-<ref>` job group with `queue: max`.
