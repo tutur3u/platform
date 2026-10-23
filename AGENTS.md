@@ -23,7 +23,7 @@ Define completion from the request: implementation and required checks, plus PR,
 merge, or production evidence only when that delivery is authorized.
 
 For autonomous multi-lane execution, use the [shared T3 contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution) and the portable [program guidance](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits). Relay these and current custody overrides in child briefs.
-Route and switch accounts per its [account-balancing guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation).
+Route and switch accounts per its [account-balancing guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation) and [cross-orchestrator quota and storage coordination](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination).
 
 ## 2. Hard Prohibitions
 

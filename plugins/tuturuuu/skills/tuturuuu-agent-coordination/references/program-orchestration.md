@@ -93,6 +93,11 @@ to an exhausted account, and let its children resume at the reset rather than
 replaying them. Switch the owner only at an idle boundary with an empty queue,
 because queued runs keep their old account. Account memory is per provider
 instance, so carry it across a switch. Automatic failover is not installed.
+Every orchestrator thread, including the cross-project supervisor, shares the
+[quota and storage coordination contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination):
+Tuturuuu's SDK, quota and resource lanes own the single implementation, with one
+switch owner per account and one cleanup lease per host. Missing quota or
+host telemetry stays UNKNOWN.
 
 For observed slow admission, repeated handovers or two fixes failing on one
 premise, assign a bounded workflow audit at a safe checkpoint. Read actual
