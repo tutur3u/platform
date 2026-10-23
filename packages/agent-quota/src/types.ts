@@ -4,6 +4,8 @@ export type ModelFamily = 'opus' | 'sonnet' | 'haiku' | 'fable';
 
 export interface UsageWindow {
   kind: WindowKind;
+  providerWindowKind?: 'session' | 'weekly' | 'monthly' | 'other';
+  freshnessTtlMs?: number;
   id?: string;
   label?: string;
   scope?: {
@@ -71,6 +73,7 @@ export interface RankedInstance {
   action: 'delegate' | 'drain' | 'wait';
   instanceIds: string[];
   score: number;
+  unknownOrderHint?: number | null;
   eligible: boolean;
   reasons: RecommendationReason[];
 }

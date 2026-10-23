@@ -21,7 +21,8 @@ async function drainGroup(
     try {
       if (!exists(pid)) return;
     } catch {
-      break;
+      // Darwin can return EPERM while a killed group is exiting. Keep
+      // polling within the same deadline; only disappearance proves drain.
     }
     await new Promise((resolve) => setTimeout(resolve, 20));
   } while (Date.now() < until);
@@ -30,7 +31,9 @@ async function drainGroup(
     undrainedGroup: pid,
   });
 }
-function runProcess(command, args, { cwd, env, timeoutMs = 30000 } = {}) {
+/** @param {{ cwd?: string, env?: NodeJS.ProcessEnv, timeoutMs?: number }} [options] */
+function runProcess(command, args, options = {}) {
+  const { cwd, env, timeoutMs = 30000 } = options;
   return new Promise((resolve, reject) => {
     let stdout = '',
       stderr = '',
@@ -58,10 +61,8 @@ function runProcess(command, args, { cwd, env, timeoutMs = 30000 } = {}) {
       killTimer = setTimeout(() => signal('SIGKILL'), 250);
     };
     const timer = setTimeout(() => stop('PROCESS_DEADLINE'), timeoutMs);
-    for (const [stream, name] of [
-      [child.stdout, 'stdout'],
-      [child.stderr, 'stderr'],
-    ]) {
+    for (const name of ['stdout', 'stderr']) {
+      const stream = name === 'stdout' ? child.stdout : child.stderr;
       stream.on('data', (chunk) => {
         bytes += chunk.length;
         if (bytes > MAX_OUTPUT) {
@@ -74,7 +75,7 @@ function runProcess(command, args, { cwd, env, timeoutMs = 30000 } = {}) {
     }
     child.on('error', (error) => {
       stopped = 'PROCESS_SPAWN';
-      stderr = error.code || 'spawn failed';
+      stderr = 'code' in error ? String(error.code) : 'spawn failed';
     });
     child.on('close', async (status, exitSignal) => {
       clearTimeout(timer);

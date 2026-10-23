@@ -451,7 +451,11 @@ describe('independent review regressions', () => {
     };
     expect(
       reroutePlan([entry], request, context, evidence, live)[0]
-    ).toMatchObject({ status: 'resumed-on-provider', success: true });
+    ).toMatchObject({
+      status: 'resumed-on-provider',
+      success: true,
+      executionOutcome: 'verified-resumed-execution',
+    });
     for (const mismatch of [
       { model: 'wrong-model' },
       { instanceId: 'wrong-provider' },
@@ -494,9 +498,11 @@ describe('independent review regressions', () => {
     try {
       await writeFile(join(dir, 'other.json'), '{}');
       await symlink(join(dir, 'other.json'), join(dir, 'antigravity.json'));
-      expect(
-        (await collectSnapshot(pool('antigravity', 'antigravity'), dir)).windows
-      ).toEqual([]);
+      const linked = await collectSnapshot(
+        pool('antigravity', 'antigravity'),
+        dir
+      );
+      expect(linked.windows[0]?.freshnessTtlMs).toBe(0);
       await rm(join(dir, 'antigravity.json'));
       await writeFile(
         join(dir, 'antigravity.json'),
@@ -516,9 +522,11 @@ describe('independent review regressions', () => {
           padding: ' '.repeat(2_000_001),
         })
       );
-      expect(
-        (await collectSnapshot(pool('antigravity', 'antigravity'), dir)).windows
-      ).toEqual([]);
+      const oversized = await collectSnapshot(
+        pool('antigravity', 'antigravity'),
+        dir
+      );
+      expect(oversized.windows[0]?.freshnessTtlMs).toBe(0);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

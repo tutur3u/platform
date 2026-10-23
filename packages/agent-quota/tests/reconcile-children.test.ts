@@ -87,6 +87,26 @@ describe('read-only descendant reconciliation', () => {
     });
     expect(JSON.stringify(data)).toBe(before);
   });
+  it.each([
+    [
+      'Native Claude handoff exceeded context allowance',
+      'context-allowance-failure',
+    ],
+    ['Provider failed to start the resumed run', 'provider-start-failure'],
+  ] as const)(
+    'records %s as a distinct execution failure, not a quota failure',
+    (message, executionOutcome) => {
+      const data = fixture();
+      data.failures[0]!.message = message;
+      data.failures[0]!.classification = null;
+      const row = reconcileChildren(data, 'root', now).entries[0];
+      expect(row).toMatchObject({
+        failureClass: 'other',
+        executionOutcome,
+        recoveryAdmissionKey: null,
+      });
+    }
+  );
   it('finds a nested descendant while its direct parent waits', () => {
     const data = fixture();
     const child = data.threads[1];

@@ -30,8 +30,6 @@ import { runHook } from '../src/hook-cli';
 
 it('plain admit automatically imports completed receipts and never prints account identity keys', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'quota-hook-home-'));
-  const previous = process.env.HOME;
-  process.env.HOME = dir;
   const log = vi.spyOn(console, 'log').mockImplementation(() => {});
   try {
     const now = new Date().toISOString();
@@ -96,32 +94,29 @@ it('plain admit automatically imports completed receipts and never prints accoun
         unknownMaxConcurrent: 1,
       },
     };
-    await runHook('admit');
+    await runHook('admit', undefined, dir);
     expect(
       log.mock.calls.map((call) => String(call[0])).join('')
     ).not.toContain('codex'.padEnd(64, '0'));
     expect(collectChildren).toHaveBeenCalledWith('parent');
     const result = JSON.parse(String(log.mock.calls.at(-1)?.[0]));
-    expect(result.chosen?.providerInstanceId).toBe('codex');
+    expect(result).toMatchObject({ chosen: { providerInstanceId: 'codex' } });
     expect(
       result.pools.find((pool: { pool: string }) => pool.pool === 'antigravity')
     ).toMatchObject({ state: 'EXHAUSTED' });
-    await runHook('admit');
+    await runHook('admit', undefined, dir);
     const replay = String(log.mock.calls.at(-1)?.[0]);
     expect(replay).toContain('admission-already-reserved');
     expect(replay).not.toContain('accountKey');
     expect(replay).not.toContain('codex'.padEnd(64, '0'));
   } finally {
     log.mockRestore();
-    process.env.HOME = previous;
     await rm(dir, { recursive: true, force: true });
   }
 });
 
 it('redacts the account fingerprint in switch-lease stdout', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'quota-redaction-'));
-  const previous = process.env.HOME;
-  process.env.HOME = dir;
   const log = vi.spyOn(console, 'log').mockImplementation(() => {});
   try {
     fixture.accounts = [
@@ -141,14 +136,13 @@ it('redacts the account fingerprint in switch-lease stdout', async () => {
       processStartedAt: processStartedAt(process.pid),
       ttlMs: 1000,
     };
-    await runHook('switch-lease', 'acquire');
+    await runHook('switch-lease', 'acquire', dir);
     const output = String(log.mock.calls.at(-1)?.[0]);
     expect(JSON.parse(output).status).toBe('acquired');
     expect(output).not.toContain('accountKey');
     expect(output).not.toContain('a'.repeat(64));
   } finally {
     log.mockRestore();
-    process.env.HOME = previous;
     await rm(dir, { recursive: true, force: true });
   }
 });

@@ -236,6 +236,114 @@ describe('freshness, identity and reservations', () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
+  it.each(['unavailable', 'malformed'] as const)(
+    'demotes live windows instead of deleting them when the cache is %s',
+    async (cacheState) => {
+      const directory = await mkdtemp(join(tmpdir(), 'quota-live-demotion-'));
+      try {
+        const live = healthy('codex');
+        const cache =
+          cacheState === 'unavailable'
+            ? JSON.stringify({
+                instanceId: 'codex',
+                driver: 'codex',
+                usageLimits: {
+                  checkedAt: now.toISOString(),
+                  unavailable: true,
+                  windows: [],
+                },
+              })
+            : '{ malformed';
+        await writeFile(join(directory, 'codex.json'), cache);
+        const result = await collectSnapshot(live, directory);
+        expect(result.windows).toHaveLength(1);
+        expect(result.windows[0]).toMatchObject({
+          usedPercent: 30,
+          freshnessTtlMs: 0,
+        });
+        expect(result.lastError).toBe(
+          cacheState === 'unavailable'
+            ? 'no-usage-signal'
+            : 'snapshot-unreadable'
+        );
+      } finally {
+        await rm(directory, { recursive: true, force: true });
+      }
+    }
+  );
+  it.each([
+    { label: 'empty object', cache: {} },
+    {
+      label: 'wrong driver',
+      cache: { instanceId: 'codex', driver: 'claudeAgent' },
+    },
+  ])(
+    'demotes live windows when valid JSON has a $label identity',
+    async ({ cache }) => {
+      const directory = await mkdtemp(join(tmpdir(), 'quota-cache-identity-'));
+      try {
+        await writeFile(join(directory, 'codex.json'), JSON.stringify(cache));
+        const result = await collectSnapshot(healthy('codex'), directory);
+        expect(result.windows[0]).toMatchObject({
+          usedPercent: 30,
+          freshnessTtlMs: 0,
+        });
+        expect(result.lastError).toBe('snapshot-identity-mismatch');
+      } finally {
+        await rm(directory, { recursive: true, force: true });
+      }
+    }
+  );
+  it('preserves and blocks non-authoritative snapshot percentages at the limit', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'quota-unknown-kind-'));
+    try {
+      const account: AccountUsage = {
+        ...healthy('claudeAgent'),
+        provider: 'claude',
+        models: ['claude-opus-5-5'],
+      };
+      await writeFile(
+        join(directory, 'claudeAgent.json'),
+        JSON.stringify({
+          instanceId: 'claudeAgent',
+          driver: 'claudeAgent',
+          usageLimits: {
+            checkedAt: now.toISOString(),
+            windows: [
+              {
+                id: 'five_hour',
+                kind: 'session',
+                usedPercent: 10,
+                resetsAt: '2026-10-24T00:00:00Z',
+              },
+              {
+                id: 'future-account-window',
+                usedPercent: 100,
+                resetsAt: '2026-10-24T00:00:00Z',
+              },
+            ],
+          },
+        })
+      );
+      const result = await collectSnapshot(account, directory);
+      expect(result.windows[1]).toMatchObject({
+        usedPercent: 100,
+        authoritative: false,
+      });
+      const ranked = recommend({
+        accounts: [result],
+        active: [],
+        task: { model: 'claude-opus-5-5' },
+        now,
+      }).ranked[0];
+      expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
+      expect(ranked?.reasons.map((reason) => reason.code)).toContain(
+        'near-limit-stale'
+      );
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
 });
 
 function first<T>(items: T[]): T {
