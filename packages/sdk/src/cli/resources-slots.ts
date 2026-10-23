@@ -13,7 +13,11 @@ import {
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { z } from 'zod';
-import { readResourceConfig, resourceMaxLanes } from './resources-config';
+import {
+  type ResourceConfig,
+  readResourceConfig,
+  resourceMaxLanes,
+} from './resources-config';
 
 const ownerSchema = z.object({
   scheduler: z.literal(2).optional(),
@@ -295,8 +299,12 @@ async function releaseMutex(path: string, token: string) {
   if (current?.token === token) await rm(path, { recursive: true });
   else await rm(join(path, 'reclaim'), { force: true });
 }
-export async function occupancy(home: string, reclaim = false) {
-  const config = await readResourceConfig(home);
+export async function occupancy(
+  home: string,
+  reclaim = false,
+  configured?: ResourceConfig
+) {
+  const config = configured ?? (await readResourceConfig(home));
   const maxLanes = config ? resourceMaxLanes(config) : 1;
   const slots = join(home, 'slots');
   const names = await readdir(slots).catch((error) => {
@@ -374,9 +382,10 @@ export async function tickets(home: string, prune = false) {
 }
 const ignoredMarkers = new Set<string>();
 // An admitted job exports its owner token. A marker counts only while it names
-// a live owner, and, when ancestry evidence exists, only inside that owner's
-// process tree, so stale or copied markers cannot bypass admission. Ancestry
-// alone still covers children whose environment was filtered (Turbo strict).
+// a live owner inside that owner's process tree, so stale or copied markers
+// cannot bypass admission. Without process-tree evidence the marker is not
+// trusted and the command queues. Ancestry alone still covers children whose
+// environment was filtered (Turbo strict).
 export async function nestedOwner(
   home: string,
   env: NodeJS.ProcessEnv = process.env,
@@ -389,9 +398,7 @@ export async function nestedOwner(
     : undefined;
   if (!state.owners.length && !marker) return undefined;
   const evidence = state.owners.length ? processLineage(refresh) : undefined;
-  if (!evidence) {
-    if (marked) return marked;
-  } else {
+  if (evidence) {
     if (marked && descendsFrom(marked, evidence)) return marked;
     const related = state.owners.find((owner) => descendsFrom(owner, evidence));
     if (related) return related;
@@ -399,7 +406,9 @@ export async function nestedOwner(
   if (marker && !ignoredMarkers.has(marker)) {
     ignoredMarkers.add(marker);
     process.stderr.write(
-      `[ttr resources] ignoring ${admittedMarker}: it does not belong to a live admitted job in this process tree; queueing normally.\n`
+      evidence || !marked
+        ? `[ttr resources] ignoring ${admittedMarker}: it does not belong to a live admitted job in this process tree; queueing normally.\n`
+        : `[ttr resources] ignoring ${admittedMarker}: the process tree could not be read (ps failed), so the marker cannot be verified; queueing normally.\n`
     );
   }
   return undefined;
