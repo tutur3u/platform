@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_message_receipt.dart';
+import 'package:mobile/features/assistant/widgets/assistant_message_text.dart';
 import 'package:mobile/features/assistant/widgets/assistant_ordered_parts.dart';
+import 'package:mobile/features/assistant/widgets/assistant_tool_names.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
@@ -23,6 +25,7 @@ class AssistantTranscriptBubble extends StatefulWidget {
     this.orderedParts = const [],
     this.isDraft = false,
     this.activityActive = false,
+    this.receipt,
     super.key,
   });
 
@@ -37,6 +40,7 @@ class AssistantTranscriptBubble extends StatefulWidget {
   final List<AssistantMessagePart> orderedParts;
   final bool isDraft;
   final bool activityActive;
+  final AssistantMessageReceiptStatus? receipt;
 
   @override
   State<AssistantTranscriptBubble> createState() =>
@@ -79,11 +83,13 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
       child: AnimatedContainer(
         key: const ValueKey('assistant-message-content'),
         duration: duration,
-        padding: const EdgeInsets.all(14),
+        padding: alignEnd
+            ? const EdgeInsets.all(14)
+            : const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
           color: alignEnd
               ? theme.colorScheme.primaryContainer
-              : theme.colorScheme.surfaceContainerLow,
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: _selected ? theme.colorScheme.primary : Colors.transparent,
@@ -96,11 +102,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final inlineImageParts = assistantImageToolParts(toolParts);
-    final timestampLabel = timestamp == null
-        ? null
-        : DateFormat.Hm().format(timestamp!.toLocal());
     final copyPayload = [
       if (text.trim().isNotEmpty) text.trim(),
       if (transcript.trim().isNotEmpty) transcript.trim(),
@@ -110,9 +112,10 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
       alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: (MediaQuery.sizeOf(context).width - 16)
-              .clamp(0, MediaQuery.sizeOf(context).width < 420 ? 320 : 620)
-              .toDouble(),
+          maxWidth:
+              (MediaQuery.sizeOf(context).width * (alignEnd ? 0.85 : 1) - 32)
+                  .clamp(0, 620)
+                  .toDouble(),
         ),
         child: Semantics(
           label: label,
@@ -145,7 +148,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (text.trim().isNotEmpty)
-                          _AssistantMessageMarkdownBody(
+                          AssistantMessageText(
                             data: text.trim(),
                             collapsible: alignEnd && !isDraft,
                           ),
@@ -188,18 +191,13 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
                   ],
                   if (toolNames.isNotEmpty && toolParts.isEmpty) ...[
                     const SizedBox(height: 8),
-                    _AssistantToolCallsCollapsible(toolNames: toolNames),
+                    AssistantToolNames(toolNames: toolNames),
                   ],
                 ],
-                if (timestampLabel != null && !isDraft)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      timestampLabel,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+                if (alignEnd && timestamp != null && !isDraft)
+                  AssistantMessageReceipt(
+                    timestamp: timestamp!,
+                    status: widget.receipt,
                   ),
               ],
             ),
@@ -256,201 +254,4 @@ Future<void> _showMessageActions(BuildContext context, String text) async {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(context.l10n.assistantCopiedMessageAction)),
   );
-}
-
-class _AssistantMessageMarkdownBody extends StatefulWidget {
-  const _AssistantMessageMarkdownBody({
-    required this.data,
-    required this.collapsible,
-  });
-
-  final String data;
-  final bool collapsible;
-
-  @override
-  State<_AssistantMessageMarkdownBody> createState() =>
-      _AssistantMessageMarkdownBodyState();
-}
-
-class _AssistantMessageMarkdownBodyState
-    extends State<_AssistantMessageMarkdownBody> {
-  static const _collapsedLineCount = 4;
-
-  var _expanded = false;
-
-  @override
-  void didUpdateWidget(covariant _AssistantMessageMarkdownBody oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.data != widget.data) {
-      _expanded = false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!widget.collapsible) {
-      return AssistantMarkdownBody(data: widget.data, selectable: false);
-    }
-
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-    final markdownStyle = assistantMarkdownStyle(theme, subdued: false);
-    final baseStyle =
-        markdownStyle.p ??
-        theme.textTheme.bodyMedium?.copyWith(height: 1.45) ??
-        const TextStyle(fontSize: 14, height: 1.45);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final plainText = _markdownPlainText(widget.data);
-        if (plainText.isEmpty) {
-          return AssistantMarkdownBody(data: widget.data, selectable: false);
-        }
-        final painter = TextPainter(
-          text: TextSpan(text: plainText, style: baseStyle),
-          textDirection: Directionality.of(context),
-          maxLines: _collapsedLineCount,
-        )..layout(maxWidth: constraints.maxWidth);
-        final shouldCollapse = painter.didExceedMaxLines;
-
-        if (!shouldCollapse) {
-          return AssistantMarkdownBody(data: widget.data, selectable: false);
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_expanded)
-              AssistantMarkdownBody(data: widget.data, selectable: false)
-            else
-              Text(
-                plainText,
-                maxLines: _collapsedLineCount,
-                overflow: TextOverflow.fade,
-                softWrap: true,
-                style: baseStyle.copyWith(
-                  color:
-                      baseStyle.color ?? theme.colorScheme.onPrimaryContainer,
-                ),
-              ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: () => setState(() => _expanded = !_expanded),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.only(top: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                ),
-                child: Text(
-                  _expanded
-                      ? l10n.assistantSeeLessLabel
-                      : l10n.assistantSeeMoreLabel,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-String _markdownPlainText(String markdown) {
-  return markdown
-      .replaceAll(RegExp(r'```[\s\S]*?```'), ' ')
-      .replaceAllMapped(RegExp('`([^`]*)`'), (match) => match.group(1) ?? '')
-      .replaceAll(RegExp(r'!\[([^\]]*)\]\([^)]+\)'), r'$1')
-      .replaceAll(RegExp(r'\[([^\]]+)\]\([^)]+\)'), r'$1')
-      .replaceAll(RegExp(r'(^|\s)[#>*_~-]+', multiLine: true), ' ')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
-}
-
-class _AssistantToolCallsCollapsible extends StatefulWidget {
-  const _AssistantToolCallsCollapsible({required this.toolNames});
-
-  final List<String> toolNames;
-
-  @override
-  State<_AssistantToolCallsCollapsible> createState() =>
-      _AssistantToolCallsCollapsibleState();
-}
-
-class _AssistantToolCallsCollapsibleState
-    extends State<_AssistantToolCallsCollapsible> {
-  var _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final names = widget.toolNames;
-    if (names.length == 1) {
-      return _AssistantToolNameChip(label: names.single);
-    }
-
-    if (!_expanded) {
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          _AssistantToolNameChip(label: names.last),
-          TextButton(
-            onPressed: () => setState(() => _expanded = true),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-            child: Text(l10n.assistantSeeMoreLabel),
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: names
-              .map((tool) => _AssistantToolNameChip(label: tool))
-              .toList(growable: false),
-        ),
-        TextButton(
-          onPressed: () => setState(() => _expanded = false),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.only(top: 4),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
-          child: Text(l10n.assistantSeeLessLabel),
-        ),
-      ],
-    );
-  }
-}
-
-class _AssistantToolNameChip extends StatelessWidget {
-  const _AssistantToolNameChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.66),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(label, style: theme.textTheme.labelSmall),
-    );
-  }
 }

@@ -841,6 +841,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantMermaidZoomReset => 'Reset zoom';
 
   @override
+  String get assistantMessageDelivered => 'Delivered';
+
+  @override
+  String get assistantMessageRead => 'Read';
+
+  @override
   String get assistantMessageActionsTitle => 'Message actions';
 
   @override
@@ -949,7 +955,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSendAction => 'Send message';
 
   @override
-  String get assistantSettingsTitle => 'Assistant settings';
+  String get assistantSettingsTitle => 'Assistant Settings';
 
   @override
   String get assistantShowBottomNavLabel => 'Show bottom nav';

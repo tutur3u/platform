@@ -55,7 +55,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AppBar), findsNothing);
       expect(find.byType(MobileSectionAppBar), findsOneWidget);
-      expect(find.text('Assistant settings'), findsOneWidget);
+      expect(find.text('Assistant Settings'), findsOneWidget);
       expect(find.byKey(const ValueKey('settings-route-back')), findsOneWidget);
       expect(find.byType(Image), findsWidgets);
       expect(
@@ -66,7 +66,7 @@ void main() {
         tester
             .widget<ShellTitleOverride>(find.byType(ShellTitleOverride))
             .title,
-        'Assistant settings',
+        'Assistant Settings',
       );
       expect(
         tester.widget<ShellMiniNav>(find.byType(ShellMiniNav)).items.single.id,

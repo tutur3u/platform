@@ -57,7 +57,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.byType(MobileSectionAppBar), findsOneWidget);
-        expect(find.text('Assistant settings'), findsOneWidget);
+        expect(find.text('Assistant Settings'), findsOneWidget);
         final header = tester.getRect(find.byType(MobileSectionAppBar));
         final setting = tester.getRect(find.byType(SwitchListTile));
         expect(header.top, 47);

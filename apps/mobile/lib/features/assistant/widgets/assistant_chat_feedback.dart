@@ -60,7 +60,15 @@ class AssistantChatFeedback extends StatelessWidget {
         ),
       );
     }
-    if (state.isBusy) {
+    final responding =
+        state.messages.isNotEmpty &&
+        state.messages.last.role == 'assistant' &&
+        state.messages.last.parts.any(
+          (part) =>
+              part.type == 'dynamic-tool' ||
+              (part.text?.trim().isNotEmpty ?? false),
+        );
+    if (state.isBusy && !responding) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(

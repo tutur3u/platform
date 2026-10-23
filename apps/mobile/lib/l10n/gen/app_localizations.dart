@@ -1711,6 +1711,18 @@ abstract class AppLocalizations {
   /// **'Reset zoom'**
   String get assistantMermaidZoomReset;
 
+  /// No description provided for @assistantMessageDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get assistantMessageDelivered;
+
+  /// No description provided for @assistantMessageRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get assistantMessageRead;
+
   /// No description provided for @assistantMessageActionsTitle.
   ///
   /// In en, this message translates to:
@@ -1930,7 +1942,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantSettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Assistant settings'**
+  /// **'Assistant Settings'**
   String get assistantSettingsTitle;
 
   /// No description provided for @assistantShowBottomNavLabel.

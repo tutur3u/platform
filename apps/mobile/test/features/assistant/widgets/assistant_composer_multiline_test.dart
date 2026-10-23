@@ -60,6 +60,12 @@ void main() {
       tester.getSize(find.byType(AssistantComposerDock)).height,
       lessThan(100),
     );
+    focus.requestFocus();
+    await tester.pumpAndSettle();
+    expect(tester.getSize(field).height, empty);
+    focus.unfocus();
+    await tester.pumpAndSettle();
+    expect(tester.getSize(field).height, empty);
     controller.text = 'First line';
     await tester.pumpAndSettle();
     expect(tester.getSize(field).height, empty);

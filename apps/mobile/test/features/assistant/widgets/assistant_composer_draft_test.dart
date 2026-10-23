@@ -153,46 +153,43 @@ void main() {
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await icons.load();
   });
-  testWidgets(
-    'focused prompt reserves three lines and exposes draft expansion',
-    (tester) async {
-      tester.view.physicalSize = const Size(390, 800);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final controller = TextEditingController(text: 'Synthetic draft');
-      final focus = FocusNode();
-      addTearDown(controller.dispose);
-      addTearDown(focus.dispose);
-      await _pump(tester, controller, focus);
-      focus.requestFocus();
-      await tester.pumpAndSettle();
-      final path = Platform.environment['ASSISTANT_RASTER_PATH'];
-      if (path != null) {
-        await tester.runAsync(() async {
-          final boundary =
-              _rasterKey.currentContext!.findRenderObject()!
-                  as RenderRepaintBoundary;
-          final image = await boundary.toImage();
-          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-          await File(path).writeAsBytes(bytes!.buffer.asUint8List());
-          image.dispose();
-        });
-      }
-      expect(
-        tester.getRect(find.byType(TextField)).height,
-        greaterThanOrEqualTo(84),
-      );
-      final expand = tester.getRect(
-        find.byKey(const ValueKey('assistant-expand-prompt')),
-      );
-      final send = tester.getRect(
-        find.byKey(const ValueKey('assistant-navigation-toggle')),
-      );
-      expect(expand.bottom, lessThanOrEqualTo(send.top));
-      expect(tester.takeException(), isNull);
-    },
-  );
+  testWidgets('focused prompt keeps its height and exposes draft expansion', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = TextEditingController(text: 'Synthetic draft');
+    final focus = FocusNode();
+    addTearDown(controller.dispose);
+    addTearDown(focus.dispose);
+    await _pump(tester, controller, focus);
+    final initialHeight = tester.getRect(find.byType(TextField)).height;
+    focus.requestFocus();
+    await tester.pumpAndSettle();
+    final path = Platform.environment['ASSISTANT_RASTER_PATH'];
+    if (path != null) {
+      await tester.runAsync(() async {
+        final boundary =
+            _rasterKey.currentContext!.findRenderObject()!
+                as RenderRepaintBoundary;
+        final image = await boundary.toImage();
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        await File(path).writeAsBytes(bytes!.buffer.asUint8List());
+        image.dispose();
+      });
+    }
+    expect(tester.getRect(find.byType(TextField)).height, initialHeight);
+    final expand = tester.getRect(
+      find.byKey(const ValueKey('assistant-expand-prompt')),
+    );
+    final send = tester.getRect(
+      find.byKey(const ValueKey('assistant-navigation-toggle')),
+    );
+    expect(expand.bottom, lessThanOrEqualTo(send.top));
+    expect(tester.takeException(), isNull);
+  });
   for (final scale in [1.0, 2.0]) {
     testWidgets('fullscreen draft retains selection, previews and send guard '
         'scale$scale', (tester) async {
