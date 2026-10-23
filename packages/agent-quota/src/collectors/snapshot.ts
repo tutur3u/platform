@@ -37,7 +37,7 @@ export async function collectSnapshot(
     const driver =
       account.provider === 'claude' ? 'claudeAgent' : account.provider;
     if (value.instanceId !== account.instanceId || value.driver !== driver)
-      return account;
+      return demoteSnapshot(account, 'snapshot-identity-mismatch');
     const limits = value.usageLimits;
     account = {
       ...account,

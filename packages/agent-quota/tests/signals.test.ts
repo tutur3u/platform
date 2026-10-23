@@ -271,6 +271,29 @@ describe('freshness, identity and reservations', () => {
       }
     }
   );
+  it.each([
+    { label: 'empty object', cache: {} },
+    {
+      label: 'wrong driver',
+      cache: { instanceId: 'codex', driver: 'claudeAgent' },
+    },
+  ])(
+    'demotes live windows when valid JSON has a $label identity',
+    async ({ cache }) => {
+      const directory = await mkdtemp(join(tmpdir(), 'quota-cache-identity-'));
+      try {
+        await writeFile(join(directory, 'codex.json'), JSON.stringify(cache));
+        const result = await collectSnapshot(healthy('codex'), directory);
+        expect(result.windows[0]).toMatchObject({
+          usedPercent: 30,
+          freshnessTtlMs: 0,
+        });
+        expect(result.lastError).toBe('snapshot-identity-mismatch');
+      } finally {
+        await rm(directory, { recursive: true, force: true });
+      }
+    }
+  );
   it('preserves and blocks non-authoritative snapshot percentages at the limit', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'quota-unknown-kind-'));
     try {

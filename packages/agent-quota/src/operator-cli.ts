@@ -33,6 +33,28 @@ function input(): Record<string, unknown> {
     throw new HookError('input-invalid');
   return value;
 }
+
+export function rankOperatorRows<
+  T extends {
+    exitCode: number;
+    state?: string;
+    preference: number;
+    unknownOrderHint: number | null;
+    pool: string;
+  },
+>(rows: T[]): T[] {
+  return [...rows].sort(
+    (a, b) =>
+      Number(b.exitCode === 0) - Number(a.exitCode === 0) ||
+      Number(b.state === 'healthy') - Number(a.state === 'healthy') ||
+      b.preference - a.preference ||
+      (a.state === 'UNKNOWN' && b.state === 'UNKNOWN'
+        ? compareSignalOrder(a.unknownOrderHint, b.unknownOrderHint)
+        : 0) ||
+      a.pool.localeCompare(b.pool)
+  );
+}
+
 // Import only a deliberately narrow app-side export, never a full settings/auth document.
 export function validateUsageImport(
   value: Record<string, unknown>,
@@ -364,17 +386,7 @@ export async function runOperator(command: string, args: string[]) {
           })),
         };
       });
-    const ranked = [...rows].sort(
-      (a, b) =>
-        Number(b.exitCode === 0) - Number(a.exitCode === 0) ||
-        Number('state' in b && b.state === 'healthy') -
-          Number('state' in a && a.state === 'healthy') ||
-        b.preference - a.preference ||
-        (a.state === 'UNKNOWN' && b.state === 'UNKNOWN'
-          ? compareSignalOrder(a.unknownOrderHint, b.unknownOrderHint)
-          : 0) ||
-        a.pool.localeCompare(b.pool)
-    );
+    const ranked = rankOperatorRows(rows);
     console.log(
       JSON.stringify(
         {

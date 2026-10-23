@@ -53,8 +53,8 @@ add per-account `minRemainingPercent`, `maxConcurrent`, or `excluded` values.
 These policy choices are local routing recommendations; T3 Code dispatch still
 requires its normal provider instance selection.
 
-Production state paths use Node's `os.homedir()` (and therefore honor `HOME`).
-`AGENT_QUOTA_STATE_ROOT` is a test-only override used under Vitest; production
+Production state paths use `process.env.HOME || os.homedir()`. The
+`AGENT_QUOTA_STATE_ROOT` override is honored only when `VITEST` is set; production
 commands ignore it. The passwd home is used only by the test write guard.
 
 ## Freshness, reservations, and Antigravity
