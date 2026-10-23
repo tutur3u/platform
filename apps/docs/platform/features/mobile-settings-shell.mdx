@@ -41,15 +41,20 @@ Their scroll content reserves the shell-provided bottom padding, so the floating
 dock clears the last actionable row. Pushed destinations return to the screen
 that opened them; direct links fall back to their Settings parent.
 
-Settings → You now opens identity, avatar and account-status settings at
-`/settings/profile`, with account management at `/settings/accounts`. Legacy
+Settings → Edit profile, opened from the Settings profile header, is the one
+place for account and profile settings at `/settings/profile`: Identity (display
+name, full name, email with any pending change), Avatar (change or remove, plus
+the cover banner), Account (Manage accounts at `/settings/accounts`, Sessions and
+devices) and Account status, as captioned grouped cards with the shell title
+"Edit profile". The root no longer has a separate You row that duplicated the
+header; a Manage accounts row takes its place in the general group. Legacy
 `/profile/edit` and `/profile/accounts` links redirect to those destinations.
 `/profile` retains the Overview/Timeline activity surface. Its edit entry is a
 compact icon with an accessible Identity label and tooltip. Account-switching
 shortcuts remain available there. These defaults apply in both mobile languages;
 workspace permissions and queued profile writes retain their existing rules.
 
-Profile identity fields use the shared Settings tiles and panel material, with
+Profile identity fields use the shared Settings tiles in grouped cards, with
 read-only values until a field is opened for editing. Manage accounts uses the
 same grouped Add account row and account panels; its shell title is not repeated
 in a hero card. The Profile account-management entry has one label, and What's
@@ -57,7 +62,7 @@ new keeps its description and installed version without repeating the shell
 heading. Account removal confirmations and queued profile writes are unchanged.
 These defaults apply to both languages, light/dark themes and enlarged text.
 
-Avatar removal in Settings → You captures the authenticated account when its
+Avatar removal in Settings → Edit profile captures the authenticated account when its
 confirmation opens. An account switch or logout invalidates that confirmation,
 even if the original account returns before confirmation. Removal uses the
 existing avatar DELETE and offline queue contracts, with the original actor
@@ -163,18 +168,80 @@ the new count or end its loading state. This applies to the native shell action
 button and shared notifications cubit; delayed-actor and same-workspace ABA
 regressions are in `notifications_cubit_test.dart`.
 
-## Product settings entry points
+## Settings > Apps: one home for app settings
 
-The central Settings overview lists native products with maintained settings
-entries in `product_settings_registry.dart`. Calendar and Finance open the
-existing shared Preferences controls; Mail resolves the selected workspace's
-mailboxes and opens its existing quick-settings editor. Entries are shown only
-when the product's corresponding state/access is available; this registry does
-not grant permissions or fabricate settings for unimplemented products. App
-quick settings and central entries share implementations and persisted state.
-Mail's nested editor uses the shell title, bottom navigation/actions and inherited
-background. A scoped route is cancelled on any account/workspace transition;
-request completion cannot replace an editor opened for another scope.
+Every native app's settings live in Settings under a captioned **Apps** group.
+Each row shows a summary of current values and opens that app's settings. This
+applies to both mobile languages, all themes and enlarged text. Each setting
+has exactly one editor and keeps its existing storage, scope cancellation and
+permission gate. Rows appear only when the app is available. Timer appears when
+its opt-in experiment is enabled. Mail requires mail discovery and a workspace.
+Assistant requires a signed-in account and a workspace. The registry does not
+grant permissions or invent settings.
+
+| Setting | Previous surface | Central location |
+| --- | --- | --- |
+| Open Tasks board by default | Settings root, offline Tasks page | Apps → Tasks (`/settings/apps/tasks`) |
+| First day of week | Settings root, Calendar product dialog | Apps → Calendar (`/settings/apps/calendar`) |
+| Calendar accounts and visibility | Calendar top-bar action only | Apps → Calendar; the action remains |
+| Finance amounts | Settings root, offline Finance page, product dialog | Apps → Finance (`/settings/apps/finance`); the eye quick toggle remains |
+| Pomodoro lengths and auto-start | Timer gear sheet | Apps → Timer (`/settings/apps/timer`) |
+| Missed-entry approval threshold and grace period | Timer Requests gear sheet | Apps → Timer, shown only for a shared workspace whose member has `manage_time_tracking_requests` and `manage_workspace_settings` |
+| Mailbox settings, device reading and swipe actions | Mail gear (swipe actions only there) | Apps → Mail hub, now including swipe actions |
+| Assistant personality, memory and on-device models | Mira menu | Apps → Assistant hub |
+| Profile and account | Settings → You row and Edit profile | Settings → Edit profile (`/settings/profile`) |
+
+Device-wide preferences stay at the root: Appearance and language, Time zone
+(personal and workspace), and Notifications and interaction (reminders, haptics,
+link browser). Tasks, Calendar, Finance and Timer render as routed sub-screens in
+the shell with one top title, dock Back and dock-clearing scroll. Offline module
+pages link to the app sub-screen instead of repeating its editors. The app
+sub-screens link back to their offline data. Mail and Assistant keep their
+account-scoped hubs, which an account or workspace switch cancels.
+
+In-app entry points use the same editor. The Timer gear and the Requests gear
+deep-link to Apps → Timer. On return, Timer reloads Pomodoro lengths and Requests
+reloads its threshold and permissions for the same workspace. The Mail gear
+opens the current mailbox in the shared Mail editor. The Mira menu opens the
+shared Assistant hub.
+
+These stay contextual on purpose:
+
+- quick toggles that edit the same stored value, such as the Finance eye
+  action;
+- the layout editors of their own surfaces, Home customize and Apps arrange;
+- per-entity settings, such as a Meet room, a chat conversation's model and a
+  habit tracker.
+
+Routes and redirects:
+
+- `/settings/apps` and unknown or hub-only app ids, such as
+  `/settings/apps/mail`, redirect to `/settings`.
+- `/tasks/settings`, `/calendar/settings`, `/finance/settings` and
+  `/timer/settings` redirect to the matching sub-screen. They are registered
+  before `/tasks/:taskId` and `/calendar/:eventId`.
+- Web and app links of the form `<workspace>/settings/apps/<app>` and
+  `<workspace>/<app>/settings`, plus the Tasks host's `<workspace>/settings`,
+  resolve to the same locations.
+- `/settings/preferences` still redirects to `/settings`, and existing Settings
+  routes are unchanged.
+
+Settings search sits under the profile header. It matches titles, sections and
+the settings on app sub-screens, ignoring case and Vietnamese diacritics. A
+result for a routed destination opens it. A result for an inline root row clears
+the search and scrolls that row's group into view.
+
+Coverage:
+
+- `settings_apps_checks.dart` covers the Apps rows, sub-screens, renders and
+  search.
+- `timer_app_settings_test.dart` covers the threshold permission gate, workspace
+  switch and Pomodoro persistence.
+- `time_tracker_settings_entrypoint_test.dart` covers the Requests gear deep
+  link and reload.
+- `app_settings_routes_test.dart` covers redirects and deep links.
+- `settings_search_test.dart` covers folding and matching.
+- `profile_page_test.dart` covers the Edit profile groups.
 
 ### Assistant settings layout
 
@@ -277,8 +344,9 @@ General and product settings share one rounded card per group, with inset
 separators and unboxed line icons, rather than a separate outlined card for every
 action. On solid pages, the card is a quiet tonal step from the page background
 that keeps muted text at WCAG AA. Over a gradient or blob appearance, the card is
-translucent at the chosen card opacity. Existing profile panels and explicit
-destructive confirmations retain their grouping.
+translucent at the chosen card opacity. Edit profile uses the same captioned
+groups; its cover banner keeps its preview panel, and explicit destructive
+confirmations retain their grouping.
 Preference categories use one consistent gap between groups and no trailing group
 gap; the parent owns spacing to the next section. Row touch targets remain at least
 48 logical pixels, while translated labels and enlarged text may increase height.
@@ -332,8 +400,9 @@ and its Edit profile pill open `/settings/profile`. The workspace count keeps it
 natural width on one line and opens the workspace list; a long name ellipsizes
 instead. With enlarged text, if the name would have less than about 96px, the
 count moves to its own line under the identity. The Workspace pill opens
-`/settings/workspace`. These are shortcuts; every existing row and destination
-remains in its captioned group. The header does not show social counts or
+`/settings/workspace`. These are shortcuts; every destination remains reachable
+from a captioned group, with per-app rows under Apps. The header does not show
+social counts or
 invented destinations. The shell keeps the single top-navbar title and the
 floating dock Back control; the page adds no large in-body title or back chevron.
 
