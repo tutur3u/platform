@@ -128,9 +128,15 @@ test(
       const helper = pathToFileURL(path.join(directory, moduleFiles[0])).href;
       const marker = path.join(directory, 'ready.json'),
         token = randomUUID();
-      const descendant = `process.on('SIGTERM',()=>{});const server=require('node:net').createServer();server.listen(0,'127.0.0.1',()=>require('node:fs').writeFileSync(${JSON.stringify(marker)},JSON.stringify({pid:process.pid,port:server.address().port,token:${JSON.stringify(token)}})));`;
-      const leader = `const c=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{stdio:['ignore',1,2]});c.unref();${mode === 'leader-exit' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(marker)})){clearInterval(timer);process.exit(7)}},10);` : "process.on('SIGTERM',()=>{});setInterval(()=>{},1000);"}`;
-      const worker = `import {runOwnedBuildProcess} from ${JSON.stringify(helper)};const job=runOwnedBuildProcess('node',['-e',${JSON.stringify(leader)}],{...process.env,PATH:${JSON.stringify(path.dirname(process.execPath))}+':'+process.env.PATH},${mode === 'inner-timeout' ? 300 : 10000});${mode === 'fixture-crash' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(marker)})){clearInterval(timer);process.kill(process.pid,'SIGKILL')}},10);` : ''}try{const result=await job;console.log(JSON.stringify({exitCode:result.status,timedOut:result.timedOut}))}catch{console.log(JSON.stringify({controlFailure:'owned-build'}));process.exitCode=1}`;
+      const jsLiteral = (value) =>
+        JSON.stringify(value).replace(
+          /[<>&/\u2028\u2029]/gu,
+          (character) =>
+            `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`
+        );
+      const descendant = `process.on('SIGTERM',()=>{});const server=require('node:net').createServer();server.listen(0,'127.0.0.1',()=>require('node:fs').writeFileSync(${jsLiteral(marker)},JSON.stringify({pid:process.pid,port:server.address().port,token:${jsLiteral(token)}})));`;
+      const leader = `const c=require('node:child_process').spawn(process.execPath,['-e',${jsLiteral(descendant)}],{stdio:['ignore',1,2]});c.unref();${mode === 'leader-exit' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${jsLiteral(marker)})){clearInterval(timer);process.exit(7)}},10);` : "process.on('SIGTERM',()=>{});setInterval(()=>{},1000);"}`;
+      const worker = `import {runOwnedBuildProcess} from ${jsLiteral(helper)};const job=runOwnedBuildProcess('node',['-e',${jsLiteral(leader)}],{...process.env,PATH:${jsLiteral(path.dirname(process.execPath))}+':'+process.env.PATH},${mode === 'inner-timeout' ? 300 : 10000});${mode === 'fixture-crash' ? `const timer=setInterval(()=>{if(require('node:fs').existsSync(${jsLiteral(marker)})){clearInterval(timer);process.kill(process.pid,'SIGKILL')}},10);` : ''}try{const result=await job;console.log(JSON.stringify({exitCode:result.status,timedOut:result.timedOut}))}catch{console.log(JSON.stringify({controlFailure:'owned-build'}));process.exitCode=1}`;
       try {
         const started = Date.now();
         const result = await runOwnedSessionProcess(
@@ -199,7 +205,7 @@ test('a fixture without its IPC owner cannot launch a detached build', async () 
     [
       '--input-type=module',
       '-e',
-      `import {runOwnedBuildProcess} from ${JSON.stringify(helper)};try{await runOwnedBuildProcess('node',['-e','process.exit(0)'],process.env,1000);console.log('unsafe')}catch{console.log('owner-required')}`,
+      `import {runOwnedBuildProcess} from ${jsLiteral(helper)};try{await runOwnedBuildProcess('node',['-e','process.exit(0)'],process.env,1000);console.log('unsafe')}catch{console.log('owner-required')}`,
     ],
     {
       env: { ...process.env, EMPLOYEE_WEB_SESSION_PROCESS_GROUP: '1' },

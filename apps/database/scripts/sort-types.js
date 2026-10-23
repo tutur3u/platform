@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeFileAtomically } from './atomic-file.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -237,7 +238,7 @@ function resolveTypesFilePath() {
   );
 }
 
-function main() {
+async function main() {
   try {
     const typesFilePath = resolveTypesFilePath();
 
@@ -248,11 +249,34 @@ function main() {
       process.exit(1);
     }
 
-    const content = fs.readFileSync(typesFilePath, 'utf8');
+    const fd = fs.openSync(
+      typesFilePath,
+      fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW
+    );
+    let opened;
+    let content;
+    try {
+      opened = fs.fstatSync(fd);
+      if (!opened.isFile())
+        throw new Error('Types file is not a regular file.');
+      content = fs.readFileSync(fd, 'utf8');
+    } finally {
+      fs.closeSync(fd);
+    }
     const sortedContent = sortGeneratedTypes(content);
 
     if (content !== sortedContent) {
-      fs.writeFileSync(typesFilePath, sortedContent, 'utf8');
+      await writeFileAtomically(typesFilePath, sortedContent, {
+        beforeMove: () => {
+          const current = fs.lstatSync(typesFilePath);
+          if (
+            !current.isFile() ||
+            current.dev !== opened.dev ||
+            current.ino !== opened.ino
+          )
+            throw new Error('Types file changed while sorting.');
+        },
+      });
       console.log('Wrote sorted content back to file');
     } else {
       console.log('No changes detected, file is already sorted.');
@@ -266,6 +290,10 @@ function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  main().catch((error) => {
+    console.error('Error:', error.message);
+    console.error('Stack trace:', error.stack);
+    process.exit(1);
+  });
 }
