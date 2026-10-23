@@ -28,4 +28,44 @@ describe('Google Calendar OAuth URLs', () => {
       'http://localhost:7803/api/v1/calendar/auth/callback'
     );
   });
+
+  it('uses the Calendar base URL in production instead of forwarded hosts', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('GOOGLE_REDIRECT_URI', '');
+
+    expect(
+      resolveGoogleCalendarOAuthRedirectUri(
+        {
+          headers: new Headers({
+            host: 'attacker.example',
+            'x-forwarded-host': 'attacker.example',
+          }),
+        },
+        'https://calendar.tuturuuu.com'
+      )
+    ).toBe('https://calendar.tuturuuu.com/api/v1/calendar/auth/callback');
+  });
+
+  it('keeps the forwarded-host fallback outside production only', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('GOOGLE_REDIRECT_URI', '');
+    for (const key of [
+      'WEB_APP_URL',
+      'NEXT_PUBLIC_WEB_APP_URL',
+      'NEXT_PUBLIC_APP_URL',
+      'COOLIFY_URL',
+      'COOLIFY_FQDN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
+
+    expect(
+      resolveGoogleCalendarOAuthRedirectUri({
+        headers: new Headers({
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+        }),
+      })
+    ).toBe('http://localhost:7803/api/v1/calendar/auth/callback');
+  });
 });

@@ -39,6 +39,17 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(async () => ({ get: cookieGetMock })),
 }));
 
+vi.mock('@tuturuuu/supabase/next/server', async () => {
+  const { sharedFakeCalendarOAuthNonceLedger } = await import(
+    '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils'
+  );
+  return {
+    createAdminClient: vi.fn(
+      async () => sharedFakeCalendarOAuthNonceLedger().client
+    ),
+  };
+});
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: verifyWorkspaceMembershipTypeMock,
 }));
@@ -51,11 +62,15 @@ vi.mock('@/lib/calendar/microsoft-refresh-credential', () => ({
   microsoftRefreshCredential: vi.fn(() => 'refresh-credential'),
 }));
 
+import { BASE_URL } from '@/constants/common';
+import { sharedFakeCalendarOAuthNonceLedger } from '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils';
 import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
 
+const nonceLedger = sharedFakeCalendarOAuthNonceLedger();
+const CALENDAR_ORIGIN = new URL(BASE_URL).origin;
+
 const SECRET = 'microsoft-client-secret';
-const CALENDAR_ORIGIN = 'https://calendar.tuturuuu.com';
 const ATTACKER_HEADERS = {
   host: 'attacker.example',
   'x-forwarded-host': 'attacker.example',
@@ -121,13 +136,10 @@ describe('Microsoft Calendar OAuth callback route', () => {
       'NEXT_PUBLIC_APP_URL',
       'COOLIFY_URL',
       'COOLIFY_FQDN',
-      'UPSTASH_REDIS_REST_URL',
-      'UPSTASH_REDIS_REST_TOKEN',
-      'NEXT_PUBLIC_CALENDAR_APP_URL',
     ]) {
       vi.stubEnv(key, '');
     }
-    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
+    nonceLedger.reset();
     vi.stubEnv('MICROSOFT_CLIENT_ID', 'microsoft-client-id');
     vi.stubEnv('MICROSOFT_CLIENT_SECRET', SECRET);
     vi.stubEnv(
@@ -214,22 +226,47 @@ describe('Microsoft Calendar OAuth callback route', () => {
 
   it.each([
     ['provider error', () => `error=access_denied&state=${signedState()}`],
-    ['code', () => `code=abc&state=${signedState()}`],
+    ['successful connection', () => `code=abc&state=${signedState()}`],
   ])(
-    'fails closed in production without the state store for a %s callback',
+    'works in production without Calendar or Upstash env vars and ignores attacker hosts for a %s redirect',
     async (_label, query) => {
+      vi.resetModules();
       vi.stubEnv('NODE_ENV', 'production');
+      for (const key of [
+        'CALENDAR_APP_URL',
+        'NEXT_PUBLIC_CALENDAR_APP_URL',
+        'BASE_URL',
+        'UPSTASH_REDIS_REST_URL',
+        'UPSTASH_REDIS_REST_TOKEN',
+      ]) {
+        vi.stubEnv(key, '');
+      }
+      const { GET: productionGET } = await import('./route');
 
-      const response = await GET(callback(query()));
+      const response = await productionGET(
+        callback(query(), {
+          headers: ATTACKER_HEADERS,
+          origin: 'https://attacker.example',
+        })
+      );
 
-      expect(response.status).toBe(503);
-      await expect(response.json()).resolves.toEqual({
-        error: 'Calendar connection is temporarily unavailable',
-      });
-      expect(resolveSessionAuthContextMock).not.toHaveBeenCalled();
-      expect(acquireTokenByCodeMock).not.toHaveBeenCalled();
+      expect(response.status).toBe(302);
+      expect(locationOf(response).origin).toBe('https://calendar.tuturuuu.com');
+      expect(locationOf(response).pathname).toBe('/workspace-1');
     }
   );
+
+  it('fails closed before the code exchange when the nonce ledger is unavailable', async () => {
+    nonceLedger.failure = { code: '42P01', message: 'relation does not exist' };
+
+    const response = await GET(callback(`code=abc&state=${signedState()}`));
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Calendar connection is temporarily unavailable',
+    });
+    expect(acquireTokenByCodeMock).not.toHaveBeenCalled();
+  });
 
   it('rejects an unsigned workspace state before exchanging the code', async () => {
     const response = await GET(callback('code=abc&state=workspace-1'));
@@ -279,5 +316,9 @@ describe('Microsoft Calendar OAuth callback route', () => {
       error: 'Invalid OAuth state',
     });
     expect(acquireTokenByCodeMock).toHaveBeenCalledTimes(1);
+    expect(nonceLedger.calls.map((call) => call.args.p_provider)).toEqual([
+      'microsoft',
+      'microsoft',
+    ]);
   });
 });

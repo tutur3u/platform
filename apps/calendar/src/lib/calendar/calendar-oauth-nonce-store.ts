@@ -1,5 +1,4 @@
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
-import { isCalendarOAuthProductionRuntime } from './calendar-oauth-runtime';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { CalendarOAuthProvider } from './calendar-oauth-state';
 
 export type CalendarOAuthNonceConsumption =
@@ -7,55 +6,77 @@ export type CalendarOAuthNonceConsumption =
   | 'replayed'
   | 'unavailable';
 
-const KEY_PREFIX = 'calendar:oauth-state:v1';
-const MAX_LOCAL_ENTRIES = 10_000;
+type NonceRpcResult = {
+  data: unknown;
+  error: { code?: string; message?: string } | null;
+};
 
-// Process-local fallback for non-production environments without Upstash
-// (local development and tests). Production must use Redis so replay
-// protection spans instances; without it consumption fails closed.
-const locallyConsumed = new Map<string, number>();
+/** Minimal surface of the service-role client used for nonce consumption. */
+export type CalendarOAuthNonceClient = {
+  schema(schema: 'private'): {
+    rpc(
+      fn: 'consume_calendar_oauth_state_nonce',
+      args: {
+        p_expires_at: string;
+        p_nonce: string;
+        p_provider: CalendarOAuthProvider;
+        p_user_id: string;
+      }
+    ): PromiseLike<NonceRpcResult>;
+  };
+};
 
-function consumeLocally(key: string, expiresAt: number, now: number) {
-  for (const [entry, entryExpiresAt] of locallyConsumed) {
-    if (entryExpiresAt <= now) locallyConsumed.delete(entry);
-  }
-
-  if (locallyConsumed.has(key)) return 'replayed' as const;
-  if (locallyConsumed.size >= MAX_LOCAL_ENTRIES) return 'unavailable' as const;
-
-  locallyConsumed.set(key, expiresAt);
-  return 'consumed' as const;
+async function defaultClient() {
+  return (await createAdminClient({
+    noCookie: true,
+  })) as unknown as CalendarOAuthNonceClient;
 }
 
 /**
- * Atomically mark an OAuth state nonce as used. Returns `replayed` when the
- * nonce was already consumed and `unavailable` when the store cannot answer;
- * callers must reject both.
+ * Atomically mark an OAuth state nonce as used in the private single-use
+ * ledger (`private.calendar_oauth_state_nonces`). Returns `replayed` when the
+ * nonce was already consumed and `unavailable` when the ledger cannot answer
+ * (for example the table or RPC is missing); callers must reject both.
  */
 export async function consumeCalendarOAuthNonce({
+  client,
   expiresAt,
   nonce,
-  now = Date.now(),
   provider,
+  userId,
 }: {
+  client?: CalendarOAuthNonceClient;
   expiresAt: number;
   nonce: string;
-  now?: number;
   provider: CalendarOAuthProvider;
+  userId: string;
 }): Promise<CalendarOAuthNonceConsumption> {
-  const key = `${KEY_PREFIX}:${provider}:${nonce}`;
-  const ttlSeconds = Math.max(1, Math.ceil((expiresAt - now) / 1000));
-
   try {
-    const redis = await getUpstashRestRedisClient();
-    if (!redis) {
-      return isCalendarOAuthProductionRuntime()
-        ? 'unavailable'
-        : consumeLocally(key, expiresAt, now);
+    const db = client ?? (await defaultClient());
+    const { data, error } = await db
+      .schema('private')
+      .rpc('consume_calendar_oauth_state_nonce', {
+        p_expires_at: new Date(expiresAt).toISOString(),
+        p_nonce: nonce,
+        p_provider: provider,
+        p_user_id: userId,
+      });
+
+    if (error) {
+      console.error('Failed to record calendar OAuth state use', {
+        code: error.code ?? null,
+        provider,
+      });
+      return 'unavailable';
     }
 
-    const result = await redis.set(key, '1', { ex: ttlSeconds, nx: true });
-    return result === 'OK' ? 'consumed' : 'replayed';
+    if (data === true) return 'consumed';
+    if (data === false) return 'replayed';
+
+    console.error('Unexpected calendar OAuth state ledger response', {
+      provider,
+    });
+    return 'unavailable';
   } catch (error) {
     console.error('Failed to record calendar OAuth state use', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -63,8 +84,4 @@ export async function consumeCalendarOAuthNonce({
     });
     return 'unavailable';
   }
-}
-
-export function resetLocalCalendarOAuthNonceStoreForTests() {
-  locallyConsumed.clear();
 }

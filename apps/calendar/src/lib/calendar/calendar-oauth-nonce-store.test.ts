@@ -1,72 +1,75 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getUpstashRestRedisClientMock } = vi.hoisted(() => ({
-  getUpstashRestRedisClientMock: vi.fn(),
+const { createAdminClientMock } = vi.hoisted(() => ({
+  createAdminClientMock: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: getUpstashRestRedisClientMock,
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: createAdminClientMock,
 }));
 
-import {
-  consumeCalendarOAuthNonce,
-  resetLocalCalendarOAuthNonceStoreForTests,
-} from './calendar-oauth-nonce-store';
+import { createFakeCalendarOAuthNonceLedger } from './calendar-oauth-nonce-ledger.test-utils';
+import { consumeCalendarOAuthNonce } from './calendar-oauth-nonce-store';
 
-const now = 1_000_000;
+const expiresAt = Date.UTC(2026, 9, 24, 9, 10, 0);
 const input = {
-  expiresAt: now + 600_000,
-  nonce: 'nonce-1',
-  now,
+  expiresAt,
+  nonce: 'nonce-1234567890abcdef',
   provider: 'google' as const,
+  userId: '00000000-0000-4000-8000-000000000001',
 };
 
 describe('calendar OAuth nonce store', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    resetLocalCalendarOAuthNonceStoreForTests();
   });
 
-  it('consumes a nonce atomically in Redis for its remaining lifetime', async () => {
-    const set = vi.fn().mockResolvedValueOnce('OK').mockResolvedValueOnce(null);
-    getUpstashRestRedisClientMock.mockResolvedValue({ set });
+  it('consumes a nonce once through the private RPC and reports replays', async () => {
+    const ledger = createFakeCalendarOAuthNonceLedger();
+    createAdminClientMock.mockResolvedValue(ledger.client);
 
     await expect(consumeCalendarOAuthNonce(input)).resolves.toBe('consumed');
     await expect(consumeCalendarOAuthNonce(input)).resolves.toBe('replayed');
-    expect(set).toHaveBeenCalledWith(
-      'calendar:oauth-state:v1:google:nonce-1',
-      '1',
-      { ex: 600, nx: true }
+    expect(createAdminClientMock).toHaveBeenCalledWith({ noCookie: true });
+    expect(ledger.calls[0]).toEqual({
+      args: {
+        p_expires_at: '2026-10-24T09:10:00.000Z',
+        p_nonce: 'nonce-1234567890abcdef',
+        p_provider: 'google',
+        p_user_id: '00000000-0000-4000-8000-000000000001',
+      },
+      fn: 'consume_calendar_oauth_state_nonce',
+      schema: 'private',
+    });
+  });
+
+  it.each([
+    ['a missing RPC', { code: 'PGRST202', message: 'not found' }],
+    ['a missing table', { code: '42P01', message: 'relation missing' }],
+    ['rejected input', { code: '22023', message: 'invalid expiry' }],
+  ])('fails closed on %s', async (_label, failure) => {
+    const ledger = createFakeCalendarOAuthNonceLedger();
+    ledger.failure = failure;
+
+    await expect(
+      consumeCalendarOAuthNonce({ ...input, client: ledger.client })
+    ).resolves.toBe('unavailable');
+  });
+
+  it('fails closed on an unexpected RPC response', async () => {
+    const client = {
+      schema: () => ({ rpc: async () => ({ data: null, error: null }) }),
+    };
+
+    await expect(consumeCalendarOAuthNonce({ ...input, client })).resolves.toBe(
+      'unavailable'
     );
   });
 
-  it('fails closed when Redis errors', async () => {
-    getUpstashRestRedisClientMock.mockResolvedValue({
-      set: vi.fn().mockRejectedValue(new Error('down')),
-    });
+  it('fails closed when the admin client cannot be created', async () => {
+    createAdminClientMock.mockRejectedValue(new Error('no service key'));
 
     await expect(consumeCalendarOAuthNonce(input)).resolves.toBe('unavailable');
-  });
-
-  it('refuses the process-local fallback in production', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    getUpstashRestRedisClientMock.mockResolvedValue(null);
-
-    await expect(consumeCalendarOAuthNonce(input)).resolves.toBe('unavailable');
-    vi.unstubAllEnvs();
-  });
-
-  it('falls back to a process-local single-use store without Redis', async () => {
-    getUpstashRestRedisClientMock.mockResolvedValue(null);
-
-    await expect(consumeCalendarOAuthNonce(input)).resolves.toBe('consumed');
-    await expect(consumeCalendarOAuthNonce(input)).resolves.toBe('replayed');
-    await expect(
-      consumeCalendarOAuthNonce({ ...input, provider: 'microsoft' })
-    ).resolves.toBe('consumed');
-    await expect(
-      consumeCalendarOAuthNonce({ ...input, now: input.expiresAt + 1 })
-    ).resolves.toBe('consumed');
   });
 });

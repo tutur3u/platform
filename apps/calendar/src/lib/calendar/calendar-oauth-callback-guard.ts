@@ -77,6 +77,7 @@ export async function authorizeCalendarOAuthCallback({
     expiresAt: verifiedState.expiresAt,
     nonce: verifiedState.nonce,
     provider,
+    userId: user.id,
   });
 
   if (consumption === 'replayed') {

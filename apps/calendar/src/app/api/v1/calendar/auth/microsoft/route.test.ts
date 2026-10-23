@@ -38,7 +38,6 @@ vi.mock('@/lib/workspace-helper', () => ({
 }));
 
 import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
-import { GET } from './route';
 
 const SECRET = 'microsoft-client-secret';
 
@@ -58,9 +57,6 @@ describe('Microsoft Calendar auth route', () => {
       'MICROSOFT_REDIRECT_URI',
       'https://calendar.tuturuuu.com/api/v1/calendar/auth/microsoft/callback'
     );
-    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
-    vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
-    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '');
     normalizeWorkspaceIdMock.mockResolvedValue('workspace-1');
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,
@@ -71,31 +67,21 @@ describe('Microsoft Calendar auth route', () => {
     getAuthCodeUrlMock.mockResolvedValue('https://login.example/authorize');
   });
 
-  it('fails closed in production without the single-use state store', async () => {
+  it('issues a signed state and PKCE cookie in production with no Calendar or Upstash env vars', async () => {
+    vi.resetModules();
     vi.stubEnv('NODE_ENV', 'production');
-    const consoleError = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => undefined);
+    for (const key of [
+      'CALENDAR_APP_URL',
+      'NEXT_PUBLIC_CALENDAR_APP_URL',
+      'BASE_URL',
+      'UPSTASH_REDIS_REST_URL',
+      'UPSTASH_REDIS_REST_TOKEN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
+    const { GET: productionGET } = await import('./route');
 
-    const response = await GET(startRequest());
-
-    expect(response.status).toBe(503);
-    await expect(response.json()).resolves.toEqual({
-      error: 'Calendar connection is temporarily unavailable',
-    });
-    expect(getAuthCodeUrlMock).not.toHaveBeenCalled();
-    expect(consoleError.mock.calls.flat().join(' ')).toContain(
-      'UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN'
-    );
-    consoleError.mockRestore();
-  });
-
-  it('issues a signed state and PKCE cookie once production is configured', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://store.example');
-    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
-
-    const response = await GET(startRequest());
+    const response = await productionGET(startRequest());
     const [request] = getAuthCodeUrlMock.mock.calls[0] as [
       { codeChallengeMethod: string; state: string },
     ];

@@ -47,15 +47,31 @@ vi.mock('@tuturuuu/trigger/google-calendar-full-sync', () => ({
   performFullSyncForWorkspace: fullSyncMock,
 }));
 
+vi.mock('@tuturuuu/supabase/next/server', async () => {
+  const { sharedFakeCalendarOAuthNonceLedger } = await import(
+    '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils'
+  );
+  return {
+    createAdminClient: vi.fn(
+      async () => sharedFakeCalendarOAuthNonceLedger().client
+    ),
+  };
+});
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: verifyWorkspaceMembershipTypeMock,
 }));
 
+import { BASE_URL } from '@/constants/common';
+import { sharedFakeCalendarOAuthNonceLedger } from '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils';
 import {
   createCalendarOAuthState,
   deriveCalendarOAuthPkce,
 } from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
+
+const nonceLedger = sharedFakeCalendarOAuthNonceLedger();
+const CALENDAR_ORIGIN = new URL(BASE_URL).origin;
 
 function signedState({
   secret = 'google-client-secret',
@@ -184,13 +200,10 @@ describe('Google Calendar OAuth callback route', () => {
       'NEXT_PUBLIC_APP_URL',
       'COOLIFY_URL',
       'COOLIFY_FQDN',
-      'UPSTASH_REDIS_REST_URL',
-      'UPSTASH_REDIS_REST_TOKEN',
-      'NEXT_PUBLIC_CALENDAR_APP_URL',
     ]) {
       vi.stubEnv(key, '');
     }
-    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
+    nonceLedger.reset();
     vi.stubEnv('GOOGLE_CLIENT_ID', 'google-client-id');
     vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -233,26 +246,52 @@ describe('Google Calendar OAuth callback route', () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe(
-      'https://calendar.tuturuuu.com/workspace-1?provider=google&connected=true'
+      `${CALENDAR_ORIGIN}/workspace-1?provider=google&connected=true`
     );
   });
 
-  it.each([
-    [
-      'the single-use state store',
-      { CALENDAR_APP_URL: 'https://calendar.tuturuuu.com' },
-    ],
-    [
-      'a Calendar public origin',
-      {
-        CALENDAR_APP_URL: '',
-        UPSTASH_REDIS_REST_TOKEN: 'token',
-        UPSTASH_REDIS_REST_URL: 'https://store.example',
-      },
-    ],
-  ])('fails closed in production without %s', async (_label, env) => {
+  it('works in production with no Calendar, Web or Upstash env vars and ignores attacker hosts', async () => {
+    vi.resetModules();
     vi.stubEnv('NODE_ENV', 'production');
-    for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
+    for (const key of [
+      'CALENDAR_APP_URL',
+      'NEXT_PUBLIC_CALENDAR_APP_URL',
+      'BASE_URL',
+      'GOOGLE_REDIRECT_URI',
+      'UPSTASH_REDIS_REST_URL',
+      'UPSTASH_REDIS_REST_TOKEN',
+    ]) {
+      vi.stubEnv(key, '');
+    }
+    const { GET: productionGET } = await import('./route');
+    const { OAuth2Client } = await import('@tuturuuu/google');
+
+    const response = await productionGET(
+      callbackRequest(signedState(), 'https://attacker.example', {
+        host: 'attacker.example',
+        'x-forwarded-host': 'attacker.example',
+        'x-forwarded-proto': 'https',
+      })
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'https://calendar.tuturuuu.com/workspace-1?provider=google&connected=true'
+    );
+    expect(vi.mocked(OAuth2Client)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        redirectUri:
+          'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback',
+      })
+    );
+    expect(nonceLedger.calls).toHaveLength(1);
+  });
+
+  it('fails closed before the code exchange when the nonce ledger is unavailable', async () => {
+    nonceLedger.failure = {
+      code: 'PGRST202',
+      message: 'Could not find the function',
+    };
 
     const response = await GET(callbackRequest(signedState()));
 
@@ -260,8 +299,8 @@ describe('Google Calendar OAuth callback route', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Calendar connection is temporarily unavailable',
     });
-    expect(resolveSessionAuthContextMock).not.toHaveBeenCalled();
     expect(getTokenMock).not.toHaveBeenCalled();
+    expect(fullSyncMock).not.toHaveBeenCalled();
   });
 
   it('preserves an existing refresh token when Google omits one on reconnect', async () => {
@@ -394,7 +433,7 @@ describe('Google Calendar OAuth callback route', () => {
     const location = new URL(response.headers.get('location') ?? '');
 
     expect(response.status).toBe(302);
-    expect(location.origin).toBe('https://calendar.tuturuuu.com');
+    expect(location.origin).toBe(CALENDAR_ORIGIN);
     expect(location.pathname).toBe('/workspace-1');
   });
 
@@ -434,5 +473,14 @@ describe('Google Calendar OAuth callback route', () => {
     });
     expect(getTokenMock).toHaveBeenCalledTimes(1);
     expect(fullSyncMock).toHaveBeenCalledTimes(1);
+    expect(nonceLedger.calls).toHaveLength(2);
+    expect(nonceLedger.calls[0]).toMatchObject({
+      args: { p_provider: 'google', p_user_id: 'user-1' },
+      fn: 'consume_calendar_oauth_state_nonce',
+      schema: 'private',
+    });
+    expect(nonceLedger.calls[1]?.args.p_nonce).toBe(
+      nonceLedger.calls[0]?.args.p_nonce
+    );
   });
 });
