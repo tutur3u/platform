@@ -96,8 +96,12 @@ select ok(not has_function_privilege('anon', 'public.award_mira_xp(uuid,integer,
 select ok(has_function_privilege('authenticated', 'public.award_mira_xp(uuid,integer,text)', 'EXECUTE'), 'authenticated: award XP');
 
 -- Policy and search_path pins (24-33).
-select is((select roles::text from pg_policies where schemaname = 'public' and tablename = 'workspace_chat_messages'
-  and policyname = 'Participants can view messages in their channels'), '{authenticated}', 'chat message read policy applies to authenticated only');
+select ok((select relrowsecurity from pg_class
+  where oid='public.workspace_chat_messages'::regclass)
+  and not exists(select 1 from pg_policies where schemaname='public'
+    and tablename='workspace_chat_messages' and cmd='SELECT'
+    and roles && array['public','anon']::name[]),
+  'chat message reads enforce RLS without PUBLIC or anon SELECT policies');
 select is((select proconfig::text from pg_proc where oid = 'public.award_mira_xp(uuid,integer,text)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'award XP pinned catalog and temp');
 select is((select proconfig::text from pg_proc where oid = 'public.complete_mira_focus_session(uuid,text)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'focus completion pinned catalog and temp');
 select is((select proconfig::text from pg_proc where oid = 'public.is_task_board_member(uuid,uuid)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'board membership pinned catalog and temp');

@@ -122,11 +122,22 @@ grant execute on function public.user_is_in_channel(uuid, uuid) to authenticated
 grant execute on function public.is_member_invited(uuid, uuid) to authenticated, service_role;
 grant execute on function public.is_task_board_member(uuid, uuid) to authenticated, service_role;
 
--- The chat message read policy had no role clause, so anon evaluated it too.
--- Scope it to authenticated; the USING expression is unchanged.
-alter policy "Participants can view messages in their channels"
-  on public.workspace_chat_messages
-  to authenticated;
+-- The full catalog may no longer have the original named read policy. Enforce
+-- its security property for any remaining legacy SELECT policy, preserving USING.
+alter table public.workspace_chat_messages enable row level security;
+do $$
+declare read_policy record;
+begin
+  for read_policy in
+    select policyname from pg_policies
+    where schemaname='public' and tablename='workspace_chat_messages'
+      and cmd='SELECT' and roles && array['public','anon']::name[]
+  loop
+    execute format('alter policy %I on public.workspace_chat_messages to authenticated',
+      read_policy.policyname);
+  end loop;
+end;
+$$;
 
 -- ---------------------------------------------------------------------------
 -- 3. Task list membership. The body ignored _user_id and only checked that
