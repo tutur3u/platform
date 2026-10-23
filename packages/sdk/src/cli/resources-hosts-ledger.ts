@@ -4,7 +4,6 @@ import { z } from 'zod';
 import {
   type DevboxFleetSnapshot,
   evaluateTrustedRunner,
-  fleetSnapshotNow,
 } from '../devbox-fleet-types';
 import { atomicJson } from './resources-config';
 import type { HostRegistry, JobClass } from './resources-hosts-config';
@@ -157,9 +156,14 @@ export function hostStates(
         entry.hostId === hostId &&
         entry.jobClass === jobClass
     ).length;
-  const now =
-    telemetry.now ??
-    (telemetry.snapshot ? fleetSnapshotNow(telemetry.snapshot) : Date.now());
+  // Heartbeats are server timestamps, so freshness is judged only by the
+  // server's clock; a snapshot without one cannot prove any runner fresh.
+  const serverNow = telemetry.snapshot
+    ? Date.parse(
+        telemetry.snapshot.server_time ?? telemetry.snapshot.generated_at ?? ''
+      )
+    : Number.NaN;
+  const now = telemetry.now ?? serverNow;
   for (const host of registry.hosts) {
     if (host.kind === 'local') {
       // Lane owners (shims, plain `run`, and heavy hosts jobs once they hold
@@ -187,6 +191,13 @@ export function hostStates(
       };
       continue;
     }
+    if (!Number.isFinite(now)) {
+      states[host.id] = {
+        healthy: false,
+        reason: 'fleet snapshot has no server timestamp',
+      };
+      continue;
+    }
     const verdict = evaluateTrustedRunner(runner, now);
     const age = now - Date.parse(runner.last_heartbeat_at ?? '');
     const fresh =
@@ -210,6 +221,36 @@ export function hostStates(
     };
   }
   return states;
+}
+
+// Final check immediately before remote creation: the runner must still be
+// eligible, fresh and have known disk above its floor in a snapshot that
+// carries the server's own timestamp (never the local clock). Returns the
+// blocker, or undefined when dispatch may proceed.
+export function remoteDispatchBlocker(
+  registry: HostRegistry,
+  hostId: string,
+  snapshot: DevboxFleetSnapshot | undefined
+) {
+  const host = registry.hosts.find((entry) => entry.id === hostId);
+  if (host?.kind !== 'runner') return 'host is not a runner';
+  if (!snapshot) return 'fleet telemetry is unreachable';
+  const serverNow = Date.parse(
+    snapshot.server_time ?? snapshot.generated_at ?? ''
+  );
+  if (!Number.isFinite(serverNow))
+    return 'fleet snapshot has no server timestamp';
+  const state = hostStates(
+    registry,
+    { snapshot, now: serverNow },
+    { owners: 0, waiters: 0 },
+    []
+  )[hostId]!;
+  if (!state.healthy) return state.reason ?? 'runner is not eligible';
+  if (state.diskFreeGiB === undefined) return 'runner free disk is unknown';
+  if (state.diskFreeGiB < host.reserved.diskGiB)
+    return 'runner free disk is below its floor';
+  return undefined;
 }
 
 export async function enqueueHostTicket(home: string, ticket: HostTicket) {

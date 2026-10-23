@@ -17,6 +17,7 @@ import {
   type HostTelemetry,
   type HostTicket,
   releaseHostReservation,
+  remoteDispatchBlocker,
   removeHostTicket,
   updateHostReservation,
 } from './resources-hosts-ledger';
@@ -180,6 +181,24 @@ export async function hostsRun({
           },
         });
       }
+      // Admission used telemetry from before the ticket won; re-check the
+      // runner against a fresh server-timestamped snapshot right before
+      // creating the remote run, and requeue without dispatching if it
+      // stopped being eligible meanwhile.
+      const blocker = remoteDispatchBlocker(
+        hosts,
+        host.id,
+        await deps.fleet().catch(() => undefined)
+      );
+      if (blocker) {
+        log(
+          `host ${host.id} is no longer eligible (${blocker}); requeueing without dispatch`
+        );
+        await releaseHostReservation(home, reservation);
+        reservation = undefined;
+        continue;
+      }
+      if (cancelled) return signalCodes[cancelled];
       const outcome = await deps.runRemote({
         host,
         jobClass,

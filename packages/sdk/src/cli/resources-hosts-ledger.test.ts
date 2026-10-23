@@ -4,7 +4,7 @@ import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DevboxFleetSnapshot } from '../devbox-fleet-types';
 import {
   type HostRegistry,
@@ -259,6 +259,48 @@ describe('multi-host dispatch', { timeout: 30_000 }, () => {
     const [a, b] = runs;
     expect(a!.start < b!.end && b!.start < a!.end).toBe(true);
   });
+
+  it.each([
+    [
+      'goes stale',
+      (fresh: string) => ({
+        heartbeat: new Date(Date.parse(fresh) - 10 * 60_000).toISOString(),
+        server: fresh,
+      }),
+    ],
+    [
+      'loses its server timestamp',
+      (fresh: string) => ({ heartbeat: fresh, server: undefined }),
+    ],
+  ] as const)(
+    'revalidates the runner right before remote creation and requeues when it %s (REV-6503-3)',
+    async (_, after) => {
+      const path = await home();
+      let calls = 0;
+      // Admission sees a fresh runner; every later snapshot (the pre-dispatch
+      // revalidation and the requeued rounds) does not.
+      const racing: HostDispatchDeps['fleet'] = async () => {
+        calls += 1;
+        const fresh = new Date().toISOString();
+        const state =
+          calls === 1 ? { heartbeat: fresh, server: fresh } : after(fresh);
+        const snapshot = (await fleet(
+          () => state.heartbeat
+        )()) as DevboxFleetSnapshot & {
+          server_time?: string;
+        };
+        snapshot.server_time = state.server;
+        return snapshot;
+      };
+      const { runs, value } = deps(racing);
+      const remote = vi.fn(value.runRemote);
+      expect(await job(path, { ...value, runRemote: remote })).toBe(0);
+      expect(remote).not.toHaveBeenCalled();
+      expect(runs.map((run) => run.host)).toEqual(['m4']);
+      expect(calls).toBeGreaterThanOrEqual(2);
+      expect((await hostLedger(path)).reservations).toEqual([]);
+    }
+  );
 
   it('never admits a stale runner; work serialises on the healthy host', async () => {
     const path = await home();
