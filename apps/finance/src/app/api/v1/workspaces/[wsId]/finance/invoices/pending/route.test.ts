@@ -164,6 +164,28 @@ describe('GET pending invoices', () => {
     }
   );
 
+  it('treats prototype-named query keys as inert unknown parameters', async () => {
+    mocks.rpc
+      .mockResolvedValueOnce({ data: [], error: null })
+      .mockResolvedValueOnce({ data: 0, error: null });
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request(
+        'https://finance.test/api/pending?__proto__=x&constructor=y&toString=a&toString=b&userIds=u1'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+    expect(response.status).toBe(200);
+    expect(({} as Record<string, unknown>).x).toBeUndefined();
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, 'get_pending_invoices', {
+      p_limit: 10,
+      p_offset: 0,
+      p_query: undefined,
+      p_user_ids: ['u1'],
+      p_ws_id: 'ws-1',
+    });
+  });
+
   it.each(['page=0', 'pageSize=0', 'page=1.5', 'groupByUser=invalid'])(
     'rejects invalid pagination: %s',
     async (query) => {

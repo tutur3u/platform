@@ -569,3 +569,40 @@ describe('invoice create route', () => {
     expect(mocks.getUser).not.toHaveBeenCalled();
   });
 });
+
+describe('invoice list route query parsing', () => {
+  it('groups repeated filters and treats prototype-named keys as inert', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+    mocks.resolveFinanceRouteAuthContext.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: { containsPermission: () => true },
+        sbAdmin: { rpc },
+      },
+    });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request(
+        'https://finance.test/api/invoices?q=Math&__proto__=x&constructor=y&toString=a&userIds=u1&userIds=u2'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(({} as Record<string, unknown>).x).toBeUndefined();
+    expect(rpc).toHaveBeenCalledWith('search_finance_invoices', {
+      p_end_date: undefined,
+      p_limit: 10,
+      p_offset: 0,
+      p_search_query: 'Math',
+      p_start_date: undefined,
+      p_user_ids: ['u1', 'u2'],
+      p_wallet_ids: undefined,
+      p_ws_id: 'ws-1',
+    });
+  });
+});

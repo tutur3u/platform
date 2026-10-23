@@ -8,6 +8,13 @@ export type RemoteTrackOwner = {
   track?: MediaStreamTrack;
 };
 
+const RESERVED_MEDIA_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** Remote participant ids index a plain object; never let them name prototype slots. */
+export function isSafeRemoteMediaKey(userId: string) {
+  return !RESERVED_MEDIA_KEYS.has(userId);
+}
+
 /** Release ended subscriptions so the room's retry loop can pull them again. */
 export function attachRemotePlayback(
   owner: RemoteTrackOwner,
@@ -16,7 +23,7 @@ export function attachRemotePlayback(
   isCurrent: () => boolean,
   setMedia: (update: (current: RemoteMedia) => RemoteMedia) => void
 ) {
-  if (!isCurrent()) return;
+  if (!isCurrent() || !isSafeRemoteMediaKey(owner.userId)) return;
   owner.track = track;
   setMedia((current) =>
     isCurrent()
@@ -42,7 +49,11 @@ export function removeRemotePlayback(
   current: RemoteMedia,
   owner: RemoteTrackOwner
 ): RemoteMedia {
-  if (!owner.track || current[owner.userId]?.[owner.kind] !== owner.track)
+  if (
+    !isSafeRemoteMediaKey(owner.userId) ||
+    !owner.track ||
+    current[owner.userId]?.[owner.kind] !== owner.track
+  )
     return current;
   const next = { ...current, [owner.userId]: { ...current[owner.userId] } };
   delete next[owner.userId]![owner.kind];

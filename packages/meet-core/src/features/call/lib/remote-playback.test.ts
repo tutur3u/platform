@@ -260,3 +260,22 @@ it('records a late live track event as subscribed without another negotiation', 
   track.dispatchEvent(new Event('ended'));
   expect(f.subscribed.has(key)).toBe(false);
 });
+
+describe('prototype-reserved remote participant ids', () => {
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'never writes playback under %s',
+    (userId) => {
+      const f = fixture();
+      const owner: RemoteTrackOwner = { ...f.owner, userId };
+      const track = fakeTrack();
+      attachRemotePlayback(owner, track, f.subscribed, () => true, f.setMedia);
+      expect(owner.track).toBeUndefined();
+      expect(f.media()).toEqual({});
+      expect(Object.getPrototypeOf(f.media())).toBe(Object.prototype);
+      expect(({} as Record<string, unknown>).audio).toBeUndefined();
+
+      const tainted = Object.create(null) as RemoteMedia;
+      expect(removeRemotePlayback(tainted, { ...owner, track })).toBe(tainted);
+    }
+  );
+});

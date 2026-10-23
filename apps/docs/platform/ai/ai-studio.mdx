@@ -101,9 +101,13 @@ approved so they can inspect and revoke existing credentials. Rotation is
 treated as new key issuance and is therefore approval-gated.
 
 Approved key managers can quick-create a development key from either the key
-page or Playground. The one-time secret can be handed to Playground through
-browser session storage; it is removed when read and is never sent through a
-dashboard URL or persisted by the Studio application.
+page or Playground. The one-time secret can be handed to Playground only across
+the in-app client-side navigation: it is held in page memory (never Web
+Storage), scoped to the workspace, removed when read, expires after one minute
+if unused, and is never sent through a dashboard URL or persisted by the Studio
+application. A full page reload drops it, so the operator pastes the key
+manually instead. Regression coverage:
+`apps/ai/src/lib/playground-secret-transfer.test.ts`.
 
 ## Production Playground
 

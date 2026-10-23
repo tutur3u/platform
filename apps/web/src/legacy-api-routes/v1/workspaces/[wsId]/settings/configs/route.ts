@@ -34,6 +34,9 @@ const BOOLEAN_CONFIG_KEYS = new Set([
   'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
 ]);
 
+// Config IDs are request-controlled; never let them name prototype slots.
+const RESERVED_CONFIG_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 const REPORT_RENDER_CONFIG_IDS = new Set(
   availableConfigs
     .map((config) => config.id)
@@ -291,10 +294,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
-    const parsedUpdates: WorkspaceConfigUpdates = {};
+    const updateEntries = new Map<string, string>();
 
     for (const [key, value] of parsedEntries) {
-      if (typeof value !== 'string') {
+      if (typeof value !== 'string' || RESERVED_CONFIG_KEYS.has(key)) {
         return NextResponse.json(
           { error: 'Invalid request body' },
           { status: 400 }
@@ -312,8 +315,11 @@ export async function PUT(req: NextRequest, { params }: Params) {
         );
       }
 
-      parsedUpdates[key] = value;
+      updateEntries.set(key, value);
     }
+
+    const parsedUpdates: WorkspaceConfigUpdates =
+      Object.fromEntries(updateEntries);
 
     if (Object.keys(parsedUpdates).length === 0) {
       return NextResponse.json(

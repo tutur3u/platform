@@ -103,6 +103,30 @@ describe('inventory products route', () => {
     );
   });
 
+  it('keeps the last repeated query value and ignores prototype-named keys', async () => {
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: withPermissions(['create_invoices']),
+        wsId: 'ws-1',
+      },
+    });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/inventory/products?__proto__=x&constructor=y&pageSize=5&pageSize=7'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(({} as Record<string, unknown>).x).toBeUndefined();
+    expect(mocks.getInventoryCatalogProducts).toHaveBeenCalledWith(
+      expect.objectContaining({ limit: 7, wsId: 'ws-1' })
+    );
+  });
+
   it('rejects users without inventory catalog or invoice creation access', async () => {
     mocks.authorizeInventoryWorkspace.mockResolvedValue({
       ok: true,

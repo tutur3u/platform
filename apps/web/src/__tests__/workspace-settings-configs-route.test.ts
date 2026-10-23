@@ -370,6 +370,60 @@ describe('workspace settings configs route', () => {
     expect(mocks.getPermissions).toHaveBeenCalled();
   });
 
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'rejects the prototype-reserved config key %s before any update',
+    async (key) => {
+      const { PUT } = await import(
+        '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
+      );
+      const response = await PUT(
+        new NextRequest(
+          'http://localhost/api/v1/workspaces/ws-1/settings/configs',
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: `{"${key}":"x","DEFAULT_CURRENCY":"USD"}`,
+          }
+        ),
+        { params: Promise.resolve({ wsId: 'ws-1' }) }
+      );
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        error: 'Invalid request body',
+      });
+      expect(mocks.sessionSupabase.rpc).not.toHaveBeenCalled();
+    }
+  );
+
+  it('forwards string config updates as plain own properties', async () => {
+    mocks.sessionSupabase.rpc.mockResolvedValueOnce({ data: {}, error: null });
+    const { PUT } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
+    );
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs',
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ DEFAULT_CURRENCY: 'USD', toString: 'x' }),
+        }
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.sessionSupabase.rpc).toHaveBeenCalledWith(
+      'update_workspace_configs_with_approval_transitions',
+      {
+        p_ws_id: 'normalized-ws',
+        p_updates: { DEFAULT_CURRENCY: 'USD', toString: 'x' },
+        p_actor_virtual_user_id: undefined,
+      }
+    );
+  });
+
   it('returns 500 when workspace membership lookup fails in PUT', async () => {
     mocks.getPermissions.mockResolvedValue({
       containsPermission: vi.fn(() => false),
