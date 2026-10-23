@@ -79,8 +79,12 @@ instead of hand-writing query strings.
 - `apps/web/src/components/settings/settings-dialog-shortcuts.test.tsx`: web
   dashboard and user-menu hosts.
 - `apps/web/src/components/settings/settings-dialog-host-lazy.test.tsx`: Back
-  while the lazy dialog import is pending keeps the dialog closed.
+  while the lazy dialog import is pending keeps the dialog closed, including
+  after a repeated open (Cmd/Ctrl+, twice on a task board).
 - `apps/web/src/components/settings/account/use-linked-provider-confirmation.test.tsx`:
   link success only after confirmation.
+- `apps/web/src/components/settings/account/linked-identities-card.test.tsx`:
+  the real card shows no toast while identities are pending, neutral wording
+  for an unlinked provider, and success only when the provider is present.
 - `apps/web/src/__tests__/proxy.test.ts`: settings params survive the root
   redirect.
