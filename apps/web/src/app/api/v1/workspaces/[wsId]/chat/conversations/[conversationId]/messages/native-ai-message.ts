@@ -38,6 +38,8 @@ import {
   toNativeAiUiMessages,
 } from './ai-message-shared';
 
+import { AiStreamError } from './ai-stream-error';
+
 type AiAssistantMessageRow = {
   completion_tokens: number | null;
   content: string | null;
@@ -69,10 +71,13 @@ export function streamNativeAiConversationResponse({
 }) {
   const encoder = new TextEncoder();
 
+  let connected = true;
   const stream = new ReadableStream({
     async start(controller) {
       const write = (event: unknown) => {
-        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        if (connected) {
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        }
       };
 
       write({ message: userMessage, type: 'message' });
@@ -117,8 +122,11 @@ export function streamNativeAiConversationResponse({
         });
         write({ type: 'done' });
       } finally {
-        controller.close();
+        if (connected) controller.close();
       }
+    },
+    cancel() {
+      connected = false;
     },
   });
 
@@ -252,7 +260,13 @@ export async function sendNativeAiConversationMessages({
       throw new Error(errorText || 'Failed to send AI chat message');
     }
 
-    await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
+    // A provider error may follow a durably saved partial reply. Reconcile
+    // that receipt before deciding whether this turn failed.
+    try {
+      await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
+    } catch (error) {
+      if (!(error instanceof AiStreamError)) throw error;
+    }
 
     // The AI stream can close just before its onFinish persistence callback
     // becomes visible to this request. A short bounded retry avoids reporting

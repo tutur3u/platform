@@ -98,6 +98,14 @@ localization changes.
   cases in the [Assistant chronology guide](../../../../../apps/docs/platform/features/assistant-live.mdx#conversation-chronology-and-native-presentation);
   terminal parser fixtures alone do not exercise server persistence.
 
+- Native Assistant terminal batches are authoritative lists, not successive
+  replacements for one temporary reply. Restore every row from canonical parts.
+  Cache revalidation must publish to the still-current conversation as well as
+  disk; fence navigation, settings writes and newer local turns. SSE errors require bounded
+  request-scoped save readback before failure, without regenerating a response.
+  See `native-ai-stream-persistence.test.ts`, `assistant_chat_saved_batch_test.dart`
+  and `assistant_chat_revalidation_test.dart` for the focused regressions.
+
 - For real Assistant host fixtures, use the canonical
   [mobile state and lifecycle guide](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-asynchronous-assistant-fixtures-in-their-owning-zone).
   It covers scheduling ownership, creation admission, native attachment wire

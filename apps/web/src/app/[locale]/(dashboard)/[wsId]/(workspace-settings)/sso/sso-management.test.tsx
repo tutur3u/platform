@@ -280,6 +280,44 @@ describe('SSO admin interactions', () => {
     expect(screen.getByLabelText('Exact ACS URL')).toHaveValue(client.acsUrl);
     expect(mocks.update).toHaveBeenCalledTimes(1);
   });
+  it('refreshes an open editor before any conflict and saves the refreshed revision', async () => {
+    const fresh = {
+      ...client,
+      revision: 8,
+      entityId: 'urn:workos:refreshed',
+      acsUrl: 'https://sp.example.test/refreshed',
+    };
+    mount();
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByLabelText('SP entity ID'), {
+      target: { value: 'urn:unsaved:draft' },
+    });
+    mocks.list.mockResolvedValue({
+      clients: [{ ...client, id: 'other-client', revision: 99 }, fresh],
+      globalEnabled: false,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() =>
+      expect(screen.getByLabelText('SP entity ID')).toHaveValue(fresh.entityId)
+    );
+    expect(screen.getByLabelText('Exact ACS URL')).toHaveValue(fresh.acsUrl);
+    expect(mocks.update).not.toHaveBeenCalled();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Save disabled application' })
+    );
+    await waitFor(() =>
+      expect(mocks.update).toHaveBeenCalledWith(
+        'ws-a',
+        client.id,
+        expect.objectContaining({
+          expectedRevision: fresh.revision,
+          entityId: fresh.entityId,
+          acsUrl: fresh.acsUrl,
+          enabled: false,
+        })
+      )
+    );
+  });
   it('reloads conflicted trust values and saves with the fresh revision', async () => {
     const fresh = {
       ...client,
