@@ -1049,3 +1049,17 @@ input-closure hashes, exact commands, negative control detection, diagnostic
 multisets, exit status, RSS and cold/warm/error timings. Never promote on timing
 alone. See the maintained [qualification procedure](../../../../../apps/docs/build/development-tools/overview.mdx#native-checker-qualification).
 
+
+Bun 1.4.4 and the repository both report TypeScript 7.0.2, but equality on
+prepared no-emit inputs does not establish equality on generated-output
+assertions. In the Meet Worker config, tsc reports TS6305 for missing app
+reference declarations with `disableSourceOfProjectReferenceRedirect: true`;
+Bun reads the source and can pass. Keep the declaration producer and its
+output/cache validation. Run the complete baseline graph before interpreting a
+prepared-closure parity pass. Calendar's boundary producer and generated
+Wrangler ambient declarations also belong to that closure. The opt-in harness
+accepts `--all-projects --runs 1` for complete active-project diagnostic coverage,
+expanding Meet's solution root into concrete app/Worker configs. Keep repeated
+sample benchmarks separate from that one-pass coverage report. A harness exit
+of zero proves negative-control detection, not overall gate equivalence; read
+`sampleParity`, input-closure stability, diagnostics and the explicit verdict.

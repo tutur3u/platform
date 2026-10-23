@@ -212,7 +212,6 @@ imports of the check module remain allowed. Run another broad check separately
 through the original queues. This option does not skip checks, change resource
 limits, or turn an incomplete or failing check into a pass.
 
-
 ## Aggregate validation and native Bun type checking
 
 `bun validate` is the repository aggregate (formerly the custom `bun check`
@@ -250,7 +249,15 @@ proves all existing semantics. Do not remove TypeScript: declaration producers
 and editor tooling still require it. Bun 1.4.4 reports TypeScript 7.0.2 through
 `bun -p process.versions.typescript`, matching the repository compiler version.
 It embeds its own compiler and standard library; matching versions alone is not
-proof of diagnostic or build equivalence. See [Bun's native checker](https://bun.sh/docs/runtime/check).
+proof of diagnostic or build equivalence. The repository Bun pin remains owned
+by the separate Bun upgrade/security lane; this change does not update it.
+Native execution requires Bun 1.4.4, while `validate` works with the existing pin. See [Bun's native checker](https://bun.sh/docs/runtime/check).
+
+There are 89 root/workspace manifests; only the root defined `check` before
+the rename. Active scripts invoke `tsc` from TypeScript 7.0.2, often through
+`run-tsc-build.js`. No active manifest invokes a separate `tsgo` binary; that
+name is recognized by the changed-files project resolver. tsrs is installed
+externally for shadow/pre-push use, not as a workspace dependency.
 
 Run `node scripts/ci/bun-check-inventory.js` to inventory root/workspace scripts,
 resolved type-check projects, inactive workspaces and custom emit/generation
@@ -278,3 +285,103 @@ report all five observations and errors, and compare diagnostic multisets before
 comparing performance. Real diagnostic differences or unverified generated
 closures prohibit gate promotion. Preserve declaration/emit tasks even after
 future diagnostic equivalence is established.
+
+### Bun 1.4.4 evaluation: initial declaration closure
+
+The first exact-source run at `b56c8fde67b487ee07961004feb92930f121b945`
+used `sokora-ubuntu` (Linux x86_64, 20 CPUs), the fenced
+`early-merge-validate.sh` runner, Bun 1.4.4 and Node 24.22.1. Both Bun's embedded
+compiler and the baseline reported TypeScript 7.0.2; the tsrs pin reported
+7.1.0-dev.20260930.4. The frozen `bun.lock` SHA256 was
+`c4687dadb08c5aa33a132d860f8d44a0b7ee2c032ec11c09e5724a4d864999e2`.
+
+All checkers used a six-thread budget (`--threads 6`, `GOMAXPROCS=6`,
+`RAYON_NUM_THREADS=6` as applicable). The four standard Types/Supabase/Internal
+API/Masonry declaration prerequisites were built first. Each paired comparison
+used identical source/dependencies and effective no-emit flags; all 11 recorded
+input closure hashes stayed unchanged. There was one process-cold pass and four
+warm passes per checker, with alternating order, plus five error-control runs.
+The host was shared (initial load averages 9.57/34.93/31.40); these are
+observations, not an adoption or speedup claim. Source-loading inventory had
+already warmed filesystem caches before the first timed compiler process.
+
+| Checker | Process-cold total, s | Warm total median [range], s | Error median [range], s | Peak RSS, MiB |
+| --- | --- | --- | --- | --- |
+| tsc | 38.295 | 37.336 [37.112-37.599] | 0.231 [0.227-0.240] | 7855.8 |
+| bun | 7.337 | 7.346 [7.206-7.493] | 0.071 [0.067-0.072] | 2159.9 |
+| tsrs | 6.520 | 6.216 [6.100-6.310] | 0.066 [0.063-0.072] | 2418.1 |
+
+Totals above sum the 11 project checks sequentially. Peak RSS is the maximum
+single checker process, not summed memory. Warm values summarize four totals;
+error values summarize five runs of the injected Types control only. tsrs and
+Bun did not perform identical validation work on this initial closure, so the
+timing columns must not be used as an equivalence-adjusted performance ratio.
+
+| Project | tsc / Bun / tsrs diagnostics | Bun exact parity |
+| --- | --- | --- |
+| `packages/types/tsconfig.build.json` | 0 / 0 / 0 | yes |
+| `packages/utils/tsconfig.typecheck.json` | 0 / 0 / 0 | yes |
+| `packages/ui/tsconfig.typecheck.json` | 0 / 0 / 20 | yes |
+| `packages/supabase/tsconfig.typecheck.json` | 0 / 0 / 0 | yes |
+| `packages/internal-api/tsconfig.typecheck.json` | 0 / 0 / 0 | yes |
+| `apps/tasks/tsconfig.json` | 0 / 0 / 0 | yes |
+| `apps/calendar/tsconfig.json` | 0 / 0 / 0 | yes |
+| `apps/calendar/tsconfig.worker.json` | 1 / 1 / 1 | yes |
+| `apps/meet/tsconfig.app.json` | 0 / 0 / 0 | yes |
+| `apps/meet/tsconfig.cloudflare.json` | 2 / 0 / 2 | NO |
+| `apps/web/tsconfig.json` | 2 / 2 / 20 | yes |
+
+Every checker reported the injected `TS2322` at the same file, line, column and
+message in all five runs; the control was removed afterward. Existing real
+checkout diagnostics also matched exactly: Calendar Worker reported `TS2307`
+for the absent generated `#calendar-handler` alias, and Web plus SDK reported
+`TS2307` for absent `@tuturuuu/devbox` declarations. These are genuine checkout
+diagnostics, but they are missing generated inputs rather than evidence of a
+fully prepared production type gate.
+
+Meet's Worker config has `disableSourceOfProjectReferenceRedirect: true` and
+references its app declaration producer. With those declarations absent, tsc
+reported two `TS6305` diagnostics for `token.d.ts` and `handler.d.ts`; Bun
+reported none. This is consistent with Bun's documented use of referenced
+source instead of prebuilt declarations. Removing the current gate at this point
+would lose an existing generated-output assertion. tsrs also differed from the
+7.0.2 baseline (20 UI diagnostics and 20 Web diagnostics versus 0 and 2).
+**Native gate promotion remains unqualified.** Retain the authoritative
+producers, emit/declaration validation and existing baseline.
+
+The follow-up uses `--all-projects --runs 1` after running the existing complete
+Turbo type gate, including Meet/Calendar boundary producers, to distinguish
+missing-output differences from source diagnostic differences. This mode covers
+all active inventoried projects and expands Meet's solution root into its two
+concrete configs; inactive TanStack remains excluded. It is coverage evidence,
+not a second performance benchmark or an automatic rollout decision.
+
+### Prepared-closure coverage result
+
+At `612429d21223b91018e632ebd84b6044c19d00ec`, the unchanged authoritative
+Turbo type graph passed on the same Linux host (72 seconds, concurrency 2,
+`GOMAXPROCS=6`). Its declaration and boundary producers prepared the complete
+closure. The subsequent one-pass comparison covered **86 concrete configs from
+79 active workspaces**: all had exact diagnostic parity, zero diagnostics and
+unchanged input-closure hashes. The additional TS2322 negative control also
+matched exactly and failed in both checkers as intended. The lock hash and
+compiler versions matched the earlier run. Inactive TanStack was not executed.
+
+This qualifies the observed **prepared no-emit projection** of those configs.
+It does not establish drop-in equivalence for the complete current gate:
+`composite`/incremental behavior was disabled for the paired measurements,
+Bun intentionally does not enforce the same missing-reference-output behavior,
+and it does not provide emit or the existing producer/cache receipts. Keep the
+TypeScript gate and tsrs shadow; no checker dependency was removed. Before a
+switch, compare unmodified config semantics and preserve the producer/output
+assertions explicitly, including a missing/stale-output regression. Do not
+interpret the prepared all-green result as permission to discard those checks.
+
+The complete build-free pre-push gate passed on Linux for the implementation
+commit, including the changed SDK/Devbox tests and type checks; focused Node
+coverage passed 92 tests on the Mac through resource admission. The installed
+Mac shim and nested workspace CLI had incompatible admission behavior, so that
+owned full-gate invocation was stopped and the remaining checks ran on Linux.
+No installed scheduler was modified. Exact-head hosted CI and independent
+review remain separate delivery gates; no merge or production sync is part of
+this change.
