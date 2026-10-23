@@ -12,14 +12,15 @@ const now = new Date('2026-10-23T08:00:00.000Z');
 
 it('quarantines future observations individually and rejects reservation expiries beyond their TTL', () => {
   const ledger = emptyLedger();
+  const futureAt = new Date(now.getTime() + 30 * 86400_000).toISOString();
   ledger.observations.push({
     eventId: 'future',
     instanceId: 'claude_hehe',
     accountKey: 'claude:hehe',
     outcome: 'usage-limit',
-    observedAt: new Date(now.getTime() + 30 * 86400_000).toISOString(),
+    observedAt: futureAt,
   });
-  expect(validLedger(ledger, now)).toBe(true);
+  expect(validLedger(ledger)).toBe(true);
   expect(
     usageLimitReceiptActive(
       {
@@ -32,7 +33,12 @@ it('quarantines future observations individually and rejects reservation expirie
   pruneLedger(ledger, now);
   expect(ledger.observations).toEqual([]);
   expect(ledger.futureQuarantines).toMatchObject({
-    'claude:hehe': now.toISOString(),
+    'claude:hehe': {
+      quarantinedAt: now.toISOString(),
+      latestReceiptAt: futureAt,
+      models: [],
+      accountWide: true,
+    },
   });
 
   const createdAt = now.toISOString();
@@ -47,7 +53,7 @@ it('quarantines future observations individually and rejects reservation expirie
     createdAt,
     expiresAt: expiresAt.toISOString(),
   });
-  expect(validLedger(reservationLedger, now)).toBe(false);
+  expect(validLedger(reservationLedger)).toBe(false);
 
   pruneLedger(reservationLedger, now);
   expect(reservationLedger.reservations[0]?.expiresAt).toBe(
@@ -91,9 +97,25 @@ it('expires a reservation created more than five minutes in the future and drops
     createdAt: future,
   });
   ledger.lastAdmissions = { codex: Date.parse(future) };
-  expect(validLedger(ledger, now)).toBe(true);
+  expect(validLedger(ledger)).toBe(true);
   expect(isReservationActive(ledger.reservations[0]!, now)).toBe(false);
   pruneLedger(ledger, now);
   expect(ledger.reservations).toEqual([]);
   expect(ledger.lastAdmissions).toEqual({});
+});
+
+it('retains a quarantine past normal retention while its receipt is still far in the future', () => {
+  const ledger = emptyLedger();
+  ledger.futureQuarantines = {
+    'claude:hehe': {
+      quarantinedAt: now.toISOString(),
+      latestReceiptAt: new Date(now.getTime() + 31 * 86400_000).toISOString(),
+      models: ['claude-opus-4-6'],
+      accountWide: false,
+    },
+  };
+
+  pruneLedger(ledger, new Date(now.getTime() + 30 * 86400_000));
+
+  expect(ledger.futureQuarantines?.['claude:hehe']).toBeDefined();
 });
