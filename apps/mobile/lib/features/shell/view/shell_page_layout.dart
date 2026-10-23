@@ -73,9 +73,10 @@ extension _ShellPageLayout on _ShellPageState {
           removeTop: true,
           child: Theme(
             data: Theme.of(bodyContext).copyWith(
-              scaffoldBackgroundColor: shad.Theme.of(
-                bodyContext,
-              ).colorScheme.background,
+              scaffoldBackgroundColor:
+                  AppearanceScope.hasAmbientBackground(bodyContext)
+                  ? Colors.transparent
+                  : shad.Theme.of(bodyContext).colorScheme.background,
             ),
             child: SizedBox.expand(child: widget.child),
           ),

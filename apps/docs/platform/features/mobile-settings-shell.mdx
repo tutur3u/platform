@@ -5,12 +5,16 @@ description: Shared shell chrome, profile settings routes and accessible edit en
 
 ## Settings row grid
 
-Settings sections and detail rows share `SettingsRowLayout`: a 12px inset for
-headings, icons and dividers, a 24px icon slot, a 12px gap before text, and a
-44px trailing action column. Rows have a 56px minimum height and expand for
-translated or enlarged text. Multiple timezone actions stack in the trailing
-column, keeping the text width and action centers consistent with chevrons.
-Existing English and Vietnamese labels and tooltips remain unchanged.
+Settings sections and detail rows share `SettingsRowLayout`. Muted captions sit
+4px inside a rounded (24px) grouped card. Rows use a 16px inset, a 24px line-icon
+slot, a 14px gap before text and a 44px trailing action column. Inset dividers
+start at the title column (54px), not under the icon. Rows have a 56px minimum
+height and expand for translated or enlarged text. A row shows its current value
+as a muted summary under the title, as a short trailing value before the chevron
+(for example, the Appearance theme name), or both. Multiple timezone actions
+stack in the trailing column, keeping the text width and action centers
+consistent with chevrons. Existing English and Vietnamese labels and tooltips
+remain unchanged.
 
 Settings scroll lists include the shell-provided bottom inset plus 32px of
 breathing room. They inherit the shell surface and keep Back in its floating
@@ -263,9 +267,12 @@ picker and Material/app strings in both locales without missing delegates.
 
 ## Compact settings sections
 
-General and product settings share page-background row groups with quiet separators
-and unboxed icons, rather than a separate outlined card for every action. Existing
-profile panels and explicit destructive confirmations retain their grouping.
+General and product settings share one rounded card per group, with inset
+separators and unboxed line icons, rather than a separate outlined card for every
+action. On solid pages, the card is a quiet tonal step from the page background
+that keeps muted text at WCAG AA. Over a gradient or blob appearance, the card is
+translucent at the chosen card opacity. Existing profile panels and explicit
+destructive confirmations retain their grouping.
 Preference categories use one consistent gap between groups and no trailing group
 gap; the parent owns spacing to the next section. Row touch targets remain at least
 48 logical pixels, while translated labels and enlarged text may increase height.
@@ -310,3 +317,78 @@ HTTP 429 responses through the authenticated API client and repository with
 synthetic credentials, separate read/write phases, cooldown/recovery, stale
 requests and sink failure. Native authenticated provider/device evidence remains
 pending; this does not identify the cause of any customer's 429.
+
+## Settings overview and Appearance
+
+The Settings overview opens with a profile header: the signed-in user's avatar,
+display name and email, and the number of workspaces they belong to. The header
+and its Edit profile pill open `/settings/profile`. The Workspace pill opens
+`/settings/workspace`. These are shortcuts; every existing row and destination
+remains in its captioned group. The header does not show social counts or
+invented destinations. The shell keeps the single top-navbar title and the
+floating dock Back control; the page adds no large in-body title or back chevron.
+
+Root preference rows still open nested editors and save only an explicit choice.
+The earlier no-root-switch decision remains, so Settings shows no inline toggles
+at the root. The Appearance row opens `/settings/appearance`. That is a child
+page, and its controls apply and persist instantly because choosing there is the
+explicit action. Visiting the page and returning writes nothing.
+
+### Appearance options and defaults
+
+| Option | Choices | Default |
+| --- | --- | --- |
+| Mode | System, Light, Dark | System (an existing `theme-mode` preference is kept) |
+| Theme | Classic, Aurora, Sunset, Ocean, Forest, Ember, Blossom, Mono | Classic |
+| Accent | Match theme, Neutral, Indigo, Blue, Teal, Green, Amber, Orange, Rose, Violet | Match theme (Classic: Neutral) |
+| Background | Solid, Gradient, Blobs | Solid |
+| Intensity / Softness / Card opacity | Sliders; softness only for Blobs | 60% / 60% / 78% (min 40%) |
+| Animate background | Blobs only, opt-in | Off |
+
+The default (Classic, Neutral accent, Solid background) returns the original
+shad and Material themes, so users who never customize see the same colours.
+Picking a theme in the gallery also applies its recommended background style:
+Aurora, Forest and Blossom use Blobs; Sunset, Ocean, Ember and Mono use Gradient;
+Classic uses Solid. Reset to default restores every option, including System mode.
+
+Curated colour values live only in `lib/core/theme/appearance/appearance_palettes.dart`.
+`AppearanceTheme` derives the shad colour scheme and the Material bridge theme
+from them; widgets use theme tokens. Foreground and muted text keep WCAG AA (4.5:1)
+against any blend of each theme's base, gradient, blob and card colours, in light
+and dark. Accents keep AA for their labels and 3:1 against the background.
+
+### App-wide application and cost
+
+`AppearanceBackdrop` sits in the app builder around the router. For Gradient and
+Blobs, it paints one ambient layer behind every route and makes shad scaffolds
+transparent, so the theme shows across Settings, root tabs and detail pages. Its
+child keeps a stable position, so changing styles never remounts navigation.
+Imperatively pushed Material/Cupertino pages carry their own copy of the layer
+beneath their content, so transitions never reveal the page below. Adaptive
+sheets, drawers and dialogs restore opaque scaffolds. Solid styles add no layer.
+
+The layer uses radial and linear gradients, not image blur, inside a
+`RepaintBoundary`. Static backgrounds rasterize once. Animated blobs are opt-in
+and drift on a 48-second loop driven by a 15 fps timer. Only the painter repaints;
+no widget above it rebuilds per tick. Motion stops when the system Reduce Motion
+setting is on, the app is backgrounded or tickers are disabled.
+
+Persistence uses `SharedPreferences`: mode keeps the original `theme-mode` key and
+customization is stored as versioned JSON under `appearance-v1`. Installs without
+that key migrate to the default appearance with their saved mode. Unknown or
+malformed values fall back field by field. Bootstrap preloads both values, so
+cold start does not flash the default theme. A newer change or closing the cubit
+fences older pending writes. Slider drags preview live and persist when released.
+
+Coverage: `appearance_contrast_test.dart` checks AA for every theme, brightness
+and accent. `appearance_application_test.dart` checks app-wide application
+without remounting, pushed-page layers, pixel output for solid, gradient and blob
+styles, and that reduced motion schedules no frames. `theme_appearance_test.dart`
+covers migration, restart persistence, preview, write fencing, reset and decoding.
+`settings_appearance_shell_checks.dart` runs the real shell for Classic
+light/dark, Aurora blobs and Sunset gradient. It also covers instant
+apply/persist/reset, reduced and full motion, and 320px pages at 2x text in English
+and Vietnamese. `settings_design_checks.dart` covers the new row grid. These
+are widget-level checks. Device visual, battery and frame-time acceptance on the
+exact CI-built artifact remain separate gates.
+

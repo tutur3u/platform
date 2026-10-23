@@ -7,6 +7,7 @@ import 'package:mobile/features/reminders/reminder_settings_page.dart';
 import 'package:mobile/features/security/account/account_security_page.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_request_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_scanner_page.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_page.dart';
 import 'package:mobile/features/settings/view/internal_accounts_page.dart';
 import 'package:mobile/features/settings/view/offline_module_page.dart';
 import 'package:mobile/features/settings/view/offline_page.dart';
@@ -32,6 +33,10 @@ List<RouteBase> settingsRoutes() => [
   GoRoute(
     path: Routes.settingsPreferences,
     redirect: (context, state) => Routes.settings,
+  ),
+  GoRoute(
+    path: Routes.settingsAppearance,
+    builder: (context, state) => const AppearancePage(),
   ),
   GoRoute(
     path: Routes.settingsExperiments,

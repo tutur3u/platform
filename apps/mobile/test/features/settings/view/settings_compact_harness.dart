@@ -198,8 +198,14 @@ class _SettingsHarness {
         child: RepositoryProvider<AssistantPersonalSettingsRepository?>.value(
           value: assistantSettingsRepository,
           child: shad.ShadcnApp.router(
-            theme: MobileShadTheme.light,
-            darkTheme: MobileShadTheme.dark,
+            theme: AppearanceTheme.shadTheme(
+              theme.state.appearance,
+              Brightness.light,
+            ),
+            darkTheme: AppearanceTheme.shadTheme(
+              theme.state.appearance,
+              Brightness.dark,
+            ),
             themeMode: theme.state.themeMode,
             locale: locale.state.locale,
             localizationsDelegates: const [
@@ -208,15 +214,16 @@ class _SettingsHarness {
             ],
             supportedLocales: AppLocalizations.supportedLocales,
             routerConfig: router,
-            builder: (context, child) => ShadcnMaterialBridge.appBuilder(
-              context,
-              MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: TextScaler.linear(scale)),
-                child: RepaintBoundary(
-                  key: const ValueKey('synthetic-settings-render'),
-                  child: child,
+            // Mirrors App: the appearance backdrop sits outside the bridge.
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
+              child: RepaintBoundary(
+                key: const ValueKey('synthetic-settings-render'),
+                child: AppearanceBackdrop(
+                  settings: theme.state.appearance,
+                  child: ShadcnMaterialBridge.appBuilder(context, child),
                 ),
               ),
             ),

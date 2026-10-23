@@ -6920,6 +6920,140 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppVersion => 'App version';
 
   @override
+  String get appearanceAccentAmber => 'Amber';
+
+  @override
+  String get appearanceAccentBlue => 'Blue';
+
+  @override
+  String get appearanceAccentGreen => 'Green';
+
+  @override
+  String get appearanceAccentIndigo => 'Indigo';
+
+  @override
+  String get appearanceAccentNeutral => 'Neutral';
+
+  @override
+  String get appearanceAccentOrange => 'Orange';
+
+  @override
+  String get appearanceAccentRose => 'Rose';
+
+  @override
+  String get appearanceAccentTeal => 'Teal';
+
+  @override
+  String get appearanceAccentTheme => 'Match theme';
+
+  @override
+  String get appearanceAccentTitle => 'Accent color';
+
+  @override
+  String get appearanceAccentViolet => 'Violet';
+
+  @override
+  String get appearanceAnimate => 'Animate background';
+
+  @override
+  String get appearanceAnimateDescription => 'Blobs drift slowly. Uses a little more battery.';
+
+  @override
+  String get appearanceAnimateReducedMotion => 'Reduce Motion is on, so the background stays still.';
+
+  @override
+  String get appearanceBackgroundBlobs => 'Blobs';
+
+  @override
+  String get appearanceBackgroundGradient => 'Gradient';
+
+  @override
+  String get appearanceBackgroundSolid => 'Solid';
+
+  @override
+  String get appearanceBackgroundTitle => 'Background';
+
+  @override
+  String get appearanceIntensity => 'Intensity';
+
+  @override
+  String get appearanceModeTitle => 'Mode';
+
+  @override
+  String get appearancePreviewAction => 'Primary action';
+
+  @override
+  String get appearancePreviewRowSubtitle => 'Muted summary text stays readable';
+
+  @override
+  String get appearancePreviewRowTitle => 'Sample setting';
+
+  @override
+  String get appearancePreviewTitle => 'Preview';
+
+  @override
+  String get appearanceReset => 'Reset to default';
+
+  @override
+  String get appearanceResetDone => 'Appearance reset to default';
+
+  @override
+  String get appearanceSoftness => 'Softness';
+
+  @override
+  String get appearanceSurfaceOpacity => 'Card opacity';
+
+  @override
+  String get appearanceSurfacesTitle => 'Surfaces';
+
+  @override
+  String get appearanceThemeAurora => 'Aurora';
+
+  @override
+  String get appearanceThemeBlossom => 'Blossom';
+
+  @override
+  String get appearanceThemeClassic => 'Classic';
+
+  @override
+  String get appearanceThemeEmber => 'Ember';
+
+  @override
+  String get appearanceThemeForest => 'Forest';
+
+  @override
+  String get appearanceThemeMono => 'Mono';
+
+  @override
+  String get appearanceThemeOcean => 'Ocean';
+
+  @override
+  String get appearanceThemeSunset => 'Sunset';
+
+  @override
+  String get appearanceThemesTitle => 'Themes';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsProfileEdit => 'Edit profile';
+
+  @override
+  String get settingsProfileManageWorkspace => 'Workspace';
+
+  @override
+  String settingsProfileWorkspaceCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'workspaces',
+      one: 'workspace',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get settingsAppearanceLanguage => 'Appearance & language';
 
   @override

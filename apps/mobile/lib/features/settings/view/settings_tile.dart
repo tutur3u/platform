@@ -8,6 +8,7 @@ class SettingsTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.value,
+    this.trailingValue,
     this.onTap,
     this.isDestructive = false,
     this.showChevron = true,
@@ -20,7 +21,12 @@ class SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
+
+  /// Current-value summary shown under the title.
   final String? value;
+
+  /// Short current value shown before the chevron, such as a theme name.
+  final String? trailingValue;
   final VoidCallback? onTap;
   final bool isDestructive;
   final bool showChevron;
@@ -31,13 +37,15 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final accentColor = isDestructive
+    final muted = theme.colorScheme.mutedForeground;
+    final iconColor = isDestructive
         ? theme.colorScheme.destructive
-        : theme.colorScheme.primary;
+        : theme.colorScheme.foreground;
     final textColor = isDestructive ? theme.colorScheme.destructive : null;
     final hasSupportingLine =
         (value?.trim().isNotEmpty ?? false) ||
         (subtitle?.trim().isNotEmpty ?? false);
+    final end = trailingValue?.trim() ?? '';
 
     return Material(
       color: Colors.transparent,
@@ -49,9 +57,11 @@ class SettingsTile extends StatelessWidget {
             minHeight: SettingsRowLayout.minHeight,
           ),
           child: Ink(
-            padding: const EdgeInsets.symmetric(
-              horizontal: SettingsRowLayout.inset,
-              vertical: 6,
+            padding: const EdgeInsets.fromLTRB(
+              SettingsRowLayout.inset,
+              8,
+              SettingsRowLayout.inset - 8,
+              8,
             ),
             child: Row(
               crossAxisAlignment: hasSupportingLine
@@ -63,33 +73,31 @@ class SettingsTile extends StatelessWidget {
                   height: SettingsRowLayout.actionWidth,
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Icon(icon, size: 18, color: accentColor),
+                    child: Icon(icon, size: 22, color: iconColor),
                   ),
                 ),
                 const shad.Gap(SettingsRowLayout.textGap),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: hasSupportingLine ? 2 : 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           title,
-                          style: theme.typography.small.copyWith(
-                            fontWeight: FontWeight.w700,
+                          style: theme.typography.base.copyWith(
+                            fontWeight: FontWeight.w600,
                             color: textColor,
                           ),
                         ),
                         if (value?.trim().isNotEmpty ?? false) ...[
-                          const shad.Gap(4),
+                          const shad.Gap(2),
                           Text(
                             value!,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.typography.textSmall.copyWith(
-                              color:
-                                  textColor ??
-                                  theme.colorScheme.mutedForeground,
+                            style: theme.typography.small.copyWith(
+                              color: textColor ?? muted,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -104,8 +112,8 @@ class SettingsTile extends StatelessWidget {
                             overflow: onTap != null && !wrapSupportingText
                                 ? TextOverflow.ellipsis
                                 : null,
-                            style: theme.typography.textSmall.copyWith(
-                              color: theme.colorScheme.mutedForeground,
+                            style: theme.typography.small.copyWith(
+                              color: muted,
                             ),
                           ),
                         ],
@@ -113,7 +121,30 @@ class SettingsTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                const shad.Gap(8),
+                if (end.isNotEmpty)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 132),
+                    child: SizedBox(
+                      height: SettingsRowLayout.actionWidth,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            end,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.base.copyWith(
+                              color: muted,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  const shad.Gap(8),
                 SizedBox(
                   width: SettingsRowLayout.actionWidth,
                   child: IconButtonTheme(
@@ -131,8 +162,8 @@ class SettingsTile extends StatelessWidget {
                                 height: 44,
                                 child: Icon(
                                   Icons.chevron_right,
-                                  size: 20,
-                                  color: theme.colorScheme.mutedForeground,
+                                  size: 22,
+                                  color: muted,
                                 ),
                               )
                             : const SizedBox.shrink()),

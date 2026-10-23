@@ -108,14 +108,18 @@ class _SettingsOverviewSection extends StatelessWidget {
         if (constraints.maxWidth < 840) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [general, const shad.Gap(20), support],
+            children: [
+              general,
+              const shad.Gap(SettingsRowLayout.groupGap),
+              support,
+            ],
           );
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: general),
-            const SizedBox(width: 20),
+            const SizedBox(width: SettingsRowLayout.groupGap),
             Expanded(child: support),
           ],
         );
@@ -135,14 +139,17 @@ class _AboutSection extends StatelessWidget {
 
     return SettingsSection(
       title: '',
+      grouped: true,
       children: [
         SettingsTile(
+          grouped: true,
           icon: Icons.auto_awesome_outlined,
           title: l10n.settingsWhatsNew,
           subtitle: l10n.settingsWhatsNewDescription,
           onTap: () => context.push(Routes.settingsWhatsNew),
         ),
         SettingsTile(
+          grouped: true,
           icon: Icons.description_outlined,
           title: l10n.settingsLicensesSectionTitle,
           subtitle: l10n.settingsLicenseViewerDescription,
@@ -153,6 +160,7 @@ class _AboutSection extends StatelessWidget {
           ),
         ),
         SettingsTile(
+          grouped: true,
           icon: Icons.info_outline_rounded,
           title: l10n.settingsAppVersion,
           value: _formatVersionLabel(packageInfo),
@@ -173,14 +181,17 @@ class _InfrastructureSection extends StatelessWidget {
 
     return SettingsSection(
       title: '',
+      grouped: true,
       children: [
         SettingsTile(
+          grouped: true,
           icon: Icons.admin_panel_settings_outlined,
           title: l10n.adminAccountsTitle,
           subtitle: l10n.adminAccountsDescription,
           onTap: () => context.push(Routes.settingsInternalAccounts),
         ),
         SettingsTile(
+          grouped: true,
           icon: Icons.system_update_alt_rounded,
           title: l10n.settingsMobileVersions,
           subtitle: l10n.settingsMobileVersionsTileDescription,
@@ -206,9 +217,11 @@ class _ExperimentalAppsSection extends StatelessWidget {
 
     return SettingsSection(
       title: '',
+      grouped: true,
       children: [
         for (final module in AppRegistry.experimentalModules)
           SettingsTile(
+            grouped: true,
             icon: module.icon,
             title: module.label(l10n),
             subtitle: l10n.settingsExperimentalAppsTileDescription(
@@ -227,159 +240,6 @@ class _ExperimentalAppsSection extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _PreferencesSection extends StatelessWidget {
-  const _PreferencesSection({
-    required this.permissionsRepository,
-    required this.permissionsRevision,
-    required this.themeLabel,
-    required this.showFinanceAmounts,
-    required this.languageLabel,
-    required this.calendarLabel,
-    required this.disableDefaultTaskBoardNavigation,
-    required this.onChangeLanguage,
-    required this.onToggleFinanceAmounts,
-    required this.onToggleDefaultTaskBoardNavigation,
-    required this.onChangeTheme,
-    required this.onChangeFirstDayOfWeek,
-    required this.hapticsEnabled,
-    required this.onToggleHaptics,
-  });
-
-  final WorkspacePermissionsRepository permissionsRepository;
-  final int permissionsRevision;
-  final String themeLabel;
-  final bool showFinanceAmounts;
-  final String languageLabel;
-  final String calendarLabel;
-  final bool disableDefaultTaskBoardNavigation;
-  final VoidCallback onChangeLanguage;
-  final VoidCallback onToggleFinanceAmounts;
-  final VoidCallback onToggleDefaultTaskBoardNavigation;
-  final VoidCallback onChangeTheme;
-  final VoidCallback onChangeFirstDayOfWeek;
-  final bool hapticsEnabled;
-  final VoidCallback onToggleHaptics;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    final auth = context.watch<AuthCubit?>();
-    final userId = auth == null ? currentCacheUserId() : auth.state.user?.id;
-    final workspaceId = context.select<WorkspaceCubit, String?>(
-      (cubit) => cubit.state.currentWorkspace?.id,
-    );
-    final personalZone = TimezoneSettingsTile(
-      userId: userId,
-      workspaceId: workspaceId,
-      grouped: true,
-    );
-    final appearance = SettingsTile(
-      grouped: true,
-      icon: Icons.palette_outlined,
-      title: l10n.settingsTheme,
-      value: themeLabel,
-      onTap: onChangeTheme,
-    );
-    final language = SettingsTile(
-      grouped: true,
-      icon: Icons.language_rounded,
-      title: l10n.settingsLanguage,
-      value: languageLabel,
-      onTap: onChangeLanguage,
-    );
-    final finance = SettingsTile(
-      key: const ValueKey('settings-finance-row'),
-      grouped: true,
-      icon: Icons.visibility_outlined,
-      title: l10n.settingsFinanceAmounts,
-      value: showFinanceAmounts
-          ? l10n.financeShowAmounts
-          : l10n.financeHideAmounts,
-      onTap: onToggleFinanceAmounts,
-    );
-    final calendar = SettingsTile(
-      grouped: true,
-      icon: Icons.calendar_today_outlined,
-      title: l10n.settingsFirstDayOfWeek,
-      value: calendarLabel,
-      onTap: onChangeFirstDayOfWeek,
-    );
-    final notifications = SettingsTile(
-      grouped: true,
-      icon: Icons.notifications_active_outlined,
-      title: l10n.remindersTitle,
-      onTap: () => context.push(Routes.settingsReminders),
-    );
-    final interaction = SettingsTile(
-      key: const ValueKey('settings-haptics-row'),
-      grouped: true,
-      icon: Icons.vibration_rounded,
-      title: l10n.settingsHaptics,
-      value: hapticsEnabled ? l10n.commonOn : l10n.commonOff,
-      onTap: onToggleHaptics,
-    );
-    final tasks = SettingsTile(
-      key: const ValueKey('settings-task-board-row'),
-      grouped: true,
-      icon: Icons.view_kanban_outlined,
-      title: l10n.taskBoardsTitle,
-      value: disableDefaultTaskBoardNavigation
-          ? l10n.settingsDefaultTaskBoardNavigationBoardPicker
-          : l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-      onTap: onToggleDefaultTaskBoardNavigation,
-    );
-    final workspaceZone = workspaceId == null
-        ? null
-        : WorkspaceTimezoneSettingsTile(
-            userId: userId,
-            workspaceId: workspaceId,
-            permissionsRepository: permissionsRepository,
-            refreshRevision: permissionsRevision,
-            grouped: true,
-          );
-    final groups = [
-      (l10n.settingsAppearanceLanguage, [appearance, language]),
-      (
-        l10n.settingsCalendarTimezone,
-        [personalZone, if (workspaceZone != null) workspaceZone, calendar],
-      ),
-      (l10n.settingsNotificationsInteraction, [notifications, interaction]),
-      (
-        l10n.settingsAppPreferences,
-        [finance, tasks, const LinkBrowserSettingsTile()],
-      ),
-    ];
-    final sections = [
-      for (final group in groups)
-        SettingsCompactSection(title: group.$1, children: group.$2),
-    ];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        Widget column(List<Widget> widgets) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var index = 0; index < widgets.length; index++) ...[
-              if (index > 0) const SizedBox(height: 20),
-              widgets[index],
-            ],
-          ],
-        );
-        return constraints.maxWidth >= 840
-            ? Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: column(sections.take(2).toList())),
-                  const SizedBox(width: 20),
-                  Expanded(child: column(sections.skip(2).toList())),
-                ],
-              )
-            : column(sections);
-      },
     );
   }
 }
