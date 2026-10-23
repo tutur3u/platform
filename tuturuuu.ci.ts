@@ -28,6 +28,7 @@ export const ci = {
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
   'apps-cloudflare.yaml': true,
+  'shortener-cloudflare.yaml': true,
   'calendar-cloudflare.yaml': true,
   'mail-cloudflare.yaml': true,
   'wave1-native-app.yaml': true,
