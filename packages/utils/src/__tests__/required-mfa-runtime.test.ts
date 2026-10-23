@@ -52,6 +52,38 @@ beforeEach(() => {
   vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-required-mfa-secret');
 });
 describe('connected required MFA request enforcement', () => {
+  it('reports only a provider-verified bearer actor after MFA passes', async () => {
+    const { getUser } = setup();
+    getUser.mockResolvedValue({
+      data: { user: { id: 'actor', app_metadata: {} } },
+      error: null,
+    });
+    const verified = vi.fn();
+    expect(
+      await enforceRequiredMfaRequest(
+        request({ authorization: 'Bearer eyJprovider', 'x-user-id': 'forged' }),
+        verified
+      )
+    ).toBeNull();
+    expect(verified).toHaveBeenCalledExactlyOnceWith('actor');
+    expect(getUser).toHaveBeenCalledTimes(2);
+    expect(getUser).toHaveBeenNthCalledWith(1, 'eyJprovider');
+    expect(getUser).toHaveBeenNthCalledWith(2, 'eyJprovider');
+  });
+
+  it('does not report a bearer actor when MFA rejects the request', async () => {
+    setup();
+    const verified = vi.fn();
+    expect(
+      (
+        await enforceRequiredMfaRequest(
+          request({ authorization: 'Bearer eyJprovider' }),
+          verified
+        )
+      )?.status
+    ).toBe(403);
+    expect(verified).not.toHaveBeenCalled();
+  });
   it('denies provider-authenticated AAL1 sessions with fresh required policy', async () => {
     setup();
     const response = await enforceRequiredMfaRequest(

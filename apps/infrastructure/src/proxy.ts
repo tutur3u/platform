@@ -24,7 +24,7 @@ import { type Locale, routing, supportedLocales } from './i18n/routing';
 import {
   calendarPreferenceBlockDiagnostic,
   calendarPreferenceGuardPrefix,
-  isCalendarPreferenceRead,
+  isCalendarPreferenceRequest,
 } from './lib/mobile-calendar/preference-guard';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -121,10 +121,19 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: calendarPreferenceGuardPrefix(request),
+      ...(isCalendarPreferenceRequest(request)
+        ? {
+            useVerifiedBearerActor: true,
+            diagnosticPolicyName: 'native-calendar-preferences',
+          }
+        : {}),
     });
 
     if (guardResponse) {
-      if (guardResponse.status === 429 && isCalendarPreferenceRead(request)) {
+      if (
+        guardResponse.status === 429 &&
+        isCalendarPreferenceRequest(request)
+      ) {
         console.warn(
           'Calendar preference gateway blocked',
           calendarPreferenceBlockDiagnostic(guardResponse.headers)

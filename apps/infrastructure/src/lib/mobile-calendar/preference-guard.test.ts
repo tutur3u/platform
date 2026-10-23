@@ -25,7 +25,18 @@ describe('Calendar preference gateway bucket boundary', () => {
   ])('retains the common bucket for %s', (pathname) => {
     expect(prefix(pathname)).toBe('proxy:infra:api');
   });
-  it.each(['PATCH', 'POST', 'DELETE', 'HEAD'])(
+  it.each([
+    path,
+    '/api/v1/mobile-calendar/api/v1/workspaces/synthetic-ws/calendar-settings',
+  ])(
+    'isolates preference saves from unrelated gateway mutations: %s',
+    (pathname) => {
+      expect(prefix(pathname, 'PATCH')).toBe(
+        'proxy:infra:calendar-preferences'
+      );
+    }
+  );
+  it.each(['POST', 'DELETE', 'HEAD'])(
     'keeps %s on the original mutation/general guard',
     (method) => expect(prefix(path, method)).toBe('proxy:infra:api')
   );

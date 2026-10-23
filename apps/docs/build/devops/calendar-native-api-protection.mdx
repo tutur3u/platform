@@ -1,0 +1,97 @@
+---
+title: "Native Calendar API protection"
+description: "Trace timezone read/save rejection layers and audit the hosting exception without exposing credentials."
+---
+
+## Request ownership and counts
+
+Default release configuration routes personal `/api/v1/users/calendar-settings` and workspace
+`/api/v1/workspaces/:wsId/calendar-settings` through Infrastructure's
+`/api/v1/mobile-calendar` gateway to Calendar. Both support GET/PATCH with the
+original Supabase Bearer token. These local routes do not use the satellite
+fallback rewrite to Web. No satellite browser session is required.
+
+The app-level timezone scope makes one personal and one workspace GET at cold
+startup. Opening/reopening Settings displays that scope and adds zero requests.
+Same-workspace rebuilds do not reload. Account/workspace changes and OS resume
+can revalidate; in-flight loads coalesce and 429 cooldown prevents replay.
+Reminder planning separately reads preferences across workspaces; its bounded
+traffic can consume a shared allowance but is not a Settings rebuild loop.
+
+A valid unexpired access token does not refresh on each timezone read. Expiry
+within the refresh buffer or a rejected 401 can cause a bounded refresh. Refresh
+failure is a session error or falls back to an existing token; it is not itself
+the API client's `kind=http; status=429` response. There is no automatic 429 retry.
+
+## Rejection inventory
+
+| Layer | Read/save protection and identity | Observable result |
+| --- | --- | --- |
+| Mobile repository | Account-scoped cooldown after a genuine 429; no network retry during cooldown | Retains the originating diagnostic; not proof of a fresh request on Settings open |
+| Infrastructure hosting | Platform bot/WAF/DDoS protections before application code | May return a bare HTML/JSON 429 without application metadata |
+| Shared Infrastructure guard | Dedicated preferences quotas; already verified MFA Bearer actor, independent of warm trust cache | `native-calendar-preferences`, caller and minute/hour/day; IP blocks use `proxy-ip-block` |
+| Offline download guard | Additional quotas only with explicit offline-download header | `offline-capable-read`; ordinary timezone startup does not mark bulk downloads |
+| Infrastructure gateway authentication | Verifies original Bearer before secret access or fetch | Invalid/provider-rejected verification returns 401, unavailable verification 503, not raw 429 |
+| Gateway upstream response | Single bounded fetch; relays JSON 429 and safe headers | Unclassified JSON 429 becomes `upstream-or-edge` / `calendar-upstream`; HTML challenges remain 502 |
+| Calendar hosting | Bot protection and exact private-credential WAF exception | Native HTTP cannot complete a browser challenge; challenge can be HTML 429 |
+| Shared Calendar guard | Dedicated native preferences actor quotas and persistent IP blocks | `calendar-native-preferences` or `proxy-ip-block` |
+| Personal route session wrapper | GET has no session read quota. PATCH uses authenticated actor mutation quota; unrelated routes retain pre-auth IP quotas | `calendar-session-user-mutate`; old gateway-egress IP collision is covered by regression |
+| Personal route IP/auth branches | Persistent IP-block policy; upstream Supabase Auth rejection | `calendar-route-ip-block` or `calendar-auth-provider`; unknown caller/window stay unknown |
+| Workspace route | Explicit membership/settings permission; no additional route quota | Authentication failure 401, membership/permission 403; proxy quotas still apply |
+| Supabase/PostgREST | Data API write hook keys authenticated user plus user/IP; GET/read-only transactions exempt; provider quotas remain | Settings handlers map data-query errors to 500, so these are not a bare settings GET 429 |
+
+Default authenticated proxy read limits are 600/minute, 6,000/hour, 40,000/day;
+mutation limits are 60/minute, 300/hour, 2,000/day. Personal and workspace paths
+share each actor's quota across token rotation. Existing environment overrides,
+trust/risk decisions, downstream authentication, MFA and IP blocks remain active.
+
+## Hosting exception coverage
+
+The legacy native gateway WAF regex covered `/api/v1/calendar/**`, workspace
+`/calendar/**` and the two cron routes, but excluded both `/calendar-settings`
+endpoints. A matching private credential could therefore still encounter bot
+protection on these reads/saves. `firewall-policy.test.ts` reproduces this exact
+predicate gap and verifies the narrow correction without broadening other paths.
+
+Save the owning Calendar project's active firewall response in a **private** file
+using the authenticated Vercel CLI's read-only firewall API, then run:
+
+```sh
+bun scripts/audit-calendar-gateway-firewall.ts /private/path/calendar-firewall.json
+```
+
+The audit prints only public path predicates and coverage, never the gateway
+credential. Exit 1 means missing coverage, 0 means both exact settings paths are
+covered, and 2 means an unexpected rule or pending draft requires private review.
+The audit cannot publish a firewall change.
+
+The production owner must replace only the path predicate of the existing
+`Authenticated native Calendar gateway` rule with the audited proposed predicate.
+Keep its exact `x-tuturuuu-calendar-gateway` credential equality, active bypass
+action, unrelated rules and managed bot protection. Do not use mere Bearer
+presence as a hosting bypass. Review any existing draft before publishing. Then
+read back active coverage and verify authenticated native reads/saves plus
+forged-credential rejection. Repository deployment alone does not apply this
+provider configuration; no firewall publication is implied by the audit or PR.
+
+## Diagnostic interpretation
+
+Older `diagnostics=v1` output with all four fields `unknown` cannot distinguish
+absent headers from unsupported values. New diagnostics record metadata presence
+and label a response with no limiter fields `upstream-or-edge`; that is a source
+classification, not proof of a specific WAF/provider policy. Vercel/Cloudflare
+header presence is a boolean, never a request ID, credential or arbitrary server
+header. Known application rules retain their policy/caller/window and Retry-After.
+
+Content negotiation matters: a Calendar request with `Accept: application/json`
+and the gateway's Node user agent can receive a **JSON** 429 with
+`x-vercel-mitigated: challenge` and no application quota fields. The gateway
+relays that JSON status; the legacy missing settings-path exception therefore
+provides a concrete mechanism for the device's all-unknown 429 fingerprint.
+HTML challenges instead become 502. The fixed gateway preserves only the exact
+safe `challenge` marker and classifies unlabelled upstream JSON rejections.
+An unauthenticated control does not establish the affected user's individual
+request receipt. Correlate that build's effective host/path and timestamp with
+Infrastructure/Calendar logs to attribute an exact event. Keep the private
+credential condition: direct requests without it should still be challenged.
+Never log tokens, cookies, private bodies, actor/workspace identifiers or IPs here.

@@ -44,7 +44,7 @@ void main() {
       };
       await cubit.load(userId: 'synthetic-actor', workspaceId: 'synthetic-ws');
       expect(cubit.state.resolved, true);
-      expect(h.refreshes, greaterThan(0));
+      expect(h.refreshes, 2);
       expect(h.requests, hasLength(4));
       expect(
         h.requests.last.headers['authorization'],
@@ -113,6 +113,7 @@ void main() {
         ]),
       );
       expect(h.requests.where((r) => r.method == 'PATCH'), hasLength(2));
+      expect(h.refreshes, 0);
     },
   );
   test('scope-reset placeholder cannot resolve auto after cooldown', () async {

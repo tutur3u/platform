@@ -449,6 +449,8 @@ interface SessionAuthOptions {
    * Set `false` to disable rate limiting entirely (not recommended).
    */
   rateLimit?: RateLimitConfig | false;
+  /** Actor quota only for authenticated preferences behind the guarded gateway. */
+  rateLimitScope?: 'ip-and-user' | 'user';
   /**
    * Classifies the route for rate limiting.
    * Defaults to `method`, which maps GET/HEAD → read and everything else → mutate.
@@ -643,12 +645,10 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    // 1. Extract IP
     const ipAddress = extractIPFromHeaders(request.headers);
 
     let deferredApiAbuseBlock: BlockInfo | null = null;
 
-    // 2. Check persistent IP block
     if (ipAddress && ipAddress !== 'unknown') {
       const blockInfo = await isIPBlocked(ipAddress, {
         route: endpoint,
@@ -667,8 +667,7 @@ export function withSessionAuth<T = unknown>(
         }
       }
 
-      // 3. IP rate limit BEFORE auth — method-aware defaults + separate keys
-      if (options?.rateLimit !== false) {
+      if (options?.rateLimit !== false && options?.rateLimitScope !== 'user') {
         const config =
           options?.rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
 

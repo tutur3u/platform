@@ -103,5 +103,8 @@ export const PATCH = withSessionAuth(
       );
     }
   },
-  { allowAppSessionAuth: CALENDAR_SETTINGS_APP_SESSION_AUTH }
+  {
+    allowAppSessionAuth: CALENDAR_SETTINGS_APP_SESSION_AUTH,
+    rateLimitScope: 'user',
+  }
 );

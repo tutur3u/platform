@@ -33,9 +33,9 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
 }));
 
 vi.mock('@tuturuuu/auth/proxy', async () => ({
-  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
-    '@tuturuuu/auth/proxy'
-  )),
+  ...(await vi.importActual<
+    typeof import('../../../packages/auth/src/proxy/mfa-failure')
+  >('../../../packages/auth/src/proxy/mfa-failure')),
   consumeVerifyTokenRequest: (
     ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
   ) => mocks.consumeVerifyTokenRequest(...args),
@@ -198,6 +198,23 @@ describe('Infra proxy', () => {
       prefixBase: 'proxy:infra:api',
     });
   });
+
+  it.each(['GET', 'PATCH'])(
+    'uses verified actor keying for native preference %s only',
+    async (method) => {
+      mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+      const request = new NextRequest(
+        'https://infrastructure.tuturuuu.com/api/v1/mobile-calendar/api/v1/users/calendar-settings',
+        { method, headers: { authorization: 'Bearer eyJnative' } }
+      );
+      await proxy(request);
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+        prefixBase: 'proxy:infra:calendar-preferences',
+        useVerifiedBearerActor: true,
+        diagnosticPolicyName: 'native-calendar-preferences',
+      });
+    }
+  );
 
   it('redirects unauthenticated pages to the infra login page', async () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);

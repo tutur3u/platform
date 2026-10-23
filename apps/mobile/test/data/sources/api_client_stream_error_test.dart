@@ -32,7 +32,8 @@ void main() {
               (e) => e.rateLimitDiagnostics?.safeSummary,
               'guard metadata',
               'reason=route-rate-limit; policy=default; '
-                  'caller=authenticated; window=minute',
+                  'caller=authenticated; window=minute; metadata=present; '
+                  'vercel=absent; cloudflare=absent; challenge=unknown',
             ),
       ),
     );

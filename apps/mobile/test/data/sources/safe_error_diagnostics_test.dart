@@ -27,7 +27,8 @@ void main() {
       diagnostics.summary,
       'diagnostics=v1; stage=timezoneRead; kind=http; status=429; '
       'retryAfter=60; reason=unknown; policy=unknown; caller=unknown; '
-      'window=unknown',
+      'window=unknown; metadata=present; vercel=absent; cloudflare=absent; '
+      'challenge=unknown',
     );
     expect(diagnostics.summary, isNot(contains('private')));
   });

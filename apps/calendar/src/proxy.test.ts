@@ -196,6 +196,23 @@ describe('Calendar proxy verify-token handoff', () => {
     });
   });
 
+  it.each(['users/calendar-settings', 'workspaces/personal/calendar-settings'])(
+    'isolates verified preference actors on %s without refreshing bearer auth',
+    async (path) => {
+      mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+      const request = new NextRequest(`https://calendar.test/api/v1/${path}`, {
+        headers: { authorization: 'Bearer synthetic-token' },
+      });
+      await proxy(request);
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+        prefixBase: 'proxy:calendar:preferences',
+        useVerifiedBearerActor: true,
+        diagnosticPolicyName: 'calendar-native-preferences',
+      });
+    }
+  );
+
   it('refreshes product APIs in Supabase-first mode', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(null);
     mocks.hasAuthenticatedBearerToken.mockReturnValue(false);

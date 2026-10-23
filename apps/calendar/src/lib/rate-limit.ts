@@ -338,12 +338,25 @@ export async function checkRateLimit(
 
   if (!result.allowed) {
     const resetIn = Math.max(1, result.reset - Math.floor(Date.now() / 1000));
+    const sessionPolicy = /^session:(ip|user):(read|mutate):/u.exec(keyId);
     return createRateLimitErrorResponse(
       'Too Many Requests',
       `Rate limit exceeded. Try again in ${resetIn} seconds.`,
       429,
       'RATE_LIMIT_EXCEEDED',
-      headers
+      {
+        ...headers,
+        'Cache-Control': 'private, no-store',
+        'Retry-After': String(resetIn),
+        'X-Proxy-Block-Reason': 'rate-limit-exceeded',
+        'X-RateLimit-Policy': sessionPolicy
+          ? `calendar-session-${sessionPolicy[1]}-${sessionPolicy[2]}`
+          : 'calendar-route-quota',
+        'X-RateLimit-Caller-Class':
+          sessionPolicy?.[1] === 'user' ? 'authenticated' : 'unknown',
+        'X-RateLimit-Window':
+          effectiveConfig.windowMs === 60000 ? 'minute' : 'unknown',
+      }
     );
   }
 

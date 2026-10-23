@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server';
 
 type CalendarRateLimitReason = 'ip-already-blocked' | 'backend-auth-rate-limit';
 
-/** Classify only the rejecting branch, never a private block/provider detail.
- * These branches do not establish a limiter policy, caller class or window. */
+/** Expose the rejecting layer without private block or provider details. */
 export function buildCalendarRateLimitResponse(
   retryAfter: number,
   reason: CalendarRateLimitReason
@@ -17,6 +16,12 @@ export function buildCalendarRateLimitResponse(
         'Cache-Control': 'private, no-store',
         'Retry-After': `${retryAfter}`,
         'X-Proxy-Block-Reason': reason,
+        'X-RateLimit-Caller-Class': 'unknown',
+        'X-RateLimit-Window': 'unknown',
+        'X-RateLimit-Policy':
+          reason === 'ip-already-blocked'
+            ? 'calendar-route-ip-block'
+            : 'calendar-auth-provider',
       },
     }
   );

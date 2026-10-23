@@ -26,6 +26,34 @@ function dependencies() {
 }
 
 describe('authenticated native Calendar gateway', () => {
+  it('labels an upstream bare JSON 429 without inventing its limiter window', async () => {
+    const deps = dependencies();
+    deps.fetch.mockResolvedValue(
+      Response.json(
+        { message: 'Limited' },
+        {
+          status: 429,
+          headers: { 'Retry-After': '45', 'X-Vercel-Mitigated': 'challenge' },
+        }
+      )
+    );
+    const response = await forwardCalendarRequest(
+      request('/api/v1/users/calendar-settings'),
+      deps
+    );
+    expect(response.status).toBe(429);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'upstream-or-edge'
+    );
+    expect(response.headers.get('X-RateLimit-Policy')).toBe(
+      'calendar-upstream'
+    );
+    expect(response.headers.get('X-RateLimit-Caller-Class')).toBe('unknown');
+    expect(response.headers.get('X-RateLimit-Window')).toBe('unknown');
+    expect(response.headers.get('Retry-After')).toBe('45');
+    expect(response.headers.get('X-Vercel-Mitigated')).toBe('challenge');
+    expect(deps.fetch).toHaveBeenCalledTimes(1);
+  });
   it('forwards the exact color options GET and preserves its source query', async () => {
     const deps = dependencies();
     const path =
@@ -286,7 +314,7 @@ describe('authenticated native Calendar gateway', () => {
     }
   );
 
-  it('omits oversized or malformed diagnostics and does not expand the allowlist', async () => {
+  it('omits malformed upstream diagnostics while supplying fixed source classification', async () => {
     const deps = dependencies();
     deps.fetch.mockResolvedValue(
       Response.json(
@@ -299,6 +327,7 @@ describe('authenticated native Calendar gateway', () => {
             'X-Abuse-Challenge': 'https://attacker.example',
             'Retry-After': 'x'.repeat(129),
             'X-RateLimit-Secret': secret,
+            'X-Vercel-Mitigated': 'private value',
           },
         }
       )
@@ -308,7 +337,21 @@ describe('authenticated native Calendar gateway', () => {
     expect([...response.headers.keys()].sort()).toEqual([
       'cache-control',
       'content-type',
+      'x-proxy-block-reason',
+      'x-ratelimit-caller-class',
+      'x-ratelimit-policy',
+      'x-ratelimit-window',
     ]);
+    expect(response.headers.get('x-proxy-block-reason')).toBe(
+      'upstream-or-edge'
+    );
+    expect(response.headers.get('x-ratelimit-policy')).toBe(
+      'calendar-upstream'
+    );
+    expect(response.headers.get('x-ratelimit-caller-class')).toBe('unknown');
+    expect(response.headers.get('x-ratelimit-window')).toBe('unknown');
+    expect(response.headers.has('retry-after')).toBe(false);
+    expect(JSON.stringify([...response.headers])).not.toContain(secret);
   });
 
   it('forwards JSON mutations once and does not retry failures', async () => {

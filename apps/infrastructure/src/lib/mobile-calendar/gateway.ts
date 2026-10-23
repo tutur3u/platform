@@ -16,6 +16,7 @@ const DIAGNOSTIC_HEADERS: Record<string, RegExp> = {
   'x-ratelimit-remaining': /^\d{1,20}$/,
   'x-ratelimit-reset': /^\d{1,20}$/,
   'x-abuse-challenge': /^turnstile$/,
+  'x-vercel-mitigated': /^challenge$/,
 };
 
 type Dependencies = {
@@ -216,6 +217,20 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
         for (const [name, pattern] of Object.entries(DIAGNOSTIC_HEADERS)) {
           const value = upstream.headers.get(name);
           if (value && pattern.test(value)) responseHeaders.set(name, value);
+        }
+        if (
+          upstream.status === 429 &&
+          ![
+            'x-proxy-block-reason',
+            'x-ratelimit-policy',
+            'x-ratelimit-caller-class',
+            'x-ratelimit-window',
+          ].some((name) => responseHeaders.has(name))
+        ) {
+          responseHeaders.set('X-Proxy-Block-Reason', 'upstream-or-edge');
+          responseHeaders.set('X-RateLimit-Policy', 'calendar-upstream');
+          responseHeaders.set('X-RateLimit-Caller-Class', 'unknown');
+          responseHeaders.set('X-RateLimit-Window', 'unknown');
         }
         return new Response(upstream.status === 204 ? null : bytes, {
           status: upstream.status,

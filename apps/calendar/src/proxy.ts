@@ -81,8 +81,21 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       );
     }
 
+    const isNativePreference =
+      (req.method === 'GET' || req.method === 'PATCH') &&
+      /^\/api\/v1\/(?:users\/calendar-settings|workspaces\/[a-zA-Z0-9_-]+\/calendar-settings)$/u.test(
+        req.nextUrl.pathname
+      );
     const guardResponse = await guardApiProxyRequest(req, {
-      prefixBase: 'proxy:calendar:api',
+      prefixBase: isNativePreference
+        ? 'proxy:calendar:preferences'
+        : 'proxy:calendar:api',
+      ...(isNativePreference
+        ? {
+            useVerifiedBearerActor: true,
+            diagnosticPolicyName: 'calendar-native-preferences',
+          }
+        : {}),
     });
     if (guardResponse) {
       if (appSessionRefresh) {

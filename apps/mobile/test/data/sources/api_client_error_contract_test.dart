@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 
 void main() {
   test(
@@ -35,7 +36,8 @@ void main() {
                 (e) => e.rateLimitDiagnostics?.safeSummary,
                 'safe diagnostics',
                 'reason=route-rate-limit; policy=default; caller=anonymous; '
-                    'window=hour',
+                    'window=hour; metadata=present; vercel=absent; '
+                    'cloudflare=absent; challenge=unknown',
               ),
         ),
       );
@@ -67,11 +69,61 @@ void main() {
         isA<ApiException>().having(
           (e) => e.rateLimitDiagnostics?.safeSummary,
           'safe diagnostics',
-          'reason=unknown; policy=unknown; caller=unknown; window=unknown',
+          'reason=unknown; policy=unknown; caller=unknown; window=unknown; '
+              'metadata=present; vercel=absent; cloudflare=absent; '
+              'challenge=unknown',
         ),
       ),
     );
   });
+
+  for (final indicators in [false, true]) {
+    test('bare 429 preserves only edge header presence=$indicators', () async {
+      final api = ApiClient(
+        baseUrl: 'https://example.test',
+        httpClient: MockClient(
+          (_) async => http.Response(
+            'private upstream body',
+            429,
+            headers: {
+              if (indicators) 'x-vercel-id': 'private-vercel-id',
+              if (indicators) 'cf-ray': 'private-cf-ray',
+              'x-vercel-mitigated': indicators ? 'challenge' : 'private-value',
+              'server': 'private-server',
+              'authorization': 'Bearer private-token',
+            },
+          ),
+        ),
+      );
+      addTearDown(api.dispose);
+      try {
+        await api.getJson('/calendar-settings', requiresAuth: false);
+        fail('Expected HTTP 429');
+      } on ApiException catch (error) {
+        expect(error.rateLimitDiagnostics?.reason, 'upstream-or-edge');
+        expect(error.rateLimitDiagnostics?.hasStructuredMetadata, isFalse);
+        expect(error.rateLimitDiagnostics?.hasVercelId, indicators);
+        expect(error.rateLimitDiagnostics?.hasCfRay, indicators);
+        expect(error.rateLimitDiagnostics?.hasVercelChallenge, indicators);
+        final copy = SafeErrorDiagnostics.capture(
+          error,
+          DiagnosticStage.timezoneRead,
+        ).summary;
+        expect(copy, contains('reason=upstream-or-edge'));
+        expect(copy, contains('metadata=absent'));
+        expect(copy, contains('vercel=${indicators ? 'present' : 'absent'}'));
+        expect(
+          copy,
+          contains('cloudflare=${indicators ? 'present' : 'absent'}'),
+        );
+        expect(copy, isNot(contains('private')));
+        expect(
+          copy,
+          contains('challenge=${indicators ? 'vercel' : 'unknown'}'),
+        );
+      }
+    });
+  }
 
   for (final retry in <Object>[3, '3', -1]) {
     test(

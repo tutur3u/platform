@@ -29,7 +29,17 @@ void main() {
         var blockSave = true;
         h.respond = (req) async {
           if (req.method == 'PATCH' && blockSave) {
-            return http.Response('{}', 429, headers: {'retry-after': '30'});
+            return http.Response(
+              '{"error":"private upstream message"}',
+              429,
+              headers: {
+                'retry-after': '30',
+                'x-proxy-block-reason': 'route-rate-limit',
+                'x-ratelimit-policy': 'default',
+                'x-ratelimit-caller-class': 'authenticated',
+                'x-ratelimit-window': 'minute',
+              },
+            );
           }
           return TimezoneHttpHarness.json({
             'timezone': req.method == 'PATCH' ? 'Europe/London' : 'UTC',
@@ -56,6 +66,25 @@ void main() {
           canManageWorkspace: workspace,
         );
         await tester.pump();
+        expect(
+          find.textContaining('wait 30 seconds before retrying'),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining(
+            'reason=route-rate-limit; policy=default; '
+            'caller=authenticated; window=minute',
+          ),
+          findsOneWidget,
+        );
+        expect(find.textContaining('private upstream message'), findsNothing);
+        final requestCount = h.requests.length;
+        await cubit.save(
+          'Europe/London',
+          workspace: workspace,
+          canManageWorkspace: workspace,
+        );
+        expect(h.requests, hasLength(requestCount));
         await cubit.reload();
         await tester.pump();
         expect(cubit.state.failedSaveZone, 'Europe/London');
@@ -64,6 +93,15 @@ void main() {
         now = now.add(const Duration(seconds: 31));
         blockSave = false;
         await tester.pump(const Duration(seconds: 31));
+        expect(find.textContaining('private upstream message'), findsNothing);
+        expect(
+          find.textContaining('wait 30 seconds before retrying'),
+          findsNothing,
+        );
+        expect(
+          find.textContaining('reason=route-rate-limit; policy=default;'),
+          findsOneWidget,
+        );
         await tester.tap(
           find.byKey(
             ValueKey(
