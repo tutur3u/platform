@@ -549,9 +549,10 @@
       "gap": "parity-tooling"
     },
     "scripts/ci/cf-worker-parity.test.mjs": {
-      "lines": 18,
+      "lines": 20,
       "uses": 0,
-      "gap": "parity-tooling"
+      "gap": "parity-tooling",
+      "admitted": "2026-10-23 orchestrator resume: isolated nested-setting and zone-identity regressions in PR #6485."
     },
     "scripts/ci/ci-cache-policy.test.js": {
       "lines": 1,

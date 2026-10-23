@@ -104,6 +104,51 @@ test('observability, domains and zones compare whole', () => {
   assert.notDeepEqual(other, wrangler);
 });
 
+test('each nested setting and zone change independently fails identity parity', () => {
+  const config = {
+    worker: {
+      observability: { enabled: true, logs: { invocationLogs: false } },
+      domains: [{ hostname: 'app.example.com', zone: 'example.com' }],
+      env: { BOX: { type: 'durable-object', exportName: 'Box' } },
+      exports: { Box: { type: 'durable-object', storage: 'sqlite' } },
+    },
+  };
+  const identity = normalizeCfConfig(config);
+  for (const mutate of [
+    (worker) => {
+      worker.observability.logs.invocationLogs = true;
+    },
+    (worker) => {
+      worker.domains[0].zone = 'other.example';
+    },
+    (worker) => {
+      worker.env.BOX.environment = 'other';
+    },
+    (worker) => {
+      worker.exports.Box.container = { maxInstances: 1 };
+    },
+  ]) {
+    const changed = structuredClone(config);
+    mutate(changed.worker);
+    assert.notDeepEqual(normalizeCfConfig(changed), identity);
+  }
+  const raw = {
+    routes: [
+      {
+        pattern: 'app.example.com/*',
+        zone_name: 'example.com',
+        zone_id: 'one',
+      },
+    ],
+  };
+  const changed = structuredClone(raw);
+  changed.routes[0].zone_id = 'two';
+  assert.notDeepEqual(
+    normalizeWranglerConfig(changed),
+    normalizeWranglerConfig(raw)
+  );
+});
+
 test('JSONC configuration parses with comments and trailing commas', () => {
   assert.deepEqual(
     parseJsonc('{\n  // c\n  "a": "x//y", /* b */ "b": [1, 2,],\n}'),

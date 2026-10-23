@@ -40,6 +40,7 @@ function applySecrets(secrets) {
     process.env[name] = value;
   };
   // The plugin only forwards process env values for declared secrets/vars.
+  set('CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV', 'true');
   set('CLOUDFLARE_INCLUDE_PROCESS_ENV', 'true');
   set('CLOUDFLARE_VITE_FORCE_LOCAL', 'true');
   for (const [name, value] of Object.entries(secrets)) set(name, value);
@@ -67,7 +68,6 @@ export async function startCfViteWorker({ root, mode, secrets = {} }) {
   }
   assertNoLocalSecretFiles(root);
   const restore = applySecrets(secrets);
-  const vite = await importVite(root);
   const shared = {
     root,
     configFile: path.join(root, 'vite.config.ts'),
@@ -76,6 +76,7 @@ export async function startCfViteWorker({ root, mode, secrets = {} }) {
   };
   let server;
   try {
+    const vite = await importVite(root);
     if (mode === 'source') {
       server = await vite.createServer({
         ...shared,

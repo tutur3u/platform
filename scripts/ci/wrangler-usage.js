@@ -13,9 +13,9 @@ const WRANGLER_PATTERN = /wrangler/i;
 // Executable usage: CLI subcommands, module imports and dependency entries.
 // Counted separately so a mention cannot be swapped for an invocation.
 const WRANGLER_USE_PATTERNS = [
-  /\bwrangler\s+(?:ai|build|cert|check|containers|d1|delete|deploy|deployments|dev|dispatch-namespace|docs|hyperdrive|init|kv|login|logout|mtls-certificate|pages|pipelines|publish|queues|r2|rollback|secret|secrets-store|setup|tail|triggers|types|vectorize|versions|whoami|workflows)\b/i,
-  /\bfrom\s+['"]wrangler(?:\/[^'"]*)?['"]|\b(?:require|import)\(\s*['"]wrangler(?:\/[^'"]*)?['"]\s*\)/,
-  /["']wrangler["']\s*:\s*["'][^"']*\d/,
+  /\bwrangler\s+(?:ai|build|cert|check|containers|d1|delete|deploy|deployments|dev|dispatch-namespace|docs|hyperdrive|init|kv|login|logout|mtls-certificate|pages|pipelines|publish|queues|r2|rollback|secret|secrets-store|setup|tail|triggers|types|vectorize|versions|whoami|workflows)\b/gi,
+  /\bfrom\s+['"]wrangler(?:\/[^'"]*)?['"]|\b(?:require|import)\(\s*['"]wrangler(?:\/[^'"]*)?['"]\s*\)/g,
+  /["']wrangler["']\s*:\s*["'][^"']*\d/g,
 ];
 
 // Documentation explains the migration; lockfiles and generated references are
@@ -75,14 +75,15 @@ function countWranglerLines(content) {
   return countWranglerUsage(content).lines;
 }
 
-/** Count lines mentioning Wrangler and the subset that execute or depend on it. */
+/** Count mention lines and individual CLI/import/dependency occurrences. */
 function countWranglerUsage(content) {
   let lines = 0;
   let uses = 0;
   for (const line of content.split('\n')) {
     if (!WRANGLER_PATTERN.test(line)) continue;
     lines += 1;
-    if (WRANGLER_USE_PATTERNS.some((pattern) => pattern.test(line))) uses += 1;
+    for (const pattern of WRANGLER_USE_PATTERNS)
+      uses += [...line.matchAll(pattern)].length;
   }
   return { lines, uses };
 }

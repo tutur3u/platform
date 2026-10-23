@@ -26,13 +26,16 @@ for parity and Worker acceptance gates; builds stay in exact-commit CI.
 Default: cf + Void (Vite+); Wrangler only for gaps in the shrink-only
 `scripts/ci/wrangler-usage-allowlist.json`, enforced by
 `scripts/ci/wrangler-usage-guard.test.js`. Lower or delete an entry in the change
-that removes usage; growth needs an `admitted` orchestrator decision. Native Workers
+that removes usage. Count executable occurrences separately from mention lines,
+including multiple invocations per line; growth needs an `admitted` orchestrator decision. Native Workers
 use `cloudflare.config.ts` + `@cloudflare/vite-plugin` `newConfig.cfBuildOutput`,
 Build Output identity parity (`scripts/ci/cf-worker-parity.mjs`), runtime checks via
 `scripts/ci/cf-vite-worker.mjs`, and `cf deploy --prebuilt --no-provision`
 (`--provision` defaults to true). See the
 [parity matrix](../../../../../apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx)
-for per-operation verdicts, rollback and the cutover checklist.
+for per-operation verdicts, rollback and the cutover checklist. Run
+`node --test scripts/ci/cf-vite-worker.test.mjs` for disposable-secret refusal
+and environment-restoration regressions without starting a real Worker.
 
 Prefer cf for operations with demonstrated parity, beginning with bounded read-only
 inventory/observability and a Vite-native Worker pilot. Pin dependencies through

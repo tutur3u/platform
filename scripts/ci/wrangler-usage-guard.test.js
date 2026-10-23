@@ -92,6 +92,17 @@ test('scanner classifies and excludes paths deterministically', () => {
     assert.deepEqual(countWranglerUsage(line), { lines: 1, uses }, line);
 });
 
+test('multiple invocations on one line cannot hide behind a mention count', () => {
+  assert.deepEqual(countWranglerUsage('wrangler deploy && wrangler tail'), {
+    lines: 1,
+    uses: 2,
+  });
+  assert.deepEqual(
+    countWranglerUsage("import('wrangler'); require('wrangler');"),
+    { lines: 1, uses: 2 }
+  );
+});
+
 test('allowlist gaps record a reason, owner and removal condition', () => {
   const used = new Set(
     Object.values(allowlist.files).map((entry) => entry.gap)
@@ -110,10 +121,8 @@ test('allowlist gaps record a reason, owner and removal condition', () => {
     assert.ok(allowlist.gaps[entry.gap], `${file} references unknown gap`);
     assert.ok(Number.isInteger(entry.lines) && entry.lines > 0, file);
     assert.ok(
-      Number.isInteger(entry.uses) &&
-        entry.uses >= 0 &&
-        entry.uses <= entry.lines,
-      `${file} needs a uses count no larger than lines`
+      Number.isInteger(entry.uses) && entry.uses >= 0,
+      `${file} needs a nonnegative uses count`
     );
   }
 });

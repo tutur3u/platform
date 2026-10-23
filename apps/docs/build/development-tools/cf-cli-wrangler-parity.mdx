@@ -104,13 +104,20 @@ Rollback cannot cross a Durable Object lifecycle change. Secret changes can bloc
 rollback; inspect the error before using `--bypass-deployment-checks`. Retained CI
 artifacts (`<app>-worker-<sha>`) allow re-publishing an exact earlier build.
 
+The local harness rejects `.dev.vars*` and `.env*` files in both the app root and
+working directory (template `.example` files are allowed). It enables process-env
+loading for disposable secrets and restores the previous environment after startup
+failure or close. `cf-vite-worker.test.mjs` covers both source and artifact modes
+using a disposable Vite fixture; real Worker runtime acceptance remains a CI gate.
+
 ## Wrangler usage guard
 
 `node scripts/ci/wrangler-usage.js` prints the inventory. The guard scans tracked
 files (excluding docs, Markdown, lockfiles and skills) and records two exact counts
 per allowlisted file: lines mentioning Wrangler, and executable uses (CLI subcommands,
 module imports, dependency entries and config files), so a mention cannot be swapped
-for an invocation. When you migrate usage away, lower or delete the entry in the same
+for an invocation. Each occurrence counts, including multiple invocations on one line.
+When you migrate usage away, lower or delete the entry in the same
 change. A new entry or a higher count needs a fresh `admitted` field naming the
 orchestrator decision; this includes reverting a migration back to Wrangler. CI
 compares the allowlist with its base commit (`HEAD^1` of the pull request merge ref)
