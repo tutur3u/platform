@@ -4,6 +4,7 @@ import {
   copyFile,
   mkdir,
   mkdtemp,
+  open,
   readdir,
   rm,
   writeFile,
@@ -59,25 +60,30 @@ async function dispose({ metadata, repositoryRoot }) {
   await rm(metadata.disposableRoot, { recursive: true, force: true });
   await rm(repositoryRoot, { recursive: true, force: true });
 }
-test('actual metadata writer preserves old recovery record and removes failed partial temporary', async () => {
+test('actual metadata writer preserves old recovery record and removes failed partial temporary', async (t) => {
   const owned = await fixture();
   try {
+    const handle = await open(path.join(owned.repositoryRoot, 'probe'), 'wx');
+    const prototype = Object.getPrototypeOf(handle);
+    await handle.close();
+    const originalWrite = prototype.writeFile;
+    const write = t.mock.method(
+      prototype,
+      'writeFile',
+      async function (data, options) {
+        await originalWrite.call(this, data.slice(0, 17), options);
+        throw new Error('synthetic interrupted write');
+      }
+    );
     await assert.rejects(
-      writeMetadata(
-        owned.metadata.disposableRoot,
-        {
-          ...owned.metadata,
-          status: 'starting',
-        },
-        {
-          write: async (file, data, options) => {
-            await writeFile(file, data.slice(0, 17), options);
-            throw new Error('synthetic interrupted write');
-          },
-        }
-      ),
+      writeMetadata(owned.metadata.disposableRoot, {
+        ...owned.metadata,
+        status: 'starting',
+      }),
       /synthetic interrupted write/
     );
+    assert.equal(write.mock.callCount(), 1);
+    write.mock.restore();
     assert.deepEqual(
       await readLifecycleMetadata(owned.metadata.disposableRoot),
       owned.metadata
@@ -218,21 +224,32 @@ for (const [phase, previous] of [
   });
 }
 
-test('metadata preserves its original write failure when temp cleanup also fails', async () => {
+test('metadata preserves its original write failure when temp cleanup also fails', async (t) => {
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), 'metadata-write-failure-')
+  );
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const handle = await open(path.join(directory, 'probe'), 'wx');
+  const prototype = Object.getPrototypeOf(handle);
+  await handle.close();
   const primary = new Error('synthetic write failure');
+  const write = t.mock.method(prototype, 'writeFile', async () => {
+    throw primary;
+  });
+  let cleanupCalls = 0;
   await assert.rejects(
     writeMetadata(
-      '/synthetic-owned-root',
+      directory,
       { status: 'staged' },
       {
-        write: async () => {
-          throw primary;
-        },
         remove: async () => {
+          cleanupCalls++;
           throw new Error('synthetic cleanup failure');
         },
       }
     ),
     (error) => error === primary
   );
+  assert.equal(write.mock.callCount(), 1);
+  assert.equal(cleanupCalls, 1);
 });
