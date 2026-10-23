@@ -228,6 +228,8 @@ for roles, independent review, publication, receipts and retirement.
   and build workflows to pass in CI for the exact commit. Do not run `bun check`
   on this machine: its Turbo task graph can build workspace dependencies.
   Report any unrelated pre-existing CI blocker.
+- Before every push, run the build-free `bun check:changed` gate; see
+  [pre-push checks](apps/docs/build/development-tools/pre-push-checks.mdx).
 - `bun check` does NOT compile Next apps or run migrations, so it cannot see
   `cacheComponents` violations, unresolved dynamic/side-effect imports, or a
   broken FK in a new migration. When you change an app's routes, pages, or
