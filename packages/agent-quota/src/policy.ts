@@ -325,7 +325,7 @@ function rankOne(
           : 'wait',
     instanceIds: account.instanceIds ?? [account.instanceId],
     score,
-    signalOrderRemainingPercent: signalOrderRemainingPercent(
+    unknownOrderHint: signalOrderRemainingPercent(
       account.windows,
       task.model,
       now
@@ -382,10 +382,7 @@ export function recommend(options: RecommendOptions): Recommendation {
         Number(b.eligible) - Number(a.eligible) ||
         Number(b.state === 'healthy') - Number(a.state === 'healthy') ||
         (a.state === 'UNKNOWN' && b.state === 'UNKNOWN'
-          ? compareSignalOrder(
-              a.signalOrderRemainingPercent,
-              b.signalOrderRemainingPercent
-            )
+          ? compareSignalOrder(a.unknownOrderHint, b.unknownOrderHint)
           : 0) ||
         b.score - a.score ||
         a.instanceId.localeCompare(b.instanceId)

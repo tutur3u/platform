@@ -52,6 +52,46 @@ function setup(pool = account('worker')) {
   return { accounts, active: [], ledger: emptyLedger(), now };
 }
 describe('one-shot quota admission', () => {
+  it('lets operator preference outrank the UNKNOWN ordering hint', () => {
+    const at = new Date('2026-10-23T20:52:25.000Z');
+    const stale = (instanceId: string, usedPercent: number): AccountUsage => ({
+      ...account(instanceId, usedPercent),
+      provider: 'claude',
+      windows: [
+        {
+          kind: 'short',
+          usedPercent,
+          authoritative: true,
+          observedAt: '2026-10-23T20:00:00.000Z',
+          resetsAt: '2026-10-23T23:00:00.000Z',
+          source: 'sanitized preference ordering fixture',
+        },
+      ],
+    });
+    const owner = account('owner');
+    const preferred = stale('preferred', 80);
+    const moreRemaining = stale('more-remaining', 20);
+    const accounts = [owner, preferred, moreRemaining];
+    const input = request(accounts);
+    input.requirements.authorizedInstanceIds = ['preferred', 'more-remaining'];
+    input.requirements.privacyApprovedInstanceIds = [
+      'preferred',
+      'more-remaining',
+    ];
+    input.policy.preferenceWeights = { preferred: 5, 'more-remaining': 1 };
+    const result = admit(input, {
+      accounts,
+      active: [],
+      ledger: emptyLedger(),
+      now: at,
+    });
+    expect(result.chosen?.providerInstanceId).toBe('preferred');
+    expect(
+      result.pools.find((pool) => pool.pool === 'more-remaining')
+        ?.unknownOrderHint
+    ).toBe(80);
+  });
+
   it('prefers healthy Claude for main orchestrators while children stay flexible', () => {
     const owner = account('owner', 80);
     const codex = { ...account('codex-pool'), provider: 'codex' as const };
@@ -191,7 +231,15 @@ describe('one-shot quota admission', () => {
         },
       ],
     });
-    const claudeAgent = staleClaude('claudeAgent', 80);
+    const claudeAgent = staleClaude('claudeAgent', 10);
+    claudeAgent.windows.push({
+      kind: 'long',
+      usedPercent: 80,
+      authoritative: false,
+      observedAt: '2026-10-23T20:30:00.000Z',
+      resetsAt: '2026-10-24T01:00:00.000Z',
+      source: 'sanitized unclassified reset-pending window',
+    });
     const claudeKv = staleClaude('claude_kv', 20);
     const accounts = [owner, claudeAgent, claudeKv];
     const input = request(accounts);
@@ -217,12 +265,24 @@ describe('one-shot quota admission', () => {
     expect(result.status).toBe('admit');
     expect(result.chosen?.providerInstanceId).toBe('claude_kv');
     expect(
-      result.pools.find((pool) => pool.pool === 'claude_kv')
-        ?.signalOrderRemainingPercent
+      result.pools.find((pool) => pool.pool === 'claude_kv')?.unknownOrderHint
     ).toBe(80);
     expect(
       result.pools.find((pool) => pool.pool === 'claudeAgent')?.state
     ).toBe('STALE');
+
+    input.policy.preferenceWeights = { claudeAgent: 3, claude_kv: 1 };
+    const preferred = admit(input, {
+      accounts,
+      active: [],
+      ledger: emptyLedger(),
+      now: at,
+    });
+    expect(preferred.chosen?.providerInstanceId).toBe('claudeAgent');
+    expect(
+      preferred.pools.find((pool) => pool.pool === 'claudeAgent')
+        ?.unknownOrderHint
+    ).toBe(20);
   });
 
   it('blocks stale over-limit usage until its reported reset', () => {

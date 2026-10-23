@@ -586,7 +586,7 @@ describe('Usage UI and typed manual observations', () => {
       )
     ).toThrow('usage-import-reset-invalid');
   });
-  it('skips future registry entries and redacts top-level provenance on merge', () => {
+  it('uses the same five-minute future bound for validation and merge', () => {
     const future = {
       instanceId: 'claude_mira',
       driver: 'claudeAgent',
@@ -626,8 +626,37 @@ describe('Usage UI and typed manual observations', () => {
       now
     );
     expect(stillPrevious.providers).toMatchObject([
-      { usageLimits: { checkedAt: now.toISOString() } },
+      {
+        usageLimits: {
+          checkedAt: new Date(now.getTime() + 2 * 60_000).toISOString(),
+        },
+      },
     ]);
+    expect(() =>
+      validateUsageImport(
+        {
+          provenance: 'fixture',
+          providers: [slightlyFuture],
+        },
+        now
+      )
+    ).not.toThrow();
+    expect(() =>
+      validateUsageImport(
+        {
+          provenance: 'fixture',
+          providers: [
+            {
+              instanceId: 'claude_mira',
+              driver: 'claudeAgent',
+              usageLimits: { unavailable: true, windows: [] },
+            },
+          ],
+        },
+        now
+      )
+    ).toThrow('usage-import-unavailable-checked-at-required');
+    expect(merged.provenance).toBe('source Bearer [redacted]');
   });
   it('validates units, non-credential import fields and bounded settings', () => {
     expect(() =>

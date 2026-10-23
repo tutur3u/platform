@@ -365,7 +365,11 @@ export function mergeUsageImport(
     const checkedAt = Date.parse(
       String(record(provider.usageLimits).checkedAt)
     );
-    if (!Number.isFinite(checkedAt) || checkedAt > now.getTime()) continue;
+    if (
+      !Number.isFinite(checkedAt) ||
+      checkedAt > now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS
+    )
+      continue;
     const existing = providers.get(provider.instanceId);
     if (
       !existing ||

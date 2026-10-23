@@ -73,7 +73,7 @@ export interface RankedInstance {
   action: 'delegate' | 'drain' | 'wait';
   instanceIds: string[];
   score: number;
-  signalOrderRemainingPercent?: number | null;
+  unknownOrderHint?: number | null;
   eligible: boolean;
   reasons: RecommendationReason[];
 }

@@ -10,7 +10,6 @@ export function signalOrderRemainingPercent(
     .filter((window) => {
       const reset = window.resetsAt ? Date.parse(window.resetsAt) : NaN;
       return (
-        window.authoritative &&
         typeof window.usedPercent === 'number' &&
         Number.isFinite(window.usedPercent) &&
         window.usedPercent >= 0 &&

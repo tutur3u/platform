@@ -360,7 +360,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         resetAt,
         activeReservations: count,
         score: ranking.score,
-        signalOrderRemainingPercent: ranking.signalOrderRemainingPercent,
+        unknownOrderHint: ranking.unknownOrderHint,
         reasons,
         candidate,
         accountKey: key,
@@ -370,12 +370,10 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
       (a, b) =>
         b.rolePreference - a.rolePreference ||
         Number(b.state === 'FRESH') - Number(a.state === 'FRESH') ||
+        b.preferenceWeight - a.preferenceWeight ||
         (['UNKNOWN', 'STALE'].includes(a.state) &&
         ['UNKNOWN', 'STALE'].includes(b.state)
-          ? compareSignalOrder(
-              a.signalOrderRemainingPercent,
-              b.signalOrderRemainingPercent
-            )
+          ? compareSignalOrder(a.unknownOrderHint, b.unknownOrderHint)
           : 0) ||
         b.orderingScore - a.orderingScore ||
         a.pool.localeCompare(b.pool)
