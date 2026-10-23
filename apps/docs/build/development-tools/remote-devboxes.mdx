@@ -306,6 +306,16 @@ before anything runs. Git error output is not forwarded, because remote URLs can
 credentials. `judge-only` runners and playground pools reject the envelope.
 `ttr resources run --offload` uses it.
 
+A runner advertises the envelope versions it decodes as
+`capabilities.protocols.commitRun` (currently `[1]`). The advertisement ships in
+the same build as the decoder and is sent only by opted-in (`TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE=true`)
+`trusted` runners. `ttr resources run --offload` submits a commit run only to a
+runner that advertises the client's version. Otherwise the runner is
+`blockedBy=capability_missing`: `auto` queues locally and an explicit runner ID
+fails. This closes the gap where an older trusted runner would execute the
+envelope as a command. Deploy the heartbeat handlers that accept `protocols`
+before upgrading trusted runners, because both handlers reject unknown keys.
+
 ### Protecting hosts with existing critical files
 
 Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
@@ -691,7 +701,8 @@ parent scheduling client omits Playground capabilities until both heartbeat
 contracts support them; `devbox-agent-capabilities.test.ts` exercises its emitted
 body against both current handlers. Both heartbeat handlers (`apps/web` and the
 `devbox-control` Worker) also accept an optional `executionMode`
-(`trusted` or `judge-only`) and an optional `isolation` summary: `checkedAt` plus
+(`trusted` or `judge-only`), an optional `protocols.commitRun` list of envelope
+versions (integers 1-100), and an optional `isolation` summary: `checkedAt` plus
 the boolean checks `dedicatedUser`, `privateTokenDirectory`, `protectedService`,
 `dedicatedDockerSocket`, `gvisorDefault` and `noGeneralDockerGroup`. Unknown keys
 and wrong types are still rejected. These fields are self-reported and advisory:
@@ -788,9 +799,18 @@ Do not fall back to ordinary Docker isolation when gVisor is missing.
 remote creation starts, or after a definite server rejection. A lost response,
 malformed success acknowledgement, or unexpected error after creation starts
 exits nonzero and never repeats the command locally. When the acknowledgement
-contains a run ID, the CLI requests cancellation of that same run. If the ID or
-stop acknowledgement is unavailable, inspect `ttr box list` before retrying;
-a stop request alone does not prove the remote process has exited.
+contains a run ID, the CLI requests cancellation of that same run.
+
+Each offload sends a fresh client operation ID as `idempotencyKey`. The create
+handler dedupes on (actor, key), so a retried create returns the original run;
+reusing a key for a different command returns 409. When creation is interrupted,
+times out or fails without a definite rejection, the CLI calls
+`POST /api/v1/devboxes/runs/stop-by-key`, which is scoped to the caller's runs.
+A 404 can mean the create is still in flight, so the CLI retries up to three
+times within a 10-second budget. If cancellation is still unconfirmed, it prints
+the operation key; find the run with `ttr box list` and stop it with
+`ttr box stop <run-id>`. A stop request alone does not prove the remote process
+has exited.
 
 SIGINT and SIGTERM remain terminal through every creation outcome, including a
 later rejection, and return 130 and 143 respectively. Cancellation or the overall
@@ -803,8 +823,36 @@ indefinitely.
 The focused `resources-offload-interruption.test.ts` suite covers rejected and
 malformed creation after interruption, ambiguous acknowledgements, stalled log
 pages, cancellation between full pages, and SDK transport abort signals.
-`store-run-logs.test.ts` verifies stable log ordering and raw-row offsets.
+`resources-offload-operation-key.test.ts` covers an accepted create whose
+acknowledgement is lost after Ctrl-C, an in-flight create, and the unconfirmed
+notice. `store-run-idempotency.test.ts` covers server-side dedupe and key races.
 These fixtures do not establish hosted runner acceptance.
+
+### Run log cursor
+
+Run events carry a dense per-run `seq` (migration
+`20261024090000_devbox_run_log_cursor_and_idempotency.sql`). A `BEFORE INSERT`
+trigger allocates it by upserting the run's `devbox_run_event_cursors` row. That
+row lock is held until the writer commits, so commit order equals sequence order
+for every writer (web, infrastructure and SQL functions). The logs route pages
+`seq > offset` and returns the last `seq` as `next`. Because sequences start at 1,
+older clients that send raw-row offsets keep working. Paging by a `created_at`
+offset could repeat one line and skip another that committed late with an
+earlier timestamp. Before the migration applies, the route falls back to that
+legacy query.
+
+`store-run-logs.test.ts` models a late commit, and
+`apps/database/supabase/tests/devbox-run-log-cursor.sql` checks density, forged
+sequences and key constraints. To reproduce the concurrency boundary itself,
+use two sessions on a private socket-only Postgres cluster (`initdb`, then
+`pg_ctl -o "-c listen_addresses='' -k <dir>"`):
+
+1. Session A runs `begin`, inserts an event for a run and sleeps before `commit`.
+2. Session B inserts an event for the same run.
+3. A reader pages `seq > cursor` before and after both commit.
+
+Before the migration the `created_at` reader sees `B,B`. After it, B blocks
+until A commits, and the reader sees `A,B`.
 
 ## Cache Policy
 

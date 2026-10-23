@@ -286,5 +286,11 @@ Bound each control-plane request, propagate its AbortSignal through the SDK, and
 check cancellation and the overall deadline between log pages. Keep stop requests
 bounded independently of an already-aborted follow signal. A failed stop remains
 unconfirmed; direct the operator to inspect the original run before retrying.
-Use `resources-offload-interruption.test.ts` for these regressions and
-`store-run-logs.test.ts` for stable ordering and raw-row paging offsets.
+Send a per-offload operation ID as the create `idempotencyKey`. When an
+acknowledgement is lost, cancel through `runs/stop-by-key` within a bound, or
+print the key. Submit envelopes only to runners that advertise the matching
+`protocols.commitRun` version. Use `resources-offload-interruption.test.ts`,
+`resources-offload-operation-key.test.ts` and
+`resources-offload-protocol.test.ts` for these regressions. Use
+`store-run-logs.test.ts` to check that the per-run sequence cursor neither skips
+nor repeats a line that commits late.

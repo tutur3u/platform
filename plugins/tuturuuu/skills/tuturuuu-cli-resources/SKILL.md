@@ -100,7 +100,9 @@ environment is sent. When offload cannot run, the message names `blockedBy`
 `ttr resources offload --json` explains eligibility using the server clock.
 Once a remote run exists, a failure stops it and exits non-zero; even
 `--offload auto` never reruns it locally. Never offload to Judge or playground
-runners; selection excludes them.
+runners; selection excludes them. A runner must also advertise
+`protocols.commitRun` containing the client's envelope version. Otherwise it is
+`blockedBy=capability_missing`, and `auto` queues locally.
 
 ## Diagnose and recover
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
