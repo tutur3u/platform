@@ -20,6 +20,7 @@ import {
 } from './resources-setup';
 import {
   bun,
+  crossProcessTimeout,
   entry,
   exists,
   fixturePath,
@@ -44,7 +45,7 @@ afterEach(async () => {
   host.memory = 24 * 1024 ** 3;
   host.cpus = 10;
 });
-describe('resource policy', () => {
+describe('resource policy', { timeout: crossProcessTimeout }, () => {
   it('adapts worker counts and retains host headroom', () => {
     expect(defaultResourceConfig(24 * 1024 ** 3, 10).vitestWorkers).toBe(2);
     expect(defaultResourceConfig(8 * 1024 ** 3, 2).vitestWorkers).toBe(1);
@@ -185,7 +186,7 @@ describe('resource policy', () => {
     }
   );
 });
-describe('resource admission', { timeout: 45_000 }, () => {
+describe('resource admission', { timeout: crossProcessTimeout }, () => {
   it('serializes jobs across checkouts and preserves their exit codes', async () => {
     const home = await temporary();
     const a = join(home, 'a');
@@ -256,62 +257,66 @@ describe('resource admission', { timeout: 45_000 }, () => {
     expect(await inspect(project)).toBe('2');
     expect(await inspect(outside)).toBe('unset');
   });
-  it('preserves worker limits through real Turbo strict env with fixture-provisioned shims', async () => {
-    const home = await temporary();
-    const fixture = join(home, 'repo');
-    const pkg = join(fixture, 'packages', 'probe');
-    await mkdir(pkg, { recursive: true });
-    await writeFile(
-      join(fixture, 'package.json'),
-      JSON.stringify({
-        name: 'resource-fixture',
-        private: true,
-        packageManager: 'bun@1.4.1',
-        workspaces: ['packages/*'],
-      })
-    );
-    await writeFile(
-      join(pkg, 'package.json'),
-      JSON.stringify({
-        name: 'resource-probe',
-        scripts: { test: 'node probe.cjs' },
-      })
-    );
-    await writeFile(
-      join(pkg, 'probe.cjs'),
-      `console.log("WORKERS=" + process.env.VITEST_MAX_WORKERS); if (process.env.VITEST_MAX_WORKERS !== "${defaultResourceConfig().vitestWorkers}") process.exit(9);`
-    );
-    await writeFile(
-      join(fixture, 'turbo.json'),
-      JSON.stringify({ tasks: { test: { cache: false } } })
-    );
-    const install = spawn(bun, ['install', '--ignore-scripts'], {
-      cwd: fixture,
-      stdio: 'ignore',
-    });
-    children.push(install);
-    expect(await new Promise((resolve) => install.once('exit', resolve))).toBe(
-      0
-    );
-    const turbo = resolve('../../node_modules/.bin/turbo');
-    const result = await launch(
-      home,
-      [
-        'run',
-        '--',
-        turbo,
-        'run',
-        'test',
-        '--env-mode=strict',
-        '--concurrency=8',
-      ],
-      fixture
-    ).done;
-    expect(result.code, result.err).toBe(0);
-    expect(result.out).toContain(
-      `WORKERS=${defaultResourceConfig().vitestWorkers}`
-    );
-  }, 45_000);
+  it(
+    'preserves worker limits through real Turbo strict env with fixture-provisioned shims',
+    async () => {
+      const home = await temporary();
+      const fixture = join(home, 'repo');
+      const pkg = join(fixture, 'packages', 'probe');
+      await mkdir(pkg, { recursive: true });
+      await writeFile(
+        join(fixture, 'package.json'),
+        JSON.stringify({
+          name: 'resource-fixture',
+          private: true,
+          packageManager: 'bun@1.4.1',
+          workspaces: ['packages/*'],
+        })
+      );
+      await writeFile(
+        join(pkg, 'package.json'),
+        JSON.stringify({
+          name: 'resource-probe',
+          scripts: { test: 'node probe.cjs' },
+        })
+      );
+      await writeFile(
+        join(pkg, 'probe.cjs'),
+        `console.log("WORKERS=" + process.env.VITEST_MAX_WORKERS); if (process.env.VITEST_MAX_WORKERS !== "${defaultResourceConfig().vitestWorkers}") process.exit(9);`
+      );
+      await writeFile(
+        join(fixture, 'turbo.json'),
+        JSON.stringify({ tasks: { test: { cache: false } } })
+      );
+      const install = spawn(bun, ['install', '--ignore-scripts'], {
+        cwd: fixture,
+        stdio: 'ignore',
+      });
+      children.push(install);
+      expect(
+        await new Promise((resolve) => install.once('exit', resolve))
+      ).toBe(0);
+      const turbo = resolve('../../node_modules/.bin/turbo');
+      const result = await launch(
+        home,
+        [
+          'run',
+          '--',
+          turbo,
+          'run',
+          'test',
+          '--env-mode=strict',
+          '--concurrency=8',
+        ],
+        fixture
+      ).done;
+      expect(result.code, result.err).toBe(0);
+      expect(result.out).toContain(
+        `WORKERS=${defaultResourceConfig().vitestWorkers}`
+      );
+    },
+    crossProcessTimeout
+  );
   it('does not deadlock nested commands after an environment marker is removed', async () => {
     const home = await temporary();
     const source = await script(
@@ -368,7 +373,9 @@ describe('resource admission', { timeout: 45_000 }, () => {
 const queueModule = resolve('src/cli/resources-queue.ts');
 const configModule = resolve('src/cli/resources-config.ts');
 const workerHome = () => fixtures.home(1);
-describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
+describe('reviewed resource policy and signals', {
+  timeout: crossProcessTimeout,
+}, () => {
   it('rejects busy same-lane budget changes and binds actual argv/env to recorded caps', async () => {
     const home = await workerHome();
     const ready = join(home, 'ready');
@@ -511,6 +518,7 @@ describe('reviewed resource policy and signals', { timeout: 45_000 }, () => {
 });
 it.each(['enable', 'disable', 'uninstall'] as const)(
   'serializes %s config reads with setup and preserves admitted budgets',
+  { timeout: crossProcessTimeout },
   async (action) => {
     const home = await workerHome();
     const extra = join(home, 'extra');
@@ -596,7 +604,9 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
     expect((await b.done).code).toBe(0);
   }
 );
-it('retains subprocess diagnostics until inherited pipes close', async () => {
+it('retains subprocess diagnostics until inherited pipes close', {
+  timeout: crossProcessTimeout,
+}, async () => {
   const path = await fixtures.home();
   const runner = await script(
     path,
@@ -607,7 +617,9 @@ it('retains subprocess diagnostics until inherited pipes close', async () => {
   expect(result.code).toBe(7);
   expect(result.err).toContain('fixture child diagnostic');
 });
-it('disabled out-of-scope and bypass commands retain arguments under oversized policy', async () => {
+it('disabled out-of-scope and bypass commands retain arguments under oversized policy', {
+  timeout: crossProcessTimeout,
+}, async () => {
   const home = await fixtures.home();
   const original = (await readResourceConfig(home))!;
   const code =
@@ -652,7 +664,9 @@ it('disabled out-of-scope and bypass commands retain arguments under oversized p
     expect([status.owners.length, status.waiting.length]).toEqual([0, 0]);
   }
 });
-it('proves absent groups with ESRCH while permissions and unknown errors fail closed without ps', async () => {
+it('proves absent groups with ESRCH while permissions and unknown errors fail closed without ps', {
+  timeout: crossProcessTimeout,
+}, async () => {
   const path = await fixtures.home();
   const runner = join(path, 'group.ts');
   await writeFile(

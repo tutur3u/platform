@@ -33,6 +33,7 @@ export const fixturePath = [
 ].join(delimiter);
 export const entry = resolve('src/cli/resources-entry.ts');
 export const processTimeout = 15_000;
+export const crossProcessTimeout = 45_000;
 export function jsLiteral(value: unknown) {
   const serialized = JSON.stringify(value);
   if (serialized === undefined)
@@ -47,18 +48,41 @@ export const exists = (path: string) =>
     () => true,
     () => false
   );
+// Barriers follow producer liveness; Vitest owns the test deadline.
+const fixtureChildren = new Set<ChildProcess[]>();
+const fixtureStderr = new Map<ChildProcess, () => string>();
+const alive = (child: ChildProcess) =>
+  child.exitCode === null && child.signalCode === null;
+function barrierDiagnostics() {
+  const tails = [...fixtureStderr.entries()]
+    .map(
+      ([child, err]) =>
+        [child.pid, err().trim().split('\n').slice(-3).join(' | ')] as const
+    )
+    .filter(([, tail]) => tail);
+  return tails.length
+    ? ` Last fixture stderr: ${tails.map(([pid, tail]) => `PID ${pid}: ${tail}`).join('; ')}`
+    : '';
+}
 export async function until(check: () => Promise<boolean>) {
-  const end = Date.now() + processTimeout;
-  while (Date.now() < end) {
+  for (;;) {
     if (await check()) return;
+    const producing = [...fixtureChildren].some((list) => list.some(alive));
+    if (!producing) {
+      // A producer may exit right after its final write: decide on a last read.
+      if (await check()) return;
+      throw new Error(
+        `Resource fixture barrier is unreachable: every fixture process exited before it was reached.${barrierDiagnostics()}`
+      );
+    }
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
-  throw new Error('Timed out at resource fixture barrier.');
 }
 
 export function privateFixtures(ignorePressure = false) {
   const dirs: string[] = [];
   const children: ChildProcess[] = [];
+  fixtureChildren.add(children);
   const completions: Promise<unknown>[] = [];
   async function temporary() {
     const path = await realpath(
@@ -136,6 +160,7 @@ export function privateFixtures(ignorePressure = false) {
     child.stderr.on('data', (chunk) => {
       err += chunk;
     });
+    fixtureStderr.set(child, () => err);
     const finished = (event: 'exit' | 'close') =>
       new Promise<{ code: number | null; out: string; err: string }>(
         (resolve, reject) => {
@@ -176,6 +201,7 @@ export function privateFixtures(ignorePressure = false) {
           await writeFile(join(path, name.replace('.ready', '.release')), '');
       }
     }
+    for (const child of children) fixtureStderr.delete(child);
     for (const child of children.splice(0)) {
       if (child.exitCode === null && child.signalCode === null) {
         child.kill('SIGTERM');

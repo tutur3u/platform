@@ -19,6 +19,7 @@ import { setupResources } from './resources-setup';
 import { newOwner, occupancy, type ResourceOwner } from './resources-slots';
 import {
   bun,
+  crossProcessTimeout,
   exists,
   privateFixtures,
   realNode,
@@ -132,7 +133,9 @@ describe('pure burst telemetry decision', () => {
   });
 });
 
-describe('adaptive configuration and budgets', () => {
+describe('adaptive configuration and budgets', {
+  timeout: crossProcessTimeout,
+}, () => {
   it('keeps absent maximum equal to base and clamps out-of-range maxima', async () => {
     const path = await fixtures.home(2);
     const config = (await readResourceConfig(path))!;
@@ -292,7 +295,7 @@ describe('adaptive configuration and budgets', () => {
   );
 });
 
-describe('adaptive queue admission', () => {
+describe('adaptive queue admission', { timeout: crossProcessTimeout }, () => {
   it('keeps fixed base capacity and caps unchanged without probing burst', async () => {
     const path = await home(2, 2, 2);
     const a = await run(path, 'a');

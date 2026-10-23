@@ -8,6 +8,7 @@ import {
   ownerCpu,
   parseCpuTime,
   parseProcessCpu,
+  processCpuTable,
 } from './resources-activity';
 import { isTrivialCommand } from './resources-command';
 import { atomicJson, readResourceConfig } from './resources-config';
@@ -19,6 +20,7 @@ import {
 } from './resources-status';
 import {
   bun,
+  crossProcessTimeout,
   entry,
   exists,
   privateFixtures,
@@ -40,7 +42,7 @@ const run = (path: string, source: string, env: NodeJS.ProcessEnv = {}) =>
 const json = async (path: string) => JSON.parse(await readFile(path, 'utf8'));
 afterEach(() => fixtures.cleanup());
 
-describe('nested admission', { timeout: 45_000 }, () => {
+describe('nested admission', { timeout: crossProcessTimeout }, () => {
   it('passes a nested ttr resources run straight through with the admitted marker', async () => {
     const path = await home(1);
     const inner = join(path, 'inner.json');
@@ -149,7 +151,7 @@ describe('nested admission', { timeout: 45_000 }, () => {
   });
 });
 
-describe('parallelism hygiene', { timeout: 45_000 }, () => {
+describe('parallelism hygiene', { timeout: crossProcessTimeout }, () => {
   it('classifies version, help and read-only commands as trivial', () => {
     for (const [name, args] of [
       ['bun', ['--version']],
@@ -217,7 +219,7 @@ describe('parallelism hygiene', { timeout: 45_000 }, () => {
   });
 });
 
-describe('owner activity and status', () => {
+describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
   it('parses ps CPU time and accounts for descendants that left the group', () => {
     expect(parseCpuTime('0:01.50')).toBe(1.5);
     expect(parseCpuTime('125:00.00')).toBe(7500);
@@ -279,8 +281,19 @@ describe('owner activity and status', () => {
         sampledAt: new Date().toISOString(),
         lastActiveAt: started,
       });
+      // %cpu is a scheduler-decayed estimate: a just-spawned process still
+      // shows its exec cost, and a contended host can nudge it between two
+      // samples. This test is about an idle owner, so wait (causally, while
+      // it lives) for a real ps sample in which it is idle, and evaluate the
+      // whole report on that same sample.
+      fixtures.children.push(idle);
+      let sample: Awaited<ReturnType<typeof processCpuTable>>;
+      await until(async () => {
+        sample = await processCpuTable();
+        return sample?.find((row) => row.pid === idle.pid)?.percent === 0;
+      });
       const state = await resourceQueueStatus(path);
-      const details = await resourceStatusDetails(state);
+      const details = await resourceStatusDetails(state, Date.now(), sample);
       expect(details.ownerDetails[0]).toMatchObject({
         pid: owner.pid,
         childPid: idle.pid,
