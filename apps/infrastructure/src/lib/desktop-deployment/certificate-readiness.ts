@@ -5,14 +5,32 @@ import {
   createPublicKey,
   X509Certificate,
 } from 'node:crypto';
-// node-forge is limited to PKCS12/ASN.1 parsing. Do not call its certificate or
-// RSA signature verification (GHSA-86w9-cpqp-85rv has no patched release); use
-// node:crypto for any verification.
-import forge from 'node-forge';
 
-const CERT_BAG = '1.2.840.113549.1.12.10.1.3';
-const KEY_BAG = '1.2.840.113549.1.12.10.1.1';
-const ENCRYPTED_KEY_BAG = '1.2.840.113549.1.12.10.1.2';
+type Pkcs12Store = {
+  keys: Array<{ pkcs8: Buffer }>;
+  certs: Array<{ cert: Buffer }>;
+};
+
+type PkiApi = {
+  pkcs12: {
+    open(bytes: Buffer, password: string): Promise<Pkcs12Store>;
+  };
+  schema: {
+    x509: {
+      parse(bytes: Buffer): {
+        subject: { rdns: Array<Array<{ name: string | null; value: string }>> };
+        validity: { notBefore: Date; notAfter: Date };
+        extensions: Array<{ oid: string }>;
+      };
+      decodeExtensions(certificate: unknown): Array<{
+        name: string | null;
+        decoded?: unknown;
+      }>;
+    };
+  };
+};
+
+const pki = require('@blamejs/pki') as PkiApi;
 
 export type DesktopCertificateFailure =
   | 'certificate_invalid'
@@ -40,44 +58,41 @@ export type DesktopCertificateReadiness =
 
 // Portable material checks do not establish OS trust-chain, revocation,
 // Apple account access, notarization or successful artifact signing.
-export function inspectDesktopCertificate(input: {
+export async function inspectDesktopCertificate(input: {
   platform: 'windows' | 'macos';
   bytes: Uint8Array;
   password: string;
   identity?: string;
   teamId?: string;
   now?: Date;
-}): DesktopCertificateReadiness {
+}): Promise<DesktopCertificateReadiness> {
   try {
     if (input.bytes.byteLength === 0 || input.bytes.byteLength > 2097152) {
       return { ok: false, code: 'certificate_invalid' };
     }
-    const asn1 = forge.asn1.fromDer(
-      Buffer.from(input.bytes).toString('binary')
-    );
-    const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, true, input.password);
-    const certificates = p12.getBags({ bagType: CERT_BAG })[CERT_BAG] ?? [];
-    const keys = [
-      ...(p12.getBags({ bagType: KEY_BAG })[KEY_BAG] ?? []),
-      ...(p12.getBags({ bagType: ENCRYPTED_KEY_BAG })[ENCRYPTED_KEY_BAG] ?? []),
-    ].flatMap((bag) => (bag.key ? [bag.key] : []));
+    const p12 = await pki.pkcs12.open(Buffer.from(input.bytes), input.password);
+    const certificates = p12.certs.map(({ cert }) => ({ cert }));
+    const keys = p12.keys;
     if (keys.length === 0)
       return { ok: false, code: 'certificate_key_missing' };
     if (keys.length !== 1) return { ok: false, code: 'certificate_ambiguous' };
     const key = keys[0];
     if (!key) return { ok: false, code: 'certificate_key_missing' };
-    const privateKey = createPrivateKey(forge.pki.privateKeyToPem(key));
+    const privateKey = createPrivateKey({
+      key: key.pkcs8,
+      format: 'der',
+      type: 'pkcs8',
+    });
     const publicDer = createPublicKey(privateKey).export({
       type: 'spki',
       format: 'der',
     });
     const matched = certificates.flatMap((bag) => {
-      if (!bag.cert) return [];
-      const x509 = new X509Certificate(forge.pki.certificateToPem(bag.cert));
+      const x509 = new X509Certificate(bag.cert);
       return x509.publicKey
         .export({ type: 'spki', format: 'der' })
         .equals(publicDer)
-        ? [{ certificate: bag.cert, x509 }]
+        ? [{ certificate: pki.schema.x509.parse(bag.cert), x509 }]
         : [];
     });
     if (matched.length === 0)
@@ -93,22 +108,31 @@ export function inspectDesktopCertificate(input: {
     if (selected.certificate.validity.notAfter <= now) {
       return { ok: false, code: 'certificate_expired' };
     }
-    const eku = selected.certificate.getExtension('extKeyUsage') as {
-      codeSigning?: boolean;
-    } | null;
-    if (eku?.codeSigning !== true) {
+    const extensions = pki.schema.x509.decodeExtensions(selected.certificate);
+    const eku = extensions.find(
+      (extension) => extension.name === 'extKeyUsage'
+    );
+    if (
+      !Array.isArray(eku?.decoded) ||
+      !eku.decoded.includes('1.3.6.1.5.5.7.3.3')
+    ) {
       return { ok: false, code: 'certificate_codesigning_required' };
     }
     if (input.platform === 'macos') {
       if (
         !selected.certificate.extensions.some(
-          (extension) => extension.id === '1.2.840.113635.100.6.1.13'
+          (extension) => extension.oid === '1.2.840.113635.100.6.1.13'
         )
       ) {
         return { ok: false, code: 'certificate_developer_id_required' };
       }
-      const commonName = selected.certificate.subject.getField('CN')?.value;
-      const team = selected.certificate.subject.getField('OU')?.value;
+      const subject = selected.certificate.subject.rdns.flat();
+      const commonName = subject.find(
+        (field) => field.name === 'commonName'
+      )?.value;
+      const team = subject.find(
+        (field) => field.name === 'organizationalUnitName'
+      )?.value;
       if (!input.identity || input.identity !== commonName) {
         return { ok: false, code: 'certificate_identity_mismatch' };
       }

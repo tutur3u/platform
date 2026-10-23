@@ -54,16 +54,10 @@ router-plugin declares Chokidar 5, neither of which depends on braces. Treat
 these audit paths as reported graph associations, not verified Chokidar 3 call
 chains. Manifest dependency classification alone does not prove runtime exposure.
 
-The separate [node-forge advisory](https://github.com/advisories/GHSA-86w9-cpqp-85rv)
-remains tracked at `1.4.0` with no patched release. Its only consumer is
-Infrastructure admin-only desktop certificate PKCS12 inspection in
-`certificate-readiness.ts`, which uses node-forge for PKCS12/ASN.1 parsing and
-node:crypto for key matching. The affected RSA PKCS#1 v1.5 verification is
-reached only through certificate/chain verification, which that module never
-calls. `certificate-readiness.test.ts` instruments every node-forge RSA public
-key during a full inspection and fails if `verify` runs, with a positive control
-proving the instrumentation observes chain verification. Any new signature check
-must use node:crypto rather than node-forge.
+Infrastructure desktop certificate inspection parses PKCS#12 material with
+`@blamejs/pki` and uses Node's `crypto` module for key matching and certificate
+metadata. Password failures remain normalized to `certificate_invalid`, and
+certificate readiness checks continue to report the same public result codes.
 
 The moderate esbuild development-server advisory
 ([GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99)) came

@@ -85,7 +85,7 @@ export async function inspectActiveDesktopMaterial(
       ])
     );
     assertDesktopSigningResources(input.platform, profile.files, scalars);
-    const certificate = inspectDesktopCertificate({
+    const certificate = await inspectDesktopCertificate({
       platform: input.platform,
       bytes: values.get(profile.files[0])!,
       password:
