@@ -139,6 +139,8 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/infrastructure/cron/whitelist/domain/[domain]` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/cron/whitelist/domain/%5Bdomain%5D/route.ts) |
 | `/api/v1/infrastructure/cron/whitelist/domains` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/cron/whitelist/domains/route.ts) |
 | `/api/v1/infrastructure/devboxes` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/route.ts) |
+| `/api/v1/infrastructure/devboxes/runners/[runnerId]/drain` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/%5BrunnerId%5D/drain/route.ts) |
+| `/api/v1/infrastructure/devboxes/runners/[runnerId]/features` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/%5BrunnerId%5D/features/route.ts) |
 | `/api/v1/infrastructure/email-blacklist/[entryId]` | DELETE, GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/email-blacklist/%5BentryId%5D/route.ts) |
 | `/api/v1/infrastructure/email-blacklist` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/email-blacklist/route.ts) |
 | `/api/v1/infrastructure/entity-creation-limits` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/entity-creation-limits/route.ts) |
@@ -189,7 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/infrastructure/migrate/product-prices` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/product-prices/route.ts) |
 | `/api/v1/infrastructure/migrate/product-units` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/product-units/route.ts) |
 | `/api/v1/infrastructure/migrate/roles` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/roles/route.ts) |
-| `/api/v1/infrastructure/migrate/score-names` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/score-names/route.ts) |
-| `/api/v1/infrastructure/migrate/sent-emails` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/sent-emails/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).
