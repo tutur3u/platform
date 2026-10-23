@@ -16,6 +16,29 @@ function quotePostgrestString(value: string) {
   return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
 }
 
+async function getConfirmedEmail(
+  supabase: TypedSupabaseClient,
+  user: NotificationAuthUser
+) {
+  let identity = user;
+
+  if (identity.email_confirmed_at === undefined) {
+    const { data, error } = await supabase.auth.admin.getUserById(user.id);
+
+    if (error) {
+      throw new Error(
+        `Failed to load confirmed email for notification access: ${error.message}`
+      );
+    }
+
+    identity = data.user ?? identity;
+  }
+
+  return identity.email_confirmed_at
+    ? (identity.email?.trim().toLowerCase() ?? null)
+    : null;
+}
+
 export function buildNotificationAccessFilter(
   context: NotificationAccessContext
 ) {
@@ -49,11 +72,11 @@ export async function getNotificationAccessContext(
     );
   }
 
+  const userEmail = await getConfirmedEmail(supabase, user);
+
   return {
     userId: user.id,
-    userEmail: user.email_confirmed_at
-      ? (user.email?.trim().toLowerCase() ?? null)
-      : null,
+    userEmail,
     workspaceIds:
       memberships
         ?.map((membership) => membership.ws_id)

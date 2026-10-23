@@ -36,7 +36,7 @@ describe('buildNotificationAccessFilter', () => {
     );
   });
 
-  it('does not admit non-invite email-addressed rows to list or update access', () => {
+  it('does not admit non-invite email-addressed rows to list or mark-as-read access', () => {
     const filter = buildNotificationAccessFilter({
       userId: '00000000-0000-0000-0000-000000000001',
       userEmail: 'local@tuturuuu.com',
@@ -79,5 +79,38 @@ describe('buildNotificationAccessFilter', () => {
 
     expect(unconfirmed.userEmail).toBeNull();
     expect(confirmed.userEmail).toBe('local@tuturuuu.com');
+  });
+
+  it('re-reads app-session email confirmation from the auth user record', async () => {
+    const getUserById = async () => ({
+      data: {
+        user: {
+          email: 'Current@Tuturuuu.com',
+          email_confirmed_at: '2026-10-24T00:00:00.000Z',
+        },
+      },
+      error: null,
+    });
+    const supabase = {
+      auth: { admin: { getUserById } },
+      from: () => ({
+        select: () => ({
+          eq: async () => ({ data: [], error: null }),
+        }),
+      }),
+    };
+
+    const context = await getNotificationAccessContext(supabase as never, {
+      email: 'stale@tuturuuu.com',
+      id: '00000000-0000-0000-0000-000000000001',
+    });
+
+    expect(context.userEmail).toBe('current@tuturuuu.com');
+    const filter = buildNotificationAccessFilter({
+      ...context,
+      workspaceIds: ['00000000-0000-0000-0000-000000000004'],
+    });
+    expect(filter).toContain('email.eq."current@tuturuuu.com"');
+    expect(filter).not.toContain('stale@tuturuuu.com');
   });
 });
