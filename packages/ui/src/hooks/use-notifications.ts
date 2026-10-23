@@ -263,9 +263,9 @@ export function useUpdateNotification() {
       });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { error?: unknown }
-          | null;
+        const data = (await response.json().catch(() => null)) as {
+          error?: unknown;
+        } | null;
         throw new Error(
           typeof data?.error === 'string'
             ? data.error
