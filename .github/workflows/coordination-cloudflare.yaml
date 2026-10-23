@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: coordination-production
     env:
-      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub workflow expressions are literal inputs.
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
@@ -33,3 +34,13 @@ for (const app of ['cron-control', 'devbox-control', 'coordination']) {
     assert.match(evidence.with.path, /settings-\*\.json$/);
   });
 }
+
+test('service deploy jobs pin the configured Cloudflare account by variable', () => {
+  for (const app of ['cron-control', 'devbox-control', 'coordination']) {
+    assert.equal(
+      readWorkflow(`${app}-cloudflare.yaml`).jobs.deploy.env
+        .CLOUDFLARE_ACCOUNT_ID,
+      '${{ vars.CLOUDFLARE_ACCOUNT_ID }}'
+    );
+  }
+});

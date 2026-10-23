@@ -38,6 +38,13 @@ The stable Vite plugin (1.64) already supports `cloudflare.config.ts` and Build
 Output emission; the 2.0 beta is not required. Loading `cloudflare.config.ts`
 requires Node.js (not Bun). The cf package requires Node `^22.23 || ^24.22 || ^26.12`.
 
+The **cf/Void Wrangler-exit lane** owns the `cf@1.0.0-beta.20` pin.
+Upgrade through a scoped dependency PR after checking upstream release notes and
+rerunning config/output parity, credential-free artifact checks, secret handling,
+settings readback fixtures and real Worker CI tests on the candidate version.
+DO publication remains Wrangler until a disposable migration rehearsal and a
+separate reviewed publisher change. Do not float this beta pin automatically.
+
 ## Operation parity matrix
 
 Verified against cf `1.0.0-beta.20` help, the cf documentation and

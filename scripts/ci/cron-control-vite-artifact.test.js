@@ -3,7 +3,10 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
-test('Cron Control qualifies emitted configuration and deploys the same immutable artifact', () => {
+const PARITY =
+  'node scripts/ci/cf-worker-parity.mjs apps/cron-control scripts/ci/fixtures/cf-worker-parity/cron-control.json';
+
+test('Cron Control qualifies its cf Build Output and deploys the same immutable artifact', () => {
   const workflow = readWorkflow('cron-control-cloudflare.yaml');
   const steps = workflow.jobs.validate.steps;
   const build = steps.findIndex(
@@ -12,19 +15,33 @@ test('Cron Control qualifies emitted configuration and deploys the same immutabl
       step.with?.command ===
         'bun turbo:local run build --filter=@tuturuuu/cron-control --concurrency=2'
   );
-  const emitted = steps.findIndex((step) => step.env?.CRON_TEST_CONFIG);
+  const parity = steps.findIndex((step) => step.run === PARITY);
+  const emitted = steps.findIndex(
+    (step) => step.env?.CRON_TEST_BUILD_OUTPUT === '1'
+  );
+  const dryRun = steps.findIndex((step) =>
+    step.run?.startsWith('bun x --no-install cf deploy --prebuilt')
+  );
   const upload = steps.findIndex((step) =>
     step.uses?.startsWith('actions/upload-artifact@')
   );
-  assert.ok(build >= 0 && emitted > build && upload > emitted);
-  assert.equal(
-    steps[emitted].env.CRON_TEST_CONFIG,
-    '${{ github.workspace }}/apps/cron-control/dist/worker/wrangler.json'
-  );
+  assert.ok(build >= 0, 'build the Worker once');
+  for (const [name, index] of Object.entries({ parity, emitted, dryRun }))
+    assert.ok(
+      index > build && upload > index,
+      `${name} runs between build and upload`
+    );
+  assert.match(steps[dryRun].run, /--dry-run/);
+  assert.match(steps[dryRun].run, /--no-provision/);
   assert.equal(
     steps[upload].with.name,
     'cron-control-worker-${{ github.sha }}'
   );
+  assert.equal(
+    steps[upload].with.path,
+    '${{ runner.temp }}/cron-control-build-output'
+  );
+
   assert.equal(
     workflow.jobs.deploy.if,
     "github.ref == 'refs/heads/production'"
@@ -33,17 +50,23 @@ test('Cron Control qualifies emitted configuration and deploys the same immutabl
   const download = deployment.findIndex((step) =>
     step.uses?.startsWith('actions/download-artifact@')
   );
-  const deploy = deployment.findIndex((step) =>
-    step.run?.includes('wrangler deploy')
+  const recheck = deployment.findIndex(
+    (step) => step.run === `${PARITY} "$CLOUDFLARE_ACCOUNT_ID"`
   );
-  assert.ok(download >= 0 && deploy > download);
+  const publish = deployment.findIndex((step) =>
+    step.run?.includes('cf deploy --prebuilt')
+  );
+  assert.ok(download >= 0 && recheck > download && publish > recheck);
   assert.equal(deployment[download].with.name, steps[upload].with.name);
-  assert.match(deployment[deploy].run, /-c dist\/worker\/wrangler\.json/);
   assert.equal(
-    deployment[deploy].working_directory ??
-      deployment[deploy]['working-directory'],
-    'apps/cron-control'
+    deployment[download].with.path,
+    'apps/cron-control/.cloudflare/output'
   );
+  assert.match(
+    deployment[publish].run,
+    /cf deploy --prebuilt --mode production --no-provision --message "\$GITHUB_SHA" --secrets-file "\$secrets_file"/
+  );
+  assert.equal(deployment[publish]['working-directory'], 'apps/cron-control');
   assert.ok(
     !deployment.some(
       (step) =>
