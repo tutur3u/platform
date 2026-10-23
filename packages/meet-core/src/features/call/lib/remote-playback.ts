@@ -8,6 +8,9 @@ export type RemoteTrackOwner = {
   track?: MediaStreamTrack;
 };
 
+// Participant ids key plain objects; never let one address the prototype chain.
+const UNSAFE_MEDIA_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /** Release ended subscriptions so the room's retry loop can pull them again. */
 export function attachRemotePlayback(
   owner: RemoteTrackOwner,
@@ -16,7 +19,7 @@ export function attachRemotePlayback(
   isCurrent: () => boolean,
   setMedia: (update: (current: RemoteMedia) => RemoteMedia) => void
 ) {
-  if (!isCurrent()) return;
+  if (!isCurrent() || UNSAFE_MEDIA_KEYS.has(owner.userId)) return;
   owner.track = track;
   setMedia((current) =>
     isCurrent()
@@ -42,12 +45,18 @@ export function removeRemotePlayback(
   current: RemoteMedia,
   owner: RemoteTrackOwner
 ): RemoteMedia {
-  if (!owner.track || current[owner.userId]?.[owner.kind] !== owner.track)
+  if (
+    !owner.track ||
+    !Object.hasOwn(current, owner.userId) ||
+    current[owner.userId]?.[owner.kind] !== owner.track
+  )
     return current;
-  const next = { ...current, [owner.userId]: { ...current[owner.userId] } };
-  delete next[owner.userId]![owner.kind];
-  if (!Object.keys(next[owner.userId]!).length) delete next[owner.userId];
-  return next;
+  const { [owner.userId]: tracks, ...others } = current;
+  const remaining = { ...tracks };
+  delete remaining[owner.kind];
+  return Object.keys(remaining).length
+    ? { ...others, [owner.userId]: remaining }
+    : others;
 }
 
 /** Only an overlapping in-flight offer needs a fresh subscriber connection. */

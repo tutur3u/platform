@@ -1,7 +1,5 @@
 import { collapseAccounts } from './accounts';
-
-const NO_RESET_HIGH_LIMIT_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
-
+import { matchingBlocks, type QuotaBlock } from './block-ledger';
 import type {
   AccountReserve,
   AccountUsage,
@@ -11,8 +9,10 @@ import type {
   RecommendationReason,
   TaskRequest,
 } from './types';
+import { coversModel, noResetWindowMaxAgeMs } from './window-scope';
 
 export interface RecommendOptions {
+  blocks?: QuotaBlock[];
   task: TaskRequest;
   active: ActiveAssignment[];
   accounts: AccountUsage[];
@@ -48,6 +48,12 @@ function rankOne(
   staleAfterMs: number,
   hardLimitPercent: number
 ): RankedInstance {
+  account = {
+    ...account,
+    windows: account.windows.filter((window) =>
+      coversModel(window, task.model)
+    ),
+  };
   const reasons: RecommendationReason[] = [];
   const windows = account.windows.filter(
     (window): window is typeof window & { usedPercent: number } =>
@@ -242,8 +248,7 @@ function rankOne(
         const observed = Date.parse(window.observedAt);
         return (
           Number.isFinite(observed) &&
-          observed <= now.getTime() &&
-          now.getTime() - observed <= NO_RESET_HIGH_LIMIT_MAX_AGE_MS
+          now.getTime() - observed <= noResetWindowMaxAgeMs(window)
         );
       })
     ) {
@@ -333,6 +338,28 @@ export function recommend(options: RecommendOptions): Recommendation {
         hardLimitPercent
       )
     )
+    .map((item) =>
+      matchingBlocks(
+        options.blocks ?? [],
+        item.instanceIds,
+        options.task.model,
+        now
+      ).length
+        ? {
+            ...item,
+            eligible: false,
+            action: 'drain' as const,
+            reasons: [
+              ...item.reasons,
+              {
+                code: 'observed-block-ledger',
+                message:
+                  'An observed block forbids this pool/model before its eligibility time.',
+              },
+            ],
+          }
+        : item
+    )
     .sort(
       (a, b) =>
         Number(b.eligible) - Number(a.eligible) ||
@@ -375,19 +402,22 @@ export function recommendAssignments(
 function mergeReserves(
   ids: string[],
   reserves: Record<string, AccountReserve>
-): AccountReserve {
+): AccountReserve | undefined {
   const entries = ids
     .map((id) => reserves[id])
     .filter((value): value is AccountReserve => Boolean(value));
+  if (!entries.length) return;
+  const remaining = entries
+    .map((value) => value.minRemainingPercent)
+    .filter((value): value is number => value !== undefined);
+  const concurrency = entries
+    .map((value) => value.maxConcurrent)
+    .filter((value): value is number => value !== undefined);
   return {
     excluded: entries.some((value) => value.excluded),
-    minRemainingPercent: Math.max(
-      0,
-      ...entries.map((value) => value.minRemainingPercent ?? 0)
-    ),
-    maxConcurrent: Math.min(
-      Infinity,
-      ...entries.map((value) => value.maxConcurrent ?? Infinity)
-    ),
+    ...(remaining.length
+      ? { minRemainingPercent: Math.max(...remaining) }
+      : {}),
+    ...(concurrency.length ? { maxConcurrent: Math.min(...concurrency) } : {}),
   };
 }

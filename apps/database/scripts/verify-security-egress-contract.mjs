@@ -38,6 +38,8 @@ const fixtures = [
   'security-egress-budgets.sql',
   'security-mfa-verification-hook.sql',
   'security-budget-entitlements.sql',
+  'security-user-email-helper.sql',
+  'security-notification-email-access.sql',
 ];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({

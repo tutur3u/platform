@@ -15,7 +15,10 @@ export function collectT3State(
   const database = new DatabaseSync(databasePath, { readOnly: true });
   try {
     const byInstance = new Map<string, Provider>();
-    const assignments = new Map<string, number>();
+    const assignments = new Map<
+      string,
+      { count: number; reservationIds: string[] }
+    >();
     const rows = database
       .prepare(`
       SELECT provider_instance_id, provider
@@ -37,7 +40,7 @@ export function collectT3State(
     }
     const active = database
       .prepare(`
-      SELECT provider_instance_id, COUNT(*) AS count FROM (
+      SELECT provider_instance_id, COUNT(*) AS count, json_group_array(reservation_id) AS reservation_ids FROM (
         SELECT provider_instance_id, COALESCE(child_thread_id, provider_thread_id, subagent_id) AS reservation_id
         FROM orchestration_v2_projection_subagents
         WHERE provider_instance_id IS NOT NULL AND status IN ('pending', 'running', 'queued', 'starting', 'waiting')
@@ -48,15 +51,22 @@ export function collectT3State(
           AND NOT (status = 'queued' AND json_extract(payload_json, '$.queueHeld') IS 1)
       ) GROUP BY provider_instance_id
     `)
-      .all() as Array<{ provider_instance_id: string; count: number }>;
+      .all() as Array<{
+      provider_instance_id: string;
+      count: number;
+      reservation_ids: string;
+    }>;
     for (const row of active)
-      assignments.set(row.provider_instance_id, row.count);
+      assignments.set(row.provider_instance_id, {
+        count: row.count,
+        reservationIds: JSON.parse(row.reservation_ids),
+      });
 
     return {
       quotaSnapshotsFound: false,
       observedAt: new Date().toISOString(),
       activeAssignments: [...assignments.entries()].map(
-        ([instanceId, count]) => ({ instanceId, count })
+        ([instanceId, assignment]) => ({ instanceId, ...assignment })
       ),
       providerByInstance: Object.fromEntries(byInstance),
     };

@@ -1,8 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
+  closeSync,
   existsSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readFileSync,
   realpathSync,
   renameSync,
@@ -148,12 +150,15 @@ function readState() {
 }
 function saveState(state) {
   const temporary = `${statePath}.${randomUUID()}.tmp`;
+  let fd;
   try {
-    writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, {
-      flag: 'wx',
-    });
+    fd = openSync(temporary, 'wx', 0o600);
+    writeFileSync(fd, `${JSON.stringify(state, null, 2)}\n`);
+    closeSync(fd);
+    fd = undefined;
     renameSync(temporary, statePath);
   } finally {
+    if (fd !== undefined) closeSync(fd);
     rmSync(temporary, { force: true });
   }
 }
@@ -572,11 +577,20 @@ function validate() {
     readFileSync('packages/types/src/supabase.ts')
   );
   const proofRoot = path.join(output, 'local-proof');
-  mkdirSync(proofRoot, { recursive: true });
-  writeFileSync(
-    path.join(proofRoot, 'provenance.json'),
-    `${JSON.stringify(proof, null, 2)}\n`
-  );
+  mkdirSync(proofRoot, { recursive: true, mode: 0o700 });
+  const provenancePath = path.join(proofRoot, 'provenance.json');
+  const temporary = `${provenancePath}.${randomUUID()}.tmp`;
+  let fd;
+  try {
+    fd = openSync(temporary, 'wx', 0o600);
+    writeFileSync(fd, `${JSON.stringify(proof, null, 2)}\n`);
+    closeSync(fd);
+    fd = undefined;
+    renameSync(temporary, provenancePath);
+  } finally {
+    if (fd !== undefined) closeSync(fd);
+    rmSync(temporary, { force: true });
+  }
   // Fixed status only. Neither generated declarations nor provenance/hashes are
   // copied into logs, step summaries, outputs, caches or public artifacts.
   console.log(

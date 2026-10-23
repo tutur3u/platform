@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
@@ -98,7 +99,8 @@ class _ChatConversationListState extends State<ChatConversationList> {
         else
           SliverPadding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.paddingOf(context).bottom + 16,
+              bottom:
+                  MediaQuery.paddingOf(context).bottom + AppLayout.scrollEndGap,
             ),
             sliver: SliverList.separated(
               itemCount: widget.conversations.length,

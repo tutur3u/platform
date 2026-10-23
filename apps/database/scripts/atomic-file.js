@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { rename, rm, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { link, lstat, open, rename, rm, unlink } from 'node:fs/promises';
 import path from 'node:path';
 
 // Replace an owned file only after a complete write and caller revalidation.
@@ -7,13 +8,7 @@ import path from 'node:path';
 export async function writeFileAtomically(
   target,
   contents,
-  {
-    write = writeFile,
-    move = rename,
-    remove = rm,
-    writeOptions = { flag: 'wx' },
-    beforeMove = () => {},
-  } = {}
+  { move = rename, remove = rm, writeOptions = {}, beforeMove = () => {} } = {}
 ) {
   const temporary = path.join(
     path.dirname(target),
@@ -22,9 +17,31 @@ export async function writeFileAtomically(
   let failed = false;
   let primaryError;
   try {
-    await write(temporary, contents, writeOptions);
+    const targetInfo = await lstat(target).catch((error) => {
+      if (error?.code === 'ENOENT') return undefined;
+      throw error;
+    });
+    if (targetInfo && !targetInfo.isFile())
+      throw new Error('Atomic file target must be a regular file');
+    const mode =
+      writeOptions.mode ?? (targetInfo ? targetInfo.mode & 0o777 : 0o600);
+    const file = await open(
+      temporary,
+      constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL,
+      mode
+    );
+    try {
+      await file.writeFile(contents, writeOptions.encoding);
+    } finally {
+      await file.close();
+    }
     await beforeMove();
-    await move(temporary, target);
+    if (writeOptions.flag === 'wx') {
+      await link(temporary, target);
+      await unlink(temporary);
+    } else {
+      await move(temporary, target);
+    }
   } catch (error) {
     failed = true;
     primaryError = error;

@@ -1,12 +1,22 @@
 export type Provider = 'codex' | 'claude' | 'antigravity';
 export type WindowKind = 'short' | 'long' | 'session' | 'weekly';
+export type ModelFamily = 'opus' | 'sonnet' | 'haiku' | 'fable';
 
 export interface UsageWindow {
   kind: WindowKind;
+  id?: string;
+  label?: string;
+  scope?: {
+    kind: 'account' | 'models' | 'unknown';
+    modelPrefixes?: string[];
+    modelFamilies?: ModelFamily[];
+  };
   usedPercent?: number;
   estimated?: number;
-  resetsAt?: string;
+  resetsAt?: string | null;
+  windowDurationMins?: number;
   source: string;
+  confidence?: 'provider' | 'manual';
   observedAt: string;
   authoritative: boolean;
 }
@@ -17,6 +27,7 @@ export interface AccountUsage {
   label: string;
   windows: UsageWindow[];
   models?: string[];
+  modelOptions?: Record<string, { id: string; values: (string | boolean)[] }[]>;
   accountIdentityHash?: string;
   alias?: string;
   instanceIds?: string[];
@@ -28,10 +39,11 @@ export interface AccountUsage {
 export interface ActiveAssignment {
   instanceId: string;
   count: number;
+  reservationIds?: string[];
 }
 
 export interface TaskRequest {
-  kind?: 'implementation' | 'review' | 'research';
+  kind?: 'implementation' | 'analysis' | 'review' | 'research';
   provider?: Provider | 'any';
   model?: string;
   weight?: number;

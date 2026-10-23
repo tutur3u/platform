@@ -1,11 +1,16 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { NextResponse } from 'next/server';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
+import { authorizeCalendarOAuthCallback } from '@/lib/calendar/calendar-oauth-callback-guard';
 import {
-  buildGoogleCalendarPostAuthRedirectUrl,
-  resolveGoogleCalendarOAuthRedirectUri,
-} from '@/lib/calendar/google-oauth-urls';
+  buildCalendarPostAuthRedirectUrl,
+  checkCalendarOAuthRuntime,
+} from '@/lib/calendar/calendar-oauth-runtime';
+import {
+  deriveCalendarOAuthPkce,
+  verifyCalendarOAuthState,
+} from '@/lib/calendar/calendar-oauth-state';
+import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
+import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import {
   calendarOAuthDebug,
   calendarOAuthError,
@@ -24,17 +29,16 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
-  const wsId = url.searchParams.get('state');
+  const state = url.searchParams.get('state');
 
   calendarOAuthDebug('🔍 [DEBUG] OAuth callback parameters:', {
     hasCode: !!code,
-    wsId,
-    url: request.url,
+    hasState: !!state,
   });
 
-  if (!wsId) {
-    calendarOAuthDebug('❌ [DEBUG] Missing wsId in callback');
-    return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+  if (!state) {
+    calendarOAuthDebug('❌ [DEBUG] Missing state in callback');
+    return NextResponse.json({ error: 'state is required' }, { status: 400 });
   }
 
   if (!code) {
@@ -54,6 +58,37 @@ export async function GET(request: Request) {
     );
   }
 
+  const runtime = checkCalendarOAuthRuntime();
+  if (!runtime.ok) return runtime.response;
+
+  // The state is signed at initiation and binds this flow to the initiating
+  // user and workspace; never trust a workspace taken from the URL alone.
+  const verifiedState = verifyCalendarOAuthState(
+    'google',
+    state,
+    oauthConfig.config.clientSecret
+  );
+  if (!verifiedState.ok) {
+    calendarOAuthDebug('❌ [DEBUG] Rejected OAuth state', {
+      reason: verifiedState.reason,
+    });
+    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 400 });
+  }
+
+  // Same signed-in user, current workspace member, and first use of the state.
+  const authorization = await authorizeCalendarOAuthCallback({
+    provider: 'google',
+    request,
+    verifiedState,
+  });
+  if (!authorization.ok) return authorization.response;
+  const { supabase, user, wsId } = authorization;
+  const { codeVerifier } = deriveCalendarOAuthPkce(
+    'google',
+    verifiedState.nonce,
+    oauthConfig.config.clientSecret
+  );
+
   calendarOAuthDebug('🔍 [DEBUG] Creating OAuth2Client...');
   const auth = new OAuth2Client({
     clientId: oauthConfig.config.clientId,
@@ -66,7 +101,7 @@ export async function GET(request: Request) {
       '🔍 [DEBUG] Exchanging authorization code for tokens...'
     );
     // Exchange the authorization code for tokens
-    const { tokens } = await auth.getToken(code);
+    const { tokens } = await auth.getToken({ code, codeVerifier });
 
     calendarOAuthDebug('🔍 [DEBUG] Token exchange result:', {
       hasAccessToken: !!tokens.access_token,
@@ -109,25 +144,6 @@ export async function GET(request: Request) {
       );
       // Continue without user info - token will still be saved
     }
-
-    calendarOAuthDebug('🔍 [DEBUG] Resolving app-session user...');
-    const authContext = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: true,
-    });
-
-    calendarOAuthDebug('🔍 [DEBUG] User auth result:', {
-      hasUser: authContext.ok,
-      userId: authContext.ok ? authContext.user.id : null,
-    });
-
-    if (!authContext.ok) {
-      calendarOAuthDebug('❌ [DEBUG] User not authenticated');
-      return NextResponse.json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
-    const { supabase, user } = authContext;
 
     calendarOAuthDebug('🔍 [DEBUG] Checking for existing tokens...');
     // Check if this specific Google account is already connected
@@ -395,7 +411,10 @@ export async function GET(request: Request) {
     calendarOAuthDebug('🔍 [DEBUG] Redirecting to calendar page...');
     // Redirect to the calendar page with success indicator
     return NextResponse.redirect(
-      buildGoogleCalendarPostAuthRedirectUrl(request, wsId),
+      buildCalendarPostAuthRedirectUrl(runtime.publicOrigin, wsId, {
+        provider: 'google',
+        connected: 'true',
+      }),
       302
     );
   } catch (error) {

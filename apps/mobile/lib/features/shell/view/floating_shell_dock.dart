@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -48,10 +50,14 @@ class FloatingShellDock extends StatefulWidget {
     this.composerVisible = false,
     this.navigationWidth = 264,
     this.allowDockSlot = true,
+    this.hideIdleNavigation = false,
     super.key,
   });
 
   final double navigationBottomOffset;
+
+  /// Set when a leading rail owns navigation; see [PersistentShellDock].
+  final bool hideIdleNavigation;
   final bool reserveNavigationClearance;
   final bool reclaimNavigationClearanceWhenHidden;
   final bool keepNavigationVisible;
@@ -78,10 +84,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   double _travel = 0;
   late double _headerInset;
   late bool _accessibleNavigation;
+  ShellDockSlotController? _slots;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final slots = ShellDockScope.maybeOf(context);
+    if (!identical(slots, _slots)) {
+      _slots?.removeListener(_onSlotChanged);
+      _slots = slots?..addListener(_onSlotChanged);
+    }
     // Theme, default text style, text scale, direction and safe-area changes
     // invalidate this measurement; scroll frames only read the cached value.
     _headerInset = floatingShellHeaderInset(
@@ -116,7 +128,26 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   @override
   void dispose() {
     _returnTimer?.cancel();
+    _slots?.removeListener(_onSlotChanged);
     super.dispose();
+  }
+
+  void _onSlotChanged() {
+    // Only the rail layout sizes clearance from the dock's contents.
+    if (mounted && widget.hideIdleNavigation) setState(() {});
+  }
+
+  /// With a leading rail the dock holds only composers and page actions, so
+  /// scroll content reserves its clearance only while one of them is shown.
+  bool _dockHasContent(BuildContext context) {
+    final slot = _slots?.slot;
+    if (widget.allowDockSlot && slot?.location == widget.location) return true;
+    final actions = context.watch<ShellChromeActionsCubit?>();
+    if (actions == null) return false;
+    return actions.state
+            .resolveForLocation(widget.location)
+            .any((action) => action.inDock) ||
+        actions.dockPreviewForLocation(widget.location).isNotEmpty;
   }
 
   void _reveal() {
@@ -162,6 +193,36 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     return false;
   }
 
+  /// Over an ambient appearance the gradient reaches the status bar: the
+  /// header is clear where content starts below it, and frosted where root
+  /// content scrolls underneath. Solid appearances keep the opaque surface.
+  Widget _headerSurface(BuildContext context, Color color, Widget child) {
+    if (!AppearanceScope.hasAmbientBackground(context)) {
+      return ColoredBox(
+        key: const ValueKey('floating-shell-header-surface'),
+        color: color,
+        child: child,
+      );
+    }
+    if (!widget.scrollableHeader) {
+      return ColoredBox(
+        key: const ValueKey('floating-shell-header-surface'),
+        color: color.withValues(alpha: 0),
+        child: child,
+      );
+    }
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: ColoredBox(
+          key: const ValueKey('floating-shell-header-surface'),
+          color: color.withValues(alpha: 0.55),
+          child: child,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -176,6 +237,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     final navigationHidden = _hidden && !widget.keepNavigationVisible;
     final reserveClearance =
         widget.reserveNavigationClearance &&
+        (!widget.hideIdleNavigation || _dockHasContent(context)) &&
         !(widget.reclaimNavigationClearanceWhenHidden &&
             (navigationHidden || widget.keyboardVisible));
     final clearance = active && reserveClearance
@@ -219,10 +281,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                         ? Duration.zero
                         : const Duration(milliseconds: 180),
                     opacity: headerHidden ? 0 : 1,
-                    child: ColoredBox(
-                      key: const ValueKey('floating-shell-header-surface'),
-                      color: headerColor,
-                      child: SafeArea(bottom: false, child: widget.header!),
+                    child: _headerSurface(
+                      context,
+                      headerColor,
+                      SafeArea(bottom: false, child: widget.header!),
                     ),
                   ),
                 ),
@@ -265,6 +327,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                                   location: widget.location,
                                   navigationWidth: widget.navigationWidth,
                                   allowDockSlot: widget.allowDockSlot,
+                                  hideIdleNavigation: widget.hideIdleNavigation,
                                   navigation: widget.navigation,
                                 ),
                               ),
@@ -287,7 +350,9 @@ class _DockActions extends StatefulWidget {
     required this.navigation,
     required this.navigationWidth,
     required this.allowDockSlot,
+    required this.hideIdleNavigation,
   });
+  final bool hideIdleNavigation;
   final String location;
   final Widget navigation;
   final double navigationWidth;
@@ -347,6 +412,7 @@ class _DockActionsState extends State<_DockActions> {
         content: active && slot!.composing ? slot.content : navigation,
         composing: active && slot!.composing,
         expandContent: !active || slot!.expandContent,
+        hideIdleNavigation: widget.hideIdleNavigation,
         navigationWidth: widget.navigationWidth,
         primary: active ? slot!.primary : primary,
         secondary: active && slot!.composing ? null : secondary,

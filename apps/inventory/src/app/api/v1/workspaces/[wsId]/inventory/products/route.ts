@@ -18,6 +18,7 @@ import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { searchParamsToRecord } from '@tuturuuu/utils/search-params-record';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -75,11 +76,7 @@ export async function GET(request: Request, { params }: Params) {
 
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const params_obj: Record<string, string | string[]> = {};
-
-    searchParams.forEach((value, key) => {
-      params_obj[key] = value;
-    });
+    const params_obj = searchParamsToRecord(searchParams);
 
     const parsed = SearchParamsSchema.safeParse(params_obj);
     if (!parsed.success) {
