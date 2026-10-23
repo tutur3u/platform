@@ -2,6 +2,7 @@
 // often missed before pushing. Pure functions only; the runner executes steps.
 
 const path = require('node:path');
+const { reverseDependents, assertSafePaths } = require('./workspaces.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 
 const BIOME_VERSION = '2.5.13';
@@ -96,6 +97,7 @@ function nodeScriptTests(files, exists) {
 function planChecks(changes, context) {
   const exists = context.exists;
   const all = changes.map((change) => change.file);
+  assertSafePaths(all);
   const present = changes
     .filter((change) => change.status !== 'D')
     .map((change) => change.file)
@@ -103,6 +105,16 @@ function planChecks(changes, context) {
   const any = (pattern) => all.some((file) => pattern.test(file));
   const steps = [];
   const skipped = [];
+  const sharedConfig = all.filter((file) =>
+    /^(?:tsconfig\.json|biome\.jsonc?|turbo\.json|package\.json|bun\.lock)$|^packages\/typescript-config\/.*\.json$/.test(
+      file
+    )
+  );
+  if (sharedConfig.length)
+    skipped.push([
+      'shared-config',
+      `not covered; CI only: root/shared configuration (${sharedConfig.join(', ')})`,
+    ]);
 
   if (context.branch) {
     steps.push({
@@ -310,7 +322,9 @@ function planChecks(changes, context) {
       typeWorkspaces.add(workspace);
     }
   }
-  for (const workspace of [...typeWorkspaces].sort()) {
+  for (const workspace of [
+    ...reverseDependents(typeWorkspaces, context.workspaces),
+  ].sort()) {
     steps.push({
       id: `type-check:${workspace}`,
       label: `type-check ${workspace}`,

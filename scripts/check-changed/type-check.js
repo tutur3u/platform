@@ -6,6 +6,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const IMPLICIT_ANY_CODES = new Set([7005, 7006, 7031, 7034]);
 const MISSING_MODULE_CODES = new Set([2305, 2307, 7016]);
 
 function readJson(file, fsImpl = fs) {
@@ -116,7 +117,10 @@ function classifyDiagnostics(diagnostics, { changedFiles, missing }) {
       result.blocking.push(diagnostic);
     } else if (
       changedFiles.has(diagnostic.file) &&
-      !filesWithMissingImports.has(diagnostic.file)
+      !(
+        filesWithMissingImports.has(diagnostic.file) &&
+        IMPLICIT_ANY_CODES.has(diagnostic.code)
+      )
     ) {
       result.blocking.push(diagnostic);
     } else {

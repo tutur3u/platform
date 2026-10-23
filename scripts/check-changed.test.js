@@ -56,7 +56,7 @@ test('parseArgs handles flags, hooks and trailing file lists', () => {
 });
 
 test('parseNameStatus keeps the status letter and path', () => {
-  assert.deepEqual(parseNameStatus('M\tscripts/a.js\nD\tb.ts\n'), [
+  assert.deepEqual(parseNameStatus('M\0scripts/a.js\0D\0b.ts\0'), [
     { status: 'M', file: 'scripts/a.js' },
     { status: 'D', file: 'b.ts' },
   ]);
@@ -86,7 +86,11 @@ test('resolveBase prefers the origin/main merge base, even when equal to HEAD', 
 test('hookDecision requires opt-in and a HEAD push', () => {
   const head = 'a'.repeat(40);
   const execFile = (value) =>
-    fakeGit({ 'git config': value, 'git rev-parse HEAD': `${head}\n` });
+    fakeGit({
+      'git config': value,
+      'git rev-parse HEAD': `${head}\n`,
+      'git status': '',
+    });
   const stdin = `refs/heads/x ${head} refs/heads/x ${'0'.repeat(40)}\n`;
   assert.deepEqual(
     hookDecision({ stdin, env: {}, execFile: execFile(new Error('unset')) }),
@@ -252,7 +256,7 @@ test('main prints the plan in dry-run mode and exits cleanly without changes', (
   const logs = [];
   const execFile = fakeGit({
     'git merge-base': 'base\n',
-    'git diff --name-status': 'M\tscripts/check-changed.js\n',
+    'git diff --name-status': 'M\0scripts/check-changed.js\0',
     'git ls-files': '',
     'git branch --show-current': 'chore/x\n',
   });
@@ -301,4 +305,60 @@ test('main exits early from the hook when not opted in', () => {
     0
   );
   assert.deepEqual(logs, []);
+});
+
+test('REV-6467-3: NUL-delimited paths preserve tabs, newlines and spaces', () => {
+  const { collectChanges } = require('./check-changed.js');
+  const names = ['scripts/a\tb.js', 'scripts/a\nb.js', 'scripts/ space .js'];
+  const calls = [];
+  const changes = collectChanges('base', false, (_command, args) => {
+    calls.push(args);
+    if (args[0] === 'diff') return `M\0${names[0]}\0D\0${names[1]}\0`;
+    return `${names[2]}\0`;
+  });
+  assert.deepEqual(new Set(changes.map((entry) => entry.file)), new Set(names));
+  assert.ok(calls.every((args) => args.includes('-z')));
+  assert.deepEqual(parseNameStatus(`M\0${names[2]}\0`), [
+    { status: 'M', file: names[2] },
+  ]);
+});
+
+test('REV-6467-4: explicit option-like file arguments fail closed', () => {
+  assert.throws(() => parseArgs(['--files', '--write']), /option-like/);
+});
+
+test('REV-6467-5: hook refuses tracked staged or unstaged edits before planning', () => {
+  const head = 'a'.repeat(40);
+  for (const status of [' M file.ts\0', 'M  file.ts\0']) {
+    const logs = [];
+    assert.equal(
+      main(['--hook'], {
+        stdin: `refs/heads/x ${head} refs/heads/x ${'0'.repeat(40)}\n`,
+        env: { TUTURUUU_PRE_PUSH: '1' },
+        execFile: fakeGit({
+          'git config': '',
+          'git rev-parse HEAD': head,
+          'git status': status,
+        }),
+        log: (line) => logs.push(line),
+      }),
+      1
+    );
+    assert.match(logs.join('\n'), /tracked files are dirty/);
+  }
+});
+
+test('root config dry-run prints the CI-only coverage warning', () => {
+  const logs = [];
+  assert.equal(
+    main(['--dry-run', '--files', 'bun.lock'], {
+      execFile: fakeGit({
+        'git merge-base': 'base',
+        'git branch --show-current': 'chore/gate',
+      }),
+      log: (line) => logs.push(line),
+    }),
+    0
+  );
+  assert.match(logs.join('\n'), /not covered; CI only.*bun\.lock/);
 });

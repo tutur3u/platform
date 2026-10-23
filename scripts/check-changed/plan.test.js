@@ -216,3 +216,65 @@ test('workspaceOf recognises apps and packages', () => {
   assert.equal(workspaceOf('packages/ui/package.json'), 'packages/ui');
   assert.equal(workspaceOf('scripts/a.js'), null);
 });
+
+test('REV-6467-2: shared changes type-check transitive reverse dependents', () => {
+  const workspaces = [
+    { workspace: 'packages/types', name: '@tuturuuu/types', dependencies: [] },
+    {
+      workspace: 'packages/utils',
+      name: '@tuturuuu/utils',
+      dependencies: ['@tuturuuu/types'],
+    },
+    {
+      workspace: 'apps/web',
+      name: '@tuturuuu/web',
+      dependencies: ['@tuturuuu/utils'],
+    },
+    {
+      workspace: 'apps/unrelated',
+      name: '@tuturuuu/unrelated',
+      dependencies: [],
+    },
+  ];
+  const plan = planChecks(
+    changed('packages/types/src/task.ts'),
+    context([], { workspaces })
+  );
+  assert.deepEqual(
+    ids(plan).filter((id) => id.startsWith('type-check:')),
+    [
+      'type-check:apps/web',
+      'type-check:packages/types',
+      'type-check:packages/utils',
+    ]
+  );
+});
+
+test('REV-6467-2: root/shared configuration explicitly requires CI coverage', () => {
+  for (const file of [
+    'tsconfig.json',
+    'biome.json',
+    'biome.jsonc',
+    'turbo.json',
+    'package.json',
+    'bun.lock',
+    'packages/typescript-config/base.json',
+  ]) {
+    const plan = planChecks(changed(file), context());
+    assert.ok(
+      plan.skipped.some(
+        ([id, reason]) =>
+          id === 'shared-config' &&
+          reason.includes('not covered; CI only') &&
+          reason.includes(file)
+      ),
+      file
+    );
+  }
+});
+
+test('REV-6467-4: option-like path components cannot reach file tools', () => {
+  for (const file of ['-a.ts', './-a.ts', 'packages/utils/-a.test.ts']) {
+    assert.throws(() => planChecks(changed(file), context()), /option-like/);
+  }
+});

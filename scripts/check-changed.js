@@ -15,6 +15,10 @@
 const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  readWorkspaces,
+  assertSafePaths,
+} = require('./check-changed/workspaces.js');
 const { BIOME_VERSION, planChecks } = require('./check-changed/plan.js');
 const {
   classifyDiagnostics,
@@ -61,11 +65,13 @@ function parseArgs(argv) {
     else throw new Error(`Unknown argument: ${arg}`);
     if (options.files) break;
   }
+  if (options.files) assertSafePaths(options.files);
   return options;
 }
 
 function git(args, execFile = execFileSync) {
-  return execFile('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+  const output = execFile('git', args, { cwd: ROOT, encoding: 'utf8' });
+  return args.includes('-z') ? output : output.trim();
 }
 
 function tryGit(args, execFile) {
@@ -85,26 +91,31 @@ function resolveBase(explicit, execFile) {
 }
 
 function parseNameStatus(output) {
-  return output
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .map((line) => {
-      const [status, file] = line.split('\t');
-      return { status: status[0], file };
-    });
+  if (!output) return [];
+  const fields = output.split('\0');
+  if (fields.at(-1) === '') fields.pop();
+  if (fields.length % 2)
+    throw new Error('Invalid NUL-delimited git name-status output');
+  const changes = [];
+  for (let i = 0; i < fields.length; i += 2)
+    changes.push({ status: fields[i][0], file: fields[i + 1] });
+  return changes;
 }
 
 function collectChanges(base, committed, execFile) {
   const range = committed ? [base, 'HEAD'] : [base];
   const changes = parseNameStatus(
-    git(['diff', '--name-status', '--no-renames', ...range], execFile)
+    git(
+      ['diff', '--name-status', '-z', '--no-renames', ...range, '--'],
+      execFile
+    )
   );
   if (!committed) {
     const untracked = git(
-      ['ls-files', '--others', '--exclude-standard'],
+      ['ls-files', '--others', '--exclude-standard', '-z'],
       execFile
     );
-    for (const file of untracked.split(/\r?\n/).filter(Boolean)) {
+    for (const file of untracked.split('\0').filter(Boolean)) {
       changes.push({ status: 'A', file });
     }
   }
@@ -129,6 +140,16 @@ function hookDecision({ stdin, env, execFile }) {
     return {
       run: false,
       reason: 'pushed commits are not HEAD; run bun check:changed manually',
+    };
+  }
+  if (
+    git(['status', '--porcelain=v1', '-z', '--untracked-files=no'], execFile)
+  ) {
+    return {
+      run: false,
+      failed: true,
+      reason:
+        'tracked files are dirty; commit or preserve them before checking a pushed HEAD',
     };
   }
   return { run: true };
@@ -276,7 +297,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
     if (!decision.run) {
       if (decision.reason !== 'not opted in')
         log(`check:changed skipped: ${decision.reason}`);
-      return 0;
+      return decision.failed ? 1 : 0;
     }
   }
   const base = resolveBase(options.base, execFile);
@@ -296,6 +317,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
     biomeBinary: localBiome(root),
     branch: tryGit(['branch', '--show-current'], execFile),
     exists,
+    workspaces: readWorkspaces(root),
     hasVitest: (workspace) =>
       ['ts', 'mts', 'js', 'mjs'].some((ext) =>
         exists(`${workspace}/vitest.config.${ext}`)
@@ -306,6 +328,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
   log(
     `check:changed: ${changes.length} changed file(s) since ${base?.slice(0, 10) ?? 'n/a'}; ${steps.length} step(s).`
   );
+  for (const [id, reason] of plan.skipped) log(`  ${id}: ${reason}`);
   if (missing.size) {
     log(
       `  cold workspace declarations (${[...missing.keys()].join(', ')}): type errors outside changed files are advisory; CI stays authoritative.`

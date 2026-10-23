@@ -58,10 +58,15 @@ project and classifies diagnostics:
 - When declarations are cold, missing-module errors citing an unbuilt workspace
   package are ignored. Configuration errors (`TS5xxx`/`TS6xxx`, including
   `TS6059`) and errors in changed files that do not import an unbuilt package
-  block. Everything else is reported as an advisory count.
+  block. A changed file importing a missing package still blocks on real type
+  errors such as TS2322; only implicit-any follow-ons (7005/7006/7031/7034)
+  in that file are advisory. Diagnostics in unchanged files remain advisory.
 
-Cold mode cannot see fallout in unchanged files (for example consumers of
-regenerated database types); the CI type-check remains authoritative.
+Shared-package changes also select transitive reverse dependents from workspace
+manifests. Root/shared configuration changes (`package.json`, `bun.lock`, root
+`tsconfig.json`, `biome.json`, `turbo.json`, and `packages/typescript-config`)
+print **not covered; CI only** because this focused gate cannot prove their full
+repository effect. CI type-checking remains authoritative.
 
 ## Optional pre-push hook
 
@@ -74,7 +79,10 @@ TUTURUUU_PRE_PUSH=1 git push       # a single push
 TUTURUUU_PRE_PUSH=0 git push       # skip once while opted in
 ```
 
-The hook checks committed changes only and skips deletions or pushes of refs
+The hook refuses tracked staged or unstaged edits so it can check the exact
+pushed HEAD. Untracked files are not part of the committed check. NUL-delimited
+Git paths preserve whitespace; option-like filename components are rejected
+before file tools run. The hook checks committed changes only and skips deletions or pushes of refs
 other than `HEAD`. Agents should run `bun check:changed` explicitly before
 pushing whether or not the hook is enabled.
 

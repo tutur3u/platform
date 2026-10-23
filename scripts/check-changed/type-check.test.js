@@ -134,3 +134,38 @@ test('cold declarations ignore missing-module noise and soften cascades', () => 
     [7006, 2339]
   );
 });
+
+test('REV-6467-1: TS2322 blocks in a changed file importing missing workspace types', () => {
+  const file = 'apps/web/src/repro.ts';
+  const actual = classifyDiagnostics(
+    [
+      diagnostic(
+        file,
+        2307,
+        "Cannot find module '@tuturuuu/types' or its corresponding type declarations."
+      ),
+      diagnostic(
+        file,
+        2322,
+        "Type 'string' is not assignable to type 'number'."
+      ),
+      ...[7005, 7006, 7031, 7034].map((code) => diagnostic(file, code)),
+    ],
+    {
+      changedFiles: new Set([file]),
+      missing: new Map([['@tuturuuu/types', 'packages/types']]),
+    }
+  );
+  assert.deepEqual(
+    actual.blocking.map((d) => d.code),
+    [2322]
+  );
+  assert.deepEqual(
+    actual.ignored.map((d) => d.code),
+    [2307]
+  );
+  assert.deepEqual(
+    actual.advisory.map((d) => d.code),
+    [7005, 7006, 7031, 7034]
+  );
+});
