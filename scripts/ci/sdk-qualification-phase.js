@@ -111,21 +111,30 @@ function verifyPublishReceipt({ directory, sourceSha, name, version }) {
     pkg?.version !== version ||
     archives.length !== 1 ||
     pkg.archive !== archives[0] ||
+    typeof pkg.archive !== 'string' ||
+    pkg.archive.length > 255 ||
+    !/^[a-z0-9][a-z0-9_-]*(?:\.[0-9][a-z0-9_-]*)*\.tgz$/.test(pkg.archive) ||
     path.basename(pkg.archive) !== pkg.archive
   ) {
     throw new Error('PUBLIC_QUALIFICATION_RECEIPT_MISMATCH');
   }
   const archive = path.join(directory, pkg.archive);
-  const stat = fs.lstatSync(archive);
-  if (
-    !stat.isFile() ||
-    stat.isSymbolicLink() ||
-    createHash('sha256').update(fs.readFileSync(archive)).digest('hex') !==
-      pkg.sha256
-  ) {
-    throw new Error('PUBLIC_QUALIFICATION_ARTIFACT_MISMATCH');
+  const fd = fs.openSync(
+    archive,
+    fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
+  );
+  try {
+    if (
+      !fs.fstatSync(fd).isFile() ||
+      createHash('sha256').update(fs.readFileSync(fd)).digest('hex') !==
+        pkg.sha256
+    ) {
+      throw new Error('PUBLIC_QUALIFICATION_ARTIFACT_MISMATCH');
+    }
+    return archive;
+  } finally {
+    fs.closeSync(fd);
   }
-  return archive;
 }
 
 if (require.main === module) {
