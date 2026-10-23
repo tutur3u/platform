@@ -59,7 +59,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 2
           persist-credentials: false
-      - name: Use Node.js 24
+      - name: Use Node.js
         if: steps.current.outputs.matches == 'true'
         uses: actions/setup-node@v7
         with:

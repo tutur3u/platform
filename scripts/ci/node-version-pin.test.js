@@ -16,6 +16,8 @@ const SAME_COMMIT_REF = `\${{ github.sha }}`;
 // Qualifies historical sources whose runtime identity binding requires Node 24.
 const NODE_24_EVIDENCE = new Map([
   ['employee-schema-contract.yaml:schema', '24.22.1'],
+  // supabase-production.yaml admits only allowlisted blob SHAs of this file.
+  ['supabase-staging.yaml:migrate', '24'],
 ]);
 
 // Workflows the CI switchboard disables belong to paused runtimes; leave them.

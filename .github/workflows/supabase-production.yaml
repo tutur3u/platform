@@ -120,7 +120,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.TARGET_SHA }}
 
-      - name: Use Node.js 24
+      - name: Use Node.js
         if: steps.resolve_target.outputs.target_sha != ''
         uses: actions/setup-node@v7
         with:
