@@ -50,6 +50,38 @@ key scoped to the same browser session and `ip:<address>`. The relief only lets
 that session continue while admins review the appeal; it does not clear the
 global `blocked_ips` row or help unrelated users behind the same IP.
 
+## Client IP Trust
+
+Rate limits, IP blocks, abuse counters, and audit records key on the client IP
+from the shared `@tuturuuu/utils/abuse-protection/client-ip` helper, which
+`extractIPFromHeaders` and `extractIPFromRequest` delegate to. It reads only
+headers set by the proxy the deployment is configured to sit behind:
+
+| `TRUSTED_PROXY` | Trusted source                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| `vercel`        | `x-vercel-forwarded-for`, then `x-real-ip`, then `x-forwarded-for` (Vercel overwrites all three) |
+| `cloudflare`    | `cf-connecting-ip` only; use only when every request reaches the app through Cloudflare          |
+| `forwarded`     | `x-forwarded-for` entry `TRUSTED_PROXY_HOPS` positions from the right (default `1`)              |
+| `none`          | No header; every request uses the shared `unknown` bucket                                        |
+
+When `TRUSTED_PROXY` is unset, the helper selects `vercel` when the `VERCEL` or
+`VERCEL_ENV` platform variable is present, `cloudflare` inside a Cloudflare
+Worker runtime, and `none` everywhere else. An unsupported value fails closed to
+`none` and logs a warning. In `forwarded` mode, set `TRUSTED_PROXY_HOPS` to the
+number of trusted reverse proxies that append to `x-forwarded-for`; entries
+further left are caller-controlled and never used. With one hop and no
+`x-forwarded-for`, the proxy-set `x-real-ip` is used.
+
+Requests without a trusted address resolve to `unknown`. Route auth guards
+(`withSessionAuth` in every `src/lib/api-auth.ts`) still block-check and
+rate-limit that shared bucket instead of skipping the checks, while auth-failure
+recording continues to skip it so one caller cannot block every unidentified
+client. Self-hosted and Docker deployments must set `TRUSTED_PROXY` (for
+example `cloudflare` behind Cloudflare Tunnel, or `forwarded` behind the bundled
+nginx proxy); otherwise all traffic shares the `unknown` bucket. Local E2E
+specs that isolate budgets with per-test client IP headers need
+`TRUSTED_PROXY=cloudflare` in the web runtime env.
+
 ## API Abuse IP Blocks
 
 Session-authenticated routes may defer proxy-side `api_abuse` IP blocks only
