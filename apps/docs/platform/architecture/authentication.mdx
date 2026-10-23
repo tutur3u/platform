@@ -167,6 +167,17 @@ A switch redirect is a navigation instruction, not a stored route: `/login` and
 explicit `targetRoute` through the persistable-route filter or you will drop a
 sign-in that is still in flight.
 
+After switching on Web, resume the incoming account's last Web route when it is
+still a valid destination. The vault records a current route only when the
+switch request comes from Web itself; satellite app paths do not become Web
+return routes. Existing Mail folder routes such as `/personal/inbox`, `/sent`,
+and `/drafts` are not Web routes, so both a saved Mail folder and an explicit
+Mail-folder destination fall back to that workspace's home (for example,
+`/personal`). Other explicit destinations, including login handoffs, take
+precedence over the saved route. Regression coverage is in
+`apps/web/src/lib/auth/multi-account/vault.test.ts` and
+`apps/web/src/lib/auth/multi-account/vault-switch.test.ts`.
+
 ## Sign Up
 
 ### Basic Email/Password Sign Up

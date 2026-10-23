@@ -20,18 +20,20 @@ export function buildNotificationAccessFilter(
 ) {
   const branches = [
     `and(scope.in.(user,system),user_id.eq.${context.userId})`,
+    ...(context.userEmail
+      ? [
+          `and(scope.in.(user,system),user_id.is.null,email.eq.${quotePostgrestString(context.userEmail)})`,
+        ]
+      : []),
+    ...(context.userEmail && context.workspaceIds.length > 0
+      ? [
+          `and(scope.eq.workspace,user_id.is.null,email.eq.${quotePostgrestString(context.userEmail)},ws_id.in.(${context.workspaceIds.join(',')}))`,
+        ]
+      : []),
     context.workspaceIds.length > 0
       ? `and(scope.eq.workspace,user_id.eq.${context.userId},or(ws_id.is.null,ws_id.in.(${context.workspaceIds.join(',')})))`
       : `and(scope.eq.workspace,user_id.eq.${context.userId},ws_id.is.null)`,
   ];
-
-  if (context.userEmail) {
-    branches.splice(
-      1,
-      0,
-      `and(scope.in.(user,system),user_id.is.null,email.eq.${quotePostgrestString(context.userEmail)})`
-    );
-  }
 
   return branches.join(',');
 }

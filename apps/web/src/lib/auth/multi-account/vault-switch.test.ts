@@ -241,9 +241,12 @@ function storedRefreshToken(userId: string) {
     : null;
 }
 
-function request() {
+function request(origin = 'https://tuturuuu.localhost') {
   return new Request('https://tuturuuu.localhost/login?returnUrl=x', {
-    headers: { cookie: 'device-cookie=device-1.secret-1' },
+    headers: {
+      cookie: 'device-cookie=device-1.secret-1',
+      origin,
+    },
   });
 }
 
@@ -308,6 +311,46 @@ describe('switchWebAccount', () => {
     expect(
       store.devices.find((device) => device.id === 'device-1')?.active_user_id
     ).toBe('user-b');
+  });
+
+  it('does not save a satellite route as the outgoing Web route', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: session('user-a', 'refresh-a-rotated') },
+    });
+    auth.setSession.mockResolvedValue({
+      data: { session: session('user-b', 'refresh-b-fresh') },
+      error: null,
+    });
+
+    const { switchWebAccount } = await import('./vault');
+    await switchWebAccount(
+      request('https://mail.tuturuuu.localhost'),
+      'user-b',
+      { currentRoute: '/personal/transactions' }
+    );
+
+    expect(
+      store.sessions.find((row) => row.user_id === 'user-a')?.last_route
+    ).toBe('/user-a-workspace');
+  });
+
+  it('saves a same-origin Web route before switching accounts', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: session('user-a', 'refresh-a-rotated') },
+    });
+    auth.setSession.mockResolvedValue({
+      data: { session: session('user-b', 'refresh-b-fresh') },
+      error: null,
+    });
+
+    const { switchWebAccount } = await import('./vault');
+    await switchWebAccount(request(), 'user-b', {
+      currentRoute: '/user-a-workspace/tasks',
+    });
+
+    expect(
+      store.sessions.find((row) => row.user_id === 'user-a')?.last_route
+    ).toBe('/user-a-workspace/tasks');
   });
 
   it('leaves the signed-in account alone when its session is not the active one', async () => {

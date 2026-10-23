@@ -6,6 +6,43 @@ const NON_PERSISTABLE_ROUTE_SEGMENTS = new Set([
   'login',
   'onboarding',
 ]);
+const WEB_PUBLIC_ROUTE_SEGMENTS = new Set([
+  'about',
+  'account',
+  'blog',
+  'changelog',
+  'contact',
+  'documents',
+  'invite',
+  'legal',
+  'meet',
+  'models',
+  'partners',
+  'pitch',
+  'portfolio',
+  'pricing',
+  'privacy',
+  'products',
+  'security',
+  'share',
+  'shared',
+  'terms',
+  'u',
+  'ui',
+  'users',
+  'visualizations',
+]);
+const MAIL_ONLY_WORKSPACE_ROUTE_SEGMENTS = new Set([
+  'archive',
+  'drafts',
+  'inbox',
+  'muted',
+  'sent',
+  'snoozed',
+  'spam',
+  'starred',
+  'trash',
+]);
 
 function safeDecode(value: string) {
   try {
@@ -29,10 +66,29 @@ function getPrimaryRouteSegment(path: string) {
     : firstSegment;
 }
 
+function getMailWorkspaceHomeFallback(path: string) {
+  const [pathname = ''] = path.split(/[?#]/, 1);
+  const segments = pathname.split('/').filter(Boolean);
+  const locale = LOCALE_ROUTE_SEGMENTS.has(segments[0] ?? '')
+    ? segments.shift()
+    : undefined;
+
+  if (
+    segments.length < 2 ||
+    WEB_PUBLIC_ROUTE_SEGMENTS.has(segments[0]) ||
+    !MAIL_ONLY_WORKSPACE_ROUTE_SEGMENTS.has(segments[1])
+  ) {
+    return null;
+  }
+
+  return `/${[locale, segments[0]].filter(Boolean).join('/')}`;
+}
+
 function toSameOriginPath(value: string, origin: string) {
   if (value.startsWith('/') && !value.startsWith('//')) {
     const url = new URL(value, origin);
-    return `${url.pathname}${url.search}${url.hash}`;
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    return path.startsWith('//') || path.startsWith('/\\') ? null : path;
   }
 
   try {
@@ -42,7 +98,8 @@ function toSameOriginPath(value: string, origin: string) {
       (url.protocol === 'http:' || url.protocol === 'https:') &&
       url.origin === origin
     ) {
-      return `${url.pathname}${url.search}${url.hash}`;
+      const path = `${url.pathname}${url.search}${url.hash}`;
+      return path.startsWith('//') || path.startsWith('/\\') ? null : path;
     }
   } catch {
     return null;
@@ -79,6 +136,10 @@ export function isPersistableMultiAccountRoutePath(route: string | null) {
     return false;
   }
 
+  if (getMailWorkspaceHomeFallback(route)) {
+    return false;
+  }
+
   const segment = getPrimaryRouteSegment(route);
 
   return !segment || !NON_PERSISTABLE_ROUTE_SEGMENTS.has(segment);
@@ -99,9 +160,8 @@ export function normalizePersistableMultiAccountRoute(
  *
  * An explicit `targetRoute` is a navigation instruction, not something we store,
  * so the persistable filter must not apply to it — `/login` and `/add-account`
- * are non-persistable precisely because they are transient, and running the
- * target through that filter silently replaced a pending authentication flow
- * with the dashboard. Only the stored fallback stays filtered.
+ * are non-persistable precisely because they are transient. Mail-only folder
+ * routes are still mapped to their workspace home because Web does not own them.
  */
 export function resolveMultiAccountSwitchRedirect(
   payload: { lastRoute?: string | null; targetRoute?: string | null },
@@ -113,11 +173,26 @@ export function resolveMultiAccountSwitchRedirect(
     ''
   );
 
-  return (
-    target ||
-    normalizePersistableMultiAccountRoute(payload.lastRoute, request, '/') ||
-    '/'
+  const targetHome = getMailWorkspaceHomeFallback(target);
+  if (targetHome) {
+    return targetHome;
+  }
+
+  if (target) {
+    return target;
+  }
+
+  const lastRoute = normalizeMultiAccountRedirectPath(
+    payload.lastRoute,
+    request,
+    ''
   );
+  const lastRouteHome = getMailWorkspaceHomeFallback(lastRoute);
+  if (lastRouteHome && isPersistableMultiAccountRoutePath(lastRouteHome)) {
+    return lastRouteHome;
+  }
+
+  return normalizePersistableMultiAccountRoute(payload.lastRoute, request, '/');
 }
 
 /**

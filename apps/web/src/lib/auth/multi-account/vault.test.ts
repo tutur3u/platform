@@ -52,6 +52,25 @@ describe('web multi-account vault helpers', () => {
       )
     ).toBe(null);
   });
+
+  it.each([
+    'archive',
+    'drafts',
+    'inbox',
+    'muted',
+    'sent',
+    'snoozed',
+    'spam',
+    'starred',
+    'trash',
+  ])(
+    'does not keep Mail-only workspace route %s as persistable',
+    (folder) => {
+      expect(
+        normalizePersistableMultiAccountRoute(`/personal/${folder}`, request)
+      ).toBe(null);
+    }
+  );
 });
 
 describe('resolveMultiAccountSwitchRedirect', () => {
@@ -99,6 +118,81 @@ describe('resolveMultiAccountSwitchRedirect', () => {
       )
     ).toBe('/en/personal/tasks');
   });
+
+  it.each([
+    'archive',
+    'drafts',
+    'inbox',
+    'muted',
+    'sent',
+    'snoozed',
+    'spam',
+    'starred',
+    'trash',
+  ])(
+    'falls back to the workspace home for the Mail-only %s route',
+    (folder) => {
+      expect(
+        resolveMultiAccountSwitchRedirect(
+          { lastRoute: `/en/personal/${folder}` },
+          request
+        )
+      ).toBe('/en/personal');
+    }
+  );
+
+  it('does not honor an explicit target to the removed inbox route', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        { targetRoute: '/personal/inbox' },
+        request
+      )
+    ).toBe('/personal');
+  });
+
+  it('preserves an explicit login target when the saved route is inbox', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        {
+          lastRoute: '/en/personal/inbox',
+          targetRoute: '/en/login?returnUrl=https%3A%2F%2Fmail.example%2Fauth',
+        },
+        request
+      )
+    ).toBe('/en/login?returnUrl=https%3A%2F%2Fmail.example%2Fauth');
+  });
+
+  it('does not turn a transient saved route into a workspace fallback', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        { lastRoute: '/en/login/inbox' },
+        request
+      )
+    ).toBe('/');
+  });
+
+  it('preserves public profile routes whose handle matches a Mail folder', () => {
+    expect(
+      resolveMultiAccountSwitchRedirect({ lastRoute: '/en/u/inbox' }, request)
+    ).toBe('/en/u/inbox');
+    expect(
+      resolveMultiAccountSwitchRedirect(
+        { targetRoute: '/en/users/trash' },
+        request
+      )
+    ).toBe('/en/users/trash');
+  });
+
+  it.each([
+    '/.//evil.example/login',
+    '/%2e%2e//evil.example/login',
+    'https://tuturuuu.localhost//evil.example/login',
+  ])(
+    'rejects same-origin redirect paths that normalize to // URLs: %s',
+    (value) => {
+      expect(normalizeMultiAccountRedirectPath(value, request)).toBe('/');
+    }
+  );
 
   it('never leaves the origin, even when asked to', () => {
     expect(

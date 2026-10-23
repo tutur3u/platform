@@ -522,7 +522,16 @@ async function switchToStoredWebAccount(
   await refreshActiveAccountSession(device, supabase);
   await revokeCurrentUserTempAuth(supabase);
 
-  if (payload.currentRoute && device.activeUserId) {
+  const requestOrigin = request.headers.get('origin');
+  const requestUrlOrigin = new URL(request.url).origin;
+
+  // Satellite apps share the account vault but send their own app path as
+  // currentRoute. Only Web-originated paths can be resumed on Web later.
+  if (
+    payload.currentRoute &&
+    device.activeUserId &&
+    requestOrigin === requestUrlOrigin
+  ) {
     await updateCurrentWebAccount(request, {
       route: payload.currentRoute,
       workspaceId: getWorkspaceIdFromRoute(payload.currentRoute),

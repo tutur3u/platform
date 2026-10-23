@@ -263,7 +263,14 @@ export function useUpdateNotification() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update notification');
+        const data = (await response.json().catch(() => null)) as
+          | { error?: unknown }
+          | null;
+        throw new Error(
+          typeof data?.error === 'string'
+            ? data.error
+            : `Failed to update notification (${response.status})`
+        );
       }
 
       return response.json();
