@@ -131,6 +131,7 @@ export function inferTokens(
   defaults: { vitestWorkers: number; buildJobs: number }
 ) {
   const { tool, tail } = commandTool(basename(command), args);
+  if (tool === 'ambiguous') return Math.max(2, defaults.vitestWorkers);
   const isBuild =
     (tool === 'next' && tail.includes('build')) ||
     (tool === 'cargo' &&

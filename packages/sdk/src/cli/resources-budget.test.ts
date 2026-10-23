@@ -118,8 +118,25 @@ describe('per-ticket token declaration', () => {
     ['bun', ['sb:reset'], 2],
     ['turbo', ['run', 'test'], 2],
     ['node', ['scripts/small.js'], 1],
+    ['node', ['--test', 'a.test.js', 'b.test.js'], 2],
+    ['node', ['--future-flag', 'node_modules/playwright/cli.js', 'test'], 2],
   ] as const)('%s %j costs %i tokens', (command, args, tokens) => {
     expect(inferTokens(command, [...args], defaults)).toBe(tokens);
+  });
+
+  it('charges ambiguous commands at the configured worker default or two, whichever is higher', () => {
+    for (const workers of [1, 2, 6]) {
+      expect(
+        inferTokens(
+          'node',
+          ['--future-flag', 'node_modules/playwright/cli.js', 'test'],
+          {
+            vitestWorkers: workers,
+            buildJobs: 1,
+          }
+        )
+      ).toBe(Math.max(2, workers));
+    }
   });
 
   it('honours explicit declarations and clamps to the whole budget', () => {

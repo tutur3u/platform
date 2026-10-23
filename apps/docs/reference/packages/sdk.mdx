@@ -1553,6 +1553,7 @@ A shared host (for example skr-studio, shared by Tuturuuu and Upskii) can carry 
   - builds (`next build`, `cargo build|check|clippy`, Turbo or Bun `build` tasks) cost at least 4;
   - Turbo test and lint tasks, `tsc` and `eslint` cost at least 2;
   - anything else costs 1.
+- Ambiguous runtime invocations cost at least `max(2, vitestWorkers)` rather than one token. `node --test` receives `--test-concurrency` matching its charged tokens; existing concurrency flags are replaced only in the Node option segment, preserving program arguments.
 - Declared tokens are clamped to the ceiling.
 - Admission then grants exactly that many workers (`VITEST_MAX_WORKERS`, `CARGO_BUILD_JOBS`, and rewritten `--maxWorkers`/`--jobs`/`--workers`). Turbo stays at one task per lane, so a job's internal fan-out is what it paid for.
 - Playwright always receives an explicit numeric `--workers` cap. It overrides both CLI values and config defaults; percentage values fall back to the charged default rather than expanding with host CPU count.
@@ -1572,7 +1573,7 @@ A shared host (for example skr-studio, shared by Tuturuuu and Upskii) can carry 
 
 The text status prints the same per project. Regression coverage is in `resources-budget.test.ts` (fairness, borrowing, reclaim, token and memory caps, project identity for worktrees, and a sustained mixed-load simulation) and `resources-budget-admission.test.ts` (real processes).
 
-Process identity recovery remains tracked in [#6561](https://github.com/tutur3u/platform/issues/6561). PID/PGID liveness alone can retain a stale lease after PID reuse; the budget fixes do not resolve that inherited limitation.
+Process identity recovery remains tracked in [#6561](https://github.com/tutur3u/platform/issues/6561). PID/PGID liveness alone can retain a stale lease after PID reuse. Fix #6561 before enabling budgets on long-uptime Studio hosts: a reused PID can retain a dead owner's reservation and stall every project. The budget fixes do not resolve that prerequisite.
 
 #### Studio rollout: 0.28.0 single slot to the budget release
 
@@ -1591,7 +1592,7 @@ Run this only when Mastermind and Upskii have agreed a quiet window. The agent t
 3. **Swap the binary while idle.**
    - Check `ttr --version` and `ttr resources status`; the old config still has at most 2 lanes.
    - Run `ttr resources setup --root <tuturuuu root> --root <upskii root> --shell none` to regenerate shims for the new entry point. Setup keeps the existing config, including a `budget` block.
-   - Only after every `ttr` on the host is the new version, continue. 0.28.0 rejects `validationLanes` above 2, and fails closed at 12 lanes. In a one- or two-lane home it ignores the budget, so the new scheduler publishes `slots/budget-v3` under the admission mutex before its first budget action. Version 0.28.0 rejects that unknown slot name before starting work, even after every new owner has drained. Never remove this persistent fence during normal operation.
+   - Only after every `ttr` on the host is the new version, continue. 0.28.0 rejects `validationLanes` above 2, and fails closed at 12 lanes. In a one- or two-lane home it ignores the budget, so the new scheduler publishes `slots/budget-v3` under the admission mutex before every admission action, including upgrades performed before a budget is configured. Version 0.28.0 rejects that unknown slot name before starting work, even after every new owner has drained. The fence is first written to a staging file outside `slots/`, then linked atomically into place under the admission lock. A crashed writer can leave an ignored staging file but cannot publish an empty fence. Never remove this persistent fence during normal operation.
 4. **Remove the shim-in-`~/.zshenv` exposure.**
    - `~/.zshenv` runs for every zsh, including `ssh host 'cmd'` and `zsh -c`. Move the managed block to `~/.zshrc` (interactive shells only), or guard it with `[[ -o interactive ]]`.
    - The release also never admits `ttr` through its own shim, and verified ancestry lets nested shims pass, so the guard is defence in depth.

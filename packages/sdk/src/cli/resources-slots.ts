@@ -265,20 +265,23 @@ async function reclaimMutex(path: string) {
 // Keep this marker across config changes; downgrades require an idle migration.
 export const budgetFence = 'budget-v3';
 async function publishBudgetFence(home: string) {
-  if (!(await readResourceConfig(home))?.budget) return;
   const slots = join(home, 'slots');
   await mkdir(slots, { recursive: true, mode: 0o700 });
+  const target = join(slots, budgetFence);
+  const staged = join(home, `budget-fence.${randomUUID()}.tmp`);
   try {
-    await writeFile(join(slots, budgetFence), '3\n', {
-      flag: 'wx',
-      mode: 0o600,
-    });
-  } catch (error) {
-    if (!errno(error, 'EEXIST')) throw error;
-    if ((await readFile(join(slots, budgetFence), 'utf8')) !== '3\n')
-      throw new Error(
-        'Malformed budget compatibility fence; admission is closed.'
-      );
+    await writeFile(staged, '3\n', { flag: 'wx', mode: 0o600 });
+    try {
+      await link(staged, target);
+    } catch (error) {
+      if (!errno(error, 'EEXIST')) throw error;
+      if ((await readFile(target, 'utf8')) !== '3\n')
+        throw new Error(
+          'Malformed budget compatibility fence; admission is closed.'
+        );
+    }
+  } finally {
+    await rm(staged, { force: true });
   }
 }
 

@@ -403,6 +403,36 @@ export function isTrivialCommand(
   return trivialExecutable(name, env) !== undefined;
 }
 
+function limitNodeTests(args: string[], tokens: number) {
+  let testing = false;
+  let end = 0;
+  for (; end < args.length; end++) {
+    const arg = args[end]!;
+    if (arg === '--' || !arg.startsWith('-')) break;
+    const flag = arg.split('=')[0]!.replaceAll('_', '-');
+    if (['-e', '-p', '--eval', '--print'].includes(flag)) return undefined;
+    if (flag === '--test') testing = true;
+    if (valueFlags.node?.includes(flag) && !arg.includes('=')) end++;
+  }
+  if (!testing) return undefined;
+  const options: string[] = [];
+  for (let i = 0; i < end; i++) {
+    const arg = args[i]!;
+    const flag = arg.split('=')[0]!.replaceAll('_', '-');
+    if (flag === '--test-concurrency') {
+      if (!arg.includes('=')) i++;
+    } else {
+      options.push(arg);
+      // Preserve option values verbatim, including strings that look like flags.
+      if (valueFlags.node?.includes(flag) && !arg.includes('=')) {
+        if (args[i + 1] !== undefined) options.push(args[i + 1]!);
+        i++;
+      }
+    }
+  }
+  return [`--test-concurrency=${tokens}`, ...options, ...args.slice(end)];
+}
+
 export function limitCommand(
   name: string,
   args: string[],
@@ -410,6 +440,10 @@ export function limitCommand(
 ) {
   const { tool, tail, offset } = commandTool(basename(name), args);
   if (!isHeavyCommand(name, args)) return args;
+  if (basename(name) === 'node') {
+    const tests = limitNodeTests(args, config.vitestWorkers);
+    if (tests) return tests;
+  }
   if (tool === 'vitest' || tool === 'cargo' || tool === 'playwright') {
     const budget = tool === 'cargo' ? config.buildJobs : config.vitestWorkers;
     const flags =
