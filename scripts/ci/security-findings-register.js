@@ -141,34 +141,36 @@ function acceptanceWindowValid(item) {
   );
 }
 
+function acceptanceStatus(item, now) {
+  if (!acceptanceWindowValid(item)) return 'invalid';
+  const approved =
+    item.status === 'accepted' &&
+    typeof item.approvedBy === 'string' &&
+    item.approvedBy.length > 0 &&
+    Number.isFinite(Date.parse(item.approvedAt ?? ''));
+  if (!approved) return 'pending';
+  return now < Date.parse(item.expiresAt) ? 'accepted' : 'expired';
+}
+
 function applyAcceptances(entries, acceptances, now = Date.now()) {
   return entries.map((entry) => {
-    const match = acceptances.find(
+    const candidates = acceptances.filter(
       (item) =>
         typeof item?.advisory === 'string' &&
         item.advisory.length > 0 &&
         ['bun-audit', 'dependabot'].includes(entry.source) &&
         `${entry.detail} ${entry.reference}`.includes(item.advisory)
     );
-    if (!match) return entry;
-    const expires = Date.parse(match.expiresAt ?? '');
-    const approved =
-      match.status === 'accepted' &&
-      typeof match.approvedBy === 'string' &&
-      match.approvedBy.length > 0 &&
-      Number.isFinite(Date.parse(match.approvedAt ?? ''));
-    const live = Number.isFinite(expires) && now < expires;
-    const valid = acceptanceWindowValid(match);
+    if (candidates.length === 0) return entry;
+    // A renewal appended after an expired or pending entry must still apply,
+    // so prefer any acceptance in force; otherwise annotate the first match.
+    const match =
+      candidates.find((item) => acceptanceStatus(item, now) === 'accepted') ??
+      candidates[0];
     const acceptance = {
       advisory: match.advisory,
       expiresAt: match.expiresAt ?? null,
-      status: !valid
-        ? 'invalid'
-        : approved
-          ? live
-            ? 'accepted'
-            : 'expired'
-          : 'pending',
+      status: acceptanceStatus(match, now),
     };
     if (acceptance.status !== 'accepted') return { ...entry, acceptance };
     return {

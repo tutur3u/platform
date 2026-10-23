@@ -216,6 +216,39 @@ test('risk acceptances apply only when approved and unexpired', () => {
   }
   // Exactly 90 days is allowed.
   assert.equal(build(approvedBy).entries[0].status, 'accepted');
+
+  // A renewal appended after an expired or pending entry still applies; the
+  // earlier non-live entry is only an annotation when nothing is in force.
+  const lapsed = {
+    ...base,
+    ...approvedBy,
+    expiresAt: '2026-10-31',
+    proposedAt: '2026-08-02',
+  };
+  const renewal = {
+    ...base,
+    ...approvedBy,
+    proposedAt: '2026-10-31',
+    expiresAt: '2027-01-21',
+  };
+  for (const earlier of [lapsed, { ...base, status: 'pending' }]) {
+    const renewed = buildRegister({
+      coverage: [],
+      entries: applyAcceptances(nodeForge, [earlier, renewal], now),
+      generatedAt: 'now',
+      sha: 'a'.repeat(40),
+    });
+    assert.equal(renewed.entries[0].status, 'accepted');
+    assert.equal(renewed.blockers.length, 0);
+  }
+  const onlyLapsed = buildRegister({
+    coverage: [],
+    entries: applyAcceptances(nodeForge, [lapsed], now),
+    generatedAt: 'now',
+    sha: 'a'.repeat(40),
+  });
+  assert.equal(onlyLapsed.entries[0].acceptance.status, 'expired');
+  assert.equal(onlyLapsed.blockers.length, 1);
 });
 
 test('the shipped node-forge acceptance is pending the release authority', () => {
