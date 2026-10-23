@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(16);
+select plan(25);
 
 insert into public.users (id)
 values ('00000000-0000-4000-8000-00000000d001');
@@ -183,6 +183,71 @@ select is(
         where id = '00000000-0000-4000-8000-00000000d203'),
     'running', 'claim path leaves healthy long-running runs alone'
 );
+
+-- One claim must reap at most 25 runs and never sweep another runner.
+insert into private.devbox_runs (
+    actor_id, lease_id, runner_id, status, command, timeout_seconds, started_at, updated_at
+)
+select '00000000-0000-4000-8000-00000000d001',
+    '00000000-0000-4000-8000-00000000d100',
+    '00000000-0000-4000-8000-00000000d0a1', 'running', array['sleep', '1'], 1,
+    now() - interval '1 hour', now() - interval '1 hour'
+from generate_series(1, 30);
+create temp table before_claim as
+select count(*)::integer as failed from private.devbox_runs
+where runner_id = '00000000-0000-4000-8000-00000000d0a1' and status = 'failed';
+create temp table foreign_before as
+select id, status from private.devbox_runs
+where runner_id = '00000000-0000-4000-8000-00000000d0b1';
+select count(*) from private.claim_next_devbox_run('00000000-0000-4000-8000-00000000d0a1');
+select is((select count(*)::integer from private.devbox_runs
+    where runner_id = '00000000-0000-4000-8000-00000000d0a1' and status = 'failed')
+    - (select failed from before_claim), 25, 'one claim reaps exactly 25 of 30 stranded runs');
+select is((select count(*)::integer from private.devbox_runs
+    where runner_id = '00000000-0000-4000-8000-00000000d0a1'
+        and status = 'running' and timeout_seconds = 1), 5, 'claim leaves the bounded remainder');
+select ok(not exists (select 1 from foreign_before b join private.devbox_runs r on r.id = b.id
+    where r.status <> b.status), 'claim self-reap leaves foreign-runner runs untouched');
+
+-- A non-kept lease stays active while a queued or running sibling needs it.
+insert into private.devbox_leases (id, actor_id, runner_id, status, keep, expires_at)
+values ('00000000-0000-4000-8000-00000000d102',
+    '00000000-0000-4000-8000-00000000d001',
+    '00000000-0000-4000-8000-00000000d0a1', 'active', false, now() + interval '1 hour');
+insert into private.devbox_runs (
+    id, actor_id, lease_id, runner_id, status, workload, command,
+    timeout_seconds, started_at, updated_at
+)
+values
+    ('00000000-0000-4000-8000-00000000d209', '00000000-0000-4000-8000-00000000d001',
+        '00000000-0000-4000-8000-00000000d102', '00000000-0000-4000-8000-00000000d0a1',
+        'running', 'run', array['sleep', '1'], 1, now() - interval '1 hour', now() - interval '1 hour'),
+    ('00000000-0000-4000-8000-00000000d20a', '00000000-0000-4000-8000-00000000d001',
+        '00000000-0000-4000-8000-00000000d102', '00000000-0000-4000-8000-00000000d0a1',
+        'queued', 'run', array['echo', 'queued sibling'], null, null, now());
+select is(private.reap_stale_devbox_runs('00000000-0000-4000-8000-00000000d0a1', 100),
+    6, 'reap finishes stale siblings and the bounded remainder');
+select is((select status from private.devbox_leases where id = '00000000-0000-4000-8000-00000000d102'),
+    'active', 'queued sibling retains its non-kept lease');
+select is((select id from private.claim_next_devbox_run('00000000-0000-4000-8000-00000000d0a1')),
+    '00000000-0000-4000-8000-00000000d20a'::uuid, 'queued sibling is still claimable');
+-- A second stale run shares the now-running sibling's lease.
+insert into private.devbox_runs (
+    id, actor_id, lease_id, runner_id, status, workload, command,
+    timeout_seconds, started_at, updated_at
+)
+values ('00000000-0000-4000-8000-00000000d20b', '00000000-0000-4000-8000-00000000d001',
+    '00000000-0000-4000-8000-00000000d102', '00000000-0000-4000-8000-00000000d0a1',
+    'running', 'run', array['sleep', '1'], 1, now() - interval '1 hour', now() - interval '1 hour');
+select is(private.reap_stale_devbox_runs('00000000-0000-4000-8000-00000000d0a1', 100),
+    1, 'reap finishes the next stale sibling');
+select is((select status from private.devbox_leases where id = '00000000-0000-4000-8000-00000000d102'),
+    'active', 'running sibling retains its non-kept lease');
+update private.devbox_runs set status = 'cancel_requested', updated_at = now() - interval '20 minutes'
+where id = '00000000-0000-4000-8000-00000000d20a';
+select private.reap_stale_devbox_runs('00000000-0000-4000-8000-00000000d0a1', 100);
+select is((select status from private.devbox_leases where id = '00000000-0000-4000-8000-00000000d102'),
+    'released', 'last active sibling being reaped releases the non-kept lease');
 
 select * from finish();
 rollback;

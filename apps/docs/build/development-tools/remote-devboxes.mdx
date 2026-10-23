@@ -795,3 +795,18 @@ summary rather than authenticated URLs or response bodies. A runner shutdown
 without a final assertion report leaves the underlying cause unproven. Preserve
 allocated fixtures until successful final cleanup or independently verified
 resource absence, and use the next exact-source CI result for runtime evidence.
+
+### Composing devbox claim migrations
+
+Apply trust pools (`20261023100000`), drain hardening (`20261023103000`),
+mode admission (`20261023110000`), then stale-run reaping (`20261023120000`).
+The final claim keeps the mode and drain admission predicates and lease move,
+and reaps at most 25 runs for the claiming runner after acquiring its advisory
+lock and before counting capacity. Run the trust-pool, drain-hardening, mode
+admission and stale-run reaper pgTAP suites against this combined sequence;
+validating each migration in isolation cannot prove the final claim behavior.
+
+Reaping releases a non-kept lease only after every queued, running or
+cancel-requested sibling finishes. Multiple runs may reuse one lease; a stale
+run cannot invalidate a healthy sibling's next claim. The stale-run reaper
+pgTAP suite covers queued and running siblings and final-sibling release.

@@ -150,3 +150,15 @@ and timestamp-only writes, and rejects future values in the freshness helper.
 Exercise NULL operator inputs and timestamp forgery in
 `apps/database/supabase/tests/devbox-claim-mode-admission.sql`; historical stale
 fixtures may disable the stamp trigger only within their rolled-back test.
+
+Claim migrations replace one function: compose changes from the latest definition
+rather than moving an older body later. The final stale-run reaper migration
+(`20261023120000`) must retain trust-pool, drain and mode admission, inserting
+only runner-scoped `reap_stale_devbox_runs(p_runner_id, 25)` after the claim lock.
+Run every devbox pgTAP suite against the final sequence and prove the 25-row
+bound with more than 25 stale rows plus a stale row for another runner.
+
+Reaper lease release must exclude surviving queued/running/cancel-requested
+siblings. Data-modifying CTEs share the old snapshot: explicitly exclude IDs
+returned by the reaped CTE when testing for survivors, so final-sibling cleanup
+still releases its lease. Cover both sibling survival and final cleanup.

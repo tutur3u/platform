@@ -78,6 +78,13 @@ begin
         where lease.id = reaped.lease_id
             and lease.keep = false
             and lease.status = 'active'
+            and not exists (
+                select 1 from private.devbox_runs sibling
+                where sibling.lease_id = lease.id
+                    and sibling.status in ('queued', 'running', 'cancel_requested')
+                    -- Sibling CTEs see the pre-update snapshot of reaped rows.
+                    and sibling.id not in (select finished.id from reaped finished)
+            )
         returning lease.id
     ),
     events as (
@@ -99,8 +106,8 @@ revoke all on function private.reap_stale_devbox_runs(uuid, integer)
 grant execute on function private.reap_stale_devbox_runs(uuid, integer)
     to service_role;
 
--- Same claim as 20261004141202_playground_runner_claiming.sql, plus a bounded
--- reap of this runner's stale runs before its capacity is counted.
+-- Final claim composes trust pools (100000), drain hardening (103000), and
+-- mode admission (110000), adding only bounded runner-scoped self-reaping.
 create or replace function private.claim_next_devbox_run(p_runner_id uuid)
 returns table (
     id uuid,
@@ -121,7 +128,6 @@ as $$
 begin
     -- Serialize claims sharing one runner token before checking its capacity.
     perform pg_advisory_xact_lock(hashtextextended(p_runner_id::text, 1));
-    -- Free capacity held by runs this runner can no longer finish.
     perform private.reap_stale_devbox_runs(p_runner_id, 25);
     return query
     with next_run as (
@@ -130,8 +136,45 @@ begin
         join private.devbox_leases lease on lease.id = run.lease_id
         join private.devbox_runners runner on runner.id = p_runner_id
         where run.status = 'queued'
-            and (run.runner_id is null or run.runner_id = p_runner_id)
-            and (lease.runner_id is null or lease.runner_id = p_runner_id)
+            and (
+                (
+                    (run.runner_id is null or run.runner_id = p_runner_id)
+                    and (lease.runner_id is null or lease.runner_id = p_runner_id)
+                )
+                -- Queued Judge work pinned to a draining runner is requeued to
+                -- another Judge runner that enqueue would also have chosen:
+                -- it supports the submission's language and is not trusted.
+                or (
+                    run.workload = 'judge'
+                    and (run.runner_id is null or run.runner_id in (
+                        select draining.id from private.devbox_runners draining
+                        where draining.drain_requested_at is not null))
+                    and (lease.runner_id is null or lease.runner_id in (
+                        select draining.id from private.devbox_runners draining
+                        where draining.drain_requested_at is not null))
+                    and runner.capabilities ->> 'executionMode' is distinct from 'trusted'
+                    and coalesce(runner.enabled_features ->> 'run', 'false') <> 'true'
+                    and coalesce(runner.enabled_features ->> 'build', 'false') <> 'true'
+                    and coalesce(runner.enabled_features ->> 'serve', 'false') <> 'true'
+                    and coalesce(runner.enabled_features ->> 'tunnel', 'false') <> 'true'
+                    and exists (
+                        select 1 from private.learn_coding_submissions submission
+                        where submission.run_id = run.id
+                            and runner.capabilities #> '{judge,languages}' ? submission.language
+                    )
+                )
+            )
+            -- A draining runner finishes in-flight work and accepts only
+            -- maintenance (restart/upgrade); it claims nothing else.
+            and (runner.drain_requested_at is null or run.workload = 'maintenance')
+            -- S4 (flagged): trusted workloads need a fresh, server-stamped
+            -- `trusted` report; Judge refuses any `trusted` report.
+            -- With the flag off this clause is always true.
+            and private.devbox_runner_mode_admits(
+                runner.capabilities,
+                runner.capabilities_updated_at,
+                run.workload
+            )
             and lease.status = 'active'
             and lease.expires_at > now()
             and runner.status = 'online'
@@ -178,6 +221,18 @@ begin
         returning run.id, run.actor_id, run.lease_id, run.command, run.env,
             run.env_files, run.preview_ports, run.timeout_seconds,
             run.created_at, run.updated_at
+    ),
+    moved_lease as (
+        -- Requeued Judge work moves its lease to the claiming runner so the
+        -- draining runner's activity reaches zero.
+        update private.devbox_leases lease
+        set runner_id = p_runner_id,
+            updated_at = now()
+        from claimed
+        where lease.id = claimed.lease_id
+            and lease.runner_id is not null
+            and lease.runner_id <> p_runner_id
+        returning lease.id
     )
     select claimed.id, claimed.actor_id, claimed.lease_id, claimed.command,
         case when claimed.command[1] in ('__ttr_judge_v1__','__ttr_playground_v1__')
@@ -193,7 +248,3 @@ begin
     from claimed;
 end;
 $$;
-
-revoke all on function private.claim_next_devbox_run(uuid)
-    from public, anon, authenticated;
-grant execute on function private.claim_next_devbox_run(uuid) to service_role;
