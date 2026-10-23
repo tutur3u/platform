@@ -69,7 +69,8 @@ def _assigned_names(target: ast.AST) -> list[str]:
 
 def _propagate(handler: ast.ExceptHandler) -> tuple[set[str], set[str]]:
     """Fixpoint of names tainted by, or aliasing a sink within, the block."""
-    tainted, sink_aliases = {handler.name or ""}, set()
+    tainted: set[str] = {handler.name or ""}
+    sink_aliases: set[str] = set()
     assignments: list[tuple[list[ast.AST], ast.AST]] = []
     for statement in handler.body:
         for node in ast.walk(statement):
@@ -148,13 +149,13 @@ def test_guard_detects_every_exposure_shape() -> None:
             "send_response",
         ),
         ("exception alias", 'err = e\nprint(f"failed: {err}")', "print"),
-        ("chained alias", 'err = e\nmessage = repr(err)\nlogger.info(message)', "info"),
+        ("chained alias", "err = e\nmessage = repr(err)\nlogger.info(message)", "info"),
         (
             "sink alias",
             'send = client.send_response\nawait send({"content": f"{e}"}, 1, 2)',
             "send",
         ),
-        ("print alias", 'emit = print\nemit(e)', "emit"),
+        ("print alias", "emit = print\nemit(e)", "emit"),
         ("args subscript", 'return {"content": e.args[0]}', "return"),
         ("container", 'payload = [("detail", e)]\nreturn payload', "return"),
         (
@@ -162,11 +163,13 @@ def test_guard_detects_every_exposure_shape() -> None:
             'text = "failed: " + str(e)\nawait client.send_followup(content=text)',
             "send_followup",
         ),
-        ("walrus", 'if (detail := str(e)):\n    print(detail)', "print"),
+        ("walrus", "if (detail := str(e)):\n    print(detail)", "print"),
     ],
 )
 def test_guard_follows_simple_local_taint(label: str, body: str, sink: str) -> None:
-    source = "async def handler(client, logger):\n    try:\n        pass\n    except Exception as e:\n"
+    source = (
+        "async def handler(client, logger):\n    try:\n        pass\n    except Exception as e:\n"
+    )
     source += textwrap.indent(body, "        ") + "\n"
     assert [found for _line, found in exception_exposures(source)] == [sink], label
 
