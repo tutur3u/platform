@@ -20528,6 +20528,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      claim_email_invite_notifications_for: {
+        Args: {
+          p_email: string;
+          p_email_confirmed_at: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
       claim_next_devbox_run: {
         Args: { p_runner_id: string };
         Returns: {
