@@ -89,6 +89,8 @@ const prExceptions = {
     'Real sandbox must finish bounded cleanup',
   'docker-setup-check.yaml': 'Docker runtime is paused',
   'rust-backend.yml': 'Rust and TanStack runtimes are paused',
+  'security-review-classifier.yaml':
+    'Security review check writers serialize per pull request',
 };
 const mainExceptions = {
   ...prExceptions,

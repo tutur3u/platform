@@ -1,11 +1,13 @@
 name: Security Review Classification
 
-# Marks pull requests that touch auth, RLS/database, tenant isolation, runners,
-# CI, tokens/secrets or storage as security-review-required. pull_request_target
-# runs this file and the classifier from the base/default branch with a write
-# token, so it must never check out, install or execute pull request content:
-# it reads the PR file list through the API only. Removing the label re-runs
-# the classification and re-adds it. There is deliberately no path filter: the
+# Requires a Security review for pull requests whose changed paths touch a
+# sensitive category (scripts/ci/security-paths.js); the security-review-required
+# label is a cosmetic, best-effort hint and never decides membership.
+# pull_request_target runs this file and the classifier from the base/default
+# branch with a write token, so it must never check out, install or execute
+# pull request content: it reads the PR file list through the API only.
+# Removing the label re-runs the classification. There is deliberately no path
+# filter: the
 # Security review check is reported for every pull request (success when no
 # sensitive path changed) so it can be a required status check. Review
 # submissions and dismissals are recomputed by security-review-reclassify.yaml
@@ -27,9 +29,13 @@ on:
       - auto_merge_enabled
       - enqueued
 
+# One repository-wide group per pull request, shared with the reclassify job
+# (security-review-reclassify.yaml), so writers of a PR's Security review check
+# never interleave. Non-cancelling: every queued run re-reads live state.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
-  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+  group: security-review-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: read

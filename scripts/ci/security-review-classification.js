@@ -258,7 +258,19 @@ async function applyLabel(repo, number) {
   if (status !== 200) throw new Error(`labeling failed with ${status}`);
 }
 
-async function evaluate(repo, { author, headSha, number }) {
+async function listReviews(repo, number) {
+  return paginate(`/repos/${repo}/pulls/${number}/reviews`, maxReviews);
+}
+
+// The live head of an open pull request, or null once it is closed.
+async function liveHead(repo, number) {
+  const { data, status } = await github(`/repos/${repo}/pulls/${number}`);
+  if (status !== 200) throw new Error(`pull request lookup failed (${status})`);
+  return data?.state === 'open' ? (data.head?.sha ?? null) : null;
+}
+
+// Decision input from the pull request's changed paths (never its label).
+async function decisionInput(repo, { author, headSha, number }) {
   assertShape(repo, number, headSha);
   const listed = await paginate(
     `/repos/${repo}/pulls/${number}/files`,
@@ -267,27 +279,33 @@ async function evaluate(repo, { author, headSha, number }) {
   const files = listed.items.flatMap((file) =>
     [file.filename, file.previous_filename].filter(Boolean)
   );
-  const reviews = await paginate(
-    `/repos/${repo}/pulls/${number}/reviews`,
-    maxReviews
-  );
-  const decision = decide({
+  return {
     author,
     files,
     headSha,
     reviewers: parseReviewers(env.SECURITY_REVIEWERS),
-    reviews: reviews.items,
-    reviewsComplete: reviews.complete,
     // GitHub stops listing files at 3000, so a full listing is also truncated.
     truncated: !listed.complete || listed.items.length >= maxListedFiles,
-  });
-  return decision;
+  };
 }
 
-// Evaluates one pull request and records the check. The check is posted
-// first and must succeed: an evaluation error posts action_required, so it
-// can never leave an earlier success standing. Deduplication (sweep only) and
-// labeling are best-effort and can never suppress that post.
+function failedDecision() {
+  return {
+    categories: [],
+    conclusion: 'action_required',
+    required: true,
+    title: 'Security review could not be evaluated; re-run the classifier',
+  };
+}
+
+// Evaluates one pull request and records the check. Writers for one pull
+// request serialize on the repository-wide concurrency group
+// security-review-pr-<number>; the sweep cannot, so every writer also re-reads
+// the live head and reviews immediately before posting and stays silent when
+// the head moved (a newer run owns it). A success therefore always reflects
+// the reviews as they were just before the post. Any evaluation error posts
+// action_required first; deduplication (sweep only) and labels are
+// best-effort and can never suppress that post.
 async function reclassify(
   repo,
   pr,
@@ -297,15 +315,29 @@ async function reclassify(
   let decision;
   let evaluationError;
   try {
-    decision = await evaluate(repo, pr);
+    const input = await decisionInput(repo, pr);
+    // Final re-read inside the per-PR boundary, right before the post.
+    if ((await liveHead(repo, pr.number)) !== pr.headSha) {
+      console.log(
+        `#${pr.number}: the head moved or the pull request closed; a newer run classifies it.`
+      );
+      return { decision: null, posted: false };
+    }
+    // Reviews are read last and only when a sensitive path changed.
+    const { required } = classifyReview(input.files, {
+      truncated: input.truncated,
+    });
+    const reviews = required
+      ? await listReviews(repo, pr.number)
+      : { complete: true, items: [] };
+    decision = decide({
+      ...input,
+      reviews: reviews.items,
+      reviewsComplete: reviews.complete,
+    });
   } catch (error) {
     evaluationError = error;
-    decision = {
-      categories: [],
-      conclusion: 'action_required',
-      required: true,
-      title: 'Security review could not be evaluated; re-run the classifier',
-    };
+    decision = failedDecision();
   }
   const summary = evaluationError
     ? `### ${decision.title}`
@@ -344,6 +376,24 @@ async function main() {
   if (!/^[\w.-]+\/[\w.-]+$/u.test(repo ?? ''))
     throw new Error('bad repository');
   const pr = await target(repo);
+  if (env.SECURITY_REVIEW_RESOLVE_ONLY === 'true') {
+    // First job of security-review-reclassify.yaml: API-derived identity for
+    // the per-PR concurrency group of the job that evaluates and posts.
+    if (pr) assertShape(repo, pr.number, pr.headSha);
+    const outputs = pr
+      ? [
+          'found=true',
+          `number=${pr.number}`,
+          `head_sha=${pr.headSha}`,
+          `author=${pr.author}`,
+        ]
+      : ['found=false'];
+    if (env.GITHUB_OUTPUT) {
+      fs.appendFileSync(env.GITHUB_OUTPUT, `${outputs.join('\n')}\n`);
+    }
+    console.log(outputs.join('\n'));
+    return;
+  }
   if (!pr) {
     console.log(
       'No open pull request still has the reviewed head; nothing to reclassify.'

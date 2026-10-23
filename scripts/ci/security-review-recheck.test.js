@@ -74,36 +74,73 @@ test('reclassification runs only default-branch classifier code', () => {
   assert.equal(workflow.concurrency['cancel-in-progress'], false);
   assert.equal(workflow.concurrency.queue, 'max');
   assert.deepEqual(workflow.permissions, { contents: 'read' });
-  const job = workflow.jobs.reclassify;
+  const classifier = readWorkflow('security-review-classifier.yaml');
+  const { resolve, reclassify } = workflow.jobs;
+  assert.deepEqual(Object.keys(workflow.jobs), ['resolve', 'reclassify']);
   assert.equal(
-    job.if,
+    resolve.if,
     "github.event.workflow_run.event == 'pull_request_review'"
   );
+  assert.deepEqual(resolve.permissions, {
+    contents: 'read',
+    'pull-requests': 'read',
+  });
+  assert.equal(reclassify.needs, 'resolve');
+  assert.equal(reclassify.if, "needs.resolve.outputs.found == 'true'");
   assert.deepEqual(
-    job.permissions,
-    readWorkflow('security-review-classifier.yaml').jobs.classify.permissions
+    reclassify.permissions,
+    classifier.jobs.classify.permissions
   );
-  const [checkout, setupNode, classify, ...rest] = job.steps;
-  assert.deepEqual(rest, []);
-  assert.match(checkout.uses, /^actions\/checkout@[0-9a-f]{40}$/u);
+  for (const job of [resolve, reclassify]) {
+    const [checkout, setupNode, classify, ...rest] = job.steps;
+    assert.deepEqual(rest, []);
+    assert.match(checkout.uses, /^actions\/checkout@[0-9a-f]{40}$/u);
+    assert.equal(
+      checkout.with.ref,
+      expression('github.event.repository.default_branch')
+    );
+    assert.equal(checkout.with['persist-credentials'], false);
+    assert.deepEqual(checkout.with['sparse-checkout'].trim().split('\n'), [
+      'scripts/ci/security-paths.js',
+      'scripts/ci/security-review-classification.js',
+    ]);
+    assert.match(setupNode.uses, /^actions\/setup-node@[0-9a-f]{40}$/u);
+    assert.equal(
+      classify.run,
+      'node scripts/ci/security-review-classification.js'
+    );
+  }
+  // Event fields are lookup keys only: the resolve job finds the PR through
+  // the API, and the posting job takes its identity from those outputs.
+  const find = resolve.steps[2];
+  assert.equal(find.env.SECURITY_REVIEW_RESOLVE_ONLY, 'true');
+  assert.equal(find.env.PR_NUMBER, undefined);
+  const post = reclassify.steps[2];
+  assert.equal(post.env.PR_NUMBER, expression('needs.resolve.outputs.number'));
+  assert.equal(post.env.HEAD_SHA, expression('needs.resolve.outputs.head_sha'));
+  assert.equal(post.env.PR_AUTHOR, expression('needs.resolve.outputs.author'));
+  // REV-6456-16: one repository-wide, non-cancelling group per pull request
+  // is shared by every per-PR writer.
+  const perPull = (group) =>
+    /^security-review-pr-\$\{\{ [\w.]+ \}\}$/u.test(group);
+  for (const [name, concurrency] of [
+    ['classifier', classifier.concurrency],
+    ['reclassify', reclassify.concurrency],
+  ]) {
+    assert.ok(perPull(concurrency.group), `${name}: ${concurrency.group}`);
+    assert.equal(concurrency['cancel-in-progress'], false, name);
+  }
   assert.equal(
-    checkout.with.ref,
-    expression('github.event.repository.default_branch')
+    classifier.concurrency.group,
+    expression('github.event.pull_request.number').replace(
+      /^/u,
+      'security-review-pr-'
+    )
   );
-  assert.equal(checkout.with['persist-credentials'], false);
-  assert.deepEqual(checkout.with['sparse-checkout'].trim().split('\n'), [
-    'scripts/ci/security-paths.js',
-    'scripts/ci/security-review-classification.js',
-  ]);
-  assert.match(setupNode.uses, /^actions\/setup-node@[0-9a-f]{40}$/u);
   assert.equal(
-    classify.run,
-    'node scripts/ci/security-review-classification.js'
+    reclassify.concurrency.group,
+    `security-review-pr-${expression('needs.resolve.outputs.number')}`
   );
-  // Event fields are lookup keys only; PR number/author/head come from the API.
-  assert.equal(classify.env.PR_NUMBER, undefined);
-  assert.equal(classify.env.PR_AUTHOR, undefined);
-  assert.equal(classify.env.HEAD_SHA, undefined);
   const text = source('security-review-reclassify.yaml');
   assert.doesNotMatch(
     text,
@@ -156,7 +193,9 @@ function mockGitHub(t, { pulls, reviews }) {
     requests.push({ body, method: init.method ?? 'GET', route });
     let data = [];
     if (route.startsWith(`/repos/${repo}/pulls?`)) data = pulls;
-    else if (route.includes('/files?')) {
+    else if (route === `/repos/${repo}/pulls/42`) {
+      data = { head: { sha: head }, state: 'open' };
+    } else if (route.includes('/files?')) {
       data = route.includes('page=1')
         ? [{ filename: '.github/workflows/x.yaml' }]
         : [];
@@ -179,11 +218,13 @@ function mockGitHub(t, { pulls, reviews }) {
 function relayEnv(t, overrides = {}) {
   const keys = [
     'GITHUB_REPOSITORY',
+    'GITHUB_OUTPUT',
     'GITHUB_STEP_SUMMARY',
     'HEAD_SHA',
     'PR_AUTHOR',
     'PR_NUMBER',
     'SECURITY_REVIEWERS',
+    'SECURITY_REVIEW_RESOLVE_ONLY',
     'TRIGGER_HEAD_BRANCH',
     'TRIGGER_HEAD_OWNER',
     'TRIGGER_HEAD_SHA',
@@ -262,6 +303,7 @@ test('a relay for a moved, foreign or spoofed head posts nothing', async (t) => 
 });
 
 const prRoutes = (reviewsByPage) => ({
+  [`/repos/${repo}/pulls/42`]: { head: { sha: head }, state: 'open' },
   [`/repos/${repo}/pulls/42/files`]: (page) =>
     page === 1 ? [{ filename: '.github/workflows/x.yaml' }] : [],
   [`/repos/${repo}/pulls/42/reviews`]: reviewsByPage,
@@ -366,7 +408,7 @@ test('revocation does not depend on the pull-request-owned relay', () => {
   assert.equal(checkout.with['persist-credentials'], false);
   assert.match(setupNode.uses, /^actions\/setup-node@[0-9a-f]{40}$/u);
   assert.equal(run.run, 'node scripts/ci/security-review-sweep.js');
-  assert.match(run.env.SWEEP_CALL_BUDGET, /^[1-9]\d*$/u);
+  assert.equal(run.env.SWEEP_CALL_BUDGET, undefined, 'budget sized in code');
   // Hourly; GitHub may delay or drop scheduled runs.
   assert.deepEqual(triggers(sweep).schedule, [{ cron: '23 * * * *' }]);
   assert.doesNotMatch(
@@ -378,5 +420,36 @@ test('revocation does not depend on the pull-request-owned relay', () => {
     .pull_request_target.types;
   for (const type of ['auto_merge_enabled', 'enqueued', 'synchronize']) {
     assert.ok(types.includes(type), type);
+  }
+});
+
+test('the resolve job emits API-derived identity and never writes', async (t) => {
+  const os = require('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'resolve-'));
+  t.after(() => fs.rmSync(dir, { force: true, recursive: true }));
+  t.mock.method(console, 'log', () => {});
+  for (const [pulls, expected] of [
+    [
+      [openPull],
+      ['found=true', 'number=42', `head_sha=${head}`, 'author=mallory'],
+    ],
+    [[{ ...openPull, head: { sha: 'b'.repeat(40) } }], ['found=false']],
+  ]) {
+    const output = path.join(dir, 'output');
+    fs.writeFileSync(output, '');
+    relayEnv(t, {
+      GITHUB_OUTPUT: output,
+      SECURITY_REVIEW_RESOLVE_ONLY: 'true',
+    });
+    const requests = mockGitHub(t, { pulls, reviews: [] });
+    await main();
+    assert.deepEqual(
+      fs.readFileSync(output, 'utf8').trim().split('\n'),
+      expected
+    );
+    assert.deepEqual(
+      requests.map(({ method }) => method),
+      ['GET']
+    );
   }
 });
