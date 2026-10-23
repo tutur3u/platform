@@ -168,6 +168,13 @@ concrete next assignment. A queued validation is not a pass; never duplicate it
 or edit its frozen source. One bounded remote snapshot per wake replaces polling.
 Native PR watches and the authorized schedule provide the next wake.
 
+Send scope, priority, collision and safety corrections to an active child with
+`t3_thread_send(mode="steer")`, and confirm `delivery: "steered"`; `auto` can queue
+behind the running turn. On each wake, list child queues: keep queued text in the
+ledger, cancel only proven-redundant items, and steer still-relevant corrections
+once. Hold one coalesced correction for a child that is not yet steerable. Follow
+the [steering contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#steering-active-children).
+
 ## Autonomy and asynchronous waits
 
 Use [the shared T3 autonomy contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
