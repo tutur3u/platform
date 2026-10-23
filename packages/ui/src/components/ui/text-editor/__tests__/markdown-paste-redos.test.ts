@@ -20,6 +20,15 @@ describe('markdown paste parsing stays linear on adversarial lines', () => {
   });
 });
 
+describe('markdown paste parsing always makes progress', () => {
+  it('renders a list-like line the item parser rejects as a paragraph', () => {
+    const { elapsed, html } = timed('- first\u2028second');
+    expect(elapsed).toBeLessThan(1000);
+    expect(html).toContain('first');
+    expect(html).toContain('second');
+  });
+});
+
 describe('markdown paste parsing keeps legitimate output', () => {
   it('parses headings, ignoring extra spaces after the marker', () => {
     expect(markdownToHtml('##   Title')).toBe('<h2>Title</h2>');

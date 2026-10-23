@@ -496,10 +496,14 @@ export function markdownToHtml(markdown: string): string {
     if (listMatch) {
       const indent = listMatch[1] ? listMatch[1].length : 0;
       const { nodes, endIndex } = parseListTree(lines, i, indent);
-      const ordered = /^\d+\.$/.test(nodes[0]?.marker || '');
-      result.push(renderListTree(nodes, ordered));
-      i = endIndex;
-      continue;
+      // The item parser is stricter than this detector (e.g. a line separator
+      // in the content); fall through to a paragraph instead of stalling.
+      if (endIndex > i) {
+        const ordered = /^\d+\.$/.test(nodes[0]?.marker || '');
+        result.push(renderListTree(nodes, ordered));
+        i = endIndex;
+        continue;
+      }
     }
 
     // Table
