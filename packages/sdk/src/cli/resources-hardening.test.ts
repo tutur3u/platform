@@ -1,4 +1,5 @@
-import { mkdtemp, realpath, rm } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { mkdtemp, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -24,6 +25,7 @@ vi.mock('node:os', async (original) => ({
   availableParallelism: () => 4,
 }));
 
+import { isTrivialCommand } from './resources-command';
 import { atomicJson } from './resources-config';
 import { nestedOwner, newOwner } from './resources-slots';
 
@@ -80,5 +82,90 @@ describe('nested markers need process-tree evidence (REV-6431-1)', () => {
     } finally {
       stderr.mockRestore();
     }
+  });
+});
+
+describe('trivial command exemptions (REV-6431-2)', () => {
+  it.each([
+    ['node', ['--version']],
+    ['git', ['--version']],
+    ['cargo', ['-V']],
+    ['git', ['status']],
+    ['git', ['rev-parse', 'HEAD']],
+    ['git', ['remote', '-v']],
+    ['git', ['remote', 'get-url', 'origin']],
+    ['git', ['branch', '--show-current']],
+    ['ls', ['-la']],
+  ] as const)('%s %j stays trivial', (name, args) => {
+    expect(isTrivialCommand(name, [...args])).toBe(true);
+  });
+
+  it.each([
+    // Single informational-looking words are project-defined elsewhere.
+    ['make', ['help']],
+    ['make', ['--version']],
+    ['./scripts/ci.sh', ['--help']],
+    ['just', ['-v']],
+    // Global git options that redirect config or the repository.
+    ['git', ['-c', 'core.fsmonitor=./x', 'status']],
+    ['git', ['-c', 'core.pager=sh -c "touch pwned"', '-p', 'status']],
+    ['git', ['-ccore.pager=less', 'status']],
+    ['git', ['--config-env=core.pager=PAGER', 'status']],
+    ['git', ['--config-env', 'core.pager=PAGER', 'status']],
+    ['git', ['-p', 'branch']],
+    ['git', ['--paginate', 'status']],
+    ['git', ['--exec-path=/tmp', 'status']],
+    ['git', ['status', '-c', 'core.fsmonitor=./x']],
+    ['git', ['branch', '--edit-description']],
+    ['git', ['remote', 'update']],
+    ['git', ['remote', '-v', 'update']],
+    ['git', ['remote', 'prune', 'origin']],
+    ['git', ['--git-dir=/elsewhere/.git', 'status']],
+    ['git', ['--git-dir', '/elsewhere/.git', 'status']],
+    ['git', ['--work-tree', '/elsewhere', 'status']],
+    ['git', ['-C', '/elsewhere', 'status']],
+    // textconv / external diff drivers can run programs.
+    ['git', ['diff']],
+    ['git', ['log', '-p']],
+    ['git', ['show', 'HEAD']],
+    ['git', ['diff', '--no-ext-diff', '--no-textconv']],
+    // A version flag followed by more arguments is no longer a probe.
+    ['node', ['--version', '--', 'script.js']],
+    ['node', ['--help', 'script.js']],
+    // Recursive listings can be arbitrarily large.
+    ['ls', ['-R']],
+    ['ls', ['-laR', '/']],
+    ['ls', ['--recursive']],
+  ] as const)('%s %j queues', (name, args) => {
+    expect(isTrivialCommand(name, [...args])).toBe(false);
+  });
+});
+
+describe('git code-execution vectors stay queued (REV-6431-2)', () => {
+  it('git diff runs a repository textconv program, so it queues', async () => {
+    const repo = await realpath(
+      await mkdtemp(join(tmpdir(), 'ttr-resources-textconv-'))
+    );
+    dirs.push(repo);
+    const sentinel = join(repo, 'textconv-ran');
+    const git = (...args: string[]) =>
+      execFileSync('git', args, {
+        cwd: repo,
+        encoding: 'utf8',
+        env: { ...process.env, GIT_CONFIG_NOSYSTEM: '1' },
+      });
+    git('init', '-q');
+    git('config', 'user.email', 'test@example.com');
+    git('config', 'user.name', 'Test');
+    git('config', 'diff.probe.textconv', `touch '${sentinel}'; cat`);
+    await writeFile(join(repo, '.gitattributes'), '*.probe diff=probe\n');
+    await writeFile(join(repo, 'a.probe'), 'one\n');
+    git('add', '.');
+    git('commit', '-qm', 'init');
+    await writeFile(join(repo, 'a.probe'), 'two\n');
+    git('diff');
+    await expect(stat(sentinel)).resolves.toBeTruthy();
+    expect(isTrivialCommand('git', ['diff'])).toBe(false);
+    expect(isTrivialCommand('/usr/bin/git', ['log', '-p'])).toBe(false);
   });
 });

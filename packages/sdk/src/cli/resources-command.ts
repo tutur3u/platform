@@ -108,15 +108,37 @@ export function isHeavyCommand(name: string, args: string[]) {
   return false;
 }
 
-const informational = new Set([
-  '--version',
-  '-v',
-  '-V',
-  'version',
-  '--help',
-  '-h',
-  'help',
-]);
+// Version/help probes skip the queue only for tools whose single flag is known
+// to be informational; for anything else (a Makefile target, a project script)
+// `help` or `--version` may run arbitrary work.
+const versionHelp = ['--version', '-v', '--help', '-h'];
+const informational: Record<string, readonly string[]> = {
+  node: versionHelp,
+  bun: versionHelp,
+  bunx: versionHelp,
+  deno: [...versionHelp, '-V'],
+  npm: versionHelp,
+  npx: versionHelp,
+  pnpm: versionHelp,
+  yarn: versionHelp,
+  tsc: versionHelp,
+  vitest: versionHelp,
+  biome: ['--version', '--help', '-h'],
+  turbo: ['--version', '--help', '-h'],
+  git: ['--version', '--help', '-h', 'version'],
+  gh: ['--version', '--help', '-h', 'version'],
+  ttr: ['--version', '--help', '-h', 'version'],
+  cargo: ['--version', '-V', '--help', '-h'],
+  rustc: ['--version', '-V', '--help', '-h'],
+  rustup: ['--version', '-V', '--help', '-h'],
+  python: ['--version', '-V', '--help', '-h'],
+  python3: ['--version', '-V', '--help', '-h'],
+  go: ['version', 'help'],
+  docker: ['--version', '-v', '--help', 'version'],
+  flutter: ['--version', '--help', '-h'],
+  dart: ['--version', '--help', '-h'],
+  supabase: ['--version', '--help', '-h'],
+};
 const readOnly = new Set([
   'echo',
   'pwd',
@@ -133,29 +155,44 @@ const readOnly = new Set([
   'tail',
   'wc',
 ]);
+// diff/log/show are excluded: textconv and external diff drivers configured by
+// the repository can run arbitrary programs.
 const readOnlyGit = new Set([
   'status',
   'rev-parse',
-  'log',
-  'diff',
-  'show',
   'branch',
   'remote',
   'ls-files',
 ]);
+// Options that redirect git's configuration, repository or helpers, letting a
+// "read-only" subcommand run hooks, pagers or drivers from elsewhere.
+const unsafeGitOption = (arg: string) =>
+  /^-[Cc]/u.test(arg) ||
+  /^--(exec|config-env|git-dir|work-tree|paginate|namespace)/u.test(arg) ||
+  arg === '-p' ||
+  arg === '--edit-description';
+// `git remote` subcommands other than listing/get-url contact or edit remotes.
+const readOnlyRemote = (rest: string[]) =>
+  rest[0] === 'get-url' ||
+  rest.every((arg) => arg === '-v' || arg === '--verbose');
+const recursiveLs = (arg: string) =>
+  arg === '--recursive' || /^-[A-Za-z]*R/u.test(arg);
 // Explicit `ttr resources run` queues by default because arbitrary scripts can
-// be heavy. Version/help probes and a small read-only allowlist skip the queue.
+// be heavy. Per-tool version/help probes and a small read-only allowlist skip
+// the queue. Anything unrecognised queues (fail closed).
 export function isTrivialCommand(name: string, args: string[]) {
   const tool = basename(name);
-  const flags = args.includes('--') ? args.slice(0, args.indexOf('--')) : args;
-  if (flags.length === 1 && informational.has(flags[0]!)) return true;
+  if (args.length === 1 && informational[tool]?.includes(args[0]!)) return true;
+  if (tool === 'ls') return !args.some(recursiveLs);
   if (readOnly.has(tool)) return true;
   if (tool === 'git') {
-    const subcommand = args.find((arg) => !arg.startsWith('-'));
+    // The subcommand must come first: no global options may precede it.
+    const [subcommand, ...rest] = args;
     return (
       subcommand !== undefined &&
       readOnlyGit.has(subcommand) &&
-      !args.some((arg) => arg === '-C' || arg.startsWith('--exec'))
+      !rest.some(unsafeGitOption) &&
+      (subcommand !== 'remote' || readOnlyRemote(rest))
     );
   }
   return false;
