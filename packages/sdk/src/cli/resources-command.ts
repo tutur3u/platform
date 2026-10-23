@@ -58,9 +58,7 @@ const valueFlags: Record<string, readonly string[]> = {
     '--disable-warning',
     '--dns-result-order',
     '--env-file-if-exists',
-    '--experimental-config-file',
     '--experimental-default-type',
-    '--experimental-specifier-resolution',
     '--experimental-package-map',
     '--experimental-sea-config',
     '--experimental-test-tag-filter',
@@ -134,6 +132,11 @@ const valueFlags: Record<string, readonly string[]> = {
   bunx: ['-p', '--package'],
   npx: ['-p', '--package', '-c', '--call'],
 };
+// Bare forms do not consume the following argv in Node 26.4.
+const nodeEqualsOnlyFlags = new Set([
+  '--experimental-config-file',
+  '--experimental-specifier-resolution',
+]);
 // Only known switches can be skipped without risking a value becoming the program.
 const nodeSwitches = new Set([
   '--help',
@@ -185,9 +188,20 @@ export function commandTool(name: string, args: string[]) {
         const flag = arg.split('=')[0]!;
         if (name === 'node' && flag === '--run')
           return { tool: 'ambiguous', tail: args, offset: 0 };
+        if (name === 'node' && nodeEqualsOnlyFlags.has(flag)) {
+          if (!arg.includes('='))
+            return { tool: 'ambiguous', tail: args, offset: 0 };
+          continue;
+        }
         if (valueFlags[name]?.includes(flag)) {
           if (!arg.includes('=')) {
-            if (!args[i + 1] || args[i + 1]!.startsWith('-'))
+            const value = args[i + 1];
+            if (
+              !value ||
+              value.startsWith('-') ||
+              commandTool(name, [value]).tool !== name ||
+              isHeavyCommand(name, [value])
+            )
               return { tool: 'ambiguous', tail: args, offset: 0 };
             i++;
           }
