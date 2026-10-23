@@ -60,19 +60,60 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
+      # Scope scripts come from the base commit (main for scheduled runs),
+      # never the checkout, so a pull request cannot switch its own gates off.
+      # Without them (bootstrap) every scan runs.
+      - name: Load trusted scope scripts
+        id: trusted_scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          trusted="$GITHUB_SHA"
+          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ]; then
+            trusted=""
+            if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+              trusted="$BASE_SHA"
+            fi
+          fi
+          dir="$RUNNER_TEMP/trusted-scope"
+          for file in scripts/ci/github-deployment-markers.ts scripts/ci/resolve-changed-files-core.ts \
+            scripts/ci/resolve-changed-files.ts scripts/ci/security-paths.js; do
+            if [ -z "$trusted" ] || ! git cat-file -e "$trusted:$file" 2>/dev/null; then
+              echo "::warning::Trusted scope scripts are unavailable; running every scan."
+              echo "available=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            mkdir -p "$dir/$(dirname "$file")"
+            git show "$trusted:$file" > "$dir/$file"
+          done
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
       - name: Compute changed files
         id: changed_files
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push')
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
           WORKFLOW_NAME: codeql.yml
-        run: node --experimental-strip-types scripts/ci/resolve-changed-files.ts
+        run: node --experimental-strip-types "$TRUSTED_SCOPE/scripts/ci/resolve-changed-files.ts"
 
       - name: Select CodeQL languages
         id: scope
         env:
+          AVAILABLE: ${{ steps.trusted_scope.outputs.available }}
           CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
-        run: node scripts/ci/security-paths.js scope
+          TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
+        run: |
+          set -euo pipefail
+          if [ "$AVAILABLE" = true ]; then
+            node "$TRUSTED_SCOPE/scripts/ci/security-paths.js" scope
+          else
+            printf '%s\n' 'codeql_languages=["actions","javascript-typescript","python"]' \
+              codeql=true dependencies=true workflows=true | tee -a "$GITHUB_OUTPUT"
+          fi
 
   analyze:
     name: Analyze (${{ matrix.language }})
@@ -123,10 +164,24 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gate="$RUNNER_TEMP/codeql-new-alerts.js"
+          # Never the checkout's copy: without the trusted gate (bootstrap)
+          # every high/critical result fails, and a result whose rule severity
+          # cannot be resolved counts as high.
           if git cat-file -e "HEAD^1:scripts/ci/codeql-new-alerts.js" 2>/dev/null; then
+            gate="$RUNNER_TEMP/codeql-new-alerts.js"
             git show "HEAD^1:scripts/ci/codeql-new-alerts.js" > "$gate"
+            node "$gate" "$RUNNER_TEMP/codeql-sarif" "$CATEGORY"
           else
-            cp scripts/ci/codeql-new-alerts.js "$gate"
+            shopt -s nullglob
+            sarif=("$RUNNER_TEMP"/codeql-sarif/*.sarif)
+            [ "${#sarif[@]}" -gt 0 ] || { echo "::error::No SARIF output to gate."; exit 1; }
+            count="$(jq -s '[.[] | .runs[]? as $run
+              | ([$run.tool.driver.rules[]?, ($run.tool.extensions[]?.rules[]?)]
+                 | map({key: .id, value: ((.properties["security-severity"] // "0") | tonumber? // 0)})
+                 | from_entries) as $severity
+              | $run.results[]?
+              | ($severity[(.ruleId // .rule.id // "")] // 10)
+              | select(. >= 7)] | length' "${sarif[@]}")"
+            echo "$count high/critical CodeQL result(s); the trusted gate is unavailable, so every one fails."
+            [ "$count" -eq 0 ]
           fi
-          node "$gate" "$RUNNER_TEMP/codeql-sarif" "$CATEGORY"

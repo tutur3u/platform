@@ -67,7 +67,8 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
     'workflow_dispatch',
   ]);
   assert.deepEqual(on.push.branches, ['main']);
-  // The only security timer lives in security-checks.yaml.
+  // The only scan timer lives in security-checks.yaml (the review sweep is
+  // a separate API-only backstop).
   assert.equal(on.schedule, undefined);
   assert.match(codeql.concurrency.group, /^codeql-/u);
   const analyze = codeql.jobs.analyze;
@@ -136,10 +137,32 @@ test('scanner tooling is verified and configured from the trusted base', () => {
     (step) => step.name === 'Prove pull requests cannot suppress findings'
   );
   assert.equal(prove, steps.length - 1, 'suppression regression runs last');
-  const audit = checks.jobs['dependency-audit'].steps.find(
+  const auditSteps = checks.jobs['dependency-audit'].steps;
+  const audit = auditSteps.find(
     (step) => step.name === 'Audit locked dependencies'
   );
-  assert.match(audit.run, /bun audit --json/u);
+  // The verified bun runs by absolute path; nothing from the checkout (local
+  // action, setup script or GITHUB_PATH change) runs before the audit.
+  assert.match(checks.env.BUN_SHA256, /^[0-9a-f]{64}$/u);
+  assert.match(audit.run, /"\$BUN_BIN" audit --json/u);
+  assert.doesNotMatch(audit.run, /(?:^|[\s(])bun audit/mu);
+  assert.equal(audit.env.BUN_BIN, expression('runner.temp') + '/bun-bin/bun');
+  for (const step of auditSteps.slice(0, auditSteps.indexOf(audit))) {
+    assert.ok(!step.uses?.startsWith('./'), `${step.name} runs a local action`);
+    assert.doesNotMatch(
+      String(step.run ?? ''),
+      /scripts\/|GITHUB_PATH|\.github\//u,
+      `${step.name} runs checkout code before the audit`
+    );
+  }
+  const bunInstall = auditSteps.find((step) =>
+    /checksum-verified bun/u.test(step.name ?? '')
+  );
+  assert.match(bunInstall.run, /sha256sum --check --strict/u);
+  // No gate ever falls back to the checkout's copy of a trusted helper.
+  for (const file of ['security-checks.yaml', 'codeql.yml']) {
+    assert.doesNotMatch(source(file), /\bcp\s+scripts\//u, file);
+  }
   assert.match(
     audit.run,
     /git show "\$BASE_SHA:scripts\/ci\/security-scan-diff\.js"/u
