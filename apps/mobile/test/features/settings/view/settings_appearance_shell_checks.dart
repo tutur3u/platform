@@ -313,4 +313,51 @@ void registerSettingsAppearanceShellChecks() {
     expect(line, lessThan(tester.getSize(find.text('1')).height));
     expect(tester.takeException(), isNull);
   });
+
+  for (final sample in [('en', 1.0), ('en', 1.6), ('vi', 1.6)]) {
+    testWidgets('Appearance row never breaks mid-word '
+        '(${sample.$1} ${sample.$2}x)', (tester) async {
+      await _pumpAppearance(
+        tester,
+        const AppearanceSettings(
+          theme: AppearanceThemeId.aurora,
+          backgroundStyle: AppearanceBackgroundStyle.blobs,
+        ),
+        mode: shad.ThemeMode.dark,
+        scale: sample.$2,
+        locale: sample.$1,
+      );
+      final row = find.byKey(const ValueKey('settings-appearance-row'));
+      final tile = tester.widget<SettingsTile>(row);
+      final title = find.descendant(of: row, matching: find.text(tile.title));
+      final value = find.descendant(
+        of: row,
+        matching: find.text(tile.trailingValue!),
+      );
+      final badge = find.descendant(of: row, matching: find.text(tile.badge!));
+      // One title line: its height is a single line of the scaled font.
+      final line = tester.getSize(title).height;
+      expect(line, lessThan(16 * sample.$2 * 1.9));
+      if (sample.$2 == 1.0) {
+        // Value and New chip share the title's line at default size.
+        expect(
+          tester.getCenter(badge).dy,
+          closeTo(tester.getCenter(title).dy, 4),
+        );
+        expect(
+          tester.getRect(value).left,
+          greaterThan(tester.getRect(badge).right),
+        );
+      } else {
+        expect(
+          tester.getRect(value).top,
+          greaterThan(tester.getRect(title).top),
+        );
+      }
+      await _capture(tester, 'settings-aurora-${sample.$1}-${sample.$2}x');
+      await _tapRow(tester, const ValueKey('settings-appearance-row'));
+      await _capture(tester, 'appearance-aurora-${sample.$1}-${sample.$2}x');
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

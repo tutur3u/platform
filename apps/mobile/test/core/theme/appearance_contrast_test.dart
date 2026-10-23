@@ -56,6 +56,16 @@ void _expectRoles(AppearanceSettings settings, Brightness b) {
   check('on primary', scheme.primaryForeground, scheme.primary, aa);
   final material = AppearanceTheme.materialTheme(settings, b).colorScheme;
   check('on error', material.onError, material.error, aa);
+  // The app-wide destructive button: solid fill and label, plus the
+  // hover/press fill (see accessible_destructive_button.dart).
+  final destructiveLabel = AppearanceTheme.labelOn(scheme.destructive);
+  check('destructive button', destructiveLabel, scheme.destructive, aa);
+  check(
+    'destructive button pressed',
+    destructiveLabel,
+    Color.lerp(scheme.destructive, destructiveLabel, 0.08)!,
+    aa,
+  );
   check('on primary (Material)', material.onPrimary, material.primary, aa);
   check('on secondary', scheme.secondaryForeground, scheme.secondary, aa);
   check('on accent', scheme.accentForeground, scheme.accent, aa);

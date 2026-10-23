@@ -6868,10 +6868,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceBackgroundBlobs => 'Đốm màu';
 
   @override
-  String get appearanceBackgroundGradient => 'Chuyển sắc';
+  String get appearanceBackgroundGradient => 'Dải màu';
 
   @override
-  String get appearanceBackgroundSolid => 'Màu trơn';
+  String get appearanceBackgroundSolid => 'Trơn';
 
   @override
   String get appearanceBackgroundTitle => 'Nền';

@@ -33,14 +33,18 @@ class SettingsPillButton extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 48),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            // One line; enlarged text scales down rather than breaking
+            // mid-word.
             child: Center(
-              child: Text(
-                label,
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.base.copyWith(
-                  fontWeight: FontWeight.w600,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: theme.typography.base.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -119,22 +123,15 @@ class SettingsWorkspaceStat extends StatelessWidget {
   /// Width of the stacked stat at the current text scale.
   static double naturalWidth(BuildContext context, int count) {
     final theme = shad.Theme.of(context);
-    final scaler = MediaQuery.textScalerOf(context);
-    double measure(String text, TextStyle style) {
-      final painter = TextPainter(
-        text: TextSpan(text: text, style: style),
-        textDirection: Directionality.of(context),
-        textScaler: scaler,
-        maxLines: 1,
-      )..layout();
-      final width = painter.width;
-      painter.dispose();
-      return width;
-    }
+    double measure(String text, TextStyle style) =>
+        SettingsRowLayout.textWidth(context, text, style);
 
     return _padding +
         [
-          measure('$count', theme.typography.large),
+          measure(
+            '$count',
+            theme.typography.large.copyWith(fontWeight: FontWeight.w700),
+          ),
           measure(
             context.l10n.settingsProfileWorkspaceCount(count),
             theme.typography.small,

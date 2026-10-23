@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mobile/core/theme/appearance/accessible_destructive_button.dart';
 import 'package:mobile/core/theme/appearance/ambient_background.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -124,7 +125,10 @@ class _AppearanceBackdropState extends State<AppearanceBackdrop>
             data: ambient
                 ? const shad.ScaffoldTheme(backgroundColor: Color(0x00000000))
                 : const shad.ScaffoldTheme(),
-            child: widget.child,
+            child: shad.ComponentTheme<shad.DestructiveButtonTheme>(
+              data: accessibleDestructiveButtonTheme,
+              child: widget.child,
+            ),
           ),
         ],
       ),

@@ -111,40 +111,11 @@ class _PreviewPane extends StatelessWidget {
                           horizontal: 14,
                           vertical: 12,
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              shad.LucideIcons.palette,
-                              size: 20,
-                              color: scheme.foreground,
-                            ),
-                            const shad.Gap(12),
-                            Expanded(
-                              child: Text(
-                                l10n.settingsAppearance,
-                                style: typography.base.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color: scheme.foreground,
-                                ),
-                              ),
-                            ),
-                            const shad.Gap(8),
-                            Flexible(
-                              child: Text(
-                                theme,
-                                textAlign: TextAlign.end,
-                                style: typography.base.copyWith(
-                                  color: scheme.mutedForeground,
-                                ),
-                              ),
-                            ),
-                            const shad.Gap(4),
-                            Icon(
-                              shad.LucideIcons.chevronRight,
-                              size: 17,
-                              color: scheme.mutedForeground,
-                            ),
-                          ],
+                        child: _PreviewRow(
+                          title: l10n.settingsAppearance,
+                          value: theme,
+                          foreground: scheme.foreground,
+                          muted: scheme.mutedForeground,
                         ),
                       ),
                     ),
@@ -155,6 +126,75 @@ class _PreviewPane extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The real Appearance row: the value sits flush right at its natural width
+/// while the title fits on one line, and moves under the title otherwise.
+class _PreviewRow extends StatelessWidget {
+  const _PreviewRow({
+    required this.title,
+    required this.value,
+    required this.foreground,
+    required this.muted,
+  });
+
+  final String title;
+  final String value;
+  final Color foreground;
+  final Color muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final typography = shad.Theme.of(context).typography;
+    final titleStyle = typography.base.copyWith(
+      fontWeight: FontWeight.w500,
+      color: foreground,
+    );
+    final valueStyle = typography.base.copyWith(color: muted);
+    final icon = Icon(shad.LucideIcons.palette, size: 20, color: foreground);
+    final chevron = Icon(shad.LucideIcons.chevronRight, size: 17, color: muted);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double width(String text, TextStyle style) =>
+            SettingsRowLayout.textWidth(context, text, style);
+        final inline =
+            constraints.maxWidth -
+                20 -
+                12 -
+                8 -
+                4 -
+                17 -
+                width(value, valueStyle) >=
+            width(title, titleStyle);
+        return Row(
+          children: [
+            icon,
+            const shad.Gap(12),
+            Expanded(
+              child: inline
+                  ? Text(title, style: titleStyle)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: titleStyle),
+                        Text(
+                          value,
+                          style: typography.small.copyWith(color: muted),
+                        ),
+                      ],
+                    ),
+            ),
+            if (inline) ...[
+              const shad.Gap(8),
+              Text(value, maxLines: 1, style: valueStyle),
+            ],
+            const shad.Gap(4),
+            chevron,
+          ],
+        );
+      },
     );
   }
 }

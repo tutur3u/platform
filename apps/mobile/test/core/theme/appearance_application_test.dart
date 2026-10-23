@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/theme/appearance/ambient_background.dart';
+import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
@@ -297,4 +298,48 @@ void main() {
     expect(clock.value, greaterThan(drifted));
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  for (final b in Brightness.values) {
+    testWidgets('destructive buttons use a solid AA fill (${b.name})', (
+      tester,
+    ) async {
+      const settings = AppearanceSettings(theme: AppearanceThemeId.sunset);
+      final theme = AppearanceTheme.shadTheme(settings, b);
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: shad.Theme(
+            data: theme,
+            child: AppearanceBackdrop(
+              settings: settings,
+              child: Center(
+                child: shad.DestructiveButton(
+                  onPressed: () {},
+                  child: const Text('Delete'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final destructive = theme.colorScheme.destructive;
+      final label = tester
+          .widget<RichText>(
+            find.descendant(
+              of: find.byType(shad.DestructiveButton),
+              matching: find.byType(RichText),
+            ),
+          )
+          .text
+          .style!
+          .color!;
+      expect(label, AppearanceTheme.labelOn(destructive));
+      expect(
+        AppearanceContrast.ratio(label, destructive),
+        greaterThanOrEqualTo(AppearanceContrast.aaText),
+      );
+      // The solid fill colour is covered by appearance_contrast_test.dart;
+      // shad paints it outside a probe-able RenderDecoratedBox.
+    });
+  }
 }

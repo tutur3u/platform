@@ -66,16 +66,20 @@ class AppearanceSegmented<T> extends StatelessWidget {
                               : scheme.foreground,
                         ),
                         const shad.Gap(6),
+                        // Long labels and enlarged text scale to fit.
                         Flexible(
-                          child: Text(
-                            label(value),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: typography.small.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: value == selected
-                                  ? scheme.primaryForeground
-                                  : scheme.foreground,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              label(value),
+                              maxLines: 1,
+                              softWrap: false,
+                              style: typography.small.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: value == selected
+                                    ? scheme.primaryForeground
+                                    : scheme.foreground,
+                              ),
                             ),
                           ),
                         ),

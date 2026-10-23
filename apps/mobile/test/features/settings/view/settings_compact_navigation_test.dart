@@ -102,13 +102,15 @@ void main() {
       url: 'https://example.supabase.co',
       publishableKey: 'test-anon-key',
     );
+    // Real proportional glyphs for the Material default family, so text
+    // geometry (wrapping, trailing values) matches devices instead of Ahem.
     final materialFont = Platform.environment['SETTINGS_MATERIAL_FONT'];
-    if (materialFont != null) {
-      await (FontLoader('Roboto')..addFont(
-            File(materialFont).readAsBytes().then(ByteData.sublistView),
-          ))
-          .load();
-    }
+    await (FontLoader('Roboto')..addFont(
+          materialFont == null
+              ? rootBundle.load('assets/fonts/NotoSans.ttf')
+              : File(materialFont).readAsBytes().then(ByteData.sublistView),
+        ))
+        .load();
     for (final font in {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',

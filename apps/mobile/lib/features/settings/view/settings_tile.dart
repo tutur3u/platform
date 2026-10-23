@@ -55,6 +55,18 @@ class SettingsTile extends StatelessWidget {
         (value?.trim().isNotEmpty ?? false) ||
         (subtitle?.trim().isNotEmpty ?? false);
     final end = trailingValue?.trim() ?? '';
+    final titleStyle = theme.typography.base.copyWith(
+      fontWeight: FontWeight.w500,
+      color: textColor,
+    );
+    final badgeStyle = theme.typography.xSmall.copyWith(
+      fontWeight: FontWeight.w600,
+      color: theme.colorScheme.primaryForeground,
+    );
+    final endStyle = theme.typography.base.copyWith(
+      color: muted,
+      fontWeight: FontWeight.w400,
+    );
 
     return Material(
       color: Colors.transparent,
@@ -72,141 +84,150 @@ class SettingsTile extends StatelessWidget {
               SettingsRowLayout.inset - 8,
               8,
             ),
-            child: Row(
-              crossAxisAlignment: hasSupportingLine && trailingWidth == null
-                  ? CrossAxisAlignment.start
-                  : CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: SettingsRowLayout.iconWidth,
-                  height: SettingsRowLayout.actionWidth,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Icon(icon, size: 21, color: iconColor),
-                  ),
-                ),
-                const shad.Gap(SettingsRowLayout.textGap),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: hasSupportingLine ? 2 : 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              title,
-                              style: theme.typography.base.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: textColor,
-                              ),
-                            ),
-                            if (badge case final label?)
-                              DecoratedBox(
-                                decoration: ShapeDecoration(
-                                  color: theme.colorScheme.primary,
-                                  shape: const StadiumBorder(),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  child: Text(
-                                    label,
-                                    style: theme.typography.xSmall.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color:
-                                          theme.colorScheme.primaryForeground,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        if (value?.trim().isNotEmpty ?? false) ...[
-                          const shad.Gap(2),
-                          Text(
-                            value!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.small.copyWith(
-                              color: textColor ?? muted,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                        if (subtitle?.trim().isNotEmpty ?? false) ...[
-                          const shad.Gap(2),
-                          Text(
-                            subtitle!,
-                            maxLines: onTap != null && !wrapSupportingText
-                                ? 1
-                                : null,
-                            overflow: onTap != null && !wrapSupportingText
-                                ? TextOverflow.ellipsis
-                                : null,
-                            style: theme.typography.small.copyWith(
-                              color: muted,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                if (end.isNotEmpty)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 132),
-                    child: SizedBox(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // The trailing value keeps its natural width while the title
+                // (and badge) still fit on one line; otherwise it moves under
+                // the title instead of squeezing it mid-word.
+                double width(String text, TextStyle style) =>
+                    SettingsRowLayout.textWidth(context, text, style);
+                final titleWidth =
+                    width(title, titleStyle) +
+                    (badge == null ? 0 : 24 + width(badge!, badgeStyle));
+                final endInline =
+                    end.isNotEmpty &&
+                    constraints.maxWidth -
+                            SettingsRowLayout.iconWidth -
+                            SettingsRowLayout.textGap -
+                            (trailingWidth ?? SettingsRowLayout.actionWidth) -
+                            8 -
+                            width(end, endStyle) >=
+                        titleWidth;
+                final endBelow = end.isNotEmpty && !endInline;
+                final supporting = hasSupportingLine || endBelow;
+                return Row(
+                  crossAxisAlignment: supporting && trailingWidth == null
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: SettingsRowLayout.iconWidth,
                       height: SettingsRowLayout.actionWidth,
                       child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: Text(
-                            end,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.base.copyWith(
-                              color: muted,
-                              fontWeight: FontWeight.w400,
+                        alignment: Alignment.centerLeft,
+                        child: Icon(icon, size: 21, color: iconColor),
+                      ),
+                    ),
+                    const shad.Gap(SettingsRowLayout.textGap),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: supporting ? 2 : 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              spacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(title, style: titleStyle),
+                                if (badge case final label?)
+                                  DecoratedBox(
+                                    decoration: ShapeDecoration(
+                                      color: theme.colorScheme.primary,
+                                      shape: const StadiumBorder(),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      child: Text(label, style: badgeStyle),
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ),
+                            if (endBelow) ...[
+                              const shad.Gap(2),
+                              Text(
+                                end,
+                                style: theme.typography.small.copyWith(
+                                  color: muted,
+                                ),
+                              ),
+                            ],
+                            if (value?.trim().isNotEmpty ?? false) ...[
+                              const shad.Gap(2),
+                              Text(
+                                value!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.small.copyWith(
+                                  color: textColor ?? muted,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                            if (subtitle?.trim().isNotEmpty ?? false) ...[
+                              const shad.Gap(2),
+                              Text(
+                                subtitle!,
+                                maxLines: onTap != null && !wrapSupportingText
+                                    ? 1
+                                    : null,
+                                overflow: onTap != null && !wrapSupportingText
+                                    ? TextOverflow.ellipsis
+                                    : null,
+                                style: theme.typography.small.copyWith(
+                                  color: muted,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),
-                  )
-                else
-                  const shad.Gap(8),
-                SizedBox(
-                  width: trailingWidth ?? SettingsRowLayout.actionWidth,
-                  child: IconButtonTheme(
-                    data: IconButtonThemeData(
-                      style: IconButton.styleFrom(
-                        minimumSize: const Size(44, 44),
-                        tapTargetSize: MaterialTapTargetSize.padded,
-                        padding: EdgeInsets.zero,
+                    if (endInline)
+                      SizedBox(
+                        height: SettingsRowLayout.actionWidth,
+                        child: Align(
+                          widthFactor: 1,
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(end, maxLines: 1, style: endStyle),
+                          ),
+                        ),
+                      )
+                    else
+                      const shad.Gap(8),
+                    SizedBox(
+                      width: trailingWidth ?? SettingsRowLayout.actionWidth,
+                      child: IconButtonTheme(
+                        data: IconButtonThemeData(
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(44, 44),
+                            tapTargetSize: MaterialTapTargetSize.padded,
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                        child: trailingWidth != null && trailing != null
+                            ? Center(heightFactor: 1, child: trailing)
+                            : trailing ??
+                                  (showChevron
+                                      ? SizedBox(
+                                          height: 44,
+                                          child: Icon(
+                                            shad.LucideIcons.chevronRight,
+                                            size: 17,
+                                            color: muted,
+                                          ),
+                                        )
+                                      : const SizedBox.shrink()),
                       ),
                     ),
-                    child: trailingWidth != null && trailing != null
-                        ? Center(heightFactor: 1, child: trailing)
-                        : trailing ??
-                              (showChevron
-                                  ? SizedBox(
-                                      height: 44,
-                                      child: Icon(
-                                        shad.LucideIcons.chevronRight,
-                                        size: 17,
-                                        color: muted,
-                                      ),
-                                    )
-                                  : const SizedBox.shrink()),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
         ),

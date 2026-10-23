@@ -63,8 +63,9 @@ class _AppearancePageState extends State<AppearancePage> {
         Row(
           children: [
             Expanded(child: SettingsCaption(caption)),
+            // Tight fit so the value sits flush right, not after the caption.
             if (trailing != null)
-              Flexible(
+              Expanded(
                 child: SettingsCaption(trailing, textAlign: TextAlign.end),
               ),
           ],

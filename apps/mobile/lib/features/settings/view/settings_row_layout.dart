@@ -26,6 +26,23 @@ abstract final class SettingsRowLayout {
         32 + MediaQuery.paddingOf(context).bottom,
       );
 
+  /// Single-line width of [text] as rendered here: the inherited text style
+  /// (font family) merged with [style], at the current text scale.
+  static double textWidth(BuildContext context, String text, TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: DefaultTextStyle.of(context).style.merge(style),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
+  }
+
   /// Fill for grouped settings cards. Solid pages use the theme card (white
   /// over the grouped page in light themes); ambient pages get the
   /// translucent appearance card.
