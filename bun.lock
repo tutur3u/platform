@@ -1992,6 +1992,9 @@
     "packages/agent-quota": {
       "name": "@tuturuuu/agent-quota",
       "version": "0.1.0",
+      "devDependencies": {
+        "typescript": "7.0.2",
+      },
     },
     "packages/ai": {
       "name": "@tuturuuu/ai",
