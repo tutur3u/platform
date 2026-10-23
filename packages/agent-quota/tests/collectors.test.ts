@@ -28,6 +28,7 @@ describe("local collectors", () => {
 		const sessions = join(root, "sessions");
 		await mkdir(sessions);
 		const observedAt = new Date().toISOString();
+		const resetsAt = Math.floor(Date.now() / 1000) + 3600;
 		await writeFile(
 			join(sessions, "fixture.jsonl"),
 			`${JSON.stringify({
@@ -40,12 +41,12 @@ describe("local collectors", () => {
 						primary: {
 							used_percent: 28,
 							window_minutes: 300,
-							resets_at: observedAt,
+							resets_at: resetsAt,
 						},
 						secondary: {
 							used_percent: 45,
 							window_minutes: 10080,
-							resets_at: observedAt,
+							resets_at: resetsAt,
 						},
 					},
 				},
@@ -58,6 +59,9 @@ describe("local collectors", () => {
 		expect(
 			result.windows.find((window) => window.kind === "long")?.usedPercent,
 		).toBe(45);
+		expect(
+			result.windows.find((window) => window.kind === "short")?.resetsAt,
+		).toBe(new Date(resetsAt * 1000).toISOString());
 		expect(
 			result.windows.find((window) => window.kind === "session")?.estimated,
 		).toBe(26);

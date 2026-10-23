@@ -11,6 +11,14 @@ interface LimitSample {
 	observedAt: string;
 }
 
+function resetTimestamp(value: unknown): string | undefined {
+	if (typeof value === "string") return value;
+	if (typeof value !== "number" || !Number.isFinite(value)) return;
+	const milliseconds = value > 1_000_000_000_000 ? value : value * 1000;
+	const date = new Date(milliseconds);
+	return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
 function recordObjects(value: unknown): Record<string, unknown>[] {
 	if (!value || typeof value !== "object") return [];
 	const root = value as Record<string, unknown>;
@@ -54,8 +62,7 @@ function parseLimits(line: string): {
 					typeof fields.window_minutes === "number"
 						? fields.window_minutes
 						: undefined,
-				resetsAt:
-					typeof fields.resets_at === "string" ? fields.resets_at : undefined,
+				resetsAt: resetTimestamp(fields.resets_at),
 				observedAt:
 					typeof object.timestamp === "string"
 						? object.timestamp
