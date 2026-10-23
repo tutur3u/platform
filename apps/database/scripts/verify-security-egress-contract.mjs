@@ -36,6 +36,7 @@ const trackedFiles = execFileSync(
   .filter(Boolean);
 const fixtures = [
   'security-egress-budgets.sql',
+  'security-mfa-verification-hook.sql',
   'security-budget-entitlements.sql',
 ];
 const ports = await chooseAvailablePortBlock(identity);
