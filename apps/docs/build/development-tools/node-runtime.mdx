@@ -1,0 +1,103 @@
+---
+title: 'Node.js Runtime Pin'
+description: 'Single-source Node.js version, where it applies, and the platforms that intentionally run a different version.'
+---
+
+The repository pins Node.js **26.12.1** in the root `.node-version` file. It is
+the 2026-10-21 security release of the Node 26 Current line, which is not LTS.
+Treat `.node-version` as the only source of the version: workflows read it with
+`actions/setup-node` `node-version-file`, and local version managers read it
+directly. That includes fnm, mise, asdf with legacy version files, nodenv and
+Volta's file support.
+
+The `engines.node` ranges are support floors, not runtime pins. The root
+`>=22.13.0` floor stays because Vercel maps `>=22` to its newest supported
+major. The `>=18.0.0` ranges in published packages are consumer contracts.
+Raising either range to 26 would break Vercel deployments and package
+consumers without changing the CI runtime.
+
+## Local setup
+
+Install the pinned version side by side with any existing Node, then run
+commands with that binary or with your version manager pointed at the file:
+
+```bash
+fnm install "$(cat .node-version)"   # or: mise install node@"$(cat .node-version)"
+node --version                       # v26.12.1
+```
+
+nvm does not read `.node-version`. Use `nvm install "$(cat .node-version)"` and
+`nvm use "$(cat .node-version)"` only on machines where changing nvm's shared
+install directory and aliases is acceptable. On shared agent hosts, stage the
+official tarball in a project-private directory instead. Verify it against the
+signed `SHASUMS256.txt` from `https://nodejs.org/dist/v26.12.1/`, then put that
+`bin` on `PATH` only for your own commands. Do not change nvm's default alias,
+the `ttr resources` shims, Homebrew or `/usr/local` Node, runner tool caches or
+shell profiles that other sessions share.
+
+`bun doctor` still enforces the Node 22 floor rather than the exact pin.
+
+## Where 26.12.1 applies
+
+| Surface | Version | Source |
+| --- | --- | --- |
+| GitHub Actions `setup-node` steps | 26.12.1 | `node-version-file: .node-version` |
+| Root script tests, SDK and package tests, Turbo tasks in CI | 26.12.1 | inherits the setup step |
+| Desktop beta and store packaging jobs (Flutter desktop plus Node TypeScript scripts) | 26.12.1 | inherits the setup step |
+| Dev container | 26.12.1 | `.devcontainer/devcontainer.json` node feature |
+| Local development | 26.12.1 | `.node-version` |
+
+A job reads `node-version-file` only when its checkout is the workflow's own
+commit (no `ref`, or `${{ github.sha }}`) and is not sparse. The file then comes
+from the same tree as the workflow. Other jobs pin the literal `26.12.1`:
+
+- jobs that set up Node before any checkout, such as package publish and dispatch;
+- sparse duplicate-validation checkouts;
+- jobs that check out a PR head, the `production` branch, a workflow-run head or
+  an input SHA, because that tree may predate `.node-version`.
+
+`scripts/ci/node-version-pin.test.js` requires every literal to equal
+`.node-version` and every exception to be listed. It also requires each
+`test "$(node --version)" = v…` workflow assertion to name the pin.
+
+Each setup step logs the resolved version. Two receipts bind `node --version` to
+the exact source SHA:
+
+- the SDK qualification receipt (`runtimeVersions.node` with `sourceSha`);
+- the Calendar native artifact receipt (`node` with `sha`).
+
+## Intentional exceptions
+
+| Surface | Runs | Why | Patched fallback |
+| --- | --- | --- | --- |
+| `employee-schema-contract.yaml` | Node 24.22.1 | It qualifies an input source SHA whose chat qualification binds a Node 24 runtime identity (`chat-initial-settings-qualification.mjs`). | 24.22.1 is the latest patched 24.x (2026-10-20 security release). |
+| Vercel Functions and the `vercel build` / `vercel deploy` workflows | Node 24.x | [Vercel supports only 24.x (default) and 22.x](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions). The CI build should match the function runtime it produces. | `node-version: 24` resolves the latest 24.x; Vercel applies patches to the function runtime. |
+| Cloudflare Workers | workerd, not Node | Workers implement Node APIs through the `nodejs_compat` flag and `compatibility_date`. That date is set in each `wrangler.jsonc`; the Node version is not configurable. | Advance `compatibility_date` deliberately with each Worker's acceptance tests. |
+| Supabase Edge Functions | Deno | The repository ships no Edge Functions today. Supabase Edge would run Deno, not Node. | Not applicable. |
+| JavaScript actions (`runs.using`) | Runner-embedded Node 24 | [Action metadata accepts only `node20` and `node24`](https://docs.github.com/en/actions/reference/workflows-and-actions/metadata-syntax). `setup-node` does not change it. | GitHub maintains the runner-embedded runtime. |
+| Local docs (`bun dev:docs`, docs validation) | Node 24.19.0 through `npx` | Mintlify CLI 4.2.520 rejects Node 25+, and its Got 12.6.1 connectivity probe crashes on Node 24.20+ (see [Mintlify runtime compatibility](/build/development-tools/documenting#mintlify-runtime-compatibility)). The host can run 26.12.1; the wrapper launches an isolated Node 24.19.0. | Upgrade Mintlify to a CLI that accepts Node 26 and reassess the Got defect, then move the pin. |
+| Docker images (`apps/web`, `apps/hive`, `apps/docs`, `apps/web/docker/native-runner.Dockerfile`) | `node:24-bookworm-slim` | The Docker runtime is paused (see [active runtime policy](/build/devops/active-runtime)), and `scripts/check-docker-web.js` enforces the retained builder stage. | On resumption, use `node:26.12.1-bookworm-slim`, digest `sha256:28147155d47dc31abe0a46e0d12b59b2fb3d0a2dcc5dc65fce76a074180b16fe` as of 2026-10-21. |
+| `apps/tanstack-web`, `apps/backend` | Unchanged | These runtimes are paused and their retained source is not updated. | Not applicable. |
+| Flutter (`apps/mobile`) | Flutter/Dart SDK | Flutter tooling does not use Node. Only the Node scripts around it follow the pin. | Not applicable. |
+| Electron | Not used | No workspace depends on Electron; desktop builds use Flutter. | Not applicable. |
+| `.idx/dev.nix` | `nodejs_20` | This Firebase Studio template depends on the nixpkgs channel that template pins. | Update it when that channel ships a Node 26 attribute. |
+
+## Native addons
+
+Node 26 uses `NODE_MODULE_VERSION` 147 and N-API 10. sharp, bcrypt,
+better-sqlite3, esbuild, lightningcss, `@swc/core`, `@napi-rs/canvas`,
+`@napi-rs/keyring` and `node:sqlite` all load and run on 26.12.1.
+better-sqlite3 is the only one tied to a V8 ABI, so reinstall it after a major
+Node change.
+
+## Updating the pin
+
+1. Read the target from `https://nodejs.org/dist/index.json`, including its
+   `security` and `lts` fields.
+2. Change `.node-version`, plus any pre-checkout `node-version` literals the
+   workflow contract tests list.
+3. Run the root script tests and the affected package tests with that exact
+   binary through `ttr resources run`.
+4. Check the CI setup logs and the SDK qualification receipt for the new
+   `node --version` on the exact commit.
+5. Re-check every exception above against its upstream documentation.
