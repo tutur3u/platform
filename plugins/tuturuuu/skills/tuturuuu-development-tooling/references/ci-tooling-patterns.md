@@ -107,6 +107,16 @@ See `apps/docs/build/devops/active-runtime.mdx`.
   <mod>::*;`; unit tests live in `src/tests.rs` (`mod tests;`). See
   `apps/backend/AGENTS.md` for the extraction pattern.
 
+## Workflow token permissions
+
+The repository default `GITHUB_TOKEN` is write-all, so every workflow declares
+a workflow-level `permissions:` default of `contents: read` (or `{}`) and grants
+write scopes only on the jobs that use them. `check-ci` callers grant exactly
+`{contents: read, deployments: read}`, because GitHub refuses to start a run
+whose reusable workflow requests more than its caller grants.
+`scripts/ci/workflow-permissions.test.js` enforces the default, the reviewed
+workflow-level write allowlist, and caller and callee grants in both directions.
+
 ## Bun runtime pins
 
 The maintained toolchain uses Bun `1.4.3`. Keep active workspace `packageManager`

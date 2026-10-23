@@ -30,6 +30,9 @@ concurrency:
   cancel-in-progress: false
   queue: max
 
+permissions:
+  contents: read
+
 jobs:
   evaluate-prerequisites:
     name: Evaluate production prerequisites
@@ -506,6 +509,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
+          persist-credentials: false
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry

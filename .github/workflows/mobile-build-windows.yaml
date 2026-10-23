@@ -20,8 +20,14 @@ on:
             - "scripts/desktop-deployment/**"
             - ".github/workflows/mobile-build-windows.yaml"
 
+permissions:
+  contents: read
+
 jobs:
     check-ci:
+        permissions:
+            contents: read
+            deployments: read
         uses: ./.github/workflows/ci-check.yml
         with:
             workflow_name: mobile-build-windows.yaml

@@ -96,6 +96,11 @@ when idle, even with a wake connection, so a missed signal cannot strand work.
 The Worker checks the runner token, token revocation, runner status, and root
 workspace membership before each heartbeat or claim. Disabling heartbeats on
 a runner continues to reject heartbeat requests. Worker traffic requires TLS.
+Agents treat `401` as fatal, so `401` means only that the credentials were
+rejected. If token, runner or membership storage fails, the web agent routes
+return `503` with `Retry-After: 5`, and the Worker returns `503`. Agents then
+back off and retry instead of exiting and flapping during a database brownout
+(`agent-auth.test.ts`).
 
 The production workflow installs Worker secrets from the repository's
 `PRODUCTION_SUPABASE_URL`, `PRODUCTION_SUPABASE_SECRET_KEY`, and

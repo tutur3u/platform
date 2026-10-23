@@ -28,11 +28,14 @@ jobs:
         with:
           fetch-depth: 2
           ref: ${{ inputs.preview_ref }}
+          persist-credentials: false
 
       - name: Confirm preview ref
         id: check_commits
+        env:
+          PREVIEW_REF: ${{ inputs.preview_ref }}
         run: |
-          echo "Deploying preview ref ${{ inputs.preview_ref }}."
+          echo "Deploying preview ref ${PREVIEW_REF}."
           echo "skip_build=false" >> $GITHUB_OUTPUT
 
       - name: Setup bun
