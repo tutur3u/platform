@@ -35,6 +35,10 @@ test('qualification requires output and a finite admitted budget', () => {
       /threads/
     );
   assert.equal(parseArgs(['--out', '/tmp/evidence']).runs, 5);
+  assert.equal(
+    parseArgs(['--out', '/tmp/evidence', '--all-projects']).allProjects,
+    true
+  );
 });
 
 test('parity compares messages, multiplicity, exits and crashes', () => {

@@ -36,6 +36,10 @@ function parseArgs(argv) {
   const options = { out: null, threads: 6, runs: 5, projects: [], tsrs: null };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
+    if (arg === '--all-projects') {
+      options.allProjects = true;
+      continue;
+    }
     const value = argv[++i];
     if (!value) throw new Error(`Missing value for ${arg}`);
     if (arg === '--out') options.out = path.resolve(value);
@@ -197,6 +201,23 @@ function main(argv) {
   fs.mkdirSync(options.out, { recursive: true });
   const entries = inventory(ROOT);
   assertNoCheckScripts(entries);
+  if (options.allProjects) {
+    options.projects = [
+      ...new Set(
+        entries
+          .filter((entry) => !entry.paused)
+          .flatMap((entry) => entry.projects)
+          .flatMap((project) =>
+            project === 'apps/meet/tsconfig.json'
+              ? [
+                  'apps/meet/tsconfig.app.json',
+                  'apps/meet/tsconfig.cloudflare.json',
+                ]
+              : [project]
+          )
+      ),
+    ];
+  }
   const tsc = path.join(ROOT, 'node_modules/.bin/tsc');
   const report = {
     sourceSha: execFileSync('git', ['rev-parse', 'HEAD'], {
