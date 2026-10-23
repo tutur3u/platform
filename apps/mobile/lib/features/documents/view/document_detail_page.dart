@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
@@ -242,8 +243,10 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                 ),
               ],
             ),
-            SafeArea(
-              bottom: false,
+            // The editor scrolls beneath the dock, so it reads the clearance.
+            AppPageBody(
+              kind: AppPageKind.reading,
+              consumeBottomClearance: false,
               child: _isLoading
                   ? const Center(child: NovaLoadingIndicator())
                   : _error != null
@@ -252,7 +255,10 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.xs,
+                            bottom: AppSpacing.md,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -296,11 +302,11 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             decoration: InputDecoration(
                               hintText: context.l10n.documentsContentHint,
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.fromLTRB(
-                                20,
-                                20,
-                                20,
-                                32 + MediaQuery.paddingOf(context).bottom,
+                              contentPadding: EdgeInsets.only(
+                                top: AppSpacing.xl,
+                                bottom:
+                                    AppLayout.scrollEndGap +
+                                    MediaQuery.paddingOf(context).bottom,
                               ),
                             ),
                           ),

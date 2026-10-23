@@ -48,10 +48,14 @@ class FloatingShellDock extends StatefulWidget {
     this.composerVisible = false,
     this.navigationWidth = 264,
     this.allowDockSlot = true,
+    this.hideIdleNavigation = false,
     super.key,
   });
 
   final double navigationBottomOffset;
+
+  /// Set when a leading rail owns navigation; see [PersistentShellDock].
+  final bool hideIdleNavigation;
   final bool reserveNavigationClearance;
   final bool reclaimNavigationClearanceWhenHidden;
   final bool keepNavigationVisible;
@@ -265,6 +269,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                                   location: widget.location,
                                   navigationWidth: widget.navigationWidth,
                                   allowDockSlot: widget.allowDockSlot,
+                                  hideIdleNavigation: widget.hideIdleNavigation,
                                   navigation: widget.navigation,
                                 ),
                               ),
@@ -287,7 +292,9 @@ class _DockActions extends StatefulWidget {
     required this.navigation,
     required this.navigationWidth,
     required this.allowDockSlot,
+    required this.hideIdleNavigation,
   });
+  final bool hideIdleNavigation;
   final String location;
   final Widget navigation;
   final double navigationWidth;
@@ -347,6 +354,7 @@ class _DockActionsState extends State<_DockActions> {
         content: active && slot!.composing ? slot.content : navigation,
         composing: active && slot!.composing,
         expandContent: !active || slot!.expandContent,
+        hideIdleNavigation: widget.hideIdleNavigation,
         navigationWidth: widget.navigationWidth,
         primary: active ? slot!.primary : primary,
         secondary: active && slot!.composing ? null : secondary,

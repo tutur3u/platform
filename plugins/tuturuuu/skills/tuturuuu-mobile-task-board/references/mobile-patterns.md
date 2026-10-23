@@ -44,6 +44,22 @@ localization changes.
   mobile satellite origin. It verifies canonical route ownership and ensures
   each satellite proxy preserves bearer-authenticated mobile API access.
 
+## Layout And Spacing
+
+- Build page bodies with the `core/layout/layout.dart` primitives
+  (`AppPageListView`, `AppPageScrollView`, `SliverAppPage`, `AppPageBody`) and
+  `AppSpacing`/`AppLayout` tokens. Do not hand-write page gutters, wrap a
+  scrollable in `ResponsiveWrapper`, or add ad-hoc scroll-end constants to
+  `MediaQuery.paddingOf(context).bottom`.
+- Use `AppPageBody.fullBleed` only for listed screen types: calendar views,
+  kanban/board and planner canvases, chat/Assistant threads and Live, Meet call
+  stages, and media/map viewers or full-canvas editors.
+- Group rows with `AppGroupedSection`/`AppGroupedCard`; row layout stays with
+  the owning feature. Expanded tablet/desktop windows use the leading
+  `ShellNavigationRail`, which must keep the mini-app Back item.
+- See the [mobile design system](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx)
+  and its layout/rail regression tests.
+
 ## Overlays And Shell
 
 - Do not call `shad.openDrawer`, `shad.showDialog` for full-screen content, or

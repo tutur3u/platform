@@ -234,6 +234,7 @@ extension _ShellPageLayout on _ShellPageState {
     bool composerVisible = false,
     double navigationWidth = 264,
     bool allowDockSlot = true,
+    bool hideIdleNavigation = false,
   }) {
     return ShellDockScope(
       controller: _dockSlotController,
@@ -241,6 +242,7 @@ extension _ShellPageLayout on _ShellPageState {
         location: widget.matchedLocation,
         navigationWidth: navigationWidth,
         allowDockSlot: allowDockSlot,
+        hideIdleNavigation: hideIdleNavigation,
         keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
         bottomInset: bodyBottomInset,
         navigationBottomOffset: navigationBottomOffset,
@@ -354,6 +356,12 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalBody = _buildGlobalBody();
     final floatingNavInset = showBottomNav ? _floatingNavBodyInset() : 0.0;
+    // Wide windows move destinations (including mini-app Back) to a leading
+    // rail. The dock keeps only the composer and page actions there.
+    final railMode =
+        shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
+        ShellNavigationMode.rail;
+    final dockItems = isMiniAppRoute ? miniItems : globalItems;
 
     return shad.Scaffold(
       footers: showBottomNav && isCompact && !composerVisible
@@ -365,22 +373,32 @@ extension _ShellPageLayout on _ShellPageState {
             ]
           : const [],
       // Preserve Assistant state when keyboard/fullscreen hides navigation.
-      child: _buildBodyWithFloatingNav(
-        body: globalBody,
-        header: immersive
-            ? null
-            : _buildFloatingHeader(
-                context,
-                activeModule: activeModule,
-                injectedMiniNavRegistration: injectedMiniNavRegistration,
-              ),
-        navigationBar: showBottomNav && (!isCompact || composerVisible)
-            ? navigationBar
-            : const SizedBox.shrink(),
-        bodyBottomInset: floatingNavInset,
-        composerVisible: composerVisible,
-        navigationWidth:
-            (isMiniAppRoute ? miniItems.length : globalItems.length) * 52.0 + 4,
+      child: AdaptiveShellFrame(
+        rail: railMode && showBottomNav
+            ? ShellNavigationRail(
+                items: dockItems,
+                selectedKey: selectedKey,
+                onSelected: navContent.onSelected,
+              )
+            : null,
+        body: _buildBodyWithFloatingNav(
+          body: globalBody,
+          header: immersive
+              ? null
+              : _buildFloatingHeader(
+                  context,
+                  activeModule: activeModule,
+                  injectedMiniNavRegistration: injectedMiniNavRegistration,
+                ),
+          navigationBar:
+              showBottomNav && !railMode && (!isCompact || composerVisible)
+              ? navigationBar
+              : const SizedBox.shrink(),
+          bodyBottomInset: floatingNavInset,
+          composerVisible: composerVisible,
+          navigationWidth: dockItems.length * 52.0 + 4,
+          hideIdleNavigation: railMode,
+        ),
       ),
     );
   }
