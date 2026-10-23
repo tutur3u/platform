@@ -300,108 +300,15 @@ extension _RequestsViewActions on _RequestsViewState {
     await _loadRequests(wsIdOverride: wsId, forceRefresh: forceRefreshRequests);
   }
 
+  /// The threshold is edited once, in Settings > Apps > Timer, which applies
+  /// the same permission gate. Reload it on return.
   Future<void> _showThresholdSettingsDialog() async {
     final wsId = _permissionsWorkspaceId;
-    if (wsId == null || wsId.isEmpty || !mounted) {
-      return;
-    }
-    final repo = context.read<ITimeTrackerRepository>();
-
-    await showAdaptiveSheet<void>(
-      context: context,
-      builder: (dialogContext) {
-        return ThresholdSettingsDialog(
-          currentThreshold: _missedEntryDateThreshold,
-          currentStatusChangeGracePeriodMinutes:
-              _statusChangeGracePeriodMinutes,
-          onSave: (threshold, statusChangeGracePeriodMinutes) async {
-            final snapshotWsId = wsId;
-            final toastContext = Navigator.of(
-              context,
-              rootNavigator: true,
-            ).context;
-            final requestVersion =
-                (_thresholdSaveRequestVersionByWorkspace[snapshotWsId] ?? 0) +
-                1;
-            _thresholdSaveRequestVersionByWorkspace[snapshotWsId] =
-                requestVersion;
-
-            bool canApplySaveResult() {
-              if (!mounted) {
-                return false;
-              }
-              final currentWsId = context
-                  .read<WorkspaceCubit>()
-                  .state
-                  .currentWorkspace
-                  ?.id;
-              final latestRequestVersion =
-                  _thresholdSaveRequestVersionByWorkspace[snapshotWsId];
-              return currentWsId == snapshotWsId &&
-                  latestRequestVersion == requestVersion;
-            }
-
-            try {
-              await repo.updateMissedEntryDateThreshold(
-                snapshotWsId,
-                threshold,
-                statusChangeGracePeriodMinutes: statusChangeGracePeriodMinutes,
-              );
-
-              if (!canApplySaveResult()) {
-                return;
-              }
-
-              _applyState(() {
-                _missedEntryDateThreshold = threshold;
-                _statusChangeGracePeriodMinutes =
-                    statusChangeGracePeriodMinutes;
-              });
-              if (!toastContext.mounted) {
-                return;
-              }
-              shad.showToast(
-                context: toastContext,
-                builder: (context, overlay) => shad.Alert(
-                  content: Text(context.l10n.timerRequestsThresholdUpdated),
-                ),
-              );
-            } on ApiException catch (e) {
-              if (!canApplySaveResult()) {
-                return;
-              }
-              if (!toastContext.mounted) {
-                return;
-              }
-              final message = e.message.isNotEmpty
-                  ? e.message
-                  : toastContext.l10n.commonSomethingWentWrong;
-              shad.showToast(
-                context: toastContext,
-                builder: (context, overlay) => shad.Alert.destructive(
-                  title: Text(context.l10n.commonSomethingWentWrong),
-                  content: Text(message),
-                ),
-              );
-            } on Object {
-              if (!canApplySaveResult()) {
-                return;
-              }
-              if (!toastContext.mounted) {
-                return;
-              }
-              shad.showToast(
-                context: toastContext,
-                builder: (context, overlay) => shad.Alert.destructive(
-                  title: Text(context.l10n.commonSomethingWentWrong),
-                  content: Text(context.l10n.commonSomethingWentWrong),
-                ),
-              );
-            }
-          },
-        );
-      },
-    );
+    if (wsId == null || wsId.isEmpty || !mounted) return;
+    await context.push(Routes.settingsAppPath('timer'));
+    if (!mounted) return;
+    final current = context.read<WorkspaceCubit>().state.currentWorkspace;
+    if (current?.id == wsId) await _loadPermissionsAndThreshold(wsId);
   }
 
   Future<void> _showRequestDetail(

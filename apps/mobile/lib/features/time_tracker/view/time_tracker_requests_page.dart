@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -27,7 +28,6 @@ import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_filters.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_shared.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
-import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_add_entry_fab.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_filter_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -117,8 +117,6 @@ class _RequestsViewState extends State<_RequestsView> {
   String? _pendingRouteRequestId;
   String? _handledRouteRequestId;
   final Map<String, int> _missedEntryDialogRequestVersionByWorkspace =
-      <String, int>{};
-  final Map<String, int> _thresholdSaveRequestVersionByWorkspace =
       <String, int>{};
   bool _didInitializeWorkspaceLoad = false;
 
