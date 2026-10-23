@@ -428,6 +428,32 @@ ceiling. A managed agent can dispatch independent Judge jobs concurrently within
 the configured process-wide sandbox budget. These settings do
 not limit the current trusted host commands, builds, previews, or tunnels.
 
+### Stale run reaper
+
+Runs left `running` or `cancel_requested` after an agent crash, watchdog exit,
+SIGKILL, or a claim response the agent never received would otherwise count
+against that capacity forever. `private.reap_stale_devbox_runs` finishes them:
+
+- `cancel_requested` unacknowledged for 10 minutes becomes `cancelled`;
+- a run past `started_at + timeout_seconds + 5 minutes` becomes `failed`;
+- a run started over 10 minutes ago on a missing or revoked runner, or one
+  without a heartbeat for 10 minutes, becomes `failed`.
+
+Reaped runs release their non-kept lease and record a `reaped` run event with
+the reason. Every claim reaps up to 25 of the claiming runner's stale runs
+before counting capacity, so both the Cloudflare control Worker and the web
+poll route free slots without a scheduler. Runs without a timeout on a healthy
+runner (long `serve` or `tunnel` jobs) are never reaped. Disabling a runner's
+heartbeat takes it offline, so its active runs are reaped after 10 minutes.
+
+Runners that stop heartbeating never claim again, so a scheduled sweep finishes
+their runs. `GET` or `POST /api/cron/devboxes/reap-stale-runs` with
+`Authorization: Bearer $CRON_SECRET` reaps at most 200 runs per call across all
+runners and returns `{ limit, reaped }`. It is idempotent and safe to overlap.
+Scheduling belongs to the Cloudflare cron-control Worker; do not add a Vercel
+cron or pg_cron entry for it. Regression coverage lives in
+`apps/database/supabase/tests/devbox-stale-run-reaper.sql` and the route test.
+
 ## Judge setup
 
 The Judge executor requires a Docker engine with the `runsc` gVisor runtime
