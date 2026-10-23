@@ -17,6 +17,69 @@ const deferred = new Set([
   '.github/actions/setup-bun-with-retry/action.yml: inputs.bun-version',
 ]);
 
+// Step and job outputs reach scripts through env too. These remaining ones are
+// computed by the workflow itself from trusted inputs (config and artifact
+// paths, booleans, build numbers, a resolved SHA, deployment URLs returned by
+// the Vercel CLI) and are accepted; any new output interpolation must use env.
+const acceptedOutputInterpolations = {
+  'apps-cloudflare.yaml': ['steps.output.outputs.config'],
+  'e2e-tests.yaml': ['steps.buildx.outputs.name'],
+  'mail-calendar-tasks-builds.yaml': ['steps.output.outputs.config'],
+  'meet-cloudflare.yaml': ['steps.meet-output.outputs.config'],
+  'mobile-deploy-stores.yaml': [
+    'needs.mobile-credentials-preflight.outputs.build_name',
+    'needs.mobile-credentials-preflight.outputs.build_number',
+    'steps.ios-ipa.outputs.local_path',
+  ],
+  'supabase-baseline.yaml': [
+    'steps.cold.outputs.restored',
+    'steps.corrupt.outputs.restored',
+    'steps.restored.outputs.restored',
+    'steps.warm.outputs.restored',
+  ],
+  'vercel-preview-platform.yaml': [
+    'steps.check_config.outputs.should_run',
+    'steps.resolve_target.outputs.sha',
+  ],
+  'vercel-production-platform.yaml': [
+    'steps.package_release_gate.outputs.pending_packages',
+    'steps.stage_deployment.outputs.url',
+  ],
+};
+for (const app of ['cms', 'contacts', 'finance', 'inventory', 'tasks']) {
+  acceptedOutputInterpolations[`vercel-production-${app}.yaml`] = [
+    'steps.stage_deployment.outputs.url',
+  ];
+}
+for (const pkg of [
+  'ai',
+  'apis',
+  'devbox',
+  'editor',
+  'google',
+  'hooks',
+  'icons',
+  'internal-api',
+  'sdk',
+  'supabase',
+  'types',
+  'typescript-config',
+  'ui',
+  'utils',
+]) {
+  acceptedOutputInterpolations[`release-${pkg}-package.yaml`] = [
+    'steps.artifact.outputs.path',
+  ];
+}
+
+function outputInterpolations(script) {
+  return [...script.matchAll(/\$\{\{\s*([\s\S]*?)\s*\}\}/gu)]
+    .map((match) => match[1])
+    .filter((expression) =>
+      /\b(?:steps|needs)\.[\w-]+\.(?:outputs|result)\b/u.test(expression)
+    );
+}
+
 function yamlFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
@@ -83,6 +146,34 @@ test('run scripts never interpolate event payloads or inputs', () => {
 });
 
 const expression = (body) => `\${{ ${body} }}`;
+
+test('step and job outputs reach scripts through env unless reviewed', () => {
+  const files = roots.flatMap((root) => yamlFiles(path.join(repoRoot, root)));
+  const documents = parseYamlFiles(files);
+  const seen = new Set();
+  const failures = Object.entries(documents).flatMap(([file, document]) =>
+    stepsOf(document)
+      .flatMap(scriptsOf)
+      .flatMap(outputInterpolations)
+      .filter((expression) => {
+        const name = path.basename(file);
+        const accepted =
+          acceptedOutputInterpolations[name]?.includes(expression);
+        if (accepted) seen.add(`${name}: ${expression}`);
+        return !accepted;
+      })
+      .map((expression) => `${path.relative(repoRoot, file)}: ${expression}`)
+  );
+  assert.deepEqual(failures, []);
+  const stale = Object.entries(acceptedOutputInterpolations)
+    .flatMap(([name, expressions]) => expressions.map((e) => `${name}: ${e}`))
+    .filter((entry) => !seen.has(entry));
+  assert.deepEqual(stale, [], 'drop accepted entries once they use env');
+  assert.deepEqual(
+    outputInterpolations(`echo "${expression('needs.lint.outputs.errors')}"`),
+    ['needs.lint.outputs.errors']
+  );
+});
 
 test('interpolation check rejects injection-shaped scripts', () => {
   for (const script of [
@@ -165,6 +256,16 @@ test('migration checks treat PR file names as data', (t) => {
 
   const collected = run(collect.run, { BASE_SHA: base, HEAD_SHA: head });
   assert.equal(collected.status, 0, collected.stderr);
+  const written = fs.readFileSync(outputFile, 'utf8');
+  const delimiter = /^new_files<<(\w+)$/mu.exec(written)?.[1];
+  assert.match(delimiter, /^ghadelim_[0-9a-f]{32}$/u);
+  fs.writeFileSync(outputFile, '');
+  run(collect.run, { BASE_SHA: base, HEAD_SHA: head });
+  assert.notEqual(
+    /^new_files<<(\w+)$/mu.exec(fs.readFileSync(outputFile, 'utf8'))?.[1],
+    delimiter,
+    'each run picks a fresh output delimiter'
+  );
   const newFiles = readOutputs(outputFile).new_files;
   assert.match(newFiles, /\$\(id>PWNED\)\.sql$/u);
 

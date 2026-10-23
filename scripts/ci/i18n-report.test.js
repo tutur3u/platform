@@ -10,6 +10,17 @@ const workflow = fs.readFileSync(
 const source = workflow
   .slice(workflow.indexOf('          script: |') + '          script: |'.length)
   .replace(/^ {12}/gm, '');
+// Job outputs reach the script through step env (see the step's env block).
+const stepEnv = Object.fromEntries(
+  [
+    ...workflow
+      .slice(
+        workflow.indexOf('- name: Comment on PR with i18n status'),
+        workflow.indexOf('          script: |')
+      )
+      .matchAll(/^ {10}([A-Z0-9_]+): \$\{\{ (.*?) \}\}$/gm),
+  ].map((match) => [match[1], match[2]])
+);
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
 async function report({
   result = 'success',
@@ -20,7 +31,7 @@ async function report({
   attempt = 1,
 } = {}) {
   const writes = [];
-  const script = source.replace(/\$\{\{ (.*?) \}\}/g, (_, key) => {
+  const resolve = (key) => {
     if (key === 'github.run_attempt') return String(attempt);
     if (key.endsWith('.result')) return result;
     if (output !== undefined) return output;
@@ -29,7 +40,11 @@ async function report({
       : key.endsWith('.has_issues')
         ? 'false'
         : '0';
-  });
+  };
+  const script = source.replace(/\$\{\{ (.*?) \}\}/g, (_, key) => resolve(key));
+  const env = Object.fromEntries(
+    Object.entries(stepEnv).map(([name, key]) => [name, resolve(key)])
+  );
   const github = {
     paginate: async () =>
       previous
@@ -52,14 +67,15 @@ async function report({
       },
     },
   };
-  await new AsyncFunction('github', 'context', 'console', script)(
+  await new AsyncFunction('github', 'context', 'console', 'process', script)(
     github,
     {
       runId,
       repo: { owner: 'o', repo: 'r' },
       payload: { pull_request: { number: 1, head: { sha: 'head' } } },
     },
-    { log() {} }
+    { log() {} },
+    { env }
   );
   return writes;
 }

@@ -32,9 +32,13 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           NEW_FILES=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" -- 'apps/database/supabase/migrations/**.sql')
-          echo "new_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$NEW_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # A random delimiter keeps a file named EOF from ending the value early.
+          delimiter="ghadelim_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+          {
+            echo "new_files<<$delimiter"
+            echo "$NEW_FILES"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Check new migration files
         env:
