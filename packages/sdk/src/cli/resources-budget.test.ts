@@ -110,6 +110,10 @@ describe('per-ticket token declaration', () => {
     ['cargo', ['build'], 4],
     ['bun', ['run', 'build'], 4],
     ['playwright', ['test'], 2],
+    ['playwright', ['test', '--workers=24'], 24],
+    ['playwright', ['test', '--workers', '6'], 6],
+    ['playwright', ['test', '-j8'], 8],
+    ['playwright', ['test', '--workers=50%'], 2],
     ['supabase', ['db', 'reset'], 2],
     ['bun', ['sb:reset'], 2],
     ['turbo', ['run', 'test'], 2],
@@ -245,6 +249,26 @@ describe('borrowing and reclaim', () => {
     expect(
       select(studio({ borrow: false }), [borrower], running).selected
     ).toBeUndefined();
+  });
+
+  it('drains capacity for an older eight-token reclaim ahead of small borrowers', () => {
+    const budget = studio();
+    const reclaim = ticket('tuturuuu', 8);
+    for (const used of [20, 18]) {
+      const borrower = ticket('upskii', 2);
+      const result = select(
+        budget,
+        [reclaim, borrower],
+        owners(['upskii', used])
+      );
+      expect(result.selected).toBeUndefined();
+      expect(result.blocked[reclaim.path]).toMatch(/draining/u);
+      expect(result.blocked[borrower.path]).toMatch(/reclaiming/u);
+    }
+    expect(
+      select(budget, [reclaim, ticket('upskii', 2)], owners(['upskii', 16]))
+        .selected
+    ).toBe(reclaim);
   });
 
   it('reclaims: the share owner goes before a borrower, and running borrowers stay', () => {

@@ -280,12 +280,14 @@ export function limitCommand(
 ) {
   const { tool, tail, offset } = commandTool(basename(name), args);
   if (!isHeavyCommand(name, args)) return args;
-  if (tool === 'vitest' || tool === 'cargo') {
-    const budget = tool === 'vitest' ? config.vitestWorkers : config.buildJobs;
+  if (tool === 'vitest' || tool === 'cargo' || tool === 'playwright') {
+    const budget = tool === 'cargo' ? config.buildJobs : config.vitestWorkers;
     const flags =
       tool === 'vitest'
         ? ['--maxWorkers', '--max-workers', '--minWorkers', '--min-workers']
-        : ['-j', '--jobs'];
+        : tool === 'playwright'
+          ? ['-j', '--workers']
+          : ['-j', '--jobs'];
     const limited: string[] = [];
     for (let i = 0; i < tail.length; i++) {
       const arg = tail[i]!;
@@ -299,14 +301,18 @@ export function limitCommand(
       }
       if (
         flags.some((flag) => arg.startsWith(`${flag}=`)) ||
-        (tool === 'cargo' && /^-j\d/.test(arg))
+        ((tool === 'cargo' || tool === 'playwright') && /^-j\d/.test(arg))
       )
         continue;
       limited.push(arg);
     }
     const divider = limited.indexOf('--');
     const cap =
-      tool === 'vitest' ? `--maxWorkers=${budget}` : `--jobs=${budget}`;
+      tool === 'vitest'
+        ? `--maxWorkers=${budget}`
+        : tool === 'playwright'
+          ? `--workers=${budget}`
+          : `--jobs=${budget}`;
     limited.splice(divider < 0 ? limited.length : divider, 0, cap);
     return [...args.slice(0, offset), ...limited];
   }

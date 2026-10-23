@@ -261,6 +261,27 @@ async function reclaimMutex(path: string) {
   }
   await rm(path, { recursive: true });
 }
+// Legacy schedulers reject unknown slot names, even after all owners drain.
+// Keep this marker across config changes; downgrades require an idle migration.
+export const budgetFence = 'budget-v3';
+async function publishBudgetFence(home: string) {
+  if (!(await readResourceConfig(home))?.budget) return;
+  const slots = join(home, 'slots');
+  await mkdir(slots, { recursive: true, mode: 0o700 });
+  try {
+    await writeFile(join(slots, budgetFence), '3\n', {
+      flag: 'wx',
+      mode: 0o600,
+    });
+  } catch (error) {
+    if (!errno(error, 'EEXIST')) throw error;
+    if ((await readFile(join(slots, budgetFence), 'utf8')) !== '3\n')
+      throw new Error(
+        'Malformed budget compatibility fence; admission is closed.'
+      );
+  }
+}
+
 export async function withAdmission<T>(
   home: string,
   action: () => Promise<T>,
@@ -327,6 +348,7 @@ export async function withAdmission<T>(
         await directory.close();
       }
     }
+    await publishBudgetFence(home);
     return await action();
   } finally {
     if (acquired) await releaseMutex(path, owner.token);
@@ -359,14 +381,23 @@ export async function occupancy(
   const config = configured ?? (await readResourceConfig(home));
   const maxLanes = config ? resourceMaxLanes(config) : 1;
   const slots = join(home, 'slots');
-  const names = await readdir(slots).catch((error) => {
+  const names: string[] = await readdir(slots).catch((error) => {
     if (errno(error, 'ENOENT')) return [];
     throw error;
   });
   if (
-    names.some(
-      (name) => !/^(0|[1-9]|1[0-5])$/.test(name) || Number(name) >= maxLanes
-    )
+    names.includes(budgetFence) &&
+    (await readFile(join(slots, budgetFence), 'utf8')) !== '3\n'
+  )
+    throw new Error(
+      'Malformed budget compatibility fence; admission is closed.'
+    );
+  if (
+    names
+      .filter((name) => name !== budgetFence)
+      .some(
+        (name) => !/^(0|[1-9]|1[0-5])$/.test(name) || Number(name) >= maxLanes
+      )
   )
     throw new Error('Unknown resource slot; admission is closed.');
   const owners: ResourceOwner[] = [];

@@ -103,10 +103,14 @@ export function projectFor(budget: ResourceBudget, cwd: string) {
   return best?.id ?? unassignedProject;
 }
 
-const requestedWorkers = (args: string[]) => {
+const requestedWorkers = (args: string[], playwright = false) => {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
-    const match = /^--max-?[wW]orkers(?:=(.+))?$/u.exec(arg);
+    const match = (
+      playwright
+        ? /^(?:--workers|-j)(?:=?(.+))?$/u
+        : /^--max-?[wW]orkers(?:=(.+))?$/u
+    ).exec(arg);
     if (!match) continue;
     const value = Number(match[1] ?? args[i + 1]);
     if (Number.isInteger(value) && value > 0) return value;
@@ -134,11 +138,9 @@ export function inferTokens(
     ((tool === 'turbo' || tool === 'bun') &&
       tail.some((arg) => buildTask.test(arg)));
   if (isBuild) return Math.max(4, defaults.buildJobs);
-  if (
-    tool === 'playwright' ||
-    tool === 'supabase' ||
-    tail.some((arg) => /^sb:/u.test(arg))
-  )
+  if (tool === 'playwright')
+    return requestedWorkers(tail, true) ?? Math.max(2, defaults.vitestWorkers);
+  if (tool === 'supabase' || tail.some((arg) => /^sb:/u.test(arg)))
     return Math.max(2, defaults.vitestWorkers);
   if (tool === 'vitest')
     return requestedWorkers(tail) ?? defaults.vitestWorkers;
@@ -255,11 +257,11 @@ export function selectBudgetTicket(
   for (const [id, entry] of heads) {
     const demand = demandOf(entry);
     const use = usage.byProject.get(id) ?? zero();
-    if (!fits(usage.total, demand, ceiling)) {
-      blocked[entry.path] = 'the host budget is fully used';
-      continue;
-    }
+    // Reclaim priority is decided before global fit: otherwise small borrowers
+    // can refill every freed token and the share owner never gets capacity.
     if (fits(use, demand, shareOf(budget, id))) own.push(entry);
+    else if (!fits(usage.total, demand, ceiling))
+      blocked[entry.path] = 'the host budget is fully used';
     else if (budget.borrow) borrowers.push(entry);
     else blocked[entry.path] = `${id} share is fully used and borrowing is off`;
   }
@@ -278,6 +280,10 @@ export function selectBudgetTicket(
   if (own[0]) {
     for (const entry of [...own.slice(1), ...borrowers])
       blocked[entry.path] = 'another project is reclaiming its share first';
+    if (!fits(usage.total, demandOf(own[0]), ceiling)) {
+      blocked[own[0].path] = 'draining the host budget for share reclaim';
+      return { blocked };
+    }
     return { selected: own[0], blocked };
   }
   borrowers.sort((a, b) => Date.parse(a.queuedAt) - Date.parse(b.queuedAt));

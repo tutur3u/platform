@@ -94,6 +94,27 @@ describe('cross-project budget admission', { timeout: 60_000 }, () => {
     expect((await budget(path)).used).toMatchObject({ lanes: 0, tokens: 0 });
   });
 
+  it('leaves free tokens idle until a reclaiming head can start', async () => {
+    const { path, a, b } = await budgetHome();
+    const a1 = job(path, a, 2, ['node', await held(path, 'drain-a1')]);
+    await until(() => exists(join(path, 'drain-a1.ready')));
+    const a2 = job(path, a, 1, ['node', await held(path, 'drain-a2')]);
+    await until(() => exists(join(path, 'drain-a2.ready')));
+    const b1 = job(path, b, 2, ['node', await held(path, 'drain-b1')]);
+    await until(async () => (await project(path, 'b')).waiting === 1);
+    const a3 = job(path, a, 1, ['node', await held(path, 'drain-a3')]);
+    await until(async () => (await project(path, 'a')).waiting === 1);
+    expect((await budget(path)).used.tokens).toBe(3);
+    expect(await exists(join(path, 'drain-a3.ready'))).toBe(false);
+    await release(path, 'drain-a1');
+    expect((await a1.done).code).toBe(0);
+    await until(() => exists(join(path, 'drain-b1.ready')));
+    await until(() => exists(join(path, 'drain-a3.ready')));
+    for (const name of ['drain-a2', 'drain-b1', 'drain-a3'])
+      await release(path, name);
+    for (const child of [a2, b1, a3]) expect((await child.done).code).toBe(0);
+  });
+
   it('keeps reentrancy: a nested run inside an admitted job passes while the budget is full', async () => {
     const { path, a, b } = await budgetHome();
     const fill = [
