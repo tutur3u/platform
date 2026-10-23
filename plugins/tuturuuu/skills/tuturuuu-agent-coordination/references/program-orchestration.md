@@ -86,6 +86,30 @@ review or docs. Native result/watch events resume authorized delivery. When no
 admitted work remains ready, record the exact blocker, owner and resume event.
 Do not invent work, poll or stop a watch just to wait for a user reminder.
 
+Route delegation and owner continuation through the shared
+[account-balancing guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation).
+Portable fallback: unknown or stale quota is not headroom; stop admitting work
+to an exhausted account, and let its children resume at the reset rather than
+replaying them. Switch the owner only at an idle boundary with an empty queue,
+because queued runs keep their old account. Account memory is per provider
+instance, so carry it across a switch. Automatic failover is not installed.
+Every orchestrator thread, including the cross-project supervisor, shares the
+[quota and storage coordination contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination):
+Tuturuuu's SDK, quota and resource lanes own the single implementation, with one
+transition owner per owner thread and one cleanup lease per host. Missing quota or
+host telemetry stays UNKNOWN.
+Accounts are shared: several threads may use one account at once, so track
+pool usage, reservations and reset rather than locking an account. Serialize
+each owner thread's account transitions. If a safe in-thread switch is
+impossible, one top-level successor may take over through the
+[replacement-thread handover](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover).
+Prefer Codex pools for suitable new or disjoint implementation, analysis and
+independent review, following the
+[capacity-aware provider preference](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#capacity-aware-provider-preference).
+Treat relative plan size and reset credit as planning inputs, not measured
+headroom. Keep Claude and Antigravity for task fit, parallel capacity and
+reviewer independence, and do not migrate healthy running writers.
+
 For observed slow admission, repeated handovers or two fixes failing on one
 premise, assign a bounded workflow audit at a safe checkpoint. Read actual
 actor/lifecycle and gate receipts, identify the causal bottleneck, and return one
