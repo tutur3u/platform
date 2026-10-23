@@ -2,6 +2,7 @@ import { accountKey, collapseAccounts } from './accounts';
 import { matchingBlocks } from './block-ledger';
 import { capacityCooldownActive } from './capacity';
 import {
+  MAX_FUTURE_OBSERVATION_SKEW_MS,
   recoveryAdmissionKey,
   usageLimitReceiptActive,
 } from './failure-receipt';
@@ -21,7 +22,17 @@ import { coversModel, receiptCovers } from './window-scope';
 
 export { accountKey } from './accounts';
 
-export function recordObservation(ledger: HookLedger, input: Observation) {
+export function recordObservation(
+  ledger: HookLedger,
+  input: Observation,
+  now = new Date()
+) {
+  if (
+    !Number.isFinite(Date.parse(input.observedAt)) ||
+    Date.parse(input.observedAt) >
+      now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS
+  )
+    throw new HookError('observation-in-future');
   if (input.outcome === 'capacity-error' && !input.model)
     throw new HookError('capacity-model-required');
   if (input.outcome === 'capacity-error' && input.resetsAt)

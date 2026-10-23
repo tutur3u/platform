@@ -88,6 +88,12 @@ export async function collectSnapshot(
                 window.windowDurationMins > 1440)
                 ? 'long'
                 : 'short',
+            windowDurationMins:
+              typeof window.windowDurationMins === 'number' &&
+              Number.isFinite(window.windowDurationMins) &&
+              window.windowDurationMins > 0
+                ? window.windowDurationMins
+                : undefined,
             usedPercent: window.usedPercent,
             resetsAt:
               typeof window.resetsAt === 'string' ? window.resetsAt : undefined,

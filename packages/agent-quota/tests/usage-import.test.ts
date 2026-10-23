@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { collapseAccounts } from '../src/accounts';
+import { recordObservation } from '../src/admission';
 import { receiptReset, usageLimitReceiptActive } from '../src/failure-receipt';
 import { emptyLedger } from '../src/hook-ledger';
 import type { Observation } from '../src/hooks-types';
@@ -87,6 +88,7 @@ describe('Usage UI and typed manual observations', () => {
       'All models except Opus',
       'Weekly · excluding Opus',
       'Weekly · without Opus',
+      'Weekly · all models other than Opus',
     ])
       expect(windowScope('claude', 'weekly', label)).toEqual({
         kind: 'account',
@@ -160,17 +162,36 @@ describe('Usage UI and typed manual observations', () => {
     );
     expect(result[0]?.windows).toEqual(providerAccount.windows);
   });
-  it('keeps a future-dated usage-limit receipt binding', () => {
+  it('rejects a no-reset receipt more than five minutes in the future', () => {
+    const observedAt = new Date(now.getTime() + 30 * 86400_000).toISOString();
+    expect(() =>
+      recordObservation(
+        emptyLedger(),
+        {
+          eventId: 'future-limit',
+          instanceId: 'claudeAgent',
+          accountKey: 'claude:claudeAgent',
+          outcome: 'usage-limit',
+          observedAt,
+        },
+        now
+      )
+    ).toThrow('observation-in-future');
     expect(
       usageLimitReceiptActive(
-        { observedAt: new Date(now.getTime() + 60 * 60_000).toISOString() },
+        { observedAt: new Date(now.getTime() + 4 * 60_000).toISOString() },
         now
       )
     ).toBe(true);
   });
   it('inherits a matching block reset for a resetless manual session window', () => {
     const result = applyManualUsage(
-      [account('claudeAgent')],
+      [
+        {
+          ...account('claudeAgent'),
+          models: ['claude-opus-4-6', 'claude-sonnet-4-5'],
+        },
+      ],
       [{ ...manual('claudeAgent', 0), metric: 'Session' }],
       [],
       now,
@@ -185,6 +206,47 @@ describe('Usage UI and typed manual observations', () => {
       ]
     );
     expect(result[0]?.windows[0]?.resetsAt).toBe('2026-10-23T06:00:00Z');
+  });
+  it('does not inherit a model-scoped weekly block into an account-wide session', () => {
+    const result = applyManualUsage(
+      [
+        {
+          ...account('claudeAgent'),
+          models: ['claude-opus-4-6', 'claude-sonnet-4-5'],
+        },
+      ],
+      [{ ...manual('claudeAgent', 0), metric: 'Session' }],
+      [],
+      now,
+      [
+        {
+          pool: 'claudeAgent',
+          modelScope: 'claude-opus-*',
+          reason: 'weekly Opus limit',
+          observedAt: now.toISOString(),
+          resetAt: '2026-10-29T05:00:00Z',
+        },
+      ]
+    );
+    expect(result[0]?.windows[0]?.resetsAt).toBeUndefined();
+  });
+  it('does not inherit a reset beyond the manual window duration', () => {
+    const result = applyManualUsage(
+      [account('claudeAgent')],
+      [{ ...manual('claudeAgent', 0), metric: 'Session' }],
+      [],
+      now,
+      [
+        {
+          pool: 'claudeAgent',
+          modelScope: '*',
+          reason: 'session limit',
+          observedAt: now.toISOString(),
+          resetAt: '2026-10-24T05:00:00Z',
+        },
+      ]
+    );
+    expect(result[0]?.windows[0]?.resetsAt).toBeUndefined();
   });
   it('keys all five screenshot observations by catalog ID through label and order changes', () => {
     const values = [

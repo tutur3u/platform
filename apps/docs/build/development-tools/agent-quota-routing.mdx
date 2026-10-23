@@ -465,8 +465,10 @@ resumption must match a running task, provider and model in the T3 snapshot.
 Before each delegation, invoke `agent-quota admit POOL MODEL`. Exit **0** means
 ADMIT; exit **3** means a policy block; exit **2** means malformed input or
 unverifiable state. JSON on
-stdout explains the decision. This preflight uses cache-only quota and current
-reservations; it does not create a task reservation. The existing stdin JSON
+stdout explains the decision. This preflight uses cache-only quota and current reservations. Every successful
+positional admission records a provisional reservation for five minutes, so
+concurrent callers share the configured pool limit while the native task binding
+settles. The reservation is provisional, not a native task reservation. The existing stdin JSON
 `admit` interface remains the transactional admission path for full requirements.
 Pass `--reserve-owner` when the target is the orchestrator's own account, or set
 `AGENT_QUOTA_OWNER_POOL`; matching aliases require fresh headroom above the 30%
@@ -562,9 +564,13 @@ ACP transport is unavailable. Positional admission retains exit **0** for admit,
 state. Lock contention is a retryable block (exit 3). A malformed `block`
 command also exits **2**. Invalid manual observations
 are skipped individually and listed in `invalidObservations`; valid observations
-continue to contribute. It records pacing/hysteresis state in the existing hook ledger but does
-not reserve a task or switch an active writer. Full JSON admission remains the
-transactional reservation interface.
+continue to contribute. It records pacing/hysteresis state and a five-minute provisional reservation
+in the existing hook ledger; it does not switch an active writer. Full JSON
+admission remains the transactional native-task reservation interface. Manual
+observations more than five minutes in the future are rejected into
+`invalidObservations`. A resetless session observation is bounded to five hours.
+A block reset is inherited only when its scope covers the entire observed window
+and the block is within that window’s maximum age.
 
 The cross-thread terminal receipt scan targets a maximum of 2 seconds for up to
 5,000 candidate runs on a local projection; it performs one bounded candidate

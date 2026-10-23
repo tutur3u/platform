@@ -1,10 +1,18 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute, normalize } from 'node:path';
 import { blockUntil, matchesScope, type QuotaBlock } from './block-ledger';
-import { failureClass, safeReceipt } from './failure-receipt';
+import {
+  failureClass,
+  MAX_FUTURE_OBSERVATION_SKEW_MS,
+  safeReceipt,
+} from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type { AccountUsage, UsageWindow } from './types';
-import { coversModel, windowScope } from './window-scope';
+import {
+  coversModel,
+  noResetWindowMaxAgeMs,
+  windowScope,
+} from './window-scope';
 
 export interface ManualUsage {
   pool: string;
@@ -54,7 +62,8 @@ export function manualUsage(value: unknown, now = new Date()): ManualUsage {
   if (
     typeof output.observedAt === 'string' &&
     Number.isFinite(Date.parse(output.observedAt)) &&
-    Date.parse(output.observedAt) > now.getTime() + 5 * 60_000
+    Date.parse(output.observedAt) >
+      now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS
   )
     throw new HookError('manual-usage-future-observed-at');
   if (
@@ -174,32 +183,49 @@ export function applyManualUsage(
         observation.windowId,
         observation.windowLabel
       );
+      const kind = observation.windowId === 'five_hour' ? 'short' : 'long';
+      const maxWindowAge = noResetWindowMaxAgeMs({
+        id: observation.windowId,
+        kind,
+      });
+      const scopedModels =
+        scope.kind === 'account'
+          ? (account.models ?? [])
+          : scope.kind === 'models'
+            ? (account.models ?? []).filter((model) =>
+                coversModel({ scope } as UsageWindow, model)
+              )
+            : [];
+      const wholeWindowScopeCovered = (modelScope: string) =>
+        modelScope === '*' ||
+        (scopedModels.length > 0 &&
+          scopedModels.every((model) => matchesScope(modelScope, model)));
       const inheritedReset = blocks
         .filter(
           (block) =>
             aliases.includes(block.pool) &&
             block.kind !== 'capacity' &&
-            blockUntil(block) > now.getTime()
-        )
-        .filter((block) =>
-          (account.models ?? []).some(
-            (model) =>
-              coversModel({ scope } as UsageWindow, model) &&
-              matchesScope(block.modelScope, model)
-          )
+            blockUntil(block) > now.getTime() &&
+            Number.isFinite(Date.parse(block.observedAt)) &&
+            Date.parse(block.observedAt) <=
+              now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS &&
+            now.getTime() - Date.parse(block.observedAt) <= maxWindowAge &&
+            wholeWindowScopeCovered(block.modelScope)
         )
         .map((block) => block.resetAt)
         .filter(
           (reset): reset is string =>
             typeof reset === 'string' &&
             Number.isFinite(Date.parse(reset)) &&
-            Date.parse(reset) > now.getTime()
+            Date.parse(reset) > now.getTime() &&
+            Date.parse(reset) <=
+              Date.parse(observation.observedAt) + maxWindowAge
         )
         .sort((a, b) => Date.parse(b) - Date.parse(a))[0];
       windows.push({
         id: observation.windowId,
         label: observation.windowLabel,
-        kind: observation.windowId === 'five_hour' ? 'short' : 'long',
+        kind,
         scope,
         usedPercent:
           observation.measure === 'remaining'
@@ -251,6 +277,12 @@ export function snapshotWindows(
           window.windowDurationMins > 1440)
           ? 'long'
           : 'short',
+      windowDurationMins:
+        typeof window.windowDurationMins === 'number' &&
+        Number.isFinite(window.windowDurationMins) &&
+        window.windowDurationMins > 0
+          ? window.windowDurationMins
+          : undefined,
       usedPercent: window.usedPercent,
       resetsAt:
         typeof window.resetsAt === 'string' ? window.resetsAt : undefined,

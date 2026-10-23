@@ -3,6 +3,7 @@ import { accountKey, admit, recordObservation } from './admission';
 import { CAPACITY_COOLDOWN_MS } from './capacity';
 import { collectAll } from './collectors';
 import { collectChildren, collectPoolReceipts } from './collectors/children';
+import { MAX_FUTURE_OBSERVATION_SKEW_MS } from './failure-receipt';
 import { checkHandover } from './handover';
 import {
   admissionInput,
@@ -110,38 +111,45 @@ export async function runHook(command: string, action?: string): Promise<void> {
         )
           throw new HookError('outcome-invalid');
         const observedAt = timestamp(input.observedAt);
-        if (Date.parse(observedAt) > now.getTime())
+        if (
+          Date.parse(observedAt) >
+          now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS
+        )
           throw new HookError('observation-in-future');
         const resetsAt =
           input.resetsAt === undefined ? undefined : timestamp(input.resetsAt);
         if (resetsAt && Date.parse(resetsAt) <= Date.parse(observedAt))
           throw new HookError('reset-before-observation');
         result = await transactLedger((ledger) =>
-          recordObservation(ledger, {
-            eventId: id(input.eventId),
-            terminal:
-              input.terminal === undefined ? true : bool(input.terminal),
-            nativeReservationId:
-              input.nativeReservationId === undefined
-                ? undefined
-                : id(input.nativeReservationId),
-            instanceId,
-            accountKey: key,
-            outcome,
-            model: input.model === undefined ? undefined : id(input.model),
-            nextEligibleAt:
-              outcome === 'capacity-error'
-                ? input.nextEligibleAt === undefined
-                  ? new Date(
-                      Date.parse(observedAt) + CAPACITY_COOLDOWN_MS
-                    ).toISOString()
-                  : timestamp(input.nextEligibleAt)
-                : undefined,
-            observedAt,
-            resetsAt,
-            requestId:
-              input.requestId === undefined ? undefined : id(input.requestId),
-          })
+          recordObservation(
+            ledger,
+            {
+              eventId: id(input.eventId),
+              terminal:
+                input.terminal === undefined ? true : bool(input.terminal),
+              nativeReservationId:
+                input.nativeReservationId === undefined
+                  ? undefined
+                  : id(input.nativeReservationId),
+              instanceId,
+              accountKey: key,
+              outcome,
+              model: input.model === undefined ? undefined : id(input.model),
+              nextEligibleAt:
+                outcome === 'capacity-error'
+                  ? input.nextEligibleAt === undefined
+                    ? new Date(
+                        Date.parse(observedAt) + CAPACITY_COOLDOWN_MS
+                      ).toISOString()
+                    : timestamp(input.nextEligibleAt)
+                  : undefined,
+              observedAt,
+              resetsAt,
+              requestId:
+                input.requestId === undefined ? undefined : id(input.requestId),
+            },
+            now
+          )
         );
       } else if (command === 'switch-lease') {
         const identity = {

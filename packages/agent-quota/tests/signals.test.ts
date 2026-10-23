@@ -7,6 +7,7 @@ import { parseCatalog } from '../src/collectors/catalog';
 import { collectSnapshot } from '../src/collectors/snapshot';
 import { recommend, SIGNAL_TTL_MS } from '../src/policy';
 import type { AccountUsage } from '../src/types';
+import { noResetWindowMaxAgeMs } from '../src/window-scope';
 
 const now = new Date('2026-10-23T00:00:00Z');
 const healthy = (instanceId: string, label = instanceId): AccountUsage => ({
@@ -189,7 +190,9 @@ describe('freshness, identity and reservations', () => {
           credentialFingerprint: 'a'.repeat(64),
           windows: [
             {
-              kind: 'weekly',
+              id: 'monthly',
+              kind: 'monthly',
+              windowDurationMins: 44640,
               usedPercent: 25,
               resetsAt: '2026-10-23T01:00:00Z',
             },
@@ -205,7 +208,9 @@ describe('freshness, identity and reservations', () => {
         usedPercent: 25,
         observedAt: now.toISOString(),
         kind: 'long',
+        windowDurationMins: 44640,
       });
+      expect(noResetWindowMaxAgeMs(result.windows[0]!)).toBe(744 * 60 * 60_000);
       // An Antigravity window without scope cannot establish model headroom.
       expect(rank([result]).ranked[0]?.state).toBe('UNKNOWN');
       await writeFile(

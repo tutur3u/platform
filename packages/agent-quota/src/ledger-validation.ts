@@ -1,7 +1,12 @@
+import { MAX_FUTURE_OBSERVATION_SKEW_MS } from './failure-receipt';
 import type { HookLedger } from './hooks-types';
+import { RESERVATION_TTL } from './ledger-retention';
 import { MODEL_FAMILIES } from './window-scope';
 
-export function validLedger(value: unknown): value is HookLedger {
+export function validLedger(
+  value: unknown,
+  now = new Date()
+): value is HookLedger {
   const record = (item: unknown): item is Record<string, unknown> =>
     Boolean(item && typeof item === 'object' && !Array.isArray(item));
   const text = (item: unknown) =>
@@ -59,6 +64,8 @@ export function validLedger(value: unknown): value is HookLedger {
           String(item.outcome)
         ) &&
         date(item.observedAt) &&
+        Date.parse(item.observedAt as string) <=
+          now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS &&
         optional(item.model, text) &&
         optional(
           item.windowScope,
@@ -94,6 +101,9 @@ export function validLedger(value: unknown): value is HookLedger {
         ) &&
         date(item.createdAt) &&
         optional(item.expiresAt, date) &&
+        (item.expiresAt === undefined ||
+          Date.parse(item.expiresAt as string) <=
+            Date.parse(item.createdAt as string) + RESERVATION_TTL) &&
         optional(item.nativeReservationId, text)
     ) &&
     (value.leases as unknown[]).every(lease) &&

@@ -14,6 +14,7 @@ export interface UsageWindow {
   usedPercent?: number;
   estimated?: number;
   resetsAt?: string | null;
+  windowDurationMins?: number;
   source: string;
   confidence?: 'provider' | 'manual';
   observedAt: string;

@@ -30,12 +30,10 @@ export function recordPositionalAdmission(
   pool: string,
   model: string,
   account: ReturnType<typeof collapseAccounts>[number],
-  state: string | undefined,
   now: Date
 ) {
   ledger.lastAdmissions ??= {};
   ledger.lastAdmissions[pool] = now.getTime();
-  if (state !== 'UNKNOWN') return;
   const requestedThreadId =
     process.env.T3_CURRENT_THREAD_ID ?? process.env.T3_THREAD_ID;
   const threadId =
@@ -290,14 +288,7 @@ export async function runPositionalAdmit(
       const result = gateDecision(pool, model, context, reserveOwner);
       if (result.exitCode === 0) {
         if (!account) throw new HookError('pool-unverified');
-        recordPositionalAdmission(
-          ledger,
-          pool,
-          model,
-          account,
-          result.state,
-          context.now
-        );
+        recordPositionalAdmission(ledger, pool, model, account, context.now);
       }
       return result;
     });

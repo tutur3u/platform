@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 export const NO_RESET_RECEIPT_MAX_AGE_MS = 7 * 86400_000;
+export const MAX_FUTURE_OBSERVATION_SKEW_MS = 5 * 60_000;
 export function usageLimitReceiptActive(
   receipt: { resetsAt?: string | null; observedAt: string },
   now: Date
@@ -11,6 +12,7 @@ export function usageLimitReceiptActive(
   const observed = Date.parse(receipt.observedAt);
   return (
     Number.isFinite(observed) &&
+    observed <= now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS &&
     now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS
   );
 }

@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, it } from 'vitest';
 import { readLedger } from '../src/hook-ledger';
 
-it('bounds eight concurrent positional admissions to one provisional UNKNOWN reservation', async () => {
+async function runHerd(account: Record<string, unknown>) {
   const dir = await mkdtemp(join(tmpdir(), 'quota-positional-admits-'));
   let packageRoot = dirname(fileURLToPath(import.meta.url));
   while (!existsSync(resolve(packageRoot, 'src/positional-admit.ts'))) {
@@ -23,9 +23,9 @@ it('bounds eight concurrent positional admissions to one provisional UNKNOWN res
   ).href;
   const script = `import { transactLedger } from ${JSON.stringify(ledgerUrl)};
 import { runPositionalAdmit } from ${JSON.stringify(admissionUrl)};
-const [directory] = process.argv.slice(-1);
-const account = { instanceId: 'claudeAgent', provider: 'claude', label: 'fixture', available: true, models: ['claude-opus-4-6'], windows: [] };
-await runPositionalAdmit(['claudeAgent', 'claude-opus-4-6'], () => '', {
+const [directory, serializedAccount] = process.argv.slice(-2);
+const account = JSON.parse(serializedAccount);
+await runPositionalAdmit([account.instanceId, account.models[0]], () => '', {
   readBlockLedger: async () => ({ version: 1, blocks: [] }),
   collectAll: async () => ({ accounts: [account], active: [], t3ObservedAt: new Date().toISOString(), blocks: [], poolSettings: {}, invalidObservations: [] }),
   collectPoolReceipts: () => ({ threads: [], runs: [], tasks: [], failures: [], transfers: [] }),
@@ -39,11 +39,15 @@ await runPositionalAdmit(['claudeAgent', 'claude-opus-4-6'], () => '', {
         () =>
           new Promise<{ code: number | null; stdout: string; stderr: string }>(
             (resolveResult) => {
-              const child = spawn('bun', ['-e', script, dir], {
-                cwd: packageRoot,
-                env: { HOME: dir, PATH: process.env.PATH ?? '' },
-                stdio: ['ignore', 'pipe', 'pipe'],
-              });
+              const child = spawn(
+                'bun',
+                ['-e', script, dir, JSON.stringify(account)],
+                {
+                  cwd: packageRoot,
+                  env: { HOME: dir, PATH: process.env.PATH ?? '' },
+                  stdio: ['ignore', 'pipe', 'pipe'],
+                }
+              );
               let stdout = '';
               let stderr = '';
               child.stdout
@@ -68,7 +72,9 @@ await runPositionalAdmit(['claudeAgent', 'claude-opus-4-6'], () => '', {
     ).toHaveLength(1);
     expect(
       decisions.filter((result) =>
-        result.reasons?.includes('unknown-reservation-cap')
+        result.reasons?.includes('pool-reserve')
+          ? account.instanceId === 'claude_hehe'
+          : result.reasons?.includes('unknown-reservation-cap')
       )
     ).toHaveLength(7);
     const ledger = await readLedger(dir);
@@ -80,4 +86,37 @@ await runPositionalAdmit(['claudeAgent', 'claude-opus-4-6'], () => '', {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+it('bounds eight concurrent UNKNOWN positional admits with provisional reservations', async () => {
+  await runHerd({
+    instanceId: 'claudeAgent',
+    provider: 'claude',
+    label: 'fixture',
+    available: true,
+    models: ['claude-opus-4-6'],
+    windows: [],
+  });
+});
+
+it('bounds eight concurrent fresh admissions at the Claude owner concurrency cap', async () => {
+  const now = new Date();
+  await runHerd({
+    instanceId: 'claude_hehe',
+    provider: 'claude',
+    label: 'fixture',
+    available: true,
+    models: ['claude-opus-4-6'],
+    windows: [
+      {
+        id: 'five_hour',
+        kind: 'short',
+        usedPercent: 20,
+        observedAt: now.toISOString(),
+        resetsAt: new Date(now.getTime() + 60 * 60_000).toISOString(),
+        source: 'fixture',
+        authoritative: true,
+      },
+    ],
+  });
 });

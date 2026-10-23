@@ -5,7 +5,7 @@ import { collectAll } from './collectors';
 import { usageLimitReceiptActive } from './failure-receipt';
 import { readLedger } from './hook-ledger';
 import type { Observation } from './hooks-types';
-import { RESERVATION_TTL } from './ledger-retention';
+import { isReservationActive } from './ledger-retention';
 import { recommend, SIGNAL_TTL_MS } from './policy';
 import type { PoolSettings } from './pool-settings';
 import { chooseRoleCandidate } from './role-policy';
@@ -337,11 +337,8 @@ export async function evaluateWatch(owner: string, options: WatchOptions = {}) {
       (assignment) => assignment.reservationIds ?? []
     );
     const currentReservations = ledger.reservations
-      .filter(
-        (reservation) =>
-          (reservation.nativeReservationId &&
-            nativeReservations.includes(reservation.nativeReservationId)) ||
-          now.getTime() - Date.parse(reservation.createdAt) <= RESERVATION_TTL
+      .filter((reservation) =>
+        isReservationActive(reservation, now, nativeReservations)
       )
       .map((reservation) => reservation.instanceId);
     successor = selectSuccessor(

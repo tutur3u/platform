@@ -5,6 +5,24 @@ import { processState } from './process-identity';
 
 const RETENTION = 30 * 86400_000;
 export const RESERVATION_TTL = 30 * 60_000;
+export function isReservationActive(
+  reservation: HookLedger['reservations'][number],
+  now: Date,
+  activeIds: string[] = []
+) {
+  if (
+    reservation.nativeReservationId &&
+    activeIds.includes(reservation.nativeReservationId)
+  )
+    return true;
+  const createdAt = Date.parse(reservation.createdAt);
+  if (!Number.isFinite(createdAt)) return false;
+  const maxExpiry = createdAt + RESERVATION_TTL;
+  const expiry = reservation.expiresAt
+    ? Math.min(Date.parse(reservation.expiresAt), maxExpiry)
+    : maxExpiry;
+  return Number.isFinite(expiry) && expiry > now.getTime();
+}
 export function pruneLedger(
   ledger: HookLedger,
   now: Date,
@@ -13,17 +31,16 @@ export function pruneLedger(
   const time = now.getTime();
   ledger.retiredRequests ??= [];
   ledger.reservations = ledger.reservations.filter((reservation) => {
+    const createdAt = Date.parse(reservation.createdAt);
     if (
-      reservation.nativeReservationId &&
-      activeIds.includes(reservation.nativeReservationId)
+      reservation.expiresAt &&
+      Number.isFinite(createdAt) &&
+      Date.parse(reservation.expiresAt) > createdAt + RESERVATION_TTL
     )
-      return true;
-    if (
-      (reservation.expiresAt && Date.parse(reservation.expiresAt) > time) ||
-      (!reservation.expiresAt &&
-        time - Date.parse(reservation.createdAt) <= RESERVATION_TTL)
-    )
-      return true;
+      reservation.expiresAt = new Date(
+        createdAt + RESERVATION_TTL
+      ).toISOString();
+    if (isReservationActive(reservation, now, activeIds)) return true;
     ledger.retiredRequests?.push({
       requestId: reservation.requestId,
       retiredAt: now.toISOString(),

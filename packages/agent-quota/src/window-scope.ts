@@ -6,8 +6,15 @@ const WEEK_WINDOW_MAX_AGE_MS = 7 * 86400_000;
 const MONTH_WINDOW_MAX_AGE_MS = 31 * 86400_000;
 
 export function noResetWindowMaxAgeMs(
-  window: Pick<UsageWindow, 'id' | 'kind'>
+  window: Pick<UsageWindow, 'id' | 'kind' | 'windowDurationMins'>
 ) {
+  if (
+    typeof window.windowDurationMins === 'number' &&
+    Number.isFinite(window.windowDurationMins) &&
+    window.windowDurationMins > 0 &&
+    window.windowDurationMins <= 366 * 24 * 60
+  )
+    return window.windowDurationMins * 60_000;
   const id = (window.id ?? '').toLowerCase();
   if (window.kind === 'short' || /five.?hour|session/.test(id))
     return SHORT_WINDOW_MAX_AGE_MS;

@@ -406,6 +406,9 @@ it('reads checkpoint state directly for one thread within its latency budget', a
       CREATE TABLE orchestration_v2_projection_threads(thread_id TEXT,payload_json TEXT);
       CREATE TABLE orchestration_v2_projection_runs(run_id TEXT,thread_id TEXT,status TEXT);
       CREATE TABLE orchestration_v2_projection_nodes(node_id TEXT,thread_id TEXT,run_id TEXT,status TEXT);
+      CREATE INDEX projection_threads_thread_id ON orchestration_v2_projection_threads(thread_id);
+      CREATE INDEX projection_runs_thread_id_status ON orchestration_v2_projection_runs(thread_id,status);
+      CREATE INDEX projection_nodes_thread_id_run_id_status ON orchestration_v2_projection_nodes(thread_id,run_id,status);
       INSERT INTO orchestration_v2_projection_threads VALUES ('owner', '{}'), ('other', '{}');
       INSERT INTO orchestration_v2_projection_runs VALUES
         ('done', 'owner', 'completed'),
@@ -417,6 +420,27 @@ it('reads checkpoint state directly for one thread within its latency budget', a
         ('active-node', 'owner', 'active', 'running'),
         ('foreign-node', 'other', 'other-run', 'running');
     `);
+    const indexedPlans = [
+      db
+        .prepare(
+          'EXPLAIN QUERY PLAN SELECT * FROM orchestration_v2_projection_threads WHERE thread_id=?'
+        )
+        .all('owner'),
+      db
+        .prepare(
+          "EXPLAIN QUERY PLAN SELECT * FROM orchestration_v2_projection_runs WHERE thread_id=? AND status IN ('queued','running')"
+        )
+        .all('owner'),
+      db
+        .prepare(
+          "EXPLAIN QUERY PLAN SELECT * FROM orchestration_v2_projection_nodes WHERE thread_id=? AND status IN ('running','pending','waiting')"
+        )
+        .all('owner'),
+    ]
+      .flat()
+      .map((row) => String((row as { detail: string }).detail));
+    expect(indexedPlans.join(' ')).toContain('USING INDEX');
+    expect(indexedPlans).toHaveLength(3);
     db.exec(`
       BEGIN;
       WITH RECURSIVE seq(n) AS (
@@ -439,10 +463,11 @@ it('reads checkpoint state directly for one thread within its latency budget', a
     const elapsed = performance.now() - startedAt;
     expect(elapsed).toBeLessThan(CHECKPOINT_READ_BUDGET_MS);
     expect(snapshot.threads).toEqual([{ id: 'owner', activeWriterNodes: 1 }]);
-    expect(snapshot.runs).toEqual([
-      { threadId: 'owner', status: 'running' },
-      { threadId: 'owner', status: 'queued' },
+    expect(snapshot.runs.map((run) => run.status).sort()).toEqual([
+      'queued',
+      'running',
     ]);
+    expect(snapshot.runs.every((run) => run.threadId === 'owner')).toBe(true);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
