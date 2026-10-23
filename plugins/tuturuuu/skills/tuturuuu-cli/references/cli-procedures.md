@@ -106,3 +106,5 @@ Run focused non-build tests locally and require applicable exact-commit CI test,
 type-check, lint, and build results. Do not run local `bun check` or builds.
 
 For SDK package process-drain failures on macOS, inspect the first signal-zero probe after `SIGKILL`. An exiting group can briefly return `EPERM` before disappearing. Continue bounded polling inside the existing deadline; only `ESRCH` establishes disappearance. Do not suppress persistent permission failures or weaken descendant assertions. Use `scripts/ci/sdk-package-process.test.js` for deterministic transient/persistent probe controls, alongside `qualify-sdk-package.test.js` for real descendants.
+
+Retry only EPERM during group drain; rethrow other probe failures and retain the last EPERM as the timeout error's cause. Only the post-leader-close SIGKILL may continue to drain after EPERM. Include sdk-package-process.test.js in both package qualification and release qualification control steps.

@@ -17,19 +17,23 @@ async function drainGroup(
 ) {
   if (!pid) return;
   const until = Date.now() + timeoutMs;
+  let lastError;
   do {
     try {
       if (!exists(pid)) return;
-    } catch {
-      // Darwin can return EPERM while a killed group is exiting. Keep
-      // polling within the same deadline; only disappearance proves drain.
+    } catch (error) {
+      if (error.code !== 'EPERM') throw error;
+      lastError = error;
     }
     await new Promise((resolve) => setTimeout(resolve, 20));
   } while (Date.now() < until);
-  throw Object.assign(new Error('Owned process group not drained'), {
-    code: 'PROCESS_GROUP_UNDRAINED',
-    undrainedGroup: pid,
-  });
+  throw Object.assign(
+    new Error('Owned process group not drained', { cause: lastError }),
+    {
+      code: 'PROCESS_GROUP_UNDRAINED',
+      undrainedGroup: pid,
+    }
+  );
 }
 /** @param {{ cwd?: string, env?: NodeJS.ProcessEnv, timeoutMs?: number }} [options] */
 function runProcess(command, args, options = {}) {
@@ -46,12 +50,16 @@ function runProcess(command, args, options = {}) {
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    const signal = (value) => {
+    const signal = (value, phase = 'terminate') => {
       if (!child.pid) return;
       try {
         process.kill(-child.pid, value);
       } catch (error) {
-        if (error.code !== 'ESRCH') stopped = 'PROCESS_SIGNAL_FAILED';
+        if (
+          error.code !== 'ESRCH' &&
+          !(phase === 'drain' && value === 'SIGKILL' && error.code === 'EPERM')
+        )
+          stopped = 'PROCESS_SIGNAL_FAILED';
       }
     };
     const stop = (reason) => {
@@ -81,7 +89,7 @@ function runProcess(command, args, options = {}) {
       clearTimeout(timer);
       clearTimeout(killTimer);
       // Also fence descendants that closed their output streams before the leader.
-      signal('SIGKILL');
+      signal('SIGKILL', 'drain');
       try {
         await drainGroup(child.pid);
       } catch (error) {
