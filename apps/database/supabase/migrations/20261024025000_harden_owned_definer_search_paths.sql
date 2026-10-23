@@ -1,6 +1,7 @@
 -- A definer path may contain only schemas where PUBLIC, anon and authenticated
--- lack CREATE, with pg_temp explicitly last. Empty and pg_catalog-only paths are
--- safe. Inherited paths, $user and nonexistent schemas are never trusted.
+-- lack CREATE, with pg_temp explicitly last. Empty and catalog-only paths are
+-- unsafe: implicit pg_temp can shadow relation AND type names. Inherited paths,
+-- $user and nonexistent schemas are never trusted.
 -- These are the exposed schemas in supabase/config.toml (plus public).
 -- Revoke CREATE, preserving USAGE and existing object grants.
 revoke create on schema public from public, anon, authenticated;
@@ -19,7 +20,7 @@ RETURNS TABLE(
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_sync_token TEXT;
@@ -95,7 +96,7 @@ declare
   position integer;
 begin
   if path_setting is null then return false; end if;
-  if btrim(path_setting) in ('', '""') then return true; end if;
+  if btrim(path_setting) in ('', '""') then return false; end if;
   schemas := regexp_split_to_array(path_setting, '\s*,\s*');
   for position in 1..cardinality(schemas) loop
     schema_name := btrim(schemas[position]);
@@ -106,7 +107,6 @@ begin
     end if;
     schemas[position] := schema_name;
   end loop;
-  if schemas = array['pg_catalog'] then return true; end if;
   if schemas[cardinality(schemas)] <> 'pg_temp' then return false; end if;
   for position in 1..cardinality(schemas) loop
     schema_name := schemas[position];
@@ -137,6 +137,20 @@ declare
   candidate_path text;
   schema_name text;
 begin
+  -- Supabase-managed namespaces and extension functions remain provider-owned.
+  for fn in
+    select n.nspname, p.proname, pg_get_userbyid(p.proowner) as owner, p.proconfig
+    from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+    where n.nspname in ('public','private','storage','graphql_public')
+      and p.prosecdef and p.prokind='f'
+      and (not pg_has_role(current_user,p.proowner,'USAGE')
+        or n.nspname in ('storage','graphql_public')
+        or exists (select 1 from pg_catalog.pg_depend d where d.classid='pg_proc'::regclass
+          and d.objid=p.oid and d.deptype='e'))
+  loop
+    raise notice 'Provider-owned definer left unchanged: %.% owner=% proconfig=%',
+      fn.nspname,fn.proname,fn.owner,fn.proconfig;
+  end loop;
   for fn in
     select p.oid, n.nspname, p.proname, p.prosrc,
       pg_catalog.pg_get_function_identity_arguments(p.oid) as arguments,
@@ -146,15 +160,20 @@ begin
     join pg_catalog.pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'storage', 'graphql_public')
       and p.prosecdef and p.prokind = 'f'
+      and pg_has_role(current_user, p.proowner, 'USAGE')
+      and n.nspname not in ('storage', 'graphql_public')
+      and not exists (select 1 from pg_catalog.pg_depend d
+        where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e')
     order by n.nspname, p.proname, p.oid
   loop
     if pg_temp.security_definer_path_is_safe(fn.path_setting) then continue; end if;
-    -- These trigger bodies use qualified relations and only catalog/auth.uid
-    -- helpers. Keep inherited lookup out of their execution entirely.
-    if fn.oid in (to_regprocedure('public.add_ws_creator()'),
-      to_regprocedure('public.claim_workspace_creator_when_missing()')) then
-      execute format('alter function %I.%I(%s) set search_path = %L',
-        fn.nspname, fn.proname, fn.arguments, '');
+    -- Qualified bodies retain catalog lookup while making pg_temp explicit last.
+    if (fn.path_setting is not null
+      and btrim(fn.path_setting) in ('', '""', 'pg_catalog', '"pg_catalog"'))
+      or fn.oid in (to_regprocedure('public.add_ws_creator()'),
+        to_regprocedure('public.claim_workspace_creator_when_missing()')) then
+      execute format('alter function %I.%I(%s) set search_path = pg_catalog, pg_temp',
+        fn.nspname, fn.proname, fn.arguments);
       continue;
     end if;
     -- Preserve required lookup for unreviewed invoker dependency chains rather
@@ -184,6 +203,10 @@ begin
     join pg_catalog.pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'storage', 'graphql_public')
       and p.prosecdef and p.prokind = 'f'
+      and pg_has_role(current_user, p.proowner, 'USAGE')
+      and n.nspname not in ('storage', 'graphql_public')
+      and not exists (select 1 from pg_catalog.pg_depend d
+        where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e')
       and not pg_temp.security_definer_path_is_safe((
         select substr(setting, 13) from unnest(p.proconfig) setting
         where setting like 'search_path=%'

@@ -1,8 +1,8 @@
--- Contract for 20261024015000_harden_definer_function_grants.sql: legacy
+-- Contract for 20261024023000_harden_definer_function_grants.sql: legacy
 -- definer helpers are not callable by client roles, policy helpers are not
 -- callable by anon, Mira XP writes are bound to the actor, task list access
 -- requires workspace membership, list-less tasks belong to their creator
--- (20261024020000), and search_path pins hold.
+-- (20261024024000), and search_path pins hold.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
@@ -98,12 +98,12 @@ select ok(has_function_privilege('authenticated', 'public.award_mira_xp(uuid,int
 -- Policy and search_path pins (24-33).
 select is((select roles::text from pg_policies where schemaname = 'public' and tablename = 'workspace_chat_messages'
   and policyname = 'Participants can view messages in their channels'), '{authenticated}', 'chat message read policy applies to authenticated only');
-select is((select proconfig::text from pg_proc where oid = 'public.award_mira_xp(uuid,integer,text)'::regprocedure), '{"search_path=\"\""}', 'award XP pinned empty');
-select is((select proconfig::text from pg_proc where oid = 'public.complete_mira_focus_session(uuid,text)'::regprocedure), '{"search_path=\"\""}', 'focus completion pinned empty');
-select is((select proconfig::text from pg_proc where oid = 'public.is_task_board_member(uuid,uuid)'::regprocedure), '{"search_path=\"\""}', 'board membership pinned empty');
-select is((select proconfig::text from pg_proc where oid = 'public.get_task_details(uuid)'::regprocedure), '{"search_path=\"\""}', 'task details pinned at function level');
+select is((select proconfig::text from pg_proc where oid = 'public.award_mira_xp(uuid,integer,text)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'award XP pinned catalog and temp');
+select is((select proconfig::text from pg_proc where oid = 'public.complete_mira_focus_session(uuid,text)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'focus completion pinned catalog and temp');
+select is((select proconfig::text from pg_proc where oid = 'public.is_task_board_member(uuid,uuid)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'board membership pinned catalog and temp');
+select is((select proconfig::text from pg_proc where oid = 'public.get_task_details(uuid)'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'task details pinned at catalog and temp at function level');
 select ok((select position('set local' in lower(prosrc)) = 0 from pg_proc where oid = 'public.get_task_details(uuid)'::regprocedure), 'task details no longer changes the caller transaction search_path');
-select is((select proconfig::text from pg_proc where oid = 'public.get_platform_ai_credit_overview()'::regprocedure), '{"search_path=\"\""}', 'credit overview pinned empty');
+select is((select proconfig::text from pg_proc where oid = 'public.get_platform_ai_credit_overview()'::regprocedure), '{"search_path=pg_catalog, pg_temp"}', 'credit overview pinned catalog and temp');
 select is((select proconfig::text from pg_proc where oid = 'public.set_default_break_type(uuid,uuid)'::regprocedure), '{"search_path=public, pg_temp"}', 'break type helper uses a trusted path with pg_temp last');
 select is((select proconfig::text from pg_proc where oid = 'public.get_challenge_stats(uuid,uuid)'::regprocedure), '{"search_path=private, public, pg_temp"}', 'challenge stats resolves private Nova tables');
 select is((select proconfig::text from pg_proc where oid = 'public.get_transaction_creators(uuid)'::regprocedure), '{"search_path=private, public, pg_temp"}', 'existing transaction creator pin preserved');

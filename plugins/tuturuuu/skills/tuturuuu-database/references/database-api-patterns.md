@@ -36,11 +36,13 @@ review prove baseline equivalence. Existing migration history stays immutable.
   `auth.role() IS DISTINCT FROM 'service_role'` idiom.
 - Definer path trust comes from current schema privileges: `PUBLIC`, `anon` and
   `authenticated` must lack effective `CREATE`. Require explicit `pg_temp` last
-  for named paths; empty or catalog-only paths are safe. Reject inherited paths,
+  for every path; empty and catalog-only paths are unsafe for TEMP types too. Reject inherited paths,
   `$user` and nonexistent schemas. Run `security-definer-search-paths.sql` across
   every configured exposed schema and retain its negative controls. Prefer ALTER
-  to body replacement; check nested invoker dependencies before choosing an empty
-  path. See the RPC hardening section of `apps/docs/build/devops/secrets-and-configuration.mdx`.
+  to body replacement; check nested invoker dependencies before narrowing lookup
+  to `pg_catalog, pg_temp`. Limit application DDL and assertions to ownable,
+  non-provider functions; report other owners and managed schemas. See the RPC
+  hardening section of `apps/docs/build/devops/secrets-and-configuration.mdx`.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
 ## Outbound SSO persistence
