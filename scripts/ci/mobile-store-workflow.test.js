@@ -467,3 +467,28 @@ test('mobile store event guards separate new releases from review retries', () =
     }
   }
 });
+
+test('both store paths use the shared mobile note policy and bounded Play metadata', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github/workflows/mobile-deploy-stores.yaml'),
+    'utf8'
+  );
+  assert.match(workflow, /normalize-release-description\.js --mobile/);
+  assert.match(
+    workflow,
+    /whatsNewDirectory: \$\{\{ env\.MOBILE_PLAY_NOTES \}\}/
+  );
+  assert.match(workflow, /-le 500/);
+  const history = fs.readFileSync(
+    path.join(repoRoot, 'scripts/mobile-deployment/release-history.mjs'),
+    'utf8'
+  );
+  assert.match(history, /['"]--no-merges['"]/);
+  assert.match(history, /normalizer\s*\.normalizeMobileReleaseNotes/);
+  const notes = fs.readFileSync(
+    path.join(repoRoot, 'scripts/mobile-deployment/build-test-notes.mjs'),
+    'utf8'
+  );
+  assert.match(notes, /normalizer\s*\.normalizeMobileReleaseNotes/);
+  assert.match(notes, /notes\.length \+ bullet\.length > 4000/);
+});

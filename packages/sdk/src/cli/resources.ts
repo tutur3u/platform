@@ -4,6 +4,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import {
   commandCwd,
   isHeavyCommand,
+  isTrivialCommand,
   limitCommand,
   realExecutable,
 } from './resources-command';
@@ -11,6 +12,7 @@ import {
   atomicJson,
   defaultResourceConfig,
   laneResourceConfig,
+  maxResourceLanes,
   readResourceConfig,
   resourceEnvironment,
   resourceHome,
@@ -32,13 +34,17 @@ import {
   uninstallResources,
 } from './resources-setup';
 import { nestedOwner, withAdmission } from './resources-slots';
+import {
+  renderResourceStatus,
+  resourceStatusDetails,
+} from './resources-status';
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
 Usage: ttr resources <setup|status|monitor|run|enable|disable|uninstall> [options]
 
   setup --root <path>     opt in a project and its Git worktrees (repeat --root)
-  status [--json]         show machine capacity, limits, owner and waiting jobs
+  status [--json]         show capacity, owners (command, age, CPU), waiters, idle warnings
   monitor --seconds 60   capture memory/process samples every 5 seconds (JSONL)
   run -- COMMAND ARGS    queue any finite command; explicit setup required
   enable | disable       toggle automatic admission for future commands
@@ -46,16 +52,22 @@ Usage: ttr resources <setup|status|monitor|run|enable|disable|uninstall> [option
 
 Setup options:
   --shell zsh|bash|none   shell hooks; defaults to the current shell
-  --lanes <1|2>           base lanes; default 1, change only when idle
-  --max-lanes <1..8>      adaptive ceiling; default base, change only when idle
+  --lanes <1..8>          base lanes; default 1, change only when idle
+  --max-lanes <1..8>      burst ceiling; default base, change only when idle
   --workers <1..64>       Vitest/Cargo workers; default adapts to RAM and CPUs
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
 
 One base lane is the default; opt in to burst lanes only after an idle migration.
-Burst admission requires normal memory pressure, low CPU load and worker headroom.
-All lanes share one per-user FIFO queue and a bounded total worker budget.
+Burst admission requires normal memory pressure and low CPU load, and stays
+under a host lane ceiling (RAM/4 GiB, CPUs-2, at most 8). Each lane gets at
+least one worker and at most its share of the configured worker totals.
+All lanes share one per-user FIFO queue. Out-of-range config values are clamped
+with a warning; an unreadable config makes shims run commands unmanaged.
+Commands inside an admitted job (TTR_RESOURCES_ADMITTED, or a process-tree
+ancestor holding a lane) run immediately instead of queueing again.
+Version/help probes and read-only commands (ls, cat, git status...) skip the queue.
 Turbo runs one task; Vitest and Cargo get bounded worker counts. Commands
 outside those projects are unchanged. Running processes are never interrupted.
 macOS/Linux supported. Shell hooks cover new shells, not existing processes.
@@ -110,8 +122,21 @@ export async function runResourcesCommand(argv: string[]) {
     const shim = action === 'shim';
     const name = shim ? options[1] : command.shift();
     if (!name) throw new Error('Use ttr resources run -- COMMAND [ARGS...].');
-    const config = await readResourceConfig(home);
     const real = realExecutable(name, join(home, 'bin'));
+    let config: Awaited<ReturnType<typeof readResourceConfig>>;
+    try {
+      config = await readResourceConfig(home);
+    } catch (error) {
+      // One bad config must not brick every tool behind the shared shims.
+      if (!shim) throw error;
+      process.stderr.write(
+        `[ttr resources] ${error instanceof Error ? error.message : String(error)} Running ${basename(name)} without resource admission.\n`
+      );
+      process.exitCode = await spawnResourceCommand(real, command, {
+        ...process.env,
+      });
+      return;
+    }
     const enabled =
       process.env.TTR_RESOURCES_BYPASS !== '1' &&
       (!shim ||
@@ -130,7 +155,8 @@ export async function runResourcesCommand(argv: string[]) {
       env.PATH = `${bin}:${env.PATH || ''}`;
     }
     process.exitCode =
-      enabled && (!shim || isHeavyCommand(name, command))
+      enabled &&
+      (shim ? isHeavyCommand(name, command) : !isTrivialCommand(name, command))
         ? await queuedResourceCommand(
             home,
             real,
@@ -163,9 +189,11 @@ export async function runResourcesCommand(argv: string[]) {
         if (arg === '--workers') workers = Number(value);
         if (arg === '--max-lanes') maxLanes = Number(value);
         if (arg === '--lanes') {
-          if (value !== '1' && value !== '2')
-            throw new Error('--lanes must be 1 or 2.');
-          lanes = value === '1' ? 1 : 2;
+          if (!/^[1-8]$/.test(value))
+            throw new Error(
+              `--lanes must be an integer from 1 to ${maxResourceLanes}.`
+            );
+          lanes = Number(value);
         }
       } else if (!['--dry-run', '--json', '--no-update-check'].includes(arg))
         throw new Error(`Unknown setup option: ${arg}`);
@@ -217,11 +245,12 @@ export async function runResourcesCommand(argv: string[]) {
       },
       limits: config || defaultResourceConfig(),
       ...state,
+      ...(await resourceStatusDetails(state)),
     };
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(result, null, 2)}\n`
-        : `${result.enabled ? 'Enabled' : 'Not enabled'}: ${result.machine.memoryGiB} GiB RAM, ${result.machine.cpus} CPUs\nLimits: ${state.laneCount} base lane(s), max ${state.maxLanes}, burst ${state.burst.eligible ? 'eligible' : state.burst.reason}, Turbo ${result.limits.turboConcurrency}, Vitest ${result.limits.vitestWorkers}\nRunning: ${state.owners.length ? state.owners.map((owner) => `${owner.tool} (PID ${owner.pid}) in ${owner.cwd}`).join('; ') : state.occupied ? 'initializing or awaiting stale-owner inspection' : 'none'}\nWaiting: ${state.waiting.length}\n`
+        : renderResourceStatus(result)
     );
     return;
   }

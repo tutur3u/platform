@@ -1,4 +1,7 @@
-const { normalizeReleaseNotes } = require('./normalize-release-notes');
+const {
+  normalizeReleaseNotes,
+  normalizeMobileReleaseNotes,
+} = require('./normalize-release-notes');
 const { GitHubClient, resolveToken } = require('./release-please-auto-approve');
 
 /** Component summaries deliberately repeat platform notes; dedupe within each. */
@@ -46,7 +49,10 @@ async function main() {
 }
 
 module.exports = { normalizeReleaseDescription, normalizeReleasePullRequest };
-if (require.main === module) {
+if (require.main === module && process.argv[2] === '--mobile') {
+  const fs = require('node:fs');
+  process.stdout.write(normalizeMobileReleaseNotes(fs.readFileSync(0, 'utf8')));
+} else if (require.main === module) {
   main().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;

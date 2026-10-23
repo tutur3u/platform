@@ -117,6 +117,7 @@ function fixture(
     'scripts/ci/workspace-dependency-closure.ts',
     'scripts/ci/overflow-notes-ci.js',
     'scripts/ci/check-workflow-config.ts',
+    'scripts/ci/mail-calendar-tasks-affected.ts',
     'scripts/ci/release-only-changes.js',
   ]) {
     const target = path.join(dir, file);

@@ -189,6 +189,46 @@ it.each([
     expect(writes).toBe(0);
   }
 );
+const capabilityHeartbeat = (capabilities: unknown) =>
+  new Request('https://control.test/v1/heartbeat', {
+    method: 'POST',
+    headers: { 'X-Devbox-Runner-Token': token },
+    body: JSON.stringify({ capabilities }),
+  });
+it('accepts an optional advisory execution mode and isolation summary', async () => {
+  const capabilities = {
+    executionMode: 'trusted',
+    isolation: { checkedAt: '2026-10-23T00:00:00.000Z', dedicatedUser: true },
+  };
+  expect(
+    (await worker.fetch(capabilityHeartbeat(capabilities), env)).status
+  ).toBe(200);
+  const write = vi
+    .mocked(globalThis.fetch)
+    .mock.calls.find(([, init]) => init?.method === 'PATCH');
+  const stored = JSON.parse(String(write?.[1]?.body)).capabilities;
+  expect([stored.executionMode, stored.isolation]).toEqual([
+    'trusted',
+    capabilities.isolation,
+  ]);
+});
+it.each([
+  { executionMode: 'root' },
+  { executionMode: 1 },
+  { isolation: { dedicatedUser: 'yes' } },
+  { isolation: { tokenValue: true } },
+  { isolation: { checkedAt: 'x'.repeat(101) } },
+  { isolation: null },
+  { isolation: [] },
+])(
+  'rejects malformed execution mode or isolation reports without writes: %j',
+  async (capabilities) => {
+    expect(
+      (await worker.fetch(capabilityHeartbeat(capabilities), env)).status
+    ).toBe(400);
+    expect(writes).toBe(0);
+  }
+);
 it('still rejects unknown top-level capability keys', async () => {
   expect(
     (

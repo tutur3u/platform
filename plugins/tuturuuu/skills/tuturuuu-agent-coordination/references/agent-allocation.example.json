@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "project": "tuturuuu",
+  "owner": "tuturuuu-integration-owner",
+  "allocation": 8,
+  "observedRuntimeLimit": {
+    "limit": 8,
+    "unit": "per-thread-tree",
+    "source": "illustrative only; record the limit observed for the launching session"
+  },
+  "validationLanes": 2,
+  "agents": [
+    {
+      "id": "lead-security",
+      "parent": "tuturuuu-integration-owner",
+      "role": "lead",
+      "state": "active",
+      "budget": 3,
+      "worksets": [".github/workflows/**"]
+    },
+    {
+      "id": "worker-action-pins",
+      "parent": "lead-security",
+      "role": "worker",
+      "state": "active",
+      "heavyValidation": true
+    },
+    {
+      "id": "worker-token-permissions",
+      "parent": "lead-security",
+      "role": "worker",
+      "state": "waiting"
+    },
+    {
+      "id": "lead-mobile",
+      "parent": "tuturuuu-integration-owner",
+      "role": "lead",
+      "state": "active",
+      "budget": 2,
+      "worksets": ["apps/mobile/**"]
+    },
+    {
+      "id": "worker-calendar-labels",
+      "parent": "lead-mobile",
+      "role": "worker",
+      "state": "active",
+      "heavyValidation": true
+    },
+    {
+      "id": "worker-release-notes",
+      "parent": "lead-mobile",
+      "role": "worker",
+      "state": "done"
+    },
+    {
+      "id": "reviewer-action-pins",
+      "parent": "tuturuuu-integration-owner",
+      "role": "reviewer",
+      "state": "active",
+      "reviews": "worker-action-pins"
+    }
+  ]
+}

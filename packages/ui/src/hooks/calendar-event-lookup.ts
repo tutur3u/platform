@@ -1,5 +1,8 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import {
+  allDayEventCivilDates,
+  isAllDayEvent,
+} from '@tuturuuu/utils/calendar-utils';
 import { calendarInstantDay, calendarToday } from '../lib/calendar-day';
 
 const dayStamp = (date: Date) =>
@@ -11,19 +14,26 @@ export function createCalendarEventLookup(
 ) {
   const intervals = events
     .map((event, order) => {
-      const allDay = isAllDayEvent(event);
+      const allDay = isAllDayEvent(event, timezone);
+      const civil = allDay ? allDayEventCivilDates(event, timezone) : null;
       const eventDay = (value: string) => {
         const instant = new Date(value);
         if (!Number.isFinite(instant.getTime())) return NaN;
-        return dayStamp(
-          allDay ? instant : calendarInstantDay(instant, timezone)
-        );
+        return dayStamp(calendarInstantDay(instant, timezone));
       };
       return {
         event,
         order,
-        start: eventDay(event.start_at),
-        end: eventDay(event.end_at) - (allDay ? 1 : 0),
+        start: allDay
+          ? civil
+            ? dayStamp(civil.start)
+            : NaN
+          : eventDay(event.start_at),
+        end: allDay
+          ? civil
+            ? dayStamp(civil.end) - 1
+            : NaN
+          : eventDay(event.end_at),
       };
     })
     .filter((item) => Number.isFinite(item.start) && Number.isFinite(item.end))
