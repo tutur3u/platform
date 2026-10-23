@@ -1,6 +1,7 @@
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import {
   chmod,
+  mkdir,
   mkdtemp,
   realpath,
   rm,
@@ -42,7 +43,7 @@ import {
   hostLaneCeiling,
   laneResourceConfig,
 } from './resources-config';
-import { nestedOwner, newOwner } from './resources-slots';
+import { nestedOwner, newOwner, processLineage } from './resources-slots';
 
 const dirs: string[] = [];
 const children: ChildProcess[] = [];
@@ -100,6 +101,44 @@ describe('nested markers need process-tree evidence (REV-6431-1)', () => {
       // The previous code trusted any live marker once ps failed.
       expect(await nestedOwner(home, env, true)).toBeUndefined();
     } finally {
+      stderr.mockRestore();
+    }
+  });
+});
+
+describe('ancestry ignores a fake ps on PATH (REV-6492-3)', () => {
+  it('does not let a symlinked ps fabricate ancestry', async () => {
+    const home = await realpath(
+      await mkdtemp(join(tmpdir(), 'ttr-resources-fake-ps-'))
+    );
+    dirs.push(home);
+    const unrelated = spawn('sleep', ['30'], { stdio: 'ignore' });
+    children.push(unrelated);
+    const owner = { ...newOwner('unrelated'), pid: unrelated.pid! };
+    await atomicJson(join(home, 'slots', '0', 'owner.json'), owner);
+    // The fake claims the unrelated owner is this process's grandparent.
+    const sentinel = join(home, 'fake-ps-ran');
+    const script = join(home, 'fake-ps.sh');
+    await writeFile(
+      script,
+      `#!/bin/sh\ntouch '${sentinel}'\necho '${process.ppid} ${owner.pid} ${owner.pid}'\necho '${owner.pid} 1 ${owner.pid}'\necho '${process.pid} ${process.ppid} ${owner.pid}'\n`
+    );
+    await chmod(script, 0o755);
+    const bin = join(home, 'bin');
+    await mkdir(bin);
+    await symlink(script, join(bin, 'ps'));
+    const previous = process.env.PATH;
+    process.env.PATH = `${bin}${delimiter}${previous ?? ''}`;
+    const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+    try {
+      expect(processLineage(true)?.pids.has(owner.pid)).toBe(false);
+      expect(
+        await nestedOwner(home, { TTR_RESOURCES_ADMITTED: owner.token }, true)
+      ).toBeUndefined();
+      expect(await nestedOwner(home, {}, true)).toBeUndefined();
+      await expect(stat(sentinel)).rejects.toThrow();
+    } finally {
+      process.env.PATH = previous;
       stderr.mockRestore();
     }
   });

@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import {
   link,
   mkdir,
@@ -55,6 +56,22 @@ export function processAlive(pid?: number) {
     return !errno(error, 'ESRCH');
   }
 }
+// Process liveness and ancestry decide admission, so ps must never be resolved
+// through the caller's PATH (a fake ps could fabricate ancestry) or inherit
+// loader variables such as LD_PRELOAD. Without a trusted ps there is no
+// evidence, and callers fail closed.
+const psCandidates = ['/bin/ps', '/usr/bin/ps'];
+export function trustedPs(args: string[], timeout: number) {
+  const ps = psCandidates.find((path) => existsSync(path));
+  if (!ps)
+    throw new Error('No trusted ps executable at /bin/ps or /usr/bin/ps.');
+  return execFileSync(ps, args, {
+    encoding: 'utf8',
+    timeout,
+    maxBuffer: 16 * 1024 * 1024,
+    env: { LC_ALL: 'C' },
+  });
+}
 export function processGroupAlive(pid: number) {
   try {
     process.kill(-pid, 0);
@@ -62,10 +79,7 @@ export function processGroupAlive(pid: number) {
     return !errno(error, 'ESRCH');
   }
   try {
-    return execFileSync('ps', ['-axo', 'pgid=,stat='], {
-      encoding: 'utf8',
-      timeout: 3000,
-    })
+    return trustedPs(['-axo', 'pgid=,stat='], 3000)
       .split('\n')
       .some((row) => {
         const [group, state] = row.trim().split(/\s+/);
@@ -110,11 +124,7 @@ export function processLineage(refresh = false): ProcessLineage | undefined {
   if (lineage && !refresh) return lineage;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const rows = execFileSync('ps', ['-axo', 'pid=,ppid=,pgid='], {
-        encoding: 'utf8',
-        timeout: 5000,
-        maxBuffer: 16 * 1024 * 1024,
-      })
+      const rows = trustedPs(['-axo', 'pid=,ppid=,pgid='], 5000)
         .trim()
         .split('\n');
       const table = new Map<number, { parent: number; group: number }>();
