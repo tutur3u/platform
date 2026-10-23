@@ -11,8 +11,8 @@ import { gateDecision } from './positional-admit';
 import { applyDescendantReceipts } from './recovery';
 import {
   applyImportedUsage,
-  manualUsage,
   mergeUsageImport,
+  parseManualUsage,
 } from './usage-import';
 
 function input(): Record<string, unknown> {
@@ -98,18 +98,16 @@ export function validateUsageImport(value: Record<string, unknown>) {
       )
         throw new HookError('usage-import-window-not-narrow');
   }
-  const observations =
-    value.observations === undefined
-      ? []
-      : Array.isArray(value.observations)
-        ? value.observations.map(manualUsage)
-        : (() => {
-            throw new HookError('manual-usage-invalid');
-          })();
+  if (value.observations !== undefined && !Array.isArray(value.observations))
+    throw new HookError('manual-usage-invalid');
+  const parsed = parseManualUsage(
+    (value.observations as unknown[] | undefined) ?? []
+  );
   return {
     providers: value.providers ?? [],
     settings,
-    observations,
+    observations: parsed.observations,
+    invalidObservations: parsed.invalid,
     provenance: value.provenance,
   };
 }
@@ -198,6 +196,7 @@ export async function runOperator(command: string, args: string[]) {
             at,
             providers: providers.map((p) => p.instanceId),
             observations: imported.observations.length,
+            invalidObservations: imported.invalidObservations,
           })
         );
       }
@@ -326,6 +325,7 @@ export async function runOperator(command: string, args: string[]) {
         {
           readOnly: true,
           observedAt: context.now.toISOString(),
+          invalidObservations: collected.invalidObservations ?? [],
           pools: command === 'dry-run' ? ranked : rows,
           ...(command === 'dry-run'
             ? { chosen: ranked.find((r) => r.exitCode === 0) ?? null }

@@ -144,6 +144,9 @@ export async function collectAllWith(
     blocks,
     poolSettings: parsePoolSettings(poolSettings),
     invalidObservations,
+    active: t3.t3?.activeAssignments,
+    t3ObservedAt: t3.t3?.observedAt,
+    t3Error: t3.t3Error,
   };
 }
 

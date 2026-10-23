@@ -83,8 +83,15 @@ async function main(): Promise<void> {
     provider !== 'antigravity'
   )
     throw new Error('--provider must be codex, claude, or antigravity.');
-  const { accounts, active, t3ObservedAt, t3Error, blocks } = await collectAll({
-    snapshotsOnly: process.argv.includes('--snapshots-only'),
+  const {
+    accounts,
+    active,
+    t3ObservedAt,
+    t3Error,
+    blocks,
+    invalidObservations = [],
+  } = await collectAll({
+    snapshotsOnly: true,
     catalog: process.argv.includes('--catalog-stdin')
       ? JSON.parse(readFileSync(0, 'utf8'))
       : undefined,
@@ -136,6 +143,7 @@ async function main(): Promise<void> {
             t3ObservedAt,
             t3Error,
             accounts: result,
+            invalidObservations,
           },
           null,
           2
@@ -160,6 +168,8 @@ async function main(): Promise<void> {
           `${account.instanceId.padEnd(14)} ${account.provider.padEnd(8)} ${percent(account.windows, 'short').padEnd(6)} ${percent(account.windows, 'long').padEnd(5)} ${String(estimated ?? '—').padEnd(17)} ${String(account.activeCount).padEnd(6)} ${account.state} ${account.ageMs ?? 'unknown'} ${observed}`
         );
       }
+      if (invalidObservations.length)
+        console.log(`INVALID OBSERVATIONS  ${invalidObservations.join('; ')}`);
     }
     return;
   }
@@ -190,7 +200,13 @@ async function main(): Promise<void> {
   };
   const assignments = recommendAssignments({ ...assignmentOptions, count });
   const ranked = recommend({ ...assignmentOptions, count: 1 }).ranked;
-  const result = { task, requestedCount: count, assignments, ranked };
+  const result = {
+    task,
+    requestedCount: count,
+    assignments,
+    ranked,
+    invalidObservations,
+  };
   if (outputJson()) console.log(JSON.stringify(result, null, 2));
   else {
     console.log(

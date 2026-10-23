@@ -76,6 +76,31 @@ describe('Usage UI and typed manual observations', () => {
       }).ranked.every((x) => x.state === 'UNKNOWN')
     ).toBe(true);
   });
+  it('skips malformed observations individually and accepts the stored screenshot metric shape', () => {
+    const invalid: string[] = [];
+    const result = applyManualUsage(
+      [account('claude_dd')],
+      [
+        { kind: 'provider-cache', pool: 'claude_dd', value: 'bad' },
+        {
+          kind: 'manual-screenshot',
+          pool: 'claude_dd',
+          sessionRemainingPercent: 36,
+          metric: '5-hour session',
+          observedAt: '2026-10-23T06:16:00Z',
+          capturedLocal: '13:16 Asia/Saigon',
+        },
+      ],
+      invalid
+    );
+    expect(invalid).toEqual(['observations[0]: manual-usage-invalid']);
+    expect(result[0]?.windows[0]).toMatchObject({
+      id: 'five_hour',
+      label: '5-hour session',
+      usedPercent: 64,
+      confidence: 'manual',
+    });
+  });
   it('reads real settings shape and dedupes identical home paths, never guesses absent paths', () => {
     const settings = {
       providerInstances: {

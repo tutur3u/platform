@@ -27,6 +27,11 @@ export function manualUsage(value: unknown): ManualUsage {
   const legacy =
     input.kind === 'manual-screenshot' &&
     typeof input.sessionRemainingPercent === 'number';
+  const metric = typeof input.metric === 'string' ? input.metric.trim() : '';
+  const metricId = metric
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
   const output = {
     pool: input.pool,
     measure: legacy ? 'remaining' : input.measure,
@@ -34,8 +39,12 @@ export function manualUsage(value: unknown): ManualUsage {
     value: legacy ? input.sessionRemainingPercent : input.value,
     observedAt: input.observedAt,
     resetAt: input.resetAt ?? input.resetsAt,
-    windowId: legacy ? 'five_hour' : input.windowId,
-    windowLabel: legacy ? 'Session' : input.windowLabel,
+    windowId: legacy
+      ? /week|seven.?day/.test(metricId)
+        ? `seven_day_${metricId.replace(/^(?:weekly|seven_day)_?/, '') || 'default'}`
+        : 'five_hour'
+      : input.windowId,
+    windowLabel: legacy ? metric || 'Session' : input.windowLabel,
     provenance: legacy
       ? `manual-screenshot; ${typeof input.capturedLocal === 'string' ? input.capturedLocal : 'time not supplied'}; user-relayed`
       : input.provenance,
@@ -67,6 +76,23 @@ export function manualUsage(value: unknown): ManualUsage {
       .text,
   } as ManualUsage;
 }
+export function parseManualUsage(values: unknown[]): {
+  observations: ManualUsage[];
+  invalid: string[];
+} {
+  const observations: ManualUsage[] = [];
+  const invalid: string[] = [];
+  values.forEach((value, index) => {
+    try {
+      observations.push(manualUsage(value));
+    } catch (error) {
+      invalid.push(
+        `observations[${index}]: ${error instanceof HookError ? error.message : 'manual-usage-invalid'}`
+      );
+    }
+  });
+  return { observations, invalid };
+}
 export function homeIdentity(
   settings: unknown,
   instanceId: string,
@@ -89,9 +115,12 @@ export function homeIdentity(
 }
 export function applyManualUsage(
   accounts: AccountUsage[],
-  values: unknown[]
+  values: unknown[],
+  invalidObservations: string[] = []
 ): AccountUsage[] {
-  const observations = values.map(manualUsage);
+  const parsed = parseManualUsage(values);
+  invalidObservations.push(...parsed.invalid);
+  const observations = parsed.observations;
   return accounts.map((account) => {
     const latest = new Map<string, ManualUsage>();
     for (const observation of observations.filter(
