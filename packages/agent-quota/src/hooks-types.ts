@@ -35,6 +35,7 @@ export interface Observation {
   outcome: 'success' | 'usage-limit' | 'capacity-error';
   observedAt: string;
   resetsAt?: string;
+  nextEligibleAt?: string;
   requestId?: string;
   terminal?: boolean;
   nativeReservationId?: string;

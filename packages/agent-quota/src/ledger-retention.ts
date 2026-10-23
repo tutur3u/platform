@@ -1,3 +1,4 @@
+import { CAPACITY_COOLDOWN_MS } from './capacity';
 import type { HookLedger } from './hooks-types';
 import { processState } from './process-identity';
 
@@ -30,7 +31,9 @@ export function pruneLedger(
       event.outcome === 'usage-limit'
         ? false
         : event.outcome === 'capacity-error'
-          ? time - Date.parse(event.observedAt) >= 60_000
+          ? event.nextEligibleAt
+            ? time >= Date.parse(event.nextEligibleAt)
+            : time - Date.parse(event.observedAt) >= CAPACITY_COOLDOWN_MS
           : time - Date.parse(event.observedAt) > RETENTION;
     if (!expired) return true;
     if (event.requestId)

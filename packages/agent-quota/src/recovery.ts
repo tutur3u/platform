@@ -1,4 +1,5 @@
 import { accountKey, recordObservation } from './admission';
+import { CAPACITY_COOLDOWN_MS } from './capacity';
 import {
   failureClass,
   receiptReset,
@@ -19,8 +20,11 @@ export function applyRecoveryReceipt(
   if (
     entry.failureClass === 'capacity' &&
     typeof entry.failureObservedAt === 'string' &&
-    context.now.getTime() - Date.parse(entry.failureObservedAt) >= 60_000
+    context.now.getTime() - Date.parse(entry.failureObservedAt) >=
+      CAPACITY_COOLDOWN_MS
   )
+    return;
+  if (entry.failureClass === 'capacity' && typeof entry.model !== 'string')
     return;
   const account = context.accounts.find(
     (x) => x.instanceId === entry.providerInstanceId
@@ -50,7 +54,16 @@ export function applyRecoveryReceipt(
     outcome:
       entry.failureClass === 'usage-limit' ? 'usage-limit' : 'capacity-error',
     observedAt: entry.failureObservedAt,
-    resetsAt: typeof entry.resetAt === 'string' ? entry.resetAt : undefined,
+    resetsAt:
+      entry.failureClass !== 'capacity' && typeof entry.resetAt === 'string'
+        ? entry.resetAt
+        : undefined,
+    nextEligibleAt:
+      entry.failureClass === 'capacity'
+        ? new Date(
+            Date.parse(entry.failureObservedAt) + CAPACITY_COOLDOWN_MS
+          ).toISOString()
+        : undefined,
   });
 }
 

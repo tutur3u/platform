@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { accountKey, admit, recordObservation } from './admission';
+import { CAPACITY_COOLDOWN_MS } from './capacity';
 import { collectAll } from './collectors';
 import { collectChildren, collectPoolReceipts } from './collectors/children';
 import { checkHandover } from './handover';
@@ -123,6 +124,15 @@ export async function runHook(command: string, action?: string): Promise<void> {
             instanceId,
             accountKey: key,
             outcome,
+            model: input.model === undefined ? undefined : id(input.model),
+            nextEligibleAt:
+              outcome === 'capacity-error'
+                ? input.nextEligibleAt === undefined
+                  ? new Date(
+                      Date.parse(observedAt) + CAPACITY_COOLDOWN_MS
+                    ).toISOString()
+                  : timestamp(input.nextEligibleAt)
+                : undefined,
             observedAt,
             resetsAt,
             requestId:

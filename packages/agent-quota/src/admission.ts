@@ -1,5 +1,6 @@
 import { accountKey, collapseAccounts } from './accounts';
 import { matchingBlocks } from './block-ledger';
+import { capacityCooldownActive } from './capacity';
 import { recoveryAdmissionKey } from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type {
@@ -17,6 +18,16 @@ import { coversModel, receiptCovers } from './window-scope';
 export { accountKey } from './accounts';
 
 export function recordObservation(ledger: HookLedger, input: Observation) {
+  if (input.outcome === 'capacity-error' && !input.model)
+    throw new HookError('capacity-model-required');
+  if (input.outcome === 'capacity-error' && input.resetsAt)
+    throw new HookError('capacity-reset-is-not-quota');
+  if (
+    input.nextEligibleAt &&
+    (!Number.isFinite(Date.parse(input.nextEligibleAt)) ||
+      Date.parse(input.nextEligibleAt) <= Date.parse(input.observedAt))
+  )
+    throw new HookError('next-eligible-before-observation');
   const previous = ledger.observations.find(
     (event) => event.eventId === input.eventId
   );
@@ -236,8 +247,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         ledger.observations.some(
           (event) =>
             (event.accountKey === key || ids.includes(event.instanceId)) &&
-            event.outcome === 'capacity-error' &&
-            now.getTime() - Date.parse(event.observedAt) < 60_000
+            capacityCooldownActive(event, candidate?.model, now)
         )
       )
         reasons.push('capacity-cooldown');

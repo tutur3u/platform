@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute, normalize } from 'node:path';
+import { failureClass, safeReceipt } from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type { AccountUsage, UsageWindow } from './types';
 import { windowScope } from './window-scope';
@@ -60,7 +61,11 @@ export function manualUsage(value: unknown): ManualUsage {
     !output.provenance.trim()
   )
     throw new HookError('manual-usage-invalid');
-  return output as ManualUsage;
+  return {
+    ...output,
+    provenance: safeReceipt(output.provenance, failureClass(output.provenance))
+      .text,
+  } as ManualUsage;
 }
 export function homeIdentity(
   settings: unknown,

@@ -604,3 +604,11 @@ prove Gemini headroom. These dated observations are not configuration and expire
 normally. The native gaps remain a narrow read-only usage/home-path export and a
 veto-capable pre-admission callback on `delegate_task`. No native automatic
 account transition or failover is implemented.
+
+`Selected model is at capacity` is a capacity event, not a quota event. A
+`block` command for this receipt requires an exact `--model-scope MODEL` and
+uses a 30-minute `nextEligibleAt` by default; it rejects `*`/`?` scopes and
+`--reset-at` for capacity. Other models on the shared pool remain eligible.
+Likewise, `observe` with `outcome: capacity-error` requires `model`, accepts
+`nextEligibleAt`, and defaults to a 30-minute model-only cooldown. Capacity
+expiry does not assert quota headroom; normal admission checks still apply.

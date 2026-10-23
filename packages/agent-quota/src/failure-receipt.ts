@@ -11,6 +11,7 @@ export function failureClass(
   message: string,
   classification?: string | null
 ): FailureClass {
+  if (/selected model is at capacity/i.test(message)) return 'capacity';
   if (
     classification === 'usage_limit' ||
     /usage.limit|session limit|hit your.*limit|quota.*exceed|rate.limit/i.test(
@@ -153,7 +154,7 @@ export function completedFailureClass(message: string): FailureClass | null {
   )
     return 'usage-limit';
   if (
-    /^(?:(?:we(?:'re| are)|the (?:service|model|provider) is) (?:currently )?(?:at capacity|overloaded|temporarily unavailable)|(?:model|service|provider) (?:capacity (?:exceeded|exhausted)|temporarily unavailable)|temporarily unavailable\b|capacity (?:error|exceeded|exhausted)\b)/i.test(
+    /^(?:selected model is at capacity\b|(?:we(?:'re| are)|the (?:service|model|provider) is) (?:currently )?(?:at capacity|overloaded|temporarily unavailable)|(?:model|service|provider) (?:capacity (?:exceeded|exhausted)|temporarily unavailable)|temporarily unavailable\b|capacity (?:error|exceeded|exhausted)\b)/i.test(
       text
     )
   )

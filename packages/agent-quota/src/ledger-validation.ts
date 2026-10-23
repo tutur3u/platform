@@ -71,6 +71,7 @@ export function validLedger(value: unknown): value is HookLedger {
         ) &&
         optional(item.clearedAt, date) &&
         optional(item.resetsAt, date) &&
+        optional(item.nextEligibleAt, date) &&
         optional(item.requestId, text) &&
         optional(item.nativeReservationId, text) &&
         optional(item.terminal, (item) => typeof item === 'boolean')

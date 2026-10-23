@@ -324,6 +324,7 @@ describe('one-shot quota admission', () => {
     if (!worker) throw Error('fixture');
     const event = {
       eventId: 'capacity',
+      model: 'model',
       instanceId: 'worker',
       accountKey: accountKey(worker),
       outcome: 'capacity-error' as const,

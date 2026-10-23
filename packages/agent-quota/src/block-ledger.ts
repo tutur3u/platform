@@ -3,6 +3,7 @@ import { constants } from 'node:fs';
 import { lstat, mkdir, open, rename, unlink } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { CAPACITY_COOLDOWN_MS } from './capacity';
 import { failureClass, receiptReset, safeReceipt } from './failure-receipt';
 import { HookError } from './hook-ledger';
 import {
@@ -10,6 +11,7 @@ import {
   releaseTransactionLock,
 } from './transaction-lock';
 export interface QuotaBlock {
+  kind?: 'usage-limit' | 'capacity';
   pool: string;
   modelScope: string;
   reason: string;
@@ -127,24 +129,36 @@ export function createBlock(input: {
     !Number.isFinite(Date.parse(input.observedAt))
   )
     throw new HookError('block-input-invalid');
+  const kind =
+    failureClass(`${input.reason}\n${input.evidence}`) === 'capacity'
+      ? 'capacity'
+      : 'usage-limit';
+  if (kind === 'capacity' && (/[*?]/.test(input.modelScope) || input.resetAt))
+    throw new HookError('capacity-requires-exact-model-and-next-eligible');
   const reason = safeReceipt(input.reason, failureClass(input.reason)).text;
   const evidence = [
     safeReceipt(input.evidence, failureClass(input.evidence)).text,
   ];
   const resetAt =
-    input.resetAt ??
-    receiptReset(
-      `${reason}\n${evidence.join('\n')}`,
-      input.observedAt,
-      input.timezone
-    ) ??
-    undefined;
+    kind === 'capacity'
+      ? undefined
+      : (input.resetAt ??
+        receiptReset(
+          `${reason}\n${evidence.join('\n')}`,
+          input.observedAt,
+          input.timezone
+        ) ??
+        undefined);
   const nextEligibleAt =
     input.nextEligibleAt ??
     (resetAt
       ? undefined
-      : new Date(Date.parse(input.observedAt) + 5 * 3600_000).toISOString());
+      : new Date(
+          Date.parse(input.observedAt) +
+            (kind === 'capacity' ? CAPACITY_COOLDOWN_MS : 5 * 3600_000)
+        ).toISOString());
   const block: QuotaBlock = {
+    kind,
     pool: input.pool,
     modelScope: input.modelScope,
     reason,

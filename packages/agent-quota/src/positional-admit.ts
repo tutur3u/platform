@@ -1,5 +1,6 @@
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, readBlockLedger } from './block-ledger';
+import { capacityCooldownActive } from './capacity';
 import { collectAll } from './collectors';
 import { collectPoolReceipts } from './collectors/children';
 import { HookError, transactLedger } from './hook-ledger';
@@ -38,7 +39,7 @@ export function gateDecision(
       exitCode: 2,
       reasons: ['model-unavailable-or-unverified'],
     };
-  const ledger = structuredClone(context.ledger);
+  const ledger = context.ledger;
   pruneLedger(
     ledger,
     context.now,
@@ -92,8 +93,7 @@ export function gateDecision(
     ledger.observations.some(
       (event) =>
         ids.includes(event.instanceId) &&
-        event.outcome === 'capacity-error' &&
-        context.now.getTime() - Date.parse(event.observedAt) < 60_000
+        capacityCooldownActive(event, model, context.now)
     )
   )
     reasons.push('capacity-cooldown');
