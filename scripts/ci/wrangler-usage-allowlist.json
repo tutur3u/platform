@@ -1003,6 +1003,16 @@
       },
       "digest": "d58d49cc1bf53bd3fb7c9bde9dc3224668a84f46b734b5d6bdd1f7365be65c6f"
     },
+    "scripts/ci/cf-adoption-docs.test.js": {
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6486",
+        "reason": "REV-6486-6 and REV-6486-7: guard required adoption documentation against conflict-resolution truncation"
+      },
+      "lines": 2,
+      "uses": 2,
+      "digest": "266117b4de2288a62660949298586be14768bbdd9d9a4fac3df4c0c03922e16a"
+    },
     "scripts/ci/cf-worker-parity.mjs": {
       "lines": 9,
       "uses": 10,
