@@ -32,8 +32,17 @@ SINK_CALLS = {
     "critical",
     "log",
 }
-# Calls that consume the exception without exposing its text.
-SANITIZERS = {"report_error", "reply_error", "user_error", "isinstance", "type", "len"}
+# Calls whose *result* never carries exception text (their arguments are still
+# checked; see EXCEPTION_SLOT_SINKS).
+SAFE_RESULTS = {"report_error", "reply_error", "isinstance", "type", "len"}
+# Helpers that may receive the exception object in exactly one argument slot
+# (positional index, keyword). Every other argument reaches logs or users and
+# must not be tainted. `user_error` is deliberately absent: it interpolates its
+# inputs, so it propagates taint like any other call.
+EXCEPTION_SLOT_SINKS = {"report_error": (1, "error"), "reply_error": (3, "error")}
+# Calls that read the active exception without naming it.
+TRACEBACK_SOURCES = {"format_exc", "format_exception", "format_exception_only", "format_tb"}
+SYS_SOURCES = {"exc_info", "exception"}
 
 
 def _call_name(node: ast.Call) -> str:
@@ -44,14 +53,28 @@ def _call_name(node: ast.Call) -> str:
     return ""
 
 
+def _is_implicit_source(node: ast.Call) -> bool:
+    func = node.func
+    if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+        module = func.value.id
+        return (module == "traceback" and func.attr in TRACEBACK_SOURCES) or (
+            module == "sys" and func.attr in SYS_SOURCES
+        )
+    return isinstance(func, ast.Name) and func.id in TRACEBACK_SOURCES | {"exc_info"}
+
+
 def _is_tainted(node: ast.AST, tainted: set[str]) -> bool:
-    """True when ``node`` derives from a tainted name outside a sanitizer call.
+    """True when ``node`` derives from the handled exception.
 
     Covers aliases, str/repr/format, f-strings, attributes (``e.args``),
-    subscripts and containers such as dict/list/tuple literals.
+    subscripts, containers and implicit sources such as
+    ``traceback.format_exc()`` or ``sys.exc_info()[1]``.
     """
-    if isinstance(node, ast.Call) and _call_name(node) in SANITIZERS:
-        return False
+    if isinstance(node, ast.Call):
+        if _is_implicit_source(node):
+            return True
+        if _call_name(node) in SAFE_RESULTS:
+            return False
     if isinstance(node, ast.Name):
         return node.id in tainted
     return any(_is_tainted(child, tainted) for child in ast.iter_child_nodes(node))
@@ -63,13 +86,21 @@ def _is_sink_reference(node: ast.AST, sink_aliases: set[str]) -> bool:
     return isinstance(node, ast.Attribute) and node.attr in SINK_CALLS
 
 
+def _non_exception_arguments(node: ast.Call) -> list[ast.AST]:
+    """Arguments of an exception-slot helper other than its exception slot."""
+    index, keyword_name = EXCEPTION_SLOT_SINKS[_call_name(node)]
+    positional = [arg for position, arg in enumerate(node.args) if position != index]
+    keywords = [kw.value for kw in node.keywords if kw.arg != keyword_name]
+    return [*positional, *keywords]
+
+
 def _assigned_names(target: ast.AST) -> list[str]:
     return [node.id for node in ast.walk(target) if isinstance(node, ast.Name)]
 
 
 def _propagate(handler: ast.ExceptHandler) -> tuple[set[str], set[str]]:
     """Fixpoint of names tainted by, or aliasing a sink within, the block."""
-    tainted: set[str] = {handler.name or ""}
+    tainted: set[str] = {handler.name} if handler.name else set()
     sink_aliases: set[str] = set()
     assignments: list[tuple[list[ast.AST], ast.AST]] = []
     for statement in handler.body:
@@ -99,10 +130,15 @@ def _propagate(handler: ast.ExceptHandler) -> tuple[set[str], set[str]]:
 
 
 def exception_exposures(source: str) -> list[tuple[int, str]]:
-    """(line, sink) pairs where an except block passes exception data on."""
+    """(line, sink) pairs where an except block passes exception data on.
+
+    Every handler is scanned, named or not. Known gaps (documented follow-ups):
+    interprocedural flow through local helpers and the traceback that
+    ``logging.exception`` emits implicitly.
+    """
     found: set[tuple[int, str]] = set()
     for handler in ast.walk(ast.parse(source)):
-        if not isinstance(handler, ast.ExceptHandler) or not handler.name:
+        if not isinstance(handler, ast.ExceptHandler):
             continue
         tainted, sink_aliases = _propagate(handler)
         for statement in handler.body:
@@ -110,11 +146,17 @@ def exception_exposures(source: str) -> list[tuple[int, str]]:
                 if isinstance(node, ast.Return) and node.value is not None:
                     if _is_tainted(node.value, tainted):
                         found.add((node.lineno, "return"))
-                elif isinstance(node, ast.Call) and _is_sink_reference(node.func, sink_aliases):
+                    continue
+                if not isinstance(node, ast.Call):
+                    continue
+                if _call_name(node) in EXCEPTION_SLOT_SINKS:
+                    arguments = _non_exception_arguments(node)
+                elif _is_sink_reference(node.func, sink_aliases):
                     arguments = [*node.args, *(keyword.value for keyword in node.keywords)]
-                    if any(_is_tainted(argument, tainted) for argument in arguments):
-                        name = _call_name(node)
-                        found.add((node.lineno, name))
+                else:
+                    continue
+                if any(_is_tainted(argument, tainted) for argument in arguments):
+                    found.add((node.lineno, _call_name(node)))
     return sorted(found)
 
 
@@ -182,12 +224,100 @@ def test_guard_allows_reporting_through_the_helper() -> None:
                 pass
             except Exception as e:
                 error_id = report_error("context", e)
+                report_error(context="context", error=e)
                 await handler.reply_error(1, 2, "context", e, "Could not do it.")
+                await handler.reply_error(1, 2, "context", error=e, summary="Failed.")
                 await client.send_response({"content": user_error("Failed.", error_id)}, 1, 2)
                 return {"content": "Could not do it."}
         """
     )
     assert exception_exposures(source) == []
+
+
+@pytest.mark.parametrize(
+    ("label", "header", "body", "sink"),
+    [
+        (
+            "user_error propagates taint",
+            "except Exception as e:",
+            'return {"content": user_error(str(e), "id")}',
+            "return",
+        ),
+        (
+            "user_error tainted id",
+            "except Exception as e:",
+            'await client.send_response({"content": user_error("Failed.", repr(e))}, 1, 2)',
+            "send_response",
+        ),
+        (
+            "reply_error tainted summary",
+            "except Exception as e:",
+            'await handler.reply_error(1, 2, "ctx", e, str(e))',
+            "reply_error",
+        ),
+        (
+            "reply_error tainted keyword summary",
+            "except Exception as e:",
+            'await handler.reply_error(1, 2, "ctx", error=e, summary=f"{e}")',
+            "reply_error",
+        ),
+        (
+            "reply_error tainted context",
+            "except Exception as e:",
+            'await handler.reply_error(1, 2, f"ctx {e}", e, "Failed.")',
+            "reply_error",
+        ),
+        (
+            "report_error tainted context",
+            "except Exception as e:",
+            "report_error(str(e), e)",
+            "report_error",
+        ),
+        (
+            "format_exc in named handler",
+            "except Exception as e:",
+            "print(traceback.format_exc())",
+            "print",
+        ),
+        ("format_exc in bare handler", "except:", "print(traceback.format_exc())", "print"),
+        (
+            "format_exception in typed handler",
+            "except ValueError:",
+            "return traceback.format_exception(*sys.exc_info())",
+            "return",
+        ),
+        (
+            "sys.exc_info subscript",
+            "except ValueError:",
+            'detail = sys.exc_info()[1]\nreturn {"content": str(detail)}',
+            "return",
+        ),
+        (
+            "str of sys.exc_info",
+            "except Exception:",
+            "logger.error(str(sys.exc_info()[1]))",
+            "error",
+        ),
+        (
+            "sys.exception",
+            "except Exception:",
+            'await client.send_followup(content=f"{sys.exception()}")',
+            "send_followup",
+        ),
+        (
+            "imported format_exc",
+            "except Exception:",
+            "text = format_exc()\nprint(text)",
+            "print",
+        ),
+    ],
+)
+def test_guard_checks_helper_arguments_and_implicit_sources(
+    label: str, header: str, body: str, sink: str
+) -> None:
+    source = "async def h(client, handler, logger):\n    try:\n        pass\n    " + header + "\n"
+    source += textwrap.indent(body, "        ") + "\n"
+    assert [found for _line, found in exception_exposures(source)] == [sink], label
 
 
 @pytest.mark.parametrize("filename", GUARDED_FILES)
