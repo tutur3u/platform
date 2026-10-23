@@ -1054,13 +1054,13 @@ def web_app():
                     handler = CommandHandler()
                     return handler.create_ticket_form_modal(list_id, None)
 
-                except Exception as e:
-                    print(f"🤖: Error creating modal: {e}")
-                    traceback.print_exc()
+                except Exception:
+                    # Keep exception details server-side; the reply is user-visible.
+                    logger.exception("Failed to create ticket form modal")
                     return {
                         "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                         "data": {
-                            "content": f"❌ **Error:** Failed to create ticket form: {e!s}",
+                            "content": "❌ **Error:** Failed to create ticket form.",
                             "flags": 64,  # EPHEMERAL flag
                         },
                     }

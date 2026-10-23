@@ -469,3 +469,43 @@ def test_canceled_completion_waits_then_releases_owned_claim(
     interaction_lifecycle["release"].assert_called_once_with(
         "923456789012345678", 2, CLAIM_OWNERSHIP_ID
     )
+
+
+def test_ticket_modal_failure_returns_generic_error_without_exception_text(
+    monkeypatch: pytest.MonkeyPatch,
+    signing_key: SigningKey,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    internal_detail = "SYNTHETIC_INTERNAL_DETAIL /srv/internal/path"
+
+    class FailingCommandHandler:
+        def create_ticket_form_modal(self, *_args: object) -> dict:
+            raise RuntimeError(internal_detail)
+
+    monkeypatch.setattr(
+        interaction_replay,
+        "claim_discord_interaction",
+        Mock(return_value={"state": "claimed", "claimToken": CLAIM_OWNERSHIP_ID}),
+    )
+    monkeypatch.setattr(app, "CommandHandler", FailingCommandHandler)
+    client = TestClient(app.web_app.get_raw_f()())
+
+    response = post_signed(
+        client,
+        signing_key,
+        {
+            "application_id": "application-1",
+            "data": {"custom_id": "select_list_for_ticket", "values": ["board|list"]},
+            "id": "993456789012345678",
+            "member": {"user": {"id": "user-1"}},
+            "token": "interaction-token",
+            "type": 3,
+        },
+        int(time.time()),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["content"] == "❌ **Error:** Failed to create ticket form."
+    assert internal_detail not in response.text
+    assert "Traceback" not in response.text
+    assert internal_detail in caplog.text

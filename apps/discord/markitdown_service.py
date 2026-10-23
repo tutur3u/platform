@@ -3,9 +3,10 @@
 import asyncio
 import logging
 import os
+import re
 import tempfile
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse, urlsplit, urlunsplit
 
 import aiohttp
 from fastapi import HTTPException
@@ -22,6 +23,8 @@ YOUTUBE_HOSTS = {
     "youtu.be",
     "www.youtu.be",
 }
+LOCAL_SUPABASE_HOSTS = ("127.0.0.1", "localhost", "host.docker.internal")
+SAFE_TEMP_SUFFIX_PATTERN = re.compile(r"^\.[A-Za-z0-9]{1,16}$")
 logger = logging.getLogger(__name__)
 
 
@@ -56,14 +59,16 @@ def _require_supabase_hostname() -> str:
     raise HTTPException(status_code=500, detail="Supabase host is not configured")
 
 
-def _validate_signed_url(signed_url: str, configured_supabase_host: str) -> None:
-    parsed = urlparse(signed_url)
+def _validate_signed_url(signed_url: str, configured_supabase_host: str) -> str:
+    """Validate a Supabase signed URL and return a request URL rebuilt from it.
 
-    is_local_host = configured_supabase_host in (
-        "127.0.0.1",
-        "localhost",
-        "host.docker.internal",
-    )
+    The returned URL takes its host from server configuration, its scheme from
+    a fixed allowlist, and only the validated path, query, and port from the
+    caller, so userinfo, fragments, and alternate hosts never reach the client.
+    """
+    parsed = urlsplit(signed_url)
+
+    is_local_host = configured_supabase_host in LOCAL_SUPABASE_HOSTS
     allowed_schemes = ("http", "https") if is_local_host else ("https",)
 
     if parsed.scheme not in allowed_schemes:
@@ -78,6 +83,21 @@ def _validate_signed_url(signed_url: str, configured_supabase_host: str) -> None
     )
     if not token:
         raise HTTPException(status_code=400, detail="Invalid signed URL token")
+
+    try:
+        port = parsed.port
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail="Invalid signed URL port") from error
+
+    scheme = "https" if parsed.scheme == "https" else "http"
+    netloc = (
+        f"[{configured_supabase_host}]"
+        if ":" in configured_supabase_host
+        else configured_supabase_host
+    )
+    if port is not None:
+        netloc = f"{netloc}:{port}"
+    return urlunsplit((scheme, netloc, parsed.path, parsed.query, ""))
 
 
 def _validate_direct_youtube_url(url: str) -> str:
@@ -142,26 +162,33 @@ async def _download_signed_url_to_temp(
     timeout = aiohttp.ClientTimeout(total=60)
     downloaded_bytes = 0
     temp_path = ""
-    signed_url_host = urlparse(signed_url).hostname
-    allowed_hosts = {configured_supabase_host}
-    if signed_url_host:
-        allowed_hosts.add(signed_url_host.lower())
+    request_url = _validate_signed_url(signed_url, configured_supabase_host)
+    # Only a plain extension is kept (MarkItDown uses it for type detection);
+    # anything else from the caller-supplied filename is dropped.
+    safe_suffix = suffix if SAFE_TEMP_SUFFIX_PATTERN.fullmatch(suffix) else ""
 
     try:
         async with (
             aiohttp.ClientSession(timeout=timeout) as session,
-            session.get(signed_url) as response,
+            # Redirects are refused so the request can never leave the
+            # configured Supabase host, even transiently.
+            session.get(request_url, allow_redirects=False) as response,
         ):
+            if 300 <= response.status < 400:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Signed URL redirects are not allowed",
+                )
             if response.status >= 400:
                 raise HTTPException(
                     status_code=400,
                     detail=(f"Failed to download from signed URL ({response.status})"),
                 )
 
-            _validate_resolved_response_host(response.url.host, allowed_hosts)
+            _validate_resolved_response_host(response.url.host, {configured_supabase_host})
             _validate_content_length(response.headers.get("Content-Length"))
 
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=safe_suffix) as tmp:
                 temp_path = tmp.name
                 async for chunk in response.content.iter_chunked(1024 * 256):
                     if not chunk:
@@ -262,7 +289,6 @@ async def handle_markitdown(
             }
 
         configured_supabase_host = _require_supabase_hostname()
-        _validate_signed_url(signed_url, configured_supabase_host)
 
         temp_path, downloaded_bytes = await _download_signed_url_to_temp(
             signed_url,
