@@ -10,6 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { atomicJson, defaultResourceConfig } from './resources-config';
 import { runHostsAction } from './resources-hosts-cli';
 import {
   proposedHostRegistry,
@@ -94,6 +95,30 @@ describe('hosts.json trust (REV-6503-1)', () => {
           : base;
     await chmod(path, mode);
     await expect(read(home)).rejects.toThrow(message);
+  });
+
+  it('refuses a home inside an opted-in repository root', async () => {
+    const { base, home } = await privateHome();
+    await atomicJson(join(home, 'config.json'), {
+      ...defaultResourceConfig(),
+      roots: [base],
+    });
+    await expect(read(home)).rejects.toThrow(
+      /inside an opted-in repository root/u
+    );
+    await atomicJson(join(home, 'config.json'), {
+      ...defaultResourceConfig(),
+      roots: [],
+      repositories: [join(base, '.git')],
+    });
+    await expect(read(home)).rejects.toThrow(
+      /inside an opted-in repository root/u
+    );
+    await atomicJson(join(home, 'config.json'), {
+      ...defaultResourceConfig(),
+      roots: [join(base, 'elsewhere')],
+    });
+    expect(await read(home)).toBeDefined();
   });
 
   it('rejects a registry owned by another user', async () => {

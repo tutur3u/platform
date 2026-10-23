@@ -2,6 +2,7 @@ import { constants, type Stats } from 'node:fs';
 import { lstat, open } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { canonical, contains, readResourceConfig } from './resources-config';
 import { errno } from './resources-slots';
 
 // hosts.json decides where code runs, so it is trusted only from the
@@ -65,6 +66,22 @@ export async function readTrustedRegistryText(
   if (resolve(home) !== resolve(canonicalHome))
     throw new UntrustedRegistryError(
       'TTR_RESOURCES_HOME is not the canonical per-user resources home'
+    );
+  // A home inside an opted-in project would let that project's checkout (or
+  // anything it writes) supply the registry.
+  let config: Awaited<ReturnType<typeof readResourceConfig>>;
+  try {
+    config = await readResourceConfig(home);
+  } catch {
+    throw new UntrustedRegistryError('config.json is invalid');
+  }
+  const projects = [
+    ...(config?.roots ?? []),
+    ...(config?.repositories ?? []).map((repository) => dirname(repository)),
+  ];
+  if (projects.some((root) => contains(canonical(root), resolve(home))))
+    throw new UntrustedRegistryError(
+      'the resources home is inside an opted-in repository root'
     );
   const path = join(resolve(home), 'hosts.json');
   let file: Stats;
