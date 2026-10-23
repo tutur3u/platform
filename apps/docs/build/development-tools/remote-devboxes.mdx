@@ -233,6 +233,32 @@ coverage lives in `apps/database/supabase/tests/devbox-runner-trust-pools.sql`
 and `devbox-runner-drain-hardening.sql` (pgTAP), and the Infrastructure route
 and store tests.
 
+### Claim admission by reported execution mode
+
+The database flag `private.devbox_control_settings.require_reported_execution_mode`
+defaults to off. With it off, claims behave exactly as before. With it on,
+`claim_next_devbox_run` itself enforces:
+
+- `run`, `build`, `serve` and `tunnel` claims require the runner to have
+  reported `executionMode: trusted` within the last 90 seconds;
+- Judge claims refuse a runner with a fresh `trusted` report (`judge-only`, no
+  mode, and stale reports from legacy Judge agents are still accepted);
+- playground and maintenance claims are unchanged.
+
+Report freshness uses `capabilities_updated_at`, which a database trigger stamps
+whenever a heartbeat changes the runner's capabilities. A mode older than the
+window counts as unreported, and the agent's own clock is never trusted.
+
+Cutover: deploy the heartbeat handlers that accept `executionMode`, upgrade every
+run-enabled runner, set `TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE=true` on them,
+confirm with `ttr box runners --json` that each one reports `trusted`, and only
+then enable the flag. An authorized operator runs
+`private.set_devbox_require_reported_execution_mode(true)` through the gated
+production database path. It refuses while any run-enabled runner lacks a fresh
+`trusted` report and lists those runners; `p_force => true` overrides that guard
+deliberately. Disable the flag the same way with `false`. Regression coverage
+lives in `apps/database/supabase/tests/devbox-claim-mode-admission.sql`.
+
 ### Protecting hosts with existing critical files
 
 Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
