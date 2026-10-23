@@ -195,7 +195,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 function request(transport: string, method: string, value?: string | null) {
   const { token } = createAppSessionToken({ userId: actor, targetApp: 'nova' });
-  const headers =
+  const headers: Record<string, string> =
     transport === 'satellite bearer'
       ? { authorization: `Bearer ${token}` }
       : { cookie: 'synthetic-supabase-session=actor' };
