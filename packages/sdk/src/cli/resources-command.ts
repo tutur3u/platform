@@ -5,6 +5,7 @@ import {
   openSync,
   readSync,
   realpathSync,
+  statSync,
 } from 'node:fs';
 import { basename, delimiter, join, resolve } from 'node:path';
 import type { ResourceConfig } from './resources-config';
@@ -108,43 +109,17 @@ export function isHeavyCommand(name: string, args: string[]) {
   return false;
 }
 
-// Version/help probes skip the queue only for tools whose single flag is known
-// to be informational; for anything else (a Makefile target, a project script)
-// `help` or `--version` may run arbitrary work.
-const versionHelp = ['--version', '-v', '--help', '-h'];
-const informational: Record<string, readonly string[]> = {
-  node: versionHelp,
-  bun: versionHelp,
-  bunx: versionHelp,
-  deno: [...versionHelp, '-V'],
-  npm: versionHelp,
-  npx: versionHelp,
-  pnpm: versionHelp,
-  yarn: versionHelp,
-  tsc: versionHelp,
-  vitest: versionHelp,
-  biome: ['--version', '--help', '-h'],
-  turbo: ['--version', '--help', '-h'],
-  git: ['--version', '--help', '-h', 'version'],
-  gh: ['--version', '--help', '-h', 'version'],
-  ttr: ['--version', '--help', '-h', 'version'],
-  cargo: ['--version', '-V', '--help', '-h'],
-  rustc: ['--version', '-V', '--help', '-h'],
-  rustup: ['--version', '-V', '--help', '-h'],
-  python: ['--version', '-V', '--help', '-h'],
-  python3: ['--version', '-V', '--help', '-h'],
-  go: ['version', 'help'],
-  docker: ['--version', '-v', '--help', 'version'],
-  flutter: ['--version', '--help', '-h'],
-  dart: ['--version', '--help', '-h'],
-  supabase: ['--version', '--help', '-h'],
-};
+// Explicit `ttr resources run` queues by default because arbitrary scripts can
+// be heavy. Only a few coreutils that never run project code skip the queue.
+// Runtimes and package managers are excluded even for `--version`/`--help`
+// (NODE_OPTIONS, npm_config_* and preload settings load code before any flag
+// is read), and so is every git subcommand: fsmonitor, hooks, pagers, textconv
+// and GIT_CONFIG_* injection all run programs from read-only-looking commands.
 const readOnly = new Set([
   'echo',
   'pwd',
   'true',
   'false',
-  'which',
   'whoami',
   'uname',
   'date',
@@ -155,47 +130,56 @@ const readOnly = new Set([
   'tail',
   'wc',
 ]);
-// diff/log/show are excluded: textconv and external diff drivers configured by
-// the repository can run arbitrary programs.
-const readOnlyGit = new Set([
-  'status',
-  'rev-parse',
-  'branch',
-  'remote',
-  'ls-files',
-]);
-// Options that redirect git's configuration, repository or helpers, letting a
-// "read-only" subcommand run hooks, pagers or drivers from elsewhere.
-const unsafeGitOption = (arg: string) =>
-  /^-[Cc]/u.test(arg) ||
-  /^--(exec|config-env|git-dir|work-tree|paginate|namespace)/u.test(arg) ||
-  arg === '-p' ||
-  arg === '--edit-description';
-// `git remote` subcommands other than listing/get-url contact or edit remotes.
-const readOnlyRemote = (rest: string[]) =>
-  rest[0] === 'get-url' ||
-  rest.every((arg) => arg === '-v' || arg === '--verbose');
+// SIP (macOS) or root ownership (Linux) protects these directories.
+const trustedDirectories = ['/bin/', '/usr/bin/'];
+// Dynamic-loader and glibc module variables run code inside any binary.
+const loaderVariable = /^(LD_|DYLD_)|^(GCONV_PATH|LOCPATH)$/u;
 const recursiveLs = (arg: string) =>
   arg === '--recursive' || /^-[A-Za-z]*R/u.test(arg);
-// Explicit `ttr resources run` queues by default because arbitrary scripts can
-// be heavy. Per-tool version/help probes and a small read-only allowlist skip
-// the queue. Anything unrecognised queues (fail closed).
-export function isTrivialCommand(name: string, args: string[]) {
-  const tool = basename(name);
-  if (args.length === 1 && informational[tool]?.includes(args[0]!)) return true;
-  if (tool === 'ls') return !args.some(recursiveLs);
-  if (readOnly.has(tool)) return true;
-  if (tool === 'git') {
-    // The subcommand must come first: no global options may precede it.
-    const [subcommand, ...rest] = args;
-    return (
-      subcommand !== undefined &&
-      readOnlyGit.has(subcommand) &&
-      !rest.some(unsafeGitOption) &&
-      (subcommand !== 'remote' || readOnlyRemote(rest))
-    );
+// Classify by the executable that would actually run, not by its basename: an
+// arbitrary script named `cat` (or `/any/path/ls`) must queue.
+export function trustedSystemExecutable(
+  name: string,
+  path = process.env.PATH || ''
+) {
+  const candidates =
+    name.includes('/') || name.includes('\\')
+      ? [resolve(name)]
+      : path.split(delimiter).map((directory) => join(directory, name));
+  for (const candidate of candidates) {
+    try {
+      accessSync(candidate, constants.X_OK);
+    } catch {
+      continue;
+    }
+    // The first executable match is what PATH lookup would spawn; decide on
+    // it alone rather than searching on for a trusted one.
+    try {
+      const real = realpathSync(candidate);
+      const info = statSync(real);
+      return (
+        trustedDirectories.some((directory) => real.startsWith(directory)) &&
+        basename(real) === basename(name) &&
+        info.isFile() &&
+        info.uid === 0 &&
+        (info.mode & 0o022) === 0
+      );
+    } catch {
+      return false;
+    }
   }
   return false;
+}
+export function isTrivialCommand(
+  name: string,
+  args: string[],
+  env: NodeJS.ProcessEnv = process.env
+) {
+  const tool = basename(name);
+  if (!readOnly.has(tool)) return false;
+  if (tool === 'ls' && args.some(recursiveLs)) return false;
+  if (Object.keys(env).some((key) => loaderVariable.test(key))) return false;
+  return trustedSystemExecutable(name, env.PATH || '');
 }
 
 export function limitCommand(

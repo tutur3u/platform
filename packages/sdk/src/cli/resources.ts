@@ -76,7 +76,7 @@ All lanes share one per-user FIFO queue. Out-of-range config values are clamped
 with a warning; an unreadable config makes shims run commands unmanaged.
 Commands inside an admitted job (TTR_RESOURCES_ADMITTED, or a process-tree
 ancestor holding a lane) run immediately instead of queueing again.
-Version/help probes and read-only commands (ls, cat, git status...) skip the queue.
+Only read-only system tools (ls, cat, echo...) skip the queue; git and runtimes queue.
 Turbo runs one task; Vitest and Cargo get bounded worker counts. Commands
 outside those projects are unchanged. Running processes are never interrupted.
 macOS/Linux supported. Shell hooks cover new shells, not existing processes.

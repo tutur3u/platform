@@ -1,7 +1,15 @@
-import { execFileSync } from 'node:child_process';
-import { mkdtemp, realpath, rm, stat, writeFile } from 'node:fs/promises';
+import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
+import {
+  chmod,
+  mkdtemp,
+  realpath,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { psFails } = vi.hoisted(() => ({ psFails: { value: false } }));
@@ -10,7 +18,8 @@ vi.mock('node:child_process', async (original) => {
   return {
     ...actual,
     execFileSync: ((command: string, ...rest: unknown[]) => {
-      if (command === 'ps' && psFails.value) throw new Error('ps unavailable');
+      if (/(^|\/)ps$/u.test(command) && psFails.value)
+        throw new Error('ps unavailable');
       return (actual.execFileSync as (...args: unknown[]) => unknown)(
         command,
         ...rest
@@ -36,8 +45,10 @@ import {
 import { nestedOwner, newOwner } from './resources-slots';
 
 const dirs: string[] = [];
+const children: ChildProcess[] = [];
 afterEach(async () => {
   psFails.value = false;
+  for (const child of children.splice(0)) child.kill('SIGKILL');
   await Promise.all(
     dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
   );
@@ -71,73 +82,61 @@ describe('nested markers need process-tree evidence (REV-6431-1)', () => {
     }
   });
 
-  it('queues a forged marker when ps fails', async () => {
-    const { home } = await ownerHome();
+  it('refuses a copied live token from an unrelated owner when ps fails', async () => {
+    const home = await realpath(
+      await mkdtemp(join(tmpdir(), 'ttr-resources-hardening-'))
+    );
+    dirs.push(home);
+    // A live owner outside this process tree: its real token was copied.
+    const unrelated = spawn('sleep', ['30'], { stdio: 'ignore' });
+    children.push(unrelated);
+    const owner = { ...newOwner('unrelated'), pid: unrelated.pid! };
+    await atomicJson(join(home, 'slots', '0', 'owner.json'), owner);
+    const env = { TTR_RESOURCES_ADMITTED: owner.token };
     const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     try {
+      expect(await nestedOwner(home, env, true)).toBeUndefined();
       psFails.value = true;
-      expect(
-        await nestedOwner(home, { TTR_RESOURCES_ADMITTED: 'forged' }, true)
-      ).toBeUndefined();
-      expect(
-        await nestedOwner(home, { TTR_RESOURCE_OWNER: 'forged-legacy' }, true)
-      ).toBeUndefined();
-      expect(String(stderr.mock.calls.at(-1)?.[0])).toContain(
-        'does not belong to a live admitted job'
-      );
+      // The previous code trusted any live marker once ps failed.
+      expect(await nestedOwner(home, env, true)).toBeUndefined();
     } finally {
       stderr.mockRestore();
     }
   });
 });
 
-describe('trivial command exemptions (REV-6431-2)', () => {
+describe('trivial command exemptions (REV-6431-2, REV-6492-1/2/4)', () => {
   it.each([
-    ['node', ['--version']],
-    ['git', ['--version']],
-    ['cargo', ['-V']],
-    ['git', ['status']],
-    ['git', ['rev-parse', 'HEAD']],
-    ['git', ['remote', '-v']],
-    ['git', ['remote', 'get-url', 'origin']],
-    ['git', ['branch', '--show-current']],
     ['ls', ['-la']],
+    ['cat', ['package.json']],
+    ['echo', ['ok']],
+    ['/bin/ls', ['-l']],
   ] as const)('%s %j stays trivial', (name, args) => {
     expect(isTrivialCommand(name, [...args])).toBe(true);
   });
 
   it.each([
-    // Single informational-looking words are project-defined elsewhere.
+    // Runtimes and package managers load code before reading any flag.
+    ['node', ['--version']],
+    ['node', ['--help']],
+    ['npm', ['--version']],
+    ['npx', ['--version']],
+    ['bun', ['--version']],
+    ['cargo', ['-V']],
     ['make', ['help']],
-    ['make', ['--version']],
     ['./scripts/ci.sh', ['--help']],
-    ['just', ['-v']],
-    // Global git options that redirect config or the repository.
-    ['git', ['-c', 'core.fsmonitor=./x', 'status']],
+    // Every git subcommand can run fsmonitor, hooks, pagers or drivers.
+    ['git', ['--version']],
+    ['git', ['status']],
+    ['git', ['ls-files']],
+    ['git', ['branch']],
+    ['git', ['branch', 'feature']],
+    ['git', ['rev-parse', 'HEAD']],
+    ['git', ['remote', '-v']],
     ['git', ['-c', 'core.pager=sh -c "touch pwned"', '-p', 'status']],
-    ['git', ['-ccore.pager=less', 'status']],
     ['git', ['--config-env=core.pager=PAGER', 'status']],
-    ['git', ['--config-env', 'core.pager=PAGER', 'status']],
-    ['git', ['-p', 'branch']],
-    ['git', ['--paginate', 'status']],
-    ['git', ['--exec-path=/tmp', 'status']],
-    ['git', ['status', '-c', 'core.fsmonitor=./x']],
-    ['git', ['branch', '--edit-description']],
-    ['git', ['remote', 'update']],
-    ['git', ['remote', '-v', 'update']],
-    ['git', ['remote', 'prune', 'origin']],
-    ['git', ['--git-dir=/elsewhere/.git', 'status']],
-    ['git', ['--git-dir', '/elsewhere/.git', 'status']],
-    ['git', ['--work-tree', '/elsewhere', 'status']],
-    ['git', ['-C', '/elsewhere', 'status']],
-    // textconv / external diff drivers can run programs.
     ['git', ['diff']],
-    ['git', ['log', '-p']],
     ['git', ['show', 'HEAD']],
-    ['git', ['diff', '--no-ext-diff', '--no-textconv']],
-    // A version flag followed by more arguments is no longer a probe.
-    ['node', ['--version', '--', 'script.js']],
-    ['node', ['--help', 'script.js']],
     // Recursive listings can be arbitrarily large.
     ['ls', ['-R']],
     ['ls', ['-laR', '/']],
@@ -145,9 +144,38 @@ describe('trivial command exemptions (REV-6431-2)', () => {
   ] as const)('%s %j queues', (name, args) => {
     expect(isTrivialCommand(name, [...args])).toBe(false);
   });
+
+  it('queues a basename match that is not the trusted system tool', async () => {
+    const dir = await realpath(
+      await mkdtemp(join(tmpdir(), 'ttr-resources-impostor-'))
+    );
+    dirs.push(dir);
+    for (const tool of ['ls', 'cat', 'node']) {
+      await writeFile(join(dir, tool), '#!/bin/sh\nexit 0\n');
+      await chmod(join(dir, tool), 0o755);
+    }
+    await symlink('/bin/echo', join(dir, 'pwd'));
+    expect(isTrivialCommand(join(dir, 'ls'), ['-l'])).toBe(false);
+    expect(isTrivialCommand(join(dir, 'node'), ['--version'])).toBe(false);
+    // PATH lookup decides on the first match, as spawning would.
+    const env = { PATH: `${dir}${delimiter}/bin${delimiter}/usr/bin` };
+    expect(isTrivialCommand('cat', ['x'], env)).toBe(false);
+    // A symlink to a trusted binary under another name is not that tool.
+    expect(isTrivialCommand('pwd', [], env)).toBe(false);
+    expect(isTrivialCommand('echo', ['ok'], env)).toBe(true);
+  });
+
+  it('queues even trusted tools while loader variables are set', () => {
+    const path = process.env.PATH;
+    expect(isTrivialCommand('cat', ['x'], { PATH: path })).toBe(true);
+    for (const key of ['LD_PRELOAD', 'LD_AUDIT', 'DYLD_INSERT_LIBRARIES'])
+      expect(
+        isTrivialCommand('cat', ['x'], { PATH: path, [key]: '/tmp/evil.so' })
+      ).toBe(false);
+  });
 });
 
-describe('git code-execution vectors stay queued (REV-6431-2)', () => {
+describe('git code-execution vectors stay queued (REV-6431-2, REV-6492-1)', () => {
   it('git diff runs a repository textconv program, so it queues', async () => {
     const repo = await realpath(
       await mkdtemp(join(tmpdir(), 'ttr-resources-textconv-'))
@@ -172,7 +200,7 @@ describe('git code-execution vectors stay queued (REV-6431-2)', () => {
     git('diff');
     await expect(stat(sentinel)).resolves.toBeTruthy();
     expect(isTrivialCommand('git', ['diff'])).toBe(false);
-    expect(isTrivialCommand('/usr/bin/git', ['log', '-p'])).toBe(false);
+    expect(isTrivialCommand('/usr/bin/git', ['diff'])).toBe(false);
   });
 });
 
