@@ -90,10 +90,13 @@ describe('Storage Path Sanitization', () => {
       expect(sanitizePathSegments(path)).toBeNull();
     });
 
-    it.each(['x?', 'x#'])('rejects raw URL delimiters in %j', (path) => {
-      expect(sanitizePathStrict(path)).toBeNull();
-      expect(sanitizePath(path)).toBeNull();
-    });
+    it.each(['x?', 'x#'])(
+      'rejects raw URL delimiters only in strict mode %j',
+      (path) => {
+        expect(sanitizePathStrict(path)).toBeNull();
+        expect(sanitizePath(path)).toBe(path);
+      }
+    );
 
     it.each(['x%3F', 'x%23'])('allows encoded URL delimiters in %j', (path) => {
       expect(sanitizePathStrict(path)).toBe(path);

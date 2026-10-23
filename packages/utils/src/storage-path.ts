@@ -12,14 +12,16 @@ const UNSAFE_PATH_CHARACTER = /[\p{Cc}\\]/u;
  *
  * @returns The path segments, or null if the path is unsafe
  */
-export function sanitizePathSegments(path: string): string[] | null {
+export function sanitizePathSegments(
+  path: string,
+  options: { strict?: boolean } = {}
+): string[] | null {
   if (path === '') return [];
   if (
     typeof path !== 'string' ||
     UNSAFE_PATH_CHARACTER.test(path) ||
     /^[a-z][a-z\d+.-]*:\/\//i.test(path) ||
-    path.includes('?') ||
-    path.includes('#')
+    (options.strict && (path.includes('?') || path.includes('#')))
   ) {
     return null;
   }
@@ -51,7 +53,9 @@ export function sanitizePathSegments(path: string): string[] | null {
 }
 
 /**
- * Canonicalizes a legacy relative path, then applies strict path validation.
+ * Canonicalizes a legacy relative path, then validates its segments. Literal
+ * `?` and `#` are allowed for callers that encode object keys at the transport
+ * boundary; use `sanitizePathStrict` for paths interpolated into URLs.
  *
  * @param path - The path string to sanitize
  * @returns Canonicalized path string, or null if the path is unsafe
@@ -79,7 +83,7 @@ export function sanitizePath(path: string): string | null {
 
 /** Validate the exact path representation supplied to URL-interpolating APIs. */
 export function sanitizePathStrict(path: string): string | null {
-  const segments = sanitizePathSegments(path);
+  const segments = sanitizePathSegments(path, { strict: true });
   return segments === null ? null : segments.join('/');
 }
 
