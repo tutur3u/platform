@@ -30,6 +30,9 @@
 **/oidc*.ts                        @vhpx
 **/oauth.ts                        @vhpx
 **/auth.ts                         @vhpx
+**/*-auth.ts                       @vhpx
+/apps/web/src/lib/devboxes/        @vhpx
+/apps/infrastructure/src/lib/devboxes/ @vhpx
 **/*crypto*.ts                     @vhpx
 **/webhooks.ts                     @vhpx
 **/email-unsubscribe.ts            @vhpx

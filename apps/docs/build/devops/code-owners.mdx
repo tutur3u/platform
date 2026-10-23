@@ -28,15 +28,17 @@ radius:
   webhooks in `apps/pay`)
 - `CODEOWNERS` itself
 
-Modules are also owned by name wherever they live: `oidc*`, `oauth`, `auth`,
+Modules are also owned by name wherever they live: `oidc*`, `oauth`, `auth`, `*-auth`,
 `*crypto*`, `webhooks`, `email-unsubscribe` and `external-apps*` TypeScript
-files, plus the coordination Worker entry, storage export links, the workspace
+files, plus web's and Infrastructure's devbox libraries (runner authentication and token
+revocation), the coordination Worker entry, storage export links, the workspace
 membership helper and Calendar's cron-authorised sync and schedule routes.
 
 Code ownership is best-effort coverage, not an exhaustive security boundary: a
-new sensitive module with an unusual name can still land unowned. The enforced
-net for security-sensitive changes is the `Security review` classifier, which
-evaluates changed paths on every pull request.
+new sensitive module with an unusual name can still land unowned. The planned
+enforced net is the `Security review` path classifier, which evaluates changed
+paths on every pull request; until that workflow is merged and required, code
+ownership and independent agent security review are the only checks.
 
 Paths not listed have no code owner and follow the normal review rules. Importing an
 owned package does not protect its callers, so list the calling routes and guards
