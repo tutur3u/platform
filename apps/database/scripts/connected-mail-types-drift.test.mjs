@@ -21,6 +21,28 @@ test('ignores only presentation differences in the three owned table types', () 
   const generated = committed.replaceAll(';', '\n').replaceAll("'", '"');
   assert.equal(assertConnectedMailTypesMatch(committed, generated).matched, 3);
 });
+function quotedProperties(source) {
+  return source.replace(/\b([a-zA-Z_]\w*)(\??):/gu, '"$1"$2:');
+}
+test('accepts postgres-meta quoted property names after Biome formatting', () => {
+  assert.equal(
+    assertConnectedMailTypesMatch(schema(), quotedProperties(schema())).matched,
+    3
+  );
+});
+test('quoted properties still reject semantic drift', () => {
+  for (const changed of [
+    schema({ column: 'string' }),
+    schema().replace('id?:', 'id:'),
+    schema({ relationship: 'other' }),
+    schema().replace('Row: {', 'ComputedFields: never; Row: {'),
+  ]) {
+    assert.throws(
+      () => assertConnectedMailTypesMatch(schema(), quotedProperties(changed)),
+      /Private Connected Mail type drift/u
+    );
+  }
+});
 test('rejects changed row nullability', () => {
   assert.throws(
     () => assertConnectedMailTypesMatch(schema(), schema({ column: 'string' })),
