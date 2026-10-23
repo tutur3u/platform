@@ -56,7 +56,10 @@ localization changes.
   stages, and media/map viewers or full-canvas editors.
 - Group rows with `AppGroupedSection`/`AppGroupedCard`; row layout stays with
   the owning feature. Expanded tablet/desktop windows use the leading
-  `ShellNavigationRail`, which must keep the mini-app Back item.
+  `ShellNavigationRail`, which must keep the mini-app Back item. Switching
+  dock and rail must not change the shell body's tree shape; regressions
+  assert a visited root tab is not remounted, because routed pages survive
+  through the navigator key.
 - See the [mobile design system](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx)
   and its layout/rail regression tests.
 

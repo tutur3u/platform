@@ -230,13 +230,26 @@ Future<void> _expectRailViewport(WidgetTester tester, Size size) async {
   expect(body.left, closeTo(shellNavigationRailExtent, 0.5));
   expect(body.bottom, closeTo(size.height, 1));
   expect(railRect.height, lessThan(size.height));
+  // The same header brand and Apps destination as the dock layout.
+  expect(
+    find.byWidgetPredicate(
+      (widget) =>
+          widget is Image &&
+          widget.image == const AssetImage('assets/logos/nova-transparent.png'),
+    ),
+    findsOneWidget,
+  );
+  expect(find.bySemanticsLabel('Apps'), findsWidgets);
   final bodyState = tester.state(find.byType(AppsHubPage));
   tester.view.viewInsets = const FakeViewPadding(bottom: 300);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
   expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+  expect(find.byKey(railKey), findsOneWidget);
   tester.view.resetViewInsets();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
+  expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+  expect(find.byKey(railKey), findsOneWidget);
   expect(tester.takeException(), isNull);
 }

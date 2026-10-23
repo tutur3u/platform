@@ -82,8 +82,12 @@ Every primitive:
   `consumeBottomClearance: false` when an inner scrollable should run beneath
   the dock and read the clearance itself.
 
-`AppPageBody` removes the padding it consumes from the child's `MediaQuery` so
-nested widgets do not double count it.
+Every primitive also removes the insets it consumes (horizontal safe areas,
+and the bottom clearance when consumed) from its children's `MediaQuery`. A
+legacy `SafeArea` or `MediaQuery.paddingOf(context).bottom` inside a migrated
+page therefore adds nothing instead of counting the dock clearance twice.
+`SliverAppPage(includeBottom: false)` leaves the bottom clearance for the
+sliver that consumes it.
 
 ## Grouped sections
 
@@ -121,13 +125,23 @@ should still use the gutter token.
   laptops, desktops). `ShellNavigationRail` shows the same destinations on
   the leading edge, including the mini-app Back item. The dock keeps only
   the Assistant/Notes composer and page actions; an idle dock paints no
-  surface.
+  surface. Scroll content reserves dock clearance only while the dock shows a
+  composer slot or dock actions for the current route. Rail destinations show
+  their existing localized label as a hover-only tooltip on pointer devices.
 
 Both modes keep a single top navbar title with no Back button, system Back
 and deep links (handled by `ShellPage` independently of the layout), and
-scroll clearance. `AdaptiveShellFrame` paints the rail after the routed body
-because routed pages can contain `BlockSemantics`, which would otherwise drop
-the rail from the accessibility tree.
+scroll clearance.
+
+`AdaptiveShellFrame` builds the same tree in both modes: a `Stack` whose
+first, keyed child holds the body. Rotation (for example an iPad going from
+820x1180 to 1180x820), a window resize across either threshold, or an
+immersive/fullscreen toggle only adds or removes the rail, so the dock and
+every root tab keep their state. Routed pages survive through GoRouter's
+navigator key, but offstage root tabs do not, so regressions must assert on a
+visited root tab. The rail paints after the body because routed pages can
+contain `BlockSemantics`, which would otherwise drop the rail from the
+accessibility tree.
 
 ## Layout audit (October 2026)
 
@@ -156,9 +170,15 @@ remaining screens move to the primitives in a later sweep.
   `ResponsivePadding` compatibility, and the inset resolver.
 - `test/core/layout/app_page_test.dart`: gutters per device class, max-width
   centering, dock clearance, full-bleed opt-out, slivers, and grouped
-  sections.
+  sections. `app_page_media_query_test.dart` covers the consumed-inset
+  removal.
+- `test/features/documents/view/documents_layout_test.dart`: the migrated
+  Documents list and editor.
 - `test/features/shell/view/shell_navigation_rail_test.dart` and
   `shell_rail_navigation_test.dart`: rail geometry, RTL, Back reachability,
   system Back, deep links, landscape phones, and body-width gutters.
   Set `DESIGN_RENDER_DIR` to write phone, tablet, and desktop PNG captures.
+- `shell_rail_layout_test.dart`: no remount across rotation, resize, or
+  immersive toggles, rail-mode clearance, RTL through `ShellPage`, and
+  hover-only tooltips.
 - `shell_viewport_checks.dart`: the dock/rail viewport matrix.

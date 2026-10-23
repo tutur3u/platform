@@ -65,6 +65,10 @@ class AppPageBody extends StatelessWidget {
 
 /// A [ListView] whose padding applies the standard page gutters, max-width
 /// centring, top gap and dock clearance. The scrollable stays full width.
+///
+/// The consumed horizontal and bottom insets are removed from the children's
+/// MediaQuery, so a legacy `SafeArea` or `MediaQuery.paddingOf(...).bottom`
+/// inside an item cannot count the dock clearance twice.
 class AppPageListView extends StatelessWidget {
   const AppPageListView({
     required List<Widget> this.children,
@@ -111,33 +115,59 @@ class AppPageListView extends StatelessWidget {
       );
       final dismiss =
           keyboardDismissBehavior ?? ScrollViewKeyboardDismissBehavior.manual;
-      final builder = itemBuilder;
-      if (builder != null) {
-        return ListView.builder(
-          controller: controller,
-          physics: physics,
-          primary: primary,
-          keyboardDismissBehavior: dismiss,
-          padding: padding,
-          itemCount: itemCount,
-          itemBuilder: builder,
-        );
-      }
-      return ListView(
+      return _withoutConsumedPadding(
+        context,
+        consumedBottom: true,
+        child: _buildList(padding, dismiss),
+      );
+    },
+  );
+
+  Widget _buildList(
+    EdgeInsets padding,
+    ScrollViewKeyboardDismissBehavior dismiss,
+  ) {
+    final builder = itemBuilder;
+    if (builder != null) {
+      return ListView.builder(
         controller: controller,
         physics: physics,
         primary: primary,
         keyboardDismissBehavior: dismiss,
         padding: padding,
-        children: children!,
+        itemCount: itemCount,
+        itemBuilder: builder,
       );
-    },
-  );
+    }
+    return ListView(
+      controller: controller,
+      physics: physics,
+      primary: primary,
+      keyboardDismissBehavior: dismiss,
+      padding: padding,
+      children: children!,
+    );
+  }
 }
+
+/// Removes the horizontal insets, and the bottom inset when it was consumed,
+/// from [child]'s MediaQuery. Top padding is left for the shell to own.
+Widget _withoutConsumedPadding(
+  BuildContext context, {
+  required bool consumedBottom,
+  required Widget child,
+}) => MediaQuery.removePadding(
+  context: context,
+  removeLeft: true,
+  removeRight: true,
+  removeBottom: consumedBottom,
+  child: child,
+);
 
 /// Pads [sliver] with the standard page insets, resolved from the sliver's
 /// cross-axis extent. Set [includeTop]/[includeBottom] to false when the
-/// sliver is not the first/last in its scroll view.
+/// sliver is not the first/last in its scroll view. Like [AppPageListView],
+/// the consumed insets are removed from the sliver's MediaQuery.
 class SliverAppPage extends StatelessWidget {
   const SliverAppPage({
     required this.sliver,
@@ -167,9 +197,13 @@ class SliverAppPage extends StatelessWidget {
         topInset: topInset,
         consumeBottomClearance: includeBottom,
       );
-      return SliverPadding(
-        padding: includeTop ? insets : insets.copyWith(top: 0),
-        sliver: sliver,
+      return _withoutConsumedPadding(
+        context,
+        consumedBottom: includeBottom,
+        child: SliverPadding(
+          padding: includeTop ? insets : insets.copyWith(top: 0),
+          sliver: sliver,
+        ),
       );
     },
   );

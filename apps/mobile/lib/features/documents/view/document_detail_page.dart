@@ -244,75 +244,81 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
               ],
             ),
             // The editor scrolls beneath the dock, so it reads the clearance.
+            // The transparent Material gives the switch row its ink surface
+            // above the scaffold's coloured background.
             AppPageBody(
               kind: AppPageKind.reading,
               consumeBottomClearance: false,
-              child: _isLoading
-                  ? const Center(child: NovaLoadingIndicator())
-                  : _error != null
-                  ? Center(child: Text(_error!))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            top: AppSpacing.xs,
-                            bottom: AppSpacing.md,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+              child: Material(
+                type: MaterialType.transparency,
+                child: _isLoading
+                    ? const Center(child: NovaLoadingIndicator())
+                    : _error != null
+                    ? Center(child: Text(_error!))
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: AppSpacing.xs,
+                              bottom: AppSpacing.md,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 10),
-                              TextField(
-                                controller: _titleController,
-                                decoration: InputDecoration(
-                                  labelText: context.l10n.documentsDocumentName,
+                                const SizedBox(height: 10),
+                                TextField(
+                                  controller: _titleController,
+                                  decoration: InputDecoration(
+                                    labelText:
+                                        context.l10n.documentsDocumentName,
+                                  ),
+                                  onChanged: (_) => setState(() {}),
                                 ),
-                                onChanged: (_) => setState(() {}),
-                              ),
-                              const SizedBox(height: 10),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(context.l10n.documentsPublic),
-                                value: _isPublic,
-                                onChanged: (value) {
-                                  setState(() => _isPublic = value);
-                                },
-                              ),
-                            ],
+                                const SizedBox(height: 10),
+                                SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(context.l10n.documentsPublic),
+                                  value: _isPublic,
+                                  onChanged: (value) {
+                                    setState(() => _isPublic = value);
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const Divider(height: 1),
-                        Expanded(
-                          child: TextField(
-                            controller: _contentController,
-                            expands: true,
-                            maxLines: null,
-                            textAlignVertical: TextAlignVertical.top,
-                            keyboardType: TextInputType.multiline,
-                            decoration: InputDecoration(
-                              hintText: context.l10n.documentsContentHint,
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.only(
-                                top: AppSpacing.xl,
-                                bottom:
-                                    AppLayout.scrollEndGap +
-                                    MediaQuery.paddingOf(context).bottom,
+                          const Divider(height: 1),
+                          Expanded(
+                            child: TextField(
+                              controller: _contentController,
+                              expands: true,
+                              maxLines: null,
+                              textAlignVertical: TextAlignVertical.top,
+                              keyboardType: TextInputType.multiline,
+                              decoration: InputDecoration(
+                                hintText: context.l10n.documentsContentHint,
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.only(
+                                  top: AppSpacing.xl,
+                                  bottom:
+                                      AppLayout.scrollEndGap +
+                                      MediaQuery.paddingOf(context).bottom,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+              ),
             ),
           ],
         ),

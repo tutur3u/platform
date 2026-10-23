@@ -82,10 +82,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   double _travel = 0;
   late double _headerInset;
   late bool _accessibleNavigation;
+  ShellDockSlotController? _slots;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final slots = ShellDockScope.maybeOf(context);
+    if (!identical(slots, _slots)) {
+      _slots?.removeListener(_onSlotChanged);
+      _slots = slots?..addListener(_onSlotChanged);
+    }
     // Theme, default text style, text scale, direction and safe-area changes
     // invalidate this measurement; scroll frames only read the cached value.
     _headerInset = floatingShellHeaderInset(
@@ -120,7 +126,26 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   @override
   void dispose() {
     _returnTimer?.cancel();
+    _slots?.removeListener(_onSlotChanged);
     super.dispose();
+  }
+
+  void _onSlotChanged() {
+    // Only the rail layout sizes clearance from the dock's contents.
+    if (mounted && widget.hideIdleNavigation) setState(() {});
+  }
+
+  /// With a leading rail the dock holds only composers and page actions, so
+  /// scroll content reserves its clearance only while one of them is shown.
+  bool _dockHasContent(BuildContext context) {
+    final slot = _slots?.slot;
+    if (widget.allowDockSlot && slot?.location == widget.location) return true;
+    final actions = context.watch<ShellChromeActionsCubit?>();
+    if (actions == null) return false;
+    return actions.state
+            .resolveForLocation(widget.location)
+            .any((action) => action.inDock) ||
+        actions.dockPreviewForLocation(widget.location).isNotEmpty;
   }
 
   void _reveal() {
@@ -180,6 +205,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     final navigationHidden = _hidden && !widget.keepNavigationVisible;
     final reserveClearance =
         widget.reserveNavigationClearance &&
+        (!widget.hideIdleNavigation || _dockHasContent(context)) &&
         !(widget.reclaimNavigationClearanceWhenHidden &&
             (navigationHidden || widget.keyboardVisible));
     final clearance = active && reserveClearance

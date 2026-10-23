@@ -104,13 +104,59 @@ void main() {
     expect(body.right, closeTo(1200 - shellNavigationRailExtent, 0.5));
   });
 
-  testWidgets('frame returns the body unchanged without a rail', (
+  testWidgets('frame keeps the body mounted when the rail comes and goes', (
     tester,
   ) async {
+    final rail = ValueNotifier<bool>(false);
+    addTearDown(rail.dispose);
     await tester.pumpApp(
-      const AdaptiveShellFrame(body: SizedBox.expand(key: ValueKey('body'))),
+      ValueListenableBuilder<bool>(
+        valueListenable: rail,
+        builder: (context, showRail, _) => AdaptiveShellFrame(
+          rail: showRail
+              ? ShellNavigationRail(
+                  items: _items(),
+                  selectedKey: _home,
+                  onSelected: (_) {},
+                )
+              : null,
+          body: const _Counter(key: ValueKey('body')),
+        ),
+      ),
     );
+    final body = tester.state(find.byType(_Counter));
     expect(find.byType(ShellNavigationRail), findsNothing);
-    expect(find.byType(Stack), findsNothing);
+    expect(tester.getRect(find.byKey(const ValueKey('body'))).left, 0);
+
+    for (final showRail in [true, false, true]) {
+      rail.value = showRail;
+      await tester.pump();
+      expect(tester.state(find.byType(_Counter)), same(body));
+      expect(
+        find.byType(ShellNavigationRail),
+        showRail ? findsOneWidget : findsNothing,
+      );
+    }
+    expect(_Counter.mounts, 1);
   });
+}
+
+class _Counter extends StatefulWidget {
+  const _Counter({super.key});
+
+  static int mounts = 0;
+
+  @override
+  State<_Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<_Counter> {
+  @override
+  void initState() {
+    super.initState();
+    _Counter.mounts++;
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.expand();
 }

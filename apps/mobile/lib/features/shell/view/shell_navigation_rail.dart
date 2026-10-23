@@ -101,7 +101,8 @@ class _RailDestination extends StatelessWidget {
     final foreground = shad.Theme.of(context).colorScheme.foreground;
     final enabled = item.enabled ?? true;
     final radius = BorderRadius.circular(AppRadius.sheet);
-    return Semantics(
+    final label = shellNavigationItemLabel(item);
+    final destination = Semantics(
       selected: selected,
       enabled: enabled,
       child: SizedBox.square(
@@ -132,12 +133,35 @@ class _RailDestination extends StatelessWidget {
         ),
       ),
     );
+    if (label == null) return destination;
+    // Hover-only label for pointer devices; touch keeps the bare icon and the
+    // item's own semantics label, so the tooltip adds no second announcement.
+    return Tooltip(
+      message: label,
+      triggerMode: TooltipTriggerMode.manual,
+      excludeFromSemantics: true,
+      preferBelow: false,
+      child: destination,
+    );
   }
 }
 
-/// Places [rail] on the leading edge and [body] beside it. In dock mode (or
-/// when [rail] is null) the body is returned unchanged. The rail consumes the
-/// leading horizontal safe area, so it is removed from the body's MediaQuery.
+/// The localized label a shell destination already carries in its
+/// [Semantics] wrapper, reused as the rail's hover tooltip.
+String? shellNavigationItemLabel(shad.NavigationItem item) {
+  final child = item.child;
+  if (child is! Semantics) return null;
+  final label = child.properties.label;
+  return label == null || label.isEmpty ? null : label;
+}
+
+/// Places [rail] on the leading edge and [body] beside it.
+///
+/// Both modes build the same tree shape (a [Stack] whose first child holds
+/// the body under a stable key), so switching between dock and rail on
+/// rotation, resize or immersive toggles never remounts the body, its root
+/// tabs or the dock. The rail consumes the leading horizontal safe area, so
+/// it is removed from the body's MediaQuery.
 ///
 /// The rail paints after the body: routed pages may contain `BlockSemantics`,
 /// which would otherwise drop the semantics of a rail painted before them.
@@ -150,30 +174,33 @@ class AdaptiveShellFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rail = this.rail;
-    if (rail == null) return body;
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final padding = MediaQuery.paddingOf(context);
-    final extent =
-        shellNavigationRailExtent + (rtl ? padding.right : padding.left);
+    final extent = rail == null
+        ? 0.0
+        : shellNavigationRailExtent + (rtl ? padding.right : padding.left);
     return Stack(
       fit: StackFit.expand,
       children: [
         Padding(
+          key: const ValueKey('adaptive-shell-body'),
           padding: EdgeInsetsDirectional.only(start: extent),
           child: MediaQuery.removePadding(
             context: context,
-            removeLeft: !rtl,
-            removeRight: rtl,
+            removeLeft: rail != null && !rtl,
+            removeRight: rail != null && rtl,
             child: body,
           ),
         ),
-        PositionedDirectional(
-          start: 0,
-          top: 0,
-          bottom: 0,
-          width: extent,
-          child: rail,
-        ),
+        if (rail != null)
+          PositionedDirectional(
+            key: const ValueKey('adaptive-shell-rail'),
+            start: 0,
+            top: 0,
+            bottom: 0,
+            width: extent,
+            child: rail,
+          ),
       ],
     );
   }
