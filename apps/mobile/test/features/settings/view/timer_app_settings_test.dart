@@ -4,7 +4,10 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_settings.dart';
@@ -37,6 +40,8 @@ class _Cache extends Mock implements CacheStore {}
 const ValueKey<String> _thresholdRow = ValueKey(
   'settings-request-threshold-row',
 );
+Map<String, dynamic> _decodeFallback(Object? _) => {};
+
 const ValueKey<String> _pomodoroRow = ValueKey('settings-pomodoro-row');
 
 WorkspaceState _scope(String id, {required bool personal}) => WorkspaceState(
@@ -48,6 +53,9 @@ void main() {
   setUpAll(() {
     registerFallbackValue(const PomodoroSettings());
     registerFallbackValue(<String>[]);
+    registerFallbackValue(const CacheKey(namespace: 'fallback'));
+    registerFallbackValue(CachePolicies.moduleData);
+    registerFallbackValue(_decodeFallback);
   });
 
   late _Auth auth;
@@ -66,7 +74,20 @@ void main() {
     scopes = StreamController<WorkspaceState>.broadcast();
     cache = _Cache();
     when(
-      () => cache.invalidateTags(any(), workspaceId: any(named: 'workspaceId')),
+      () => cache.read<Map<String, dynamic>>(
+        key: any(named: 'key'),
+        decode: any(named: 'decode'),
+      ),
+    ).thenAnswer(
+      (_) async => const CacheReadResult(state: CacheEntryState.missing),
+    );
+    when(
+      () => cache.write(
+        key: any(named: 'key'),
+        policy: any(named: 'policy'),
+        payload: any(named: 'payload'),
+        tags: any(named: 'tags'),
+      ),
     ).thenAnswer((_) async {});
     when(
       () => repository.updateMissedEntryDateThreshold(
@@ -178,7 +199,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a saved threshold drops cached workspace settings', (
+  testWidgets('a saved threshold is published to the cached settings', (
     tester,
   ) async {
     await pump(tester, _scope('team', personal: false));
@@ -194,11 +215,49 @@ void main() {
         statusChangeGracePeriodMinutes: 10,
       ),
     ).called(1);
-    // Requests reloads through the cache on return; it must not see 3 stale.
-    verify(
-      () => cache.invalidateTags({'module:time_tracker'}, workspaceId: 'team'),
-    ).called(1);
+    // A queued offline save still reports success; Requests and Timer then
+    // reload through the cache and must read the saved value, not 3.
+    final captured = verify(
+      () => cache.write(
+        key: captureAny(named: 'key'),
+        policy: any(named: 'policy'),
+        payload: captureAny(named: 'payload'),
+        tags: any(named: 'tags'),
+      ),
+    ).captured;
+    expect(
+      (captured[0] as CacheKey).params['path'],
+      '/api/v1/workspaces/team/settings',
+    );
+    expect(captured[1], {'missed_entry_date_threshold': 3});
+    expect(captured[3], {'value': '10'});
     await tester.drainShadToastTimers();
+  });
+
+  testWidgets('focus=threshold opens the editor once it loads', (tester) async {
+    whenListen(
+      workspaces,
+      scopes.stream,
+      initialState: _scope('team', personal: false),
+    );
+    await tester.pumpApp(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthCubit>.value(value: auth),
+          BlocProvider<WorkspaceCubit>.value(value: workspaces),
+        ],
+        child: AppSettingsPage(
+          appId: 'timer',
+          focus: 'threshold',
+          timeTrackerRepository: repository,
+          permissionsRepository: permissions,
+          cacheStore: cache,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ThresholdSettingsDialog), findsOneWidget);
+    expect(find.text('Approval threshold'), findsWidgets);
   });
 
   for (final missing in [

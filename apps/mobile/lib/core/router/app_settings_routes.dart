@@ -27,7 +27,9 @@ List<RouteBase> appSettingsRoutes() => [
         Routes.appSettingsLocation(state.pathParameters['appId']) == null
         ? Routes.settings
         : null,
-    builder: (_, state) =>
-        AppSettingsPage(appId: state.pathParameters['appId']!),
+    builder: (_, state) => AppSettingsPage(
+      appId: state.pathParameters['appId']!,
+      focus: state.uri.queryParameters['focus'],
+    ),
   ),
 ];

@@ -13600,7 +13600,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsGeneralGroup.
   ///
   /// In en, this message translates to:
-  /// **'Personalize'**
+  /// **'General'**
   String get settingsGeneralGroup;
 
   /// No description provided for @settingsHaptics.
@@ -20838,6 +20838,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{app} settings'**
   String settingsAppSettingsFor(String app);
+
+  /// No description provided for @settingsApprovalThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval threshold'**
+  String get settingsApprovalThreshold;
+
+  /// No description provided for @settingsPomodoroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pomodoro'**
+  String get settingsPomodoroTitle;
+
+  /// No description provided for @settingsRequireApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Require approval'**
+  String get settingsRequireApproval;
+
+  /// No description provided for @settingsApprovalOlderThan.
+  ///
+  /// In en, this message translates to:
+  /// **'For entries older than'**
+  String get settingsApprovalOlderThan;
+
+  /// No description provided for @settingsDaysUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get settingsDaysUnit;
+
+  /// No description provided for @settingsStatusChangeWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Status change window'**
+  String get settingsStatusChangeWindow;
+
+  /// No description provided for @settingsFooterDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device.'**
+  String get settingsFooterDevice;
+
+  /// No description provided for @settingsFooterFirstDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your account on every device. Auto uses the workspace default.'**
+  String get settingsFooterFirstDay;
+
+  /// No description provided for @settingsFooterWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to everyone in this workspace.'**
+  String get settingsFooterWorkspace;
+
+  /// No description provided for @settingsFooterCalendarAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar accounts connected to this workspace.'**
+  String get settingsFooterCalendarAccounts;
+
+  /// No description provided for @settingsFooterOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Data kept on this device for offline use.'**
+  String get settingsFooterOffline;
+
+  /// No description provided for @settingsTasksSummaryBoardView.
+  ///
+  /// In en, this message translates to:
+  /// **'Board view'**
+  String get settingsTasksSummaryBoardView;
+
+  /// No description provided for @settingsTasksSummaryBoardList.
+  ///
+  /// In en, this message translates to:
+  /// **'Board list'**
+  String get settingsTasksSummaryBoardList;
+
+  /// No description provided for @settingsFinanceAmountsShown.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts shown'**
+  String get settingsFinanceAmountsShown;
+
+  /// No description provided for @settingsFinanceAmountsHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts hidden'**
+  String get settingsFinanceAmountsHidden;
+
+  /// No description provided for @settingsSearchBrowserTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'browser'**
+  String get settingsSearchBrowserTerm;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

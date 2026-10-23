@@ -57,8 +57,10 @@ abstract final class Routes {
   /// Central per-app settings. Each app's gear deep-links here.
   static const settingsApps = '/settings/apps';
   static const settingsAppDetail = '/settings/apps/:appId';
-  static String settingsAppPath(String appId) =>
-      '$settingsApps/${Uri.encodeComponent(appId)}';
+  static String settingsAppPath(String appId, {String? focus}) => Uri(
+    path: '$settingsApps/$appId',
+    queryParameters: focus == null ? null : {'focus': focus},
+  ).toString();
 
   /// Apps whose settings render as a routed Settings sub-screen. Mail and
   /// Assistant keep their account-scoped hubs in the same Settings section.

@@ -22,15 +22,22 @@ void registerSettingsAppsChecks() {
     String? summary(String id) =>
         tester.widget<SettingsTile>(find.byKey(ValueKey(id))).value;
     expect(find.text('Apps'), findsOneWidget);
-    expect(summary('tasks'), 'Tasks board');
+    // Summaries state the value, not the setting's title again.
+    expect(summary('tasks'), 'Board view');
     expect(summary('calendar'), 'First day: Auto');
-    expect(summary('finance'), 'Hide amounts');
+    expect(summary('finance'), 'Amounts hidden');
     // Timer is opt-in; without the experiment its row stays hidden.
     expect(find.byKey(const ValueKey('timer')), findsNothing);
     // One source of truth: the root no longer repeats per-app editors.
     expect(find.byKey(const ValueKey('settings-finance-row')), findsNothing);
     expect(find.byKey(const ValueKey('settings-task-board-row')), findsNothing);
     expect(find.byKey(const ValueKey('settings-you-row')), findsNothing);
+    // Manage accounts lives once, under Edit profile → Account.
+    expect(
+      find.byKey(const ValueKey('settings-accounts-row'), skipOffstage: false),
+      findsNothing,
+    );
+    expect(find.text('General', skipOffstage: false), findsOneWidget);
     await _capture(tester, 'settings-root-apps');
 
     await _tapRow(tester, const ValueKey('tasks'));
@@ -130,6 +137,30 @@ void registerSettingsAppsChecks() {
     final licenses = tester.getRect(find.text('Open-source licenses'));
     expect(licenses.top, greaterThanOrEqualTo(0));
     expect(licenses.bottom, lessThanOrEqualTo(844));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Calendar reloads the workspace default and links time zones', (
+    tester,
+  ) async {
+    _viewport(tester, const Size(390, 844));
+    final h = _SettingsHarness(initial: Routes.settingsAppPath('calendar'));
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await h.dispose();
+    });
+    await h.pump(tester);
+    // Deep-linked without the Settings root: this screen loads the default.
+    verify(() => h.calendar.loadWorkspacePreference('ws')).called(1);
+    h.scopes.add(_workspace('other'));
+    await _settle(tester);
+    verify(() => h.calendar.loadWorkspacePreference('other')).called(1);
+    await _tapRow(tester, const ValueKey('settings-calendar-timezone-row'));
+    expect(h.router.state.matchedLocation, Routes.settings);
+    final zone = tester.getRect(find.text('Personal timezone'));
+    expect(zone.top, greaterThanOrEqualTo(0));
+    expect(zone.bottom, lessThanOrEqualTo(844));
     expect(tester.takeException(), isNull);
   });
 }

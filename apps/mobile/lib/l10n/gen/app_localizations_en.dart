@@ -7146,7 +7146,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsFirstDaySunday => 'Sunday';
 
   @override
-  String get settingsGeneralGroup => 'Personalize';
+  String get settingsGeneralGroup => 'General';
 
   @override
   String get settingsHaptics => 'Haptic feedback';
@@ -11015,4 +11015,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String settingsAppSettingsFor(String app) {
     return '$app settings';
   }
+
+  @override
+  String get settingsApprovalThreshold => 'Approval threshold';
+
+  @override
+  String get settingsPomodoroTitle => 'Pomodoro';
+
+  @override
+  String get settingsRequireApproval => 'Require approval';
+
+  @override
+  String get settingsApprovalOlderThan => 'For entries older than';
+
+  @override
+  String get settingsDaysUnit => 'days';
+
+  @override
+  String get settingsStatusChangeWindow => 'Status change window';
+
+  @override
+  String get settingsFooterDevice => 'Saved on this device.';
+
+  @override
+  String get settingsFooterFirstDay => 'Saved to your account on every device. Auto uses the workspace default.';
+
+  @override
+  String get settingsFooterWorkspace => 'Applies to everyone in this workspace.';
+
+  @override
+  String get settingsFooterCalendarAccounts => 'Calendar accounts connected to this workspace.';
+
+  @override
+  String get settingsFooterOffline => 'Data kept on this device for offline use.';
+
+  @override
+  String get settingsTasksSummaryBoardView => 'Board view';
+
+  @override
+  String get settingsTasksSummaryBoardList => 'Board list';
+
+  @override
+  String get settingsFinanceAmountsShown => 'Amounts shown';
+
+  @override
+  String get settingsFinanceAmountsHidden => 'Amounts hidden';
+
+  @override
+  String get settingsSearchBrowserTerm => 'browser';
 }

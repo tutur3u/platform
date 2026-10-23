@@ -5,6 +5,10 @@ import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+/// A root Settings group to scroll into view, set by links from app
+/// sub-screens and consumed by the Settings root.
+final ValueNotifier<String?> settingsFocusRequest = ValueNotifier(null);
+
 /// One quick-jump destination in Settings search.
 class SettingsSearchEntry {
   const SettingsSearchEntry({
@@ -42,12 +46,11 @@ final Map<String, String> _foldTable = {
 };
 
 /// Lowercase and strip Vietnamese diacritics so "mui gio" finds "Múi giờ".
-String foldSettingsSearch(String value) => value
-    .toLowerCase()
-    .split('')
-    .map((char) => _foldTable[char] ?? char)
-    .join()
-    .trim();
+/// Keyboards may send decomposed text (a base letter plus combining marks,
+/// U+0300 to U+036F); those marks are dropped before the precomposed table.
+String foldSettingsSearch(String value) => String.fromCharCodes(
+  value.toLowerCase().runes.where((rune) => rune < 0x0300 || rune > 0x036F),
+).split('').map((char) => _foldTable[char] ?? char).join().trim();
 
 List<SettingsSearchEntry> filterSettingsSearch(
   List<SettingsSearchEntry> entries,

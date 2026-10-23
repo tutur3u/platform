@@ -3433,7 +3433,7 @@
   "settingsFirstDayOfWeekDescription": "Control how calendars and weekly summaries start.",
   "settingsFirstDaySaturday": "Saturday",
   "settingsFirstDaySunday": "Sunday",
-  "settingsGeneralGroup": "Personalize",
+  "settingsGeneralGroup": "General",
   "settingsHaptics": "Haptic feedback",
   "settingsHeroDescription": "Personal setup, workspace context, and release details in one place.",
   "settingsInfrastructureSectionDescription": "Platform-wide controls available in the internal workspace.",
@@ -4703,5 +4703,21 @@
         "type": "String"
       }
     }
-  }
+  },
+  "settingsApprovalThreshold": "Approval threshold",
+  "settingsPomodoroTitle": "Pomodoro",
+  "settingsRequireApproval": "Require approval",
+  "settingsApprovalOlderThan": "For entries older than",
+  "settingsDaysUnit": "days",
+  "settingsStatusChangeWindow": "Status change window",
+  "settingsFooterDevice": "Saved on this device.",
+  "settingsFooterFirstDay": "Saved to your account on every device. Auto uses the workspace default.",
+  "settingsFooterWorkspace": "Applies to everyone in this workspace.",
+  "settingsFooterCalendarAccounts": "Calendar accounts connected to this workspace.",
+  "settingsFooterOffline": "Data kept on this device for offline use.",
+  "settingsTasksSummaryBoardView": "Board view",
+  "settingsTasksSummaryBoardList": "Board list",
+  "settingsFinanceAmountsShown": "Amounts shown",
+  "settingsFinanceAmountsHidden": "Amounts hidden",
+  "settingsSearchBrowserTerm": "browser"
 }

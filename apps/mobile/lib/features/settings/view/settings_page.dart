@@ -44,6 +44,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'settings_page_actions.dart';
 part 'settings_page_search.dart';
+part 'settings_page_sections.dart';
 part 'settings_page_widgets.dart';
 part 'settings_preferences_section.dart';
 
@@ -119,6 +120,7 @@ class _SettingsViewState extends State<_SettingsView>
     }
     if (widget.section == SettingsSectionDestination.overview) {
       unawaited(_loadMobileVersionsAccess(workspaceId, forceReload: true));
+      _listenForFocusRequests();
     }
   }
 

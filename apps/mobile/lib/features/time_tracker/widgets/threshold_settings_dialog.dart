@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'threshold_settings_rows.dart';
 
 class ThresholdSettingsDialog extends StatefulWidget {
   const ThresholdSettingsDialog({
@@ -38,10 +42,13 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
+    final muted = theme.typography.small.copyWith(
+      color: theme.colorScheme.mutedForeground,
+    );
     return AppDialogScaffold(
-      title: l10n.timerRequestsThresholdTitle,
+      title: l10n.settingsApprovalThreshold,
       description: l10n.timerRequestsThresholdDescription,
-      icon: Icons.rule_folder_outlined,
+      icon: shad.LucideIcons.clipboardCheck,
       maxWidth: 520,
       actions: [
         shad.OutlineButton(
@@ -62,72 +69,54 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          SettingsGroup(
             children: [
-              Expanded(
-                child: Text(
-                  l10n.timerRequestsThresholdNoApproval,
-                  style: theme.typography.small,
+              _ThresholdRow(
+                title: l10n.settingsRequireApproval,
+                subtitle: _noApprovalNeeded
+                    ? l10n.timerRequestsThresholdNoApprovalHint
+                    : null,
+                trailing: shad.Switch(
+                  value: !_noApprovalNeeded,
+                  onChanged: _isSaving
+                      ? null
+                      : (value) => setState(() {
+                          _noApprovalNeeded = !value;
+                          _error = null;
+                        }),
                 ),
               ),
-              shad.Switch(
-                value: _noApprovalNeeded,
-                onChanged: _isSaving
-                    ? null
-                    : (value) {
-                        setState(() {
-                          _noApprovalNeeded = value;
-                          _error = null;
-                        });
-                      },
+              if (!_noApprovalNeeded)
+                _ThresholdRow(
+                  title: l10n.settingsApprovalOlderThan,
+                  trailing: _NumberField(
+                    controller: _thresholdController,
+                    unit: l10n.settingsDaysUnit,
+                    placeholder: '1',
+                    enabled: !_isSaving,
+                  ),
+                ),
+              _ThresholdRow(
+                title: l10n.settingsStatusChangeWindow,
+                trailing: _NumberField(
+                  controller: _statusChangeGracePeriodController,
+                  unit: l10n.settingsMinutesUnit,
+                  placeholder: '0',
+                  enabled: !_isSaving,
+                ),
               ),
             ],
           ),
-          if (_noApprovalNeeded) ...[
-            const shad.Gap(8),
-            Text(
-              l10n.timerRequestsThresholdNoApprovalHint,
-              style: theme.typography.textMuted,
-            ),
-          ] else ...[
-            const shad.Gap(12),
-            Text(
-              l10n.timerRequestsThresholdLabel,
-              style: theme.typography.small,
-            ),
-            const shad.Gap(4),
-            shad.TextField(
-              selectionControls: platformTextSelectionControls(),
-              contextMenuBuilder: platformTextContextMenuBuilder(),
-              controller: _thresholdController,
-              keyboardType: TextInputType.number,
-              placeholder: const Text('1'),
-              enabled: !_isSaving,
-            ),
-            const shad.Gap(8),
-            Text(
-              l10n.timerRequestsThresholdHelp,
-              style: theme.typography.textMuted,
-            ),
-          ],
-          const shad.Gap(12),
-          Text(
-            l10n.timerRequestsStatusChangeGracePeriodLabel,
-            style: theme.typography.small,
-          ),
-          const shad.Gap(4),
-          shad.TextField(
-            selectionControls: platformTextSelectionControls(),
-            contextMenuBuilder: platformTextContextMenuBuilder(),
-            controller: _statusChangeGracePeriodController,
-            keyboardType: TextInputType.number,
-            hintText: '0',
-            enabled: !_isSaving,
-          ),
           const shad.Gap(8),
-          Text(
-            l10n.timerRequestsStatusChangeGracePeriodHelp,
-            style: theme.typography.textMuted,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              [
+                if (!_noApprovalNeeded) l10n.timerRequestsThresholdHelp,
+                l10n.timerRequestsStatusChangeGracePeriodHelp,
+              ].join(' '),
+              style: muted,
+            ),
           ),
           if (_error != null) ...[
             const shad.Gap(8),

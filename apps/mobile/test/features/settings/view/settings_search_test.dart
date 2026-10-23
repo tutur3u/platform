@@ -18,6 +18,17 @@ void main() {
     expect(foldSettingsSearch('Đổi ảnh đại diện'), 'doi anh dai dien');
   });
 
+  test('decomposed input with combining marks folds like precomposed', () {
+    // "múi giò" typed as base letters plus U+0301 and U+0300.
+    const decomposed = 'mu\u0301i gio\u0300';
+    expect(foldSettingsSearch(decomposed), 'mui gio');
+    // "ờ" as o + horn (U+031B) + grave (U+0300).
+    expect(foldSettingsSearch('gio\u031B\u0300'), 'gio');
+    final entries = [_entry('zone', 'Múi giờ cá nhân')];
+    expect(filterSettingsSearch(entries, decomposed).single.id, 'zone');
+    expect(filterSettingsSearch(entries, 'múi giò').single.id, 'zone');
+  });
+
   test('every query word must match the title, section or terms', () {
     final entries = [
       _entry('pomodoro', 'Pomodoro settings'),

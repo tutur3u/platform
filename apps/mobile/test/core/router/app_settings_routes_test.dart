@@ -1,9 +1,35 @@
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/app_settings_routes.dart';
 import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/cubit/app_tab_state.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/education/cubit/education_access_cubit.dart';
+import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
+import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+
+class _Auth extends MockCubit<AuthState> implements AuthCubit {}
+
+class _Workspaces extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
+
+class _Habits extends MockCubit<HabitsAccessState>
+    implements HabitsAccessCubit {}
+
+class _Education extends MockCubit<EducationAccessState>
+    implements EducationAccessCubit {}
+
+class _Inventory extends MockCubit<InventoryAccessState>
+    implements InventoryAccessCubit {}
+
+class _Tabs extends MockCubit<AppTabState> implements AppTabCubit {}
 
 /// The shipped routes with their pages stubbed; redirects stay real.
 List<RouteBase> _stubbed(List<RouteBase> routes) => [
@@ -94,5 +120,38 @@ void main() {
         reason: entry.key,
       );
     }
+  });
+
+  test('the real app router resolves app settings before detail routes', () {
+    final auth = _Auth();
+    final workspaces = _Workspaces();
+    final habits = _Habits();
+    final education = _Education();
+    final inventory = _Inventory();
+    final tabs = _Tabs();
+    whenListen(auth, const Stream<AuthState>.empty());
+    whenListen(workspaces, const Stream<WorkspaceState>.empty());
+    whenListen(habits, const Stream<HabitsAccessState>.empty());
+    whenListen(education, const Stream<EducationAccessState>.empty());
+    whenListen(inventory, const Stream<InventoryAccessState>.empty());
+    final router = createAppRouter(
+      auth,
+      workspaces,
+      habits,
+      education,
+      inventory,
+      tabs,
+    );
+    addTearDown(router.dispose);
+    String leaf(String location) =>
+        router.configuration.findMatch(Uri.parse(location)).last.route.path;
+    // `/calendar/:eventId` comes from the app registry; the aliases win.
+    expect(leaf('/calendar/settings'), '/calendar/settings');
+    expect(leaf('/calendar/evt-1'), Routes.calendarEventDetail);
+    for (final root in ['/tasks', '/finance', '/timer']) {
+      expect(leaf('$root/settings'), '$root/settings');
+    }
+    expect(leaf('/settings/apps/timer'), Routes.settingsAppDetail);
+    expect(leaf('/settings/apps'), Routes.settingsApps);
   });
 }

@@ -8,6 +8,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/settings/view/apps/app_settings_group.dart';
 import 'package:mobile/features/settings/view/apps/app_settings_sections.dart';
 import 'package:mobile/features/settings/view/apps/timer_app_settings.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
@@ -24,6 +25,7 @@ class AppSettingsPage extends StatelessWidget {
     this.timeTrackerRepository,
     this.permissionsRepository,
     this.cacheStore,
+    this.focus,
     super.key,
   });
 
@@ -32,6 +34,9 @@ class AppSettingsPage extends StatelessWidget {
   final ITimeTrackerRepository? timeTrackerRepository;
   final WorkspacePermissionsRepository? permissionsRepository;
   final CacheStore? cacheStore;
+
+  /// Optional row to open on arrival, such as `threshold` from Requests.
+  final String? focus;
 
   /// Apps with locally prepared offline data link to their offline screen.
   static const _offlineModules = {'tasks', 'calendar', 'finance'};
@@ -48,6 +53,7 @@ class AppSettingsPage extends StatelessWidget {
           repository: timeTrackerRepository,
           permissionsRepository: permissionsRepository,
           cacheStore: cacheStore,
+          focusThreshold: focus == 'threshold',
         ),
       ],
       _ => const <Widget>[],
@@ -65,8 +71,9 @@ class AppSettingsPage extends StatelessWidget {
             ...groups,
             if (_offlineModules.contains(appId)) ...[
               const SizedBox(height: SettingsRowLayout.groupGap),
-              SettingsCompactSection(
+              AppSettingsGroup(
                 title: context.l10n.offlineSectionTitle,
+                footer: context.l10n.settingsFooterOffline,
                 children: [
                   SettingsTile(
                     key: ValueKey('app-settings-$appId-offline'),

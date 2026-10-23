@@ -12,11 +12,26 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
 
   @override
   void dispose() {
+    settingsFocusRequest.removeListener(_consumeFocusRequest);
     _searchController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged(String value) => setState(() => _searchQuery = value);
+
+  /// Consumes a pending [settingsFocusRequest], such as Calendar's time
+  /// zone link, whether this page was already mounted or is new.
+  void _listenForFocusRequests() {
+    settingsFocusRequest.addListener(_consumeFocusRequest);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _consumeFocusRequest());
+  }
+
+  void _consumeFocusRequest() {
+    final group = settingsFocusRequest.value;
+    if (group == null || !mounted) return;
+    settingsFocusRequest.value = null;
+    _jumpTo(group);
+  }
 
   void _jumpTo(String groupId) {
     _searchController.clear();
@@ -60,12 +75,14 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
       IconData icon,
       String title,
       String groupId,
-      String section,
-    ) => SettingsSearchEntry(
+      String section, {
+      List<String> terms = const [],
+    }) => SettingsSearchEntry(
       id: id,
       icon: icon,
       title: title,
       section: section,
+      terms: terms,
       onOpen: () => _jumpTo(groupId),
     );
 
@@ -94,6 +111,7 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
         l10n.authManageAccounts,
         l10n.settingsAccountSectionTitle,
         Routes.settingsAccounts,
+        terms: [l10n.settingsProfileEdit],
       ),
       route(
         'appearance',
@@ -144,6 +162,11 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
         l10n.settingsLinkBrowser,
         'interaction',
         interaction,
+        terms: [
+          l10n.settingsSearchBrowserTerm,
+          l10n.settingsLinkBrowserBuiltIn,
+          l10n.settingsLinkBrowserExternal,
+        ],
       ),
       for (final app in productSettingsRegistry.where(
         (app) => app.visible(context),
@@ -183,6 +206,7 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
         l10n.workspaceHiddenTitle,
         'general',
         general,
+        terms: [l10n.settingsNavWorkspace],
       ),
       route(
         'experiments',
@@ -190,6 +214,10 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
         l10n.settingsExperimentalAppsSectionTitle,
         general,
         Routes.settingsExperiments,
+        terms: [
+          for (final module in AppRegistry.experimentalModules)
+            module.label(l10n),
+        ],
       ),
       route(
         'offline',
@@ -197,6 +225,13 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
         l10n.offlineSectionTitle,
         general,
         Routes.settingsOffline,
+        terms: [
+          l10n.settingsAppOfflineData,
+          l10n.navTasks,
+          l10n.navCalendar,
+          l10n.navFinance,
+          l10n.inventoryTitle,
+        ],
       ),
       if (showInfrastructure)
         route(
@@ -205,6 +240,7 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
           l10n.settingsInfrastructureSectionTitle,
           general,
           Routes.settingsInfrastructure,
+          terms: [l10n.adminAccountsTitle, l10n.settingsMobileVersions],
         ),
       route(
         'feedback',
