@@ -104,7 +104,7 @@ select is((select proconfig::text from pg_proc where oid = 'public.is_task_board
 select is((select proconfig::text from pg_proc where oid = 'public.get_task_details(uuid)'::regprocedure), '{"search_path=\"\""}', 'task details pinned at function level');
 select ok((select position('set local' in lower(prosrc)) = 0 from pg_proc where oid = 'public.get_task_details(uuid)'::regprocedure), 'task details no longer changes the caller transaction search_path');
 select is((select proconfig::text from pg_proc where oid = 'public.get_platform_ai_credit_overview()'::regprocedure), '{"search_path=\"\""}', 'credit overview pinned empty');
-select is((select proconfig::text from pg_proc where oid = 'public.set_default_break_type(uuid,uuid)'::regprocedure), '{search_path=public}', 'break type helper pinned to public');
+select is((select proconfig::text from pg_proc where oid = 'public.set_default_break_type(uuid,uuid)'::regprocedure), '{"search_path=public, pg_temp"}', 'break type helper uses a trusted path with pg_temp last');
 select is((select proconfig::text from pg_proc where oid = 'public.get_challenge_stats(uuid,uuid)'::regprocedure), '{"search_path=private, public, pg_temp"}', 'challenge stats resolves private Nova tables');
 select is((select proconfig::text from pg_proc where oid = 'public.get_transaction_creators(uuid)'::regprocedure), '{"search_path=private, public, pg_temp"}', 'existing transaction creator pin preserved');
 

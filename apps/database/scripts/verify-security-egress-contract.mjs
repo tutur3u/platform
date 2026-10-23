@@ -13,6 +13,20 @@ import {
 } from './run-supabase-isolated.js';
 
 const repositoryRoot = process.cwd();
+
+const apiConfig = readFileSync('apps/database/supabase/config.toml', 'utf8')
+  .split(/^\[/m)
+  .find((section) => section.startsWith('api]'));
+const schemaSetting = apiConfig?.match(/^schemas\s*=\s*(\[[^\n]*\])/m)?.[1];
+if (!schemaSetting) throw new Error('Missing exposed API schemas');
+const configuredSchemas = JSON.parse(schemaSetting);
+if (
+  !Array.isArray(configuredSchemas) ||
+  configuredSchemas.some((s) => typeof s !== 'string' || !s)
+)
+  throw new Error('Invalid exposed API schemas');
+const exposedSchemas = [...new Set(['public', ...configuredSchemas])].join(',');
+
 const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
   encoding: 'utf8',
 }).trim();
@@ -38,6 +52,7 @@ const fixtures = [
   'security-egress-budgets.sql',
   'security-budget-entitlements.sql',
   'security-definer-function-grants.sql',
+  'security-definer-search-paths.sql',
 ];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
@@ -99,6 +114,8 @@ const runner = async (command, args, cwd) => {
           '-t',
           '-v',
           'ON_ERROR_STOP=1',
+          '-v',
+          `security_exposed_schemas=${exposedSchemas}`,
           '-U',
           'supabase_admin',
           '--dbname',
