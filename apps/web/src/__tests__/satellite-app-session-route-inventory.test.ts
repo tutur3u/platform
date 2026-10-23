@@ -35,6 +35,7 @@ const satelliteRouteRoots = [
   'apps/web/src/legacy-api-routes/v1/users/me/profile',
   'apps/web/src/app/api/v1/users/me/avatar',
   'apps/web/src/legacy-api-routes/v1/users/me/email',
+  'apps/web/src/app/api/v1/workspaces/[wsId]/avatar/route.ts',
 ];
 
 const satelliteAppApiRoots = [

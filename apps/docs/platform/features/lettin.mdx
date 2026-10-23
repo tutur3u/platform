@@ -333,6 +333,35 @@ exercise two actors through the production session wrapper and signed satellite
 tokens, with cookie identity and database/Storage fixtures. Hosted Storage
 acceptance remains a separate gate.
 
+### Workspace avatar ownership
+
+Web and registered satellite workspace-avatar PATCH and DELETE retain
+`manage_workspace_settings` authorization on the resolved workspace. PATCH
+accepts only the upload ticket's exact
+`workspaces/<workspace UUID>/avatar-<lowercase ticket UUID>.webp` path. It does not
+trim, decode or normalize the submitted path. DELETE first clears that workspace's
+field, then best-effort removes only a stored URL whose unparsed string matches
+the configured Supabase Storage origin, `avatars` bucket, workspace prefix and
+exact ticket filename. The DELETE-time ownership check remains authoritative even
+for values written directly to the workspace row. Traversal, encodings, extra
+segments, backslashes, repeated slashes, query strings, fragments, noncanonical
+host/port spellings, other buckets and other owners never authorize removal.
+Older filenames and external URLs are cleared without deleting objects.
+
+Web cookie sessions use their existing RLS client for removal; satellite app
+sessions use the server client only after verifying the actor and workspace
+settings permission. The missing avatar DELETE policy can therefore leave web
+cookie-session orphans. Existing images remain readable, and upload tickets,
+public API paths and response shapes are unchanged. No Storage policy changes
+are included.
+
+Regression coverage: [web workspace avatar route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/avatar/route.test.ts)
+and [satellite workspace avatar ownership tests](https://github.com/tutur3u/platform/blob/main/packages/satellite/src/routes/workspace-avatar-ownership.test.ts)
+exercise two actors and workspaces, direct stored-URL injection, rejected PATCH
+paths, permission denial and legitimate set/remove. These use database and
+Storage fixtures; hosted Storage policy acceptance is separate.
+
+
 Avatar uploads are automatically optimized to at most **1 MB (1,000,000 bytes)**;
 banners to **2 MB (2,000,000 bytes)**. Source PNG, JPEG, WebP and GIF files may be
 up to 2 MiB for avatars or 5 MiB for banners. This rule covers canonical personal

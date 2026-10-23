@@ -298,7 +298,8 @@ describe('satellite workspace settings route handlers', () => {
         'https://inventory.test/api/v1/workspaces/workspace-one/avatar',
         {
           body: JSON.stringify({
-            filePath: 'workspaces/resolved-workspace-id/avatar.png',
+            filePath:
+              'workspaces/resolved-workspace-id/avatar-12345678-1234-4234-8234-123456789abc.webp',
           }),
           method: 'PATCH',
         }
