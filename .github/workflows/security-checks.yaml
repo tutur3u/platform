@@ -28,7 +28,7 @@ permissions:
 env:
   GITLEAKS_VERSION: 8.30.1
   GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
-  BUN_VERSION: 1.4.3
+  BUN_VERSION: 1.4.4
   BUN_SHA256: 3e730528d89775f03f87f05c06787c4df4099d0a37f3f252e7b829cb23816e18
 
 jobs:
@@ -383,7 +383,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Use Node.js 24
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
