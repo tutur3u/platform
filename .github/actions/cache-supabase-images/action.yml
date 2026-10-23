@@ -30,6 +30,17 @@ runs:
       if: steps.cache.outputs.cache-hit == 'true'
       shell: bash
       run: node scripts/ci/supabase-image-cache.js load
+    - name: Restore exact smaller profile archive
+      id: subset
+      if: steps.cache.outputs.cache-hit != 'true' && steps.identity.outputs.subset-key != ''
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}/supabase-images/images.tar
+        key: ${{ steps.identity.outputs.subset-key }}
+    - name: Load smaller profile images
+      if: steps.subset.outputs.cache-hit == 'true'
+      shell: bash
+      run: node scripts/ci/supabase-image-cache.js load-subset
     - name: Pull missing images within a short budget
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash

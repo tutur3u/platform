@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
+      fail-fast: false
       max-parallel: 1
       matrix:
         profile: [contract, contract-http, full]
