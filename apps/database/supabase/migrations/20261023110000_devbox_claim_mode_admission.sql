@@ -12,7 +12,8 @@
 -- With the flag off, claims behave exactly as before.
 --
 -- This redefines claim_next_devbox_run on top of the S2/S3 drain-aware body
--- (20261023100000_devbox_runner_trust_pools.sql) and must apply after it.
+-- (20261023100000_devbox_runner_trust_pools.sql) and its hardened requeue
+-- (20261023103000_devbox_runner_drain_hardening.sql); it must apply after both.
 -- drain_requested_at is added here too so this migration also applies alone.
 
 alter table private.devbox_runners
@@ -181,7 +182,8 @@ begin
                     and (lease.runner_id is null or lease.runner_id = p_runner_id)
                 )
                 -- Queued Judge work pinned to a draining runner is requeued to
-                -- any other eligible Judge runner (checked below as usual).
+                -- another Judge runner that enqueue would also have chosen:
+                -- it supports the submission's language and is not trusted.
                 or (
                     run.workload = 'judge'
                     and (run.runner_id is null or run.runner_id in (
@@ -190,6 +192,16 @@ begin
                     and (lease.runner_id is null or lease.runner_id in (
                         select draining.id from private.devbox_runners draining
                         where draining.drain_requested_at is not null))
+                    and runner.capabilities ->> 'executionMode' is distinct from 'trusted'
+                    and coalesce(runner.enabled_features ->> 'run', 'false') <> 'true'
+                    and coalesce(runner.enabled_features ->> 'build', 'false') <> 'true'
+                    and coalesce(runner.enabled_features ->> 'serve', 'false') <> 'true'
+                    and coalesce(runner.enabled_features ->> 'tunnel', 'false') <> 'true'
+                    and exists (
+                        select 1 from private.learn_coding_submissions submission
+                        where submission.run_id = run.id
+                            and runner.capabilities #> '{judge,languages}' ? submission.language
+                    )
                 )
             )
             -- A draining runner finishes in-flight work and accepts only
