@@ -3,7 +3,7 @@ const { createRequire } = require('node:module');
 const { resolve } = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { test } = require('node:test');
-const { existsSync, readFileSync } = require('node:fs');
+const { existsSync, readFileSync, realpathSync } = require('node:fs');
 const root = resolve(__dirname, '..');
 const mail = createRequire(resolve(root, 'apps/mail/package.json'));
 const mailauth = createRequire(mail.resolve('mailauth'));
@@ -152,14 +152,19 @@ test('patched gRPC retains Photon consumer loopback behavior', {
 // Void's Drizzle Kit pulls the deprecated @esbuild-kit loader, which pins
 // esbuild ~0.18 (GHSA-67mh-4wv8-2f99). The override must keep its transform API.
 test('esbuild-kit consumer transforms TypeScript on patched esbuild', () => {
+  // Follow the isolated linker's store paths so hoisted root copies cannot
+  // satisfy a transitive lookup the real consumer would not see.
+  const storeRequire = (parent, name) =>
+    createRequire(
+      realpathSync(dependencyRequire(parent, name).resolve(`./package.json`))
+    );
   const apps = createRequire(resolve(root, 'apps/apps/package.json'));
-  const kit = dependencyRequire(
-    dependencyRequire(
-      dependencyRequire(dependencyRequire(apps, 'void'), 'drizzle-kit'),
-      '@esbuild-kit/esm-loader'
-    ),
-    '@esbuild-kit/core-utils'
-  );
+  const kit = [
+    'void',
+    'drizzle-kit',
+    '@esbuild-kit/esm-loader',
+    '@esbuild-kit/core-utils',
+  ].reduce(storeRequire, apps);
   const [major, minor] = kit('esbuild/package.json').version.split('.');
   assert.ok(Number(major) > 0 || Number(minor) >= 25, 'esbuild >= 0.25.0');
   const { code } = kit('@esbuild-kit/core-utils').transformSync(
