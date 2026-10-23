@@ -25,13 +25,36 @@ export function collapseAccounts(
     return {
       ...first,
       instanceIds: ordered.map((account) => account.instanceId),
-      windows: ordered.flatMap((account) => account.windows),
+      windows: [
+        ...ordered
+          .flatMap((account) => account.windows)
+          .reduce((windows, window) => {
+            const key = JSON.stringify([
+              window.id ?? window.kind,
+              window.scope ?? { kind: 'account' },
+            ]);
+            const previous = windows.get(key);
+            if (
+              !previous ||
+              Date.parse(window.observedAt) > Date.parse(previous.observedAt) ||
+              (window.observedAt === previous.observedAt &&
+                (window.usedPercent ?? -1) > (previous.usedPercent ?? -1))
+            )
+              windows.set(key, window);
+            return windows;
+          }, new Map<string, AccountUsage['windows'][number]>())
+          .values(),
+      ],
       alias:
         ordered.length > 1
           ? `Shared account identity: ${ordered.map((account) => account.instanceId).join(', ')}; reservations combined.`
           : first.accountIdentityHash
-            ? 'Account identity verified by an opaque provider hash; display labels remain aliases.'
+            ? 'Account identity established from provider metadata or the configured account-home mapping; display labels remain aliases.'
             : 'Account identity unavailable; display labels are aliases, not account identity. Instances remain separate.',
     };
   });
+}
+
+export function accountKey(account: AccountUsage): string {
+  return `${account.provider}:${account.accountIdentityHash ? `account:${account.accountIdentityHash}` : `instance:${account.instanceId}`}`;
 }

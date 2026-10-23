@@ -323,7 +323,7 @@ describe('local collectors', () => {
     expect(result.quotaSnapshotsFound).toBe(false);
     expect(result.providerByInstance).toEqual({ codex: 'codex' });
     expect(result.activeAssignments).toEqual([
-      { instanceId: 'codex', count: 1 },
+      { instanceId: 'codex', count: 1, reservationIds: ['child'] },
     ]);
     expect(() =>
       new DatabaseSync(path, { readOnly: true }).exec(
@@ -345,6 +345,7 @@ describe('local collectors', () => {
       collectClaude: async () => ({ ...account, provider: 'claude' as const }),
       collectCodex: async () => account,
       collectSnapshot: async (value) => value,
+      readBlockLedger: async () => ({ version: 1 as const, blocks: [] }),
     });
     expect(result.accounts).toHaveLength(8);
     expect(result.active).toBeUndefined();
