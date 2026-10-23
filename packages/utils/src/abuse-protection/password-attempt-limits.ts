@@ -1,32 +1,30 @@
 /**
- * Failure budgets for shared-secret password checks (Meet guest login, Nova
- * challenge passwords).
- *
- * Each check is limited per target (one guest identity or one challenge for
- * one user) and per client IP, so guessing is bounded whether the attacker
- * focuses on one target or sprays many from one address. Counters live in
- * Upstash Redis; like the rest of abuse protection they fail open when Redis
- * is not configured or unavailable, leaving the KDF cost as the only bound.
+ * Atomic pre-work budgets for Meet guest creation/login and Nova challenges.
+ * All admitted attempts, including successes, consume capacity until expiry.
+ * Missing or unavailable Upstash preserves the existing fail-open policy.
  */
 
 import { createHash } from 'node:crypto';
 import {
-  getUpstashRestRedisClient,
+  getUpstashRatelimitRedisClient,
   hasUpstashRestEnv,
-  type UpstashRestRedisClient,
+  type UpstashRatelimitRedisClient,
 } from '../upstash-rest';
 import type { AbuseCheckResult } from './types';
 
 export const PASSWORD_ATTEMPT_LIMITS = {
-  /** Failed passwords allowed for one target per window. */
+  /** Password attempts allowed for one target per window. */
   TARGET_FAILED_MAX: 10,
   TARGET_WINDOW_MS: 15 * 60 * 1000,
-  /** Failed passwords allowed from one IP across targets per window. */
+  /** Password attempts allowed from one IP across targets per window. */
   IP_FAILED_MAX: 30,
   IP_WINDOW_MS: 15 * 60 * 1000,
 } as const;
 
-export type PasswordAttemptScope = 'meet-guest' | 'nova-challenge';
+export type PasswordAttemptScope =
+  | 'meet-guest'
+  | 'meet-guest-create'
+  | 'nova-challenge';
 
 export interface PasswordAttemptSubject {
   scope: PasswordAttemptScope;
@@ -35,14 +33,11 @@ export interface PasswordAttemptSubject {
    * name. Hashed before use so raw names never reach Redis keys.
    */
   target: string;
-  /** Client IP from the trusted IP helper; `unknown`/empty skips the IP budget. */
+  /** Client IP from the trusted helper; missing/invalid values share a bucket. */
   ip?: string | null;
 }
 
-type CounterClient = Pick<
-  UpstashRestRedisClient,
-  'del' | 'expire' | 'get' | 'incr' | 'ttl'
->;
+type CounterClient = Pick<UpstashRatelimitRedisClient, 'eval'>;
 
 const IP_PATTERN = /^[0-9A-Fa-f:.]{2,45}$/u;
 
@@ -55,7 +50,7 @@ export function getPasswordAttemptKeys(subject: PasswordAttemptSubject) {
   const ip = subject.ip?.trim();
   return {
     target: `${prefix}:target:${digest(subject.target)}`,
-    ip: ip && IP_PATTERN.test(ip) ? `${prefix}:ip:${ip.toLowerCase()}` : null,
+    ip: `${prefix}:ip:${ip && IP_PATTERN.test(ip) ? ip.toLowerCase() : 'unknown'}`,
   };
 }
 
@@ -66,25 +61,43 @@ export function normalizePasswordAttemptName(name: string) {
 
 async function defaultRedis(): Promise<CounterClient | null> {
   if (!hasUpstashRestEnv()) return null;
-  return getUpstashRestRedisClient();
+  return getUpstashRatelimitRedisClient();
 }
 
 function failOpen(message: string, error: unknown) {
   console.warn(`[Abuse Protection] ${message}`, error);
 }
 
+// Redis runs the whole script atomically: denied attempts neither allocate new
+// target keys nor extend the window. TTL and increment commit together.
+export const RESERVE_PASSWORD_ATTEMPT_SCRIPT = `
+local remaining = math.huge
+for i, key in ipairs(KEYS) do
+  local limit = tonumber(ARGV[(i - 1) * 2 + 1])
+  local count = tonumber(redis.call('GET', key) or '0')
+  if count >= limit then
+    local ttl = redis.call('TTL', key)
+    if ttl < 0 then
+      ttl = tonumber(ARGV[i * 2])
+      redis.call('EXPIRE', key, ttl)
+    end
+    return {0, ttl, 0}
+  end
+  remaining = math.min(remaining, limit - count - 1)
+end
+for i, key in ipairs(KEYS) do
+  local count = redis.call('INCR', key)
+  if count == 1 or redis.call('TTL', key) < 0 then
+    redis.call('EXPIRE', key, tonumber(ARGV[i * 2]))
+  end
+end
+return {1, 0, remaining}
+`;
+
 export function createPasswordAttemptLimiter(
   getRedis: () => Promise<CounterClient | null> = defaultRedis
 ) {
-  async function remainingSeconds(
-    redis: CounterClient,
-    key: string,
-    windowMs: number
-  ) {
-    const ttl = await redis.ttl(key);
-    return ttl > 0 ? ttl : Math.ceil(windowMs / 1000);
-  }
-
+  /** Reserves capacity before KDF work; success does not reset concurrent work. */
   async function check(
     subject: PasswordAttemptSubject
   ): Promise<AbuseCheckResult> {
@@ -93,101 +106,36 @@ export function createPasswordAttemptLimiter(
 
     const keys = getPasswordAttemptKeys(subject);
     try {
-      const [targetCount, ipCount] = await Promise.all([
-        redis.get<number>(keys.target),
-        keys.ip ? redis.get<number>(keys.ip) : Promise.resolve(0),
-      ]);
-      const targetFailures = Number(targetCount) || 0;
-      const ipFailures = Number(ipCount) || 0;
-
-      if (keys.ip && ipFailures >= PASSWORD_ATTEMPT_LIMITS.IP_FAILED_MAX) {
-        return {
-          allowed: false,
-          reason: 'Too many failed password attempts',
-          retryAfter: await remainingSeconds(
-            redis,
-            keys.ip,
-            PASSWORD_ATTEMPT_LIMITS.IP_WINDOW_MS
-          ),
-          remainingAttempts: 0,
-        };
-      }
-
-      if (targetFailures >= PASSWORD_ATTEMPT_LIMITS.TARGET_FAILED_MAX) {
-        return {
-          allowed: false,
-          reason: 'Too many failed password attempts',
-          retryAfter: await remainingSeconds(
-            redis,
-            keys.target,
-            PASSWORD_ATTEMPT_LIMITS.TARGET_WINDOW_MS
-          ),
-          remainingAttempts: 0,
-        };
-      }
-
-      return {
-        allowed: true,
-        remainingAttempts: Math.min(
-          PASSWORD_ATTEMPT_LIMITS.TARGET_FAILED_MAX - targetFailures,
-          keys.ip
-            ? PASSWORD_ATTEMPT_LIMITS.IP_FAILED_MAX - ipFailures
-            : Number.POSITIVE_INFINITY
-        ),
-      };
+      const [allowed, retryAfter, remainingAttempts] = await redis.eval<
+        number[],
+        [number, number, number]
+      >(
+        RESERVE_PASSWORD_ATTEMPT_SCRIPT,
+        [keys.ip, keys.target],
+        [
+          PASSWORD_ATTEMPT_LIMITS.IP_FAILED_MAX,
+          Math.ceil(PASSWORD_ATTEMPT_LIMITS.IP_WINDOW_MS / 1000),
+          PASSWORD_ATTEMPT_LIMITS.TARGET_FAILED_MAX,
+          Math.ceil(PASSWORD_ATTEMPT_LIMITS.TARGET_WINDOW_MS / 1000),
+        ]
+      );
+      return allowed === 1
+        ? { allowed: true, remainingAttempts }
+        : {
+            allowed: false,
+            reason: 'Too many failed password attempts',
+            retryAfter,
+            remainingAttempts: 0,
+          };
     } catch (error) {
-      failOpen('Password attempt limit read failed:', error);
+      failOpen('Password attempt reservation failed:', error);
       return { allowed: true };
     }
   }
 
-  async function increment(
-    redis: CounterClient,
-    key: string,
-    windowMs: number
-  ) {
-    const count = await redis.incr(key);
-    if (count === 1) await redis.expire(key, Math.ceil(windowMs / 1000));
-    return count;
-  }
-
-  async function recordFailure(subject: PasswordAttemptSubject) {
-    const redis = await getRedis().catch(() => null);
-    if (!redis) return;
-
-    const keys = getPasswordAttemptKeys(subject);
-    try {
-      await Promise.all([
-        increment(redis, keys.target, PASSWORD_ATTEMPT_LIMITS.TARGET_WINDOW_MS),
-        keys.ip
-          ? increment(redis, keys.ip, PASSWORD_ATTEMPT_LIMITS.IP_WINDOW_MS)
-          : null,
-      ]);
-    } catch (error) {
-      failOpen('Password attempt limit write failed:', error);
-    }
-  }
-
-  /**
-   * A correct password resets the target budget. The IP budget is kept so a
-   * client cannot launder failures across targets with one known password.
-   */
-  async function clear(subject: PasswordAttemptSubject) {
-    const redis = await getRedis().catch(() => null);
-    if (!redis) return;
-
-    try {
-      await redis.del(getPasswordAttemptKeys(subject).target);
-    } catch (error) {
-      failOpen('Password attempt limit reset failed:', error);
-    }
-  }
-
-  return { check, clear, recordFailure };
+  return { check };
 }
 
 const defaultLimiter = createPasswordAttemptLimiter();
 
 export const checkPasswordAttemptLimit = defaultLimiter.check;
-export const recordPasswordAttemptFailure = defaultLimiter.recordFailure;
-export const clearPasswordAttemptFailures = defaultLimiter.clear;

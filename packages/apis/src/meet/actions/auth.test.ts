@@ -73,8 +73,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 const limits = vi.hoisted(() => ({
   check: vi.fn(),
-  clear: vi.fn(),
-  recordFailure: vi.fn(),
 }));
 
 vi.mock(
@@ -84,9 +82,6 @@ vi.mock(
       typeof import('@tuturuuu/utils/abuse-protection/password-attempt-limits')
     >()),
     checkPasswordAttemptLimit: (...args: unknown[]) => limits.check(...args),
-    clearPasswordAttemptFailures: (...args: unknown[]) => limits.clear(...args),
-    recordPasswordAttemptFailure: (...args: unknown[]) =>
-      limits.recordFailure(...args),
   })
 );
 
@@ -145,6 +140,37 @@ describe('Meet guest login', () => {
     ).toBeNull();
   });
 
+  it('reserves the shared plan creation budget before hashing a new guest', async () => {
+    limits.check.mockResolvedValue({ allowed: false, retryAfter: 420 });
+    mocks.queue('meet_together_guests:select', { data: null, error: null });
+    mocks.queue('meet_together_guests:insert', {
+      data: { id: 'guest-new', name: 'Fresh name' },
+      error: null,
+    });
+    const crypto = await import('@tuturuuu/utils/crypto');
+    const hash = vi.spyOn(crypto, 'hashPassword');
+    try {
+      const { guestLogin } = await import('./auth.js');
+      const result = await guestLogin(PLAN_ID, {
+        name: 'Fresh name',
+        password: 'secret',
+      });
+      expect(result).toEqual({
+        error: 'Too many failed attempts',
+        retryAfter: 420,
+      });
+      expect(limits.check).toHaveBeenCalledWith({
+        scope: 'meet-guest-create',
+        target: PLAN_ID,
+        ip: '203.0.113.9',
+      });
+      expect(hash).not.toHaveBeenCalled();
+      expect(mutations()).toEqual([]);
+    } finally {
+      hash.mockRestore();
+    }
+  });
+
   it('upgrades a legacy hash with a guarded update on successful login', async () => {
     const legacyHash = hashLegacyPassword('secret', 'abc123');
     mocks.queue('meet_together_guests:select', {
@@ -196,12 +222,11 @@ describe('Meet guest login', () => {
 
     expect(result).toEqual({ error: 'Invalid credentials' });
     expect(mutations()).toEqual([]);
-    expect(limits.recordFailure).toHaveBeenCalledWith({
+    expect(limits.check).toHaveBeenCalledWith({
       scope: 'meet-guest',
       target: `${PLAN_ID}:ann`,
       ip: '203.0.113.9',
     });
-    expect(limits.clear).not.toHaveBeenCalled();
   });
 
   it('refuses to verify once the failure budget is spent', async () => {
@@ -229,7 +254,6 @@ describe('Meet guest login', () => {
     expect(limits.check).toHaveBeenCalledWith(
       expect.objectContaining({ target: `${PLAN_ID}:ann` })
     );
-    expect(limits.recordFailure).not.toHaveBeenCalled();
     expect(mutations()).toEqual([]);
   });
 
@@ -252,7 +276,6 @@ describe('Meet guest login', () => {
 
     expect(result.data?.user.id).toBe('guest-1');
     expect(mutations()).toEqual([]);
-    expect(limits.clear).toHaveBeenCalledTimes(1);
   });
 
   it('rejects the stored hash presented as the password', async () => {

@@ -2,9 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import {
   checkPasswordAttemptLimit,
-  clearPasswordAttemptFailures,
   type PasswordAttemptSubject,
-  recordPasswordAttemptFailure,
 } from '@tuturuuu/utils/abuse-protection/password-attempt-limits';
 import {
   hashPassword,
@@ -96,14 +94,11 @@ export async function POST(request: Request) {
     });
 
     if (!verification.valid) {
-      await recordPasswordAttemptFailure(attempt);
       return NextResponse.json(
         { message: 'Invalid password' },
         { status: 401 }
       );
     }
-
-    await clearPasswordAttemptFailures(attempt);
 
     if (verification.needsRehash) {
       // Upgrade legacy hashes in place, guarded by the old value so a

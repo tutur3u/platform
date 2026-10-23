@@ -106,11 +106,19 @@ are unaffected.
   to passwordless guests; the password and the session are not persisted.
 - **Expiry.** When a session expires the guest action is rejected and the guest
   signs in again from the plan page.
-- **Attempt limits.** Failed guest passwords are limited per plan and guest
+- **Attempt limits.** Guest password attempts are limited per plan and guest
   name and per client IP (see
   [shared-secret password budgets](/build/devops/adaptive-abuse-rate-limits#shared-secret-password-budgets)).
   While a budget is spent the form shows a localized retry message, even for
-  the correct password. Creating a new guest name is not limited by this budget.
+  the correct password. Every attempt consumes capacity, including successful
+  logins. Creation reserves
+  a separate plan-wide budget before hashing: 10 creations per plan and 30 per IP
+  per 15 minutes, independent of the chosen guest name. Unknown IPs share a bucket.
+  The participant view and guest table are available only to server/admin clients;
+  client roles cannot query either directly. Regression coverage lives in
+  `packages/apis/src/meet/actions/auth.test.ts`,
+  `packages/utils/src/abuse-protection/__tests__/password-attempt-limits.test.ts`,
+  and `apps/database/supabase/tests/security-meet-guest-grants.sql`.
 - **Table access.** `meet_together_guests` keeps row level security with no
   client-role policies, and client-role table grants are revoked; only server
   code using the service role reads it.

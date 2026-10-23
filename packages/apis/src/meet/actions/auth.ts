@@ -4,10 +4,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import {
   checkPasswordAttemptLimit,
-  clearPasswordAttemptFailures,
   normalizePasswordAttemptName,
   type PasswordAttemptSubject,
-  recordPasswordAttemptFailure,
 } from '@tuturuuu/utils/abuse-protection/password-attempt-limits';
 import {
   hashPassword,
@@ -92,6 +90,21 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
     return { error: 'Error while fetching guest' };
   }
 
+  const attempt: PasswordAttemptSubject = {
+    scope: guest?.name ? 'meet-guest' : 'meet-guest-create',
+    target: guest?.name
+      ? `${planId}:${normalizePasswordAttemptName(name)}`
+      : planId,
+    ip: await resolveClientIP(),
+  };
+  const limit = await checkPasswordAttemptLimit(attempt);
+  if (!limit.allowed) {
+    return {
+      error: 'Too many failed attempts',
+      retryAfter: limit.retryAfter ?? 60,
+    };
+  }
+
   // If guest does not exist, create a new one
   if (!guest?.name) {
     const passwordHash = await hashPassword(password);
@@ -123,30 +136,14 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
     };
   }
 
-  const attempt: PasswordAttemptSubject = {
-    scope: 'meet-guest',
-    target: `${planId}:${normalizePasswordAttemptName(name)}`,
-    ip: await resolveClientIP(),
-  };
-  const limit = await checkPasswordAttemptLimit(attempt);
-  if (!limit.allowed) {
-    return {
-      error: 'Too many failed attempts',
-      retryAfter: limit.retryAfter ?? 60,
-    };
-  }
-
   const verification = await verifyPassword(password, {
     hash: guest.password_hash,
     salt: guest.password_salt,
   });
 
   if (!verification.valid) {
-    await recordPasswordAttemptFailure(attempt);
     return { error: 'Invalid credentials' };
   }
-
-  await clearPasswordAttemptFailures(attempt);
 
   if (verification.needsRehash) {
     // Upgrade legacy hashes in place. The filter on the old value keeps a

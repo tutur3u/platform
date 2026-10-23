@@ -7,28 +7,41 @@ import {
   type PasswordAttemptSubject,
 } from '../password-attempt-limits';
 
+// Model atomic Redis execution; the integration test executes the actual Lua.
 function fakeRedis() {
   const values = new Map<string, number>();
   const ttls = new Map<string, number>();
+  const evaluate = vi.fn(
+    async (_script: string, keys: string[], args: number[]) => {
+      for (const [i, key] of keys.entries()) {
+        if ((values.get(key) ?? 0) >= args[i * 2]!) {
+          return [0, ttls.get(key) ?? args[i * 2 + 1]!, 0];
+        }
+      }
+      let remaining = Infinity;
+      for (const [i, key] of keys.entries()) {
+        const count = (values.get(key) ?? 0) + 1;
+        values.set(key, count);
+        ttls.set(key, args[i * 2 + 1]!);
+        remaining = Math.min(remaining, args[i * 2]! - count);
+      }
+      return [1, 0, remaining];
+    }
+  );
   return {
     values,
-    ttls,
     client: {
-      del: vi.fn(async (...keys: string[]) => {
-        for (const key of keys) values.delete(key);
-        return keys.length;
-      }),
-      expire: vi.fn(async (key: string, seconds: number) => {
-        ttls.set(key, seconds);
-        return 1 as const;
-      }),
+      eval: evaluate,
+      // Retained in the fixture to run these regressions against the old helper.
       get: vi.fn(async (key: string) => values.get(key) ?? null),
       incr: vi.fn(async (key: string) => {
         const next = (values.get(key) ?? 0) + 1;
         values.set(key, next);
         return next;
       }),
+      expire: vi.fn(async () => 1),
       ttl: vi.fn(async (key: string) => ttls.get(key) ?? -1),
+      del: vi.fn(async (key: string) => Number(values.delete(key))),
     },
   };
 }
@@ -42,105 +55,100 @@ const subject = (
   ...overrides,
 });
 
+function fixture() {
+  const redis = fakeRedis();
+  // The generic Redis result is supplied by the atomic fake above.
+  const limiter = createPasswordAttemptLimiter(
+    async () => redis.client as never
+  );
+  return { redis, limiter };
+}
+
 describe('password attempt limits', () => {
-  it('blocks a target after the failure budget with a retry window', async () => {
-    const redis = fakeRedis();
-    const limiter = createPasswordAttemptLimiter(
-      async () => redis.client as never
+  it('admits exactly the target budget from parallel attempts before any failures', async () => {
+    const { limiter } = fixture();
+    const results = await Promise.all(
+      Array.from({ length: 64 }, (_, i) =>
+        limiter.check(subject({ ip: `198.51.100.${i + 1}` }))
+      )
     );
+    expect(results.filter((r) => r.allowed)).toHaveLength(
+      PASSWORD_ATTEMPT_LIMITS.TARGET_FAILED_MAX
+    );
+    expect(results.find((r) => !r.allowed)).toMatchObject({
+      retryAfter: 900,
+      remainingAttempts: 0,
+    });
+  });
 
-    for (let i = 0; i < PASSWORD_ATTEMPT_LIMITS.TARGET_FAILED_MAX; i++) {
+  it('admits exactly the IP budget across parallel distinct targets', async () => {
+    const { limiter, redis } = fixture();
+    const results = await Promise.all(
+      Array.from({ length: 64 }, (_, i) =>
+        limiter.check(subject({ target: `target-${i}` }))
+      )
+    );
+    expect(results.filter((r) => r.allowed)).toHaveLength(
+      PASSWORD_ATTEMPT_LIMITS.IP_FAILED_MAX
+    );
+    expect(redis.values.size).toBe(PASSWORD_ATTEMPT_LIMITS.IP_FAILED_MAX + 1);
+  });
+
+  it('bounds new guest names by the shared plan before allocating target keys', async () => {
+    const { limiter, redis } = fixture();
+    const attempt = subject({ scope: 'meet-guest-create', target: 'plan-1' });
+    const results = await Promise.all(
+      Array.from({ length: 64 }, () => limiter.check(attempt))
+    );
+    expect(results.filter((r) => r.allowed)).toHaveLength(10);
+    expect(redis.values.size).toBe(2);
+  });
+
+  it('charges success too, so completion cannot reset concurrent reservations', async () => {
+    const { limiter } = fixture();
+    for (let i = 0; i < 10; i++) {
       expect((await limiter.check(subject())).allowed).toBe(true);
-      await limiter.recordFailure(subject());
     }
-
-    const blocked = await limiter.check(subject());
-    expect(blocked).toMatchObject({ allowed: false, remainingAttempts: 0 });
-    expect(blocked.retryAfter).toBe(
-      PASSWORD_ATTEMPT_LIMITS.TARGET_WINDOW_MS / 1000
-    );
-    // Another guest on the same plan keeps its own budget.
+    expect((await limiter.check(subject())).allowed).toBe(false);
     expect(
       (await limiter.check(subject({ target: 'plan-1:bob' }))).allowed
     ).toBe(true);
   });
 
-  it('blocks an IP spraying many targets', async () => {
-    const redis = fakeRedis();
-    const limiter = createPasswordAttemptLimiter(
-      async () => redis.client as never
-    );
-
-    for (let i = 0; i < PASSWORD_ATTEMPT_LIMITS.IP_FAILED_MAX; i++) {
-      await limiter.recordFailure(subject({ target: `plan-1:guest-${i}` }));
-    }
-
-    expect(
-      await limiter.check(subject({ target: 'plan-1:fresh' }))
-    ).toMatchObject({ allowed: false });
-    expect(
-      (
-        await limiter.check(
-          subject({ target: 'plan-1:fresh', ip: '198.51.100.2' })
-        )
-      ).allowed
-    ).toBe(true);
-  });
-
-  it('clears the target budget on success but keeps the IP budget', async () => {
-    const redis = fakeRedis();
-    const limiter = createPasswordAttemptLimiter(
-      async () => redis.client as never
-    );
-    const keys = getPasswordAttemptKeys(subject());
-
-    await limiter.recordFailure(subject());
-    await limiter.clear(subject());
-
-    expect(redis.values.has(keys.target)).toBe(false);
-    expect(redis.values.get(keys.ip!)).toBe(1);
-  });
-
-  it('scopes, hashes and validates keys', () => {
+  it('scopes and hashes keys and shares the unknown IP bucket', () => {
     const meet = getPasswordAttemptKeys(subject());
-    const nova = getPasswordAttemptKeys(subject({ scope: 'nova-challenge' }));
-
     expect(meet.target).toMatch(/^pwd:failed:meet-guest:target:[0-9a-f]{32}$/);
     expect(meet.target).not.toContain('ann');
-    expect(nova.target).not.toBe(meet.target);
-    expect(getPasswordAttemptKeys(subject({ ip: 'unknown' })).ip).toBeNull();
-    expect(getPasswordAttemptKeys(subject({ ip: 'a b;c' })).ip).toBeNull();
-    expect(getPasswordAttemptKeys(subject({ ip: null })).ip).toBeNull();
+    expect(
+      getPasswordAttemptKeys(subject({ scope: 'nova-challenge' })).target
+    ).not.toBe(meet.target);
+    for (const ip of ['unknown', 'a b;c', null]) {
+      expect(getPasswordAttemptKeys(subject({ ip })).ip).toBe(
+        'pwd:failed:meet-guest:ip:unknown'
+      );
+    }
   });
 
-  it('applies only the target budget when the IP is unknown', async () => {
-    const redis = fakeRedis();
-    const limiter = createPasswordAttemptLimiter(
-      async () => redis.client as never
+  it('bounds unknown IP attempts across distinct targets', async () => {
+    const { limiter } = fixture();
+    const results = await Promise.all(
+      Array.from({ length: 64 }, (_, i) =>
+        limiter.check(subject({ target: `target-${i}`, ip: null }))
+      )
     );
-
-    await limiter.recordFailure(subject({ ip: 'unknown' }));
-
-    expect([...redis.values.keys()]).toEqual([
-      getPasswordAttemptKeys(subject()).target,
-    ]);
+    expect(results.filter((r) => r.allowed)).toHaveLength(30);
   });
 
-  it('fails open without Redis or when Redis errors', async () => {
+  it('fails open without Redis or when reservation fails', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      const missing = createPasswordAttemptLimiter(async () => null);
-      expect(await missing.check(subject())).toEqual({ allowed: true });
-      await expect(missing.recordFailure(subject())).resolves.toBeUndefined();
-
-      const broken = fakeRedis();
-      broken.client.get.mockRejectedValue(new Error('down'));
-      broken.client.incr.mockRejectedValue(new Error('down'));
-      const failing = createPasswordAttemptLimiter(
-        async () => broken.client as never
-      );
-      expect(await failing.check(subject())).toEqual({ allowed: true });
-      await expect(failing.recordFailure(subject())).resolves.toBeUndefined();
+      expect(
+        await createPasswordAttemptLimiter(async () => null).check(subject())
+      ).toEqual({ allowed: true });
+      const { limiter, redis } = fixture();
+      redis.client.eval.mockRejectedValue(new Error('down'));
+      expect(await limiter.check(subject())).toEqual({ allowed: true });
+      expect(warn).toHaveBeenCalledOnce();
     } finally {
       warn.mockRestore();
     }

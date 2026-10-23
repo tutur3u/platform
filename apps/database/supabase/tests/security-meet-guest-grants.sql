@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(7);
+select plan(12);
 
 select ok(
   (
@@ -64,6 +64,39 @@ select ok(
     'select, insert, update'
   ),
   'service role keeps server access to meet guests'
+);
+
+select ok(
+  not has_table_privilege('anon', 'public.meet_together_users', 'select'),
+  'anon cannot select the meet participant view'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.meet_together_users', 'select'),
+  'authenticated cannot select the meet participant view'
+);
+
+set local role anon;
+select throws_ok(
+  'select * from public.meet_together_users',
+  '42501',
+  'permission denied for view meet_together_users',
+  'anon participant reads are denied at runtime'
+);
+reset role;
+
+set local role authenticated;
+select throws_ok(
+  'select * from public.meet_together_users',
+  '42501',
+  'permission denied for view meet_together_users',
+  'authenticated participant reads are denied at runtime'
+);
+reset role;
+
+select ok(
+  has_table_privilege('service_role', 'public.meet_together_users', 'select'),
+  'service role keeps server access to the participant view'
 );
 
 select * from finish();

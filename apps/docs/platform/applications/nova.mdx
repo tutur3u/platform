@@ -123,7 +123,8 @@ bound to that challenge and the signed-in user, valid for the challenge
 duration (at most seven days). Challenge pages accept only that grant; the
 stored hash is never sent to the browser, and the retired `token` cookie is
 cleared and no longer grants access. Users with an open challenge from before
-this change re-enter the password once. Failed passwords are limited per
+this change re-enter the password once. Each password attempt, including a
+success, reserves capacity atomically before verification. Budgets apply per
 challenge and user and per client IP; a spent budget answers 429 with
 `Retry-After` (see
 [shared-secret password budgets](/build/devops/adaptive-abuse-rate-limits#shared-secret-password-budgets)).

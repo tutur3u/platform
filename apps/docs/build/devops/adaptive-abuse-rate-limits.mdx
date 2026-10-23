@@ -193,15 +193,21 @@ address. Keep them time-bound and review live usage before renewing.
 
 Meet plan guest login and Nova challenge passwords use
 `@tuturuuu/utils/abuse-protection/password-attempt-limits`. Each check has two
-failure budgets in Upstash Redis:
+attempt budgets in Upstash Redis:
 
 | Scope | Limit | Key |
 | --- | --- | --- |
-| Target | 10 failures / 15 minutes | Meet: plan id + normalized guest name. Nova: challenge id + user id. Hashed before use. |
-| Source IP | 30 failures / 15 minutes | Client IP from `extractIPFromHeaders`; skipped when the IP is unknown |
+| Target | 10 attempts / 15 minutes | Meet: plan id + normalized guest name. Nova: challenge id + user id. Hashed before use. |
+| Source IP | 30 attempts / 15 minutes | Client IP from `extractIPFromHeaders`; unknown addresses share a bucket |
 
-The limit is checked before the password is verified. A correct password clears
-the target budget but not the IP budget. A spent budget returns
+A single Redis Lua script checks and increments both counters atomically before
+password verification, creation hashing, or legacy rehashing. All admitted attempts,
+including successes, consume capacity until expiry; success never resets another
+request's reservation. Denials neither allocate new target keys nor extend the window.
+Guest creation uses a separate `meet-guest-create` scope with a plan-wide target
+(10 creations per plan and 30 per source IP per 15 minutes). New display names
+therefore share the same plan budget. Existing guest login and Nova use their
+own scopes with the target keys above. A spent budget returns
 `retryAfter` seconds: Nova answers HTTP 429 with `Retry-After`, and the Meet
 guest-login server action returns `{ error, retryAfter }` for the localized
 form message. Like other abuse protection, the counters fail open when
@@ -210,6 +216,12 @@ the scrypt cost then remains the only bound. The Meet Worker reaches Upstash
 through the same fetch-based REST client as its API proxy guard, so the limit
 applies there only when those two secrets are set on the `tuturuuu-meet`
 Worker. Coverage: `packages/utils/src/abuse-protection/__tests__/password-attempt-limits.test.ts`.
+The adjacent `password-attempt-redis.test.ts` executes the Lua against a disposable
+Redis Unix socket selected by `PASSWORD_ATTEMPT_REDIS_SOCKET`; it never reads
+hosted Redis configuration. Start Redis with TCP disabled (`--port 0`), persistence
+disabled (`--save '' --appendonly no`), and a private socket directory. Run the
+focused suite through `ttr resources run -- bunx vitest run` with `--maxWorkers=2`,
+then stop that Redis process and remove its private directory.
 
 ## Rate-Limit Appeals
 

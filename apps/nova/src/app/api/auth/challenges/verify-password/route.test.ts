@@ -22,8 +22,6 @@ const mocks = vi.hoisted(() => ({
 
 const limits = vi.hoisted(() => ({
   check: vi.fn(),
-  clear: vi.fn(),
-  recordFailure: vi.fn(),
 }));
 
 vi.mock(
@@ -33,9 +31,6 @@ vi.mock(
       typeof import('@tuturuuu/utils/abuse-protection/password-attempt-limits')
     >()),
     checkPasswordAttemptLimit: (...args: unknown[]) => limits.check(...args),
-    clearPasswordAttemptFailures: (...args: unknown[]) => limits.clear(...args),
-    recordPasswordAttemptFailure: (...args: unknown[]) =>
-      limits.recordFailure(...args),
   })
 );
 
@@ -213,8 +208,7 @@ describe('Nova challenge password verification', () => {
       expect(response.headers.getSetCookie()).toEqual([]);
     }
     expect(mocks.updates).toEqual([]);
-    expect(limits.recordFailure).toHaveBeenCalledTimes(2);
-    expect(limits.clear).not.toHaveBeenCalled();
+    expect(limits.check).toHaveBeenCalledTimes(2);
   });
 
   it('requires a signed-in Nova user', async () => {
