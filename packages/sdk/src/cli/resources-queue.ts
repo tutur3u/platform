@@ -4,6 +4,7 @@ import { constants, setPriority } from 'node:os';
 import { join } from 'node:path';
 import { Writable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { startActivitySampler } from './resources-activity';
 import {
   admissionResourceConfig,
   burstEligibility,
@@ -22,10 +23,12 @@ import {
 } from './resources-config';
 import { memoryPressure } from './resources-diagnostics';
 import {
+  admittedMarker,
   nestedOwner,
   newOwner,
   occupancy,
   processGroupAlive,
+  type ResourceOwner,
   readOwner,
   releaseSlot,
   tickets,
@@ -53,15 +56,17 @@ export async function resourceQueueStatus(
       : state.occupied.length >= effectiveResourceLanes(config)
         ? {
             eligible: false,
-            reason: 'Burst lanes or aggregate worker budgets are full',
+            reason: 'Burst lanes are full or above the host lane ceiling',
           }
         : await burstEligibility(config);
   const waiting = (await tickets(home)).map((ticket) => ticket.owner);
   return {
     owners: state.owners,
+    ownerSlots: state.ownerSlots,
     laneCount,
     baseLanes,
     maxLanes,
+    effectiveLanes: effectiveResourceLanes(config),
     burst,
     // Preserve the old field without representing multiple owners as idle.
     owner: state.owners[0] ?? null,
@@ -164,6 +169,36 @@ export async function spawnResourceCommand(
     });
   });
 }
+export function commandSummary(command: string, args: string[]) {
+  const text = [command.split('/').pop() || command, ...args].join(' ');
+  return text.length > 200 ? `${text.slice(0, 199)}…` : text;
+}
+// The ancestor was admitted under its recorded limits; re-validating the host
+// budget here would reject nested work on a smaller or busier host.
+async function runNested(
+  home: string,
+  command: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+  parent: ResourceOwner
+) {
+  const inherited = parent.limits
+    ? {
+        VITEST_MAX_WORKERS: String(parent.limits.vitestWorkers),
+        CARGO_BUILD_JOBS: String(parent.limits.buildJobs),
+        TURBO_CONCURRENCY: '1',
+      }
+    : {};
+  const config = (await readResourceConfig(home)) || defaultResourceConfig();
+  const caps = parent.limits
+    ? { ...config, turboConcurrency: 1 }
+    : laneResourceConfig(config);
+  return spawnResourceCommand(
+    command,
+    limitCommand(command, args, { ...caps, ...parent.limits }),
+    { ...env, ...inherited, [admittedMarker]: parent.token }
+  );
+}
 export async function queuedResourceCommand(
   home: string,
   command: string,
@@ -178,29 +213,14 @@ export async function queuedResourceCommand(
     throw new Error('Resource admission currently supports macOS and Linux.');
   const originalArgs = [...args];
   const parent = await nestedOwner(home);
-  if (parent) {
-    const inherited = parent.limits
-      ? {
-          VITEST_MAX_WORKERS: String(parent.limits.vitestWorkers),
-          CARGO_BUILD_JOBS: String(parent.limits.buildJobs),
-          TURBO_CONCURRENCY: '1',
-        }
-      : {};
-    // The ancestor was admitted under its recorded limits; re-validating the
-    // host budget here would reject nested work on a smaller or busier host.
-    const config = (await readResourceConfig(home)) || defaultResourceConfig();
-    const caps = parent.limits
-      ? { ...config, turboConcurrency: 1 }
-      : laneResourceConfig(config);
-    return spawnResourceCommand(
-      command,
-      limitCommand(command, originalArgs, { ...caps, ...parent.limits }),
-      { ...env, ...inherited }
-    );
-  }
-  const owner = newOwner(command.split('/').pop() || command);
+  if (parent) return runNested(home, command, originalArgs, env, parent);
+  const owner = newOwner(
+    command.split('/').pop() || command,
+    commandSummary(command, originalArgs)
+  );
   const ticket = join(home, 'queue', `${Date.now()}-${owner.token}.json`);
   let slot: string | undefined;
+  let stopSampler: (() => Promise<void>) | undefined;
   let launchArgs = originalArgs;
   const signalCodes = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 };
   const waiting = new AbortController();
@@ -230,8 +250,26 @@ export async function queuedResourceCommand(
     );
     let announced = 0;
     let pressureReason: string | null = null;
+    let ancestryCheckedAt = Date.now();
     while (!slot) {
       if (cancelled) return signalCodes[cancelled];
+      // Safety net: a waiter must never queue behind its own ancestor, even if
+      // the first ancestry probe failed. Confirm with a fresh process snapshot.
+      if (Date.now() - ancestryCheckedAt >= 1_000) {
+        ancestryCheckedAt = Date.now();
+        const ancestor = await nestedOwner(home)
+          .then((found) => found && nestedOwner(home, process.env, true))
+          .catch(() => undefined);
+        if (ancestor) {
+          process.stderr.write(
+            `[ttr resources] PID ${process.pid} descends from admitted PID ${ancestor.pid}; running without re-queueing\n`
+          );
+          // Leave the FIFO first so siblings are not held behind this ticket.
+          if ((await readOwner(ticket))?.token === owner.token)
+            await rm(ticket, { force: true });
+          return await runNested(home, command, originalArgs, env, ancestor);
+        }
+      }
       let pressureBlocked = false;
       pressureReason = null;
       slot = await withAdmission(
@@ -245,7 +283,7 @@ export async function queuedResourceCommand(
             );
           const policy = resourcePolicyKey(config);
           laneResourceConfig(config);
-          const maxLanes = resourceMaxLanes(config);
+          const maxLanes = effectiveResourceLanes(config);
           const live = await tickets(home, true);
           const state = await occupancy(home, true);
           if (
@@ -340,6 +378,7 @@ export async function queuedResourceCommand(
       {
         ...env,
         TTR_RESOURCE_OWNER: owner.token,
+        [admittedMarker]: owner.token,
         TURBO_CONCURRENCY: '1',
         VITEST_MAX_WORKERS: String(owner.limits?.vitestWorkers),
         CARGO_BUILD_JOBS: String(owner.limits?.buildJobs),
@@ -357,6 +396,7 @@ export async function queuedResourceCommand(
             );
           await atomicJson(join(ownedSlot, 'owner.json'), owner);
         });
+        stopSampler = startActivitySampler(ownedSlot, owner);
         if (cancelled) signalChild(pid, cancelled);
       }
     );
@@ -366,6 +406,7 @@ export async function queuedResourceCommand(
     process.removeListener('SIGINT', cancelInt);
     process.removeListener('SIGTERM', cancelTerm);
     process.removeListener('SIGHUP', cancelHup);
+    await stopSampler?.();
     // Ticket names are private UUIDs. A cancelled broker must also be able to
     // remove its own ticket while an unrelated initializing mutex blocks admission.
     if ((await readOwner(ticket))?.token === owner.token)
