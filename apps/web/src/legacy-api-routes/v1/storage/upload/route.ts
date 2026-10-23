@@ -1,6 +1,10 @@
 import { posix } from 'node:path';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
+import {
+  encodeStoragePath,
+  sanitizeFilename,
+  sanitizePath,
+} from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { rejectReservedStoragePath } from '../reserved-path';
@@ -168,7 +172,7 @@ export const POST = withApiAuth(
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('workspaces')
-        .upload(storagePath, buffer, {
+        .upload(encodeStoragePath(storagePath), buffer, {
           contentType: file.type || 'application/octet-stream',
           upsert,
         });

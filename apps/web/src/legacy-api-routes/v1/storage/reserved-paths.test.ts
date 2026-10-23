@@ -98,6 +98,57 @@ describe('API-key storage reserved mobile deployment paths', () => {
     expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
   });
 
+  it('preserves raw URL delimiters when listing legacy paths', async () => {
+    const list = vi.fn().mockResolvedValue({ data: [], error: null });
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      storage: { from: vi.fn(() => ({ list })) },
+    });
+    const { GET } = await import('./list/route');
+    const path = 'docs?draft#final';
+    const response = await GET(
+      new Request(
+        `http://localhost/api/v1/storage/list?path=${encodeURIComponent(path)}`
+      ) as Parameters<typeof GET>[0]
+    );
+
+    expect(response.status).toBe(200);
+    expect(list).toHaveBeenCalledWith(
+      `${ROOT_WORKSPACE_ID}/docs?draft#final`,
+      expect.any(Object)
+    );
+  });
+
+  it('encodes raw URL delimiters before direct upload requests', async () => {
+    const upload = vi.fn().mockResolvedValue({
+      data: { path: 'file.pdf' },
+      error: null,
+    });
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      storage: { from: vi.fn(() => ({ upload })) },
+    });
+    const { POST } = await import('./upload/route');
+    const file = {
+      arrayBuffer: async () => new TextEncoder().encode('file').buffer,
+      name: 'file.pdf',
+      size: 4,
+      type: 'application/pdf',
+    } as File;
+    const response = await POST({
+      formData: async () => ({
+        get: (key: string) =>
+          key === 'file' ? file : key === 'path' ? 'docs?draft#final' : null,
+      }),
+      url: 'http://localhost/api/v1/storage/upload',
+    } as unknown as Parameters<typeof POST>[0]);
+
+    expect(response.status).toBe(200);
+    expect(upload).toHaveBeenCalledWith(
+      `${ROOT_WORKSPACE_ID}/docs%3Fdraft%23final/file.pdf`,
+      expect.any(Uint8Array),
+      expect.any(Object)
+    );
+  });
+
   it('rejects signed uploads into the mobile deployment vault prefix', async () => {
     const { POST } = await import('./upload-url/route');
 
@@ -228,6 +279,30 @@ describe('API-key storage reserved mobile deployment paths', () => {
 
     await expectReserved(response);
     expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('preserves raw URL delimiters in legacy folder parent paths', async () => {
+    const upload = vi.fn().mockResolvedValue({
+      data: { path: 'folder' },
+      error: null,
+    });
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      storage: { from: vi.fn(() => ({ upload })) },
+    });
+    const { POST } = await import('./folders/route');
+    const response = await POST(
+      createJsonRequest('POST', '/api/v1/storage/folders', {
+        name: 'safe',
+        path: 'docs?draft#final',
+      }) as Parameters<typeof POST>[0]
+    );
+
+    expect(response.status).toBe(200);
+    expect(upload).toHaveBeenCalledWith(
+      `${ROOT_WORKSPACE_ID}/docs%3Fdraft%23final/safe/.emptyFolderPlaceholder`,
+      expect.any(Uint8Array),
+      expect.any(Object)
+    );
   });
 
   it('rejects signed share URLs for the mobile deployment vault prefix', async () => {

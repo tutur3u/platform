@@ -20,6 +20,7 @@ import {
   type StorageObject,
 } from '@tuturuuu/types/primitives/StorageObject';
 import {
+  encodeStoragePath,
   sanitizeFilename,
   sanitizeFolderName,
   sanitizePath,
@@ -1324,7 +1325,7 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
 
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .upload(fullPath, buffer, {
+    .upload(encodeStoragePath(fullPath), buffer, {
       contentType: options?.contentType || 'application/octet-stream',
       upsert: options?.upsert ?? false,
     });
@@ -1513,7 +1514,7 @@ export async function createWorkspaceStorageUploadPayload(
   });
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .createSignedUploadUrl(fullPath, {
+    .createSignedUploadUrl(encodeStoragePath(fullPath), {
       upsert: options?.upsert ?? false,
     });
 
@@ -1606,7 +1607,7 @@ export async function createWorkspaceStorageFolderObject(
   const supabase = await createDynamicAdminClient();
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .upload(folderPath, new Uint8Array(0), {
+    .upload(encodeStoragePath(folderPath), new Uint8Array(0), {
       contentType: 'text/plain',
       upsert: false,
     });

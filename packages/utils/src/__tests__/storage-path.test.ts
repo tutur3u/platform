@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  encodeStoragePath,
   sanitizeFilename,
   sanitizeFolderName,
   sanitizePath,
@@ -8,6 +9,12 @@ import {
 } from '../storage-path';
 
 describe('Storage Path Sanitization', () => {
+  it('encodes URL delimiters in storage path segments only', () => {
+    expect(encodeStoragePath('folder/file?name#final')).toBe(
+      'folder/file%3Fname%23final'
+    );
+  });
+
   describe('sanitizePath', () => {
     it('returns empty string for empty input', () => {
       expect(sanitizePath('')).toBe('');
@@ -43,7 +50,7 @@ describe('Storage Path Sanitization', () => {
     it('rejects path traversal with double dots', () => {
       expect(sanitizePath('../../../etc/passwd')).toBeNull();
       expect(sanitizePath('folder/../other')).toBeNull();
-      expect(sanitizePath('folder/..hidden')).toBeNull();
+      expect(sanitizePath('folder/..hidden')).toBe('folder/..hidden');
     });
 
     it('rejects single dot segments', () => {
@@ -90,13 +97,31 @@ describe('Storage Path Sanitization', () => {
       expect(sanitizePathSegments(path)).toBeNull();
     });
 
-    it.each(['x?', 'x#'])('rejects raw URL delimiters in %j', (path) => {
-      expect(sanitizePathStrict(path)).toBeNull();
-      expect(sanitizePath(path)).toBeNull();
-    });
+    it.each(['x?', 'x#'])(
+      'rejects raw URL delimiters only in strict mode %j',
+      (path) => {
+        expect(sanitizePathStrict(path)).toBeNull();
+        expect(sanitizePath(path)).toBe(path);
+      }
+    );
 
     it.each(['x%3F', 'x%23'])('allows encoded URL delimiters in %j', (path) => {
       expect(sanitizePathStrict(path)).toBe(path);
+    });
+
+    it('rejects traversal that remains encoded after the decode limit', () => {
+      let encodedTraversal = '%2e%2e';
+      for (let pass = 0; pass < 6; pass += 1) {
+        encodedTraversal = encodeURIComponent(encodedTraversal);
+      }
+      expect(sanitizePathStrict(encodedTraversal)).toBeNull();
+      expect(sanitizePath('50% done')).toBe('50% done');
+      expect(sanitizePath('x%')).toBe('x%');
+      expect(sanitizePath('100%ab')).toBe('100%ab');
+    });
+
+    it('preserves adjacent dots inside a legacy filename', () => {
+      expect(sanitizePath('v1..final.pdf')).toBe('v1..final.pdf');
     });
 
     it('handles complex valid paths', () => {

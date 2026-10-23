@@ -27,11 +27,18 @@ describe('private app-managed storage accounting', () => {
               },
             ];
       if (depth === 0)
-        data.push({
-          id: 'public-file',
-          name: 'notes.txt',
-          metadata: { size: 100 },
-        });
+        data.push(
+          {
+            id: 'public-file',
+            name: 'notes.txt',
+            metadata: { size: 100 },
+          },
+          {
+            id: 'double-dot-filename',
+            name: 'v1..final.pdf',
+            metadata: { size: 50 },
+          }
+        );
       return { data, error: null };
     });
     const client = { storage: { from: () => ({ list }) } };
@@ -41,8 +48,8 @@ describe('private app-managed storage accounting', () => {
       ROOT_WORKSPACE_ID,
       true
     );
-    expect(visible.totalSize).toBe(100);
+    expect(visible.totalSize).toBe(150);
     expect(visible.largestFile?.name).toBe('notes.txt');
-    expect(quota.totalSize).toBe(1000);
+    expect(quota.totalSize).toBe(1050);
   });
 });

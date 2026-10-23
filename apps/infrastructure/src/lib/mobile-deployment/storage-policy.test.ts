@@ -51,6 +51,12 @@ describe('mobile deployment storage policy', () => {
     expect(
       isReservedMobileDeploymentDrivePath(ROOT_WORKSPACE_ID, 'public/file')
     ).toBe(false);
+    expect(
+      isReservedMobileDeploymentDrivePath(ROOT_WORKSPACE_ID, 'v1..final.pdf')
+    ).toBe(false);
+    expect(
+      isReservedMobileDeploymentDrivePath(ROOT_WORKSPACE_ID, 'docs/')
+    ).toBe(false);
   });
 
   it('does not reserve paths in non-root workspaces', () => {

@@ -19,7 +19,10 @@
  * sanitizePath('') // => ''
  * ```
  */
-export function sanitizePathSegments(path: string): string[] | null {
+export function sanitizePathSegments(
+  path: string,
+  options: { strict?: boolean } = {}
+): string[] | null {
   if (path === '') return [];
   if (
     typeof path !== 'string' ||
@@ -29,8 +32,7 @@ export function sanitizePathSegments(path: string): string[] | null {
       return code <= 0x1f || code === 0x7f;
     }) ||
     /^[a-z][a-z\d+.-]*:\/\//i.test(path) ||
-    path.includes('?') ||
-    path.includes('#')
+    (options.strict && (path.includes('?') || path.includes('#')))
   ) {
     return null;
   }
@@ -47,10 +49,13 @@ export function sanitizePathSegments(path: string): string[] | null {
       if (next === decoded) break;
       decoded = next;
     }
+    const next = decoded.replace(/%([\da-f]{2})/gi, (_match, byte: string) =>
+      String.fromCharCode(Number.parseInt(byte, 16))
+    );
+    if (next !== decoded) return null;
     if (
       decoded === '.' ||
       decoded === '..' ||
-      decoded.includes('..') ||
       decoded.includes('/') ||
       decoded.includes('\\') ||
       [...decoded].some((character) => {
@@ -80,8 +85,13 @@ export function sanitizePath(path: string): string | null {
 
 /** Validate the exact path representation supplied to URL-interpolating APIs. */
 export function sanitizePathStrict(path: string): string | null {
-  const segments = sanitizePathSegments(path);
+  const segments = sanitizePathSegments(path, { strict: true });
   return segments === null ? null : segments.join('/');
+}
+
+/** Encode URL delimiters in storage keys while preserving path separators. */
+export function encodeStoragePath(path: string): string {
+  return path.split('/').map(encodeURIComponent).join('/');
 }
 
 /**
@@ -104,8 +114,10 @@ export function sanitizeFolderName(name: string): string | null {
     .trim()
     .replaceAll('\\', '/')
     .replace(/^\/+|\/+$/g, '');
-  const segments = sanitizePathSegments(normalized);
-  return segments?.length === 1 ? segments[0]! : null;
+  const segments = sanitizePathSegments(normalized, { strict: true });
+  return segments?.length === 1 && !segments[0]!.includes('..')
+    ? segments[0]!
+    : null;
 }
 
 /**
