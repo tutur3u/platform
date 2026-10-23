@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 // Finite structural check for the agent operating model. The T3 runtime does
-// not enforce a subagent cap; the budget is a repository contract that this
-// checker verifies against declared allocation files. It never contacts T3,
-// GitHub or a model provider, and a passing result is not proof that a live
-// thread tree actually stayed within budget.
+// not enforce the ten-agent ceiling, and no live session is claimed to support
+// ten; the budget is a repository contract that this checker verifies against
+// declared allocation files. It never contacts T3, GitHub or a model provider,
+// and a passing result is not proof that a live thread tree stayed in budget.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -12,7 +12,15 @@ const path = require('node:path');
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const MARKER_RE = /`agent-allocation:\s*(\d+)`/gu;
 const ROLES = new Set(['lead', 'worker', 'reviewer']);
-const LIVE_STATES = new Set(['active', 'blocked']);
+// Queued, executing, waiting-for-children, blocked and reserved agents all hold
+// a slot; only drained (done/retired) agents release it.
+const LIVE_STATES = new Set([
+  'reserved',
+  'queued',
+  'active',
+  'waiting',
+  'blocked',
+]);
 const STATES = new Set([...LIVE_STATES, 'done', 'retired']);
 const MAX_DEPTH = 3;
 
@@ -72,6 +80,27 @@ function validateAllocation(allocation, { cap }) {
       `allocation ${allocation.allocation} exceeds the project allocation ${cap} declared in AGENTS.md.`
     );
   }
+  // The allocation is the lowest of the ceiling, the runtime limit observed for
+  // the launching session (with its unit), resource admission and any explicit
+  // lower allocation, so the observed limit must be recorded.
+  const observed = allocation.observedRuntimeLimit;
+  if (
+    !observed ||
+    !isPositiveInteger(observed.limit) ||
+    typeof observed.unit !== 'string' ||
+    observed.unit.trim() === ''
+  ) {
+    fail(
+      'observedRuntimeLimit must record the observed { limit, unit } for the launching session.'
+    );
+  } else if (
+    isPositiveInteger(allocation.allocation) &&
+    allocation.allocation > observed.limit
+  ) {
+    fail(
+      `allocation ${allocation.allocation} exceeds the observed runtime limit ${observed.limit} per ${observed.unit}.`
+    );
+  }
   if (
     allocation.validationLanes !== undefined &&
     !isPositiveInteger(allocation.validationLanes)
@@ -114,7 +143,7 @@ function validateAllocation(allocation, { cap }) {
     if (!ROLES.has(agent.role))
       fail(`${id}: role must be lead, worker or reviewer.`);
     if (!STATES.has(agent.state)) {
-      fail(`${id}: state must be active, blocked, done or retired.`);
+      fail(`${id}: state must be one of ${[...STATES].join(', ')}.`);
     }
     if (agent.parent !== owner && !byId.has(agent.parent)) {
       fail(

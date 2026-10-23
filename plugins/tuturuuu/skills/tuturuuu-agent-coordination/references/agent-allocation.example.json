@@ -2,7 +2,12 @@
   "version": 1,
   "project": "tuturuuu",
   "owner": "tuturuuu-integration-owner",
-  "allocation": 10,
+  "allocation": 8,
+  "observedRuntimeLimit": {
+    "limit": 8,
+    "unit": "session",
+    "source": "illustrative only; record the limit observed for the launching session"
+  },
   "validationLanes": 2,
   "agents": [
     {
@@ -24,7 +29,7 @@
       "id": "worker-token-permissions",
       "parent": "lead-security",
       "role": "worker",
-      "state": "blocked"
+      "state": "waiting"
     },
     {
       "id": "lead-mobile",

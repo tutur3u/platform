@@ -24,30 +24,52 @@ they do not concurrently rewrite it. Keep credentials and private payloads out.
 
 ## Operating model and budget
 
+The canonical rule is the user-local shared
+[team operating contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#team-operating-contract)
+(see also its
+[autonomous parallel execution](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
+section). Mastermind maintains that skill; repository sources link to it rather
+than copying it. This section records only Tuturuuu's application and checker.
+
 Run work as a bounded company hierarchy:
 
 | Role | Holder | Owns |
 | --- | --- | --- |
 | Director | The user or Mastermind | Cross-project priorities, admin custody, user-local shared skills |
-| Project integration owner | One orchestrator per project | The only writer of main/integration/release, the program board, budget grants, final acceptance |
+| Project integration owner | One orchestrator per project | The only writer of main and release (and other shared refs), the program board, admission and budget reservations, final acceptance |
 | Team lead | A delegated child | One disjoint workset, its workers, its receipts |
-| Worker | A delegated child | Execution on an isolated branch/worktree |
+| Worker | A delegated child | Its own work branch and PR only, on an isolated worktree |
 | Reviewer | A child that did not author the change | An independent review receipt |
 
-The project allocation is `agent-allocation: 10` active subagents per thread
-tree, counting every descendant. It supersedes the older five-child ceiling.
+The ceiling is `agent-allocation: 10` subagents per thread tree, counting every
+descendant. It supersedes the older five-child ceiling. Ten is a ceiling, not a
+target.
 
-- **Live agents:** `active` and `blocked` agents occupy a slot. `done` and
-  `retired` agents release theirs.
+- **Declared allocation:** each project declares its allocation as the lowest
+  of:
+  - ten;
+  - the runtime/provider limit observed for the launching session, recorded
+    with its unit (a "per session" limit is not assumed to equal "per thread");
+  - resource admission;
+  - any explicit lower allocation.
+
+  Changing a runtime limit is a separate, user-authorized configuration change.
+- **Live agents:** `reserved`, `queued`, `active`, `waiting` (for children) and
+  `blocked` agents occupy a slot. Only drained `done` and `retired` agents
+  release theirs. The owner reserves capacity before a launch, so
+  simultaneous leads cannot oversubscribe the next free slot.
 - **Grants:** the owner grants each lead an explicit remaining budget out of
   that allocation. A lead's children, including nested leads with their own
   grants, must fit inside the grant. A nested lead never receives ten new
   slots.
 - **Hierarchy depth:** at most three subagent levels below the owner. Only
   leads delegate.
-- **Enforcement:** the T3 runtime does not enforce this cap. It is a contract.
-  Declare live allocations in the program's ignored `allocation.json` (shape:
-  [example](agent-allocation.example.json)) and check it:
+- **Enforcement:** the T3 runtime does not enforce ten, and no live session is
+  claimed to support ten. The budget is a contract plus this checker; a local
+  checker cannot configure or enforce T3's runtime limit. Declare live
+  allocations, including `observedRuntimeLimit: { limit, unit }`, in the
+  program's ignored `allocation.json` (shape: [example](agent-allocation.example.json))
+  and check it:
 
   ```bash
   node scripts/ci/check-agent-budget.js tmp/agent-coordination/<program>/allocation.json
@@ -55,7 +77,8 @@ tree, counting every descendant. It supersedes the older five-child ceiling.
 
   The checker rejects:
   - more live agents than the allocation, so 11 is rejected;
-  - an allocation above the AGENTS.md value;
+  - an allocation above the AGENTS.md value or the recorded observed runtime
+    limit, or a missing observed limit;
   - grants that oversubscribe the owner or a lead;
   - unbounded nesting;
   - live orphans under finished leads;
@@ -76,9 +99,12 @@ tree, counting every descendant. It supersedes the older five-child ceiling.
   - Shrink active WIP when the queue is long or free disk is low.
   - Admit agents only for real ready work. Never spawn busywork to fill slots.
 - **Publication:**
-  - Isolated workers and leads commit, push and open PRs for their own verified
-    branches under the completion contract below.
-  - Only the integration owner writes main, integration or release.
+  - Isolated workers and leads commit and push only their own verified work
+    branch, or open a PR, under the completion contract below.
+  - Main, release and other shared refs move only through the project
+    integration owner as sole writer.
+  - Shared-checkout workers hand patches to that owner rather than racing its
+    index.
   - Publish from the worker's own worktree, so the root checkout's index never
     blocks branch publication.
 - **Receipts:** leads return compact receipts with PR, full head SHA, tests run
@@ -88,8 +114,10 @@ tree, counting every descendant. It supersedes the older five-child ceiling.
   parent removes that child's worktree. For recovery, keep the pushed branch
   and a receipt rather than the worktree.
 - **No new standing machinery:** create no new permanent controller, timer or
-  retired wake. Use native result/PR watches and the existing authorized
-  cadence.
+  wake, and never revive a retired one. Use native result/PR watches and the
+  existing authorized cadence.
+- **Security:** follow [the security default](security-default.md).
+  Security-sensitive changes need an independent review before integration.
 
 ## Worker contract
 
@@ -142,8 +170,8 @@ Native PR watches and the authorized schedule provide the next wake.
 Use [the shared T3 autonomy contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
 when available. Its useful-delegation and inheritance rules apply within the
 current task's authority, not as permission to restart retired controllers or
-broaden release access. The project allocation above replaces its older
-five-child ceiling for Tuturuuu. Give every child the accessible policy,
+broaden release access. Its ceiling of ten applies through the declared project
+allocation and checker above. Give every child the accessible policy,
 project instructions, latest custody override and remaining task-tree budget;
 relay permitted pinned bytes when paths are unavailable across machines/providers.
 

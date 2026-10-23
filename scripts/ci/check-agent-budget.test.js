@@ -27,7 +27,14 @@ function workers(count, parent = OWNER, prefix = 'w') {
 }
 
 function allocation(agents, overrides = {}) {
-  return { version: 1, owner: OWNER, allocation: CAP, agents, ...overrides };
+  return {
+    version: 1,
+    owner: OWNER,
+    allocation: CAP,
+    observedRuntimeLimit: { limit: CAP, unit: 'thread' },
+    agents,
+    ...overrides,
+  };
 }
 
 function errorsFor(agents, overrides) {
@@ -70,6 +77,46 @@ test('blocked agents count; done and retired agents release their slot', () => {
   released.push({ ...workers(1, OWNER, 'd')[0], state: 'done' });
   released.push({ ...workers(1, OWNER, 'r')[0], state: 'retired' });
   assert.deepEqual(errorsFor(released), []);
+});
+
+test('queued, waiting and reserved agents hold slots', () => {
+  const agents = workers(8);
+  for (const state of ['queued', 'waiting', 'reserved']) {
+    agents.push({ ...workers(1, OWNER, state)[0], state });
+  }
+  assertRejected(errorsFor(agents), /11 live agents/u);
+});
+
+test('the allocation records and respects the observed runtime limit', () => {
+  assertRejected(
+    errorsFor(workers(2), { observedRuntimeLimit: undefined }),
+    /observedRuntimeLimit must record/u
+  );
+  assertRejected(
+    errorsFor(workers(2), { observedRuntimeLimit: { limit: 6 } }),
+    /observedRuntimeLimit must record/u
+  );
+  assertRejected(
+    errorsFor(workers(2), {
+      observedRuntimeLimit: { limit: 6, unit: 'session' },
+    }),
+    /allocation 10 exceeds the observed runtime limit 6 per session/u
+  );
+  // A lower observed limit is honored by declaring the lower allocation.
+  assert.deepEqual(
+    errorsFor(workers(6), {
+      allocation: 6,
+      observedRuntimeLimit: { limit: 6, unit: 'session' },
+    }),
+    []
+  );
+  assertRejected(
+    errorsFor(workers(7), {
+      allocation: 6,
+      observedRuntimeLimit: { limit: 6, unit: 'session' },
+    }),
+    /7 live agents exceed the allocation of 6/u
+  );
 });
 
 test('an allocation file cannot raise the project allocation', () => {
