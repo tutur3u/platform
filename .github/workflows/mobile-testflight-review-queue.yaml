@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
   contents: read
   deployments: read
 
@@ -20,6 +19,10 @@ jobs:
       workflow_name: mobile-testflight-review-queue.yaml
 
   dispatch:
+    permissions:
+      actions: write
+      contents: read
+      deployments: read
     name: Ask the production workflow to retry review
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'

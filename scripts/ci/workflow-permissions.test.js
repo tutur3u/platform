@@ -26,10 +26,6 @@ const scopes = [
 // Workflow-level write scopes reach every job without its own permissions, so
 // each one is reviewed here. Jobs should request writes themselves instead.
 const workflowWriteScopes = {
-  // Every non-reusable job exchanges an OIDC token for store credentials.
-  'mobile-deploy-stores.yaml': ['id-token'],
-  // Only the dispatch job inherits it; check-ci is scoped read-only.
-  'mobile-testflight-review-queue.yaml': ['actions'],
   // Single resume job dispatches workflows and records deployment markers.
   'production-package-resume.yaml': ['actions', 'deployments'],
   // Single migration job records the staging deployment marker. The file is a
