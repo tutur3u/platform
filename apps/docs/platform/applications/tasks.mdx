@@ -697,9 +697,13 @@ Task boards may contain multiple `closed` lists when teams need distinct termina
 **Access rule:** request-scoped clients can read or write a task list only when
 the signed-in user has a `workspace_members` row (any member type) in the
 workspace that owns the list's board. Because the `tasks` policy delegates to
-list visibility, the same rule scopes list-bound tasks. Board shares, task
-shares, and public share links do not grant direct list access; their routes
-verify the share and then read through the admin client. Regression coverage:
+list visibility, the same rule scopes list-bound tasks. Tasks without a list
+(`list_id` null, created by the calendar scheduling route
+`POST /api/{wsId}/task/create`) have no workspace link, so only their creator
+(`creator_id`) can read, update, delete or insert them through a
+request-scoped client. Board shares, task shares, and public share links do
+not grant direct list or task access; their routes verify the share and then
+read through the admin client. Regression coverage:
 `apps/database/supabase/tests/security-definer-function-grants.sql`.
 
 ```sql

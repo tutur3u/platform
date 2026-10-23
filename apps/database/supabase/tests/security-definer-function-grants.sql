@@ -1,11 +1,12 @@
 -- Contract for 20261024015000_harden_definer_function_grants.sql: legacy
 -- definer helpers are not callable by client roles, policy helpers are not
 -- callable by anon, Mira XP writes are bound to the actor, task list access
--- requires workspace membership, and search_path pins hold.
+-- requires workspace membership, list-less tasks belong to their creator
+-- (20261024020000), and search_path pins hold.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(80);
+select plan(90);
 
 create temp table definer_service_only(fn regprocedure) on commit drop;
 insert into definer_service_only values
@@ -138,7 +139,29 @@ select lives_ok($$insert into public.task_lists(id, board_id, name) values ('000
   'member creates a list on the board');
 select is((select count(*)::int from public.task_lists where id in ('00000000-0000-4000-8000-00000000a231', '00000000-0000-4000-8000-00000000a233')), 2, 'member sees both board lists');
 
--- Mira actor checks (42-48). Still authenticated as A.
+-- List-less tasks belong to their creator (42-51).
+reset role;
+insert into public.tasks(id, name, creator_id)
+values ('00000000-0000-4000-8000-00000000a251', 'Contract task', '00000000-0000-4000-8000-00000000a201');
+set local role authenticated;
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000a202"}', true);
+select is((select count(*)::int from public.tasks where id = '00000000-0000-4000-8000-00000000a251'), 0, 'non-creator cannot read a list-less task');
+select throws_ok($$insert into public.tasks(id, name, creator_id) values ('00000000-0000-4000-8000-00000000a252', 'Forged', '00000000-0000-4000-8000-00000000a201')$$,
+  '42501', null, 'non-creator cannot insert a list-less task as another user');
+select lives_ok($$insert into public.tasks(id, name, creator_id) values ('00000000-0000-4000-8000-00000000a253', 'Own task', '00000000-0000-4000-8000-00000000a202')$$,
+  'user can insert a list-less task as self');
+select lives_ok($$update public.tasks set name = 'Hijacked' where id = '00000000-0000-4000-8000-00000000a251'$$, 'non-creator update runs');
+select lives_ok($$delete from public.tasks where id = '00000000-0000-4000-8000-00000000a251'$$, 'non-creator delete runs');
+reset role;
+select is((select name from public.tasks where id = '00000000-0000-4000-8000-00000000a251'), 'Contract task', 'non-creator update changed nothing');
+select is((select count(*)::int from public.tasks where id = '00000000-0000-4000-8000-00000000a251'), 1, 'non-creator delete removed nothing');
+set local role authenticated;
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000a201"}', true);
+select is((select count(*)::int from public.tasks where id = '00000000-0000-4000-8000-00000000a251'), 1, 'creator reads own list-less task');
+select lives_ok($$update public.tasks set name = 'Creator edit' where id = '00000000-0000-4000-8000-00000000a251'$$, 'creator updates own list-less task');
+select is((select name from public.tasks where id = '00000000-0000-4000-8000-00000000a251'), 'Creator edit', 'creator update applied');
+
+-- Mira actor checks (52-58). Authenticated as A.
 select throws_ok($$select public.award_mira_xp('00000000-0000-4000-8000-00000000a202', 5, 'contract')$$,
   '42501', 'Not allowed to award XP to another user', 'user A cannot award XP to user B');
 select is((public.award_mira_xp('00000000-0000-4000-8000-00000000a201', 5, 'contract')).user_id, '00000000-0000-4000-8000-00000000a201'::uuid, 'user A can award XP to self');
@@ -154,7 +177,7 @@ reset role;
 select set_config('request.jwt.claims', '', true);
 select lives_ok($$select public.award_mira_xp('00000000-0000-4000-8000-00000000a202', 1, 'contract')$$, 'no-JWT server context can award XP');
 
--- Pinned bodies still resolve their objects when called by the server (49-80).
+-- Pinned bodies still resolve their objects when called by the server (59-90).
 set local role service_role;
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select lives_ok($$select public.get_platform_ai_credit_overview()$$, 'call: platform credit overview');
