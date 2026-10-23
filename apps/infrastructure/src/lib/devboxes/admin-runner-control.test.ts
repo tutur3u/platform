@@ -44,7 +44,13 @@ describe('devbox runner control', () => {
       },
       {
         data: [
-          { runner_id: 'a', queued_runs: 0, running_runs: 0, active_leases: 0 },
+          {
+            runner_id: 'a',
+            queued_runs: 0,
+            running_runs: 0,
+            active_leases: 0,
+            kept_leases: '2',
+          },
           {
             runner_id: 'b',
             queued_runs: '0',
@@ -57,7 +63,10 @@ describe('devbox runner control', () => {
       }
     );
     const control = await listDevboxRunnerControl(client);
-    expect(control.get('a')).toMatchObject({ drained: true });
+    expect(control.get('a')).toMatchObject({
+      drained: true,
+      activity: { kept_leases: 2 },
+    });
     expect(control.get('b')).toMatchObject({
       drained: false,
       activity: { queued_runs: 0, running_runs: 1, active_leases: 1 },

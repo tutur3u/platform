@@ -21080,6 +21080,7 @@ export type Database = {
         Args: never;
         Returns: {
           active_leases: number;
+          kept_leases: number;
           queued_runs: number;
           runner_id: string;
           running_runs: number;

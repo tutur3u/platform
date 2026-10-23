@@ -7,7 +7,11 @@ import {
 export interface DevboxRunnerActivity {
   queued_runs: number;
   running_runs: number;
+  // Unexpired, non-kept leases; these must reach zero before `drained`.
   active_leases: number;
+  // Kept (persistent) leases survive a drain and never block `drained`;
+  // release them separately before retiring the runner.
+  kept_leases: number;
 }
 export interface DevboxRunnerControl {
   drain_requested_at: string | null;
@@ -21,6 +25,8 @@ type ActivityRow = {
   queued_runs: number | string;
   running_runs: number | string;
   active_leases: number | string;
+  // Absent before migration 20261023103000.
+  kept_leases?: number | string | null;
 };
 
 /** Requests or clears a drain; the RPC also cancels/requeues pinned work. */
@@ -69,6 +75,7 @@ export async function listDevboxRunnerControl(
         queued_runs: Number(row.queued_runs),
         running_runs: Number(row.running_runs),
         active_leases: Number(row.active_leases),
+        kept_leases: Number(row.kept_leases ?? 0),
       },
     ])
   );

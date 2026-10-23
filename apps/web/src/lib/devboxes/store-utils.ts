@@ -49,6 +49,10 @@ export function getDevboxStorageError(error: DevboxStorageErrorLike) {
   if (isDevboxReadinessError(message)) {
     return new DevboxStoreError(DEVBOX_READINESS_MESSAGE, 503);
   }
+  // Raised by the reject_devbox_run_on_draining_runner trigger.
+  if (message.startsWith('Runner is draining')) {
+    return new DevboxStoreError(message, 409);
+  }
 
   return new DevboxStoreError(message);
 }
