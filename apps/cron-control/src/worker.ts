@@ -1,90 +1,67 @@
-interface Env {
-  CRON_CONTROL_DELIVERY_TOKEN: string;
-  SUPABASE_SECRET_KEY: string;
-  SUPABASE_URL: string;
-  WEB_ORIGIN: string;
-}
+import { handleControlRequest } from './control';
+import { type DispatchEnv, dispatchScheduledJobs } from './dispatch';
+import {
+  type ImmediateNotificationsEnv,
+  processImmediateNotifications,
+} from './immediate-notifications';
+import { CRON_TRIGGERS, IMMEDIATE_NOTIFICATIONS_CRON } from './jobs';
+import type { Ledger } from './ledger';
+import { CronLedger } from './ledger-object';
 
-function databaseHeaders(env: Env) {
-  return {
-    apikey: env.SUPABASE_SECRET_KEY,
-    'Content-Type': 'application/json',
-    'Accept-Profile': 'private',
-    'Content-Profile': 'private',
+export { CronLedger, processImmediateNotifications };
+
+type Env = DispatchEnv &
+  ImmediateNotificationsEnv & {
+    CRON_CONTROL_OPERATOR_TOKEN?: string;
+    CRON_LEDGER: DurableObjectNamespace<CronLedger>;
+  };
+
+// A single ledger instance serializes every claim; volume is a few thousand
+// small requests a day at most.
+function ledgerFor(env: Env): () => Ledger {
+  let stub: Ledger | undefined;
+  return () => {
+    stub ??= env.CRON_LEDGER.get(
+      env.CRON_LEDGER.idFromName('cron-control-ledger')
+    ) as unknown as Ledger;
+    return stub;
   };
 }
 
-async function requeueStalePushBatches(env: Env) {
-  const response = await fetch(
-    new URL('/rest/v1/rpc/requeue_mail_push_batches', env.SUPABASE_URL),
-    {
-      method: 'POST',
-      headers: databaseHeaders(env),
-      body: '{}',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(30_000),
-    }
-  );
-  if (!response.ok)
-    throw new Error(`Push batch recovery failed: ${response.status}`);
-}
-
-async function hasImmediateWork(env: Env) {
-  const url = new URL('/rest/v1/notification_batches', env.SUPABASE_URL);
-  url.searchParams.set('select', 'id');
-  url.searchParams.set('status', 'eq.pending');
-  url.searchParams.set('delivery_mode', 'eq.immediate');
-  url.searchParams.set('limit', '1');
-  const response = await fetch(url, {
-    headers: databaseHeaders(env),
-    redirect: 'manual',
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok)
-    throw new Error(`Immediate batch lookup failed: ${response.status}`);
-  const rows = (await response.json()) as { id: string }[];
-  return rows.length > 0;
-}
-
-export async function processImmediateNotifications(env: Env) {
-  await requeueStalePushBatches(env);
-  if (!(await hasImmediateWork(env))) return { invoked: false };
-  const response = await fetch(
-    new URL('/api/notifications/send-immediate', env.WEB_ORIGIN),
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.CRON_CONTROL_DELIVERY_TOKEN}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Tuturuuu-Cron-Control/1.0',
-      },
-      body: '{}',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(180_000),
-    }
-  );
-  if (!response.ok)
-    throw new Error(`Immediate batch delivery failed: ${response.status}`);
-  return { invoked: true };
-}
-
 export default {
-  async fetch(request: Request): Promise<Response> {
-    if (
-      request.method === 'GET' &&
-      new URL(request.url).pathname === '/health'
-    ) {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const { pathname } = new URL(request.url);
+    if (request.method === 'GET' && pathname === '/health') {
       return Response.json(
         { ok: true },
         { headers: { 'Cache-Control': 'no-store' } }
       );
     }
+    const control = await handleControlRequest(request, env, ledgerFor(env));
+    if (control) return control;
     return Response.json({ message: 'Not found' }, { status: 404 });
   },
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
-    if (controller.cron !== '*/5 * * * *')
+    if (!CRON_TRIGGERS.includes(controller.cron))
       throw new Error('Unexpected cron trigger');
-    const result = await processImmediateNotifications(env);
-    console.log('Immediate notification recovery completed', result);
+    const [immediate, jobs] = await Promise.allSettled([
+      controller.cron === IMMEDIATE_NOTIFICATIONS_CRON
+        ? processImmediateNotifications(env)
+        : Promise.resolve(null),
+      dispatchScheduledJobs(controller.cron, controller.scheduledTime, env, {
+        fetch: (input, init) => fetch(input, init),
+        ledger: ledgerFor(env),
+        now: () => Date.now(),
+        sleep: (milliseconds) =>
+          new Promise((resolve) => setTimeout(resolve, milliseconds)),
+      }),
+    ]);
+    if (jobs.status === 'fulfilled' && jobs.value.length > 0)
+      console.log('Cron Control jobs completed', jobs.value);
+    if (jobs.status === 'rejected')
+      console.error('Cron Control dispatch failed', jobs.reason);
+    if (immediate.status === 'rejected') throw immediate.reason;
+    if (immediate.value)
+      console.log('Immediate notification recovery completed', immediate.value);
   },
 } satisfies ExportedHandler<Env>;
