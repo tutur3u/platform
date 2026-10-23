@@ -87,8 +87,27 @@ def _is_sink_reference(node: ast.AST, sink_aliases: set[str]) -> bool:
 
 
 def _non_exception_arguments(node: ast.Call) -> list[ast.AST]:
-    """Arguments of an exception-slot helper other than its exception slot."""
+    """Arguments of an exception-slot helper other than its exception slot.
+
+    The slot is only exempt when Python's binding is unambiguous: any ``*args``
+    or ``**kwargs`` could move a tainted value into another parameter, so then
+    every argument is checked. A method looked up on its class (for example
+    ``CommandHandler.reply_error(handler, ...)``) receives ``self`` explicitly,
+    which shifts the positional slot by one.
+    """
+    every_argument = [*node.args, *(keyword.value for keyword in node.keywords)]
+    if any(isinstance(arg, ast.Starred) for arg in node.args) or any(
+        keyword.arg is None for keyword in node.keywords
+    ):
+        return every_argument
     index, keyword_name = EXCEPTION_SLOT_SINKS[_call_name(node)]
+    func = node.func
+    if (
+        isinstance(func, ast.Attribute)
+        and isinstance(func.value, ast.Name)
+        and func.value.id[:1].isupper()
+    ):
+        index += 1
     positional = [arg for position, arg in enumerate(node.args) if position != index]
     keywords = [kw.value for kw in node.keywords if kw.arg != keyword_name]
     return [*positional, *keywords]
@@ -227,6 +246,7 @@ def test_guard_allows_reporting_through_the_helper() -> None:
                 report_error(context="context", error=e)
                 await handler.reply_error(1, 2, "context", e, "Could not do it.")
                 await handler.reply_error(1, 2, "context", error=e, summary="Failed.")
+                await CommandHandler.reply_error(handler, 1, 2, "context", e, "Failed.")
                 await client.send_response({"content": user_error("Failed.", error_id)}, 1, 2)
                 return {"content": "Could not do it."}
         """
@@ -303,6 +323,30 @@ def test_guard_allows_reporting_through_the_helper() -> None:
             "except Exception:",
             'await client.send_followup(content=f"{sys.exception()}")',
             "send_followup",
+        ),
+        (
+            "starred positional shifts the summary",
+            "except Exception as e:",
+            'await handler.reply_error(1, 2, *("ctx", RuntimeError("x")), str(e))',
+            "reply_error",
+        ),
+        (
+            "double-star kwargs bind the summary",
+            "except Exception as e:",
+            'await handler.reply_error(1, 2, "ctx", e, **{"summary": str(e)})',
+            "reply_error",
+        ),
+        (
+            "double-star kwargs make the slot ambiguous",
+            "except Exception as e:",
+            'await handler.reply_error(1, 2, "ctx", str(e), **extra)',
+            "reply_error",
+        ),
+        (
+            "unbound class call shifts the slot",
+            "except Exception as e:",
+            'await CommandHandler.reply_error(handler, 1, 2, str(e), RuntimeError("x"), "S")',
+            "reply_error",
         ),
         (
             "imported format_exc",
