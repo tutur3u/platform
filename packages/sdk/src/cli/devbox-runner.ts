@@ -215,8 +215,23 @@ export async function executeDevboxAgentJob(
   const maintenance =
     (command.length === 1 && command[0] === '__ttr_restart_agent_v1__') ||
     (command.length === 4 && command.join(' ') === 'bun i -g tuturuuu');
+  // Trust tiers stay separate on the runner too: a trusted host (with its
+  // credentials) never executes untrusted Judge code, and a playground pool
+  // process accepts only playground envelopes. Server-side feature exclusion
+  // is the primary control; this is the local fence.
+  const playgroundPool = Boolean(
+    (options.env ?? process.env).TUTURUUU_PLAYGROUND_POOL_ID
+  );
+  const trustedFenceRejects =
+    executionMode === 'trusted' &&
+    !maintenance &&
+    (command[0] === '__ttr_judge_v1__' ||
+      (playgroundPool
+        ? command[0] !== '__ttr_playground_v1__'
+        : command[0] === '__ttr_playground_v1__'));
   if (
     !['trusted', 'judge-only'].includes(executionMode) ||
+    trustedFenceRejects ||
     (executionMode === 'judge-only' &&
       (job.envFiles?.length ||
         (!maintenance && command[0] !== '__ttr_judge_v1__') ||

@@ -54,6 +54,7 @@ export interface DevboxSetupOptions {
   runCommand?: DevboxSetupCommandRunner;
   service?: boolean;
   serviceManager?: DevboxServiceManager;
+  serviceName?: string;
   serviceUser?: string;
   stdout?: (value: string) => void;
   tokenFile?: string;
@@ -356,6 +357,7 @@ export async function runDevboxSetupCommand({
     runnerName: getFlag(flags, 'runner-name'),
     service: flags.service === true,
     serviceManager: serviceManager as DevboxServiceManager | undefined,
+    serviceName: getFlag(flags, 'service-name'),
     serviceUser: getFlag(flags, 'service-user'),
     tokenFile: getFlag(flags, 'token-file'),
     yes: flags.yes === true,

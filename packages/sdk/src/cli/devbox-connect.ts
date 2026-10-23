@@ -41,6 +41,7 @@ export async function runDevboxConnect({
       runnerName: getFlag(flags, 'runner-name'),
       service: flags.service === true,
       serviceManager: serviceManager as DevboxServiceManager | undefined,
+      serviceName: getFlag(flags, 'service-name'),
       serviceUser: getFlag(flags, 'service-user'),
       tokenFile: getFlag(flags, 'token-file'),
     },

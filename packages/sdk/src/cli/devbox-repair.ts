@@ -44,6 +44,7 @@ export interface DevboxRepairOptions {
   noRestart?: boolean;
   runCommand?: DevboxSetupCommandRunner;
   serviceManager?: DevboxServiceManager;
+  serviceName?: string;
   serviceUser?: string;
   stdout?: (value: string) => void;
   tokenFile?: string;
@@ -132,7 +133,8 @@ export async function runDevboxRepair(
   const stdout =
     options.stdout ?? ((value: string) => process.stdout.write(value));
   const tokenFile = resolve(
-    options.tokenFile?.trim() || getDefaultRunnerTokenFile()
+    options.tokenFile?.trim() ||
+      getDefaultRunnerTokenFile(undefined, options.serviceName)
   );
   const manager = resolveDevboxServiceManager(options.serviceManager);
 
@@ -209,11 +211,12 @@ export async function runDevboxRepair(
   }
   const service = options.dryRun
     ? {
-        definitionPath: getServiceDefinitionPath(manager),
+        definitionPath: getServiceDefinitionPath(manager, options.serviceName),
         manager,
         wrapperPath: resolve(
           getDefaultRunnerWrapperFile(
-            executionMode === 'judge-only' ? tokenFile : undefined
+            executionMode === 'judge-only' ? tokenFile : undefined,
+            options.serviceName
           )
         ),
       }
@@ -224,6 +227,7 @@ export async function runDevboxRepair(
         json: options.json,
         manager,
         runCommand,
+        serviceName: options.serviceName,
         serviceUser,
         tokenFile,
       });
@@ -236,6 +240,7 @@ export async function runDevboxRepair(
         json: options.json,
         manager: service.manager,
         runCommand,
+        serviceName: options.serviceName,
       })
     );
 
@@ -283,6 +288,7 @@ export async function runDevboxRepairCommand({
       ? parseDevboxExecutionMode(getFlag(flags, 'execution-mode'))
       : undefined,
     dockerHost: getFlag(flags, 'docker-host'),
+    serviceName: getFlag(flags, 'service-name'),
     serviceUser: getFlag(flags, 'service-user'),
     tokenFile: getFlag(flags, 'token-file'),
   });

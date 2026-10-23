@@ -6,6 +6,12 @@ const mocks = vi.hoisted(() => ({
   count: vi.fn(),
 }));
 vi.mock('./devbox-judge-sandbox', () => ({ getJudgeReadiness: mocks.judge }));
+vi.mock('./devbox-isolation', () => ({
+  collectDevboxIsolation: vi.fn().mockResolvedValue({
+    summary: { checkedAt: '2026-10-23T00:00:00.000Z', dedicatedUser: true },
+    findings: [],
+  }),
+}));
 vi.mock('./devbox-playground-sandbox', () => ({
   getPlaygroundReadiness: mocks.playground,
   playgroundEnvironmentCount: mocks.count,
@@ -85,4 +91,17 @@ it('keeps explicitly opted-in unavailable pools visible as not ready', async () 
     languages: [],
     environments: 2,
   });
+});
+it('keeps execution mode and isolation out of heartbeats until opted in', async () => {
+  vi.stubEnv('TUTURUUU_DEVBOX_EXECUTION_MODE', 'judge-only');
+  const plain = await collect();
+  expect(plain).not.toHaveProperty('executionMode');
+  expect(plain).not.toHaveProperty('isolation');
+  vi.stubEnv('TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE', 'true');
+  expect(await collect()).toMatchObject({
+    executionMode: 'judge-only',
+    isolation: { checkedAt: '2026-10-23T00:00:00.000Z', dedicatedUser: true },
+  });
+  vi.stubEnv('TUTURUUU_DEVBOX_EXECUTION_MODE', 'bogus');
+  expect(await collect()).not.toHaveProperty('executionMode');
 });

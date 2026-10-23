@@ -18,6 +18,7 @@ import {
 import type { DevboxSetupCommandRunner } from './devbox-setup-command';
 import {
   type DevboxServiceManager,
+  devboxServiceNames,
   getServiceDefinitionPath,
   renderLaunchdPlist,
   renderSystemdUnit,
@@ -42,6 +43,7 @@ export interface InstallDevboxRunnerServiceOptions {
   json?: boolean;
   manager?: DevboxServiceManager;
   runCommand: DevboxSetupCommandRunner;
+  serviceName?: string;
   serviceUser?: string;
   tokenFile: string;
 }
@@ -61,6 +63,7 @@ export interface SetupDevboxRunnerOptions {
     runCommand: DevboxSetupCommandRunner;
     service?: boolean;
     serviceManager?: DevboxServiceManager;
+    serviceName?: string;
     serviceUser?: string;
     tokenFile?: string;
     judgeImages?: string;
@@ -75,25 +78,29 @@ export function getDevboxRunnerDashboardUrl(runnerId: string) {
   return `https://infrastructure.tuturuuu.com/00000000-0000-0000-0000-000000000000/devboxes#runner-${encodeURIComponent(runnerId)}`;
 }
 
-export function getDefaultRunnerTokenFile(configPath = getDefaultConfigPath()) {
-  return join(dirname(configPath), 'devbox-runner.env');
+export function getDefaultRunnerTokenFile(
+  configPath = getDefaultConfigPath(),
+  serviceName?: string
+) {
+  return join(dirname(configPath), devboxServiceNames(serviceName).tokenFile);
 }
 
 export function getDefaultRunnerWrapperFile(
-  configPath = getDefaultConfigPath()
+  configPath = getDefaultConfigPath(),
+  serviceName?: string
 ) {
-  return join(dirname(configPath), 'devbox-runner.sh');
+  return join(dirname(configPath), devboxServiceNames(serviceName).wrapperFile);
 }
 
 function getDefaultServiceDefinitionFile(
   manager: Exclude<DevboxServiceManager, 'auto'>,
-  configPath = getDefaultConfigPath()
+  configPath = getDefaultConfigPath(),
+  serviceName?: string
 ) {
+  const names = devboxServiceNames(serviceName);
   return join(
     dirname(configPath),
-    manager === 'systemd'
-      ? 'tuturuuu-devbox-runner.service'
-      : 'com.tuturuuu.devbox-runner.plist'
+    manager === 'systemd' ? names.systemdUnit : `${names.launchdLabel}.plist`
   );
 }
 
@@ -169,15 +176,18 @@ async function writeRunnerWrapper({
   tokenFile,
   executionMode,
   dockerHost,
+  serviceName,
 }: {
   checkoutDir: string;
   tokenFile: string;
   executionMode?: DevboxExecutionMode;
   dockerHost?: string;
+  serviceName?: string;
 }) {
   const wrapperPath = resolve(
     getDefaultRunnerWrapperFile(
-      executionMode === 'judge-only' ? tokenFile : undefined
+      executionMode === 'judge-only' ? tokenFile : undefined,
+      serviceName
     )
   );
   const ttrCommand = getCurrentTtrCommand();
@@ -193,6 +203,8 @@ async function writeRunnerWrapper({
     `. ${shellQuote(tokenFile)}`,
     'set +a',
     `export TUTURUUU_DEVBOX_EXECUTION_MODE=${shellQuote(executionMode ?? 'trusted')}`,
+    // Lets the agent check its own credential directory (path only).
+    `export TUTURUUU_DEVBOX_TOKEN_FILE=${shellQuote(tokenFile)}`,
     ...(dockerHost ? [`export DOCKER_HOST=${shellQuote(dockerHost)}`] : []),
     // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion in the generated script.
     ': "${TUTURUUU_DEVBOX_AUTO_UPGRADE:=false}"',
@@ -251,10 +263,12 @@ export async function installDevboxRunnerService({
   json,
   manager,
   runCommand,
+  serviceName,
   serviceUser,
   tokenFile,
 }: InstallDevboxRunnerServiceOptions) {
   const resolvedManager = resolveDevboxServiceManager(manager);
+  const names = devboxServiceNames(serviceName);
   const resolvedServiceUser = serviceUser?.trim() || userInfo().username;
   const serviceHome = await preflightProtectedService({
     mode: executionMode,
@@ -271,9 +285,17 @@ export async function installDevboxRunnerService({
     tokenFile,
     executionMode,
     dockerHost,
+    serviceName,
   });
-  const definitionPath = getDefaultServiceDefinitionFile(resolvedManager);
-  const systemDefinitionPath = getServiceDefinitionPath(resolvedManager);
+  const definitionPath = getDefaultServiceDefinitionFile(
+    resolvedManager,
+    undefined,
+    serviceName
+  );
+  const systemDefinitionPath = getServiceDefinitionPath(
+    resolvedManager,
+    serviceName
+  );
   const definition =
     resolvedManager === 'systemd'
       ? renderSystemdUnit({
@@ -285,6 +307,7 @@ export async function installDevboxRunnerService({
         })
       : renderLaunchdPlist({
           checkoutDir,
+          serviceName,
           serviceUser: resolvedServiceUser,
           wrapperPath,
         });
@@ -316,7 +339,7 @@ export async function installDevboxRunnerService({
       runCommand,
     });
     await runRequiredServiceCommand({
-      args: ['systemctl', 'enable', '--now', 'tuturuuu-devbox-runner.service'],
+      args: ['systemctl', 'enable', '--now', names.systemdUnit],
       command: 'sudo',
       json,
       name: 'Enable systemd devbox runner service',
@@ -359,19 +382,14 @@ export async function installDevboxRunnerService({
       runCommand,
     });
     await runRequiredServiceCommand({
-      args: ['launchctl', 'enable', 'system/com.tuturuuu.devbox-runner'],
+      args: ['launchctl', 'enable', `system/${names.launchdLabel}`],
       command: 'sudo',
       json,
       name: 'Enable launchd devbox runner service',
       runCommand,
     });
     await runRequiredServiceCommand({
-      args: [
-        'launchctl',
-        'kickstart',
-        '-k',
-        'system/com.tuturuuu.devbox-runner',
-      ],
+      args: ['launchctl', 'kickstart', '-k', `system/${names.launchdLabel}`],
       command: 'sudo',
       json,
       name: 'Start launchd devbox runner service',
@@ -390,16 +408,19 @@ export async function restartDevboxRunnerService({
   json,
   manager,
   runCommand,
+  serviceName,
 }: {
   json?: boolean;
   manager?: DevboxServiceManager;
   runCommand: DevboxSetupCommandRunner;
+  serviceName?: string;
 }) {
   const resolvedManager = resolveDevboxServiceManager(manager);
+  const names = devboxServiceNames(serviceName);
 
   if (resolvedManager === 'systemd') {
     await runRequiredServiceCommand({
-      args: ['systemctl', 'restart', 'tuturuuu-devbox-runner.service'],
+      args: ['systemctl', 'restart', names.systemdUnit],
       command: 'sudo',
       json,
       name: 'Restart systemd devbox runner service',
@@ -407,12 +428,7 @@ export async function restartDevboxRunnerService({
     });
   } else {
     await runRequiredServiceCommand({
-      args: [
-        'launchctl',
-        'kickstart',
-        '-k',
-        'system/com.tuturuuu.devbox-runner',
-      ],
+      args: ['launchctl', 'kickstart', '-k', `system/${names.launchdLabel}`],
       command: 'sudo',
       json,
       name: 'Restart launchd devbox runner service',
@@ -464,6 +480,7 @@ export async function setupDevboxRunner({
   )
     throw new Error('Control URL must use HTTPS without embedded credentials.');
   if (options.judgeImages) parseJudgeImages(options.judgeImages);
+  devboxServiceNames(options.serviceName);
   const runnerName = options.runnerName?.trim() || getDefaultRunnerName();
   const executionMode =
     options.executionMode ?? (options.judgeImages ? 'judge-only' : 'trusted');
@@ -474,7 +491,9 @@ export async function setupDevboxRunner({
       manager: resolveDevboxServiceManager(options.serviceManager),
       serviceUser: options.serviceUser?.trim() || userInfo().username,
       checkoutDir,
-      tokenFile: options.tokenFile ?? getDefaultRunnerTokenFile(),
+      tokenFile:
+        options.tokenFile ??
+        getDefaultRunnerTokenFile(undefined, options.serviceName),
       cliCommand: getCurrentTtrCommand(),
       dockerHost: options.dockerHost,
       runCommand: options.runCommand,
@@ -504,7 +523,9 @@ export async function setupDevboxRunner({
     controlUrl: options.controlUrl,
     serviceUser: options.serviceUser,
     token: registration.token,
-    tokenFile: options.tokenFile,
+    tokenFile:
+      options.tokenFile ??
+      getDefaultRunnerTokenFile(undefined, options.serviceName),
   });
 
   if (!shouldInstallService) {
@@ -523,6 +544,7 @@ export async function setupDevboxRunner({
       json: options.json,
       manager: options.serviceManager,
       runCommand: options.runCommand,
+      serviceName: options.serviceName,
       serviceUser: options.serviceUser,
       tokenFile,
     }),
