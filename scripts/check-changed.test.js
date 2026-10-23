@@ -279,6 +279,15 @@ test('main prints the plan in dry-run mode and exits cleanly without changes', (
   assert.match(quiet[0], /no changed files/);
 });
 
+test('the pre-push hook passes stdin refs but not git positional args', () => {
+  const hook = fs.readFileSync(
+    path.join(__dirname, '..', '.githooks', 'pre-push'),
+    'utf8'
+  );
+  assert.match(hook, /^exec node scripts\/check-changed\.js --hook$/m);
+  assert.doesNotMatch(hook, /"\$@"/);
+});
+
 test('main exits early from the hook when not opted in', () => {
   const logs = [];
   const execFile = fakeGit({ 'git config': new Error('unset') });
