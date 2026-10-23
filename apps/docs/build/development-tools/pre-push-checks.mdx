@@ -1,0 +1,86 @@
+---
+title: "Pre-push checks"
+description: "Run the build-free changed-files gate before pushing so cheap CI failures are caught locally in seconds."
+updatedAt: "2026-10-23"
+---
+
+## Why this gate exists
+
+Most avoidable CI failures come from cheap checks skipped before pushing: Biome
+formatting, `flutter analyze` infos (fatal in CI), TypeScript errors such as
+`TS6059` (a package importing app source outside its `rootDir`), stale generated
+inventories and branch names the checker rejects. `bun check` is too heavy for
+agent machines because its Turbo graph can build workspace dependencies, so it
+is not run locally. `bun check:changed` is the replacement before every push.
+
+```bash
+bun check:changed                 # working tree vs merge base with origin/main
+bun check:changed --dry-run       # print the planned steps only
+bun check:changed --only biome    # one step (ids or prefixes such as type-check)
+bun check:changed --skip vitest   # skip a step family
+bun check:changed --committed     # committed changes only (the hook's mode)
+bun check:changed --files a.ts b.ts
+```
+
+It never runs builds, `bun check` or Turbo. Small repository scripts run directly;
+Vitest, type-check and `flutter analyze` are queued through `ttr resources run`
+when resource control is installed and enabled (`--no-ttr` opts out). Without
+ttr, steps run sequentially with Vitest capped at two workers.
+
+## What runs for which paths
+
+| Changed paths | Steps |
+| --- | --- |
+| Any | Branch name (same pattern as `branch-name-check.yaml`), source-size ceiling, docs inventory and app SEO `--check` |
+| JS/TS/JSON/CSS outside `apps/mobile` | Biome `check --error-on-warnings` on those files (pinned 2.5.13); Oxlint on JS/TS files as an **advisory** step |
+| `apps/*` or `packages/*` source | App-session, satellite cookie and server-console guards |
+| A workspace's source, `tsconfig*.json` or `package.json` | Type-check of the projects its `type-check` script checks |
+| A workspace with a Vitest config | Changed tests plus colocated `foo.test.ts(x)` and `__tests__/foo.test.ts(x)` siblings |
+| `scripts/`, `.github/actions/`, `plugins/` | Changed and sibling `node --test` files |
+| `.github/workflows/` or `.github/actions/` | Workflow concurrency, Bun pin and workflow-config policy tests |
+| `apps/mobile/` | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it |
+| `apps/*/messages/*.json` | i18n sort and en/vi key parity |
+| Migrations, docs, web API routes | Migration timestamps, docs audit, legacy route wrappers, mobile API mappings |
+
+Oxlint stays advisory until a scope records Biome parity under the
+[Oxc adoption rules](/build/development-tools/oxc-cloudflare-adoption); Biome
+remains the blocking formatter and linter. Paused runtimes are excluded.
+
+## Type-checking without built declarations
+
+CI builds `@tuturuuu/types`, `supabase`, `internal-api` and `masonry` before
+type-checking. Local checkouts usually lack those `dist` declarations, which
+produces thousands of missing-module errors and implicit-`any` cascades. The
+gate runs `tsc -p <project> --noEmit --incremental false --composite false` per
+project and classifies diagnostics:
+
+- With every workspace declaration present, all diagnostics block.
+- When declarations are cold, missing-module errors citing an unbuilt workspace
+  package are ignored. Configuration errors (`TS5xxx`/`TS6xxx`, including
+  `TS6059`) and errors in changed files that do not import an unbuilt package
+  block. Everything else is reported as an advisory count.
+
+Cold mode cannot see fallout in unchanged files (for example consumers of
+regenerated database types); the CI type-check remains authoritative.
+
+## Optional pre-push hook
+
+`bun install` already points `core.hooksPath` at `.githooks`. The pre-push hook
+is inert until you opt in:
+
+```bash
+git config tuturuuu.prePush true   # every push in this clone and its worktrees
+TUTURUUU_PRE_PUSH=1 git push       # a single push
+TUTURUUU_PRE_PUSH=0 git push       # skip once while opted in
+```
+
+The hook checks committed changes only and skips deletions or pushes of refs
+other than `HEAD`. Agents should run `bun check:changed` explicitly before
+pushing whether or not the hook is enabled.
+
+## Regression coverage
+
+`scripts/check-changed.test.js`, `scripts/check-changed/plan.test.js`,
+`scripts/check-changed/type-check.test.js` and `scripts/ts-diagnostics.test.js`
+cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
+ttr queueing and cold-declaration classification.

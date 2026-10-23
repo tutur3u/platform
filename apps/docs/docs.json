@@ -364,6 +364,7 @@
               "build/development-tools/oxc-cloudflare-adoption",
               "build/development-tools/cf-cli-wrangler-parity",
               "build/development-tools/git-conventions",
+              "build/development-tools/pre-push-checks",
               "build/development-tools/stacked-pull-requests",
               "build/development-tools/local-supabase-development",
               "build/development-tools/employee-schema-qualification",
