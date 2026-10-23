@@ -5,13 +5,53 @@ const fs = require('node:fs');
 const { homedir } = require('node:os');
 const path = require('node:path');
 
+function assertWorkspaceBins(cwd = process.cwd()) {
+  const unsafe = [];
+  for (
+    let directory = fs.realpathSync(cwd);
+    ;
+    directory = path.dirname(directory)
+  ) {
+    for (const alias of ['ttr', 'tuturuuu', 'tutur3u']) {
+      const file = path.join(directory, 'node_modules/.bin', alias);
+      try {
+        fs.lstatSync(file);
+        const target = fs.realpathSync(file);
+        if (
+          path.basename(target) !== 'ttr.cjs' ||
+          path.basename(path.dirname(target)) !== 'bin'
+        )
+          unsafe.push(`${file} -> ${target}`);
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+        if (fs.existsSync(path.dirname(file))) {
+          try {
+            fs.lstatSync(file);
+            unsafe.push(`${file} -> broken link`);
+          } catch (missing) {
+            if (missing.code !== 'ENOENT') throw missing;
+          }
+        }
+      }
+    }
+    if (path.dirname(directory) === directory) break;
+  }
+  if (unsafe.length)
+    throw new Error(
+      `Unsafe ancestor ttr bin links (possibly orphaned): ${unsafe.join('; ')}. Refusing workspace dist. Inspect and explicitly remove confirmed orphan alias symlinks and the orphan node_modules/tuturuuu link, then run bun install. bun install alone may leave orphans unchanged. Use absolute ~/.bun/bin/ttr while recovering.`
+    );
+}
+
 function inResourceLane(env = process.env) {
   return Boolean(env.TTR_RESOURCES_ADMITTED || env.TTR_RESOURCE_OWNER);
 }
 
 function trustedTtr(home = homedir()) {
-  const cli = path.join(home, '.bun/bin/ttr');
+  assertWorkspaceBins();
+  let cli = path.join(home, '.bun/bin/ttr');
   try {
+    home = fs.realpathSync(home);
+    cli = path.join(home, '.bun/bin/ttr');
     const entry = fs.realpathSync(cli);
     const relative = path.relative(path.join(home, '.bun/install'), entry);
     if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
@@ -44,6 +84,7 @@ function trustedTtr(home = homedir()) {
 }
 
 function resourceCommand(args, env = process.env) {
+  assertWorkspaceBins();
   if (!args.length)
     throw new Error('Use node scripts/ttr-run.js -- COMMAND [ARGS...].');
   return inResourceLane(env)
@@ -52,6 +93,7 @@ function resourceCommand(args, env = process.env) {
 }
 
 function run(args) {
+  assertWorkspaceBins();
   const divider = args.indexOf('--');
   const command =
     args[0] === 'resources' &&
@@ -69,7 +111,12 @@ function run(args) {
   return result.status ?? 1;
 }
 
-module.exports = { trustedTtr, inResourceLane, resourceCommand };
+module.exports = {
+  trustedTtr,
+  inResourceLane,
+  resourceCommand,
+  assertWorkspaceBins,
+};
 if (require.main === module) {
   try {
     process.exitCode = run(process.argv.slice(2));

@@ -6,8 +6,10 @@ const path = require('node:path');
 const test = require('node:test');
 const { trustedTtr } = require('./trusted-ttr');
 
-function fixture(t) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'trusted-ttr-'));
+function fixture(t, orphan = false) {
+  const root = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'trusted-ttr-'))
+  );
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const home = path.join(root, 'user');
   const ancestor = path.join(root, 'ancestor');
@@ -31,7 +33,7 @@ function fixture(t) {
     `#!${process.execPath}\nrequire('node:fs').writeFileSync(${JSON.stringify(launcher)},'legacy overwrite');process.stdout.write('{"installed":true,"enabled":true}');`,
     { mode: 0o700 }
   );
-  fs.symlinkSync(legacy, path.join(bin, 'ttr'));
+  if (orphan) fs.symlinkSync(legacy, path.join(bin, 'ttr'));
   fs.writeFileSync(
     path.join(pkg, 'package.json'),
     JSON.stringify({
@@ -57,23 +59,24 @@ function fixture(t) {
   return { root, home, worktree, pkg, cli, legacy, launcher, observed, env };
 }
 
-test('ancestor workspace binary is never executed from a worktree without node_modules', (t) => {
-  const f = fixture(t);
+test('ancestor workspace binary is refused from a worktree without node_modules', (t) => {
+  const f = fixture(t, true);
   assert.equal(fs.existsSync(path.join(f.worktree, 'node_modules')), false);
   const checker = path.join(__dirname, 'check-changed.js');
-  execFileSync(
-    process.execPath,
-    [
-      '-e',
-      `const cp=require('node:child_process');const p=require(${JSON.stringify(checker)}).ttrPrefix(true,cp.execFileSync);if(!p)throw Error('missing admission');cp.execFileSync(p[0],p.slice(1));`,
-    ],
-    { cwd: f.worktree, env: f.env }
+  assert.throws(
+    () =>
+      execFileSync(
+        process.execPath,
+        [
+          '-e',
+          `const cp=require('node:child_process');require(${JSON.stringify(checker)}).ttrPrefix(true,cp.execFileSync);`,
+        ],
+        { cwd: f.worktree, env: f.env, stdio: 'pipe' }
+      ),
+    (error) => /Unsafe ancestor ttr bin/.test(error.stderr.toString())
   );
   assert.equal(fs.readFileSync(f.launcher, 'utf8'), 'trusted bytes');
-  assert.equal(
-    fs.readFileSync(f.observed, 'utf8').trim().split('\n').length,
-    2
-  );
+  assert.equal(fs.existsSync(f.observed), false);
 });
 
 test('missing, legacy and redirected global installations refuse with recovery instructions', (t) => {
@@ -199,4 +202,14 @@ test('trusted resolver accepts the published wrapper entry declared by a new glo
   fs.unlinkSync(f.cli);
   fs.symlinkSync(bin, f.cli);
   assert.equal(trustedTtr(f.home), f.cli);
+});
+
+test('symlinked HOME resolves the same trusted global CLI', (t) => {
+  const f = fixture(t);
+  const alias = path.join(f.root, 'home-link');
+  fs.symlinkSync(f.home, alias, 'dir');
+  assert.equal(
+    trustedTtr(alias),
+    fs.realpathSync(path.dirname(f.cli)) + '/ttr'
+  );
 });

@@ -406,6 +406,33 @@ export async function installedResourceShims(
   return bin;
 }
 
+function existingLauncherIdentity(
+  content: string,
+  home: string,
+  entry: string,
+  name: string
+) {
+  // Only an entry verified against the public global link may migrate old
+  // versioned cache paths. A consumer cache entry must remain distinct.
+  if (
+    /\/\.bun\/install\/global\/node_modules\/tuturuuu\/dist\/cli\/[^/]+$/u.test(
+      entry
+    ) &&
+    existsSync(entry)
+  ) {
+    content = globalResourceEntry(content);
+  }
+  const prefix = `#!/bin/sh\n# Managed by ttr resources\nTTR_RESOURCES_HOME=${shellQuote(home)} exec `;
+  const suffix = ` ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
+  if (content.startsWith(prefix) && content.endsWith(suffix)) {
+    const runtime = content.slice(prefix.length, -suffix.length);
+    if (/^'(?:[^']|'\\'')*'$/u.test(runtime)) {
+      return `${prefix}${shellQuote(process.execPath)}${suffix}`;
+    }
+  }
+  return content;
+}
+
 async function resourceShimEdits(home: string, entry: string, force = false) {
   const edits = [];
   for (const name of resourceShims) {
@@ -421,7 +448,7 @@ async function resourceShimEdits(home: string, entry: string, force = false) {
       );
     if (
       existing !== undefined &&
-      globalResourceEntry(existing.content) !== globalResourceEntry(next) &&
+      existingLauncherIdentity(existing.content, home, entry, name) !== next &&
       !force
     )
       throw new Error(

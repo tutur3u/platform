@@ -6,7 +6,9 @@ const path = require('node:path');
 const test = require('node:test');
 
 test('bun install replaces stale workspace bin links without rebuilding dist', (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'workspace-ttr-bin-'));
+  const root = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'workspace-ttr-bin-'))
+  );
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const sdk = path.join(root, 'packages/sdk');
   const bin = path.join(root, 'node_modules/.bin');

@@ -16,7 +16,11 @@
 const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const { trustedTtr, inResourceLane } = require('./trusted-ttr.js');
+const {
+  trustedTtr,
+  inResourceLane,
+  assertWorkspaceBins,
+} = require('./trusted-ttr.js');
 const {
   readWorkspaces,
   assertSafePaths,
@@ -182,6 +186,7 @@ function ttrPrefix(
   env = process.env,
   resolveCli = trustedTtr
 ) {
+  assertWorkspaceBins();
   if (!enabled || inResourceLane(env)) return null;
   const cli = resolveCli();
   try {
