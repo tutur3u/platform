@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "portless": {
     "name": "infra.tuturuuu",
     "script": "dev:app"

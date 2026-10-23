@@ -157,7 +157,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -298,7 +298,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -484,7 +484,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -607,7 +607,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
         uses: actions/setup-node@v7

@@ -48,7 +48,7 @@ exact-source CI and admitted runtime acceptance remain separate evidence.
 
 `mail-calendar-tasks-builds.yaml` checks out the exact PR head or push SHA.
 Its Mail, Tasks and affected Web builds retain real app-build evidence. Calendar
-uses a separate native job on Bun 1.4.3 and Node 24.22.0: build shared dependencies,
+uses a separate native job on Bun 1.4.4 and Node 24.22.0: build shared dependencies,
 run owning Calendar/Web/Tasks UI tests, build with the official Void plugin,
 discover `.wrangler/deploy/config.json`, then generate emitted `CloudflareEnv` bindings in fresh runner scratch because Wrangler rejects the handwritten stub.
 Only successful, regular, nonempty, nonsymlink output replaces stable `cloudflare-env.d.ts`; own scratch is cleaned on success/failure.
@@ -1383,7 +1383,7 @@ and the script reports `blocked` and leaves the run green rather than failing.
 Use `--dry-run` to see the decision without posting a review.
 
 Generated release formatting also refreshes Bun workspace-version metadata with
-pinned Bun 1.4.3 using `--lockfile-only --ignore-scripts`. The shared
+pinned Bun 1.4.4 using `--lockfile-only --ignore-scripts`. The shared
 `release-workspace-lock.js` validator accepts only workspace `version` string
 changes matching the generated package manifests. It rejects dependency,
 resolution, workspace identity, root version and unrelated formatting changes;

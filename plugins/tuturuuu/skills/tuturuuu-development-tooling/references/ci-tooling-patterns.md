@@ -145,7 +145,7 @@ workflow-level write allowlist, and caller and callee grants in both directions.
 
 ## Bun runtime pins
 
-The maintained toolchain uses Bun `1.4.3`. Keep active workspace `packageManager`
+The maintained toolchain uses Bun `1.4.4`. Keep active workspace `packageManager`
 metadata, CI setup/action defaults, bootstrap fallback and SDK qualification
 expectations aligned when changing the stable runtime. Use `bun pm pkg set` for
 manifest metadata. Preserve historical observations, intentional version fixtures

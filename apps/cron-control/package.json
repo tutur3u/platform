@@ -2,7 +2,7 @@
   "name": "@tuturuuu/cron-control",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "scripts": {
     "dev": "vp dev",
     "build": "vp build",
