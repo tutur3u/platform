@@ -55,11 +55,30 @@ these audit paths as reported graph associations, not verified Chokidar 3 call
 chains. Manifest dependency classification alone does not prove runtime exposure.
 
 The separate [node-forge advisory](https://github.com/advisories/GHSA-86w9-cpqp-85rv)
-remains tracked at `1.4.0`. Its observed use is Infrastructure admin-only desktop
-certificate PKCS12 inspection in `certificate-readiness.ts`, not a public
-signature-verification endpoint; the current scope is judged low risk and is
-unchanged. The audit also retains the moderate esbuild development-server
-advisory. This removal does not claim a clean audit or remediate those packages.
+remains tracked at `1.4.0` with no patched release. Its only consumer is
+Infrastructure admin-only desktop certificate PKCS12 inspection in
+`certificate-readiness.ts`, which uses node-forge for PKCS12/ASN.1 parsing and
+node:crypto for key matching. The affected RSA PKCS#1 v1.5 verification is
+reached only through certificate/chain verification, which that module never
+calls. `certificate-readiness.test.ts` instruments every node-forge RSA public
+key during a full inspection and fails if `verify` runs, with a positive control
+proving the instrumentation observes chain verification. Any new signature check
+must use node:crypto rather than node-forge.
+
+The moderate esbuild development-server advisory
+([GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99)) came
+from `apps/apps → void → drizzle-kit → @esbuild-kit/esm-loader →
+@esbuild-kit/core-utils`, which pins esbuild `~0.18.20`; Drizzle Kit 0.31 no
+longer loads that deprecated loader. The root `esbuild@0.18` override moves it to
+`0.25.12`, and `scripts/security-dependency-compatibility.test.js` checks the
+esbuild-kit TypeScript transform on the patched version.
+
+The standalone `.opencode/package-lock.json` (OpenCode local plugin install, no
+tracked manifest) resolves `toml` through `@opencode-ai/plugin → effect`, whose
+unstable CLI file parser is the only `toml` caller. Regenerate that lockfile with
+a temporary manifest that overrides `toml` to at least `5.0.1`
+(GHSA-4qx8-w7c3-pj3p, GHSA-9j65-hcg3-gc64, GHSA-9qmh-m7c6-f92p); the
+compatibility test fails if a local reinstall commits a downgrade.
 
 Recheck with `bun why braces --depth 4` and `bun audit` after dependency changes.
 Before introducing an actual bash/glob runtime consumer, validate untrusted

@@ -91,7 +91,6 @@ test('all matrix failures propagate through stable required check names', () => 
   for (const [file, gate, workers, expectedName] of [
     ['mobile.yaml', 'build', 'tests', 'build'],
     ['turbo-unit-tests.yaml', 'build', 'test-shards', 'Unit Tests (24)'],
-    ['codecov.yaml', 'test', 'test-shards', 'Run tests and collect coverage'],
   ]) {
     const workflow = readWorkflow(file);
     const job = workflow.jobs[gate];
@@ -164,19 +163,19 @@ test('all matrix failures propagate through stable required check names', () => 
 });
 
 test('coverage is uploaded only after all complete workspace artifacts are collected', () => {
-  const workflow = readWorkflow('codecov.yaml');
+  const workflow = readWorkflow('turbo-unit-tests.yaml');
   const producer = workflow.jobs['test-shards'].steps.find((step) =>
     step.uses?.startsWith('actions/upload-artifact')
   );
   assert.equal(producer.with['if-no-files-found'], 'error');
   assert.match(producer.with.path, /apps\/\*\/coverage/);
   assert.match(producer.with.path, /packages\/\*\/coverage/);
-  const steps = workflow.jobs.test.steps;
+  const steps = readWorkflow('codecov.yaml').jobs.test.steps;
   const download = steps.findIndex((step) =>
     step.uses?.startsWith('actions/download-artifact')
   );
   const upload = steps.findIndex((step) => step.uses?.startsWith('codecov/'));
-  assert.ok(download > 0 && upload > download);
+  assert.ok(download >= 0 && upload > download);
   assert.equal(steps[download].with['merge-multiple'], true);
   assert.equal(steps[download].with.pattern, 'coverage-shard-*');
 });

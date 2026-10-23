@@ -162,7 +162,7 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
           state.failed &&
               (state.failedSaveZone == null ||
                   state.failedSaveWorkspace == widget.workspace)
-          ? Row(
+          ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(

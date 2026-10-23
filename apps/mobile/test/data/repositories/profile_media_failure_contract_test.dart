@@ -64,7 +64,12 @@ void main() {
   for (final banner in [false, true]) {
     for (final (status, kind) in [
       (400, ProfileMediaFailureKind.image),
-      (401, ProfileMediaFailureKind.authorization),
+      (
+        401,
+        banner
+            ? ProfileMediaFailureKind.expired
+            : ProfileMediaFailureKind.authorization,
+      ),
       (403, ProfileMediaFailureKind.authorization),
       (409, ProfileMediaFailureKind.conflict),
       (413, ProfileMediaFailureKind.size),

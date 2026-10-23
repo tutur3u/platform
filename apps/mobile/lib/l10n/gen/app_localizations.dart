@@ -20436,6 +20436,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter details of 1–8000 characters.'**
   String get feedbackDetailsRequired;
+
+  /// No description provided for @profileMediaNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect. Check your connection and try again.'**
+  String get profileMediaNetworkError;
+
+  /// No description provided for @profileMediaUploadExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The upload link expired or is invalid. Select the image again.'**
+  String get profileMediaUploadExpired;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

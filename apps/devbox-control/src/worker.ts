@@ -148,6 +148,15 @@ async function boundedJson(request: Request): Promise<unknown> {
   }
 }
 
+const EXECUTION_MODES = new Set(['trusted', 'judge-only']);
+const ISOLATION_CHECKS = new Set([
+  'dedicatedUser',
+  'privateTokenDirectory',
+  'protectedService',
+  'dedicatedDockerSocket',
+  'gvisorDefault',
+  'noGeneralDockerGroup',
+]);
 function isCapabilities(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const data = value as Record<string, unknown>;
@@ -156,6 +165,8 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
       (key) =>
         ![
           'cli',
+          'executionMode',
+          'isolation',
           'judge',
           'playground',
           'os',
@@ -167,6 +178,23 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
     )
   )
     return false;
+  // Advisory self-reports; stored only, never an authorization input.
+  if (
+    data.executionMode !== undefined &&
+    !EXECUTION_MODES.has(String(data.executionMode))
+  )
+    return false;
+  const isolation = data.isolation;
+  if (isolation !== undefined) {
+    if (!isolation || typeof isolation !== 'object' || Array.isArray(isolation))
+      return false;
+    for (const [key, item] of Object.entries(isolation)) {
+      if (key === 'checkedAt') {
+        if (typeof item !== 'string' || item.length > 100) return false;
+      } else if (!ISOLATION_CHECKS.has(key) || typeof item !== 'boolean')
+        return false;
+    }
+  }
   const judge = data.judge;
   if (judge !== undefined) {
     if (!judge || typeof judge !== 'object' || Array.isArray(judge))

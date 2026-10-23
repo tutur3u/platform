@@ -9,21 +9,33 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 import { DEVBOX_RUN_LOG_PAGE_SIZE, listDevboxRunLogs } from './store';
+import { DevboxStoreError } from './store-utils';
 
 describe('devbox run log paging', () => {
   const rangeMock = vi.fn();
   const orderMock = vi.fn();
   const eqMock = vi.fn();
-  const selectMock = vi.fn();
   const fromMock = vi.fn();
+  const ownedRunLimitMock = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    const query = { order: orderMock, range: rangeMock };
-    orderMock.mockReturnValue(query);
-    eqMock.mockReturnValue(query);
-    selectMock.mockReturnValue({ eq: eqMock });
-    fromMock.mockReturnValue({ select: selectMock });
+    const eventsQuery = { order: orderMock, range: rangeMock };
+    orderMock.mockReturnValue(eventsQuery);
+    eqMock.mockReturnValue(eventsQuery);
+    const ownedRunQuery = {
+      eq: vi.fn(() => ownedRunQuery),
+      limit: ownedRunLimitMock,
+    };
+    ownedRunLimitMock.mockResolvedValue({
+      data: [{ id: 'run-1' }],
+      error: null,
+    });
+    fromMock.mockImplementation((table: string) =>
+      table === 'devbox_runs'
+        ? { select: vi.fn(() => ownedRunQuery) }
+        : { select: vi.fn(() => ({ eq: eqMock })) }
+    );
     createAdminClientMock.mockResolvedValue({
       schema: vi.fn().mockReturnValue({ from: fromMock }),
     });
@@ -35,9 +47,9 @@ describe('devbox run log paging', () => {
       error: null,
     });
 
-    await expect(listDevboxRunLogs('run-1', { offset: 2000 })).resolves.toEqual(
-      { logs: ['one', 'two'], next: 2003 }
-    );
+    await expect(
+      listDevboxRunLogs({ actorId: 'owner', offset: 2000, runId: 'run-1' })
+    ).resolves.toEqual({ logs: ['one', 'two'], next: 2003 });
 
     expect(fromMock).toHaveBeenCalledWith('devbox_run_events');
     expect(eqMock).toHaveBeenCalledWith('run_id', 'run-1');
@@ -53,10 +65,21 @@ describe('devbox run log paging', () => {
 
   it('defaults to the first page', async () => {
     rangeMock.mockResolvedValue({ data: [], error: null });
-    await expect(listDevboxRunLogs('run-1')).resolves.toEqual({
+    await expect(
+      listDevboxRunLogs({ actorId: 'owner', runId: 'run-1' })
+    ).resolves.toEqual({
       logs: [],
       next: 0,
     });
     expect(rangeMock).toHaveBeenCalledWith(0, DEVBOX_RUN_LOG_PAGE_SIZE - 1);
+  });
+
+  it('does not page events for a run the actor does not own', async () => {
+    ownedRunLimitMock.mockResolvedValue({ data: [], error: null });
+
+    await expect(
+      listDevboxRunLogs({ actorId: 'other', offset: 0, runId: 'run-1' })
+    ).rejects.toBeInstanceOf(DevboxStoreError);
+    expect(rangeMock).not.toHaveBeenCalled();
   });
 });

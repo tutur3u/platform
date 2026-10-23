@@ -33,7 +33,7 @@ const satelliteRouteRoots = [
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links',
   'apps/web/src/legacy-api-routes/v1/users/me/profile',
-  'apps/web/src/legacy-api-routes/v1/users/me/avatar',
+  'apps/web/src/app/api/v1/users/me/avatar',
   'apps/web/src/legacy-api-routes/v1/users/me/email',
 ];
 

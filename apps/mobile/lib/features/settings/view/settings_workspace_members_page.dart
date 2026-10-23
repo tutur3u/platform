@@ -16,6 +16,7 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -84,11 +85,9 @@ class _SettingsWorkspaceMembersViewState
               physics: const AlwaysScrollableScrollPhysics(
                 parent: BouncingScrollPhysics(),
               ),
-              padding: EdgeInsets.fromLTRB(
+              padding: SettingsRowLayout.scrollPadding(
+                context,
                 horizontalPadding,
-                20,
-                horizontalPadding,
-                32 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
                 FinancePanel(

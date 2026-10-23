@@ -4,10 +4,16 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 # Validation jobs supersede independently; repository mutations finish under a
 # separate non-cancelling lock. Never add a cancelling workflow-level parent.
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     concurrency:
       group: ${{ github.workflow }}-check-ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
       cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
@@ -287,9 +293,11 @@ jobs:
 
       - name: Fail Workflow After Creating PR
         if: steps.create-pr.outputs.pull-request-url != ''
+        env:
+          CREATE_PR_PULL_REQUEST_URL: ${{ steps.create-pr.outputs.pull-request-url }}
         run: |
           echo "Biome formatting issues were found and a PR has been created."
-          echo "PR URL: ${{ steps.create-pr.outputs.pull-request-url }}"
+          echo "PR URL: ${CREATE_PR_PULL_REQUEST_URL}"
           exit 1
 
   close-outdated-format-pr:
@@ -307,6 +315,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Close and delete outdated formatting PR
         uses: actions/github-script@v9
@@ -384,6 +394,19 @@ jobs:
     steps:
       - name: Comment on PR with progress
         uses: actions/github-script@v9
+        env:
+          FORMAT_ERRORS: ${{ needs.format.outputs.errors }}
+          FORMAT_FILES_CHECKED: ${{ needs.format.outputs.files_checked }}
+          FORMAT_HAS_ISSUES: ${{ needs.format.outputs.has_issues }}
+          FORMAT_INFOS: ${{ needs.format.outputs.infos }}
+          FORMAT_TOTAL_ISSUES: ${{ needs.format.outputs.total_issues }}
+          FORMAT_WARNINGS: ${{ needs.format.outputs.warnings }}
+          LINT_ERRORS: ${{ needs.lint.outputs.errors }}
+          LINT_FILES_CHECKED: ${{ needs.lint.outputs.files_checked }}
+          LINT_HAS_ISSUES: ${{ needs.lint.outputs.has_issues }}
+          LINT_INFOS: ${{ needs.lint.outputs.infos }}
+          LINT_TOTAL_ISSUES: ${{ needs.lint.outputs.total_issues }}
+          LINT_WARNINGS: ${{ needs.lint.outputs.warnings }}
         with:
           script: |
             // Get PR number from context or search for PR associated with this branch
@@ -416,19 +439,19 @@ jobs:
             }
 
             // Get outputs from both jobs
-            const formatFilesChecked = '${{ needs.format.outputs.files_checked }}';
-            const formatErrors = '${{ needs.format.outputs.errors }}';
-            const formatWarnings = '${{ needs.format.outputs.warnings }}';
-            const formatInfos = '${{ needs.format.outputs.infos }}';
-            const formatTotalIssues = '${{ needs.format.outputs.total_issues }}';
-            const formatHasIssues = '${{ needs.format.outputs.has_issues }}';
+            const formatFilesChecked = process.env.FORMAT_FILES_CHECKED ?? '';
+            const formatErrors = process.env.FORMAT_ERRORS ?? '';
+            const formatWarnings = process.env.FORMAT_WARNINGS ?? '';
+            const formatInfos = process.env.FORMAT_INFOS ?? '';
+            const formatTotalIssues = process.env.FORMAT_TOTAL_ISSUES ?? '';
+            const formatHasIssues = process.env.FORMAT_HAS_ISSUES ?? '';
 
-            const lintFilesChecked = '${{ needs.lint.outputs.files_checked }}';
-            const lintErrors = '${{ needs.lint.outputs.errors }}';
-            const lintWarnings = '${{ needs.lint.outputs.warnings }}';
-            const lintInfos = '${{ needs.lint.outputs.infos }}';
-            const lintTotalIssues = '${{ needs.lint.outputs.total_issues }}';
-            const lintHasIssues = '${{ needs.lint.outputs.has_issues }}';
+            const lintFilesChecked = process.env.LINT_FILES_CHECKED ?? '';
+            const lintErrors = process.env.LINT_ERRORS ?? '';
+            const lintWarnings = process.env.LINT_WARNINGS ?? '';
+            const lintInfos = process.env.LINT_INFOS ?? '';
+            const lintTotalIssues = process.env.LINT_TOTAL_ISSUES ?? '';
+            const lintHasIssues = process.env.LINT_HAS_ISSUES ?? '';
 
             // Calculate overall status
             const formatErrorsCount = parseInt(formatErrors) || 0;

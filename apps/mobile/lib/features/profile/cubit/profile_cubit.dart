@@ -239,6 +239,16 @@ class ProfileCubit extends Cubit<ProfileState> {
     _repository.removeBannerResult,
     ProfileMediaTarget.removeBanner,
   );
+  void reportBannerSelectionFailure(Object error) {
+    if (!_sameActor(state.profile?.id)) return;
+    emit(
+      state.copyWith(
+        mediaFailure: ProfileMediaFailure.capture(error),
+        mediaTarget: ProfileMediaTarget.banner,
+      ),
+    );
+  }
+
   void clearMediaFailure() =>
       emit(state.copyWith(mediaFailure: null, mediaTarget: null));
 

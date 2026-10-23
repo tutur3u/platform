@@ -1181,3 +1181,14 @@ operation and requires its existing explicit adjudication; password fields and s
 generation stay in memory and clear on close. Preserve independent completion proof,
 actor/workspace fences and the separate retained-mailbox adoption workflow. See the
 Infrastructure application decision and creation/restoration/reset dialog regressions.
+
+### Calendar civil dates and timer teardown
+
+Use `allDayEventCivilDates` for both date lookup and rendered all-day end bounds;
+pass the resolved calendar timezone into classification, including DST spans.
+Check zoned midnight using wall-clock fields, since Day.js `startOf('day')`
+can depend on the host timezone. Preserve UTC-midnight legacy import dates and
+exclusive ends. Test browser/calendar timezone disagreement and both DST changes.
+Tracker completion notifications need effect-owned timeout cleanup in addition
+to the elapsed-time interval cleanup. Fake-timer regressions must unmount before
+restoring real timers; see the Calendar application decision and tracker tests.

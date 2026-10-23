@@ -309,6 +309,30 @@ well as the shared RPC; conflicting, invalid, or rate-limited saves roll back th
 whole patch. The private per-user change history is pruned to 28 days when a
 change succeeds. Public identity read surfaces never select this private history.
 
+### Personal avatar ownership
+
+The central personal-avatar removal endpoint applies the same rule to web cookies,
+mobile sessions and satellite app-session bearers: clear only the authenticated
+actor's profile field, then best-effort delete only an exact managed public avatar
+URL under that actor's prefix with the upload ticket name
+`<actor UUID>/<ticket UUID>.webp`. The configured public Storage origin and
+`avatars` bucket must match. Traversal, encoded paths, repeated slashes, query
+strings and fragments never authorize deletion. External and older noncanonical
+avatars are cleared without deleting an object.
+
+Profile PATCH accepts external HTTPS avatar URLs, including OAuth provider
+pictures. URLs on our configured public or internal Supabase origin must use the
+canonical personal-avatar convention; another user's avatar, another bucket or
+malformed managed URLs are rejected. Contact, workspace and public profile-link
+avatars have separate owners and are intentionally excluded from personal removal.
+Existing images remain readable; older personal filenames are not cleaned up by
+this endpoint. No client changes are required for the public API path or response.
+
+Regression coverage: [personal avatar route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/users/me/avatar/route.test.ts)
+exercise two actors through the production session wrapper and signed satellite
+tokens, with cookie identity and database/Storage fixtures. Hosted Storage
+acceptance remains a separate gate.
+
 Avatar uploads are automatically optimized to at most **1 MB (1,000,000 bytes)**;
 banners to **2 MB (2,000,000 bytes)**. Source PNG, JPEG, WebP and GIF files may be
 up to 2 MiB for avatars or 5 MiB for banners. This rule covers canonical personal
