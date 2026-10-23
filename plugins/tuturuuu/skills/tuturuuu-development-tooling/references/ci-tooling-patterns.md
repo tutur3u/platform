@@ -1024,7 +1024,6 @@ Keep `.cloudflare/state` outside cache outputs. cf prerelease pins remain held b
 Renovate until an owner qualifies a scoped upgrade. Production jobs require the
 Actions repository variable `CLOUDFLARE_ACCOUNT_ID` to match emitted account identity.
 
-
 ## Aggregate name and native Bun qualification
 
 Use `bun validate` / `bun validate:now` for the existing aggregate runner.
@@ -1055,7 +1054,6 @@ input-closure hashes, exact commands, negative control detection, diagnostic
 multisets, exit status, RSS and cold/warm/error timings. Never promote on timing
 alone. See the maintained [qualification procedure](../../../../../apps/docs/build/development-tools/overview.mdx#native-checker-qualification).
 
-
 Bun 1.4.4 and the repository both report TypeScript 7.0.2, but equality on
 prepared no-emit inputs does not establish equality on generated-output
 assertions. In the Meet Worker config, tsc reports TS6305 for missing app
@@ -1069,3 +1067,9 @@ expanding Meet's solution root into concrete app/Worker configs. Keep repeated
 sample benchmarks separate from that one-pass coverage report. A harness exit
 of zero proves negative-control detection, not overall gate equivalence; read
 `sampleParity`, input-closure stability, diagnostics and the explicit verdict.
+
+The native-check inventory reads existing declaration generators, including
+`wrangler types` and `cf types` under any script name; it never invokes them.
+Its compatibility detector and data-only fixture use the `producer-inventory`
+gap admission in the Wrangler allowlist. Retain the visible legacy token and
+remove that admission when no legacy producer needs recognition.

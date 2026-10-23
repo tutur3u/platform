@@ -3,6 +3,8 @@ const path = require('node:path');
 const { typeCheckProjects } = require('../check-changed/type-check.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 
+const PRODUCER_COMMAND = /run-tsc-build|--build|\b(?:wrangler|cf)\s+types\b/;
+
 function inventory(root) {
   const manifests = ['package.json'];
   for (const parent of ['apps', 'packages']) {
@@ -25,7 +27,8 @@ function inventory(root) {
           name === 'validate' ||
           name === 'validate:now' ||
           name.startsWith('type-check') ||
-          /\b(?:tsc|tsgo|tsrs)\b|run-tsc-build/.test(command)
+          /\b(?:tsc|tsgo|tsrs)\b|run-tsc-build/.test(command) ||
+          PRODUCER_COMMAND.test(command)
       )
     );
     const projects =
@@ -42,7 +45,7 @@ function inventory(root) {
       projects,
       emitsOrGenerates:
         Object.values(selected).some((command) =>
-          /run-tsc-build|--build|wrangler types/.test(command)
+          PRODUCER_COMMAND.test(command)
         ) || projects.some((project) => /tsconfig\.build\.json$/.test(project)),
       customProducer: workspace === 'apps/meet',
     };

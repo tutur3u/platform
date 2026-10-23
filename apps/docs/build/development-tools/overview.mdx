@@ -244,6 +244,11 @@ that lane limit, preserving smaller requests. The aggregate rejects unknown argu
 `--dry-run`, before starting work, prints one usage line to stderr and exits 1; neither flag
 provides an aggregate preview.
 
+The inventory recognizes both `wrangler types` and `cf types` as declaration
+generators, including scripts with custom names. It reads package manifests
+without executing generators. The legacy detector and its data-only regression
+fixture have an explicit `producer-inventory` Wrangler-gap admission.
+
 ### Native checker qualification
 
 The required gate remains `tsc` 7.0.2, including `run-tsc-build.js` and its

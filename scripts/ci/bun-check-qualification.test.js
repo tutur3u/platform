@@ -78,3 +78,33 @@ test('parity compares messages, multiplicity, exits and crashes', () => {
     false
   );
 });
+
+test('producer inventory recognizes legacy and cf generation without executing commands', (t) => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { inventory } = require('./bun-check-inventory.js');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'producer-inventory-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'apps'));
+  fs.mkdirSync(path.join(root, 'packages'));
+  for (const [command, emits] of [
+    ['wrangler types', true],
+    ['cf types', true],
+    ['bun x --no-install cf types --env preview', true],
+    ['tsc --build', true],
+    ['tsc --noEmit', false],
+    ['scf types', false],
+    ['cf typescript', false],
+  ]) {
+    for (const name of ['type-check', 'generate-types']) {
+      fs.writeFileSync(
+        path.join(root, 'package.json'),
+        JSON.stringify({ scripts: { [name]: command } })
+      );
+      const [entry] = inventory(root);
+      assert.equal(entry.emitsOrGenerates, emits, `${name}: ${command}`);
+      if (emits) assert.equal(entry.scripts[name], command);
+    }
+  }
+});
