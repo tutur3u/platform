@@ -126,13 +126,6 @@ jobs:
           echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
           tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
 
-      # Runs the suppression regression against the installed release, so a
-      # gitleaks upgrade that changes ignore/config loading fails here.
-      - name: Prove pull requests cannot suppress findings
-        env:
-          GITLEAKS_BIN: ${{ runner.temp }}/gitleaks
-        run: node --test scripts/ci/security-gitleaks-suppression.test.js
-
       # Configuration, the ignore list and the summarizer come from the trusted
       # base so a change cannot allowlist or hide its own secret: inline
       # `gitleaks:allow` comments are ignored, and checkout-local
@@ -198,6 +191,15 @@ jobs:
           path: ${{ runner.temp }}/register-input/gitleaks.json
           retention-days: 2
           if-no-files-found: error
+
+      # Runs the suppression regression against the installed release, so a
+      # gitleaks upgrade that changes ignore/config loading fails here. It is
+      # checkout (pull request) code, so it runs only after the scan, its
+      # summary and the register input are final and cannot be tampered with.
+      - name: Prove pull requests cannot suppress findings
+        env:
+          GITLEAKS_BIN: ${{ runner.temp }}/gitleaks
+        run: node --test scripts/ci/security-gitleaks-suppression.test.js
 
   dependency-review:
     name: Dependency review

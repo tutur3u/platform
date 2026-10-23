@@ -119,6 +119,23 @@ test('scanner tooling is verified and configured from the trusted base', () => {
     /git show "\$trusted:scripts\/ci\/security-scan-diff\.js"/u
   );
   assert.match(scan.run, /--redact/u);
+  assert.match(scan.run, /--ignore-gitleaks-allow/u);
+  // Checkout (pull request) code may only run after the scan, its summary and
+  // the register input are final; earlier it could replace the gitleaks binary
+  // in RUNNER_TEMP or rewrite the scanned tree.
+  const scanIndex = steps.indexOf(scan);
+  for (const step of steps.slice(0, scanIndex)) {
+    assert.doesNotMatch(
+      String(step.run ?? ''),
+      /(?:^|\s)(?:node|bun|bunx|npx|python3?|bash|sh)\s+(?:--test\s+)?(?:\.\/)?scripts\//mu,
+      `${step.name} runs checkout code before the scan`
+    );
+    assert.ok(!step.uses?.startsWith('./'), `${step.name} runs a local action`);
+  }
+  const prove = steps.findIndex(
+    (step) => step.name === 'Prove pull requests cannot suppress findings'
+  );
+  assert.equal(prove, steps.length - 1, 'suppression regression runs last');
   const audit = checks.jobs['dependency-audit'].steps.find(
     (step) => step.name === 'Audit locked dependencies'
   );
