@@ -4,8 +4,7 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/meet/meet_meeting.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
@@ -485,83 +484,74 @@ class _MeetPageState extends State<MeetPage> {
                 ),
               ],
             ),
-            ResponsiveWrapper(
-              maxWidth: context.isCompact ? null : 1440,
-              child: NovaRefreshIndicator(
-                onRefresh: _reload,
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    40 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  children: [
-                    if (_isLoading && _meetings.isEmpty)
-                      const SizedBox(
-                        height: 240,
-                        child: Center(child: NovaLoadingIndicator()),
-                      )
-                    else if (_error != null)
-                      _MeetMessageCard(message: _error!)
-                    else if (_meetings.isEmpty)
-                      _MeetMessageCard(
-                        message: context.l10n.meetEmptyDescription,
-                      )
-                    else
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final columns = (constraints.maxWidth / 360)
-                              .floor()
-                              .clamp(1, 3);
-                          final width =
-                              (constraints.maxWidth - 12 * (columns - 1)) /
-                              columns;
-                          return Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              for (final meeting in _meetings)
-                                SizedBox(
-                                  width: width,
-                                  child: PendingSyncFrame(
-                                    workspaceId: _wsId ?? '',
-                                    feature: 'meet',
-                                    entityId: meeting.id,
-                                    child: _MeetingTile(
-                                      meeting: meeting,
-                                      onJoin: () {
-                                        final code = encodeMeetRoomCode(
-                                          meeting.id,
-                                        );
-                                        context.go('${Routes.meet}?room=$code');
-                                      },
-                                      onEdit: () => _showMeetingEditor(meeting),
-                                      onDelete: () => _deleteMeeting(meeting),
-                                    ),
+            NovaRefreshIndicator(
+              onRefresh: _reload,
+              child: AppPageListView(
+                kind: AppPageKind.root,
+                children: [
+                  if (_isLoading && _meetings.isEmpty)
+                    const SizedBox(
+                      height: 240,
+                      child: Center(child: NovaLoadingIndicator()),
+                    )
+                  else if (_error != null)
+                    _MeetMessageCard(message: _error!)
+                  else if (_meetings.isEmpty)
+                    _MeetMessageCard(message: context.l10n.meetEmptyDescription)
+                  else
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = (constraints.maxWidth / 360)
+                            .floor()
+                            .clamp(1, 3);
+                        final width =
+                            (constraints.maxWidth -
+                                AppLayout.itemGap * (columns - 1)) /
+                            columns;
+                        return Wrap(
+                          spacing: AppLayout.itemGap,
+                          runSpacing: AppLayout.itemGap,
+                          children: [
+                            for (final meeting in _meetings)
+                              SizedBox(
+                                width: width,
+                                child: PendingSyncFrame(
+                                  workspaceId: _wsId ?? '',
+                                  feature: 'meet',
+                                  entityId: meeting.id,
+                                  child: _MeetingTile(
+                                    meeting: meeting,
+                                    onJoin: () {
+                                      final code = encodeMeetRoomCode(
+                                        meeting.id,
+                                      );
+                                      context.go('${Routes.meet}?room=$code');
+                                    },
+                                    onEdit: () => _showMeetingEditor(meeting),
+                                    onDelete: () => _deleteMeeting(meeting),
                                   ),
                                 ),
-                            ],
-                          );
-                        },
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  if (_hasMore) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: FilledButton.tonal(
+                        onPressed: _isLoadingMore ? null : _loadMore,
+                        child: _isLoadingMore
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: NovaLoadingIndicator(size: 20),
+                              )
+                            : Text(context.l10n.commonLoadMore),
                       ),
-                    if (_hasMore) ...[
-                      const SizedBox(height: 8),
-                      Center(
-                        child: FilledButton.tonal(
-                          onPressed: _isLoadingMore ? null : _loadMore,
-                          child: _isLoadingMore
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: NovaLoadingIndicator(size: 20),
-                                )
-                              : Text(context.l10n.commonLoadMore),
-                        ),
-                      ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ],

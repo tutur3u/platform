@@ -8,28 +8,23 @@ class _ChatSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.sizeOf(context).width >= 700;
-    return ResponsiveWrapper(
-      maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          ResponsivePadding.horizontal(context.deviceClass),
-          10,
-          ResponsivePadding.horizontal(context.deviceClass),
-          0,
-        ),
-        child: isWide
-            ? Row(
-                children: [
-                  SizedBox(
-                    width: MediaQuery.sizeOf(context).width < 900 ? 260 : 340,
-                    child: _ConversationPane(state: state),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: _ThreadPane(state: state)),
-                ],
-              )
-            : _CompactChatSurface(state: state),
-      ),
+    // The list and thread panes read the dock clearance themselves so they
+    // can run beneath the dock.
+    return AppPageBody(
+      kind: AppPageKind.root,
+      consumeBottomClearance: false,
+      child: isWide
+          ? Row(
+              children: [
+                SizedBox(
+                  width: MediaQuery.sizeOf(context).width < 900 ? 260 : 340,
+                  child: _ConversationPane(state: state),
+                ),
+                const SizedBox(width: AppLayout.itemGap),
+                Expanded(child: _ThreadPane(state: state)),
+              ],
+            )
+          : _CompactChatSurface(state: state),
     );
   }
 }
@@ -84,7 +79,7 @@ class _ThreadPane extends StatelessWidget {
     final cubit = context.read<ChatCubit>();
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.paddingOf(context).bottom + 16,
+        bottom: MediaQuery.paddingOf(context).bottom + AppLayout.boxEndGap,
       ),
       child: ChatThreadView(
         conversation: state.selectedConversation,
