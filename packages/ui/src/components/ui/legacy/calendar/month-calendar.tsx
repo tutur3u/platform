@@ -8,7 +8,10 @@ import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
-import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import {
+  allDayEventCivilDates,
+  isAllDayEvent,
+} from '@tuturuuu/utils/calendar-utils';
 import { cn } from '@tuturuuu/utils/format';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import {
@@ -34,7 +37,10 @@ import { formatLunarDay, getLunarDate } from '../../../../lib/lunar-calendar';
 import { Button } from '../../button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { calendarDraftDate } from './calendar-period';
-import { pastEventTreatment } from './past-event-treatment';
+import {
+  calendarEventDisplayEnd,
+  pastEventTreatment,
+} from './past-event-treatment';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(utc);
@@ -65,8 +71,11 @@ function MonthEvent({
   const { preservePastEventOpacity } = useCalendar();
   const t = useTranslations('calendar');
   const title = event.title || t('views.untitled_event');
-  const allDay = isAllDayEvent(event);
-  const continued = new Date(event.start_at) < calendarDayBoundary(day, zone);
+  const allDay = isAllDayEvent(event, zone);
+  const civil = allDay ? allDayEventCivilDates(event, zone) : null;
+  const continued = civil
+    ? civil.start < day
+    : new Date(event.start_at) < calendarDayBoundary(day, zone);
   return (
     <button
       type="button"
@@ -76,7 +85,13 @@ function MonthEvent({
       className={cn(
         'relative flex w-full min-w-0 items-center gap-1 rounded px-1 py-1 text-left text-[10px] leading-tight transition-colors hover:ring-1 hover:ring-current focus-visible:outline-2 focus-visible:outline-ring sm:px-1.5 sm:text-xs',
         allDay && 'font-medium',
-        pastEventTreatment(event, preservePastEventOpacity)
+        pastEventTreatment(
+          event,
+          preservePastEventOpacity,
+          false,
+          Date.now(),
+          calendarEventDisplayEnd(event, zone)
+        )
       )}
     >
       {continued ? (
@@ -186,7 +201,8 @@ export function MonthCalendar({
         {visibleDays.map((day) => {
           const events = [...getCurrentEvents(day)].sort(
             (a, b) =>
-              Number(isAllDayEvent(b)) - Number(isAllDayEvent(a)) ||
+              Number(isAllDayEvent(b, settings?.timezone?.timezone)) -
+                Number(isAllDayEvent(a, settings?.timezone?.timezone)) ||
               +new Date(a.start_at) - +new Date(b.start_at)
           );
           const currentMonth = isSameMonth(day, viewedMonth);
