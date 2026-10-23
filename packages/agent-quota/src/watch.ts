@@ -300,6 +300,8 @@ export function selectSuccessor(
 export async function evaluateWatch(owner: string, options: WatchOptions = {}) {
   const now = options.now ?? new Date();
   const data = await collectAll({ snapshotsOnly: true });
+  if (data.active === undefined) throw new Error('watch-activity-unknown');
+  const active = data.active;
   const accounts = collapseAccounts(data.accounts);
   const ownerAccount = accounts.find((account) =>
     (account.instanceIds ?? [account.instanceId]).includes(owner)
@@ -328,14 +330,14 @@ export async function evaluateWatch(owner: string, options: WatchOptions = {}) {
     );
     const ranking = recommend({
       accounts: data.accounts,
-      active: data.active,
+      active,
       blocks: data.blocks,
       task: { kind: 'implementation' },
       now,
       reserves,
     }).ranked;
     const ownerIds = ownerAccount.instanceIds ?? [ownerAccount.instanceId];
-    const nativeReservations = data.active.flatMap(
+    const nativeReservations = active.flatMap(
       (assignment) => assignment.reservationIds ?? []
     );
     const currentReservations = ledger.reservations

@@ -88,6 +88,9 @@ export async function runReroute(args: string[]) {
       snapshotsOnly: true,
       catalog: input.catalog,
     });
+    if (collected.active === undefined)
+      throw new HookError('reservation-state-unavailable');
+    const active = collected.active;
     const snapshot = collectChildren(parent);
     const reconciliation = reconcileChildren(
       snapshot,
@@ -98,7 +101,7 @@ export async function runReroute(args: string[]) {
         : undefined,
       drain
     );
-    const context = { ...collected, ledger: await readLedger(), now };
+    const context = { ...collected, active, ledger: await readLedger(), now };
     applyDescendantReceipts(
       collectPoolReceipts(
         collected.accounts.map((account) => account.instanceId),

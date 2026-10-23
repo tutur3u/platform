@@ -238,8 +238,12 @@ export async function runOperator(command: string, args: string[]) {
       snapshotsOnly: true,
       catalog: args.includes('--catalog-stdin') ? input() : undefined,
     });
+    if (collected.active === undefined)
+      throw new HookError('reservation-state-unavailable');
+    const active = collected.active;
     const context = {
       ...collected,
+      active,
       ledger: await readLedger(),
       now: new Date(),
     };

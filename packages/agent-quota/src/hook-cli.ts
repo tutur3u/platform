@@ -36,6 +36,9 @@ export async function runHook(command: string, action?: string): Promise<void> {
     });
     let result: unknown;
     if (command === 'admit') {
+      if (collected.active === undefined)
+        throw new HookError('reservation-state-unavailable');
+      const active = collected.active;
       const request = admissionInput(input);
       const descendants = collectChildren(request.threadId);
       const poolReceipts = collectPoolReceipts(
@@ -80,7 +83,7 @@ export async function runHook(command: string, action?: string): Promise<void> {
       }
 
       result = await transactLedger((ledger) => {
-        const context = { ...collected, ledger, now };
+        const context = { ...collected, active, ledger, now };
         applyDescendantReceipts(
           poolReceipts,
           context,

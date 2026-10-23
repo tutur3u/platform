@@ -2,9 +2,9 @@
 
 import { readFileSync } from 'node:fs';
 import { collapseAccounts } from './accounts';
-import { argumentValue } from './cli-args';
 import { runBlock } from './block-cli';
 import { runCheckpointReady } from './checkpoint-ready';
+import { argumentValue } from './cli-args';
 import { collectAll } from './collectors';
 import { runHook } from './hook-cli';
 import { runOperator } from './operator-cli';
@@ -36,9 +36,7 @@ async function main(): Promise<void> {
   const command = process.argv[2];
   if (
     command &&
-    ['status', 'explain', 'dry-run', 'import-usage', 'configure'].includes(
-      command
-    )
+    ['explain', 'dry-run', 'import-usage', 'configure'].includes(command)
   ) {
     await runOperator(command, process.argv.slice(3));
     return;

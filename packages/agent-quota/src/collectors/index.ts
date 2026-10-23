@@ -1,9 +1,9 @@
 import {
   matchingBlocks,
-  readBlockLedger,
   type QuotaBlock,
+  readBlockLedger,
 } from '../block-ledger';
-import { parsePoolSettings, type PoolSettings } from '../pool-settings';
+import { type PoolSettings, parsePoolSettings } from '../pool-settings';
 import type { AccountUsage, ActiveAssignment, Provider } from '../types';
 import { DEFAULT_INSTANCE_LABELS } from '../types';
 import { applyImportedUsage, applyManualUsage } from '../usage-import';
@@ -113,14 +113,16 @@ export async function collectAllWith(
             )
         )
         .map((item) => item.instanceId);
-      const blocked = matchingBlocks(blocks, aliases, undefined, now).length > 0;
+      const blocked =
+        matchingBlocks(blocks, aliases, undefined, now).length > 0;
       const account =
         blocked || options.snapshotsOnly !== false
           ? cache
           : provider === 'claude'
             ? await collectors.collectClaude(instanceId, label)
             : await collectors.collectCodex(instanceId, label);
-      const snapshot = account === cache ? cache : await collectors.collectSnapshot(account);
+      const snapshot =
+        account === cache ? cache : await collectors.collectSnapshot(account);
       return {
         ...snapshot,
         models: instance.models,
@@ -144,9 +146,6 @@ export async function collectAllWith(
     blocks,
     poolSettings: parsePoolSettings(poolSettings),
     invalidObservations,
-    active: t3.t3?.activeAssignments,
-    t3ObservedAt: t3.t3?.observedAt,
-    t3Error: t3.t3Error,
   };
 }
 

@@ -223,8 +223,9 @@ export async function runPositionalAdmit(
       snapshotsOnly: true,
       catalog,
     });
-    if (!collected.t3ObservedAt)
+    if (!collected.t3ObservedAt || collected.active === undefined)
       throw new HookError('reservation-state-unavailable');
+    const active = collected.active;
     const owner = process.env.AGENT_QUOTA_OWNER_POOL;
     if (
       owner &&
@@ -244,6 +245,7 @@ export async function runPositionalAdmit(
     const result = await dependencies.transactLedger((ledger) => {
       const context = {
         ...collected,
+        active,
         blocks: collected.blocks ?? blocks,
         ledger,
         now,
