@@ -92,8 +92,13 @@ No package version, dependency resolution or published changelog is rewritten.
   - the producer `path` and `workflow_id` match a `TRUSTED_PRODUCERS` line
     (`<file> <workflow ID> <exact branch> <events> <conclusions>`);
   - branch, event, conclusion and head repository name and ID match exactly;
-  - the head SHA is reachable from the branch (compare status `behind` or
-    `identical`), which rejects tag sources;
+  - the head SHA is reachable from the branch: compare status `behind` or
+    `identical` against `refs/heads/<branch>`. The base is fully qualified
+    because GitHub resolves a bare name to a same-named tag first, and a tag
+    push reports the tag name as `head_branch`. Tag pushes also ignore `paths`
+    filters. Deploy consumers (Discord Modal deploy, Supabase Staging) set
+    `REQUIRE_BRANCH_TIP` and accept only `identical`, the live branch tip, so
+    re-running an old run cannot redeploy an old commit;
   - manual runs start from exactly `TRUSTED_DISPATCH_REF`.
 
   Checkouts use the step's verified `head_sha`, and secret-bearing steps and jobs
@@ -102,6 +107,11 @@ No package version, dependency resolution or published changelog is rewritten.
   repos/<repo>/actions/workflows/<file> --jq .id`); until then the gate fails
   closed. `scripts/ci/workflow-run-trigger-gate.test.js` runs the real step against
   case variants, tag sources, spoofed producers and head-repository mismatches.
+- Supabase Production accepts a staging migration marker only when the
+  producer's `supabase-staging.yaml` blob is allowlisted. Keep the list to the
+  current blob plus blobs from `main`'s history; drop blobs from rejected or
+  intermediate branch heads. `scripts/ci/staging-contract-allowlist.test.js`
+  pins the list exactly.
 - Ineligible runs (spoofed completions, dispatches from other refs) take a
   private `supabase-staging-migration-ignored-<run>` lock, so they never queue
   with real migrations.
