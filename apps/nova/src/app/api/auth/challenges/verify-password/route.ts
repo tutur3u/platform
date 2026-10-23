@@ -1,14 +1,22 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
+import {
+  hashPassword,
+  MAX_PASSWORD_LENGTH,
+  verifyPassword,
+} from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import {
+  challengeAccessCookieName,
+  challengeAccessTtlSeconds,
+  createChallengeAccessGrant,
+  LEGACY_CHALLENGE_ACCESS_COOKIE,
+} from '@/lib/challenge-access';
 
 export async function POST(request: Request) {
-  const appSession = getAppSessionClaimsFromRequest(request, {
-    targetApp: 'nova',
-  });
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  if (!appSession) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -25,7 +33,13 @@ export async function POST(request: Request) {
   try {
     const { challengeId, password } = body;
 
-    if (!challengeId || !password) {
+    if (
+      typeof challengeId !== 'string' ||
+      typeof password !== 'string' ||
+      !challengeId ||
+      !password ||
+      password.length > MAX_PASSWORD_LENGTH
+    ) {
       return NextResponse.json(
         {
           message: 'Missing required fields: challengeId and password',
@@ -55,26 +69,58 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash the provided password and compare with stored hash
-    const passwordSalt = challenge.password_salt || generateSalt();
-    const passwordHash = await hashPassword(password, passwordSalt);
+    const verification = await verifyPassword(password, {
+      hash: challenge.password_hash,
+      salt: challenge.password_salt,
+    });
 
-    if (challenge.password_hash !== passwordHash) {
+    if (!verification.valid) {
       return NextResponse.json(
         { message: 'Invalid password' },
         { status: 401 }
       );
     }
 
+    if (verification.needsRehash) {
+      // Upgrade legacy hashes in place, guarded by the old value so a
+      // concurrent password change is never overwritten.
+      const { error: rehashError } = await sbAdmin
+        .schema('private')
+        .from('nova_challenges')
+        .update({
+          password_hash: await hashPassword(password),
+          password_salt: null,
+        })
+        .eq('id', challenge.id)
+        .eq('password_hash', challenge.password_hash);
+
+      if (rehashError) {
+        console.warn('Failed to upgrade Nova challenge password hash', {
+          message: rehashError.message,
+        });
+      }
+    }
+
+    const ttlSeconds = challengeAccessTtlSeconds(challenge.duration);
+    const grant = createChallengeAccessGrant({
+      challengeId: challenge.id,
+      userId: user.id,
+      ttlSeconds,
+    });
+
     const response = NextResponse.json(
       { message: 'Password verified successfully' },
       { status: 200 }
     );
-    response.cookies.set('token', passwordHash, {
+    response.cookies.set(challengeAccessCookieName(challenge.id), grant.token, {
       httpOnly: true,
       secure: true,
-      maxAge: challenge.duration,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: ttlSeconds,
     });
+    // Older builds stored password material in this cookie; drop it.
+    response.cookies.delete(LEGACY_CHALLENGE_ACCESS_COOKIE);
 
     return response;
   } catch {

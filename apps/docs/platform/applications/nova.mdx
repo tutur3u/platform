@@ -110,6 +110,22 @@ CREATE TABLE private.nova_challenges (
 );
 ```
 
+Challenge passwords use the shared scrypt KDF from `@tuturuuu/utils/crypto`;
+new hashes embed their salt, so `password_salt` is `null` for them. Legacy
+salted SHA-256 rows still verify and are upgraded to scrypt the next time the
+correct password is entered, with an update guarded by the previous hash. See
+the Meet [password hash migration](/platform/applications/meet#password-hash-migration)
+for the shared coexistence and removal plan.
+
+After the password verifies, `/api/auth/challenges/verify-password` sets an
+httpOnly `nova_challenge_access_<challengeId>` cookie holding a signed grant
+bound to that challenge and the signed-in user, valid for the challenge
+duration (at most seven days). Challenge pages accept only that grant; the
+stored hash is never sent to the browser, and the retired `token` cookie is
+cleared and no longer grants access. Users with an open challenge from before
+this change re-enter the password once. Coverage:
+`apps/nova/src/app/api/auth/challenges/verify-password/route.test.ts`.
+
 #### `nova_problems`
 
 ```sql

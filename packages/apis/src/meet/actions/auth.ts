@@ -1,7 +1,15 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
+import {
+  hashPassword,
+  MAX_PASSWORD_LENGTH,
+  verifyPassword,
+} from '@tuturuuu/utils/crypto';
+import {
+  createMeetGuestSession,
+  normalizeMeetPlanId,
+} from '@tuturuuu/utils/meet-guest-session';
 
 export interface GuestLoginInput {
   name: string;
@@ -11,30 +19,48 @@ export interface GuestLoginInput {
 export interface GuestUser {
   id: string;
   display_name: string;
-  password_hash: string;
+  /** Short-lived, plan-bound session issued after password verification. */
+  guest_session: string;
+  guest_session_expires_at: string;
   planId: string;
   is_guest: true;
 }
 
-export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
-  // rawPlanId is a uuid without dashes, add them back
-  const planId = rawPlanId.replace(
-    /^(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})$/,
-    '$1-$2-$3-$4-$5'
-  );
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
 
-  // Validate UUID format
-  if (planId.length !== 36) {
+function guestUser(id: string, name: string, planId: string): GuestUser {
+  const session = createMeetGuestSession({ guestId: id, planId });
+  return {
+    id,
+    display_name: name,
+    guest_session: session.token,
+    guest_session_expires_at: session.expiresAt,
+    planId,
+    is_guest: true,
+  };
+}
+
+export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
+  // rawPlanId may be a uuid without dashes; normalise to the stored form.
+  const planId = normalizeMeetPlanId(rawPlanId);
+
+  if (!UUID_PATTERN.test(planId)) {
+    return { error: 'Invalid request' };
+  }
+
+  const { name } = input;
+  const password = input.password ?? '';
+
+  if (
+    !name ||
+    typeof password !== 'string' ||
+    password.length > MAX_PASSWORD_LENGTH
+  ) {
     return { error: 'Invalid request' };
   }
 
   const sbAdmin = await createAdminClient();
-
-  const { name, password } = input;
-
-  if (!name) {
-    return { error: 'Invalid request' };
-  }
 
   // Fetch guest by name and planId
   const { data: guest, error } = await sbAdmin
@@ -45,61 +71,74 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
     .maybeSingle();
 
   if (error) {
-    console.log(error);
+    console.error('Failed to fetch Meet guest', { message: error.message });
     return { error: 'Error while fetching guest' };
   }
 
   // If guest does not exist, create a new one
   if (!guest?.name) {
-    const salt = generateSalt();
-    const hashedPassword = await hashPassword(password, salt);
+    const passwordHash = await hashPassword(password);
 
     const { data: newGuest, error: createError } = await sbAdmin
       .from('meet_together_guests')
       .insert({
         name,
         plan_id: planId,
-        password_hash: hashedPassword,
-        password_salt: salt,
+        password_hash: passwordHash,
+        // The scrypt encoding embeds its own salt.
+        password_salt: '',
       })
       .select('id, name')
       .single();
 
     if (createError) {
-      console.log(createError);
+      console.error('Failed to create Meet guest', {
+        message: createError.message,
+      });
       return { error: 'Error while creating guest' };
     }
 
     return {
       data: {
-        user: {
-          id: newGuest.id,
-          display_name: newGuest.name,
-          password_hash: hashedPassword,
-          planId,
-          is_guest: true as const,
-        },
+        user: guestUser(newGuest.id, newGuest.name, planId),
         message: 'Created new guest',
       },
     };
   }
 
-  // If guest exists, check password
-  const hashedPassword = await hashPassword(password, guest.password_salt);
-  if (hashedPassword === guest.password_hash) {
-    return {
-      data: {
-        user: {
-          id: guest.id,
-          display_name: guest.name,
-          password_hash: hashedPassword,
-          planId,
-          is_guest: true as const,
-        },
-        message: 'Logged in',
-      },
-    };
+  const verification = await verifyPassword(password, {
+    hash: guest.password_hash,
+    salt: guest.password_salt,
+  });
+
+  if (!verification.valid) {
+    return { error: 'Invalid credentials' };
   }
 
-  return { error: 'Invalid credentials' };
+  if (verification.needsRehash) {
+    // Upgrade legacy hashes in place. The filter on the old value keeps a
+    // concurrent login from overwriting a hash another request already
+    // upgraded; losing that race is harmless because both hashes verify.
+    const { error: rehashError } = await sbAdmin
+      .from('meet_together_guests')
+      .update({
+        password_hash: await hashPassword(password),
+        password_salt: '',
+      })
+      .eq('id', guest.id)
+      .eq('password_hash', guest.password_hash);
+
+    if (rehashError) {
+      console.warn('Failed to upgrade Meet guest password hash', {
+        message: rehashError.message,
+      });
+    }
+  }
+
+  return {
+    data: {
+      user: guestUser(guest.id, guest.name, planId),
+      message: 'Logged in',
+    },
+  };
 }

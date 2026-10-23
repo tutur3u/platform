@@ -82,6 +82,64 @@ login-page rendering and emitted original/restored Worker acceptance require
 separate runtime evidence. These controls do not establish the cause of a past
 hosted redirect.
 
+## Plan guest passwords and sessions
+
+Scope: guests who join a Meet plan by name, with or without a password, on
+both the Meet satellite and the web-hosted plan page. Signed-in platform users
+are unaffected.
+
+- **Storage.** Guest passwords are stored with the shared server-only KDF in
+  `@tuturuuu/utils/crypto` (scrypt, encoded as `scrypt$N$r$p$salt$key` with
+  N=2^15, r=8, p=1, a 16-byte random salt and a 32-byte key). The salt lives
+  inside the encoding, so `password_salt` is written as an empty string for new
+  rows. Verification uses a constant-time comparison.
+- **Credential flow.** The guest submits the plaintext password over HTTPS to
+  the guest login server action. The server verifies it and returns a signed
+  guest session (`@tuturuuu/utils/meet-guest-session`) bound to that guest and
+  plan, valid for 12 hours. Availability updates and guest poll actions present
+  that session (`guestSession`); the server re-verifies the signature, plan,
+  guest and expiry, and checks that the guest still belongs to the plan. Stored
+  password hashes are never returned to the browser and are not accepted as a
+  credential.
+- **Default.** Passwordless guests keep working: the empty password is hashed
+  like any other value. The saved-name auto login on reload still applies only
+  to passwordless guests; the password and the session are not persisted.
+- **Expiry.** When a session expires the guest action is rejected and the guest
+  signs in again from the plan page.
+- **Signing secret.** Sessions are signed with the shared server token secret
+  (`TUTURUUU_APP_COORDINATION_SECRET`, falling back to `SUPABASE_SECRET_KEY`)
+  through a purpose-derived key, so they cannot be replayed as any other token
+  type. Rotating that secret ends all active guest sessions.
+
+### Password hash migration
+
+1. **Coexistence.** `verifyPassword` accepts both the scrypt encoding and the
+   legacy unprefixed salted SHA-256 hex digest, distinguished by the `scrypt$`
+   prefix. No schema change is needed; both fit the existing text columns.
+2. **Rollout order.** The server that verifies both formats and writes only
+   scrypt ships first. There is no separate migration step and no backfill:
+   legacy rows cannot be converted without the plaintext.
+3. **Transparent rehash.** When a legacy hash (or scrypt with older
+   parameters) verifies, the login request replaces it with a fresh scrypt hash
+   using an update filtered on the previous `password_hash` value, so a
+   concurrent upgrade is never overwritten. A failed upgrade is logged and the
+   login still succeeds.
+4. **In-flight clients.** Browsers holding a page from before this change send
+   the retired hash field, which the server now rejects. Those guests see a
+   failed save or vote and sign in again after reloading.
+5. **Removing legacy verification.** Legacy verification can be removed once a
+   query finds no Meet guest or Nova challenge rows whose `password_hash` lacks
+   the `scrypt$` prefix, or after an announced cutoff after which remaining
+   legacy guests must re-register. Removing it before then locks those guests
+   out.
+
+Regression coverage: `packages/utils/src/__tests__/crypto.test.ts`,
+`packages/utils/src/__tests__/meet-guest-session.test.ts`,
+`packages/apis/src/meet/actions/auth.test.ts`,
+`packages/apis/src/meet/actions/polls.test.ts`,
+`apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.test.ts` and
+`apps/meet/src/runtime/legacy-action-ports.test.ts`.
+
 ## Runtime boundaries
 
 Meet shares behavior through `packages/meet-core` and `packages/meet-ui`.
