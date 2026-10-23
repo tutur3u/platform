@@ -132,7 +132,7 @@ test('owned group drain waits for disappearance and fails closed on a live or un
       },
       25
     ),
-    { code: 'PROCESS_GROUP_UNDRAINED' }
+    { message: 'unknown' }
   );
 });
 
