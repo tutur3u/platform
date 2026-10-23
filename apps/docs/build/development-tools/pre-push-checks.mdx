@@ -9,7 +9,7 @@ updatedAt: "2026-10-23"
 Most avoidable CI failures come from cheap checks skipped before pushing: Biome
 formatting, `flutter analyze` infos (fatal in CI), TypeScript errors such as
 `TS6059` (a package importing app source outside its `rootDir`), stale generated
-inventories and branch names the checker rejects. `bun check` is too heavy for
+inventories and branch names the checker rejects. `bun validate` is too heavy for
 agent machines because its Turbo graph can build workspace dependencies, so it
 is not run locally. `bun check:changed` is the replacement before every push.
 
@@ -22,7 +22,7 @@ bun check:changed --committed     # committed changes only (the hook's mode)
 bun check:changed --files a.ts b.ts
 ```
 
-It never runs builds, `bun check` or Turbo. Small repository scripts run directly;
+It never runs builds, `bun validate` or Turbo. Small repository scripts run directly;
 Vitest, type-check and `flutter analyze` are queued through `ttr resources run`
 when resource control is installed and enabled (`--no-ttr` opts out). Without
 ttr, steps run sequentially with Vitest capped at two workers.

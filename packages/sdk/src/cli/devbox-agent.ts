@@ -17,6 +17,7 @@ import {
   DevboxCliUpgradeBusyError,
   upgradeDevboxCliIfNeeded,
 } from './devbox-auto-upgrade';
+import { sweepStaleCommitWorktrees } from './devbox-commit-run';
 import { prepareJudgeContainers } from './devbox-judge-containers';
 import { executeDevboxAgentJob } from './devbox-runner';
 
@@ -98,6 +99,11 @@ export async function runDevboxAgentLoop({
   };
 
   process.stdout.write('Starting Tuturuuu devbox agent.\n');
+  const swept = await sweepStaleCommitWorktrees({
+    checkout: process.cwd(),
+  }).catch(() => 0);
+  if (swept)
+    process.stdout.write(`Removed ${swept} stale commit run worktree(s).\n`);
   await prepareJudgeContainers(token);
   const timing = { ...defaultDevboxAgentTiming, ...timingOverrides };
   const watchdogMs = timing.heartbeatIntervalMs * timing.watchdogIntervals;

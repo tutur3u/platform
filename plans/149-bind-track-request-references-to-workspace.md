@@ -62,7 +62,7 @@ type paths are explicitly available.
 | Typegen | `bun sb:typegen` | only expected generated type changes |
 | Track typecheck | `bun run --cwd apps/track type-check` | exit 0 |
 | Track build | `bun run --cwd apps/track build` | production build exits 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -135,7 +135,7 @@ rejected and no row is written or exposed.
 ### Step 5: Run mandatory gates
 
 Apply the migration locally, regenerate types only if required, run focused and
-full database tests, both route suites, Track typecheck/build, `bun check`, and
+full database tests, both route suites, Track typecheck/build, `bun validate`, and
 the whitespace gate. Keep unrelated local database failures separate; no commit
 is allowed while a mandatory gate is unsatisfied.
 

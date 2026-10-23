@@ -366,6 +366,7 @@ describe('Usage UI and typed manual observations', () => {
             windows: [
               {
                 id: 'seven_day_fable',
+                kind: 'weekly',
                 label: 'Weekly · Fable',
                 usedPercent: 100,
                 resetsAt: '2026-10-30T05:33:00Z',
@@ -523,6 +524,139 @@ describe('Usage UI and typed manual observations', () => {
     const agedLedger = { ...emptyLedger(), observations: [aged] };
     clearRecoveredLimits({ accounts: [], active: [], ledger: agedLedger, now });
     expect(aged.clearedAt).toBe(now.toISOString());
+  });
+  it('does not clear a receipt from a window observed up to five minutes in the future', () => {
+    const event: Observation = {
+      eventId: 'no-reset-future-window',
+      instanceId: 'claude_mira',
+      accountKey: 'claude:test',
+      outcome: 'usage-limit',
+      observedAt: '2026-10-23T05:00:00Z',
+    };
+    const pool = account('claude_mira');
+    pool.windows = [
+      {
+        kind: 'session',
+        usedPercent: 50,
+        source: 'sanitized future-skew fixture',
+        authoritative: true,
+        observedAt: '2026-10-23T05:35:00Z',
+        resetsAt: '2026-10-23T06:00:00Z',
+      },
+    ];
+    clearRecoveredLimits({
+      accounts: [pool],
+      active: [],
+      ledger: { ...emptyLedger(), observations: [event] },
+      now,
+    });
+    expect(event.clearedAt).toBeUndefined();
+  });
+  it('rejects future checkedAt and reset timestamps that do not follow checkedAt', () => {
+    const imported = (checkedAt: string, resetsAt: string) => ({
+      provenance: 'sanitized registry fixture',
+      providers: [
+        {
+          instanceId: 'claude_mira',
+          driver: 'claudeAgent',
+          usageLimits: {
+            checkedAt,
+            windows: [
+              {
+                id: 'five_hour',
+                kind: 'session',
+                usedPercent: 25,
+                resetsAt,
+              },
+            ],
+          },
+        },
+      ],
+    });
+    expect(() =>
+      validateUsageImport(
+        imported('2026-10-23T05:40:00Z', '2026-10-23T06:00:00Z'),
+        now
+      )
+    ).toThrow('usage-import-checked-at-invalid');
+    expect(() =>
+      validateUsageImport(
+        imported('2026-10-23T05:30:00Z', '2026-10-23T05:30:00Z'),
+        now
+      )
+    ).toThrow('usage-import-reset-invalid');
+  });
+  it('uses the same five-minute future bound for validation and merge', () => {
+    const future = {
+      instanceId: 'claude_mira',
+      driver: 'claudeAgent',
+      usageLimits: {
+        checkedAt: '2099-01-01T00:00:00Z',
+        windows: [],
+      },
+    };
+    const previous = {
+      providers: [
+        {
+          ...future,
+          usageLimits: { ...future.usageLimits, checkedAt: now.toISOString() },
+        },
+      ],
+      settings: { providerInstances: {} },
+    };
+    const merged = mergeUsageImport(
+      previous,
+      { providers: [future], provenance: 'source Bearer sanitized-token' },
+      now
+    );
+    expect(merged.providers).toMatchObject([
+      { usageLimits: { checkedAt: now.toISOString() } },
+    ]);
+    expect(merged.provenance).toBe('source Bearer [redacted]');
+    const slightlyFuture = {
+      ...future,
+      usageLimits: {
+        ...future.usageLimits,
+        checkedAt: new Date(now.getTime() + 2 * 60_000).toISOString(),
+      },
+    };
+    const stillPrevious = mergeUsageImport(
+      previous,
+      { providers: [slightlyFuture] },
+      now
+    );
+    expect(stillPrevious.providers).toMatchObject([
+      {
+        usageLimits: {
+          checkedAt: new Date(now.getTime() + 2 * 60_000).toISOString(),
+        },
+      },
+    ]);
+    expect(() =>
+      validateUsageImport(
+        {
+          provenance: 'fixture',
+          providers: [slightlyFuture],
+        },
+        now
+      )
+    ).not.toThrow();
+    expect(() =>
+      validateUsageImport(
+        {
+          provenance: 'fixture',
+          providers: [
+            {
+              instanceId: 'claude_mira',
+              driver: 'claudeAgent',
+              usageLimits: { unavailable: true, windows: [] },
+            },
+          ],
+        },
+        now
+      )
+    ).toThrow('usage-import-unavailable-checked-at-required');
+    expect(merged.provenance).toBe('source Bearer [redacted]');
   });
   it('validates units, non-credential import fields and bounded settings', () => {
     expect(() =>

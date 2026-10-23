@@ -73,9 +73,10 @@ extension _ShellPageLayout on _ShellPageState {
           removeTop: true,
           child: Theme(
             data: Theme.of(bodyContext).copyWith(
-              scaffoldBackgroundColor: shad.Theme.of(
-                bodyContext,
-              ).colorScheme.background,
+              scaffoldBackgroundColor:
+                  AppearanceScope.hasAmbientBackground(bodyContext)
+                  ? Colors.transparent
+                  : shad.Theme.of(bodyContext).colorScheme.background,
             ),
             child: SizedBox.expand(child: widget.child),
           ),
@@ -216,7 +217,9 @@ extension _ShellPageLayout on _ShellPageState {
 
     return Container(
       key: const ValueKey('compact-shell-footer'),
-      color: shad.Theme.of(context).colorScheme.background,
+      color: AppearanceScope.hasAmbientBackground(context)
+          ? Colors.transparent
+          : shad.Theme.of(context).colorScheme.background,
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: ShellKeyboardChrome(
         keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,

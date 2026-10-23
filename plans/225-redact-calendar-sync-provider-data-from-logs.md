@@ -56,7 +56,7 @@ do not absorb their authorization/provider-sync work.
 | Focused log safety | `bun --cwd apps/calendar vitest run src/lib/calendar/incremental-active-sync.test.ts src/lib/calendar/incremental-active-sync-log-safety.test.ts` | representative token/event payloads never reach console arguments; allowed summaries remain |
 | Typecheck | `bun run --cwd apps/calendar type-check` | exit 0 |
 | Build | `bun run --cwd apps/calendar build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | all gates pass |
+| Repository | `bun validate && git diff --check` | all gates pass |
 
 ## Scope
 

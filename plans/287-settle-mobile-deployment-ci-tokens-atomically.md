@@ -110,7 +110,7 @@ The real route/store boundaries and validation rules have no focused tests.
 | Types | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot" && bun run --cwd apps/infrastructure type-check` | a second isolated typegen is byte-identical to the intentional generated diff; Infrastructure compiles |
 | Localization | `bun i18n:sort && bun i18n:key-parity && bun i18n:namespace-check` | English/Vietnamese refresh warning is sorted and aligned |
 | Infrastructure build | `bun run --cwd apps/infrastructure build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

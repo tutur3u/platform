@@ -53,7 +53,7 @@ files (16 tests) plus Web and Tasks typechecks. The mandatory combined build
 then failed twice before Tasks build: the sandbox attempt also hit Google Font
 network errors, while the approved network retry removed those and reproduced
 the same unrelated `packages/utils/src/i18n-root-locale.ts:2` inability to
-resolve `next/root-params` from middleware. Per the STOP rule, `bun check`,
+resolve `next/root-params` from middleware. Per the STOP rule, `bun validate`,
 final whitespace, staging, and commit were not run. Keep the refined worktree
 intact. Plan 216 has since repaired and verified that base contract in final
 corrective commit `3a09b070ab`, integrated in verified main `cdef1c5533`.
@@ -117,7 +117,7 @@ not expand into its paths.
 | Canonical Tasks tests | `bun --cwd apps/tasks vitest run src/lib/habit-trackers/schemas.test.ts src/lib/habit-trackers/service.test.ts src/lib/habit-trackers/streaks.test.ts src/lib/tasks/public-task-board.test.ts src/lib/tasks/default-personal-task-board.test.ts` | all five files collect and pass; no `server-only` resolution error |
 | Typechecks | `bun run --cwd apps/web type-check && bun run --cwd apps/tasks type-check` | both exit 0 |
 | Builds | `bun run --cwd apps/web build && bun run --cwd apps/tasks build` | both production builds exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -144,7 +144,7 @@ route manifests, or generated files.
    test-harness paths and rerun the canonical focused command; all five files
    must collect and pass.
 4. Run both typechecks, both production
-   builds, `bun check`, `git diff --check`, and a final status/scope audit.
+   builds, `bun validate`, `git diff --check`, and a final status/scope audit.
 
 ## Done criteria
 

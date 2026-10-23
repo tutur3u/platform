@@ -13165,6 +13165,246 @@ abstract class AppLocalizations {
   /// **'App version'**
   String get settingsAppVersion;
 
+  /// No description provided for @appearanceAccentAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber'**
+  String get appearanceAccentAmber;
+
+  /// No description provided for @appearanceAccentBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get appearanceAccentBlue;
+
+  /// No description provided for @appearanceAccentGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get appearanceAccentGreen;
+
+  /// No description provided for @appearanceAccentIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get appearanceAccentIndigo;
+
+  /// No description provided for @appearanceAccentNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral'**
+  String get appearanceAccentNeutral;
+
+  /// No description provided for @appearanceAccentOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get appearanceAccentOrange;
+
+  /// No description provided for @appearanceAccentRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose'**
+  String get appearanceAccentRose;
+
+  /// No description provided for @appearanceAccentTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get appearanceAccentTeal;
+
+  /// No description provided for @appearanceAccentTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Match theme'**
+  String get appearanceAccentTheme;
+
+  /// No description provided for @appearanceAccentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent color'**
+  String get appearanceAccentTitle;
+
+  /// No description provided for @appearanceAccentViolet.
+  ///
+  /// In en, this message translates to:
+  /// **'Violet'**
+  String get appearanceAccentViolet;
+
+  /// No description provided for @appearanceAnimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Animate background'**
+  String get appearanceAnimate;
+
+  /// No description provided for @appearanceAnimateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Blobs drift slowly. Uses a little more battery.'**
+  String get appearanceAnimateDescription;
+
+  /// No description provided for @appearanceAnimateReducedMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce Motion is on, so the background stays still.'**
+  String get appearanceAnimateReducedMotion;
+
+  /// No description provided for @appearanceBackgroundBlobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Blobs'**
+  String get appearanceBackgroundBlobs;
+
+  /// No description provided for @appearanceBackgroundGradient.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradient'**
+  String get appearanceBackgroundGradient;
+
+  /// No description provided for @appearanceBackgroundSolid.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid'**
+  String get appearanceBackgroundSolid;
+
+  /// No description provided for @appearanceBackgroundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get appearanceBackgroundTitle;
+
+  /// No description provided for @appearanceIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity'**
+  String get appearanceIntensity;
+
+  /// No description provided for @appearanceModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get appearanceModeTitle;
+
+  /// No description provided for @appearanceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get appearanceNew;
+
+  /// No description provided for @appearancePreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get appearancePreviewTitle;
+
+  /// No description provided for @appearanceReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to default'**
+  String get appearanceReset;
+
+  /// No description provided for @appearanceResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance reset to default'**
+  String get appearanceResetDone;
+
+  /// No description provided for @appearanceSoftness.
+  ///
+  /// In en, this message translates to:
+  /// **'Softness'**
+  String get appearanceSoftness;
+
+  /// No description provided for @appearanceSurfaceOpacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Card opacity'**
+  String get appearanceSurfaceOpacity;
+
+  /// No description provided for @appearanceSurfacesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Surfaces'**
+  String get appearanceSurfacesTitle;
+
+  /// No description provided for @appearanceThemeAurora.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora'**
+  String get appearanceThemeAurora;
+
+  /// No description provided for @appearanceThemeBlossom.
+  ///
+  /// In en, this message translates to:
+  /// **'Blossom'**
+  String get appearanceThemeBlossom;
+
+  /// No description provided for @appearanceThemeClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get appearanceThemeClassic;
+
+  /// No description provided for @appearanceThemeEmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Ember'**
+  String get appearanceThemeEmber;
+
+  /// No description provided for @appearanceThemeForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest'**
+  String get appearanceThemeForest;
+
+  /// No description provided for @appearanceThemeMono.
+  ///
+  /// In en, this message translates to:
+  /// **'Mono'**
+  String get appearanceThemeMono;
+
+  /// No description provided for @appearanceThemeOcean.
+  ///
+  /// In en, this message translates to:
+  /// **'Ocean'**
+  String get appearanceThemeOcean;
+
+  /// No description provided for @appearanceThemeSunset.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset'**
+  String get appearanceThemeSunset;
+
+  /// No description provided for @appearanceThemesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes'**
+  String get appearanceThemesTitle;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsProfileEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get settingsProfileEdit;
+
+  /// No description provided for @settingsProfileManageWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get settingsProfileManageWorkspace;
+
+  /// No description provided for @settingsProfileWorkspaceCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{workspace} other{workspaces}}'**
+  String settingsProfileWorkspaceCount(int count);
+
   /// No description provided for @settingsAppearanceLanguage.
   ///
   /// In en, this message translates to:

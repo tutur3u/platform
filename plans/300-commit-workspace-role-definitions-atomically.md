@@ -88,7 +88,7 @@ permission matrix, while preserving partial PUT semantics for compatibility.
 | Typegen determinism | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | second isolated generation is byte-identical |
 | Route artifacts | `bun web:api-routes:check && bun migration:tanstack:manifest && git diff --check -- apps/tanstack-web/migration` | wrappers and migration ownership are current |
 | Web | `bun run --cwd apps/web type-check && bun run --cwd apps/web build` | Web compiles and builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Size | `wc -l 'apps/web/src/app/api/v1/workspaces/[wsId]/roles/route.ts' 'apps/web/src/app/api/v1/workspaces/[wsId]/roles/[roleId]/route.ts'` | both authored route files are below 700 lines |
 
 ## Scope

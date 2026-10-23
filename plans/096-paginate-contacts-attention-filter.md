@@ -50,7 +50,7 @@ migration/generated-type owners. Obtain exact transfer.
 | Core tests | `bun run --cwd packages/users-core test -- src/routes/users/database.test.ts` | bounded query/count suite passes |
 | Contacts tests | `bun --cwd apps/contacts vitest run 'src/app/api/v1/workspaces/[wsId]/users/database/route.test.ts'` | wrapper integration passes |
 | Contacts build | `bun run --cwd apps/contacts build` | exit 0 |
-| Repository | `bun check` | exit 0 or documented unrelated blocker |
+| Repository | `bun validate` | exit 0 or documented unrelated blocker |
 
 ## Scope
 
@@ -75,7 +75,7 @@ and run `bun setup`. Commit `perf(contacts): paginate attention filtering`.
    ordering, and range occur in the database. Preserve current page/limit bounds.
 3. Enrich only returned IDs and reuse the returned attention flag; remove both
    full-set materialization and duplicate helper lookup.
-4. Apply/typegen, run database/core/wrapper tests, Contacts build, and `bun check`.
+4. Apply/typegen, run database/core/wrapper tests, Contacts build, and `bun validate`.
 
 ## Done criteria
 

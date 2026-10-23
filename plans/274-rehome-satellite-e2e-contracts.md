@@ -94,7 +94,7 @@ isolated worktree. Never use production credentials or production data.
 | Retired skips | `rg -n 'TODO\(#4956\)|test\.skip' apps/web/e2e/{finance-permission-boundaries.noauth.spec.ts,inventory-simulated-checkout.noauth.spec.ts,post-email-queue-production-scale.spec.ts,user-group-session-calendar.spec.ts,user-group-storage-ai-boundaries.noauth.spec.ts,workspace-debt-loans-private.spec.ts,workspace-quiz-answers-private.noauth.spec.ts,workspace-wallets-private.spec.ts` | no output; exit 1 after scoped migration |
 | Workflow contracts | `node --test scripts/ci/e2e-image-bundle.test.js scripts/ci/check-workflow-config.test.js` | image and workflow policy suites pass with all four satellites enrolled |
 | Types | `bun run --cwd apps/inventory type-check && bun run --cwd apps/finance type-check && bun run --cwd apps/teach type-check && bun run --cwd apps/contacts type-check` | all exit 0 |
-| Repository | `bun check && git diff --check` | canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | canonical gates pass; whitespace output is empty |
 
 ## Scope
 
@@ -131,7 +131,7 @@ credentials, or merging unrelated satellite migrations.
 5. Add three bounded workflow jobs with correct build filters, browser install,
    Supabase lifecycle, artifacts, branch conditions, and timeouts. Extend workflow
    contract tests so removing any enrolled satellite or failure artifact fails.
-6. Run workflow tests, four app typechecks, `bun check`, whitespace, lockfile
+6. Run workflow tests, four app typechecks, `bun validate`, whitespace, lockfile
    scope, and exact-diff review. Builds are not mandatory because production app
    source/dependencies beyond the test runner do not change; run a destination
    build if its manifest/config causes type-resolution drift.

@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process';
 import {
   closeSync,
+  constants,
+  fstatSync,
   openSync,
   readFileSync,
   readSync,
   realpathSync,
-  statSync,
 } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -101,11 +102,11 @@ export function resolveHostedNativeCli(
       ].includes(packageName)
     )
       throw new Error();
-    const stat = statSync(binary);
-    if (!stat.isFile() || !(stat.mode & 0o111)) throw new Error();
     const header = Buffer.alloc(20);
-    const fd = openSync(binary, 'r');
+    const fd = openSync(binary, constants.O_RDONLY | constants.O_NOFOLLOW);
     try {
+      const stat = fstatSync(fd);
+      if (!stat.isFile() || !(stat.mode & 0o111)) throw new Error();
       if (readSync(fd, header, 0, header.length, 0) !== header.length)
         throw new Error();
     } finally {

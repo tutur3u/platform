@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
+import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
@@ -193,12 +195,14 @@ void registerShellViewportChecks(
         1,
       ),
     );
-    final firstSliver = tester.widget<SliverToBoxAdapter>(
-      find
-          .descendant(of: apps, matching: find.byType(SliverToBoxAdapter))
-          .first,
+    // The page primitive starts content one page-top gap below the header.
+    final firstContent = find
+        .descendant(of: apps, matching: find.byType(AppsReorderGrid))
+        .first;
+    expect(
+      tester.getTopLeft(firstContent).dy,
+      closeTo(header.bottom + AppLayout.pageTop, 1),
     );
-    expect((firstSliver.child! as SizedBox).height, closeTo(header.bottom, 1));
   });
 }
 

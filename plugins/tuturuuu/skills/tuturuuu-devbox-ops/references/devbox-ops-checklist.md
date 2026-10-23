@@ -53,7 +53,7 @@ Expected result:
 - `git rev-parse --show-toplevel`
 - `bun --cwd packages/devbox test`
 - A focused package test for the touched code
-- `bun check` after focused tests pass, when the repo rules require it
+- `bun validate` after focused tests pass, when the repo rules require it
 
 ## Build, Serve, Tunnel, And Database Forwarding
 

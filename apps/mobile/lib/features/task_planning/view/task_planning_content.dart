@@ -42,32 +42,15 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
                   return TaskEstimatesErrorView(error: error);
                 }
 
-                final listBottomPadding =
-                    _TaskPlanningViewState._fabContentBottomPadding +
-                    MediaQuery.paddingOf(context).bottom;
-
-                return ResponsiveWrapper(
-                  maxWidth: ResponsivePadding.maxContentWidth(
-                    context.deviceClass,
-                  ),
-                  child: NovaRefreshIndicator(
-                    onRefresh: _reload,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        12,
-                        16,
-                        listBottomPadding,
-                      ),
-                      children: [
-                        ..._activeTabItems(
-                          context,
-                          estimatesState,
-                          labelsState,
-                          portfolioState,
-                        ),
-                      ],
+                return NovaRefreshIndicator(
+                  onRefresh: _reload,
+                  child: AppPageListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: _activeTabItems(
+                      context,
+                      estimatesState,
+                      labelsState,
+                      portfolioState,
                     ),
                   ),
                 );
@@ -169,7 +152,9 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
           final project = entry.$2;
           return Padding(
             padding: EdgeInsets.only(
-              bottom: entry.$1 == state.projects.length - 1 ? 0 : 12,
+              bottom: entry.$1 == state.projects.length - 1
+                  ? 0
+                  : AppLayout.itemGap,
             ),
             child: PendingSyncFrame(
               workspaceId: project.wsId,
@@ -210,7 +195,9 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
           final initiative = entry.$2;
           return Padding(
             padding: EdgeInsets.only(
-              bottom: entry.$1 == state.initiatives.length - 1 ? 0 : 12,
+              bottom: entry.$1 == state.initiatives.length - 1
+                  ? 0
+                  : AppLayout.itemGap,
             ),
             child: PendingSyncFrame(
               workspaceId:

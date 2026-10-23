@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide FilledButton, Scaffold, TextButton;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/cubit/app_version_state.dart';
@@ -139,32 +140,29 @@ class _RequiredUpdateScreen extends StatelessWidget {
     final l10n = context.l10n;
 
     return shad.Scaffold(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.appUpdateRequiredTitle,
-                  style: shad.Theme.of(context).typography.h2,
-                  textAlign: TextAlign.center,
-                ),
-                const shad.Gap(12),
-                Text(
-                  l10n.appUpdateRequiredMessage,
-                  textAlign: TextAlign.center,
-                  style: shad.Theme.of(context).typography.textMuted,
-                ),
-                const shad.Gap(24),
-                shad.PrimaryButton(
-                  onPressed: _launchStoreUrl,
-                  child: Text(l10n.appUpdateNow),
-                ),
-              ],
-            ),
+      child: AppPageBody(
+        kind: AppPageKind.form,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.appUpdateRequiredTitle,
+                style: shad.Theme.of(context).typography.h2,
+                textAlign: TextAlign.center,
+              ),
+              const shad.Gap(12),
+              Text(
+                l10n.appUpdateRequiredMessage,
+                textAlign: TextAlign.center,
+                style: shad.Theme.of(context).typography.textMuted,
+              ),
+              const shad.Gap(24),
+              shad.PrimaryButton(
+                onPressed: _launchStoreUrl,
+                child: Text(l10n.appUpdateNow),
+              ),
+            ],
           ),
         ),
       ),

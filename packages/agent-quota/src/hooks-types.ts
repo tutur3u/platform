@@ -61,10 +61,16 @@ export interface SwitchLease {
   acquiredAt: string;
   expiresAt: string;
 }
+export interface FutureQuarantine {
+  quarantinedAt: string;
+  latestReceiptAt?: string;
+  models: string[];
+  accountWide: boolean;
+}
 export interface HookLedger {
   poolHolds?: Record<string, boolean>;
   lastAdmissions?: Record<string, number>;
-  futureQuarantines?: Record<string, string>;
+  futureQuarantines?: Record<string, FutureQuarantine | string>;
   version: 1;
   observations: Observation[];
   retiredRequests?: { requestId: string; retiredAt: string }[];

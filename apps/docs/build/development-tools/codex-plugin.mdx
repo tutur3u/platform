@@ -229,7 +229,7 @@ Then verify the cached page after refresh at
   registration, one-shot smoke tests, 24/7 system services, runner-token
   cleanup, CLI upgrades, and infrastructure devbox observability.
 - `$tuturuuu-validation-offload`: validation strategy guidance for deciding
-  when to run focused tests, `bun check`, Supabase, Docker, or browser-heavy
+  when to run focused tests, `bun validate`, Supabase, Docker, or browser-heavy
   workflows through internal devboxes instead of the local agent session.
 - `$tuturuuu-web-release`: `apps/web` release badge metadata, blue/green
   runtime snapshot fallback, `PLATFORM_BUILD_*` precedence, and
@@ -491,7 +491,7 @@ worktree state.
 The normal scoped commit path still lets Git hooks run. Agents may use
 `git commit --no-verify` only when they can produce a proof packet for their
 exact staged paths: reviewed status and staged diff output, path ownership,
-separated validation mapped to the relevant `bun check` components, path-based
+separated validation mapped to the relevant `bun validate` components, path-based
 rationale for skipped components, and `bun check:mobile` coverage when
 `apps/mobile` is touched. Incomplete proof, unclear ownership, or uncertain
 check mapping means the hook should run or the risk should be reported instead

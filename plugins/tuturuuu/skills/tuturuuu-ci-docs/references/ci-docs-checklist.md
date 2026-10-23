@@ -13,6 +13,16 @@ does not authorize promotion.
 ## CI
 
 - Inspect nearby workflows before adding a new one.
+- Treat the repository Actions cache budget as shared with the Supabase image
+  archives. Heavyweight Gradle, Flutter SDK/pub, Bun dependency and CocoaPods
+  writers must have explicit trusted-ref/event guards; PRs restore only.
+  `actions/setup-java` with `cache: gradle` registers an implicit post-job save,
+  so use SHA-pinned `actions/cache/restore` plus a main-push-only save instead.
+  Keep the pinned Bun version in dependency keys and every restore prefix.
+  Run `node --test scripts/ci/heavyweight-cache-budget.test.js` when changing
+  cache behavior; see the CI runbook's repository cache budget section for
+  bounded, operator-owned retired-version cleanup. A passing source guard does
+  not prove hosted cache retention.
 - Use `.github/workflows/ci-check.yml` when the workflow should respect the repo-level `tuturuuu.ts` switchboard.
 - Add the workflow filename to `tuturuuu.ts`.
 - Prefer `permissions: contents: read` for validation-only jobs.
@@ -146,4 +156,4 @@ artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 - Parse touched JSON with `python3 -m json.tool`.
 - Run `bun ff` on touched docs, scripts, config, and workflow files.
 - Run `git diff --check`.
-- Run `bun check` when root TypeScript config or repo-wide script/config behavior changed.
+- Run `bun validate` when root TypeScript config or repo-wide script/config behavior changed.

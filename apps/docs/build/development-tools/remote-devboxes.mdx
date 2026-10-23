@@ -287,6 +287,25 @@ report `executionMode` and the isolation summary in heartbeats only when
 `TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE=true` is set. Enable it only after both
 heartbeat handlers accept those fields.
 
+### Running an exact commit
+
+Trusted runners accept a typed `__ttr_commit_run_v1__` envelope that carries
+only a full commit SHA, a clean relative directory, and an argv. The runner
+checks the argv against the execution policy before any git work, then fetches
+`origin` branches (`refs/heads/*` into `refs/remotes/origin/*`) and requires
+the SHA to be reachable from one of them. A commit that GitHub would serve by
+SHA from elsewhere in a fork network is rejected. The detached worktree is
+created inside a fresh `mkdtemp` directory (mode `0700`) under the runner-private
+`commit-runs` directory beside the CLI config, never in shared `/tmp`. The argv
+then runs from that directory through the normal execution policy,
+process-group timeout and stop handling, and the worktree is removed on every
+exit path. Agent startup removes any `ttr-commit-run-*` worktree a crashed agent
+left behind and prunes git's records. Local edits on the requesting machine and
+on the runner never reach the run. Unknown commits and missing directories fail
+before anything runs. Git error output is not forwarded, because remote URLs can contain
+credentials. `judge-only` runners and playground pools reject the envelope.
+`ttr resources run --offload` uses it.
+
 ### Protecting hosts with existing critical files
 
 Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
@@ -540,7 +559,7 @@ agent process.
 Run heavy commands remotely:
 
 ```bash
-ttr box run -- bun check
+ttr box run -- bun validate
 ttr box run -- bun sb:reset
 ttr box run -- bun test:e2e
 ttr box build --cwd apps/web
@@ -621,7 +640,7 @@ create their own containers only when the requested command does so.
 
 Allowed remote workflows include:
 
-- `bun check`, `bun test`, and package-local Bun commands
+- `bun validate`, `bun test`, and package-local Bun commands
 - `bun test:e2e` and Docker-backed Playwright workflows
 - `bun sb:start`, `bun sb:reset`, `bun sb:up`, and `bun sb:typegen`
 
@@ -637,8 +656,8 @@ checkout so local Supabase-backed apps and E2E workflows can use that runner's
 own Supabase stack.
 
 ```bash
-ttr box run --env DATABASE_URL=postgres://remote -- bun check
-ttr box run --database-url-env DEVBOX_DATABASE_URL -- bun check
+ttr box run --env DATABASE_URL=postgres://remote -- bun validate
+ttr box run --database-url-env DEVBOX_DATABASE_URL -- bun validate
 ttr box serve --database-url-env DEVBOX_DATABASE_URL
 ttr box run --env-file .env.remote -- bun test:e2e
 ttr box env set --lease <lease-id> API_TOKEN=value

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/reminders/reminder_plan.dart';
 import 'package:mobile/features/reminders/reminder_service.dart';
@@ -157,13 +158,7 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
     final status = _service.status;
     final dateFormat = DateFormat.MMMd().add_jm();
     return shad.Scaffold(
-      child: ListView(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          20,
-          16,
-          24 + MediaQuery.paddingOf(context).bottom,
-        ),
+      child: AppPageListView(
         children: [
           Text(l10n.remindersDescription),
           const SizedBox(height: 20),
