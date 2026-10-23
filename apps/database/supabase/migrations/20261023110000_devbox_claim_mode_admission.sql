@@ -3,11 +3,11 @@
 -- When private.devbox_control_settings.require_reported_execution_mode is on:
 --   * run/build/serve/tunnel claims require the runner's capabilities to report
 --     executionMode = 'trusted' within the freshness window;
---   * Judge claims refuse a runner whose fresh report says 'trusted' (a
---     'judge-only' report or no/stale report, for legacy Judge agents, is fine);
+--   * Judge claims refuse any runner reporting 'trusted', even when the
+--     timestamp is stale or missing; legacy agents without a mode may claim;
 --   * playground and maintenance claims are unchanged (playground pools run in
 --     trusted mode behind the agent's pool fence and the S2 feature exclusion).
--- A mode older than the window counts as unreported. Freshness is stamped by
+-- Trusted-work freshness is stamped by
 -- the database (capabilities_updated_at), never taken from the agent's clock.
 -- With the flag off, claims behave exactly as before.
 --
@@ -22,26 +22,25 @@ alter table private.devbox_runners
 alter table private.devbox_runners
     add column if not exists capabilities_updated_at timestamptz;
 
--- Agents send a fresh capabilities object (with reportedAt) on every
--- heartbeat, so a change in capabilities marks a fresh report.
+-- Every report write is server-stamped, including identical capabilities.
+-- Timestamp-only writes cannot forge freshness or erase the report timestamp.
 create or replace function private.stamp_devbox_runner_capabilities()
 returns trigger
 language plpgsql
 set search_path = private, public, pg_temp
 as $$
 begin
-    if new.capabilities is not null and (
-        tg_op = 'INSERT' or new.capabilities is distinct from old.capabilities
-    ) then
-        new.capabilities_updated_at := now();
-    end if;
+    new.capabilities_updated_at := case
+        when new.capabilities is not null then now()
+        else null
+    end;
     return new;
 end;
 $$;
 
 drop trigger if exists stamp_devbox_runner_capabilities on private.devbox_runners;
 create trigger stamp_devbox_runner_capabilities
-    before insert or update of capabilities on private.devbox_runners
+    before insert or update of capabilities, capabilities_updated_at on private.devbox_runners
     for each row execute function private.stamp_devbox_runner_capabilities();
 
 create table if not exists private.devbox_control_settings (
@@ -79,7 +78,8 @@ stable
 set search_path = private, public, pg_temp
 as $$
     select coalesce(p_capabilities ->> 'executionMode' = 'trusted', false)
-        and coalesce(p_capabilities_updated_at > now() - interval '90 seconds', false);
+        and coalesce(p_capabilities_updated_at > now() - interval '90 seconds'
+            and p_capabilities_updated_at <= now(), false);
 $$;
 
 create or replace function private.devbox_runner_mode_admits(
@@ -93,13 +93,13 @@ stable
 security definer
 set search_path = private, public, pg_temp
 as $$
-    -- coalesce: a missing mode or timestamp is "not freshly trusted", never NULL.
+    -- A trusted report permanently narrows Judge admission regardless of age.
     select case
         when not private.devbox_require_reported_execution_mode() then true
         when p_workload in ('run', 'build', 'serve', 'tunnel') then
             private.devbox_reports_fresh_trusted(p_capabilities, p_capabilities_updated_at)
         when p_workload = 'judge' then
-            not private.devbox_reports_fresh_trusted(p_capabilities, p_capabilities_updated_at)
+            p_capabilities ->> 'executionMode' is distinct from 'trusted'
         else true
     end;
 $$;
@@ -118,6 +118,10 @@ as $$
 declare
     v_unready jsonb;
 begin
+    if p_enabled is null then
+        raise exception 'p_enabled must not be NULL';
+    end if;
+
     select coalesce(jsonb_agg(runner.id order by runner.id), '[]'::jsonb)
     into v_unready
     from private.devbox_runners runner
@@ -133,7 +137,7 @@ begin
             runner.capabilities_updated_at
         );
 
-    if p_enabled and jsonb_array_length(v_unready) > 0 and not p_force then
+    if p_enabled and jsonb_array_length(v_unready) > 0 and p_force is not true then
         raise exception 'Run-enabled runners have not reported executionMode=trusted: %', v_unready;
     end if;
 
@@ -208,7 +212,7 @@ begin
             -- maintenance (restart/upgrade); it claims nothing else.
             and (runner.drain_requested_at is null or run.workload = 'maintenance')
             -- S4 (flagged): trusted workloads need a fresh, server-stamped
-            -- `trusted` report; Judge refuses a fresh `trusted` report.
+            -- `trusted` report; Judge refuses any `trusted` report.
             -- With the flag off this clause is always true.
             and private.devbox_runner_mode_admits(
                 runner.capabilities,

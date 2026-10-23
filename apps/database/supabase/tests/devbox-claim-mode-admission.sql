@@ -3,7 +3,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(36);
 
 create temp table fx as select id as actor from public.users limit 1;
 
@@ -25,10 +25,12 @@ from fx, (values
     ('10000000-0000-4000-8000-000000000006', 'trusted-judge', '{"executionMode": "trusted", "judge": {"ready": true, "languages": ["python"]}}', '{"judge": true}')
 ) as x(id, name, capabilities, features);
 
--- A report older than the freshness window counts as unreported.
+-- Model historical state without allowing production writes to forge it.
+alter table private.devbox_runners disable trigger stamp_devbox_runner_capabilities;
 update private.devbox_runners
 set capabilities_updated_at = now() - interval '10 minutes'
 where id = '10000000-0000-4000-8000-000000000003';
+alter table private.devbox_runners enable trigger stamp_devbox_runner_capabilities;
 
 -- Queues one unpinned run of a workload, asks a runner to claim it, then
 -- removes it so every probe sees an otherwise empty queue.
@@ -63,6 +65,24 @@ select ok(
     'inserting capabilities stamps a server-side report time'
 );
 
+-- Explicit timestamp writes cannot forge future, stale, or NULL report times.
+update private.devbox_runners set capabilities_updated_at = now() + interval '1 day'
+where id = '10000000-0000-4000-8000-000000000001';
+select is((select capabilities_updated_at from private.devbox_runners where id = '10000000-0000-4000-8000-000000000001'), now(), 'timestamp-only future write is server-stamped');
+update private.devbox_runners set capabilities_updated_at = null
+where id = '10000000-0000-4000-8000-000000000001';
+select is((select capabilities_updated_at from private.devbox_runners where id = '10000000-0000-4000-8000-000000000001'), now(), 'timestamp-only NULL write is server-stamped');
+update private.devbox_runners set capabilities = capabilities, capabilities_updated_at = now() - interval '1 day'
+where id = '10000000-0000-4000-8000-000000000001';
+select is((select capabilities_updated_at from private.devbox_runners where id = '10000000-0000-4000-8000-000000000001'), now(), 'identical report is server-stamped');
+select ok(not private.devbox_reports_fresh_trusted('{"executionMode":"trusted"}', now() + interval '1 second'), 'future report is never fresh');
+select ok(not private.devbox_reports_fresh_trusted('{"executionMode":"trusted"}', null), 'NULL report time is never fresh');
+select ok(not private.devbox_reports_fresh_trusted('{"executionMode":"trusted"}', now() - interval '90 seconds'), 'freshness boundary excludes expired reports');
+insert into private.devbox_runners (id, actor_id, name, capabilities, capabilities_updated_at)
+select '10000000-0000-4000-8000-000000000007', actor, 'supplied-timestamp', '{}', now() + interval '1 day' from fx;
+select is((select capabilities_updated_at from private.devbox_runners where id = '10000000-0000-4000-8000-000000000007'), now(), 'insert overwrites supplied timestamp');
+select is((select enabled_features ->> 'run' from private.devbox_runners where id = '10000000-0000-4000-8000-000000000007'), 'false', 'reports never enable operator-disabled features');
+
 -- Flag OFF: identical to the previous claim behavior.
 select ok(pg_temp.claims('10000000-0000-4000-8000-000000000001', 'run'), 'off: trusted runner claims run');
 select ok(pg_temp.claims('10000000-0000-4000-8000-000000000002', 'run'), 'off: unreported runner claims run');
@@ -75,6 +95,15 @@ select throws_like(
     $$ select private.set_devbox_require_reported_execution_mode(true) $$,
     'Run-enabled runners have not reported executionMode=trusted%',
     'enabling refuses with unready run-enabled runners'
+);
+select throws_like(
+    $$ select private.set_devbox_require_reported_execution_mode(true, null) $$,
+    'Run-enabled runners have not reported executionMode=trusted%',
+    'NULL force cannot bypass readiness'
+);
+select throws_ok(
+    $$ select private.set_devbox_require_reported_execution_mode(null, true) $$,
+    'P0001', 'p_enabled must not be NULL', 'NULL enabled has an explicit error'
 );
 select ok(not private.devbox_require_reported_execution_mode(), 'refused enable leaves the flag off');
 select is(
@@ -96,6 +125,20 @@ select ok(
     private.devbox_runner_mode_admits('{"executionMode": "trusted"}', now(), 'playground'),
     'on: playground admission is unchanged'
 );
+
+-- Historical trusted reports never admit Judge, regardless of their timestamp.
+alter table private.devbox_runners disable trigger stamp_devbox_runner_capabilities;
+update private.devbox_runners set capabilities_updated_at = now() - interval '10 minutes'
+where id = '10000000-0000-4000-8000-000000000006';
+alter table private.devbox_runners enable trigger stamp_devbox_runner_capabilities;
+select ok(not pg_temp.claims('10000000-0000-4000-8000-000000000006', 'judge'), 'on: stale trusted report cannot claim judge');
+alter table private.devbox_runners disable trigger stamp_devbox_runner_capabilities;
+update private.devbox_runners set capabilities_updated_at = null
+where id = '10000000-0000-4000-8000-000000000006';
+alter table private.devbox_runners enable trigger stamp_devbox_runner_capabilities;
+select ok(not pg_temp.claims('10000000-0000-4000-8000-000000000006', 'judge'), 'on: trusted report with NULL time cannot claim judge');
+select ok(not private.devbox_runner_mode_admits('{"executionMode":"trusted"}', now() + interval '1 day', 'run'), 'on: future trusted report cannot admit trusted work');
+select ok(private.devbox_runner_mode_admits('{"executionMode":"judge-only"}', null, 'judge'), 'on: judge-only report without timestamp remains eligible');
 
 -- A heartbeat that changes capabilities refreshes the report.
 update private.devbox_runners
