@@ -53,9 +53,9 @@ function normalizeMobileReleaseNotes(content) {
       .replace(/^\w+(?:\([^)]*\))?!?:\s*/u, '')
       .replace(referencePattern, '')
       .replace(/\s*\(#\d+\)/gu, '')
-      .replace(/\b(?:PR\s*)?#\d+\b/giu, '')
+      .replace(/(?:\bPR\s*)?#\d+\b/giu, '')
       .replace(
-        /\b(?:feat|feature|fix|bugfix|hotfix|chore|ci|test|docs|refactor)\/[\w./-]+/giu,
+        /\b(?:feat|feature|fix|bugfix|hotfix|release|chore|ci|test|docs|style|refactor|perf|dependabot|claude)\/[\w./-]+/giu,
         ''
       )
       .replace(/\s+/gu, ' ')

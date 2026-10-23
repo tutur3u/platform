@@ -369,3 +369,33 @@ test('mobile history excludes multi-parent product-titled merges but keeps their
     ['Send feedback']
   );
 });
+
+test('mobile notes strip bare PR numbers and every permitted task branch prefix', () => {
+  assert.equal(
+    normalizeMobileReleaseNotes('fix(mobile): Keep drafts #123'),
+    '- Keep drafts'
+  );
+  for (const prefix of [
+    'feature',
+    'feat',
+    'fix',
+    'bugfix',
+    'hotfix',
+    'release',
+    'chore',
+    'docs',
+    'style',
+    'refactor',
+    'perf',
+    'dependabot',
+    'claude',
+  ]) {
+    assert.equal(
+      normalizeMobileReleaseNotes(
+        `fix(mobile): Keep drafts ${prefix}/drafts #123`
+      ),
+      '- Keep drafts',
+      prefix
+    );
+  }
+});
