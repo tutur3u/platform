@@ -158,7 +158,19 @@ only runner-scoped `reap_stale_devbox_runs(p_runner_id, 25)` after the claim loc
 Run every devbox pgTAP suite against the final sequence and prove the 25-row
 bound with more than 25 stale rows plus a stale row for another runner.
 
-Reaper lease release must exclude surviving queued/running/cancel-requested
-siblings. Data-modifying CTEs share the old snapshot: explicitly exclude IDs
-returned by the reaped CTE when testing for survivors, so final-sibling cleanup
-still releases its lease. Cover both sibling survival and final cleanup.
+Reaper lease cleanup runs after the run/event update, locks affected leases in
+ID order FOR UPDATE, then checks live siblings in a separate statement with a
+fresh READ COMMITTED snapshot. Enqueue takes FOR SHARE and rejects inactive
+leases after waiting. Preserve runner-before-lease trigger order. Cover enqueue
+winning the lock, reaper winning the lock, and final-sibling cleanup. Terminal
+status uses the locked update target's current status, never a candidate copy.
+The global sweep is manual until a separately admitted Cloudflare Cron Control
+trigger meets the billable-work and durable-stop requirements; do not imply that
+an unscheduled endpoint guarantees cleanup for runners that never claim again.
+
+The lease-race SQL fixture is `supabase/fixtures/devbox-reaper-lease-race.sql`.
+Run it as the disposable local stack's `supabase_admin`, separately from the
+four ordinary devbox pgTAP suites. Loopback trust does not consume a supplied
+password, and Supabase's restricted postgres role cannot use dblink_connect_u.
+The isolated lifecycle must destroy the database after committed-session tests,
+including on failure; do not grant new production privileges to run a fixture.

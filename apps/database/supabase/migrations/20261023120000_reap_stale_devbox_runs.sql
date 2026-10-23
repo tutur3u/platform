@@ -6,7 +6,7 @@
 --   * it started over 10 minutes ago on a runner that is missing, revoked, or
 --     has not heartbeated for 10 minutes.
 -- Each call handles at most p_limit runs (capped at 500) and skips locked
--- rows, so concurrent claims and sweeps never wait on each other. Re-running
+-- run rows. Lease cleanup serializes with enqueue and other reapers. Re-running
 -- is idempotent: reaped runs are terminal and drop out of the candidate set.
 create index if not exists idx_devbox_runs_active_updated
     on private.devbox_runs(updated_at)
@@ -24,9 +24,10 @@ as $$
 declare
     v_limit integer := least(greatest(coalesce(p_limit, 100), 1), 500);
     v_count integer;
+    v_lease_ids uuid[];
 begin
     with candidates as (
-        select run.id, run.status,
+        select run.id,
             case
                 when run.status = 'cancel_requested'
                     and run.updated_at < now() - interval '10 minutes'
@@ -50,7 +51,7 @@ begin
             and (p_runner_id is null or run.runner_id = p_runner_id)
     ),
     stale as (
-        select candidate.id, candidate.status, candidate.reason
+        select candidate.id, candidate.reason
         from candidates candidate
         join private.devbox_runs run on run.id = candidate.id
         where candidate.reason is not null
@@ -60,7 +61,7 @@ begin
     ),
     reaped as (
         update private.devbox_runs run
-        set status = case when stale.status = 'cancel_requested'
+        set status = case when run.status = 'cancel_requested'
                 then 'cancelled' else 'failed' end,
             completed_at = now(),
             updated_at = now()
@@ -68,24 +69,6 @@ begin
         where run.id = stale.id
             and run.status in ('running', 'cancel_requested')
         returning run.id, run.lease_id, stale.reason
-    ),
-    released_leases as (
-        update private.devbox_leases lease
-        set released_at = now(),
-            status = 'released',
-            updated_at = now()
-        from reaped
-        where lease.id = reaped.lease_id
-            and lease.keep = false
-            and lease.status = 'active'
-            and not exists (
-                select 1 from private.devbox_runs sibling
-                where sibling.lease_id = lease.id
-                    and sibling.status in ('queued', 'running', 'cancel_requested')
-                    -- Sibling CTEs see the pre-update snapshot of reaped rows.
-                    and sibling.id not in (select finished.id from reaped finished)
-            )
-        returning lease.id
     ),
     events as (
         insert into private.devbox_run_events (run_id, event_type, message, metadata)
@@ -95,7 +78,26 @@ begin
         from reaped
         returning run_id
     )
-    select count(*) into v_count from reaped;
+    select count(*), array_agg(distinct reaped.lease_id)
+    into v_count, v_lease_ids from reaped;
+
+    -- Enqueue takes FOR SHARE on the lease. Lock first, then use a new
+    -- READ COMMITTED statement snapshot to observe any enqueue that won.
+    perform lease.id from private.devbox_leases lease
+    where lease.id = any(v_lease_ids)
+    order by lease.id
+    for update of lease;
+
+    update private.devbox_leases lease
+    set released_at = now(), status = 'released', updated_at = now()
+    where lease.id = any(v_lease_ids)
+        and not lease.keep
+        and lease.status = 'active'
+        and not exists (
+            select 1 from private.devbox_runs sibling
+            where sibling.lease_id = lease.id
+                and sibling.status in ('queued', 'running', 'cancel_requested')
+        );
 
     return v_count;
 end;
@@ -105,6 +107,34 @@ revoke all on function private.reap_stale_devbox_runs(uuid, integer)
     from public, anon, authenticated;
 grant execute on function private.reap_stale_devbox_runs(uuid, integer)
     to service_role;
+
+-- Alphabetical trigger order preserves the drain guard's runner lock before
+-- this lease lock. A lease released while enqueue waits cannot admit the run.
+create or replace function private.reject_devbox_run_on_inactive_lease()
+returns trigger
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+declare
+    v_status text;
+begin
+    if new.status not in ('queued', 'running', 'cancel_requested') then
+        return new;
+    end if;
+    select lease.status into v_status
+    from private.devbox_leases lease where lease.id = new.lease_id
+    for share of lease;
+    if v_status is distinct from 'active' then
+        raise exception 'Devbox lease is no longer active.' using errcode = '55000';
+    end if;
+    return new;
+end;
+$$;
+revoke all on function private.reject_devbox_run_on_inactive_lease() from public, anon, authenticated;
+drop trigger if exists reject_devbox_run_on_inactive_lease on private.devbox_runs;
+create trigger reject_devbox_run_on_inactive_lease before insert on private.devbox_runs
+    for each row execute function private.reject_devbox_run_on_inactive_lease();
 
 -- Final claim composes trust pools (100000), drain hardening (103000), and
 -- mode admission (110000), adding only bounded runner-scoped self-reaping.
@@ -169,7 +199,7 @@ begin
             and (runner.drain_requested_at is null or run.workload = 'maintenance')
             -- S4 (flagged): trusted workloads need a fresh, server-stamped
             -- `trusted` report; Judge refuses any `trusted` report.
-            -- With the flag off this clause is always true.
+            -- Judge denial also applies while freshness admission is off.
             and private.devbox_runner_mode_admits(
                 runner.capabilities,
                 runner.capabilities_updated_at,

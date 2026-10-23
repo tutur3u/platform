@@ -439,20 +439,24 @@ against that capacity forever. `private.reap_stale_devbox_runs` finishes them:
 - a run started over 10 minutes ago on a missing or revoked runner, or one
   without a heartbeat for 10 minutes, becomes `failed`.
 
-Reaped runs release their non-kept lease and record a `reaped` run event with
+Reaped runs release an unused non-kept lease and record a `reaped` run event with
 the reason. Every claim reaps up to 25 of the claiming runner's stale runs
 before counting capacity, so both the Cloudflare control Worker and the web
 poll route free slots without a scheduler. Runs without a timeout on a healthy
 runner (long `serve` or `tunnel` jobs) are never reaped. Disabling a runner's
 heartbeat takes it offline, so its active runs are reaped after 10 minutes.
 
-Runners that stop heartbeating never claim again, so a scheduled sweep finishes
-their runs. `GET` or `POST /api/cron/devboxes/reap-stale-runs` with
-`Authorization: Bearer $CRON_SECRET` reaps at most 200 runs per call across all
-runners and returns `{ limit, reaped }`. It is idempotent and safe to overlap.
-Scheduling belongs to the Cloudflare cron-control Worker; do not add a Vercel
-cron or pg_cron entry for it. Regression coverage lives in
-`apps/database/supabase/tests/devbox-stale-run-reaper.sql` and the route test.
+**MANUAL sweep or on-claim self-reap only.** No trigger schedules a global
+sweep today. Runners that never claim again retain their stale runs until an
+authorized operator invokes `GET` or `POST /api/cron/devboxes/reap-stale-runs`
+with `Authorization: Bearer $CRON_SECRET`. Each call reaps at most 200 runs
+across all runners and returns `{ limit, reaped }`.
+
+Adding a Cloudflare Cron Control trigger is a follow-up under the billable-work
+rules: bounded calls/retries, idempotent progress, terminal scheduling and a
+tested durable stop fence. Do not add a Vercel cron or pg_cron entry. Regression
+coverage lives in `apps/database/supabase/tests/devbox-stale-run-reaper.sql`
+and the route test.
 
 ## Judge setup
 
@@ -808,5 +812,17 @@ validating each migration in isolation cannot prove the final claim behavior.
 
 Reaping releases a non-kept lease only after every queued, running or
 cancel-requested sibling finishes. Multiple runs may reuse one lease; a stale
-run cannot invalidate a healthy sibling's next claim. The stale-run reaper
+run cannot invalidate a healthy sibling's next claim. The reaper locks affected
+leases in ID order before checking siblings in a fresh statement snapshot;
+enqueue locks the lease for sharing and rejects inactive leases after waiting. The stale-run reaper
 pgTAP suite covers queued and running siblings and final-sibling release.
+
+For the lease race regression, run
+`supabase/fixtures/devbox-reaper-lease-race.sql` as `supabase_admin` inside the
+repository isolated local database before its lifecycle cleanup. It opens two
+committed sessions to prove each lease-lock winner. Normal Supabase pgTAP uses
+the restricted `postgres` role, which cannot use dblink with loopback trust
+authentication. Keep this privileged fixture inside a disposable local stack;
+its setup commits rows and its teardown removes only its actor's devbox rows.
+The lifecycle's full database cleanup removes the test account and its automatic
+workspace membership.
