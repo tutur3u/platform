@@ -189,6 +189,55 @@ JSON for tooling extensions. These commands do not enable arbitrary shell access
 or change runner workload permissions. Custom SDK deployments use their own
 origin rather than forwarding credentials to hosted Infrastructure.
 
+### Several runner identities on one host
+
+Keep each trust tier on its own runner identity: a separate runner token, OS
+user, token file, service unit and Docker socket. Pass `--service-name <name>`
+to `ttr box setup`, `ttr box connect` and `ttr box repair` to give an identity
+its own systemd unit (`tuturuuu-devbox-runner-<name>.service`), launchd label
+(`com.tuturuuu.devbox-runner.<name>`), token file (`devbox-runner-<name>.env`)
+and wrapper. Without a name the legacy single-runner paths are used, so existing
+installations and `repair` keep working. `setup`, `connect` and `repair` refuse
+to overwrite a token file, wrapper or unit that belongs to a different execution
+mode (for example adding a Judge runner without a name on a host whose legacy
+unit is trusted). Use `--service-name` for the new identity; pass `--force` only
+to deliberately replace the existing one. `repair --execution-mode` still
+requires `--force` when the installed service belongs to another mode.
+
+The agent enforces the tiers locally as well. A `trusted` runner never executes
+Judge or playground envelopes. A playground pool process
+(`TUTURUUU_PLAYGROUND_POOL_ID`) accepts only playground envelopes and
+maintenance. A `judge-only` runner accepts only Judge envelopes and maintenance.
+Judge hosts therefore run in `judge-only` mode, which `--judge-images` selects
+automatically. When a trusted runner refuses a Judge or playground envelope it
+posts `trusted_runner_fence refused a <judge|playground> envelope` as the job
+error and logs `[devbox] trusted_runner_fence` locally. That means untrusted work
+was routed to a credentialed host: audit run events for it before enabling
+trusted-mode admission.
+
+`ttr box doctor --isolation` prints read-only evidence about the identity it
+runs as: dedicated user, private token directory, systemd `ProtectHome`,
+dedicated Docker socket, gVisor default runtime, and no `docker` group
+membership. Each check is `pass`, `FAIL` or `unknown`. The command exits `1`
+unless every check the execution mode requires is proven and no other
+non-advisory check fails. `trusted` requires a dedicated user and a private
+token directory; `judge-only` also requires a dedicated Docker socket, gVisor
+by default and no `docker` group. An unset `DOCKER_HOST` with a reachable
+daemon counts as the general socket. `protectedService` is advisory: it is
+self-reported and an unreadable `/home` is reported as `unknown`, never a pass.
+The mode comes from `--execution-mode` or `TUTURUUU_DEVBOX_EXECUTION_MODE`.
+Add `--other-user <judge-user>` to prove that user cannot reach this runner's
+secrets. It fails when that user is root or in `docker`, `sudo`, `wheel`,
+`admin`, `root` or `lxd`; when the credential file or directory is a symlink,
+or grants it owner, group or other access. It checks `$HOME`, the checkout
+(`--checkout-dir`, default cwd), checkout `.env*` files other than examples,
+and every ancestor using modes and ACLs (`getfacl` on Linux, `ls -le` on macOS).
+Effective extended ACL grants conservatively fail even for unrelated identities;
+missing tools or indeterminate ACLs are required `unknown` failures. Agents
+report `executionMode` and the isolation summary in heartbeats only when
+`TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE=true` is set. Enable it only after both
+heartbeat handlers accept those fields.
+
 ### Protecting hosts with existing critical files
 
 Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
@@ -598,6 +647,32 @@ window if an await stays wedged, so the service manager's `Restart=always`
 recovers the agent instead of leaving it hung with a stale heartbeat. Regression
 coverage, including a real socket that never answers, lives in
 `devbox-agent-network.test.ts`.
+
+Trusted jobs run as the leader of their own process group. A timeout
+(`--timeout`) or a remote stop (`ttr box stop <run-id>`) sends `SIGTERM` to the
+whole group: shells, Docker CLIs and test workers, not only the direct child.
+Anything still running after a 10-second grace period gets `SIGKILL`. The
+claiming agent observes a stop through the events endpoint, which returns
+`cancelRequested` to the runner that owns the run, about every 10 seconds per
+job. A stopped run completes as `cancelled` with exit `143`; a timeout completes
+as `failed` with exit `124`. On `SIGTERM` or `SIGINT` the agent claims nothing
+new, finishes its active jobs while heartbeating, and exits `0`. A second signal
+also stops active trusted jobs through their process groups. Generated systemd
+units use `KillMode=mixed` (only the agent receives the stop signal) and
+`TimeoutStopSec=600`; launchd plists use `ExitTimeOut` 600. Re-render existing
+units with `ttr box repair` to pick these up. Regression coverage lives in
+`devbox-job-process.test.ts` and `devbox-agent-stop.test.ts`. Signals only ever
+target the job's process group. Once the group is gone the agent does not signal
+the bare PID, because the operating system may have reused it for an unrelated
+process.
+
+Judge sandboxes carry a `dev.tuturuuu.devbox.judge=1` label and an owner label
+derived from a hash of the runner token. Docker keeps a container running after
+the agent dies (watchdog exit, `SIGKILL`, crash). So when an agent with
+`TUTURUUU_JUDGE_IMAGES` configured starts, it removes up to 100 of its own
+runner's labelled containers before claiming work. Dedicated playground pool
+processes skip this step, and other runners on the same host keep their
+containers. Regression coverage lives in `devbox-judge-containers.test.ts`.
 
 Platform-managed playground workers opt in through operator configuration. They
 require gVisor and pinned language image digests, run unprivileged without host

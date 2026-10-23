@@ -1,5 +1,4 @@
 const assert = require('node:assert/strict');
-const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
@@ -13,28 +12,6 @@ const roots = ['.github/workflows', '.github/actions'];
 const pinnedUses =
   /^(?:\.\/\S+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[^\s@]+)?@[0-9a-f]{40} # \S.*)$/u;
 const usesLine = /^\s*(?:-\s+)?uses:\s*(.*?)\s*$/u;
-
-// Supabase Production authenticates staging deployment markers by the exact Git
-// blob of supabase-staging.yaml. Repinning that file changes the blob, so it
-// needs a coordinated producer-contract update rather than a mechanical pin.
-const blobPinnedProducer = '.github/workflows/supabase-staging.yaml';
-
-function gitBlobSha(bytes) {
-  return createHash('sha1')
-    .update(`blob ${bytes.length}\0`)
-    .update(bytes)
-    .digest('hex');
-}
-
-function producerContractPinsCurrentBlob() {
-  const bytes = fs.readFileSync(path.join(repoRoot, blobPinnedProducer));
-  const production = fs.readFileSync(
-    path.join(repoRoot, '.github/workflows/supabase-production.yaml'),
-    'utf8'
-  );
-  const allowlist = /\[workflowPath, \[([^\]]*)\]\]/u.exec(production)?.[1];
-  return Boolean(allowlist?.includes(`'${gitBlobSha(bytes)}'`));
-}
 
 function yamlFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -56,26 +33,12 @@ function unpinnedUses(source) {
 test('workflow and composite action uses are pinned to commit SHAs', () => {
   const files = roots.flatMap((root) => yamlFiles(path.join(repoRoot, root)));
   assert.ok(files.length > 100, 'expected to scan every workflow and action');
-  const exempt = producerContractPinsCurrentBlob() ? [blobPinnedProducer] : [];
-  const failures = files
-    .filter((file) => !exempt.includes(path.relative(repoRoot, file)))
-    .flatMap((file) =>
-      unpinnedUses(fs.readFileSync(file, 'utf8')).map(
-        (entry) => `${path.relative(repoRoot, file)}:${entry}`
-      )
-    );
-  assert.deepEqual(failures, []);
-});
-
-test('only the blob-pinned staging producer contract may defer pinning', () => {
-  // Once the producer contract no longer pins this exact blob, the exemption
-  // lapses and the staging workflow must be pinned like every other workflow.
-  assert.equal(producerContractPinsCurrentBlob(), true);
-  const staging = fs.readFileSync(
-    path.join(repoRoot, blobPinnedProducer),
-    'utf8'
+  const failures = files.flatMap((file) =>
+    unpinnedUses(fs.readFileSync(file, 'utf8')).map(
+      (entry) => `${path.relative(repoRoot, file)}:${entry}`
+    )
   );
-  assert.ok(unpinnedUses(staging).length > 0, 'pin staging and drop exemption');
+  assert.deepEqual(failures, []);
 });
 
 test('pin check rejects mutable and uncommented refs', () => {

@@ -17,6 +17,7 @@ import {
   DevboxCliUpgradeBusyError,
   upgradeDevboxCliIfNeeded,
 } from './devbox-auto-upgrade';
+import { prepareJudgeContainers } from './devbox-judge-containers';
 import { executeDevboxAgentJob } from './devbox-runner';
 
 function formatResponseStatus(response: Response) {
@@ -97,6 +98,7 @@ export async function runDevboxAgentLoop({
   };
 
   process.stdout.write('Starting Tuturuuu devbox agent.\n');
+  await prepareJudgeContainers(token);
   const timing = { ...defaultDevboxAgentTiming, ...timingOverrides };
   const watchdogMs = timing.heartbeatIntervalMs * timing.watchdogIntervals;
   let lastHeartbeatOkAt = Date.now();
@@ -197,6 +199,30 @@ export async function runDevboxAgentLoop({
         `No successful devbox heartbeat for ${Math.round(watchdogMs / 1000)}s; exiting for service manager restart.`
       );
   };
+  // First SIGTERM/SIGINT: claim nothing new, finish active jobs, exit 0.
+  // A second signal also stops active jobs through their process groups.
+  // systemd units need KillMode=mixed and a TimeoutStopSec that covers jobs.
+  let stopping = false;
+  const jobCancel = new AbortController();
+  const stopHandlers = (['SIGTERM', 'SIGINT'] as const).map((signal) => {
+    const handler = () => {
+      if (stopping) {
+        console.warn(
+          `Received ${signal} again; stopping ${active.size} active job(s).`
+        );
+        jobCancel.abort();
+        return;
+      }
+      stopping = true;
+      running = false;
+      console.warn(
+        `Received ${signal}; claiming no new jobs and finishing ${active.size} active job(s) before exit.`
+      );
+      localWake.dispatchEvent(new Event('wake'));
+    };
+    process.on(signal, handler);
+    return [signal, handler] as const;
+  });
   try {
     while (running) {
       if (Date.now() >= nextHeartbeatAt) await tryHeartbeat();
@@ -228,6 +254,8 @@ export async function runDevboxAgentLoop({
         );
         continue;
       }
+      // Never claim after a stop signal: claimed jobs must run to completion.
+      if (stopping) break;
       pendingWake = false;
       let pollResponse: Awaited<ReturnType<typeof pollDevboxAgentJobs>>;
       let pollError: string | undefined;
@@ -278,7 +306,11 @@ export async function runDevboxAgentLoop({
             if (failure) throw failure;
           }
           if (failure) throw failure;
-          const task = executeDevboxAgentJob(job, { baseUrl: origin, token })
+          const task = executeDevboxAgentJob(job, {
+            baseUrl: origin,
+            cancelSignal: jobCancel.signal,
+            token,
+          })
             .then((result) => {
               if (result.status === 'succeeded' && (restart || update)) {
                 restartRequested = true;
@@ -374,8 +406,12 @@ export async function runDevboxAgentLoop({
     }
     wakeSocket?.close();
     clearInterval(hardWatchdog);
+    for (const [signal, handler] of stopHandlers)
+      process.removeListener(signal, handler);
   }
   if (failure) throw failure;
+  if (stopping)
+    process.stdout.write('Devbox agent stopped after draining active jobs.\n');
   if (restartRequested)
     process.stdout.write(
       cliUpdated

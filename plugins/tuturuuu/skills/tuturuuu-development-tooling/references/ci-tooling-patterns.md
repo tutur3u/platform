@@ -583,6 +583,13 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   lock. Guard Modal deployment before its job lock; cancelled validation
   completions must never cancel active provider work. Discover `workflow_run`
   consumers in regression tests rather than protecting producers in isolation.
+- Never trust expression `==` for protected refs; it ignores case (`Main`).
+  Every `workflow_run` consumer starts with the canonical inline "Verify trusted
+  trigger" step: it checks the exact producer path, ID, branch and head
+  repository, and confirms `head_sha` is reachable from the branch. It binds
+  checkouts to the verified SHA and gates secrets on its output. Keep the step
+  byte-identical across consumers (`workflow-run-trigger-gate.test.js`), and
+  re-allowlist the staging blob in Supabase Production after editing staging.
 - Keep the PR exception list in `scripts/ci/protected-workflow-concurrency.test.js`
   explicit. Desktop Beta and the seven mixed Cloudflare workflows retain their deployment locks;
   gVisor acceptance retains bounded cleanup. Paused Docker/Rust workflows are

@@ -77,7 +77,7 @@ No package version, dependency resolution or published changelog is rewritten.
 ### Staging Database
 
 - `supabase-staging.yaml` is tied to the `Vercel Platform Preview Deployment` workflow on `main`.
-- The staging migration runs only when the triggering platform preview build concludes successfully, or when manually dispatched.
+- The staging migration runs only when the triggering platform preview build concludes successfully, or when manually dispatched from `main`.
 - `workflow_run` matches upstream workflows by name, so a fork pull request can
   define a same-named workflow on a branch called `main`. The job gate admits only
   a successful `push` completion from this repository's `main`; dispatched preview
@@ -85,6 +85,56 @@ No package version, dependency resolution or published changelog is rewritten.
   step. Supabase Production applies the same event and head-repository checks to
   its planner and staging triggers, and `scripts/ci/workflow-run-trust.test.js`
   requires them for every `workflow_run` consumer.
+- Expression `==` ignores case, so `head_branch == 'main'` also admits a branch
+  named `Main`. Job `if` guards are only a cheap pre-filter. Every `workflow_run`
+  consumer first runs the same inline **Verify trusted trigger** step. It reads
+  the event file, never interpolation, and fails the job unless all of these hold:
+  - the producer `path` and `workflow_id` match a `TRUSTED_PRODUCERS` line
+    (`<file> <workflow ID> <exact branch> <events> <conclusions>`);
+  - branch, event, conclusion and head repository name and ID match exactly;
+  - the head SHA is reachable from the branch: compare status `behind` or
+    `identical` against `refs/heads/<branch>`. The base is fully qualified
+    because GitHub resolves a bare name to a same-named tag first, and a tag
+    push reports the tag name as `head_branch`. Tag pushes also ignore `paths`
+    filters. The Discord Modal deploy sets `REQUIRE_BRANCH_TIP` and accepts
+    only `identical`, the live branch tip. It also sets
+    `TIP_TREE_PATH: apps/discord`. Its CI runs only for
+    Discord changes, so unrelated commits often land on `main` while it runs.
+    A `behind` head is therefore accepted only when the `apps/discord` tree at
+    that head equals the tree at the tip of `refs/heads/main`, read with
+    `git/ref` and contents GETs. The gate runs again as the first step of every
+    job that checks out code. Re-running an old run, or only its failed deploy
+    job, is therefore rejected once the deployed code has changed on the
+    branch. Supabase Staging deliberately accepts any SHA reachable from
+    `refs/heads/main`. Production sync may promote a `main` SHA that is no
+    longer the tip, and that SHA's production migration needs its staging
+    marker. Re-applying an older `main` checkout is idempotent for
+    `db push --include-all`, and the marker binds the trust step's verified
+    SHA, never the raw event;
+  - manual runs start from exactly `TRUSTED_DISPATCH_REF`.
+
+  Checkouts use the step's verified `head_sha`, and secret-bearing steps and jobs
+  are gated on its `trusted` output. Workflow IDs are stable per file path. If a
+  producer file is renamed or recreated, update its line (`gh api
+  repos/<repo>/actions/workflows/<file> --jq .id`); until then the gate fails
+  closed. `scripts/ci/workflow-run-trigger-gate.test.js` runs the real step against
+  case variants, tag sources, spoofed producers and head-repository mismatches.
+- A pinned production sync must use a SHA whose Supabase Staging Migration
+  succeeded. Otherwise the production migration finds no staging marker for
+  that SHA and waits.
+- Supabase Production accepts a staging migration marker only when the
+  producer's `supabase-staging.yaml` blob is allowlisted. Keep the list to the
+  current blob plus blobs from `main`'s history; drop blobs from rejected or
+  intermediate branch heads. `scripts/ci/staging-contract-allowlist.test.js`
+  pins the list exactly.
+- Ineligible runs (spoofed completions, dispatches from other refs) take a
+  private `supabase-staging-migration-ignored-<run>` lock, so they never queue
+  with real migrations.
+- Admin hardening: move the staging Supabase secrets to an environment whose
+  deployment branch policy allows only `main` (not `supabase-staging`, which holds
+  the deployment markers Supabase Production reads). Add a tag ruleset that blocks
+  creating `main` and `production` tags; `head_branch` cannot tell a tag apart from
+  a branch with the same name.
 - The staging deploy step runs `supabase db push --include-all` after linking
   the staging Supabase project, so staging can converge after `main` migration
   history changes.
