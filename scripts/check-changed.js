@@ -334,6 +334,10 @@ function main(argv = process.argv.slice(2), deps = {}) {
         [
           ...changes.map((change) => workspaceOf(change.file)),
           ...steps.map((step) => step.typeCheck?.workspace ?? step.cwd),
+          ...steps
+            .filter((step) => step.id === 'script-tests')
+            .flatMap((step) => step.args.filter((arg) => !arg.startsWith('-')))
+            .map((file) => path.posix.dirname(file)),
         ].filter(Boolean)
       ),
     ];
@@ -354,7 +358,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
       : [];
     if (untracked.length) {
       log(
-        `check:changed refused: untracked files in selected workspaces can affect pushed HEAD checks: ${untracked.map((file) => JSON.stringify(file)).join(', ')}`
+        `check:changed refused: untracked files in selected workspaces or script directories can affect pushed HEAD checks: ${untracked.map((file) => JSON.stringify(file)).join(', ')}`
       );
       return 1;
     }

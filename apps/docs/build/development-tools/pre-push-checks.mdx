@@ -84,6 +84,8 @@ TUTURUUU_PRE_PUSH=0 git push       # skip once while opted in
 The hook refuses tracked staged or unstaged edits so it can check the exact
 pushed HEAD. It also refuses untracked files in changed workspaces and selected
 reverse dependents because those files can affect type-checking and test discovery.
+When script tests are selected, their parent directories (including `scripts/`)
+are also checked for untracked helpers.
 Ignored files are excluded from this check. NUL-delimited Git paths preserve
 whitespace; only option-like repository/workspace-relative prefixes are rejected
 before file tools run. Internal dash directories, including Git app routes, are valid. The hook checks committed changes only and skips deletions or pushes of refs
