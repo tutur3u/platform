@@ -108,7 +108,11 @@ describe('read-only reset reroute planning', () => {
       context,
       { child: proof }
     )[0];
-    expect(plan?.status).toBe('plan-ready');
+    expect(plan).toMatchObject({
+      status: 'plan-ready',
+      success: false,
+      executionOutcome: 'admission-only',
+    });
     expect(plan?.operations.slice(0, 2).map((x) => x.operation)).toEqual([
       'read-and-save-queued-text',
       't3_queue_cancel',
@@ -131,7 +135,11 @@ describe('read-only reset reroute planning', () => {
       reroutePlan([entry], request, context, {
         child: { ...proof, configured },
       })[0]
-    ).toMatchObject({ status: 'configured', success: false });
+    ).toMatchObject({
+      status: 'configured',
+      success: false,
+      executionOutcome: 'configured-only',
+    });
     expect(
       reroutePlan([entry], request, context, {
         child: {
@@ -156,6 +164,9 @@ describe('read-only reset reroute planning', () => {
     expect(
       reroutePlan([entry], request, context, { child: proof })[0]?.blockers
     ).toContain('no-eligible-pool');
+    expect(
+      reroutePlan([entry], request, context, { child: proof })[0]
+    ).toMatchObject({ executionOutcome: 'no-eligible-pool', success: false });
   });
   it('reviewer independence overrides Codex preference', () => {
     const { request, context } = fixture();

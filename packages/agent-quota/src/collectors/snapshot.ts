@@ -1,15 +1,16 @@
 import { constants } from 'node:fs';
 import { open } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { stateRoot } from '../state-root';
 import type { AccountUsage, UsageWindow } from '../types';
 import { homeIdentity } from '../usage-import';
+import { PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS } from '../window-freshness';
 import { windowScope } from '../window-scope';
 
 // Provider status caches are distinct from provider profiles and authentication files.
 export async function collectSnapshot(
   account: AccountUsage,
-  cacheDir = join(homedir(), '.t3', 'caches'),
+  cacheDir = stateRoot('.t3', 'caches'),
   settings?: unknown
 ): Promise<AccountUsage> {
   if (!/^[a-zA-Z0-9_-]+$/.test(account.instanceId)) return account;
@@ -73,6 +74,14 @@ export async function collectSnapshot(
           window.usedPercent > 100
         )
           return [];
+        const providerWindowKind =
+          window.kind === 'session' ||
+          window.kind === 'weekly' ||
+          window.kind === 'monthly' ||
+          window.kind === 'other'
+            ? window.kind
+            : undefined;
+        const kindKnown = providerWindowKind !== undefined;
         return [
           {
             id: typeof window.id === 'string' ? window.id : undefined,
@@ -83,11 +92,14 @@ export async function collectSnapshot(
               typeof window.label === 'string' ? window.label : ''
             ),
             kind:
-              window.kind === 'weekly' ||
+              providerWindowKind === 'weekly' ||
+              providerWindowKind === 'monthly' ||
               (typeof window.windowDurationMins === 'number' &&
                 window.windowDurationMins > 1440)
                 ? 'long'
                 : 'short',
+            providerWindowKind,
+            freshnessTtlMs: PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS,
             windowDurationMins:
               typeof window.windowDurationMins === 'number' &&
               Number.isFinite(window.windowDurationMins) &&
@@ -100,7 +112,7 @@ export async function collectSnapshot(
             source: 'T3 provider status cache usageLimits',
             confidence: 'provider',
             observedAt: limits.checkedAt,
-            authoritative: true,
+            authoritative: kindKnown,
           },
         ];
       }

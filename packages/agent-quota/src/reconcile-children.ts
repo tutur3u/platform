@@ -1,4 +1,5 @@
 import {
+  executionFailureKind,
   failureClass,
   receiptReset,
   recoveryAdmissionKey,
@@ -158,6 +159,10 @@ export function reconcileChildren(
         run.status === 'failed' || receipt
           ? failureClass(receipt?.message ?? '', receipt?.classification)
           : null;
+      const executionOutcome = executionFailureKind(
+        receipt?.message ?? '',
+        receipt?.classification
+      );
       const key = classification
         ? recoveryAdmissionKey(threadId, run.id, classification)
         : `${threadId}:${run.id}:status`;
@@ -270,7 +275,11 @@ export function reconcileChildren(
             ? 'safe-to-switch-account'
             : 'needs-parent-action',
         switchBlockers: blockers,
-        recoveryAdmissionKey: classification ? key : null,
+        executionOutcome: executionOutcome ?? undefined,
+        recoveryAdmissionKey:
+          classification === 'usage-limit' || classification === 'capacity'
+            ? key
+            : null,
       });
     }
     if (!runs.length)
@@ -297,6 +306,10 @@ export function reconcileChildren(
       task.status === 'failed' || receipt
         ? failureClass(receipt?.message ?? '', receipt?.classification)
         : null;
+    const executionOutcome = executionFailureKind(
+      receipt?.message ?? '',
+      receipt?.classification
+    );
     const safe = classification
       ? safeReceipt(
           receipt?.message ?? '[terminal receipt unavailable]',
@@ -313,6 +326,7 @@ export function reconcileChildren(
       latestTurnStatus: task.status,
       providerInstanceId: task.instanceId,
       failureClass: classification,
+      executionOutcome: executionOutcome ?? undefined,
       terminalReceipt: safe?.text ?? null,
       receiptRedacted: safe?.redacted ?? false,
       resetAt:
@@ -329,9 +343,10 @@ export function reconcileChildren(
             : 'missing-event',
       disposition: 'needs-parent-action',
       switchBlockers: ['provider-native-writer-drain-unverified'],
-      recoveryAdmissionKey: classification
-        ? recoveryAdmissionKey(task.parentId, runId, classification)
-        : null,
+      recoveryAdmissionKey:
+        classification === 'usage-limit' || classification === 'capacity'
+          ? recoveryAdmissionKey(task.parentId, runId, classification)
+          : null,
     });
   }
   return {

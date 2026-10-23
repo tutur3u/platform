@@ -171,6 +171,60 @@ describe('one-shot quota admission', () => {
     });
   });
 
+  it('uses reset-pending utilization to order otherwise equal UNKNOWN admissions', () => {
+    const at = new Date('2026-10-23T20:52:25.000Z');
+    const owner = account('owner', 20);
+    const staleClaude = (
+      instanceId: string,
+      usedPercent: number
+    ): AccountUsage => ({
+      ...account(instanceId, usedPercent),
+      provider: 'claude',
+      windows: [
+        {
+          kind: 'short',
+          usedPercent,
+          authoritative: true,
+          observedAt: '2026-10-23T20:30:00.000Z',
+          resetsAt: '2026-10-23T23:00:00.000Z',
+          source: 'sanitized 20:52:25Z ordering fixture',
+        },
+      ],
+    });
+    const claudeAgent = staleClaude('claudeAgent', 80);
+    const claudeKv = staleClaude('claude_kv', 20);
+    const accounts = [owner, claudeAgent, claudeKv];
+    const input = request(accounts);
+    input.requirements.authorizedInstanceIds = [
+      claudeAgent.instanceId,
+      claudeKv.instanceId,
+    ];
+    input.requirements.privacyApprovedInstanceIds = [
+      claudeAgent.instanceId,
+      claudeKv.instanceId,
+    ];
+    input.requirements.candidates = [claudeAgent, claudeKv].map((pool) => ({
+      instanceId: pool.instanceId,
+      model: 'model',
+      capabilities: ['implementation'],
+    }));
+    const result = admit(input, {
+      accounts,
+      active: [],
+      ledger: emptyLedger(),
+      now: at,
+    });
+    expect(result.status).toBe('admit');
+    expect(result.chosen?.providerInstanceId).toBe('claude_kv');
+    expect(
+      result.pools.find((pool) => pool.pool === 'claude_kv')
+        ?.signalOrderRemainingPercent
+    ).toBe(80);
+    expect(
+      result.pools.find((pool) => pool.pool === 'claudeAgent')?.state
+    ).toBe('STALE');
+  });
+
   it('blocks stale over-limit usage until its reported reset', () => {
     const context = setup();
     const worker = context.accounts[1];

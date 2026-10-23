@@ -1,11 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, rename, unlink } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { CAPACITY_COOLDOWN_MS } from './capacity';
 import { failureClass, receiptReset, safeReceipt } from './failure-receipt';
 import { HookError } from './hook-ledger';
+import { assertSafeStateWrite, stateRoot } from './state-root';
 import {
   acquireTransactionLock,
   releaseTransactionLock,
@@ -28,7 +28,7 @@ export interface BlockLedger {
   [key: string]: unknown;
 }
 export const blockLedgerPath = () =>
-  join(homedir(), '.local/share/tuturuuu/orchestration/quota/blocks.json');
+  stateRoot('.local/share/tuturuuu/orchestration/quota/blocks.json');
 export function validGlob(value: unknown): value is string {
   return (
     typeof value === 'string' && /^[A-Za-z0-9_./:*?%-]{1,256}$/.test(value)
@@ -195,6 +195,7 @@ export async function updateBlockLedger<T>(
   operation: (ledger: BlockLedger) => T,
   path = blockLedgerPath()
 ) {
+  assertSafeStateWrite(path);
   const directory = dirname(path);
   await mkdir(directory, { recursive: true, mode: 0o700 });
   if (!(await lstat(directory)).isDirectory())

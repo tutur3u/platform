@@ -1,5 +1,4 @@
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { stateRoot } from '../state-root';
 
 export const ALLOWED_INSTANCE_IDS = [
   'codex_ai4ed',
@@ -12,13 +11,12 @@ export const ALLOWED_INSTANCE_IDS = [
 ] as const;
 
 export function codexRoots(): string[] {
-  const home = homedir();
-  return [join(home, '.codex'), join(home, '.codex-t3')];
+  return [stateRoot('.codex'), stateRoot('.codex-t3')];
 }
 
 export function codexRoot(instanceId: string): string | undefined {
-  if (instanceId === 'codex') return join(homedir(), '.codex');
-  if (instanceId === 'codex_ai4ed') return join(homedir(), '.codex-t3');
+  if (instanceId === 'codex') return stateRoot('.codex');
+  if (instanceId === 'codex_ai4ed') return stateRoot('.codex-t3');
   return;
 }
 
@@ -28,7 +26,7 @@ export function claudeProjectsRoot(_instanceId: string): string | undefined {
 }
 
 export function t3StateDatabase(): string {
-  return join(homedir(), '.t3', 'userdata', 'statev2.sqlite');
+  return stateRoot('.t3', 'userdata', 'statev2.sqlite');
 }
 
 export function allowedSessionFile(path: string, roots: string[]): boolean {

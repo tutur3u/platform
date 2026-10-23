@@ -7,6 +7,7 @@ import type {
   HookLedger,
 } from './hooks-types';
 import { SIGNAL_TTL_MS } from './policy';
+import { windowObservationIsFresh } from './window-freshness';
 import { coversModel } from './window-scope';
 
 export { FUTURE_QUARANTINE_TTL_MS } from './future-quarantine-constants';
@@ -67,15 +68,17 @@ function hasFreshWindowAfter(
   model?: string
 ) {
   return account.windows.some((window) => {
-    const observed = Date.parse(window.observedAt);
     const reset = Date.parse(window.resetsAt ?? '');
     return (
       window.authoritative &&
       typeof window.usedPercent === 'number' &&
       coversModel(window, model) &&
-      observed > timestamp &&
-      observed <= context.now.getTime() + MAX_FUTURE_OBSERVATION_SKEW_MS &&
-      context.now.getTime() - observed <= SIGNAL_TTL_MS[account.provider] &&
+      Date.parse(window.observedAt) > timestamp &&
+      windowObservationIsFresh(
+        window,
+        context.now,
+        SIGNAL_TTL_MS[account.provider]
+      ) &&
       Number.isFinite(reset) &&
       reset > context.now.getTime()
     );

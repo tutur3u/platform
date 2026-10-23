@@ -19,6 +19,7 @@ import { recommend } from './policy';
 import { poolPolicyReasons, settingsFor } from './pool-settings';
 import { clearRecoveredLimits } from './receipt-expiry';
 import { chooseRoleCandidate, rolePreferenceRank } from './role-policy';
+import { compareSignalOrder } from './signal-order';
 import { coversModel, receiptCovers } from './window-scope';
 
 export { accountKey } from './accounts';
@@ -359,6 +360,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         resetAt,
         activeReservations: count,
         score: ranking.score,
+        signalOrderRemainingPercent: ranking.signalOrderRemainingPercent,
         reasons,
         candidate,
         accountKey: key,
@@ -368,6 +370,13 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
       (a, b) =>
         b.rolePreference - a.rolePreference ||
         Number(b.state === 'FRESH') - Number(a.state === 'FRESH') ||
+        (['UNKNOWN', 'STALE'].includes(a.state) &&
+        ['UNKNOWN', 'STALE'].includes(b.state)
+          ? compareSignalOrder(
+              a.signalOrderRemainingPercent,
+              b.signalOrderRemainingPercent
+            )
+          : 0) ||
         b.orderingScore - a.orderingScore ||
         a.pool.localeCompare(b.pool)
     );
