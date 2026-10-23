@@ -1,5 +1,5 @@
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -34,7 +34,7 @@ export const POST = withSessionAuth(
 
       const expectedPrefix = `${wsId}/chats/ai/resources/`;
       if (
-        sanitizePath(path) !== path ||
+        sanitizePathStrict(path) !== path ||
         !path.startsWith(expectedPrefix) ||
         path.length === expectedPrefix.length
       ) {

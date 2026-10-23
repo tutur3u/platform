@@ -1,4 +1,4 @@
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -27,7 +27,7 @@ export const DELETE = withSessionAuth<Params>(
       const { path } = deleteBackgroundSchema.parse(await request.json());
 
       if (
-        sanitizePath(path) !== path ||
+        sanitizePathStrict(path) !== path ||
         !path.startsWith(`${context.wsId}/template-backgrounds/`) ||
         path.endsWith('/')
       ) {

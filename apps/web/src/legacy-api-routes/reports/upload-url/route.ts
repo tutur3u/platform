@@ -5,7 +5,10 @@ import {
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
+import {
+  sanitizeFilename,
+  sanitizePathStrict,
+} from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -170,7 +173,7 @@ export async function DELETE(request: Request) {
 
     const hasInvalidPath = normalizedPaths.some(
       (path) =>
-        sanitizePath(path) !== path ||
+        sanitizePathStrict(path) !== path ||
         !path.startsWith(`${user.id}/`) ||
         path.length === user.id.length + 1
     );

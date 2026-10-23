@@ -3,7 +3,7 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -37,7 +37,7 @@ function validateImagePaths(
 ): { valid: true } | { valid: false; error: string } {
   for (const p of imagePaths) {
     if (
-      sanitizePath(p) !== p ||
+      sanitizePathStrict(p) !== p ||
       !p.startsWith(`${requestId}/`) ||
       p.length === requestId.length + 1
     ) {

@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -97,7 +97,7 @@ export const POST = withSessionAuth(
 
       for (const imagePath of imagePaths) {
         if (
-          sanitizePath(imagePath) !== imagePath ||
+          sanitizePathStrict(imagePath) !== imagePath ||
           !imagePath.startsWith(`${id}/`) ||
           imagePath.length === id.length + 1
         ) {

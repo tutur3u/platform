@@ -1,4 +1,7 @@
-import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
+import {
+  sanitizeFilename,
+  sanitizePathStrict,
+} from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWhiteboardAccess } from '../../access';
@@ -43,7 +46,7 @@ export async function GET(
 
     const expectedPrefix = `${wsId}/whiteboards/${parsedParams.boardId}/`;
     if (
-      sanitizePath(path) !== path ||
+      sanitizePathStrict(path) !== path ||
       !path.startsWith(expectedPrefix) ||
       path.length === expectedPrefix.length
     ) {
