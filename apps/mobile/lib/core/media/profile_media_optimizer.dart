@@ -10,6 +10,10 @@ enum ProfileMediaKind { avatar, banner }
 /// an independent pixel ceiling and the encoded result keeps its smaller cap.
 const int profileMediaSourceByteLimit = 20 * 1024 * 1024;
 
+class ProfileMediaSizeException extends FormatException {
+  const ProfileMediaSizeException(super.message);
+}
+
 class OptimizedProfileMedia {
   const OptimizedProfileMedia(this.bytes, this.contentType, this.filename);
   final Uint8List bytes;
@@ -22,7 +26,9 @@ Future<OptimizedProfileMedia> optimizeProfileMediaFile(
   ProfileMediaKind kind = ProfileMediaKind.avatar,
 }) async {
   if (await file.length() > profileMediaSourceByteLimit) {
-    throw const FormatException('Source image exceeds the size limit');
+    throw const ProfileMediaSizeException(
+      'Source image exceeds the size limit',
+    );
   }
   return await optimizeProfileMediaBytes(await file.readAsBytes(), kind: kind);
 }
@@ -47,7 +53,9 @@ OptimizedProfileMedia _optimizeImage((Uint8List, ProfileMediaKind) input) {
   final (bytes, kind) = input;
   final avatar = kind == ProfileMediaKind.avatar;
   if (bytes.isEmpty || bytes.length > profileMediaSourceByteLimit) {
-    throw const FormatException('Source image exceeds the size limit');
+    throw const ProfileMediaSizeException(
+      'Source image exceeds the size limit',
+    );
   }
   if (bytes.length < 12) throw const FormatException('Invalid profile image');
   final decoder = bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255
@@ -106,5 +114,7 @@ OptimizedProfileMedia _optimizeImage((Uint8List, ProfileMediaKind) input) {
       return OptimizedProfileMedia(output, 'image/png', '${kind.name}.png');
     }
   }
-  throw const FormatException('Optimized image exceeds the size limit');
+  throw const ProfileMediaSizeException(
+    'Optimized image exceeds the size limit',
+  );
 }
