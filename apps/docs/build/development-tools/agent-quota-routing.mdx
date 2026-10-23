@@ -622,3 +622,48 @@ uses a 30-minute `nextEligibleAt` by default; it rejects `*`/`?` scopes and
 Likewise, `observe` with `outcome: capacity-error` requires `model`, accepts
 `nextEligibleAt`, and defaults to a 30-minute model-only cooldown. Capacity
 expiry does not assert quota headroom; normal admission checks still apply.
+
+### Turn-boundary warning and safe same-thread switch
+
+The optional, bounded `watch` command is read-only and is intended to run at an
+orchestrator turn boundary. It uses cache-reported, fresh session/short-window
+remaining percentage and never probes a provider. Defaults are `warn` at 25%
+remaining, `switch-now` at 12%, and a 3-point hysteresis band. Supply the previous
+verdict to preserve hysteresis across invocations; callers own that small piece
+of turn state, so the command needs no timer or writable watch ledger:
+
+```sh
+bun packages/agent-quota/src/cli.ts watch --owner claude_hehe \
+  --previous-verdict warn --warn-percent 25 --critical-percent 12 \
+  --hysteresis-percent 3
+```
+
+It emits one JSON line with the verdict, signal state, remaining percent and an
+optional successor. Exit codes are 0 for `ok`, 3 for `warn`, and 4 for
+`switch-now`. Missing or stale data is `warn`; a successor is selected only from
+fresh healthy headroom and excludes the owner account, blocked pools, active
+loads and outstanding reservations. No successor means the caller must stop and
+escalate rather than choose a fallback.
+
+Before a supported same-thread account change, the owner runs a read-only
+checkpoint against its thread ID and a newline-separated file of watcher PIDs:
+
+```sh
+bun packages/agent-quota/src/cli.ts checkpoint-ready \
+  --thread THREAD_ID --watcher-pids-file /path/to/watcher-pids.txt
+```
+
+It reports `go` or `no-go`, including queue/writer counts, missing watcher
+process metadata and any in-flight `gh pr merge` process. A non-empty queue,
+active T3 writer/run, unknown watcher PID, or merge
+blocks the configure boundary. The supported operation sequence is exactly:
+
+1. `checkpoint-ready` passes and the owner's queue is empty.
+2. The owner calls the supported `t3_thread_configure(modelSelection)` API.
+3. The owner reads back the thread configuration and verifies provider/model.
+4. The owner continues only after the readback matches.
+
+The check does not acquire a lease, cancel queued work, or configure the thread.
+The owner must preserve and drain any work before retrying it. T3 still has no
+native pre-delegation admission callback on `delegate_task` and no automatic
+account failover; these one-shot commands are orchestrator-invoked safeguards.

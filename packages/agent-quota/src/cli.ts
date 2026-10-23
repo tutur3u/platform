@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { collapseAccounts } from './accounts';
 import { argumentValue } from './cli-args';
 import { runBlock } from './block-cli';
+import { runCheckpointReady } from './checkpoint-ready';
 import { collectAll } from './collectors';
 import { runHook } from './hook-cli';
 import { runOperator } from './operator-cli';
@@ -13,6 +14,7 @@ import { runReconcile } from './reconcile-cli';
 import { runReroute } from './reroute-cli';
 import { parseReserves } from './reserves';
 import type { Provider, TaskRequest } from './types';
+import { evaluateWatch, type WatchVerdict } from './watch';
 
 const arg = (flag: string) => argumentValue(flag);
 
@@ -43,6 +45,52 @@ async function main(): Promise<void> {
   }
   if (command === 'block') {
     await runBlock(process.argv.slice(3));
+    return;
+  }
+  if (command === 'watch') {
+    const owner = arg('--owner');
+    if (!owner) throw new Error('watch-owner-required');
+    const numberArg = (flag: string, fallback: number) => {
+      const value = arg(flag);
+      if (value === undefined) return fallback;
+      const number = Number(value);
+      if (!Number.isFinite(number))
+        throw new Error(`watch-option-invalid:${flag}`);
+      return number;
+    };
+    const previous = arg('--previous-verdict');
+    if (
+      previous !== undefined &&
+      !['ok', 'warn', 'switch-now'].includes(previous)
+    )
+      throw new Error('watch-option-invalid:--previous-verdict');
+    try {
+      const result = await evaluateWatch(owner, {
+        warnPercent: numberArg('--warn-percent', 25),
+        criticalPercent: numberArg('--critical-percent', 12),
+        hysteresisPercent: numberArg('--hysteresis-percent', 3),
+        previous: previous as WatchVerdict | undefined,
+      });
+      console.log(JSON.stringify(result));
+      process.exitCode =
+        result.verdict === 'ok' ? 0 : result.verdict === 'warn' ? 3 : 4;
+    } catch (error) {
+      console.log(
+        JSON.stringify({
+          verdict: 'warn',
+          owner,
+          state: 'UNKNOWN',
+          remainingPercent: null,
+          successor: null,
+          reason: error instanceof Error ? error.message : 'watch-unavailable',
+        })
+      );
+      process.exitCode = 3;
+    }
+    return;
+  }
+  if (command === 'checkpoint-ready') {
+    runCheckpointReady(process.argv.slice(3));
     return;
   }
   if (command === 'admit' && process.argv[3]) {
