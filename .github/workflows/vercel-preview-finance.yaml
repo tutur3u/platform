@@ -28,6 +28,7 @@ jobs:
         with:
           fetch-depth: 2
           ref: ${{ inputs.preview_ref }}
+          persist-credentials: false
 
       - name: Confirm preview ref
         id: check_commits

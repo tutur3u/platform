@@ -313,6 +313,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Close and delete outdated formatting PR
         uses: actions/github-script@v9
