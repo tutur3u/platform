@@ -335,3 +335,24 @@ test('a rejected check post fails the run instead of passing silently', async (t
     /check-run post failed with 422/u
   );
 });
+
+test('an expensive pull request cannot starve later members of its slot', async (t) => {
+  // CodeRabbit 4360337362: the slice shares one budget. #24's huge file list
+  // exhausts it, so with a fixed order #72 and #96 would never be visited.
+  // The start rotates by UTC day, so each member leads on some day.
+  quietEnv(t);
+  const pulls = Array.from({ length: 96 }, (_, index) => pull(index + 1));
+  const files = (item) => (item.number === 24 ? 2500 : 1);
+  const seen = new Set();
+  for (let day = 0; day < 4; day += 1) {
+    const requests = routedGitHub(t, world(pulls, { files }));
+    await sweep(repo, { now: day0 + day * 24 * hour }).catch(() => {});
+    for (const number of visited(requests)) {
+      if (number % slots === 0) seen.add(number);
+    }
+  }
+  assert.deepEqual(
+    [...seen].sort((a, b) => a - b),
+    [24, 48, 72, 96]
+  );
+});

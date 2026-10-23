@@ -33,6 +33,14 @@ const workflowPath = '.github/workflows/security-review-sweep.yaml';
 
 const slotOf = (now) => new Date(now).getUTCHours() % slots;
 
+// The slice starts at a different member each UTC day, so a PR that exhausts
+// the shared budget cannot starve the same later members of its slot daily.
+function rotate(slice, now) {
+  if (slice.length === 0) return slice;
+  const start = Math.floor(now / (24 * 60 * 60 * 1000)) % slice.length;
+  return [...slice.slice(start), ...slice.slice(0, start)];
+}
+
 // Start of the last successful scheduled sweep of this workflow file on the
 // default branch, or null when it cannot be established.
 async function lastSweepStart(repo) {
@@ -89,7 +97,10 @@ async function sweep(repo, { now = Date.now() } = {}) {
     (pull) => pull.base?.repo?.full_name === repo
   );
   const slot = slotOf(now);
-  const slice = pulls.filter((pull) => pull.number % slots === slot);
+  const slice = rotate(
+    pulls.filter((pull) => pull.number % slots === slot),
+    now
+  );
   const budget = used() + slice.length * callsPerPull;
   const counts = { failed: 0, fastPath: 0, overBudget: 0, partition: 0 };
 
@@ -157,4 +168,12 @@ if (require.main === module) {
   });
 }
 
-module.exports = { callsPerPull, fastPathPulls, main, slotOf, slots, sweep };
+module.exports = {
+  callsPerPull,
+  fastPathPulls,
+  main,
+  rotate,
+  slotOf,
+  slots,
+  sweep,
+};
