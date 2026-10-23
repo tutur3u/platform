@@ -303,3 +303,23 @@ test('no checkout-local selector or helper can skip or decide a security gate', 
     assert.equal(steps.at(-1).name, name, `${id} must stay the last step`);
   }
 });
+
+// CodeRabbit 4360337349: any workflow holding checks: write could post a
+// same-named "Security review" check through GITHUB_TOKEN, and every such
+// check comes from the shared github-actions app. Until a dedicated GitHub App
+// writes the check (a repository-setting decision, see security-cadence.mdx),
+// only the three Security review writers may request checks: write.
+test('only the Security review writers can write check runs', () => {
+  const writers = [];
+  for (const file of fs.readdirSync(workflowsDir).sort()) {
+    if (!/\.ya?ml$/u.test(file)) continue;
+    const text = source(file);
+    assert.doesNotMatch(text, /permissions:\s*write-all/u, file);
+    if (/^\s*checks:\s*write\b/mu.test(text)) writers.push(file);
+  }
+  assert.deepEqual(writers, [
+    'security-review-classifier.yaml',
+    'security-review-reclassify.yaml',
+    'security-review-sweep.yaml',
+  ]);
+});

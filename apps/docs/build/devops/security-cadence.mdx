@@ -94,6 +94,20 @@ findings are tracked in the findings register instead of blocking unrelated work
   scan, audit and CodeQL gate steps against a base without the trusted helpers
   and a hostile checkout copy.
 - Fork CodeQL results are not uploaded. They feed only the new-alert gate.
+- The repository and its Actions logs are public, so neither CodeQL gate prints
+  rule IDs, paths or messages, and no SARIF is kept as an artifact. They print
+  counts by severity and point to the maintainer-only code-scanning view
+  (Security tab). Triage findings there, by alert number. Pull request uploads
+  are diff-filtered, so the Security tab may show none of the pre-existing
+  results that a bootstrap gate counts.
+- **Bootstrap sequencing.** Until `scripts/ci/codeql-new-alerts.js` is on
+  `main`, the pull request gate fails on every high/critical result, including
+  pre-existing ones. Land the gate script on `main` first, in its own PR. The
+  trusted lookup reads it from `HEAD^1`, which is the base (`main`) commit of the
+  pull request merge ref; the gate does not run on pushes. Then make sure
+  `main` has a CodeQL analysis for every scanned category, because the script
+  compares against `main`'s latest analysis per category and still fails
+  closed when a category has no baseline. New findings always fail.
 - Do not enable GitHub CodeQL default setup while `codeql.yml` exists. Code
   scanning rejects advanced-setup uploads when default setup is on.
 
@@ -202,6 +216,8 @@ stale. Revocation is therefore enforced in layers that the PR does not own:
      changed paths, never labels. Every open PR is therefore visited once per
      24 scheduled runs. A failed or over-budget slice fails its run but cannot
      block a later slice, and the rest of a failing slice is still evaluated.
+     The slice starts at a different member each UTC day, so an expensive PR
+     cannot starve the same later members of its slot every day.
    - **Fast path (best effort).** Afterwards, at most 10 other PRs updated
      since the last successful sweep are evaluated, oldest change first.
      - The cursor is read from GitHub's run history. It is used only when the
@@ -244,8 +260,22 @@ The check is enforced only when a ruleset requires the **Security review** statu
 check from the GitHub Actions app (integration ID `15368`). Pinning the app stops
 a same-named commit status or another app's check from satisfying it. It cannot
 stop a same-repository workflow holding `checks: write` from posting a same-named
-check, so keep the repository's default workflow token read-only. Treat a PR that
-adds such a workflow as a security review case. Organization admins with an
+check: every `GITHUB_TOKEN` check run comes from the shared `github-actions` app,
+with nothing that binds it to the classifier. `security-workflows.test.js` fails
+if any workflow other than the three Security review writers requests
+`checks: write`. Keep the repository's default workflow token read-only, and
+treat a PR that adds such a workflow as a security review case. This is a
+mitigation, not a fix: a pull request can still edit workflows under
+`pull_request`.
+
+The full fix needs a repository-setting decision by the owner:
+- create a dedicated GitHub App with only `checks: write`, and have all three
+  writers post with its installation token;
+- require the **Security review** check from that App's integration ID;
+- filter `latestCheckConclusion` by its slug.
+
+The `tuturuuu-bot` App (#6493) does not fit, because it deliberately has no
+`checks` permission and is never used from workflows. Organization admins with an
 `always` bypass skip the requirement, and GitHub records the bypass. Without that
 rule, the integration owner must not merge a PR with a pending **Security review**
 check. Before merging, re-derive the decision from `main`:
