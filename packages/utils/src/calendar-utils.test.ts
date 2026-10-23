@@ -1,5 +1,5 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   convertGoogleAllDayEvent,
   createAllDayEvent,
@@ -8,6 +8,22 @@ import {
 
 describe('calendar-utils', () => {
   describe('isAllDayEvent', () => {
+    it.each([
+      ['2026-03-08T05:00:00Z', '2026-03-09T04:00:00Z'],
+      ['2026-11-01T04:00:00Z', '2026-11-02T05:00:00Z'],
+    ])(
+      'detects display-zone DST midnights from another browser zone (%s)',
+      (start_at, end_at) => {
+        vi.stubEnv('TZ', 'Pacific/Honolulu');
+        try {
+          expect(isAllDayEvent({ start_at, end_at }, 'America/New_York')).toBe(
+            true
+          );
+        } finally {
+          vi.unstubAllEnvs();
+        }
+      }
+    );
     it('should detect all-day events with date-only format', () => {
       const event: Pick<CalendarEvent, 'start_at' | 'end_at'> = {
         start_at: '2024-01-01T00:00:00.000Z',
