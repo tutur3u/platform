@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { generateKeyPairSync } from 'node:crypto';
+import { generateKeyPairSync, type KeyObject } from 'node:crypto';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
@@ -12,7 +12,7 @@ import {
 
 const now = new Date('2026-10-06T00:00:00Z');
 const password = 'synthetic-test-password';
-type TestKeyPair = ReturnType<typeof generateKeyPairSync>;
+type TestKeyPair = { privateKey: KeyObject; publicKey: KeyObject };
 type TestPki = {
   x509: {
     sign(
