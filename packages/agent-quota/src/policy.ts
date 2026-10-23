@@ -1,3 +1,7 @@
+import { collapseAccounts } from './accounts';
+
+const NO_RESET_HIGH_LIMIT_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
+
 import type {
   AccountReserve,
   AccountUsage,
@@ -19,12 +23,20 @@ export interface RecommendOptions {
   hardLimitPercent?: number;
 }
 
+export const SIGNAL_TTL_MS = {
+  codex: 15 * 60_000,
+  claude: 15 * 60_000,
+  antigravity: 5 * 60_000,
+};
+
 const DEFAULT_RESERVES: Record<string, AccountReserve> = {
   claude_hehe: { minRemainingPercent: 25, maxConcurrent: 1 },
 };
 
 function activeCount(id: string, active: ActiveAssignment[]): number {
-  return active.find((entry) => entry.instanceId === id)?.count ?? 0;
+  return active
+    .filter((entry) => entry.instanceId === id)
+    .reduce((sum, entry) => sum + Math.max(0, entry.count), 0);
 }
 
 function rankOne(
@@ -39,7 +51,11 @@ function rankOne(
   const reasons: RecommendationReason[] = [];
   const windows = account.windows.filter(
     (window): window is typeof window & { usedPercent: number } =>
-      typeof window.usedPercent === 'number'
+      window.authoritative &&
+      typeof window.usedPercent === 'number' &&
+      Number.isFinite(window.usedPercent) &&
+      window.usedPercent >= 0 &&
+      window.usedPercent <= 100
   );
   const isFresh = (window: (typeof windows)[number]): boolean => {
     const observedAt = Date.parse(window.observedAt);
@@ -48,20 +64,67 @@ function rankOne(
       Number.isFinite(observedAt) &&
       observedAt <= now.getTime() + 5 * 60_000 &&
       now.getTime() - observedAt <= staleAfterMs &&
-      (resetAt === undefined ||
-        !Number.isFinite(resetAt) ||
-        resetAt > now.getTime())
+      resetAt !== undefined &&
+      Number.isFinite(resetAt) &&
+      resetAt > now.getTime()
     );
   };
   const freshWindows = windows.filter(isFresh);
   const staleWindows = windows.filter((window) => !isFresh(window));
-  const count = activeCount(account.instanceId, active);
+  const count = (account.instanceIds ?? [account.instanceId]).reduce(
+    (sum, id) => sum + activeCount(id, active),
+    0
+  );
+  const ages = windows
+    .map((window) => now.getTime() - Date.parse(window.observedAt))
+    .filter(Number.isFinite);
+  const ageMs = ages.length ? Math.max(0, ...ages) : null;
+  const known =
+    freshWindows.length > 0 &&
+    staleWindows.length === 0 &&
+    account.windows.filter((window) => window.usedPercent !== undefined)
+      .length === windows.length;
+  const maximum = Math.max(...freshWindows.map((window) => window.usedPercent));
+  const state = !known
+    ? 'UNKNOWN'
+    : maximum >= 100
+      ? 'exhausted'
+      : maximum >= hardLimitPercent
+        ? 'near'
+        : 'healthy';
   const weight = Math.max(0, task.weight ?? 1);
   const eligibleProvider =
     !task.provider ||
     task.provider === 'any' ||
     task.provider === account.provider;
-  let eligible = eligibleProvider && reserve?.excluded !== true;
+  let eligible =
+    eligibleProvider &&
+    reserve?.excluded !== true &&
+    state === 'healthy' &&
+    account.available !== false;
+  if (account.alias) reasons.push({ code: 'alias', message: account.alias });
+  if (account.available === false)
+    reasons.push({
+      code: 'unavailable',
+      message: 'Live catalog does not allow delegation to this instance.',
+    });
+  if (!windows.length)
+    reasons.push({
+      code: 'no-usage-signal',
+      message:
+        'No authoritative usage signal is exposed; eligibility is UNKNOWN.',
+    });
+  reasons.push({
+    code: 'task-kind',
+    message: `${task.kind ?? 'implementation'}: quota policy is shared across task kinds; no model quality is inferred.`,
+  });
+  if (task.model && !account.models?.includes(task.model)) {
+    eligible = false;
+    reasons.push({
+      code: 'model-unverified',
+      message: 'Requested model is not verified in this instance live catalog.',
+    });
+  }
   if (!eligibleProvider)
     reasons.push({
       code: 'provider-mismatch',
@@ -89,11 +152,11 @@ function rankOne(
       code: 'headroom',
       message: `${Math.round(weakest)}% remaining in the tightest reported window.`,
     });
-    if (freshWindows.some((window) => window.usedPercent > hardLimitPercent)) {
+    if (freshWindows.some((window) => window.usedPercent >= hardLimitPercent)) {
       eligible = false;
       reasons.push({
         code: 'near-limit',
-        message: `Excluded because a reported window exceeds ${hardLimitPercent}% used.`,
+        message: `Excluded because a reported window meets or exceeds ${hardLimitPercent}% used.`,
       });
     }
     const remaining = Math.min(...headrooms);
@@ -161,24 +224,33 @@ function rankOne(
     });
   }
 
+  if (state === 'near' || state === 'exhausted')
+    reasons.push({
+      code: 'drain',
+      message:
+        'Drain existing work; do not assign new lanes until fresh usage confirms recovery.',
+    });
   if (staleWindows.length) {
     score = Math.min(score, freshWindows.length ? 60 : 18);
     if (
       staleWindows.some((window) => {
-        const resetAt = window.resetsAt
-          ? Date.parse(window.resetsAt)
-          : Number.NaN;
+        if (window.usedPercent < hardLimitPercent) return false;
+        if (window.resetsAt) {
+          const reset = Date.parse(window.resetsAt);
+          return Number.isFinite(reset) && reset > now.getTime();
+        }
+        const observed = Date.parse(window.observedAt);
         return (
-          window.usedPercent > hardLimitPercent &&
-          Number.isFinite(resetAt) &&
-          resetAt > now.getTime()
+          Number.isFinite(observed) &&
+          observed <= now.getTime() &&
+          now.getTime() - observed <= NO_RESET_HIGH_LIMIT_MAX_AGE_MS
         );
       })
     ) {
       eligible = false;
       reasons.push({
         code: 'near-limit-stale',
-        message: `Excluded because a stale window above ${hardLimitPercent}% used has not reset yet.`,
+        message: `Excluded because a stale window at or above ${hardLimitPercent}% used has not reset or aged out.`,
       });
     }
     reasons.push({
@@ -224,6 +296,17 @@ function rankOne(
     instanceId: account.instanceId,
     provider: account.provider,
     label: account.label,
+    state,
+    ageMs,
+    ttlMs: staleAfterMs,
+    activeCount: count,
+    action:
+      state === 'near' || state === 'exhausted'
+        ? 'drain'
+        : eligible
+          ? 'delegate'
+          : 'wait',
+    instanceIds: account.instanceIds ?? [account.instanceId],
     score,
     eligible,
     reasons,
@@ -232,27 +315,28 @@ function rankOne(
 
 export function recommend(options: RecommendOptions): Recommendation {
   const now = options.now ?? new Date();
-  const staleAfterMs = options.staleAfterMs ?? 15 * 60_000;
+
   const hardLimitPercent = options.hardLimitPercent ?? 90;
   const reserves = { ...DEFAULT_RESERVES, ...options.reserves };
   const simulated = new Map(
     options.active.map((entry) => [entry.instanceId, entry.count])
   );
-  const ranked = options.accounts
+  const ranked = collapseAccounts(options.accounts, options.task.model)
     .map((account) =>
       rankOne(
         account,
         options.task,
         [...simulated].map(([instanceId, count]) => ({ instanceId, count })),
-        reserves[account.instanceId],
+        mergeReserves(account.instanceIds ?? [account.instanceId], reserves),
         now,
-        staleAfterMs,
+        options.staleAfterMs ?? SIGNAL_TTL_MS[account.provider],
         hardLimitPercent
       )
     )
     .sort(
       (a, b) =>
         Number(b.eligible) - Number(a.eligible) ||
+        Number(b.state === 'healthy') - Number(a.state === 'healthy') ||
         b.score - a.score ||
         a.instanceId.localeCompare(b.instanceId)
     );
@@ -286,4 +370,24 @@ export function recommendAssignments(
     else active.push({ instanceId: next.instanceId, count: 1 });
   }
   return selected;
+}
+
+function mergeReserves(
+  ids: string[],
+  reserves: Record<string, AccountReserve>
+): AccountReserve {
+  const entries = ids
+    .map((id) => reserves[id])
+    .filter((value): value is AccountReserve => Boolean(value));
+  return {
+    excluded: entries.some((value) => value.excluded),
+    minRemainingPercent: Math.max(
+      0,
+      ...entries.map((value) => value.minRemainingPercent ?? 0)
+    ),
+    maxConcurrent: Math.min(
+      Infinity,
+      ...entries.map((value) => value.maxConcurrent ?? Infinity)
+    ),
+  };
 }

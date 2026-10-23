@@ -145,7 +145,7 @@ export async function collectClaude(
           tokens.output += usage.output;
           latestUsageAt = Math.max(latestUsageAt, timestamp);
         }
-        const limit = readRateLimitEvent(line, info.mtime.toISOString());
+        const limit = readRateLimitEvent(line, '');
         if (limit) {
           const previous = limits.get(limit.id);
           if (

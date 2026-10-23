@@ -3,16 +3,18 @@ title: "Agent quota routing"
 description: "Inspect local agent quota signals and spread delegated work across accounts."
 ---
 
-`packages/agent-quota` is a read-only local CLI and routing library for the Codex
-and Claude Code provider instances available to T3 Code. It recommends where to
-send delegated tasks using provider headroom when available, active assignments,
-data freshness, reset time, and account reserves.
+`packages/agent-quota` is a read-only local CLI and routing library for Codex,
+Claude Code, and Antigravity provider instances available to T3 Code. It
+recommends where to send delegated tasks using provider headroom when available,
+active assignments, data freshness, reset time, and account reserves.
 
 ## Data sources and authority
 
 | Source | Signals | Authority and freshness |
 | --- | --- | --- |
 | T3 Code `~/.t3/userdata/statev2.sqlite` | Provider instance IDs, latest session timestamps, active subagent counts | Authoritative for T3's locally persisted orchestration metadata. It does not contain provider quota snapshots. Read through a read-only SQLite connection and only query non-content columns. |
+| T3 provider status cache `~/.t3/caches/<providerInstanceId>.json` | `usageLimits` windows with provider-reported utilization and resets | Authoritative only for each reported window and its model scope at `checkedAt`. A model with no covering window is UNKNOWN; no percentage is inferred. |
+| Antigravity live catalog | Provider instance ID, supported models and delegation availability | Identifies routable models, not quota. Gemini models without a covering provider-reported usage/reset window remain UNKNOWN. |
 | Codex local `codex app-server` snapshot (primary), with `~/.codex/sessions` and `~/.codex-t3/sessions` JSONL fallback | Local JSON-RPC `account/rateLimits/read` primary/secondary `usedPercent`, window length and reset time; JSONL token increments | Codex owns authentication and provider communication. The app-server snapshot and provider-reported windows are authoritative at their observation timestamp. Token totals are estimates, limited to recent local rollouts. |
 | Claude `~/.claude-t3/<instance>/projects` JSONL | Recent input/output token usage; structured `rate_limit_event` utilization and numeric `resetsAt` values | Token sums are estimates and are not converted into quota percentages. Structured provider limit events are authoritative; numeric reset times are normalized to ISO timestamps. Plain-text “usage limit reached” messages are ignored. |
 
@@ -40,8 +42,8 @@ bun packages/agent-quota/src/cli.ts recommend --provider codex --count 2 --json
 
 `recommend` returns a ranked list with reasons and a simulated assignment list
 that spreads the requested task count. A stale or missing quota signal is
-uncertain and receives a ranking penalty. A fresh reported window above 90% is
-excluded. A reset timestamp already in the past also makes that window
+uncertain and makes the pool ineligible. A fresh reported window at or above
+90% is excluded. A reset timestamp already in the past also makes that window
 uncertain, so it receives no imminent-reset preference. `claude_hehe` defaults
 to at most one active assignment and a 25%
 remaining reserve to keep the orchestrator account available.
@@ -50,3 +52,73 @@ Set `AGENT_QUOTA_RESERVES` to a JSON object keyed by instance ID to override or
 add per-account `minRemainingPercent`, `maxConcurrent`, or `excluded` values.
 These policy choices are local routing recommendations; T3 Code dispatch still
 requires its normal provider instance selection.
+
+## Freshness, reservations, and Antigravity
+
+The 2026-10-23 routing policy includes every configured Codex, Claude, and
+Antigravity instance. Availability alone is never quota evidence. Only
+provider-reported percentages with valid observation and future reset timestamps
+can establish healthy capacity. Every reported quota window must be current.
+Codex and Claude signals have a 15-minute TTL; Antigravity has a 5-minute TTL.
+These are conservative local policy defaults, not provider reset cadences.
+Output includes `state`, `ageMs` (oldest quota window), `ttlMs`, `activeCount`,
+`action`, and explanatory reasons. Missing observations have a null age.
+Expired, missing, malformed, or non-authoritative usage is `UNKNOWN` and cannot
+be selected. Near means at least 90% used; exhausted means 100%. Both recommend
+`drain`: finish existing work without assigning new lanes, then require a fresh
+healthy observation. An expired reset never implies free quota.
+
+The tool reads existing `~/.t3/caches/<providerInstanceId>.json` **provider status
+snapshots**, validating both instance ID and driver. It projects only quota
+windows, `usageLimits.checkedAt`, and the optional opaque account identity hash.
+It does not read provider profiles or auth files, invoke Antigravity's probe, or
+reproduce its authentication flow. `--snapshots-only` disables transcript and
+Codex app-server collection, making this cache plus orchestration metadata the
+only usage sources.
+
+T3 Nightly source inspection found Antigravity support in provider-core's
+`makeAntigravityUsageProbe`: provider quota-summary buckets are preferred, with
+reported model quotas as a fallback. The probe publishes `usageLimits` with
+`checkedAt`, percentage windows, reported resets, and an opaque
+`credentialFingerprint`. `ProviderRegistry` persists those status snapshots;
+the Limits tab deduplicates account identities. No reset cadence is inferred
+when a provider omits it. Missing or unavailable cached usage produces
+`UNKNOWN` with `no-usage-signal`. This is a snapshot consumer; refreshing T3's
+Limits tab remains T3's responsibility.
+
+Models and display names come from `orchestrator_capabilities`, through the
+supported T3 ACP command transport when available. A caller using native MCP
+can pipe that tool's JSON response to `--catalog-stdin`. No Antigravity model
+IDs are baked into the router. The observed live catalog includes Gemini 4
+Argon and Gemini 3.8 Flash low/medium/high variants. Without a catalog, known
+instance IDs remain visible, but requested model availability is unverified.
+
+```sh
+bun packages/agent-quota/src/cli.ts recommend --task-kind implementation --snapshots-only --json
+bun packages/agent-quota/src/cli.ts recommend --task-kind review --provider antigravity --snapshots-only --json
+# Pipe a sanitized orchestrator_capabilities response into this command:
+bun packages/agent-quota/src/cli.ts recommend --task-kind research --catalog-stdin --snapshots-only --json
+```
+
+Task kinds share quota scoring; they do not imply invented model-quality scores.
+A requested `--model` must appear in that instance's catalog. Rankings subtract
+30 points per active reservation plus a bounded contention penalty. This is a
+routing weight, not a usage percentage. Eligible healthy pools rank before
+UNKNOWN, near, or exhausted pools even when their reservations produce a
+negative score.
+
+Reservations combine active run and subagent projections, including queued,
+preparing, starting, pending and waiting work. Held queued runs do not reserve
+capacity. A task and its running child thread count once per instance; a later
+active child turn still counts after the original task completes. Native
+subagents without child threads use their provider-thread identity. Reads are
+advisory snapshots, not atomic admission locks; concurrent callers must still
+coordinate dispatch.
+
+Identity is always `providerInstanceId`, never display name. The crossed Claude
+labels and the shared `skora` label do not merge pools. When T3 exposes the same
+opaque account fingerprint under the same provider, instances collapse into one
+pool with combined reservations and the strictest configured reserve. Otherwise
+they remain separate and carry an `alias` explanation. Hashes are not printed
+in CLI output. Regression coverage lives in `tests/signals.test.ts` and the
+existing collector/policy suites under `packages/agent-quota`.

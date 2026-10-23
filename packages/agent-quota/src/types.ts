@@ -1,4 +1,4 @@
-export type Provider = 'codex' | 'claude';
+export type Provider = 'codex' | 'claude' | 'antigravity';
 export type WindowKind = 'short' | 'long' | 'session' | 'weekly';
 
 export interface UsageWindow {
@@ -16,6 +16,11 @@ export interface AccountUsage {
   provider: Provider;
   label: string;
   windows: UsageWindow[];
+  models?: string[];
+  accountIdentityHash?: string;
+  alias?: string;
+  instanceIds?: string[];
+  available?: boolean;
   recentTokens?: { input: number; output: number; observedAt: string };
   lastError?: string;
 }
@@ -26,6 +31,7 @@ export interface ActiveAssignment {
 }
 
 export interface TaskRequest {
+  kind?: 'implementation' | 'review' | 'research';
   provider?: Provider | 'any';
   model?: string;
   weight?: number;
@@ -46,6 +52,12 @@ export interface RankedInstance {
   instanceId: string;
   provider: Provider;
   label: string;
+  state: 'healthy' | 'near' | 'exhausted' | 'UNKNOWN';
+  ageMs: number | null;
+  ttlMs: number;
+  activeCount: number;
+  action: 'delegate' | 'drain' | 'wait';
+  instanceIds: string[];
   score: number;
   eligible: boolean;
   reasons: RecommendationReason[];
@@ -57,6 +69,7 @@ export interface Recommendation {
 }
 
 export const DEFAULT_INSTANCE_LABELS: Record<string, string> = {
+  antigravity: 'Antigravity',
   codex_ai4ed: 'aiedu',
   codex: 'skora',
   claudeAgent: 'hehe',
