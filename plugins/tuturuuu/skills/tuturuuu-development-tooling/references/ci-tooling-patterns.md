@@ -233,6 +233,16 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   source or an unmerged worktree. Confirmed-merged worktrees should be removed
   after main-green, `bun git-sync`, and production verification so their target
   caches disappear with them.
+- `bun worktree:footprint` reports each registered worktree's allocated and
+  APFS-unique size. On macOS Bun `node_modules` are clones of the shared cache,
+  so `du` overstates a fresh worktree about 14x (4.3 GiB vs ~0.3 GiB unique).
+  `bun worktree:prune-artifacts` is a dry run unless `--apply` is passed. It
+  only removes git-ignored, untracked rebuildable outputs (`.turbo`, `.next`,
+  `.open-next`, `dist`, ignored `build`, Flutter `.dart_tool` build output,
+  `apps/backend/target`) from linked worktrees that are clean, unheld, idle,
+  and merged into `--base`. Keep `bunfig.toml` `globalStore = false` and the
+  default clonefile backend unless exact-commit CI type-check/build evidence
+  proves otherwise. See `apps/docs/build/development-tools/worktree-disk-usage.mdx`.
 - Turborepo build outputs may include production `.next/**`, but must exclude
   volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
   enables the Turbopack build filesystem cache locally through the shared Next

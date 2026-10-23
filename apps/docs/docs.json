@@ -373,6 +373,7 @@
               "build/development-tools/ci-cd-pipelines",
               "build/development-tools/ci-cd-optimization",
               "build/development-tools/cleaning-clone",
+              "build/development-tools/worktree-disk-usage",
               "build/development-tools/documenting",
               "build/development-tools/mobile-state-regressions",
               "build/development-tools/public-seo",
