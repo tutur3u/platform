@@ -23,12 +23,26 @@ function loadWorkflows() {
   }));
 }
 
+// GitHub expressions yield null for properties of null (a deleted fork has
+// head_repository: null), so property access outside string literals is
+// made optional instead of throwing.
+function nullSafe(source) {
+  return source
+    .split(/('(?:[^']|'')*')/u)
+    .map((part, index) =>
+      index % 2 === 1 ? part : part.replace(/\.(?=[A-Za-z_])/gu, '?.')
+    )
+    .join('');
+}
+
 function evaluateIf(expression, github) {
-  const source = String(expression)
-    .trim()
-    .replace(/^\$\{\{([\s\S]*)\}\}$/u, '$1')
-    .replace(/needs\.([\w-]+)/gu, 'needs["$1"]')
-    .replace(/steps\.([\w-]+)/gu, 'steps["$1"]');
+  const source = nullSafe(
+    String(expression)
+      .trim()
+      .replace(/^\$\{\{([\s\S]*)\}\}$/u, '$1')
+      .replace(/needs\.([\w-]+)/gu, 'needs["$1"]')
+      .replace(/steps\.([\w-]+)/gu, 'steps["$1"]')
+  );
   const lower = (value) => String(value ?? '').toLowerCase();
   return Boolean(
     vm.runInNewContext(
@@ -115,6 +129,10 @@ function runningJobs(workflow, github) {
 const spoofedCompletions = {
   'fork pull request': { event: 'pull_request' },
   'fork head repository': { event: 'push' },
+  'fork head repository workflow_run': { event: 'workflow_run' },
+  'fork head repository workflow_dispatch': { event: 'workflow_dispatch' },
+  'deleted fork pull request': { event: 'pull_request', head_repository: null },
+  'deleted fork push': { event: 'push', head_repository: null },
   'same-repository pull request': {
     event: 'pull_request',
     head_repository: { full_name: repository },
@@ -235,6 +253,35 @@ test('spoof check catches each missing workflow_run guard', () => {
     );
     assert.match(spoofFailures([weakened]).join('\n'), new RegExp(label, 'u'));
   }
+
+  // Supabase Production: each guard on the admission job is load-bearing.
+  const production = consumers.filter(
+    ({ file }) => file === 'supabase-production.yaml'
+  );
+  for (const [guard, label] of [
+    [
+      /github\.event\.workflow_run\.head_repository\.full_name == github\.repository && /u,
+      'fork head repository',
+    ],
+    [
+      / && \(github\.event\.workflow_run\.event == 'push' \|\| github\.event\.workflow_run\.event == 'workflow_dispatch'\)/u,
+      'same-repository pull request completion of "Production Deployment Planner"',
+    ],
+    [
+      / && \(github\.event\.workflow_run\.event == 'workflow_run' \|\| github\.event\.workflow_run\.event == 'workflow_dispatch'\)/u,
+      'same-repository pull request completion of "Supabase Staging Migration"',
+    ],
+  ]) {
+    const weakened = production.map((consumer) => {
+      const copy = structuredClone(consumer);
+      const job = copy.workflow.jobs['evaluate-prerequisites'];
+      const original = job.if;
+      job.if = original.replace(guard, '');
+      assert.notEqual(job.if, original);
+      return copy;
+    });
+    assert.match(spoofFailures(weakened).join('\n'), new RegExp(label, 'u'));
+  }
 });
 
 test('Supabase Staging migrates only trusted main push completions', () => {
@@ -247,10 +294,33 @@ test('Supabase Staging migrates only trusted main push completions', () => {
       ...overrides,
     });
   assert.deepEqual(runningJobs(workflow, trusted()), ['migrate']);
-  assert.deepEqual(
-    runningJobs(workflow, { event_name: 'workflow_dispatch', repository }),
-    ['migrate']
-  );
+  const dispatch = (ref) => ({
+    event_name: 'workflow_dispatch',
+    ref,
+    repository,
+  });
+  assert.deepEqual(runningJobs(workflow, dispatch('refs/heads/main')), [
+    'migrate',
+  ]);
+  // Manual staging migrations from unreviewed branches are refused.
+  assert.deepEqual(runningJobs(workflow, dispatch('refs/heads/feature/x')), []);
+
+  // Ineligible runs get a private lock instead of queueing with real ones.
+  const group = (github) =>
+    evaluateIf(
+      `(${workflow.concurrency.group.replace(/^\$\{\{|\}\}$/gu, '')}) == 'supabase-staging-migration'`,
+      { run_id: 9, ...github }
+    );
+  assert.equal(group(trusted()), true);
+  assert.equal(group(dispatch('refs/heads/main')), true);
+  for (const github of [
+    trusted({ head_repository: { full_name: attacker } }),
+    trusted({ head_repository: null }),
+    trusted({ event: 'pull_request' }),
+    dispatch('refs/heads/feature/x'),
+  ]) {
+    assert.equal(group(github), false);
+  }
   for (const overrides of [
     { event: 'pull_request' },
     { event: 'workflow_dispatch' },
@@ -326,10 +396,18 @@ test('Discord Modal deploy accepts only trusted main push completions', () => {
       ...overrides,
     });
   assert.equal(evaluateIf(deploy, trusted({})), true);
-  assert.equal(
-    evaluateIf(deploy, { event_name: 'workflow_dispatch', repository }),
-    true
+  const dispatch = (ref) => ({
+    event_name: 'workflow_dispatch',
+    ref,
+    repository,
+  });
+  assert.equal(evaluateIf(deploy, dispatch('refs/heads/main')), true);
+  assert.equal(evaluateIf(deploy, dispatch('refs/heads/feature/x')), false);
+  assert.equal(workflow.jobs.deploy.environment, 'discord-production');
+  const checkout = workflow.jobs.deploy.steps.find((step) =>
+    step.uses?.startsWith('actions/checkout@')
   );
+  assert.equal(checkout.with['persist-credentials'], false);
   for (const overrides of [
     { event: 'pull_request' },
     { head_repository: { full_name: 'attacker/platform' } },

@@ -77,7 +77,7 @@ No package version, dependency resolution or published changelog is rewritten.
 ### Staging Database
 
 - `supabase-staging.yaml` is tied to the `Vercel Platform Preview Deployment` workflow on `main`.
-- The staging migration runs only when the triggering platform preview build concludes successfully, or when manually dispatched.
+- The staging migration runs only when the triggering platform preview build concludes successfully, or when manually dispatched from `main`.
 - `workflow_run` matches upstream workflows by name, so a fork pull request can
   define a same-named workflow on a branch called `main`. The job gate admits only
   a successful `push` completion from this repository's `main`; dispatched preview
@@ -85,6 +85,14 @@ No package version, dependency resolution or published changelog is rewritten.
   step. Supabase Production applies the same event and head-repository checks to
   its planner and staging triggers, and `scripts/ci/workflow-run-trust.test.js`
   requires them for every `workflow_run` consumer.
+- Ineligible runs (spoofed completions, dispatches from other refs) take a
+  private `supabase-staging-migration-ignored-<run>` lock, so they never queue
+  with real migrations.
+- Admin hardening: move the staging Supabase secrets to an environment whose
+  deployment branch policy allows only `main` (not `supabase-staging`, which holds
+  the deployment markers Supabase Production reads). Add a tag ruleset that blocks
+  creating `main` and `production` tags; `head_branch` cannot tell a tag apart from
+  a branch with the same name.
 - The staging deploy step runs `supabase db push --include-all` after linking
   the staging Supabase project, so staging can converge after `main` migration
   history changes.

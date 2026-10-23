@@ -50,7 +50,7 @@ function fixture(t, overrides = {}) {
   const contracts = [
     [
       '.github/workflows/supabase-staging.yaml',
-      '68449e684d33ca9608e6c873563ca3092543ca6c',
+      '8123f16d927bcac4075f4e01b520b7d8f5eec0b2',
     ],
     [
       'scripts/ci/record-deployment-marker.ts',

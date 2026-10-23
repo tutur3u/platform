@@ -308,9 +308,11 @@ for (const file of serialized) {
       workflows[file].concurrency || workflows[file].jobs.deploy.concurrency;
     assert.equal(c['cancel-in-progress'], false);
     assert.equal(c.queue, 'max');
-    const ref = file.endsWith('-cloudflare.yaml')
-      ? 'refs/heads/main'
-      : 'refs/heads/production';
+    // Staging migrations and Cloudflare deploys are dispatched from main.
+    const ref =
+      file.endsWith('-cloudflare.yaml') || file === 'supabase-staging.yaml'
+        ? 'refs/heads/main'
+        : 'refs/heads/production';
     const first = context(ref, 'first', 1, 'workflow_dispatch');
     assert.equal(
       render(c.group, first),

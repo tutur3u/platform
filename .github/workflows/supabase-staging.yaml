@@ -9,8 +9,10 @@ on:
       - main
   workflow_dispatch:
 
+# Ineligible (for example name-spoofed) runs get their own group so they never
+# queue behind or ahead of a real staging migration.
 concurrency:
-  group: supabase-staging-migration
+  group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository)) && 'supabase-staging-migration' || format('supabase-staging-migration-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
   queue: max
 
@@ -24,9 +26,13 @@ jobs:
     # workflow_run matches upstreams by name, and a fork PR can define a
     # workflow with the same name on a branch called main. Only same-repository
     # push completions may select the migration target, and nothing from the
-    # target checkout runs before this gate.
+    # target checkout runs before this gate. Manual migrations run from main
+    # only, so an unreviewed branch cannot push migrations to staging.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main'
+      ) ||
       (
         github.event_name == 'workflow_run' &&
         github.event.workflow_run.conclusion == 'success' &&
