@@ -94,8 +94,10 @@ describe('nested admission', { timeout: 45_000 }, () => {
     const runner = join(path, 'net.ts');
     await writeFile(
       runner,
-      `import {mock} from 'bun:test';import * as cp from 'node:child_process';
-      let failures=2;const original=cp.execFileSync;
+      `import {mock} from 'bun:test';import * as cp from 'node:child_process';import * as fs from 'node:fs';
+      let failures=2;const original=cp.execFileSync;const readProc=fs.readFileSync;
+      // Keep Linux's /proc fallback from supplying the evidence this test withholds.
+      mock.module('node:fs',()=>({...fs,readFileSync:(path,...rest)=>{if(String(path).startsWith('/proc/')&&failures>0)throw new Error('ENOENT');return readProc(path,...rest)}}));
       mock.module('node:child_process',()=>({...cp,execFileSync:(command,args,options)=>{if(/(^|\\/)ps$/.test(command)&&args?.[1]==='pid=,ppid=,pgid='&&failures-->0)throw new Error('ps unavailable');return original(command,args,options)}}));
       delete process.env.TTR_RESOURCES_ADMITTED;delete process.env.TTR_RESOURCE_OWNER;
       const {queuedResourceCommand}=await import(${JSON.stringify(queueModule)});
