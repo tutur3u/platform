@@ -1026,7 +1026,7 @@ Wrangler or Docker origins in the `cloudflare-workers-preview` Environment.
 - `security-review-classifier.yaml`
 - `security-review-recheck.yaml` (permissionless review signal)
 - `security-review-reclassify.yaml` (default-branch recompute after reviews)
-- `security-review-sweep.yaml` (scheduled default-branch recompute of labeled PRs; revocation backstop)
+- `security-review-sweep.yaml` (hourly default-branch recompute of one 1/24 partition of open PRs; revocation backstop)
 - `codecov.yaml`
 - `i18n-check.yaml`
 - `check-migrations.yml`

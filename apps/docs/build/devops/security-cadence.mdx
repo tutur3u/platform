@@ -20,7 +20,7 @@ sources at one commit.
 | Dependency audit (`bun audit`) | `security-checks.yaml` → **Dependency audit** | PRs and pushes that change a manifest or lockfile | High/critical advisory present at head but not at base |
 | Workflow trust boundaries | `security-checks.yaml` → **Workflow trust boundaries** | Changes under `.github/` or `scripts/ci/` | Any failing workflow security suite (`scripts/ci/workflow-*.test.js`, `security-*.test.js`, protected concurrency, workflow config) |
 | CodeQL (`security-extended`) | `codeql.yml` → **Analyze (language)** | PRs and `main` pushes; only languages the diff touches (`javascript-typescript`, `python`, `actions`) | High/critical result absent from the latest `main` analysis |
-| Security review classification | `security-review-classifier.yaml` → **Security review** check and `security-review-required` label; recomputed by `security-review-reclassify.yaml` and `security-review-sweep.yaml` | Every PR event (no path filter), auto-merge or merge-queue entry, every review submission or dismissal, and an hourly trusted sweep | Reports `action_required` until an independent security review is recorded; `success` when no sensitive path changed |
+| Security review classification | `security-review-classifier.yaml` → **Security review** check (plus a cosmetic `security-review-required` label); recomputed by `security-review-reclassify.yaml` and `security-review-sweep.yaml` | Every PR event (no path filter), auto-merge or merge-queue entry, every review submission or dismissal, and an hourly trusted sweep | Reports `action_required` until an independent security review is recorded; `success` when no sensitive path changed |
 
 Path gating uses the same changed-file resolution as the rest of CI, but
 `security-checks.yaml` and `codeql.yml` deliberately do not call the `ci-check`
@@ -51,7 +51,10 @@ findings are tracked in the findings register instead of blocking unrelated work
   example while the PR that introduces them is open, the gate fails closed with
   an inline `jq` check: any gitleaks finding, any high/critical advisory, or any
   high/critical CodeQL result fails. A result whose rule is unknown, or whose
-  `security-severity` is missing or not numeric, counts as high. The register refuses to
+  `security-severity` is missing, `null`, empty or not numeric, counts as high.
+  The trusted `codeql-new-alerts.js` applies the same rule. One fixture
+  (`scripts/ci/fixtures/codeql-severity.sarif.json`) drives the tests for both
+  gates. The register refuses to
   build. The checkout's copy is never executed. The scope scripts that choose
   which scans run (`resolve-changed-files.ts`, `security-paths.js`) are also read
   from the base commit. Without them, every scan runs.
@@ -104,19 +107,27 @@ and classifies them with `scripts/ci/security-paths.js`:
 | Category | Examples | Owner role |
 | --- | --- | --- |
 | `ci` | `.github/**`, `scripts/ci/**`, `tuturuuu.ci.ts`, `scripts/git-*` | `ci-cd` |
-| `auth` | `packages/auth`, `packages/sso`, auth/session/OAuth/MFA paths, `proxy.ts` | `platform-auth` |
+| `auth` | `packages/auth`, `packages/sso`, auth/session/OAuth/OIDC/MFA paths, `proxy.ts`, `api-middleware`, `authorization`, `api-proxy-guard`, `required-mfa*`, `external-apps*` | `platform-auth` |
 | `rls-database` | `apps/database/**`, `packages/supabase/**`, RLS/policy files | `database` |
-| `tenant-isolation` | permission, RBAC, tenant and workspace-membership helpers | `platform` |
+| `tenant-isolation` | permission, RBAC, tenant and workspace-membership helpers, calendar sync/schedule routes, notification send-immediate | `platform` |
 | `runner-sandbox` | devbox, cron, coordination, playground, Dockerfiles, Wrangler config | `runtime` |
-| `tokens-secrets` | token, secret, credential, crypto, JWT and API-key paths, `.env*` | `platform-auth` |
-| `payments` | `packages/payment*`, Pay payment/billing APIs (including `apps/pay/src/app/api/payment/webhooks`), every `webhook(s)` path | `payments` |
+| `tokens-secrets` | token, secret, credential, crypto, JWT and API-key paths, `email-unsubscribe`, `.env*` | `platform-auth` |
+| `scheduled-jobs` | every `apps/*/src/app/api/cron/` route, `legacy-api-routes/cron/`, `*cron*` modules such as the Infrastructure cron gateway, post-email-queue run-now | `runtime` |
+| `payments` | `packages/payment*`, Pay payment/billing APIs (including `apps/pay/src/app/api/payment/webhooks`), SePay libraries | `payments` |
+| `inbound-webhooks` | every `webhook(s)` path, mail inbound | `platform` |
 | `storage` | `packages/storage-core`, Drive, upload/bucket/signed-URL paths | `storage` |
 
 Docs (`.md`, `.mdx`) and translation bundles are exempt. A file list at GitHub's
-3,000-file limit is always classified as requiring review.
+3,000-file limit is always classified as requiring review. Every path that
+`.github/CODEOWNERS` assigns must classify as requiring review.
+`scripts/ci/security-codeowners-sync.test.js` checks the live file and a pinned
+copy of #6491's, so the two lists cannot drift.
 
-When a PR matches, the workflow adds the `security-review-required` label and
-records a **Security review** check run on the head commit. The check concludes
+Membership is always decided from the PR's changed paths, never from its
+label. When a PR matches, the workflow records a **Security review** check run
+on the head commit and, as a best-effort cosmetic hint, adds the
+`security-review-required` label. Neither revocation nor an approved PR's
+`success` depends on the label. The check concludes
 `success` only when a user listed in the repository variable `SECURITY_REVIEWERS`
 has approved that exact head commit and is not the PR author. A new commit
 requires a new approval. PRs that touch no sensitive path also get a
@@ -152,10 +163,20 @@ or review listing that cannot be read records `action_required` ("could not be
 evaluated") instead of leaving an earlier success standing. The revocation is
 always posted first. Duplicate suppression (sweep only) and labeling are
 best-effort, so a failed check lookup or label write cannot suppress it. A
-rejected check post fails the run. Event fields serve only as lookup keys, so
+rejected check post fails the run.
+
+Writers never interleave for one PR. The classifier and the reclassify job share
+the repository-wide, non-cancelling concurrency group
+`security-review-pr-<number>`. Reclassify first resolves the PR in a separate
+job, so it can join that group. The sweep spans many PRs and cannot hold their
+groups. So every writer, including the sweep, re-reads the live head and then
+the reviews immediately before posting, and posts nothing when the head moved.
+An `action_required` followed by a stale `success` for the same head is
+therefore impossible: a success always reflects the reviews read just before
+its post. Event fields serve only as lookup keys, so
 a spoofed signal can only cause an honest recomputation. A fork contributor's
 first workflow runs may wait for maintainer approval. Until then, re-run the
-latest classifier run or remove the label to recompute.
+latest classifier run to recompute.
 
 ### Revocation does not depend on the relay
 
@@ -175,31 +196,34 @@ stale. Revocation is therefore enforced in layers that the PR does not own:
 2. **Trusted recomputes.** The classifier (`pull_request_target`, default-branch
    file) also runs when auto-merge is enabled or the PR enters a merge queue.
    `security-review-sweep.yaml` runs hourly on a schedule from the default
-   branch (`scripts/ci/security-review-sweep.js`):
-   - It lists open pull requests (never plain issues) and keeps those labeled
-     `security-review-required`.
-   - Its cursor is the start of the last successful scheduled sweep, read from
-     GitHub's run history, so it keeps no state of its own. PRs updated since
-     then (pushes, reviews, labels, comments) are evaluated, oldest change
-     first.
-   - Every other labeled PR is re-evaluated in a fixed hourly rotation (PR
-     number modulo 24). A revocation that does not move `updated_at` is still
-     caught within about 24 successful hourly runs.
+   branch (`scripts/ci/security-review-sweep.js`) and keeps no state:
+   - **Partition (the guarantee).** Each run evaluates every open PR whose
+     number modulo 24 equals the current UTC hour. Membership comes from
+     changed paths, never labels. Every open PR is therefore visited once per
+     24 scheduled runs. A failed or over-budget slice fails its run but cannot
+     block a later slice, and the rest of a failing slice is still evaluated.
+   - **Fast path (best effort).** Afterwards, at most 10 other PRs updated
+     since the last successful sweep are evaluated, oldest change first.
+     - The cursor is read from GitHub's run history. It is used only when the
+       run is on the default branch, from this workflow's ID and path, with
+       event `schedule` and conclusion `success`.
+     - The fast path cannot starve the partition, which always runs first.
    - It posts a check only when the decision changed, and never writes labels.
      Its token has `actions: read` (run history), `checks: write`,
      `pull-requests: read` and `contents: read`.
-   - Call budget: `SWEEP_CALL_BUDGET` (300) REST calls per run, plus at most
-     one PR's calls past the budget (about 4 for a typical PR).
-     - A typical run costs one run-history call and one listing call per 100
-       open PRs, plus about 4 calls per changed or rotated PR. At 200 labeled
-       PRs with ten changes an hour, that is about 80 calls.
-     - Work left over fails the run, so the cursor does not advance and the
-       backlog leads the next run.
+   - **Call budget.** The partition's budget is sized to its slice: 8 REST
+     calls per PR, which covers the files, live head, reviews, check lookup
+     and post, with headroom for an extra page.
+     - A run costs about three cursor calls, one listing call per 100 open PRs,
+       and about 4 to 6 calls per evaluated PR.
+     - At 200 open PRs that is roughly 9 slice PRs plus 10 fast-path PRs:
+       about 120 calls a run.
      - The repository's `GITHUB_TOKEN` allowance (1,000 calls an hour, shared
        by all workflows) bounds this.
 
    GitHub may delay or drop scheduled runs, so the sweep bounds staleness only
-   loosely. It is a backstop, not a guarantee.
+   loosely. A dropped run delays its slice by a day. The sweep is a backstop,
+   not a guarantee.
 3. **The relay** remains the fast path for honest PRs.
 
 The **Security review** check is therefore stricter, but it is not the only
@@ -210,7 +234,8 @@ The control cannot be bypassed by the PR author:
 
 - The workflow files that hold write tokens and the classifier come from the
   base/default branch.
-- Removing the label triggers a new run, which re-adds it.
+- Removing the label changes nothing: it is cosmetic, and the next run re-adds
+  it.
 - Changing the classifier is itself a `ci` change that requires review.
 
 ### Enforcement
