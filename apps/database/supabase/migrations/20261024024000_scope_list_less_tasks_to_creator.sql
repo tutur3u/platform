@@ -1,17 +1,10 @@
--- Scope list-less tasks to their creator.
---
--- tasks.list_id became nullable for personal calendar scheduling tasks
--- (20250624145741). Those rows have no list, board or workspace link; the
--- only owner is creator_id. The tasks policy from 20250727170000 admitted
--- every signed-in user when list_id is null, for reads and writes alike.
---
--- Keep the list branch unchanged (task_lists visibility, which now requires
--- workspace membership) and require creator_id = auth.uid() for list-less
--- rows, on both USING and WITH CHECK so a client cannot create or detach a
--- list-less task on another user's behalf.
-
-alter policy "Enable all access for tasks in accessible task list"
-  on public.tasks
+-- Scope list-less tasks to their creator without reopening direct table access.
+-- The current catalog uses server-owned task APIs and has no permissive task
+-- policy for authenticated. Keep that boundary. This restrictive fence also
+-- protects older catalogs or future grants with a permissive task policy.
+create policy "task_creator_or_accessible_list_guard"
+  on public.tasks as restrictive
+  for all to authenticated
   using (
     (list_id is null and creator_id = (select auth.uid()))
     or exists (select 1 from public.task_lists tl where tl.id = tasks.list_id)

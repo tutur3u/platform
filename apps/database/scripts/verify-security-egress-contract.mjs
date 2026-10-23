@@ -92,7 +92,7 @@ try {
   throw error;
 }
 const excluded =
-  'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
+  'gotrue,realtime,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
 const runner = async (command, args, cwd) => {
   if (args.includes('test')) {
     const container = `supabase_db_${metadata.projectId}`;

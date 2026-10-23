@@ -11,7 +11,7 @@ begin;
 set local role :"security_migration_role";
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(22);
+select plan(23);
 select set_config('security.exposed_schemas', :'security_exposed_schemas', true);
 create function pg_temp.security_definer_path_is_safe(path_setting text)
 returns boolean
@@ -68,6 +68,8 @@ where n.nspname=any(string_to_array(current_setting('security.exposed_schemas'),
     or n.nspname in ('storage','graphql_public')
     or exists(select 1 from pg_catalog.pg_depend d
       where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e'));
+select ok(exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='storage'), 'Storage functions are bootstrapped for managed ownership inventory');
 select is((
   select count(*)::integer from pg_catalog.pg_proc p
   join pg_catalog.pg_namespace n on n.oid = p.pronamespace

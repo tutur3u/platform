@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(90);
+select plan(92);
 
 create temp table definer_service_only(fn regprocedure) on commit drop;
 insert into definer_service_only values
@@ -143,8 +143,18 @@ select lives_ok($$insert into public.task_lists(id, board_id, name) values ('000
   'member creates a list on the board');
 select is((select count(*)::int from public.task_lists where id in ('00000000-0000-4000-8000-00000000a231', '00000000-0000-4000-8000-00000000a233')), 2, 'member sees both board lists');
 
--- List-less tasks belong to their creator (42-51).
+-- Verify the production privilege boundary before making RLS prerequisites live.
+-- Both grants and the permissive fixture policy roll back with this transaction.
 reset role;
+select ok(not has_table_privilege('authenticated','public.tasks','SELECT'),
+  'authenticated has no direct task table read grant');
+select ok(not has_table_privilege('anon','public.tasks','SELECT'),
+  'anon has no direct task table read grant');
+grant select, insert, update, delete on public.tasks to authenticated;
+create policy security_definer_tasks_prerequisite on public.tasks
+  as permissive for all to authenticated using(true) with check(true);
+-- List-less creator guard remains effective with healthy permission prerequisites.
+
 insert into public.tasks(id, name, creator_id)
 values ('00000000-0000-4000-8000-00000000a251', 'Contract task', '00000000-0000-4000-8000-00000000a201');
 set local role authenticated;
