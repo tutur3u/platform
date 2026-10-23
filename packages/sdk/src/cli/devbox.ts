@@ -25,12 +25,12 @@ import {
 import { parseDurationSeconds } from './devbox-duration';
 import { runDevboxFleetCommand } from './devbox-fleet';
 import { parseDevboxExecutionMode } from './devbox-host-protection';
+import { runDevboxIsolationDoctor } from './devbox-isolation-command';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
 import {
   createDevboxRestartPayload,
   createDevboxUpgradePayload,
 } from './devbox-maintenance';
-import { runDevboxIsolationDoctor } from './devbox-isolation-command';
 import { runDevboxRepairCommand } from './devbox-repair';
 import { runDevboxSetupCommand } from './devbox-setup';
 

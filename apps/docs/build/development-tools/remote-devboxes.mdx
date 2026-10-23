@@ -831,7 +831,7 @@ These fixtures do not establish hosted runner acceptance.
 ### Run log cursor
 
 Run events carry a dense per-run `seq` (migration
-`20261024090000_devbox_run_log_cursor_and_idempotency.sql`). A `BEFORE INSERT`
+`20261024030000_devbox_run_log_cursor_and_idempotency.sql`). A `BEFORE INSERT`
 trigger allocates it by upserting the run's `devbox_run_event_cursors` row. That
 row lock is held until the writer commits, so commit order equals sequence order
 for every writer (web, infrastructure and SQL functions). The logs route pages

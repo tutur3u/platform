@@ -1,4 +1,4 @@
--- Devbox run log cursor and create idempotency (migration 20261024090000).
+-- Devbox run log cursor and create idempotency (migration 20261024030000).
 -- Commit-order serialization across concurrent writers needs two sessions;
 -- see the delayed-insertion procedure in the remote devboxes runbook.
 begin;
