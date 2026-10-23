@@ -13,6 +13,12 @@
     {
       "matchUpdateTypes": ["minor", "patch"],
       "matchCurrentVersion": "!/^0/"
+    },
+    {
+      "description": "Hold cf prerelease pins until the cf/Void owner qualifies an explicit upgrade PR.",
+      "matchPackageNames": ["cf"],
+      "matchCurrentVersion": "/-/",
+      "enabled": false
     }
   ],
   "ignorePaths": [

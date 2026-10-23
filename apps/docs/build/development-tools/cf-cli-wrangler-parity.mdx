@@ -43,7 +43,9 @@ Upgrade through a scoped dependency PR after checking upstream release notes and
 rerunning config/output parity, credential-free artifact checks, secret handling,
 settings readback fixtures and real Worker CI tests on the candidate version.
 DO publication remains Wrangler until a disposable migration rehearsal and a
-separate reviewed publisher change. Do not float this beta pin automatically.
+separate reviewed publisher change. Renovate holds cf prerelease pins via the
+`cf` package rule in `renovate.json`; update this hold only with the qualified
+upgrade PR. Do not float this beta pin automatically.
 
 ## Operation parity matrix
 
@@ -185,37 +187,24 @@ Cloudflare documents the accepted permissions for
 [zones](https://developers.cloudflare.com/api/resources/zones/methods/list/) and
 [routes](https://developers.cloudflare.com/api/resources/workers/subresources/routes/methods/list/).
 
-## Production cutover checklist
+## Deployment account variable
 
-For each service, the orchestrator verifies before promotion:
+Set the non-secret **Actions repository variable** `CLOUDFLARE_ACCOUNT_ID` in
+`tutur3u/platform` (Settings → Secrets and variables → Actions → Variables).
+Use the account ID recorded in the service's `cloudflare.config.ts` and parity
+baseline; the deploy job checks it against the emitted artifact. One repository
+variable supplies `cron-control-production`, `devbox-control-production` and
+`coordination-production`. If any of those environments defines the same variable,
+it must have the same value because the environment value takes precedence.
+Missing or mismatched configuration blocks deployment. Source publication does
+not provision this variable; the release owner must set it before promotion.
 
-1. Exact-commit CI on the promoted SHA is green for the service workflow, including:
-   source runtime checks, emitted Build Output parity
-   (`cf-worker-parity.mjs` prints `matches <worker> deployment identity`), emitted runtime
-   checks, the `cf deploy --prebuilt --dry-run --no-provision` step, and the uploaded
-   `<app>-worker-<sha>` artifact.
-2. The production job publishes that artifact with `cf deploy --prebuilt` (no rebuild) and
-   the same `--message` SHA.
-3. The deploy job runs `cf-worker-settings.mjs before` before any publication or
-   secret mutation, then `after` before recording success. It checks the pinned
-   account, compatibility, preview URLs, observability/logs, cron schedules and
-   declared secret names; snapshots routes/custom domains and hashes remaining
-   settings without persisting text bindings. It captures the active deployment and version IDs
-   (`cf workers deployments list`) as the rollback target. Also capture `cf workers get <name>`,
-   `cf workers secrets list` and, with the Cloudflare API, the script's cron schedules
-   (`/workers/scripts/<name>/schedules`), routes or custom domains, and `workers.dev`/preview
-   URL state. The job captures them again after deployment and compares; unexplained changes
-   fail the job before its success marker. Evidence is retained even on failure.
-   This route-free pilot supports at most 20 account zones and one API list page,
-   uses at most 28 GET requests per snapshot, and fails closed on missing read
-   permissions, truncated results or unsupported scope. It never retries writes.
-   The expected preview setting is explicitly true; this is unverified against
-   current production until the preflight runs. A mismatch stops before mutation.
-4. Production publication for Devbox Control and Coordination remains Wrangler
-   with their applied `v1` migration metadata. A separate reviewed change must
-   carry the rehearsal receipt before enabling cf publication. For these Workers, rehearse the first cf deploy on a disposable Worker created
-   with the same Wrangler migration history and data, and confirm object data survives the
-   switch to `exports`. Do not promote until that rehearsal passes.
-5. Health checks pass on the canonical host, and the deployment marker records the SHA.
-6. If a check fails, roll back with `cf workers deployments create` to the captured
-   version, then reconcile before retrying.
+## Cached Build Output
+
+The root Turbo `build.outputs` includes `.cloudflare/output/**`, including hidden
+Vite metadata. Cache hits must restore the complete emitted tree before parity,
+runtime and publication checks. `.cloudflare/state` remains outside the output
+scope. `cf-build-output-cache.test.mjs` runs a disposable emit-only task through
+an actual cache miss and hit, verifies restored bytes and execution count, and
+checks the old output list as a negative control. It never compiles an app or
+uses shared/remote cache credentials.
