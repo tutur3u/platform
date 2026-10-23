@@ -47,11 +47,11 @@ void registerSettingsDesignChecks() {
       matching: find.byIcon(Icons.chevron_right),
     );
     h.accounts.add(
-      AuthState.authenticated(
+      const AuthState.authenticated(
         supa.User(
           id: 'user',
-          appMetadata: const {},
-          userMetadata: const {},
+          appMetadata: {},
+          userMetadata: {},
           aud: 'authenticated',
           email: 'settings-fixture@tuturuuu.com',
           emailConfirmedAt: '2026-01-01T00:00:00Z',
