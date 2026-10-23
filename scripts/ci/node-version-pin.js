@@ -47,9 +47,13 @@ const readPin = (dir = root) =>
 
 function disabledWorkflows(dir = root) {
   const config = fs.readFileSync(path.join(dir, 'tuturuuu.ci.ts'), 'utf8');
-  return new Set(
-    [...config.matchAll(/'([\w.-]+\.ya?ml)': false/gu)].map(([, file]) => file)
-  );
+  return new Set([
+    ...[...config.matchAll(/'([\w.-]+\.ya?ml)': false/gu)].map(
+      ([, file]) => file
+    ),
+    // The retained preview workflow also belongs to the paused TanStack app.
+    'vercel-preview-tanstack-web.yaml',
+  ]);
 }
 
 function stepCommands(step) {
