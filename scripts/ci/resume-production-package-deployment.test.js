@@ -176,10 +176,7 @@ test('workflow checks production before trusted checkout and planner pins recove
     workflow.indexOf('Verify current production before checkout') <
       workflow.indexOf('uses: actions/checkout')
   );
-  assert.match(
-    workflow,
-    /ref: \$\{\{ github\.event\.workflow_run\.head_sha \}\}/
-  );
+  assert.match(workflow, /ref: \$\{\{ steps\.trigger\.outputs\.head_sha \}\}/);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.match(workflow, /- "Production Deployment Planner"/);
   const planner = fs.readFileSync(

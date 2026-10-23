@@ -85,6 +85,23 @@ No package version, dependency resolution or published changelog is rewritten.
   step. Supabase Production applies the same event and head-repository checks to
   its planner and staging triggers, and `scripts/ci/workflow-run-trust.test.js`
   requires them for every `workflow_run` consumer.
+- Expression `==` ignores case, so `head_branch == 'main'` also admits a branch
+  named `Main`. Job `if` guards are only a cheap pre-filter. Every `workflow_run`
+  consumer first runs the same inline **Verify trusted trigger** step. It reads
+  the event file, never interpolation, and fails the job unless all of these hold:
+  - the producer `path` and `workflow_id` match a `TRUSTED_PRODUCERS` line
+    (`<file> <workflow ID> <exact branch> <events> <conclusions>`);
+  - branch, event, conclusion and head repository name and ID match exactly;
+  - the head SHA is reachable from the branch (compare status `behind` or
+    `identical`), which rejects tag sources;
+  - manual runs start from exactly `TRUSTED_DISPATCH_REF`.
+
+  Checkouts use the step's verified `head_sha`, and secret-bearing steps and jobs
+  are gated on its `trusted` output. Workflow IDs are stable per file path. If a
+  producer file is renamed or recreated, update its line (`gh api
+  repos/<repo>/actions/workflows/<file> --jq .id`); until then the gate fails
+  closed. `scripts/ci/workflow-run-trigger-gate.test.js` runs the real step against
+  case variants, tag sources, spoofed producers and head-repository mismatches.
 - Ineligible runs (spoofed completions, dispatches from other refs) take a
   private `supabase-staging-migration-ignored-<run>` lock, so they never queue
   with real migrations.

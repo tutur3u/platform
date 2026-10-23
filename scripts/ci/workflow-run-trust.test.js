@@ -1,174 +1,19 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const vm = require('node:vm');
 const {
-  readAllWorkflows,
-  readWorkflow,
-} = require('./workflow-yaml-test-helper');
+  attacker,
+  completion,
+  evaluateIf,
+  repository,
+  runningJobs,
+  spoofFailures,
+  workflowRunConsumers,
+} = require('./workflow-run-trust-test-helper');
+const { readWorkflow } = require('./workflow-yaml-test-helper');
 
-const repository = 'tutur3u/platform';
-const attacker = 'attacker/platform';
-
-function triggersOf(workflow) {
-  const on = workflow.on ?? workflow.true;
-  if (typeof on === 'string') return { [on]: null };
-  if (Array.isArray(on)) return Object.fromEntries(on.map((t) => [t, null]));
-  return on ?? {};
-}
-
-function loadWorkflows() {
-  return Object.entries(readAllWorkflows()).map(([file, workflow]) => ({
-    file,
-    workflow,
-  }));
-}
-
-// GitHub expressions yield null for properties of null (a deleted fork has
-// head_repository: null), so property access outside string literals is
-// made optional instead of throwing.
-function nullSafe(source) {
-  return source
-    .split(/('(?:[^']|'')*')/u)
-    .map((part, index) =>
-      index % 2 === 1 ? part : part.replace(/\.(?=[A-Za-z_])/gu, '?.')
-    )
-    .join('');
-}
-
-function evaluateIf(expression, github) {
-  const source = nullSafe(
-    String(expression)
-      .trim()
-      .replace(/^\$\{\{([\s\S]*)\}\}$/u, '$1')
-      .replace(/needs\.([\w-]+)/gu, 'needs["$1"]')
-      .replace(/steps\.([\w-]+)/gu, 'steps["$1"]')
-  );
-  const lower = (value) => String(value ?? '').toLowerCase();
-  return Boolean(
-    vm.runInNewContext(
-      source,
-      {
-        always: () => true,
-        cancelled: () => false,
-        contains: (haystack, needle) =>
-          Array.isArray(haystack)
-            ? haystack.some((item) => lower(item) === lower(needle))
-            : lower(haystack).includes(lower(needle)),
-        endsWith: (value, suffix) => lower(value).endsWith(lower(suffix)),
-        failure: () => false,
-        format: (template, ...args) =>
-          template.replace(/\{(\d+)\}/gu, (_, i) => String(args[i] ?? '')),
-        fromJSON: (value) => JSON.parse(value),
-        github,
-        inputs: {},
-        needs: new Proxy(
-          {},
-          { get: () => ({ outputs: {}, result: 'success' }) }
-        ),
-        startsWith: (value, prefix) => lower(value).startsWith(lower(prefix)),
-        steps: new Proxy({}, { get: () => ({ outputs: {} }) }),
-        success: () => true,
-        toJSON: (value) => JSON.stringify(value),
-        vars: {},
-      },
-      { timeout: 100 }
-    )
-  );
-}
-
-function completion(upstreamName, headBranch, overrides = {}) {
-  return {
-    event: {
-      workflow_run: {
-        conclusion: 'success',
-        event: 'pull_request',
-        head_branch: headBranch,
-        head_repository: { full_name: attacker },
-        head_sha: 'a'.repeat(40),
-        id: 1,
-        name: upstreamName,
-        run_attempt: 1,
-        ...overrides,
-      },
-    },
-    event_name: 'workflow_run',
-    ref: 'refs/heads/main',
-    repository,
-    run_attempt: 1,
-  };
-}
-
-// Jobs that would run for this event: a job is skipped when its own `if` is
-// false or when it needs a skipped job without forcing evaluation (always()).
-function runningJobs(workflow, github) {
-  const skipped = new Set();
-  const jobs = Object.entries(workflow.jobs);
-  for (let pass = 0; pass < jobs.length; pass += 1) {
-    for (const [id, job] of jobs) {
-      if (skipped.has(id)) continue;
-      const needs = [job.needs ?? []].flat();
-      const forced = /\b(always|failure|cancelled)\(\)/u.test(
-        String(job.if ?? '')
-      );
-      if (
-        (job.if !== undefined && !evaluateIf(job.if, github)) ||
-        (!forced && needs.some((need) => skipped.has(need)))
-      ) {
-        skipped.add(id);
-      }
-    }
-  }
-  return jobs.map(([id]) => id).filter((id) => !skipped.has(id));
-}
-
-// workflow_run matches upstream workflows by name, and a fork PR can add a
-// workflow with any name and run it on pull_request from a branch named after
-// any protected branch. Every consumer is therefore fork-reachable, whatever
-// its real upstream's triggers are; head_branch and branch filters never prove
-// trust. Both the event and the head repository must be checked.
-const spoofedCompletions = {
-  'fork pull request': { event: 'pull_request' },
-  'fork head repository': { event: 'push' },
-  'fork head repository workflow_run': { event: 'workflow_run' },
-  'fork head repository workflow_dispatch': { event: 'workflow_dispatch' },
-  'deleted fork pull request': { event: 'pull_request', head_repository: null },
-  'deleted fork push': { event: 'push', head_repository: null },
-  'same-repository pull request': {
-    event: 'pull_request',
-    head_repository: { full_name: repository },
-  },
-};
-
-function workflowRunConsumers(all = loadWorkflows()) {
-  return all.flatMap(({ file, workflow }) => {
-    const trigger = triggersOf(workflow).workflow_run;
-    if (trigger === undefined) return [];
-    return (trigger?.workflows ?? []).map((upstreamName) => ({
-      branches: trigger?.branches ?? ['main', 'production'],
-      file,
-      upstreamName,
-      workflow,
-    }));
-  });
-}
-
-function spoofFailures(consumers) {
-  return consumers.flatMap(({ branches, file, upstreamName, workflow }) =>
-    branches.flatMap((headBranch) =>
-      Object.entries(spoofedCompletions).flatMap(([label, overrides]) => {
-        const running = runningJobs(
-          workflow,
-          completion(upstreamName, headBranch, overrides)
-        );
-        return running.length === 0
-          ? []
-          : [
-              `${file}: ${running.join(', ')} run for a ${label} completion of "${upstreamName}" on "${headBranch}"`,
-            ];
-      })
-    )
-  );
-}
+// These tests cover the expression layer (job `if`) of each consumer. The
+// exact, case-sensitive trigger proof is covered by
+// workflow-run-trigger-gate.test.js.
 
 test('every workflow_run consumer rejects name-spoofed completions', () => {
   const consumers = workflowRunConsumers();
@@ -388,7 +233,7 @@ test('Supabase Production evaluates only same-repository trusted completions', (
 
 test('Discord Modal deploy accepts only trusted main push completions', () => {
   const workflow = readWorkflow('discord-modal-deploy.yml');
-  const deploy = workflow.jobs.deploy.if;
+  const deploy = workflow.jobs.trigger.if;
   const trusted = (overrides) =>
     completion('Discord Python CI', 'main', {
       event: 'push',
@@ -404,6 +249,7 @@ test('Discord Modal deploy accepts only trusted main push completions', () => {
   assert.equal(evaluateIf(deploy, dispatch('refs/heads/main')), true);
   assert.equal(evaluateIf(deploy, dispatch('refs/heads/feature/x')), false);
   assert.equal(workflow.jobs.deploy.environment, 'discord-production');
+  assert.deepEqual(runningJobs(workflow, trusted({})), ['trigger', 'deploy']);
   const checkout = workflow.jobs.deploy.steps.find((step) =>
     step.uses?.startsWith('actions/checkout@')
   );
@@ -419,7 +265,7 @@ test('Discord Modal deploy accepts only trusted main push completions', () => {
 
   // Removing the fork guard must be caught by the generic consumer check.
   const weakened = structuredClone(workflow);
-  weakened.jobs.deploy.if = deploy
+  weakened.jobs.trigger.if = deploy
     .replace(/github\.event\.workflow_run\.event == 'push' &&/u, '')
     .replace(
       /&&\s*github\.event\.workflow_run\.head_repository\.full_name == github\.repository/u,
@@ -434,7 +280,7 @@ test('Discord Modal deploy accepts only trusted main push completions', () => {
         workflow: weakened,
       },
     ]).join('\n'),
-    /deploy run for a fork pull request completion/u
+    /trigger, deploy run for a fork pull request completion/u
   );
 });
 
