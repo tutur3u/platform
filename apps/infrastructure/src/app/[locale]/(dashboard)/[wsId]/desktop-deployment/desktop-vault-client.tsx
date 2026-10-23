@@ -20,6 +20,16 @@ function statusOf(error: unknown) {
     : null;
 }
 
+function certificateInspectionUnavailable(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (('code' in error && error.code === 'certificate_inspection_unavailable') ||
+      ('inspectionUnavailable' in error &&
+        error.inspectionUnavailable === true))
+  );
+}
+
 export function DesktopVaultClient({ actorId }: { actorId: string }) {
   // Actor changes destroy local credential inputs and one-time token state.
   return <DesktopVaultSession key={actorId} actorId={actorId} />;
@@ -34,6 +44,7 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
   const operation = useRef<(() => Promise<void>) | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [inspectionUnavailable, setInspectionUnavailable] = useState(false);
   const [denied, setDenied] = useState(false);
   // Lifecycle cleanup only; all data reads and writes use TanStack Query.
   useEffect(() => {
@@ -63,12 +74,14 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
         // Never retain a server body or input-bearing exception in MutationCache.
         throw Object.assign(new Error('Desktop operation rejected'), {
           status: typeof statusOf(error) === 'number' ? statusOf(error) : null,
+          inspectionUnavailable: certificateInspectionUnavailable(error),
         });
       }
     },
     onError: (error) => {
       if (!scope.current) return;
       setFailed(true);
+      setInspectionUnavailable(certificateInspectionUnavailable(error));
       setToken(null);
       if (statusOf(error) === 401 || statusOf(error) === 403) setDenied(true);
       if (statusOf(error) === 409)
@@ -92,6 +105,7 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
     client.setQueryData(key, result.state);
     if (typeof result.token === 'string') setToken(result.token);
     setFailed(false);
+    setInspectionUnavailable(false);
   }
   async function act(input: DesktopVaultMutation) {
     if (input.action === 'create_token') setToken(null);
@@ -154,7 +168,11 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
       </header>
       {failed && (
         <div role="alert" className="space-y-2 text-destructive text-sm">
-          <p>{t('operationFailed')}</p>
+          <p>
+            {inspectionUnavailable
+              ? t('errors.certificate_inspection_unavailable')
+              : t('operationFailed')}
+          </p>
           <Button
             variant="outline"
             onClick={() => {

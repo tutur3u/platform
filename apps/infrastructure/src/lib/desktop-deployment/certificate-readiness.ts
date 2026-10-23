@@ -5,32 +5,10 @@ import {
   createPublicKey,
   X509Certificate,
 } from 'node:crypto';
-
-type Pkcs12Store = {
-  keys: Array<{ pkcs8: Buffer }>;
-  certs: Array<{ cert: Buffer }>;
-};
-
-type PkiApi = {
-  pkcs12: {
-    open(bytes: Buffer, password: string): Promise<Pkcs12Store>;
-  };
-  schema: {
-    x509: {
-      parse(bytes: Buffer): {
-        subject: { rdns: Array<Array<{ name: string | null; value: string }>> };
-        validity: { notBefore: Date; notAfter: Date };
-        extensions: Array<{ oid: string }>;
-      };
-      decodeExtensions(certificate: unknown): Array<{
-        name: string | null;
-        decoded?: unknown;
-      }>;
-    };
-  };
-};
+import { loadDesktopPki, type PkiApi } from './pki-loader';
 
 export type DesktopCertificateFailure =
+  | 'certificate_inspection_unavailable'
   | 'certificate_invalid'
   | 'certificate_expired'
   | 'certificate_not_yet_valid'
@@ -71,7 +49,13 @@ export async function inspectDesktopCertificate(input: {
     // The parser captures Node URL intrinsics at module load. Defer loading it
     // until certificate parsing so route imports in DOM-based tests don't load
     // Node-only intrinsics into the jsdom runtime.
-    const pki = require('@blamejs/pki') as PkiApi;
+    let pki: PkiApi;
+    try {
+      pki = loadDesktopPki();
+    } catch (cause) {
+      console.error('Desktop certificate parser could not be loaded', cause);
+      return { ok: false, code: 'certificate_inspection_unavailable' };
+    }
     const p12 = await pki.pkcs12.open(Buffer.from(input.bytes), input.password);
     const certificates = p12.certs.map(({ cert }) => ({ cert }));
     const keys = p12.keys;

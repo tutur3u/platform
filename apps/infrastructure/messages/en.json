@@ -6216,6 +6216,7 @@
         "certificate_developer_id_required": "A Developer ID Application certificate is required.",
         "certificate_expired": "The signing certificate has expired.",
         "certificate_identity_mismatch": "The signing identity does not match the certificate.",
+        "certificate_inspection_unavailable": "Certificate inspection is temporarily unavailable. Try again shortly.",
         "certificate_invalid": "Certificate material could not be read with the supplied password.",
         "certificate_key_mismatch": "The private key does not match the certificate.",
         "certificate_key_missing": "A matching private signing key is required.",

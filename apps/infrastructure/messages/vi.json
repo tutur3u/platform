@@ -6216,6 +6216,7 @@
         "certificate_developer_id_required": "Cần chứng chỉ Developer ID Application.",
         "certificate_expired": "Chứng chỉ ký đã hết hạn.",
         "certificate_identity_mismatch": "Danh tính ký không khớp chứng chỉ.",
+        "certificate_inspection_unavailable": "Hiện không thể kiểm tra chứng chỉ. Vui lòng thử lại sau ít phút.",
         "certificate_invalid": "Không thể đọc chứng chỉ với mật khẩu đã cung cấp.",
         "certificate_key_mismatch": "Khóa riêng không khớp chứng chỉ.",
         "certificate_key_missing": "Cần khóa ký riêng phù hợp.",

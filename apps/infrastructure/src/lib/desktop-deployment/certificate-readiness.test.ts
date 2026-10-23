@@ -120,6 +120,41 @@ async function inspect(
 }
 
 describe('portable desktop certificate readiness', () => {
+  it('reports and logs a parser load failure without treating it as bad material', async () => {
+    const cause = new Error('synthetic parser load failure');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.doMock('./pki-loader', () => ({
+      loadDesktopPki: () => {
+        throw cause;
+      },
+    }));
+    vi.resetModules();
+
+    try {
+      const { inspectDesktopCertificate: inspectWithoutParser } = await import(
+        './certificate-readiness'
+      );
+      const result = await inspectWithoutParser({
+        platform: 'windows',
+        bytes: Buffer.from('synthetic p12'),
+        password,
+        now,
+      });
+      expect(result, JSON.stringify(result)).toEqual({
+        ok: false,
+        code: 'certificate_inspection_unavailable',
+      });
+      expect(log).toHaveBeenCalledWith(
+        'Desktop certificate parser could not be loaded',
+        cause
+      );
+    } finally {
+      log.mockRestore();
+      vi.doUnmock('./pki-loader');
+      vi.resetModules();
+    }
+  });
+
   it('accepts matching current code-signing material and returns only public metadata', async () => {
     const result = await inspect(await pfx(await certificate()));
     expect(result).toMatchObject({
