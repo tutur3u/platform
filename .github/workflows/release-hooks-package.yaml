@@ -306,21 +306,10 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Mint scoped tuturuuu-bot token
-        id: bot-token
-        if: vars.TUTURUUU_BOT_APP_ID != '' && github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/production'
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
-        with:
-          app-id: ${{ vars.TUTURUUU_BOT_APP_ID }}
-          private-key: ${{ secrets.TUTURUUU_BOT_PRIVATE_KEY }}
-          owner: tutur3u
-          repositories: platform
-          permission-actions: write
-
       - name: Dispatch dependent package releases
         env:
           DEPENDENT_WORKFLOWS: ${{ needs.release-gate.outputs.dependent_workflows }}
-          GH_TOKEN: ${{ steps.bot-token.outputs.token || github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           node <<'NODE'
           const workflows = JSON.parse(process.env.DEPENDENT_WORKFLOWS || '[]');

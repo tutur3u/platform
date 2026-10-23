@@ -1,26 +1,31 @@
-# GitHub automation identity
+# Local agent GitHub identity
 
 The [tuturuuu-bot runbook](../../../../../apps/docs/build/devops/tuturuuu-bot.mdx)
-owns manifest permissions, owner-only provisioning, migration inventory, local
-agent usage and revocation. Never request or inspect the App private key in an
-agent session. Store it through owner-controlled GitHub/Keychain interfaces.
+owns provisioning, permissions, threat model and revocation. The App is only for
+local agent task-branch pushes and PR creation. Release automation keeps its own
+PAT/job identity. No workflow currently mints this App token and no Actions App
+private-key secret should exist.
 
-Mint workflow tokens only on trusted main/production refs with explicit
-`permission-*` inputs and a fixed platform repository selection. Preserve each
-consumer's existing fallback while the App ID variable is empty. Configured but
-broken credentials must fail closed. Keep permissions, triggers and action pins
-intact. Fork-visible jobs and jobs executing untrusted checkout/code cannot mint.
+The owner imports the key into macOS Keychain without `-A`/`-T`, removes trusted
+application access and never chooses Always Allow. Same-user processes can still
+prompt; a separate-user or biometric signing broker is the recommended future
+boundary. Never inspect or request the key in an agent session.
 
 Local writers use `scripts/tuturuuu-bot-token.js --permissions ... -- gh|git ...`.
-The token goes to the trusted child environment; never add raw-token output,
-file/env private-key inputs or persistent Git/gh authentication configuration.
-The wrapper is not a sandbox against same-user tools, hooks or hostile children.
-Normal cleanup revokes; crashes require expiry or owner suspension/revocation.
+Only contents/pull_requests scope inputs, `gh pr create` and exactly one
+`git push origin HEAD:<task-branch>` refspec are permitted. Never add approval,
+force/deletion/tag push options, raw-token output or file/env key inputs.
+Credentials stay in process memory and the child environment; normal cleanup
+revokes but crashes may require owner suspension/expiry.
 
-The bot never approves PRs or bypasses repository rules. PR author identity comes
-from the token used at creation, independent of commit coauthor trailers.
-Protected branch synchronization remains a separate owner-authorized workflow.
+The bot never approves PRs or bypasses rules. The release approval guard pins the
+exact release identities and rejects arbitrary Bot authors and agent-bot commits.
+After the classifier lane merges, it owns a default-branch-code check rejecting
+agent-bot approvals. Sensitive paths require human CODEOWNERS review.
 
-Run focused token/workflow tests and regenerate the runbook inventory after
-scope changes. Independent credential/security review and exact-head CI remain
-integration gates; mocked tests do not prove hosted App acceptance.
+Any future Actions use needs separate owner approval and a dedicated environment
+with main/production-only deployment-branch policy before storing its key there.
+Every minting job must declare that environment; repo secrets are forbidden.
+Generate the inventory on demand; do not add global snapshot equality gates for
+unrelated workflows. Run focused tests through the resource queue, and preserve
+independent review and exact-head CI before integration.

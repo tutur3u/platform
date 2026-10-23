@@ -1,153 +1,162 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const test = require('node:test');
 const { readAllWorkflows } = require('./workflow-yaml-test-helper');
-const workflows = readAllWorkflows();
-const PIN = 'fee1f7d63c2ff003460e3d139729b119787bc349';
-function validate(file, workflow) {
-  for (const [id, job] of Object.entries(workflow.jobs || {})) {
-    for (const step of job.steps || []) {
-      if (!step.uses?.startsWith('actions/create-github-app-token@')) continue;
-      assert.equal(
-        step.uses,
-        `actions/create-github-app-token@${PIN}`,
-        `${file}/${id}: pin`
-      );
-      const events = Object.keys(workflow.on);
-      assert.ok(
-        events.every((event) =>
-          ['push', 'schedule', 'workflow_dispatch'].includes(event)
-        ),
-        `${file}: trusted triggers`
-      );
-      assert.match(step.if, /vars.TUTURUUU_BOT_APP_ID != ''/);
-      assert.match(step.if, /github.repository == 'tutur3u\/platform'/);
-      assert.match(step.if, /github.ref == 'refs\/heads\/(main|production)'/);
-      assert.doesNotMatch(
-        JSON.stringify(job),
-        /github.event.pull_request|github.head_ref/
-      );
-      for (const checkout of job.steps.filter((s) =>
-        s.uses?.startsWith('actions/checkout@')
-      )) {
-        assert.ok(
-          [undefined, 'main', 'production'].includes(checkout.with?.ref),
-          'trusted checkout'
-        );
-      }
-      const otherSteps = job.steps.filter((s) => s !== step);
-      assert.doesNotMatch(
-        JSON.stringify(otherSteps),
-        /secrets.TUTURUUU_BOT_PRIVATE_KEY/
-      );
-      assert.equal(step.with.owner, 'tutur3u');
-      assert.equal(step.with.repositories, 'platform');
-      assert.equal(step.with['app-id'], `\${{ vars.TUTURUUU_BOT_APP_ID }}`);
-      assert.equal(
-        step.with['private-key'],
-        `\${{ secrets.TUTURUUU_BOT_PRIVATE_KEY }}`
-      );
-      const scopes = Object.fromEntries(
-        Object.entries(step.with).filter(([key]) =>
-          key.startsWith('permission-')
+
+function appMintJobs(workflows) {
+  return Object.entries(workflows).flatMap(([file, workflow]) =>
+    Object.entries(workflow.jobs || {}).flatMap(([id, job]) =>
+      (job.steps || [])
+        .filter(
+          (step) =>
+            step.uses?.startsWith('actions/create-github-app-token@') &&
+            String(step.with?.['private-key']).includes(
+              'TUTURUUU_BOT_PRIVATE_KEY'
+            )
         )
-      );
-      assert.deepEqual(
-        scopes,
-        file === 'release-please.yaml'
-          ? {
-              'permission-contents': 'write',
-              'permission-issues': 'write',
-              'permission-pull-requests': 'write',
-            }
-          : { 'permission-actions': 'write' }
-      );
-      assert.notEqual(step.with['skip-token-revoke'], true);
-      const consumers = JSON.stringify(job.steps.filter((s) => s !== step));
-      assert.match(
-        consumers,
-        /steps.bot-token.outputs.token \|\| (secrets.RELEASE_PLEASE_TOKEN \|\| )?github.token/
-      );
-      for (const consumer of job.steps.filter((s) =>
-        /approve/i.test(s.name || '')
-      )) {
-        assert.doesNotMatch(
-          JSON.stringify(consumer),
-          /bot-token.outputs.token/
-        );
-      }
-    }
+        .map((step) => ({ file, id, workflow, job, step }))
+    )
+  );
+}
+
+function validateMint({ workflow, job, step }) {
+  assert.match(step.uses, /^actions\/create-github-app-token@[a-f0-9]{40}$/);
+  assert.ok(
+    Object.keys(workflow.on).every((event) =>
+      ['push', 'schedule', 'workflow_dispatch'].includes(event)
+    )
+  );
+  assert.equal(
+    typeof job.environment === 'string'
+      ? job.environment
+      : job.environment?.name,
+    'tuturuuu-bot'
+  );
+  assert.match(step.if, /github.repository == 'tutur3u\/platform'/);
+  assert.match(step.if, /github.ref == 'refs\/heads\/(main|production)'/);
+  assert.doesNotMatch(
+    JSON.stringify(job),
+    /github.event.pull_request|github.head_ref/
+  );
+  for (const checkout of job.steps.filter((item) =>
+    item.uses?.startsWith('actions/checkout@')
+  )) {
+    assert.ok([undefined, 'main', 'production'].includes(checkout.with?.ref));
+    assert.ok(
+      [undefined, 'tutur3u/platform'].includes(checkout.with?.repository)
+    );
+  }
+  assert.equal(step.with.owner, 'tutur3u');
+  assert.equal(step.with.repositories, 'platform');
+  const scopes = Object.entries(step.with).filter(([key]) =>
+    key.startsWith('permission-')
+  );
+  assert.ok(scopes.length > 0);
+  for (const [key, value] of scopes) {
+    assert.ok(
+      ['permission-contents', 'permission-pull-requests'].includes(key)
+    );
+    assert.ok(['read', 'write'].includes(value));
+  }
+  assert.ok(![true, 'true'].includes(step.with['skip-token-revoke']));
+  for (const consumer of job.steps.filter((item) => item !== step)) {
+    assert.doesNotMatch(
+      JSON.stringify(consumer),
+      /secrets.TUTURUUU_BOT_PRIVATE_KEY/
+    );
   }
 }
 
-test('all App jobs are pinned, platform-only, trusted-ref-only, explicitly scoped with fallback', () => {
-  let count = 0;
-  for (const [file, workflow] of Object.entries(workflows)) {
-    validate(file, workflow);
-    count += Object.values(workflow.jobs || {}).filter((j) =>
-      j.steps?.some((s) => s.id === 'bot-token')
-    ).length;
-  }
-  assert.ok(count >= 3);
-  const approval = workflows['release-please.yaml'].jobs[
-    'release-please'
-  ].steps.find((s) => s.name === 'Approve untouched release PR');
-  assert.equal(approval.env.GITHUB_TOKEN, `\${{ github.token }}`);
+test('only jobs minting this App token are subject to the App trust policy', () => {
+  for (const mint of appMintJobs(readAllWorkflows())) validateMint(mint);
 });
 
-test('policy rejects unpinned actions, fork triggers, broad scope and absent fallback', () => {
-  for (const mutation of [
-    (_w, s) => {
-      s.uses = 'actions/create-github-app-token@v2';
+test('unrelated workflow changes do not participate in App policy or inventory equality', () => {
+  assert.deepEqual(
+    appMintJobs({
+      unrelated: {
+        on: { pull_request: {} },
+        jobs: {
+          comments: {
+            permissions: { 'pull-requests': 'write' },
+            steps: [{ run: 'changed by another PR' }],
+          },
+        },
+      },
+    }),
+    []
+  );
+});
+
+test('any future App mint job requires pinned action, protected environment, trusted triggers and narrow scope', () => {
+  const fixture = {
+    workflow: { on: { push: {} } },
+    job: { environment: 'tuturuuu-bot', steps: [] },
+    step: {
+      uses: `actions/create-github-app-token@${'a'.repeat(40)}`,
+      if: "github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'",
+      with: {
+        owner: 'tutur3u',
+        repositories: 'platform',
+        'permission-contents': 'write',
+      },
     },
-    (w) => {
-      w.on.pull_request = {};
+  };
+  validateMint(fixture);
+  for (const mutate of [
+    (f) => {
+      f.step.uses = 'actions/create-github-app-token@v2';
     },
-    (w) => {
-      w.on.pull_request_target = {};
+    (f) => {
+      delete f.job.environment;
     },
-    (_w, s) => {
-      s.with['permission-workflows'] = 'write';
+    (f) => {
+      f.job.environment = 'arbitrary';
     },
-    (_w, s) => {
-      s.if = 'always()';
+    (f) => {
+      f.job.steps.push({
+        uses: 'actions/checkout@sha',
+        with: { ref: 'untrusted-branch' },
+      });
     },
-    (w) => {
-      w.jobs.dispatch.steps.at(-1).env.GH_TOKEN =
-        `\${{ steps.bot-token.outputs.token }}`;
+    (f) => {
+      f.workflow.on.pull_request = {};
+    },
+    (f) => {
+      f.workflow.on.pull_request_target = {};
+    },
+    (f) => {
+      f.step.if = 'always()';
+    },
+    (f) => {
+      f.step.with['permission-actions'] = 'write';
+    },
+    (f) => {
+      f.step.with['permission-workflows'] = 'write';
+    },
+    (f) => {
+      f.step.with['skip-token-revoke'] = 'true';
     },
   ]) {
-    const w = structuredClone(workflows['mobile-testflight-review-queue.yaml']);
-    mutation(
-      w,
-      w.jobs.dispatch.steps.find((s) => s.id === 'bot-token')
-    );
-    assert.throws(() => validate('mobile-testflight-review-queue.yaml', w));
+    const bad = structuredClone(fixture);
+    mutate(bad);
+    assert.throws(() => validateMint(bad));
   }
 });
 
-test('private inactive manifest has no review, bypass, workflow or unused check authority', () => {
-  const m = JSON.parse(fs.readFileSync('.github/tuturuuu-bot/manifest.json'));
-  assert.equal(m.public, false);
-  assert.equal(m.hook_attributes.active, false);
-  assert.deepEqual(m.default_events, []);
-  assert.deepEqual(m.default_permissions, {
-    actions: 'write',
-    contents: 'write',
-    issues: 'write',
-    metadata: 'read',
-    pull_requests: 'write',
-  });
-});
-
-test('owner runbook inventory matches current workflow and script sources', () => {
-  const { render } = require('./tuturuuu-bot-inventory');
-  const doc = fs.readFileSync(
-    'apps/docs/build/devops/tuturuuu-bot.mdx',
-    'utf8'
+test('manifest is private and inactive with only local push and PR creation permissions', () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      path.resolve(__dirname, '../../.github/tuturuuu-bot/manifest.json')
+    )
   );
-  const section = doc
-    .split('<!-- bot-inventory:start -->\n')[1]
-    .split('\n<!-- bot-inventory:end -->')[0];
-  assert.equal(section, render());
+  assert.equal(manifest.public, false);
+  assert.equal(manifest.hook_attributes.active, false);
+  assert.deepEqual(manifest.default_events, []);
+  assert.deepEqual(manifest.default_permissions, {
+    contents: 'write',
+    pull_requests: 'write',
+    metadata: 'read',
+  });
 });

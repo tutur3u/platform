@@ -39,10 +39,12 @@ function inventory() {
       reason =
         migrated.join('; ') +
         '. Other jobs retain job-bound read/OIDC/lifecycle tokens.';
-    } else if (file === 'release-please-auto-merge.yaml') {
+    } else if (
+      ['release-please.yaml', 'release-please-auto-merge.yaml'].includes(file)
+    ) {
       decision = 'b: retain current PAT/GITHUB_TOKEN';
       reason =
-        'Protected main/production sync can push workflow files; App has no workflows permission or bypass. Requires separate redesign, never grant bypass.';
+        'Release automation retains RELEASE_PLEASE_TOKEN/GITHUB_TOKEN, including workflow-scoped PAT writes. The local agent App is a separate identity and has no bypass.';
     } else if (
       /pull_request/.test(JSON.stringify(workflow.on || {})) ||
       file === 'biome-check.yaml'
@@ -95,7 +97,7 @@ function inventory() {
         )
       )
         reason =
-          'a: release-please caller now injects App token (contents/issues/pull-requests write); other callers retain their existing token. No token lookup API change.';
+          'b: release caller retains its existing release identity and PAT/GITHUB_TOKEN. No App migration.';
       else if (/release-please-auto-approve/.test(relative))
         reason =
           'b: approval identity remains GITHUB_TOKEN; never pass the App token.';
@@ -135,18 +137,4 @@ function render() {
   );
 }
 module.exports = { render, RESERVED };
-if (require.main === module) {
-  const file = path.join(ROOT, 'apps/docs/build/devops/tuturuuu-bot.mdx');
-  const text = fs.readFileSync(file, 'utf8');
-  const next = text.replace(
-    /<!-- bot-inventory:start -->[\s\S]*<!-- bot-inventory:end -->/,
-    `<!-- bot-inventory:start -->\n${render()}\n<!-- bot-inventory:end -->`
-  );
-  if (process.argv.includes('--write')) fs.writeFileSync(file, next);
-  else if (text !== next) {
-    console.error(
-      'Bot inventory drift: run node scripts/ci/tuturuuu-bot-inventory.js --write'
-    );
-    process.exitCode = 1;
-  }
-}
+if (require.main === module) process.stdout.write(`${render()}\n`);

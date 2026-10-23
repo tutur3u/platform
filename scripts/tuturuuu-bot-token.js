@@ -3,13 +3,7 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const crypto = require('node:crypto');
 
 const API = 'https://api.github.com';
-const SCOPES = new Set([
-  'contents',
-  'pull_requests',
-  'issues',
-  'actions',
-  'metadata',
-]);
+const SCOPES = new Set(['contents', 'pull_requests']);
 
 function parseArgs(argv) {
   const separator = argv.indexOf('--');
@@ -22,12 +16,7 @@ function parseArgs(argv) {
   const permissions = { metadata: 'read' };
   for (const entry of options[1].split(',')) {
     const [scope, level, extra] = entry.split('=');
-    if (
-      !SCOPES.has(scope) ||
-      !['read', 'write'].includes(level) ||
-      extra ||
-      (scope === 'metadata' && level !== 'read')
-    )
+    if (!SCOPES.has(scope) || !['read', 'write'].includes(level) || extra)
       throw new Error('Invalid permission scope or level');
     permissions[scope] = level;
   }
@@ -38,7 +27,28 @@ function parseArgs(argv) {
   ) {
     throw new Error('Only git push and gh pr create are supported');
   }
+  if (command[0] === 'git') validatePush(command);
   return { permissions, command };
+}
+
+function validatePush(command) {
+  const [git, push, remote, refspec, ...extra] = command;
+  const branch = refspec?.startsWith('HEAD:') ? refspec.slice(5) : '';
+  if (
+    git !== 'git' ||
+    push !== 'push' ||
+    remote !== 'origin' ||
+    extra.length ||
+    !/^(feature|feat|fix|bugfix|hotfix|chore|docs|style|refactor|perf|dependabot|claude)\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(
+      branch
+    ) ||
+    branch.includes('//') ||
+    branch.includes('/-')
+  ) {
+    throw new Error(
+      'Use exactly git push origin HEAD:<task-branch>; flags and protected/tag refs are forbidden'
+    );
+  }
 }
 
 function loadPrivateKey(env, read = execFileSync) {
@@ -134,10 +144,16 @@ async function runCli(
       GH_TOKEN: token,
       GITHUB_TOKEN: token,
       GH_HOST: 'github.com',
+      GH_REPO: 'tutur3u/platform',
       GIT_TERMINAL_PROMPT: '0',
     };
     for (const name of Object.keys(childEnv)) {
-      if (name.startsWith('TUTURUUU_BOT_') || name.startsWith('GIT_CONFIG_'))
+      if (
+        name.startsWith('TUTURUUU_BOT_') ||
+        name.startsWith('GIT_CONFIG_') ||
+        name.startsWith('GIT_TRACE') ||
+        ['GH_DEBUG', 'GIT_CURL_VERBOSE'].includes(name)
+      )
         delete childEnv[name];
     }
     // Override cached personal credentials without writing repository/global config.

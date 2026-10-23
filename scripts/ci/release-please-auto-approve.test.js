@@ -227,8 +227,11 @@ test('an approval only counts when it matches the current head', () => {
 });
 
 test('approved authors fall back to the default when the override is empty', () => {
-  assert.deepEqual(parseApprovedAuthors(''), ['github-actions[bot]']);
-  assert.deepEqual(parseApprovedAuthors('  ,  '), ['github-actions[bot]']);
+  assert.deepEqual(parseApprovedAuthors(''), ['vhpx', 'github-actions[bot]']);
+  assert.deepEqual(parseApprovedAuthors('  ,  '), [
+    'vhpx',
+    'github-actions[bot]',
+  ]);
   assert.deepEqual(parseApprovedAuthors('a-bot, b-bot'), ['a-bot', 'b-bot']);
 });
 
@@ -398,4 +401,55 @@ test('the auto approve test is covered by script-test discovery', () => {
     ),
     'the release auto-approve test must remain discoverable'
   );
+});
+
+test('only the exact release identities are eligible, independent of GitHub user type', () => {
+  for (const login of ['vhpx', 'github-actions[bot]']) {
+    const decision = evaluate({
+      pullRequest: releasePullRequest({ user: { login, type: 'User' } }),
+      commits: [releaseCommit({ author: { login } })],
+    });
+    assert.equal(decision.approve, true);
+  }
+  assert.equal(
+    evaluate({
+      pullRequest: releasePullRequest({
+        user: { login: 'unrelated[bot]', type: 'Bot' },
+      }),
+    }).approve,
+    false
+  );
+});
+
+test('agent bot PRs and commits on the exact release branch never post approvals', async () => {
+  const bot = 'tuturuuu-bot[bot]';
+  const cases = [
+    {
+      pullRequest: releasePullRequest({ user: { login: bot, type: 'Bot' } }),
+      commits: [releaseCommit({ author: { login: bot } })],
+    },
+    {
+      pullRequest: releasePullRequest({
+        user: { login: 'vhpx', type: 'User' },
+      }),
+      commits: [releaseCommit({ author: { login: bot } })],
+    },
+  ];
+  for (const entry of cases) {
+    let approvals = 0;
+    const result = await autoApproveReleasePullRequest({
+      config,
+      approvedAuthors: ['vhpx', 'github-actions[bot]', bot],
+      github: stubGitHub({
+        ...entry,
+        files: [{ filename: 'CHANGELOG.md' }],
+        onApprove: () => {
+          approvals += 1;
+        },
+      }),
+      targetBranch: 'production',
+    });
+    assert.equal(result.status, 'skipped');
+    assert.equal(approvals, 0);
+  }
 });

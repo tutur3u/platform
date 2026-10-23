@@ -103,7 +103,7 @@ test('git credentials use ephemeral config and propagate failure while revoking'
   });
   assert.equal(
     await runCli(
-      [...argv.slice(0, 3), 'git', 'push', 'origin', 'HEAD'],
+      [...argv.slice(0, 3), 'git', 'push', 'origin', 'HEAD:chore/test'],
       f.deps
     ),
     7
@@ -185,4 +185,93 @@ test('revocation failure is visible and fails the command', async () => {
   assert.equal(await runCli(argv, f.deps), 1);
   assert.match(f.output(), /revocation failed/);
   assert.doesNotMatch(f.output(), /ghs_fake/);
+});
+
+test('local scopes exclude actions, issues, workflow, checks, admin and explicit metadata', () => {
+  for (const scope of [
+    'actions',
+    'issues',
+    'workflows',
+    'checks',
+    'administration',
+    'metadata',
+  ]) {
+    assert.throws(() =>
+      parseArgs(['--permissions', `${scope}=write`, '--', 'gh', 'pr', 'create'])
+    );
+  }
+});
+
+test('git push accepts exactly one explicit task-branch HEAD refspec', () => {
+  const prefix = ['--permissions', 'contents=write', '--', 'git', 'push'];
+  assert.equal(
+    parseArgs([...prefix, 'origin', 'HEAD:fix/x']).command.at(-1),
+    'HEAD:fix/x'
+  );
+  for (const args of [
+    ['origin', 'HEAD'],
+    ['origin'],
+    ['origin', 'main'],
+    ['origin', 'HEAD:main'],
+    ['origin', 'HEAD:production'],
+    ['origin', 'HEAD:refs/tags/v1'],
+    ['origin', 'HEAD:refs/heads/fix/x'],
+    ['origin', 'HEAD:release-please--branches--production'],
+    ['origin', 'HEAD:fix/a', 'HEAD:fix/b'],
+    ['origin', ':fix/a'],
+    ['origin', '+HEAD:fix/a'],
+    ['origin', 'HEAD:fix/../x'],
+    ['origin', 'HEAD:fix/x.lock'],
+    ['origin', 'HEAD:fix//x'],
+    ['elsewhere', 'HEAD:fix/x'],
+    ...[
+      '--force',
+      '--force-with-lease',
+      '--force-if-includes',
+      '--delete',
+      '-d',
+      '--mirror',
+      '--all',
+      '--tags',
+      '--receive-pack',
+      '--exec',
+      '-f',
+    ].map((flag) => ['origin', flag, 'HEAD:fix/x']),
+    ['origin', 'HEAD:fix/x', '--force'],
+    ['origin', '--receive-pack=evil', 'HEAD:fix/x'],
+    ['origin', '--exec=evil', 'HEAD:fix/x'],
+  ])
+    assert.throws(() => parseArgs([...prefix, ...args]), args.join(' '));
+});
+
+test('rejected commands never access the Keychain or mint a token', async () => {
+  for (const command of [
+    ['git', 'push', 'origin', '--mirror'],
+    ['gh', 'pr', 'review', '--approve'],
+    ['gh', 'pr', 'review', '-a'],
+  ]) {
+    const f = fixture();
+    assert.equal(await runCli([...argv.slice(0, 3), ...command], f.deps), 1);
+    assert.deepEqual(f.calls, []);
+  }
+});
+
+test('child environment drops auth tracing and personal Git config overrides', async () => {
+  const f = fixture();
+  Object.assign(f.deps.env, {
+    GH_DEBUG: 'api',
+    GIT_TRACE_CURL: '1',
+    GIT_CURL_VERBOSE: '1',
+    GIT_CONFIG_COUNT: '1',
+  });
+  assert.equal(await runCli(argv, f.deps), 0);
+  const env = f.calls[2].options.env;
+  for (const name of [
+    'GH_DEBUG',
+    'GIT_TRACE_CURL',
+    'GIT_CURL_VERBOSE',
+    'GIT_CONFIG_COUNT',
+  ])
+    assert.equal(env[name], undefined);
+  assert.equal(env.GH_REPO, 'tutur3u/platform');
 });

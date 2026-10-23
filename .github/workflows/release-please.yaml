@@ -39,29 +39,16 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - name: Mint scoped tuturuuu-bot token
-        id: bot-token
-        if: vars.TUTURUUU_BOT_APP_ID != '' && github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/production'
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
-        with:
-          app-id: ${{ vars.TUTURUUU_BOT_APP_ID }}
-          private-key: ${{ secrets.TUTURUUU_BOT_PRIVATE_KEY }}
-          owner: tutur3u
-          repositories: platform
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
       - name: Checkout release automation
         uses: actions/checkout@v7
         with:
           ref: production
           fetch-depth: 0
-          token: ${{ steps.bot-token.outputs.token || secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
       - name: Recover overflow release notes
         env:
-          GITHUB_TOKEN: ${{ steps.bot-token.outputs.token || secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: node scripts/ci/release-please-overflow-recovery.js --target-branch production
 
       - name: Capture previous generated release head
@@ -81,7 +68,7 @@ jobs:
         id: release
         uses: googleapis/release-please-action@v5
         with:
-          token: ${{ steps.bot-token.outputs.token || secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           target-branch: production
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
@@ -164,7 +151,7 @@ jobs:
 
       - name: Normalize generated release description
         env:
-          GITHUB_TOKEN: ${{ steps.bot-token.outputs.token || secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: node scripts/ci/normalize-release-description.js
 
       # Overflow notes are still needed while the merged PR carries
@@ -213,7 +200,6 @@ jobs:
       - name: Approve untouched release PR
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          # Extend when release-please starts committing as another identity;
-          # the script names the login it saw when it skips for this reason.
-          RELEASE_PLEASE_AUTHORS: github-actions[bot]
+          # Fixed PAT identity and job-token fallback; never admit the agent App.
+          RELEASE_PLEASE_AUTHORS: vhpx,github-actions[bot]
         run: node scripts/ci/release-please-auto-approve.js --target-branch production
