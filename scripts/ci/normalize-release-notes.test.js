@@ -294,3 +294,108 @@ test('kills a stalled published-history read at its 10-second deadline without r
   assert.ok(elapsed >= 10_000 && elapsed < 14_000, `Elapsed ${elapsed} ms`);
   assert.equal(fs.readFileSync(control.attempts, 'utf8'), 'attempt\n');
 });
+
+const { normalizeMobileReleaseNotes } = require('./normalize-release-notes');
+test('renders the reported mobile submission history without branch merge noise', () => {
+  const input =
+    '- Merge main into feat/feedback-mobile-submit-20261022\n- retain uncertain submissions and compare omitted media\n- connect secure mobile submission and private media\n- retain completed replies across reload and follow-up';
+  assert.equal(
+    normalizeMobileReleaseNotes(input),
+    '- Retain uncertain submissions and compare omitted media\n- Connect secure mobile submission and private media\n- Retain completed replies across reload and follow-up'
+  );
+});
+
+test('prefers mobile product changes, removes maintenance and references, and deduplicates', () => {
+  const input = [
+    'fix(web): repair navigation (#12)',
+    'chore(mobile): update tools',
+    'ci: update workflow',
+    'test: extend coverage',
+    'docs: explain testing',
+    'refactor(mobile): move helpers',
+    'feat(mobile): send feedback (#42)',
+    'fix(mobile): Send feedback',
+    'fix(mobile): repair replies on fix/mobile-replies PR #43',
+  ].join('\n');
+  const expected = '- Send feedback\n- Repair replies on\n- Repair navigation';
+  assert.equal(normalizeMobileReleaseNotes(input), expected);
+  assert.equal(normalizeMobileReleaseNotes(expected), expected);
+  assert.equal(
+    normalizeMobileReleaseNotes('- merge duplicate contacts'),
+    '- Merge duplicate contacts'
+  );
+  const result = spawnSync(
+    process.execPath,
+    [path.join(__dirname, 'normalize-release-description.js'), '--mobile'],
+    { input, encoding: 'utf8' }
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, expected);
+});
+
+test('mobile history excludes multi-parent product-titled merges but keeps their underlying work', async (t) => {
+  const fixture = historyFixture(t);
+  const git = (...args) =>
+    execFileSync(
+      '/usr/bin/git',
+      [
+        '-c',
+        'user.name=Fixture',
+        '-c',
+        'user.email=fixture@example.test',
+        '-c',
+        'commit.gpgsign=false',
+        '-c',
+        'core.hooksPath=/dev/null',
+        ...args,
+      ],
+      { cwd: fixture.cwd, encoding: 'utf8' }
+    );
+  const base = git('rev-parse', 'HEAD').trim();
+  fs.mkdirSync(path.join(fixture.cwd, 'apps/mobile'), { recursive: true });
+  git('checkout', '-b', 'product');
+  fs.writeFileSync(path.join(fixture.cwd, 'apps/mobile/feature'), 'feature');
+  git('add', 'apps/mobile');
+  git('commit', '-m', 'feat(mobile): send feedback');
+  git('checkout', '--detach', base);
+  git('merge', '--no-ff', 'product', '-m', 'feat(mobile): integration noise');
+  const { changesBetween } = await import(
+    '../mobile-deployment/release-history.mjs'
+  );
+  assert.deepEqual(
+    changesBetween(base, 'HEAD', (command, args) =>
+      execFileSync(command, args, { cwd: fixture.cwd, encoding: 'utf8' })
+    ),
+    ['Send feedback']
+  );
+});
+
+test('mobile notes strip bare PR numbers and every permitted task branch prefix', () => {
+  assert.equal(
+    normalizeMobileReleaseNotes('fix(mobile): Keep drafts #123'),
+    '- Keep drafts'
+  );
+  for (const prefix of [
+    'feature',
+    'feat',
+    'fix',
+    'bugfix',
+    'hotfix',
+    'release',
+    'chore',
+    'docs',
+    'style',
+    'refactor',
+    'perf',
+    'dependabot',
+    'claude',
+  ]) {
+    assert.equal(
+      normalizeMobileReleaseNotes(
+        `fix(mobile): Keep drafts ${prefix}/drafts #123`
+      ),
+      '- Keep drafts',
+      prefix
+    );
+  }
+});
