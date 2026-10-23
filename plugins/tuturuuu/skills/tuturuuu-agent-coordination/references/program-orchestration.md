@@ -135,7 +135,8 @@ Tuturuuu procedures that follow from them:
   runtime for every shell on the host.
 - A failed-jobs-only rerun cannot reuse artifacts that its successful producer
   uploaded in an earlier attempt. `scripts/ci/workflow-failed-rerun-artifacts.test.js`
-  requires every failed-only retry to target a workflow without artifact handoff.
+  requires every workflow that reruns another run to declare its target and mode;
+  partial reruns may only target workflows without artifact handoff.
 
 For observed slow admission, repeated handovers or two fixes failing on one
 premise, assign a bounded workflow audit at a safe checkpoint. Read actual
