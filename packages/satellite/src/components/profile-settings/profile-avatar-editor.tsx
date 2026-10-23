@@ -16,6 +16,12 @@ import { useRef } from 'react';
 
 export const satelliteProfileQueryKey = ['current-user-profile'] as const;
 
+/**
+ * Avatar removal stays off in satellites until the web avatar route fix lands
+ * (REV-6477-2). Upload is unaffected; users can still remove it in apps/web.
+ */
+export const SATELLITE_AVATAR_REMOVE_ENABLED = false;
+
 export function ProfileAvatarEditor({
   profile,
 }: {
@@ -96,7 +102,7 @@ export function ProfileAvatarEditor({
           )}
           {t('new_avatar')}
         </Button>
-        {profile.avatar_url ? (
+        {SATELLITE_AVATAR_REMOVE_ENABLED && profile.avatar_url ? (
           <Button
             disabled={busy}
             size="sm"

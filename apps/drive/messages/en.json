@@ -6835,6 +6835,7 @@
     "accounts_switch": "Switch between signed-in accounts",
     "appearance": "Appearance",
     "appearance_description": "Theme and language",
+    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
     "managed_centrally_description": "For your protection, {section} changes are made in Tuturuuu, which may ask you to confirm your identity. Changes apply to every Tuturuuu app.",
     "managed_centrally_title": "Managed in your Tuturuuu account",
     "open_in_tuturuuu": "Open in Tuturuuu",

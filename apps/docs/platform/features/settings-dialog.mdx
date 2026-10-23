@@ -62,7 +62,7 @@ so `?settingsTab=<tab>` means the same thing in every app.
 
 | Tab id | apps/web | Satellites |
 | --- | --- | --- |
-| `profile` | Full profile panel | Shared `SatelliteProfileSettingsPanel`: avatar, display name, full name, email (with verification), user id. |
+| `profile` | Full profile panel | Shared `SatelliteProfileSettingsPanel`: avatar upload, display name, full name, user id. Email is read-only, with a link to the web profile tab. |
 | `accounts` | Account switcher management | Explains the tab and opens the same tab in apps/web. |
 | `security` | Password, 2FA, passkeys, linked identities | Explains the tab and opens the same tab in apps/web. |
 | `sessions` | Devices and session revocation | Explains the tab and opens the same tab in apps/web. |
@@ -88,9 +88,18 @@ satellite `accounts`, `security` and `sessions` tabs link to
 `<web origin>/personal?settingsDialog=open&settingsTab=<tab>` in a new tab
 (`rel="noopener noreferrer"`), which opens the web dialog on the same tab.
 
-Profile edits are not step-up gated. Satellites call the existing web profile
-endpoints (`/api/v1/users/me/*`) through `@tuturuuu/internal-api`, using the
-satellite session and the `/api` proxy contract.
+Satellites edit only display name, full name and avatar upload, through the
+existing web profile endpoints (`/api/v1/users/me/*`) in
+`@tuturuuu/internal-api`, using the satellite session and the `/api` proxy
+contract.
+
+- **Email is a link-out.** A satellite session's admin client has no provider
+  session and cannot change the auth email. Satellites show the email read-only
+  and link to `?settingsTab=profile` in apps/web, which owns verification. They
+  never call `PATCH /api/v1/users/me/email`.
+- **Avatar removal is off in satellites**
+  (`SATELLITE_AVATAR_REMOVE_ENABLED`) until the web avatar route fix is merged.
+  Users remove avatars in apps/web.
 
 ### Exceptions
 
@@ -140,6 +149,8 @@ instead of hand-writing query strings.
   default dialog for apps without their own, and the menu Settings item.
 - `packages/ui/src/components/ui/custom/satellite-user-menu-items.test.tsx`: the
   Settings menu item.
+- `packages/satellite/src/components/profile-settings/profile-sensitive-actions.test.tsx`:
+  the email link-out sends no email PATCH, and avatar removal is not offered.
 - `apps/calendar/src/components/settings/settings-dialog.test.tsx`: an
   app-specific dialog includes the shared account tabs.
 - `apps/web/src/__tests__/proxy.test.ts`: settings params survive the root

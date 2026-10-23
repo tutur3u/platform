@@ -7,7 +7,7 @@ import type { WebManagedAccountTabId } from './account-settings-navigation';
  */
 export function buildWebAccountSettingsUrl(
   centralUrl: string,
-  tab: WebManagedAccountTabId
+  tab: WebManagedAccountTabId | 'profile'
 ): string {
   const origin = new URL(centralUrl).origin;
   return buildSettingsDialogHref(`${origin}/personal`, tab);

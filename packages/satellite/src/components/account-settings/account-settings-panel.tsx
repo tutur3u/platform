@@ -18,7 +18,9 @@ export function SatelliteAccountSettingsPanel({
   if (!user) return null;
 
   if (activeTab === 'profile') {
-    return <SatelliteProfileSettingsPanel user={user} />;
+    return (
+      <SatelliteProfileSettingsPanel centralUrl={centralUrl} user={user} />
+    );
   }
 
   if (isWebManagedAccountTab(activeTab)) {

@@ -10261,6 +10261,7 @@
     "wallet_deleted": "Đã xóa ví thành công"
   },
   "satellite-account-settings": {
+    "email_managed_centrally": "Việc đổi email cần được xác nhận, nên bạn thực hiện trong phần cài đặt tài khoản Tuturuuu.",
     "title": "Tài khoản",
     "preferences": "Tùy chọn",
     "profile": "Hồ sơ",

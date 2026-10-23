@@ -9304,6 +9304,7 @@
     "wallet": "Payment Method"
   },
   "satellite-account-settings": {
+    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
     "title": "Account",
     "preferences": "Preferences",
     "profile": "Profile",

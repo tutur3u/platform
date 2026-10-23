@@ -1617,6 +1617,7 @@
     "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery."
   },
   "satellite-account-settings": {
+    "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",
     "title": "Account",
     "preferences": "Preferences",
     "profile": "Profile",

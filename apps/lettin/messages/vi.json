@@ -1617,6 +1617,7 @@
     "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối."
   },
   "satellite-account-settings": {
+    "email_managed_centrally": "Việc đổi email cần được xác nhận, nên bạn thực hiện trong phần cài đặt tài khoản Tuturuuu.",
     "title": "Tài khoản",
     "preferences": "Tùy chọn",
     "profile": "Hồ sơ",
