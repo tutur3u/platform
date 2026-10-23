@@ -51,7 +51,7 @@ remains the blocking formatter and linter. Paused runtimes are excluded.
 CI builds `@tuturuuu/types`, `supabase`, `internal-api` and `masonry` before
 type-checking. Local checkouts usually lack those `dist` declarations, which
 produces thousands of missing-module errors and implicit-`any` cascades. The
-gate runs `tsc -p <project> --noEmit --incremental false --composite false` per
+gate runs `-p <project> --noEmit --incremental false --composite false` per
 project and classifies diagnostics:
 
 - With every workspace declaration present, all diagnostics block.
@@ -69,6 +69,18 @@ root `vitest.config.ts`, `.oxlintrc.json`, `.oxfmtrc.json`, and
 `packages/typescript-config`)
 print **not covered; CI only** because this focused gate cannot prove their full
 repository effect. CI type-checking remains authoritative.
+
+### Optional tsrs shadow
+
+`--checker auto` and `--checker tsc` use tsc only. Existing clean-source
+qualification does not establish that tsrs catches seeded errors, so a tsrs
+pass cannot replace tsc. `--checker tsrs` requests advisory comparisons, always
+followed by tsc regardless of success, failure or crash. Only tsc can block.
+The resolver runs only if at least one planned project is in the recorded
+qualification set; unqualified-only plans fall back to tsc. Hook mode uses only
+an existing `TSRS_BIN`, with no network fetch. Outside hooks, pinned npm
+resolution disables install lifecycle scripts. See the
+[qualification limits](/build/development-tools/tsrs-shadow-type-check).
 
 ## Optional pre-push hook
 
@@ -106,6 +118,7 @@ a passing frozen install alone does not prove a normal install leaves it stable.
 ## Regression coverage
 
 `scripts/check-changed.test.js`, `scripts/check-changed/plan.test.js`,
-`scripts/check-changed/type-check.test.js` and `scripts/ts-diagnostics.test.js`
-cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
-ttr queueing and cold-declaration classification.
+`scripts/check-changed/type-check.test.js`, `scripts/check-changed/tsrs.test.js`
+and `scripts/ts-diagnostics.test.js` cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
+ttr queueing, cold-declaration classification and tsc confirmation of tsrs
+failures.

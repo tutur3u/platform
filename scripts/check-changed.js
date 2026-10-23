@@ -6,7 +6,8 @@
  *
  * Usage:
  *   bun check:changed [--base <ref>] [--committed] [--only <id>] [--skip <id>]
- *     [--fail-fast] [--dry-run] [--no-ttr] [--files <path>...]
+ *     [--checker auto|tsc|tsrs] [--fail-fast] [--dry-run] [--no-ttr]
+ *     [--files <path>...]
  *
  * The optional pre-push hook runs this with --hook once opted in:
  *   git config tuturuuu.prePush true
@@ -29,8 +30,18 @@ const {
   missingDistPackages,
   typeCheckProjects,
 } = require('./check-changed/type-check.js');
+const {
+  CHECKERS,
+  TSRS_PROJECTS,
+  prefersTsrs,
+  resolveTsrs,
+} = require('./check-changed/tsrs.js');
 const { createChildEnv } = require('./pre-commit.js');
-const { diagnosticKey, runChecker } = require('./ts-diagnostics.js');
+const {
+  compareDiagnostics,
+  diagnosticKey,
+  runChecker,
+} = require('./ts-diagnostics.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const ZERO_SHA = /^0+$/;
@@ -39,6 +50,7 @@ const MAX_PRINTED_DIAGNOSTICS = 40;
 function parseArgs(argv) {
   const options = {
     base: null,
+    checker: 'auto',
     committed: false,
     dryRun: false,
     failFast: false,
@@ -58,6 +70,7 @@ function parseArgs(argv) {
       return value;
     };
     if (arg === '--base') options.base = next();
+    else if (arg === '--checker') options.checker = next();
     else if (arg === '--committed') options.committed = true;
     else if (arg === '--dry-run') options.dryRun = true;
     else if (arg === '--fail-fast') options.failFast = true;
@@ -70,6 +83,9 @@ function parseArgs(argv) {
     if (options.files) break;
   }
   if (options.files) assertSafePaths(options.files);
+  if (!CHECKERS.has(options.checker)) {
+    throw new Error(`--checker must be one of ${[...CHECKERS].join(', ')}`);
+  }
   return options;
 }
 
@@ -212,33 +228,76 @@ function runTypeCheck(step, context) {
   if (!projects.length)
     return { status: 'skip', detail: 'no tsc type-check script' };
   const totals = { blocking: [], advisory: 0, ignored: 0 };
-  for (const project of projects) {
-    const checker = context.checkerFor(project);
-    const result = runChecker(checker, project, {
+  const used = { tsc: 0, tsrs: 0 };
+  let shadowCount = 0;
+  const parityOutput = [];
+  const check = (name, project) => {
+    const result = runChecker(context.checkers[name], project, {
       cwd: context.root,
       env: context.env,
       spawn: context.spawn,
       timer: null,
     });
+    return { result, groups: classifyDiagnostics(result.diagnostics, context) };
+  };
+  for (const project of projects) {
+    let name =
+      context.checkers.tsrs &&
+      TSRS_PROJECTS.has(project) &&
+      prefersTsrs(context.checker)
+        ? 'tsrs'
+        : 'tsc';
+    let { result, groups } = check(name, project);
+    // Positive and negative tsrs outcomes are advisory; tsc alone decides.
+    if (name === 'tsrs') {
+      shadowCount++;
+      const shadow = result;
+      name = 'tsc';
+      ({ result, groups } = check(name, project));
+      const parity = compareDiagnostics(result.diagnostics, shadow.diagnostics);
+      if (shadow.crashed || !parity.equal) {
+        parityOutput.push(
+          `advisory tsrs parity ${project}: ${parity.onlyActual.length} tsrs-only, ${parity.onlyExpected.length} tsc-only${shadow.crashed ? ', tsrs crashed' : ''}`
+        );
+        for (const [label, diagnostics] of [
+          ['tsrs-only', parity.onlyActual],
+          ['tsc-only', parity.onlyExpected],
+        ]) {
+          parityOutput.push(
+            ...diagnostics
+              .slice(0, MAX_PRINTED_DIAGNOSTICS)
+              .map((diagnostic) => `[${label}] ${diagnosticKey(diagnostic)}`)
+          );
+        }
+      }
+    }
+    used[name]++;
     if (result.crashed) {
       return {
         status: 'fail',
         detail: `${project} crashed`,
         output: result.output,
+        parityOutput: parityOutput.join('\n'),
       };
     }
-    const groups = classifyDiagnostics(result.diagnostics, context);
     totals.blocking.push(...groups.blocking);
     totals.advisory += groups.advisory.length;
     totals.ignored += groups.ignored.length;
   }
-  const notes = [`${projects.length} project(s)`];
+  const notes = [
+    Object.entries(used)
+      .filter(([, count]) => count)
+      .map(([name, count]) => `${name} x${count}`)
+      .join(', '),
+  ];
+  if (shadowCount) notes.push(`tsrs advisory x${shadowCount}`);
   if (totals.ignored) notes.push(`${totals.ignored} missing-dist ignored`);
   if (totals.advisory)
     notes.push(`${totals.advisory} advisory outside changed files`);
   return {
     status: totals.blocking.length ? 'fail' : 'pass',
     detail: notes.join(', '),
+    parityOutput: parityOutput.join('\n'),
     output: totals.blocking
       .slice(0, MAX_PRINTED_DIAGNOSTICS)
       .map(diagnosticKey)
@@ -277,6 +336,7 @@ function runChecks(steps, context, log = console.log) {
     log(
       `${ICONS[result.status]} ${step.label} (${seconds}s)${result.detail ? ` - ${result.detail}` : ''}`
     );
+    if (result.parityOutput) log(result.parityOutput.replace(/^/gm, '     '));
     if (result.status === 'fail' || result.status === 'advisory') {
       if (result.output) log(result.output.replace(/^/gm, '     '));
       for (const hint of [step.failureHint, step.fixHint].filter(Boolean)) {
@@ -379,7 +439,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
   if (options.dryRun) {
     for (const step of steps) {
       const command = step.typeCheck
-        ? `tsc -p <projects of ${step.typeCheck.workspace}>`
+        ? `${options.checker === 'tsrs' ? 'tsrs advisory + tsc' : 'tsc'} -p <projects of ${step.typeCheck.workspace}>`
         : step.inline
           ? '(inline)'
           : [step.command, ...step.args].join(' ');
@@ -388,12 +448,33 @@ function main(argv = process.argv.slice(2), deps = {}) {
     return 0;
   }
   const ttr = ttrPrefix(options.ttr, execFile);
+  const tsrs =
+    options.checker === 'tsrs' &&
+    steps.some((step) => {
+      if (!step.typeCheck) return false;
+      const { workspace } = step.typeCheck;
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(root, workspace, 'package.json'), 'utf8')
+      );
+      return typeCheckProjects(workspace, manifest.scripts).some(
+        (project) => TSRS_PROJECTS.has(project) && exists(project)
+      );
+    })
+      ? (deps.resolveTsrs ?? resolveTsrs)({
+          env: deps.env ?? process.env,
+          allowNetwork: !options.hook,
+        })
+      : null;
+  if (options.checker === 'tsrs' && !tsrs) {
+    log('  tsrs unavailable; type-checking with tsc.');
+  }
   const context = {
     changedFiles: new Set(changes.map((change) => change.file)),
-    checkerFor: () => [
-      ...(ttr ?? []),
-      path.join(root, 'node_modules/.bin/tsc'),
-    ],
+    checker: options.checker,
+    checkers: {
+      tsc: [...(ttr ?? []), path.join(root, 'node_modules/.bin/tsc')],
+      tsrs: tsrs ? [...(ttr ?? []), tsrs] : null,
+    },
     env: createChildEnv(deps.env ?? process.env),
     failFast: options.failFast,
     missing,

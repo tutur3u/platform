@@ -51,6 +51,9 @@ test('parseArgs handles flags, hooks and trailing file lists', () => {
   const hook = parseArgs(['--hook']);
   assert.equal(hook.hook, true);
   assert.equal(hook.committed, true);
+  assert.equal(parseArgs([]).checker, 'auto');
+  assert.equal(parseArgs(['--checker', 'tsc']).checker, 'tsc');
+  assert.throws(() => parseArgs(['--checker', 'tsgo']), /--checker must be/);
   assert.throws(() => parseArgs(['--base']), /Missing value/);
   assert.throws(() => parseArgs(['--wat']), /Unknown argument/);
 });
@@ -230,7 +233,8 @@ test('runTypeCheck blocks only on changed-file errors while declarations are col
     env: {},
     changedFiles: new Set(['apps/web/src/b.ts']),
     missing: new Map([['@tuturuuu/types', 'packages/types']]),
-    checkerFor: () => ['tsc'],
+    checker: 'tsc',
+    checkers: { tsc: ['tsc'], tsrs: null },
     spawn: (command, args) => {
       calls.push([command, ...args]);
       return { status: 2, stdout: output, stderr: '' };
@@ -250,6 +254,60 @@ test('runTypeCheck blocks only on changed-file errors while declarations are col
     runTypeCheck({ typeCheck: { workspace: 'apps/web' } }, context).status,
     'pass'
   );
+});
+
+test('runTypeCheck defaults to tsc and confirms every explicit tsrs result', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'check-changed-tsrs-'));
+  fs.mkdirSync(path.join(root, 'apps/tasks'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'apps/tasks/package.json'),
+    JSON.stringify({ scripts: { 'type-check': 'tsc -p tsconfig.json' } })
+  );
+  fs.writeFileSync(path.join(root, 'apps/tasks/tsconfig.json'), '{}');
+  const outputs = { tsrs: '', tsc: '' };
+  const calls = [];
+  const context = {
+    root,
+    env: {},
+    checker: 'auto',
+    checkers: { tsc: ['tsc'], tsrs: ['tsrs'] },
+    changedFiles: new Set(['apps/tasks/src/a.ts']),
+    missing: new Map(),
+    spawn: (command) => {
+      calls.push(command);
+      return { status: outputs[command] ? 2 : 0, stdout: outputs[command] };
+    },
+  };
+  const step = { typeCheck: { workspace: 'apps/tasks' } };
+
+  let result = runTypeCheck(step, context);
+  assert.deepEqual(calls, ['tsc']);
+  assert.equal(result.status, 'pass');
+  assert.match(result.detail, /^tsc x1/);
+
+  context.checker = 'tsrs';
+  calls.length = 0;
+  outputs.tsc = 'apps/tasks/src/a.ts(1,1): error TS2322: missed by tsrs.';
+  result = runTypeCheck(step, context);
+  assert.deepEqual(calls, ['tsrs', 'tsc']);
+  assert.equal(result.status, 'fail');
+  assert.match(result.output, /missed by tsrs/);
+  outputs.tsc = '';
+
+  // A tsrs-only error must not block: tsc decides.
+  calls.length = 0;
+  outputs.tsrs = 'apps/tasks/src/a.ts(1,1): error TS2322: tsrs only.';
+  result = runTypeCheck(step, context);
+  assert.deepEqual(calls, ['tsrs', 'tsc']);
+  assert.equal(result.status, 'pass');
+  assert.match(result.detail, /^tsc x1/);
+
+  // An error both checkers report blocks with tsc's diagnostics.
+  calls.length = 0;
+  outputs.tsc = 'apps/tasks/src/a.ts(1,1): error TS2322: shared.';
+  result = runTypeCheck(step, context);
+  assert.equal(result.status, 'fail');
+  assert.equal(result.output, outputs.tsc);
 });
 
 test('main prints the plan in dry-run mode and exits cleanly without changes', () => {
@@ -423,4 +481,114 @@ test('REV-6467-8: hook refuses untracked inputs in selected reverse dependents',
     ]);
     if (untracked) assert.ok(logs.join('\n').includes(untracked));
   }
+});
+
+test('tsrs resolution is lazy, qualified-project-only and offline in hooks', (t) => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'changed-tsrs-admission-')
+  );
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const workspace of ['apps/tasks', 'apps/unqualified']) {
+    fs.mkdirSync(path.join(root, workspace), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, workspace, 'package.json'),
+      JSON.stringify({
+        name: workspace,
+        scripts: { 'type-check': 'tsc -p tsconfig.json' },
+      })
+    );
+    fs.writeFileSync(path.join(root, workspace, 'tsconfig.json'), '{}');
+  }
+  const head = 'a'.repeat(40);
+  const calls = [];
+  const options = [];
+  const deps = {
+    root,
+    env: { TUTURUUU_PRE_PUSH: '1' },
+    stdin: `refs/heads/x ${head} refs/heads/x ${'0'.repeat(40)}\n`,
+    log: () => {},
+    execFile: fakeGit({
+      'git merge-base': 'base',
+      'git branch --show-current': 'chore/gate',
+      'git config': '',
+      'git rev-parse HEAD': head,
+      'git status': '',
+      'git ls-files': '',
+    }),
+    resolveTsrs: (value) => {
+      options.push(value);
+      return '/explicit/tsrs';
+    },
+    spawn: (command) => {
+      calls.push(command);
+      return { status: 0, stdout: '' };
+    },
+  };
+  for (const args of [
+    ['--files', 'apps/tasks/src/a.ts'],
+    ['--checker', 'tsrs', '--files', 'apps/unqualified/src/a.ts'],
+  ]) {
+    assert.equal(main(['--no-ttr', '--only', 'type-check', ...args], deps), 0);
+    assert.equal(options.length, 0);
+    assert.equal(calls.length, 1);
+    assert.ok(calls.pop().endsWith('/tsc'));
+  }
+  assert.equal(
+    main(
+      [
+        '--hook',
+        '--no-ttr',
+        '--only',
+        'type-check',
+        '--checker',
+        'tsrs',
+        '--files',
+        'apps/tasks/src/a.ts',
+      ],
+      deps
+    ),
+    0
+  );
+  assert.equal(options.length, 1);
+  assert.equal(options[0].allowNetwork, false);
+  assert.equal(calls[0], '/explicit/tsrs');
+  assert.ok(calls[1].endsWith('/tsc'));
+});
+
+test('forced tsrs uses only tsc in an unqualified project', (t) => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'changed-tsrs-unqualified-')
+  );
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'apps/unqualified'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'apps/unqualified/package.json'),
+    JSON.stringify({ scripts: { 'type-check': 'tsc -p tsconfig.json' } })
+  );
+  fs.writeFileSync(path.join(root, 'apps/unqualified/tsconfig.json'), '{}');
+  const calls = [];
+  const result = runTypeCheck(
+    { typeCheck: { workspace: 'apps/unqualified' } },
+    {
+      root,
+      env: {},
+      checker: 'tsrs',
+      checkers: { tsc: ['tsc'], tsrs: ['tsrs'] },
+      changedFiles: new Set(),
+      missing: new Map(),
+      spawn: (command) => {
+        calls.push(command);
+        return {
+          status: command === 'tsc' ? 2 : 0,
+          stdout:
+            command === 'tsc'
+              ? 'apps/unqualified/src/a.ts(1,1): error TS2322: real error.'
+              : '',
+        };
+      },
+    }
+  );
+  assert.deepEqual(calls, ['tsc']);
+  assert.equal(result.status, 'fail');
+  assert.match(result.output, /real error/);
 });
