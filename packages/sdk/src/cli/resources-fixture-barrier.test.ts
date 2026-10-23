@@ -1,6 +1,6 @@
 import type { ChildProcess } from 'node:child_process';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { privateFixtures, until } from './resources-test-fixtures';
+import { jsLiteral, privateFixtures, until } from './resources-test-fixtures';
 
 // The barrier is causal: it waits as long as a fixture process that could
 // still produce the awaited state is alive, and fails as soon as none is.
@@ -16,6 +16,12 @@ afterEach(() => {
 });
 
 describe('resource fixture barrier', () => {
+  it('serializes generated source literals without HTML or separator characters', () => {
+    expect(jsLiteral('</script>\u2028\u2029')).toBe(
+      '"\\u003c\\u002fscript\\u003e\\u2028\\u2029"'
+    );
+  });
+
   it('keeps waiting for a slow but live producer past any fixed deadline', async () => {
     vi.useFakeTimers();
     producer();

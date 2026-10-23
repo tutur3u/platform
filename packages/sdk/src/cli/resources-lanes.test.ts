@@ -53,12 +53,6 @@ afterEach(async () => {
   host.cpus = 10;
 });
 describe('lane policy', { timeout: crossProcessTimeout }, () => {
-  it('serializes generated source literals without HTML or separator characters', () => {
-    expect(jsLiteral('</script>\u2028\u2029')).toBe(
-      '"\\u003c\\u002fscript\\u003e\\u2028\\u2029"'
-    );
-  });
-
   it('preserves Bun run separators when clamping the underlying Turbo command', () => {
     expect(
       limitCommand(

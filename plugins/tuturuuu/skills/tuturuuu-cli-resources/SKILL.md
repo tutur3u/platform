@@ -112,3 +112,5 @@ bypass automatic shims; explicitly wrap unrecognized commands. Admission caps ap
 retain argv/env. Invalid config errors name the field and range but omit values. The queue is cooperative scheduling.
 
 Resource fixtures mock host capacity in Vitest parents and disposable Bun loaders/shims. Read subprocess diagnostics after pipes close; use a separate exit barrier for surviving-descendant tests. Pass a custom script as the launcher target, keeping its working directory a directory. Parent Vitest coverage is not evidence of coverage inside Bun subprocesses.
+
+Cross-process resource fixtures wait for producer liveness instead of imposing an independent 15-second barrier deadline. Vitest keeps the existing 45-second test budget, including standalone parameterized config mutation tests. Barriers report captured stderr when every producer exits before the expected state; idle-owner status assertions use the same observed CPU snapshot.
