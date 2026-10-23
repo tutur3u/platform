@@ -42,6 +42,17 @@ satellite user menu, plus the dedicated Calendar and Tasks hosts).
 - Switching tabs and closing replace the current entry, so tab browsing does not
   fill the history stack.
 - All updates are shallow (no server round-trip) and keep the scroll position.
+- apps/web shows the dialog optimistically on an open intent, before the URL
+  updates. That optimistic state is dropped as soon as the URL acknowledges the
+  open, even if the lazy dialog bundle is still loading. Back always closes the
+  dialog.
+
+## Identity-link callback
+
+`settingsLinkedProvider` is set on the return URL whether the provider flow
+succeeded, failed or was cancelled. apps/web shows the "linked" success message
+only after a fresh identities read contains that provider. Otherwise it shows a
+neutral "couldn't confirm" message.
 
 ## Implementation
 
@@ -67,5 +78,9 @@ instead of hand-writing query strings.
   satellite hosts.
 - `apps/web/src/components/settings/settings-dialog-shortcuts.test.tsx`: web
   dashboard and user-menu hosts.
+- `apps/web/src/components/settings/settings-dialog-host-lazy.test.tsx`: Back
+  while the lazy dialog import is pending keeps the dialog closed.
+- `apps/web/src/components/settings/account/use-linked-provider-confirmation.test.tsx`:
+  link success only after confirmation.
 - `apps/web/src/__tests__/proxy.test.ts`: settings params survive the root
   redirect.
