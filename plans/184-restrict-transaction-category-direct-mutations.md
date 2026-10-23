@@ -56,7 +56,7 @@ the caller-token Infrastructure category export.
 | Finance | `bun run --cwd apps/finance type-check` | exit 0 |
 | Inventory | `bun run --cwd apps/inventory type-check` | exit 0 |
 | Backend | `bun check:backend` | caller-token category export tests and full backend checks pass |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

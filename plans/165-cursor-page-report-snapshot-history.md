@@ -81,7 +81,7 @@ tests and users-core report helpers.
 | Contacts | `bun --cwd apps/contacts vitest run 'src/app/[locale]/[wsId]/users/reports/[reportId]/hooks/use-report-history.test.tsx' 'src/app/[locale]/[wsId]/users/reports/[reportId]/components/report-history.test.tsx'` | paging/restoration UI cases pass |
 | Typechecks | `bun run --cwd packages/users-core type-check && bun run --cwd packages/internal-api type-check && bun run --cwd apps/contacts type-check` | exit 0 |
 | Contacts build | `bun run --cwd apps/contacts build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -144,7 +144,7 @@ Use branch `perf/cursor-report-snapshot-history` and commit
    boundary rows, no next page, page failure, selection retention, and rejected
    restoration from an older `latestApproved` outside `items`.
 
-5. **Run all gates.** Run typechecks, Contacts build, `bun check`, and the
+5. **Run all gates.** Run typechecks, Contacts build, `bun validate`, and the
    whitespace command.
 
 ## Done criteria

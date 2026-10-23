@@ -46,7 +46,7 @@ blocked by the active Mail catch-all handoff; obtain exact-path transfer.
 | Apply/typegen | `bun sb:up && bun sb:typegen` | exit 0 |
 | Mail tests | `bun --cwd apps/mail vitest run src/lib/mail/repository/threads.test.ts` | detail/state suite passes |
 | Mail build | `bun run --cwd apps/mail build` | exit 0 |
-| Repository | `bun check` | exit 0 or documented unrelated blocker |
+| Repository | `bun validate` | exit 0 or documented unrelated blocker |
 
 ## Scope
 

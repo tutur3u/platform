@@ -35,7 +35,7 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 - Clear transaction-local JWT claims before privileged signup fixture inserts.
   `RESET ROLE` preserves `request.jwt.claims`, which signup/workspace triggers read.
 - Run focused API/helper tests for affected code.
-- Run `bun check` for TypeScript changes.
+- Run `bun validate` for TypeScript changes.
 
 ### Isolated lifecycle recovery
 

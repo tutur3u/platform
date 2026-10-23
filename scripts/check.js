@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Unified Check Runner
- *
- * Runs repository quality checks, including path-sensitive validation.
- *
+ * Repository quality checks, including path-sensitive validation.
  * Usage:
  *   node scripts/check.js [--table] [--timing] [--details] [--run-all] [--force-now]
- *   bun check [--table] [--timing] [--details] [--run-all] [--force-now]
+ *   bun validate [--table] [--timing] [--details] [--run-all] [--force-now]
  *
  * Exit codes:
  *   0 - All checks passed
  *   1 - One or more checks failed
  */
+
+if (require.main === module)
+  require('./check-cli-options.js').checkCliArgs(process.argv.slice(2));
 
 const crypto = require('node:crypto');
 const { execFileSync, spawn } = require('node:child_process');
@@ -38,7 +38,7 @@ const failFastRequiredChecks = new Set(['tests', 'type-check']);
 // Checks that must still run even when a fail-fast required check fails, so
 // fast, independent quality gates (formatting/lint) are never silently skipped
 // just because tests or type-check are red (e.g. an unrelated pre-existing
-// failure). Prevents format/lint regressions from slipping past `bun check`.
+// failure). Prevents format/lint regressions from slipping past `bun validate`.
 const alwaysRunAfterFailFast = new Set(['biome']);
 const DISCORD_PYTHON_PATH_PREFIX = 'apps/discord/';
 const DISCORD_PYTHON_WORKFLOW_PATH = '.github/workflows/discord-python-ci.yml';
@@ -51,9 +51,6 @@ let activeCheckProcess = null;
 let activeQueueHandle = null;
 let shutdownSignalHandled = false;
 
-/**
- * Strip ANSI escape codes from a string
- */
 const ESC = String.fromCharCode(27);
 const ANSI_REGEX = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 function stripAnsi(str) {
@@ -476,7 +473,7 @@ function getChangedFiles(options = {}) {
         changedFiles.add(filePath);
       }
     } catch {
-      // Keep bun check usable outside a Git checkout or before an initial commit.
+      // Keep bun validate usable outside a Git checkout or before an initial commit.
     }
   }
 
@@ -603,7 +600,7 @@ function formatSignalError(pid, signal, error) {
       ? 'permission denied'
       : error?.message || 'unknown error';
   return new Error(
-    `Failed to send ${signal} to bun check pid ${pid}: ${detail}`
+    `Failed to send ${signal} to bun validate pid ${pid}: ${detail}`
   );
 }
 
@@ -634,12 +631,12 @@ function isCheckQueueProcess(pid, options = {}) {
       normalizedCommand
     );
   const hasCheckPackageScript =
-    /(^|\s)(?:[^ ]+\/)?bun(?:\s+run)?\s+check(?::now)?(?:\s|$)/.test(
+    /(^|\s)(?:[^ ]+\/)?bun(?:\s+run)?\s+validate(?::now)?(?:\s|$)/.test(
       normalizedCommand
     );
   const hasExpectedRuntime =
     /(^|\s)(?:[^ ]+\/)?(?:bun|node)(?:\s|$)/.test(normalizedCommand) ||
-    /(^|\s)(?:[^ ]+\/)?bun(?:\s+run)?\s+check(?::now)?(?:\s|$)/.test(
+    /(^|\s)(?:[^ ]+\/)?bun(?:\s+run)?\s+validate(?::now)?(?:\s|$)/.test(
       normalizedCommand
     );
 
@@ -840,7 +837,7 @@ async function forceClearCheckQueue(options = {}) {
 
   if (untrustedProcesses.length > 0) {
     stdoutWriter(
-      `${colors.yellow}Discarding ${untrustedProcesses.length} unverified bun check queue record${untrustedProcesses.length === 1 ? '' : 's'} without signaling their PID${untrustedProcesses.length === 1 ? '' : 's'}.${colors.reset}\n`
+      `${colors.yellow}Discarding ${untrustedProcesses.length} unverified bun validate queue record${untrustedProcesses.length === 1 ? '' : 's'} without signaling their PID${untrustedProcesses.length === 1 ? '' : 's'}.${colors.reset}\n`
     );
   }
 
@@ -851,7 +848,7 @@ async function forceClearCheckQueue(options = {}) {
   }
 
   stdoutWriter(
-    `${colors.yellow}${colors.bold}Force stopping ${trustedProcesses.length} earlier bun check invocation${trustedProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
+    `${colors.yellow}${colors.bold}Force stopping ${trustedProcesses.length} earlier bun validate invocation${trustedProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
   );
 
   for (const processInfo of trustedProcesses) {
@@ -876,7 +873,7 @@ async function forceClearCheckQueue(options = {}) {
 
   if (stubbornProcesses.length > 0) {
     stdoutWriter(
-      `${colors.yellow}Escalating to ${forceKillSignal} for ${stubbornProcesses.length} bun check invocation${stubbornProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
+      `${colors.yellow}Escalating to ${forceKillSignal} for ${stubbornProcesses.length} bun validate invocation${stubbornProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
     );
 
     for (const processInfo of stubbornProcesses) {
@@ -934,7 +931,7 @@ async function acquireCheckQueueLock(options = {}) {
       );
 
       if (position === -1) {
-        throw new Error('Lost bun check queue ticket before lock acquisition');
+        throw new Error('Lost bun validate ticket before lock acquisition');
       }
 
       if (position === 0) {
@@ -974,7 +971,7 @@ async function acquireCheckQueueLock(options = {}) {
       const blockers = position + (fsImpl.existsSync(paths.lockDir) ? 1 : 0);
       if (blockers > 0 && blockers !== lastAnnouncedBlockers) {
         stdoutWriter(
-          `${colors.dim}Queued behind ${blockers} earlier bun check invocation${blockers === 1 ? '' : 's'}...${colors.reset}\n`
+          `${colors.dim}Queued behind ${blockers} earlier bun validate invocation${blockers === 1 ? '' : 's'}...${colors.reset}\n`
         );
         lastAnnouncedBlockers = blockers;
       }

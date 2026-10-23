@@ -58,7 +58,7 @@ live consumer before changing dual-write behavior.
 | CMS route tests | `bun run --cwd apps/cms test -- 'src/app/api/v1/admin/external-project-bindings/[workspaceId]/route.test.ts'` | actor and error mapping passes |
 | CMS typecheck | `bun run --cwd apps/cms type-check` | exit 0 |
 | CMS build | `bun run --cwd apps/cms build` | exit 0 |
-| Repository gate | `bun check` | exit 0 or documented unrelated blocker |
+| Repository gate | `bun validate` | exit 0 or documented unrelated blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

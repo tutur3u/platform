@@ -77,7 +77,7 @@ Rust, TanStack-manifest, or provider-dashboard change.
 | Phase-2 route | `bun --cwd apps/pay vitest run 'src/app/api/payment/migrations/subscriptions/cross-check/phase-2/route.test.ts'` | lookup error, absent, deleted, valid sync, and provider failures pass |
 | Types | `bun run --cwd packages/payment-core type-check && bun run --cwd apps/pay type-check` | exit 0 |
 | Pay build | `bun run --cwd apps/pay build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | all canonical gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all canonical gates pass; whitespace output is empty |
 
 ## Scope
 
@@ -106,7 +106,7 @@ TanStack migration artifacts; production provider or migration operations.
 4. Destructure and handle the workspace query error before absence. Record the
    error and continue to the next subscription without either provider
    mutation. Preserve genuine orphan revocation and final counters/messages.
-5. Run the focused tests, both typechecks, Pay production build, `bun check`,
+5. Run the focused tests, both typechecks, Pay production build, `bun validate`,
    whitespace, and exact-scope checks.
 
 ## Done criteria

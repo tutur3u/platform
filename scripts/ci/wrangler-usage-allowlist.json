@@ -21,6 +21,11 @@
       "owner": "cf/Void Wrangler-exit lane",
       "removal": "Delete in the service PR that moves it to cloudflare.config.ts, cf types, Build Output parity and cf deploy --prebuilt."
     },
+    "producer-inventory": {
+      "reason": "Compiler qualification detects pre-existing wrangler types producers and cf types equivalents; its detector and data-only regression fixture perform no invocation.",
+      "owner": "Development tooling and native type-check qualification owner",
+      "removal": "Remove the compatibility detector and fixture admission after every declaration producer uses cf types and no legacy producer needs recognition."
+    },
     "shared-toolchain": {
       "reason": "Root wrangler devDependency supplies the CLI for every remaining gap; trustedDependencies, .wrangler ignores and policy tests cover @cloudflare/vite-plugin 1.x, which depends on the wrangler library.",
       "owner": "cf/Void Wrangler-exit lane",
@@ -912,6 +917,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "4e37276f800598baeb980bc03127c6746432b2e38489712f1bf91b491689ec30"
+    },
+    "scripts/ci/bun-check-inventory.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6504",
+        "reason": "Detects pre-existing wrangler types producers and cf types equivalents; no invocation."
+      },
+      "digest": "c55f3fd51dac80c324b145cb06f493e3d14d94c5152d9f8e71280e80f7f4092e"
+    },
+    "scripts/ci/bun-check-qualification.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6504",
+        "reason": "Data-only fixture tests pre-existing wrangler types and cf types producer detection; no invocation."
+      },
+      "digest": "44a2d124db1b7ab13e5cfab56303a465538920ea32ada7d464a755611ffb3497"
     },
     "scripts/ci/calendar-emitted-defaults.mjs": {
       "lines": 6,

@@ -58,7 +58,7 @@ not touch unrelated dirty files.
 | Focused tests | `bun run --cwd packages/tasks-api test -- src/server/tasks/taskId/description/route.test.ts` | all description route tests pass |
 | Package types | `bun run --cwd packages/tasks-api type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
-| Repository gate | `bun check` | exit 0, or only a documented unrelated pre-existing blocker |
+| Repository gate | `bun validate` | exit 0, or only a documented unrelated pre-existing blocker |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -101,7 +101,7 @@ actor attribution.
 
 ### Step 3: Verify the re-exported production surface
 
-Run focused tests, package typecheck, the real Tasks build, then `bun check`.
+Run focused tests, package typecheck, the real Tasks build, then `bun validate`.
 Inspect the final diff to prove only the shared handler/test and index status
 changed.
 
@@ -119,7 +119,7 @@ changed.
 - [ ] No logical save performs two task-row writes.
 - [ ] Both representations are present in one actor-aware RPC payload.
 - [ ] Direct/chunked atomicity and idempotent read-back tests pass.
-- [ ] Tasks API typecheck, Tasks build, `bun check`, and whitespace pass.
+- [ ] Tasks API typecheck, Tasks build, `bun validate`, and whitespace pass.
 - [ ] No migration, public contract, or unrelated file changed.
 
 ## STOP conditions

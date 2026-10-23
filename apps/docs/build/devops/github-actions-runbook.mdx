@@ -335,7 +335,7 @@ changing product tests. `df` can show free space while an individual `/tmp`
 write fails with `Disk quota exceeded`. A private writable `TMPDIR` under the
 owning program directory can isolate direct validation from that failure. Set
 `TMPDIR` only in the child payload after resource-broker admission. Do not set it
-before `bun check`: its `os.tmpdir()`-based check queue would move shared state.
+before `bun validate`: its `os.tmpdir()`-based check queue would move shared state.
 Verify the destination quota and retain the original failure before one bounded
 validation attempt. Preserve unknown files and active jobs. Thread-pool retries passed focused Vitest suites,
 but a private `TMPDIR` was also needed for the observed D1 fixture failure;
@@ -1472,7 +1472,7 @@ runs daily at 00:00 UTC (`cron: "0 0 * * *"`), which is 07:00 in Vietnam
 runs `bun git-release-please` and then `bun git-sync`, the same two commands the
 release flow uses locally, so the scheduled path and the manual path cannot
 drift. Those scripts own the merge rules — platform version sync, conflict
-detection, `bun check`, and fast-forward safety — and are covered by
+detection, `bun validate`, and fast-forward safety — and are covered by
 `scripts/git-release-please.test.js` and `scripts/git-sync.test.js`.
 
 The generated PR must have passing checks, no unresolved active review threads,
@@ -1494,7 +1494,7 @@ use the same step-scoped Turbo remote-cache wrapper.
 
 If another PR lands on `main` during release validation, the push step fetches
 and merges the new head, reinstalls its frozen dependency graph and rebuilds the
-dist-only setup packages before rerunning `bun check`. Affected mobile changes
+dist-only setup packages before rerunning `bun validate`. Affected mobile changes
 also refresh `flutter pub get` before mobile checks. The push retries up to four
 times. An install or setup failure stops the retry; checks must never validate a
 new source commit against dependencies installed for an older checkout. A merge conflict or a push error unrelated to
@@ -1534,12 +1534,12 @@ workflows, so the `production` push would silently skip
 `Production Deployment Planner` and the next `Release Please` run and
 stall the release chain. A run that would need to push checks for the secret up
 front and fails with an actionable error, rather than discovering it after
-`bun check`.
+`bun validate`.
 
 The job also installs Flutter (`3.47.x`, the same pin as `mobile.yaml`) and runs
 `flutter pub get` in `apps/mobile` before the merge. When a release includes
 mobile changes, `touchesMobile()` in `scripts/git-release-please.js` follows
-`bun check` with `bun check:mobile`; without a toolchain `dart-format`,
+`bun validate` with `bun check:mobile`; without a toolchain `dart-format`,
 `flutter-analyze` and `flutter-test` all exit `127`.
 
 Keep every mobile build/deploy workflow on that same Flutter minor. The mobile

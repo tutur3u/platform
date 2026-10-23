@@ -68,7 +68,7 @@ before execution. No API, migration, or dependency change is authorized.
 | Source ceiling | `node -e "const fs=require('fs'); for(const f of process.argv.slice(1)) if(fs.readFileSync(f,'utf8').split(/\\r?\\n/u).length>700) throw new Error(f)" packages/tasks-ui/src/hooks/use-task-actions.ts packages/tasks-ui/src/hooks/use-task-status-actions.ts packages/tasks-ui/src/hooks/use-task-field-actions.ts packages/tasks-ui/src/hooks/use-task-relation-actions.ts packages/tasks-ui/src/hooks/task-action-concurrency.ts` | exits 0 only when every listed authored module is at most 700 lines |
 | Package test/typecheck | `bun run --cwd packages/tasks-ui test && bun run --cwd packages/tasks-ui type-check` | package suite and types pass |
 | Tasks build | `bun run --cwd apps/tasks build` | consuming app builds |
-| Repository | `bun check && git diff --check` | all checks and whitespace pass |
+| Repository | `bun validate && git diff --check` | all checks and whitespace pass |
 
 ## Scope
 
@@ -97,7 +97,7 @@ assignee/relation behavior changes, or changing operation envelopes.
    back individually, only successes broadcast, external-task workspace/list
    routing remains correct, and all-failed behavior still restores the full
    previous state.
-6. Run focused/full package tests, source ceiling, typecheck, Tasks build, `bun check`,
+6. Run focused/full package tests, source ceiling, typecheck, Tasks build, `bun validate`,
    whitespace, and exact-scope review.
 
 ## Done criteria

@@ -430,7 +430,7 @@ and failed write readback fail verification rather than masquerading as missing
 history; they require a retry or investigation.
 
 Run focused release checks with `node --experimental-strip-types --test scripts/mobile-deployment/*.test.mjs
-scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
+scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun validate`
 for repository validation and `ttr resources run -- bun check:mobile` for the
 Flutter checks. Normally run the applicable mobile tests and native builds in
 CI on the exact branch commit, even when local checks pass. If the CI queue is

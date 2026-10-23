@@ -52,7 +52,7 @@ losing access to its real workspace.
 | Focused routes | `bun --cwd apps/tasks vitest run 'src/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/updates/[updateId]/comments/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/updates/[updateId]/comments/[commentId]/route.test.ts' 'src/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/updates/[updateId]/reactions/route.test.ts'` | all cases pass |
 | Tasks typecheck | `bun run --cwd apps/tasks type-check` | exit 0 |
 | Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
-| Repository | `bun check` | exit 0 |
+| Repository | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -108,7 +108,7 @@ an unrelated authorized workspace/project/update path.
 
 ### Step 4: Run all gates
 
-Run focused tests, typecheck, the real Tasks build, `bun check`, and whitespace.
+Run focused tests, typecheck, the real Tasks build, `bun validate`, and whitespace.
 Confirm only scoped files plus the executor-owned README row changed.
 
 ## Done criteria

@@ -87,5 +87,5 @@ fix does not require this broader audit:
 
 Run the smallest source checks that prove the fix, then the repo-required
 validation for touched files. Keep browser verification read-only unless the
-user authorized a test mutation. Record any unrelated `bun check`, deployment,
+user authorized a test mutation. Record any unrelated `bun validate`, deployment,
 or log-retention blocker without widening the patch.

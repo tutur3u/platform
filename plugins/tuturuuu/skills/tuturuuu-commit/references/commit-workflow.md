@@ -86,7 +86,7 @@ portions with the relevant owner before committing.
 
 Let commit hooks run by default. Use `git commit --no-verify` only when the
 current agent can prove that every exact staged path it owns would pass the
-checks normally covered by `bun check`.
+checks normally covered by `bun validate`.
 
 Before choosing no-verify, collect a proof packet:
 
@@ -96,10 +96,10 @@ Before choosing no-verify, collect a proof packet:
   every staged path owned by the current agent.
 - touched files listed explicitly or by a narrow path group that exactly matches
   the staged scope.
-- separated checks run, mapped to the affected `bun check` components such as
+- separated checks run, mapped to the affected `bun validate` components such as
   tests, type-check, Biome, script tests, i18n checks, migration timestamp
   checks, server-console checks, or other path-sensitive checks.
-- skipped `bun check` components listed with path-based rationale, not generic
+- skipped `bun validate` components listed with path-based rationale, not generic
   confidence.
 - `bun check:mobile` coverage included when staged or touched paths include
   `apps/mobile`.
