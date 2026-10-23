@@ -3,7 +3,7 @@ const RELEASE_COMMIT_SUBJECT = /^chore\(release\): release /u;
 const MANIFEST_FILE = '.release-please-manifest.json';
 const DEFAULT_CHANGELOG = 'CHANGELOG.md';
 const DEFAULT_RELEASE_TYPE = 'node';
-const DEFAULT_APPROVED_AUTHORS = Object.freeze(['vhpx', 'github-actions[bot]']);
+const DEFAULT_APPROVED_AUTHORS = Object.freeze(['github-actions[bot]']);
 
 // The version file each release type rewrites. Anything else is a release type
 // this repo does not use yet, and an unknown type must narrow the allowlist

@@ -1,5 +1,9 @@
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
+const { execFileSync, spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const test = require('node:test');
 const {
   parseArgs,
@@ -15,6 +19,8 @@ const argv = [
   'gh',
   'pr',
   'create',
+  '--head',
+  'chore/test',
 ];
 const token = 'ghs_fake_test_token';
 function fixture(overrides = {}) {
@@ -96,6 +102,16 @@ test('git credentials use ephemeral config and propagate failure while revoking'
         'credential.helper=',
         '-c',
         'credential.helper=!gh auth git-credential',
+      ]);
+      assert.deepEqual(args.slice(4), [
+        '-c',
+        'push.followTags=false',
+        '-c',
+        'core.hooksPath=/dev/null',
+        'push',
+        '--no-verify',
+        'https://github.com/tutur3u/platform.git',
+        'HEAD:refs/heads/chore/test',
       ]);
       assert.equal(options.env.GH_TOKEN, token);
       return { status: 7 };
@@ -274,4 +290,132 @@ test('child environment drops auth tracing and personal Git config overrides', a
   ])
     assert.equal(env[name], undefined);
   assert.equal(env.GH_REPO, 'tutur3u/platform');
+  assert.equal(env.GH_PROMPT_DISABLED, '1');
+});
+
+test('PR creation requires one explicit task-branch head before accessing credentials', async () => {
+  const prefix = [
+    '--permissions',
+    'pull_requests=write',
+    '--',
+    'gh',
+    'pr',
+    'create',
+  ];
+  assert.equal(parseArgs([...prefix, '--head', 'fix/x']).branch, 'fix/x');
+  assert.equal(
+    parseArgs([
+      ...prefix,
+      '--title',
+      'A change',
+      '--head',
+      'chore/test',
+      '--draft',
+    ]).branch,
+    'chore/test'
+  );
+  for (const args of [
+    [],
+    ['--head'],
+    ['--head', 'main'],
+    ['--head', 'production'],
+    ['--head', 'refs/heads/fix/x'],
+    ['--head', 'vhpx:fix/x'],
+    ['--head', 'release-please--branches--production'],
+    ['--head', 'fix/../x'],
+    ['--head', 'fix/x', '--head', 'fix/y'],
+    ['--head=fix/x'],
+    ['--title', '--head', 'fix/x'],
+    ['--body', '--head'],
+    ['--head', 'fix/x', '--repo', 'someone/else'],
+  ]) {
+    const f = fixture();
+    assert.equal(
+      await runCli([...prefix, ...args], f.deps),
+      1,
+      JSON.stringify(args)
+    );
+    assert.deepEqual(f.calls, []);
+  }
+});
+
+test('gh prompts are disabled even if the caller enables them', async () => {
+  const f = fixture();
+  f.deps.env.GH_PROMPT_DISABLED = '0';
+  f.deps.spawn = (_command, args, options) => {
+    assert.equal(options.env.GH_PROMPT_DISABLED, '1');
+    assert.deepEqual(args.slice(-2), ['--head', 'chore/test']);
+    return { status: 0 };
+  };
+  assert.equal(await runCli(argv, f.deps), 0);
+});
+
+test('real Git push runs no local hook and does not follow reachable tags', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tuturuuu-bot-push-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const repo = path.join(dir, 'source');
+  const remote = path.join(dir, 'remote.git');
+  const marker = path.join(dir, 'hook-ran');
+  const git = (args) =>
+    execFileSync('git', args, {
+      cwd: repo,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  fs.mkdirSync(repo);
+  git(['init', '--initial-branch=chore/source']);
+  git(['init', '--bare', remote]);
+  git(['config', 'user.name', 'Test']);
+  git(['config', 'user.email', 'test@example.invalid']);
+  git(['commit', '--allow-empty', '-m', 'test: seed']);
+  git(['tag', '-a', 'v-test', '-m', 'test tag']);
+  git(['config', 'push.followTags', 'true']);
+  const hooks = path.join(dir, 'hostile-hooks');
+  fs.mkdirSync(hooks);
+  git(['config', 'core.hooksPath', hooks]);
+  fs.writeFileSync(
+    path.join(hooks, 'pre-push'),
+    `#!/bin/sh\ntouch '${marker}'\nexit 1\n`,
+    { mode: 0o700 }
+  );
+  const f = fixture({
+    spawn: (command, args, options) => {
+      const urlIndex = args.indexOf('https://github.com/tutur3u/platform.git');
+      assert.ok(urlIndex > 0);
+      const local = [...args];
+      local[urlIndex] = remote;
+      return spawnSync(command, local, {
+        ...options,
+        cwd: repo,
+        stdio: 'pipe',
+      });
+    },
+  });
+  assert.equal(
+    await runCli(
+      [...argv.slice(0, 3), 'git', 'push', 'origin', 'HEAD:chore/test'],
+      f.deps
+    ),
+    0
+  );
+  assert.equal(fs.existsSync(marker), false);
+  assert.match(
+    git(['--git-dir', remote, 'show-ref', '--verify', 'refs/heads/chore/test']),
+    /refs\/heads\/chore\/test/
+  );
+  assert.equal(
+    spawnSync(
+      'git',
+      [
+        '--git-dir',
+        remote,
+        'show-ref',
+        '--verify',
+        '--quiet',
+        'refs/tags/v-test',
+      ],
+      { stdio: 'ignore' }
+    ).status,
+    1
+  );
 });

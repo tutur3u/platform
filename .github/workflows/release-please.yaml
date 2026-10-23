@@ -200,6 +200,6 @@ jobs:
       - name: Approve untouched release PR
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          # Fixed PAT identity and job-token fallback; never admit the agent App.
-          RELEASE_PLEASE_AUTHORS: vhpx,github-actions[bot]
+          # Preserve the original approval allowlist; neither agents nor vhpx qualify.
+          RELEASE_PLEASE_AUTHORS: github-actions[bot]
         run: node scripts/ci/release-please-auto-approve.js --target-branch production

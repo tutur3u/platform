@@ -227,11 +227,8 @@ test('an approval only counts when it matches the current head', () => {
 });
 
 test('approved authors fall back to the default when the override is empty', () => {
-  assert.deepEqual(parseApprovedAuthors(''), ['vhpx', 'github-actions[bot]']);
-  assert.deepEqual(parseApprovedAuthors('  ,  '), [
-    'vhpx',
-    'github-actions[bot]',
-  ]);
+  assert.deepEqual(parseApprovedAuthors(''), ['github-actions[bot]']);
+  assert.deepEqual(parseApprovedAuthors('  ,  '), ['github-actions[bot]']);
   assert.deepEqual(parseApprovedAuthors('a-bot, b-bot'), ['a-bot', 'b-bot']);
 });
 
@@ -403,8 +400,8 @@ test('the auto approve test is covered by script-test discovery', () => {
   );
 });
 
-test('only the exact release identities are eligible, independent of GitHub user type', () => {
-  for (const login of ['vhpx', 'github-actions[bot]']) {
+test('only the original release identity is eligible, independent of GitHub user type', () => {
+  for (const login of ['github-actions[bot]']) {
     const decision = evaluate({
       pullRequest: releasePullRequest({ user: { login, type: 'User' } }),
       commits: [releaseCommit({ author: { login } })],
@@ -416,6 +413,7 @@ test('only the exact release identities are eligible, independent of GitHub user
       pullRequest: releasePullRequest({
         user: { login: 'unrelated[bot]', type: 'Bot' },
       }),
+      commits: [releaseCommit({ author: { login: 'unrelated[bot]' } })],
     }).approve,
     false
   );
@@ -430,7 +428,7 @@ test('agent bot PRs and commits on the exact release branch never post approvals
     },
     {
       pullRequest: releasePullRequest({
-        user: { login: 'vhpx', type: 'User' },
+        user: { login: 'github-actions[bot]', type: 'Bot' },
       }),
       commits: [releaseCommit({ author: { login: bot } })],
     },
@@ -452,4 +450,26 @@ test('agent bot PRs and commits on the exact release branch never post approvals
     assert.equal(result.status, 'skipped');
     assert.equal(approvals, 0);
   }
+});
+
+test('vhpx-authored release PRs never gain an auto-approval path, even with an override', async () => {
+  let approvals = 0;
+  const result = await autoApproveReleasePullRequest({
+    config,
+    approvedAuthors: ['vhpx', 'github-actions[bot]'],
+    github: stubGitHub({
+      pullRequest: releasePullRequest({
+        user: { login: 'vhpx', type: 'User' },
+      }),
+      commits: [releaseCommit({ author: { login: 'vhpx' } })],
+      files: [{ filename: 'CHANGELOG.md' }],
+      onApprove: () => {
+        approvals += 1;
+      },
+    }),
+    targetBranch: 'production',
+  });
+  assert.equal(result.status, 'skipped');
+  assert.match(result.reason, /not a release automation identity/);
+  assert.equal(approvals, 0);
 });

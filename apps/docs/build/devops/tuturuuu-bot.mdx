@@ -54,7 +54,13 @@ Only the owner performs credential setup, outside agent sessions and recordings.
    and **Restrict deletions**, and keep the App outside bypass lists. Confirm the
    selected patterns cover real tags and do not block first-time release tag
    creation. Only the owner applies repo settings; this PR does not apply them.
-7. Verify a narrowly scoped push to an owned task branch, then PR creation. Check
+7. Add an owner-managed branch ruleset restricting updates to
+   `release-please--branches--*`, with access limited to the intended release
+   writer and no agent-bot bypass. Review creation/deletion protections as well.
+   If the release PAT and agents share `vhpx`, GitHub cannot distinguish their
+   processes through an actor-based ruleset; isolating the release writer's
+   credentials/principal remains necessary. This PR does not apply the ruleset.
+8. Verify a narrowly scoped push to an owned task branch, then PR creation. Check
    the PR author is `tuturuuu-bot[bot]`, its human approval gate remains required,
    and the token is revoked. Do not dispatch release/publication jobs to test this
    local identity. Do not retire `RELEASE_PLEASE_TOKEN`: releases still use it.
@@ -77,16 +83,21 @@ workflow-changing work needs a separately authorized identity and review.
 | Local task-branch pushes and agent PR creation | Use the App via the helper | Explicit contents/pull_requests subset; platform only |
 | `release-please.yaml` | Retain `RELEASE_PLEASE_TOKEN` with existing `github.token` fallback | Existing release PAT includes workflow scope; never substitute the agent App |
 | Package release dispatchers and TestFlight review queue | Retain `github.token` | Existing Actions job permissions; no App key or token minting |
-| Release approval | Retain existing job identity | Exact release author logins `vhpx` and `github-actions[bot]`; arbitrary Bot authors are rejected |
+| Release approval | Preserve main's original author allowlist and job approval token | Only `github-actions[bot]` is eligible; `vhpx` and arbitrary Bot authors remain ineligible |
 | All other workflows and scripts | Retain existing identity | Job-bound tokens, service credentials or owning lane policy |
 
-The release approval guard checks exact identities in addition to release-branch,
-commit and generated-file gates. A `type: Bot` flag does not confer authority.
-Both PRs and commits authored by `tuturuuu-bot[bot]` on a release branch are rejected,
-even if an override attempts to add that login. The workflow pins
-`RELEASE_PLEASE_AUTHORS` to `vhpx,github-actions[bot]`; the core allowlist cannot be
-widened by that environment variable. Changes to the release identity need an
-explicit source review. Existing self-review refusal remains a blocked outcome.
+The release approval guard preserves the original `github-actions[bot]` author
+allowlist, together with release-branch, commit-subject and generated-file gates.
+A `type: Bot` flag does not confer authority. `vhpx`-authored release PRs remain
+ineligible for automatic approval even if an override includes that login.
+The workflow and core pin `RELEASE_PLEASE_AUTHORS` to `github-actions[bot]` only.
+
+GitHub resolves `commit.author.login` from author email, which can be spoofed.
+Matching that login and a generated-looking subject/file set is a heuristic, not
+proof that release automation created or pushed the commit. The owner-managed
+release-branch ruleset and isolated writer credentials are needed to restrict
+who can update the branch. Neither the allowlist nor this PR establishes trusted
+commit provenance. Existing self-review refusal remains a blocked outcome.
 
 ## Local usage
 
@@ -94,7 +105,7 @@ Run from trusted code on an owner-controlled macOS host:
 
 ```sh
 node scripts/tuturuuu-bot-token.js --permissions contents=write -- git push origin HEAD:chore/my-task
-node scripts/tuturuuu-bot-token.js --permissions contents=read,pull_requests=write -- gh pr create --repo tutur3u/platform
+node scripts/tuturuuu-bot-token.js --permissions contents=read,pull_requests=write -- gh pr create --head chore/my-task --repo tutur3u/platform
 ```
 
 Git accepts exactly `git push origin HEAD:<task-branch>`. Task branches use the
@@ -103,10 +114,17 @@ letters, numbers, underscores, hyphens and slash-separated components. The helpe
 rejects omitted/multiple refspecs, implicit destinations, protected/release/tag
 refs, deletion refspecs, force options, `--delete`, `-d`, `--mirror`, `--all`,
 `--tags`, `--receive-pack`, `--exec` and all other push flags. Git's normal
-non-fast-forward checks remain in force. Use an HTTPS GitHub remote; SSH uses the
-host's SSH identity. Verify origin points to `https://github.com/tutur3u/platform`.
+non-fast-forward checks remain in force. The wrapper replaces the `origin` label
+with `https://github.com/tutur3u/platform.git` and sends exactly
+`HEAD:refs/heads/<task-branch>`. It disables automatic tag following with
+`push.followTags=false` and disables local hooks with both `--no-verify` and
+`core.hooksPath=/dev/null`, so pre-push hooks do not receive the child token.
 
-The helper accepts only `gh pr create` and the constrained `git push` form. All
+PR creation requires exactly one `--head <task-branch>` using the same task-branch
+validation as pushes. Supported options are parsed before credential access;
+missing/duplicate/ambiguous heads and another repository are refused. The helper
+sets `GH_PROMPT_DISABLED=1` to prevent interactive branch-push prompts. It accepts
+only that `gh pr create` form and the constrained `git push` form. All
 `gh pr review` invocations (including `--approve` and `-a`), token-inspection
 commands, `gh api` and other executables are refused before Keychain access.
 Only explicit `contents` and `pull_requests` scope inputs are accepted; metadata
@@ -134,7 +152,8 @@ the private key, requires user presence and enforces repository/permission/reque
 policy while returning only short-lived scoped tokens. That broker is not
 implemented here; the current wrapper handles the key in its own process memory.
 
-Child output is inherited, so a hostile child/hook can print credentials. Never
+Child output is inherited, so a compromised child can print credentials. Local
+push hooks are disabled; this does not sandbox the host tools or Git configuration. Never
 use HTTP/shell tracing, credential inspection or commands that persist auth. Error
 messages from signing, Keychain, API response bodies and subprocess exceptions are
 replaced with fixed messages. The wrapper itself never logs or writes the key or
@@ -185,10 +204,10 @@ node scripts/ci/tuturuuu-bot-inventory.js > tmp/tuturuuu-bot-inventory.md
 The generator prints workflow/script decisions and explicit current scopes. Its
 output is a local report, not a committed snapshot or a global equality CI gate.
 Unrelated workflow/script changes therefore do not make this PR's tests drift.
-Policy tests inspect only jobs actually minting this App's token and the helper's
-manifest/behavior; there are currently no such workflow jobs. Any future minting
-would require pinned actions, a protected environment, trusted main/production
-refs and explicit narrow token permissions, plus separate owner approval.
+Policy tests reject any workflow reference to `TUTURUUU_BOT_` or
+`tuturuuu-bot-token`, including non-minting jobs and comments. Any future Actions
+proposal must separately review this local-only guard and the required environment
+boundary before enabling minting; no workflow is currently authorized to use it.
 
 Run focused tests through the shared resource queue:
 

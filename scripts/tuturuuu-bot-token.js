@@ -27,8 +27,9 @@ function parseArgs(argv) {
   ) {
     throw new Error('Only git push and gh pr create are supported');
   }
-  if (command[0] === 'git') validatePush(command);
-  return { permissions, command };
+  const branch =
+    command[0] === 'git' ? validatePush(command) : validatePullRequest(command);
+  return { permissions, command, branch };
 }
 
 function validatePush(command) {
@@ -39,16 +40,78 @@ function validatePush(command) {
     push !== 'push' ||
     remote !== 'origin' ||
     extra.length ||
-    !/^(feature|feat|fix|bugfix|hotfix|chore|docs|style|refactor|perf|dependabot|claude)\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(
-      branch
-    ) ||
-    branch.includes('//') ||
-    branch.includes('/-')
+    !isTaskBranch(branch)
   ) {
     throw new Error(
       'Use exactly git push origin HEAD:<task-branch>; flags and protected/tag refs are forbidden'
     );
   }
+  return branch;
+}
+
+function isTaskBranch(branch) {
+  return (
+    typeof branch === 'string' &&
+    /^(feature|feat|fix|bugfix|hotfix|chore|docs|style|refactor|perf|dependabot|claude)\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(
+      branch
+    ) &&
+    !branch.includes('/-')
+  );
+}
+
+function validatePullRequest(command) {
+  const valued = new Set([
+    '--head',
+    '--repo',
+    '--title',
+    '-t',
+    '--body',
+    '-b',
+    '--body-file',
+    '-F',
+    '--base',
+    '-B',
+    '--label',
+    '-l',
+    '--assignee',
+    '-a',
+    '--reviewer',
+    '-r',
+    '--milestone',
+    '-m',
+    '--project',
+    '-p',
+    '--template',
+    '-T',
+  ]);
+  const flags = new Set([
+    '--draft',
+    '-d',
+    '--fill',
+    '-f',
+    '--fill-first',
+    '--fill-verbose',
+    '--no-maintainer-edit',
+    '--dry-run',
+  ]);
+  let branch;
+  for (let index = 3; index < command.length; index += 1) {
+    const option = command[index];
+    if (flags.has(option)) continue;
+    if (!valued.has(option) || command[index + 1] === undefined) {
+      throw new Error('Unsupported or incomplete gh pr create option');
+    }
+    const value = command[++index];
+    if (option === '--head') {
+      if (branch || !isTaskBranch(value))
+        throw new Error('Specify one --head <task-branch>');
+      branch = value;
+    }
+    if (option === '--repo' && value !== 'tutur3u/platform')
+      throw new Error('Only tutur3u/platform is allowed');
+  }
+  if (!branch) throw new Error('gh pr create requires --head <task-branch>');
+  return branch;
 }
 
 function loadPrivateKey(env, read = execFileSync) {
@@ -113,7 +176,7 @@ async function runCli(
   let token;
   let code = 1;
   try {
-    const { permissions, command } = parseArgs(argv);
+    const { permissions, command, branch } = parseArgs(argv);
     const appId = env.TUTURUUU_BOT_APP_ID;
     const installationId = env.TUTURUUU_BOT_INSTALLATION_ID;
     if (!/^\d+$/.test(appId || '') || !/^\d+$/.test(installationId || '')) {
@@ -145,6 +208,7 @@ async function runCli(
       GITHUB_TOKEN: token,
       GH_HOST: 'github.com',
       GH_REPO: 'tutur3u/platform',
+      GH_PROMPT_DISABLED: '1',
       GIT_TERMINAL_PROMPT: '0',
     };
     for (const name of Object.keys(childEnv)) {
@@ -164,7 +228,14 @@ async function runCli(
             'credential.helper=',
             '-c',
             'credential.helper=!gh auth git-credential',
-            ...command.slice(1),
+            '-c',
+            'push.followTags=false',
+            '-c',
+            'core.hooksPath=/dev/null',
+            'push',
+            '--no-verify',
+            'https://github.com/tutur3u/platform.git',
+            `HEAD:refs/heads/${branch}`,
           ]
         : command.slice(1);
     const result = spawn(command[0], args, {
