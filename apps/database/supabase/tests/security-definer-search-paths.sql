@@ -164,8 +164,8 @@ select is((select count(*)::integer from public.workspace_members
     and user_id = '00000000-0000-4000-8000-00000000a301'), 1,
   'catalog-and-temp workspace creator trigger adds its member');
 delete from public.workspace_members where ws_id = '00000000-0000-4000-8000-00000000a311';
-insert into public.workspace_members(ws_id, user_id)
-values ('00000000-0000-4000-8000-00000000a311', '00000000-0000-4000-8000-00000000a302');
+insert into public.workspace_members(ws_id, user_id, type)
+values ('00000000-0000-4000-8000-00000000a311', '00000000-0000-4000-8000-00000000a302', 'MEMBER');
 select is((select creator_id from public.workspaces where id = '00000000-0000-4000-8000-00000000a311'),
   '00000000-0000-4000-8000-00000000a302'::uuid,
   'catalog-and-temp sole-member trigger claims the workspace');
