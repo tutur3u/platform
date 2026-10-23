@@ -10,6 +10,7 @@ import {
 export { dockerMetadata } from './devbox-docker-metadata';
 
 import { runJudgeCaseBatch } from './devbox-judge-case-batch';
+import { judgeContainerLabelArgs } from './devbox-judge-containers';
 import {
   createJudgeLanguageCommand,
   isJudgeLanguage,
@@ -141,6 +142,7 @@ export async function getJudgeReadiness(
           '--pull=never',
           '--runtime=runsc',
           `--name=${smokeName}`,
+          ...judgeContainerLabelArgs(),
           '--network=none',
           '--read-only',
           '--cap-drop=ALL',
@@ -275,6 +277,7 @@ export function createJudgeDockerArgs({
     '--pull=never',
     '--runtime=runsc',
     `--name=${name}`,
+    ...judgeContainerLabelArgs(),
     '--network=none',
     '--read-only',
     '--cap-drop=ALL',

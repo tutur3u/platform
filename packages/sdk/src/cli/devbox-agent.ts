@@ -17,6 +17,7 @@ import {
   DevboxCliUpgradeBusyError,
   upgradeDevboxCliIfNeeded,
 } from './devbox-auto-upgrade';
+import { prepareJudgeContainers } from './devbox-judge-containers';
 import { executeDevboxAgentJob } from './devbox-runner';
 
 function formatResponseStatus(response: Response) {
@@ -97,6 +98,7 @@ export async function runDevboxAgentLoop({
   };
 
   process.stdout.write('Starting Tuturuuu devbox agent.\n');
+  await prepareJudgeContainers(token);
   const timing = { ...defaultDevboxAgentTiming, ...timingOverrides };
   const watchdogMs = timing.heartbeatIntervalMs * timing.watchdogIntervals;
   let lastHeartbeatOkAt = Date.now();

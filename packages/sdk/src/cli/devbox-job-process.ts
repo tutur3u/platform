@@ -3,17 +3,15 @@ import { spawn } from 'node:child_process';
 export const DEVBOX_JOB_KILL_GRACE_MS = 10_000;
 export const DEVBOX_CANCEL_CHECK_MS = 10_000;
 
+// Jobs are spawned detached, so the job's pid is also its process group id.
+// Never fall back to signalling the bare pid: once the group is gone that pid
+// can belong to an unrelated, reused process.
 export function signalProcessGroup(pid: number, signal: NodeJS.Signals) {
   try {
     process.kill(-pid, signal);
     return true;
   } catch {
-    try {
-      process.kill(pid, signal);
-      return true;
-    } catch {
-      return false;
-    }
+    return false;
   }
 }
 export function processGroupExists(pid: number) {
