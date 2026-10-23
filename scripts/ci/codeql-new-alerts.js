@@ -9,6 +9,8 @@ const path = require('node:path');
 const { env } = process;
 
 const highSeverity = 7;
+// At most 1,000 analyses are inspected for a category's baseline.
+const maxAnalysisPages = 10;
 // A result whose rule is unknown, or whose security-severity is missing, null,
 // empty or not a plain number, is treated as critical: an unreadable severity
 // must never pass as 0. The bootstrap jq gate in codeql.yml uses the same rule.
@@ -86,18 +88,27 @@ async function baselineSarif({ category, ref, repo }) {
     /\/$/u,
     ''
   );
-  const query = new URLSearchParams({
-    per_page: '50',
-    ref,
-    tool_name: 'CodeQL',
-  });
-  const analyses = await github(
-    `${api}/repos/${repo}/code-scanning/analyses?${query}`,
-    'application/vnd.github+json'
-  );
-  const analysis = analyses.find(
-    (candidate) => candidate.category === category && !candidate.error
-  );
+  // Analyses of every category are listed newest first, and frequent
+  // categories (one per main push) can bury a daily one, so page until the
+  // newest analysis of this category is found, within a fixed bound.
+  let analysis;
+  for (let page = 1; page <= maxAnalysisPages && !analysis; page += 1) {
+    const query = new URLSearchParams({
+      page: String(page),
+      per_page: '100',
+      ref,
+      tool_name: 'CodeQL',
+    });
+    const analyses = await github(
+      `${api}/repos/${repo}/code-scanning/analyses?${query}`,
+      'application/vnd.github+json'
+    );
+    if (!Array.isArray(analyses)) break;
+    analysis = analyses.find(
+      (candidate) => candidate.category === category && !candidate.error
+    );
+    if (analyses.length < 100) break;
+  }
   if (!analysis) throw new Error(`no ${category} analysis on ${ref}`);
   return github(
     `${api}/repos/${repo}/code-scanning/analyses/${analysis.id}`,
