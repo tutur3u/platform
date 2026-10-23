@@ -16,6 +16,7 @@
 const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { trustedTtr } = require('./trusted-ttr.js');
 const {
   readWorkspaces,
   assertSafePaths,
@@ -176,16 +177,17 @@ function hookDecision({ stdin, env, execFile }) {
 }
 
 function ttrPrefix(enabled, execFile) {
+  const cli = trustedTtr();
   if (!enabled) return null;
   try {
     const status = JSON.parse(
-      execFile('ttr', ['resources', 'status', '--json'], {
+      execFile(cli, ['resources', 'status', '--json'], {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
       })
     );
     return status.installed && status.enabled
-      ? ['ttr', 'resources', 'run', '--']
+      ? [cli, 'resources', 'run', '--']
       : null;
   } catch {
     return null;

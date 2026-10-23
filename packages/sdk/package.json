@@ -86,7 +86,7 @@
   "scripts": {
     "build": "node scripts/portable-build.cjs",
     "dev": "tsc --project tsconfig.build.json --watch --incremental",
-    "ttr": "bun src/cli/index.ts",
+    "ttr": "node ../../scripts/trusted-ttr.js",
     "type-check": "tsc --project tsconfig.typecheck.json",
     "clean": "rm -rf dist .turbo tsconfig.build.tsbuildinfo",
     "prepack": "bun run clean && bun run build",

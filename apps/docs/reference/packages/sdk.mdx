@@ -1560,3 +1560,5 @@ The CLI-to-staff-service composition fixture covers pagination, detail/content
 opt-in, status filters and denied current identities/registry reads through the
 real PostgREST serializer. These synthetic boundaries do not qualify a hosted
 Auth or database deployment.
+
+Repository operational scripts, including `bun ttr` and `check:changed`, invoke `~/.bun/bin/ttr` directly so package-manager PATH changes cannot select stale workspace SDK dist. `resources run` and `shim` never install launchers. Setup refuses launchers from another CLI installation; drain and explicitly uninstall through the owning CLI before switching installations. Source CLI experiments require a disposable resources home. Regression coverage: `scripts/trusted-ttr.test.js` and `resources-provisioning.test.ts`.

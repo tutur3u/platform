@@ -131,7 +131,12 @@ test('hookDecision requires opt-in and a HEAD push', () => {
 
 test('ttrPrefix queues heavy work only when resources are enabled', () => {
   const enabled = () => JSON.stringify({ installed: true, enabled: true });
-  assert.deepEqual(ttrPrefix(true, enabled), ['ttr', 'resources', 'run', '--']);
+  assert.deepEqual(ttrPrefix(true, enabled), [
+    require('./trusted-ttr.js').trustedTtr(),
+    'resources',
+    'run',
+    '--',
+  ]);
   assert.equal(ttrPrefix(false, enabled), null);
   assert.equal(
     ttrPrefix(true, () => JSON.stringify({ installed: true, enabled: false })),

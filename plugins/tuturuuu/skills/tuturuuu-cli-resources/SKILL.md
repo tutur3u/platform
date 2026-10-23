@@ -33,7 +33,7 @@ ttr resources setup --root <repo> --shell zsh
 ttr resources status --json
 ```
 
-Explicit `run` validates and reuses existing executable shims without provisioning. Missing, stale or malformed launchers fail before admission with an explicit setup instruction. Setup is the provisioning boundary; inspect occupancy and obtain installation authority before replacing an installed scheduler. An early lightweight resource dispatch avoids general CLI imports but source review does not prove a host startup repair.
+Explicit `run` validates and reuses existing executable shims without provisioning. Missing, stale or malformed launchers fail before admission with an explicit setup instruction. Repository scripts and check:changed invoke `~/.bun/bin/ttr` directly, bypassing workspace binaries. Run and shim never provision launchers. Setup refuses existing launchers owned by a different installation; drain and explicitly uninstall with the owning CLI before switching. Setup is the provisioning boundary; inspect occupancy and obtain installation authority before replacing an installed scheduler. An early lightweight resource dispatch avoids general CLI imports but source review does not prove a host startup repair.
 
 Repeat `--root` for other repositories. Linked Git worktrees inherit repository
 scope. Zsh/Bash hooks apply to new shells; `--shell none` avoids shell edits and

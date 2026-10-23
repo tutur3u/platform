@@ -388,7 +388,6 @@ export async function installResourceShims(
 ) {
   entry = stableResourceEntry(entry);
   const bin = join(home, 'bin');
-  await mkdir(bin, { recursive: true, mode: 0o700 });
   // Never overwrite a file that did not come from this installer.
   const existingFiles = new Map<
     string,
@@ -403,7 +402,15 @@ export async function installResourceShims(
       !existing.content.includes('# Managed by ttr resources')
     )
       throw new Error(`Refusing to overwrite unmanaged shim: ${path}`);
+    if (
+      existing !== undefined &&
+      existing.content !== resourceLauncher(home, entry, name)
+    )
+      throw new Error(
+        `Refusing cross-install resource shim replacement: ${path}. Use the owning installed CLI; drain and explicitly uninstall it before changing installations.`
+      );
   }
+  await mkdir(bin, { recursive: true, mode: 0o700 });
   for (const name of resourceShims) {
     const path = join(bin, name);
     await replaceShellFile(

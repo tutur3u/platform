@@ -172,3 +172,42 @@ it('cold caller must explicitly setup before admission, and later run never prov
   expect((await resourceQueueStatus(home)).occupied).toBe(0);
   expectNoShimWrites(home);
 }, 30_000);
+
+it('refuses a different installation before replacing any launcher', async () => {
+  const home = await fixture();
+  const before = await Promise.all(
+    resourceShims.map((name) => fs.readFile(join(home, 'bin', name), 'utf8'))
+  );
+  const foreign = join(
+    home,
+    'stale-workspace',
+    'packages/sdk/dist/cli/resources-entry.js'
+  );
+  await expect(installResourceShims(home, foreign)).rejects.toThrow(
+    'cross-install'
+  );
+  expect(
+    await Promise.all(
+      resourceShims.map((name) => fs.readFile(join(home, 'bin', name), 'utf8'))
+    )
+  ).toEqual(before);
+  expectNoShimWrites(home);
+});
+
+it('an admitted shim runs without installing or replacing launchers', async () => {
+  const home = await fixture();
+  const config = defaultResourceConfig();
+  config.roots = [process.cwd()];
+  await atomicJson(join(home, 'config.json'), config);
+  const marker = join(home, 'shim-marker');
+  await runResourcesCommand([
+    'shim',
+    'node',
+    '--',
+    '-e',
+    `require('node:fs').writeFileSync(${JSON.stringify(marker)},'ran')`,
+  ]);
+  expect(process.exitCode).toBe(0);
+  expect(await fs.readFile(marker, 'utf8')).toBe('ran');
+  expectNoShimWrites(home);
+});

@@ -86,7 +86,7 @@
     "redis:setup:dry-run": "node scripts/setup-redis.js --dry-run",
     "redis:reset": "node scripts/setup-redis.js --reset",
     "setup:mobile": "cd apps/mobile && flutter pub get && flutter pub upgrade",
-    "ttr": "bun packages/sdk/src/cli/index.ts",
+    "ttr": "node scripts/trusted-ttr.js",
     "git-sync": "node scripts/git-sync.js",
     "git-commit-window": "node scripts/git-commit-window.js",
     "coordination:audit": "node scripts/coordination-notes.js audit",
