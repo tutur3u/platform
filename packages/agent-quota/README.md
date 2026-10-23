@@ -34,7 +34,7 @@ Orchestrator-invoked enforcement:
 
 ```sh
 bun packages/agent-quota/src/cli.ts admit antigravity gemini-4-argon-high
-# Exit 0: ADMIT; exit 3: BLOCKED (including unreadable state).
+# Exit 0: ADMIT; exit 3: policy block/retryable contention; exit 2: malformed or unverifiable state.
 bun packages/agent-quota/src/cli.ts admit codex gpt-6.1-sol --reserve-owner
 bun packages/agent-quota/src/cli.ts block --pool antigravity --model-scope 'gemini-4-argon-*' --reason 'Usage Limit Reached resets in 6 days, 23 hours' --evidence 'thread/run/terminal-receipt'
 ```

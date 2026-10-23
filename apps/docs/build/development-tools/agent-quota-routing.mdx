@@ -206,7 +206,8 @@ is created by this tool. Event IDs are idempotent; conflicting reuse, account
 mismatch, and outcomes older than the admission are rejected. A usage-limit
 outcome fences the entire shared account until its reported reset, even without
 a usage API. Without a reset it remains exhausted until a later fresh covering-window check
-shows usage below 100%; a success receipt alone does not clear it. A capacity error imposes a 60-second local pacing cooldown,
+shows usage below 100%; with a reset it expires at that time unless a newer receipt exists.
+A success receipt alone does not clear it. A capacity error imposes a 60-second local pacing cooldown,
 not a quota percentage. After a reported reset, normal fresh/unknown admission
 gates apply again; reset is not proof of fresh capacity.
 
@@ -411,12 +412,14 @@ See the maintained [reset-wait rerouting contract](~/.codex/skills/pstack-t3-wor
 
 ### Receipt and model-scope admission gates
 
-Every admission scans the requesting thread and its descendants for provider-limit
-receipts, including completed runs whose final assistant message reports a limit.
+Every admission scans recent provider-limit receipts across all T3 threads, bounded
+to catalog instances and 30 days, including completed runs whose final assistant
+message reports a limit. This reflects shared accounts across orchestrators.
 This catches Antigravity's `Usage Limit Reached` result even when T3 labels the run
 completed. Relative resets (for example, `6 days, 23 hours`) use the observation
 time and round duration up to whole seconds. A limit without a reset remains
-exhausted until a later fresh covering-window check shows usage below 100%.
+exhausted until a later fresh covering-window check shows usage below 100%. A
+receipt with a reset expires at that timestamp unless a newer receipt supersedes it.
 
 Cache window IDs, labels and model scopes are preserved. Antigravity `3p-*`
 windows cover Claude/GPT, not Gemini; `gemini-*` windows cover Gemini. Claude's
@@ -424,16 +427,19 @@ windows cover Claude/GPT, not Gemini; `gemini-*` windows cover Gemini. Claude's
 window are UNKNOWN and subject to bounded admission. Availability and a zero in
 an unrelated window never establish headroom.
 
-When provider identity hashes are missing, the maintained `CLAUDE_HOME_BY_INSTANCE`
-mapping establishes the five distinct Claude accounts without opening auth files.
-A provider identity hash, when present, still takes precedence for alias deduplication.
-Account keys and fingerprints are removed from hook JSON output. Cache reads reject
-symlinks, non-regular files and files over 2 MB.
+When provider identity hashes are missing, distinct per-instance Claude homes or
+an explicit owner mapping may establish separate accounts. The home identity is
+the SHA-256 hash of the normalized path from
+`settings.providerInstances.<id>.config.homePath`, not a built-in table. Missing
+paths remain unknown. A provider identity hash, when present, takes precedence
+for alias deduplication. Account keys and fingerprints are removed from hook JSON
+output. Cache reads reject symlinks, non-regular files and files over 2 MB.
 
 Reservations without a currently active native binding expire after 30 minutes;
-completion or expiry retains a 30-day request tombstone. Expired reset/capacity
+completion or expiry retains a 30-day request tombstone. A usage-limit receipt
+expires at its recorded reset unless a newer receipt exists. Expired capacity
 observations and dead-owner leases are compacted; live or uncertain expired lease
-owners remain protected until release or confirmed death; unresolved limits are retained. Lease
+owners remain protected until release or confirmed death. Lease
 history and request tombstones have 30-day retention, so callers must reconcile
 older recovery operations rather than relying on indefinite idempotency. The
 transaction mutex records its PID and process start time; takeover requires a
@@ -448,7 +454,8 @@ resumption must match a running task, provider and model in the T3 snapshot.
 ### Preventive block ledger and shell-compatible gate
 
 Before each delegation, invoke `agent-quota admit POOL MODEL`. Exit **0** means
-ADMIT; exit **3** means BLOCKED, including unavailable or invalid state. JSON on
+ADMIT; exit **3** means a policy block; exit **2** means malformed input or
+unverifiable state. JSON on
 stdout explains the decision. This preflight uses cache-only quota and current
 reservations; it does not create a task reservation. The existing stdin JSON
 `admit` interface remains the transactional admission path for full requirements.
@@ -511,7 +518,7 @@ the corresponding model family, so Argon effort variants share a limit without
 blocking Flash. The latest reset phrase wins. Every admission scans terminal
 receipts across all catalog instances and orchestrator trees, limited to 30 days
 and 5,000 rows per projection; overflow or unreadable state fails closed. An
-expired receipt requires fresh covering usage after its reset before clearing.
+expired receipt is cleared at its recorded reset unless a newer receipt exists.
 
 Account identity uses provider metadata when available. Otherwise it is the
 SHA-256 hash of the normalized, explicitly supplied account home path (including
@@ -531,7 +538,7 @@ Run from the repository (the package script exposes the same commands):
 
 ```sh
 bun packages/agent-quota/src/cli.ts status --json
-bun packages/agent-quota/src/cli.ts explain --pool claude_dd --model claude-opus-4-6
+bun packages/agent-quota/src/cli.ts explain --pool claude_dd --model CLAUDE_MODEL_FROM_LIVE_CATALOG
 bun packages/agent-quota/src/cli.ts dry-run route --model gpt-6.1-sol
 bun packages/agent-quota/src/cli.ts admit codex_ai4ed gpt-6.1-sol
 ```
@@ -543,7 +550,10 @@ shared or unverified same-provider identity cannot satisfy reviewer independence
 `--catalog-stdin` accepts the current `orchestrator_capabilities` catalog when the
 ACP transport is unavailable. Positional admission retains exit **0** for admit,
 **3** for policy/exhaustion block, and **2** for malformed input or unverifiable
-state. It records pacing/hysteresis state in the existing hook ledger but does
+state. Lock contention is a retryable block (exit 3). A malformed `block`
+command also exits **2**. Invalid manual observations
+are skipped individually and listed in `invalidObservations`; valid observations
+continue to contribute. It records pacing/hysteresis state in the existing hook ledger but does
 not reserve a task or switch an active writer. Full JSON admission remains the
 transactional reservation interface.
 
