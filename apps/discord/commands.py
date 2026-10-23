@@ -12,12 +12,12 @@ import aiohttp
 import pytz
 
 from config import ALLOWED_GUILD_IDS, DiscordResponseType
-from error_reporting import report_error, user_error
 from discord_client import (
     DiscordAPIError,
     DiscordClient,
     DiscordMissingAccessError,
 )
+from error_reporting import report_error, user_error
 from link_shortener import LinkShortener
 from utils import (
     get_base_url,

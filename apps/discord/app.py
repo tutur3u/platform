@@ -32,6 +32,7 @@ image = (
         "commands",
         "config",
         "discord_client",
+        "error_reporting",
         "interaction_replay",
         "link_shortener",
         "markitdown_service",

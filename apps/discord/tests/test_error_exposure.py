@@ -32,7 +32,8 @@ SINK_CALLS = {
     "critical",
     "log",
 }
-STRINGIFIERS = {"str", "repr", "format"}
+# Calls that consume the exception without exposing its text.
+SANITIZERS = {"report_error", "reply_error", "user_error", "isinstance", "type", "len"}
 
 
 def _call_name(node: ast.Call) -> str:
@@ -43,38 +44,76 @@ def _call_name(node: ast.Call) -> str:
     return ""
 
 
-def _exposes(node: ast.AST, name: str) -> bool:
+def _is_tainted(node: ast.AST, tainted: set[str]) -> bool:
+    """True when ``node`` derives from a tainted name outside a sanitizer call.
+
+    Covers aliases, str/repr/format, f-strings, attributes (``e.args``),
+    subscripts and containers such as dict/list/tuple literals.
+    """
+    if isinstance(node, ast.Call) and _call_name(node) in SANITIZERS:
+        return False
     if isinstance(node, ast.Name):
-        return node.id == name
-    for value in ast.walk(node):
-        if isinstance(value, ast.FormattedValue) and any(
-            isinstance(inner, ast.Name) and inner.id == name for inner in ast.walk(value.value)
-        ):
-            return True
-        if (
-            isinstance(value, ast.Call)
-            and _call_name(value) in STRINGIFIERS
-            and any(isinstance(arg, ast.Name) and arg.id == name for arg in value.args)
-        ):
-            return True
-    return False
+        return node.id in tainted
+    return any(_is_tainted(child, tainted) for child in ast.iter_child_nodes(node))
+
+
+def _is_sink_reference(node: ast.AST, sink_aliases: set[str]) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in SINK_CALLS or node.id in sink_aliases
+    return isinstance(node, ast.Attribute) and node.attr in SINK_CALLS
+
+
+def _assigned_names(target: ast.AST) -> list[str]:
+    return [node.id for node in ast.walk(target) if isinstance(node, ast.Name)]
+
+
+def _propagate(handler: ast.ExceptHandler) -> tuple[set[str], set[str]]:
+    """Fixpoint of names tainted by, or aliasing a sink within, the block."""
+    tainted, sink_aliases = {handler.name or ""}, set()
+    assignments: list[tuple[list[ast.AST], ast.AST]] = []
+    for statement in handler.body:
+        for node in ast.walk(statement):
+            if isinstance(node, ast.Assign):
+                assignments.append((node.targets, node.value))
+            elif isinstance(node, (ast.AnnAssign, ast.AugAssign, ast.NamedExpr)):
+                if node.value is not None:
+                    assignments.append(([node.target], node.value))
+            elif isinstance(node, (ast.For, ast.AsyncFor, ast.comprehension)):
+                assignments.append(([node.target], node.iter))
+            elif isinstance(node, ast.withitem) and node.optional_vars is not None:
+                assignments.append(([node.optional_vars], node.context_expr))
+    changed = True
+    while changed:
+        changed = False
+        for targets, value in assignments:
+            for target in targets:
+                for name in _assigned_names(target):
+                    if name not in tainted and _is_tainted(value, tainted):
+                        tainted.add(name)
+                        changed = True
+                    if name not in sink_aliases and _is_sink_reference(value, sink_aliases):
+                        sink_aliases.add(name)
+                        changed = True
+    return tainted, sink_aliases
 
 
 def exception_exposures(source: str) -> list[tuple[int, str]]:
-    """(line, sink) pairs where an except block passes its exception text on."""
+    """(line, sink) pairs where an except block passes exception data on."""
     found: set[tuple[int, str]] = set()
     for handler in ast.walk(ast.parse(source)):
         if not isinstance(handler, ast.ExceptHandler) or not handler.name:
             continue
+        tainted, sink_aliases = _propagate(handler)
         for statement in handler.body:
             for node in ast.walk(statement):
                 if isinstance(node, ast.Return) and node.value is not None:
-                    if _exposes(node.value, handler.name):
+                    if _is_tainted(node.value, tainted):
                         found.add((node.lineno, "return"))
-                elif isinstance(node, ast.Call) and _call_name(node) in SINK_CALLS:
+                elif isinstance(node, ast.Call) and _is_sink_reference(node.func, sink_aliases):
                     arguments = [*node.args, *(keyword.value for keyword in node.keywords)]
-                    if any(_exposes(argument, handler.name) for argument in arguments):
-                        found.add((node.lineno, _call_name(node)))
+                    if any(_is_tainted(argument, tainted) for argument in arguments):
+                        name = _call_name(node)
+                        found.add((node.lineno, name))
     return sorted(found)
 
 
@@ -98,6 +137,38 @@ def test_guard_detects_every_exposure_shape() -> None:
     assert sorted(sinks) == sorted(
         ["print", "error", "warning", "send_response", "send_followup", "HTTPException", "return"]
     )
+
+
+@pytest.mark.parametrize(
+    ("label", "body", "sink"),
+    [
+        (
+            "stringified local",
+            'detail = str(e)\nawait client.send_response({"content": detail}, 1, 2)',
+            "send_response",
+        ),
+        ("exception alias", 'err = e\nprint(f"failed: {err}")', "print"),
+        ("chained alias", 'err = e\nmessage = repr(err)\nlogger.info(message)', "info"),
+        (
+            "sink alias",
+            'send = client.send_response\nawait send({"content": f"{e}"}, 1, 2)',
+            "send",
+        ),
+        ("print alias", 'emit = print\nemit(e)', "emit"),
+        ("args subscript", 'return {"content": e.args[0]}', "return"),
+        ("container", 'payload = [("detail", e)]\nreturn payload', "return"),
+        (
+            "concatenation",
+            'text = "failed: " + str(e)\nawait client.send_followup(content=text)',
+            "send_followup",
+        ),
+        ("walrus", 'if (detail := str(e)):\n    print(detail)', "print"),
+    ],
+)
+def test_guard_follows_simple_local_taint(label: str, body: str, sink: str) -> None:
+    source = "async def handler(client, logger):\n    try:\n        pass\n    except Exception as e:\n"
+    source += textwrap.indent(body, "        ") + "\n"
+    assert [found for _line, found in exception_exposures(source)] == [sink], label
 
 
 def test_guard_allows_reporting_through_the_helper() -> None:
