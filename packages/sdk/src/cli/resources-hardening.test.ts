@@ -28,6 +28,22 @@ vi.mock('node:child_process', async (original) => {
     }) as typeof actual.execFileSync,
   };
 });
+// Linux's /proc lineage fallback would otherwise supply the evidence that a
+// failing ps withholds.
+vi.mock('node:fs', async (original) => {
+  const actual = await original<typeof import('node:fs')>();
+  return {
+    ...actual,
+    readFileSync: ((path: string, ...rest: unknown[]) => {
+      if (psFails.value && String(path).startsWith('/proc/'))
+        throw new Error('ENOENT');
+      return (actual.readFileSync as (...args: unknown[]) => unknown)(
+        path,
+        ...rest
+      );
+    }) as typeof actual.readFileSync,
+  };
+});
 vi.mock('node:os', async (original) => ({
   ...(await original<typeof import('node:os')>()),
   // A small host: floor(8 GiB / 4) = 2 lanes, 4 CPUs - 2 = 2 lanes.
