@@ -1,0 +1,140 @@
+---
+title: "Security Review Cadence"
+description: "Pull request security checks, the security review classifier, the daily findings register and the weekly deep review."
+updatedAt: '2026-10-23'
+---
+
+Tuturuuu is open source and a high-value target, so security review is a default
+part of delivery rather than an occasional audit. Three workflows carry the
+automated part. People and agents carry the review part, on the cadence below.
+No automated result is a security clearance. Each run is evidence for the listed
+sources at one commit.
+
+## What runs on every pull request and `main` push
+
+| Check | Workflow | Runs when | Fails on |
+| --- | --- | --- | --- |
+| Secret scan (gitleaks, checksum-verified release) | `security-checks.yaml` → **Secret scan** | Every PR and `main` push; scans the commits in the change | Any finding in those commits |
+| Dependency review | `security-checks.yaml` → **Dependency review** | PRs that change a manifest or lockfile | New dependency with a high/critical advisory (GitHub dependency graph) |
+| Dependency audit (`bun audit`) | `security-checks.yaml` → **Dependency audit** | PRs and pushes that change a manifest or lockfile | High/critical advisory present at head but not at base |
+| Workflow trust boundaries | `security-checks.yaml` → **Workflow trust boundaries** | Changes under `.github/` or `scripts/ci/` | Any failing workflow security suite (`scripts/ci/workflow-*.test.js`, `security-*.test.js`, protected concurrency, workflow config) |
+| CodeQL (`security-extended`) | `codeql.yml` → **Analyze (language)** | PRs and `main` pushes; only languages the diff touches (`javascript-typescript`, `python`, `actions`) | High/critical result absent from the latest `main` analysis |
+| Security review classification | `security-review-classifier.yaml` → **Security review** check and `security-review-required` label | Every PR event | Reports `action_required` until an independent security review is recorded |
+
+Path gating uses the same changed-file resolution as the `ci-check` switchboard
+(`tuturuuu.ci.ts` keys `security-checks.yaml` and `codeql.yml`). Unknown change
+sets scan everything.
+
+### Pre-existing findings
+
+The October 2026 CodeQL refresh reported 270 open alerts. Pull requests fail only
+on high/critical CodeQL results the diff introduces, matched against the latest
+`main` analysis by rule and GitHub's primary location fingerprint. The same
+applies to `bun audit` advisories, compared against the base commit. Existing
+findings are tracked in the findings register instead of blocking unrelated work.
+
+### Fork safety
+
+- `security-checks.yaml` and `codeql.yml` use `pull_request`, so fork runs get a
+  read-only token and no secrets. Jobs install no packages and run no package
+  scripts. `bun audit` reads only manifests and the lockfile.
+- Gitleaks configuration (`.github/security/gitleaks.toml`) and the scan
+  summarizers are read from the base commit, so a PR cannot allowlist or hide its
+  own finding. Allowlists are path-scoped with a reason; never allowlist by value.
+- Fork CodeQL results are not uploaded. They feed only the new-alert gate.
+- Do not enable GitHub CodeQL default setup while `codeql.yml` exists. Code
+  scanning rejects advanced-setup uploads when default setup is on.
+
+## Security review classification
+
+`security-review-classifier.yaml` runs on `pull_request_target` from the default
+branch. It never checks out, installs or executes pull request content. It lists
+the PR's file names (including the old name of renamed files) through the API
+and classifies them with `scripts/ci/security-paths.js`:
+
+| Category | Examples | Owner role |
+| --- | --- | --- |
+| `ci` | `.github/**`, `scripts/ci/**`, `tuturuuu.ci.ts`, `scripts/git-*` | `ci-cd` |
+| `auth` | `packages/auth`, `packages/sso`, auth/session/OAuth/MFA paths, `proxy.ts` | `platform-auth` |
+| `rls-database` | `apps/database/**`, `packages/supabase/**`, RLS/policy files | `database` |
+| `tenant-isolation` | permission, RBAC, tenant and workspace-membership helpers | `platform` |
+| `runner-sandbox` | devbox, cron, coordination, playground, Dockerfiles, Wrangler config | `runtime` |
+| `tokens-secrets` | token, secret, credential, crypto, JWT and API-key paths, `.env*` | `platform-auth` |
+| `storage` | `packages/storage-core`, Drive, upload/bucket/signed-URL paths | `storage` |
+
+Docs (`.md`, `.mdx`) and translation bundles are exempt. A file list at GitHub's
+3,000-file limit is always classified as requiring review.
+
+When a PR matches, the workflow adds the `security-review-required` label and
+records a **Security review** check run on the head commit. The check concludes
+`success` only when a user listed in the repository variable `SECURITY_REVIEWERS`
+(comma separated, set by an admin) has approved that exact head commit and is not
+the PR author. After the review, re-run the classification run. A new commit
+requires a new approval.
+
+The control cannot be bypassed by the PR author:
+
+- The workflow file and classifier come from the base/default branch.
+- Removing the label triggers a new run, which re-adds it.
+- Changing the classifier is itself a `ci` change that requires review.
+
+The integration owner must not merge a PR with a pending **Security review**
+check. Before merging, re-derive the decision from `main`:
+`node -e "console.log(require('./scripts/ci/security-paths.js').classifyReview(process.argv.slice(1)))" <paths>`.
+
+## Daily audit and findings register
+
+The daily `security-checks.yaml` schedule (`17 2 * * *`, the only security timer)
+runs CodeQL on `main` through `codeql.yml`, gitleaks over the last three days of
+history, `bun audit` on the lockfile, and the workflow trust suites. It then
+builds the findings register (`scripts/ci/security-findings-register.js`) from
+those results and the code scanning and Dependabot alert APIs.
+
+Each register entry (`tuturuuu-security-register/v1`) has:
+
+- `id`: stable `TTR-SEC-<SOURCE>-<hash>`, derived from the advisory, alert number
+  or fingerprint.
+- `severity`, `owner` (role), `source` and `status` (`open`, `fixed`, `accepted`).
+- `confirmed`: whether a finding is a confirmed advisory match or untriaged scanner
+  output.
+- `remediation`: receipts such as fix or dismissal time and reason.
+- `reference`: advisory or alert URL.
+
+Actions logs and artifacts of a public repository are public, so the register is
+redacted. It omits secret values and locations, and the rule IDs and paths of
+code-scanning alerts; those stay in GitHub's maintainer-only security views and
+are referenced by alert URL. Dependency entries name the package and public
+advisory. Never add raw secrets or customer logs to scans, summaries or artifacts.
+
+**Confirmed critical/high findings are release blockers.** The register job fails
+while any confirmed open critical/high entry exists. The integration owner treats
+a red register run, or any open private security advisory, as a blocker for
+production sync. Untriaged CodeQL and gitleaks output stays visible, unconfirmed,
+until a maintainer triages it. Record a confirmed code finding as a private
+repository security advisory, or fix it.
+
+A source that could not be read (for example, secret scanning alerts are not
+readable with the workflow token) is listed as a coverage gap, never as clean.
+
+## Weekly deep review
+
+No extra timer runs this. On Mondays (UTC) the daily schedule also runs a
+full-history secret scan, and a manual dispatch can request the same deep pass
+with the `deep` input. During the week that follows, the security integration
+owner, or an agent assigned that role by the program owner, reviews:
+
+1. The latest findings register: triage new unconfirmed entries, confirm or
+   dismiss them with a reason, and check that blocker owners have remediation in
+   progress.
+2. GitHub's maintainer-only views:
+   - secret scanning and push-protection bypasses (rotate exposed credentials
+     first);
+   - code scanning alerts by severity;
+   - Dependabot alerts, including manifests outside `bun.lock`.
+3. Merged PRs carrying `security-review-required`: each needs a recorded
+   independent approval of its merged head.
+4. Workflow trust drift: run `uvx zizmor --offline .github` locally and compare
+   it with the workflow security suites; fix or record new high findings.
+
+Record the outcome in the private program backlog. Keep public notes to IDs,
+counts and remediation receipts.

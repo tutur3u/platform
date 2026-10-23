@@ -596,23 +596,28 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
-test('checked-in CodeQL is a manual fallback for managed commit scanning', () => {
+test('checked-in CodeQL is the only CodeQL configuration and scans every change', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'codeql.yml'),
     'utf8'
   );
 
+  // Default setup is not configured; this workflow owns PR, push and the daily
+  // scheduled scan (scheduled through security-checks.yaml, the only timer).
   assert.match(workflow, /\n {2}workflow_dispatch:\n/);
-  assert.doesNotMatch(workflow, /\n {2}push:/);
-  assert.doesNotMatch(workflow, /\n {2}pull_request:/);
+  assert.match(workflow, /\n {2}pull_request:\n/);
+  assert.match(workflow, /\n {2}push:\n {4}branches:\n {6}- main\n/);
+  assert.match(workflow, /\n {2}workflow_call:\n/);
   assert.doesNotMatch(workflow, /\n {2}schedule:/);
-  assert.match(workflow, /- javascript-typescript\n {10}- python/);
+  assert.doesNotMatch(workflow, /pull_request_target:/);
   assert.match(workflow, /queries: security-extended/);
-  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
-  assert.doesNotMatch(workflow, /needs\.check-ci/);
+  assert.match(workflow, /^ {2}check-ci:/m);
+  assert.match(workflow, /node "\$gate" "\$RUNNER_TEMP\/codeql-sarif" "\$CATEGORY"/);
 
   const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
   assert.doesNotMatch(config, /['"]codeql\.yml['"]\s*:/);
+  const switchboard = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ci.ts'), 'utf8');
+  assert.match(switchboard, /'codeql\.yml': true/);
 });
 
 test('Codecov workflow runs workspace package tests with coverage', () => {

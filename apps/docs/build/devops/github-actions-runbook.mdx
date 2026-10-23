@@ -1022,6 +1022,8 @@ Wrangler or Docker origins in the `cloudflare-workers-preview` Environment.
 - `turbo-unit-tests.yaml`
 - `biome-check.yaml`
 - `codeql.yml`
+- `security-checks.yaml`
+- `security-review-classifier.yaml`
 - `codecov.yaml`
 - `i18n-check.yaml`
 - `check-migrations.yml`
@@ -1104,12 +1106,11 @@ secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
 
-Automatic CodeQL uses GitHub's organization-managed
-`dynamic/github-code-scanning/codeql` workflow for JavaScript/TypeScript and
-Python. `codeql.yml` is a manual-only fallback so the repository retains an
-explicit workflow file without duplicating managed push or pull-request scans.
-Do not add automatic or cron triggers to the fallback; `bun git-sync` mirrors
-the already-scanned `main` commit to `production`.
+CodeQL runs from the repository-owned `codeql.yml` (GitHub default setup is not
+configured; do not enable both). It scans pull requests and `main` pushes for the
+languages the diff touches, and `security-checks.yaml` runs it daily. Pull requests
+fail only on new high/critical results; `bun git-sync` mirrors the already-scanned
+`main` commit to `production`. See [Security review cadence](/build/devops/security-cadence).
 
 E2E suites reuse only exact same-day success proofs from protected `main`.
 See [E2E proof reuse](/build/devops/e2e-proof-reuse) for suite inputs, conservative

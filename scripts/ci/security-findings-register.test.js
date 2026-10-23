@@ -1,0 +1,141 @@
+const assert = require('node:assert/strict');
+const { test } = require('node:test');
+const {
+  buildRegister,
+  fromBunAudit,
+  fromCodeScanning,
+  fromDependabot,
+  fromGitleaks,
+  stableId,
+  summarize,
+} = require('./security-findings-register.js');
+
+const codeAlert = (number, level, state = 'open', extra = {}) => ({
+  html_url: `https://github.com/o/r/security/code-scanning/${number}`,
+  most_recent_instance: {
+    location: { path: 'apps/database/x.sql', start_line: 9 },
+  },
+  number,
+  rule: { id: 'js/sql-injection', security_severity_level: level },
+  state,
+  ...extra,
+});
+
+function sampleRegister() {
+  const entries = [
+    ...fromBunAudit({
+      braces: [
+        {
+          severity: 'high',
+          url: 'https://github.com/advisories/GHSA-vfj7-8cjw-p6xm',
+          vulnerable_versions: '<=3.0.3',
+        },
+      ],
+    }),
+    ...fromDependabot([
+      {
+        dependency: {
+          manifest_path: 'a/package-lock.json',
+          package: { name: 'toml' },
+        },
+        html_url: 'https://github.com/o/r/security/dependabot/1',
+        security_advisory: { ghsa_id: 'GHSA-x', severity: 'critical' },
+        state: 'fixed',
+        fixed_at: '2026-10-22T00:00:00Z',
+      },
+    ]),
+    ...fromCodeScanning([
+      codeAlert(5, 'critical'),
+      codeAlert(6, 'high', 'dismissed', {
+        dismissed_at: '2026-10-21T00:00:00Z',
+        dismissed_reason: 'false positive',
+      }),
+    ]),
+    ...fromGitleaks([{ id: 'abc123', rule: 'generic-api-key' }]),
+  ];
+  return buildRegister({
+    coverage: [
+      { source: 'bun-audit', status: 'scanned' },
+      { reason: 'HTTP 403', source: 'dependabot', status: 'unavailable' },
+    ],
+    entries,
+    generatedAt: '2026-10-23T02:17:00Z',
+    sha: 'f'.repeat(40),
+  });
+}
+
+test('register entries carry stable IDs, owners, status and receipts', () => {
+  const register = sampleRegister();
+  assert.equal(register.format, 'tuturuuu-security-register/v1');
+  for (const entry of register.entries) {
+    assert.match(entry.id, /^TTR-SEC-[A-Z]+-[0-9a-f]{12}$/u);
+    for (const field of [
+      'severity',
+      'owner',
+      'source',
+      'status',
+      'remediation',
+    ]) {
+      assert.ok(field in entry, `${entry.id} lacks ${field}`);
+    }
+  }
+  assert.equal(stableId('codeql', '5'), stableId('codeql', '5'));
+  assert.notEqual(stableId('codeql', '5'), stableId('codeql', '6'));
+  const fixed = register.entries.find((entry) => entry.source === 'dependabot');
+  assert.equal(fixed.status, 'fixed');
+  assert.deepEqual(fixed.remediation, [
+    { at: '2026-10-22T00:00:00Z', kind: 'fixed' },
+  ]);
+  const accepted = register.entries.find(
+    (entry) => entry.status === 'accepted'
+  );
+  assert.equal(accepted.remediation[0].reason, 'false positive');
+  assert.equal(
+    register.entries.find((entry) => entry.source === 'code-scanning').owner,
+    'database'
+  );
+});
+
+test('only confirmed open critical/high findings block releases', () => {
+  const register = sampleRegister();
+  const blockers = register.entries.filter((entry) =>
+    register.blockers.includes(entry.id)
+  );
+  assert.deepEqual(
+    blockers.map(({ source, severity }) => `${source}:${severity}`),
+    ['bun-audit:high']
+  );
+  // Untriaged scanner output (CodeQL, gitleaks) stays visible but unconfirmed.
+  for (const source of ['code-scanning', 'gitleaks']) {
+    assert.ok(
+      register.entries.some(
+        (entry) => entry.source === source && !entry.confirmed
+      )
+    );
+  }
+});
+
+test('the public register is redacted', () => {
+  const text = JSON.stringify(sampleRegister());
+  assert.doesNotMatch(
+    text,
+    /apps\/database\/x\.sql|js\/sql-injection|start_line/u
+  );
+  assert.doesNotMatch(text, /"(?:file|line|commit|Match|Secret)"/u);
+});
+
+test('summaries never claim a clearance and report coverage gaps', () => {
+  const summary = summarize(sampleRegister());
+  assert.match(summary, /Release blockers \(confirmed critical\/high\): 1/u);
+  assert.match(summary, /dependabot: HTTP 403/u);
+  assert.match(summary, /It is not\s+a clearance/u);
+  const empty = summarize(
+    buildRegister({ coverage: [], entries: [], generatedAt: 'now', sha: 'x' })
+  );
+  for (const text of [summary, empty]) {
+    assert.doesNotMatch(
+      text,
+      /all clear|no vulnerabilities|is secure|clean bill/iu
+    );
+  }
+});
