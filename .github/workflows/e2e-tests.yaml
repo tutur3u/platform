@@ -148,6 +148,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Free runner disk for E2E image bundle
         run: bash scripts/ci/e2e-free-disk.sh
@@ -155,7 +157,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -296,7 +298,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -482,7 +484,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -605,7 +607,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -703,6 +705,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Delete this run's E2E image bundle
         env:

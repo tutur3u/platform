@@ -101,7 +101,8 @@ const ticket = '00000000-0000-4000-8000-000000000003';
 const origin = 'https://storage.example.test';
 const path = `${actor}/${ticket}.webp`;
 const otherPath = `${other}/${ticket}.webp`;
-const url = (p: string) => `${origin}/storage/v1/object/public/avatars/${p}`;
+const url = (p: string, storageOrigin = origin) =>
+  `${storageOrigin}/storage/v1/object/public/avatars/${p}`;
 const rows = new Map<string, string | null>();
 const objects = new Set<string>();
 const remove = vi.fn();
@@ -116,6 +117,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', 'synthetic-avatar-route-secret');
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', origin);
+  vi.stubEnv('SUPABASE_SERVER_URL', '');
   vi.stubEnv('SUPABASE_PUBLIC_STORAGE_ORIGIN', '');
   rows.clear();
   rows.set(actor, url(path));
@@ -211,28 +213,42 @@ function request(transport: string, method: string, value?: string | null) {
   );
 }
 
+function unsafeManagedUrls(storageOrigin: string) {
+  const ownUrl = url(path, storageOrigin);
+  const { host, port } = new URL(storageOrigin);
+  const portVariant = port
+    ? storageOrigin.replace(`:${port}`, `:0${port}`)
+    : `${storageOrigin}:443`;
+  return [
+    url(otherPath, storageOrigin),
+    url(`${actor}/../${otherPath}`, storageOrigin),
+    url(`${actor}/%2e%2e/${otherPath}`, storageOrigin),
+    url(`${actor}/%252e%252e/${otherPath}`, storageOrigin),
+    url(`${actor}/%2E%2E%2F${otherPath}`, storageOrigin),
+    url(`${actor}//${ticket}.webp`, storageOrigin),
+    url(`/${path}`, storageOrigin),
+    ownUrl.replace('/avatars/', '/banners/'),
+    `${ownUrl}?download=1`,
+    `${ownUrl}#avatar`,
+    `${ownUrl}?`,
+    `${ownUrl}#`,
+    url(`${actor}/%30${ticket.slice(1)}.webp`, storageOrigin),
+    ownUrl.replace('/avatars/', '/%61vatars/'),
+    url(`${actor}/subdirectory/${ticket}.webp`, storageOrigin),
+    url(`${actor}/1700000000000.png`, storageOrigin),
+    ownUrl.replace('https://', 'https://user:pass@'),
+    ownUrl.replace('https://', 'HTTPS://'),
+    ownUrl.replace(host, host.toUpperCase()),
+    url(path, portVariant),
+    ` ${ownUrl}`,
+    `${ownUrl}\n`,
+  ];
+}
+
 const unsafe = [
-  url(otherPath),
+  ...unsafeManagedUrls(origin),
   'https://oauth.example.test/picture.png',
-  url(path).replace(origin, 'https://foreign.example.test'),
-  url(`${actor}/../${otherPath}`),
-  url(`${actor}/%2e%2e/${otherPath}`),
-  url(`${actor}/%252e%252e/${otherPath}`),
-  url(`${actor}/%2E%2E%2F${otherPath}`),
-  url(`${actor}//${ticket}.webp`),
-  url(`/${path}`),
-  url(path).replace('/avatars/', '/banners/'),
-  `${url(path)}?download=1`,
-  `${url(path)}#avatar`,
-  `${url(path)}?`,
-  `${url(path)}#`,
-  url(`${actor}/%30${ticket.slice(1)}.webp`),
-  url(path).replace('/avatars/', '/%61vatars/'),
-  url(`${actor}/subdirectory/${ticket}.webp`),
-  url(`${actor}/1700000000000.png`),
-  url(path).replace('https://', 'https://user:pass@'),
-  ` ${url(path)}`,
-  `${url(path)}\n`,
+  url(path, 'https://foreign.example.test'),
   'not a URL',
 ];
 
@@ -280,7 +296,7 @@ describe.each(['web cookie', 'satellite bearer'])(
       expect(objects.has(path)).toBe(true);
       expect(remove).not.toHaveBeenCalled();
     });
-    it.each(unsafe.filter((value) => value.includes('storage.example.test')))(
+    it.each(unsafeManagedUrls(origin))(
       'rejects managed PATCH URL %s',
       async (value) => {
         expect((await PATCH(request(transport, 'PATCH', value))).status).toBe(
@@ -313,6 +329,49 @@ describe.each(['web cookie', 'satellite bearer'])(
       rows.set(actor, url(path).replace(origin, 'https://public.example.test'));
       expect((await DELETE(request(transport, 'DELETE'))).status).toBe(200);
       expect(remove).toHaveBeenCalledExactlyOnceWith([path]);
+    });
+    describe.each([
+      'https://public.example.test',
+      'https://server.example.test:8443',
+      origin,
+    ])('with distinct configured origins at %s', (configuredOrigin) => {
+      beforeEach(() => {
+        vi.stubEnv(
+          'SUPABASE_PUBLIC_STORAGE_ORIGIN',
+          'https://public.example.test'
+        );
+        vi.stubEnv('SUPABASE_SERVER_URL', 'https://server.example.test:8443');
+      });
+
+      it('accepts the exact own URL and deletes only its ticket', async () => {
+        const value = url(path, configuredOrigin);
+        expect((await PATCH(request(transport, 'PATCH', value))).status).toBe(
+          200
+        );
+        expect(rows.get(actor)).toBe(value);
+        expect(rows.get(other)).toBe(url(otherPath));
+        expect((await DELETE(request(transport, 'DELETE'))).status).toBe(200);
+        expect(rows.get(actor)).toBeNull();
+        expect(objects.has(otherPath)).toBe(true);
+        expect(remove).toHaveBeenCalledExactlyOnceWith([path]);
+      });
+
+      it.each(unsafeManagedUrls(configuredOrigin))(
+        'rejects managed PATCH and prevents deletion for %s',
+        async (value) => {
+          expect((await PATCH(request(transport, 'PATCH', value))).status).toBe(
+            400
+          );
+          expect(rpc).not.toHaveBeenCalled();
+          expect(rows.get(actor)).toBe(url(path));
+          rows.set(actor, value);
+          expect((await DELETE(request(transport, 'DELETE'))).status).toBe(200);
+          expect(rows.get(actor)).toBeNull();
+          expect(objects.has(path)).toBe(true);
+          expect(objects.has(otherPath)).toBe(true);
+          expect(remove).not.toHaveBeenCalled();
+        }
+      );
     });
     it('clears without deletion if storage configuration is invalid', async () => {
       vi.stubEnv(

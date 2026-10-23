@@ -25,6 +25,11 @@ merge, or production evidence only when that delivery is authorized.
 For autonomous multi-lane execution, use the [shared T3 contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution) and the portable [program guidance](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits). Relay these and current custody overrides in child briefs.
 Route and switch accounts per its [account-balancing guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation) and [cross-orchestrator quota and storage coordination](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination).
 
+Operating model: `agent-allocation: 10` is the thread-tree ceiling, subject to
+observed runtime scope, resource admission and parent grants. Follow the
+[operating model and budget](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#operating-model-and-budget)
+for roles, independent review, publication, receipts and retirement.
+
 ## 2. Hard Prohibitions
 
 - Start long-lived development servers only when requested or needed for an
@@ -51,6 +56,7 @@ Route and switch accounts per its [account-balancing guidance](~/.codex/skills/p
   emitted artifacts and rollback parity are established; retain Wrangler for gaps.
   Do not run global configuration migration or infer production authorization from
   CLI adoption. See the adoption guidance linked above.
+  The target toolchain is cf + Void (Vite+), adopted operation by operation.
 - For Cloudflare work that adds or amplifies billable operations, require bounded
   work/retries, idempotent progress, terminal-state scheduling and a tested durable
   stop fence. Verify operation-count and failure/restart regressions; ingress rate
@@ -92,6 +98,10 @@ Route and switch accounts per its [account-balancing guidance](~/.codex/skills/p
 
 - Run `git status --short` before editing. If dirty or untracked paths exist,
   treat them as user-owned or other-agent-owned until proven otherwise.
+- Treat security as a default; Tuturuuu is open source. Follow the
+  [security default](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/security-default.md).
+  Open critical/high findings hold a release until verified fixed, evidenced
+  false positive, or risk-accepted by the release authority with ID, scope and expiry.
 - When assigned ongoing program ownership, capture new and amended requests in
   the durable private backlog before dispatch. Recover that backlog alongside
   current ownership and exact-head evidence on each wake; do not infer completion

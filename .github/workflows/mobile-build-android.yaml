@@ -11,13 +11,21 @@ on:
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-android.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-android.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
+
+permissions:
+  contents: read
 
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: mobile-build-android.yaml
@@ -45,12 +53,10 @@ jobs:
             apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       - name: Verify pinned Meet WebRTC overlay
         run: node --test android/overlays/flutter_webrtc/verify-overlay.test.mjs

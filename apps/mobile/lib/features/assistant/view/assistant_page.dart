@@ -65,6 +65,7 @@ import 'package:mobile/features/assistant/widgets/assistant_local_status_sheet.d
 import 'package:mobile/features/assistant/widgets/assistant_new_chat_confirmation.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
+import 'package:mobile/features/assistant/widgets/assistant_transcript_scroll_follower.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -141,6 +142,10 @@ class _AssistantPageState extends State<AssistantPage>
     parent: BouncingScrollPhysics(),
   );
   static const _composerFabThreshold = 56.0;
+  late final _transcriptFollower = AssistantTranscriptScrollFollower(
+    controller: _scrollController,
+    onVisibilityChanged: _setScrollToBottomFabVisible,
+  );
   static const _scrollToBottomFabThreshold = 160.0;
 
   late final AssistantShellCubit _shellCubit = AssistantShellCubit(
@@ -349,6 +354,7 @@ class _AssistantPageState extends State<AssistantPage>
     _inputFocusNode.removeListener(_handleInputFocusChange);
     _inputController.dispose();
     _inputFocusNode.dispose();
+    _transcriptFollower.dispose();
     _scrollController.dispose();
     unawaited(_voiceCapture.close());
     unawaited(_liveCubit.close());
@@ -390,6 +396,7 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _scheduleScrollToBottom() {
+    _transcriptFollower.resume();
     if (!_scrollController.hasClients) {
       return;
     }
@@ -415,7 +422,7 @@ class _AssistantPageState extends State<AssistantPage>
               }
               _ignoreScrollVisibilityUpdates = false;
               _resetComposerVisibilityAnchor();
-              _setScrollToBottomFabVisible(false);
+              _transcriptFollower.followUpdate();
             }),
       );
     });
@@ -465,6 +472,7 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _handleScroll() {
+    _transcriptFollower.observeScroll();
     if (!mounted ||
         _ignoreScrollVisibilityUpdates ||
         !_scrollController.hasClients) {
@@ -476,12 +484,11 @@ class _AssistantPageState extends State<AssistantPage>
       return;
     }
 
-    if (MediaQuery.viewInsetsOf(context).bottom > 0 ||
-        _inputFocusNode.hasFocus) {
+    final editing =
+        MediaQuery.viewInsetsOf(context).bottom > 0 || _inputFocusNode.hasFocus;
+    if (editing) {
       _setComposerVisible(true);
       _resetComposerVisibilityAnchor();
-      _setScrollToBottomFabVisible(false);
-      return;
     }
 
     if (position.outOfRange) {
@@ -492,6 +499,7 @@ class _AssistantPageState extends State<AssistantPage>
     _composerVisibilityAnchorOffset = anchorOffset;
     final distanceFromAnchor = (position.pixels - anchorOffset).abs();
     if (_isComposerVisible &&
+        !editing &&
         position.userScrollDirection != ScrollDirection.idle &&
         distanceFromAnchor >= _composerFabThreshold) {
       _setComposerVisible(false);
