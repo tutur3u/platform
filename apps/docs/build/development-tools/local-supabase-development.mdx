@@ -33,6 +33,15 @@ JSON columns, and emits `Record<PropertyKey, never>` for no-argument RPCs. The
 same-database comparison also distinguishes these changes from the newer service
 baseline's Storage lifecycle columns and version-aware function signatures.
 
+Check every active workspace after regeneration: Turbo can stop at the first
+failure. Use queued per-workspace type checks; when cold `dist` declarations are
+missing, use a temporary no-emit config mapping package exports to source while
+preserving the workspace's file exclusions. Do not build locally to fill `dist`.
+Narrow object-only JSON producers and validated write inputs to `NonNullable<Json>`;
+keep genuinely nullable columns and sanitized delivery values nullable. Include
+computed relationships in row fixtures, but never insert computed fields. Run
+focused tests and require the exact pushed commit's TypeScript CI to pass.
+
 The Connected Mail drift check compares three private tables with the committed
 types. Their upgrade delta is `ComputedFields: never`; their row columns,
 optionality and relationships are unchanged. The new generator also quotes

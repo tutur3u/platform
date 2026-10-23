@@ -131,7 +131,7 @@ function normalizeOrigin(origin: string | undefined, requestUrl?: string) {
 }
 
 function asJson(value: Record<string, unknown>) {
-  return value as Json;
+  return value as NonNullable<Json>;
 }
 
 function createTurnstileRequestLike(

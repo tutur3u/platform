@@ -164,7 +164,7 @@ export async function POST(request: Request) {
     .insert({
       created_by: authorization.user.id,
       expires_at: payload.expiresAt ?? null,
-      metadata: (payload.metadata ?? {}) as Json,
+      metadata: (payload.metadata ?? {}) as NonNullable<Json>,
       reason: payload.reason,
       subject_key: payload.subjectKey,
       subject_type: payload.subjectType,

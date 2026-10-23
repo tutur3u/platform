@@ -73,8 +73,8 @@ export async function POST(
       {
         actorId: access.user.id,
         collection_id: payload.collection_id,
-        metadata: payload.metadata as Json,
-        profile_data: payload.profile_data as Json,
+        metadata: payload.metadata as NonNullable<Json>,
+        profile_data: payload.profile_data as NonNullable<Json>,
         scheduled_for: payload.scheduled_for ?? null,
         slug: payload.slug,
         status: payload.status,

@@ -272,7 +272,7 @@ export async function POST(request: Request) {
       metadata: {
         ...(payload.metadata ?? {}),
         ...(payload.presetKey ? { preset_key: payload.presetKey } : {}),
-      } as Json,
+      } as NonNullable<Json>,
       reason: payload.reason,
       subject_key: payload.subjectKey,
       subject_type: payload.subjectType,

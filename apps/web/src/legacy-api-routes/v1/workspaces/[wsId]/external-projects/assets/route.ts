@@ -111,7 +111,7 @@ export async function POST(
         asset_type: payload.asset_type,
         block_id: payload.block_id,
         entry_id: payload.entry_id,
-        metadata: payload.metadata as Json,
+        metadata: payload.metadata as NonNullable<Json>,
         sort_order: payload.sort_order,
         source_url: payload.source_url,
         storage_path: payload.storage_path,

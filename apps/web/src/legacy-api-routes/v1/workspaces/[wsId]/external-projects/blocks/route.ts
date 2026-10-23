@@ -30,7 +30,7 @@ export async function POST(
       {
         actorId: access.user.id,
         block_type: payload.block_type,
-        content: payload.content as Json,
+        content: payload.content as NonNullable<Json>,
         entry_id: payload.entry_id,
         sort_order: payload.sort_order,
         title: payload.title,

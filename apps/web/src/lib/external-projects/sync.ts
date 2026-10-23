@@ -95,8 +95,8 @@ async function deleteSyncedEntry({
   );
 }
 
-function asJsonObject(value: unknown): Json {
-  return asRecord(value) as Json;
+function asJsonObject(value: unknown): NonNullable<Json> {
+  return asRecord(value) as NonNullable<Json>;
 }
 
 function asSyncSchema(value: unknown): ExternalProjectSyncSchema | null {
@@ -894,7 +894,7 @@ async function upsertCollections({
         .from('workspace_external_project_collections')
         .update({
           collection_type: collection.collection_type,
-          config: config as Json,
+          config: config as NonNullable<Json>,
           description: collection.description ?? null,
           title: collection.title,
           updated_by: actorId,
@@ -915,7 +915,7 @@ async function upsertCollections({
       .from('workspace_external_project_collections')
       .insert({
         collection_type: collection.collection_type,
-        config: config as Json,
+        config: config as NonNullable<Json>,
         created_by: actorId,
         description: collection.description ?? null,
         slug: collection.slug,

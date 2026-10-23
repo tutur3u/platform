@@ -220,7 +220,7 @@ export async function POST(
         actorId: access.user.id,
         asset_type: WEBGL_PACKAGE_ASSET_TYPE,
         entry_id: payload.entryId,
-        metadata: artifact as Json,
+        metadata: artifact as NonNullable<Json>,
         source_url: null,
         storage_path: artifact.rootPath,
         workspaceId: access.normalizedWorkspaceId,

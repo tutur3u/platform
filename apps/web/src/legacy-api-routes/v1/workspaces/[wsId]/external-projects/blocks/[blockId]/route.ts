@@ -33,7 +33,7 @@ export async function PATCH(
       {
         actorId: access.user.id,
         block_type: payload.block_type,
-        content: payload.content as Json | undefined,
+        content: payload.content as NonNullable<Json> | undefined,
         sort_order: payload.sort_order,
         title: payload.title,
         workspaceId: access.normalizedWorkspaceId,

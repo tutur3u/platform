@@ -27,6 +27,11 @@ review prove baseline equivalence. Existing migration history stays immutable.
   to equivalent quoted property names while retaining optionality, nullability,
   computed-field and relationship checks. See
   [CLI upgrade type drift](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#cli-upgrade-type-drift).
+- After generator upgrades, check all active workspace consumers, not only the
+  first Turbo failure. Narrow object-only JSON producers at their source; retain
+  nullable delivery contracts and complete computed-row fixtures. Cold no-emit
+  source-resolution configs must preserve the owning workspace's exclusions;
+  they do not replace exact-commit CI. See the CLI upgrade type drift guide above.
 - If a migration adds or changes PostgREST-exposed RPC signatures, drop legacy
   overloads that would make named arguments ambiguous.
 - Call typed `.rpc(name, args)` directly. Binding the full generic RPC method can

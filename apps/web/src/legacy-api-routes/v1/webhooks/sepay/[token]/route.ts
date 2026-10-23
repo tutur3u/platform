@@ -380,7 +380,7 @@ export async function POST(request: Request, { params }: Params) {
       .insert([
         {
           endpoint_id: endpoint.id,
-          payload: payload.raw as Json,
+          payload: payload.raw as NonNullable<Json>,
           reference_code: payload.referenceCode,
           sepay_event_id: payload.eventId,
           status: 'received',

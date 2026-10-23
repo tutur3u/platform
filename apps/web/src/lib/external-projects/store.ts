@@ -1213,11 +1213,11 @@ export async function createCanonicalExternalProject(
     adapter: CanonicalExternalProject['adapter'];
     allowed_collections: CanonicalExternalProject['allowed_collections'];
     allowed_features: CanonicalExternalProject['allowed_features'];
-    delivery_profile: Json;
+    delivery_profile: NonNullable<Json>;
     display_name: string;
     id: string;
     is_active: boolean;
-    metadata: Json;
+    metadata: NonNullable<Json>;
     actorId: string;
   },
   db?: AdminDb
@@ -1247,10 +1247,10 @@ export async function updateCanonicalExternalProject(
     adapter: CanonicalExternalProject['adapter'];
     allowed_collections: CanonicalExternalProject['allowed_collections'];
     allowed_features: CanonicalExternalProject['allowed_features'];
-    delivery_profile: Json;
+    delivery_profile: NonNullable<Json>;
     display_name: string;
     is_active: boolean;
-    metadata: Json;
+    metadata: NonNullable<Json>;
   }> & {
     actorId: string;
   },
@@ -1277,7 +1277,7 @@ export async function updateCanonicalExternalProject(
 
 type UpsertCollectionPayload = {
   collection_type: string;
-  config: Json;
+  config: NonNullable<Json>;
   description?: string | null;
   slug: string;
   title: string;
@@ -1314,7 +1314,7 @@ export async function updateWorkspaceExternalProjectCollection(
   collectionId: string,
   payload: Partial<{
     collection_type: string;
-    config: Json;
+    config: NonNullable<Json>;
     description: string | null;
     is_enabled: boolean;
     slug: string;
@@ -1820,7 +1820,7 @@ export async function upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
 
 type UpsertBlockPayload = {
   block_type: string;
-  content: Json;
+  content: NonNullable<Json>;
   entry_id: string;
   sort_order?: number;
   stable_source_id?: string | null;
@@ -1858,7 +1858,7 @@ export async function updateWorkspaceExternalProjectBlock(
   blockId: string,
   payload: Partial<{
     block_type: string;
-    content: Json;
+    content: NonNullable<Json>;
     sort_order: number;
     title: string | null;
   }> & {
@@ -1948,8 +1948,8 @@ export async function deleteWorkspaceExternalProjectBlock(
 
 type UpsertEntryPayload = {
   collection_id: string;
-  metadata: Json;
-  profile_data: Json;
+  metadata: NonNullable<Json>;
+  profile_data: NonNullable<Json>;
   scheduled_for?: string | null;
   slug: string;
   status: ExternalProjectEntry['status'];
@@ -1988,8 +1988,8 @@ export async function createWorkspaceExternalProjectEntry(
 export async function updateWorkspaceExternalProjectEntry(
   entryId: string,
   payload: Partial<{
-    metadata: Json;
-    profile_data: Json;
+    metadata: NonNullable<Json>;
+    profile_data: NonNullable<Json>;
     scheduled_for: string | null;
     slug: string;
     status: ExternalProjectEntry['status'];
@@ -2323,7 +2323,7 @@ type UpsertAssetPayload = {
   alt_text?: string | null;
   block_id?: string | null;
   entry_id?: string | null;
-  metadata: Json;
+  metadata: NonNullable<Json>;
   sort_order?: number;
   source_url?: string | null;
   stable_source_id?: string | null;
@@ -2365,7 +2365,7 @@ export async function updateWorkspaceExternalProjectAsset(
     alt_text: string | null;
     block_id: string | null;
     entry_id: string | null;
-    metadata: Json;
+    metadata: NonNullable<Json>;
     sort_order: number;
     source_url: string | null;
     storage_path: string | null;
@@ -2490,8 +2490,8 @@ export async function publishWorkspaceExternalProjectEntry(
         canonical_external_project_id: binding.canonical_id as string,
         entry_id: entry.id,
         event_kind: eventKind,
-        payload: payload as Json,
-        profile_data: payload.profileData as Json,
+        payload: payload as NonNullable<Json>,
+        profile_data: payload.profileData as NonNullable<Json>,
         triggered_by: actorId,
         visibility_scope: visibilityScope,
         ws_id: workspaceId,

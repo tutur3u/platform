@@ -179,7 +179,7 @@ function buildExternalProjectDeliveryProfile(
   return {
     schema: schema ?? { collections: [] },
     ...(template ? { template } : {}),
-  } as Json;
+  } as NonNullable<Json>;
 }
 
 async function ensureCanonicalExternalProject({

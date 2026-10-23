@@ -83,7 +83,7 @@ export const MfaMobileApprovalApproveRequestSchema = z.object({
 });
 
 function asJson(value: Record<string, unknown>) {
-  return value as Json;
+  return value as NonNullable<Json>;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

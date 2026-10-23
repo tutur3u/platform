@@ -830,9 +830,9 @@ export type ExternalProjectDeliveryAsset = Pick<
   | 'source_url'
   | 'alt_text'
   | 'sort_order'
-  | 'metadata'
   | 'updated_at'
 > & {
+  metadata: Json;
   assetUrl: string | null;
   assetRevision: string;
 };
