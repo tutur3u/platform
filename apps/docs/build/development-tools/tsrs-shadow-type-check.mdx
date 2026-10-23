@@ -11,9 +11,11 @@ compiler built with the TypeScript team and planned to become part of Oxc. It is
 **experimental**. `tsc` (TypeScript 7.0.2) stays the required type-check gate.
 tsrs runs in two advisory places only:
 
-1. The [pre-push gate](/build/development-tools/pre-push-checks) uses tsrs for
-   parity-qualified projects and confirms any tsrs failure with `tsc`, so tsrs
-   alone can never block a push.
+1. The [pre-push gate](/build/development-tools/pre-push-checks) defaults to tsc.
+   Explicit `--checker tsrs` comparisons are advisory and always confirmed by
+   tsc, including a tsrs pass. Resolution requires a planned qualified project;
+   hook mode accepts only an existing `TSRS_BIN` and never fetches packages.
+   Clean-source parity alone does not qualify detection of seeded errors.
 2. `.github/workflows/tsrs-shadow.yaml` compares tsrs with `tsc` on main pushes
    that touch qualified projects and reports differences as warnings. The job is
    `continue-on-error` and is not a required check.
@@ -95,7 +97,9 @@ Do not replace `tsc` as the required gate until **all** of these hold:
 2. **Parity over time.** At least 30 consecutive shadow runs on main per
    promoted project show location parity, matching success/failure status and no
    tsrs crash, with warm declarations. Message-text differences are reviewed and
-   recorded.
+   recorded. Each promoted project must also have a seeded-error corpus that
+   both checkers reject, covering real type errors, path/ambient declarations
+   and reference boundaries. Until then, keep tsc confirmation on passes too.
 3. **Feature coverage.** Every project the required job checks is covered,
    including project references (`apps/meet`), worker/boundary configs and
    declaration-emitting builds, or an explicit `tsc` fallback is kept for each
@@ -103,8 +107,7 @@ Do not replace `tsc` as the required gate until **all** of these hold:
 4. **Operational evidence.** Linux CI wall time and memory are recorded for the
    promoted set, and rollback is a single-commit switch back to `tsc`.
 
-Promote in stages: first tsrs as a fast pre-check in the type-check workflow with
-`tsc` confirming failures, then tsrs alone for qualified projects with a
-scheduled full `tsc` run. Update this page, the default project list in
-`scripts/ci/tsrs-shadow.js` and the [pre-push gate](/build/development-tools/pre-push-checks)
-together whenever the qualified set changes.
+Keep tsrs advisory, with tsc confirming every outcome, until all criteria hold.
+Then switch only the qualified scopes, preserving explicit tsc fallbacks and
+emit tasks. Update this page, the project list in `scripts/ci/tsrs-shadow.js`
+and the [pre-push gate](/build/development-tools/pre-push-checks) together.

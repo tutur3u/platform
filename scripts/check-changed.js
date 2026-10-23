@@ -32,6 +32,7 @@ const {
 } = require('./check-changed/type-check.js');
 const {
   CHECKERS,
+  TSRS_PROJECTS,
   prefersTsrs,
   resolveTsrs,
 } = require('./check-changed/tsrs.js');
@@ -224,6 +225,7 @@ function runTypeCheck(step, context) {
     return { status: 'skip', detail: 'no tsc type-check script' };
   const totals = { blocking: [], advisory: 0, ignored: 0 };
   const used = { tsc: 0, tsrs: 0 };
+  let shadowCount = 0;
   const check = (name, project) => {
     const result = runChecker(context.checkers[name], project, {
       cwd: context.root,
@@ -239,8 +241,9 @@ function runTypeCheck(step, context) {
         ? 'tsrs'
         : 'tsc';
     let { result, groups } = check(name, project);
-    // tsrs is experimental: confirm any failure with tsc before blocking.
-    if (name === 'tsrs' && (result.crashed || groups.blocking.length)) {
+    // Positive and negative tsrs outcomes are advisory; tsc alone decides.
+    if (name === 'tsrs') {
+      shadowCount++;
       name = 'tsc';
       ({ result, groups } = check(name, project));
     }
@@ -262,6 +265,7 @@ function runTypeCheck(step, context) {
       .map(([name, count]) => `${name} x${count}`)
       .join(', '),
   ];
+  if (shadowCount) notes.push(`tsrs advisory x${shadowCount}`);
   if (totals.ignored) notes.push(`${totals.ignored} missing-dist ignored`);
   if (totals.advisory)
     notes.push(`${totals.advisory} advisory outside changed files`);
@@ -408,7 +412,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
   if (options.dryRun) {
     for (const step of steps) {
       const command = step.typeCheck
-        ? `${options.checker === 'tsc' ? 'tsc' : 'tsrs|tsc'} -p <projects of ${step.typeCheck.workspace}>`
+        ? `${options.checker === 'tsrs' ? 'tsrs advisory + tsc' : 'tsc'} -p <projects of ${step.typeCheck.workspace}>`
         : step.inline
           ? '(inline)'
           : [step.command, ...step.args].join(' ');
@@ -418,8 +422,21 @@ function main(argv = process.argv.slice(2), deps = {}) {
   }
   const ttr = ttrPrefix(options.ttr, execFile);
   const tsrs =
-    options.checker !== 'tsc' && steps.some((step) => step.typeCheck)
-      ? (deps.resolveTsrs ?? resolveTsrs)({ env: deps.env ?? process.env })
+    options.checker === 'tsrs' &&
+    steps.some((step) => {
+      if (!step.typeCheck) return false;
+      const { workspace } = step.typeCheck;
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(root, workspace, 'package.json'), 'utf8')
+      );
+      return typeCheckProjects(workspace, manifest.scripts).some(
+        (project) => TSRS_PROJECTS.has(project) && exists(project)
+      );
+    })
+      ? (deps.resolveTsrs ?? resolveTsrs)({
+          env: deps.env ?? process.env,
+          allowNetwork: !options.hook,
+        })
       : null;
   if (options.checker === 'tsrs' && !tsrs) {
     log('  tsrs unavailable; type-checking with tsc.');

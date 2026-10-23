@@ -1,6 +1,5 @@
-// Optional tsrs (Rust TypeScript port) acceleration for the changed-files
-// gate. Only projects with recorded diagnostic parity use tsrs, and the runner
-// confirms any tsrs failure with tsc, so tsrs alone never blocks a push.
+// Optional tsrs shadow diagnostics for the changed-files gate. The default
+// uses tsc only, and explicit tsrs runs always retain tsc confirmation.
 
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
@@ -18,8 +17,10 @@ function resolveTsrs({
   env = process.env,
   execFile = execFileSync,
   exists = fs.existsSync,
+  allowNetwork = true,
 } = {}) {
   if (env.TSRS_BIN) return exists(env.TSRS_BIN) ? env.TSRS_BIN : null;
+  if (!allowNetwork) return null;
   try {
     const output = execFile(
       'npm',
@@ -35,6 +36,7 @@ function resolveTsrs({
       {
         // npm cannot parse Bun `catalog:` manifests, so resolve outside the repo.
         cwd: os.tmpdir(),
+        env: { ...env, npm_config_ignore_scripts: 'true' },
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
         timeout: 120_000,
@@ -47,11 +49,10 @@ function resolveTsrs({
   }
 }
 
-// `auto` uses tsrs only for parity-qualified projects; `tsrs` forces it for
-// every project (still confirmed by tsc on failure); `tsc` disables it.
-function prefersTsrs(mode, project) {
-  if (mode === 'tsrs') return true;
-  return mode === 'auto' && TSRS_PROJECTS.has(project);
+// Auto stays on tsc until seeded-error qualification exists. Explicit tsrs
+// runs are advisory and always followed by the authoritative tsc result.
+function prefersTsrs(mode) {
+  return mode === 'tsrs';
 }
 
 module.exports = {
