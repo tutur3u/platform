@@ -13,6 +13,7 @@ import {
 import {
   atomicJson,
   defaultResourceConfig,
+  hostLaneCeiling,
   laneResourceConfig,
   maxResourceLanes,
   readResourceConfig,
@@ -296,29 +297,75 @@ export async function runResourcesCommand(argv: string[]) {
     return;
   }
   if (action === 'status') {
-    const config = await readResourceConfig(home);
+    // Status must explain an unusable config instead of failing with it.
+    let config: Awaited<ReturnType<typeof readResourceConfig>>;
+    let configError: string | undefined;
+    try {
+      config = await readResourceConfig(home);
+    } catch (error) {
+      configError = error instanceof Error ? error.message : String(error);
+    }
+    const limits = config || defaultResourceConfig();
+    // An invalid config's lane count is unknown: read every possible slot so
+    // running owners are still reported instead of closing status.
     const state = await resourceQueueStatus(
       home,
-      resourceLanes(config || defaultResourceConfig())
+      resourceLanes(limits),
+      configError ? { ...limits, maxValidationLanes: maxResourceLanes } : limits
     );
+    const ceiling = hostLaneCeiling();
+    const configWarnings = [
+      ...(configError
+        ? [
+            `${configError} Explicit runs fail and shims run without admission until it is fixed.`,
+          ]
+        : []),
+      ...(config && !config.enabled
+        ? [
+            'Resource admission is disabled: shims run tools without queueing. Run `ttr resources enable` to restore it.',
+          ]
+        : []),
+      ...(resourceLanes(limits) > ceiling
+        ? [
+            `validationLanes ${resourceLanes(limits)} exceeds this host's lane ceiling ${ceiling}; at most ${state.effectiveLanes} lane(s) are admitted.`,
+          ]
+        : []),
+    ];
+    const details = await resourceStatusDetails(state);
     const result = {
-      installed: Boolean(config),
+      installed: Boolean(config) || Boolean(configError),
       enabled: config?.enabled ?? false,
+      config: configError
+        ? { state: 'invalid', error: configError }
+        : {
+            state: !config
+              ? 'missing'
+              : config.enabled
+                ? 'enabled'
+                : 'disabled',
+          },
+      hostLaneCeiling: ceiling,
       home,
       machine: {
         platform: process.platform,
         memoryGiB: Math.round(totalmem() / 1024 ** 3),
         cpus: availableParallelism(),
       },
-      limits: config || defaultResourceConfig(),
+      limits,
       ...state,
-      ...(await resourceStatusDetails(state)),
+      ...details,
+      warnings: [...configWarnings, ...details.warnings],
     };
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(result, null, 2)}\n`
         : renderResourceStatus(result)
     );
+    // Still a failure for scripts: admission cannot work with this config.
+    if (configError) {
+      process.stderr.write(`[ttr resources] ${configError}\n`);
+      process.exitCode = 1;
+    }
     return;
   }
   if (action === 'enable' || action === 'disable') {

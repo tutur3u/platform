@@ -26,7 +26,13 @@ vi.mock('node:os', async (original) => ({
 }));
 
 import { isTrivialCommand } from './resources-command';
-import { atomicJson } from './resources-config';
+import {
+  atomicJson,
+  defaultResourceConfig,
+  effectiveResourceLanes,
+  hostLaneCeiling,
+  laneResourceConfig,
+} from './resources-config';
 import { nestedOwner, newOwner } from './resources-slots';
 
 const dirs: string[] = [];
@@ -167,5 +173,95 @@ describe('git code-execution vectors stay queued (REV-6431-2)', () => {
     await expect(stat(sentinel)).resolves.toBeTruthy();
     expect(isTrivialCommand('git', ['diff'])).toBe(false);
     expect(isTrivialCommand('/usr/bin/git', ['log', '-p'])).toBe(false);
+  });
+});
+
+describe('host lane ceiling (REV-6431-3)', () => {
+  it('caps configured base lanes by the host ceiling', () => {
+    expect(hostLaneCeiling()).toBe(2);
+    const config = {
+      ...defaultResourceConfig(),
+      validationLanes: 4,
+      maxValidationLanes: 4,
+      vitestWorkers: 4,
+      buildJobs: 4,
+    };
+    expect(effectiveResourceLanes(config)).toBe(2);
+    // Workers are split across the lanes that can actually be admitted.
+    expect(laneResourceConfig(config).vitestWorkers).toBeGreaterThanOrEqual(1);
+    expect(
+      effectiveResourceLanes({
+        ...config,
+        validationLanes: 1,
+        maxValidationLanes: 1,
+      })
+    ).toBe(1);
+  });
+});
+
+describe('status surfaces unusable configuration (REV-6431-3)', () => {
+  const status = async (home: string) => {
+    const { runResourcesCommand } = await import('./resources');
+    const out: string[] = [];
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk) => {
+        out.push(String(chunk));
+        return true;
+      });
+    const previous = process.env.TTR_RESOURCES_HOME;
+    process.env.TTR_RESOURCES_HOME = home;
+    try {
+      await runResourcesCommand(['status', '--json']);
+    } finally {
+      write.mockRestore();
+      if (previous === undefined) delete process.env.TTR_RESOURCES_HOME;
+      else process.env.TTR_RESOURCES_HOME = previous;
+    }
+    return JSON.parse(out.join('')) as {
+      config: { state: string; error?: string };
+      warnings: string[];
+      effectiveLanes: number;
+      occupied: number;
+    };
+  };
+  const home = async () => {
+    const path = await realpath(
+      await mkdtemp(join(tmpdir(), 'ttr-resources-status-'))
+    );
+    dirs.push(path);
+    return path;
+  };
+
+  it('reports invalid, disabled and over-ceiling configs instead of failing', async () => {
+    const invalid = await home();
+    await writeFile(join(invalid, 'config.json'), '{not json');
+    // A second running lane must not close status while the config is broken.
+    await atomicJson(join(invalid, 'slots', '1', 'owner.json'), {
+      ...newOwner('lane-two'),
+      pid: process.pid,
+    });
+    const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+    const broken = await status(invalid).finally(() => stderr.mockRestore());
+    expect(process.exitCode).toBe(1);
+    process.exitCode = 0;
+    expect(broken.config.state).toBe('invalid');
+    expect(broken.warnings[0]).toContain('not valid JSON');
+    expect(broken.occupied).toBe(1);
+
+    const disabled = await home();
+    await atomicJson(join(disabled, 'config.json'), {
+      ...defaultResourceConfig(),
+      enabled: false,
+      validationLanes: 4,
+      maxValidationLanes: 4,
+      vitestWorkers: 4,
+      buildJobs: 4,
+    });
+    const report = await status(disabled);
+    expect(report.config.state).toBe('disabled');
+    expect(report.effectiveLanes).toBe(2);
+    expect(report.warnings.join('\n')).toContain('admission is disabled');
+    expect(report.warnings.join('\n')).toContain('exceeds this host');
   });
 });
