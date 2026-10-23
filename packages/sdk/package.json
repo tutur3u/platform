@@ -17,9 +17,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "ttr": "./dist/cli/index.js",
-    "tuturuuu": "./dist/cli/index.js",
-    "tutur3u": "./dist/cli/index.js"
+    "ttr": "./bin/ttr.cjs",
+    "tuturuuu": "./bin/ttr.cjs",
+    "tutur3u": "./bin/ttr.cjs"
   },
   "exports": {
     ".": {
@@ -79,7 +79,7 @@
       "default": "./dist/platform.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": ["dist", "bin", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },

@@ -26,7 +26,21 @@ const end = '# <<< ttr resources <<<';
 export const shellQuote = (value: string) =>
   `'${value.replaceAll("'", "'\\''")}'`;
 
+function globalResourceEntry(entry: string) {
+  return entry.replace(
+    /\/\.bun\/install\/cache\/links\/tuturuuu@[^/\n']+\/node_modules\/tuturuuu\/dist\/cli\//g,
+    '/.bun/install/global/node_modules/tuturuuu/dist/cli/'
+  );
+}
+
 export function stableResourceEntry(entry: string) {
+  const global = globalResourceEntry(entry);
+  if (
+    global !== entry &&
+    existsSync(global) &&
+    canonical(global) === canonical(entry)
+  )
+    return global;
   for (const store of ['.bun', '.pnpm']) {
     const index = entry.indexOf(`/node_modules/${store}/`);
     if (index < 0) continue;
@@ -150,6 +164,7 @@ interface SetupOptions {
   lanes?: ValidationLanes;
   maxLanes?: number;
   dryRun?: boolean;
+  force?: boolean;
 }
 export async function setupResources(options: SetupOptions) {
   if (options.dryRun) return prepareResources(options);
@@ -211,16 +226,17 @@ async function prepareResources(options: SetupOptions) {
       `--max-lanes must be an integer between the base lane count and ${maxResourceLanes}.`
     );
   assertLaneBudget(config);
-  const assertIdle = async () => {
+  const assertIdle = async (replacing = false) => {
     if (
       resourcePolicyKey(previous || defaultResourceConfig()) ===
-      resourcePolicyKey(config)
+        resourcePolicyKey(config) &&
+      !replacing
     )
       return;
     const state = await resourceQueueStatus(options.home);
     if (state.occupied || state.waiting.length)
       throw new Error(
-        'Wait for all resource owners and tickets to drain before changing lanes or worker budgets.'
+        'Wait for all resource owners and tickets to drain before changing lanes, worker budgets or resource launchers.'
       );
   };
   const shellFiles = resourceShellFiles(options.shell);
@@ -231,7 +247,18 @@ async function prepareResources(options: SetupOptions) {
       __filename.endsWith('.ts') ? 'resources-entry.ts' : 'resources-entry.js'
     )
   );
+  await assertIdle();
+  const replacements = (
+    await resourceShimEdits(options.home, entry, options.force)
+  )
+    .filter((edit) => edit.existing && edit.existing.content !== edit.next)
+    .map((edit) => ({
+      path: edit.path,
+      previous: edit.existing!.content,
+      next: edit.next,
+    }));
   const plan = {
+    replacements,
     config,
     home: options.home,
     bin,
@@ -240,10 +267,10 @@ async function prepareResources(options: SetupOptions) {
     entry,
   };
   if (options.dryRun) {
-    await assertIdle();
+    await assertIdle(replacements.length > 0);
     return plan;
   }
-  await assertIdle();
+  await assertIdle(replacements.length > 0);
   const hook = `${start}\nexport PATH=${shellQuote(bin)}:"$PATH"\n${end}\n`;
   const edits = await Promise.all(
     shellFiles.map(async (path) => {
@@ -258,7 +285,7 @@ async function prepareResources(options: SetupOptions) {
       };
     })
   );
-  await installResourceShims(options.home, entry);
+  await installResourceShims(options.home, entry, { force: options.force });
   for (const edit of edits) {
     await mkdir(dirname(edit.path), { recursive: true });
     const backup = join(
@@ -379,46 +406,45 @@ export async function installedResourceShims(
   return bin;
 }
 
+async function resourceShimEdits(home: string, entry: string, force = false) {
+  const edits = [];
+  for (const name of resourceShims) {
+    const path = join(home, 'bin', name);
+    const existing = await readShellFile(path);
+    const next = resourceLauncher(home, entry, name);
+    if (
+      existing !== undefined &&
+      !existing.content.includes('# Managed by ttr resources')
+    )
+      throw new Error(
+        `Refusing to overwrite unmanaged shim: ${path}. Inspect and move that file explicitly, then rerun setup from ~/.bun/bin/ttr; --force never replaces unmanaged files.`
+      );
+    if (
+      existing !== undefined &&
+      globalResourceEntry(existing.content) !== globalResourceEntry(next) &&
+      !force
+    )
+      throw new Error(
+        `Refusing cross-install resource shim replacement: ${path}. Use the owning installed CLI, or inspect setup --force --dry-run and drain all jobs before setup --force.`
+      );
+    edits.push({ path, existing, next });
+  }
+  return edits;
+}
+
 export async function installResourceShims(
   home: string,
   entry = join(
     __dirname,
     __filename.endsWith('.ts') ? 'resources-entry.ts' : 'resources-entry.js'
-  )
+  ),
+  options: { force?: boolean } = {}
 ) {
   entry = stableResourceEntry(entry);
+  const edits = await resourceShimEdits(home, entry, options.force);
   const bin = join(home, 'bin');
-  // Never overwrite a file that did not come from this installer.
-  const existingFiles = new Map<
-    string,
-    Awaited<ReturnType<typeof readShellFile>>
-  >();
-  for (const name of resourceShims) {
-    const path = join(bin, name);
-    const existing = await readShellFile(path);
-    existingFiles.set(path, existing);
-    if (
-      existing !== undefined &&
-      !existing.content.includes('# Managed by ttr resources')
-    )
-      throw new Error(`Refusing to overwrite unmanaged shim: ${path}`);
-    if (
-      existing !== undefined &&
-      existing.content !== resourceLauncher(home, entry, name)
-    )
-      throw new Error(
-        `Refusing cross-install resource shim replacement: ${path}. Use the owning installed CLI; drain and explicitly uninstall it before changing installations.`
-      );
-  }
   await mkdir(bin, { recursive: true, mode: 0o700 });
-  for (const name of resourceShims) {
-    const path = join(bin, name);
-    await replaceShellFile(
-      path,
-      existingFiles.get(path),
-      resourceLauncher(home, entry, name),
-      0o700
-    );
-  }
+  for (const edit of edits)
+    await replaceShellFile(edit.path, edit.existing, edit.next, 0o700);
   return bin;
 }

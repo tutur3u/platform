@@ -129,25 +129,35 @@ test('hookDecision requires opt-in and a HEAD push', () => {
   );
 });
 
-test('ttrPrefix queues heavy work only when resources are enabled', () => {
+test('ttrPrefix queues only outside admitted lanes and refuses a broken global CLI', () => {
+  const cli = '/trusted/global/ttr';
   const enabled = () => JSON.stringify({ installed: true, enabled: true });
-  assert.deepEqual(ttrPrefix(true, enabled), [
-    require('./trusted-ttr.js').trustedTtr(),
-    'resources',
-    'run',
-    '--',
-  ]);
-  assert.equal(ttrPrefix(false, enabled), null);
+  const prefix = (enabledFlag, exec, env = {}) =>
+    ttrPrefix(enabledFlag, exec, env, () => cli);
+  assert.deepEqual(prefix(true, enabled), [cli, 'resources', 'run', '--']);
+  assert.equal(prefix(false, enabled), null);
   assert.equal(
-    ttrPrefix(true, () => JSON.stringify({ installed: true, enabled: false })),
+    prefix(true, () => JSON.stringify({ installed: true, enabled: false })),
     null
   );
-  assert.equal(
-    ttrPrefix(true, () => {
-      throw new Error('ENOENT');
-    }),
-    null
+  assert.throws(
+    () =>
+      prefix(true, () => {
+        throw new Error('ENOENT');
+      }),
+    /refusing unadmitted/
   );
+  for (const marker of ['TTR_RESOURCES_ADMITTED', 'TTR_RESOURCE_OWNER']) {
+    assert.equal(
+      ttrPrefix(
+        true,
+        () => assert.fail('must not probe'),
+        { [marker]: 'inherited' },
+        () => assert.fail('must not resolve')
+      ),
+      null
+    );
+  }
 });
 
 test('selectSteps matches ids and workspace-qualified prefixes', () => {

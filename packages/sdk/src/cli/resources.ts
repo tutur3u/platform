@@ -55,6 +55,7 @@ Setup options:
   --lanes <1..8>          base lanes; default 1, change only when idle
   --max-lanes <1..8>      burst ceiling; default base, change only when idle
   --workers <1..64>       Vitest/Cargo workers; default adapts to RAM and CPUs
+  --force                permit cross-install replacement only after draining
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
 Run option: --ignore-pressure skips only pressure admission for a deliberate small job.
@@ -195,7 +196,9 @@ export async function runResourcesCommand(argv: string[]) {
             );
           lanes = Number(value);
         }
-      } else if (!['--dry-run', '--json', '--no-update-check'].includes(arg))
+      } else if (
+        !['--dry-run', '--force', '--json', '--no-update-check'].includes(arg)
+      )
         throw new Error(`Unknown setup option: ${arg}`);
     }
     const plan = await setupResources({
@@ -206,8 +209,14 @@ export async function runResourcesCommand(argv: string[]) {
       lanes,
       maxLanes,
       dryRun: options.includes('--dry-run'),
+      force: options.includes('--force'),
     });
     if (!plan) throw new Error('Resource setup was cancelled.');
+    for (const replacement of plan.replacements) {
+      process.stderr.write(
+        `[ttr resources] ${options.includes('--dry-run') ? 'Would replace' : 'Replaced'} ${replacement.path}\nFrom: ${replacement.previous.trim()}\nTo: ${replacement.next.trim()}\n`
+      );
+    }
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(plan, null, 2)}\n`

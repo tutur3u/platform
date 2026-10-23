@@ -215,6 +215,7 @@ test('finite process controls drain on timeout and output overflow', async () =>
 
 test('unavailable registry dependency blocks before pack/install and preserves package beforeimages', async (t) => {
   const root = fixture(t);
+  write(root, 'packages/sdk/bin/ttr.cjs', 'synthetic fixture');
   write(root, 'package.json', { workspaces: ['packages/*'] });
   write(root, 'packages/sdk/package.json', {
     name: 'tuturuuu',
@@ -326,7 +327,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
   write(root, 'packages/sdk/package.json', {
     name: 'tuturuuu',
     version: '0.0.0',
-    files: ['dist'],
+    files: ['dist', 'bin'],
     ...changes.manifest,
   });
   write(root, 'packages/unpublished/package.json', {
@@ -336,6 +337,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
   const required = [
     'index.js',
     'index.d.ts',
+    '../bin/ttr.cjs',
     'cli/index.js',
     'cli/operational-cli.js',
     'cli/operational-search.js',
@@ -431,7 +433,7 @@ async function injectedPipeline(t, changes = {}, implementation = qualify) {
       fs.mkdirSync(path.join(consumer, 'node_modules/.bin'));
       for (const alias of ['ttr', 'tuturuuu', 'tutur3u'])
         fs.symlinkSync(
-          path.join(installed, 'dist/cli/index.js'),
+          path.join(installed, 'bin/ttr.cjs'),
           path.join(consumer, 'node_modules/.bin', alias)
         );
       if (changes.installedName || changes.installedVersion)

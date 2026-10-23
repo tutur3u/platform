@@ -2695,9 +2695,9 @@
       "name": "tuturuuu",
       "version": "0.28.0",
       "bin": {
-        "ttr": "./dist/cli/index.js",
-        "tuturuuu": "./dist/cli/index.js",
-        "tutur3u": "./dist/cli/index.js",
+        "ttr": "./bin/ttr.cjs",
+        "tuturuuu": "./bin/ttr.cjs",
+        "tutur3u": "./bin/ttr.cjs",
       },
       "dependencies": {
         "@tiptap/core": "3.32.0",

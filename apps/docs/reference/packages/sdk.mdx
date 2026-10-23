@@ -1561,4 +1561,21 @@ opt-in, status filters and denied current identities/registry reads through the
 real PostgREST serializer. These synthetic boundaries do not qualify a hosted
 Auth or database deployment.
 
-Repository operational scripts, including `bun ttr` and `check:changed`, invoke `~/.bun/bin/ttr` directly so package-manager PATH changes cannot select stale workspace SDK dist. `resources run` and `shim` never install launchers. Setup refuses launchers from another CLI installation; drain and explicitly uninstall through the owning CLI before switching installations. Source CLI experiments require a disposable resources home. Regression coverage: `scripts/trusted-ttr.test.js` and `resources-provisioning.test.ts`.
+Repository operational scripts, including `bun ttr` and `check:changed`, invoke `~/.bun/bin/ttr` directly so package-manager PATH changes cannot select stale workspace SDK dist. `resources run` and `shim` never install launchers. Setup refuses launchers from another CLI installation; preview an intentional switch with `setup --force --dry-run`, drain all jobs, and explicitly apply `setup --force`. Same-install Bun global version upgrades remain supported. Source CLI experiments require a disposable resources home. Regression coverage: `scripts/trusted-ttr.test.js` and `resources-provisioning.test.ts`.
+
+### Launcher mismatch incident recovery
+
+Symptom: the global CLI rejects missing, stale or malformed launchers. A stale workspace SDK dist can write its own entry into shared launchers before admission, and its nested run can block the queue. Never run operational commands through workspace or ancestor `node_modules/.bin/ttr` or stale `packages/sdk/dist`.
+
+Repository admission uses the verified global `~/.bun/bin/ttr` (stable >= 0.28.0). `check:changed` and `node scripts/ttr-run.js -- COMMAND` run directly when the inherited `TTR_RESOURCES_ADMITTED` or `TTR_RESOURCE_OWNER` marker is present. Missing/old global installations fail with `bun add -g tuturuuu` recovery guidance; they never fall back to a workspace binary. Refresh workspace bin links with `bun install` after adopting the source wrapper. This does not rebuild dist. The shipped bin works in installed packages; workspace aliases refuse to execute dist, including from `bunx`.
+
+An operator with installation authority must identify and drain the offending jobs, preserve the existing resource configuration, then restore canonical launchers through the trusted global CLI with the **same existing roots and shell settings**:
+
+```sh
+~/.bun/bin/ttr resources setup --root <existing-root-1> --root <existing-root-2> --shell <existing-shell>
+~/.bun/bin/ttr resources status --json
+```
+
+Fence-enabled CLI versions refuse a different installation by default. Inspect `setup --force --dry-run` before an intentional cross-install restore, then use `setup --force` with the same roots after the queue drains. The plan reports each old/new launcher. Force never overwrites unmanaged files. Version changes within one Bun global installation are allowed; versioned cache paths normalise to its stable global link. Run/shim never write launchers. Review status for enabled installation and an empty queue before resuming work. Source changes do not repair already-installed links or prove historical writer attribution.
+
+Regression coverage: `scripts/trusted-ttr.test.js`, `scripts/workspace-ttr-bin.test.js`, and `resources-provisioning.test.ts` exercise ancestor lookup, inherited admission, minimum version, stale bins, same-install upgrades, refusal and forced replacement with disposable homes.

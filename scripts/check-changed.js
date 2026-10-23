@@ -16,7 +16,7 @@
 const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const { trustedTtr } = require('./trusted-ttr.js');
+const { trustedTtr, inResourceLane } = require('./trusted-ttr.js');
 const {
   readWorkspaces,
   assertSafePaths,
@@ -176,9 +176,14 @@ function hookDecision({ stdin, env, execFile }) {
   return { run: true };
 }
 
-function ttrPrefix(enabled, execFile) {
-  const cli = trustedTtr();
-  if (!enabled) return null;
+function ttrPrefix(
+  enabled,
+  execFile,
+  env = process.env,
+  resolveCli = trustedTtr
+) {
+  if (!enabled || inResourceLane(env)) return null;
+  const cli = resolveCli();
   try {
     const status = JSON.parse(
       execFile(cli, ['resources', 'status', '--json'], {
@@ -189,8 +194,11 @@ function ttrPrefix(enabled, execFile) {
     return status.installed && status.enabled
       ? [cli, 'resources', 'run', '--']
       : null;
-  } catch {
-    return null;
+  } catch (cause) {
+    throw new Error(
+      `Trusted global ttr resource status failed at ${cli}; refusing unadmitted validation. ${cause.message}`,
+      { cause }
+    );
   }
 }
 
@@ -449,7 +457,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
     }
     return 0;
   }
-  const ttr = ttrPrefix(options.ttr, execFile);
+  const ttr = ttrPrefix(options.ttr, execFile, deps.env ?? process.env);
   const tsrs =
     options.checker === 'tsrs' &&
     steps.some((step) => {

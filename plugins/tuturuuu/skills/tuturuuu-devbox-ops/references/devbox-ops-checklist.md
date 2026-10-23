@@ -9,7 +9,8 @@ up Tuturuuu devbox runners.
   `TUTURUUU_CLI_CONFIG`.
 - Devbox agent poll and heartbeat routes are blocked unless the platform web app
   has `TUTURUUU_DEVBOX_AGENT_API_ENABLED=true`.
-- `bun ttr ...` runs the repo-local SDK CLI.
+- `bun ttr ...` delegates to the trusted global `~/.bun/bin/ttr` (>= 0.28.0).
+- For local source development, use `TUTURUUU_CONFIG=<private-config> TTR_RESOURCES_HOME=<disposable-resource-home> bun packages/sdk/src/cli/index.ts box ...` from the repo root; keep production CLI config and scheduler state separate.
 - `ttr ...` runs the installed CLI.
 - Use `ttr whoami --no-update-check` or equivalent config inspection before
   assuming a command targets local, staging, or production.
