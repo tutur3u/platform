@@ -1,0 +1,54 @@
+---
+updatedAt: "2026-10-24"
+title: 'Notification access'
+description: 'Who can see a notification, when email-addressed invitations are claimed, and what happens on account deletion.'
+---
+
+Notifications are server-owned. Web, satellite and mobile clients read and update
+them only through the notification API routes, which use the service role after
+resolving the signed-in user. The `anon` and `authenticated` API roles hold no
+privileges on `public.notifications`. The row-level policies are kept as defence
+in depth.
+
+## Who sees a notification
+
+- A notification with a recipient account (`user_id`) is visible only to that
+  account. The row does not keep a copy of the recipient's address, so later
+  address changes or reuse of the address by another account do not expose it.
+- A row is addressed by email only while it is an **unclaimed workspace
+  invitation** (`type = 'workspace_invite'` with no `user_id`). It is shown to
+  the account whose **confirmed** address matches. Unconfirmed addresses never
+  match.
+- Addresses are stored trimmed and lowercased, and compared the same way.
+
+## Claiming invitations
+
+An unclaimed invitation is assigned to an account when:
+
+- the account is created with an already-confirmed address (for example OAuth),
+- the account confirms its address, or
+- a confirmed account changes to a new confirmed address.
+
+Only unclaimed invitation rows are claimed; rows that belong to another account
+are never reassigned. `sync_my_notifications()` applies the same rule on demand
+for the caller's confirmed address.
+
+## Account deletion
+
+Deleting a `public.users` row deletes that account's notifications instead of
+leaving them without a recipient. The rollout migration removed existing
+recipient-less rows that were not invitations, since they could only have been
+left behind by deleted accounts.
+
+## Scope and exceptions
+
+- Applies to every app that shows the notification inbox: web, satellites through
+  the shared notification popover, and mobile through the API.
+- The account email helper used by these checks, `public.get_current_user_email()`,
+  resolves only the caller's own confirmed address.
+- Delivery (email and push batches) is unchanged; batch rows keep the delivery
+  address they need.
+
+Regression coverage: `apps/database/supabase/tests/security-notification-email-access.sql`
+and `apps/database/supabase/tests/security-user-email-helper.sql`, run by the
+security database contract job (`apps/database/scripts/verify-security-egress-contract.mjs`).

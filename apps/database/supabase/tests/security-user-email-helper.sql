@@ -106,6 +106,11 @@ select is(
   'Notification read, update and delete policies apply only to authenticated'
 );
 
+-- API roles hold no notification table privileges once notifications are
+-- fully server-owned. Grant inside this rolled-back transaction so the
+-- policies are still exercised as defence in depth.
+grant select, update on public.notifications to authenticated;
+
 -- Anonymous callers.
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
