@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Turns raw scanner output into PR gate decisions and redacted register input.
 //   bun-audit-diff <head.json> <base.json>  fail on new high/critical advisories
+//     (security-checks.yaml loads this file from the base commit; logs: counts)
 //   gitleaks <report.json> <redacted.json> pr|register
 //     pr: annotate locations the PR itself introduced and fail on any finding
 //     register: keep only opaque IDs and rules; public logs show counts only
@@ -74,13 +75,20 @@ function main(argv = process.argv.slice(2)) {
       readJson(first, {}),
       readJson(second, {})
     );
-    for (const item of fresh) {
+    // Public logs carry counts only; `bun audit` locally (or Dependabot)
+    // names the advisories for maintainers.
+    const critical = fresh.filter(
+      ({ severity }) => severity === 'critical'
+    ).length;
+    console.log(
+      `${fresh.length} new high/critical dependency advisory(ies) (${critical} critical, ${fresh.length - critical} high).`
+    );
+    if (fresh.length > 0) {
       console.log(
-        `::error::New ${item.severity} advisory ${item.advisory} in ${item.package} (${item.vulnerableVersions})`
+        '::error::New high/critical dependency advisories; run `bun audit` locally or check Dependabot alerts.'
       );
+      process.exitCode = 1;
     }
-    console.log(`${fresh.length} new high/critical dependency advisory(ies).`);
-    if (fresh.length > 0) process.exitCode = 1;
     return;
   }
   if (command === 'gitleaks') {
@@ -112,6 +120,7 @@ if (require.main === module) main();
 module.exports = {
   auditAdvisories,
   fingerprintId,
+  main,
   newBlockingAdvisories,
   redactGitleaks,
 };
