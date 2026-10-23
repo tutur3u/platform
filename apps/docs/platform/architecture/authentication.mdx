@@ -170,15 +170,29 @@ sign-in that is still in flight.
 After switching on Web, resume the incoming account's last Web route when it is
 still a valid destination. The vault records a current route only when the
 switch request comes from Web itself; new satellite app paths do not become Web
-return routes. Existing Mail folder routes such as `/personal/inbox`, `/sent`,
-and `/drafts` are not Web routes, so both a saved Mail folder and an explicit
-Mail-folder destination fall back to that workspace's home (for example,
-`/personal`). Other explicit destinations, including login handoffs, take
-precedence over the saved route. Regression coverage is in
+return routes. Saved workspace routes are checked against Web-owned route
+segments; direct Mail folders such as `/personal/inbox`, `/personal/sent`, and
+`/personal/drafts`, and old paths with no Web page or redirect such as
+`/personal/transactions`, fall back to the workspace home (for example,
+`/personal`). Explicit login handoffs take precedence over the saved route.
+Legacy app-prefixed paths that Web redirects to a satellite, such as
+`/personal/mail/sent` and `/personal/finance/invoices`, remain valid.
+Regression coverage is in
 `apps/web/src/lib/auth/multi-account/vault.test.ts` and
 `apps/web/src/lib/auth/multi-account/vault-switch.test.ts`.
-Legacy non-Mail satellite paths already stored in `last_route` are not mapped;
-the next account switch initiated from a Web page replaces that saved value.
+
+### Notification access after account switches
+
+Only unclaimed `workspace_invite` notifications (`user_id IS NULL`) can be
+matched by recipient email. The caller must have a confirmed email; matching
+uses its trimmed lowercase form and also requires current membership in the
+invited workspace. This rule applies to notification lists, unread counts,
+mark-read updates, deletion, and metadata updates. When a request contains both
+a supported Supabase auth cookie and an app-session token, notification routes
+use the current Supabase cookie identity; a valid app session remains the
+fallback when the cookie is absent. Regression coverage is in
+`apps/web/src/legacy-api-routes/v1/notifications/access.test.ts` and
+`apps/web/src/lib/api-auth.test.ts`.
 
 ## Sign Up
 

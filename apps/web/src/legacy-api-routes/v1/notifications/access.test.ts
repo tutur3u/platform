@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildNotificationAccessFilter,
+  getNotificationAccessContext,
   type NotificationAccessContext,
 } from './access';
 
 describe('buildNotificationAccessFilter', () => {
-  it('includes user, email, and workspace-scoped ownership branches', () => {
+  it('includes user ownership and confirmed workspace-invite email branches', () => {
     const context: NotificationAccessContext = {
       userId: '00000000-0000-0000-0000-000000000001',
       userEmail: 'local@tuturuuu.com',
@@ -17,8 +18,7 @@ describe('buildNotificationAccessFilter', () => {
 
     expect(buildNotificationAccessFilter(context)).toBe(
       'and(scope.in.(user,system),user_id.eq.00000000-0000-0000-0000-000000000001),' +
-        'and(scope.in.(user,system),user_id.is.null,email.eq."local@tuturuuu.com"),' +
-        'and(scope.eq.workspace,user_id.is.null,email.eq."local@tuturuuu.com",ws_id.in.(00000000-0000-0000-0000-000000000000,00000000-0000-0000-0000-000000000004)),' +
+        'and(scope.eq.workspace,user_id.is.null,type.eq.workspace_invite,email.eq."local@tuturuuu.com",ws_id.in.(00000000-0000-0000-0000-000000000000,00000000-0000-0000-0000-000000000004)),' +
         'and(scope.eq.workspace,user_id.eq.00000000-0000-0000-0000-000000000001,or(ws_id.is.null,ws_id.in.(00000000-0000-0000-0000-000000000000,00000000-0000-0000-0000-000000000004)))'
     );
   });
@@ -36,18 +36,48 @@ describe('buildNotificationAccessFilter', () => {
     );
   });
 
-  it('does not admit email-addressed workspace notifications without membership', () => {
+  it('does not admit non-invite email-addressed rows to list or update access', () => {
     const filter = buildNotificationAccessFilter({
       userId: '00000000-0000-0000-0000-000000000001',
       userEmail: 'local@tuturuuu.com',
-      workspaceIds: [],
+      workspaceIds: ['00000000-0000-0000-0000-000000000004'],
     });
 
+    expect(filter).toContain(
+      'scope.eq.workspace,user_id.is.null,type.eq.workspace_invite,email.eq."local@tuturuuu.com"'
+    );
+    expect(filter).not.toContain(
+      'scope.in.(user,system),user_id.is.null,email.eq.'
+    );
     expect(filter).not.toContain(
       'scope.eq.workspace,user_id.is.null,email.eq.'
     );
-    expect(filter).toContain(
-      'and(scope.in.(user,system),user_id.is.null,email.eq."local@tuturuuu.com")'
-    );
+  });
+
+  it('uses only a confirmed email and normalizes it before matching', async () => {
+    const supabase = {
+      from: () => ({
+        select: () => ({
+          eq: async () => ({
+            data: [{ ws_id: '00000000-0000-0000-0000-000000000004' }],
+            error: null,
+          }),
+        }),
+      }),
+    };
+
+    const unconfirmed = await getNotificationAccessContext(supabase as never, {
+      email: ' Local@Tuturuuu.com ',
+      email_confirmed_at: null,
+      id: '00000000-0000-0000-0000-000000000001',
+    });
+    const confirmed = await getNotificationAccessContext(supabase as never, {
+      email: ' Local@Tuturuuu.com ',
+      email_confirmed_at: '2026-10-24T00:00:00.000Z',
+      id: '00000000-0000-0000-0000-000000000001',
+    });
+
+    expect(unconfirmed.userEmail).toBeNull();
+    expect(confirmed.userEmail).toBe('local@tuturuuu.com');
   });
 });

@@ -9,6 +9,7 @@ export interface NotificationAccessContext {
 interface NotificationAuthUser {
   id: string;
   email?: string | null;
+  email_confirmed_at?: string | null;
 }
 
 function quotePostgrestString(value: string) {
@@ -20,14 +21,9 @@ export function buildNotificationAccessFilter(
 ) {
   const branches = [
     `and(scope.in.(user,system),user_id.eq.${context.userId})`,
-    ...(context.userEmail
-      ? [
-          `and(scope.in.(user,system),user_id.is.null,email.eq.${quotePostgrestString(context.userEmail)})`,
-        ]
-      : []),
     ...(context.userEmail && context.workspaceIds.length > 0
       ? [
-          `and(scope.eq.workspace,user_id.is.null,email.eq.${quotePostgrestString(context.userEmail)},ws_id.in.(${context.workspaceIds.join(',')}))`,
+          `and(scope.eq.workspace,user_id.is.null,type.eq.workspace_invite,email.eq.${quotePostgrestString(context.userEmail)},ws_id.in.(${context.workspaceIds.join(',')}))`,
         ]
       : []),
     context.workspaceIds.length > 0
@@ -55,7 +51,9 @@ export async function getNotificationAccessContext(
 
   return {
     userId: user.id,
-    userEmail: user.email?.trim().toLowerCase() ?? null,
+    userEmail: user.email_confirmed_at
+      ? (user.email?.trim().toLowerCase() ?? null)
+      : null,
     workspaceIds:
       memberships
         ?.map((membership) => membership.ws_id)

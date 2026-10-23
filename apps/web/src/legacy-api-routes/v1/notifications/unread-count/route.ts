@@ -105,5 +105,6 @@ export const GET = withSessionAuth(
   {
     allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
     cache: { maxAge: 15, swr: 15 },
+    preferSupabaseSessionAuth: true,
   }
 );

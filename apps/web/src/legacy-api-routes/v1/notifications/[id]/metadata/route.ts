@@ -114,5 +114,8 @@ export const PATCH = withSessionAuth<{ id: string }>(
       );
     }
   },
-  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+  {
+    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    preferSupabaseSessionAuth: true,
+  }
 );

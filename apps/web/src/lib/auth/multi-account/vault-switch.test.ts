@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BASE_URL } from '@/constants/common';
+
+vi.mock('@/constants/common', () => ({ BASE_URL: 'https://tuturuuu.com' }));
 
 /**
  * Exercises the account-switch path against an in-memory stand-in for the
@@ -241,12 +244,12 @@ function storedRefreshToken(userId: string) {
     : null;
 }
 
-function request(origin = 'https://tuturuuu.localhost') {
+function request(origin: string | null = new URL(BASE_URL).origin) {
+  const headers = new Headers({ cookie: 'device-cookie=device-1.secret-1' });
+  if (origin) headers.set('origin', origin);
+
   return new Request('https://tuturuuu.localhost/login?returnUrl=x', {
-    headers: {
-      cookie: 'device-cookie=device-1.secret-1',
-      origin,
-    },
+    headers,
   });
 }
 
@@ -351,6 +354,25 @@ describe('switchWebAccount', () => {
     expect(
       store.sessions.find((row) => row.user_id === 'user-a')?.last_route
     ).toBe('/user-a-workspace/tasks');
+  });
+
+  it('does not save a route when the request has no Origin header', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: session('user-a', 'refresh-a-rotated') },
+    });
+    auth.setSession.mockResolvedValue({
+      data: { session: session('user-b', 'refresh-b-fresh') },
+      error: null,
+    });
+
+    const { switchWebAccount } = await import('./vault');
+    await switchWebAccount(request(null), 'user-b', {
+      currentRoute: '/user-a-workspace/tasks',
+    });
+
+    expect(
+      store.sessions.find((row) => row.user_id === 'user-a')?.last_route
+    ).toBe('/user-a-workspace');
   });
 
   it('leaves the signed-in account alone when its session is not the active one', async () => {
