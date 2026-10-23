@@ -10,6 +10,9 @@ inputs:
   pull-budget-seconds:
     description: 120 normally, or 600 only for a trusted main cache seed
     default: "120"
+  seed-image-catalog:
+    description: Fixed trusted seed catalog (current or cli-2.121.0)
+    default: current
 runs:
   using: composite
   steps:
@@ -19,6 +22,8 @@ runs:
       env:
         IMAGE_PROFILE: ${{ inputs.profile }}
         IMAGE_DATABASE: ${{ inputs.database }}
+        IMAGE_PULL_BUDGET_SECONDS: ${{ inputs.pull-budget-seconds }}
+        IMAGE_SEED_CATALOG: ${{ inputs.seed-image-catalog }}
       run: node scripts/ci/supabase-image-cache.js key
     - name: Restore exact image archive
       id: cache
@@ -47,6 +52,8 @@ runs:
       env:
         IMAGE_PULL_BUDGET_SECONDS: ${{ inputs.pull-budget-seconds }}
         IMAGE_SAVE: ${{ steps.identity.outputs.save }}
+        IMAGE_PROFILE: ${{ inputs.profile }}
+        IMAGE_SEED_CATALOG: ${{ inputs.seed-image-catalog }}
       run: node scripts/ci/supabase-image-cache.js pull
     - name: Save trusted image archive
       if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.cache.outputs.cache-hit != 'true' && steps.identity.outputs.save == 'true'

@@ -1,0 +1,102 @@
+{
+  "fallbacks": {
+    "public.ecr.aws/supabase/gotrue:v2.196.0": {
+      "repository": "ghcr.io/supabase/gotrue",
+      "index": "sha256:c0c25187a6b835e65a6f6e6c6b39d090e832d40e6de5186f2c038e0411944232",
+      "amd64": "sha256:7e813221b93fbf54b515036438550e483bfaf057b9db52fe9bc1ce91c47e817e",
+      "config": "sha256:688edbb786f6d736edaa478438f23c7044a22a6a5f19502a7138d38caca6c2f6"
+    },
+    "public.ecr.aws/supabase/gotrue:v2.197.0": {
+      "repository": "ghcr.io/supabase/gotrue",
+      "index": "sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+      "amd64": "sha256:839f529492d116b4e8b7777c953a27c381d34c15a744b1bcefde5eefaa1f9f9f",
+      "config": "sha256:1181bff5ba4ce440013a63cef9f4cf13024c432d705c9b1fbc9e5b949e852f48"
+    }
+  },
+  "catalogs": {
+    "cli-2.121.0": {
+      "profiles": {
+        "contract": [
+          "public.ecr.aws/supabase/gotrue:v2.197.0",
+          "public.ecr.aws/supabase/postgres-meta:v0.100.0",
+          "public.ecr.aws/supabase/postgres:17.11.0.004",
+          "public.ecr.aws/supabase/realtime:v2.143.4",
+          "public.ecr.aws/supabase/storage-api:v1.82.1"
+        ],
+        "contract-http": [
+          "public.ecr.aws/supabase/gotrue:v2.197.0",
+          "public.ecr.aws/supabase/kong:2.8.1",
+          "public.ecr.aws/supabase/postgres-meta:v0.100.0",
+          "public.ecr.aws/supabase/postgres:17.11.0.004",
+          "public.ecr.aws/supabase/postgrest:v16.4",
+          "public.ecr.aws/supabase/realtime:v2.143.4",
+          "public.ecr.aws/supabase/storage-api:v1.82.1"
+        ],
+        "full": [
+          "public.ecr.aws/supabase/gotrue:v2.197.0",
+          "public.ecr.aws/supabase/imgproxy:v3.26.0",
+          "public.ecr.aws/supabase/kong:2.8.1",
+          "public.ecr.aws/supabase/mailpit:v1.31.3",
+          "public.ecr.aws/supabase/postgres-meta:v0.100.0",
+          "public.ecr.aws/supabase/postgres:17.11.0.004",
+          "public.ecr.aws/supabase/postgrest:v16.4",
+          "public.ecr.aws/supabase/realtime:v2.143.4",
+          "public.ecr.aws/supabase/storage-api:v1.82.1",
+          "public.ecr.aws/supabase/studio:2026.10.12-sha-3699278"
+        ]
+      },
+      "images": {
+        "public.ecr.aws/supabase/gotrue:v2.197.0": {
+          "index": "sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+          "amd64": "sha256:839f529492d116b4e8b7777c953a27c381d34c15a744b1bcefde5eefaa1f9f9f",
+          "config": "sha256:1181bff5ba4ce440013a63cef9f4cf13024c432d705c9b1fbc9e5b949e852f48"
+        },
+        "public.ecr.aws/supabase/imgproxy:v3.26.0": {
+          "index": "sha256:f3130cc154e8584643581ad7ba53970ec779e7e974f98b121854bba2a46b3b76",
+          "amd64": "sha256:0801f8b9b001fdea97769f90f40ddf0ff312729e1ddcffc3b9fcba6a77a4a3a3",
+          "config": "sha256:c188cf40fde16b29767f40da4784d1bebc36907bfc7ceb07f2742c0cd20ff4ed"
+        },
+        "public.ecr.aws/supabase/kong:2.8.1": {
+          "index": "sha256:1b53405d8680a09d6f44494b7990bf7da2ea43f84a258c59717d4539abf09f6d",
+          "amd64": "sha256:e21b0b793879ab96720ed4188f9441260273f4bf775bcbff8d435e019ffb759a",
+          "config": "sha256:3cefb958bcd694597b65adc00053a762b1f9a6df3c6031af528d052d75a64e1a"
+        },
+        "public.ecr.aws/supabase/mailpit:v1.31.3": {
+          "index": "sha256:ed9b00c609e77e99c79b93f1178255ebc271868920f2c69a8d166bd5634ed10d",
+          "amd64": "sha256:13de4ffbd28f3089be6dff32afbc8210edb5a593d738fa877ae7272cc73aeb67",
+          "config": "sha256:1ce65b9a2daa2a01cf4f226dbd4b3758b5b9fe686c2f471cf979273a389aab91"
+        },
+        "public.ecr.aws/supabase/postgres-meta:v0.100.0": {
+          "index": "sha256:145325b7e39f8ef4931d6e8cfd3f6f4d655de09d72a2ccc96d9513542c2202bd",
+          "amd64": "sha256:822227a8d12c109b24b8d8f1dae98a9c089a698b4586d35527dadf929e655136",
+          "config": "sha256:8d72aca55290778ae61a1c5cef261728a04ff8d207bc8b3d5a8255faa2dea0e9"
+        },
+        "public.ecr.aws/supabase/postgres:17.11.0.004": {
+          "index": "sha256:b15d862126dd2dac02da524696ccfde2dcce2ceaee0a58973b2727befe492706",
+          "amd64": "sha256:e85bc10ac5b141223b289e1e8dc8d448cf3df92501917149db0366b9c5aaf053",
+          "config": "sha256:c4be96218454e68421a29c712e1a83c7a9fe186208c725d8bb2ebb474e2042f2"
+        },
+        "public.ecr.aws/supabase/postgrest:v16.4": {
+          "index": "sha256:d155c6718ed9a9f990d159a2ab7c0a3f16944dbb6d0a0344557421042acfe0df",
+          "amd64": "sha256:bee9e1efe9d90d8f6be359f756e039dbb6e1972474bc271b7c49c5a495911a41",
+          "config": "sha256:1ad5f2ea5501150ec9c7953ae9bf04111ced39a53ca01fc0f08af6d0b7ba67be"
+        },
+        "public.ecr.aws/supabase/realtime:v2.143.4": {
+          "index": "sha256:35e99d3f1cbba5aa5585e8ac3cf70ecc54909ee4aee0626effed93c60fb41439",
+          "amd64": "sha256:90318268bf07d0156ae1e4d7606d536d3fd9e79b639eb012c94d96559fa171d3",
+          "config": "sha256:b23ce4af461b8a994f677cd52311e616421d43e3bbf9a0bdd048bedfe22d0b2a"
+        },
+        "public.ecr.aws/supabase/storage-api:v1.82.1": {
+          "index": "sha256:ec2ad41411eac8fc2b769b4bb00d1af32ae37eca3745c15bdb329db27d218934",
+          "amd64": "sha256:31c11d93a3c7840f97acba43f6df9894028dc85dd9c0781d23427e2009be5b76",
+          "config": "sha256:ed2afc0194b24a697cfa9b245c60d5fd0b41a9ba5a255083418cd643577098a3"
+        },
+        "public.ecr.aws/supabase/studio:2026.10.12-sha-3699278": {
+          "index": "sha256:948770ec467f00e6ae34c35018ef7cb23d7b30eb806b42c2cc0d7bcfdcf8a7a8",
+          "amd64": "sha256:bfb1b1e4a7ee9fee9f0f5aaa86f990f271305cf89d736f64b437e11d5d85b86d",
+          "config": "sha256:a9233b9e6c0a1eb1cf81a9db52d333431566f76aed1d4739af9e94f82ff47e0d"
+        }
+      }
+    }
+  }
+}
