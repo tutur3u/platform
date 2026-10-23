@@ -9,14 +9,19 @@ radius:
 
 - CI, workflows and repository automation (`.github/`, `scripts/ci/`)
 - authentication, sessions, SSO and request guards (`packages/auth`,
-  `packages/sso`, `packages/turnstile`, the API proxy guard and required-MFA
-  runtime in `packages/utils`)
+  `packages/sso`, `packages/turnstile`, `packages/supabase`, the satellite session
+  validator, web's auth and SSO API routes, every app's `proxy.ts`, and the API
+  proxy guard and required-MFA runtime in `packages/utils`)
+- scheduled job routes authenticated by the cron secret (`apps/*/src/app/api/cron/`)
 - database migrations and RLS (`apps/database/supabase/migrations/`)
 - code-execution infrastructure (`apps/devbox-control`, `packages/devbox`)
-- payments (`packages/payment`, `packages/payment-core`)
+- payments (`packages/payment`, `packages/payment-core`, and the payment API and
+  webhooks in `apps/pay`)
 - `CODEOWNERS` itself
 
-Paths not listed have no code owner and follow the normal review rules.
+Paths not listed have no code owner and follow the normal review rules. Importing an
+owned package does not protect its callers, so list the calling routes and guards
+themselves when they make security decisions.
 
 ## Agent-authored pull requests
 

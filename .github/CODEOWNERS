@@ -14,6 +14,15 @@
 /packages/turnstile/               @vhpx
 /packages/utils/src/api-proxy-guard.ts     @vhpx
 /packages/utils/src/required-mfa-runtime.ts @vhpx
+/packages/satellite/src/auth.ts    @vhpx
+/packages/supabase/                @vhpx
+/apps/web/src/app/api/auth/        @vhpx
+/apps/web/src/legacy-api-routes/auth/ @vhpx
+/apps/web/src/app/api/v1/sso/      @vhpx
+/apps/*/src/proxy.ts               @vhpx
+
+# Scheduled jobs authenticated by the cron secret
+/apps/*/src/app/api/cron/          @vhpx
 
 # Database schema, migrations and RLS
 /apps/database/supabase/migrations/ @vhpx
@@ -25,6 +34,7 @@
 # Payments
 /packages/payment/                 @vhpx
 /packages/payment-core/            @vhpx
+/apps/pay/src/app/api/payment/     @vhpx
 
 # Code ownership itself
 /.github/CODEOWNERS                @vhpx
