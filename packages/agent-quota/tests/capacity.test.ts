@@ -32,6 +32,18 @@ describe('model-only provider capacity cooldown', () => {
     expect(failureClass(message)).toBe('capacity');
     expect(completedFailureClass(message)).toBe('capacity');
   });
+  it('recognizes quota, overload, and exhausted-resource error-item wording', () => {
+    expect(failureClass('The requested quota exceeded the allowance')).toBe(
+      'usage-limit'
+    );
+    expect(failureClass('Provider overload, retry shortly')).toBe('capacity');
+    expect(failureClass('Resource exhausted for this model')).toBe('capacity');
+    expect(completedFailureClass('Quota exceeded. resets in 2 hours')).toBe(
+      'usage-limit'
+    );
+    expect(completedFailureClass('Overload: retry later')).toBe('capacity');
+    expect(completedFailureClass('Resource exhausted')).toBe('capacity');
+  });
   it('records an exact model block with a default thirty-minute next eligibility', () => {
     const block = createBlock({
       pool: 'antigravity',

@@ -199,6 +199,56 @@ it('projects descendant metadata and structured errors without reading message c
         JSON.stringify({ text: 'Rate limit reached. resets in 7 days' })
       );
     }
+    otherRun.run(
+      'noisy',
+      'unrelated-root',
+      2,
+      'completed',
+      '2026-10-23T03:59:00Z',
+      'antigravity',
+      JSON.stringify({ rootNodeId: 'noisy' })
+    );
+    otherItem.run(
+      'unrelated-root',
+      'noisy',
+      'noisy-first',
+      'assistant_message',
+      'completed',
+      '2026-10-23T03:58:30Z',
+      JSON.stringify({ text: 'This message mentions a limit in prose.' })
+    );
+    otherItem.run(
+      'unrelated-root',
+      'noisy',
+      'noisy-final',
+      'assistant_message',
+      'completed',
+      '2026-10-23T03:59:00Z',
+      JSON.stringify({ text: 'The requested work completed successfully.' })
+    );
+    otherRun.run(
+      'error-capacity',
+      'unrelated-root',
+      3,
+      'failed',
+      '2026-10-23T03:59:30Z',
+      'antigravity',
+      JSON.stringify({ rootNodeId: 'error-capacity' })
+    );
+    otherItem.run(
+      'unrelated-root',
+      'error-capacity',
+      'error-capacity-node',
+      'error',
+      'failed',
+      '2026-10-23T03:59:30Z',
+      JSON.stringify({
+        failure: {
+          class: 'capacity',
+          message: 'Selected model is at capacity',
+        },
+      })
+    );
     completed.close();
     const global = collectPoolReceipts(
       ['antigravity'],
@@ -208,6 +258,8 @@ it('projects descendant metadata and structured errors without reading message c
     expect(global.failures.map((f) => f.runId)).toEqual(
       expect.arrayContaining(['run6', 'other'])
     );
+    expect(global.failures.map((f) => f.runId)).toContain('error-capacity');
+    expect(global.failures.map((f) => f.runId)).not.toContain('noisy');
     expect(global.failures.map((f) => f.runId)).not.toContain('old');
     expect(global.failures.map((f) => f.runId)).not.toContain('foreign');
     expect(

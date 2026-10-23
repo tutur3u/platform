@@ -148,13 +148,13 @@ export function receiptReset(
 export function completedFailureClass(message: string): FailureClass | null {
   const text = message.trimStart().replace(/^[#*_>\s]+/, '');
   if (
-    /^(?:rate limit reached\b|you['’]ve hit your limit\b|usage limit reached\b|you['’]ve hit your (?:session|usage) limit\b|you have reached (?:your |the )?usage limit\b)/i.test(
+    /^(?:rate limit reached\b|you['’]ve hit your limit\b|usage limit reached\b|you['’]ve hit your (?:session|usage) limit\b|you have reached (?:your |the )?usage limit\b|quota exceeded\b|you have exceeded your quota\b)/i.test(
       text
     )
   )
     return 'usage-limit';
   if (
-    /^(?:selected model is at capacity\b|(?:we(?:'re| are)|the (?:service|model|provider) is) (?:currently )?(?:at capacity|overloaded|temporarily unavailable)|(?:model|service|provider) (?:capacity (?:exceeded|exhausted)|temporarily unavailable)|temporarily unavailable\b|capacity (?:error|exceeded|exhausted)\b)/i.test(
+    /^(?:selected model is at capacity\b|(?:we(?:'re| are)|the (?:service|model|provider) is) (?:currently )?(?:at capacity|overloaded|temporarily unavailable)|(?:model|service|provider) (?:capacity (?:exceeded|exhausted)|temporarily unavailable)|overload\b|resource exhausted\b|temporarily unavailable\b|capacity (?:error|exceeded|exhausted)\b)/i.test(
       text
     )
   )

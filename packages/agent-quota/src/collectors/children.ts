@@ -18,6 +18,30 @@ const scope = `WITH RECURSIVE descendants(thread_id) AS (
  UNION
  SELECT s.child_thread_id FROM orchestration_v2_projection_subagents s JOIN descendants d ON s.thread_id=d.thread_id WHERE s.child_thread_id IS NOT NULL
 ) `;
+const receiptPrefixes = [
+  "LIKE 'usage limit reached%'",
+  "LIKE 'you''ve hit your limit%'",
+  "LIKE 'you''ve hit your session limit%'",
+  "LIKE 'you''ve hit your usage limit%'",
+  "LIKE 'you have reached your usage limit%'",
+  "LIKE 'rate limit reached%'",
+  "LIKE 'quota exceeded%'",
+  "LIKE 'you have exceeded your quota%'",
+  "LIKE 'selected model is at capacity%'",
+  "LIKE 'we''re at capacity%'",
+  "LIKE 'we are at capacity%'",
+  "LIKE 'the service is at capacity%'",
+  "LIKE 'the model is at capacity%'",
+  "LIKE 'the provider is at capacity%'",
+  "LIKE 'overload%'",
+  "LIKE 'resource exhausted%'",
+  "LIKE 'temporarily unavailable%'",
+  "LIKE 'capacity error%'",
+  "LIKE 'capacity exceeded%'",
+  "LIKE 'capacity exhausted%'",
+];
+const terminalPrefixPredicate = (expression: string) =>
+  `(${receiptPrefixes.map((prefix) => `${expression} ${prefix}`).join(' OR ')})`;
 export function collectChildren(
   parentId: string,
   databasePath = t3StateDatabase(),
@@ -35,9 +59,14 @@ export function collectChildren(
       WHERE provider_instance_id IN (SELECT value FROM json_each(?))
       AND julianday(completed_at) >= julianday(?) AND julianday(completed_at) <= julianday(?)
       AND r.status IN ('failed','completed')
-      AND EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items receipt WHERE receipt.run_id=r.run_id
-        AND ((receipt.type='error' AND (lower(json_extract(receipt.payload_json,'$.failure.message')) LIKE '%limit%' OR json_extract(receipt.payload_json,'$.failure.class')='usage_limit' OR lower(json_extract(receipt.payload_json,'$.failure.message')) LIKE '%capacity%'))
-          OR (receipt.type='assistant_message' AND (lower(json_extract(receipt.payload_json,'$.text')) LIKE '%limit%' OR lower(json_extract(receipt.payload_json,'$.text')) LIKE '%capacity%' OR lower(json_extract(receipt.payload_json,'$.text')) LIKE '%temporarily unavailable%'))))
+      AND (EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items receipt WHERE receipt.run_id=r.run_id
+        AND receipt.type='error' AND receipt.status='failed'
+        AND json_type(receipt.payload_json,'$.failure.message')='text'
+        AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(receipt.payload_json,'$.failure.message'),'’',char(39))))")})
+        OR (r.status='completed' AND EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items receipt WHERE receipt.run_id=r.run_id
+          AND receipt.type='assistant_message'
+          AND NOT EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items newer WHERE newer.run_id=receipt.run_id AND newer.type='assistant_message' AND newer.updated_at>receipt.updated_at)
+          AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(receipt.payload_json,'$.text'),'’',char(39))))")})))
     ), descendants(thread_id) AS (
       SELECT DISTINCT thread_id FROM recent_runs
     ) `
@@ -91,7 +120,9 @@ export function collectChildren(
    substr(json_extract(i.payload_json,'$.failure.message'),1,4096) AS message,json_extract(i.payload_json,'$.failure.class') AS classification,
    json_extract(i.payload_json,'$.failure.resetAt') AS resetAt,i.updated_at AS observedAt
    FROM orchestration_v2_projection_turn_items i JOIN descendants d ON d.thread_id=i.thread_id
-   WHERE i.type='error' AND i.status='failed' AND json_type(i.payload_json,'$.failure.message')='text'`);
+   WHERE i.type='error' AND i.status='failed' AND json_type(i.payload_json,'$.failure.message')='text'
+   AND EXISTS(SELECT 1 FROM orchestration_v2_projection_runs terminal WHERE terminal.run_id=i.run_id AND terminal.status='failed')
+   AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(i.payload_json,'$.failure.message'),'’',char(39))))")}`);
     const completedReceipts = rows<ChildFailure>(`SELECT i.run_id AS runId,
       json_extract(r.payload_json,'$.rootNodeId') AS nodeId,
       substr(json_extract(i.payload_json,'$.text'),1,4096) AS message,
@@ -101,9 +132,8 @@ export function collectChildren(
       JOIN orchestration_v2_projection_runs r ON r.run_id=i.run_id
       JOIN (SELECT j.run_id,MAX(j.updated_at) AS finalAt FROM orchestration_v2_projection_turn_items j JOIN descendants dj ON dj.thread_id=j.thread_id WHERE j.type='assistant_message' GROUP BY j.run_id) final ON final.run_id=i.run_id AND final.finalAt=i.updated_at
       WHERE r.status='completed' AND i.type='assistant_message'
-      AND (lower(json_extract(i.payload_json,'$.text')) LIKE '%limit%'
-        OR lower(json_extract(i.payload_json,'$.text')) LIKE '%capacity%'
-        OR lower(json_extract(i.payload_json,'$.text')) LIKE '%temporarily unavailable%')`);
+      AND NOT EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items newer WHERE newer.run_id=i.run_id AND newer.type='assistant_message' AND newer.updated_at>i.updated_at)
+      AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(i.payload_json,'$.text'),'’',char(39))))")}`);
     for (const receipt of completedReceipts) {
       const kind = completedFailureClass(receipt.message);
       if (kind === 'usage-limit' || kind === 'capacity')
