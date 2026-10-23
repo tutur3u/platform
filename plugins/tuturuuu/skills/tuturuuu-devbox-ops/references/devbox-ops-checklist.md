@@ -137,3 +137,18 @@ Use `ttr box repair --dir .` after upgrading the CLI to regenerate the wrapper
 and system service from the existing token file without registering a new runner
 row. Use `ttr box repair --dir . --dry-run` when checking a host remotely before
 allowing service-file writes or sudo restart commands.
+
+### Trust-tier isolation evidence
+
+`box doctor --isolation --other-user <user>` requires readable ACL evidence for
+the credential, home, checkout, checkout `.env*` files and their ancestors. Linux
+uses numeric `getfacl` entries with effective masks; macOS uses `ls -le`. Effective
+extended grants conservatively fail even for unrelated identities. Missing tools
+or malformed ACL output are `unknown` and fail required evidence. Regressions
+live in `devbox-isolation-acl.test.ts`.
+
+`repair --execution-mode` does not authorize replacing another service mode;
+that guard requires `--force`. Setup normalizes token paths before both the
+overwrite guard and registration. Cover these boundaries with
+`devbox-repair.test.ts` and `devbox-isolation.test.ts`; confirm refusal occurs
+before credential issuance or file changes.

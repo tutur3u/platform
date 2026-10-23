@@ -5,6 +5,7 @@ import {
   defaultIsolationProbes,
   isSymlinkMode,
 } from './devbox-isolation';
+import { createAclInspector } from './devbox-isolation-acl';
 
 type FileInfo = { uid: number; gid: number; mode: number };
 type Other = { name: string; uid: number; gids: Set<number> };
@@ -70,36 +71,6 @@ async function exposure(
   return { real, info, exposed: open };
 }
 
-async function extendedAclEntries(path: string, probes: DevboxIsolationProbes) {
-  if (probes.platform === 'linux') {
-    const result = await probes.run('getfacl', [
-      '--omit-header',
-      '--absolute-names',
-      path,
-    ]);
-    if (result.code !== 0) return undefined;
-    return result.stdout
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => {
-        const match = /^(?:default:)?(?:user|group):([^:]+):([rwx-]{3})/u.exec(
-          line
-        );
-        return Boolean(match && match[2] !== '---');
-      });
-  }
-  if (probes.platform === 'darwin') {
-    const result = await probes.run('ls', ['-led', path]);
-    if (result.code !== 0) return undefined;
-    return result.stdout
-      .split('\n')
-      .slice(1)
-      .map((line) => line.trim())
-      .filter((line) => /^\d+:\s.*\sallow\s/u.test(line));
-  }
-  return undefined;
-}
-
 async function envFiles(checkoutDir: string, probes: DevboxIsolationProbes) {
   const list = (dir: string) => probes.readdir(dir).catch(() => [] as string[]);
   const dirs = [checkoutDir];
@@ -132,6 +103,19 @@ export async function checkCredentialIsolation({
   probes?: Partial<DevboxIsolationProbes>;
 }): Promise<DevboxIsolationFinding[]> {
   const probes = { ...defaultIsolationProbes, ...overrides };
+  const inspectAcl = createAclInspector(probes);
+  const aclFinding = async (label: string, path: string) => {
+    const grants = await inspectAcl(path);
+    return finding(
+      `${label}Acl`,
+      grants === undefined ? undefined : grants.length === 0,
+      grants === undefined
+        ? `cannot determine ACLs for ${path} and its ancestors`
+        : grants.length
+          ? `extended ACL grants: ${grants.join('; ')}`
+          : `${path} and its ancestors have no effective extended ACL grants`
+    );
+  };
   const [account, groups, groupNames] = await Promise.all([
     probes.run('id', ['-u', otherUser]),
     probes.run('id', ['-G', otherUser]),
@@ -188,18 +172,7 @@ export async function checkCredentialIsolation({
             : `${path}: owner ${info.uid}, group ${info.gid}, mode ${(info.mode & 0o777).toString(8)}; ${otherUser} must have no owner, group or other access`
       )
     );
-    const acl = await extendedAclEntries(path, probes);
-    findings.push(
-      finding(
-        `${label}Acl`,
-        acl === undefined ? undefined : acl.length === 0,
-        acl === undefined
-          ? `cannot read ACLs for ${path} (install getfacl on Linux)`
-          : acl.length
-            ? `${path} has ACL entries granting access: ${acl.join('; ')}`
-            : `${path} has no ACL entries granting access`
-      )
-    );
+    findings.push(await aclFinding(label, path));
   }
 
   for (const [label, path] of [
@@ -207,6 +180,7 @@ export async function checkCredentialIsolation({
     ['checkoutDirectory', checkoutDir],
   ] as const) {
     if (!path) continue;
+    findings.push(await aclFinding(label, path));
     const { real, info, exposed } = await exposure(
       path,
       other,
@@ -227,12 +201,24 @@ export async function checkCredentialIsolation({
   if (checkoutDir) {
     const exposedFiles: string[] = [];
     let unknown = 0;
+    const aclFindings: DevboxIsolationFinding[] = [];
     for (const file of await envFiles(checkoutDir, probes)) {
+      aclFindings.push(await aclFinding('checkoutEnvFile', file));
       const { exposed } = await exposure(file, other, probes, 'file');
       if (exposed === undefined) unknown += 1;
       else if (exposed) exposedFiles.push(file.split(sep).slice(-2).join(sep));
     }
     findings.push(
+      finding(
+        'checkoutEnvFilesAcl',
+        aclFindings.some((entry) => entry.status === 'fail')
+          ? false
+          : aclFindings.some((entry) => entry.status === 'unknown')
+            ? undefined
+            : true,
+        aclFindings.map((entry) => entry.detail).join('; ') ||
+          'no checkout .env files'
+      ),
       finding(
         'checkoutEnvFiles',
         exposedFiles.length ? false : unknown ? undefined : true,

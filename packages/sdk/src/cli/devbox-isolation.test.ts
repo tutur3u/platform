@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -181,7 +181,7 @@ describe('--other-user credential isolation', () => {
     '/home/dev/platform/.env.example': [1000, 1000, FILE | 0o644],
   };
   const run =
-    (groups = 'judge', acl = '') =>
+    (groups = 'judge', acl = 'user::rw-\ngroup::---\nother::---\n') =>
     async (command: string, args: string[]) =>
       command === 'getfacl'
         ? { code: 0, stdout: acl }
@@ -224,7 +224,11 @@ describe('--other-user credential isolation', () => {
   );
 
   it('fails a named ACL entry and reports missing ACL tooling as unknown', async () => {
-    const granted = await check(base, 'judge', 'user::rw-\nuser:judge:r--\n');
+    const granted = await check(
+      base,
+      'judge',
+      'user::rw-\nuser:990:r--\ngroup::---\nmask::r--\nother::---\n'
+    );
     expect(byCheck(granted, 'credentialFileAcl')).toBe('fail');
     const findings = await checkCredentialIsolation({
       tokenFile: '/home/dev/.config/tuturuuu/devbox-runner.env',
@@ -328,30 +332,35 @@ describe('runner execution-mode overwrite guard', () => {
     ).rejects.toThrow('judge-only');
   });
 
-  it('checks the token file before issuing a new credential', async () => {
-    const { dir } = await fixture();
-    const tokenFile = join(dir, 'devbox-runner.env');
-    await writeFile(
-      tokenFile,
-      "TUTURUUU_DEVBOX_RUNNER_TOKEN='x'\nTUTURUUU_DEVBOX_EXECUTION_MODE='judge-only'\n",
-      { mode: 0o600 }
-    );
-    const registerAgent = vi.fn();
-    await expect(
-      setupDevboxRunner({
-        checkoutDir: dir,
-        options: {
-          agent: true,
-          client: {
-            devboxes: { registerAgent },
-          } as unknown as TuturuuuUserClient,
-          executionMode: 'trusted',
-          json: true,
-          runCommand: vi.fn(),
-          tokenFile,
-        },
-      })
-    ).rejects.toThrow('--service-name');
-    expect(registerAgent).not.toHaveBeenCalled();
-  });
+  it.each([false, true])(
+    'checks the normalized token file before registration (padded: %s)',
+    async (padded) => {
+      const { dir } = await fixture();
+      const tokenFile = join(dir, 'devbox-runner.env');
+      await writeFile(
+        tokenFile,
+        "TUTURUUU_DEVBOX_RUNNER_TOKEN='x'\nTUTURUUU_DEVBOX_EXECUTION_MODE='judge-only'\n",
+        { mode: 0o600 }
+      );
+      const original = await readFile(tokenFile, 'utf8');
+      const registerAgent = vi.fn();
+      await expect(
+        setupDevboxRunner({
+          checkoutDir: dir,
+          options: {
+            agent: true,
+            client: {
+              devboxes: { registerAgent },
+            } as unknown as TuturuuuUserClient,
+            executionMode: 'trusted',
+            json: true,
+            runCommand: vi.fn(),
+            tokenFile: padded ? `  ${tokenFile}  ` : tokenFile,
+          },
+        })
+      ).rejects.toThrow('--service-name');
+      expect(registerAgent).not.toHaveBeenCalled();
+      expect(await readFile(tokenFile, 'utf8')).toBe(original);
+    }
+  );
 });

@@ -153,10 +153,7 @@ export async function runDevboxRepair(
       'Repair cannot weaken an existing Judge-only execution policy.'
     );
   const dockerHost = options.dockerHost ?? readSetting('DOCKER_HOST');
-  // An explicit --execution-mode is a deliberate change of this identity;
-  // otherwise refuse before touching the token when the installed service
-  // belongs to a different mode.
-  const force = options.force === true || options.executionMode !== undefined;
+  const force = options.force === true;
   await assertRunnerExecutionModeUnchanged({
     executionMode,
     force,

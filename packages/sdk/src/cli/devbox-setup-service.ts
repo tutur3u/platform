@@ -504,9 +504,10 @@ export async function setupDevboxRunner({
   const runnerName = options.runnerName?.trim() || getDefaultRunnerName();
   const executionMode =
     options.executionMode ?? (options.judgeImages ? 'judge-only' : 'trusted');
-  const targetTokenFile =
-    options.tokenFile ??
-    getDefaultRunnerTokenFile(undefined, options.serviceName);
+  const targetTokenFile = resolve(
+    options.tokenFile?.trim() ||
+      getDefaultRunnerTokenFile(undefined, options.serviceName)
+  );
   // Validate protection prerequisites before issuing a new runner credential.
   if (shouldInstallService)
     await preflightProtectedService({
@@ -546,7 +547,7 @@ export async function setupDevboxRunner({
         )
       : undefined,
     scriptPaths: [
-      resolve(targetTokenFile),
+      targetTokenFile,
       ...(shouldInstallService
         ? runnerWrapperCandidates(targetTokenFile, options.serviceName)
         : []),
