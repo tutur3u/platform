@@ -13,7 +13,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
-import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
+import { sanitizeLogError } from '@tuturuuu/utils/log-sanitizer';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -539,7 +539,7 @@ export async function POST(
   } catch (error) {
     console.error(
       'Error generating schedule preview:',
-      sanitizeLogValue(error)
+      sanitizeLogError(error)
     );
     if (
       error instanceof Error &&

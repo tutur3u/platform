@@ -1,5 +1,8 @@
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
+import {
+  sanitizeLogError,
+  sanitizeLogValue,
+} from '@tuturuuu/utils/log-sanitizer';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
     console.error(
       'Invalid timezone:',
       sanitizeLogValue(timezone),
-      sanitizeLogValue(error)
+      sanitizeLogError(error)
     );
     return NextResponse.json(
       { error: `Invalid timezone: ${timezone}` },
@@ -157,7 +160,7 @@ export async function POST(request: NextRequest) {
     .insert(allTestEvents);
 
   if (error) {
-    console.error('Failed to generate test events:', error);
+    console.error('Failed to generate test events:', sanitizeLogError(error));
     return NextResponse.json(
       { error: 'Failed to create test events' },
       { status: 500 }

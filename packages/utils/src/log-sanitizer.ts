@@ -27,16 +27,22 @@ function stripControlCharacters(value: string) {
   return result;
 }
 
+// Errors log as `name [code]: message` only: stacks and other provider fields
+// can carry request-derived content and internal paths.
+function formatErrorLike(value: unknown, requireCode: boolean): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const { code, message, name } = value as Record<string, unknown>;
+  if (typeof message !== 'string') return null;
+  const hasCode = typeof code === 'string' || typeof code === 'number';
+  if (requireCode && !hasCode && !(value instanceof Error)) return null;
+  const label = typeof name === 'string' && name ? name : 'Error';
+  return `${label}${hasCode ? ` [${code}]` : ''}: ${message}`;
+}
+
 function formatLogValue(value: unknown): string {
   if (typeof value === 'string') return value;
-  if (value instanceof Error) {
-    // Keep stack frames readable on a single line.
-    return (value.stack ?? `${value.name}: ${value.message}`)
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .join(' | ');
-  }
+  const error = formatErrorLike(value, true);
+  if (error !== null) return error;
   if (
     value === null ||
     value === undefined ||
@@ -56,7 +62,8 @@ function formatLogValue(value: unknown): string {
 
 /**
  * Formats a value for a single log line: line breaks and control/bidi
- * characters are removed and the result is length-bounded.
+ * characters are removed and the result is length-bounded. Errors and
+ * provider error objects (with a `code`) log as `name [code]: message`.
  */
 export function sanitizeLogValue(
   value: unknown,
@@ -67,4 +74,13 @@ export function sanitizeLogValue(
   return sanitized.length > maxLength
     ? `${sanitized.slice(0, maxLength)}${TRUNCATION_SUFFIX}`
     : sanitized;
+}
+
+/**
+ * Formats a caught error for logs as `name [code]: message`, never the raw
+ * object or its stack. Any object with a string `message` is treated as an
+ * error; other values fall back to `sanitizeLogValue`.
+ */
+export function sanitizeLogError(error: unknown, maxLength = 500): string {
+  return sanitizeLogValue(formatErrorLike(error, false) ?? error, maxLength);
 }

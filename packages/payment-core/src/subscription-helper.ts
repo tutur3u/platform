@@ -86,7 +86,10 @@ export async function hasActiveSubscription(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Error checking active subscriptions:', errorMessage);
+    console.error(
+      'Error checking active subscriptions:',
+      sanitizeLogValue(errorMessage)
+    );
     // Fail-closed: treat API errors as "active" to prevent duplicate subscriptions
     return { hasWorkspace: true, hasActive: true, subscription: null };
   }
@@ -174,7 +177,7 @@ export async function createFreeSubscription(
   if (!freeProduct) {
     console.error('No active free-tier product configured', {
       hint: FREE_PRODUCT_MISSING_HINT,
-      wsId,
+      wsId: sanitizeLogValue(wsId),
     });
     return {
       status: 'error',
@@ -199,8 +202,8 @@ export async function createFreeSubscription(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Failed to create free subscription', {
-      error: errorMessage,
-      wsId,
+      error: sanitizeLogValue(errorMessage),
+      wsId: sanitizeLogValue(wsId),
     });
     return { status: 'error', message: errorMessage };
   }

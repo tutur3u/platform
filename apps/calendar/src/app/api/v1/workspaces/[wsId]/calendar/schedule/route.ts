@@ -210,7 +210,7 @@ export async function POST(
         previewSummary = body.summary;
       }
     } catch (parseError) {
-      console.log(`[Schedule] Body parse error:`, parseError);
+      console.log('[Schedule] Body parse error:', sanitizeLogValue(parseError));
       // No body or invalid JSON, use defaults
     }
 
@@ -545,7 +545,7 @@ export async function GET(
       mode: isPersonalWorkspace ? 'personal' : 'workspace',
     });
   } catch (error) {
-    console.error('Error in unified schedule GET:', error);
+    console.error('Error in unified schedule GET:', sanitizeLogValue(error));
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -827,7 +827,7 @@ async function createEventsFromPreview(
           .eq('id', existingEvent.id);
 
         if (updateError) {
-          console.error('Failed to update event:', updateError);
+          console.error('Event update failed:', sanitizeLogValue(updateError));
           warnings.push(`Failed to update event: ${previewEvent.title}`);
           continue;
         }
@@ -1009,7 +1009,7 @@ async function createEventsFromPreview(
       .in('id', orphanedEventIds);
 
     if (deleteError) {
-      console.error('Failed to delete orphaned events:', deleteError);
+      console.error('Orphan delete failed:', sanitizeLogValue(deleteError));
       warnings.push('Failed to clean up orphaned events');
     } else {
       stats.deleted = orphanedEventIds.length;
@@ -1053,7 +1053,7 @@ async function createEventsFromPreview(
       p_window_days: windowDays,
     });
   } catch (e) {
-    console.error('Error updating scheduling metadata:', e);
+    console.error('Error updating scheduling metadata:', sanitizeLogValue(e));
   }
 
   return NextResponse.json({

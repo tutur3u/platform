@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeLogValue } from './log-sanitizer';
+import { sanitizeLogError, sanitizeLogValue } from './log-sanitizer';
 
 describe('sanitizeLogValue', () => {
   it('keeps ordinary values unchanged', () => {
@@ -28,11 +28,9 @@ describe('sanitizeLogValue', () => {
     );
   });
 
-  it('formats errors with their stack on one line', () => {
-    const error = new Error('bad\ninput');
-    const sanitized = sanitizeLogValue(error);
-    expect(sanitized.startsWith('Error: bad | input')).toBe(true);
-    expect(sanitized).not.toMatch(/[\r\n]/);
+  it('formats errors as name and message without the stack', () => {
+    const error = new TypeError('bad\ninput');
+    expect(sanitizeLogValue(error)).toBe('TypeError: badinput');
   });
 
   it('falls back when a value cannot be serialized', () => {
@@ -44,5 +42,41 @@ describe('sanitizeLogValue', () => {
   it('bounds the logged length', () => {
     const sanitized = sanitizeLogValue('x'.repeat(50), 10);
     expect(sanitized).toBe(`${'x'.repeat(10)}...[truncated]`);
+  });
+});
+
+describe('sanitizeLogError', () => {
+  it('logs only the name, code and single-line message', () => {
+    const error = Object.assign(new Error('row\r\n[Fake] forged'), {
+      code: 'P0001',
+      details: 'internal detail',
+    });
+    const logged = sanitizeLogError(error);
+    expect(logged).toBe('Error [P0001]: row[Fake] forged');
+    expect(logged).not.toContain('internal detail');
+    expect(logged).not.toContain('at ');
+  });
+
+  it('handles plain provider error objects without logging other fields', () => {
+    const logged = sanitizeLogError({
+      code: '23505',
+      details: 'Key (email)=(someone@example.com) already exists.',
+      hint: null,
+      message: 'duplicate key value violates unique constraint',
+    });
+    expect(logged).toBe(
+      'Error [23505]: duplicate key value violates unique constraint'
+    );
+  });
+
+  it('falls back to the value formatter for non-error values', () => {
+    expect(sanitizeLogError('plain\nstring')).toBe('plainstring');
+    expect(sanitizeLogError(undefined)).toBe('undefined');
+  });
+
+  it('bounds the message length', () => {
+    expect(sanitizeLogError(new Error('x'.repeat(1000)), 20)).toBe(
+      `Error: ${'x'.repeat(13)}...[truncated]`
+    );
   });
 });

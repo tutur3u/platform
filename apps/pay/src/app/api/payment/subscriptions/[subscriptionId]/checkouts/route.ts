@@ -4,7 +4,10 @@ import {
   isSelfServeWorkspaceProduct,
 } from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
-import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
+import {
+  sanitizeLogError,
+  sanitizeLogValue,
+} from '@tuturuuu/utils/log-sanitizer';
 import { type NextRequest, NextResponse } from 'next/server';
 import { PORT } from '@/constants/common';
 import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
@@ -51,7 +54,7 @@ export async function POST(
   if (hasManageSubscriptionPermissionError) {
     console.error(
       'Error checking manage subscription permission:',
-      hasManageSubscriptionPermissionError
+      sanitizeLogError(hasManageSubscriptionPermissionError)
     );
     return NextResponse.json(
       {
@@ -78,7 +81,10 @@ export async function POST(
     .maybeSingle();
 
   if (workspaceError) {
-    console.error('Error fetching workspace:', workspaceError);
+    console.error(
+      'Error fetching workspace:',
+      sanitizeLogError(workspaceError)
+    );
     return NextResponse.json(
       { error: 'An error occurred while fetching the workspace' },
       { status: 500 }
@@ -98,7 +104,10 @@ export async function POST(
     .maybeSingle();
 
   if (subscriptionError) {
-    console.error('Error fetching subscription:', subscriptionError);
+    console.error(
+      'Error fetching subscription:',
+      sanitizeLogError(subscriptionError)
+    );
     return NextResponse.json(
       { error: 'An error occurred while fetching the subscription' },
       { status: 500 }
@@ -197,7 +206,10 @@ export async function POST(
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
-    console.error('Failed to create checkout session:', error);
+    console.error(
+      'Failed to create checkout session:',
+      sanitizeLogError(error)
+    );
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }

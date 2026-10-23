@@ -1,7 +1,10 @@
 import type { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
-import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
+import {
+  sanitizeLogError,
+  sanitizeLogValue,
+} from '@tuturuuu/utils/log-sanitizer';
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
@@ -138,7 +141,7 @@ export async function POST(request: Request) {
       if (updateError) {
         console.error(
           'Failed to update Supabase with Google Event ID:',
-          updateError
+          sanitizeLogError(updateError)
         );
         // Don't fail the whole request, but log the issue
       } else {
@@ -154,7 +157,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ googleEventId: googleEventId }, { status: 200 });
   } catch (error: any) {
-    console.error('Failed to sync with Google Calendar (POST):', error);
+    console.error(
+      'Failed to sync with Google Calendar (POST):',
+      sanitizeLogError(error)
+    );
     if (error.response?.data?.error === 'invalid_grant') {
       return NextResponse.json(
         {
@@ -227,7 +233,10 @@ export async function PUT(request: Request) {
     .eq('ws_id', access.wsId)
     .single();
   if (googleTokensError || !googleTokens?.access_token) {
-    console.error('Google Tokens Error or Missing:', googleTokensError);
+    console.error(
+      'Google Tokens Error or Missing:',
+      sanitizeLogError(googleTokensError)
+    );
     return NextResponse.json(
       { error: 'Google Calendar not authenticated or tokens missing' },
       { status: 401 }
@@ -392,7 +401,10 @@ export async function DELETE(request: Request) {
     .eq('ws_id', access.wsId)
     .single();
   if (googleTokensError || !googleTokens?.access_token) {
-    console.error('Google Tokens Error or Missing:', googleTokensError);
+    console.error(
+      'Google Tokens Error or Missing:',
+      sanitizeLogError(googleTokensError)
+    );
     return NextResponse.json(
       { error: 'Google Calendar not authenticated or tokens missing' },
       { status: 401 }

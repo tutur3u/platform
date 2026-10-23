@@ -81,7 +81,7 @@ export const createCalendarOptimizer = (
       } catch (err) {
         console.error(
           `Failed to apply optimization for event ${optimization.eventId}:`,
-          err
+          sanitizeLogValue(err)
         );
       }
     }
