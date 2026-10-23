@@ -126,8 +126,19 @@ jobs:
           echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
           tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
 
-      # Configuration and the summarizer come from the trusted base so a change
-      # cannot allowlist or hide its own secret. Scheduled runs scan main.
+      # Runs the suppression regression against the installed release, so a
+      # gitleaks upgrade that changes ignore/config loading fails here.
+      - name: Prove pull requests cannot suppress findings
+        env:
+          GITLEAKS_BIN: ${{ runner.temp }}/gitleaks
+        run: node --test scripts/ci/security-gitleaks-suppression.test.js
+
+      # Configuration, the ignore list and the summarizer come from the trusted
+      # base so a change cannot allowlist or hide its own secret: inline
+      # `gitleaks:allow` comments are ignored, and checkout-local
+      # .gitleaksignore/.gitleaks.toml files are removed before scanning because
+      # gitleaks would otherwise load them from the scanned directory.
+      # Scheduled runs scan main.
       - name: Scan for secrets
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -149,10 +160,16 @@ jobs:
           elif [ "$DEEP" = true ]; then
             log_opts=""
           fi
-          config=()
+          unset GITLEAKS_CONFIG GITLEAKS_CONFIG_TOML
+          rm -f .gitleaksignore .gitleaks.toml
           if git cat-file -e "$trusted:.github/security/gitleaks.toml" 2>/dev/null; then
             git show "$trusted:.github/security/gitleaks.toml" > "$RUNNER_TEMP/gitleaks.toml"
-            config=(--config "$RUNNER_TEMP/gitleaks.toml")
+          else
+            printf '[extend]\nuseDefault = true\n' > "$RUNNER_TEMP/gitleaks.toml"
+          fi
+          : > "$RUNNER_TEMP/gitleaksignore"
+          if git cat-file -e "$trusted:.gitleaksignore" 2>/dev/null; then
+            git show "$trusted:.gitleaksignore" > "$RUNNER_TEMP/gitleaksignore"
           fi
           summarizer="$RUNNER_TEMP/security-scan-diff.js"
           if git cat-file -e "$trusted:scripts/ci/security-scan-diff.js" 2>/dev/null; then
@@ -164,7 +181,9 @@ jobs:
           if [ -n "$log_opts" ]; then
             range=(--log-opts "$log_opts")
           fi
-          "$RUNNER_TEMP/gitleaks" git ${config[@]+"${config[@]}"} ${range[@]+"${range[@]}"} --redact \
+          "$RUNNER_TEMP/gitleaks" git --config "$RUNNER_TEMP/gitleaks.toml" \
+            --gitleaks-ignore-path "$RUNNER_TEMP/gitleaksignore" --ignore-gitleaks-allow \
+            ${range[@]+"${range[@]}"} --redact \
             --no-banner --exit-code 0 --report-format json \
             --report-path "$RUNNER_TEMP/gitleaks.json" .
           mkdir -p "$RUNNER_TEMP/register-input"
