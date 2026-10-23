@@ -1,47 +1,29 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { createTestHarness } from 'wrangler';
+import { startCfViteWorker } from '../../../scripts/ci/cf-vite-worker.mjs';
 
-// CI repeats the same checks with Vite's emitted configuration. Disposable secrets
-// and rejected credentials keep every test away from Supabase and hosted runners.
-if (process.env.DEVBOX_TEST_CONFIG) {
-  const config = JSON.parse(
-    readFileSync(process.env.DEVBOX_TEST_CONFIG, 'utf8')
-  );
-  assert.equal(config.name, 'tuturuuu-devbox-control');
-  assert.equal(config.account_id, 'e8912e2867beecc673d171907bf09649');
-  assert.equal(config.compatibility_date, '2026-09-28');
-  // Devbox does not opt into Node compatibility; preserve that runtime contract.
-  assert.deepEqual(config.compatibility_flags ?? [], []);
-  assert.deepEqual(config.durable_objects.bindings, [
-    { name: 'RUNNER_WAKE', class_name: 'RunnerWake' },
-  ]);
-  assert.deepEqual(config.migrations, [
-    { tag: 'v1', new_sqlite_classes: ['RunnerWake'] },
-  ]);
-}
-const server = createTestHarness({
-  workers: [
-    {
-      configPath:
-        process.env.DEVBOX_TEST_CONFIG ??
-        fileURLToPath(new URL('../wrangler.jsonc', import.meta.url)),
-      secrets: {
-        DEVBOX_CONTROL_INTERNAL_TOKEN: randomUUID() + randomUUID(),
-        SUPABASE_URL: 'https://unreachable.example.invalid',
-        SUPABASE_SECRET_KEY: 'isolated-devbox-runtime-fixture',
-      },
-    },
-  ],
-});
+// Source mode serves cloudflare.config.ts through the Vite dev runtime; CI sets
+// DEVBOX_TEST_BUILD_OUTPUT=1 to repeat the checks on the emitted cf Build Output.
+// Disposable secrets and rejected credentials keep every test away from
+// Supabase and hosted runners.
+const root = fileURLToPath(new URL('..', import.meta.url));
+let server;
 before(async () => {
-  await server.listen();
+  server = await startCfViteWorker({
+    root,
+    mode:
+      process.env.DEVBOX_TEST_BUILD_OUTPUT === '1' ? 'build-output' : 'source',
+    secrets: {
+      DEVBOX_CONTROL_INTERNAL_TOKEN: randomUUID() + randomUUID(),
+      SUPABASE_URL: 'https://unreachable.example.invalid',
+      SUPABASE_SECRET_KEY: 'isolated-devbox-runtime-fixture',
+    },
+  });
 });
 after(async () => {
-  await server.close();
+  await server?.close();
 });
 
 test('serves complete private health JSON in the real Worker runtime', async () => {
@@ -60,4 +42,17 @@ test('rejects unauthenticated runner and internal requests before remote access'
     assert.equal(response.status, 401);
     assert.deepEqual(await response.json(), { message: 'Unauthorized' });
   }
+});
+test('binds RunnerWake as the SQLite Durable Object namespace', async () => {
+  // The Local Explorer reflects the namespaces workerd created from `exports`.
+  const response = await server.fetch(
+    '/cdn-cgi/local/explorer/api/workers/durable_objects/namespaces'
+  );
+  assert.equal(response.status, 200);
+  const { result } = await response.json();
+  const runnerWake = result.filter((entry) => entry.class === 'RunnerWake');
+  assert.deepEqual(
+    runnerWake.map(({ script, use_sqlite }) => ({ script, use_sqlite })),
+    [{ script: 'tuturuuu-devbox-control', use_sqlite: true }]
+  );
 });

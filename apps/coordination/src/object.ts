@@ -12,8 +12,8 @@ type Row = {
   completed: number;
   expires_at: number;
 };
-export class CoordinationObject extends DurableObject<CoordinationEnv> {
-  constructor(ctx: DurableObjectState, env: CoordinationEnv) {
+export class CoordinationObject extends DurableObject<Cloudflare.Env> {
+  constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
     this.ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS coordination (
       id INTEGER PRIMARY KEY CHECK (id = 1), owner TEXT NOT NULL,

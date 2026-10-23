@@ -4,8 +4,9 @@
 // `build-output` previews the emitted .cloudflare/output/v0 artifact that
 // `cf deploy --prebuilt` publishes. Both bind loopback only, disable remote
 // bindings, and receive validated disposable secrets via process env.
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { readBuildOutputConfig } from './cf-worker-parity.mjs';
@@ -16,6 +17,7 @@ const CONTROL_ENV = {
   CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: 'true',
   CLOUDFLARE_INCLUDE_PROCESS_ENV: 'false',
   CLOUDFLARE_VITE_FORCE_LOCAL: 'true',
+  CF_VITE_TEST_PERSIST_PATH: undefined,
 };
 
 async function importSourceConfig(root) {
@@ -89,7 +91,7 @@ function assertNoLocalSecretFiles(root) {
   }
 }
 
-function applySecrets(secrets, bindingNames) {
+function applySecrets(secrets, bindingNames, persistPath) {
   const previous = new Map();
   const set = (name, value) => {
     if (!previous.has(name)) previous.set(name, process.env[name]);
@@ -100,6 +102,7 @@ function applySecrets(secrets, bindingNames) {
   // with INCLUDE_PROCESS_ENV=false. Mask bindings first to preserve defaults.
   for (const name of bindingNames) set(name, undefined);
   for (const [name, value] of Object.entries(CONTROL_ENV)) set(name, value);
+  set('CF_VITE_TEST_PERSIST_PATH', persistPath);
   for (const [name, value] of Object.entries(secrets)) set(name, value);
   return () => {
     for (const [name, value] of previous) {
@@ -107,6 +110,50 @@ function applySecrets(secrets, bindingNames) {
       else process.env[name] = value;
     }
   };
+}
+
+const EXPLORER = '/cdn-cgi/local/explorer/api';
+
+async function listen(vite, root, mode) {
+  const shared = {
+    root,
+    configFile: path.join(root, 'vite.config.ts'),
+    logLevel: 'warn',
+    clearScreen: false,
+  };
+  if (mode === 'build-output')
+    return vite.preview({
+      ...shared,
+      preview: { host: '127.0.0.1', port: 0, strictPort: false },
+    });
+  const server = await vite.createServer({
+    ...shared,
+    server: { host: '127.0.0.1', port: 0, strictPort: false, hmr: false },
+  });
+  try {
+    await server.listen();
+  } catch (error) {
+    try {
+      await server.close();
+    } catch (closeError) {
+      throw new AggregateError(
+        [error, closeError],
+        'Worker startup and cleanup failed'
+      );
+    }
+    throw error;
+  }
+  return server;
+}
+
+async function explorerJson(origin, pathname, init) {
+  const response = await fetch(new URL(`${EXPLORER}${pathname}`, origin), init);
+  const body = await response.json();
+  if (!response.ok || body.success !== true)
+    throw new Error(
+      `Local Explorer ${pathname}: ${JSON.stringify(body.errors)}`
+    );
+  return body.result;
 }
 
 /**
@@ -138,31 +185,22 @@ export async function startCfViteWorker({
       ? await loadSourceConfig(root)
       : readBuildOutputConfig(root);
   const bindingNames = validateFixtures(config, secrets);
-  const restore = applySecrets(secrets, bindingNames);
-  const shared = {
-    root,
-    configFile: path.join(root, 'vite.config.ts'),
-    logLevel: 'warn',
-    clearScreen: false,
+  const persistPath = mkdtempSync(path.join(tmpdir(), 'cf-vite-worker-'));
+  const restore = applySecrets(secrets, bindingNames, persistPath);
+  const cleanup = () => {
+    try {
+      restore();
+    } finally {
+      rmSync(persistPath, { recursive: true, force: true });
+    }
   };
   let server;
-  let origin;
+  let vite;
+  let closed = false;
   try {
-    const vite = await importVite(root);
-    if (mode === 'source') {
-      server = await vite.createServer({
-        ...shared,
-        server: { host: '127.0.0.1', port: 0, strictPort: false, hmr: false },
-      });
-      await server.listen();
-    } else {
-      server = await vite.preview({
-        ...shared,
-        preview: { host: '127.0.0.1', port: 0, strictPort: false },
-      });
-    }
-    const address = server.httpServer.address();
-    origin = `http://127.0.0.1:${address.port}`;
+    vite = await importVite(root);
+    server = await listen(vite, root, mode);
+    server.httpServer.address();
   } catch (error) {
     try {
       await server?.close?.();
@@ -172,18 +210,55 @@ export async function startCfViteWorker({
         'Worker startup and cleanup failed'
       );
     } finally {
-      restore();
+      cleanup();
     }
     throw error;
   }
+  const originForServer = () =>
+    `http://127.0.0.1:${server.httpServer.address().port}`;
   return {
-    origin,
-    fetch: (pathname, init) => fetch(new URL(pathname, origin), init),
+    get origin() {
+      return originForServer();
+    },
+    fetch: (pathname, init) =>
+      fetch(new URL(pathname, originForServer()), init),
+    /** Durable Object namespaces workerd created, from the Local Explorer. */
+    durableObjectNamespaces: () =>
+      explorerJson(originForServer(), '/workers/durable_objects/namespaces'),
+    /** Run SQL inside a named Durable Object; returns rows as objects. */
+    async durableObjectSql(className, objectName, sql, params = []) {
+      const namespaces = await this.durableObjectNamespaces();
+      const namespace = namespaces.find((entry) => entry.class === className);
+      if (!namespace) throw new Error(`No ${className} namespace`);
+      const [result] = await explorerJson(
+        originForServer(),
+        `/workers/durable_objects/namespaces/${encodeURIComponent(namespace.id)}/query`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            durable_object_name: objectName,
+            queries: [{ sql, params }],
+          }),
+        }
+      );
+      return result.rows.map((row) =>
+        Object.fromEntries(result.columns.map((name, i) => [name, row[i]]))
+      );
+    },
+    /** Restart workerd: every object is re-instantiated from persisted storage. */
+    async restart() {
+      if (closed) throw new Error('Worker is closed');
+      await server.close();
+      server = await listen(vite, root, mode);
+    },
     async close() {
+      if (closed) return;
+      closed = true;
       try {
         await server.close();
       } finally {
-        restore();
+        cleanup();
       }
     },
   };

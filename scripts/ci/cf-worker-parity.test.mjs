@@ -371,3 +371,24 @@ for (const fixture of readdirSync(FIXTURES).filter((f) =>
     assert.deepEqual(normalizeCfRaw(resolved), baseline.identity);
   });
 }
+
+for (const app of ['devbox-control', 'coordination']) {
+  test(`${app} retains the original production migration history`, () => {
+    const raw = parseJsonc(
+      readFileSync(
+        join(REPO_ROOT, 'apps', app, 'wrangler.publish.jsonc'),
+        'utf8'
+      )
+    );
+    const baseline = JSON.parse(
+      readFileSync(join(FIXTURES, `${app}.json`), 'utf8')
+    );
+    assert.deepEqual(normalizeWranglerRaw(raw), baseline.identity);
+    assert.deepEqual(raw.migrations, [
+      {
+        tag: 'v1',
+        new_sqlite_classes: Object.keys(baseline.identity.durableObjectClasses),
+      },
+    ]);
+  });
+}

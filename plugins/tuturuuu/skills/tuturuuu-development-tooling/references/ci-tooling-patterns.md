@@ -41,7 +41,11 @@ and environment-restoration regressions without starting a real Worker. Require
 fixtures for all declared secrets, mask declared text bindings from the shell and
 retain only the first prior environment value. Deploy settings snapshots must
 pass before publication and after it; DO publication remains Wrangler until a
-separately reviewed rehearsal receipt permits cf.
+separately reviewed rehearsal receipt permits cf. The retained publisher validates
+its source migration tags against the artifact, checks every ES module stays in
+the qualified bundle and invokes Wrangler without rebundling. Runtime fixtures
+allocate one temporary persistence directory per run, retain it across restarts,
+and remove it on failure/close; never reuse the app developer state directory.
 
 Settings preflight tokens need Workers Scripts read coverage on the pinned account,
 plus Zone and Workers Routes read coverage on every target-account zone; narrower
