@@ -125,8 +125,11 @@ jobs:
         env:
           CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
         run: test "$CONTRACT_ENABLED" = true
+      # Dispatch this workflow on the ref whose head is the source commit: the
+      # source must equal the workflow commit, so no dispatch input ever selects
+      # code to run in this ref's cache scope (in particular main's).
       - name: Validate exact source selection
-        run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA) || (process.env.EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION === "true" && process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== process.env.EMPLOYEE_SCHEMA_CONTROL_SHA)) process.exit(1)'
+        run: node -e 'if (!/^[a-f0-9]{40}$/.test(process.env.EMPLOYEE_SCHEMA_SOURCE_SHA) || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== process.env.EMPLOYEE_SCHEMA_CONTROL_SHA) process.exit(1)'
       - name: Validate structured diagnostic selection
         if: inputs.structured_provenance == true && inputs.include_chat_initial_settings != true
         run: node -e 'if (process.env.GITHUB_REF !== "refs/heads/main" || process.env.GITHUB_REPOSITORY !== "tutur3u/platform" || process.env.EMPLOYEE_SCHEMA_SOURCE_SHA !== "5c7c08e23a3d410bdbdc066f5c4dd2776fbeabd7") process.exit(1)'
@@ -136,7 +139,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.source_sha }}
+          ref: ${{ github.sha }}
           path: source
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry

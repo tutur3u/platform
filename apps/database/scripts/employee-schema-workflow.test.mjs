@@ -25,7 +25,10 @@ test('trusted control checkout stays at the workspace root', () => {
   assert.match(checkouts[0], /^ {10}ref: \$\{\{ github.sha \}\}$/mu);
   assert.doesNotMatch(checkouts[0], /^ {10}path:/mu);
   assert.match(checkouts[0], /^ {10}persist-credentials: false$/mu);
-  assert.match(checkouts[1], /^ {10}ref: \$\{\{ inputs.source_sha \}\}$/mu);
+  // The source is the dispatched commit itself: no dispatch input selects code
+  // to run in the ref's cache scope (CodeQL actions/cache-poisoning).
+  assert.match(checkouts[1], /^ {10}ref: \$\{\{ github.sha \}\}$/mu);
+  assert.doesNotMatch(steps.join('\n'), /ref: \$\{\{ inputs\./u);
   assert.match(checkouts[1], /^ {10}path: source$/mu);
   assert.match(checkouts[1], /^ {10}persist-credentials: false$/mu);
 });
@@ -380,6 +383,23 @@ test('qualification Node test census keeps builtin controls separate from the tw
     assert.doesNotMatch(step, /working-directory:/u);
   }
 });
+test('every profile requires source and control to be the same published H', () => {
+  const step = namedStep('Validate exact source selection');
+  const script = /^ {8}run: node -e '(.+)'$/mu.exec(step)?.[1];
+  assert.ok(script);
+  // Matching source/control passes in the address test below; a mismatch
+  // fails even without the address profile.
+  const result = spawnSync(process.execPath, ['-e', script], {
+    env: {
+      ...process.env,
+      EMPLOYEE_SCHEMA_SOURCE_SHA: 'a'.repeat(40),
+      EMPLOYEE_SCHEMA_CONTROL_SHA: 'b'.repeat(40),
+      EMPLOYEE_SCHEMA_INCLUDE_ADDRESS_MIGRATION: 'false',
+    },
+  });
+  assert.equal(result.status, 1);
+});
+
 test('address-only and provider profiles require source and control to be the same published H', () => {
   const step = namedStep('Validate exact source selection');
   const script = /^ {8}run: node -e '(.+)'$/mu.exec(step)?.[1];

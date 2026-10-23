@@ -590,9 +590,10 @@ The combined `rust-backend.yml` workflow is paused in `tuturuuu.ci.ts`.
 Its disabled switch also applies to manual dispatch; skipped verify jobs do not
 prove native or wasm compilation, regardless of the aggregate check result.
 
-`rust-verify.yml` provides a separate manual, main-only CI verification route
-once registered on the default branch. Supply the exact 40-character source
-commit SHA. It verifies the checkout and records source/workflow SHAs,
+`rust-verify.yml` provides a separate manual CI verification route (paused with
+Rust). Dispatch it on the ref whose head is the commit to verify and supply that
+exact 40-character SHA. The workflow rejects any other SHA, so no dispatch input
+selects code to run in a branch's cache scope. It verifies the checkout and records source/workflow SHAs,
 manifest and lock hashes, and the Rust toolchain in the run summary. It uses the
 repository's Rust 1.95 minimum to run locked native Clippy/tests, wasm Worker
 checking and a native release build. It uses read-only repository permissions,
