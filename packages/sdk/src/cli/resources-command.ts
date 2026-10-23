@@ -131,8 +131,14 @@ const readOnly = new Set([
   'tail',
   'wc',
 ]);
-// SIP (macOS) or root ownership (Linux) protects these directories.
-const trustedDirectories = ['/bin/', '/usr/bin/'];
+// Canonical locations of system coreutils: SIP (macOS) or root ownership
+// (Linux) protects them. Ubuntu 25.10+ links /usr/bin/cat and friends to
+// rust-coreutils under /usr/lib/cargo/bin/coreutils.
+const trustedDirectories = [
+  '/bin/',
+  '/usr/bin/',
+  '/usr/lib/cargo/bin/coreutils/',
+];
 // Dynamic-loader and glibc module variables run code inside any binary.
 const loaderVariable = /^(LD_|DYLD_)|^(GCONV_PATH|LOCPATH)$/u;
 // Root-owned and not writable by group/others, so no other user can replace it.
