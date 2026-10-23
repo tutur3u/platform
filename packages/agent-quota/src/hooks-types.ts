@@ -49,6 +49,7 @@ export interface Reservation {
   accountKey: string;
   model: string;
   createdAt: string;
+  expiresAt?: string;
   nativeReservationId?: string;
 }
 export interface SwitchLease {

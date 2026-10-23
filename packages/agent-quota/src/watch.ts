@@ -2,10 +2,7 @@ import { accountKey, collapseAccounts } from './accounts';
 import { matchingBlocks, type QuotaBlock } from './block-ledger';
 import { capacityCooldownActive } from './capacity';
 import { collectAll } from './collectors';
-import {
-  NO_RESET_RECEIPT_MAX_AGE_MS,
-  usageLimitReceiptActive,
-} from './failure-receipt';
+import { usageLimitReceiptActive } from './failure-receipt';
 import { readLedger } from './hook-ledger';
 import type { Observation } from './hooks-types';
 import { RESERVATION_TTL } from './ledger-retention';
@@ -13,7 +10,7 @@ import { recommend, SIGNAL_TTL_MS } from './policy';
 import type { PoolSettings } from './pool-settings';
 import { chooseRoleCandidate } from './role-policy';
 import type { AccountUsage, RankedInstance, UsageWindow } from './types';
-import { coversModel } from './window-scope';
+import { coversModel, noResetWindowMaxAgeMs } from './window-scope';
 
 export type WatchVerdict = 'ok' | 'warn' | 'switch-now';
 export interface WatchOptions {
@@ -163,8 +160,7 @@ export function ownerWatchStatus(
     const observed = Date.parse(window.observedAt);
     return (
       Number.isFinite(observed) &&
-      observed <= now.getTime() &&
-      now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS
+      now.getTime() - observed <= noResetWindowMaxAgeMs(window)
     );
   });
   const reason =

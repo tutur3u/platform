@@ -11,7 +11,6 @@ export function usageLimitReceiptActive(
   const observed = Date.parse(receipt.observedAt);
   return (
     Number.isFinite(observed) &&
-    observed <= now.getTime() &&
     now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS
   );
 }

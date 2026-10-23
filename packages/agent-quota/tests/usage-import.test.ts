@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { collapseAccounts } from '../src/accounts';
-import { receiptReset } from '../src/failure-receipt';
+import { receiptReset, usageLimitReceiptActive } from '../src/failure-receipt';
 import { emptyLedger } from '../src/hook-ledger';
 import type { Observation } from '../src/hooks-types';
+import { validLedger } from '../src/ledger-validation';
 import { validateUsageImport } from '../src/operator-cli';
 import { recommend } from '../src/policy';
 import { poolPolicyReasons, validatePoolSettings } from '../src/pool-settings';
@@ -80,6 +81,20 @@ describe('Usage UI and typed manual observations', () => {
     expect(
       windowScope('claude', 'weekly', 'Weekly · Opus except Sonnet')
     ).toEqual({ kind: 'account' });
+    for (const label of [
+      'Weekly · non-Opus',
+      'Weekly · Non Opus',
+      'All models except Opus',
+      'Weekly · excluding Opus',
+      'Weekly · without Opus',
+    ])
+      expect(windowScope('claude', 'weekly', label)).toEqual({
+        kind: 'account',
+      });
+    expect(windowScope('claude', 'weekly', 'Weekly · Opus & Sonnet')).toEqual({
+      kind: 'models',
+      modelFamilies: ['opus', 'sonnet'],
+    });
     expect(
       coversModel(
         {
@@ -95,6 +110,18 @@ describe('Usage UI and typed manual observations', () => {
       )
     ).toBe(true);
   });
+  it.each(['(', '.*'])('rejects unsafe ledger model family %s', (family) => {
+    const ledger = emptyLedger();
+    ledger.observations.push({
+      eventId: 'invalid-family',
+      instanceId: 'claudeAgent',
+      accountKey: 'claude:claudeAgent',
+      outcome: 'usage-limit',
+      observedAt: now.toISOString(),
+      windowScope: { kind: 'models', modelFamilies: [family] as never[] },
+    });
+    expect(validLedger(ledger)).toBe(false);
+  });
   it('converts remaining once, keeps explicit used unchanged, and preserves provenance', () => {
     const a = applyManualUsage(
       [account('claudeAgent'), account('claude_kv')],
@@ -108,6 +135,56 @@ describe('Usage UI and typed manual observations', () => {
       confidence: 'manual',
       source: expect.stringContaining('manual-screenshot'),
     });
+  });
+  it('ignores future manual observations and preserves the supported provider snapshot', () => {
+    const providerAccount = {
+      ...account('claudeAgent'),
+      windows: [
+        {
+          id: 'five_hour',
+          kind: 'short' as const,
+          usedPercent: 20,
+          source: 'provider-fixture',
+          observedAt: now.toISOString(),
+          resetsAt: '2026-10-23T06:00:00Z',
+          authoritative: true,
+        },
+      ],
+    };
+    const invalid: string[] = [];
+    const future = manual('claudeAgent', 0);
+    future.observedAt = new Date(now.getTime() + 7 * 60 * 60_000).toISOString();
+    const result = applyManualUsage([providerAccount], [future], invalid, now);
+    expect(invalid).toContain(
+      'observations[0]: manual-usage-future-observed-at'
+    );
+    expect(result[0]?.windows).toEqual(providerAccount.windows);
+  });
+  it('keeps a future-dated usage-limit receipt binding', () => {
+    expect(
+      usageLimitReceiptActive(
+        { observedAt: new Date(now.getTime() + 60 * 60_000).toISOString() },
+        now
+      )
+    ).toBe(true);
+  });
+  it('inherits a matching block reset for a resetless manual session window', () => {
+    const result = applyManualUsage(
+      [account('claudeAgent')],
+      [{ ...manual('claudeAgent', 0), metric: 'Session' }],
+      [],
+      now,
+      [
+        {
+          pool: 'claudeAgent',
+          modelScope: '*',
+          reason: 'usage limit',
+          observedAt: now.toISOString(),
+          resetAt: '2026-10-23T06:00:00Z',
+        },
+      ]
+    );
+    expect(result[0]?.windows[0]?.resetsAt).toBe('2026-10-23T06:00:00Z');
   });
   it('keys all five screenshot observations by catalog ID through label and order changes', () => {
     const values = [

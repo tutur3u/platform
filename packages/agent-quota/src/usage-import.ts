@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute, normalize } from 'node:path';
+import { blockUntil, matchesScope, type QuotaBlock } from './block-ledger';
 import { failureClass, safeReceipt } from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type { AccountUsage, UsageWindow } from './types';
-import { windowScope } from './window-scope';
+import { coversModel, windowScope } from './window-scope';
 
 export interface ManualUsage {
   pool: string;
@@ -22,7 +23,7 @@ function record(value: unknown): Record<string, unknown> {
     ? (value as Record<string, unknown>)
     : {};
 }
-export function manualUsage(value: unknown): ManualUsage {
+export function manualUsage(value: unknown, now = new Date()): ManualUsage {
   const input = record(value);
   const legacy =
     input.kind === 'manual-screenshot' &&
@@ -51,6 +52,12 @@ export function manualUsage(value: unknown): ManualUsage {
     confidence: 'manual',
   };
   if (
+    typeof output.observedAt === 'string' &&
+    Number.isFinite(Date.parse(output.observedAt)) &&
+    Date.parse(output.observedAt) > now.getTime() + 5 * 60_000
+  )
+    throw new HookError('manual-usage-future-observed-at');
+  if (
     typeof output.pool !== 'string' ||
     !/^[\w-]+$/.test(output.pool) ||
     !['remaining', 'used'].includes(String(output.measure)) ||
@@ -76,7 +83,10 @@ export function manualUsage(value: unknown): ManualUsage {
       .text,
   } as ManualUsage;
 }
-export function parseManualUsage(values: unknown[]): {
+export function parseManualUsage(
+  values: unknown[],
+  now = new Date()
+): {
   observations: ManualUsage[];
   invalid: string[];
 } {
@@ -84,7 +94,7 @@ export function parseManualUsage(values: unknown[]): {
   const invalid: string[] = [];
   values.forEach((value, index) => {
     try {
-      observations.push(manualUsage(value));
+      observations.push(manualUsage(value, now));
     } catch (error) {
       invalid.push(
         `observations[${index}]: ${error instanceof HookError ? error.message : 'manual-usage-invalid'}`
@@ -116,12 +126,23 @@ export function homeIdentity(
 export function applyManualUsage(
   accounts: AccountUsage[],
   values: unknown[],
-  invalidObservations: string[] = []
+  invalidObservations: string[] = [],
+  now = new Date(),
+  blocks: QuotaBlock[] = []
 ): AccountUsage[] {
-  const parsed = parseManualUsage(values);
+  const parsed = parseManualUsage(values, now);
   invalidObservations.push(...parsed.invalid);
   const observations = parsed.observations;
   return accounts.map((account) => {
+    const aliases = accounts
+      .filter(
+        (candidate) =>
+          candidate.instanceId === account.instanceId ||
+          (account.accountIdentityHash &&
+            candidate.provider === account.provider &&
+            candidate.accountIdentityHash === account.accountIdentityHash)
+      )
+      .map((candidate) => candidate.instanceId);
     const latest = new Map<string, ManualUsage>();
     for (const observation of observations.filter(
       (item) => item.pool === account.instanceId
@@ -148,20 +169,43 @@ export function applyManualUsage(
         continue;
       for (let i = windows.length - 1; i >= 0; i--)
         if (windows[i]?.id === observation.windowId) windows.splice(i, 1);
+      const scope = windowScope(
+        account.provider,
+        observation.windowId,
+        observation.windowLabel
+      );
+      const inheritedReset = blocks
+        .filter(
+          (block) =>
+            aliases.includes(block.pool) &&
+            block.kind !== 'capacity' &&
+            blockUntil(block) > now.getTime()
+        )
+        .filter((block) =>
+          (account.models ?? []).some(
+            (model) =>
+              coversModel({ scope } as UsageWindow, model) &&
+              matchesScope(block.modelScope, model)
+          )
+        )
+        .map((block) => block.resetAt)
+        .filter(
+          (reset): reset is string =>
+            typeof reset === 'string' &&
+            Number.isFinite(Date.parse(reset)) &&
+            Date.parse(reset) > now.getTime()
+        )
+        .sort((a, b) => Date.parse(b) - Date.parse(a))[0];
       windows.push({
         id: observation.windowId,
         label: observation.windowLabel,
         kind: observation.windowId === 'five_hour' ? 'short' : 'long',
-        scope: windowScope(
-          account.provider,
-          observation.windowId,
-          observation.windowLabel
-        ),
+        scope,
         usedPercent:
           observation.measure === 'remaining'
             ? 100 - observation.value
             : observation.value,
-        resetsAt: observation.resetAt,
+        resetsAt: observation.resetAt ?? inheritedReset,
         observedAt: observation.observedAt,
         source: observation.provenance,
         confidence: 'manual',

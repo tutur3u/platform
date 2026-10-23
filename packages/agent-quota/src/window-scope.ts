@@ -1,9 +1,27 @@
 import type { ModelFamily, Provider, UsageWindow } from './types';
 
 export const MODEL_FAMILIES = ['opus', 'sonnet', 'haiku', 'fable'] as const;
+const SHORT_WINDOW_MAX_AGE_MS = 5 * 60 * 60_000;
+const WEEK_WINDOW_MAX_AGE_MS = 7 * 86400_000;
+const MONTH_WINDOW_MAX_AGE_MS = 31 * 86400_000;
+
+export function noResetWindowMaxAgeMs(
+  window: Pick<UsageWindow, 'id' | 'kind'>
+) {
+  const id = (window.id ?? '').toLowerCase();
+  if (window.kind === 'short' || /five.?hour|session/.test(id))
+    return SHORT_WINDOW_MAX_AGE_MS;
+  if (/month/.test(id)) return MONTH_WINDOW_MAX_AGE_MS;
+  if (/week|seven.?day/.test(id) || window.kind === 'long')
+    return WEEK_WINDOW_MAX_AGE_MS;
+  return WEEK_WINDOW_MAX_AGE_MS;
+}
 
 function modelFamiliesInLabel(label: string): ModelFamily[] {
-  if (/\bexcept\b|\bnon-/i.test(label)) return [];
+  if (
+    /\b(?:except|excluding|without)\b|\bother\s+than\b|\bnon[-\s]/i.test(label)
+  )
+    return [];
   const found = [...label.matchAll(/\b(opusplan|opus|sonnet|haiku|fable)\b/gi)]
     .map((match) =>
       match[1]?.toLowerCase() === 'opusplan' ? 'opus' : match[1]?.toLowerCase()

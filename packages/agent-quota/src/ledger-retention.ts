@@ -18,7 +18,11 @@ export function pruneLedger(
       activeIds.includes(reservation.nativeReservationId)
     )
       return true;
-    if (time - Date.parse(reservation.createdAt) <= RESERVATION_TTL)
+    if (
+      (reservation.expiresAt && Date.parse(reservation.expiresAt) > time) ||
+      (!reservation.expiresAt &&
+        time - Date.parse(reservation.createdAt) <= RESERVATION_TTL)
+    )
       return true;
     ledger.retiredRequests?.push({
       requestId: reservation.requestId,

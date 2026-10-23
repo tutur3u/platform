@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { collapseAccounts } from './accounts';
+import { accountKey, collapseAccounts } from './accounts';
 import {
   type BlockLedger,
   matchingBlocks,
@@ -22,6 +23,37 @@ import { coversModel, receiptCovers } from './window-scope';
 type LedgerTransaction = <T>(
   operation: (ledger: HookLedger) => T | Promise<T>
 ) => Promise<T>;
+const PROVISIONAL_RESERVATION_TTL_MS = 5 * 60_000;
+
+export function recordPositionalAdmission(
+  ledger: HookLedger,
+  pool: string,
+  model: string,
+  account: ReturnType<typeof collapseAccounts>[number],
+  state: string | undefined,
+  now: Date
+) {
+  ledger.lastAdmissions ??= {};
+  ledger.lastAdmissions[pool] = now.getTime();
+  if (state !== 'UNKNOWN') return;
+  const requestedThreadId =
+    process.env.T3_CURRENT_THREAD_ID ?? process.env.T3_THREAD_ID;
+  const threadId =
+    requestedThreadId && /^[A-Za-z0-9_-]{1,256}$/.test(requestedThreadId)
+      ? requestedThreadId
+      : 'positional-admit';
+  ledger.reservations.push({
+    requestId: `positional:${randomUUID()}`,
+    threadId,
+    instanceId: pool,
+    accountKey: accountKey(account),
+    model,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(
+      now.getTime() + PROVISIONAL_RESERVATION_TTL_MS
+    ).toISOString(),
+  });
+}
 
 export interface PositionalAdmitDependencies {
   readBlockLedger: () => Promise<BlockLedger>;
@@ -257,8 +289,15 @@ export async function runPositionalAdmit(
       );
       const result = gateDecision(pool, model, context, reserveOwner);
       if (result.exitCode === 0) {
-        ledger.lastAdmissions ??= {};
-        ledger.lastAdmissions[pool] = context.now.getTime();
+        if (!account) throw new HookError('pool-unverified');
+        recordPositionalAdmission(
+          ledger,
+          pool,
+          model,
+          account,
+          result.state,
+          context.now
+        );
       }
       return result;
     });

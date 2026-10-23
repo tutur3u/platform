@@ -100,6 +100,7 @@ describe('routing policy', () => {
 
   it('keeps a stale hard-limit window binding through a bounded no-reset age', () => {
     const staleNoReset = account('claudeAgent', 95, '2026-10-20T00:00:00.000Z');
+    staleNoReset.windows[0]!.kind = 'long';
     delete staleNoReset.windows[0]!.resetsAt;
     const result = recommend({
       task: { model: 'claude-opus-4-6' },
@@ -108,6 +109,64 @@ describe('routing policy', () => {
       now,
     });
     expect(result.ranked[0]?.state).toBe('UNKNOWN');
+    expect(result.ranked[0]?.eligible).toBe(false);
+    expect(
+      result.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'near-limit-stale'
+      )
+    ).toBe(true);
+  });
+
+  it('bounds resetless manual session exhaustion by its five-hour window', () => {
+    const withinWindow = account(
+      'claudeAgent',
+      100,
+      new Date(now.getTime() - 4 * 60 * 60_000).toISOString()
+    );
+    delete withinWindow.windows[0]!.resetsAt;
+    const beyondWindow = account(
+      'claudeAgent',
+      100,
+      new Date(now.getTime() - 6 * 60 * 60_000).toISOString()
+    );
+    delete beyondWindow.windows[0]!.resetsAt;
+    const inside = recommend({
+      task: { model: 'claude-opus-4-6' },
+      active: [],
+      accounts: [withinWindow],
+      now,
+    });
+    const outside = recommend({
+      task: { model: 'claude-opus-4-6' },
+      active: [],
+      accounts: [beyondWindow],
+      now,
+    });
+    expect(
+      inside.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'near-limit-stale'
+      )
+    ).toBe(true);
+    expect(
+      outside.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'near-limit-stale'
+      )
+    ).toBe(false);
+  });
+
+  it('keeps future-dated resetless exhaustion binding instead of treating it as free', () => {
+    const future = account(
+      'claudeAgent',
+      100,
+      new Date(now.getTime() + 60 * 60_000).toISOString()
+    );
+    delete future.windows[0]!.resetsAt;
+    const result = recommend({
+      task: { model: 'claude-opus-4-6' },
+      active: [],
+      accounts: [future],
+      now,
+    });
     expect(result.ranked[0]?.eligible).toBe(false);
     expect(
       result.ranked[0]?.reasons.some(

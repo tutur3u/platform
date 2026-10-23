@@ -196,6 +196,7 @@ export function collectCheckpointThread(
   const db = new DatabaseSync(databasePath, { readOnly: true });
   try {
     db.exec('PRAGMA busy_timeout=1000');
+    db.exec('BEGIN');
     const threads = db
       .prepare(
         `SELECT t.thread_id AS id,
@@ -223,7 +224,15 @@ export function collectCheckpointThread(
            AND status IN ('queued','running','starting','preparing','waiting')`
       )
       .all(threadId) as CheckpointThreadSnapshot['runs'];
+    db.exec('COMMIT');
     return { threads, runs };
+  } catch (error) {
+    try {
+      db.exec('ROLLBACK');
+    } catch {
+      // The read transaction may already have ended.
+    }
+    throw error;
   } finally {
     db.close();
   }

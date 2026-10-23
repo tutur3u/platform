@@ -1,6 +1,5 @@
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, type QuotaBlock } from './block-ledger';
-import { NO_RESET_RECEIPT_MAX_AGE_MS } from './failure-receipt';
 import type {
   AccountReserve,
   AccountUsage,
@@ -10,7 +9,7 @@ import type {
   RecommendationReason,
   TaskRequest,
 } from './types';
-import { coversModel } from './window-scope';
+import { coversModel, noResetWindowMaxAgeMs } from './window-scope';
 
 export interface RecommendOptions {
   blocks?: QuotaBlock[];
@@ -249,8 +248,7 @@ function rankOne(
         const observed = Date.parse(window.observedAt);
         return (
           Number.isFinite(observed) &&
-          observed <= now.getTime() &&
-          now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS
+          now.getTime() - observed <= noResetWindowMaxAgeMs(window)
         );
       })
     ) {

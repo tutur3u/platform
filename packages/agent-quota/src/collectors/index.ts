@@ -135,7 +135,9 @@ export async function collectAllWith(
   const withManual = applyManualUsage(
     applyImportedUsage(accounts, usageImport),
     Array.isArray(observations) ? observations : [],
-    invalidObservations
+    invalidObservations,
+    now,
+    blocks
   );
   const t3 = await t3Result;
   return {

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { accountKey } from '../src/accounts';
-import { checkpointDecision } from '../src/checkpoint-ready';
+import {
+  checkpointDecision,
+  checkpointFailureReason,
+} from '../src/checkpoint-ready';
 import type { ChildSnapshot } from '../src/reconcile-children';
 import type { AccountUsage, RankedInstance } from '../src/types';
 import {
@@ -145,6 +148,40 @@ describe('quota turn-boundary watch', () => {
       verdict: 'switch-now',
       reason: 'reported-limit-not-reset',
     });
+  });
+
+  it('does not let a future observation timestamp disarm resetless exhaustion', () => {
+    const status = ownerWatchStatus(
+      {
+        ...pool('claude_kv'),
+        windows: [
+          {
+            kind: 'session',
+            usedPercent: 100,
+            source: 'fixture',
+            observedAt: new Date(at.getTime() + 60 * 60_000).toISOString(),
+            authoritative: true,
+          },
+        ],
+      },
+      [],
+      [],
+      at,
+      { model: 'claude-opus-4-6' }
+    );
+    expect(status).toMatchObject({
+      verdict: 'switch-now',
+      reason: 'reported-limit-not-reset',
+    });
+  });
+
+  it('returns stable checkpoint failure codes without exposing SQLite text', () => {
+    expect(
+      checkpointFailureReason(new Error('no such table: private_schema'))
+    ).toBe('checkpoint-state-unavailable');
+    expect(
+      checkpointFailureReason(new Error('checkpoint-thread-unavailable'))
+    ).toBe('checkpoint-thread-unavailable');
   });
 
   it.each(['claude_kv', 'claude_mira'])(

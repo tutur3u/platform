@@ -93,6 +93,7 @@ export function validLedger(value: unknown): value is HookLedger {
           (key) => text(item[key])
         ) &&
         date(item.createdAt) &&
+        optional(item.expiresAt, date) &&
         optional(item.nativeReservationId, text)
     ) &&
     (value.leases as unknown[]).every(lease) &&

@@ -67,6 +67,15 @@ export function checkpointDecision(
   };
 }
 
+export function checkpointFailureReason(error: unknown): string {
+  const code = error instanceof Error ? error.message : '';
+  return /^(?:checkpoint-(?:arguments-invalid|thread-unavailable)|watcher-pids-invalid|process-list-unavailable)$/.test(
+    code
+  )
+    ? code
+    : 'checkpoint-state-unavailable';
+}
+
 function readProcessMetadata(): ProcessMetadata[] {
   const result = spawnSync('ps', ['-A', '-o', 'pid=,ppid=,command='], {
     encoding: 'utf8',
@@ -104,9 +113,7 @@ export function runCheckpointReady(args: string[]) {
     console.log(
       JSON.stringify({
         result: 'no-go',
-        reasons: [
-          error instanceof Error ? error.message : 'checkpoint-unavailable',
-        ],
+        reasons: [checkpointFailureReason(error)],
       })
     );
     process.exitCode = 2;

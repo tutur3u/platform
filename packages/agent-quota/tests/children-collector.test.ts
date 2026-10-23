@@ -417,6 +417,22 @@ it('reads checkpoint state directly for one thread within its latency budget', a
         ('active-node', 'owner', 'active', 'running'),
         ('foreign-node', 'other', 'other-run', 'running');
     `);
+    db.exec(`
+      BEGIN;
+      WITH RECURSIVE seq(n) AS (
+        SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 50000
+      ) INSERT INTO orchestration_v2_projection_threads
+        SELECT 'bulk-' || n, '{}' FROM seq;
+      WITH RECURSIVE seq(n) AS (
+        SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 50000
+      ) INSERT INTO orchestration_v2_projection_runs
+        SELECT 'bulk-run-' || n, 'bulk-' || n, 'completed' FROM seq;
+      WITH RECURSIVE seq(n) AS (
+        SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 50000
+      ) INSERT INTO orchestration_v2_projection_nodes
+        SELECT 'bulk-node-' || n, 'bulk-' || n, 'bulk-run-' || n, 'running' FROM seq;
+      COMMIT;
+    `);
     db.close();
     const startedAt = performance.now();
     const snapshot = collectCheckpointThread('owner', path);
