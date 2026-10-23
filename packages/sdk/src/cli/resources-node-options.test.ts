@@ -38,10 +38,7 @@ describe('Node runtime option admission', () => {
   ])('admits ambiguous or script-running runtime arguments %j', (...args) => {
     expect(isHeavyCommand('node', args)).toBe(true);
   });
-  it.each([
-    '--experimental-specifier-resolution',
-    '--experimental-config-file',
-  ])(
+  it.each(['--experimental-specifier-resolution'])(
     'admits the bare %s form instead of consuming a possible program',
     (flag) => {
       const args = [flag, program, 'run', '--maxWorkers=24'];

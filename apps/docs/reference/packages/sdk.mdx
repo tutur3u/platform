@@ -1566,3 +1566,5 @@ The CLI-to-staff-service composition fixture covers pagination, detail/content
 opt-in, status filters and denied current identities/registry reads through the
 real PostgREST serializer. These synthetic boundaries do not qualify a hosted
 Auth or database deployment.
+
+Node config-file options (`--experimental-config-file` and `--experimental-default-config-file`, including attached values) can activate the native test runner. Resource admission treats them as ambiguous and injects `--test-concurrency` before program arguments. A positive explicit lower concurrency remains lower; zero (Node auto) is bounded by the configured worker cap. Regression: `resources-node-config.test.ts` includes real Node config-selected five-file runs.
