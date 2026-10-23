@@ -159,20 +159,21 @@ test('dependency audit ignores checkout bun, config and differ', (t) => {
   const verified = path.join(box.root, 'verified-bun');
   fs.writeFileSync(
     verified,
-    `#!/bin/sh\nls -A >> "${seen}"\necho "registry=$BUN_CONFIG_REGISTRY" >> "${seen}"\nprintf '%s' "$FAKE_AUDIT"\n`,
+    `#!/bin/sh\nls -A >> "${seen}"\necho "registry=$BUN_CONFIG_REGISTRY" >> "${seen}"\nprintf '%s' "$FAKE_AUDIT"\nexit "\${FAKE_AUDIT_EXIT:-0}"\n`,
     { mode: 0o755 }
   );
   const script = stepScript(
     'security-checks.yaml',
     'Audit locked dependencies'
   );
-  const audit = (advisories) =>
+  const audit = (advisories, exit = 0, raw = undefined) =>
     run(script, box, {
       BASE_SHA: base,
       BUN_BIN: verified,
       BUN_CONFIG_REGISTRY: 'https://registry.npmjs.org/',
       EVENT_NAME: 'pull_request',
-      FAKE_AUDIT: JSON.stringify(advisories),
+      FAKE_AUDIT: raw ?? JSON.stringify(advisories),
+      FAKE_AUDIT_EXIT: String(exit),
       GITHUB_SHA: head,
     });
 
@@ -187,6 +188,27 @@ test('dependency audit ignores checkout bun, config and differ', (t) => {
   const low = { lodash: [{ severity: 'low', url: 'https://x.invalid/2' }] };
   const passed = audit(low);
   assert.equal(passed.status, 0, passed.stdout + passed.stderr);
+
+  // bun audit exits non-zero both on advisories and on failure: the output
+  // decides, and a crash or network error never reads as clean.
+  for (const [label, raw, exit] of [
+    ['empty output', '', 1],
+    ['error object', '{"error":"registry unavailable"}', 0],
+    ['no advisories but failed', '{}', 1],
+  ]) {
+    const failed = audit(null, exit, raw);
+    assert.notEqual(failed.status, 0, label);
+    assert.match(
+      failed.stdout,
+      /Dependency audit output unavailable|failed \(exit 1\) without reporting/u,
+      label
+    );
+  }
+  // A non-zero exit that does report advisories is an ordinary audit result.
+  assert.equal(audit(low, 1).status, 0);
+  // Unknown severities block in the bootstrap path too.
+  const unknown = audit({ lodash: [{ url: 'https://x.invalid/3' }] });
+  assert.notEqual(unknown.status, 0);
 
   // Unparseable scanner output never passes.
   const broken = run(script, box, {

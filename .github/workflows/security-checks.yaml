@@ -315,9 +315,21 @@ jobs:
               xargs -r git archive "$1" | tar -x -C "$2"
             [ -f "$2/package.json" ]
           }
+          # The audit exits non-zero both when it finds advisories and when it
+          # fails, so the output decides: it must be an object of advisory
+          # arrays, and a non-zero exit must come with at least one advisory.
+          # Anything else (crash, network error, error object) fails closed.
           audit() {
-            (cd "$1" && "$BUN_BIN" audit --json > "$2") || true
-            jq -e 'type == "object"' "$2" > /dev/null
+            local code=0
+            (cd "$1" && "$BUN_BIN" audit --json > "$2") || code=$?
+            if ! jq -e 'type == "object" and all(.[]; type == "array")' "$2" > /dev/null 2>&1; then
+              echo "::error::Dependency audit output unavailable (exit $code)."
+              exit 1
+            fi
+            if [ "$code" -ne 0 ] && [ "$(jq '[.[][]] | length' "$2")" -eq 0 ]; then
+              echo "::error::The dependency audit failed (exit $code) without reporting advisories."
+              exit 1
+            fi
           }
           mkdir -p "$RUNNER_TEMP/register-input"
           manifests HEAD "$RUNNER_TEMP/head"
@@ -339,7 +351,8 @@ jobs:
             git show "$BASE_SHA:scripts/ci/security-scan-diff.js" > "$differ"
             node "$differ" bun-audit-diff "$RUNNER_TEMP/register-input/bun-audit.json" "$RUNNER_TEMP/base-audit.json"
           else
-            count="$(jq '[.[]? | arrays | .[] | select((.severity // "" | ascii_downcase) == "high" or (.severity // "" | ascii_downcase) == "critical")] | length' "$RUNNER_TEMP/register-input/bun-audit.json")"
+            # Unknown or missing severities block, as in the trusted differ.
+            count="$(jq '[.[]? | arrays | .[] | select((.severity // "" | ascii_downcase) as $s | ["moderate", "medium", "low", "info"] | index($s) | not)] | length' "$RUNNER_TEMP/register-input/bun-audit.json")"
             echo "$count high/critical dependency advisory(ies); the trusted differ is unavailable, so every one fails."
             [ "$count" -eq 0 ]
           fi
