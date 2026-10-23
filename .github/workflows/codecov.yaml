@@ -34,13 +34,13 @@ jobs:
       run_checks: ${{ steps.proof.outputs.run_checks }}
     steps:
       - name: Checkout validation helper
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           sparse-checkout: scripts/ci/check-completed-validation.js
           sparse-checkout-cone-mode: false
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - name: Prove completed duplicate
@@ -62,7 +62,7 @@ jobs:
         shard: [0, 1, 2, 3]
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
 
@@ -77,7 +77,7 @@ jobs:
           family: coverage-${{ matrix.shard }}
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
@@ -103,7 +103,7 @@ jobs:
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Preserve complete workspace coverage
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-shard-${{ matrix.shard }}
           path: |
@@ -122,12 +122,12 @@ jobs:
         env:
           TEST_RESULT: ${{ needs.test-shards.result }}
         run: test "$TEST_RESULT" = success
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: coverage-shard-*
           merge-multiple: true
       - name: Upload complete results to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

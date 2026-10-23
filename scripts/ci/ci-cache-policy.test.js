@@ -642,7 +642,8 @@ test('BuildKit cache scopes have one protected default-branch writer', () => {
   const rustBackend = workflows.get('rust-backend.yml');
   const e2e = workflows.get('e2e-tests.yaml');
   assert.equal(
-    [...e2e.matchAll(/uses: docker\/setup-buildx-action@v4/gu)].length,
+    [...e2e.matchAll(/uses: docker\/setup-buildx-action@[0-9a-f]{40} # v4\b/gu)]
+      .length,
     3,
     'the bundle producer and both Dockerized E2E job families must use a cache-export-capable builder'
   );

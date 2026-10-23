@@ -188,7 +188,7 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
-      workflow.replace('actions/upload-artifact@v7', '')
+      workflow.replaceAll('actions/upload-artifact@', '')
     ).join('\n'),
     /upload-artifact/
   );

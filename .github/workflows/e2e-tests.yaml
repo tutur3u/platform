@@ -91,7 +91,7 @@ jobs:
       runner_context: ${{ steps.plan.outputs.runner_context }}
     steps:
       - name: Check out code and comparison history
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           sparse-checkout: scripts/ci
@@ -147,7 +147,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free runner disk for E2E image bundle
         run: bash scripts/ci/e2e-free-disk.sh
@@ -158,14 +158,14 @@ jobs:
           bun-version: 1.4.3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
       - name: Setup Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Select Docker Buildx builder
         run: echo "BUILDX_BUILDER=${{ steps.buildx.outputs.name }}" >> "$GITHUB_ENV"
@@ -267,7 +267,7 @@ jobs:
         run: echo "E2E_JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
 
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free runner disk for Dockerized E2E
         run: bash scripts/ci/e2e-free-disk.sh
@@ -282,7 +282,7 @@ jobs:
       - name: Restore cached Docker images
         id: cache-supabase
         if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/supabase-docker
           key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
@@ -299,14 +299,14 @@ jobs:
           bun-version: 1.4.3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
       - name: Setup Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Select Docker Buildx builder
         run: echo "BUILDX_BUILDER=${{ steps.buildx.outputs.name }}" >> "$GITHUB_ENV"
@@ -397,13 +397,13 @@ jobs:
 
       - name: Cache Supabase Docker images
         if: ${{ always() && steps.prepare-supabase-docker-cache.outputs.cache-ready == 'true' }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/supabase-docker
           key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
 
       - name: Upload E2E failure artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() && steps.redact-diagnostics.outcome == 'success' }}
         with:
           name: e2e-failure-${{ matrix.id }}
@@ -433,7 +433,7 @@ jobs:
 
       - name: Cache successful E2E proof
         if: success() && steps.proof.outputs.reusable == 'true'
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tmp/e2e-proof-receipt.json
           key: ${{ matrix.cache_key }}
@@ -453,7 +453,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free runner disk for cross-app cache E2E
         run: bash scripts/ci/e2e-free-disk.sh
@@ -468,7 +468,7 @@ jobs:
       - name: Restore cached Supabase Docker images
         id: cache-supabase
         if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/supabase-docker
           key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
@@ -485,7 +485,7 @@ jobs:
           bun-version: 1.4.3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -519,7 +519,7 @@ jobs:
         run: node scripts/ci/e2e-diagnostics-redact.js --report tmp/e2e-inventory-results.json --output tmp/e2e-diagnostics/inventory-results.json
 
       - name: Upload cache E2E failure artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() && steps.redact-inventory.outcome == 'success' }}
         with:
           name: inventory-storefront-cache-e2e
@@ -543,7 +543,7 @@ jobs:
 
       - name: Cache successful E2E proof
         if: success() && steps.proof.outputs.reusable == 'true'
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tmp/e2e-proof-receipt.json
           key: ${{ needs.relevance.outputs.inventory_key }}
@@ -593,7 +593,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free runner disk for Dockerized migration E2E
         run: bash scripts/ci/e2e-free-disk.sh
@@ -608,14 +608,14 @@ jobs:
           bun-version: 1.4.3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
       - name: Setup Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Select Docker Buildx builder
         run: echo "BUILDX_BUILDER=${{ steps.buildx.outputs.name }}" >> "$GITHUB_ENV"
@@ -667,7 +667,7 @@ jobs:
         run: ${{ matrix.command }}
 
       - name: Upload migration E2E artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() }}
         with:
           name: migration-e2e-${{ matrix.mode }}
@@ -702,7 +702,7 @@ jobs:
       packages: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Delete this run's E2E image bundle
         env:

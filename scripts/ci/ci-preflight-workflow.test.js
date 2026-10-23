@@ -153,11 +153,13 @@ for (const [name, aggregate, checkName, shardName] of [
     );
     if (name === 'codecov.yaml') {
       assert.ok(
-        job.steps.some((step) => step.uses === 'codecov/codecov-action@v7')
+        job.steps.some((step) =>
+          /^codecov\/codecov-action@[0-9a-f]{40}$/u.test(step.uses ?? '')
+        )
       );
       assert.ok(
-        workflow.jobs['test-shards'].steps.some(
-          (step) => step.uses === 'actions/upload-artifact@v7'
+        workflow.jobs['test-shards'].steps.some((step) =>
+          /^actions\/upload-artifact@[0-9a-f]{40}$/u.test(step.uses ?? '')
         )
       );
     }
