@@ -12,8 +12,23 @@ permissions:
   contents: read
 
 jobs:
-  Deploy-Production:
+  production-policy:
+    name: Report wave-2 production publication hold
     if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.policy.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - id: policy
+        run: node scripts/ci/production-publication-policy.ts vercel-production-shortener.yaml "$GITHUB_STEP_SUMMARY"
+
+  Deploy-Production:
+    needs: [production-policy]
+    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
     environment: vercel-production-shortener
     runs-on: ubuntu-latest
     permissions:
@@ -24,6 +39,14 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 2
+
+      - name: Keep native Shortener outside Vercel publication
+        shell: bash
+        run: |
+          if [ -f apps/shortener/void.config.ts ]; then
+            echo "::error::Native Shortener requires qualified Worker publication; legacy Vercel publication is disabled. Retain the previous Vercel deployment for rollback."
+            exit 1
+          fi
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry

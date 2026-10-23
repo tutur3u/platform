@@ -10,6 +10,8 @@ const protectedSurfaces = {
   calendar: ['frontend'],
   mail: ['frontend'],
   apps: ['frontend'],
+  // Wave 2: held until a reviewed Start + Void cutover admits it.
+  shortener: ['frontend'],
 } as const;
 
 type ProtectedApp = keyof typeof protectedSurfaces;
@@ -39,8 +41,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 // Dependency-free so direct publishers can validate before installing packages.
 export function validateProductionPublicationPolicy(policy: unknown) {
-  if (!isRecord(policy) || Object.keys(policy).length !== 4) {
-    throw new Error('Expected exactly the four protected publication records');
+  if (
+    !isRecord(policy) ||
+    Object.keys(policy).length !== Object.keys(protectedSurfaces).length
+  ) {
+    throw new Error('Expected exactly the protected publication records');
   }
   const entries = new Map<string, PublicationEntry>();
   for (const [app, requiredSurfaces] of Object.entries(protectedSurfaces)) {

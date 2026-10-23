@@ -1,18 +1,30 @@
 {
-  "extends": "@tuturuuu/typescript-config/nextjs.json",
+  "extends": "@tuturuuu/typescript-config/base.json",
   "compilerOptions": {
     "module": "ESNext",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "incremental": false,
+    "types": ["vite/client", "node"],
     "paths": {
       "@/*": ["./src/*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "include": [
+    "src/router.tsx",
+    "src/start.ts",
+    "src/routes",
+    "src/routeTree.gen.ts",
+    "src/native",
+    "src/link",
+    "src/components",
+    "cloudflare/worker.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".turbo", "src/i18n"]
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import { Eye, EyeOff, Lock } from '@tuturuuu/icons';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { leaveFor } from './navigate';
 
 interface PasswordFormProps {
   linkId: string;
@@ -19,7 +19,6 @@ export default function PasswordForm({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,10 +45,8 @@ export default function PasswordForm({
         return;
       }
 
-      // Redirect to the destination URL
-      if (data.url) {
-        router.push(data.url);
-      }
+      // Leave the app for the verified destination; never execute a script URL.
+      leaveFor(data.url);
     } catch (err) {
       console.error('An error occurred while verifying the password.', err);
       setError('An error occurred. Please try again.');
