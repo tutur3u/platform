@@ -35,7 +35,7 @@ jobs:
       workflow_name: mobile.yaml
 
   semantic-pull-request:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@v2
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
 
