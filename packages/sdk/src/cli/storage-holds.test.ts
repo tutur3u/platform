@@ -29,7 +29,7 @@ describe('hold files', () => {
     const dir = await temp();
     await writeFile(
       join(dir, 'mastermind.txt'),
-      '# header\n/a/held # reason\n\nrelative/ignored\n'
+      '# header\n/a/held # reason\n\n   # indented comment\n'
     );
     await writeFile(join(dir, 'tuturuuu.txt'), '/b/glob-*\n');
     await writeFile(join(dir, 'notes.md'), '/c/not-a-hold\n');
@@ -37,6 +37,17 @@ describe('hold files', () => {
       { path: '/a/held', owner: 'mastermind', glob: false },
       { path: '/b/glob-*', owner: 'tuturuuu', glob: true },
     ]);
+  });
+
+  it('stops on a malformed or relative hold, naming the file and line', async () => {
+    const dir = await temp();
+    await writeFile(
+      join(dir, 'mastermind.txt'),
+      '# header\n/a/held\nrelative/evidence # meant to be held\n'
+    );
+    expect(() => readHolds([dir])).toThrow(
+      /Invalid hold in .*mastermind\.txt:3: "relative\/evidence # meant to be held"/u
+    );
   });
 
   it('treats a missing directory as no holds but refuses an unreadable one', async () => {

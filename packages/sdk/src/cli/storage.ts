@@ -13,7 +13,12 @@ import {
   parseByteSize,
   storageThresholds,
 } from './storage-headroom';
-import { holdsDirs, listProcessCwds, readHolds } from './storage-holds';
+import { holdsDirs, readHolds } from './storage-holds';
+import {
+  listProcessCwdsStrict,
+  listVisibleCwds,
+  openFilesUnder,
+} from './storage-liveness';
 import {
   AUTO_CATEGORIES,
   defaultMaxRemoveBytes,
@@ -58,6 +63,11 @@ Prune options:
 Never removed: dirty, unmerged, locked, current, busy or held worktrees; the
 primary checkout; source; preserve/* branches; any held path (hold files cover
 a path, everything below and above it); VM disks, Trash, archives and AVDs.
+Every removal first re-checks holds, every process's cwd and open files (lsof);
+when another user's or root's processes cannot be inspected nothing is proven
+unused, so the step is skipped. An invalid hold line stops the run. Trees are
+removed by verified directory identity, never across a symlink or mount.
+Docker steps run only against a verified local unix-socket daemon.
 Merged-clean worktrees are removed with plain \`git worktree remove\` and their
 branch with \`git branch -d\` (never -D). Sizes use APFS private bytes on macOS
 and allocated blocks with hard links counted once on Linux; never \`du -L\`.
@@ -241,7 +251,7 @@ export async function readSuggestionCache(
 /** Analysis tolerates a failed lsof (prune re-reads it and fails closed). */
 function analysisCwds() {
   try {
-    return listProcessCwds();
+    return listVisibleCwds();
   } catch (error) {
     process.stderr.write(
       `[ttr storage] ${error instanceof Error ? error.message : String(error)}; busy worktrees are not detected in this report, prune re-checks.\n`
@@ -319,7 +329,8 @@ export async function runStorageCommand(argv: string[]) {
     paths: options.paths,
     names: options.names,
     holds,
-    cwds: listProcessCwds,
+    cwds: () => listProcessCwdsStrict(),
+    openFiles: (path) => openFilesUnder(path),
     prs: options.offline ? () => null : ghPullRequests,
     ttrArgv,
   });

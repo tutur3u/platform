@@ -58,6 +58,7 @@ function prune(
     names: [],
     holds: () => holds,
     cwds: () => [],
+    openFiles: () => 'none',
     prs: () => null,
     now: later,
     ...options,
@@ -154,6 +155,7 @@ describe('storage prune safety fences', { timeout: 30_000 }, () => {
       names: [],
       holds: () => [],
       cwds: () => [],
+      openFiles: () => 'none',
       prs: () => null,
       now,
     });
@@ -210,6 +212,7 @@ describe('storage prune categories', () => {
       names: [],
       holds: () => [],
       cwds: () => [],
+      openFiles: () => 'none',
       prs: () => null,
       exec: () => ({ status: 0, stdout: '', stderr: '' }),
       ...overrides,
@@ -238,12 +241,45 @@ describe('storage prune categories', () => {
       apply: true,
       categories: ['supabase-volumes'],
       names: ['supabase_db_old', 'supabase_db_live'],
+      env: {},
+      isSocket: (path) => path === '/var/run/docker.sock',
       exec: (argv) => {
         calls.push(argv);
-        return { status: 0, stdout: '', stderr: '' };
+        return argv[1] === 'context'
+          ? { status: 0, stdout: '"unix:///var/run/docker.sock"', stderr: '' }
+          : { status: 0, stdout: '', stderr: '' };
       },
     });
-    expect(calls).toEqual([['docker', 'volume', 'rm', 'supabase_db_old']]);
+    // Pinned to the verified local socket, after the endpoint check.
+    expect(calls.filter((argv) => argv[1] !== 'context')).toEqual([
+      [
+        'docker',
+        '-H',
+        'unix:///var/run/docker.sock',
+        'volume',
+        'rm',
+        'supabase_db_old',
+      ],
+    ]);
+    const remote = base({
+      report: { ...report('', []), worktrees: [], docker },
+      apply: true,
+      categories: ['supabase-volumes'],
+      names: ['supabase_db_old'],
+      env: {},
+      isSocket: () => true,
+      exec: (argv) => {
+        calls.push(argv);
+        return argv[1] === 'context'
+          ? { status: 0, stdout: '"ssh://ops@prod-db"', stderr: '' }
+          : { status: 0, stdout: '', stderr: '' };
+      },
+    });
+    expect(remote.steps[0]).toMatchObject({
+      status: 'failed',
+      reason: expect.stringMatching(/not a local unix socket/u),
+    });
+    expect(calls.filter((argv) => argv.includes('rm'))).toHaveLength(1);
     expect(
       result.steps.find(
         (step) => step.path === 'docker-volume:supabase_db_live'
@@ -282,7 +318,9 @@ describe('storage prune categories', () => {
         apply: true,
         categories,
         holds: () => [{ path: kept, owner: 'evidence', glob: false }],
-        remove: (path) => removed.push(path),
+        removeTree: (identity) => {
+          removed.push(identity.target);
+        },
       });
     run(null);
     expect(removed).toEqual([]);

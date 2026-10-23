@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { rmSync } from 'node:fs';
 import type { StorageItem, StorageReport } from './storage-analyze';
 import { formatBytes, GiB } from './storage-headroom';
 import {
@@ -10,6 +9,7 @@ import {
   isBusy,
   isInside,
 } from './storage-holds';
+import { checkPathIdle, type OpenFiles } from './storage-liveness';
 import { type Measurer, measureTrees } from './storage-measure';
 import {
   buildArtifactSteps,
@@ -21,9 +21,15 @@ import {
   cacheCommandSteps,
   derivedDataSteps,
   dockerSteps,
+  simulatorSteps,
   supabaseVolumeSteps,
   tmpSteps,
 } from './storage-prune-machine';
+import {
+  captureIdentity,
+  removeVerifiedTree,
+  type TreeIdentity,
+} from './storage-safe-remove';
 import type { StorageCategory } from './storage-targets';
 import { type Git, type PullRequestLookup, realGit } from './storage-worktrees';
 
@@ -33,11 +39,15 @@ export const AUTO_CATEGORIES: StorageCategory[] = [
   'rust-target',
   'xcode-derived-data',
   'xcode-simulators',
+];
+/**
+ * Applied only when named with `--category`. Homebrew cleanup also removes
+ * old formula versions and Docker prunes are not path-bounded, so neither is
+ * part of a plain `prune --apply`.
+ */
+export const NAMED_CATEGORIES: StorageCategory[] = [
   'homebrew-cache',
   'docker',
-];
-/** Applied only when named with `--category`. */
-export const NAMED_CATEGORIES: StorageCategory[] = [
   'worktrees',
   'node-modules-stale',
   'npm-cache',
@@ -91,14 +101,21 @@ export interface PruneOptions {
   paths: string[];
   names: string[];
   holds: () => Hold[];
+  /** Strict cwd scan: throws unless every process could be inspected. */
   cwds: CwdLister;
+  /** Open files under a path (lsof +D); see storage-liveness. */
+  openFiles: (path: string) => OpenFiles;
   git?: Git;
   prs: PullRequestLookup;
   exec?: Exec;
-  remove?: (path: string) => void;
+  /** Removes a tree whose identity was captured before the checks ran. */
+  removeTree?: (identity: TreeIdentity) => void;
   measure?: Measurer;
   ttrArgv?: string[];
   now?: number;
+  env?: NodeJS.ProcessEnv;
+  /** Whether a path is an existing unix socket (local Docker check). */
+  isSocket?: (path: string) => boolean;
 }
 
 export interface PruneContext {
@@ -107,10 +124,24 @@ export interface PruneContext {
   steps: PruneStep[];
   /** Adds a step unless a hold, a busy process or the size bound skips it. */
   push: (step: Omit<PruneStep, 'status'>) => void;
-  /** Wraps an action so holds and live cwds are re-read right before it runs. */
+  /**
+   * Wraps an action so holds, live cwds and open files are re-checked right
+   * before it runs; any failed or erroring check skips the action.
+   */
   fenced: (
     paths: string | string[],
     action: () => StepResult
+  ) => () => StepResult;
+  /**
+   * Removes `target` (strictly inside `root`): its directory identity is
+   * captured first, then the fences and `recheck` run, then the tree is
+   * removed only if that identity still holds.
+   */
+  removeTree: (
+    root: string,
+    target: string,
+    recheck?: () => string | null,
+    fencePaths?: string[]
   ) => () => StepResult;
   command: (
     argv: string[],
@@ -124,7 +155,7 @@ export interface PruneContext {
   maxRemoveBytes: number;
   git: Git;
   exec: Exec;
-  remove: (path: string) => void;
+  env: NodeJS.ProcessEnv;
   measure: Measurer;
   now: number;
   planned: () => number;
@@ -144,19 +175,21 @@ const builders: Partial<
   'tmp-old': tmpSteps,
   'supabase-volumes': supabaseVolumeSteps,
   docker: dockerSteps,
-  'xcode-simulators': cacheCommandSteps,
+  'xcode-simulators': simulatorSteps,
   'homebrew-cache': cacheCommandSteps,
   'npm-cache': cacheCommandSteps,
   'bun-cache': cacheCommandSteps,
   'pub-cache': cacheCommandSteps,
 };
 
-const forceRemove = (path: string) =>
-  rmSync(path, { recursive: true, force: true, maxRetries: 2 });
+const verifiedRemove = (identity: TreeIdentity) => {
+  removeVerifiedTree(identity);
+};
 
 /**
- * Builds the plan from a fresh report, then (with apply) re-reads holds and
- * process cwds and re-verifies each step immediately before acting.
+ * Builds the plan from a fresh report, then (with apply) re-reads holds,
+ * process cwds and open files and re-verifies each step immediately before
+ * acting.
  */
 export function pruneStorage(options: PruneOptions) {
   const {
@@ -166,9 +199,10 @@ export function pruneStorage(options: PruneOptions) {
     maxRemoveBytes,
     git = realGit,
     exec = realExec,
-    remove = forceRemove,
+    removeTree = verifiedRemove,
     measure = measureTrees,
     now = Date.now(),
+    env = process.env,
   } = options;
   const requested = options.categories ?? AUTO_CATEGORIES;
   const manual = requested.filter(
@@ -189,7 +223,15 @@ export function pruneStorage(options: PruneOptions) {
 
   const cutoff = now - olderThanDays * 86_400_000;
   const holds = options.holds();
-  const cwds = options.cwds();
+  // Without complete process visibility no path is provably unused: path
+  // steps are planned as skipped with the reason, and apply re-checks anyway.
+  let cwds: ReturnType<CwdLister> = [];
+  let blind: string | null = null;
+  try {
+    cwds = options.cwds();
+  } catch (error) {
+    blind = `cwd scan failed: ${error instanceof Error ? error.message : String(error)}`;
+  }
   const steps: PruneStep[] = [];
   let planned = 0;
   const wanted = (path: string) =>
@@ -209,6 +251,13 @@ export function pruneStorage(options: PruneOptions) {
         reason: `held by ${held.join(', ')}`,
         run: undefined,
       });
+    if (paths.length && blind)
+      return void steps.push({
+        ...step,
+        status: 'skipped',
+        reason: blind,
+        run: undefined,
+      });
     if (paths.some((path) => isBusy(path, cwds)))
       return void steps.push({
         ...step,
@@ -226,19 +275,38 @@ export function pruneStorage(options: PruneOptions) {
     planned += step.bytes;
     steps.push({ ...step, status: 'planned' });
   };
-  // Every destructive closure re-checks holds and live cwds first.
+  // Every destructive closure re-checks holds, live cwds and open files.
+  const fences = (paths: string[]): string | null => {
+    const freshHolds = options.holds();
+    const held = [
+      ...new Set(paths.flatMap((path) => holdOwners(path, freshHolds))),
+    ];
+    if (held.length) return `held by ${held.join(', ')}`;
+    const idle = checkPathIdle(
+      paths.filter((path) => path.startsWith('/')),
+      { cwds: options.cwds, openFiles: options.openFiles }
+    );
+    return idle.ok ? null : idle.reason;
+  };
   const fenced =
     (target: string | string[], action: () => StepResult) => () => {
-      const paths = Array.isArray(target) ? target : [target];
-      const freshHolds = options.holds();
-      const held = [
-        ...new Set(paths.flatMap((path) => holdOwners(path, freshHolds))),
-      ];
-      if (held.length) return `held by ${held.join(', ')}`;
-      const freshCwds = options.cwds();
-      if (paths.some((path) => isBusy(path, freshCwds)))
-        return 'a process is working inside';
-      return action();
+      const failed = fences(Array.isArray(target) ? target : [target]);
+      return failed ?? action();
+    };
+  const removeTreeStep =
+    (
+      root: string,
+      target: string,
+      recheck?: () => string | null,
+      fencePaths: string[] = [target]
+    ) =>
+    (): StepResult => {
+      // Anchor first, so a swap during the checks below is detected.
+      const identity = captureIdentity(root, target);
+      const failed = fences(fencePaths) ?? recheck?.() ?? null;
+      if (failed) return failed;
+      removeTree(identity);
+      return null;
     };
   const command =
     (argv: string[], cwd?: string, env?: NodeJS.ProcessEnv) => () => {
@@ -266,7 +334,8 @@ export function pruneStorage(options: PruneOptions) {
     maxRemoveBytes,
     git,
     exec,
-    remove,
+    env,
+    removeTree: removeTreeStep,
     measure,
     now,
     planned: () => planned,

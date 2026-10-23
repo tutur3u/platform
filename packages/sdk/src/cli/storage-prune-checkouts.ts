@@ -151,7 +151,7 @@ export function worktreeSteps(ctx: PruneContext, category: StorageCategory) {
 }
 
 export function nodeModulesSteps(ctx: PruneContext, category: StorageCategory) {
-  const { report, options, steps, push, fenced, command, remove } = ctx;
+  const { report, options, steps, push, command, removeTree } = ctx;
   const checkout = resolve(options.paths[0]!);
   const item = report.items.find(
     (entry) =>
@@ -186,18 +186,26 @@ export function nodeModulesSteps(ctx: PruneContext, category: StorageCategory) {
     bytes: item.uniqueBytes,
     description:
       'remove node_modules, then ttr resources run -- bun install --frozen-lockfile',
-    run: fenced(checkout, (): StepResult => {
-      const failed = recheck(ctx, worktree, (fresh) =>
-        blocking(fresh.fences).length
-          ? `re-check failed: ${blocking(fresh.fences).join('; ')}`
-          : null
-      );
-      if (failed) return failed;
-      if (!existsSync(join(checkout, 'bun.lock')))
-        return 'no bun.lock in checkout';
-      if (!lstatSync(modules, { throwIfNoEntry: false })?.isDirectory())
-        return 'node_modules is not a directory';
-      remove(modules);
+    run: (): StepResult => {
+      const removed = removeTree(
+        checkout,
+        modules,
+        () => {
+          const failed = recheck(ctx, worktree, (fresh) =>
+            blocking(fresh.fences).length
+              ? `re-check failed: ${blocking(fresh.fences).join('; ')}`
+              : null
+          );
+          if (failed) return failed;
+          if (!existsSync(join(checkout, 'bun.lock')))
+            return 'no bun.lock in checkout';
+          if (!lstatSync(modules, { throwIfNoEntry: false })?.isDirectory())
+            return 'node_modules is not a directory';
+          return null;
+        },
+        [checkout]
+      )();
+      if (removed !== null) return removed;
       // The disk gate must not strand a checkout whose node_modules was just
       // removed to free space.
       return command(
@@ -213,7 +221,7 @@ export function nodeModulesSteps(ctx: PruneContext, category: StorageCategory) {
         checkout,
         { TTR_RESOURCES_IGNORE_DISK: '1' }
       )();
-    }),
+    },
   });
 }
 

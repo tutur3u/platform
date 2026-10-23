@@ -62,6 +62,7 @@ const options = (overrides: Partial<Parameters<typeof pruneStorage>[0]>) =>
     names: [],
     holds: () => [],
     cwds: () => [],
+    openFiles: () => 'none',
     prs: () => null,
     now: later,
     ...overrides,
@@ -184,24 +185,55 @@ describe('worktree fences after review', { timeout: 30_000 }, () => {
 });
 
 describe('machine cache fences after review', () => {
-  it('fences every path a cache command touches and re-checks cache users', () => {
+  it('deletes only individually verified simulator UDIDs, never held or filtered ones', () => {
+    const a = '/sim/Devices/AAAAAAAA-0000-4000-8000-000000000001';
+    const b = '/sim/Devices/BBBBBBBB-0000-4000-8000-000000000002';
+    const c = '/other/Devices/CCCCCCCC-0000-4000-8000-000000000003';
     const calls: string[][] = [];
+    let listed = [a, b, c];
     const exec: Exec = (argv) => {
       calls.push(argv);
+      if (argv.join(' ').includes('simctl list'))
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            devices: {
+              runtime: listed.map((path) => ({ dataPath: `${path}/data` })),
+            },
+          }),
+          stderr: '',
+        };
       return { status: 0, stdout: '', stderr: '' };
     };
-    const items = [item({ path: '/sim/a' }), item({ path: '/sim/b' })];
-    const held = options({
+    const items = [item({ path: a }), item({ path: b }), item({ path: c })];
+    const result = options({
       report: report('', [], items),
       categories: ['xcode-simulators'],
-      holds: () => [{ path: '/sim/b', owner: 'ios-lane', glob: false }],
+      paths: ['/sim'],
+      holds: () => [{ path: b, owner: 'ios-lane', glob: false }],
       exec,
     });
-    expect(held.steps[0]).toMatchObject({
-      status: 'skipped',
-      reason: 'held by ios-lane',
+    expect(result.steps.map((step) => [step.path, step.status])).toEqual([
+      [a, process.platform === 'darwin' ? 'done' : 'failed'],
+      [b, 'skipped'],
+    ]);
+    const deletes = calls.filter((argv) => argv.includes('delete'));
+    expect(deletes.flat()).not.toContain('unavailable');
+    if (process.platform === 'darwin')
+      expect(deletes).toEqual([
+        ['xcrun', 'simctl', 'delete', 'AAAAAAAA-0000-4000-8000-000000000001'],
+      ]);
+    else expect(deletes).toEqual([]);
+    // A device that is no longer unavailable is re-checked and kept.
+    calls.length = 0;
+    listed = [];
+    const recovered = options({
+      report: report('', [], [item({ path: a })]),
+      categories: ['xcode-simulators'],
+      exec,
     });
-    expect(calls.some((argv) => argv[0] === 'xcrun')).toBe(false);
+    expect(recovered.steps[0]?.reason).toMatch(/no longer an unavailable/u);
+    expect(calls.some((argv) => argv.includes('delete'))).toBe(false);
 
     let ps = 0;
     const busyLater: Exec = (argv) => {

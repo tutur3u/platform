@@ -235,7 +235,7 @@ export interface TmpCandidate {
   newestMtimeMs: number;
 }
 
-/** User-owned top-level tmp dirs whose newest entry (2 levels) is older than the cutoff. */
+/** User-owned top-level tmp dirs whose newest entry anywhere is older than the cutoff. */
 export function oldTmpDirs({
   roots = tmpRoots(),
   olderThanMs,
@@ -265,7 +265,7 @@ export function oldTmpDirs({
         (uid >= 0 && info.uid !== uid)
       )
         continue;
-      const newest = newestMtime(path, 2);
+      const newest = newestMtime(path);
       if (now - newest >= olderThanMs)
         found.push({ path, newestMtimeMs: newest });
     }
@@ -279,18 +279,29 @@ export function tmpRoots(platform = process.platform) {
   return [...roots];
 }
 
-/** Newest mtime within `depth` levels; unreadable trees count as fresh. */
-export function newestMtime(path: string, depth: number): number {
+/**
+ * Newest mtime anywhere in the tree (directories included, symlinks not
+ * followed). A deep, recently written file keeps the whole tree fresh, so an
+ * idle check can never be fooled by a shallow walk. Unreadable trees and
+ * trees larger than `maxEntries` count as fresh (fail closed).
+ */
+export function newestMtime(
+  path: string,
+  { maxEntries = 500_000 }: { maxEntries?: number } = {}
+): number {
   let newest = 0;
-  const visit = (target: string, level: number) => {
-    const info = lstatSync(target);
-    newest = Math.max(newest, info.mtimeMs);
-    if (!info.isDirectory() || level >= depth) return;
-    for (const name of readdirSync(target))
-      visit(join(target, name), level + 1);
-  };
+  let seen = 0;
+  const pending = [path];
   try {
-    visit(path, 0);
+    while (pending.length) {
+      const target = pending.pop()!;
+      if (++seen > maxEntries) return Number.POSITIVE_INFINITY;
+      const info = lstatSync(target);
+      newest = Math.max(newest, info.mtimeMs, info.ctimeMs);
+      if (info.isDirectory() && !info.isSymbolicLink())
+        for (const name of readdirSync(target))
+          pending.push(join(target, name));
+    }
     return newest;
   } catch {
     return Number.POSITIVE_INFINITY;

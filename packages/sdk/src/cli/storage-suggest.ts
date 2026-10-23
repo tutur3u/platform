@@ -188,9 +188,9 @@ export function suggestActions(report: StorageReport): {
     },
     {
       category: 'homebrew-cache',
-      title: 'Prune Homebrew downloads',
+      title: 'Prune Homebrew downloads (also removes old formula versions)',
       command: 'brew cleanup --prune=7',
-      apply: 'auto',
+      apply: 'named',
       risk: 'safe',
     },
     {
@@ -265,7 +265,7 @@ export function suggestActions(report: StorageReport): {
       path: simulators[0]!.path,
       reclaimableBytes: simulatorBytes,
       risk: 'safe',
-      command: 'xcrun simctl delete unavailable',
+      command: 'ttr storage prune --category xcode-simulators --apply',
       apply: 'auto',
     });
   for (const rule of machine) {
@@ -286,8 +286,9 @@ export function suggestActions(report: StorageReport): {
       path: 'docker:build-cache',
       reclaimableBytes: build.reclaimableBytes,
       risk: 'safe',
-      command: 'docker builder prune --force --filter until=168h',
-      apply: 'auto',
+      command:
+        'ttr storage prune --category docker --apply  # local daemon only',
+      apply: 'named',
     });
   const images = report.docker?.usage.find((row) => /image/iu.test(row.type));
   if (images && images.reclaimableBytes >= MIN_BYTES)
@@ -297,7 +298,8 @@ export function suggestActions(report: StorageReport): {
       path: 'docker:images',
       reclaimableBytes: images.reclaimableBytes,
       risk: 'moderate',
-      command: 'docker image prune --all --force --filter until=168h',
+      command:
+        'ttr storage prune --category docker --apply  # local daemon only',
       apply: 'named',
     });
   for (const volume of report.docker?.supabaseVolumes ?? [])

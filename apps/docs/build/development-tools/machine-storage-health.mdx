@@ -59,9 +59,9 @@ values fall back to the default with a warning.
 | `rust-target` | `apps/backend/target` | safe | default, via `bun rust-cache prune` |
 | `bun-cache`, `npm-cache`, `pub-cache` | Package manager caches | moderate / safe | named only |
 | `xcode-derived-data` | DerivedData project folders idle past `--older-than` | safe | default |
-| `xcode-simulators` | Simulators for uninstalled runtimes (`xcrun simctl delete unavailable`) | safe | default |
-| `homebrew-cache` | `brew cleanup --prune=<days>` | safe | default |
-| `docker` | Build cache older than the age bound (default); unused images (named) | safe / moderate | default / named |
+| `xcode-simulators` | Simulators for uninstalled runtimes, each deleted by its own UDID (`xcrun simctl delete <udid>`, never `delete unavailable`) | safe | default |
+| `homebrew-cache` | `brew cleanup --prune=<days>` (also removes old formula versions) | safe | named only |
+| `docker` | Build cache older than the age bound; unused images. Verified local daemon only | safe / moderate | named only |
 | `supabase-volumes` | Supabase CLI local volumes | high | only `--name <volume>`, never attached |
 | `tmp-old` | User-owned tmp dirs idle past the age bound, at least 25 MiB | moderate | named only |
 | `xcode-device-support`, `gradle`, `playwright` | Rebuildable but costly | moderate | manual command only |
@@ -77,8 +77,24 @@ Defaults: `--older-than 7` days, `--max-remove 20G` total per run.
 - Any path covered by a hold file. Hold files are `*.txt` in
   `~/.t3/cleanup/holds.d` (or `--holds-dir`, `TTR_STORAGE_HOLDS_DIRS`); one
   absolute path or glob per line, `#` comments. A hold covers its path,
-  everything below it and everything above it. An unreadable holds directory
-  stops the run.
+  everything below it and everything above it. An unreadable holds directory,
+  or any non-comment line that is not an absolute path or glob, stops the run
+  with the file and line; fix or comment out the line.
+- Any path a process may be using. Right before each removal, every process's
+  working directory (`lsof -d cwd`, checked against the full `ps` table) and
+  every open file under the path (`lsof +D`) are re-checked. A failed scan,
+  any `lsof` diagnostic, or a live process this user cannot inspect (another
+  user's or root's, when not running as root) means use is not proven absent,
+  and the step is skipped. As a non-root user on macOS, root's processes are
+  never inspectable, so path removals are skipped there until they can be
+  run with full visibility.
+- Anything reached through a symlink or across a mount. Trees are removed by
+  directory identity (device and inode) captured before the checks and
+  re-verified before every unlink; a swapped ancestor or a nested mount stops
+  the removal, and entries created after the pre-scan are left in place.
+- Docker on a remote or unknown engine. Docker steps run only when
+  `DOCKER_HOST` is unset and the current context's endpoint is an existing
+  local unix socket; the command is pinned to that socket with `-H`.
 - `preserve/*` branches and every other ref. Merged-clean worktrees are removed
   with plain `git worktree remove` (no `--force`) and their branch with
   `git branch -d`; git keeps a squash-merged branch, which is reported for a
@@ -90,7 +106,10 @@ Defaults: `--older-than 7` days, `--max-remove 20G` total per run.
 ancestor of `origin/main`, or a merged pull request's head is that `HEAD`
 (squash merges). An open PR, a closed-unmerged PR or local commits after the
 merged head keep the worktree. Every apply step re-reads holds, process
-working directories and worktree state immediately before acting.
+working directories, open files and worktree state immediately before acting.
+Idle ages use the newest modification or change time anywhere in a tree (a
+deep, recently written file keeps the whole tree); trees over 500,000 entries
+or unreadable ones count as recent.
 
 ## Stale `node_modules`
 

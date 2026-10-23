@@ -1,19 +1,24 @@
 import { lstatSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+import { dockerOverrides, verifyLocalDocker } from './storage-docker-local';
 import { canonicalPath, isInside } from './storage-holds';
-import type { Exec, PruneContext } from './storage-prune';
-import { newestMtime, type StorageCategory, tmpRoots } from './storage-targets';
+import type { Exec, PruneContext, StepResult } from './storage-prune';
+import {
+  newestMtime,
+  type StorageCategory,
+  tmpRoots,
+  unavailableSimulators,
+} from './storage-targets';
 
 export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
   const {
     steps,
     push,
-    fenced,
+    removeTree,
     items,
     cutoff,
     olderThanDays,
     exec,
-    remove,
     measure,
   } = ctx;
   const xcodeBusy = /\bxcodebuild\b|Xcode\.app\/Contents\/MacOS\/Xcode/u;
@@ -36,7 +41,7 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
       .filter(
         (child) =>
           lstatSync(child, { throwIfNoEntry: false })?.isDirectory() &&
-          newestMtime(child, 2) <= cutoff
+          newestMtime(child) <= cutoff
       );
     const sizes = measure(candidates.map((root) => ({ root }))).results;
     candidates.forEach((child, index) => {
@@ -45,15 +50,11 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
         path: child,
         bytes: sizes[index]?.uniqueBytes ?? 0,
         description: `remove DerivedData/${child.slice(item.path.length + 1)} (idle > ${olderThanDays}d)`,
-        run: fenced(child, () => {
+        run: removeTree(item.path, child, () => {
           if (processRunning(exec, xcodeBusy))
             return 'Xcode or xcodebuild started';
-          if (
-            !isInside(canonicalPath(child), canonicalPath(item.path)) ||
-            newestMtime(child, 2) > cutoff
-          )
+          if (newestMtime(child) > cutoff)
             return 're-check failed: written recently';
-          remove(child);
           return null;
         }),
       });
@@ -62,29 +63,36 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
 }
 
 export function tmpSteps(ctx: PruneContext, category: StorageCategory) {
-  const { push, fenced, items, cutoff, remove } = ctx;
+  const { steps, push, items, cutoff, removeTree } = ctx;
   const roots = tmpRoots().map(canonicalPath);
   for (const item of items(category)) {
     if (item.uniqueBytes < 25 * 1024 ** 2) continue;
+    const root = roots.find(
+      (entry) =>
+        isInside(canonicalPath(item.path), entry) &&
+        canonicalPath(item.path) !== entry
+    );
+    if (!root) {
+      steps.push({
+        category,
+        path: item.path,
+        bytes: item.uniqueBytes,
+        description: `remove idle tmp dir (${item.label})`,
+        status: 'skipped',
+        reason: 'outside tmp roots',
+      });
+      continue;
+    }
     push({
       category,
       path: item.path,
       bytes: item.uniqueBytes,
       description: `remove idle tmp dir (${item.label})`,
-      run: fenced(item.path, () => {
-        if (
-          !roots.some(
-            (root) =>
-              isInside(canonicalPath(item.path), root) &&
-              canonicalPath(item.path) !== root
-          )
-        )
-          return 'outside tmp roots';
-        if (newestMtime(item.path, 2) > cutoff)
-          return 're-check failed: written recently';
-        remove(item.path);
-        return null;
-      }),
+      run: removeTree(root, item.path, () =>
+        newestMtime(item.path) > cutoff
+          ? 're-check failed: written recently'
+          : null
+      ),
     });
   }
 }
@@ -93,7 +101,7 @@ export function supabaseVolumeSteps(
   ctx: PruneContext,
   category: StorageCategory
 ) {
-  const { report, options, steps, push, command } = ctx;
+  const { report, options, steps, push } = ctx;
   for (const name of options.names) {
     const volume = report.docker?.supabaseVolumes.find(
       (entry) => entry.name === name
@@ -125,13 +133,13 @@ export function supabaseVolumeSteps(
       path: `docker-volume:${name}`,
       bytes: volume.sizeBytes,
       description: `docker volume rm ${name} (explicitly named)`,
-      run: command(['docker', 'volume', 'rm', name]),
+      run: localDocker(ctx, ['volume', 'rm', name]),
     });
   }
 }
 
 export function dockerSteps(ctx: PruneContext, category: StorageCategory) {
-  const { report, options, push, command, olderThanDays } = ctx;
+  const { report, options, push, olderThanDays } = ctx;
   const build = report.docker?.usage.find((row) => /build/iu.test(row.type));
   if (build?.reclaimableBytes)
     push({
@@ -139,8 +147,7 @@ export function dockerSteps(ctx: PruneContext, category: StorageCategory) {
       path: 'docker:build-cache',
       bytes: build.reclaimableBytes,
       description: `docker builder prune (unused > ${olderThanDays}d)`,
-      run: command([
-        'docker',
+      run: localDocker(ctx, [
         'builder',
         'prune',
         '--force',
@@ -155,8 +162,7 @@ export function dockerSteps(ctx: PruneContext, category: StorageCategory) {
       path: 'docker:images',
       bytes: images.reclaimableBytes,
       description: `docker image prune --all (unused > ${olderThanDays}d)`,
-      run: command([
-        'docker',
+      run: localDocker(ctx, [
         'image',
         'prune',
         '--all',
@@ -175,9 +181,6 @@ export function cacheCommandSteps(
   const simple: Partial<
     Record<StorageCategory, { argv: string[]; busy?: RegExp }>
   > = {
-    'xcode-simulators': {
-      argv: ['xcrun', 'simctl', 'delete', 'unavailable'],
-    },
     'homebrew-cache': {
       argv: ['brew', 'cleanup', `--prune=${olderThanDays}`],
     },
@@ -195,9 +198,7 @@ export function cacheCommandSteps(
     },
   };
   const rule = simple[category];
-  const relevant = items(category).filter(
-    (item) => category !== 'xcode-simulators' || item.risk === 'safe'
-  );
+  const relevant = items(category);
   const bytes = relevant.reduce((sum, item) => sum + item.uniqueBytes, 0);
   if (!rule || !bytes) return;
   if (rule.busy && processRunning(exec, rule.busy)) {
@@ -226,6 +227,59 @@ export function cacheCommandSteps(
         : command(rule.argv)()
     ),
   });
+}
+
+/**
+ * Runs a Docker command only against a verified local daemon, pinned to its
+ * socket; the endpoint is verified again right before the command runs.
+ */
+function localDocker(ctx: PruneContext, args: string[]) {
+  return (): StepResult => {
+    const docker = verifyLocalDocker(ctx.exec, ctx.env, ctx.options.isSocket);
+    if (!docker.ok) return docker.reason;
+    return ctx.command(docker.argv(args), undefined, dockerOverrides)();
+  };
+}
+
+const UDID = /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/iu;
+
+/**
+ * One step per unavailable simulator, deleted by its own UDID (never
+ * `simctl delete unavailable`, which would also delete held or filtered-out
+ * devices). Each device is re-listed as unavailable and re-fenced right
+ * before its delete.
+ */
+export function simulatorSteps(ctx: PruneContext, category: StorageCategory) {
+  const { steps, push, fenced, command, items } = ctx;
+  for (const item of items(category)) {
+    if (item.risk !== 'safe') continue;
+    const udid = basename(item.path);
+    if (!UDID.test(udid) || basename(dirname(item.path)) !== 'Devices') {
+      steps.push({
+        category,
+        path: item.path,
+        bytes: item.uniqueBytes,
+        description: 'xcrun simctl delete',
+        status: 'skipped',
+        reason: 'not a simulator device directory',
+      });
+      continue;
+    }
+    push({
+      category,
+      path: item.path,
+      bytes: item.uniqueBytes,
+      description: `xcrun simctl delete ${udid} (runtime uninstalled)`,
+      run: fenced(item.path, () => {
+        const current = unavailableSimulators((args) =>
+          ctx.exec(['xcrun', ...args])
+        ).map(canonicalPath);
+        if (!current.includes(canonicalPath(item.path)))
+          return 're-check failed: no longer an unavailable simulator';
+        return command(['xcrun', 'simctl', 'delete', udid])();
+      }),
+    });
+  }
 }
 
 function safeReaddir(path: string) {
