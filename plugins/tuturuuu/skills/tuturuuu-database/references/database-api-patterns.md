@@ -27,6 +27,13 @@ review prove baseline equivalence. Existing migration history stays immutable.
   optional arguments only after verifying their SQL defaults preserve behavior.
 - Public `SECURITY DEFINER` RPCs must enforce `auth.uid()` and workspace/RBAC
   checks internally, then revoke broad execution and grant only required roles.
+- Public functions created before `20260522172925` inherited EXECUTE for
+  `PUBLIC`, `anon` and `authenticated`. When touching one, revoke from all three,
+  grant only the roles its callers use, and check RLS policies and invoker
+  functions that call it first (policies run as the querying role). Pin
+  `search_path` with `ALTER FUNCTION ... SET`; never `SET LOCAL` inside a body,
+  which leaks into the caller's transaction. Actor checks follow the
+  `auth.role() IS DISTINCT FROM 'service_role'` idiom.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
 ## Outbound SSO persistence

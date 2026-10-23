@@ -37,6 +37,7 @@ const trackedFiles = execFileSync(
 const fixtures = [
   'security-egress-budgets.sql',
   'security-budget-entitlements.sql',
+  'security-definer-function-grants.sql',
 ];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
