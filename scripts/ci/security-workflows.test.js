@@ -386,7 +386,8 @@ test('the checks: write detector parses YAML forms, not script text', (t) => {
   t.after(() => fs.rmSync(dir, { force: true, recursive: true }));
   let count = 0;
   const parse = (yaml) => {
-    const file = path.join(dir, `w${(count += 1)}.yaml`);
+    count += 1;
+    const file = path.join(dir, `w${count}.yaml`);
     fs.writeFileSync(file, yaml);
     return readWorkflow(file);
   };
