@@ -146,7 +146,7 @@ test('scanner tooling is verified and configured from the trusted base', () => {
   assert.match(checks.env.BUN_SHA256, /^[0-9a-f]{64}$/u);
   assert.match(audit.run, /"\$BUN_BIN" audit --json/u);
   assert.doesNotMatch(audit.run, /(?:^|[\s(])bun audit/mu);
-  assert.equal(audit.env.BUN_BIN, expression('runner.temp') + '/bun-bin/bun');
+  assert.equal(audit.env.BUN_BIN, `${expression('runner.temp')}/bun-bin/bun`);
   for (const step of auditSteps.slice(0, auditSteps.indexOf(audit))) {
     assert.ok(!step.uses?.startsWith('./'), `${step.name} runs a local action`);
     assert.doesNotMatch(
@@ -231,9 +231,9 @@ test('the register job publishes only the redacted register', () => {
   assert.deepEqual(
     uploads.map((step) => step.with.path).sort(),
     [
-      expression('runner.temp') + '/register-input/bun-audit.json',
-      expression('runner.temp') + '/register-input/gitleaks.json',
-      expression('runner.temp') + '/security-register.json',
+      `${expression('runner.temp')}/register-input/bun-audit.json`,
+      `${expression('runner.temp')}/register-input/gitleaks.json`,
+      `${expression('runner.temp')}/security-register.json`,
     ].sort()
   );
   const scan = checks.jobs.secrets.steps.find(
