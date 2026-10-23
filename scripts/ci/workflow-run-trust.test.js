@@ -349,9 +349,10 @@ test('recompute-only workflow_run consumers never trust the completion', () => {
 test('the recompute-only exemption is narrow, named and signal-only', () => {
   // Only the Security review reclassifier may consume a fork-reachable
   // completion (its upstream relay runs on pull_request_review).
-  assert.deepEqual([...recomputeOnlyConsumers], [
-    'security-review-reclassify.yaml',
-  ]);
+  assert.deepEqual(
+    [...recomputeOnlyConsumers],
+    ['security-review-reclassify.yaml']
+  );
   const workflow = readWorkflow('security-review-reclassify.yaml');
   const serialized = JSON.stringify(workflow);
   // No PR ref or event head is ever checked out or used as a ref.
