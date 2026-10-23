@@ -93,7 +93,24 @@ export function evaluateTrustedRunner(
 }
 
 export interface DevboxFleetSnapshot {
+  /** Server-reported generation time, when the server provides one. */
+  generated_at?: string;
+  /** Server clock for this snapshot (`generated_at` or the `Date` header). */
+  server_time?: string;
   runners: DevboxFleetRunner[];
   runs: { id: string; runner_id: string | null; status: string }[];
   leases: { id: string; runner_id: string | null; status: string }[];
+}
+
+/**
+ * The server's clock for a snapshot. Heartbeats are server timestamps, so
+ * comparing them with a skewed local clock would misjudge freshness; the local
+ * clock is only a fallback for servers that send neither field.
+ */
+export function fleetSnapshotNow(
+  snapshot: Pick<DevboxFleetSnapshot, 'generated_at' | 'server_time'>,
+  fallback = Date.now()
+) {
+  const now = Date.parse(snapshot.server_time ?? snapshot.generated_at ?? '');
+  return Number.isFinite(now) ? now : fallback;
 }

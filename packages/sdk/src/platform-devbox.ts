@@ -139,9 +139,14 @@ export class DevboxesClient {
     );
   }
 
-  getRunLogs(runId: string) {
-    return this.api.json<{ logs: string[] }>(
-      `/api/v1/devboxes/runs/${encodePathSegment(runId)}/logs`
+  /**
+   * One page of run log lines. `next` is the offset for the following page;
+   * servers that predate paging omit it and return only the first page.
+   */
+  getRunLogs(runId: string, options: { offset?: number } = {}) {
+    return this.api.json<{ logs: string[]; next?: number }>(
+      `/api/v1/devboxes/runs/${encodePathSegment(runId)}/logs`,
+      options.offset ? { query: { offset: options.offset } } : {}
     );
   }
 

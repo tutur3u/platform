@@ -292,7 +292,15 @@ export async function stopDevboxRun(runId: string) {
   return { message: `Devbox run ${runId} cancellation requested.` };
 }
 
-export async function listDevboxRunLogs(runId: string) {
+export const DEVBOX_RUN_LOG_PAGE_SIZE = 1000;
+
+// Pages run events in a stable order. `next` is the raw-row offset to request
+// next, so clients stream long runs incrementally instead of refetching (and
+// truncating at) the first page.
+export async function listDevboxRunLogs(
+  runId: string,
+  { offset = 0 }: { offset?: number } = {}
+) {
   const privateClient = getPrivateSchemaClient(
     await createPrivateDevboxClient()
   );
@@ -303,20 +311,23 @@ export async function listDevboxRunLogs(runId: string) {
     .select('message')
     .eq('run_id', runId)
     .order('created_at', { ascending: true })
-    .limit(1000);
+    .order('id', { ascending: true })
+    .range(offset, offset + DEVBOX_RUN_LOG_PAGE_SIZE - 1);
 
   if (error) {
     throw getDevboxStorageError(error);
   }
 
+  const rows = data ?? [];
   return {
-    logs: (data ?? [])
+    logs: rows
       .map((row) =>
         row && typeof row === 'object' && 'message' in row
           ? String(row.message ?? '')
           : ''
       )
       .filter(Boolean),
+    next: offset + rows.length,
   };
 }
 

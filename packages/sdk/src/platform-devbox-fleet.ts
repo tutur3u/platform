@@ -1,6 +1,7 @@
 import {
   createInternalApiClient,
   type InternalApiClientOptions,
+  InternalApiError,
 } from '@tuturuuu/internal-api/client';
 
 export {
@@ -9,6 +10,7 @@ export {
   type DevboxFleetSnapshot,
   type DevboxRunnerBlocker,
   evaluateTrustedRunner,
+  fleetSnapshotNow,
 } from './devbox-fleet-types';
 
 import type {
@@ -22,10 +24,33 @@ export class DevboxFleetClient {
   constructor(options: InternalApiClientOptions) {
     this.api = createInternalApiClient(options);
   }
-  snapshot() {
-    return this.api.json<DevboxFleetSnapshot>(
-      '/api/v1/infrastructure/devboxes'
-    );
+  /**
+   * Stamps `server_time` from the server's `generated_at` (when present) or
+   * the response `Date` header, so heartbeat freshness never depends on the
+   * caller's clock.
+   */
+  async snapshot(): Promise<DevboxFleetSnapshot> {
+    const response = await this.api.fetch('/api/v1/infrastructure/devboxes');
+    if (!response.ok) {
+      const data = (await response.json().catch(() => ({}))) as {
+        code?: string;
+        error?: string;
+        message?: string;
+      };
+      throw new InternalApiError(
+        data.message ||
+          data.error ||
+          `Internal API request failed: ${response.status}`,
+        response.status,
+        data.code
+      );
+    }
+    const body = (await response.json()) as DevboxFleetSnapshot;
+    const date = Date.parse(response.headers.get('date') ?? '');
+    const serverTime =
+      body.generated_at ??
+      (Number.isFinite(date) ? new Date(date).toISOString() : undefined);
+    return serverTime ? { ...body, server_time: serverTime } : body;
   }
   /** Root admin only; the server enforces trust-pool exclusion. */
   setFeature(runnerId: string, feature: string, enabled: boolean) {

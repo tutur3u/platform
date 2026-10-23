@@ -1,7 +1,7 @@
 import { availableParallelism, totalmem } from 'node:os';
 import { basename, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { evaluateTrustedRunner } from '../devbox-fleet-types';
+import { evaluateTrustedRunner, fleetSnapshotNow } from '../devbox-fleet-types';
 import { parseDurationSeconds } from './devbox-duration';
 import {
   commandCwd,
@@ -225,7 +225,7 @@ export async function runResourcesCommand(argv: string[]) {
         .map((runner) => ({
           id: runner.id,
           name: runner.name,
-          ...evaluateTrustedRunner(runner),
+          ...evaluateTrustedRunner(runner, fleetSnapshotNow(snapshot)),
         })),
     };
     process.stdout.write(
@@ -353,32 +353,40 @@ function optionValue(options: string[], name: string) {
 }
 
 // `--offload auto` offloads only when local lanes are saturated and falls back
-// to the local queue when no eligible runner exists; `--offload <runner-id>`
-// always targets that runner and fails instead of falling back.
-async function offloadRun({
+// to the local queue when no eligible runner exists or the server rejected the
+// run; `--offload <runner-id>` always targets that runner and fails instead of
+// falling back. Once a remote run exists (or might exist) neither mode falls
+// back: runBoxOffload stops it and returns a non-zero code instead.
+export async function offloadRun({
   home,
   lanes,
   target,
   argv,
   timeout,
+  cwd = process.cwd(),
+  loadBox = () => import('./resources-box-offload'),
+  queueStatus = resourceQueueStatus,
 }: {
   home: string;
   lanes: number;
   target: string;
   argv: string[];
   timeout?: string;
+  cwd?: string;
+  loadBox?: () => Promise<typeof import('./resources-box-offload')>;
+  queueStatus?: typeof resourceQueueStatus;
 }) {
   const log = (text: string) =>
     process.stderr.write(`[ttr resources] ${text}\n`);
   const explicit = target !== 'auto';
   if (!explicit) {
-    const state = await resourceQueueStatus(home, lanes);
+    const state = await queueStatus(home, lanes);
     if (state.occupied < state.effectiveLanes && !state.waiting.length)
       return undefined;
   }
+  const box = await loadBox();
   try {
-    const box = await import('./resources-box-offload');
-    const plan = box.offloadCommitPlan(process.cwd());
+    const plan = box.offloadCommitPlan(cwd);
     const client = await box.createSessionClient();
     const selection = box.selectOffloadRunner(
       await client.devboxes.fleet.snapshot(),
@@ -406,6 +414,12 @@ async function offloadRun({
     });
   } catch (error) {
     if (explicit) throw error;
+    if (error instanceof box.OffloadNotCreatedError && !error.rejected) {
+      log(
+        `${error.message}. The run may exist remotely, so it is not repeated locally; check \`ttr box list\` and stop it with \`ttr box stop <run-id>\`.`
+      );
+      return 1;
+    }
     log(
       `offload unavailable: ${error instanceof Error ? error.message : String(error)} Queueing locally.`
     );

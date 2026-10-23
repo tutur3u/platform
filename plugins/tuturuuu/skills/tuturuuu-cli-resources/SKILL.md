@@ -94,11 +94,13 @@ avoid waiting. A bypass is a deliberate exception for a known small operation.
 Cross-machine offload: `ttr resources run --offload auto -- <cmd>` runs the
 exact pushed `HEAD` on a fresh, attested trusted-development `ttr box` runner
 when local lanes are saturated. `--offload <runner-id>` targets one runner.
-Dirty or unpushed trees are refused and no local environment is sent. When
-offload cannot run, the message names `blockedBy` (`stale_heartbeat`,
-`trust_cap`, `capability_missing`, and so on). `ttr resources offload --json`
-explains eligibility. Never offload to Judge or playground runners; selection
-excludes them.
+Dirty trees and commits not on an `origin/*` branch are refused, and no local
+environment is sent. When offload cannot run, the message names `blockedBy`
+(actionable blockers such as `stale_heartbeat` rank ahead of `trust_cap`).
+`ttr resources offload --json` explains eligibility using the server clock.
+Once a remote run exists, a failure stops it and exits non-zero; even
+`--offload auto` never reruns it locally. Never offload to Judge or playground
+runners; selection excludes them.
 
 ## Diagnose and recover
 `ttr resources status` lists each owner's command, PIDs, age and CPU, plus waiter
