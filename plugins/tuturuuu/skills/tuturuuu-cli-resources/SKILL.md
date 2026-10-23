@@ -112,6 +112,26 @@ Once a remote run exists, a failure stops it and exits non-zero; even
 `--offload auto` never reruns it locally. Never offload to Judge or playground
 runners; selection excludes them.
 
+## Cross-project budget (shared host)
+
+An optional `budget` in `config.json` layers worker tokens, memory and
+per-project shares onto the same lanes, home and mutex. There is no second
+queue or home.
+- Projects come from roots, including a linked worktree's main checkout.
+  Unmatched work is `other` and only borrows.
+- Tokens come from `run --tokens N` or `TTR_RESOURCES_TOKENS`. Otherwise they
+  are inferred: vitest costs its worker count, browser or DB suites at least 2,
+  builds at least 4. Admission grants exactly that many workers.
+- Per-project FIFO. Owners reclaim unused share first; borrowing only when no
+  owner with spare share waits; no preemption.
+- `status --json` shows `budget` (ceiling, used, per-project
+  share/used/borrowing/waiting).
+- Studio policy: 12 lanes / 24 tokens / 320 GiB, Tuturuuu and Upskii 6/12/160
+  each. Roll out only through the SDK reference's Studio plan: pinned
+  artifact, drain first, every `ttr` on the host upgraded before the config
+  changes, the zshenv shim guard, then a +2 lane ramp with measurements.
+  Never edit a shared host's live config from an agent session.
+
 ## Multi-host weighted admission
 
 `ttr resources run --hosts -- CMD` admits across `<home>/hosts.json`. It is off

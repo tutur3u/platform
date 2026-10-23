@@ -1523,6 +1523,94 @@ Out-of-range numeric configuration values (lanes `1`–`8`, workers and Turbo `1
 The bounded monitor emits JSONL memory-pressure, T3-tree resident-memory and top-process samples without arguments or environment values. RSS differs from Activity Monitor's footprint and can count shared pages multiple times.
 Offload full validation with `ttr box run --runner <remote-id> -- <command>` only after verifying a different machine and intended checkout. Same-machine runners/containers consume local RAM; resource setup does not configure runners, transmit credentials, or restart Docker.
 
+### Cross-project budget on a shared host
+
+A shared host (for example skr-studio, shared by Tuturuuu and Upskii) can carry a `budget` block in `config.json`. It is a layer on the existing lane admission, not a second scheduler: tickets, owners, the resources home and the admission mutex are unchanged. The budget decides which waiter may claim the next lane, and how many worker tokens that job may fan out to.
+
+```json
+"budget": {
+  "lanes": 12, "tokens": 24, "memoryGiB": 320, "borrow": true,
+  "projects": [
+    { "id": "tuturuuu", "roots": ["/Users/thanh/Documents/GitHub/tuturuuu"], "lanes": 6, "tokens": 12, "memoryGiB": 160 },
+    { "id": "upskii",   "roots": ["/Users/thanh/Documents/GitHub/upskii"],   "lanes": 6, "tokens": 12, "memoryGiB": 160 }
+  ]
+}
+```
+
+**Configuration rules**
+- The ceiling is `lanes`/`tokens`/`memoryGiB`, with lanes up to 16.
+- Shares must fit inside the ceiling, and `maxValidationLanes` may not exceed `budget.lanes`.
+- An invalid budget makes the whole config invalid: explicit runs fail, and shims print the error and run unmanaged.
+- A project is the longest matching root, checked for the working directory and for a linked worktree's main checkout (from `.git` → `gitdir` → `commondir`). So every Upskii worktree under `~/.t3/worktrees/upskii` counts against Upskii.
+- Work outside every root is `other`: it has no share and only borrows idle capacity.
+
+**Worker tokens**
+- Each ticket declares tokens at enqueue. `run --tokens N` or `TTR_RESOURCES_TOKENS=N` set them explicitly; otherwise the classified tool decides:
+  - `vitest` costs its `--maxWorkers` value, or `vitestWorkers`;
+  - browser or database suites (`playwright test`, `supabase start|test|db reset`, `sb:*`) cost at least 2;
+  - builds (`next build`, `cargo build|check|clippy`, Turbo or Bun `build` tasks) cost at least 4;
+  - Turbo test and lint tasks, `tsc` and `eslint` cost at least 2;
+  - anything else costs 1.
+- Declared tokens are clamped to the ceiling.
+- Admission then grants exactly that many workers (`VITEST_MAX_WORKERS`, `CARGO_BUILD_JOBS`, and rewritten `--maxWorkers`/`--jobs`). Turbo stays at one task per lane, so a job's internal fan-out is what it paid for.
+- Memory is declared with `--memory-gib` / `TTR_RESOURCES_MEMORY_GIB`, and defaults to `tokens × memoryGiB / tokens` of the ceiling (about 13.3 GiB per token on Studio).
+
+**Fairness, borrowing and reclaim**
+- Each project keeps FIFO order, and only its oldest ticket competes.
+- A head that fits inside its own share wins first, least-used share first. A project with unused share therefore reclaims it on its next admission.
+- A head that would exceed its share may borrow only when `borrow` is on, the global ceiling still fits, and no project with unused share has a head waiting that fits its share.
+- Running jobs, borrowers included, are never preempted.
+- Nested commands inside an admitted job still run under its owner (verified ancestry), so reentrancy is unaffected.
+
+**Status.** `ttr resources status --json` adds `budget`:
+- `ceiling`, `used` and `borrow`;
+- per project: `share`, `used`, `borrowing` (use above share) and `waiting`.
+
+The text status prints the same per project. Regression coverage is in `resources-budget.test.ts` (fairness, borrowing, reclaim, token and memory caps, project identity for worktrees, and a sustained mixed-load simulation) and `resources-budget-admission.test.ts` (real processes).
+
+#### Studio rollout: 0.28.0 single slot to the budget release
+
+Run this only when Mastermind and Upskii have agreed a quiet window. The agent that prepared it does not change Studio's live config.
+
+1. **Pin the artifact.**
+   - Fetch the exact release with `npm pack tuturuuu@<version>` and record `sha256sum` of the tarball.
+   - Check it against `npm view tuturuuu@<version> dist.integrity`.
+   - Install into a versioned owner path, for example `npm install --prefix ~/.tuturuuu/cli/<version> ./tuturuuu-<version>.tgz`, and keep the 0.28.0 install alongside it for rollback.
+   - Point `~/.tuturuuu/bin/ttr` at the new `node_modules/.bin/ttr` with an atomic symlink swap.
+   - Every `ttr` that shares the resources home must move together. Check this with `which -a ttr` for the interactive user, launchd services and GitHub Actions runner environments.
+2. **Drain, don't delete.**
+   - Stop starting new heavy work: pause new lanes and runner pickups by coordination.
+   - Do not `disable`, because shims would then run unmanaged.
+   - Wait until `ttr resources status --json` shows no `owners` and an empty `waiting`. Existing owners and tickets finish on 0.28.0. Never remove tickets or slot directories by hand.
+3. **Swap the binary while idle.**
+   - Check `ttr --version` and `ttr resources status`; the old config still has at most 2 lanes.
+   - Run `ttr resources setup --root <tuturuuu root> --root <upskii root> --shell none` to regenerate shims for the new entry point. Setup keeps the existing config, including a `budget` block.
+   - Only after every `ttr` on the host is the new version, continue. 0.28.0 rejects `validationLanes` above 2, which makes its shims run unmanaged, and it closes admission when it sees `slots/2` or higher.
+4. **Remove the shim-in-`~/.zshenv` exposure.**
+   - `~/.zshenv` runs for every zsh, including `ssh host 'cmd'` and `zsh -c`. Move the managed block to `~/.zshrc` (interactive shells only), or guard it with `[[ -o interactive ]]`.
+   - The release also never admits `ttr` through its own shim, and verified ancestry lets nested shims pass, so the guard is defence in depth.
+   - Decide explicitly how runner jobs are counted: wrap heavy steps in `ttr resources run`, or put the shim directory on the runner service's PATH. Anything left unmanaged (GitHub Actions jobs, direct SSH work and its fan-out) is invisible to the budget, and is only seen through memory pressure and load.
+5. **Write the config atomically** (temporary file plus rename, mode 0600), with a backup of the old file kept for rollback:
+   - `roots` and `repositories`: both projects;
+   - `turboConcurrency: 1`, `vitestWorkers: 2`, `buildJobs: 4`;
+   - `validationLanes: 2` (the first ramp step), `maxValidationLanes: 12`;
+   - the `budget` block above (12/24/320 ceiling, 6/12/160 shares, `borrow: true`).
+   - Confirm with `ttr resources status --json` that `budget.projects` lists both projects and that a Tuturuuu and an Upskii worktree resolve to the right project, using a trivial `ttr resources run --tokens 1 -- true` from each.
+6. **Ramp by two lanes.** Raise `validationLanes` 2 → 4 → 6 → 8 → 10 → 12. Lanes above the base are already admitted only through pressure- and load-gated bursts.
+   - Lane changes are refused while owners or waiters exist, so each step needs an idle window.
+   - Before each step, measure over at least 15 minutes of normal load:
+     - `memory_pressure | tail -1` (stay "normal");
+     - `sysctl -n vm.loadavg` (1-minute load below 0.7 × 32 ≈ 22);
+     - idle CPU from `top -l 2 -n 0 | grep "CPU usage"` (at least 30%);
+     - `ttr resources status --json | jq .budget` (tokens below the ceiling);
+     - the wall time of a fixed probe suite, which must not regress.
+   - Count unmanaged fan-out too: `ps -axo pid,ppid,%cpu,rss,command | grep -E 'Runner.Worker|vitest|turbo|next build|cargo'`.
+   - If the current work already spends the budget, or pressure rises, drain before raising. Lanes are a ceiling, not a reason to start heavy work.
+7. **Rollback** (idle only):
+   - restore the backed-up config first, because 0.28.0 rejects more than 2 lanes and ignores `budget`;
+   - swap the `ttr` symlink back to the pinned 0.28.0 path;
+   - rerun `setup --shell none`.
+
 ### Multi-host weighted admission
 
 `ttr resources run --hosts -- COMMAND` admits a job across the hosts in `<resources home>/hosts.json`. Without that file, `--hosts` refuses to run and admission stays the single-host lane FIFO. The CLI never writes or activates `hosts.json`; an operator installs it after a reviewed release. The registry decides where code runs, so it is trusted only from the canonical per-user home `~/.tuturuuu/resources`. That directory must be a real 0700 directory owned by you, `hosts.json` a real 0600 file owned by you, and every parent a non-symlink directory writable only by root or you (a root-owned sticky directory such as `/tmp` is allowed). The file is opened with `O_NOFOLLOW` and re-verified through the descriptor. A home inside an opted-in repository root (`roots`, or a `repositories` checkout) is refused too, as is an invalid `config.json`. When `TTR_RESOURCES_HOME` points anywhere else, or any check fails, the registry is ignored and `--hosts` is disabled (`resources-hosts-trust.test.ts`). `ttr resources hosts [--json]` shows each host's budget, reservations and waiters (or the proposed registry when none is installed). `ttr resources hosts --simulate [--json]` is an offline dry run of the measured queue through the same planner.
