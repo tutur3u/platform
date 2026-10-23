@@ -1,16 +1,16 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { calendarPreferenceGuardPrefix } from '../../../../apps/infrastructure/src/lib/mobile-calendar/preference-guard';
+import { calendarPreferenceGuardPrefix } from './preference-guard';
 
 const mocks = vi.hoisted(() => ({
   trust: vi.fn(),
   blocked: vi.fn(),
   buckets: new Map<string, number>(),
 }));
-vi.mock('../offline-download-guard', () => ({
+vi.mock('@tuturuuu/utils/offline-download-guard', () => ({
   guardOfflineDownloadRequest: async () => null,
 }));
-vi.mock('../required-mfa-runtime', () => ({
+vi.mock('@tuturuuu/utils/required-mfa-runtime', () => ({
   enforceRequiredMfaRequest: async () => null,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -44,7 +44,7 @@ vi.mock('@upstash/redis', () => ({
     }
   },
 }));
-vi.mock('../abuse-protection/edge', () => ({
+vi.mock('@tuturuuu/utils/abuse-protection/edge', () => ({
   extractIPFromRequest: () => '192.0.2.1',
   isIPBlockedEdge: () => mocks.blocked(),
   readEdgeAbuseProtectionControls: async () => ({
@@ -52,16 +52,16 @@ vi.mock('../abuse-protection/edge', () => ({
     rateLimitsEnabled: true,
   }),
 }));
-vi.mock('../abuse-protection/edge-trust', () => ({
+vi.mock('@tuturuuu/utils/abuse-protection/edge-trust', () => ({
   getCachedTrustEntries: (keys: string[]) => mocks.trust(keys),
   hasCachedIpBlockAppealRelief: async () => false,
 }));
-vi.mock('../request-emoji-limit', () => ({
+vi.mock('@tuturuuu/utils/request-emoji-limit', () => ({
   validateRequestEmojiLimit: async () => null,
 }));
 
 // Use the actual server subject builder, rather than a separately invented hash.
-import { buildAbuseRiskSubjects } from '../abuse-protection/reputation';
+import { buildAbuseRiskSubjects } from '@tuturuuu/utils/abuse-protection/reputation';
 
 const path = '/api/v1/mobile-calendar/api/v1/users/calendar-settings';
 const token = 'synthetic-native-session';
@@ -72,7 +72,9 @@ function verifiedKey(value = token) {
   }).find((subject) => subject.subject_type === 'session')!.subject_key;
 }
 async function request(pathname: string) {
-  const { guardApiProxyRequest } = await import('../api-proxy-guard.js');
+  const { guardApiProxyRequest } = await import(
+    '@tuturuuu/utils/api-proxy-guard'
+  );
   const req = new NextRequest(`https://infra.test${pathname}`, {
     method: 'PATCH',
     headers: {

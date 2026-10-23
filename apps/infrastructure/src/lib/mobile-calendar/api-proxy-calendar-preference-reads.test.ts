@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { calendarPreferenceGuardPrefix } from '../../../../apps/infrastructure/src/lib/mobile-calendar/preference-guard';
+import { calendarPreferenceGuardPrefix } from './preference-guard';
 
 const mocks = vi.hoisted(() => ({
   trust: vi.fn(),
@@ -10,10 +10,10 @@ const mocks = vi.hoisted(() => ({
   blocked: vi.fn(),
   buckets: new Map<string, number>(),
 }));
-vi.mock('../offline-download-guard', () => ({
+vi.mock('@tuturuuu/utils/offline-download-guard', () => ({
   guardOfflineDownloadRequest: async () => null,
 }));
-vi.mock('../required-mfa-request', () => ({
+vi.mock('@tuturuuu/utils/required-mfa-request', () => ({
   checkRequiredAccountMfa: (...args: unknown[]) => mocks.assurance(...args),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -47,7 +47,7 @@ vi.mock('@upstash/redis', () => ({
     }
   },
 }));
-vi.mock('../abuse-protection/edge', () => ({
+vi.mock('@tuturuuu/utils/abuse-protection/edge', () => ({
   extractIPFromRequest: () => '192.0.2.1',
   isIPBlockedEdge: () => mocks.blocked(),
   readEdgeAbuseProtectionControls: async () => ({
@@ -55,11 +55,11 @@ vi.mock('../abuse-protection/edge', () => ({
     rateLimitsEnabled: true,
   }),
 }));
-vi.mock('../abuse-protection/edge-trust', () => ({
+vi.mock('@tuturuuu/utils/abuse-protection/edge-trust', () => ({
   getCachedTrustEntries: (keys: string[]) => mocks.trust(keys),
   hasCachedIpBlockAppealRelief: async () => false,
 }));
-vi.mock('../request-emoji-limit', () => ({
+vi.mock('@tuturuuu/utils/request-emoji-limit', () => ({
   validateRequestEmojiLimit: async () => null,
 }));
 
@@ -72,7 +72,9 @@ async function request(
   useActor = true,
   method = 'GET'
 ) {
-  const { guardApiProxyRequest } = await import('../api-proxy-guard.js');
+  const { guardApiProxyRequest } = await import(
+    '@tuturuuu/utils/api-proxy-guard'
+  );
   const req = new NextRequest(`https://infra.test${pathname}`, {
     method,
     headers: { authorization: `Bearer ${token}`, 'x-user-id': 'forged-actor' },
