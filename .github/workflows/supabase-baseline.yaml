@@ -16,6 +16,11 @@ on:
         description: Seed all image profiles on main without database contracts
         type: boolean
         default: false
+      seed_image_catalog:
+        description: Reviewed image catalog for main-only seeding
+        type: choice
+        default: current
+        options: [current, cli-2.121.0]
 env:
   SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
 permissions:
@@ -48,6 +53,7 @@ jobs:
         with:
           profile: ${{ matrix.profile }}
           pull-budget-seconds: "600"
+          seed-image-catalog: ${{ inputs.seed_image_catalog || 'current' }}
   cold-warm-corrupt:
     if: inputs.seed_images_only != true
     permissions:
