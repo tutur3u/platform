@@ -23,6 +23,9 @@ export interface CronJob {
   path: string;
   target: ProcessorTarget;
   timeoutMs: number;
+  // Job ids listed in CRON_CONTROL_WORKER_PROCESSORS run this Worker port
+  // instead of calling the legacy processor route.
+  workerProcessor?: 'checkout-expiry';
 }
 
 export const IMMEDIATE_NOTIFICATIONS_CRON = '*/5 * * * *';
@@ -38,7 +41,9 @@ function job(
   target: ProcessorTarget,
   path: string,
   overlap: OverlapClass,
-  options: { method?: 'GET' | 'POST'; timeoutMs?: number } = {}
+  options: Partial<
+    Pick<CronJob, 'method' | 'timeoutMs' | 'workerProcessor'>
+  > = {}
 ): CronJob {
   return {
     cron,
@@ -48,6 +53,9 @@ function job(
     path,
     target,
     timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    ...(options.workerProcessor
+      ? { workerProcessor: options.workerProcessor }
+      : {}),
   };
 }
 
@@ -132,7 +140,8 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '*/5 * * * *',
     'inventory',
     '/api/cron/inventory/checkout-expiry',
-    'claim-fenced'
+    'claim-fenced',
+    { workerProcessor: 'checkout-expiry' }
   ),
   job(
     'web-deadline-reminders',

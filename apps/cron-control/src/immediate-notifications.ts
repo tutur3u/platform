@@ -1,17 +1,10 @@
+import { databaseHeaders } from './database';
+
 export interface ImmediateNotificationsEnv {
   CRON_CONTROL_DELIVERY_TOKEN: string;
   SUPABASE_SECRET_KEY: string;
   SUPABASE_URL: string;
   WEB_ORIGIN: string;
-}
-
-function databaseHeaders(env: ImmediateNotificationsEnv) {
-  return {
-    apikey: env.SUPABASE_SECRET_KEY,
-    'Content-Type': 'application/json',
-    'Accept-Profile': 'private',
-    'Content-Profile': 'private',
-  };
 }
 
 async function requeueStalePushBatches(env: ImmediateNotificationsEnv) {

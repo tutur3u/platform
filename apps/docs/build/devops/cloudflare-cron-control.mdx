@@ -69,6 +69,11 @@ separate reviewed workflow change or an operator `wrangler secret put`. An enabl
 job whose secret or https origin is missing logs `Cron Control job misconfigured`
 and does nothing.
 
+A job with a Worker port (currently `inventory-checkout-expiry`) runs that port
+instead of its Next route only when its id is also listed in
+`CRON_CONTROL_WORKER_PROCESSORS`, which is empty by default. See
+[processor migration](/build/devops/cloudflare-processor-migration).
+
 ### Ledger, claims and stop fence
 
 The `CronLedger` SQLite Durable Object (one instance) stores per-job state:

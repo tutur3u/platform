@@ -26,6 +26,11 @@ const source = JSON.parse(
 );
 assert.deepEqual(source.triggers.crons, TRIGGERS);
 assert.equal(source.vars.CRON_CONTROL_ENABLED_JOBS, '', 'jobs default off');
+assert.equal(
+  source.vars.CRON_CONTROL_WORKER_PROCESSORS,
+  '',
+  'Worker processors default off'
+);
 if (process.env.CRON_TEST_CONFIG) {
   const config = JSON.parse(readFileSync(process.env.CRON_TEST_CONFIG, 'utf8'));
   for (const key of [

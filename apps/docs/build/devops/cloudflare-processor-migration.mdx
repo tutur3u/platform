@@ -1,0 +1,73 @@
+---
+title: "Processor migration to Cloudflare"
+description: "Per-job plan and cost bounds for moving scheduled processors off Vercel, with checkout expiry as the Worker template."
+updatedAt: '2026-10-23'
+---
+
+Moving a job's **schedule** into [Cron Control](/build/devops/cloudflare-cron-control)
+still invokes its Vercel function every slot. Moving its **processor** into a
+Worker, Queue consumer or Workflow removes that invocation. Follow
+[Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership) and the
+[runaway-work acceptance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
+rules for every move.
+
+## Template: checkout expiry Worker processor
+
+`apps/cron-control/src/processors/checkout-expiry.ts` ports Inventory's
+checkout-expiry processor. It runs only when `inventory-checkout-expiry` is in
+both `CRON_CONTROL_ENABLED_JOBS` and `CRON_CONTROL_WORKER_PROCESSORS`, so the
+schedule can move first and the processor later. Both vars are empty by default.
+
+- **Same claim.** The Worker calls the private `expire_inventory_checkout_sessions`
+  RPC directly with the service key in `apikey`. The RPC locks candidates with
+  `FOR UPDATE SKIP LOCKED` and only moves `reserved` rows, so a concurrent legacy
+  run cannot double-expire a checkout.
+- **Same bounds.** At most 10 batches of 1,000 rows per slot, one shared `p_now`,
+  30-second database deadlines and manual redirects. The ledger stop fence is
+  checked before every batch after the first.
+- **Next-only side effect.** Storefront payloads are cached for a year and
+  invalidated by tag inside the Next.js host. When rows expire, the Worker posts
+  their workspace ids, 100 per request, to `POST /api/cron/inventory/checkout-expiry`
+  with Inventory's cron secret. That handler only revalidates; it accepts at most
+  100 UUIDs in an 8 KiB body. Committed expiries are revalidated even if a later
+  batch fails. A failed revalidation fails the slot; storefronts stay stale until
+  the next revalidating write, as when the Next processor's revalidation fails.
+- **Outcomes.** A database deadline is `unknown`; HTTP errors, redirects and an
+  unexpected RPC shape are `failed`. Worker processors run once per slot: the next
+  slot is the retry, and five consecutive failed slots stop the job.
+
+**Cost.** An idle slot is two ledger requests and one RPC, with no Vercel call:
+at 288 slots a day that removes 288 Inventory function invocations and adds 288
+database RPCs (the Next route made the same RPC). A full slot is at most 10 RPCs
+plus one revalidation request per 100 affected workspaces.
+
+**Cutover.** Enable the job first (it calls the Next route), verify one slot, then
+add it to `CRON_CONTROL_WORKER_PROCESSORS` in a separate change. Verify one slot
+with `detail.expired` and storefront freshness for a test checkout, then remove the
+Vercel cron. Roll back by removing the id from `CRON_CONTROL_WORKER_PROCESSORS`;
+the job returns to calling the Next route.
+
+Regression coverage: `src/processors/checkout-expiry.test.ts` counts RPC and
+revalidation calls for idle, draining, capped, stopped, partially failed, deadline,
+malformed and chunked cases; `src/dispatch.test.ts` proves the port runs only when
+selected; the Inventory route test covers revalidation auth and input bounds.
+
+## Per-job plan
+
+| Job | Processor target | Work bounds to keep | Cost change when moved |
+| --- | --- | --- | --- |
+| `inventory-checkout-expiry` | Worker processor (implemented, off) | 10 × 1,000 rows, revalidation chunks of 100 | −288 Vercel invocations a day |
+| `tasks-cleanup-media` | Worker processor with a durable workspace cursor in the ledger | Page storage listings, bound workspaces per slot, keep the 30-day retention and reference checks | −1 long (300 s) invocation a day; deletes stay idempotent |
+| `pay-products` | Worker processor | Page Polar products at 100, keep upsert by provider id | −2 a day |
+| `infrastructure-sync-trust-cache` | Worker processor writing the trust cache over REST | Keep 32-way write concurrency and the 2-hour TTL | −144 a day |
+| `calendar-provider-sync` | Queue consumer, one message per workspace | Keep the per-workspace cooldown; align Queue retries with it | −96 gateway invocations a day; adds Queue operations per workspace |
+| `calendar-smart-schedule` | Workflow per workspace | Persist step results; finite attempts | −4 a day |
+| `web-notification-batches`, `web-post-email-queue`, `web-topic-announcements`, `web-report-automation` | Queue consumers | Keep the existing row claims and send reconciliation; one attempt budget across Queue and claims | −336 a day; adds Queue operations per batch |
+| `web-deadline-reminders` | Worker processor after the receipt check becomes an atomic claim | Make check-and-record one RPC before porting | −288 a day |
+| `finance-exchange-rates` | Worker processor | One provider call a day | −1 a day |
+| `infrastructure-sample-resources`, `infrastructure-docker-recovery-alerts` | Retire, pending owner decision | They read the retired Docker host | −1,728 a day if retired |
+
+Ports that need Next.js-only effects (cache tags, React email rendering) keep a
+small authenticated adapter in the owning app, called only when work happened,
+until that app itself moves to Cloudflare. Durable business work never relies on
+`ctx.waitUntil`.

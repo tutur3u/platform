@@ -11,9 +11,12 @@ import {
   TARGET_SECRET_VARS,
 } from './jobs';
 import type { Ledger, RunOutcome } from './ledger';
+import { WORKER_PROCESSORS } from './processors';
+import type { ProcessorEnv } from './processors/types';
 
 export type DispatchEnv = Partial<Record<string, string>> & {
   CRON_CONTROL_ENABLED_JOBS?: string;
+  CRON_CONTROL_WORKER_PROCESSORS?: string;
 };
 
 export interface DispatchDeps {
@@ -24,7 +27,13 @@ export interface DispatchDeps {
 }
 
 export type JobReport =
-  | { attempts: number; id: string; outcome: RunOutcome; status?: number }
+  | {
+      attempts: number;
+      detail?: Record<string, number>;
+      id: string;
+      outcome: RunOutcome;
+      status?: number;
+    }
   | { id: string; outcome: 'misconfigured'; problem: string }
   | { id: string; outcome: 'skipped'; reason: string };
 
@@ -50,6 +59,18 @@ function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
   if (url.protocol !== 'https:' && !(loopback && url.protocol === 'http:'))
     return { problem: `${TARGET_ORIGIN_VARS[cronJob.target]} must be https` };
   return { secret, url };
+}
+
+// The Worker port is selected separately from enabling the job, so a job can
+// move its schedule first and its processor later. It also needs the
+// database secrets the Worker already holds.
+function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
+  if (!cronJob.workerProcessor) return null;
+  const selected = (env.CRON_CONTROL_WORKER_PROCESSORS ?? '')
+    .split(',')
+    .map((id) => id.trim());
+  if (!selected.includes(cronJob.id)) return null;
+  return WORKER_PROCESSORS[cronJob.workerProcessor];
 }
 
 type Attempt = 'failed' | 'ok' | 'retryable' | 'unknown';
@@ -116,6 +137,32 @@ async function runJob(
   });
   if (!claim.granted)
     return { id: cronJob.id, outcome: 'skipped', reason: claim.reason };
+
+  const processor = workerProcessorFor(cronJob, env);
+  if (processor) {
+    // Worker processors run once per slot; the next slot is the retry.
+    const result = await processor({
+      env: env as unknown as ProcessorEnv,
+      fetch: deps.fetch,
+      fence: () => ledger.checkFence(cronJob.id, claim.generation),
+      now: deps.now,
+      userAgent: USER_AGENT,
+    });
+    await ledger.complete({
+      generation: claim.generation,
+      jobId: cronJob.id,
+      maxConsecutiveFailures: MAX_CONSECUTIVE_FAILURES,
+      now: deps.now(),
+      outcome: result.outcome,
+      slot,
+    });
+    return {
+      attempts: 1,
+      detail: result.detail,
+      id: cronJob.id,
+      outcome: result.outcome,
+    };
+  }
 
   let outcome: RunOutcome = 'failed';
   let attempts = 0;

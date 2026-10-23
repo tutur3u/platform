@@ -25,7 +25,8 @@
     "INVENTORY_ORIGIN": "https://inventory.tuturuuu.com",
     "PAY_ORIGIN": "https://pay.tuturuuu.com",
     "TASKS_ORIGIN": "https://tasks.tuturuuu.com",
-    "CRON_CONTROL_ENABLED_JOBS": ""
+    "CRON_CONTROL_ENABLED_JOBS": "",
+    "CRON_CONTROL_WORKER_PROCESSORS": ""
   },
   "durable_objects": {
     "bindings": [{ "name": "CRON_LEDGER", "class_name": "CronLedger" }]

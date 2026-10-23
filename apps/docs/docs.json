@@ -348,6 +348,7 @@
                   "build/devops/cloudflare-cron-control",
                   "build/devops/cloudflare-backend-ownership",
                   "build/devops/background-work-inventory",
+                  "build/devops/cloudflare-processor-migration",
                   "build/devops/mobile-store-deployment",
                   "build/devops/desktop-beta-distribution",
                   "build/devops/secrets-and-configuration",

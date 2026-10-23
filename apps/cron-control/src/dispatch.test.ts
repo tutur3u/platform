@@ -245,3 +245,41 @@ it('fails closed without calling the processor when the ledger is down', async (
   });
   expect(h.calls).toHaveLength(0);
 });
+
+it('runs the checkout-expiry Worker port only when separately selected', async () => {
+  const h = harness((url) =>
+    url.hostname === 'db.example.test'
+      ? Response.json([])
+      : Response.json({ ok: true })
+  );
+  const workerEnv = {
+    ...env,
+    CRON_CONTROL_ENABLED_JOBS: 'inventory-checkout-expiry',
+    SUPABASE_SECRET_KEY: 'service-key',
+    SUPABASE_URL: 'https://db.example.test',
+  };
+  await dispatchScheduledJobs('*/5 * * * *', T0, workerEnv, h.deps);
+  expect(h.calls.map((call) => call.url.pathname)).toEqual([
+    '/api/cron/inventory/checkout-expiry',
+  ]);
+
+  const [report] = await dispatchScheduledJobs(
+    '*/5 * * * *',
+    T0 + 300_000,
+    {
+      ...workerEnv,
+      CRON_CONTROL_WORKER_PROCESSORS: 'inventory-checkout-expiry',
+    },
+    h.deps
+  );
+  expect(report).toEqual({
+    attempts: 1,
+    detail: { batches: 1, expired: 0, revalidated: 0 },
+    id: 'inventory-checkout-expiry',
+    outcome: 'ok',
+  });
+  // The idle Worker slot replaces the Vercel invocation with one RPC.
+  expect(h.calls.slice(1).map((call) => call.url.pathname)).toEqual([
+    '/rest/v1/rpc/expire_inventory_checkout_sessions',
+  ]);
+});
