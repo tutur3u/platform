@@ -1,3 +1,4 @@
+import type { QuotaBlock } from './block-ledger';
 import type { AccountUsage, ActiveAssignment, TaskRequest } from './types';
 
 export interface AdmissionRequest {
@@ -68,6 +69,7 @@ export interface HookLedger {
   }[];
 }
 export interface AdmissionContext {
+  blocks?: QuotaBlock[];
   accounts: AccountUsage[];
   active: ActiveAssignment[];
   ledger: HookLedger;

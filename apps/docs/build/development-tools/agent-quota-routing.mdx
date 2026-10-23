@@ -444,3 +444,49 @@ an expired lease held by a live or unverified process cannot be taken over.
 Reroute planning reuses and revalidates its existing reservation rather than
 reserving twice. Blockers take precedence over configured/resumed status, and
 resumption must match a running task, provider and model in the T3 snapshot.
+
+### Preventive block ledger and shell-compatible gate
+
+Before each delegation, invoke `agent-quota admit POOL MODEL`. Exit **0** means
+ADMIT; exit **3** means BLOCKED, including unavailable or invalid state. JSON on
+stdout explains the decision. This preflight uses cache-only quota and current
+reservations; it does not create a task reservation. The existing stdin JSON
+`admit` interface remains the transactional admission path for full requirements.
+Pass `--reserve-owner` when the target is the orchestrator's own account, or set
+`AGENT_QUOTA_OWNER_POOL`; matching aliases require fresh headroom above the 30%
+owner reserve. Uncovered/stale models remain bounded by one concurrent reservation.
+
+Both admission interfaces and recommendations ingest
+`~/.local/share/tuturuuu/orchestration/quota/blocks.json`. Version 1 preserves the
+interim `blocks` entries: `pool`, `modelScope`, `reason`, `observedAt`, `resetAt`
+and/or `nextEligibleAt`, plus evidence and existing metadata. Model scopes support
+`*` and `?` globs. A block applies until the later supplied eligibility timestamp.
+Any active scope block suppresses all provider probes for that account, including
+detected aliases; cache-only reads can still admit an unblocked model. A malformed
+ledger fails closed. No-model recommendations exclude a pool with any active scope.
+
+Record a failure once with:
+
+```sh
+agent-quota block --pool antigravity --model-scope 'gemini-4-argon-*' \
+  --reason 'Usage Limit Reached resets in 6 days, 23 hours' \
+  --evidence 'thread-id/run-id/terminal-receipt'
+```
+
+Optional `--observed-at`, `--reset-at` or `--next-eligible-at` records explicit
+provider/operator timing. Relative reset text is anchored to observation time;
+clock-only reset text uses `--timezone` or the machine timezone. Without reset
+evidence, the default conservative `nextEligibleAt` is five hours later, not a
+claim that quota resets then. Evidence should identify the terminal run uniquely;
+repeating the same pool/scope/reason/evidence is idempotent and does not extend the
+original block. Writes are atomic under a process-verified file mutex and preserve
+existing interim metadata. Block expiry removes this prohibition; normal fresh
+quota, owner-reserve and bounded-unknown gates still apply.
+
+Enforcement is **orchestrator-invoked**. T3 currently has no native pre-delegation
+hook or automatic failover. A native `delegate_task` pre-admission callback that
+can veto dispatch is needed for platform enforcement; provider-reported usage,
+model scope and reset timestamps in `orchestrator_capabilities` would supply the
+corresponding telemetry. This change installs neither API nor any controller.
+
+An existing interim block without either deadline remains blocked until its evidence is corrected; it does not invalidate unrelated pools. Newly recorded blocks always receive a deadline.

@@ -1,3 +1,8 @@
+import {
+  matchingBlocks,
+  readBlockLedger,
+  type QuotaBlock,
+} from '../block-ledger';
 import type { AccountUsage, ActiveAssignment, Provider } from '../types';
 import { DEFAULT_INSTANCE_LABELS } from '../types';
 import { collectAntigravity } from './antigravity';
@@ -14,6 +19,7 @@ export interface Collectors {
   collectCodex: typeof collectCodex;
   collectAntigravity: typeof collectAntigravity;
   collectSnapshot: typeof collectSnapshot;
+  readBlockLedger: typeof readBlockLedger;
 }
 
 const DEFAULT_COLLECTORS: Collectors = {
@@ -23,6 +29,7 @@ const DEFAULT_COLLECTORS: Collectors = {
   collectCodex,
   collectAntigravity,
   collectSnapshot,
+  readBlockLedger,
 };
 
 export interface CollectOptions {
@@ -35,6 +42,7 @@ export interface CollectionResult {
   active?: ActiveAssignment[];
   t3ObservedAt?: string;
   t3Error?: string;
+  blocks: QuotaBlock[];
 }
 
 export async function collectAll(
@@ -53,10 +61,12 @@ export async function collectAllWith(
       .then(() => collectors.collectT3State())
       .then((t3) => ({ t3 }))
       .catch(() => ({ t3Error: 'T3 activity state is unavailable.' }));
-  const catalog =
+  const [{ blocks }, catalog] = await Promise.all([
+    collectors.readBlockLedger(),
     options.catalog === undefined
-      ? await collectors.collectCatalog()
-      : parseCatalog(options.catalog);
+      ? collectors.collectCatalog()
+      : Promise.resolve(parseCatalog(options.catalog)),
+  ]);
   const instances = catalog.length
     ? catalog
     : Object.entries(DEFAULT_INSTANCE_LABELS).map(([instanceId, label]) => ({
@@ -67,25 +77,42 @@ export async function collectAllWith(
         modelOptions: {},
         available: false,
       }));
-  const accounts = await Promise.all(
-    instances.map(async (instance) => {
-      const { instanceId, label, provider } = instance;
-      const empty: AccountUsage = {
-        instanceId,
-        label,
-        provider,
+  const cached = await Promise.all(
+    instances.map((instance) =>
+      collectors.collectSnapshot({
+        instanceId: instance.instanceId,
+        label: instance.label,
+        provider: instance.provider,
         windows: [],
         lastError: 'no-usage-signal',
-      };
+      })
+    )
+  );
+  const now = new Date();
+  const accounts = await Promise.all(
+    instances.map(async (instance, index) => {
+      const { instanceId, label, provider } = instance;
+      const cache = cached[index]!;
+      const aliases = cached
+        .filter(
+          (item) =>
+            item.instanceId === instanceId ||
+            Boolean(
+              cache.accountIdentityHash &&
+                item.provider === provider &&
+                item.accountIdentityHash === cache.accountIdentityHash
+            )
+        )
+        .map((item) => item.instanceId);
+      const blocked = matchingBlocks(blocks, aliases, undefined, now).length > 0;
       const account =
-        provider === 'antigravity'
-          ? collectors.collectAntigravity(instanceId, label, instance.models)
-          : options.snapshotsOnly
-            ? empty
-            : provider === 'claude'
-              ? await collectors.collectClaude(instanceId, label)
-              : await collectors.collectCodex(instanceId, label);
-      const snapshot = await collectors.collectSnapshot(account);
+        blocked || options.snapshotsOnly || provider === 'antigravity'
+          ? cache
+          : provider === 'claude'
+            ? await collectors.collectClaude(instanceId, label)
+            : await collectors.collectCodex(instanceId, label);
+      const snapshot =
+        account === cache ? cache : await collectors.collectSnapshot(account);
       return {
         ...snapshot,
         models: instance.models,
@@ -100,6 +127,7 @@ export async function collectAllWith(
     active: t3.t3?.activeAssignments,
     t3ObservedAt: t3.t3?.observedAt,
     t3Error: t3.t3Error,
+    blocks,
   };
 }
 

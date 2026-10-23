@@ -1,10 +1,13 @@
 #!/usr/bin/env bun
+
 import { readFileSync } from 'node:fs';
 import { collapseAccounts } from './accounts';
 import { argumentValue } from './cli-args';
+import { runBlock } from './block-cli';
 import { collectAll } from './collectors';
 import { runHook } from './hook-cli';
 import { recommend, recommendAssignments } from './policy';
+import { runPositionalAdmit } from './positional-admit';
 import { runReconcile } from './reconcile-cli';
 import { runReroute } from './reroute-cli';
 import { parseReserves } from './reserves';
@@ -28,6 +31,14 @@ function percent(
 
 async function main(): Promise<void> {
   const command = process.argv[2];
+  if (command === 'block') {
+    await runBlock(process.argv.slice(3));
+    return;
+  }
+  if (command === 'admit' && process.argv[3]) {
+    await runPositionalAdmit(process.argv.slice(3));
+    return;
+  }
   if (command === 'reroute-plan') {
     await runReroute(process.argv.slice(3));
     return;
@@ -62,7 +73,7 @@ async function main(): Promise<void> {
     provider !== 'antigravity'
   )
     throw new Error('--provider must be codex, claude, or antigravity.');
-  const { accounts, active, t3ObservedAt, t3Error } = await collectAll({
+  const { accounts, active, t3ObservedAt, t3Error, blocks } = await collectAll({
     snapshotsOnly: process.argv.includes('--snapshots-only'),
     catalog: process.argv.includes('--catalog-stdin')
       ? JSON.parse(readFileSync(0, 'utf8'))
@@ -74,7 +85,13 @@ async function main(): Promise<void> {
   const reserves = parseReserves();
   if (command === 'status') {
     const ranking = active
-      ? recommend({ task: {}, active, accounts: filtered, reserves }).ranked
+      ? recommend({
+          task: {},
+          active,
+          accounts: filtered,
+          blocks,
+          reserves,
+        }).ranked
       : [];
     const result = collapseAccounts(filtered).map((account) => ({
       ...account,
@@ -154,7 +171,13 @@ async function main(): Promise<void> {
   };
   if (!Number.isFinite(task.weight) || task.weight <= 0)
     throw new Error('--weight must be positive.');
-  const assignmentOptions = { task, active, accounts: filtered, reserves };
+  const assignmentOptions = {
+    task,
+    active,
+    accounts: filtered,
+    reserves,
+    blocks,
+  };
   const assignments = recommendAssignments({ ...assignmentOptions, count });
   const ranked = recommend({ ...assignmentOptions, count: 1 }).ranked;
   const result = { task, requestedCount: count, assignments, ranked };

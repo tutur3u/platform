@@ -1,4 +1,5 @@
 import { accountKey, collapseAccounts } from './accounts';
+import { matchingBlocks } from './block-ledger';
 import { recoveryAdmissionKey } from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type {
@@ -123,7 +124,12 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
       const candidates = request.requirements.candidates.filter((candidate) =>
         ids.includes(candidate.instanceId)
       );
-      const candidate = candidates.find((candidate) => {
+      const unblockedCandidates = candidates.filter(
+        (candidate) =>
+          matchingBlocks(context.blocks ?? [], ids, candidate.model, now)
+            .length === 0
+      );
+      const candidate = unblockedCandidates.find((candidate) => {
         const member = accounts.find(
           (account) => account.instanceId === candidate.instanceId
         );
@@ -188,6 +194,8 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
             reason.code === 'reserve'
         )
         .map((reason) => reason.code);
+      if (candidates.length && !unblockedCandidates.length)
+        reasons.push('observed-block-ledger');
       const quotaFresh = ranking.state !== 'UNKNOWN';
       let state: 'FRESH' | 'STALE' | 'UNKNOWN' | 'EXHAUSTED' = quotaFresh
         ? ranking.state === 'exhausted'
@@ -207,6 +215,9 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         (event) =>
           (event.accountKey === key || ids.includes(event.instanceId)) &&
           event.outcome === 'usage-limit' &&
+          (pool.provider !== 'antigravity' ||
+            !event.model ||
+            event.model === candidate?.model) &&
           !event.clearedAt &&
           (!event.resetsAt || Date.parse(event.resetsAt) > now.getTime())
       );

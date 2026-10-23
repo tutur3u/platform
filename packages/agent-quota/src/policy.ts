@@ -1,7 +1,7 @@
 import { collapseAccounts } from './accounts';
+import { matchingBlocks, type QuotaBlock } from './block-ledger';
 
 const NO_RESET_HIGH_LIMIT_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
-
 import type {
   AccountReserve,
   AccountUsage,
@@ -14,6 +14,7 @@ import type {
 import { coversModel } from './window-scope';
 
 export interface RecommendOptions {
+  blocks?: QuotaBlock[];
   task: TaskRequest;
   active: ActiveAssignment[];
   accounts: AccountUsage[];
@@ -339,6 +340,28 @@ export function recommend(options: RecommendOptions): Recommendation {
         options.staleAfterMs ?? SIGNAL_TTL_MS[account.provider],
         hardLimitPercent
       )
+    )
+    .map((item) =>
+      matchingBlocks(
+        options.blocks ?? [],
+        item.instanceIds,
+        options.task.model,
+        now
+      ).length
+        ? {
+            ...item,
+            eligible: false,
+            action: 'drain' as const,
+            reasons: [
+              ...item.reasons,
+              {
+                code: 'observed-block-ledger',
+                message:
+                  'An observed block forbids this pool/model before its eligibility time.',
+              },
+            ],
+          }
+        : item
     )
     .sort(
       (a, b) =>
