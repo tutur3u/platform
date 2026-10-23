@@ -1,67 +1,76 @@
-import type { ChildProcess } from 'node:child_process';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { jsLiteral, privateFixtures, until } from './resources-test-fixtures';
+import {
+  crossProcessTimeout,
+  jsLiteral,
+  until,
+} from './resources-test-fixtures';
 
-// The barrier is causal: it waits as long as a fixture process that could
-// still produce the awaited state is alive, and fails as soon as none is.
-const fixtures = privateFixtures();
-const producer = () => {
-  const child = { exitCode: null, signalCode: null } as unknown as ChildProcess;
-  fixtures.children.push(child);
-  return child;
-};
-afterEach(() => {
-  vi.useRealTimers();
-  fixtures.children.splice(0);
-});
-
-describe('resource fixture barrier', () => {
+afterEach(() => vi.useRealTimers());
+describe('resource fixture barrier', { timeout: crossProcessTimeout }, () => {
   it('serializes generated source literals without HTML or separator characters', () => {
     expect(jsLiteral('</script>\u2028\u2029')).toBe(
       '"\\u003c\\u002fscript\\u003e\\u2028\\u2029"'
     );
   });
-
-  it('keeps waiting for a slow but live producer past any fixed deadline', async () => {
+  it('waits for its live producer within the test budget', async () => {
     vi.useFakeTimers();
-    producer();
-    let produced = false;
-    const barrier = until(async () => produced);
-    // A loaded runner (coverage, two workers) can take far longer than the
-    // former 15 s wall-clock deadline; progress is what matters.
-    await vi.advanceTimersByTimeAsync(40_000);
-    produced = true;
-    await vi.advanceTimersByTimeAsync(20);
-    await expect(barrier).resolves.toBeUndefined();
-  });
-
-  it('fails promptly once every producer exited without reaching it', async () => {
-    vi.useFakeTimers();
-    const child = producer();
-    const barrier = until(async () => false);
-    const settled = expect(barrier).rejects.toThrow(
-      /barrier is unreachable: every fixture process exited/u
+    let ready = false;
+    const waiting = until(
+      async () => ready,
+      [{ alive: () => true, diagnostics: () => 'slow producer' }]
     );
-    await vi.advanceTimersByTimeAsync(100);
-    Object.assign(child, { exitCode: 1 });
+    void waiting.catch(() => {});
+    await vi.advanceTimersByTimeAsync(40_000);
+    ready = true;
     await vi.advanceTimersByTimeAsync(20);
-    await settled;
+    await waiting;
   });
-
-  it('accepts state written just before the producer exited', async () => {
-    const child = producer();
-    let produced = false;
+  it('reports a dead producer even while an unrelated producer lives', async () => {
+    vi.useFakeTimers();
+    const unrelated = { alive: () => true, diagnostics: () => 'unrelated' };
+    expect(await unrelated.alive()).toBe(true);
+    const waiting = until(
+      async () => false,
+      [
+        {
+          alive: () => false,
+          diagnostics: () => 'specific producer stderr: failed install',
+        },
+      ]
+    );
+    const rejected = expect(waiting).rejects.toThrow(
+      'specific producer stderr: failed install'
+    );
+    await vi.advanceTimersByTimeAsync(1020);
+    await rejected;
+  });
+  it('allows an unregistered descendant to finish during the settle window', async () => {
+    vi.useFakeTimers();
+    let drained = false;
+    const waiting = until(async () => drained, []);
+    void waiting.catch(() => {});
+    await vi.advanceTimersByTimeAsync(800);
+    drained = true;
+    await vi.advanceTimersByTimeAsync(20);
+    await waiting;
+  });
+  it('reports live producer diagnostics before the Vitest deadline', async () => {
+    vi.useFakeTimers();
+    const waiting = until(
+      async () => false,
+      [{ alive: () => true, diagnostics: () => 'producer still blocked' }]
+    );
+    const rejected = expect(waiting).rejects.toThrow(
+      /deadline approaching.*producer still blocked/
+    );
+    await vi.advanceTimersByTimeAsync(44_020);
+    await rejected;
+  });
+  it('accepts a final write after the producer exits', async () => {
     let checks = 0;
-    // The producer writes and exits between two checks.
-    const barrier = until(async () => {
-      checks += 1;
-      if (checks === 2) {
-        produced = true;
-        Object.assign(child, { exitCode: 0 });
-        return false;
-      }
-      return produced;
-    });
-    await expect(barrier).resolves.toBeUndefined();
+    await until(
+      async () => ++checks > 1,
+      [{ alive: () => false, diagnostics: () => 'exited' }]
+    );
   });
 });

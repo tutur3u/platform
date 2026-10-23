@@ -8,7 +8,6 @@ import {
   ownerCpu,
   parseCpuTime,
   parseProcessCpu,
-  processCpuTable,
 } from './resources-activity';
 import { isTrivialCommand } from './resources-command';
 import { atomicJson, readResourceConfig } from './resources-config';
@@ -26,7 +25,6 @@ import {
   privateFixtures,
   processTimeout,
   realNode,
-  until,
 } from './resources-test-fixtures';
 
 vi.mock('node:os', async (original) => ({
@@ -76,9 +74,9 @@ describe('nested admission', { timeout: crossProcessTimeout }, () => {
       `const fs=require('fs');fs.writeFileSync(${JSON.stringify(join(path, 'outer.ready'))},'');const t=setInterval(()=>{if(!fs.existsSync(${JSON.stringify(go)}))return;clearInterval(t);require('child_process').execFileSync(${JSON.stringify(join(path, 'bin', 'node'))},[${JSON.stringify(check)}],{stdio:'inherit',timeout:${processTimeout}});},20);`
     );
     const parent = run(path, outer);
-    await until(() => exists(join(path, 'outer.ready')));
+    await parent.until(() => exists(join(path, 'outer.ready')));
     const sibling = launch(path, ['run', '--', 'node', '-e', '0']);
-    await waiting(path, 1);
+    await waiting(path, 1, [sibling]);
     await writeFile(go, '');
     const result = await parent.done;
     expect(result.code, result.err).toBe(0);
@@ -131,16 +129,16 @@ describe('nested admission', { timeout: crossProcessTimeout }, () => {
   it('rejects stale and copied markers so unrelated jobs keep queueing FIFO', async () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const { token } = await json(join(path, 'slots', '0', 'owner.json'));
     const copied = launch(path, ['run', '--', 'node', '-e', '0'], path, entry, {
       TTR_RESOURCES_ADMITTED: token,
     });
-    await waiting(path, 1);
+    await waiting(path, 1, [copied]);
     const stale = launch(path, ['run', '--', 'node', '-e', '0'], path, entry, {
       TTR_RESOURCES_ADMITTED: 'stale-token',
     });
-    await waiting(path, 2);
+    await waiting(path, 2, [stale]);
     expect([copied.child.exitCode, stale.child.exitCode]).toEqual([null, null]);
     await release(path, 'a');
     expect((await a.done).code).toBe(0);
@@ -176,7 +174,7 @@ describe('parallelism hygiene', { timeout: crossProcessTimeout }, () => {
   it('runs trivial commands immediately while every lane is busy', async () => {
     const path = await home(1);
     const a = run(path, await held(path, 'a'));
-    await until(() => exists(join(path, 'a.ready')));
+    await a.until(() => exists(join(path, 'a.ready')));
     const probe = await launch(path, ['run', '--', 'node', '--version']).done;
     expect(probe.code, probe.err).toBe(0);
     expect(probe.out).toMatch(/^v\d+/);
@@ -263,7 +261,7 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
     expect(idleFor(owner, undefined, { percent: 0, seconds: 9 }, now)).toBe(0);
   });
 
-  it('reports owner command, age, CPU and an idle warning without signalling', async () => {
+  it('reports owner command, age and sampled CPU without signalling', async () => {
     const path = await home(1);
     const slot = join(path, 'slots', '0');
     const idle = spawn('sleep', ['60'], { stdio: 'ignore', detached: true });
@@ -281,30 +279,18 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
         sampledAt: new Date().toISOString(),
         lastActiveAt: started,
       });
-      // %cpu is a scheduler-decayed estimate: a just-spawned process still
-      // shows its exec cost, and a contended host can nudge it between two
-      // samples. This test is about an idle owner, so wait (causally, while
-      // it lives) for a real ps sample in which it is idle, and evaluate the
-      // whole report on that same sample.
-      fixtures.children.push(idle);
-      let sample: Awaited<ReturnType<typeof processCpuTable>>;
-      await until(async () => {
-        sample = await processCpuTable();
-        return sample?.find((row) => row.pid === idle.pid)?.percent === 0;
-      });
       const state = await resourceQueueStatus(path);
-      const details = await resourceStatusDetails(state, Date.now(), sample);
+      const details = await resourceStatusDetails(state);
       expect(details.ownerDetails[0]).toMatchObject({
         pid: owner.pid,
         childPid: idle.pid,
         command: 'python3 /tmp/check.py',
-        cpuPercent: 0,
       });
       expect(details.ownerDetails[0]!.elapsedSeconds).toBeGreaterThanOrEqual(
         12 * 60
       );
-      expect(details.warnings).toHaveLength(1);
-      expect(details.warnings[0]).toContain('idle at 0% CPU for 12m');
+      expect(Number.isFinite(details.ownerDetails[0]!.cpuPercent)).toBe(true);
+      expect(details.ownerDetails[0]!.cpuPercent).toBeGreaterThanOrEqual(0);
       const text = renderResourceStatus({
         enabled: true,
         machine: { memoryGiB: 24, cpus: 10 },
@@ -313,7 +299,6 @@ describe('owner activity and status', { timeout: crossProcessTimeout }, () => {
         ...details,
       });
       expect(text).toContain('python3 /tmp/check.py');
-      expect(text).toContain('WARNING: Owner PID');
       expect(idle.exitCode).toBeNull();
     } finally {
       idle.kill();

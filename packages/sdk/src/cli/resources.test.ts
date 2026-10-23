@@ -28,7 +28,6 @@ import {
   privateFixtures,
   processTimeout,
   realNode,
-  until,
   workerProbe,
 } from './resources-test-fixtures';
 
@@ -207,7 +206,7 @@ describe('resource admission', { timeout: crossProcessTimeout }, () => {
       `require('fs').writeFileSync(${jsLiteral(second)},'');process.exit(7);`
     );
     const first = launch(home, ['run', '--', 'node', firstScript], a);
-    await until(() => exists(ready));
+    await first.until(() => exists(ready));
     const next = launch(home, ['run', '--', 'node', nextScript], b);
     await new Promise((resolve) => setTimeout(resolve, 150));
     expect(await exists(second)).toBe(false);
@@ -337,7 +336,7 @@ describe('resource admission', { timeout: crossProcessTimeout }, () => {
       `require('fs').writeFileSync(${jsLiteral(ready)},'');setTimeout(()=>{},60000);`
     );
     const first = launch(home, ['run', '--', 'node', source]);
-    await until(() => exists(ready));
+    await first.until(() => exists(ready));
     const next = launch(home, ['run', '--', 'node', '-e', 'console.log(1)']);
     first.child.kill('SIGTERM');
     expect((await first.done).code).toBe(143);
@@ -353,8 +352,8 @@ describe('resource admission', { timeout: crossProcessTimeout }, () => {
       `const fs=require('fs');fs.writeFileSync(${jsLiteral(ready)},'');const t=setInterval(()=>{if(fs.existsSync(${jsLiteral(release)})){clearInterval(t)}},25);`
     );
     const first = launch(home, ['run', '--', 'node', source]);
-    await until(() => exists(ready));
-    await until(async () =>
+    await first.until(() => exists(ready));
+    await first.until(async () =>
       Boolean(
         JSON.parse(
           await readFile(join(home, 'slots', '0', 'owner.json'), 'utf8')
@@ -390,10 +389,10 @@ describe('reviewed resource policy and signals', {
         `const fs=require('fs');fs.writeFileSync(${jsLiteral(ready)},'');const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(release)}))clearInterval(timer)},10);`
       ),
     ]);
-    await until(() => exists(ready));
+    await active.until(() => exists(ready));
     const probe = await workerProbe(home, 'vitest');
     const queued = launch(home, ['run', '--', probe, 'run', '--maxWorkers=16']);
-    await until(
+    await queued.until(
       async () => (await resourceQueueStatus(home)).waiting.length === 1
     );
     const before = await readFile(join(home, 'config.json'), 'utf8');
@@ -409,7 +408,7 @@ describe('reviewed resource policy and signals', {
     expect(await readFile(join(home, 'config.json'), 'utf8')).toBe(before);
     await writeFile(release, '');
     await active.done;
-    await until(() => exists(join(home, 'probe.json')));
+    await queued.until(() => exists(join(home, 'probe.json')));
     expect(
       JSON.parse(await readFile(join(home, 'probe.json'), 'utf8'))
     ).toEqual({
@@ -433,7 +432,7 @@ describe('reviewed resource policy and signals', {
       `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {writeFileSync} from 'node:fs';process.exitCode=await queuedResourceCommand(${jsLiteral(home)},'node',['-e','process.exit(9)'],process.env,false,1,async()=>{writeFileSync(${jsLiteral(join(home, 'pressure.ready'))},'');return {blocked:true,reason:'private fixture'};});`
     );
     const waiter = launch(home, [], undefined, runner);
-    await until(() => exists(join(home, 'pressure.ready')));
+    await waiter.until(() => exists(join(home, 'pressure.ready')));
     expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
     const before = await readFile(join(home, 'config.json'), 'utf8');
     await expect(
@@ -452,14 +451,14 @@ describe('reviewed resource policy and signals', {
       `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {readResourceConfig,laneResourceConfig,resourceEnvironment} from ${jsLiteral(configModule)};import {limitCommand} from ${jsLiteral(resolve('src/cli/resources-command.ts'))};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const config=laneResourceConfig(await readResourceConfig(${jsLiteral(home)}));const args=limitCommand('cargo',['test','--jobs=16'],config);writeFileSync(${jsLiteral(join(home, 'initial.json'))},JSON.stringify(args));while(!existsSync(${jsLiteral(join(home, 'initial.release'))}))await setTimeout(10);process.exitCode=await queuedResourceCommand(${jsLiteral(home)},${jsLiteral(probe)},args,resourceEnvironment(config),true,1);`
     );
     const broker = launch(home, [], undefined, runner);
-    await until(() => exists(join(home, 'initial.json')));
+    await broker.until(() => exists(join(home, 'initial.json')));
     expect(
       JSON.parse(await readFile(join(home, 'initial.json'), 'utf8'))
     ).toEqual(['test', '--jobs=2']);
     expect((await resourceQueueStatus(home)).waiting).toHaveLength(0);
     await setupResources({ home, roots: [home], shell: 'none', workers: 1 });
     await writeFile(join(home, 'initial.release'), '');
-    await until(() => exists(join(home, 'probe.json')));
+    await broker.until(() => exists(join(home, 'probe.json')));
     expect(
       JSON.parse(await readFile(join(home, 'probe.json'), 'utf8'))
     ).toEqual({
@@ -484,7 +483,7 @@ describe('reviewed resource policy and signals', {
       `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';try{process.exitCode=await queuedResourceCommand(${jsLiteral(home)},${jsLiteral(probe)},['run','--maxWorkers=16'],process.env,false,1,async()=>{writeFileSync(${jsLiteral(join(home, 'pressure.ready'))},'');while(!existsSync(${jsLiteral(join(home, 'pressure.release'))}))await setTimeout(10);return {blocked:false,reason:null};});}catch(error){console.error(error.message);process.exitCode=1;}`
     );
     const broker = launch(home, [], undefined, runner);
-    await until(() => exists(join(home, 'pressure.ready')));
+    await broker.until(() => exists(join(home, 'pressure.ready')));
     await atomicJson(join(home, 'config.json'), {
       ...(await readResourceConfig(home)),
       vitestWorkers: 1,
@@ -505,9 +504,9 @@ describe('reviewed resource policy and signals', {
       `const fs=require('fs');process.on('SIGHUP',()=>fs.writeFileSync(${jsLiteral(join(home, 'signal'))},'SIGHUP'));process.on('SIGTERM',()=>fs.writeFileSync(${jsLiteral(join(home, 'signal'))},'SIGTERM'));fs.writeFileSync(${jsLiteral(join(home, 'ready'))},'');const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(join(home, 'release'))})){clearInterval(timer);process.exit(0)}},10);`
     );
     const broker = launch(home, ['run', '--', 'node', child]);
-    await until(() => exists(join(home, 'ready')));
+    await broker.until(() => exists(join(home, 'ready')));
     broker.child.kill('SIGHUP');
-    await until(() => exists(join(home, 'signal')));
+    await broker.until(() => exists(join(home, 'signal')));
     expect(await readFile(join(home, 'signal'), 'utf8')).toBe('SIGHUP');
     expect(broker.child.exitCode).toBeNull();
     expect((await resourceQueueStatus(home)).owners).toHaveLength(1);
@@ -535,7 +534,7 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
       `import {mock} from 'bun:test';import * as fs from 'node:fs/promises';import {existsSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const original=fs.readFile;let paused=false;mock.module('node:fs/promises',()=>({...fs,readFile:async(path,...args)=>{const value=await original(path,...args);if(String(path)===${jsLiteral(join(home, 'config.json'))}&&!paused){paused=true;await fs.writeFile(${jsLiteral(join(home, 'read.ready'))},'');while(!existsSync(${jsLiteral(join(home, 'read.release'))}))await setTimeout(10);}return value;}}));const {runResourcesCommand}=await import(${jsLiteral(resolve('src/cli/resources.ts'))});await runResourcesCommand([${jsLiteral(action)}]);`
     );
     const reader = launch(home, [], undefined, readerFile);
-    await until(() => exists(join(home, 'read.ready')));
+    await reader.until(() => exists(join(home, 'read.ready')));
     expect(
       JSON.parse(await readFile(join(home, 'admission', 'owner.json'), 'utf8'))
         .pid
@@ -546,7 +545,7 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
       `import {setupResources} from ${jsLiteral(resolve('src/cli/resources-setup.ts'))};import {writeFileSync} from 'node:fs';const result=setupResources({home:${jsLiteral(home)},roots:[${jsLiteral(extra)}],shell:'none',workers:2,lanes:2});writeFileSync(${jsLiteral(join(home, 'setup.ready'))},'');await result;writeFileSync(${jsLiteral(join(home, 'setup.done'))},'');`
     );
     const setup = launch(home, [], undefined, setupFile);
-    await until(() => exists(join(home, 'setup.ready')));
+    await setup.until(() => exists(join(home, 'setup.ready')));
     expect(await exists(join(home, 'setup.done'))).toBe(false);
     expect((await readResourceConfig(home))?.validationLanes).toBe(1);
     await writeFile(join(home, 'read.release'), '');
@@ -563,7 +562,7 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
       'run',
       '--maxWorkers=16',
     ]);
-    await until(() => exists(join(home, 'a.json')));
+    await a.until(() => exists(join(home, 'a.json')));
     const toggle = await launch(home, [action]).done;
     expect(toggle.code).toBe(action === 'uninstall' ? 1 : 0);
     const current = await readResourceConfig(home);
@@ -579,7 +578,7 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
       'test',
       '--jobs=16',
     ]);
-    await until(() => exists(join(home, 'b.json')));
+    await b.until(() => exists(join(home, 'b.json')));
     const owners = (await resourceQueueStatus(home, 2)).owners;
     expect(owners.map((owner) => owner.limits)).toEqual([
       { vitestWorkers: 1, buildJobs: 1 },

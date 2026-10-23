@@ -23,7 +23,6 @@ import {
   exists,
   privateFixtures,
   realNode,
-  until,
 } from './resources-test-fixtures';
 
 vi.mock('node:os', async (original) => ({
@@ -40,9 +39,13 @@ const normal: BurstTelemetry = {
   pressureLevel: 1,
 };
 const fixtures = privateFixtures();
+const jobs = new Map<string, ReturnType<typeof fixtures.laneLaunch>>();
 const queueModule = resolve('src/cli/resources-queue.ts');
 const adaptiveModule = resolve('src/cli/resources-adaptive.ts');
-afterEach(() => fixtures.cleanup());
+afterEach(async () => {
+  await fixtures.cleanup();
+  jobs.clear();
+});
 
 async function home(base: 1 | 2 = 1, max = 3, workers = 3) {
   const path = await fixtures.home(base);
@@ -82,12 +85,18 @@ async function run(
       });
   `
   );
-  return fixtures.laneLaunch(path, [name], runner);
+  const job = fixtures.laneLaunch(path, [name], runner);
+  jobs.set(join(path, name), job);
+  return job;
 }
-const ready = (path: string, name: string) =>
-  until(() => exists(join(path, `${name}.ready`)));
+function waitForProbe(path: string, name: string, extension: string) {
+  const job = jobs.get(join(path, name));
+  if (!job) throw new Error(`No fixture producer for ${name}`);
+  return job.until(() => exists(join(path, `${name}.${extension}`)));
+}
+const ready = (path: string, name: string) => waitForProbe(path, name, 'ready');
 const checked = (path: string, name: string) =>
-  until(() => exists(join(path, `${name}.checked`)));
+  waitForProbe(path, name, 'checked');
 async function finish(
   path: string,
   name: string,
@@ -303,7 +312,7 @@ describe('adaptive queue admission', { timeout: crossProcessTimeout }, () => {
     await ready(path, 'a');
     await ready(path, 'b');
     const c = await run(path, 'c');
-    await fixtures.waiting(path, 1);
+    await fixtures.waiting(path, 1, [c]);
     expect(await exists(join(path, 'c.checked'))).toBe(false);
     expect(await exists(join(path, 'c.ready'))).toBe(false);
     await finish(path, 'a', a);
@@ -366,7 +375,7 @@ describe('adaptive queue admission', { timeout: crossProcessTimeout }, () => {
     const b = await run(path, 'b');
     await checked(path, 'b');
     const c = await run(path, 'c');
-    await fixtures.waiting(path, 2);
+    await fixtures.waiting(path, 2, [c]);
     expect(await exists(join(path, 'c.checked'))).toBe(false);
     await atomicJson(join(path, 'telemetry.json'), normal);
     await ready(path, 'b');
@@ -417,7 +426,7 @@ describe('adaptive queue admission', { timeout: crossProcessTimeout }, () => {
     const c = await run(path, 'c');
     await ready(path, 'c');
     const d = await run(path, 'd');
-    await fixtures.waiting(path, 1);
+    await fixtures.waiting(path, 1, [d]);
     expect(await exists(join(path, 'd.ready'))).toBe(false);
     const result = await fixtures.laneLaunch(path, ['status', '--json']).done;
     expect(result.code, result.err).toBe(0);
@@ -477,7 +486,7 @@ describe('adaptive queue admission', { timeout: crossProcessTimeout }, () => {
         "const fs=await import('node:fs/promises');await fs.mkdir(path+'/slots/1',{recursive:true});",
     });
     await checked(path, 'b');
-    await fixtures.waiting(path, 1);
+    await fixtures.waiting(path, 1, [b]);
     expect(await exists(join(path, 'b.ready'))).toBe(false);
     b.child.kill('SIGTERM');
     expect((await b.done).code).toBe(143);
