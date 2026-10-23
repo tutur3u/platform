@@ -27,137 +27,160 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
     final wsId = context.watch<WorkspaceCubit>().state.currentWorkspace?.id;
     final currentUserId = context.read<AuthCubit>().state.user?.id;
 
+    final projectLocation = Routes.taskPortfolioProjectPath(widget.projectId);
+
+    // The shell owns the title and Back (dock or rail); no in-body top bar.
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: l10n.taskPortfolioTitle,
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.taskPortfolio);
-              },
-              child: const Icon(Icons.arrow_back),
+      child: Stack(
+        children: [
+          Positioned.fill(child: _buildBody(context, wsId, currentUserId)),
+          BlocSelector<TaskPortfolioCubit, TaskPortfolioState, String?>(
+            selector: (state) => state.projects
+                .where(
+                  (item) => item.id == widget.projectId && item.wsId == wsId,
+                )
+                .firstOrNull
+                ?.name
+                .trim(),
+            builder: (context, name) => ShellTitleOverride(
+              ownerId: 'task-project-title-${widget.projectId}',
+              locations: {projectLocation},
+              title: name == null || name.isEmpty
+                  ? l10n.taskPortfolioTitle
+                  : name,
             ),
-          ],
-        ),
-      ],
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<WorkspaceCubit, WorkspaceState>(
-            listenWhen: (prev, curr) =>
-                prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-            listener: (context, state) {
-              final wsId = state.currentWorkspace?.id;
-              if (wsId != null) {
-                unawaited(context.read<TaskPortfolioCubit>().load(wsId));
-              }
-            },
           ),
-          BlocListener<AuthCubit, AuthState>(
-            listenWhen: (prev, curr) => prev.user?.id != curr.user?.id,
-            listener: (context, _) {
-              final wsId = context
-                  .read<WorkspaceCubit>()
-                  .state
-                  .currentWorkspace
-                  ?.id;
-              if (wsId != null) {
-                unawaited(context.read<TaskPortfolioCubit>().load(wsId));
-              }
-            },
+          ShellMiniNav(
+            ownerId: 'task-project-mini-nav-${widget.projectId}',
+            locations: {projectLocation},
+            deepLinkBackRoute: Routes.taskPortfolio,
+            items: [
+              ShellMiniNavItemSpec(
+                id: 'back',
+                icon: Icons.chevron_left,
+                label: l10n.navBack,
+                callbackToken: 'back',
+                onPressed: () => context.go(Routes.taskPortfolio),
+              ),
+            ],
           ),
         ],
-        child: BlocBuilder<TaskPortfolioCubit, TaskPortfolioState>(
-          builder: (context, state) {
-            if (state.status == TaskPortfolioStatus.loading &&
-                state.projects.isEmpty) {
-              return const Center(child: NovaLoadingIndicator());
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, String? wsId, String? currentUserId) {
+    final l10n = context.l10n;
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (prev, curr) =>
+              prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+          listener: (context, state) {
+            final wsId = state.currentWorkspace?.id;
+            if (wsId != null) {
+              unawaited(context.read<TaskPortfolioCubit>().load(wsId));
             }
-
-            if (state.status == TaskPortfolioStatus.error &&
-                state.projects.isEmpty) {
-              return _ErrorState(message: state.error);
-            }
-
-            final project = wsId == null
-                ? null
-                : state.projects
-                      .where(
-                        (item) =>
-                            item.id == widget.projectId && item.wsId == wsId,
-                      )
-                      .firstOrNull;
-
-            if (project == null) {
-              return _NotFoundState(
-                title: l10n.taskPortfolioProjectNotFoundTitle,
-                description: l10n.taskPortfolioProjectNotFoundDescription,
-              );
-            }
-
-            return NovaRefreshIndicator(
-              onRefresh: _reload,
-              child: AppPageListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  TaskSurfaceHero(
-                    icon: Icons.folder_open_outlined,
-                    title: project.name,
-                    subtitle: _projectStatusLabel(context, project.status),
-                    accentColor: const Color(0xFF7C3AED),
-                    stats: [
-                      TaskSurfaceStatData(
-                        label: context.l10n.taskPortfolioLinkedTasks,
-                        value: '${project.linkedTasks.length}',
-                      ),
-                      TaskSurfaceStatData(
-                        label: context.l10n.taskPortfolioProjectTasksProgress(
-                          project.completedTasksCount,
-                          project.tasksCount,
-                        ),
-                        value:
-                            '${project.completedTasksCount}/${project.tasksCount}',
-                      ),
-                    ],
-                  ),
-                  const shad.Gap(12),
-                  _ProjectDetailsCard(
-                    project: project,
-                    isMutating: state.isMutating,
-                    onEdit: () => _actions.openEditProject(project),
-                    onDelete: () => _deleteProject(project),
-                  ),
-                  const shad.Gap(12),
-                  _LinkedTasksCard(
-                    project: project,
-                    isMutating: state.isMutating,
-                    onLinkTask: () => _openLinkTaskDialog(project),
-                    onUnlinkTask: (taskId) => _unlinkTask(project.id, taskId),
-                  ),
-                  if (project.linkedTasks.isNotEmpty) ...[
-                    const shad.Gap(12),
-                    _ProjectStatsCard(project: project),
-                  ],
-                  if (wsId != null && currentUserId != null) ...[
-                    const shad.Gap(12),
-                    TaskProjectUpdatesSection(
-                      workspaceId: wsId,
-                      projectId: project.id,
-                      currentUserId: currentUserId,
-                      taskRepository: _taskRepository,
-                    ),
-                  ],
-                ],
-              ),
-            );
           },
         ),
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (prev, curr) => prev.user?.id != curr.user?.id,
+          listener: (context, _) {
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            if (wsId != null) {
+              unawaited(context.read<TaskPortfolioCubit>().load(wsId));
+            }
+          },
+        ),
+      ],
+      child: BlocBuilder<TaskPortfolioCubit, TaskPortfolioState>(
+        builder: (context, state) {
+          if (state.status == TaskPortfolioStatus.loading &&
+              state.projects.isEmpty) {
+            return const Center(child: NovaLoadingIndicator());
+          }
+
+          if (state.status == TaskPortfolioStatus.error &&
+              state.projects.isEmpty) {
+            return _ErrorState(message: state.error);
+          }
+
+          final project = wsId == null
+              ? null
+              : state.projects
+                    .where(
+                      (item) =>
+                          item.id == widget.projectId && item.wsId == wsId,
+                    )
+                    .firstOrNull;
+
+          if (project == null) {
+            return _NotFoundState(
+              title: l10n.taskPortfolioProjectNotFoundTitle,
+              description: l10n.taskPortfolioProjectNotFoundDescription,
+            );
+          }
+
+          return NovaRefreshIndicator(
+            onRefresh: _reload,
+            child: AppPageListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                TaskSurfaceHero(
+                  icon: Icons.folder_open_outlined,
+                  title: project.name,
+                  subtitle: _projectStatusLabel(context, project.status),
+                  accentColor: const Color(0xFF7C3AED),
+                  stats: [
+                    TaskSurfaceStatData(
+                      label: context.l10n.taskPortfolioLinkedTasks,
+                      value: '${project.linkedTasks.length}',
+                    ),
+                    TaskSurfaceStatData(
+                      label: context.l10n.taskPortfolioProjectTasksProgress(
+                        project.completedTasksCount,
+                        project.tasksCount,
+                      ),
+                      value:
+                          '${project.completedTasksCount}/${project.tasksCount}',
+                    ),
+                  ],
+                ),
+                const shad.Gap(12),
+                _ProjectDetailsCard(
+                  project: project,
+                  isMutating: state.isMutating,
+                  onEdit: () => _actions.openEditProject(project),
+                  onDelete: () => _deleteProject(project),
+                ),
+                const shad.Gap(12),
+                _LinkedTasksCard(
+                  project: project,
+                  isMutating: state.isMutating,
+                  onLinkTask: () => _openLinkTaskDialog(project),
+                  onUnlinkTask: (taskId) => _unlinkTask(project.id, taskId),
+                ),
+                if (project.linkedTasks.isNotEmpty) ...[
+                  const shad.Gap(12),
+                  _ProjectStatsCard(project: project),
+                ],
+                if (wsId != null && currentUserId != null) ...[
+                  const shad.Gap(12),
+                  TaskProjectUpdatesSection(
+                    workspaceId: wsId,
+                    projectId: project.id,
+                    currentUserId: currentUserId,
+                    taskRepository: _taskRepository,
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -174,7 +174,14 @@ Feature screens use the primitives with these page kinds:
 Full-bleed screens: calendar day/multi-day/month views, the task board kanban
 canvas, chat threads and composers, Assistant Live, the Meet call grid, and
 media/attachment viewers. Their headers, empty states and loading states still
-use the gutter.
+use the gutter. When a page passes the dock clearance through
+(`consumeBottomClearance: false`), a scrolling canvas pads its own scroll end.
+A fixed, non-scrolling canvas such as the month grid must stop above the dock
+by reserving `MediaQuery.paddingOf(context).bottom` below itself.
+
+Shell detail routes that are not mini-app nav items, such as a portfolio
+project, register `ShellTitleOverride` and a `ShellMiniNav` with a
+`deepLinkBackRoute`, so the dock or rail Back returns to their parent list.
 
 Documented exceptions:
 

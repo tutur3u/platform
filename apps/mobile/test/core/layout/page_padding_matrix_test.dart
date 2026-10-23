@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
+import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
@@ -58,7 +59,8 @@ Future<void> _pump(WidgetTester tester, Size size, Widget page) async {
       key: _renderKey,
       child: shad.ShadcnApp(
         debugShowCheckedModeBanner: false,
-        theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+        // The app's real theme, so captures use its NotoSans typography.
+        theme: MobileShadTheme.light,
         localizationsDelegates: const [
           ...AppLocalizations.localizationsDelegates,
           AppShadcnLocalizationsDelegate(),
@@ -77,6 +79,8 @@ Future<void> _pump(WidgetTester tester, Size size, Widget page) async {
     ),
   );
   await tester.pump();
+  // Let async preferences resolve so controls render their enabled state.
+  await tester.pump(const Duration(milliseconds: 300));
 }
 
 Future<void> _capture(WidgetTester tester, String name) async {
