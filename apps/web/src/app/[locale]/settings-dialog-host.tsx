@@ -128,11 +128,14 @@ export function SettingsDialogHost({
     };
   }, [openSettings]);
 
+  // The optimistic intent only bridges the gap until the URL acknowledges the
+  // open. Clear it on acknowledgement, independent of the lazy import, so a
+  // later Back (URL closed) cannot leave the dialog open via a stale intent.
   useEffect(() => {
-    if (requestedSettingsOpen && SettingsDialog) {
+    if (requestedSettingsOpen) {
       setOpenIntent(null);
     }
-  }, [requestedSettingsOpen, SettingsDialog]);
+  }, [requestedSettingsOpen]);
 
   const openSettingsDialog = useCallback(() => {
     const routeBoardId = getRouteParam(params, 'boardId');
