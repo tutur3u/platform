@@ -1111,6 +1111,18 @@ explicit workflow file without duplicating managed push or pull-request scans.
 Do not add automatic or cron triggers to the fallback; `bun git-sync` mirrors
 the already-scanned `main` commit to `production`.
 
+`scripts/ci/codeql-new-alerts.js` is the trusted new-alert gate for a
+repository-owned pull request CodeQL workflow. That workflow reads it from the
+pull request's base commit (`HEAD^1` of the merge ref, so never from pull
+request code). It fails only on high/critical results that are absent from
+`main`'s latest analysis of the same category. It pages through `main`'s
+analyses within a fixed bound to find that baseline. A category with no `main`
+analysis fails closed, as does a rule whose severity is unknown or unreadable.
+The public log carries counts only; triage results by alert number in the
+maintainer-only Security tab. A category such as `/language:actions` needs a
+`main` analysis, from default setup or a trusted `main` run, before pull
+requests can pass on pre-existing findings.
+
 E2E suites reuse only exact same-day success proofs from protected `main`.
 See [E2E proof reuse](/build/devops/e2e-proof-reuse) for suite inputs, conservative
 fallbacks, diagnostics safety, and inactive database proposal handling.
