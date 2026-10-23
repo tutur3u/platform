@@ -169,7 +169,9 @@ it.each(['waiting', 'admitted'])(
       socket.message({ type: 'ready', userId: 'self', admission });
       drop(socket);
       if (index < 12) {
-        await vi.advanceTimersByTimeAsync(admission === 'waiting' ? 60_000 : 1);
+        await vi.advanceTimersByTimeAsync(
+          admission === 'waiting' && index > 0 ? 60_000 : 1
+        );
       }
     }
     expect(onStatusChange).toHaveBeenLastCalledWith('error');
@@ -201,18 +203,30 @@ it.each(['waiting', 'admitted'])(
   }
 );
 
-it('rate limits pending reconnects and cancels the delayed attempt on leave', async () => {
+it('reconnects pending admission immediately once, then throttles repeats and cancels on leave', async () => {
   const { signaling } = fixture();
   await Promise.resolve();
-  const socket = Socket.instances[0]!;
-  socket.open();
-  socket.message({ type: 'ready', userId: 'self', admission: 'waiting' });
-  drop(socket);
-  await vi.advanceTimersByTimeAsync(59_999);
-  expect(Socket.instances).toHaveLength(1);
+  const first = Socket.instances[0]!;
+  first.open();
+  first.message({ type: 'ready', userId: 'self', admission: 'waiting' });
+  drop(first);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(Socket.instances).toHaveLength(2);
+  const second = Socket.instances[1]!;
+  second.open();
+  second.message({ type: 'ready', userId: 'self', admission: 'waiting' });
+  drop(second);
+  await vi.advanceTimersByTimeAsync(59_998);
+  expect(Socket.instances).toHaveLength(2);
+  await vi.advanceTimersByTimeAsync(2);
+  expect(Socket.instances).toHaveLength(3);
+  const third = Socket.instances[2]!;
+  third.open();
+  third.message({ type: 'ready', userId: 'self', admission: 'waiting' });
+  drop(third);
   signaling.close();
   await vi.advanceTimersByTimeAsync(120_000);
-  expect(Socket.instances).toHaveLength(1);
+  expect(Socket.instances).toHaveLength(3);
 });
 
 it('renews the retry budget only after thirty seconds of stable ready', async () => {
@@ -230,3 +244,69 @@ it('renews the retry budget only after thirty seconds of stable ready', async ()
   expect(onStatusChange).toHaveBeenLastCalledWith('connecting');
   signaling.close();
 });
+
+it.each(['disconnect', 'visibility change'])(
+  'preserves the retry budget across a %s just before thirty seconds',
+  async (event) => {
+    const { signaling, onStatusChange } = fixture();
+    await Promise.resolve();
+    for (let index = 0; index < 13; index++) {
+      const socket = Socket.instances.at(-1)!;
+      socket.open();
+      socket.message({ type: 'ready', userId: 'self', admission: 'admitted' });
+      if (index === 12) {
+        await vi.advanceTimersByTimeAsync(29_999);
+        if (event === 'visibility change') {
+          vi.spyOn(document, 'visibilityState', 'get').mockReturnValue(
+            'hidden'
+          );
+          document.dispatchEvent(new Event('visibilitychange'));
+          vi.spyOn(document, 'visibilityState', 'get').mockReturnValue(
+            'visible'
+          );
+          document.dispatchEvent(new Event('visibilitychange'));
+        }
+      }
+      drop(socket);
+      await vi.advanceTimersByTimeAsync(1);
+    }
+    expect(Socket.instances).toHaveLength(13);
+    expect(onStatusChange).toHaveBeenLastCalledWith('error');
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(Socket.instances).toHaveLength(13);
+    signaling.close();
+  }
+);
+
+it.each([-3_600_000, 3_600_000])(
+  'does not let a wall-clock jump of %i ms bypass admission throttling or stability',
+  async (jump) => {
+    const { signaling, onStatusChange } = fixture();
+    await Promise.resolve();
+    const first = Socket.instances[0]!;
+    first.open();
+    first.message({ type: 'ready', userId: 'self', admission: 'waiting' });
+    drop(first);
+    await vi.advanceTimersByTimeAsync(1);
+    const second = Socket.instances[1]!;
+    second.open();
+    second.message({ type: 'ready', userId: 'self', admission: 'waiting' });
+    await vi.advanceTimersByTimeAsync(29_999);
+    vi.setSystemTime(Date.now() + jump);
+    drop(second);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(Socket.instances).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(29_999);
+    expect(Socket.instances).toHaveLength(3);
+    for (let index = 2; index < 13; index++) {
+      const socket = Socket.instances.at(-1)!;
+      socket.open();
+      socket.message({ type: 'ready', userId: 'self', admission: 'waiting' });
+      drop(socket);
+      if (index < 12) await vi.advanceTimersByTimeAsync(60_000);
+    }
+    expect(onStatusChange).toHaveBeenLastCalledWith('error');
+    expect(Socket.instances).toHaveLength(13);
+    signaling.close();
+  }
+);

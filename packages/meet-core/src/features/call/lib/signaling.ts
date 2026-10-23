@@ -61,7 +61,7 @@ export class MeetSignaling {
   private connectionAttempt: AbortController | null = null;
   private stableTimer: ReturnType<typeof setTimeout> | null = null;
   private waitingForAdmission = false;
-  private lastAdmissionAttemptAt = 0;
+  private lastAdmissionReconnectAt: number | null = null;
   private lastPing = 0;
   private pingPending = false;
   private socketWatch: ReturnType<typeof setInterval> | null = null;
@@ -73,7 +73,8 @@ export class MeetSignaling {
   connect() {
     if (this.connectionAttempt || this.socket || this.retryTimer) return;
     this.closedByUs = false;
-    if (this.waitingForAdmission) this.lastAdmissionAttemptAt = Date.now();
+    if (this.waitingForAdmission)
+      this.lastAdmissionReconnectAt = performance.now();
     const attempt = new AbortController();
     this.connectionAttempt = attempt;
     this.options.onStatusChange?.('connecting');
@@ -118,7 +119,7 @@ export class MeetSignaling {
         if (this.socket !== socket || this.closedByUs) return;
         const reconnected = this.hasConnected;
         this.hasConnected = true;
-        this.lastPing = Date.now();
+        this.lastPing = performance.now();
         this.pingPending = false;
         this.options.onStatusChange?.('open');
         if (reconnected) this.options.onReconnected?.();
@@ -172,17 +173,20 @@ export class MeetSignaling {
   private watchClosingSocket(socket: WebSocket) {
     this.clearSocketWatch();
     let closingSince: number | null = null;
-    const connectingSince = Date.now();
+    const connectingSince = performance.now();
     this.socketWatch = setInterval(() => {
       if (this.closedByUs || this.socket !== socket) return;
-      if (socket.readyState === 0 && Date.now() - connectingSince >= 10_000) {
+      if (
+        socket.readyState === 0 &&
+        performance.now() - connectingSince >= 10_000
+      ) {
         this.finishSocket(socket);
         socket.close();
         return;
       }
       if (
         socket.readyState === WebSocket.OPEN &&
-        Date.now() - this.lastPing >= 60_000
+        performance.now() - this.lastPing >= 60_000
       ) {
         if (this.pingPending) {
           socket.close(4000, 'keepalive_timeout');
@@ -190,13 +194,13 @@ export class MeetSignaling {
           return;
         }
         this.pingPending = true;
-        this.lastPing = Date.now();
+        this.lastPing = performance.now();
         socket.send('meet:ping');
       }
       // Chrome may remain CLOSING for a minute before delivering a close event.
       if (socket.readyState === 2) {
-        closingSince ??= Date.now();
-        if (Date.now() - closingSince >= 5000) this.finishSocket(socket);
+        closingSince ??= performance.now();
+        if (performance.now() - closingSince >= 5000) this.finishSocket(socket);
       } else if (socket.readyState === 3) {
         this.finishSocket(socket);
       } else {
@@ -214,14 +218,15 @@ export class MeetSignaling {
     }
 
     // The server re-announces pending admission on every connection. Bound
-    // those notifications even when a socket repeatedly reaches ready and drops.
-    const admissionDelay = this.waitingForAdmission
-      ? Math.max(
-          0,
-          PENDING_RECONNECT_INTERVAL_MS -
-            (Date.now() - this.lastAdmissionAttemptAt)
-        )
-      : 0;
+    // repeated notifications after allowing the first recovery with normal backoff.
+    const admissionDelay =
+      this.waitingForAdmission && this.lastAdmissionReconnectAt !== null
+        ? Math.max(
+            0,
+            PENDING_RECONNECT_INTERVAL_MS -
+              (performance.now() - this.lastAdmissionReconnectAt)
+          )
+        : 0;
     const delay = Math.max(computeBackoffMs(this.attempt), admissionDelay);
     this.attempt += 1;
     this.retryTimer = setTimeout(() => {
@@ -269,18 +274,27 @@ export class MeetSignaling {
       this.clearReadiness();
       if (!this.stableTimer) {
         const socket = this.socket;
-        this.stableTimer = setTimeout(() => {
+        const readyAt = performance.now();
+        const resetWhenStable = () => {
           this.stableTimer = null;
           if (
-            this.socket === socket &&
-            socket?.readyState === WebSocket.OPEN &&
-            !this.closedByUs
+            this.socket !== socket ||
+            socket?.readyState !== WebSocket.OPEN ||
+            this.closedByUs
           )
-            this.attempt = 0;
-        }, STABLE_CONNECTION_MS);
+            return;
+          const remaining =
+            STABLE_CONNECTION_MS - (performance.now() - readyAt);
+          if (remaining > 0) {
+            this.stableTimer = setTimeout(resetWhenStable, remaining);
+            return;
+          }
+          this.attempt = 0;
+          this.lastAdmissionReconnectAt = null;
+        };
+        this.stableTimer = setTimeout(resetWhenStable, STABLE_CONNECTION_MS);
       }
       this.waitingForAdmission = message.admission === 'waiting';
-      if (this.waitingForAdmission) this.lastAdmissionAttemptAt = Date.now();
       this.selfUserId = message.userId;
     }
     if (message.type === 'admission.result' && message.admitted)

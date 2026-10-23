@@ -225,11 +225,14 @@ absence of a presence snapshot in a waiting response.
 The signaling readiness deadline is 10 seconds per attempt, including refreshed
 token resolution and the server's `ready` response. Automatic recovery is limited
 to 12 retries. The budget resets only after the socket stays open for 30 seconds
-after protocol-ready; repeated ready/disconnect cycles still exhaust it. Pending
-admission reconnects are limited to one attempt per minute, including failed token
-refreshes. The server currently re-announces pending admission on every connection,
+after protocol-ready; repeated ready/disconnect cycles still exhaust it. The first
+pending admission reconnect uses normal backoff immediately; subsequent attempts are
+limited to one per minute, including failed token refreshes. Both the stability
+window and throttle use a monotonic clock, unaffected by wall-clock changes. The
+server currently re-announces pending admission on every connection,
 even for an existing waiting entry; this client limit bounds those notifications
-but does not provide server-side deduplication across tabs or page reloads. Late responses
+but does not provide server-side deduplication across tabs or page reloads. Late
+responses
 from expired attempts cannot revive them. Connection errors offer retry and leave;
 room-capacity refusals cannot leave a disabled Connecting spinner. Preparing the
 page or controls for more than 30 seconds replaces its spinner with an explanation

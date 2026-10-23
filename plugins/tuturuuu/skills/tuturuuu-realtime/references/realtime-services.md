@@ -369,7 +369,8 @@ is not protocol readiness. Bound token resolution and the ready handshake, abort
 expired requests, and ignore their late results. Preserve denial/removal/ended
 messages before a delayed close event; terminal UI must retain the reason. Reset
 the retry budget only after 30 seconds of stable protocol-ready transport, not on
-each ready message. Pending reconnect attempts are limited to once per minute:
+each ready message. Allow the first pending reconnect with normal backoff; limit subsequent attempts
+to once per minute. Measure stability and throttling with a monotonic clock:
 the server currently re-notifies managers even for an existing waiting entry.
 This client bound is not cross-tab or cross-reload server deduplication.
 
