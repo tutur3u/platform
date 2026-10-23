@@ -5,9 +5,12 @@ name: Security Review Sweep
 # pull request can delete or rename it and a later dismissal would never be
 # signalled. This schedule runs only default-branch code and needs no
 # pull-request-owned workflow. scripts/ci/security-review-sweep.js evaluates
-# labeled open pull requests updated since the last successful sweep, plus a
-# fixed hourly 1/24 rotation of the rest, under a REST call budget, and posts a
-# check only when the decision changed.
+# every open pull request whose number % 24 equals the UTC hour (each one at
+# least once per 24 scheduled runs; membership by changed paths, never by
+# label), then a bounded pass over pull requests updated since the last
+# successful sweep. It posts a check only when the decision changed, and
+# re-reads the head and reviews right before each post (it spans many pull
+# requests, so it cannot hold their per-PR concurrency groups).
 # GitHub may delay or drop scheduled runs, so this bounds staleness only
 # loosely; native code-owner review remains the primary revocation control
 # (see security-cadence.mdx). Never check out, install or execute pull request
@@ -28,9 +31,9 @@ jobs:
     name: Recompute labeled security reviews
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Labels are never written here (swept pull requests are already labeled),
-    # so pull requests are read-only and issues need no access. actions: read
-    # finds the last successful sweep, which is the incremental cursor.
+    # Labels are cosmetic and never written here, so pull requests are
+    # read-only and issues need no access. actions: read finds the last
+    # successful sweep for the bounded fast path.
     permissions:
       actions: read
       checks: write
@@ -59,6 +62,5 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           SECURITY_REVIEWERS: ${{ vars.SECURITY_REVIEWERS }}
-          SWEEP_CALL_BUDGET: "300"
         run: node scripts/ci/security-review-sweep.js
 

@@ -1,20 +1,32 @@
-// Regressions for REV-6456-10 (the sweep eventually covers every labeled open
-// pull request under a call budget, incrementally) and REV-6456-11 (the
-// revocation is posted first; check lookup and labeling are best-effort).
+// Regressions for the scheduled sweep and per-PR writers:
+// - REV-6456-13: a deterministic UTC-hour partition visits every open pull
+//   request within 24 scheduled runs, whatever earlier runs did, and the
+//   bounded fast path cannot starve it;
+// - REV-6456-17: membership comes from changed paths, never the label;
+// - REV-6456-16: a writer re-reads head and reviews right before posting, so
+//   a stale success can never follow a revocation for the same head;
+// - REV-6456-11: the revocation is posted first; lookups and labels are
+//   best-effort.
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { reclassify } = require('./security-review-classification.js');
-const { hourMs, rotationSlots, sweep } = require('./security-review-sweep.js');
+const {
+  callsPerPull,
+  fastPathPulls,
+  slots,
+  sweep,
+} = require('./security-review-sweep.js');
 const { routedGitHub } = require('./security-review-test-helper');
 
 const repo = 'example/platform';
 const sha = (n) => n.toString(16).padStart(40, '0');
+const hour = 60 * 60 * 1000;
+const day0 = Date.parse('2026-10-23T00:05:00Z');
 const review = (login, state, commit) => ({
   commit_id: commit,
   state,
   user: { login, type: 'User' },
 });
-const labeled = [{ name: 'security-review-required' }];
 
 function quietEnv(t) {
   const saved = { ...process.env };
@@ -27,35 +39,58 @@ function quietEnv(t) {
   t.mock.method(console, 'error', () => {});
 }
 
+// Unlabeled on purpose: the sweep must not depend on labels.
 function pull(number, overrides = {}) {
   return {
     base: { repo: { full_name: repo } },
     head: { sha: sha(number) },
-    labels: labeled,
+    labels: [],
     number,
-    updated_at: '2026-10-23T00:00:00Z',
+    state: 'open',
+    updated_at: '2026-10-01T00:00:00Z',
     user: { login: 'mallory' },
     ...overrides,
   };
 }
 
-// Every pull request touches CI, was approved and then dismissed, and its
-// latest check is a stale success: each evaluation must post a revocation.
-// `lastSweep` is the start of the last successful scheduled sweep (cursor).
-function world(pulls, { checkConclusion = 'success', lastSweep } = {}) {
+const lastRun = (overrides = {}) => ({
+  conclusion: 'success',
+  event: 'schedule',
+  head_branch: 'main',
+  path: '.github/workflows/security-review-sweep.yaml',
+  run_started_at: '2026-10-22T23:00:00Z',
+  workflow_id: 77,
+  ...overrides,
+});
+
+// Every pull request touches CI and was approved then dismissed, and its
+// latest check is a stale success: each evaluation posts a revocation.
+function world(pulls, { files = () => 1, run = lastRun() } = {}) {
+  const workflow = `/repos/${repo}/actions/workflows/security-review-sweep.yaml`;
   const routes = {
-    [`/repos/${repo}/actions/workflows/security-review-sweep.yaml/runs`]: {
-      workflow_runs: lastSweep
-        ? [{ run_started_at: new Date(lastSweep).toISOString() }]
-        : [],
-    },
+    [`/repos/${repo}`]: { default_branch: 'main' },
+    [workflow]: { id: 77 },
+    [`${workflow}/runs`]: { workflow_runs: run ? [run] : [] },
     [`/repos/${repo}/pulls`]: (page) =>
       pulls.slice((page - 1) * 100, page * 100),
   };
   for (const item of pulls) {
     const base = `/repos/${repo}/pulls/${item.number}`;
-    routes[`${base}/files`] = (page) =>
-      page === 1 ? [{ filename: '.github/workflows/x.yaml' }] : [];
+    const fileCount = files(item);
+    routes[base] = item;
+    routes[`${base}/files`] =
+      typeof fileCount === 'number'
+        ? (page) =>
+            Array.from(
+              {
+                length: Math.max(
+                  0,
+                  Math.min(100, fileCount - (page - 1) * 100)
+                ),
+              },
+              (_, index) => ({ filename: `.github/workflows/x${index}.yaml` })
+            )
+        : fileCount;
     routes[`${base}/reviews`] = (page) =>
       page === 1
         ? [
@@ -67,7 +102,7 @@ function world(pulls, { checkConclusion = 'success', lastSweep } = {}) {
       check_runs: [
         {
           app: { slug: 'github-actions' },
-          conclusion: checkConclusion,
+          conclusion: 'success',
           started_at: '2026-10-23T00:00:00Z',
         },
       ],
@@ -80,123 +115,185 @@ const checkPosts = (requests) =>
   requests.filter(
     ({ method, route }) => method === 'POST' && route.endsWith('/check-runs')
   );
-
-const swept = (requests) =>
+const visited = (requests) =>
   checkPosts(requests).map(({ body }) => Number.parseInt(body.head_sha, 16));
-const at = (iso) => Date.parse(iso);
 
-test('changed labeled pull requests are revoked; issues and others are skipped', async (t) => {
+test('every open pull request is visited within 24 scheduled runs', async (t) => {
   quietEnv(t);
-  const cursor = at('2026-10-23T10:00:00Z');
-  const now = at('2026-10-23T11:05:00Z');
-  const slot = Math.floor(now / hourMs) % rotationSlots;
-  // Pick numbers outside the current rotation slot so only "changed" counts.
-  const off = (n) => (n % rotationSlots === slot ? n + 1 : n);
-  const changed = pull(off(1), { updated_at: '2026-10-23T10:30:00Z' });
-  const stale = pull(off(3), { updated_at: '2026-10-22T09:00:00Z' });
-  const pulls = [
-    changed,
-    stale,
-    // Unlabeled and foreign-base pull requests are never visited.
-    pull(off(5), { labels: [], updated_at: '2026-10-23T10:30:00Z' }),
-    pull(off(7), {
-      base: { repo: { full_name: 'attacker/platform' } },
-      updated_at: '2026-10-23T10:30:00Z',
-    }),
-  ];
-  const requests = routedGitHub(t, world(pulls, { lastSweep: cursor }));
-  const counts = await sweep(repo, { now });
-  assert.deepEqual(swept(requests), [changed.number]);
-  assert.equal(counts.changed, 1);
-  assert.equal(counts.rotated, 0);
-  for (const skipped of pulls.slice(1)) {
-    assert.ok(
-      !requests.some(({ route }) =>
-        route.startsWith(`/repos/${repo}/pulls/${skipped.number}/`)
-      ),
-      `#${skipped.number} must not be evaluated`
+  // Every PR looks recently updated, so the fast path is saturated each run.
+  const pulls = Array.from({ length: 200 }, (_, index) =>
+    pull(index + 1, { updated_at: '2026-10-23T00:00:00Z' })
+  );
+  const seen = new Set();
+  for (let run = 0; run < slots; run += 1) {
+    const requests = routedGitHub(t, world(pulls));
+    const now = day0 + run * hour;
+    const counts = await sweep(repo, { now });
+    const slot = new Date(now).getUTCHours();
+    const inSlice = visited(requests).filter((n) => n % slots === slot);
+    // The whole slice is evaluated before, and regardless of, the fast path.
+    assert.equal(inSlice.length, counts.slice);
+    assert.ok(counts.fastPath <= fastPathPulls);
+    for (const number of visited(requests)) seen.add(number);
+  }
+  assert.equal(seen.size, 200);
+});
+
+test('over-budget and failed slices never block later slices', async (t) => {
+  quietEnv(t);
+  const pulls = Array.from({ length: 96 }, (_, index) => pull(index + 1));
+  // Three consecutive runs whose slices contain huge file lists exhaust the
+  // slice budget, then 24 ordinary runs follow.
+  const huge = (item) => (item.number % slots < 3 ? 2500 : 1);
+  for (let run = 0; run < 3; run += 1) {
+    routedGitHub(t, world(pulls, { files: huge }));
+    await assert.rejects(
+      sweep(repo, { now: day0 + run * hour }),
+      /over-budget pull request/u
     );
   }
-  for (const { body } of checkPosts(requests)) {
-    assert.equal(body.conclusion, 'action_required');
+  const seen = new Set();
+  for (let run = 3; run < 3 + slots; run += 1) {
+    const requests = routedGitHub(t, world(pulls));
+    await sweep(repo, { now: day0 + run * hour });
+    for (const number of visited(requests)) seen.add(number);
+  }
+  assert.equal(seen.size, 96, 'every pull request visited within 24 runs');
+
+  // A fault-injected slice: one PR's file listing fails. It still gets a
+  // fail-closed revocation, the run fails, and the next slice is unaffected.
+  const failing = world(pulls);
+  failing[`/repos/${repo}/pulls/5/files`] = 500;
+  let requests = routedGitHub(t, failing);
+  await assert.rejects(sweep(repo, { now: day0 + 5 * hour }), /1 failed/u);
+  const revoked = checkPosts(requests).find(
+    ({ body }) => body.head_sha === sha(5)
+  );
+  assert.equal(revoked.body.conclusion, 'action_required');
+  assert.match(revoked.body.output.title, /could not be evaluated/u);
+  // The rest of the failing slice is still evaluated.
+  assert.deepEqual(
+    visited(requests)
+      .filter((n) => n % slots === 5)
+      .sort((a, b) => a - b),
+    [5, 29, 53, 77]
+  );
+  requests = routedGitHub(t, world(pulls));
+  const next = await sweep(repo, { now: day0 + 6 * hour });
+  assert.equal(next.partition, next.slice);
+});
+
+test('the fast path is bounded and needs a verified cursor', async (t) => {
+  quietEnv(t);
+  const pulls = Array.from({ length: 48 }, (_, index) =>
+    pull(index + 1, { updated_at: '2026-10-23T00:00:00Z' })
+  );
+  let requests = routedGitHub(t, world(pulls));
+  let counts = await sweep(repo, { now: day0 });
+  assert.equal(counts.fastPath, fastPathPulls);
+  assert.ok(counts.calls <= 5 + (counts.slice + fastPathPulls) * callsPerPull);
+  // The partition posts come first.
+  assert.ok(
+    visited(requests)
+      .slice(0, counts.slice)
+      .every((n) => n % slots === 0)
+  );
+
+  for (const run of [
+    null,
+    lastRun({ head_branch: 'feature/x' }),
+    lastRun({ workflow_id: 78 }),
+    lastRun({ path: '.github/workflows/other.yaml' }),
+    lastRun({ event: 'workflow_dispatch' }),
+  ]) {
+    requests = routedGitHub(t, world(pulls, { run }));
+    counts = await sweep(repo, { now: day0 });
+    assert.equal(counts.fastPath, 0, JSON.stringify(run));
   }
 });
 
-test('the hourly rotation re-evaluates every unchanged labeled pull request', async (t) => {
+test('membership comes from changed paths, not labels', async (t) => {
   quietEnv(t);
-  // updated_at never moves (for example a dismissal that does not bump it).
-  const pulls = Array.from({ length: 60 }, (_, index) =>
-    pull(index + 1, { updated_at: '2026-10-01T00:00:00Z' })
+  const pulls = [
+    pull(24),
+    pull(48, { labels: [{ name: 'security-review-required' }] }),
+  ];
+  // #48 is labeled but changes nothing sensitive: it gets success.
+  const routes = world(pulls);
+  routes[`/repos/${repo}/pulls/48/files`] = (page) =>
+    page === 1 ? [{ filename: 'README.md' }] : [];
+  routes[`/repos/${repo}/commits/${sha(48)}/check-runs`] = {
+    check_runs: [
+      {
+        app: { slug: 'github-actions' },
+        conclusion: 'action_required',
+        started_at: '2026-10-23T00:00:00Z',
+      },
+    ],
+  };
+  const requests = routedGitHub(t, routes);
+  await sweep(repo, { now: day0 });
+  const byHead = Object.fromEntries(
+    checkPosts(requests).map(({ body }) => [
+      Number.parseInt(body.head_sha, 16),
+      body.conclusion,
+    ])
   );
-  const cursor = at('2026-10-23T00:00:00Z');
-  const visited = new Set();
-  for (let hour = 0; hour < rotationSlots; hour += 1) {
-    const now = cursor + (hour + 1) * hourMs;
-    const requests = routedGitHub(t, world(pulls, { lastSweep: cursor }));
-    const counts = await sweep(repo, { now });
-    assert.equal(counts.changed, 0);
-    for (const number of swept(requests)) visited.add(number);
-  }
-  assert.equal(visited.size, 60, 'every labeled pull request was revisited');
+  assert.deepEqual(byHead, { 24: 'action_required', 48: 'success' });
+  assert.ok(!requests.some(({ route }) => route.includes('/labels')));
 });
 
-test('a run over budget fails so the cursor keeps the backlog', async (t) => {
+test('a stale success can never follow a revocation for the same head', async (t) => {
   quietEnv(t);
-  const pulls = Array.from({ length: 30 }, (_, index) =>
-    pull(index + 1, { updated_at: '2026-10-23T10:30:00Z' })
+  const item = pull(1);
+  const target = { author: 'mallory', headSha: sha(1), number: '1' };
+  const routes = world([item]);
+  // The approval is dismissed while this writer is still evaluating, after it
+  // read the file list.
+  let dismissed = false;
+  routes[`/repos/${repo}/pulls/1/files`] = (page) => {
+    dismissed = true;
+    return page === 1 ? [{ filename: '.github/workflows/x.yaml' }] : [];
+  };
+  routes[`/repos/${repo}/pulls/1/reviews`] = (page) =>
+    page === 1
+      ? [
+          review('alice', 'APPROVED', sha(1)),
+          ...(dismissed ? [review('alice', 'DISMISSED', sha(1))] : []),
+        ]
+      : [];
+  const requests = routedGitHub(t, routes);
+  await reclassify(repo, target);
+  const conclusions = checkPosts(requests).map(({ body }) => body.conclusion);
+  assert.deepEqual(conclusions, ['action_required']);
+  // The reviews read is the last GitHub read before the post.
+  const order = requests.map(
+    ({ method, route }) => `${method} ${route.split('?')[0]}`
   );
-  const requests = routedGitHub(
-    t,
-    world(pulls, { lastSweep: at('2026-10-23T10:00:00Z') })
-  );
-  await assert.rejects(
-    sweep(repo, { budget: 25, now: at('2026-10-23T11:05:00Z') }),
-    /deferred .*resumes from the previous cursor/u
-  );
-  // Oldest change first, within budget plus at most one pull request.
-  const calls = requests.filter(({ method }) => method === 'GET').length;
-  assert.ok(calls <= 25 + 4, `used ${calls}`);
-  assert.ok(swept(requests).length > 0);
+  const post = order.indexOf(`POST /repos/${repo}/check-runs`);
+  assert.equal(order[post - 1], `GET /repos/${repo}/pulls/1/reviews`);
+  assert.equal(order[post - 2], `GET /repos/${repo}/pulls/1`);
+
+  // A head that moved during evaluation posts nothing: a newer run owns it.
+  const moved = world([item]);
+  moved[`/repos/${repo}/pulls/1`] = pull(1, { head: { sha: sha(99) } });
+  const silent = routedGitHub(t, moved);
+  const result = await reclassify(repo, target);
+  assert.equal(result.posted, false);
+  assert.deepEqual(checkPosts(silent), []);
 });
 
-test('without a previous successful sweep every labeled pull request is evaluated', async (t) => {
-  quietEnv(t);
-  const pulls = [pull(1), pull(2), pull(3)];
-  const requests = routedGitHub(t, world(pulls));
-  const counts = await sweep(repo, { now: at('2026-10-23T11:05:00Z') });
-  assert.equal(counts.changed, 3);
-  assert.deepEqual(swept(requests).sort(), [1, 2, 3]);
-});
-
-test('an unchanged decision posts nothing', async (t) => {
-  quietEnv(t);
-  const requests = routedGitHub(
-    t,
-    world([pull(1)], { checkConclusion: 'action_required' })
-  );
-  await sweep(repo, { now: at('2026-10-23T11:05:00Z') });
-  assert.deepEqual(checkPosts(requests), []);
-});
-
-test('the sweep refuses to silently truncate the open pull request list', async (t) => {
-  quietEnv(t);
-  routedGitHub(t, {
-    [`/repos/${repo}/pulls`]: (page) =>
-      Array.from({ length: 100 }, (_, index) =>
-        pull(page * 100 + index, { labels: [] })
-      ),
-  });
-  await assert.rejects(sweep(repo, {}), /more than 3000 open pull requests/u);
-});
-
-const target = { author: 'mallory', headSha: sha(1), number: '1' };
+const faultTarget = { author: 'mallory', headSha: sha(1), number: '1' };
 
 test('a failed check lookup still posts the revocation', async (t) => {
   quietEnv(t);
   const routes = world([pull(1)]);
   routes[`/repos/${repo}/commits/${sha(1)}/check-runs`] = 500;
   const requests = routedGitHub(t, routes);
-  await reclassify(repo, target, { applyLabels: false, onlyIfChanged: true });
+  await reclassify(repo, faultTarget, {
+    applyLabels: false,
+    onlyIfChanged: true,
+  });
   const [check] = checkPosts(requests);
   assert.equal(check.body.conclusion, 'action_required');
   assert.equal(check.body.head_sha, sha(1));
@@ -219,7 +316,7 @@ test('a failed label write never suppresses the revocation', async (t) => {
     const requests = routedGitHub(t, routes, {
       posts: { [`/repos/${repo}/issues/1/labels`]: 500 },
     });
-    const { decision } = await reclassify(repo, target);
+    const { decision } = await reclassify(repo, faultTarget);
     assert.equal(decision.conclusion, 'action_required');
     const posts = requests.filter(({ method }) => method === 'POST');
     // The check is the first write, before any label attempt.
@@ -234,7 +331,7 @@ test('a rejected check post fails the run instead of passing silently', async (t
     posts: { [`/repos/${repo}/check-runs`]: 422 },
   });
   await assert.rejects(
-    reclassify(repo, target),
+    reclassify(repo, faultTarget),
     /check-run post failed with 422/u
   );
 });
