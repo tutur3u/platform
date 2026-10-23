@@ -126,6 +126,12 @@ export const listProcessCwds: CwdLister = () => {
     if (line.startsWith('p')) pid = Number(line.slice(1));
     else if (line.startsWith('n/')) cwds.push({ pid, cwd: line.slice(1) });
   }
+  // Fail closed: a healthy listing always includes this process. Anything
+  // else (killed, permission errors, empty output) must not read as idle.
+  if (!cwds.some((entry) => entry.pid === process.pid))
+    throw new Error(
+      `lsof did not list process cwds (status ${result.status ?? result.signal}): ${result.stderr?.trim().slice(0, 200) || 'no output'}`
+    );
   return cwds;
 };
 

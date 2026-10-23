@@ -154,6 +154,40 @@ describe('storage suggestions', () => {
   });
 });
 
+describe('storage suggestion fences', () => {
+  it('never proposes held paths or worktrees active within a day', () => {
+    const { actions, review } = suggestActions(
+      report({
+        worktrees: [worktree({ path: '/fresh', idleDays: 0.2 })],
+        items: [
+          item({
+            category: 'tmp-old',
+            path: '/tmp/evidence',
+            uniqueBytes: 200 * 1024 ** 2,
+            heldBy: ['tuturuuu'],
+            risk: 'moderate',
+          }),
+          item({
+            category: 'npm-cache',
+            path: '/npm',
+            uniqueBytes: GiB,
+            heldBy: ['mastermind'],
+          }),
+        ],
+      })
+    );
+    expect(actions).toEqual([]);
+    expect(review.map((entry) => entry.path).sort()).toEqual([
+      '/fresh',
+      '/npm',
+      '/tmp/evidence',
+    ]);
+    expect(review.find((entry) => entry.path === '/tmp/evidence')?.reason).toBe(
+      'tmp-old held by tuturuuu'
+    );
+  });
+});
+
 describe('analysis helpers', () => {
   const dirs: string[] = [];
   afterEach(async () => {

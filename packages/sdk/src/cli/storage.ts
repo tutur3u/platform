@@ -238,6 +238,18 @@ export async function readSuggestionCache(
   }
 }
 
+/** Analysis tolerates a failed lsof (prune re-reads it and fails closed). */
+function analysisCwds() {
+  try {
+    return listProcessCwds();
+  } catch (error) {
+    process.stderr.write(
+      `[ttr storage] ${error instanceof Error ? error.message : String(error)}; busy worktrees are not detected in this report, prune re-checks.\n`
+    );
+    return [];
+  }
+}
+
 export async function runStorageCommand(argv: string[]) {
   if (argv.includes('--help') || argv.includes('-h') || argv[0] === 'help') {
     process.stdout.write(storageHelp());
@@ -279,7 +291,7 @@ export async function runStorageCommand(argv: string[]) {
     thresholds,
     offline: options.offline,
     maxEntries: options.maxEntries,
-    cwds: listProcessCwds(),
+    cwds: analysisCwds(),
     prs: ghPullRequests,
     docker: options.docker,
   });

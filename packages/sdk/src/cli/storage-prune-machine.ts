@@ -5,12 +5,20 @@ import type { Exec, PruneContext } from './storage-prune';
 import { newestMtime, type StorageCategory, tmpRoots } from './storage-targets';
 
 export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
-  const { steps, push, fenced, items, cutoff, olderThanDays, exec, remove } =
-    ctx;
+  const {
+    steps,
+    push,
+    fenced,
+    items,
+    cutoff,
+    olderThanDays,
+    exec,
+    remove,
+    measure,
+  } = ctx;
+  const xcodeBusy = /\bxcodebuild\b|Xcode\.app\/Contents\/MacOS\/Xcode/u;
   for (const item of items(category)) {
-    if (
-      processRunning(exec, /\bxcodebuild\b|Xcode\.app\/Contents\/MacOS\/Xcode/u)
-    ) {
+    if (processRunning(exec, xcodeBusy)) {
       steps.push({
         category,
         path: item.path,
@@ -21,21 +29,25 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
       });
       continue;
     }
-    for (const name of safeReaddir(item.path)) {
-      const child = join(item.path, name);
-      if (
-        !lstatSync(child, { throwIfNoEntry: false })?.isDirectory() ||
-        newestMtime(child, 2) > cutoff
-      )
-        continue;
+    // Each idle project folder is measured on its own so --max-remove
+    // bounds the bytes actually removed.
+    const candidates = safeReaddir(item.path)
+      .map((name) => join(item.path, name))
+      .filter(
+        (child) =>
+          lstatSync(child, { throwIfNoEntry: false })?.isDirectory() &&
+          newestMtime(child, 2) <= cutoff
+      );
+    const sizes = measure(candidates.map((root) => ({ root }))).results;
+    candidates.forEach((child, index) => {
       push({
         category,
         path: child,
-        bytes: Math.round(
-          item.uniqueBytes / Math.max(1, safeReaddir(item.path).length)
-        ),
-        description: `remove DerivedData/${name} (idle > ${olderThanDays}d)`,
+        bytes: sizes[index]?.uniqueBytes ?? 0,
+        description: `remove DerivedData/${child.slice(item.path.length + 1)} (idle > ${olderThanDays}d)`,
         run: fenced(child, () => {
+          if (processRunning(exec, xcodeBusy))
+            return 'Xcode or xcodebuild started';
           if (
             !isInside(canonicalPath(child), canonicalPath(item.path)) ||
             newestMtime(child, 2) > cutoff
@@ -45,7 +57,7 @@ export function derivedDataSteps(ctx: PruneContext, category: StorageCategory) {
           return null;
         }),
       });
-    }
+    });
   }
 }
 
@@ -159,7 +171,7 @@ export function cacheCommandSteps(
   ctx: PruneContext,
   category: StorageCategory
 ) {
-  const { steps, push, command, items, olderThanDays, exec } = ctx;
+  const { steps, push, fenced, command, items, olderThanDays, exec } = ctx;
   const simple: Partial<
     Record<StorageCategory, { argv: string[]; busy?: RegExp }>
   > = {
@@ -199,12 +211,20 @@ export function cacheCommandSteps(
     });
     return;
   }
+  // The command can touch every measured path, so all of them are fenced,
+  // and the cache-user check repeats right before it runs.
+  const paths = relevant.map((item) => item.path);
   push({
     category,
-    path: relevant[0]!.path,
+    path: paths[0]!,
+    fencePaths: paths,
     bytes,
     description: rule.argv.join(' '),
-    run: command(rule.argv),
+    run: fenced(paths, () =>
+      rule.busy && processRunning(exec, rule.busy)
+        ? 'a process started using this cache'
+        : command(rule.argv)()
+    ),
   });
 }
 
@@ -216,10 +236,11 @@ function safeReaddir(path: string) {
   }
 }
 
+/** Fails closed: an unreadable process list counts as busy. */
 function processRunning(exec: Exec, pattern: RegExp) {
   const result = exec(['ps', '-axo', 'command=']);
   return (
-    result.status === 0 &&
+    result.status !== 0 ||
     result.stdout.split('\n').some((line) => pattern.test(line))
   );
 }

@@ -9,7 +9,12 @@ import {
   storagePressure,
   type VolumeProbe,
 } from './storage-headroom';
-import { type CwdLister, type Hold, isInside } from './storage-holds';
+import {
+  type CwdLister,
+  type Hold,
+  holdOwners,
+  isInside,
+} from './storage-holds';
 import {
   type MeasureJob,
   type MeasureMethod,
@@ -64,6 +69,8 @@ export interface StorageItem {
   truncated: boolean;
   risk: StorageRisk;
   worktree?: string;
+  /** Hold-file owners covering this path; `suggest` never proposes it. */
+  heldBy?: string[];
 }
 
 export interface VolumeReport extends VolumeProbe {
@@ -324,7 +331,12 @@ export async function analyzeStorage({
       truncated: result.truncated,
     };
   });
-  const items = foldSmallTmp(measuredItems);
+  const items = foldSmallTmp(measuredItems).map((item) => {
+    if (item.category === 'worktrees' || !item.path.startsWith('/'))
+      return item;
+    const heldBy = holdOwners(item.path, holds);
+    return heldBy.length ? { ...item, heldBy } : item;
+  });
   if (items.some((item) => item.truncated))
     warnings.push(
       `Some trees exceeded ${maxEntries} entries and are under-reported (raise --max-entries).`

@@ -11,6 +11,9 @@ import {
   isInside,
 } from './storage-holds';
 
+/** Merged-clean worktrees must also be idle this long (as #6436 prune). */
+export const WORKTREE_MIN_IDLE_DAYS = 1;
+
 export type Git = (cwd: string, args: string[]) => string;
 export const realGit: Git = (cwd, args) =>
   // --no-optional-locks keeps status from rewriting indexes it only reads.
@@ -274,7 +277,12 @@ export function classifyWorktrees({
           busy: false,
           idleDays: null,
           pullRequest: null,
-          fences: [],
+          // A missing directory still keeps its hold, lock and preserve fences.
+          fences: [
+            entry.locked && 'locked',
+            heldBy.length && `held by ${heldBy.join(', ')}`,
+            entry.branch?.startsWith('preserve/') && 'preserve/* branch',
+          ].filter((fence): fence is string => Boolean(fence)),
         };
       const dirtyPaths = git(entry.path, [
         'status',

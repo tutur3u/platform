@@ -10,6 +10,7 @@ import {
   isBusy,
   isInside,
 } from './storage-holds';
+import { type Measurer, measureTrees } from './storage-measure';
 import {
   buildArtifactSteps,
   nodeModulesSteps,
@@ -48,11 +49,13 @@ export const NAMED_CATEGORIES: StorageCategory[] = [
 
 export type Exec = (
   argv: string[],
-  cwd?: string
+  cwd?: string,
+  env?: NodeJS.ProcessEnv
 ) => { status: number | null; stdout: string; stderr: string };
-export const realExec: Exec = (argv, cwd) => {
+export const realExec: Exec = (argv, cwd, env) => {
   const result = spawnSync(argv[0]!, argv.slice(1), {
     cwd,
+    env: env ? { ...process.env, ...env } : process.env,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
@@ -70,9 +73,14 @@ export interface PruneStep {
   description: string;
   status: 'planned' | 'done' | 'skipped' | 'failed';
   reason?: string;
-  /** Runs the step after re-verifying its fences; returns a failure reason or null. */
-  run?: () => string | null;
+  /** Every path the step touches; holds and busy checks cover all of them. */
+  fencePaths?: string[];
+  /** Runs the step after re-verifying its fences. */
+  run?: () => StepResult;
 }
+
+/** A failure reason, null for success, or success with a note. */
+export type StepResult = string | null | { note: string };
 
 export interface PruneOptions {
   report: StorageReport;
@@ -88,6 +96,7 @@ export interface PruneOptions {
   prs: PullRequestLookup;
   exec?: Exec;
   remove?: (path: string) => void;
+  measure?: Measurer;
   ttrArgv?: string[];
   now?: number;
 }
@@ -99,8 +108,15 @@ export interface PruneContext {
   /** Adds a step unless a hold, a busy process or the size bound skips it. */
   push: (step: Omit<PruneStep, 'status'>) => void;
   /** Wraps an action so holds and live cwds are re-read right before it runs. */
-  fenced: (path: string, action: () => string | null) => () => string | null;
-  command: (argv: string[], cwd?: string) => () => string | null;
+  fenced: (
+    paths: string | string[],
+    action: () => StepResult
+  ) => () => StepResult;
+  command: (
+    argv: string[],
+    cwd?: string,
+    env?: NodeJS.ProcessEnv
+  ) => () => StepResult;
   items: (category: StorageCategory) => StorageItem[];
   wanted: (path: string) => boolean;
   cutoff: number;
@@ -109,6 +125,7 @@ export interface PruneContext {
   git: Git;
   exec: Exec;
   remove: (path: string) => void;
+  measure: Measurer;
   now: number;
   planned: () => number;
 }
@@ -150,6 +167,7 @@ export function pruneStorage(options: PruneOptions) {
     git = realGit,
     exec = realExec,
     remove = forceRemove,
+    measure = measureTrees,
     now = Date.now(),
   } = options;
   const requested = options.categories ?? AUTO_CATEGORIES;
@@ -179,8 +197,11 @@ export function pruneStorage(options: PruneOptions) {
     options.paths.some((entry) =>
       isInside(canonicalPath(path), canonicalPath(entry))
     );
+  const absolute = (step: Omit<PruneStep, 'status'>) =>
+    (step.fencePaths ?? [step.path]).filter((path) => path.startsWith('/'));
   const push = (step: Omit<PruneStep, 'status'>): void => {
-    const held = step.path.startsWith('/') ? holdOwners(step.path, holds) : [];
+    const paths = absolute(step);
+    const held = [...new Set(paths.flatMap((path) => holdOwners(path, holds)))];
     if (held.length)
       return void steps.push({
         ...step,
@@ -188,7 +209,7 @@ export function pruneStorage(options: PruneOptions) {
         reason: `held by ${held.join(', ')}`,
         run: undefined,
       });
-    if (step.path.startsWith('/') && isBusy(step.path, cwds))
+    if (paths.some((path) => isBusy(path, cwds)))
       return void steps.push({
         ...step,
         status: 'skipped',
@@ -206,18 +227,26 @@ export function pruneStorage(options: PruneOptions) {
     steps.push({ ...step, status: 'planned' });
   };
   // Every destructive closure re-checks holds and live cwds first.
-  const fenced = (path: string, action: () => string | null) => () => {
-    const held = holdOwners(path, options.holds());
-    if (held.length) return `held by ${held.join(', ')}`;
-    if (isBusy(path, options.cwds())) return 'a process is working inside';
-    return action();
-  };
-  const command = (argv: string[], cwd?: string) => () => {
-    const result = exec(argv, cwd);
-    return result.status === 0
-      ? null
-      : `${argv.join(' ')} exited ${result.status}: ${result.stderr.trim().slice(0, 300)}`;
-  };
+  const fenced =
+    (target: string | string[], action: () => StepResult) => () => {
+      const paths = Array.isArray(target) ? target : [target];
+      const freshHolds = options.holds();
+      const held = [
+        ...new Set(paths.flatMap((path) => holdOwners(path, freshHolds))),
+      ];
+      if (held.length) return `held by ${held.join(', ')}`;
+      const freshCwds = options.cwds();
+      if (paths.some((path) => isBusy(path, freshCwds)))
+        return 'a process is working inside';
+      return action();
+    };
+  const command =
+    (argv: string[], cwd?: string, env?: NodeJS.ProcessEnv) => () => {
+      const result = exec(argv, cwd, env);
+      return result.status === 0
+        ? null
+        : `${argv.join(' ')} exited ${result.status}: ${result.stderr.trim().slice(0, 300)}`;
+    };
   const items = (category: StorageCategory) =>
     report.items.filter(
       (item) => item.category === category && wanted(item.path)
@@ -238,6 +267,7 @@ export function pruneStorage(options: PruneOptions) {
     git,
     exec,
     remove,
+    measure,
     now,
     planned: () => planned,
   };
@@ -247,9 +277,10 @@ export function pruneStorage(options: PruneOptions) {
     for (const step of steps) {
       if (step.status !== 'planned' || !step.run) continue;
       try {
-        const failure = step.run();
-        step.status = failure ? 'failed' : 'done';
-        if (failure) step.reason = failure;
+        const result = step.run();
+        step.status = typeof result === 'string' ? 'failed' : 'done';
+        if (typeof result === 'string') step.reason = result;
+        else if (result) step.reason = result.note;
       } catch (error) {
         step.status = 'failed';
         step.reason = error instanceof Error ? error.message : String(error);
@@ -260,7 +291,7 @@ export function pruneStorage(options: PruneOptions) {
     olderThanDays,
     maxRemoveBytes,
     plannedBytes: planned,
-    steps: steps.map(({ run: _run, ...step }) => step),
+    steps: steps.map(({ run: _run, fencePaths: _paths, ...step }) => step),
   };
 }
 

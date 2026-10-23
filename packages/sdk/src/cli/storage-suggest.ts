@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import type { StorageItem, StorageReport } from './storage-analyze';
 import { formatBytes, GiB } from './storage-headroom';
 import type { StorageCategory, StorageRisk } from './storage-targets';
+import { WORKTREE_MIN_IDLE_DAYS } from './storage-worktrees';
 
 export interface StorageAction {
   category: StorageCategory;
@@ -48,7 +49,15 @@ export function suggestActions(report: StorageReport): {
 } {
   const actions: StorageAction[] = [];
   const review: StorageReview[] = [];
-  const items = report.items;
+  // Held paths are never proposed; large ones are listed for their owner.
+  const items = report.items.filter((item) => !item.heldBy?.length);
+  for (const item of report.items)
+    if (item.heldBy?.length && item.uniqueBytes >= MIN_BYTES)
+      review.push({
+        path: item.path,
+        reason: `${item.category} held by ${item.heldBy.join(', ')}`,
+        uniqueBytes: item.uniqueBytes,
+      });
 
   for (const worktree of report.worktrees) {
     if (worktree.classification === 'primary') continue;
@@ -74,6 +83,14 @@ export function suggestActions(report: StorageReport): {
           reason: `${worktree.classification} (${worktree.owner}): ${worktree.fences.join('; ')}`,
           uniqueBytes: worktree.uniqueBytes,
         });
+      continue;
+    }
+    if ((worktree.idleDays ?? 0) < WORKTREE_MIN_IDLE_DAYS) {
+      review.push({
+        path: worktree.path,
+        reason: `merged-clean but active within ${WORKTREE_MIN_IDLE_DAYS}d (${worktree.owner}); re-run suggest later`,
+        uniqueBytes: worktree.uniqueBytes,
+      });
       continue;
     }
     const branch =
@@ -128,20 +145,29 @@ export function suggestActions(report: StorageReport): {
       apply: 'auto',
       note: 'dry run first; skips dirty, held, unmerged, locked and recently written trees',
     });
+  // Only fence-clear worktrees (risk safe), using the primary checkout's
+  // script; rust targets in fenced trees stay with their owner.
   for (const item of items.filter(
     (entry) =>
-      entry.category === 'rust-target' && entry.uniqueBytes >= MIN_BYTES
-  ))
+      entry.category === 'rust-target' &&
+      entry.risk === 'safe' &&
+      entry.uniqueBytes >= MIN_BYTES
+  )) {
+    const repo =
+      report.worktrees.find((entry) => entry.path === item.worktree)?.repo ??
+      item.worktree ??
+      '.';
     actions.push({
       category: 'rust-target',
       title: 'Prune stale Rust build cache',
       path: item.path,
       reclaimableBytes: item.uniqueBytes,
       risk: 'safe',
-      command: `node ${quote(join(item.worktree ?? '.', 'scripts', 'rust-cache.js'))} prune --apply --target ${quote(item.path)}`,
+      command: `node ${quote(join(repo, 'scripts', 'rust-cache.js'))} prune --apply --target ${quote(item.path)}`,
       apply: 'auto',
       note: 'bounded by the rust-cache age/size policy; reclaimable is an upper bound',
     });
+  }
 
   const machine: {
     category: StorageCategory;

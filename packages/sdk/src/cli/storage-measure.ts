@@ -5,7 +5,8 @@ import { join } from 'node:path';
 // "Unique" bytes are what deleting a tree would actually free:
 // - macOS/APFS: getattrlist ATTR_CMNEXT_PRIVATESIZE, the bytes no clone
 //   shares (Bun's clonefile node_modules report 0 here, du reports GiBs).
-// - Linux: allocated blocks with hard links counted once per run.
+// - Linux: allocated blocks; a hard-linked file counts once, and as unique
+//   only when every link is inside the measured tree.
 // `du -L` follows Bun's workspace symlinks and over-reports by 100x; never
 // use it. Same method as scripts/worktree-footprint-size.js (#6436), which
 // the published CLI cannot import.
@@ -29,12 +30,12 @@ if apfs:
         if getattrlist(os.fsencode(p), ctypes.byref(attrs), buf, 16, 0x1 | 0x20) != 0:
             return 0
         return struct.unpack_from('<Iq', buf.raw)[1]
-seen = set()
 out = []
 for job in jobs:
     exclude = set(job.get('exclude', []))
     cap = job.get('maxEntries', 0)
-    files = apparent = allocated = private = 0
+    files = apparent = allocated = unique = 0
+    links = {}
     truncated = False
     stack = [job['root']]
     while stack and not truncated:
@@ -60,17 +61,22 @@ for job in jobs:
                     st = entry.stat(follow_symlinks=False)
                 except OSError:
                     continue
+                freed = private_size(entry.path) if apfs else st.st_blocks * 512
                 if st.st_nlink > 1:
                     key = (st.st_dev, st.st_ino)
-                    if key in seen:
+                    link = links.get(key)
+                    if link:
+                        link[0] += 1
                         continue
-                    seen.add(key)
+                    links[key] = [1, st.st_nlink, freed]
+                else:
+                    unique += freed
                 apparent += st.st_size
                 allocated += st.st_blocks * 512
-                if apfs:
-                    private += private_size(entry.path)
+    # A hard-linked file is freed only when every link lives in this tree.
+    unique += sum(freed for seen, nlink, freed in links.values() if seen >= nlink)
     out.append({'files': files, 'apparentBytes': apparent, 'allocatedBytes': allocated,
-                'uniqueBytes': private if apfs else allocated, 'truncated': truncated})
+                'uniqueBytes': unique, 'truncated': truncated})
 json.dump({'method': 'apfs-private' if apfs else 'allocated-dedup', 'results': out}, sys.stdout)
 `;
 
@@ -97,13 +103,19 @@ export interface MeasureResult {
 
 export type Measurer = (jobs: MeasureJob[]) => MeasureResult;
 
-/** Hard links count once across all jobs in one call. */
+/**
+ * Per job: hard links count once toward allocated bytes, and toward unique
+ * bytes only when every link lives inside the tree (deleting it frees them).
+ */
 export function measureTreesFallback(jobs: MeasureJob[]): MeasureResult {
-  const seen = new Set<string>();
   return {
     method: 'allocated-dedup',
     results: jobs.map((job) => {
       const exclude = new Set(job.exclude ?? []);
+      const links = new Map<
+        string,
+        { seen: number; nlink: number; bytes: number }
+      >();
       const totals: TreeMeasure = {
         files: 0,
         apparentBytes: 0,
@@ -139,17 +151,22 @@ export function measureTreesFallback(jobs: MeasureJob[]): MeasureResult {
           } catch {
             continue;
           }
+          const bytes = (info.blocks ?? Math.ceil(info.size / 512)) * 512;
           if (info.nlink > 1) {
             const key = `${info.dev}:${info.ino}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
-          }
+            const link = links.get(key);
+            if (link) {
+              link.seen += 1;
+              continue;
+            }
+            links.set(key, { seen: 1, nlink: info.nlink, bytes });
+          } else totals.uniqueBytes += bytes;
           totals.apparentBytes += info.size;
-          totals.allocatedBytes +=
-            (info.blocks ?? Math.ceil(info.size / 512)) * 512;
+          totals.allocatedBytes += bytes;
         }
       }
-      totals.uniqueBytes = totals.allocatedBytes;
+      for (const link of links.values())
+        if (link.seen >= link.nlink) totals.uniqueBytes += link.bytes;
       return totals;
     }),
   };
