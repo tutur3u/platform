@@ -17,6 +17,19 @@ describe('searchParamsToRecord', () => {
     ).toEqual({ page: '1', userIds: ['a', 'b', 'c'] });
   });
 
+  it('replaces an empty earlier duplicate in multi mode like the old parsers', () => {
+    expect(
+      searchParamsToRecord(new URLSearchParams('page=&page=2&q=a'), {
+        multi: true,
+      })
+    ).toEqual({ page: '2', q: 'a' });
+    expect(
+      searchParamsToRecord(new URLSearchParams('ids=a&ids=&ids=b'), {
+        multi: true,
+      })
+    ).toEqual({ ids: ['a', '', 'b'] });
+  });
+
   it('keeps prototype-named keys as own properties', () => {
     for (const multi of [false, true]) {
       const record = searchParamsToRecord(

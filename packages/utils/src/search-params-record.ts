@@ -9,7 +9,8 @@ export type SearchParamsRecord = Record<string, string | string[]>;
  * the record's prototype.
  *
  * Repeated keys keep the last value by default; pass `{ multi: true }` to
- * collect repeated keys into arrays (a single occurrence stays a string).
+ * collect repeated keys into arrays (a single occurrence stays a string, and
+ * an empty earlier value is replaced by the next one).
  */
 export function searchParamsToRecord(
   searchParams: URLSearchParams,
@@ -20,7 +21,9 @@ export function searchParamsToRecord(
   searchParams.forEach((value, key) => {
     const existing = entries.get(key);
 
-    if (!options.multi || existing === undefined) {
+    // An empty earlier value is replaced rather than collected, matching the
+    // previous route parsers (`?page=&page=2` yields `'2'`).
+    if (!options.multi || !existing) {
       entries.set(key, value);
     } else if (Array.isArray(existing)) {
       existing.push(value);
