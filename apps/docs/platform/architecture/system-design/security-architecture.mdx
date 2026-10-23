@@ -54,16 +54,29 @@ router-plugin declares Chokidar 5, neither of which depends on braces. Treat
 these audit paths as reported graph associations, not verified Chokidar 3 call
 chains. Manifest dependency classification alone does not prove runtime exposure.
 
-The separate [node-forge advisory](https://github.com/advisories/GHSA-86w9-cpqp-85rv)
-remains tracked at `1.4.0` with no patched release. Its only consumer is
-Infrastructure admin-only desktop certificate PKCS12 inspection in
-`certificate-readiness.ts`, which uses node-forge for PKCS12/ASN.1 parsing and
-node:crypto for key matching. The affected RSA PKCS#1 v1.5 verification is
-reached only through certificate/chain verification, which that module never
-calls. `certificate-readiness.test.ts` instruments every node-forge RSA public
-key during a full inspection and fails if `verify` runs, with a positive control
-proving the instrumentation observes chain verification. Any new signature check
-must use node:crypto rather than node-forge.
+Infrastructure desktop certificate inspection parses PKCS#12 material and
+X.509 metadata with `@blamejs/pki`; Node's `crypto` module matches private keys
+to certificates and computes certificate fingerprints. PKCS#12 stores without
+a MAC, or requiring more than about one million combined KDF rounds, are
+refused. Password failures remain normalized to `certificate_invalid`; a parser
+load failure is reported separately as `certificate_inspection_unavailable`.
+
+#### `@blamejs/pki` supply-chain exception
+
+The infrastructure app pins `@blamejs/pki` to exactly `0.9.7`. It is the only
+maintained option found that handles legacy 3DES and RC2-40 PKCS#12 stores
+without hand-rolled cryptography. This is an explicit supply-chain exception:
+the package is young, has a single maintainer, and its `pkijs.com` homepage can
+be confused with the separate PKI.js project at `pkijs.org`. The reviewed
+release has zero dependencies and no install scripts; its registry lockfile
+integrity and SLSA provenance were checked on 2026-10-24. Loading is lazy and
+limited to the Node runtime, and parser load failures are logged and surfaced as
+`certificate_inspection_unavailable`.
+
+- Owner: dependencies
+- Approved by the user: 2026-10-24
+- Review date: 2027-01-24
+- Re-vet required for any version bump
 
 The moderate esbuild development-server advisory
 ([GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99)) came
