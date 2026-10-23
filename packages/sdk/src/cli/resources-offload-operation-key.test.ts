@@ -124,6 +124,31 @@ describe('lost creation acknowledgements are cancelled by operation key', () => 
     expect([...runs.values()][0]?.status).toBe('cancelled');
   });
 
+  it('treats the coded idempotency 503 as a definite rejection', async () => {
+    const { devboxes, options } = server();
+    devboxes.createRun.mockRejectedValue(
+      Object.assign(new Error('keys unavailable'), {
+        status: 503,
+        code: 'DEVBOX_IDEMPOTENCY_UNAVAILABLE',
+      })
+    );
+    await expect(box.runBoxOffload(options)).rejects.toMatchObject({
+      rejected: true,
+    });
+    expect(devboxes.stopRunByKey).not.toHaveBeenCalled();
+  });
+
+  it('keeps an uncoded 503 ambiguous', async () => {
+    const { devboxes, options } = server();
+    devboxes.createRun.mockRejectedValue(
+      Object.assign(new Error('gateway'), { status: 503 })
+    );
+    await expect(box.runBoxOffload(options)).rejects.toMatchObject({
+      rejected: false,
+    });
+    expect(devboxes.stopRunByKey).toHaveBeenCalled();
+  });
+
   it('does not cancel anything after a definite rejection', async () => {
     const { devboxes, options } = server();
     devboxes.createRun.mockRejectedValue(

@@ -6,6 +6,7 @@ import {
   createDevboxAgentApiDisabledResponse,
   isDevboxAgentApiEnabled,
 } from '@/lib/devboxes/agent-traffic-gate';
+import { restrictReportedProtocols } from '@/lib/devboxes/commit-run-guard';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 const NullableStringSchema = z.string().trim().max(500).nullable();
@@ -164,7 +165,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       await heartbeatDevboxRunner(
         authorization.runner.id,
-        parsed.data?.capabilities
+        // Only trusted-mode runners may advertise envelope protocols; the
+        // database also drops them for Judge/playground runners.
+        restrictReportedProtocols(parsed.data?.capabilities)
       )
     );
   } catch (error) {

@@ -16,23 +16,46 @@ vi.mock('./runner-drain-guard', () => ({
 }));
 
 import { createDevboxRun, stopDevboxRunByKey } from './store';
+import { resetDevboxIdempotencyReadinessForTests } from './store-run-idempotency';
 import { DevboxStoreError } from './store-utils';
 
 type Row = Record<string, unknown>;
+type SchemaOptions = {
+  // devbox_run_idempotency_ready(): true, false, or missing (pre-migration).
+  ready?: boolean | 'missing';
+  // Key column missing from the schema cache at lookup or at insert.
+  keyColumn?: 'present' | 'missing-lookup' | 'missing-insert';
+  raceWinner?: Row;
+};
+
+const trustedRunner = {
+  capabilities: { executionMode: 'trusted', protocols: { commitRun: [1] } },
+  enabled_features: { run: true },
+  id: 'trusted-1',
+};
 
 // In-memory private schema with the migration's unique (actor, key) index.
 // `raceWinner` simulates a concurrent create with the same key committing
 // between this request's lookup and its insert.
-function createSchema(options: { keyColumn?: boolean; raceWinner?: Row } = {}) {
-  const tables: { devbox_leases: Row[]; devbox_runs: Row[] } = {
+function createSchema(options: SchemaOptions = {}) {
+  const tables: Record<
+    'devbox_leases' | 'devbox_runners' | 'devbox_runs',
+    Row[]
+  > = {
     devbox_leases: [],
+    devbox_runners: [{ ...trustedRunner }],
     devbox_runs: [],
+  };
+  const missingColumn = {
+    message:
+      "Could not find the 'idempotency_key' column of 'devbox_runs' in the schema cache",
   };
   let raced = false;
   const from = (table: string) => {
     const rows = tables[table as keyof typeof tables];
     const filters: ((row: Row) => boolean)[] = [];
     let patch: Row | null = null;
+    let columns = '';
     const matched = () => rows.filter((row) => filters.every((f) => f(row)));
     const builder = {
       eq(column: string, value: unknown) {
@@ -41,13 +64,8 @@ function createSchema(options: { keyColumn?: boolean; raceWinner?: Row } = {}) {
       },
       insert(value: Row) {
         if (table === 'devbox_runs' && 'idempotency_key' in value) {
-          if (options.keyColumn === false)
-            return Promise.resolve({
-              error: {
-                message:
-                  "Could not find the 'idempotency_key' column of 'devbox_runs' in the schema cache",
-              },
-            });
+          if (options.keyColumn === 'missing-insert')
+            return Promise.resolve({ error: missingColumn });
           if (options.raceWinner && !raced) {
             raced = true;
             rows.push(options.raceWinner);
@@ -68,24 +86,18 @@ function createSchema(options: { keyColumn?: boolean; raceWinner?: Row } = {}) {
       },
       limit(count: number) {
         if (
-          options.keyColumn === false &&
-          filters.length &&
+          options.keyColumn === 'missing-lookup' &&
           table === 'devbox_runs' &&
-          lastColumns.includes('lease_id')
+          columns.includes('lease_id')
         )
-          return Promise.resolve({
-            data: null,
-            error: {
-              message: 'column devbox_runs.idempotency_key does not exist',
-            },
-          });
+          return Promise.resolve({ data: null, error: missingColumn });
         return Promise.resolve({
           data: matched().slice(0, count),
           error: null,
         });
       },
-      select(columns = '') {
-        lastColumns = columns;
+      select(selected = '') {
+        columns = selected;
         if (!patch) return builder;
         const changed = matched();
         for (const row of changed) Object.assign(row, patch);
@@ -99,13 +111,26 @@ function createSchema(options: { keyColumn?: boolean; raceWinner?: Row } = {}) {
         return builder;
       },
     };
-    let lastColumns = '';
     return builder;
   };
-  createAdminClientMock.mockResolvedValue({
-    schema: vi.fn().mockReturnValue({ from }),
+  const rpc = vi.fn(async (fn: string) => {
+    if (fn !== 'devbox_run_idempotency_ready')
+      return { data: null, error: { message: `unexpected rpc ${fn}` } };
+    const ready = options.ready ?? true;
+    return ready === 'missing'
+      ? {
+          data: null,
+          error: {
+            message:
+              'Could not find the function private.devbox_run_idempotency_ready without parameters in the schema cache',
+          },
+        }
+      : { data: ready, error: null };
   });
-  return tables;
+  createAdminClientMock.mockResolvedValue({
+    schema: vi.fn().mockReturnValue({ from, rpc }),
+  });
+  return { rpc, tables };
 }
 
 const key = '7d0c3a9e-1f3b-4c55-9f1e-2a3b4c5d6e7f';
@@ -123,10 +148,13 @@ const create = (
   });
 
 describe('devbox run creation idempotency', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetDevboxIdempotencyReadinessForTests();
+  });
 
   it('returns the original run when a create is retried with the same key', async () => {
-    const tables = createSchema();
+    const { tables } = createSchema();
     const first = await create();
     const retry = await create();
     expect(retry.run.id).toBe(first.run.id);
@@ -139,7 +167,7 @@ describe('devbox run creation idempotency', () => {
   });
 
   it('scopes keys per actor and refuses reuse for a different command', async () => {
-    const tables = createSchema();
+    const { tables } = createSchema();
     await create();
     await create({ actorId: 'other' });
     expect(tables.devbox_runs).toHaveLength(2);
@@ -158,7 +186,7 @@ describe('devbox run creation idempotency', () => {
       lease_id: 'lease-winner',
       status: 'queued',
     };
-    const tables = createSchema({ raceWinner: winner });
+    const { tables } = createSchema({ raceWinner: winner });
     await expect(create()).resolves.toMatchObject({
       replayed: true,
       run: { id: 'run-winner' },
@@ -168,17 +196,52 @@ describe('devbox run creation idempotency', () => {
     expect(notifyDevboxRunMock).not.toHaveBeenCalled();
   });
 
-  it('creates without dedupe before the key column migration applies', async () => {
-    const tables = createSchema({ keyColumn: false });
-    await expect(create()).resolves.toMatchObject({
-      run: { status: 'queued' },
-    });
+  it.each([
+    ['readiness function missing', { ready: 'missing' }],
+    ['unique index not yet valid', { ready: false }],
+    [
+      'key column missing from the schema cache',
+      { keyColumn: 'missing-lookup' },
+    ],
+  ] as const)(
+    'refuses a keyed create with a coded 503 before any write: %s',
+    async (_case, options) => {
+      const { tables } = createSchema(options);
+      await expect(create()).rejects.toMatchObject({
+        code: 'DEVBOX_IDEMPOTENCY_UNAVAILABLE',
+        status: 503,
+      });
+      expect(tables.devbox_leases).toEqual([]);
+      expect(tables.devbox_runs).toEqual([]);
+      expect(notifyDevboxRunMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it('releases its lease and refuses when the key column vanishes at insert', async () => {
+    const { tables } = createSchema({ keyColumn: 'missing-insert' });
+    await expect(create()).rejects.toMatchObject({ status: 503 });
+    expect(tables.devbox_runs).toEqual([]);
+    expect(tables.devbox_leases[0]).toMatchObject({ status: 'released' });
+  });
+
+  it('keeps unkeyed creates compatible without consulting key storage', async () => {
+    const { rpc, tables } = createSchema({ ready: 'missing' });
+    await expect(
+      create({ command: ['echo', 'hi'], idempotencyKey: undefined })
+    ).resolves.toMatchObject({ run: { status: 'queued' } });
+    expect(rpc).not.toHaveBeenCalled();
     expect(tables.devbox_runs).toHaveLength(1);
-    expect(tables.devbox_runs[0]).not.toHaveProperty('idempotency_key');
+  });
+
+  it('caches confirmed key storage', async () => {
+    const { rpc } = createSchema();
+    await create();
+    await create({ idempotencyKey: `${key}-2` });
+    expect(rpc).toHaveBeenCalledOnce();
   });
 
   it('stops only the caller run created with the key', async () => {
-    const tables = createSchema();
+    const { tables } = createSchema();
     const { run } = await create();
     await expect(
       stopDevboxRunByKey({ actorId: 'other', idempotencyKey: key })

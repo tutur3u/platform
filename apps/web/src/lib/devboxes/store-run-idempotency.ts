@@ -41,8 +41,43 @@ export function isUniqueViolation(error: DevboxStorageErrorLike) {
   );
 }
 
-// Before the idempotency migration applies there is no key column, so no run
-// can be found by key; callers then behave as before (no dedupe).
+export const DEVBOX_IDEMPOTENCY_UNAVAILABLE_CODE =
+  'DEVBOX_IDEMPOTENCY_UNAVAILABLE';
+
+export function idempotencyUnavailable() {
+  return new DevboxStoreError(
+    'Devbox run idempotency keys are not available yet; no run was created.',
+    503,
+    DEVBOX_IDEMPOTENCY_UNAVAILABLE_CODE
+  );
+}
+
+// The unique (actor, key) index never disappears once valid, so a confirmed
+// check is cached for the process lifetime.
+let idempotencyConfirmed = false;
+
+export function resetDevboxIdempotencyReadinessForTests() {
+  idempotencyConfirmed = false;
+}
+
+/**
+ * Keyed creates are accepted only once key storage is confirmed: the column
+ * exists, the schema cache knows it and the unique (actor, key) index is
+ * valid. Otherwise a retried create could store a second run that
+ * stop-by-key cannot find, so refuse before any write instead of dropping
+ * the key.
+ */
+export async function assertDevboxIdempotencyReady(
+  client: DevboxPrivateSchemaClient
+) {
+  if (idempotencyConfirmed) return;
+  const { data, error } = await client.rpc<boolean>(
+    'devbox_run_idempotency_ready'
+  );
+  if (error || data !== true) throw idempotencyUnavailable();
+  idempotencyConfirmed = true;
+}
+
 export async function findDevboxRunByIdempotencyKey(
   client: DevboxPrivateSchemaClient,
   input: { actorId: string; idempotencyKey: string }
@@ -57,7 +92,7 @@ export async function findDevboxRunByIdempotencyKey(
     .eq('idempotency_key', input.idempotencyKey)
     .limit(1);
   if (error) {
-    if (isMissingIdempotencyColumn(error)) return null;
+    if (isMissingIdempotencyColumn(error)) throw idempotencyUnavailable();
     throw getDevboxStorageError(error);
   }
   const row = data?.[0] as Record<string, unknown> | undefined;

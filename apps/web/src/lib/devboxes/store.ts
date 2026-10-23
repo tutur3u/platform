@@ -4,9 +4,12 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { assertDevboxCommitRunRunner } from './commit-run-guard';
 import { assertDevboxRunnerAcceptsRun } from './runner-drain-guard';
 import {
+  assertDevboxIdempotencyReady,
   findDevboxRunByIdempotencyKey,
+  idempotencyUnavailable,
   isMissingIdempotencyColumn,
   isUniqueViolation,
   replayKeyedDevboxRun,
@@ -199,11 +202,14 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     : null;
 
   // A retried create (lost acknowledgement) returns the run it already made.
+  // Until key storage is confirmed, refuse before writing anything.
   if (keyed) {
+    await assertDevboxIdempotencyReady(privateClient);
     const existing = await findDevboxRunByIdempotencyKey(privateClient, keyed);
     if (existing) return replayKeyedDevboxRun(existing, input.command);
   }
 
+  await assertDevboxCommitRunRunner(privateClient, input);
   await assertDevboxRunnerAcceptsRun(privateClient, {
     leaseId: input.leaseId,
     runnerId: input.runnerId,
@@ -232,7 +238,7 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     }
   }
 
-  let runInsert: Record<string, unknown> = {
+  const runInsert: Record<string, unknown> = {
     actor_id: input.actorId,
     command: input.command,
     created_at: now,
@@ -250,14 +256,6 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
   let { error } = await getPrivateTable(privateClient, 'devbox_runs').insert(
     runInsert
   );
-  // Before the idempotency migration applies, create without dedupe.
-  if (keyed && isMissingIdempotencyColumn(error)) {
-    const { idempotency_key: _key, ...unkeyed } = runInsert;
-    runInsert = unkeyed;
-    ({ error } = await getPrivateTable(privateClient, 'devbox_runs').insert(
-      runInsert
-    ));
-  }
   const storageMessage = error?.message?.toLowerCase() ?? '';
   if (
     (input.workload ?? 'run') === 'run' &&
@@ -272,18 +270,22 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     ));
   }
 
-  // A concurrent create with the same key won the insert: retire the lease
-  // made for this attempt and return the winner's run.
-  if (keyed && isUniqueViolation(error)) {
-    if (leaseMode === 'auto')
-      await getScopedUpdate(privateClient, 'devbox_leases', {
-        released_at: now,
-        status: 'released',
-        updated_at: now,
-      })
-        .eq('id', leaseId)
-        .eq('actor_id', input.actorId)
-        .select('id');
+  // A concurrent create with the same key won the insert, or key storage
+  // vanished from the schema cache: retire the lease made for this attempt,
+  // then return the winner's run or refuse without a run.
+  const keyRace = keyed && isUniqueViolation(error);
+  const keyUnavailable = keyed && isMissingIdempotencyColumn(error);
+  if ((keyRace || keyUnavailable) && leaseMode === 'auto')
+    await getScopedUpdate(privateClient, 'devbox_leases', {
+      released_at: now,
+      status: 'released',
+      updated_at: now,
+    })
+      .eq('id', leaseId)
+      .eq('actor_id', input.actorId)
+      .select('id');
+  if (keyUnavailable) throw idempotencyUnavailable();
+  if (keyed && keyRace) {
     const winner = await findDevboxRunByIdempotencyKey(privateClient, keyed);
     if (winner) return replayKeyedDevboxRun(winner, input.command);
   }

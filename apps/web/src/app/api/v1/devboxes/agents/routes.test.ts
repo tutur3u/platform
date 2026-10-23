@@ -215,7 +215,6 @@ describe('devbox agent routes', () => {
     mockAuthorizedRunner(true);
     const capabilities = {
       executionMode: 'judge-only',
-      protocols: { commitRun: [1] },
       isolation: {
         checkedAt: '2026-10-23T00:00:00.000Z',
         dedicatedUser: true,
@@ -227,6 +226,33 @@ describe('devbox agent routes', () => {
       },
     };
     heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      capabilities
+    );
+  });
+  it('drops a protocol advertisement from a Judge-only runner', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    const capabilities = {
+      executionMode: 'judge-only',
+      protocols: { commitRun: [1] },
+    };
+    expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith('runner-1', {
+      executionMode: 'judge-only',
+    });
+  });
+  it('keeps a protocol advertisement from a trusted runner', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    const capabilities = {
+      executionMode: 'trusted',
+      protocols: { commitRun: [1] },
+    };
     expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
     expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
       'runner-1',

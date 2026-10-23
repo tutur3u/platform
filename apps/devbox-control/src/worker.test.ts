@@ -214,6 +214,20 @@ it('accepts an optional advisory execution mode and isolation summary', async ()
     capabilities.isolation,
   ]);
 });
+it('drops a protocol advertisement from a Judge-only runner', async () => {
+  const capabilities = {
+    executionMode: 'judge-only',
+    protocols: { commitRun: [1] },
+  };
+  expect(
+    (await worker.fetch(capabilityHeartbeat(capabilities), env)).status
+  ).toBe(200);
+  const write = vi
+    .mocked(globalThis.fetch)
+    .mock.calls.find(([, init]) => init?.method === 'PATCH');
+  const stored = JSON.parse(String(write?.[1]?.body)).capabilities;
+  expect(stored).toEqual({ executionMode: 'judge-only' });
+});
 it.each([
   { executionMode: 'root' },
   { executionMode: 1 },

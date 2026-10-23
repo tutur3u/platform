@@ -42,6 +42,22 @@ function errorStatus(error: unknown) {
     : undefined;
 }
 
+// The server refuses keyed creates before writing anything until its key
+// storage is confirmed; that 503 is a definite rejection, not an outage.
+export const IDEMPOTENCY_UNAVAILABLE_CODE = 'DEVBOX_IDEMPOTENCY_UNAVAILABLE';
+function isDefiniteRejection(error: unknown) {
+  const status = errorStatus(error);
+  if (typeof status !== 'number') return false;
+  if (status === 503)
+    return (
+      !!error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === IDEMPOTENCY_UNAVAILABLE_CODE
+    );
+  return [400, 401, 403, 404, 405, 409, 413, 415, 422, 429].includes(status);
+}
+
 /**
  * The run was never confirmed created. `rejected` means the server refused it
  * (a definite client rejection), so no remote run exists and `--offload auto` may queue locally; any
@@ -305,10 +321,7 @@ export async function runBoxOffload({
         }
       );
     } catch (error) {
-      const status = errorStatus(error);
-      const rejected =
-        typeof status === 'number' &&
-        [400, 401, 403, 404, 405, 409, 413, 415, 422, 429].includes(status);
+      const rejected = isDefiniteRejection(error);
       const code = terminalCode();
       // Only a definite rejection proves no run exists; anything else may have
       // created one that nobody will follow.

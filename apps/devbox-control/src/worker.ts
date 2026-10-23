@@ -277,9 +277,19 @@ async function heartbeat(request: Request, env: Env, runner: Runner) {
     Object.keys(body).some((key) => key !== 'capabilities')
   )
     return json({ message: 'Invalid heartbeat body' }, 400);
-  const capabilities = (body as { capabilities?: unknown }).capabilities;
+  let capabilities = (body as { capabilities?: unknown }).capabilities;
   if (capabilities !== undefined && !isCapabilities(capabilities))
     return json({ message: 'Invalid heartbeat body' }, 400);
+  // Only trusted-mode runners may advertise envelope protocols; the database
+  // also drops them for Judge/playground runners.
+  if (
+    capabilities &&
+    'protocols' in capabilities &&
+    capabilities.executionMode !== 'trusted'
+  ) {
+    const { protocols: _dropped, ...rest } = capabilities;
+    capabilities = rest;
+  }
   const now = new Date().toISOString();
   await query(env, `/rest/v1/devbox_runners?id=eq.${runner.id}`, 'private', {
     method: 'PATCH',

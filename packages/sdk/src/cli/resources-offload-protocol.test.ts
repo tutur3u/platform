@@ -93,6 +93,30 @@ describe('offload requires the runner commit-run protocol', () => {
     expect(devboxes.createRun).not.toHaveBeenCalled();
   });
 
+  it('auto queues locally when the server cannot store operation keys yet', async () => {
+    const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+    try {
+      const { devboxes, run } = fixture({
+        executionMode: 'trusted',
+        protocols: { commitRun: [1] },
+      });
+      devboxes.createRun.mockRejectedValue(
+        Object.assign(new Error('keys unavailable'), {
+          status: 503,
+          code: 'DEVBOX_IDEMPOTENCY_UNAVAILABLE',
+        })
+      );
+      await expect(run('auto')).resolves.toBeUndefined();
+      expect(devboxes.createRun).toHaveBeenCalledOnce();
+      expect(devboxes.stopRunByKey).not.toHaveBeenCalled();
+      expect(String(stderr.mock.calls.at(-1)?.[0])).toContain(
+        'Queueing locally'
+      );
+    } finally {
+      stderr.mockRestore();
+    }
+  });
+
   it.each(['auto', 'trusted-1'])(
     '%s offloads to a runner that advertises it',
     async (target) => {
