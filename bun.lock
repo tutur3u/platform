@@ -1989,6 +1989,13 @@
         "vitest": "^5.0.5",
       },
     },
+    "packages/agent-quota": {
+      "name": "@tuturuuu/agent-quota",
+      "version": "0.1.0",
+      "devDependencies": {
+        "typescript": "7.0.2",
+      },
+    },
     "packages/ai": {
       "name": "@tuturuuu/ai",
       "version": "0.18.2",
@@ -5107,6 +5114,8 @@
     "@turbo/windows-64": ["@turbo/windows-64@2.11.10", "", { "os": "win32", "cpu": "x64" }, "sha512-UJOP3BkbreY3/JlMgJR6ZiimxYIBn+c+B4tnBIxD0E9c3Estmk+XoVNVBNBottZLNRXe3/ScgOU4+/k8tIWysg=="],
 
     "@turbo/windows-arm64": ["@turbo/windows-arm64@2.11.10", "", { "os": "win32", "cpu": "arm64" }, "sha512-xOkEjF3ws/b/YNlc+bvJHMYBn+vL+QbEISZFVi0qS+ImmhA1X3/gmNmBrjjIG3dg6aeN+n6gQitzSkXQ286qJQ=="],
+
+    "@tuturuuu/agent-quota": ["@tuturuuu/agent-quota@workspace:packages/agent-quota"],
 
     "@tuturuuu/ai": ["@tuturuuu/ai@workspace:packages/ai"],
 

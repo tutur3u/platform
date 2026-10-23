@@ -1,0 +1,52 @@
+---
+title: "Agent quota routing"
+description: "Inspect local agent quota signals and spread delegated work across accounts."
+---
+
+`packages/agent-quota` is a read-only local CLI and routing library for the Codex
+and Claude Code provider instances available to T3 Code. It recommends where to
+send delegated tasks using provider headroom when available, active assignments,
+data freshness, reset time, and account reserves.
+
+## Data sources and authority
+
+| Source | Signals | Authority and freshness |
+| --- | --- | --- |
+| T3 Code `~/.t3/userdata/statev2.sqlite` | Provider instance IDs, latest session timestamps, active subagent counts | Authoritative for T3's locally persisted orchestration metadata. It does not contain provider quota snapshots. Read through a read-only SQLite connection and only query non-content columns. |
+| Codex local `codex app-server` snapshot (primary), with `~/.codex/sessions` and `~/.codex-t3/sessions` JSONL fallback | Local JSON-RPC `account/rateLimits/read` primary/secondary `usedPercent`, window length and reset time; JSONL token increments | Codex owns authentication and provider communication. The app-server snapshot and provider-reported windows are authoritative at their observation timestamp. Token totals are estimates, limited to recent local rollouts. |
+| Claude `~/.claude-t3/<instance>/projects` JSONL | Recent input/output token usage; structured `rate_limit_event` utilization and numeric `resetsAt` values | Token sums are estimates and are not converted into quota percentages. Structured provider limit events are authoritative; numeric reset times are normalized to ISO timestamps. Plain-text “usage limit reached” messages are ignored. |
+
+The collector allowlists the local instance directories and JSONL session paths.
+For Codex, it starts a local `codex app-server` and calls its
+`account/rateLimits/read` method over JSON-RPC. Codex owns authentication and any
+provider communication; the collector does not open authentication or
+credential files. No quota percentage is inferred from token counts without an
+explicit budget.
+
+The local Codex homes are `~/.codex` for `codex` and `~/.codex-t3` for
+`codex_ai4ed`. Claude's provider IDs are resolved to the local `claude_<label>`
+homes using the T3 account labels (`claudeAgent` → `claude_hehe`,
+`claude_mira` → `claude_kv`, `claude_kv` → `claude_mira`, `claude_dd` →
+`claude_dd`, and `claude_hehe` → `claude_skora`). Active assignment counts and
+provider associations come from the T3 SQLite projections, not those names.
+
+## Commands
+
+```sh
+bun packages/agent-quota/src/cli.ts status
+bun packages/agent-quota/src/cli.ts recommend --provider claude --count 3 --json
+bun packages/agent-quota/src/cli.ts recommend --provider codex --count 2 --json
+```
+
+`recommend` returns a ranked list with reasons and a simulated assignment list
+that spreads the requested task count. A stale or missing quota signal is
+uncertain and receives a ranking penalty. A fresh reported window above 90% is
+excluded. A reset timestamp already in the past also makes that window
+uncertain, so it receives no imminent-reset preference. `claude_hehe` defaults
+to at most one active assignment and a 25%
+remaining reserve to keep the orchestrator account available.
+
+Set `AGENT_QUOTA_RESERVES` to a JSON object keyed by instance ID to override or
+add per-account `minRemainingPercent`, `maxConcurrent`, or `excluded` values.
+These policy choices are local routing recommendations; T3 Code dispatch still
+requires its normal provider instance selection.
