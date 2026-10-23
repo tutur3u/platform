@@ -39,6 +39,13 @@ export function isReservedMobileDeploymentDrivePath(
   const normalizedPath = normalizeRelativePath(path);
   if (normalizedPath === null) return true;
 
+  if (
+    normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}?`) ||
+    normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}#`)
+  ) {
+    return true;
+  }
+
   return (
     normalizedPath === MOBILE_DEPLOYMENT_DRIVE_PREFIX ||
     normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}/`) ||

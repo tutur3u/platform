@@ -33,6 +33,8 @@ describe('mobile deployment storage policy', () => {
   it.each([
     '.tuturuuu/mobile-deployment-vault/x%',
     '.tuturuuu/mobile-deployment-vault/',
+    '.tuturuuu/mobile-deployment-vault?',
+    '.tuturuuu/mobile-deployment-vault#',
     '/.tuturuuu/mobile-deployment-vault/v1',
     '.tuturuuu//mobile-deployment-vault/v1',
   ])('fails closed for malformed reserved vault path %s', (path) => {
