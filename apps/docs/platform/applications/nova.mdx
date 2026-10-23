@@ -123,9 +123,11 @@ bound to that challenge and the signed-in user, valid for the challenge
 duration (at most seven days). Challenge pages accept only that grant; the
 stored hash is never sent to the browser, and the retired `token` cookie is
 cleared and no longer grants access. Users with an open challenge from before
-this change re-enter the password once. Each password attempt, including a
-success, reserves capacity atomically before verification. Budgets apply per
-challenge and user and per client IP; a spent budget answers 429 with
+this change re-enter the password once. Each password attempt reserves capacity atomically before verification.
+Verified success refunds exactly that target reservation. Budgets allow 10
+outstanding or failed attempts per challenge and user, plus 60 admitted checks per
+user across challenges in 15 minutes. The aggregate budget uses the authenticated
+user id, so an office does not share one IP budget. A spent budget answers 429 with
 `Retry-After` (see
 [shared-secret password budgets](/build/devops/adaptive-abuse-rate-limits#shared-secret-password-budgets)).
 

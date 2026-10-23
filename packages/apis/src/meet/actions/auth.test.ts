@@ -57,7 +57,17 @@ const mocks = vi.hoisted(() => {
   return {
     calls,
     createAdminClient: vi.fn(async () => ({ from })),
-    queue(key: string, response: unknown) {
+    queue(key: string, response: { data: unknown; error: unknown }) {
+      if (key === 'meet_together_guests:select') {
+        key = 'meet_together_plans:select';
+        response = {
+          data: {
+            id: 'existing-plan',
+            meet_together_guests: response.data ? [response.data] : [],
+          },
+          error: response.error,
+        };
+      }
       responses[key] = [...(responses[key] ?? []), response];
     },
     reset() {
@@ -73,6 +83,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 const limits = vi.hoisted(() => ({
   check: vi.fn(),
+  refund: vi.fn(),
 }));
 
 vi.mock(
@@ -95,7 +106,7 @@ describe('Meet guest login', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.reset();
-    limits.check.mockResolvedValue({ allowed: true });
+    limits.check.mockResolvedValue({ allowed: true, refund: limits.refund });
   });
 
   it('creates a guest with a scrypt hash and returns a session, not the hash', async () => {
@@ -156,7 +167,8 @@ describe('Meet guest login', () => {
         password: 'secret',
       });
       expect(result).toEqual({
-        error: 'Too many failed attempts',
+        error: 'Too many attempts to join',
+        limitType: 'join',
         retryAfter: 420,
       });
       expect(limits.check).toHaveBeenCalledWith({
@@ -222,6 +234,7 @@ describe('Meet guest login', () => {
 
     expect(result).toEqual({ error: 'Invalid credentials' });
     expect(mutations()).toEqual([]);
+    expect(limits.refund).not.toHaveBeenCalled();
     expect(limits.check).toHaveBeenCalledWith({
       scope: 'meet-guest',
       target: `${PLAN_ID}:ann`,
@@ -249,6 +262,7 @@ describe('Meet guest login', () => {
 
     expect(result).toEqual({
       error: 'Too many failed attempts',
+      limitType: 'password',
       retryAfter: 420,
     });
     expect(limits.check).toHaveBeenCalledWith(
@@ -275,6 +289,7 @@ describe('Meet guest login', () => {
     });
 
     expect(result.data?.user.id).toBe('guest-1');
+    expect(limits.refund).toHaveBeenCalledOnce();
     expect(mutations()).toEqual([]);
   });
 
@@ -308,6 +323,29 @@ describe('Meet guest login', () => {
       await guestLogin(PLAN_ID, { name: 'Bob', password: legacyHash })
     ).toEqual({ error: 'Invalid credentials' });
     expect(mutations()).toEqual([]);
+  });
+
+  it('does no reservation or hashing for a nonexistent plan', async () => {
+    mocks.queue('meet_together_plans:select', { data: null, error: null });
+    mocks.queue('meet_together_guests:insert', {
+      data: { id: 'unexpected', name: 'Ann' },
+      error: null,
+    });
+    const crypto = await import('@tuturuuu/utils/crypto');
+    const hash = vi.spyOn(crypto, 'hashPassword');
+    try {
+      const { guestLogin } = await import('./auth.js');
+      const result = await guestLogin(PLAN_ID, {
+        name: 'Ann',
+        password: 'secret',
+      });
+      expect(hash).not.toHaveBeenCalled();
+      expect(limits.check).not.toHaveBeenCalled();
+      expect(result).toEqual({ error: 'Invalid request' });
+      expect(mutations()).toEqual([]);
+    } finally {
+      hash.mockRestore();
+    }
   });
 
   it('rejects malformed plan ids and oversized passwords before querying', async () => {

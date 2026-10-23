@@ -110,9 +110,14 @@ export default function PlanLogin({
         form.setError('guestPassword', {
           message:
             'retryAfter' in result && typeof result.retryAfter === 'number'
-              ? t('meet-together-plan-details.too_many_attempts', {
-                  minutes: Math.max(1, Math.ceil(result.retryAfter / 60)),
-                })
+              ? t(
+                  result.limitType === 'join'
+                    ? 'meet-together-plan-details.too_many_join_attempts'
+                    : 'meet-together-plan-details.too_many_attempts',
+                  {
+                    minutes: Math.max(1, Math.ceil(result.retryAfter / 60)),
+                  }
+                )
               : result.error,
         });
         setLoading(false);

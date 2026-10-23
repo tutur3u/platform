@@ -77,18 +77,19 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
 
   const sbAdmin = await createAdminClient();
 
-  // Fetch guest by name and planId
-  const { data: guest, error } = await sbAdmin
-    .from('meet_together_guests')
-    .select('id, name, password_hash, password_salt')
-    .eq('plan_id', planId)
-    .eq('name', name)
+  const { data: plan, error } = await sbAdmin
+    .from('meet_together_plans')
+    .select('id, meet_together_guests(id, name, password_hash, password_salt)')
+    .eq('id', planId)
+    .eq('meet_together_guests.name', name)
     .maybeSingle();
 
   if (error) {
     console.error('Failed to fetch Meet guest', { message: error.message });
     return { error: 'Error while fetching guest' };
   }
+  if (!plan) return { error: 'Invalid request' };
+  const guest = plan.meet_together_guests[0];
 
   const attempt: PasswordAttemptSubject = {
     scope: guest?.name ? 'meet-guest' : 'meet-guest-create',
@@ -100,7 +101,10 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
   const limit = await checkPasswordAttemptLimit(attempt);
   if (!limit.allowed) {
     return {
-      error: 'Too many failed attempts',
+      error: guest?.name
+        ? 'Too many failed attempts'
+        : 'Too many attempts to join',
+      limitType: guest?.name ? 'password' : 'join',
       retryAfter: limit.retryAfter ?? 60,
     };
   }
@@ -164,6 +168,8 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
       });
     }
   }
+
+  await limit.refund?.();
 
   return {
     data: {

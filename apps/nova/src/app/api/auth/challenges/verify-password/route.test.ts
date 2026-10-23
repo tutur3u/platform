@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 
 const limits = vi.hoisted(() => ({
   check: vi.fn(),
+  refund: vi.fn(),
 }));
 
 vi.mock(
@@ -103,7 +104,7 @@ describe('Nova challenge password verification', () => {
     mocks.updates.length = 0;
     mocks.user = { id: 'user-1' };
     vi.clearAllMocks();
-    limits.check.mockResolvedValue({ allowed: true });
+    limits.check.mockResolvedValue({ allowed: true, refund: limits.refund });
   });
 
   it('returns 429 with retryAfter once the failure budget is spent', async () => {
@@ -124,7 +125,7 @@ describe('Nova challenge password verification', () => {
     expect(limits.check).toHaveBeenCalledWith({
       scope: 'nova-challenge',
       target: `${CHALLENGE_ID}:user-1`,
-      ip: '198.51.100.4',
+      userId: 'user-1',
     });
   });
 
@@ -140,6 +141,7 @@ describe('Nova challenge password verification', () => {
     const response = await verify('open sesame');
 
     expect(response.status).toBe(200);
+    expect(limits.refund).toHaveBeenCalledOnce();
     expect(mocks.updates).toHaveLength(1);
     expect(mocks.updates[0]!.filters).toEqual([
       ['id', CHALLENGE_ID],
@@ -187,6 +189,7 @@ describe('Nova challenge password verification', () => {
     const response = await verify('open sesame');
 
     expect(response.status).toBe(200);
+    expect(limits.refund).toHaveBeenCalledOnce();
     expect(mocks.updates).toEqual([]);
     expect(
       cookieStoreFrom(response).get(challengeAccessCookieName(CHALLENGE_ID))
@@ -209,6 +212,7 @@ describe('Nova challenge password verification', () => {
     }
     expect(mocks.updates).toEqual([]);
     expect(limits.check).toHaveBeenCalledTimes(2);
+    expect(limits.refund).not.toHaveBeenCalled();
   });
 
   it('requires a signed-in Nova user', async () => {

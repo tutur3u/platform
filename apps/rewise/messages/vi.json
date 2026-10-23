@@ -6032,6 +6032,7 @@
     "timeblocks": "Khung giờ",
     "times": "Thời gian",
     "too_many_attempts": "Quá nhiều lần thử không thành công. Vui lòng thử lại sau {minutes} phút.",
+    "too_many_join_attempts": "Quá nhiều lần thử tham gia. Vui lòng thử lại sau {minutes} phút.",
     "tuturuuu_account": "Tài khoản Tuturuuu",
     "tuturuuu_meet": "Tuturuuu Meet",
     "unavailable": "Không rảnh",

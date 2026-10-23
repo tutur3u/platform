@@ -2016,6 +2016,7 @@
     "something_went_wrong": "Có lỗi xảy ra. Vui lòng thử lại sau.",
     "switch_account": "Chuyển tài khoản",
     "timeblocks": "Khung giờ",
+    "too_many_join_attempts": "Quá nhiều lần thử tham gia. Vui lòng thử lại sau {minutes} phút.",
     "tuturuuu_account": "Tài khoản Tuturuuu",
     "unavailable": "Không rảnh",
     "update_plan": "Cập nhật kế hoạch",

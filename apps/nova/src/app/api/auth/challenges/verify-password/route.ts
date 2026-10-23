@@ -1,5 +1,4 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import {
   checkPasswordAttemptLimit,
   type PasswordAttemptSubject,
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
 
   try {
     body = await request.json();
-  } catch (_error) {
+  } catch {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 
@@ -77,7 +76,7 @@ export async function POST(request: Request) {
     const attempt: PasswordAttemptSubject = {
       scope: 'nova-challenge',
       target: `${challenge.id}:${user.id}`,
-      ip: extractIPFromHeaders(request.headers),
+      userId: user.id,
     };
     const limit = await checkPasswordAttemptLimit(attempt);
     if (!limit.allowed) {
@@ -119,6 +118,8 @@ export async function POST(request: Request) {
         });
       }
     }
+
+    await limit.refund?.();
 
     const ttlSeconds = challengeAccessTtlSeconds(challenge.duration);
     const grant = createChallengeAccessGrant({

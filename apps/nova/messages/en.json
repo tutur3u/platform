@@ -2016,6 +2016,7 @@
     "something_went_wrong": "Something went wrong",
     "switch_account": "Switch account",
     "timeblocks": "Timeblocks",
+    "too_many_join_attempts": "Too many attempts to join. Try again in {minutes} minutes.",
     "tuturuuu_account": "Tuturuuu account",
     "unavailable": "Unavailable",
     "update_plan": "Update plan",

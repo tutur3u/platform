@@ -110,10 +110,13 @@ are unaffected.
   name and per client IP (see
   [shared-secret password budgets](/build/devops/adaptive-abuse-rate-limits#shared-secret-password-budgets)).
   While a budget is spent the form shows a localized retry message, even for
-  the correct password. Every attempt consumes capacity, including successful
-  logins. Creation reserves
-  a separate plan-wide budget before hashing: 10 creations per plan and 30 per IP
-  per 15 minutes, independent of the chosen guest name. Unknown IPs share a bucket.
+  the correct password. Verified logins refund one target attempt; source counters
+  retain the charge. The source budget is 300 attempts per 15 minutes to tolerate
+  shared office addresses. Creation reserves 10 attempts per plan and source
+  network per 15 minutes, independent of the chosen name. Different networks do
+  not share a plan-wide creation cap. IPv6 addresses share their /64; unknown IPs
+  share a bucket. Missing plans do no hashing. Creation denials use distinct
+  English/Vietnamese copy about attempts to join.
   The participant view and guest table are available only to server/admin clients;
   client roles cannot query either directly. Regression coverage lives in
   `packages/apis/src/meet/actions/auth.test.ts`,

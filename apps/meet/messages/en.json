@@ -4701,6 +4701,7 @@
     "timeblocks": "Timeblocks",
     "times": "Times",
     "too_many_attempts": "Too many failed attempts. Try again in {minutes} minutes.",
+    "too_many_join_attempts": "Too many attempts to join. Try again in {minutes} minutes.",
     "tuturuuu_account": "Tuturuuu account",
     "tuturuuu_meet": "Tuturuuu Meet",
     "unavailable": "Unavailable",
