@@ -1015,3 +1015,9 @@ at each caller boundary and reject references elsewhere, including the actual
 production token name `CLOUDFLARE_API_TOKEN`. The wave-1 permission and publisher
 secret tests cover these boundaries; protected concurrency tests preserve the
 non-cancelling durable-attempt publication queue.
+
+Include `.cloudflare/output/**` in Turbo build outputs. Validate a real cache-hit
+replay after deleting emitted files; replayed logs alone do not qualify an artifact.
+Keep `.cloudflare/state` outside cache outputs. cf prerelease pins remain held by
+Renovate until an owner qualifies a scoped upgrade. Production jobs require the
+Actions repository variable `CLOUDFLARE_ACCOUNT_ID` to match emitted account identity.

@@ -63,16 +63,6 @@
       },
       "digest": "26bdc8b1dc21b706c960eb0ae8a8d8758d3f4ec3e9f56a7ce3cc56b7de9a36ae"
     },
-    ".github/workflows/cron-control-cloudflare.yaml": {
-      "lines": 5,
-      "uses": 9,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "09e7a357198f86610a7fbdb570ae0a2947c70f1789b2175bc62d19c0b2b2f053"
-    },
     ".github/workflows/devbox-control-cloudflare.yaml": {
       "lines": 5,
       "uses": 9,
@@ -322,56 +312,6 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "bcf522b59db5e53edd34048ed5c20f3d9821a45cb0ca0d2be0e7726b91f4aa34"
-    },
-    "apps/cron-control/.gitignore": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "e6ae347ccce0869f12c481f2c2d8f120b088e2b0d992ae60f308ce00d5dc7d79"
-    },
-    "apps/cron-control/package.json": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "c44360ef33b6367e600afe9c2d15df2ff695031b055d13bb769b3667f4f0c415"
-    },
-    "apps/cron-control/scripts/verify-worker-runtime.mjs": {
-      "lines": 3,
-      "uses": 3,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "5dccfd517bd422b52f3653c64118c3e515252850f618d73c28fa99a2e0b6a6b0"
-    },
-    "apps/cron-control/vite.config.ts": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "9e15c227f35f6c2d0ad3c5586ae959517cd2d997e3959303be8cce73f001bcf8"
-    },
-    "apps/cron-control/wrangler.jsonc": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "a6122eae081e6a657734e0b13e5440046f23619f2fb3b261a4afc8af0d2bfac9"
     },
     "apps/devbox-control/package.json": {
       "lines": 2,
@@ -1063,6 +1003,16 @@
       },
       "digest": "d58d49cc1bf53bd3fb7c9bde9dc3224668a84f46b734b5d6bdd1f7365be65c6f"
     },
+    "scripts/ci/cf-adoption-docs.test.js": {
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6486",
+        "reason": "REV-6486-6 and REV-6486-7: guard required adoption documentation against conflict-resolution truncation"
+      },
+      "lines": 2,
+      "uses": 2,
+      "digest": "266117b4de2288a62660949298586be14768bbdd9d9a4fac3df4c0c03922e16a"
+    },
     "scripts/ci/cf-worker-parity.mjs": {
       "lines": 9,
       "uses": 10,
@@ -1102,16 +1052,6 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "870ee7dc37ba959b9cf0e198972ba5843606a36acbccdcc3bb58c4bf40b73626"
-    },
-    "scripts/ci/cron-control-vite-artifact.test.js": {
-      "lines": 3,
-      "uses": 3,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "3dc54ef1ade8d966c60c701c6720858f0c7ef90e4d58d2d28f6207adad95775a"
     },
     "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
       "lines": 1,

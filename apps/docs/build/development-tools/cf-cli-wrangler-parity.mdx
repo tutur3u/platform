@@ -38,6 +38,15 @@ The stable Vite plugin (1.64) already supports `cloudflare.config.ts` and Build
 Output emission; the 2.0 beta is not required. Loading `cloudflare.config.ts`
 requires Node.js (not Bun). The cf package requires Node `^22.23 || ^24.22 || ^26.12`.
 
+The **cf/Void Wrangler-exit lane** owns the `cf@1.0.0-beta.20` pin.
+Upgrade through a scoped dependency PR after checking upstream release notes and
+rerunning config/output parity, credential-free artifact checks, secret handling,
+settings readback fixtures and real Worker CI tests on the candidate version.
+DO publication remains Wrangler until a disposable migration rehearsal and a
+separate reviewed publisher change. Renovate holds cf prerelease pins via the
+`cf` package rule in `renovate.json`; update this hold only with the qualified
+upgrade PR. Do not float this beta pin automatically.
+
 ## Operation parity matrix
 
 Verified against cf `1.0.0-beta.20` help, the cf documentation and
@@ -177,6 +186,28 @@ Cloudflare documents the accepted permissions for
 [custom domains](https://developers.cloudflare.com/api/resources/workers/subresources/domains/methods/list/),
 [zones](https://developers.cloudflare.com/api/resources/zones/methods/list/) and
 [routes](https://developers.cloudflare.com/api/resources/workers/subresources/routes/methods/list/).
+
+## Deployment account variable
+
+Set the non-secret **Actions repository variable** `CLOUDFLARE_ACCOUNT_ID` in
+`tutur3u/platform` (Settings → Secrets and variables → Actions → Variables).
+Use the account ID recorded in the service's `cloudflare.config.ts` and parity
+baseline; the deploy job checks it against the emitted artifact. One repository
+variable supplies `cron-control-production`, `devbox-control-production` and
+`coordination-production`. If any of those environments defines the same variable,
+it must have the same value because the environment value takes precedence.
+Missing or mismatched configuration blocks deployment. Source publication does
+not provision this variable; the release owner must set it before promotion.
+
+## Cached Build Output
+
+The root Turbo `build.outputs` includes `.cloudflare/output/**`, including hidden
+Vite metadata. Cache hits must restore the complete emitted tree before parity,
+runtime and publication checks. `.cloudflare/state` remains outside the output
+scope. `cf-build-output-cache.test.mjs` runs a disposable emit-only task through
+an actual cache miss and hit, verifies restored bytes and execution count, and
+checks the old output list as a negative control. It never compiles an app or
+uses shared/remote cache credentials.
 
 ## Production cutover checklist
 
