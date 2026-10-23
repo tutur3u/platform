@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// Runs in security-review-classifier.yaml (pull_request_target) from the
-// default branch. It never reads or executes pull request content: it lists
-// the PR's file names through the API, classifies them with the default
-// branch's security-paths.js, labels the PR and records a check run.
+// Runs from the default branch in security-review-classifier.yaml
+// (pull_request_target) and security-review-reclassify.yaml (workflow_run after
+// a review is submitted or dismissed). It never reads or executes pull request
+// content: it lists the PR's file names and current reviews through the API,
+// classifies them with the default branch's security-paths.js, labels the PR
+// and records a check run.
 const fs = require('node:fs');
 const { classifyReview, maxListedFiles } = require('./security-paths.js');
 
@@ -20,13 +22,16 @@ function parseReviewers(value) {
   );
 }
 
-// Latest review per user decides; only approvals of the exact head commit by a
-// configured reviewer who is not the author count as independent.
-function independentApprovers({ author, headSha, reviewers, reviews }) {
+// Latest review per user decides, recomputed from the live review list on
+// every run: a dismissed approval reads back as DISMISSED and stops counting.
+// Comments and unsubmitted (PENDING) reviews never change a decision. Only
+// approvals of the exact head commit by a configured reviewer who is not the
+// author count as independent.
+function independentApprovers({ author, headSha, reviews, reviewers }) {
   const latest = new Map();
   for (const review of reviews) {
     const login = review.user?.login?.toLowerCase();
-    if (!login || review.state === 'COMMENTED') continue;
+    if (!login || ['COMMENTED', 'PENDING'].includes(review.state)) continue;
     latest.set(login, review);
   }
   return [...latest.entries()]
@@ -89,8 +94,8 @@ function summarize(decision) {
     lines.push(
       '',
       'An approval of the current head by a configured security reviewer who',
-      'is not the author satisfies this check. Re-run this workflow after the',
-      'review; new commits require a new approval.'
+      'is not the author satisfies this check. Submitting or dismissing a',
+      'review recomputes it; new commits require a new approval.'
     );
   }
   return lines.join('\n');
@@ -130,10 +135,61 @@ async function paginate(path, limit) {
   return items;
 }
 
+// A review relay carries only the head owner, branch and SHA of the reviewed
+// pull request. They are lookup keys: the open PR whose live head still matches
+// is re-read from the API, so a spoofed signal can only cause an honest
+// recomputation. A head that moved on was already reclassified on synchronize.
+async function resolveRelayedPullRequest(repo) {
+  const owner = env.TRIGGER_HEAD_OWNER ?? '';
+  const branch = env.TRIGGER_HEAD_BRANCH ?? '';
+  const sha = env.TRIGGER_HEAD_SHA ?? '';
+  if (
+    !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/u.test(owner) ||
+    !branch ||
+    branch.length > 255 ||
+    !/^[0-9a-f]{40}$/u.test(sha)
+  ) {
+    throw new Error('bad review relay trigger');
+  }
+  const head = encodeURIComponent(`${owner}:${branch}`);
+  const { data } = await github(
+    `/repos/${repo}/pulls?state=open&head=${head}&per_page=100`
+  );
+  const matches = (Array.isArray(data) ? data : []).filter(
+    (pr) => pr.head?.sha === sha && pr.base?.repo?.full_name === repo
+  );
+  if (matches.length !== 1) return null;
+  const [pr] = matches;
+  return {
+    author: pr.user?.login ?? '',
+    headSha: pr.head.sha,
+    number: String(pr.number),
+  };
+}
+
+async function target(repo) {
+  if (env.PR_NUMBER) {
+    return {
+      author: env.PR_AUTHOR,
+      headSha: env.HEAD_SHA,
+      number: env.PR_NUMBER,
+    };
+  }
+  return resolveRelayedPullRequest(repo);
+}
+
 async function main() {
   const repo = env.GITHUB_REPOSITORY;
-  const number = env.PR_NUMBER;
-  const headSha = env.HEAD_SHA;
+  if (!/^[\w.-]+\/[\w.-]+$/u.test(repo ?? ''))
+    throw new Error('bad repository');
+  const pr = await target(repo);
+  if (!pr) {
+    console.log(
+      'No open pull request still has the reviewed head; nothing to reclassify.'
+    );
+    return;
+  }
+  const { author, headSha, number } = pr;
   assertShape(repo, number, headSha);
   const listed = await paginate(
     `/repos/${repo}/pulls/${number}/files`,
@@ -147,7 +203,7 @@ async function main() {
     1000
   );
   const decision = decide({
-    author: env.PR_AUTHOR,
+    author,
     files,
     headSha,
     reviewers: parseReviewers(env.SECURITY_REVIEWERS),
@@ -208,6 +264,7 @@ module.exports = {
   decide,
   independentApprovers,
   label,
+  main,
   parseReviewers,
   summarize,
 };

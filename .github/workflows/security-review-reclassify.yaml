@@ -1,0 +1,60 @@
+name: Security Review Reclassification
+
+# Recomputes the Security review check after a review is submitted or
+# dismissed (security-review-recheck.yaml). workflow_run always runs this file
+# from the default branch, and the completion is only a wake-up signal: the
+# open pull request whose live head matches, its file list and its current
+# reviews are re-read through the API, so a spoofed or replayed signal can only
+# cause an honest recomputation. Never check out, install or execute pull
+# request content here.
+on:
+  workflow_run:
+    workflows: ["Security Review Recheck"]
+    types:
+      - completed
+
+concurrency:
+  group: security-review-reclassify-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+  queue: max
+
+permissions:
+  contents: read
+
+jobs:
+  reclassify:
+    name: Reclassify security review
+    if: github.event.workflow_run.event == 'pull_request_review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      checks: write
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Check out the default-branch classifier only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/security-paths.js
+            scripts/ci/security-review-classification.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Recompute the security review check from current reviews
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SECURITY_REVIEWERS: ${{ vars.SECURITY_REVIEWERS }}
+          TRIGGER_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          TRIGGER_HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+          TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/ci/security-review-classification.js

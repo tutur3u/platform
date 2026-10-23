@@ -36,6 +36,7 @@ const serialized = [
   'release-typescript-config-package.yaml',
   'release-ui-package.yaml',
   'release-utils-package.yaml',
+  'security-review-reclassify.yaml',
   'supabase-production.yaml',
   'supabase-staging.yaml',
   'vercel-production-ai.yaml',

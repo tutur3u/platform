@@ -5,7 +5,10 @@ name: Security Review Classification
 # runs this file and the classifier from the base/default branch with a write
 # token, so it must never check out, install or execute pull request content:
 # it reads the PR file list through the API only. Removing the label re-runs
-# the classification and re-adds it.
+# the classification and re-adds it. There is deliberately no path filter: the
+# Security review check is reported for every pull request (success when no
+# sensitive path changed) so it can be a required status check. Review
+# submissions and dismissals are recomputed by security-review-reclassify.yaml.
 on:
   pull_request_target:
     types:
