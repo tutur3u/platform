@@ -16,6 +16,7 @@ import {
   preflightProtectedService,
 } from './devbox-host-protection';
 import { readPersistedRunnerSetting } from './devbox-persisted-setting';
+import { assertRunnerExecutionModeUnchanged } from './devbox-service-mode-guard';
 import {
   type DevboxCheckoutSelection,
   resolveExistingDevboxCheckout,
@@ -40,10 +41,13 @@ export interface DevboxRepairOptions {
   cwd?: string;
   dir?: string;
   dryRun?: boolean;
+  /** Replace service files that belong to a different execution mode. */
+  force?: boolean;
   json?: boolean;
   noRestart?: boolean;
   runCommand?: DevboxSetupCommandRunner;
   serviceManager?: DevboxServiceManager;
+  serviceName?: string;
   serviceUser?: string;
   stdout?: (value: string) => void;
   tokenFile?: string;
@@ -132,7 +136,8 @@ export async function runDevboxRepair(
   const stdout =
     options.stdout ?? ((value: string) => process.stdout.write(value));
   const tokenFile = resolve(
-    options.tokenFile?.trim() || getDefaultRunnerTokenFile()
+    options.tokenFile?.trim() ||
+      getDefaultRunnerTokenFile(undefined, options.serviceName)
   );
   const manager = resolveDevboxServiceManager(options.serviceManager);
 
@@ -148,6 +153,16 @@ export async function runDevboxRepair(
       'Repair cannot weaken an existing Judge-only execution policy.'
     );
   const dockerHost = options.dockerHost ?? readSetting('DOCKER_HOST');
+  const force = options.force === true;
+  await assertRunnerExecutionModeUnchanged({
+    executionMode,
+    force,
+    definitionPath: getServiceDefinitionPath(manager, options.serviceName),
+    scriptPaths: [
+      resolve(getDefaultRunnerWrapperFile(undefined, options.serviceName)),
+      resolve(getDefaultRunnerWrapperFile(tokenFile, options.serviceName)),
+    ],
+  });
 
   const serviceUser =
     options.serviceUser ?? readSetting('TUTURUUU_DEVBOX_SERVICE_USER');
@@ -209,11 +224,12 @@ export async function runDevboxRepair(
   }
   const service = options.dryRun
     ? {
-        definitionPath: getServiceDefinitionPath(manager),
+        definitionPath: getServiceDefinitionPath(manager, options.serviceName),
         manager,
         wrapperPath: resolve(
           getDefaultRunnerWrapperFile(
-            executionMode === 'judge-only' ? tokenFile : undefined
+            executionMode === 'judge-only' ? tokenFile : undefined,
+            options.serviceName
           )
         ),
       }
@@ -221,9 +237,11 @@ export async function runDevboxRepair(
         checkoutDir: checkout.path,
         executionMode,
         dockerHost,
+        force,
         json: options.json,
         manager,
         runCommand,
+        serviceName: options.serviceName,
         serviceUser,
         tokenFile,
       });
@@ -236,6 +254,7 @@ export async function runDevboxRepair(
         json: options.json,
         manager: service.manager,
         runCommand,
+        serviceName: options.serviceName,
       })
     );
 
@@ -274,6 +293,7 @@ export async function runDevboxRepairCommand({
   await runDevboxRepair({
     dir: getFlag(flags, 'dir'),
     dryRun: flags['dry-run'] === true,
+    force: flags.force === true,
     json,
     noRestart: flags['no-restart'] === true,
     serviceManager: assertSupportedServiceManager(
@@ -283,6 +303,7 @@ export async function runDevboxRepairCommand({
       ? parseDevboxExecutionMode(getFlag(flags, 'execution-mode'))
       : undefined,
     dockerHost: getFlag(flags, 'docker-host'),
+    serviceName: getFlag(flags, 'service-name'),
     serviceUser: getFlag(flags, 'service-user'),
     tokenFile: getFlag(flags, 'token-file'),
   });
