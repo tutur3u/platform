@@ -309,7 +309,7 @@ describe('passive T3 Usage registry parity import', () => {
       now,
     }).ranked[0];
     expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
-    expect(ranked?.signalOrderRemainingPercent).toBeNull();
+    expect(ranked?.unknownOrderHint).toBeNull();
   });
 
   it('does not use fresh Fable-only remaining as Opus headroom', () => {

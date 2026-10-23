@@ -53,6 +53,10 @@ add per-account `minRemainingPercent`, `maxConcurrent`, or `excluded` values.
 These policy choices are local routing recommendations; T3 Code dispatch still
 requires its normal provider instance selection.
 
+Production state paths use Node's `os.homedir()` (and therefore honor `HOME`).
+`AGENT_QUOTA_STATE_ROOT` is a test-only override used under Vitest; production
+commands ignore it. The passwd home is used only by the test write guard.
+
 ## Freshness, reservations, and Antigravity
 
 The 2026-10-23 routing policy includes every configured Codex, Claude, and
@@ -84,7 +88,9 @@ reported model quotas as a fallback. The probe publishes `usageLimits` with
 the Limits tab deduplicates account identities. No reset cadence is inferred
 when a provider omits it. Missing or unavailable cached usage produces
 `UNKNOWN` with `no-usage-signal`. This is a snapshot consumer; refreshing T3's
-Limits tab remains T3's responsibility.
+Limits tab remains T3's responsibility. If a normal live collector has windows
+but the cache is missing, malformed, or unavailable, those windows are retained
+with zero freshness TTL so the cache failure cannot erase usage evidence.
 
 An unrecognized provider window kind keeps its reported percentage but is marked
 non-authoritative. It cannot establish headroom. If it reports a near-limit or
@@ -225,9 +231,13 @@ per instance through `policy.preferenceWeights`. They reflect the user's report
 that the ChatGPT allowance is about four times one Claude allowance. **These
 weights are user planning inputs, not telemetry or measured capacity.** Each
 shared account gets one weight (the maximum configured member weight), never
-the sum of aliases. Ordering uses the existing reservation-adjusted score plus
-that weight, after separating FRESH pools from unknown telemetry and applying
-all eligibility gates. Claude and Antigravity remain available for task fit,
+the sum of aliases. After role and eligibility gates and FRESH/UNKNOWN ordering,
+an operator's configured preference takes precedence over the unknown-state
+ordering hint. The emitted `unknownOrderHint` is only a sorting diagnostic: it
+is the minimum reported remaining percentage among covering numeric windows
+whose reset is still pending, including non-authoritative windows. It is NOT
+headroom and never makes a pool eligible. Claude and Antigravity remain
+available for task fit,
 parallel work, and reviewer independence.
 
 The reported extra ChatGPT reset credit appears only as an unverified planning
@@ -651,6 +661,10 @@ only `instanceId`, `driver`, and `usageLimits` (`checkedAt`, `windows`,
 `windowDurationMins`. Optional `settings.providerInstances` accepts only driver
 and config homePath/shadowHomePath. Never pipe a full config or auth document.
 Newer provider observations supersede older manual readings for the same window.
+Provider `checkedAt` may be at most five minutes ahead of import time, and merge
+uses the same bound. An unavailable provider entry still requires a valid
+`checkedAt`; otherwise the whole import is rejected with
+`usage-import-unavailable-checked-at-required` rather than silently skipping it.
 
 `configure` takes JSON stdin with `pool`, `policy`, `evidence` and optionally
 `catalog`. Policy requires `reservePercent` (0–100), `nearUsedPercent` (1–100),

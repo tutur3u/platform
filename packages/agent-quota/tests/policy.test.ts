@@ -328,9 +328,37 @@ describe('routing policy', () => {
       'claudeAgent',
       'claude_dd',
     ]);
-    expect(
-      result.ranked.map((item) => item.signalOrderRemainingPercent)
-    ).toEqual([80, 20, null]);
+    expect(result.ranked.map((item) => item.unknownOrderHint)).toEqual([
+      80,
+      20,
+      null,
+    ]);
     expect(result.ranked.every((item) => item.state === 'UNKNOWN')).toBe(true);
+  });
+
+  it('uses the lowest covering reset-pending percentage even from non-authoritative windows', () => {
+    const accountWithMixedWindows = account(
+      'claude_dd',
+      10,
+      '2026-10-22T20:00:00Z'
+    );
+    accountWithMixedWindows.windows.push({
+      kind: 'long',
+      usedPercent: 80,
+      authoritative: false,
+      observedAt: '2026-10-22T20:00:00Z',
+      resetsAt: '2026-10-24T00:00:00Z',
+      source: 'sanitized unclassified window',
+    });
+    const result = recommend({
+      accounts: [accountWithMixedWindows],
+      active: [],
+      task: { model: 'claude-opus-5-5' },
+      now,
+    });
+    expect(result.ranked[0]).toMatchObject({
+      state: 'UNKNOWN',
+      unknownOrderHint: 20,
+    });
   });
 });

@@ -1,16 +1,16 @@
 import { constants } from 'node:fs';
 import { open } from 'node:fs/promises';
 import { join } from 'node:path';
-import { stateRoot } from '../state-root';
 import type { AccountUsage, UsageWindow } from '../types';
 import { homeIdentity } from '../usage-import';
 import { PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS } from '../window-freshness';
 import { windowScope } from '../window-scope';
+import { defaultCollectorPaths } from './paths';
 
 // Provider status caches are distinct from provider profiles and authentication files.
 export async function collectSnapshot(
   account: AccountUsage,
-  cacheDir = stateRoot('.t3', 'caches'),
+  cacheDir = defaultCollectorPaths().snapshotCacheDir,
   settings?: unknown
 ): Promise<AccountUsage> {
   if (!/^[a-zA-Z0-9_-]+$/.test(account.instanceId)) return account;
@@ -52,7 +52,7 @@ export async function collectSnapshot(
       typeof limits.checkedAt !== 'string' ||
       !Array.isArray(limits.windows)
     )
-      return account;
+      return demoteSnapshot(account, 'no-usage-signal');
     if (
       limits.unavailable ||
       limits.windows.some(
@@ -64,7 +64,7 @@ export async function collectSnapshot(
           window.usedPercent > 100
       )
     )
-      return { ...account, windows: [], lastError: 'no-usage-signal' };
+      return demoteSnapshot(account, 'no-usage-signal');
     const windows: UsageWindow[] = limits.windows.flatMap(
       (window: Record<string, unknown>) => {
         if (
@@ -117,6 +117,7 @@ export async function collectSnapshot(
         ];
       }
     );
+    if (windows.length === 0) return demoteSnapshot(account, 'no-usage-signal');
     return {
       ...account,
       windows,
@@ -128,6 +129,17 @@ export async function collectSnapshot(
       lastError: windows.length ? undefined : 'no-usage-signal',
     };
   } catch {
-    return { ...account, windows: [], lastError: 'snapshot-unreadable' };
+    return demoteSnapshot(account, 'snapshot-unreadable');
   }
+}
+
+function demoteSnapshot(account: AccountUsage, reason: string): AccountUsage {
+  return {
+    ...account,
+    windows: account.windows.map((window) => ({
+      ...window,
+      freshnessTtlMs: 0,
+    })),
+    lastError: reason,
+  };
 }

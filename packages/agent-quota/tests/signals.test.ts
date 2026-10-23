@@ -236,6 +236,41 @@ describe('freshness, identity and reservations', () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
+  it.each(['unavailable', 'malformed'] as const)(
+    'demotes live windows instead of deleting them when the cache is %s',
+    async (cacheState) => {
+      const directory = await mkdtemp(join(tmpdir(), 'quota-live-demotion-'));
+      try {
+        const live = healthy('codex');
+        const cache =
+          cacheState === 'unavailable'
+            ? JSON.stringify({
+                instanceId: 'codex',
+                driver: 'codex',
+                usageLimits: {
+                  checkedAt: now.toISOString(),
+                  unavailable: true,
+                  windows: [],
+                },
+              })
+            : '{ malformed';
+        await writeFile(join(directory, 'codex.json'), cache);
+        const result = await collectSnapshot(live, directory);
+        expect(result.windows).toHaveLength(1);
+        expect(result.windows[0]).toMatchObject({
+          usedPercent: 30,
+          freshnessTtlMs: 0,
+        });
+        expect(result.lastError).toBe(
+          cacheState === 'unavailable'
+            ? 'no-usage-signal'
+            : 'snapshot-unreadable'
+        );
+      } finally {
+        await rm(directory, { recursive: true, force: true });
+      }
+    }
+  );
   it('preserves and blocks non-authoritative snapshot percentages at the limit', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'quota-unknown-kind-'));
     try {

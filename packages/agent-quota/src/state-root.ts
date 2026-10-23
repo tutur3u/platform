@@ -1,4 +1,4 @@
-import { userInfo } from 'node:os';
+import { homedir, userInfo } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 let injectedBase: string | undefined;
@@ -8,8 +8,9 @@ export function setStateRootBaseForTests(base: string | undefined) {
 }
 
 export function stateRoot(...segments: string[]) {
-  const base =
-    process.env.AGENT_QUOTA_STATE_ROOT || injectedBase || userInfo().homedir;
+  const base = process.env.VITEST
+    ? process.env.AGENT_QUOTA_STATE_ROOT || injectedBase || homedir()
+    : process.env.HOME || homedir();
   return join(base, ...segments);
 }
 
