@@ -1993,6 +1993,8 @@ async function runRelationshipsCliCommand(context: WorkspaceCommandContext) {
 export async function runCli(argv = process.argv.slice(2)) {
   if (argv[0] === 'resources')
     return (await import('./resources.js')).runResourcesCommand(argv.slice(1));
+  if (argv[0] === 'storage')
+    return (await import('./storage.js')).runStorageCommand(argv.slice(1));
   const commandSeparatorIndex = argv.indexOf('--');
   const globalArgs =
     commandSeparatorIndex >= 0 ? argv.slice(0, commandSeparatorIndex) : argv;

@@ -1,0 +1,296 @@
+import { existsSync } from 'node:fs';
+import { mkdir, rm, utimes, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+import type { StorageReport } from './storage-analyze';
+import { defaultStorageThresholds } from './storage-headroom';
+import type { Hold } from './storage-holds';
+import { pruneStorage } from './storage-prune';
+import { createRepoFixture, git } from './storage-test-fixtures';
+import { classifyWorktrees } from './storage-worktrees';
+
+const roots: string[] = [];
+afterEach(async () => {
+  for (const root of roots.splice(0))
+    await rm(root, { recursive: true, force: true });
+});
+const later = Date.now() + 3 * 86_400_000;
+
+function report(
+  repo: string,
+  holds: Hold[],
+  overrides: Partial<StorageReport> = {},
+  now = later
+): StorageReport {
+  return {
+    version: 1,
+    generatedAt: new Date(now).toISOString(),
+    platform: process.platform,
+    method: 'allocated-dedup',
+    thresholds: defaultStorageThresholds,
+    volumes: [],
+    items: [],
+    worktrees: repo
+      ? classifyWorktrees({ repo, holds, cwds: [], currentDir: '/', now }).map(
+          (entry) => ({ ...entry, uniqueBytes: 1024 })
+        )
+      : [],
+    nodeModules: [],
+    docker: null,
+    tmpOlderThanDays: 3,
+    warnings: [],
+    ...overrides,
+  };
+}
+
+function prune(
+  repo: string,
+  holds: Hold[],
+  options: Partial<Parameters<typeof pruneStorage>[0]> = {}
+) {
+  return pruneStorage({
+    report: report(repo, holds),
+    apply: true,
+    categories: ['worktrees'],
+    olderThanDays: 7,
+    maxRemoveBytes: 1024 ** 3,
+    paths: [],
+    names: [],
+    holds: () => holds,
+    cwds: () => [],
+    prs: () => null,
+    now: later,
+    ...options,
+  });
+}
+
+// Real git worktrees; slow under a loaded host.
+describe('storage prune safety fences', { timeout: 30_000 }, () => {
+  it('removes only the merged clean worktree and deletes its branch with -d', async () => {
+    const fixture = await createRepoFixture();
+    roots.push(fixture.root);
+    const merged = await fixture.worktree('merged');
+    const dirty = await fixture.worktree('dirty');
+    await writeFile(join(dirty.path, 'notes.txt'), 'uncommitted\n');
+    const unmerged = await fixture.worktree('unmerged', { commit: true });
+    const held = await fixture.worktree('held');
+    const holds = [{ path: held.path, owner: 'mastermind', glob: false }];
+
+    const result = prune(fixture.repo, holds);
+
+    expect(existsSync(merged.path)).toBe(false);
+    expect(git(fixture.repo, 'branch', '--list', 'merged')).toBe('');
+    for (const kept of [dirty.path, unmerged.path, held.path, fixture.repo])
+      expect(existsSync(kept)).toBe(true);
+    expect(git(fixture.repo, 'branch', '--list', 'unmerged')).toContain(
+      'unmerged'
+    );
+    const reasons = Object.fromEntries(
+      result.steps.map((step) => [
+        step.path,
+        `${step.status}:${step.reason ?? ''}`,
+      ])
+    );
+    expect(reasons[merged.path]).toBe('done:');
+    expect(reasons[dirty.path]).toMatch(/^skipped:.*dirty/u);
+    expect(reasons[unmerged.path]).toMatch(/^skipped:.*unmerged/u);
+    expect(reasons[held.path]).toBe('skipped:held by mastermind');
+  });
+
+  it('is a dry run unless apply is set', async () => {
+    const fixture = await createRepoFixture();
+    roots.push(fixture.root);
+    const merged = await fixture.worktree('merged');
+    const result = prune(fixture.repo, [], { apply: false });
+    expect(result.steps.find((step) => step.path === merged.path)?.status).toBe(
+      'planned'
+    );
+    expect(existsSync(merged.path)).toBe(true);
+  });
+
+  it('re-verifies right before removal: a tree that became dirty or held is kept', async () => {
+    const fixture = await createRepoFixture();
+    roots.push(fixture.root);
+    const becameDirty = await fixture.worktree('became-dirty');
+    const becameHeld = await fixture.worktree('became-held');
+    const planReport = report(fixture.repo, []);
+    await writeFile(
+      join(becameDirty.path, 'late.txt'),
+      'written after planning\n'
+    );
+    const lateHolds = [
+      { path: becameHeld.path, owner: 'late-owner', glob: false },
+    ];
+    // The plan reads no holds; the hold lands before apply re-checks.
+    let reads = 0;
+    const result = prune(fixture.repo, [], {
+      report: planReport,
+      holds: () => (reads++ === 0 ? [] : lateHolds),
+    });
+    expect(existsSync(becameDirty.path)).toBe(true);
+    expect(existsSync(becameHeld.path)).toBe(true);
+    expect(
+      result.steps.find((step) => step.path === becameDirty.path)
+    ).toMatchObject({ status: 'failed' });
+    expect(
+      result.steps.find((step) => step.path === becameHeld.path)
+    ).toMatchObject({ status: 'failed', reason: 'held by late-owner' });
+  });
+
+  it('keeps recently active trees, busy trees and preserve/* branches', async () => {
+    const fixture = await createRepoFixture();
+    roots.push(fixture.root);
+    const fresh = await fixture.worktree('fresh');
+    const busy = await fixture.worktree('busy');
+    const preserve = await fixture.worktree('preserve/snapshot');
+    const now = Date.now();
+    const result = pruneStorage({
+      report: report(fixture.repo, [], {}, now),
+      apply: true,
+      categories: ['worktrees'],
+      olderThanDays: 7,
+      maxRemoveBytes: 1024 ** 3,
+      paths: [],
+      names: [],
+      holds: () => [],
+      cwds: () => [],
+      prs: () => null,
+      now,
+    });
+    expect(existsSync(fresh.path)).toBe(true);
+    expect(
+      result.steps.find((step) => step.path === fresh.path)?.reason
+    ).toMatch(/recently active/u);
+    const busyResult = prune(fixture.repo, [], {
+      cwds: () => [{ pid: 1, cwd: busy.path }],
+    });
+    expect(existsSync(busy.path)).toBe(true);
+    expect(
+      busyResult.steps.find((step) => step.path === busy.path)?.reason
+    ).toBe('a process is working inside');
+    expect(existsSync(preserve.path)).toBe(true);
+    expect(
+      git(fixture.repo, 'branch', '--list', 'preserve/snapshot')
+    ).toContain('preserve/snapshot');
+  });
+
+  it('respects --max-remove and --path', async () => {
+    const fixture = await createRepoFixture();
+    roots.push(fixture.root);
+    const first = await fixture.worktree('first');
+    const second = await fixture.worktree('second');
+    const bounded = prune(fixture.repo, [], {
+      apply: false,
+      maxRemoveBytes: 1500,
+    });
+    expect(
+      bounded.steps.filter((step) => step.status === 'planned')
+    ).toHaveLength(1);
+    expect(
+      bounded.steps.some((step) => step.reason?.startsWith('over --max-remove'))
+    ).toBe(true);
+    const narrowed = prune(fixture.repo, [], {
+      apply: false,
+      paths: [second.path],
+    });
+    expect(narrowed.steps.map((step) => step.path)).toEqual([second.path]);
+    expect(existsSync(first.path)).toBe(true);
+  });
+});
+
+describe('storage prune categories', () => {
+  const base = (overrides: Partial<Parameters<typeof pruneStorage>[0]>) =>
+    pruneStorage({
+      report: { ...report('', []), worktrees: [] },
+      apply: false,
+      categories: null,
+      olderThanDays: 7,
+      maxRemoveBytes: 1024 ** 3,
+      paths: [],
+      names: [],
+      holds: () => [],
+      cwds: () => [],
+      prs: () => null,
+      exec: () => ({ status: 0, stdout: '', stderr: '' }),
+      ...overrides,
+    });
+
+  it('refuses report-only categories and unnamed destructive targets', () => {
+    expect(() => base({ categories: ['trash'] })).toThrow(/reported only/u);
+    expect(() => base({ categories: ['vm-disks'] })).toThrow(/reported only/u);
+    expect(() => base({ categories: ['supabase-volumes'] })).toThrow(/--name/u);
+    expect(() => base({ categories: ['node-modules-stale'] })).toThrow(
+      /--path/u
+    );
+  });
+
+  it('removes only explicitly named, unattached Supabase volumes', () => {
+    const calls: string[][] = [];
+    const docker = {
+      usage: [],
+      supabaseVolumes: [
+        { name: 'supabase_db_old', project: 'old', sizeBytes: 10, links: 0 },
+        { name: 'supabase_db_live', project: 'live', sizeBytes: 10, links: 1 },
+      ],
+    };
+    const result = base({
+      report: { ...report('', []), worktrees: [], docker },
+      apply: true,
+      categories: ['supabase-volumes'],
+      names: ['supabase_db_old', 'supabase_db_live'],
+      exec: (argv) => {
+        calls.push(argv);
+        return { status: 0, stdout: '', stderr: '' };
+      },
+    });
+    expect(calls).toEqual([['docker', 'volume', 'rm', 'supabase_db_old']]);
+    expect(
+      result.steps.find(
+        (step) => step.path === 'docker-volume:supabase_db_live'
+      )?.status
+    ).toBe('skipped');
+  });
+
+  it('removes idle tmp dirs only when named, never held ones', async () => {
+    const fixture = await createRepoFixture();
+    roots.push(fixture.root);
+    const idle = join(fixture.root, 'idle');
+    const kept = join(fixture.root, 'kept');
+    for (const dir of [idle, kept]) {
+      await mkdir(dir);
+      await writeFile(join(dir, 'blob'), 'x');
+      const old = new Date(Date.now() - 30 * 86_400_000);
+      await utimes(join(dir, 'blob'), old, old);
+      await utimes(dir, old, old);
+    }
+    const items = [idle, kept].map((path) => ({
+      category: 'tmp-old' as const,
+      label: 'idle 30d',
+      path,
+      uniqueBytes: 30 * 1024 ** 2,
+      allocatedBytes: 0,
+      files: 1,
+      truncated: false,
+      risk: 'moderate' as const,
+    }));
+    const removed: string[] = [];
+    const run = (
+      categories: Parameters<typeof pruneStorage>[0]['categories']
+    ) =>
+      base({
+        report: { ...report('', []), worktrees: [], items },
+        apply: true,
+        categories,
+        holds: () => [{ path: kept, owner: 'evidence', glob: false }],
+        remove: (path) => removed.push(path),
+      });
+    run(null);
+    expect(removed).toEqual([]);
+    const result = run(['tmp-old']);
+    // The fixture root is not a tmp root on every OS; either way, held stays.
+    expect(removed).not.toContain(kept);
+    expect(result.steps.find((step) => step.path === kept)?.reason).toBe(
+      'held by evidence'
+    );
+  });
+});
