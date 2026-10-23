@@ -17,7 +17,9 @@ export interface DiskAdmission {
  * Heavy commands are refused when the volume holding their working directory
  * is critical (below TTR_STORAGE_MIN_FREE*, default 15 GiB / 5% / 5% inodes):
  * a build or install that fills the disk breaks every lane on the machine.
- * `low` only warns. A probe failure never blocks work.
+ * `low` only warns. A failed probe is UNKNOWN and is refused too: only an
+ * explicit operator override (--ignore-disk or TTR_RESOURCES_IGNORE_DISK=1)
+ * admits a command whose disk headroom could not be measured.
  */
 export async function diskAdmission({
   cwd,
@@ -36,8 +38,16 @@ export async function diskAdmission({
   let volume: Awaited<ReturnType<typeof probeVolume>>;
   try {
     volume = await probe(cwd);
-  } catch {
-    return { pressure: 'unknown', refuse: false, message: null };
+  } catch (error) {
+    return {
+      pressure: 'unknown',
+      refuse: true,
+      message: [
+        `refusing a heavy command: disk headroom is UNKNOWN for the volume holding ${cwd} (${error instanceof Error ? error.message : String(error)}).`,
+        'Check the path and run ttr storage status; once it reports the volume, re-run the command.',
+        'If you have verified free space yourself, override once with --ignore-disk or TTR_RESOURCES_IGNORE_DISK=1; with --offload the command runs on a devbox instead.',
+      ].join('\n'),
+    };
   }
   const { thresholds } = storageThresholds(env);
   const { pressure, reasons } = storagePressure(volume, thresholds);
@@ -67,5 +77,26 @@ export async function diskAdmission({
         : 'Run ttr storage suggest for ranked cleanup actions.',
       'Override once with --ignore-disk or TTR_RESOURCES_IGNORE_DISK=1; with --offload the command runs on a devbox instead.',
     ].join('\n'),
+  };
+}
+
+/**
+ * The launch-time gate: queued commands are re-admitted against a fresh probe
+ * after they claim a slot and right before they start, so a volume that
+ * filled while they waited refuses them (exit 75).
+ */
+export function launchDiskGate(
+  cwd: string,
+  admit: typeof diskAdmission = diskAdmission,
+  write: (message: string) => void = (message) =>
+    process.stderr.write(`[ttr resources] ${message}\n`)
+) {
+  return async () => {
+    const disk = await admit({ cwd });
+    if (disk.refuse) {
+      if (disk.message) write(disk.message);
+      return 75;
+    }
+    return null;
   };
 }

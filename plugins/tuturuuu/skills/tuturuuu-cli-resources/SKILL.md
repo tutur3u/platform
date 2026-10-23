@@ -93,7 +93,8 @@ avoid waiting. A bypass is a deliberate exception for a known small operation.
 
 Disk admission: a heavy command exits 75 when the volume holding its cwd is
 critical (`TTR_STORAGE_MIN_FREE` 15G, 5% free or 5% inodes) and prints the top
-cached `ttr storage suggest` actions. `low` (within 2x) only warns. Reclaim
+cached `ttr storage suggest` actions. It is checked before queueing and again
+right before launch; an unmeasurable volume (UNKNOWN) is refused as well. `low` (within 2x) only warns. Reclaim
 space with `ttr storage suggest` / `ttr storage prune` instead of
 `--ignore-disk` / `TTR_RESOURCES_IGNORE_DISK=1`; with `--offload auto` the
 command prefers a devbox runner. Offload skips runners whose heartbeat reports

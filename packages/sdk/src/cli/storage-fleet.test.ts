@@ -152,7 +152,7 @@ describe('ttr resources disk admission', () => {
     expect(result.message).toContain('--ignore-disk');
   });
 
-  it('honours the override and never blocks on a probe failure', async () => {
+  it('refuses UNKNOWN headroom unless the operator overrides explicitly', async () => {
     expect(
       (
         await diskAdmission({
@@ -165,9 +165,20 @@ describe('ttr resources disk admission', () => {
     const failing = async () => {
       throw new Error('statfs unsupported');
     };
+    const unknown = await diskAdmission({ cwd: '/w', env: {}, probe: failing });
+    expect(unknown).toMatchObject({ pressure: 'unknown', refuse: true });
+    expect(unknown.message).toContain('UNKNOWN');
+    expect(unknown.message).toContain('statfs unsupported');
+    expect(unknown.message).toContain('--ignore-disk');
     expect(
-      (await diskAdmission({ cwd: '/w', env: {}, probe: failing })).pressure
-    ).toBe('unknown');
+      (
+        await diskAdmission({
+          cwd: '/w',
+          env: { TTR_RESOURCES_IGNORE_DISK: '1' },
+          probe: failing,
+        })
+      ).refuse
+    ).toBe(false);
   });
 
   it('uses configured thresholds', async () => {

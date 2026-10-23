@@ -207,7 +207,12 @@ export async function queuedResourceCommand(
   ignorePressure = false,
   lanes: ValidationLanes = 1,
   pressureProbe: typeof memoryPressure = memoryPressure,
-  burstProbe: typeof burstEligibility = burstEligibility
+  burstProbe: typeof burstEligibility = burstEligibility,
+  /**
+   * Re-checked after the slot is claimed and right before the command starts
+   * (a queued command may wait a long time); an exit code refuses the launch.
+   */
+  admitLaunch?: () => Promise<number | null>
 ) {
   if (process.platform === 'win32')
     throw new Error('Resource admission currently supports macOS and Linux.');
@@ -370,6 +375,11 @@ export async function queuedResourceCommand(
             throw error;
         });
       }
+    }
+    if (cancelled) return signalCodes[cancelled];
+    if (admitLaunch) {
+      const refused = await admitLaunch();
+      if (refused !== null) return refused;
     }
     if (cancelled) return signalCodes[cancelled];
     process.stderr.write(`[ttr resources] running PID ${process.pid}\n`);

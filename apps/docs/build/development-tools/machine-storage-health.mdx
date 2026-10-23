@@ -53,9 +53,11 @@ values fall back to the default with a warning.
 ## Disk-aware admission
 
 `ttr resources` checks the volume holding a heavy command's working directory
-before queueing it. At `critical` it refuses with exit code 75 and prints the
-top non-high actions from the last `ttr storage suggest`; at `low` it warns and
-continues. A probe failure never blocks work.
+before queueing it, and again with a fresh probe after the command claims its
+slot and right before it starts (a queued command may wait a long time). At
+`critical` it refuses with exit code 75 and prints the top non-high actions
+from the last `ttr storage suggest`; at `low` it warns and continues. A failed
+probe is UNKNOWN and is refused too, with the probe error and the override.
 
 - `--ignore-disk` (or `TTR_RESOURCES_IGNORE_DISK=1`) overrides once. Prefer
   reclaiming space.

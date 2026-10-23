@@ -24,7 +24,7 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { resourceSnapshot } from './resources-diagnostics';
-import { diskAdmission } from './resources-disk-admission';
+import { diskAdmission, launchDiskGate } from './resources-disk-admission';
 import {
   hasResourceOwner,
   queuedResourceCommand,
@@ -176,7 +176,9 @@ export async function runResourcesCommand(argv: string[]) {
     const offload = optionValue(options, '--offload');
     // Disk headroom gate for heavy work; nested jobs were admitted already.
     let diskCritical = false;
-    if (queued && !parent && !(!shim && options.includes('--ignore-disk'))) {
+    const diskGated =
+      queued && !parent && !(!shim && options.includes('--ignore-disk'));
+    if (diskGated) {
       const disk = await diskAdmission({ cwd: commandCwd(command) });
       if (disk.message)
         process.stderr.write(`[ttr resources] ${disk.message}\n`);
@@ -211,7 +213,10 @@ export async function runResourcesCommand(argv: string[]) {
           command,
           env,
           !shim && options.includes('--ignore-pressure'),
-          resourceLanes(total)
+          resourceLanes(total),
+          undefined,
+          undefined,
+          diskGated ? launchDiskGate(commandCwd(command)) : undefined
         )
       : await spawnResourceCommand(real, args, env);
     return;
