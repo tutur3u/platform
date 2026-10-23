@@ -96,7 +96,7 @@ instance, so carry it across a switch. Automatic failover is not installed.
 Every orchestrator thread, including the cross-project supervisor, shares the
 [quota and storage coordination contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination):
 Tuturuuu's SDK, quota and resource lanes own the single implementation, with one
-switch owner per account and one cleanup lease per host. Missing quota or
+transition owner per owner thread and one cleanup lease per host. Missing quota or
 host telemetry stays UNKNOWN.
 Accounts are shared: several threads may use one account at once, so track
 pool usage, reservations and reset rather than locking an account. Serialize
