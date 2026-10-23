@@ -18,6 +18,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -189,12 +190,6 @@ export async function POST(
         console.log(
           `[Schedule] Received ${previewEvents.length} preview events from client`
         );
-        if (previewEvents.length > 0 && previewEvents[0]) {
-          console.log(
-            `[Schedule] First event sample:`,
-            JSON.stringify(previewEvents[0], null, 2)
-          );
-        }
       } else {
         console.log(
           `[Schedule] No preview events in body, will generate fresh`
@@ -424,7 +419,7 @@ export async function POST(
 
     // Log for debugging
     console.log(
-      `[Schedule] Processing ${previewEvents.length} preview events for ws ${wsId} (${applyMode}, ${applyScope})`
+      `[Schedule] Processing ${previewEvents.length} preview events for ws ${sanitizeLogValue(wsId)} (${sanitizeLogValue(applyMode)}, ${sanitizeLogValue(applyScope)})`
     );
 
     // Now persist the preview events (whether provided or generated)
@@ -442,7 +437,7 @@ export async function POST(
       applyScope,
     });
   } catch (error) {
-    console.error('Error in unified schedule POST:', error);
+    console.error('Error in unified schedule POST:', sanitizeLogValue(error));
     if (
       error instanceof Error &&
       (error.message.startsWith('Workspace timezone is not set') ||
@@ -728,7 +723,7 @@ async function createEventsFromPreview(
   for (const previewEvent of previewEvents) {
     // Log each event for debugging
     console.log(
-      `[Schedule] Processing event: type=${previewEvent.type}, title="${previewEvent.title}", source_id=${previewEvent.source_id}`
+      `[Schedule] Processing event: type=${sanitizeLogValue(previewEvent.type)}, source_id=${sanitizeLogValue(previewEvent.source_id)}`
     );
 
     const isHabit = previewEvent.type === 'habit';
@@ -739,7 +734,10 @@ async function createEventsFromPreview(
 
     // Validate required fields
     if (!previewEvent.start_at || !previewEvent.end_at || !previewEvent.title) {
-      console.error(`[Schedule] Invalid event data:`, previewEvent);
+      console.error(
+        '[Schedule] Invalid event data:',
+        sanitizeLogValue(previewEvent.source_id)
+      );
       warnings.push(`Skipped invalid event: missing required fields`);
       continue;
     }
@@ -888,7 +886,7 @@ async function createEventsFromPreview(
       // INSERT new event (no existing event to reuse)
       // ============================================================================
       console.log(
-        `[Schedule] Creating new event: "${previewEvent.title}" (${previewEvent.type})`
+        `[Schedule] Creating new event (${sanitizeLogValue(previewEvent.type)})`
       );
 
       // Encrypt the event data if encryption is enabled

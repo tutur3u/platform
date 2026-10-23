@@ -1,5 +1,6 @@
 import type { Polar, Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 import { SEAT_ACTIVE_STATUSES } from './subscription-constants';
 
 function privateSchema(supabase: TypedSupabaseClient) {
@@ -56,7 +57,7 @@ export async function hasActiveSubscription(
 
   if (!workspace) {
     console.error(
-      `Workspace ${wsId} not found, cannot check active subscriptions`
+      `Workspace ${sanitizeLogValue(wsId)} not found, cannot check active subscriptions`
     );
 
     return { hasWorkspace: false, hasActive: false, subscription: null };
@@ -106,14 +107,14 @@ export async function createFreeSubscription(
 
   if (!hasWorkspace) {
     console.error(
-      `Workspace ${wsId} not found, cannot create free subscription`
+      `Workspace ${sanitizeLogValue(wsId)} not found, cannot create free subscription`
     );
     return { status: 'error', message: 'Workspace not found' };
   }
 
   if (hasActive && subscription) {
     console.log(
-      `Workspace ${wsId} already has an active subscription, skipping free subscription creation`
+      `Workspace ${sanitizeLogValue(wsId)} already has an active subscription, skipping free subscription creation`
     );
     return { status: 'already_active', subscription };
   }
@@ -136,7 +137,7 @@ export async function createFreeSubscription(
 
   if (!workspace) {
     console.error(
-      `Workspace not found for wsId ${wsId}, cannot create free subscription`
+      `Workspace not found for wsId ${sanitizeLogValue(wsId)}, cannot create free subscription`
     );
     return { status: 'error', message: 'Workspace not found' };
   }
@@ -191,7 +192,7 @@ export async function createFreeSubscription(
     });
 
     console.log(
-      `Created free subscription ${subscription.id} for workspace ${wsId}`
+      `Created free subscription ${subscription.id} for workspace ${sanitizeLogValue(wsId)}`
     );
 
     return { status: 'created', subscription };

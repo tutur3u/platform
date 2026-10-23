@@ -20,6 +20,7 @@ import {
   getMasterKey,
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 import { clampWorkspaceCalendarPlaintextForEncryptedStorage } from '@/lib/calendar/sync-field-limits';
 import {
   checkProviderSyncBudget,
@@ -222,7 +223,7 @@ export async function decryptEventsFromStorage<
     // this app's runtime (it must match apps/web). Without it getWorkspaceKey()
     // returns null and events stay encrypted, so name the env var so ops can act.
     console.error(
-      `Encrypted calendar events found for workspace ${wsId} but no encryption key is available. ` +
+      `Encrypted calendar events found for workspace ${sanitizeLogValue(wsId)} but no encryption key is available. ` +
         'Set ENCRYPTION_MASTER_KEY in this app to the same value as apps/web so getWorkspaceKey() can derive the workspace key; ' +
         'returning events undecrypted.'
     );

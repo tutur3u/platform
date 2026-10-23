@@ -1,6 +1,7 @@
 import type { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
@@ -142,12 +143,12 @@ export async function POST(request: Request) {
         // Don't fail the whole request, but log the issue
       } else {
         console.log(
-          `Stored Google Event ID ${googleEventId} for local event ${event.id}`
+          `Stored Google Event ID ${sanitizeLogValue(googleEventId)} for local event ${sanitizeLogValue(event.id)}`
         );
       }
     } else {
       console.warn(
-        `Could not store Google Event ID. Google Event ID: ${googleEventId}, Local Event ID: ${event.id}`
+        `Could not store Google Event ID. Google Event ID: ${sanitizeLogValue(googleEventId)}, Local Event ID: ${sanitizeLogValue(event.id)}`
       );
     }
 

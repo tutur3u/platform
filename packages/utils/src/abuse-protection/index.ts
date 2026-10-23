@@ -8,6 +8,7 @@
 import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database, Json } from '@tuturuuu/types';
+import { sanitizeLogValue } from '../log-sanitizer';
 import { getUpstashRestRedisClient, hasUpstashRestEnv } from '../upstash-rest';
 import {
   ABUSE_THRESHOLDS,
@@ -196,8 +197,7 @@ function normalizeAbuseEventEmail(email?: string): string | null {
 }
 
 function sanitizeAbuseLogValue(value: string | null | undefined) {
-  const normalized = value?.trim();
-  return normalized ? normalized.slice(0, 256) : null;
+  return value?.trim() ? sanitizeLogValue(value.trim(), 256) : null;
 }
 
 function createAbuseLogContext(
@@ -503,7 +503,7 @@ export async function blockIP(
     }
 
     console.log(
-      `[Abuse Protection] Blocked IP ${ipAddress} at level ${newLevel} for ${blockDuration}s due to ${reason}`
+      `[Abuse Protection] Blocked IP ${sanitizeLogValue(ipAddress)} at level ${newLevel} for ${blockDuration}s due to ${sanitizeLogValue(reason)}`
     );
   } catch (error) {
     console.error('[Abuse Protection] Error blocking IP:', error);
@@ -550,7 +550,7 @@ export async function unblockIP(
     }
 
     console.log(
-      `[Abuse Protection] Unblocked IP ${ipAddress} by user ${unblockingUserId}`
+      `[Abuse Protection] Unblocked IP ${sanitizeLogValue(ipAddress)} by user ${unblockingUserId}`
     );
     return true;
   } catch (error) {

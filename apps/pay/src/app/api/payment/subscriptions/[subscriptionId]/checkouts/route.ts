@@ -4,6 +4,7 @@ import {
   isSelfServeWorkspaceProduct,
 } from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 import { type NextRequest, NextResponse } from 'next/server';
 import { PORT } from '@/constants/common';
 import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
@@ -62,7 +63,7 @@ export async function POST(
 
   if (!hasManageSubscriptionPermission) {
     console.error(
-      `You are not authorized to create subscription for wsId: ${wsId}`
+      `You are not authorized to create subscription for wsId: ${sanitizeLogValue(wsId)}`
     );
     return NextResponse.json(
       { error: 'Unauthorized: You are not authorized to create subscription' },

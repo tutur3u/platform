@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 
 interface CalendarEvent {
   id: string;
@@ -37,13 +38,12 @@ export const createCalendarOptimizer = (
       .select('*')
       .eq('ws_id', wsId);
 
-    // Apply intelligent date filtering if provided
     if (dateRange?.startDate && dateRange.endDate) {
       const startDateTime = `${dateRange.startDate}T00:00:00.000Z`;
       const endDateTime = `${dateRange.endDate}T23:59:59.999Z`;
 
       console.log(
-        `[OPTIMIZER] Filtering events between ${startDateTime} and ${endDateTime}`
+        `[OPTIMIZER] Filtering events between ${sanitizeLogValue(startDateTime)} and ${sanitizeLogValue(endDateTime)}`
       );
 
       query = query.gte('start_at', startDateTime).lte('start_at', endDateTime);

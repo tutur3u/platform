@@ -1,4 +1,5 @@
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import { sanitizeLogValue } from '@tuturuuu/utils/log-sanitizer';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -83,7 +84,11 @@ export async function POST(request: NextRequest) {
       .second(0)
       .millisecond(0);
   } catch (error) {
-    console.error('Invalid timezone:', timezone, error);
+    console.error(
+      'Invalid timezone:',
+      sanitizeLogValue(timezone),
+      sanitizeLogValue(error)
+    );
     return NextResponse.json(
       { error: `Invalid timezone: ${timezone}` },
       { status: 400 }
