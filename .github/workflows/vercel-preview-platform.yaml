@@ -59,6 +59,8 @@ jobs:
 
       - name: Confirm preview target
         id: check_commits
+        env:
+          PREVIEW_REF: ${{ github.event.inputs.preview_ref || github.sha }}
         run: |
           if [ "${{ steps.check_config.outputs.should_run }}" != "true" ]; then
             echo "No platform preview build is required for this change."
@@ -66,7 +68,7 @@ jobs:
             exit 0
           fi
 
-          echo "Building preview ref ${{ github.event.inputs.preview_ref || github.sha }}."
+          echo "Building preview ref ${PREVIEW_REF}."
           echo "skip_build=false" >> "$GITHUB_OUTPUT"
 
       - name: Resolve checked-out SHA
