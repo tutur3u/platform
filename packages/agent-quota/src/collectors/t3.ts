@@ -28,27 +28,33 @@ export function collectT3State(
     `)
       .all() as Array<{ provider_instance_id: string; provider: string }>;
     for (const row of rows) {
-      if (row.provider === 'codex' || row.provider === 'claude')
+      if (
+        row.provider === 'codex' ||
+        row.provider === 'claude' ||
+        row.provider === 'antigravity'
+      )
         byInstance.set(row.provider_instance_id, row.provider);
     }
     const active = database
       .prepare(`
-      SELECT provider_instance_id, COUNT(*) AS count
-      FROM orchestration_v2_projection_subagents
-      WHERE provider_instance_id IS NOT NULL AND status IN ('running', 'queued', 'starting')
-      GROUP BY provider_instance_id
+      SELECT provider_instance_id, COUNT(*) AS count FROM (
+        SELECT provider_instance_id, COALESCE(child_thread_id, provider_thread_id, subagent_id) AS reservation_id
+        FROM orchestration_v2_projection_subagents
+        WHERE provider_instance_id IS NOT NULL AND status IN ('pending', 'running', 'queued', 'starting', 'waiting')
+        UNION
+        SELECT provider_instance_id, thread_id AS reservation_id
+        FROM orchestration_v2_projection_runs
+        WHERE provider_instance_id IS NOT NULL AND status IN ('running', 'queued', 'preparing', 'starting', 'waiting')
+          AND NOT (status = 'queued' AND json_extract(payload_json, '$.queueHeld') IS 1)
+      ) GROUP BY provider_instance_id
     `)
       .all() as Array<{ provider_instance_id: string; count: number }>;
     for (const row of active)
       assignments.set(row.provider_instance_id, row.count);
-    const observed = database
-      .prepare(
-        'SELECT MAX(updated_at) AS observed_at FROM orchestration_v2_projection_provider_sessions'
-      )
-      .get() as { observed_at?: string } | undefined;
+
     return {
       quotaSnapshotsFound: false,
-      observedAt: observed?.observed_at ?? new Date().toISOString(),
+      observedAt: new Date().toISOString(),
       activeAssignments: [...assignments.entries()].map(
         ([instanceId, count]) => ({ instanceId, count })
       ),

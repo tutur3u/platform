@@ -119,7 +119,7 @@ describe('routing policy', () => {
     expect(result.ranked[0]?.score).toBe(18);
   });
 
-  it('uses a fresh quota window when another window reset has expired', () => {
+  it('requires all reported quota windows to be current', () => {
     const mixed = account('codex', 10, now.toISOString());
     mixed.windows = [
       {
@@ -145,7 +145,8 @@ describe('routing policy', () => {
       accounts: [mixed],
       now,
     });
-    expect(result.ranked[0]?.eligible).toBe(true);
+    expect(result.ranked[0]?.eligible).toBe(false);
+    expect(result.ranked[0]?.state).toBe('UNKNOWN');
     expect(result.ranked[0]?.score).toBe(46);
     expect(
       result.ranked[0]?.reasons.some((reason) => reason.code === 'stale')

@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { collectAllWith } from '../src/collectors';
 import { collectClaude } from '../src/collectors/claude';
 import { collectCodex } from '../src/collectors/codex';
-import { readCodexAppServerLimits } from '../src/collectors/codex-app-server';
 import { collectT3State } from '../src/collectors/t3';
 import { recommend } from '../src/policy';
 
@@ -199,38 +198,6 @@ describe('local collectors', () => {
     ]);
   });
 
-  it('parses the final app-server response when close flushes a partial line', async () => {
-    const root = await tempDir();
-    const command = join(root, 'codex-app-server-final-line');
-    await writeFile(
-      command,
-      `#!/bin/sh\nwhile IFS= read -r line; do\n  case "$line" in\n    *'"id":1'*) printf '%s\\n' '{"jsonrpc":"2.0","id":1,"result":{}}' ;;\n    *'account/rateLimits/read'*) printf '%s' '{"jsonrpc":"2.0","id":2,"result":{"rateLimits":{"primary":{"usedPercent":73,"windowDurationMins":300,"resetsAt":1900000000}}}}'; exit 0 ;;\n  esac\ndone\n`
-    );
-    await chmod(command, 0o755);
-    const startedAt = Date.now();
-    const result = await readCodexAppServerLimits(root, {
-      command,
-      timeoutMs: 3000,
-      now: () => new Date('2026-10-23T00:00:00.000Z'),
-    });
-    expect(Date.now() - startedAt).toBeLessThan(1000);
-    expect(result).toMatchObject([{ kind: 'short', usedPercent: 73 }]);
-  });
-
-  it('settles promptly when the app-server closes its pipes without a response', async () => {
-    const root = await tempDir();
-    const command = join(root, 'codex-app-server-early-close');
-    await writeFile(command, '#!/bin/sh\nexit 0\n');
-    await chmod(command, 0o755);
-    const startedAt = Date.now();
-    const result = await readCodexAppServerLimits(root, {
-      command,
-      timeoutMs: 3000,
-    });
-    expect(Date.now() - startedAt).toBeLessThan(1000);
-    expect(result).toEqual([]);
-  });
-
   it('estimates Claude token totals without fabricating a quota percentage', async () => {
     const root = await tempDir();
     const project = join(root, 'project');
@@ -326,9 +293,12 @@ describe('local collectors', () => {
     const path = join(root, 'state.sqlite');
     const db = new DatabaseSync(path);
     db.exec(`CREATE TABLE orchestration_v2_projection_provider_sessions (provider_instance_id TEXT, provider TEXT, updated_at TEXT);
-      CREATE TABLE orchestration_v2_projection_subagents (provider_instance_id TEXT, provider TEXT, status TEXT, started_at TEXT);
+      CREATE TABLE orchestration_v2_projection_subagents (provider_instance_id TEXT, provider TEXT, status TEXT, started_at TEXT, child_thread_id TEXT, provider_thread_id TEXT, subagent_id TEXT);
+      CREATE TABLE orchestration_v2_projection_runs (provider_instance_id TEXT, thread_id TEXT, status TEXT, payload_json TEXT);
       INSERT INTO orchestration_v2_projection_provider_sessions VALUES ('codex', 'codex', '2026-10-23T01:00:00Z');
-      INSERT INTO orchestration_v2_projection_subagents VALUES ('codex', 'codex', 'running', '2026-10-23T01:00:00Z');`);
+      INSERT INTO orchestration_v2_projection_subagents VALUES ('codex', 'codex', 'running', '2026-10-23T01:00:00Z', 'child', NULL, 'task');
+      INSERT INTO orchestration_v2_projection_runs VALUES ('codex', 'child', 'running', '{}');
+      INSERT INTO orchestration_v2_projection_runs VALUES ('codex', 'held', 'queued', '{"queueHeld":true}');`);
     db.close();
     const result = collectT3State(path);
     expect(result.quotaSnapshotsFound).toBe(false);
@@ -343,23 +313,21 @@ describe('local collectors', () => {
     ).toThrow();
   });
 
-  it('returns provider data but leaves T3 activity unknown when its read fails', async () => {
-    const providerAccount = {
-      instanceId: 'codex',
+  it('returns provider data but leaves activity unknown when T3 state fails', async () => {
+    const account = {
+      instanceId: 'fixture',
       provider: 'codex' as const,
       label: 'fixture',
       windows: [],
     };
     const result = await collectAllWith({
       collectT3State: () => Promise.reject(new Error('fixture failure')),
-      collectCodex: async () => providerAccount,
-      collectClaude: async () => ({
-        ...providerAccount,
-        instanceId: 'claudeAgent',
-        provider: 'claude' as const,
-      }),
+      collectCatalog: async () => [],
+      collectClaude: async () => ({ ...account, provider: 'claude' as const }),
+      collectCodex: async () => account,
+      collectSnapshot: async (value) => value,
     });
-    expect(result.accounts).toHaveLength(7);
+    expect(result.accounts).toHaveLength(8);
     expect(result.active).toBeUndefined();
     expect(result.t3Error).toBe('T3 activity state is unavailable.');
   });

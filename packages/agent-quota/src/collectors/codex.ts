@@ -97,6 +97,14 @@ export async function collectCodex(
   appServerOptions?: CodexAppServerOptions
 ): Promise<AccountUsage> {
   const defaultRoot = codexRoot(instanceId);
+  if (!defaultRoot && !roots)
+    return {
+      instanceId,
+      label,
+      provider: 'codex',
+      windows: [],
+      lastError: 'No allowlisted instance directory',
+    };
   const sourceRoots = roots ?? (defaultRoot ? [defaultRoot] : codexRoots());
   const appServerHome = appServerOptions
     ? (roots?.[0] ?? defaultRoot ?? sourceRoots[0])

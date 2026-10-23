@@ -417,3 +417,16 @@ credential handling and production gates. Do not import Cursor-only Task/Graphit
 commands, a cloud-first policy, mandatory cross-model review, an absolute ban on
 coordinator implementation or third-party scripts. Managed plugin caches remain
 installer-owned; this reference ships through the canonical Tuturuuu plugin.
+
+## Quota-aware delegation
+
+Use the existing `packages/agent-quota` router and its
+[runbook](../../../../../apps/docs/build/development-tools/agent-quota-routing.mdx)
+for provider headroom. Pass the current `orchestrator_capabilities` response via
+`--catalog-stdin` when ACP transport is unavailable. Prefer `--snapshots-only`
+for cached provider usage plus active T3 reservations without transcript reads.
+Availability is not quota: stale or missing usage/reset evidence is UNKNOWN.
+Near/exhausted pools drain; never infer recovery from an elapsed reset. Keep
+provider instance IDs distinct from display aliases and deduplicate only with
+exposed opaque account identity. These read-only recommendations are not atomic
+reservation locks; the dispatch owner still coordinates concurrent launches.
