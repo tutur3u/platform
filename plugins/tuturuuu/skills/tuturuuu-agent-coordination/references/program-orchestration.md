@@ -98,6 +98,11 @@ Every orchestrator thread, including the cross-project supervisor, shares the
 Tuturuuu's SDK, quota and resource lanes own the single implementation, with one
 switch owner per account and one cleanup lease per host. Missing quota or
 host telemetry stays UNKNOWN.
+Accounts are shared: several threads may use one account at once, so track
+pool usage, reservations and reset rather than locking an account. Serialize
+each owner thread's account transitions. If a safe in-thread switch is
+impossible, one top-level successor may take over through the
+[replacement-thread handover](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover).
 
 For observed slow admission, repeated handovers or two fixes failing on one
 premise, assign a bounded workflow audit at a safe checkpoint. Read actual
