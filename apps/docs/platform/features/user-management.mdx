@@ -347,3 +347,27 @@ App-provided English/Vietnamese labels keep the shared component free of implici
 translation namespace requirements. Regression coverage: `public-content-link.test.ts`,
 `public-link-button.test.tsx` and profile page/projection tests. Hosted clipboard
 permissions and exact-head app/shared-package CI remain separate evidence gates.
+
+## Workspace User Avatar Paths
+
+Web and Contacts user-avatar reads authorize the workspace through the existing
+permission helper, then use its resolved lowercase UUID. Aliases such as
+`personal` remain supported only when authorization resolves them to that UUID.
+The shared read handler signs only `<workspace UUID>/users/<filename>` in the
+`workspaces` bucket. It accepts exactly three original segments; it never repairs
+or decodes a submitted object path. Full URLs, other workspaces, nested paths,
+percent encodings, backslashes and control characters are rejected.
+
+The shared upload handler requires `manage_users`, a PNG, JPEG, WebP or GIF
+content type, and one filename of at most 255 ASCII letters, digits, dots,
+underscores or hyphens starting with a letter or digit. It preserves the filename
+and issues its `avatars` ticket only after charging the verified actor's upload
+budget. These rules apply to shared handler callers; canonical Web and Contacts
+POST routes retain their existing optimized media-ticket flow. There is no
+DELETE handler in the shared user-avatar module.
+
+Regression coverage lives in
+`packages/users-core/src/routes/users/avatar.test.ts`. It exercises read and upload
+traversal, foreign workspaces, invalid resolved IDs, alias resolution, authorization
+and budget ordering with synthetic storage fixtures. Hosted Storage behavior is
+a separate acceptance boundary.
