@@ -142,7 +142,9 @@ allowing service-file writes or sudo restart commands.
 
 When changing admission SQL, preserve the final drain-aware claim body and add
 only the mode predicate. Judge must reject every reported `trusted` mode even
-with a stale or missing timestamp; only trusted-work admission uses freshness.
+with a stale or missing timestamp; only trusted-work admission uses freshness. Judge denial precedes the flag check
+and applies even with the flag off. Keep the flag off until agent reporting and
+both heartbeat handlers support executionMode; do not invent a reporting switch.
 The database owns report timestamps on inserts, identical capability updates
 and timestamp-only writes, and rejects future values in the freshness helper.
 Exercise NULL operator inputs and timestamp forgery in

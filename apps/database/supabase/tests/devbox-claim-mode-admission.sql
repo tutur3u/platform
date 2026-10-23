@@ -83,11 +83,11 @@ select '10000000-0000-4000-8000-000000000007', actor, 'supplied-timestamp', '{}'
 select is((select capabilities_updated_at from private.devbox_runners where id = '10000000-0000-4000-8000-000000000007'), now(), 'insert overwrites supplied timestamp');
 select is((select enabled_features ->> 'run' from private.devbox_runners where id = '10000000-0000-4000-8000-000000000007'), 'false', 'reports never enable operator-disabled features');
 
--- Flag OFF: identical to the previous claim behavior.
+-- Flag OFF: trusted-work freshness is optional; Judge still rejects trusted mode.
 select ok(pg_temp.claims('10000000-0000-4000-8000-000000000001', 'run'), 'off: trusted runner claims run');
 select ok(pg_temp.claims('10000000-0000-4000-8000-000000000002', 'run'), 'off: unreported runner claims run');
 select ok(pg_temp.claims('10000000-0000-4000-8000-000000000003', 'run'), 'off: stale runner claims run');
-select ok(pg_temp.claims('10000000-0000-4000-8000-000000000006', 'judge'), 'off: trusted-reporting Judge runner claims judge');
+select ok(not pg_temp.claims('10000000-0000-4000-8000-000000000006', 'judge'), 'off: trusted-reporting runner never claims judge');
 select ok(pg_temp.claims('10000000-0000-4000-8000-000000000005', 'judge'), 'off: legacy Judge claims judge');
 
 -- Enabling refuses while run-enabled runners lack a fresh trusted report.

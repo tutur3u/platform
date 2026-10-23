@@ -236,8 +236,10 @@ and store tests.
 ### Claim admission by reported execution mode
 
 The database flag `private.devbox_control_settings.require_reported_execution_mode`
-defaults to off. With it off, claims behave exactly as before. With it on,
-`claim_next_devbox_run` itself enforces:
+defaults to off and must stay off pending agent and heartbeat-handler support.
+Judge always refuses a runner reporting `trusted`, even when this flag is off.
+With the flag on, `claim_next_devbox_run` additionally enforces trusted-work
+report freshness:
 
 - `run`, `build`, `serve` and `tunnel` claims require the runner to have
   reported `executionMode: trusted` within the last 90 seconds;
@@ -251,10 +253,14 @@ window cannot admit trusted work; future timestamps are rejected. Identical
 reports and timestamp-only writes are restamped by the server. The agent's clock
 is never trusted.
 
-Cutover: deploy the heartbeat handlers that accept `executionMode`, upgrade every
-run-enabled runner, set `TUTURUUU_DEVBOX_REPORT_EXECUTION_MODE=true` on them,
-confirm with `ttr box runners --json` that each one reports `trusted`, and only
-then enable the flag. An authorized operator runs
+**PENDING agent and handler support.** Current agents do not report
+`executionMode`; the web heartbeat schema and control Worker's capability
+allowlist do not accept it yet. There is no reporting environment-variable
+switch to enable today. A follow-up must add handler acceptance and agent
+reporting, deploy both, and verify a fresh trusted report from every run-enabled
+runner before cutover. Keep the admission flag off until that verification.
+
+An authorized operator runs
 `private.set_devbox_require_reported_execution_mode(true)` through the gated
 production database path. It refuses while any run-enabled runner lacks a fresh
 `trusted` report and lists those runners; `p_force => true` overrides that guard

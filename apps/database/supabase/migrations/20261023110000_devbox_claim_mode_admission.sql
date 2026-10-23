@@ -9,7 +9,7 @@
 --     trusted mode behind the agent's pool fence and the S2 feature exclusion).
 -- Trusted-work freshness is stamped by
 -- the database (capabilities_updated_at), never taken from the agent's clock.
--- With the flag off, claims behave exactly as before.
+-- Judge always refuses trusted reports; the flag gates trusted-work freshness.
 --
 -- This redefines claim_next_devbox_run on top of the S2/S3 drain-aware body
 -- (20261023100000_devbox_runner_trust_pools.sql) and its hardened requeue
@@ -95,11 +95,11 @@ set search_path = private, public, pg_temp
 as $$
     -- A trusted report permanently narrows Judge admission regardless of age.
     select case
+        when p_workload = 'judge' then
+            p_capabilities ->> 'executionMode' is distinct from 'trusted'
         when not private.devbox_require_reported_execution_mode() then true
         when p_workload in ('run', 'build', 'serve', 'tunnel') then
             private.devbox_reports_fresh_trusted(p_capabilities, p_capabilities_updated_at)
-        when p_workload = 'judge' then
-            p_capabilities ->> 'executionMode' is distinct from 'trusted'
         else true
     end;
 $$;
@@ -213,7 +213,7 @@ begin
             and (runner.drain_requested_at is null or run.workload = 'maintenance')
             -- S4 (flagged): trusted workloads need a fresh, server-stamped
             -- `trusted` report; Judge refuses any `trusted` report.
-            -- With the flag off this clause is always true.
+            -- Judge denial also applies while freshness admission is off.
             and private.devbox_runner_mode_admits(
                 runner.capabilities,
                 runner.capabilities_updated_at,
