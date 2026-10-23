@@ -8,6 +8,7 @@ const { execFileSync } = require('node:child_process');
 const {
   findArtifactDirs,
   isHeld,
+  newestMtimeMs,
   parseWorktreeList,
   readHolds,
 } = require('./worktree-footprint-git.js');
@@ -128,7 +129,14 @@ test('holds protect the path, its parents, its children, and glob prefixes', () 
   assert.equal(isHeld('/wt/a/.worktrees/x', holds), true);
   assert.equal(isHeld('/tmp/evidence-20261023', holds), true);
   assert.equal(isHeld('/wt/b', holds), false);
-  assert.deepEqual(readHolds(path.join(root, 'missing.txt')), []);
+  assert.throws(
+    () => readHolds(path.join(root, 'missing.txt')),
+    /Cannot read holds/
+  );
+  assert.deepEqual(
+    readHolds(path.join(root, 'missing.txt'), fs, { optional: true }),
+    []
+  );
 });
 
 test('findArtifactDirs only returns ignored directories without tracked files', () => {
@@ -307,4 +315,147 @@ test('parseArgs validates commands, categories and apply scope', () => {
     parseArgs(['report'], { TUTURUUU_WORKTREE_HOLDS_FILE: '/h.txt' }).holdsFile,
     '/h.txt'
   );
+});
+
+test('holds inputs fail closed and aliases protect worktrees', () => {
+  for (const args of [
+    ['prune', '--holds-file'],
+    ['prune', '--holds-file', '--apply'],
+  ])
+    assert.throws(() => parseArgs(args, {}), /requires a path/);
+  assert.throws(() =>
+    parseArgs(['prune'], { TUTURUUU_WORKTREE_HOLDS_FILE: '' })
+  );
+  const { repo, root } = makeRepo();
+  const alias = path.join(root, 'alias');
+  fs.symlinkSync(repo, alias);
+  assert.equal(isHeld(repo, [alias]), true);
+  if (process.platform === 'darwin') {
+    assert.equal(isHeld(repo, [repo.replace('/private/tmp/', '/tmp/')]), true);
+  }
+  assert.equal(isHeld(repo, [path.join(alias, 'missing-child')]), true);
+  assert.equal(isHeld(repo, [path.join(alias, 'prefix-*')]), true);
+  assert.throws(() => readHolds(repo), /Cannot read holds/);
+  const denied = {
+    readFileSync() {
+      throw Object.assign(new Error('denied'), { code: 'EACCES' });
+    },
+  };
+  assert.throws(() => readHolds(repo, denied, { optional: true }), /denied/);
+  for (const options of [
+    parseArgs(['prune', '--holds-file', path.join(root, 'missing')], {}),
+    parseArgs(['prune'], {
+      TUTURUUU_WORKTREE_HOLDS_FILE: path.join(root, 'missing'),
+    }),
+  ]) {
+    assert.equal(options.optionalHoldsFile, false);
+    assert.throws(() =>
+      readHolds(options.holdsFile, fs, { optional: options.optionalHoldsFile })
+    );
+  }
+  assert.throws(() => parseArgs(['prune', '--category', 'rust-target'], {}));
+});
+
+test('recursive activity scan fails safe on depth, entry and read limits', () => {
+  const { root } = makeRepo();
+  const tree = path.join(root, 'activity');
+  writeFile(path.join(tree, 'a/b/c'), 'old');
+  backdate([tree], Date.now() - 48 * HOUR_MS);
+  fs.writeFileSync(path.join(tree, 'a/b/c'), 'new');
+  assert.ok(newestMtimeMs(tree) > Date.now() - HOUR_MS);
+  assert.equal(newestMtimeMs(tree, fs, { maxDepth: 1 }), Infinity);
+  assert.equal(newestMtimeMs(tree, fs, { maxEntries: 1 }), Infinity);
+  assert.equal(newestMtimeMs(path.join(root, 'missing')), Infinity);
+});
+
+test('locked, current and deeply written artifacts are preserved', () => {
+  const { repo, root } = makeRepo();
+  const now = Date.now();
+  const wt = addWorktree(repo, root, 'gates');
+  backdateWorktree(repo, wt, now - 48 * HOUR_MS);
+  const options = { repoDir: repo, currentDir: root, baseRef: 'main', now };
+  run(repo, 'worktree', 'lock', wt);
+  assert.ok(planPrune(options).skipped.some((x) => x.reason === 'locked'));
+  run(repo, 'worktree', 'unlock', wt);
+  assert.ok(
+    planPrune({ ...options, currentDir: path.join(wt, 'apps') }).skipped.some(
+      (x) => x.reason === 'current-worktree'
+    )
+  );
+  fs.writeFileSync(path.join(wt, '.turbo/cache/a.tar.zst'), 'recent');
+  const result = pruneArtifacts({ ...options, apply: true });
+  assert.ok(
+    result.skipped.some(
+      (x) =>
+        x.path === path.join(wt, '.turbo') && x.reason === 'recently-written'
+    )
+  );
+  assert.ok(fs.existsSync(path.join(wt, '.turbo/cache/a.tar.zst')));
+});
+
+test('symlink artifacts and symlink parents never become candidates', () => {
+  const { repo, root } = makeRepo();
+  const wt = addWorktree(repo, root, 'symlinks');
+  const outside = path.join(root, 'outside');
+  writeFile(path.join(outside, 'keep'), 'safe');
+  fs.rmSync(path.join(wt, '.turbo'), { recursive: true });
+  fs.symlinkSync(outside, path.join(wt, '.turbo'));
+  fs.mkdirSync(path.join(outside, '.dart_tool/build'), { recursive: true });
+  fs.symlinkSync(outside, path.join(wt, 'apps/mobile/.dart_tool'));
+  const found = findArtifactDirs(wt);
+  assert.equal(
+    found.some(
+      (x) => x.category === 'turbo' || x.category === 'dart-tool-build'
+    ),
+    false
+  );
+  assert.equal(fs.readFileSync(path.join(outside, 'keep'), 'utf8'), 'safe');
+});
+
+test('fatal check-ignore failure records a skip instead of empty success', () => {
+  const { repo, root } = makeRepo();
+  const wt = addWorktree(repo, root, 'ignore-failure');
+  backdateWorktree(repo, wt, Date.now() - 48 * HOUR_MS);
+  const execFile = (command, args, options) => {
+    if (args.includes('check-ignore'))
+      throw Object.assign(new Error('fatal'), { status: 128 });
+    return execFileSync(command, args, options);
+  };
+  const plan = planPrune({
+    repoDir: repo,
+    currentDir: root,
+    baseRef: 'main',
+    execFile,
+  });
+  assert.equal(plan.candidates.length, 0);
+  assert.ok(
+    plan.skipped.some(
+      (x) => x.path === wt && x.reason === 'check-ignore-failed'
+    )
+  );
+});
+
+test('HEAD change between planning and apply preserves artifacts', () => {
+  const { repo, root } = makeRepo();
+  const wt = addWorktree(repo, root, 'head-race');
+  backdateWorktree(repo, wt, Date.now() - 48 * HOUR_MS);
+  let changed = false;
+  const execFile = (command, args, options) => {
+    if (!changed && args.includes('rev-parse') && args.includes('HEAD')) {
+      changed = true;
+      run(wt, 'commit', '--allow-empty', '-q', '-m', 'racing commit');
+    }
+    return execFileSync(command, args, options);
+  };
+  const result = pruneArtifacts({
+    repoDir: repo,
+    currentDir: root,
+    baseRef: 'main',
+    execFile,
+    apply: true,
+  });
+  assert.equal(changed, true);
+  assert.ok(result.candidates.length > 0);
+  assert.equal(result.removed.length, 0);
+  assert.ok(fs.existsSync(path.join(wt, '.turbo')));
 });

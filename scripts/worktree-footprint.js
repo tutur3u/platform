@@ -199,7 +199,10 @@ function planPrune(options = {}) {
     }
     eligible.push(worktree.path);
 
-    for (const artifact of findArtifactDirs(worktree.path, { execFile })) {
+    for (const artifact of findArtifactDirs(worktree.path, {
+      execFile,
+      skipped,
+    })) {
       if (categories && !categories.includes(artifact.category)) continue;
       if (newestMtimeMs(artifact.path) > idleCutoffMs) {
         skipped.push({ path: artifact.path, reason: 'recently-written' });
@@ -293,7 +296,8 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
     baseRef: DEFAULT_BASE_REF,
     categories: null,
     command: args.shift() || 'report',
-    holdsFile: env.TUTURUUU_WORKTREE_HOLDS_FILE || DEFAULT_HOLDS_FILE,
+    holdsFile: env.TUTURUUU_WORKTREE_HOLDS_FILE ?? DEFAULT_HOLDS_FILE,
+    optionalHoldsFile: env.TUTURUUU_WORKTREE_HOLDS_FILE === undefined,
     json: false,
     maxRemoveBytes: DEFAULT_MAX_REMOVE_BYTES,
     minIdleHours: DEFAULT_MIN_IDLE_HOURS,
@@ -306,8 +310,13 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
     if (arg === '--apply') options.apply = true;
     else if (arg === '--json') options.json = true;
     else if (arg === '--base') options.baseRef = args[++index];
-    else if (arg === '--holds-file') options.holdsFile = args[++index];
-    else if (arg === '--max-remove')
+    else if (arg === '--holds-file') {
+      const value = args[++index];
+      if (!value || value.startsWith('--'))
+        throw new Error('--holds-file requires a path.');
+      options.holdsFile = value;
+      options.optionalHoldsFile = false;
+    } else if (arg === '--max-remove')
       options.maxRemoveBytes = parseBytes(args[++index]);
     else if (arg === '--min-idle-hours') {
       options.minIdleHours = Number(args[++index]);
@@ -329,6 +338,7 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
     }
   }
 
+  if (!options.holdsFile) throw new Error('Holds file path must not be empty.');
   if (!['report', 'prune'].includes(options.command)) {
     throw new Error(`Unknown worktree-footprint command: ${options.command}`);
   }
@@ -354,12 +364,14 @@ function main(argv = process.argv.slice(2), env = process.env) {
 
   const result = pruneArtifacts({
     ...options,
-    holds: readHolds(options.holdsFile),
+    holds: readHolds(options.holdsFile, fs, {
+      optional: options.optionalHoldsFile,
+    }),
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   if (!options.apply && result.candidates.length > 0) {
     process.stderr.write(
-      'Dry run only. Re-run with --apply to delete the listed artifacts.\n'
+      'Dry run only. Re-run with --apply to build and apply a fresh plan.\n'
     );
   }
   return 0;

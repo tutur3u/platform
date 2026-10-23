@@ -23,7 +23,6 @@ const ARTIFACT_RULES = [
       'apps/*/.dart_tool/hooks_runner',
     ],
   },
-  { category: 'rust-target', patterns: ['apps/backend/target'] },
 ];
 
 function git(cwd, args, execFile = execFileSync) {
@@ -76,8 +75,8 @@ function listWorktrees(repoDir, execFile = execFileSync) {
   );
 }
 
-function readHolds(holdsFile, fsImpl = fs) {
-  if (!holdsFile) return [];
+function readHolds(holdsFile, fsImpl = fs, { optional = false } = {}) {
+  if (!holdsFile) throw new Error('Holds file path must not be empty.');
 
   try {
     return fsImpl
@@ -85,8 +84,21 @@ function readHolds(holdsFile, fsImpl = fs) {
       .split('\n')
       .map((line) => line.replace(/#.*$/u, '').trim())
       .filter((line) => line.startsWith('/'));
-  } catch {
-    return [];
+  } catch (error) {
+    if (optional && error.code === 'ENOENT') return [];
+    throw new Error(`Cannot read holds file ${holdsFile}: ${error.message}`);
+  }
+}
+
+function canonicalPath(input) {
+  const absolute = path.resolve(input);
+  try {
+    return fs.realpathSync(absolute);
+  } catch (error) {
+    if (!['ENOENT', 'ENOTDIR'].includes(error.code)) throw error;
+    const parent = path.dirname(absolute);
+    if (parent === absolute) throw error;
+    return path.join(canonicalPath(parent), path.basename(absolute));
   }
 }
 
@@ -101,12 +113,15 @@ function isInside(child, parent) {
 // A hold protects its path, everything under it, and everything above it.
 // Globs are matched conservatively by their literal prefix.
 function isHeld(worktreePath, holds) {
+  worktreePath = canonicalPath(worktreePath);
   return holds.some((hold) => {
     const wildcard = hold.indexOf('*');
     if (wildcard === -1) {
+      hold = canonicalPath(hold);
       return isInside(hold, worktreePath) || isInside(worktreePath, hold);
     }
-    const prefix = hold.slice(0, wildcard);
+    const literal = hold.slice(0, wildcard);
+    const prefix = canonicalPath(literal) + (literal.endsWith('/') ? '/' : '');
     return (
       worktreePath.startsWith(prefix) || prefix.startsWith(`${worktreePath}/`)
     );
@@ -121,7 +136,10 @@ function expandPattern(root, pattern, fsImpl = fs) {
 
     for (const base of matches) {
       if (segment !== '*') {
-        next.push(path.join(base, segment));
+        const target = path.join(base, segment);
+        if (!fsImpl.lstatSync(target, { throwIfNoEntry: false })?.isDirectory())
+          continue;
+        next.push(target);
         continue;
       }
 
@@ -149,7 +167,7 @@ function expandPattern(root, pattern, fsImpl = fs) {
 /** Returns ignored, untracked, non-symlink artifact directories in a worktree. */
 function findArtifactDirs(
   worktreePath,
-  { execFile = execFileSync, fsImpl = fs } = {}
+  { execFile = execFileSync, fsImpl = fs, skipped = [] } = {}
 ) {
   const found = [];
 
@@ -173,8 +191,11 @@ function findArtifactDirs(
         .split('\n')
         .filter(Boolean)
     );
-  } catch {
-    // check-ignore exits 1 when nothing matches.
+  } catch (error) {
+    if (error.status !== 1) {
+      skipped.push({ path: worktreePath, reason: 'check-ignore-failed' });
+      return [];
+    }
   }
 
   const tracked = new Set(
@@ -193,17 +214,36 @@ function findArtifactDirs(
   });
 }
 
-function newestMtimeMs(dir, fsImpl = fs) {
+function newestMtimeMs(
+  dir,
+  fsImpl = fs,
+  { maxDepth = 32, maxEntries = 10000 } = {}
+) {
   let newest = 0;
-  try {
-    newest = fsImpl.lstatSync(dir).mtimeMs;
-    for (const name of fsImpl.readdirSync(dir)) {
-      newest = Math.max(newest, fsImpl.lstatSync(path.join(dir, name)).mtimeMs);
+  let entries = 0;
+  function visit(target, depth) {
+    if (++entries > maxEntries) throw new Error('entry cap');
+    const stat = fsImpl.lstatSync(target);
+    newest = Math.max(newest, stat.mtimeMs);
+    if (!stat.isDirectory()) return;
+    const handle = fsImpl.opendirSync(target);
+    try {
+      let entry = handle.readSync();
+      while (entry !== null) {
+        if (depth >= maxDepth) throw new Error('depth cap');
+        visit(path.join(target, entry.name), depth + 1);
+        entry = handle.readSync();
+      }
+    } finally {
+      handle.closeSync();
     }
-  } catch {
-    // Treat unreadable entries as their directory mtime.
   }
-  return newest;
+  try {
+    visit(dir, 0);
+    return newest;
+  } catch {
+    return Infinity;
+  }
 }
 
 function inspectWorktree(

@@ -238,11 +238,15 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   so `du` overstates a fresh worktree about 14x (4.3 GiB vs ~0.3 GiB unique).
   `bun worktree:prune-artifacts` is a dry run unless `--apply` is passed. It
   only removes git-ignored, untracked rebuildable outputs (`.turbo`, `.next`,
-  `.open-next`, `dist`, ignored `build`, Flutter `.dart_tool` build output,
-  `apps/backend/target`) from linked worktrees that are clean, unheld, idle,
+  `.open-next`, `dist`, ignored `build`, Flutter `.dart_tool` build output) from
+  linked worktrees that are clean, unheld, idle,
   and merged into `--base`. Keep `bunfig.toml` `globalStore = false` and the
   default clonefile backend unless exact-commit CI type-check/build evidence
-  proves otherwise. See `apps/docs/build/development-tools/worktree-disk-usage.mdx`.
+  proves otherwise. Explicit holds-file read errors and fatal check-ignore errors
+  fail closed. Holds resolve filesystem aliases; recursive activity scans cap depth
+  at 32 and entries at 10,000, treating incomplete scans as active. Each apply
+  invocation builds a fresh plan. Rust targets remain owned by rust-cache.
+  See `apps/docs/build/development-tools/worktree-disk-usage.mdx`.
 - Turborepo build outputs may include production `.next/**`, but must exclude
   volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
   enables the Turbopack build filesystem cache locally through the shared Next

@@ -62,7 +62,7 @@ same time.
 
 ```bash
 bun worktree:prune-artifacts                           # dry run (default)
-bun worktree:prune-artifacts --apply                   # delete the dry-run plan
+bun worktree:prune-artifacts --apply                   # build and apply a fresh plan
 bun worktree:prune-artifacts --category build --apply  # one category only
 ```
 
@@ -72,17 +72,25 @@ Candidates must pass every gate:
   not the worktree you are running from.
 - It is not held. Holds come from `~/.t3/cleanup/holds.d/tuturuuu.txt` or
   `TUTURUUU_WORKTREE_HOLDS_FILE` / `--holds-file`. A hold protects its path,
-  its children and its parents.
+  its children and its parents, resolving filesystem aliases such as /tmp and
+  /private/tmp. Explicit or environment-selected holds files must be readable;
+  only a missing default holds file is optional.
 - It is clean: `git status --porcelain` is empty, including untracked files.
 - It is merged: `HEAD` is an ancestor of `--base` (default `origin/main`).
   Squash-merged branches stay ineligible, so remove those worktrees through
   the normal post-merge cleanup instead.
 - The worktree's index and HEAD reflog, and the artifact itself, are older than
-  `--min-idle-hours` (default 24).
+  `--min-idle-hours` (default 24). Artifact activity includes descendants, with
+  a depth cap of 32 and an entry cap of 10,000. Truncated or unreadable scans
+  are treated as active and skipped.
 - The directory matches an artifact category, is git-ignored, and contains no
   tracked files. This is why the tracked `apps/docs/build` documentation is
   never a candidate.
 - The plan stays under the `--max-remove` total (default `20g`).
+
+Each invocation creates a fresh plan; `--apply` does not reuse an earlier dry run.
+Fatal `git check-ignore` errors record `check-ignore-failed` and skip that worktree.
+Rust target cleanup belongs exclusively to `bun rust-cache`.
 
 Before deleting, the tool re-checks that the worktree is still clean, still on
 the planned `HEAD`, and that the target is a real directory inside it.
@@ -95,7 +103,6 @@ the planned `HEAD`, and that the target is a real directory inside it.
 | `dist` | `apps/*/dist`, `packages/*/dist` |
 | `build` | `apps/*/build`, `packages/*/build` (ignored only) |
 | `dart-tool-build` | `apps/*/.dart_tool/{build,flutter_build,hooks_runner}` |
-| `rust-target` | `apps/backend/target` (also see `bun rust-cache`) |
 
 These are intentionally excluded: `node_modules` (mostly shared clone data),
 `.wrangler` (local D1/KV state), Playwright `test-results`/`playwright-report`
