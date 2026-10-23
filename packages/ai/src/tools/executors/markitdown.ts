@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
   commitFixedAiCreditReservation,
   releaseFixedAiCreditReservation,
@@ -28,7 +29,7 @@ function stripTimestampPrefix(name: string): string {
 }
 
 function isUnsafeStoragePath(value: string): boolean {
-  return value.includes('..') || value.includes('\\');
+  return sanitizePath(value) !== value;
 }
 
 function isLikelyBareFileName(value: string): boolean {

@@ -3,6 +3,7 @@ import {
   sanitizeFilename,
   sanitizeFolderName,
   sanitizePath,
+  sanitizePathSegments,
 } from '../storage-path';
 
 describe('Storage Path Sanitization', () => {
@@ -19,23 +20,18 @@ describe('Storage Path Sanitization', () => {
       expect(sanitizePath('folder')).toBe('folder');
     });
 
-    it('normalizes backslashes to forward slashes', () => {
-      expect(sanitizePath('folder\\subfolder')).toBe('folder/subfolder');
-      expect(sanitizePath('folder\\sub\\deep')).toBe('folder/sub/deep');
+    it('returns validated original segments without path rewriting', () => {
+      expect(sanitizePathSegments('folder/subfolder')).toEqual([
+        'folder',
+        'subfolder',
+      ]);
+      expect(sanitizePath('folder\\subfolder')).toBeNull();
+      expect(sanitizePath(' folder/subfolder ')).toBe(' folder/subfolder ');
     });
 
-    it('removes leading slashes', () => {
-      expect(sanitizePath('/folder/subfolder')).toBe('folder/subfolder');
-      expect(sanitizePath('///folder/subfolder')).toBe('folder/subfolder');
-    });
-
-    it('removes trailing slashes', () => {
-      expect(sanitizePath('folder/subfolder/')).toBe('folder/subfolder');
-      expect(sanitizePath('folder/subfolder///')).toBe('folder/subfolder');
-    });
-
-    it('trims whitespace', () => {
-      expect(sanitizePath('  folder/subfolder  ')).toBe('folder/subfolder');
+    it('rejects leading and trailing separators', () => {
+      expect(sanitizePath('/folder/subfolder')).toBeNull();
+      expect(sanitizePath('folder/subfolder/')).toBeNull();
     });
 
     it('rejects path traversal with double dots', () => {
@@ -57,15 +53,35 @@ describe('Storage Path Sanitization', () => {
       expect(sanitizePath('.')).toBeNull();
     });
 
-    it('handles paths with multiple consecutive slashes', () => {
-      expect(sanitizePath('folder//subfolder')).toBe('folder/subfolder');
-      expect(sanitizePath('folder///sub///deep')).toBe('folder/sub/deep');
+    it('rejects empty path segments and backslashes', () => {
+      expect(sanitizePath('folder//subfolder')).toBeNull();
+      expect(sanitizePath('folder///sub///deep')).toBeNull();
+      expect(sanitizePath('folder\\sub/deep\\deeper')).toBeNull();
     });
 
-    it('handles mixed separators', () => {
-      expect(sanitizePath('folder\\sub/deep\\deeper')).toBe(
-        'folder/sub/deep/deeper'
-      );
+    it.each([
+      '../outside',
+      '%2e%2e/outside',
+      '%2E%2E/outside',
+      '%2e./outside',
+      '.%2e/outside',
+      '%2E./outside',
+      '.%2E/outside',
+      'folder/%2f/outside',
+      'folder/%2Foutside',
+      'folder/%5coutside',
+      'folder/%5Coutside',
+      'folder\\..\\outside',
+      'folder/\u0000name',
+      'folder/\u001fname',
+      'folder/https://outside.test/object',
+      'https://outside.test/object',
+      'folder/%00name',
+      'folder/%0Aname',
+      'folder/%252e%252e/outside',
+    ])('rejects unsafe original path %j', (path) => {
+      expect(sanitizePath(path)).toBeNull();
+      expect(sanitizePathSegments(path)).toBeNull();
     });
 
     it('handles complex valid paths', () => {

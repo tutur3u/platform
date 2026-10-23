@@ -6,44 +6,70 @@
  */
 
 /**
- * Sanitizes a path component to prevent directory traversal attacks.
+ * Validates an original relative storage path without normalizing it.
  *
  * @param path - The path string to sanitize
- * @returns Sanitized path string, or null if the path contains invalid characters
+ * @returns Validated path segments, or null if the original path is unsafe
  *
  * @example
  * ```ts
  * sanitizePath('folder/subfolder') // => 'folder/subfolder'
  * sanitizePath('../../../etc/passwd') // => null
- * sanitizePath('folder\\subfolder') // => 'folder/subfolder' (backslashes normalized)
+ * sanitizePath('folder\\subfolder') // => null
  * sanitizePath('') // => ''
  * ```
  */
-export function sanitizePath(path: string): string | null {
-  if (!path) return '';
+export function sanitizePathSegments(path: string): string[] | null {
+  if (path === '') return [];
+  if (
+    typeof path !== 'string' ||
+    path.includes('\\') ||
+    [...path].some((character) => {
+      const code = character.charCodeAt(0);
+      return code <= 0x1f || code === 0x7f;
+    }) ||
+    /^[a-z][a-z\d+.-]*:\/\//i.test(path) ||
+    /%(?:2f|5c)/i.test(path)
+  ) {
+    return null;
+  }
 
-  // Normalize backslashes to forward slashes (Windows compatibility)
-  let sanitized = path.replace(/\\/g, '/');
-
-  // Trim and remove leading/trailing slashes
-  sanitized = sanitized.trim().replace(/^\/+|\/+$/g, '');
-
-  // Split into segments and validate each
-  const segments = sanitized.split('/').filter(Boolean);
+  const segments = path.split('/');
+  if (segments.some((segment) => segment.length === 0)) return null;
 
   for (const segment of segments) {
-    // Reject any segment that is '..' or '.' or empty
-    if (segment === '..' || segment === '.' || segment === '') {
+    let decoded = segment;
+    try {
+      for (let pass = 0; pass < 5; pass += 1) {
+        const next = decodeURIComponent(decoded);
+        if (next === decoded) break;
+        decoded = next;
+      }
+    } catch {
       return null;
     }
-    // Reject segments with path traversal attempts
-    if (segment.includes('..')) {
+    if (/%[\da-f]{2}/i.test(decoded)) return null;
+    if (
+      decoded === '.' ||
+      decoded === '..' ||
+      decoded.includes('..') ||
+      decoded.includes('/') ||
+      decoded.includes('\\') ||
+      [...decoded].some((character) => {
+        const code = character.charCodeAt(0);
+        return code <= 0x1f || code === 0x7f;
+      })
+    ) {
       return null;
     }
   }
 
-  // Rejoin with forward slashes
-  return segments.join('/');
+  return segments;
+}
+
+export function sanitizePath(path: string): string | null {
+  const segments = sanitizePathSegments(path);
+  return segments === null ? null : segments.join('/');
 }
 
 /**

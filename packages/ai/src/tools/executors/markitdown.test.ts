@@ -206,6 +206,29 @@ describe('executeConvertFileToMarkdown', () => {
     expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'workspace-1/user-groups/group-1/../group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2e%2e/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2E%2E/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2e./group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/.%2e/group-2/secret.pdf',
+    'workspace-1/user-groups/group-1/%2fgroup-2/secret.pdf',
+    'workspace-1\\user-groups\\group-1\\secret.pdf',
+    'workspace-2/user-groups/group-1/secret.pdf',
+  ])(
+    'rejects unsafe or cross-workspace storage path %s before admin access',
+    async (storagePath) => {
+      const result = (await executeConvertFileToMarkdown(
+        { storagePath },
+        createContext()
+      )) as Record<string, unknown>;
+
+      expect(result.ok).toBe(false);
+      expect(createAdminClientMock).not.toHaveBeenCalled();
+      expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
+    }
+  );
+
   it('converts user-group files only after caller-provided storage authorization', async () => {
     const createSignedUrl = vi.fn().mockResolvedValue({
       data: { signedUrl: 'https://storage.test/signed-syllabus' },

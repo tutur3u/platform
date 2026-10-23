@@ -309,6 +309,7 @@ export const POST = withSessionAuth(
 
       if (
         sanitizedStoragePath === null ||
+        sanitizedStoragePath !== storagePath ||
         !isGroupStoragePath(sanitizedStoragePath, normalizedWsId, groupId)
       ) {
         return NextResponse.json(

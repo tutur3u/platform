@@ -7,7 +7,7 @@ import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { MOBILE_DEPLOYMENT_DRIVE_PREFIX } from './constants';
 
 function normalizeRelativePath(path: string) {
-  return sanitizePath(path);
+  return sanitizePath(path.replaceAll('\\', '/'));
 }
 
 export function buildMobileDeploymentVaultStoragePath(

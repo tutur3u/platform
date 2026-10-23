@@ -46,7 +46,7 @@ export const POST = withApiAuth(
     try {
       // Sanitize the provided path
       const sanitizedPath = sanitizePath(path);
-      if (sanitizedPath === null) {
+      if (sanitizedPath === null || sanitizedPath !== path) {
         return createErrorResponse(
           'Bad Request',
           'Invalid path: path contains illegal characters or directory traversal attempts',

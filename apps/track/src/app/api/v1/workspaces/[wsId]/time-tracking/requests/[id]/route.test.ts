@@ -243,6 +243,27 @@ describe('time tracking request image edit ordering', () => {
     expect(mocks.primaryRemove).not.toHaveBeenCalled();
   });
 
+  it.each([
+    `${REQUEST_ID}/../other-request/secret.png`,
+    `${REQUEST_ID}/%2e%2e/other-request/secret.png`,
+    `${REQUEST_ID}/%2E%2E/other-request/secret.png`,
+    `${REQUEST_ID}/%2e./other-request/secret.png`,
+    `${REQUEST_ID}/.%2e/other-request/secret.png`,
+    `${REQUEST_ID}/%2fother-request/secret.png`,
+    `${REQUEST_ID}\\..\\other-request\\secret.png`,
+    `other-request/${REQUEST_ID}/secret.png`,
+    `avatars/${REQUEST_ID}/secret.png`,
+  ])('rejects unsafe or cross-request storage path %s', async (path) => {
+    const response = await put(
+      createPutRequest({ removedImages: [path], newImagePaths: [path] })
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.primaryRemove).not.toHaveBeenCalled();
+    expect(mocks.adminRemove).not.toHaveBeenCalled();
+  });
+
   it('returns the existing authentication response before reading the request', async () => {
     mocks.resolveSessionAuthContext.mockResolvedValue({
       ok: false,
