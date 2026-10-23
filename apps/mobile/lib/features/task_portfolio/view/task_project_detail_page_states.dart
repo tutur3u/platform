@@ -7,9 +7,8 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    return AppPageBody(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -33,9 +32,8 @@ class _NotFoundState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    return AppPageBody(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

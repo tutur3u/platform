@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
@@ -155,8 +156,7 @@ class _StatsTabState extends State<StatsTab> {
               ],
             ),
             switch (_surface) {
-              _StatsSurface.personal => ListView(
-                padding: const EdgeInsets.only(top: 16, bottom: 96),
+              _StatsSurface.personal => AppPageListView(
                 children: [
                   StatsCards(stats: state.stats),
                   const shad.Gap(8),
@@ -166,29 +166,22 @@ class _StatsTabState extends State<StatsTab> {
                 ],
               ),
               _StatsSurface.workspace => const WorkspaceStatsTab(),
-              _StatsSurface.goals => ListView(
-                padding: const EdgeInsets.only(top: 16, bottom: 96),
+              _StatsSurface.goals => AppPageListView(
                 children: [
                   if (wsId.isNotEmpty)
                     TimeTrackerGoalsSection(wsId: wsId)
                   else if (workspaceState.status == WorkspaceStatus.error)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        l10n.commonSomethingWentWrong,
-                        style: theme.typography.textSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                        ),
+                    Text(
+                      l10n.commonSomethingWentWrong,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
                       ),
                     )
                   else if (workspaceState.status == WorkspaceStatus.loaded)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        l10n.workspaceSelectEmpty,
-                        style: theme.typography.textSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                        ),
+                    Text(
+                      l10n.workspaceSelectEmpty,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
                       ),
                     )
                   else
