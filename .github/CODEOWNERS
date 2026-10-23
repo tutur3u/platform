@@ -1,0 +1,30 @@
+# Code owners for security-sensitive paths.
+# The main-branch ruleset requires code-owner review, so a change under these
+# paths needs approval from the security reviewer. Everything else is unowned
+# and follows the normal review rules. See
+# apps/docs/build/devops/code-owners.mdx for the review policy.
+
+# CI, workflow and repository automation
+/.github/                          @vhpx
+/scripts/ci/                       @vhpx
+
+# Authentication, sessions, SSO and request guards
+/packages/auth/                    @vhpx
+/packages/sso/                     @vhpx
+/packages/turnstile/               @vhpx
+/packages/utils/src/api-proxy-guard.ts     @vhpx
+/packages/utils/src/required-mfa-runtime.ts @vhpx
+
+# Database schema, migrations and RLS
+/apps/database/supabase/migrations/ @vhpx
+
+# Code-execution infrastructure (devbox and Judge runners)
+/apps/devbox-control/              @vhpx
+/packages/devbox/                  @vhpx
+
+# Payments
+/packages/payment/                 @vhpx
+/packages/payment-core/            @vhpx
+
+# Code ownership itself
+/.github/CODEOWNERS                @vhpx

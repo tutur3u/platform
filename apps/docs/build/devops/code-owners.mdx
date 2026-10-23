@@ -1,0 +1,35 @@
+---
+title: "Code owners for sensitive paths"
+description: "Which paths need the security reviewer's approval, and how that interacts with agent-authored pull requests."
+---
+
+The `main` ruleset requires code-owner review. `.github/CODEOWNERS` assigns the
+security reviewer (`@vhpx`) to the paths where a mistake has the widest blast
+radius:
+
+- CI, workflows and repository automation (`.github/`, `scripts/ci/`)
+- authentication, sessions, SSO and request guards (`packages/auth`,
+  `packages/sso`, `packages/turnstile`, the API proxy guard and required-MFA
+  runtime in `packages/utils`)
+- database migrations and RLS (`apps/database/supabase/migrations/`)
+- code-execution infrastructure (`apps/devbox-control`, `packages/devbox`)
+- payments (`packages/payment`, `packages/payment-core`)
+- `CODEOWNERS` itself
+
+Paths not listed have no code owner and follow the normal review rules.
+
+## Agent-authored pull requests
+
+GitHub never counts an author's own approval. Agent pull requests are currently
+opened with the security reviewer's account, so a change to an owned path cannot
+collect a code-owner approval until agents author pull requests as the
+`tuturuuu-bot` GitHub App. Until then, such a pull request merges only through
+an authorized administrator bypass after an independent agent security review,
+and GitHub records that bypass. Once `tuturuuu-bot` authors agent pull requests,
+the reviewer's approval satisfies the rule normally.
+
+## Changing ownership
+
+Adding or removing an owned path is itself an owned change. Keep the list to
+security-sensitive code; owning broad trees slows every pull request without
+adding review value.
