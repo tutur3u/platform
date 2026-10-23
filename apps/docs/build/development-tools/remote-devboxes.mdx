@@ -316,6 +316,28 @@ fails. This closes the gap where an older trusted runner would execute the
 envelope as a command. Deploy the heartbeat handlers that accept `protocols`
 before upgrading trusted runners, because both handlers reject unknown keys.
 
+The server enforces the same rule, so direct submissions and capability changes
+after selection cannot bypass it (migration
+`20261024030400_devbox_commit_run_protocol.sql`):
+
+- Both heartbeat handlers drop `protocols` unless the report says
+  `executionMode: trusted`. A database trigger also drops it for any runner with
+  Judge or playground enabled.
+- A run whose command is the envelope must be pinned, through `runnerId` and an
+  automatic lease, to a runner that supports the protocol now. The create handler
+  returns 400 or 409, and the `require_devbox_commit_run_runner` trigger enforces
+  the same rule against races.
+- If a claim would hand the envelope to an unsupported runner (for example after
+  re-pinning), the `refuse_unsupported_devbox_commit_run_claim` trigger skips it.
+  It also expires the run's lease so the run is no longer offered, and records a
+  refusal event. Stop the run and submit it again.
+- When a runner stops advertising support, the
+  `cancel_unsupported_devbox_commit_runs` trigger cancels its queued envelope runs.
+
+`claim_next_devbox_run` is not redefined, so concurrent changes to its body stay
+intact. `apps/database/supabase/tests/devbox-commit-run-protocol.sql` covers these
+rules against the real claim function.
+
 ### Protecting hosts with existing critical files
 
 Use `--execution-mode judge-only` with `box connect`, `box setup`, or `box
@@ -812,6 +834,19 @@ the operation key; find the run with `ttr box list` and stop it with
 `ttr box stop <run-id>`. A stop request alone does not prove the remote process
 has exited.
 
+Keyed creates are accepted only once key storage is confirmed:
+`private.devbox_run_idempotency_ready()` reports the unique (actor, key) index as
+valid, and the schema cache knows the column. Until then, the handler returns
+503 with `code: DEVBOX_IDEMPOTENCY_UNAVAILABLE` before writing anything. The CLI
+treats that coded 503 as a definite rejection, so `--offload auto` queues
+locally. Any other 503 stays ambiguous. Unkeyed creates never consult key
+storage.
+
+The proxy exempts trusted CLI identities from its general rate limit, so keyed
+creates and `runs/stop-by-key` each have a per-actor limit of 30 requests per
+minute (`apps/web/src/lib/devboxes/rate-limits.ts`). A 429 is a definite
+rejection.
+
 SIGINT and SIGTERM remain terminal through every creation outcome, including a
 later rejection, and return 130 and 143 respectively. Cancellation or the overall
 deadline is checked before each log page and status request. Fleet, creation,
@@ -830,22 +865,66 @@ These fixtures do not establish hosted runner acceptance.
 
 ### Run log cursor
 
-Run events carry a dense per-run `seq` (migration
-`20261024030000_devbox_run_log_cursor_and_idempotency.sql`). A `BEFORE INSERT`
-trigger allocates it by upserting the run's `devbox_run_event_cursors` row. That
-row lock is held until the writer commits, so commit order equals sequence order
-for every writer (web, infrastructure and SQL functions). The logs route pages
+Run events carry a dense per-run `seq`. A `BEFORE INSERT` trigger allocates it
+by updating, or creating, the run's `devbox_run_event_cursors` row. That row
+lock is held until the writer commits, so commit order equals sequence order for
+every writer (web, infrastructure and SQL functions). The logs route pages
 `seq > offset` and returns the last `seq` as `next`. Because sequences start at 1,
 older clients that send raw-row offsets keep working. Paging by a `created_at`
 offset could repeat one line and skip another that committed late with an
-earlier timestamp. Before the migration applies, the route falls back to that
-legacy query.
+earlier timestamp.
 
-`store-run-logs.test.ts` models a late commit, and
+Events written before the migration keep positions `1..n` in the
+`(created_at, id)` order readers already used, and later events start at `n + 1`.
+The cursor row records `legacy_rows` and `legacy_numbered`. The route keeps the
+legacy `created_at` paging for a run until the two match (and when the cursor
+table is missing), then switches to `seq` with consistent offsets.
+
+#### Rollout without a long table lock
+
+The migrations are split so the run events table is never exclusively locked for
+longer than a catalog change:
+
+| Migration | Step | Lock |
+| --- | --- | --- |
+| `20261024030000` | nullable `seq`, cursor table, triggers, functions, `NOT VALID` constraints | brief `ACCESS EXCLUSIVE`, `lock_timeout` 5 s |
+| `030100`, `030150`, `030200` | unique `(run_id, seq)`, partial unsequenced and unique `(actor_id, idempotency_key)` indexes | `CREATE INDEX CONCURRENTLY`, one statement per file |
+| `030300` | backfill of at most 50 000 events in 5 000-row calls | row locks; same-run appends wait |
+| `030350` | `VALIDATE CONSTRAINT` once no event is unsequenced | `SHARE UPDATE EXCLUSIVE` |
+
+The migration runner wraps a multi-statement file in one transaction, and
+`CREATE INDEX CONCURRENTLY` cannot run inside one. Each concurrent index is
+therefore the only statement in its file. If a concurrent build fails, drop the
+invalid index before re-running, because `if not exists` would skip it.
+
+Check production size before applying (read-only):
+
+```sql
+select count(*) as events,
+  pg_size_pretty(pg_total_relation_size('private.devbox_run_events')) as total_size,
+  pg_size_pretty(pg_relation_size('private.devbox_run_events')) as heap_size,
+  (select count(distinct run_id) from private.devbox_run_events) as runs
+from private.devbox_run_events;
+```
+
+If more than 50 000 events exist, `030300` leaves the rest for this one-time job.
+Run it with the service role or as the database owner, one call per transaction,
+until it returns 0, and then validate:
+
+```sql
+select private.backfill_devbox_run_event_seq(5000);  -- repeat until 0
+alter table private.devbox_run_events
+  validate constraint devbox_run_events_seq_present;
+```
+
+Each call numbers at most 5 000 events and locks only the cursor row of the run
+it is numbering.
+
+`store-run-logs.test.ts` models a late commit and the legacy-to-sequence switch.
 `apps/database/supabase/tests/devbox-run-log-cursor.sql` checks density, forged
-sequences and key constraints. To reproduce the concurrency boundary itself,
-use two sessions on a private socket-only Postgres cluster (`initdb`, then
-`pg_ctl -o "-c listen_addresses='' -k <dir>"`):
+sequences, validation, readiness and key constraints. To reproduce the
+concurrency boundary itself, use two sessions on a private socket-only Postgres
+cluster (`initdb`, then `pg_ctl -o "-c listen_addresses='' -k <dir>"`):
 
 1. Session A runs `begin`, inserts an event for a run and sleeps before `commit`.
 2. Session B inserts an event for the same run.

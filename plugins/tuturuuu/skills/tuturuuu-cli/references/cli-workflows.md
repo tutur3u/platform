@@ -286,6 +286,8 @@ Bound each control-plane request, propagate its AbortSignal through the SDK, and
 check cancellation and the overall deadline between log pages. Keep stop requests
 bounded independently of an already-aborted follow signal. A failed stop remains
 unconfirmed; direct the operator to inspect the original run before retrying.
+Treat a 503 carrying `code: DEVBOX_IDEMPOTENCY_UNAVAILABLE` as a definite
+rejection (no run was written) and queue locally; any other 503 is ambiguous.
 Send a per-offload operation ID as the create `idempotencyKey`. When an
 acknowledgement is lost, cancel through `runs/stop-by-key` within a bound, or
 print the key. Submit envelopes only to runners that advertise the matching
