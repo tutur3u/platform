@@ -59,6 +59,6 @@ export async function runBlock(args: string[]) {
         ],
       })
     );
-    process.exitCode = 3;
+    process.exitCode = 2;
   }
 }

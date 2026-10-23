@@ -184,6 +184,22 @@ describe('routing policy', () => {
     ).toBe(true);
   });
 
+  it('does not invent a zero-percent reserve for pools with no configured reserve', () => {
+    const unknown = { ...account('codex_unreserved', 20), windows: [] };
+    const result = recommend({
+      task: { provider: 'codex' },
+      active: [],
+      accounts: [unknown],
+      now,
+    });
+    expect(result.ranked[0]?.state).toBe('UNKNOWN');
+    expect(
+      result.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'reserve-unknown'
+      )
+    ).toBe(false);
+  });
+
   it('uses stable instance ids to break equal-score ties', () => {
     const result = recommend({
       task: { provider: 'codex' },

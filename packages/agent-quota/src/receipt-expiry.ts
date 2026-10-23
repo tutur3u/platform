@@ -10,6 +10,10 @@ export function clearRecoveredLimits(context: AdmissionContext) {
       (event.resetsAt && Date.parse(event.resetsAt) > context.now.getTime())
     )
       continue;
+    if (event.resetsAt && Date.parse(event.resetsAt) <= context.now.getTime()) {
+      event.clearedAt = context.now.toISOString();
+      continue;
+    }
     const account = context.accounts.find(
       (account) =>
         account.instanceId === event.instanceId ||

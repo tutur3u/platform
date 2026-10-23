@@ -228,7 +228,8 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
           (event.accountKey === key || ids.includes(event.instanceId)) &&
           event.outcome === 'usage-limit' &&
           receiptCovers(event, pool.provider, candidate?.model) &&
-          !event.clearedAt
+          !event.clearedAt &&
+          (!event.resetsAt || Date.parse(event.resetsAt) > now.getTime())
       );
       if (failures.length) {
         state = 'EXHAUSTED';

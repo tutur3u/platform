@@ -1,6 +1,11 @@
 import { expect, it, vi } from 'vitest';
 
-const fixture = vi.hoisted(() => ({ blocked: true, collect: vi.fn() }));
+const fixture = vi.hoisted(() => ({
+  blocked: true,
+  collect: vi.fn(),
+  receipts: vi.fn(),
+  transaction: vi.fn(),
+}));
 vi.mock('../src/block-ledger', async (original) => ({
   ...(await original<typeof import('../src/block-ledger')>()),
   readBlockLedger: async () => ({
@@ -19,27 +24,32 @@ vi.mock('../src/block-ledger', async (original) => ({
   }),
 }));
 vi.mock('../src/collectors/children', () => ({
-  collectPoolReceipts: () => ({
-    threads: [],
-    runs: [],
-    tasks: [],
-    failures: [],
-    transfers: [],
-  }),
+  collectPoolReceipts: fixture.receipts,
 }));
-vi.mock('../src/collectors', () => ({ collectAll: fixture.collect }));
 vi.mock('../src/hook-ledger', async (original) => ({
   ...(await original<typeof import('../src/hook-ledger')>()),
-  transactLedger: async (operation: (ledger: unknown) => unknown) =>
+  transactLedger: fixture.transaction,
+}));
+fixture.receipts.mockImplementation(() => ({
+  threads: [],
+  runs: [],
+  tasks: [],
+  failures: [],
+  transfers: [],
+}));
+fixture.transaction.mockImplementation(
+  (operation: (ledger: unknown) => unknown) =>
     operation({
       version: 1,
       observations: [],
       reservations: [],
       leases: [],
       leaseHistory: [],
-    }),
-}));
+    })
+);
+vi.mock('../src/collectors', () => ({ collectAll: fixture.collect }));
 
+import { HookError } from '../src/hook-ledger';
 import { runPositionalAdmit } from '../src/positional-admit';
 
 it('sets exit 3 and never collects or probes for a hard-blocked request', async () => {
@@ -88,6 +98,9 @@ it('sets exit 0 for an unblocked healthy pool, but exit 3 when owner reserve is 
     });
     await runPositionalAdmit(['codex', 'gpt-model']);
     expect(process.exitCode).toBe(0);
+    expect(fixture.receipts.mock.invocationCallOrder[0]).toBeLessThan(
+      fixture.transaction.mock.invocationCallOrder[0]!
+    );
     await runPositionalAdmit(['codex', 'gpt-model', '--reserve-owner']);
     expect(process.exitCode).toBe(3);
   } finally {
@@ -107,6 +120,49 @@ it('returns malformed/fail-closed exit 2, distinct from policy blocks', async ()
     );
   } finally {
     process.exitCode = previous;
+    log.mockRestore();
+  }
+});
+it('returns exit 3 for retryable ledger contention', async () => {
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+  const previous = process.exitCode;
+  try {
+    fixture.blocked = false;
+    fixture.collect.mockResolvedValue({
+      accounts: [
+        {
+          instanceId: 'codex',
+          provider: 'codex',
+          label: 'codex',
+          available: true,
+          models: ['gpt-model'],
+          windows: [],
+        },
+      ],
+      blocks: [],
+      active: [],
+      t3ObservedAt: new Date().toISOString(),
+    });
+    fixture.transaction.mockRejectedValue(
+      new HookError('ledger-contention-retry')
+    );
+    await runPositionalAdmit(['codex', 'gpt-model']);
+    expect(process.exitCode).toBe(3);
+    expect(String(log.mock.calls.at(-1)?.[0])).toContain(
+      'ledger-contention-retry'
+    );
+  } finally {
+    process.exitCode = previous;
+    fixture.transaction.mockImplementation(
+      (operation: (ledger: unknown) => unknown) =>
+        operation({
+          version: 1,
+          observations: [],
+          reservations: [],
+          leases: [],
+          leaseHistory: [],
+        })
+    );
     log.mockRestore();
   }
 });

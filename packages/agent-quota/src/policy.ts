@@ -405,19 +405,22 @@ export function recommendAssignments(
 function mergeReserves(
   ids: string[],
   reserves: Record<string, AccountReserve>
-): AccountReserve {
+): AccountReserve | undefined {
   const entries = ids
     .map((id) => reserves[id])
     .filter((value): value is AccountReserve => Boolean(value));
+  if (!entries.length) return;
+  const remaining = entries
+    .map((value) => value.minRemainingPercent)
+    .filter((value): value is number => value !== undefined);
+  const concurrency = entries
+    .map((value) => value.maxConcurrent)
+    .filter((value): value is number => value !== undefined);
   return {
     excluded: entries.some((value) => value.excluded),
-    minRemainingPercent: Math.max(
-      0,
-      ...entries.map((value) => value.minRemainingPercent ?? 0)
-    ),
-    maxConcurrent: Math.min(
-      Infinity,
-      ...entries.map((value) => value.maxConcurrent ?? Infinity)
-    ),
+    ...(remaining.length
+      ? { minRemainingPercent: Math.max(...remaining) }
+      : {}),
+    ...(concurrency.length ? { maxConcurrent: Math.min(...concurrency) } : {}),
   };
 }

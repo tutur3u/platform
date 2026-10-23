@@ -1,8 +1,9 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readLedger, transactLedger } from '../src/hook-ledger';
+import { processStartedAt } from '../src/process-identity';
 import { acquireSwitchLease } from '../src/switch-safety';
 
 const now = new Date();
@@ -73,6 +74,42 @@ describe('atomic host-wide hook ledger', () => {
           (event) => event.action === 'expired-takeover'
         )
       ).toBe(true);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+  it('waits briefly for a live short transaction instead of returning malformed-state failure', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'quota-hooks-'));
+    try {
+      const first = transactLedger(async (value) => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        value.lastAdmissions = { first: 1 };
+      }, dir);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      const second = transactLedger((value) => {
+        value.lastAdmissions = { second: 2 };
+      }, dir);
+      await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+      expect((await readLedger(dir)).lastAdmissions).toEqual({ second: 2 });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+  it('returns a retryable contention reason when a live transaction outlasts the bounded wait', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'quota-hooks-'));
+    try {
+      const startedAt = processStartedAt(process.pid);
+      if (!startedAt) throw Error('test process identity unavailable');
+      await writeFile(
+        join(dir, 'transaction.lock'),
+        JSON.stringify({
+          pid: process.pid,
+          processStartedAt: startedAt,
+        })
+      );
+      await expect(transactLedger(() => {}, dir)).rejects.toThrow(
+        'ledger-contention-retry'
+      );
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

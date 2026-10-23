@@ -85,6 +85,8 @@ export function gateDecision(
         ids.includes(event.instanceId) &&
         event.outcome === 'usage-limit' &&
         !event.clearedAt &&
+        (!event.resetsAt ||
+          Date.parse(event.resetsAt) > context.now.getTime()) &&
         receiptCovers(event, account.provider, model)
     )
   )
@@ -179,6 +181,11 @@ export async function runPositionalAdmit(args: string[]) {
     const account = collapseAccounts(collected.accounts).find((item) =>
       (item.instanceIds ?? [item.instanceId]).includes(pool)
     );
+    const now = new Date();
+    const poolReceipts = collectPoolReceipts(
+      collected.accounts.map((account) => account.instanceId),
+      now
+    );
     const reserveOwner =
       args.includes('--reserve-owner') ||
       Boolean(owner && (account?.instanceIds ?? [pool]).includes(owner));
@@ -187,13 +194,10 @@ export async function runPositionalAdmit(args: string[]) {
         ...collected,
         blocks: collected.blocks ?? blocks,
         ledger,
-        now: new Date(),
+        now,
       };
       applyDescendantReceipts(
-        collectPoolReceipts(
-          collected.accounts.map((account) => account.instanceId),
-          context.now
-        ),
+        poolReceipts,
         context,
         Intl.DateTimeFormat().resolvedOptions().timeZone
       );
@@ -204,7 +208,14 @@ export async function runPositionalAdmit(args: string[]) {
       }
       return result;
     });
-    console.log(JSON.stringify({ pool, model, ...result }));
+    console.log(
+      JSON.stringify({
+        pool,
+        model,
+        ...result,
+        invalidObservations: collected.invalidObservations ?? [],
+      })
+    );
     process.exitCode = result.exitCode;
   } catch (error) {
     console.log(
@@ -217,6 +228,9 @@ export async function runPositionalAdmit(args: string[]) {
         ],
       })
     );
-    process.exitCode = 2;
+    process.exitCode =
+      error instanceof HookError && error.message === 'ledger-contention-retry'
+        ? 3
+        : 2;
   }
 }

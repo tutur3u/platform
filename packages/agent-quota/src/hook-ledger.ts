@@ -62,11 +62,22 @@ export async function transactLedger<T>(
   if (!(await lstat(directory)).isDirectory())
     throw new HookError('ledger-directory-invalid');
   const lockPath = join(directory, 'transaction.lock');
-  let lock: FileHandle;
-  try {
-    lock = await acquireTransactionLock(lockPath);
-  } catch {
-    throw new HookError('ledger-busy');
+  let lock: FileHandle | undefined;
+  const waitUntil = Date.now() + 2_000;
+  while (!lock) {
+    try {
+      lock = await acquireTransactionLock(lockPath);
+    } catch (error) {
+      const retryable =
+        error instanceof Error &&
+        /transaction-owner-live-or-unverified|transaction-reclamation-busy|transaction-lock-changed/.test(
+          error.message
+        );
+      if (!retryable) throw new HookError('ledger-lock-unavailable');
+      if (Date.now() >= waitUntil)
+        throw new HookError('ledger-contention-retry');
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
   }
   const temporary = join(directory, `hooks-${randomUUID()}.tmp`);
   try {

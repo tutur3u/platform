@@ -38,6 +38,10 @@ export async function runHook(command: string, action?: string): Promise<void> {
     if (command === 'admit') {
       const request = admissionInput(input);
       const descendants = collectChildren(request.threadId);
+      const poolReceipts = collectPoolReceipts(
+        collected.accounts.map((account) => account.instanceId),
+        now
+      );
       let recoveryEntry: Record<string, unknown> | undefined;
       if (request.recovery) {
         const evidence =
@@ -78,10 +82,7 @@ export async function runHook(command: string, action?: string): Promise<void> {
       result = await transactLedger((ledger) => {
         const context = { ...collected, ledger, now };
         applyDescendantReceipts(
-          collectPoolReceipts(
-            collected.accounts.map((account) => account.instanceId),
-            now
-          ),
+          poolReceipts,
           context,
           typeof input.recoveryTimezone === 'string'
             ? input.recoveryTimezone
@@ -203,10 +204,17 @@ export async function runHook(command: string, action?: string): Promise<void> {
         result = checkSwitch(await readLedger(), switchInput(input, key), now);
     }
     console.log(
-      JSON.stringify(result, (key, value) =>
-        key === 'accountKey' || key === 'accountIdentityHash'
-          ? undefined
-          : value
+      JSON.stringify(
+        result && typeof result === 'object'
+          ? {
+              ...(result as Record<string, unknown>),
+              invalidObservations: collected.invalidObservations ?? [],
+            }
+          : result,
+        (key, value) =>
+          key === 'accountKey' || key === 'accountIdentityHash'
+            ? undefined
+            : value
       )
     );
   } catch (error) {
@@ -220,6 +228,9 @@ export async function runHook(command: string, action?: string): Promise<void> {
         ],
       })
     );
-    process.exitCode = 1;
+    process.exitCode =
+      error instanceof HookError && error.message === 'ledger-contention-retry'
+        ? 3
+        : 1;
   }
 }
