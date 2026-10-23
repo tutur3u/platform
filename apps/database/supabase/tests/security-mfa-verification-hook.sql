@@ -203,20 +203,23 @@ reset role;
 
 set local role supabase_auth_admin;
 
+select public.hook_mfa_verification_attempt(
+  jsonb_build_object(
+    'user_id', 'e3000000-0000-0000-0000-000000000001',
+    'factor_id', 'e3000000-0000-0000-0000-0000000000f9',
+    'factor_type', 'totp',
+    'valid', true
+  )
+) ->> 'decision' as auth_hook_decision
+\gset
+
+reset role;
+
 select is(
-  public.hook_mfa_verification_attempt(
-    jsonb_build_object(
-      'user_id', 'e3000000-0000-0000-0000-000000000001',
-      'factor_id', 'e3000000-0000-0000-0000-0000000000f9',
-      'factor_type', 'totp',
-      'valid', true
-    )
-  ) ->> 'decision',
+  :'auth_hook_decision'::text,
   'continue',
   'Supabase Auth runs the hook under its own role'
 );
-
-reset role;
 
 select * from finish();
 
