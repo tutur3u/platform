@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import {
-  chmodSync,
   closeSync,
   constants,
+  fchmodSync,
   lstatSync,
   openSync,
   renameSync,
@@ -93,10 +93,10 @@ export function writeFileAtomicallySync(path: string, contents: string) {
     fd = openSync(
       temporary,
       constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL,
-      info ? info.mode & 0o777 : 0o666
+      info ? Number(info.mode) & 0o777 : 0o666
     );
     writeFileSync(fd, contents, 'utf8');
-    if (info) chmodSync(fd, info.mode & 0o777);
+    if (info) fchmodSync(fd, Number(info.mode) & 0o777);
     closeSync(fd);
     fd = undefined;
     renameSync(temporary, target);
