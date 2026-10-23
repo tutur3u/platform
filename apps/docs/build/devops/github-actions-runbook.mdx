@@ -565,14 +565,38 @@ used. A trusted save still archives the complete requested image set. Serial
 matrix execution allows reuse of an already completed contract seed; matrix
 ordering is not a dependency guarantee, so rerun the dispatch after a partial seed.
 
-That main-only dispatch allows seven attempts within
-a ten-minute total pull budget per profile and retains 15-minute job limits. It
-still needs a runner with working registry access; if hosted IPs remain throttled,
-this seed cannot succeed there. Use an admitted trusted runner with registry
-access to run the same seeding action, or wait for registry recovery. Do not treat
-a registry switch as a fix or upload unreviewed image archives to the main scope.
-GitHub's cache scope allows PRs to read main caches; eviction or a version/profile
-change requires another successful seed. Exact-head hosted CI remains required.
+That main-only dispatch allows seven attempts within a ten-minute total pull
+budget per profile and retains 15-minute job limits. Only this trusted Linux x64
+seed path can substitute one existing retry slot after an ECR throttle with an
+anonymous pull from the official GHCR GoTrue publication. The source allowlist
+covers only GoTrue v2.196.0 and v2.197.0; their OCI index and linux/amd64 manifest
+digests match ECR. Pulls use the pinned platform digest and verify Docker's
+RepoDigests, config ID, OS and architecture before tagging the canonical ECR
+reference. Alternate transport failure or identity mismatch stops the seed.
+Other images still require ECR access; imgproxy has no qualified fallback.
+There is no login, additional attempt budget, arbitrary registry input or PR path.
+
+For premerge CLI 2.121.0 cache preparation, the owner may select the fixed
+`seed_image_catalog=cli-2.121.0` dispatch choice together with
+`seed_images_only=true` on main. This reads reviewed source data without running
+the future CLI or checking out PR code. Every catalog image is pulled by its
+reviewed ECR linux/amd64 manifest digest, verified before save, and tagged with
+the original ECR version reference. The exact tag list still goes through the
+existing key function; the catalog does not change consumer keys, archive paths
+or registry identity. An absent selector or `current` retains installed-CLI
+metadata and supplemental version validation. The fixed catalog is Linux x64
+only and requires the existing trusted 600-second seed mode. Update source
+catalogs only after reviewing the upstream CLI list and anonymous index/platform
+manifest metadata, including platform config digests; never accept a caller list.
+
+GitHub's cache scope allows PRs to read main caches. Cache retention is shared
+with Flutter SDK and Bun archives; capacity pressure can evict previously seeded
+images. Before another owner-controlled seed, inspect the exact cache inventory
+and active runs rather than assuming more retries establish retention. Acceptance
+requires exact producer key/ref/size evidence, a fresh consumer's exact hit and
+successful runtime contracts, then retained entries after the ordinary CI wave.
+Source tests and registry metadata parity do not establish hosted alternate
+transport reachability or runtime success. Exact-head hosted CI remains required.
 
 ### Repository cache budget
 

@@ -5,6 +5,7 @@ const test = require('node:test');
 const { execFileSync } = require('node:child_process');
 const { isDeepStrictEqual } = require('node:util');
 const { readAllWorkflows } = require('./workflow-yaml-test-helper.js');
+const { trustedSave } = require('./supabase-image-cache.js');
 
 const workflows = readAllWorkflows();
 const actions = JSON.parse(
@@ -624,4 +625,44 @@ test('Bun runtime and dependencies keep version/platform keys without lockfile h
       /1\.4\.3/,
       `${name} still pins retired Bun 1.4.3`
     );
+});
+
+test('the composite save input fences both archive creation and upload', () => {
+  const action = actions['.github/actions/cache-supabase-images/action.yml'];
+  assert.equal(action.inputs.save.default, 'true');
+  assert.equal(action.inputs['seed-image-catalog'].default, 'current');
+  const pull = action.runs.steps.find(
+    (step) => step.name === 'Pull missing images within a short budget'
+  );
+  const upload = action.runs.steps.find(
+    (step) => step.name === 'Save trusted image archive'
+  );
+  const identityStep = action.runs.steps.find((step) => step.id === 'identity');
+  assert.equal(
+    pull.env.IMAGE_SEED_CATALOG,
+    identityStep.env.IMAGE_SEED_CATALOG
+  );
+  assert.equal(pull.env.IMAGE_PROFILE, identityStep.env.IMAGE_PROFILE);
+  const evaluate = (expression, inputs, github) => {
+    const code = expression
+      .replace(/^\$\{\{\s*|\s*\}\}$/g, '')
+      .replace(/steps\.([\w-]+)\.outputs\.([\w-]+)/g, 'outputs["$1.$2"]');
+    return Function(
+      'inputs',
+      'github',
+      'outputs',
+      `return !!(${code})`
+    )(inputs, github, {
+      'identity.save': String(trustedSave(github.event_name, github.ref)),
+      'cache.cache-hit': 'false',
+    });
+  };
+  for (const save of ['true', 'false', '', 'invalid']) {
+    for (const ref of ['refs/heads/main', 'refs/pull/1/merge']) {
+      const github = { ref, event_name: 'push' };
+      const expected = save === 'true' && ref === 'refs/heads/main';
+      assert.equal(evaluate(pull.env.IMAGE_SAVE, { save }, github), expected);
+      assert.equal(evaluate(upload.if, { save }, github), expected);
+    }
+  }
 });

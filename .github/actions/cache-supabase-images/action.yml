@@ -13,6 +13,9 @@ inputs:
   save:
     description: Allow archive creation and upload from trusted main runs
     default: "true"
+  seed-image-catalog:
+    description: Fixed trusted seed catalog (current or cli-2.121.0)
+    default: current
 runs:
   using: composite
   steps:
@@ -22,6 +25,8 @@ runs:
       env:
         IMAGE_PROFILE: ${{ inputs.profile }}
         IMAGE_DATABASE: ${{ inputs.database }}
+        IMAGE_PULL_BUDGET_SECONDS: ${{ inputs.pull-budget-seconds }}
+        IMAGE_SEED_CATALOG: ${{ inputs.seed-image-catalog }}
       run: node scripts/ci/supabase-image-cache.js key
     - name: Restore exact image archive
       id: cache
@@ -50,6 +55,8 @@ runs:
       env:
         IMAGE_PULL_BUDGET_SECONDS: ${{ inputs.pull-budget-seconds }}
         IMAGE_SAVE: ${{ inputs.save == 'true' && steps.identity.outputs.save == 'true' }}
+        IMAGE_PROFILE: ${{ inputs.profile }}
+        IMAGE_SEED_CATALOG: ${{ inputs.seed-image-catalog }}
       run: node scripts/ci/supabase-image-cache.js pull
     - name: Save trusted image archive
       if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && inputs.save == 'true' && steps.cache.outputs.cache-hit != 'true' && steps.identity.outputs.save == 'true'
