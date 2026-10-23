@@ -95,7 +95,9 @@ class SettingsSearchField extends StatelessWidget {
         borderRadius: BorderRadius.circular(SettingsRowLayout.cardRadius),
         filled: true,
         features: [
-          const shad.InputFeature.leading(Icon(shad.LucideIcons.search, size: 18)),
+          const shad.InputFeature.leading(
+            Icon(shad.LucideIcons.search, size: 18),
+          ),
           if (controller.text.isNotEmpty)
             shad.InputFeature.trailing(
               shad.IconButton.ghost(

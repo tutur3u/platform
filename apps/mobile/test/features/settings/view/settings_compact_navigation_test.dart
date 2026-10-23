@@ -601,7 +601,12 @@ void main() {
 
     await h.pump(tester, scale: 2);
     expect(dockOpacity(), 1);
-    await tester.ensureVisible(find.text('Personal timezone'));
+    // The header and search field put this row below the first screen.
+    await tester.scrollUntilVisible(
+      find.text('Personal timezone'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
     await _settle(tester);
     await tester.tap(find.text('Personal timezone'));
     await _settle(tester);
