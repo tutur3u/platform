@@ -158,8 +158,8 @@ jobs:
         run: |
           set -euo pipefail
           # Never the checkout's copy: without the trusted gate (bootstrap)
-          # every high/critical result fails, and a result whose rule severity
-          # cannot be resolved counts as high.
+          # every high/critical result fails, and a result whose rule or rule
+          # severity is missing or not numeric counts as high.
           if git cat-file -e "HEAD^1:scripts/ci/codeql-new-alerts.js" 2>/dev/null; then
             gate="$RUNNER_TEMP/codeql-new-alerts.js"
             git show "HEAD^1:scripts/ci/codeql-new-alerts.js" > "$gate"
@@ -170,7 +170,10 @@ jobs:
             [ "${#sarif[@]}" -gt 0 ] || { echo "::error::No SARIF output to gate."; exit 1; }
             count="$(jq -s '[.[] | .runs[]? as $run
               | ([$run.tool.driver.rules[]?, ($run.tool.extensions[]?.rules[]?)]
-                 | map({key: .id, value: ((.properties["security-severity"] // "0") | tonumber? // 0)})
+                 | map({key: .id, value: (.properties["security-severity"]
+                     | if type == "number" then .
+                       elif type == "string" and test("^[0-9]+(\\.[0-9]+)?$") then tonumber
+                       else 10 end)})
                  | from_entries) as $severity
               | $run.results[]?
               | ($severity[(.ruleId // .rule.id // "")] // 10)

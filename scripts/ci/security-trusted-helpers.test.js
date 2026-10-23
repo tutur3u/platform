@@ -231,6 +231,20 @@ test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
                       id: 'js/low',
                       properties: { 'security-severity': '2.0' },
                     },
+                    {
+                      id: 'js/number',
+                      properties: { 'security-severity': 8.8 },
+                    },
+                    {
+                      id: 'js/low-number',
+                      properties: { 'security-severity': 2 },
+                    },
+                    { id: 'js/missing', properties: {} },
+                    { id: 'js/no-properties' },
+                    {
+                      id: 'js/non-numeric',
+                      properties: { 'security-severity': 'high' },
+                    },
                   ],
                 },
               },
@@ -243,6 +257,18 @@ test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
   };
 
   assert.notEqual(gate([{ ruleId: 'js/high' }]).status, 0);
+  // REV-6456-12: numeric 8.8 fails; a known rule whose severity is missing or
+  // not numeric fails closed instead of reading as 0.
+  for (const ruleId of [
+    'js/number',
+    'js/missing',
+    'js/no-properties',
+    'js/non-numeric',
+  ]) {
+    assert.notEqual(gate([{ ruleId }]).status, 0, ruleId);
+  }
+  const lowNumber = gate([{ ruleId: 'js/low-number' }]);
+  assert.equal(lowNumber.status, 0, lowNumber.stdout + lowNumber.stderr);
   // A result whose rule severity cannot be resolved counts as high.
   assert.notEqual(gate([{ ruleId: 'js/unlisted' }]).status, 0);
   assert.notEqual(gate(null).status, 0, 'missing SARIF output fails');
