@@ -42,8 +42,8 @@ bun packages/agent-quota/src/cli.ts recommend --provider codex --count 2 --json
 
 `recommend` returns a ranked list with reasons and a simulated assignment list
 that spreads the requested task count. A stale or missing quota signal is
-uncertain and receives a ranking penalty. A fresh reported window above 90% is
-excluded. A reset timestamp already in the past also makes that window
+uncertain and makes the pool ineligible. A fresh reported window at or above
+90% is excluded. A reset timestamp already in the past also makes that window
 uncertain, so it receives no imminent-reset preference. `claude_hehe` defaults
 to at most one active assignment and a 25%
 remaining reserve to keep the orchestrator account available.

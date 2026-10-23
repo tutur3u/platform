@@ -249,6 +249,25 @@ describe('local collectors', () => {
     });
   });
 
+  it('does not make an undated Claude rate-limit event fresh from file mtime', async () => {
+    const root = await tempDir();
+    const resetsAt = Math.floor(Date.now() / 1000) + 10 * 60;
+    await writeFile(
+      join(root, 'fixture.jsonl'),
+      `${JSON.stringify({
+        type: 'rate_limit_event',
+        rate_limit_info: {
+          rateLimitType: 'five_hour',
+          utilization: 1,
+          resetsAt,
+        },
+      })}\n`
+    );
+
+    const result = await collectClaude('claudeAgent', 'test-account', root);
+    expect(result.windows.filter((window) => window.authoritative)).toEqual([]);
+  });
+
   it('ignores expired and old resetless Claude rate-limit events', async () => {
     const root = await tempDir();
     const old = new Date(Date.now() - 8 * 24 * 60 * 60_000).toISOString();
