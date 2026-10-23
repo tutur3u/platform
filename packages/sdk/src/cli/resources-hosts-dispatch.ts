@@ -3,7 +3,11 @@ import { readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { DevboxFleetSnapshot } from '../devbox-fleet-types';
-import { probeDisk } from './resources-disk-gate';
+import {
+  type DiskGate,
+  diskGate,
+  probeDiskWithTimeout,
+} from './resources-disk-gate';
 import {
   type HostRegistry,
   type HostSpec,
@@ -16,11 +20,14 @@ import {
   type HostReservation,
   type HostTelemetry,
   type HostTicket,
+  hostReservationMarker,
+  nestedHostReservation,
   releaseHostReservation,
   remoteDispatchBlocker,
   removeHostTicket,
   updateHostReservation,
 } from './resources-hosts-ledger';
+import { canEverHold } from './resources-hosts-plan';
 import { commandSummary } from './resources-queue';
 
 // Fairness is per repository: linked worktrees of one repository (for
@@ -61,6 +68,8 @@ export interface HostDispatchDeps {
     host: HostSpec;
     jobClass: JobClass;
     reservation: HostReservation;
+    // Exported to the job so nested `run --hosts` reuses this reservation.
+    marker: Record<string, string>;
     onChild: (pid: number) => Promise<void>;
   }) => Promise<number>;
   // Reuses #6454's offload transport; `rejected` means no remote run exists.
@@ -71,11 +80,13 @@ export interface HostDispatchDeps {
     prefix: string;
   }) => Promise<number | { rejected: true; reason: string }>;
   localDiskFreeGiB?: (cwd: string) => Promise<number | undefined>;
+  // Dequeue-time gate for local light work (heavy work passes the lane gate).
+  localDiskGate?: (cwd: string) => Promise<DiskGate>;
   pollMs?: number;
   log?: (text: string) => void;
 }
 const defaultDisk = async (cwd: string) =>
-  probeDisk(cwd)
+  probeDiskWithTimeout(cwd)
     .then((probe) => probe.freeBytes / 1024 ** 3)
     .catch(() => undefined);
 
@@ -83,7 +94,9 @@ const defaultDisk = async (cwd: string) =>
  * Admits one job across the registered hosts and runs it on the assigned
  * host. The reservation is held until the job ends and is released on
  * success, failure, cancellation (SIGINT/SIGTERM/SIGHUP) or, if this broker
- * dies, by liveness pruning in the next admission round.
+ * dies, by liveness pruning in the next admission round. Remote dispatch
+ * re-checks the runner and the commit plan immediately before creation and
+ * requeues instead of dispatching when either changed.
  */
 export async function hostsRun({
   home,
@@ -91,6 +104,7 @@ export async function hostsRun({
   args,
   jobClass,
   cwd = process.cwd(),
+  env = process.env,
   registry,
   deps,
 }: {
@@ -99,6 +113,7 @@ export async function hostsRun({
   args: string[];
   jobClass: JobClass;
   cwd?: string;
+  env?: NodeJS.ProcessEnv;
   registry?: HostRegistry;
   deps: HostDispatchDeps;
 }) {
@@ -110,9 +125,26 @@ export async function hostsRun({
     throw new Error(
       'No hosts.json in the resources home; multi-host admission is not configured.'
     );
-  const plan = hosts.hosts.some((host) => host.kind === 'runner')
-    ? await deps.commitPlan(cwd)
-    : undefined;
+  // Nested inside an admitted hosts job: run under the ancestor's
+  // reservation rather than queueing behind it.
+  const parent = await nestedHostReservation(home, env, true);
+  if (parent) {
+    const host = hosts.hosts.find((entry) => entry.id === parent.hostId);
+    if (host?.kind === 'local') {
+      log(
+        `PID ${process.pid} runs under ancestor reservation ${parent.token.slice(0, 8)}`
+      );
+      return await deps.runLocal({
+        host,
+        jobClass: parent.jobClass,
+        reservation: parent,
+        marker: { [hostReservationMarker]: parent.token },
+        onChild: async () => {},
+      });
+    }
+  }
+  const remoteHosts = hosts.hosts.some((host) => host.kind === 'runner');
+  const plan = remoteHosts ? await deps.commitPlan(cwd) : undefined;
   const ticket: HostTicket = {
     token: randomUUID(),
     pid: process.pid,
@@ -123,8 +155,13 @@ export async function hostsRun({
     remoteOk: Boolean(plan),
     command: commandSummary(command, args),
   };
+  if (!canEverHold(hosts, ticket))
+    throw new Error(
+      `No registered host can ever run a ${jobClass} job${plan ? '' : ' from this tree (remote runs need a clean, pushed commit)'}; check hosts.json slots and weights.`
+    );
   const signalCodes = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 } as const;
   let cancelled: keyof typeof signalCodes | undefined;
+  let remoteRunning = false;
   const waiting = new AbortController();
   const handlers = (
     Object.keys(signalCodes) as (keyof typeof signalCodes)[]
@@ -132,11 +169,27 @@ export async function hostsRun({
     const handler = () => {
       cancelled ??= signal;
       waiting.abort();
+      // The offload transport stops its remote run on SIGINT/SIGTERM only;
+      // forward a hangup so a closed terminal also stops the remote run.
+      if (signal === 'SIGHUP' && remoteRunning)
+        process.kill(process.pid, 'SIGTERM');
     };
     process.on(signal, handler);
     return [signal, handler] as const;
   });
   let reservation: HostReservation | undefined;
+  const requeue = async (reason: string, localOnly: boolean) => {
+    log(reason);
+    if (reservation) await releaseHostReservation(home, reservation);
+    reservation = undefined;
+    if (localOnly) {
+      ticket.remoteOk = false;
+      if (!canEverHold(hosts, ticket))
+        throw new Error(
+          `No local host can run this ${jobClass} job after remote dispatch was refused.`
+        );
+    }
+  };
   try {
     for (;;) {
       await enqueueHostTicket(home, ticket);
@@ -145,7 +198,7 @@ export async function hostsRun({
         if (cancelled) return signalCodes[cancelled];
         const telemetry: HostTelemetry = {
           localDiskFreeGiB: await (deps.localDiskFreeGiB ?? defaultDisk)(cwd),
-          snapshot: hosts.hosts.some((host) => host.kind === 'runner')
+          snapshot: remoteHosts
             ? await deps.fleet().catch(() => undefined)
             : undefined,
         };
@@ -165,55 +218,74 @@ export async function hostsRun({
           signal: waiting.signal,
         }).catch(() => undefined);
       }
-      const host = hosts.hosts.find(
-        (entry) => entry.id === reservation!.hostId
-      )!;
-      log(`admitted ${jobClass} PID ${process.pid} on host ${host.id}`);
+      const held: HostReservation = reservation;
+      const host = hosts.hosts.find((entry) => entry.id === held.hostId)!;
       if (host.kind === 'local') {
-        const held = reservation;
+        if (jobClass === 'light') {
+          const disk = await (
+            deps.localDiskGate ?? ((path) => diskGate(path, env))
+          )(cwd);
+          if (!disk.admit) {
+            await requeue(
+              `queued light PID ${process.pid}; blockedBy=disk: ${disk.reason}`,
+              false
+            );
+            await sleep(deps.pollMs ?? 5_000, undefined, {
+              signal: waiting.signal,
+            }).catch(() => undefined);
+            continue;
+          }
+        }
+        log(`admitted ${jobClass} PID ${process.pid} on host ${host.id}`);
         return await deps.runLocal({
           host,
           jobClass,
           reservation: held,
+          marker: { [hostReservationMarker]: held.token },
           onChild: async (pid) => {
             held.childPid = pid;
             await updateHostReservation(home, held);
           },
         });
       }
-      // Admission used telemetry from before the ticket won; re-check the
-      // runner against a fresh server-timestamped snapshot right before
-      // creating the remote run, and requeue without dispatching if it
-      // stopped being eligible meanwhile.
+      // Admission used telemetry from before the ticket won: re-check the
+      // runner against a fresh server-timestamped snapshot, and the commit
+      // plan, right before creating the remote run.
       const blocker = remoteDispatchBlocker(
         hosts,
         host.id,
         await deps.fleet().catch(() => undefined)
       );
       if (blocker) {
-        log(
-          `host ${host.id} is no longer eligible (${blocker}); requeueing without dispatch`
+        await requeue(
+          `host ${host.id} is no longer eligible (${blocker}); requeueing without dispatch`,
+          false
         );
-        await releaseHostReservation(home, reservation);
-        reservation = undefined;
+        continue;
+      }
+      const current = await deps.commitPlan(cwd);
+      if (current?.sha !== plan!.sha || current.prefix !== plan!.prefix) {
+        await requeue(
+          'the commit plan changed since admission; requeueing for local hosts',
+          true
+        );
         continue;
       }
       if (cancelled) return signalCodes[cancelled];
-      const outcome = await deps.runRemote({
-        host,
-        jobClass,
-        sha: plan!.sha,
-        prefix: plan!.prefix,
-      });
+      log(`admitted ${jobClass} PID ${process.pid} on host ${host.id}`);
+      remoteRunning = true;
+      const outcome = await deps
+        .runRemote({ host, jobClass, sha: current.sha, prefix: current.prefix })
+        .finally(() => {
+          remoteRunning = false;
+        });
       if (typeof outcome === 'number') return outcome;
       // The runner refused creation, so no remote run exists: requeue the job
       // for local hosts only instead of failing or running twice.
-      log(
-        `host ${host.id} refused the run (${outcome.reason}); requeueing for local hosts`
+      await requeue(
+        `host ${host.id} refused the run (${outcome.reason}); requeueing for local hosts`,
+        true
       );
-      await releaseHostReservation(home, reservation);
-      reservation = undefined;
-      ticket.remoteOk = false;
       ticket.bypassed = 0;
     }
   } finally {

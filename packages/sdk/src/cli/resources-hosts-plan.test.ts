@@ -6,6 +6,7 @@ import {
 } from './resources-hosts-config';
 import { hostStates } from './resources-hosts-ledger';
 import {
+  canEverHold,
   type HostState,
   planAdmissions,
   type Reservation,
@@ -159,6 +160,16 @@ describe('stale, unreachable and unknown hosts are not admitted', () => {
     expect(plan.assignments).toEqual([]);
   });
 
+  it('refuses a runner that reports no activity telemetry (REV-6503-8)', () => {
+    const state = remoteState({
+      snapshot: snapshot([runner(5_000, { activity: null })]),
+    });
+    expect(state).toMatchObject({
+      healthy: false,
+      reason: 'runner reports no activity telemetry',
+    });
+  });
+
   it('fails closed on unknown or low disk, local or remote', () => {
     const unknownRemote = remoteState({
       snapshot: snapshot([
@@ -219,6 +230,38 @@ describe('project-only locks never claim host-wide admission', () => {
     // Holding only a project lock is not admission: the holder still queues.
     const holder = planAdmissions(registry, states, [lock], []);
     expect(holder.assignments).toEqual([]);
+  });
+});
+
+describe('starving waiters hold only hosts they could use (REV-6503-9)', () => {
+  it('does not hold a runner for a waiter that cannot run remotely', () => {
+    const states = healthy();
+    states.m4!.external = { heavy: 2 };
+    const plan = planAdmissions(
+      registry,
+      states,
+      [],
+      [
+        { ...waiter('w1', 'heavy'), remoteOk: false, bypassed: 99 },
+        waiter('w2', 'heavy'),
+      ]
+    );
+    expect(plan.assignments).toEqual([
+      { token: 'w2', hostId: 'skr-linux-lan' },
+    ]);
+    expect(canEverHold(registry, { jobClass: 'heavy', remoteOk: false })).toBe(
+      true
+    );
+    const remoteOnly: HostRegistry = {
+      ...registry,
+      hosts: [
+        { ...registry.hosts[0]!, slots: { light: 0, heavy: 0 } },
+        registry.hosts[1]!,
+      ],
+    };
+    expect(
+      canEverHold(remoteOnly, { jobClass: 'heavy', remoteOk: false })
+    ).toBe(false);
   });
 });
 

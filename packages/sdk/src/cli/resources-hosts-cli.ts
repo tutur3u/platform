@@ -9,6 +9,7 @@ import {
 } from './resources-config';
 import {
   hostBudget,
+  type JobClass,
   proposedHostRegistry,
   readHostRegistry,
 } from './resources-hosts-config';
@@ -17,6 +18,14 @@ import { hostLedger } from './resources-hosts-ledger';
 import { compareWithCurrent, renderSimulation } from './resources-hosts-sim';
 import { UntrustedRegistryError } from './resources-hosts-trust';
 import { queuedResourceCommand, spawnResourceCommand } from './resources-queue';
+
+// Explicit runs queue by default (trivial commands never reach --hosts), so
+// an unrecognised command is heavy unless `--class light` says otherwise.
+export function hostsJobClass(value: string | undefined): JobClass {
+  if (value === undefined || value === 'heavy') return 'heavy';
+  if (value === 'light') return 'light';
+  throw new Error('--class must be light or heavy.');
+}
 
 // Production wiring for `ttr resources run --hosts`: local work goes through
 // the lane FIFO (heavy) or a light reservation; remote work reuses #6454's
@@ -62,7 +71,7 @@ export function hostsDependencies({
         return undefined;
       }
     },
-    runLocal: async ({ host, jobClass, reservation, onChild }) => {
+    runLocal: async ({ host, jobClass, reservation, marker, onChild }) => {
       const config =
         (await readResourceConfig(home)) || defaultResourceConfig();
       const caps = {
@@ -70,7 +79,7 @@ export function hostsDependencies({
         vitestWorkers: host.workers[jobClass],
         buildJobs: host.workers[jobClass],
       };
-      const childEnv = { ...env, ...resourceEnvironment(caps) };
+      const childEnv = { ...env, ...resourceEnvironment(caps), ...marker };
       if (jobClass === 'heavy')
         return queuedResourceCommand(
           home,

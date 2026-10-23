@@ -18,6 +18,7 @@ import {
   occupancy,
   processAlive,
   processGroupAlive,
+  processLineage,
   tickets,
   withAdmission,
 } from './resources-slots';
@@ -198,15 +199,22 @@ export function hostStates(
       };
       continue;
     }
+    // Without activity telemetry, runs started elsewhere are invisible and
+    // the runner could be oversubscribed: never admit it.
+    if (!runner.activity) {
+      states[host.id] = {
+        healthy: false,
+        reason: 'runner reports no activity telemetry',
+      };
+      continue;
+    }
     const verdict = evaluateTrustedRunner(runner, now);
     const age = now - Date.parse(runner.last_heartbeat_at ?? '');
     const fresh =
       Number.isFinite(age) &&
       age >= 0 &&
       age < registry.telemetryTtlSeconds * 1000;
-    const busy = runner.activity
-      ? runner.activity.running_runs + runner.activity.queued_runs
-      : 0;
+    const busy = runner.activity.running_runs + runner.activity.queued_runs;
     const ours = owned(host.id, 'light') + owned(host.id, 'heavy');
     states[host.id] = {
       healthy: verdict.eligible && fresh,
@@ -251,6 +259,32 @@ export function remoteDispatchBlocker(
   if (state.diskFreeGiB < host.reserved.diskGiB)
     return 'runner free disk is below its floor';
   return undefined;
+}
+
+// A job admitted under a host reservation exports its token. A nested
+// `run --hosts` inside it runs under that reservation instead of queueing
+// behind its own ancestor, but only while the reservation is live and its
+// broker (or owned child group) is a verified process ancestor.
+export const hostReservationMarker = 'TTR_RESOURCES_HOST_RESERVATION';
+export async function nestedHostReservation(
+  home: string,
+  env: NodeJS.ProcessEnv = process.env,
+  refresh = false
+) {
+  const marker = env[hostReservationMarker];
+  if (!marker) return undefined;
+  const reservation = (await hostLedger(home)).reservations.find(
+    (entry) => entry.token === marker && entry.scope === 'host'
+  );
+  if (!reservation) return undefined;
+  const evidence = processLineage(refresh);
+  if (!evidence) return undefined;
+  const related =
+    evidence.pids.has(reservation.pid) ||
+    (reservation.childPid !== undefined &&
+      (evidence.pids.has(reservation.childPid) ||
+        evidence.group === reservation.childPid));
+  return related ? reservation : undefined;
 }
 
 export async function enqueueHostTicket(home: string, ticket: HostTicket) {

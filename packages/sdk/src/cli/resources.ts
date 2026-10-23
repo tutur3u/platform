@@ -69,7 +69,8 @@ saturated (auto) or always (runner id). Dirty or unpushed trees are refused and
 no local environment is sent. --timeout <30s|10m|2h> bounds it (default 30m).
 ttr resources offload [--runner <id>] [--json] explains eligibility (blockedBy).
 Run option: --hosts admits across hosts.json hosts (weighted light/heavy slots,
-per-host budgets); off unless an operator installs hosts.json.
+per-host budgets); off unless an operator installs hosts.json. Jobs are heavy
+unless --class light is given.
 
 One base lane is the default; opt in to burst lanes only after an idle migration.
 Burst admission requires normal memory pressure and low CPU load, and stays
@@ -110,7 +111,7 @@ export async function runResourcesCommand(argv: string[]) {
     return;
   }
   const allowed: Record<string, string[]> = {
-    run: ['--ignore-pressure', '--offload', '--timeout', '--hosts'],
+    run: ['--ignore-pressure', '--offload', '--timeout', '--hosts', '--class'],
     hosts: ['--json', '--simulate'],
     offload: ['--json', '--runner'],
     shim: [],
@@ -128,7 +129,9 @@ export async function runResourcesCommand(argv: string[]) {
       if (!allowed[action]!.includes(option))
         throw new Error(`Unknown ${action} option: ${option}`);
       if (
-        ['--seconds', '--offload', '--timeout', '--runner'].includes(option)
+        ['--seconds', '--offload', '--timeout', '--runner', '--class'].includes(
+          option
+        )
       ) {
         const value = options[++i];
         if (!value || value.startsWith('--'))
@@ -196,13 +199,16 @@ export async function runResourcesCommand(argv: string[]) {
     if (!shim && queued && !parent && options.includes('--hosts')) {
       if (offload) throw new Error('Use --hosts or --offload, not both.');
       const { hostsRun } = await import('./resources-hosts-dispatch.js');
-      const { hostsDependencies } = await import('./resources-hosts-cli.js');
+      const { hostsDependencies, hostsJobClass } = await import(
+        './resources-hosts-cli.js'
+      );
+      const jobClass = hostsJobClass(optionValue(options, '--class'));
       const timeout = optionValue(options, '--timeout');
       process.exitCode = await hostsRun({
         home,
         command: name,
         args: command,
-        jobClass: isHeavyCommand(name, command) ? 'heavy' : 'light',
+        jobClass,
         deps: hostsDependencies({
           home,
           name,

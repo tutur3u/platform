@@ -114,15 +114,28 @@ export function hostBlocker(
     return `${host.id}: memory budget ${usage.memoryGiB}/${budget.memoryGiB} GiB cannot fit ${weight.memoryGiB}`;
   return undefined;
 }
-// Whether `host` could ever hold this class, so a starving waiter reserves it.
-const couldHold = (host: HostSpec, jobClass: JobClass) => {
+// Whether `host` could ever hold this waiter, so a starving waiter reserves
+// it. Runner hosts never hold a waiter that cannot run remotely.
+export function couldHold(
+  host: HostSpec,
+  waiter: Pick<Waiter, 'jobClass' | 'remoteOk'>
+) {
   const budget = hostBudget(host);
+  const weight = host.weights[waiter.jobClass];
   return (
-    host.slots[jobClass] > 0 &&
-    host.weights[jobClass].cpus <= budget.cpus &&
-    host.weights[jobClass].memoryGiB <= budget.memoryGiB
+    (host.kind === 'local' || waiter.remoteOk) &&
+    host.slots[waiter.jobClass] > 0 &&
+    weight.cpus <= budget.cpus &&
+    weight.memoryGiB <= budget.memoryGiB
   );
-};
+}
+// No registered host could ever run it: fail fast instead of queueing forever.
+export function canEverHold(
+  registry: HostRegistry,
+  waiter: Pick<Waiter, 'jobClass' | 'remoteOk'>
+) {
+  return registry.hosts.some((host) => couldHold(host, waiter));
+}
 
 /**
  * Plans one admission round.
@@ -197,7 +210,7 @@ export function planAdmissions(
     remaining.splice(remaining.indexOf(waiter), 1);
     if (!place(waiter))
       for (const host of registry.hosts)
-        if (couldHold(host, waiter.jobClass)) held.add(host.id);
+        if (couldHold(host, waiter)) held.add(host.id);
   }
   while (remaining.length) {
     let index = 0;
