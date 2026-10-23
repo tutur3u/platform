@@ -86,6 +86,14 @@ review or docs. Native result/watch events resume authorized delivery. When no
 admitted work remains ready, record the exact blocker, owner and resume event.
 Do not invent work, poll or stop a watch just to wait for a user reminder.
 
+Route delegation and owner continuation through the shared
+[account-balancing guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation).
+Portable fallback: unknown or stale quota is not headroom; stop admitting work
+to an exhausted account, and let its children resume at the reset rather than
+replaying them. Switch the owner only at an idle boundary with an empty queue,
+because queued runs keep their old account. Account memory is per provider
+instance, so carry it across a switch. Automatic failover is not installed.
+
 For observed slow admission, repeated handovers or two fixes failing on one
 premise, assign a bounded workflow audit at a safe checkpoint. Read actual
 actor/lifecycle and gate receipts, identify the causal bottleneck, and return one
