@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';
@@ -177,6 +178,12 @@ class _SettingsViewState extends State<_SettingsView>
                   context.deviceClass,
                 ),
                 child: ListView(
+                  // Search jumps need every root group built, not only the
+                  // visible ones; the root is a few dozen rows.
+                  scrollCacheExtent:
+                      widget.section == SettingsSectionDestination.overview
+                      ? const ScrollCacheExtent.pixels(100000)
+                      : null,
                   physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics(),
                   ),

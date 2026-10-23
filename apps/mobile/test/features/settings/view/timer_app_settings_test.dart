@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_settings.dart';
@@ -15,6 +16,7 @@ import 'package:mobile/features/settings/view/apps/app_settings_page.dart';
 import 'package:mobile/features/settings/view/apps/timer_app_settings.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/time_tracker/widgets/pomodoro_settings_dialog.dart';
+import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -30,6 +32,8 @@ class _Repository extends Mock implements ITimeTrackerRepository {}
 
 class _Permissions extends Mock implements WorkspacePermissionsRepository {}
 
+class _Cache extends Mock implements CacheStore {}
+
 const ValueKey<String> _thresholdRow = ValueKey(
   'settings-request-threshold-row',
 );
@@ -41,13 +45,17 @@ WorkspaceState _scope(String id, {required bool personal}) => WorkspaceState(
 );
 
 void main() {
-  setUpAll(() => registerFallbackValue(const PomodoroSettings()));
+  setUpAll(() {
+    registerFallbackValue(const PomodoroSettings());
+    registerFallbackValue(<String>[]);
+  });
 
   late _Auth auth;
   late _Workspaces workspaces;
   late _Repository repository;
   late _Permissions permissions;
   late StreamController<WorkspaceState> scopes;
+  late _Cache cache;
   var granted = <String>{};
 
   setUp(() {
@@ -56,6 +64,19 @@ void main() {
     repository = _Repository();
     permissions = _Permissions();
     scopes = StreamController<WorkspaceState>.broadcast();
+    cache = _Cache();
+    when(
+      () => cache.invalidateTags(any(), workspaceId: any(named: 'workspaceId')),
+    ).thenAnswer((_) async {});
+    when(
+      () => repository.updateMissedEntryDateThreshold(
+        any(),
+        any(),
+        statusChangeGracePeriodMinutes: any(
+          named: 'statusChangeGracePeriodMinutes',
+        ),
+      ),
+    ).thenAnswer((_) async {});
     granted = {
       manageTimeTrackingRequestsPermission,
       manageWorkspaceSettingsPermission,
@@ -111,6 +132,7 @@ void main() {
           appId: 'timer',
           timeTrackerRepository: repository,
           permissionsRepository: permissions,
+          cacheStore: cache,
         ),
       ),
     );
@@ -154,6 +176,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(_thresholdRow), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a saved threshold drops cached workspace settings', (
+    tester,
+  ) async {
+    await pump(tester, _scope('team', personal: false));
+    await tester.tap(find.byKey(_thresholdRow));
+    await tester.pumpAndSettle();
+    expect(find.byType(ThresholdSettingsDialog), findsOneWidget);
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    verify(
+      () => repository.updateMissedEntryDateThreshold(
+        'team',
+        3,
+        statusChangeGracePeriodMinutes: 10,
+      ),
+    ).called(1);
+    // Requests reloads through the cache on return; it must not see 3 stale.
+    verify(
+      () => cache.invalidateTags({'module:time_tracker'}, workspaceId: 'team'),
+    ).called(1);
+    await tester.drainShadToastTimers();
   });
 
   for (final missing in [

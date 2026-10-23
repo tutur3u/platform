@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -22,6 +23,7 @@ class AppSettingsPage extends StatelessWidget {
     this.settingsRepository,
     this.timeTrackerRepository,
     this.permissionsRepository,
+    this.cacheStore,
     super.key,
   });
 
@@ -29,6 +31,7 @@ class AppSettingsPage extends StatelessWidget {
   final SettingsRepository? settingsRepository;
   final ITimeTrackerRepository? timeTrackerRepository;
   final WorkspacePermissionsRepository? permissionsRepository;
+  final CacheStore? cacheStore;
 
   /// Apps with locally prepared offline data link to their offline screen.
   static const _offlineModules = {'tasks', 'calendar', 'finance'};
@@ -44,6 +47,7 @@ class AppSettingsPage extends StatelessWidget {
         TimerAppSettings(
           repository: timeTrackerRepository,
           permissionsRepository: permissionsRepository,
+          cacheStore: cacheStore,
         ),
       ],
       _ => const <Widget>[],

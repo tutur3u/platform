@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -30,11 +31,13 @@ class TimerAppSettings extends StatefulWidget {
   const TimerAppSettings({
     this.repository,
     this.permissionsRepository,
+    this.cacheStore,
     super.key,
   });
 
   final ITimeTrackerRepository? repository;
   final WorkspacePermissionsRepository? permissionsRepository;
+  final CacheStore? cacheStore;
 
   @override
   State<TimerAppSettings> createState() => _TimerAppSettingsState();
@@ -148,6 +151,15 @@ class _TimerAppSettingsState extends State<TimerAppSettings> {
               threshold,
               statusChangeGracePeriodMinutes: grace,
             );
+            // Workspace settings reads are cached; drop them so the Requests
+            // page reloads the saved threshold instead of the old one.
+            try {
+              await (widget.cacheStore ?? CacheStore.instance).invalidateTags({
+                'module:time_tracker',
+              }, workspaceId: workspaceId);
+            } on Object {
+              // A cache failure never undoes or repeats the saved write.
+            }
             if (!stillCurrent()) return;
             setState(
               () => _threshold = _ThresholdState(

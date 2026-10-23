@@ -116,6 +116,20 @@ void registerSettingsAppsChecks() {
     expect(zone.top, greaterThanOrEqualTo(0));
     expect(zone.bottom, lessThanOrEqualTo(844));
     expect(h.router.state.matchedLocation, Routes.settings);
+
+    // Groups far below the fold are built, so their jumps land too.
+    await tester.scrollUntilVisible(
+      field,
+      -200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(field, 'licenses');
+    await _settle(tester);
+    await tester.tap(find.byKey(const ValueKey('settings-search-licenses')));
+    await _settle(tester);
+    final licenses = tester.getRect(find.text('Open-source licenses'));
+    expect(licenses.top, greaterThanOrEqualTo(0));
+    expect(licenses.bottom, lessThanOrEqualTo(844));
     expect(tester.takeException(), isNull);
   });
 }
