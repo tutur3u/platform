@@ -21,7 +21,7 @@ def _frame_summary(error: BaseException) -> str:
     )
 
 
-def report_error(context: str, error: BaseException) -> str:
+def report_error(context: str, *, error: BaseException) -> str:
     """Log an exception on one escaped line and return its correlation ID."""
     error_id = secrets.token_hex(4)
     # repr() escapes CR/LF and control characters so the message stays on

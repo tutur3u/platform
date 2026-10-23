@@ -129,10 +129,10 @@ async def reply_shorten_link(
         # Send error response to Discord
         try:
             await handler.reply_error(
-                app_id, interaction_token, "shorten command", e, "Could not shorten the link."
+                app_id, interaction_token, "shorten command", "Could not shorten the link.", error=e
             )
         except Exception as response_error:
-            report_error("Failed to send error response", response_error)
+            report_error("Failed to send error response", error=response_error)
 
 
 @app.function(secrets=[supabase_secret], image=image)
@@ -186,10 +186,10 @@ async def reply_daily_report(
         # Send error response to Discord
         try:
             await handler.reply_error(
-                app_id, interaction_token, "daily report command", e, "Could not create the report."
+                app_id, interaction_token, "daily report", "Could not create the report.", error=e
             )
         except Exception as response_error:
-            report_error("Failed to send error response", response_error)
+            report_error("Failed to send error response", error=response_error)
 
 
 @app.function(secrets=[supabase_secret], image=image)
@@ -232,7 +232,7 @@ async def reply_tumeet_plan(
         )
     except Exception as e:
         await handler.reply_error(
-            app_id, interaction_token, "reply_tumeet_plan", e, "Could not create the plan."
+            app_id, interaction_token, "reply_tumeet_plan", "Could not create the plan.", error=e
         )
 
 
@@ -276,7 +276,7 @@ async def reply_wol_reminder(
         )
     except Exception as error:
         await handler.reply_error(
-            app_id, interaction_token, "reply_wol_reminder", error, "Could not send the reminder."
+            app_id, interaction_token, "wol reminder", "Could not send the reminder.", error=error
         )
 
 
@@ -317,7 +317,7 @@ async def reply_ticket(
         await handler.handle_boards_command(app_id, interaction_token, user_info)
     except Exception as e:
         await handler.reply_error(
-            app_id, interaction_token, "reply_ticket", e, "Could not load boards."
+            app_id, interaction_token, "reply_ticket", "Could not load boards.", error=e
         )
 
 
@@ -358,7 +358,7 @@ async def reply_assign(
         await handler.handle_assign_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
         await handler.reply_error(
-            app_id, interaction_token, "reply_assign", e, "Could not assign users."
+            app_id, interaction_token, "reply_assign", "Could not assign users.", error=e
         )
 
 
@@ -399,7 +399,7 @@ async def reply_unassign(
         await handler.handle_unassign_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
         await handler.reply_error(
-            app_id, interaction_token, "reply_unassign", e, "Could not unassign users."
+            app_id, interaction_token, "reply_unassign", "Could not unassign users.", error=e
         )
 
 
@@ -440,7 +440,7 @@ async def reply_assignees(
         await handler.handle_assignees_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
         await handler.reply_error(
-            app_id, interaction_token, "reply_assignees", e, "Could not list assignees."
+            app_id, interaction_token, "reply_assignees", "Could not list assignees.", error=e
         )
 
 
@@ -492,7 +492,7 @@ async def handle_board_selection_interaction(
         )
     except Exception as e:
         await handler.reply_error(
-            app_id, interaction_token, "board selection", e, "Could not load lists."
+            app_id, interaction_token, "board selection", "Could not load lists.", error=e
         )
 
 
@@ -546,7 +546,7 @@ async def handle_list_selection_interaction(
         )
     except Exception as e:
         await handler.reply_error(
-            app_id, interaction_token, "list selection", e, "Could not open the ticket form."
+            app_id, interaction_token, "list selection", "Could not open the ticket form.", error=e
         )
 
 
@@ -612,7 +612,7 @@ async def handle_ticket_modal_submission(
                     value = component.get("value", "")
                     form_data[custom_id] = value
     except Exception as e:
-        report_error("extracting form data", e)
+        report_error("extracting form data", error=e)
         form_data = {}
 
     # Extract board_id from the custom_id of the modal
@@ -631,7 +631,7 @@ async def handle_ticket_modal_submission(
             if list_result.data:
                 board_id = list_result.data[0].get("board_id", "")
     except Exception as e:
-        report_error("extracting board_id", e)
+        report_error("extracting board_id", error=e)
         board_id = ""
 
     try:
@@ -640,7 +640,7 @@ async def handle_ticket_modal_submission(
         )
     except Exception as e:
         await handler.reply_error(
-            app_id, interaction_token, "ticket submission", e, "Could not create the ticket."
+            app_id, interaction_token, "ticket submission", "Could not create the ticket.", error=e
         )
 
 
@@ -1041,7 +1041,7 @@ def web_app():
                     return handler.create_ticket_form_modal(list_id, None)
 
                 except Exception as e:
-                    report_error("creating modal", e)
+                    report_error("creating modal", error=e)
                     return {
                         "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                         "data": {
@@ -1134,7 +1134,7 @@ def web_app():
         try:
             result = await trigger_wol_reminder()
         except DiscordMissingAccessError as error:
-            report_error("Cron WOL reminder missing access", error)
+            report_error("Cron WOL reminder missing access", error=error)
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -1143,7 +1143,7 @@ def web_app():
                 ),
             ) from error
         except DiscordAPIError as error:
-            report_error("executing WOL reminder", error)
+            report_error("executing WOL reminder", error=error)
             raise HTTPException(status_code=500, detail="Failed to send reminder") from error
 
         return {
@@ -1169,11 +1169,11 @@ def web_app():
         try:
             result = await trigger_daily_report()
         except DailyReportConfigurationError as error:
-            error_id = report_error("Daily report configuration", error)
+            error_id = report_error("Daily report configuration", error=error)
             detail = f"Daily report is not configured (error ID {error_id})"
             raise HTTPException(status_code=500, detail=detail) from error
         except DiscordMissingAccessError as error:
-            report_error("Cron daily report missing access", error)
+            report_error("Cron daily report missing access", error=error)
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -1182,7 +1182,7 @@ def web_app():
                 ),
             ) from error
         except DiscordMissingPermissionsError as error:
-            report_error("Cron daily report missing permissions", error)
+            report_error("Cron daily report missing permissions", error=error)
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -1191,10 +1191,10 @@ def web_app():
                 ),
             ) from error
         except DiscordAPIError as error:
-            report_error("executing daily report", error)
+            report_error("executing daily report", error=error)
             raise HTTPException(status_code=500, detail="Failed to send daily report") from error
         except Exception as error:
-            report_error("Unexpected error executing daily report", error)
+            report_error("Unexpected error executing daily report", error=error)
             raise HTTPException(
                 status_code=500, detail="Unexpected error during daily report"
             ) from error

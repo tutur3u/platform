@@ -33,13 +33,15 @@ SINK_CALLS = {
     "log",
 }
 # Calls whose *result* never carries exception text (their arguments are still
-# checked; see EXCEPTION_SLOT_SINKS).
+# checked; see EXCEPTION_KEYWORD_SINKS).
 SAFE_RESULTS = {"report_error", "reply_error", "isinstance", "type", "len"}
-# Helpers that may receive the exception object in exactly one argument slot
-# (positional index, keyword). Every other argument reaches logs or users and
-# must not be tainted. `user_error` is deliberately absent: it interpolates its
-# inputs, so it propagates taint like any other call.
-EXCEPTION_SLOT_SINKS = {"report_error": (1, "error"), "reply_error": (3, "error")}
+# Helpers whose `error=` keyword may carry the handled exception itself. That
+# keyword is the only exempt argument, and only when its value is exactly the
+# handler's bound exception name (or `sys.exception()`). Every positional and
+# every other keyword argument is checked, so no binding inference is needed.
+# `user_error` is deliberately absent: it interpolates its inputs, so it
+# propagates taint like any other call.
+EXCEPTION_KEYWORD_SINKS = {"report_error", "reply_error"}
 # Calls that read the active exception without naming it.
 TRACEBACK_SOURCES = {"format_exc", "format_exception", "format_exception_only", "format_tb"}
 SYS_SOURCES = {"exc_info", "exception"}
@@ -86,31 +88,31 @@ def _is_sink_reference(node: ast.AST, sink_aliases: set[str]) -> bool:
     return isinstance(node, ast.Attribute) and node.attr in SINK_CALLS
 
 
-def _non_exception_arguments(node: ast.Call) -> list[ast.AST]:
-    """Arguments of an exception-slot helper other than its exception slot.
+def _is_exempt_exception_keyword(keyword: ast.keyword, bound_name: str | None) -> bool:
+    if keyword.arg != "error":
+        return False
+    value = keyword.value
+    if isinstance(value, ast.Name):
+        return bound_name is not None and value.id == bound_name
+    return (
+        isinstance(value, ast.Call)
+        and not value.args
+        and not value.keywords
+        and isinstance(value.func, ast.Attribute)
+        and isinstance(value.func.value, ast.Name)
+        and value.func.value.id == "sys"
+        and value.func.attr == "exception"
+    )
 
-    The slot is only exempt when Python's binding is unambiguous: any ``*args``
-    or ``**kwargs`` could move a tainted value into another parameter, so then
-    every argument is checked. A method looked up on its class (for example
-    ``CommandHandler.reply_error(handler, ...)``) receives ``self`` explicitly,
-    which shifts the positional slot by one.
-    """
-    every_argument = [*node.args, *(keyword.value for keyword in node.keywords)]
-    if any(isinstance(arg, ast.Starred) for arg in node.args) or any(
-        keyword.arg is None for keyword in node.keywords
-    ):
-        return every_argument
-    index, keyword_name = EXCEPTION_SLOT_SINKS[_call_name(node)]
-    func = node.func
-    if (
-        isinstance(func, ast.Attribute)
-        and isinstance(func.value, ast.Name)
-        and func.value.id[:1].isupper()
-    ):
-        index += 1
-    positional = [arg for position, arg in enumerate(node.args) if position != index]
-    keywords = [kw.value for kw in node.keywords if kw.arg != keyword_name]
-    return [*positional, *keywords]
+
+def _checked_helper_arguments(node: ast.Call, bound_name: str | None) -> list[ast.AST]:
+    """Every argument except an exact `error=<bound exception>` keyword."""
+    keywords = [
+        keyword.value
+        for keyword in node.keywords
+        if not _is_exempt_exception_keyword(keyword, bound_name)
+    ]
+    return [*node.args, *keywords]
 
 
 def _assigned_names(target: ast.AST) -> list[str]:
@@ -168,8 +170,8 @@ def exception_exposures(source: str) -> list[tuple[int, str]]:
                     continue
                 if not isinstance(node, ast.Call):
                     continue
-                if _call_name(node) in EXCEPTION_SLOT_SINKS:
-                    arguments = _non_exception_arguments(node)
+                if _call_name(node) in EXCEPTION_KEYWORD_SINKS:
+                    arguments = _checked_helper_arguments(node, handler.name)
                 elif _is_sink_reference(node.func, sink_aliases):
                     arguments = [*node.args, *(keyword.value for keyword in node.keywords)]
                 else:
@@ -242,11 +244,11 @@ def test_guard_allows_reporting_through_the_helper() -> None:
             try:
                 pass
             except Exception as e:
-                error_id = report_error("context", e)
+                error_id = report_error("context", error=e)
                 report_error(context="context", error=e)
-                await handler.reply_error(1, 2, "context", e, "Could not do it.")
-                await handler.reply_error(1, 2, "context", error=e, summary="Failed.")
-                await CommandHandler.reply_error(handler, 1, 2, "context", e, "Failed.")
+                await handler.reply_error(1, 2, "context", "Could not do it.", error=e)
+                await handler.reply_error(1, 2, "context", summary="Failed.", error=e)
+                await CommandHandler.reply_error(handler, 1, 2, "context", "Failed.", error=e)
                 await client.send_response({"content": user_error("Failed.", error_id)}, 1, 2)
                 return {"content": "Could not do it."}
         """
@@ -349,6 +351,43 @@ def test_guard_allows_reporting_through_the_helper() -> None:
             "reply_error",
         ),
         (
+            "aliased capitalized instance",
+            "except Exception as e:",
+            'Handler = handler\nawait Handler.reply_error(1, 2, "ctx", RuntimeError("x"), str(e))',
+            "reply_error",
+        ),
+        (
+            "lowercase class alias",
+            "except Exception as e:",
+            "cls = CommandHandler\n"
+            'await cls.reply_error(handler, 1, 2, str(e), RuntimeError("x"), "S")',
+            "reply_error",
+        ),
+        (
+            "positional exception to report_error",
+            "except Exception as e:",
+            'report_error("ctx", e)',
+            "report_error",
+        ),
+        (
+            "positional exception to reply_error",
+            "except Exception as e:",
+            'await handler.reply_error(1, 2, "ctx", "Failed.", e)',
+            "reply_error",
+        ),
+        (
+            "aliased exception keyword",
+            "except Exception as e:",
+            'err = e\nreport_error("ctx", error=err)',
+            "report_error",
+        ),
+        (
+            "derived exception keyword",
+            "except Exception as e:",
+            'report_error("ctx", error=str(e))',
+            "report_error",
+        ),
+        (
             "imported format_exc",
             "except Exception:",
             "text = format_exc()\nprint(text)",
@@ -364,6 +403,24 @@ def test_guard_checks_helper_arguments_and_implicit_sources(
     assert [found for _line, found in exception_exposures(source)] == [sink], label
 
 
+def test_guard_exempts_only_the_bound_exception_keyword() -> None:
+    source = textwrap.dedent(
+        """
+        async def h(handler):
+            try:
+                pass
+            except Exception as e:
+                report_error("ctx", error=e)
+                await handler.reply_error(1, 2, "ctx", "Failed.", error=e)
+            try:
+                pass
+            except Exception:
+                report_error("ctx", error=sys.exception())
+        """
+    )
+    assert exception_exposures(source) == []
+
+
 @pytest.mark.parametrize("filename", GUARDED_FILES)
 def test_handlers_do_not_expose_exception_text(filename: str) -> None:
     source = (DISCORD_DIR / filename).read_text(encoding="utf-8")
@@ -374,7 +431,7 @@ def test_report_error_logs_one_escaped_line_with_correlation_id(capsys) -> None:
     try:
         raise RuntimeError(f"line one\r\n[forged] {SYNTHETIC_DETAIL}\x1b[31m")
     except RuntimeError as error:
-        error_id = report_error("unit test\ncontext", error)
+        error_id = report_error("unit test\ncontext", error=error)
 
     output = capsys.readouterr().out
     assert output.count("\n") == 1
@@ -405,7 +462,7 @@ def test_reply_error_sends_fixed_text_with_correlation_id(capsys) -> None:
 
     asyncio.run(
         handler.reply_error(
-            "app", "token", "lists command", RuntimeError(SYNTHETIC_DETAIL), "Failed."
+            "app", "token", "lists command", "Failed.", error=RuntimeError(SYNTHETIC_DETAIL)
         )
     )
 
