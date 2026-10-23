@@ -117,7 +117,11 @@ using a disposable Vite fixture; real Worker runtime acceptance remains a CI gat
 
 `node scripts/ci/wrangler-usage.js` prints the inventory. The guard scans tracked
 files, including executables under `plugins/`, `.agents/` and `tmp/`; Markdown,
-text, lockfiles and binary assets are excluded. It counts mention lines and all
+text, lockfiles and binary assets are excluded. Ignored/untracked `tmp/` files are
+not an inventory: executable files there enter the guard only when tracked.
+`.md`, `.mdx` and `.txt` are documentation exclusions in every directory;
+commands embedded in those files need normal review, since the guard does not
+parse executable documentation examples. It counts mention lines and all
 Wrangler token occurrences conservatively, including comments and strings. A SHA-256
 digest also covers each file's Wrangler lines (all content for config files), so
 same-count substitutions require admission. Lower or remove counts when usage falls.
@@ -145,6 +149,34 @@ Current gaps: `paused-runtime` (retained paused runtimes), `opennext-adapter`,
 | Meet, Apps, Calendar, Mail, Shortener | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
 | Parley, Lettin | OpenNext, Wrangler | Start on Void migration | `opennext-adapter` |
 | Backend, TanStack Web | Paused | Excluded | `paused-runtime` |
+
+## Settings preflight token permissions
+
+The deploy token must cover the pinned account and every zone in that account.
+The settings snapshots require these Cloudflare API token permissions in addition
+to the publication permissions:
+
+| Resource | Read permission | Snapshot data |
+| --- | --- | --- |
+| Target account | Account → Workers Scripts → Read (Write also grants read) | Worker settings, schedules, secret names, deployments and custom domains |
+| Every target-account zone | Zone → Zone → Read | Zone enumeration |
+| Every target-account zone | Zone → Workers Routes → Read | Worker route enumeration |
+
+Grant zone visibility for **all zones in the target account**. Limiting visibility
+to the expected hostname's zone can hide unexpected routes and cannot establish
+route parity. Do not grant unrelated accounts. These requirements apply to
+`COLAB_CLOUDFLARE_API_TOKEN` and to `COORDINATION_CLOUDFLARE_API_TOKEN` when supplied
+instead of the fallback. Keep values in GitHub secrets; never attach token values
+to receipts. Actual token scope remains unverified until the bounded read-only
+preflight succeeds. Missing access, truncated lists and unsupported account size
+fail before publication; do not bypass that gate to deploy.
+
+Cloudflare documents the accepted permissions for
+[Worker secrets](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/secrets/methods/list/),
+[deployments](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/),
+[custom domains](https://developers.cloudflare.com/api/resources/workers/subresources/domains/methods/list/),
+[zones](https://developers.cloudflare.com/api/resources/zones/methods/list/) and
+[routes](https://developers.cloudflare.com/api/resources/workers/subresources/routes/methods/list/).
 
 ## Production cutover checklist
 

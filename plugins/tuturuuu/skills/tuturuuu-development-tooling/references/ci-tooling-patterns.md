@@ -43,6 +43,12 @@ retain only the first prior environment value. Deploy settings snapshots must
 pass before publication and after it; DO publication remains Wrangler until a
 separately reviewed rehearsal receipt permits cf.
 
+Settings preflight tokens need Workers Scripts read coverage on the pinned account,
+plus Zone and Workers Routes read coverage on every target-account zone; narrower
+visibility can hide unexpected routes. Keep the bounded fail-closed checks and see
+the parity runbook's permission table. The usage inventory scans tracked executable
+files in `tmp/` but excludes `.md`/`.mdx`/`.txt` everywhere, including runnable docs.
+
 Prefer cf for operations with demonstrated parity, beginning with bounded read-only
 inventory/observability and a Vite-native Worker pilot. Pin dependencies through
 package-manager commands; verify cf authentication/account independently of Wrangler.
