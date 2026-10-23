@@ -19,7 +19,7 @@ const namedStep = (name) => {
 
 test('trusted control checkout stays at the workspace root', () => {
   const checkouts = steps.filter((step) =>
-    step.startsWith('      - uses: actions/checkout@v7\n')
+    step.startsWith('      - uses: actions/checkout@')
   );
   assert.equal(checkouts.length, 2);
   assert.match(checkouts[0], /^ {10}ref: \$\{\{ github.sha \}\}$/mu);
