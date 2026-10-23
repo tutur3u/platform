@@ -574,7 +574,7 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   }
   for (const restoreStep of [runtimeRestoreStep, packageRestoreStep]) {
     assert.match(restoreStep, /github\.ref != 'refs\/heads\/main'/);
-    assert.match(restoreStep, /github\.event_name == 'pull_request'/);
+    assert.match(restoreStep, /github\.event_name != 'push'/);
     assert.match(restoreStep, /github\.actor == 'dependabot\[bot\]'/);
   }
   assert.doesNotMatch(setupAction, /node_modules/);

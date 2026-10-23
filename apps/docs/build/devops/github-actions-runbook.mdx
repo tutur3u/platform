@@ -574,6 +574,48 @@ a registry switch as a fix or upload unreviewed image archives to the main scope
 GitHub's cache scope allows PRs to read main caches; eviction or a version/profile
 change requires another successful seed. Exact-head hosted CI remains required.
 
+### Repository cache budget
+
+The repository's 10 GiB Actions cache budget uses least-recently-used eviction.
+Cache misses can make Supabase contracts depend on throttled public ECR pulls.
+Keep heavyweight writes on trusted refs; PRs restore the main cache rather than
+creating a copy under every merge ref. This reduces eviction pressure but does
+not reserve capacity or guarantee image retention.
+
+| Cache family | Observed pressure | Save policy |
+| --- | --- | --- |
+| Supabase images | About 1.1 GiB and 717 MiB per observed profile | Main push/dispatch only; exact image keys |
+| Android Gradle | About 3.6 GiB plus 366 MiB wrapper in one PR | Explicit restore everywhere; save only on main pushes |
+| Flutter SDK/pub | SDK archives can exceed 1 GiB | Mobile wrapper saves on main push/dispatch; direct desktop saves require trusted main/production push/dispatch |
+| Bun downloads | About 1 GiB per current Linux lockfile key | Main push/dispatch only, partitioned by OS, architecture, pinned Bun version and lockfile |
+| CocoaPods | About 82 MiB per observed iOS PR copy | Explicit restore everywhere; save only on main pushes, including macOS pods |
+
+These are incident measurements, not fixed sizes or a guaranteed total. New
+Gradle keys use the `gradle-v1-` namespace; their first main push must populate
+them. PRs cannot warm missing heavyweight caches. The static budget gate is
+`node --test scripts/ci/heavyweight-cache-budget.test.js`, also discovered by
+`bun test:scripts`. It checks workflow and composite writers, including implicit
+setup-java and Flutter action saves, against trusted and untrusted events/refs.
+
+Bun dependency keys and restore prefixes both include `inputs.bun-version`.
+Keep the version in every fallback so a newer runner does not restore and
+refresh the last-access time of an obsolete version's archive. After confirming
+that no workflow or action pins Bun 1.4.3, the release owner can perform this
+one-time cleanup without adding a scheduled maintenance loop:
+
+```sh
+rg -n '1\.4\.3' .github/workflows .github/actions --glob '*.yml' --glob '*.yaml'
+gh cache list --repo tutur3u/platform --key bun-deps-v1- --limit 1000 --json id,key,ref,sizeInBytes
+# Review the inventory, then delete each exact retired-version cache ID:
+gh cache delete <cache-id> --repo tutur3u/platform
+```
+
+The search must return no pins. Delete only inventory rows whose keys match
+`bun-deps-v1-*-1.4.3-*`; repeat inventory if its limit is reached. Deleting an
+already absent ID needs no retry. Do not delete Supabase image keys or add cache
+write permissions to PR jobs. Old PR-scoped Gradle/Pods entries will otherwise
+age out; source gating does not remove existing archives.
+
 For Linux reproduction, isolate the Supabase project ID and ports, use a
 scratch-local Bun matching the repository pin, and remove only that project's
 containers and volumes afterward. Supabase CLI 2.117.0 recognizes a missing volume

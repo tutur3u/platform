@@ -54,8 +54,9 @@ jobs:
       - name: Disable Flutter Swift Package Manager
         run: flutter config --no-enable-swift-package-manager
 
-      - name: Cache iOS dependencies
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Restore CocoaPods downloads without saving
+        id: pods-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             /Users/runner/Library/Caches/CocoaPods
@@ -88,3 +89,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
+
+      - name: Save trusted CocoaPods downloads
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.pods-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /Users/runner/Library/Caches/CocoaPods
+            /Users/runner/.cocoapods/repos/trunk
+          key: ${{ runner.os }}-${{ runner.arch }}-flutter-ios-pods-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/ios/Podfile', 'apps/mobile/ios/Podfile.lock') }}

@@ -69,8 +69,8 @@ jobs:
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
+          cache: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          pub-cache: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       - name: Write dry-run public configuration
         env:
           DESKTOP_PUBLIC_CONFIG: '{"NEXT_PUBLIC_SUPABASE_URL":"https://desktop-ci.supabase.co","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY":"sb_publishable_desktop_ci_placeholder","API_BASE_URL":"https://tuturuuu.com"}'
@@ -163,8 +163,8 @@ jobs:
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
+          cache: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          pub-cache: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       - name: Validate public build configuration
         shell: bash
         env:

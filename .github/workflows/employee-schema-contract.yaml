@@ -208,7 +208,7 @@ jobs:
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
+          cache: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       - name: Restore locked chat mobile dependencies
         if: inputs.include_chat_initial_settings == true
         working-directory: source/apps/mobile
