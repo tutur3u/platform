@@ -11,6 +11,11 @@ export interface DevboxRunPayload {
   workload?: 'run' | 'build' | 'serve' | 'tunnel' | 'maintenance';
   env?: DevboxEnv;
   envFiles?: string[];
+  /**
+   * Client operation ID (16-128 of `A-Za-z0-9_-`). The server returns the
+   * existing run for a repeated key instead of creating a second one.
+   */
+  idempotencyKey?: string;
   keep?: boolean;
   leaseId?: string;
   leaseMode: 'auto' | 'existing';
@@ -141,9 +146,24 @@ export class DevboxesClient {
     );
   }
 
+  /** Stops the caller's run created with this idempotency key. */
+  stopRunByKey(idempotencyKey: string, options: { signal?: AbortSignal } = {}) {
+    return this.api.json<{ message: string; runId: string; status: string }>(
+      '/api/v1/devboxes/runs/stop-by-key',
+      {
+        body: JSON.stringify({ idempotencyKey }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        signal: options.signal,
+      }
+    );
+  }
+
   /**
-   * One page of run log lines. `next` is the offset for the following page;
-   * servers that predate paging omit it and return only the first page.
+   * One page of run log lines. `next` is the cursor for the following page
+   * (the last per-run event sequence returned, so lines that commit late are
+   * never skipped); servers that predate paging omit it and return only the
+   * first page.
    */
   getRunLogs(
     runId: string,

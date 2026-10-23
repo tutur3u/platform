@@ -4026,6 +4026,29 @@ export type Database = {
           },
         ];
       };
+      devbox_run_event_cursors: {
+        Row: {
+          last_seq: number;
+          run_id: string;
+        };
+        Insert: {
+          last_seq?: number;
+          run_id: string;
+        };
+        Update: {
+          last_seq?: number;
+          run_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_run_event_cursors_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: true;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       devbox_run_events: {
         Row: {
           created_at: string;
@@ -4034,6 +4057,7 @@ export type Database = {
           message: string | null;
           metadata: Json;
           run_id: string;
+          seq: number;
         };
         Insert: {
           created_at?: string;
@@ -4042,6 +4066,7 @@ export type Database = {
           message?: string | null;
           metadata?: Json;
           run_id: string;
+          seq?: number;
         };
         Update: {
           created_at?: string;
@@ -4050,6 +4075,7 @@ export type Database = {
           message?: string | null;
           metadata?: Json;
           run_id?: string;
+          seq?: number;
         };
         Relationships: [
           {
@@ -4163,6 +4189,7 @@ export type Database = {
           env_files: string[];
           exit_code: number | null;
           id: string;
+          idempotency_key: string | null;
           lease_id: string;
           preview_ports: number[];
           runner_id: string | null;
@@ -4181,6 +4208,7 @@ export type Database = {
           env_files?: string[];
           exit_code?: number | null;
           id?: string;
+          idempotency_key?: string | null;
           lease_id: string;
           preview_ports?: number[];
           runner_id?: string | null;
@@ -4199,6 +4227,7 @@ export type Database = {
           env_files?: string[];
           exit_code?: number | null;
           id?: string;
+          idempotency_key?: string | null;
           lease_id?: string;
           preview_ports?: number[];
           runner_id?: string | null;

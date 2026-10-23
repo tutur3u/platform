@@ -6,6 +6,13 @@ import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { assertDevboxRunnerAcceptsRun } from './runner-drain-guard';
 import {
+  findDevboxRunByIdempotencyKey,
+  isMissingIdempotencyColumn,
+  isUniqueViolation,
+  replayKeyedDevboxRun,
+  stopDevboxRunByIdempotencyKey,
+} from './store-run-idempotency';
+import {
   createPrivateDevboxClient,
   type DevboxPrivateSchemaClient,
   type DevboxStorageErrorLike,
@@ -49,6 +56,7 @@ export interface CreateDevboxRunInput {
   command: string[];
   env?: Record<string, string>;
   envFiles?: string[];
+  idempotencyKey?: string;
   keep?: boolean;
   leaseId?: string;
   leaseMode?: 'auto' | 'existing';
@@ -186,6 +194,15 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
   const leaseId = input.leaseId ?? randomUUID();
   const runId = randomUUID();
   const leaseMode = input.leaseId ? 'existing' : (input.leaseMode ?? 'auto');
+  const keyed = input.idempotencyKey
+    ? { actorId: input.actorId, idempotencyKey: input.idempotencyKey }
+    : null;
+
+  // A retried create (lost acknowledgement) returns the run it already made.
+  if (keyed) {
+    const existing = await findDevboxRunByIdempotencyKey(privateClient, keyed);
+    if (existing) return replayKeyedDevboxRun(existing, input.command);
+  }
 
   await assertDevboxRunnerAcceptsRun(privateClient, {
     leaseId: input.leaseId,
@@ -215,13 +232,14 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     }
   }
 
-  const runInsert = {
+  let runInsert: Record<string, unknown> = {
     actor_id: input.actorId,
     command: input.command,
     created_at: now,
     env: input.env ?? {},
     env_files: input.envFiles ?? [],
     id: runId,
+    ...(keyed ? { idempotency_key: keyed.idempotencyKey } : {}),
     lease_id: leaseId,
     preview_ports: input.previewPorts ?? [],
     status: 'queued',
@@ -232,6 +250,14 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
   let { error } = await getPrivateTable(privateClient, 'devbox_runs').insert(
     runInsert
   );
+  // Before the idempotency migration applies, create without dedupe.
+  if (keyed && isMissingIdempotencyColumn(error)) {
+    const { idempotency_key: _key, ...unkeyed } = runInsert;
+    runInsert = unkeyed;
+    ({ error } = await getPrivateTable(privateClient, 'devbox_runs').insert(
+      runInsert
+    ));
+  }
   const storageMessage = error?.message?.toLowerCase() ?? '';
   if (
     (input.workload ?? 'run') === 'run' &&
@@ -244,6 +270,22 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     ({ error } = await getPrivateTable(privateClient, 'devbox_runs').insert(
       legacyRunInsert
     ));
+  }
+
+  // A concurrent create with the same key won the insert: retire the lease
+  // made for this attempt and return the winner's run.
+  if (keyed && isUniqueViolation(error)) {
+    if (leaseMode === 'auto')
+      await getScopedUpdate(privateClient, 'devbox_leases', {
+        released_at: now,
+        status: 'released',
+        updated_at: now,
+      })
+        .eq('id', leaseId)
+        .eq('actor_id', input.actorId)
+        .select('id');
+    const winner = await findDevboxRunByIdempotencyKey(privateClient, keyed);
+    if (winner) return replayKeyedDevboxRun(winner, input.command);
   }
 
   if (error) {
@@ -415,56 +457,17 @@ export async function stopDevboxRun(input: { actorId: string; runId: string }) {
   };
 }
 
-export const DEVBOX_RUN_LOG_PAGE_SIZE = 1000;
-
-// Pages run events in a stable order. `next` is the raw-row offset to request
-// next, so clients stream long runs incrementally instead of refetching (and
-// truncating at) the first page.
-export async function listDevboxRunLogs(input: {
+export function stopDevboxRunByKey(input: {
   actorId: string;
-  offset?: number;
-  runId: string;
+  idempotencyKey: string;
 }) {
-  const offset = input.offset ?? 0;
-  const privateClient = getPrivateSchemaClient(
-    await createPrivateDevboxClient()
-  );
-  const run = await selectOwnedRow(privateClient, 'devbox_runs', {
-    actorId: input.actorId,
-    columns: 'id',
-    id: input.runId,
-  });
-
-  if (!run) {
-    throw new DevboxStoreError('Devbox run not found.', 404);
-  }
-
-  const { data, error } = await getPrivateTable(
-    privateClient,
-    'devbox_run_events'
-  )
-    .select('message')
-    .eq('run_id', input.runId)
-    .order('created_at', { ascending: true })
-    .order('id', { ascending: true })
-    .range(offset, offset + DEVBOX_RUN_LOG_PAGE_SIZE - 1);
-
-  if (error) {
-    throw getDevboxStorageError(error);
-  }
-
-  const rows = data ?? [];
-  return {
-    logs: rows
-      .map((row) =>
-        row && typeof row === 'object' && 'message' in row
-          ? String(row.message ?? '')
-          : ''
-      )
-      .filter(Boolean),
-    next: offset + rows.length,
-  };
+  return stopDevboxRunByIdempotencyKey(input, stopDevboxRun);
 }
+
+export {
+  DEVBOX_RUN_LOG_PAGE_SIZE,
+  listDevboxRunLogs,
+} from './store-run-logs';
 
 export async function createDevboxPreview(input: {
   leaseId: string;

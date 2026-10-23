@@ -11,75 +11,165 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 import { DEVBOX_RUN_LOG_PAGE_SIZE, listDevboxRunLogs } from './store';
 import { DevboxStoreError } from './store-utils';
 
+type Event = {
+  created_at: string;
+  id: string;
+  message: string;
+  run_id: string;
+  seq?: number;
+};
+
+// In-memory PostgREST builder over the rows a reader can currently see
+// (committed rows). It honours both the cursor query and the legacy
+// created_at/id offset query, so tests compare real paging behaviour.
+function createEventsTable(options: { seqColumn: boolean }) {
+  const committed: Event[] = [];
+  const calls: string[] = [];
+  const from = (table: string) => {
+    const filters: ((row: Event) => boolean)[] = [];
+    const orders: string[] = [];
+    let columns = '';
+    const visible = () => {
+      const rows = (
+        table === 'devbox_runs'
+          ? [{ actor_id: 'owner', id: 'run-1' } as unknown as Event]
+          : committed
+      ).filter((row) => filters.every((filter) => filter(row)));
+      return rows.sort((a, b) => {
+        for (const column of orders) {
+          const left = a[column as keyof Event] ?? '';
+          const right = b[column as keyof Event] ?? '';
+          if (left < right) return -1;
+          if (left > right) return 1;
+        }
+        return 0;
+      });
+    };
+    const missingSeq = () =>
+      table === 'devbox_run_events' &&
+      !options.seqColumn &&
+      (columns.includes('seq') || orders.includes('seq'));
+    const result = (data: unknown[]) =>
+      Promise.resolve(
+        missingSeq()
+          ? {
+              data: null,
+              error: {
+                message: 'column devbox_run_events.seq does not exist',
+              },
+            }
+          : { data, error: null }
+      );
+    const builder = {
+      eq(column: string, value: string) {
+        filters.push((row) => row[column as keyof Event] === value);
+        return builder;
+      },
+      gt(column: string, value: number) {
+        filters.push((row) => Number(row[column as keyof Event]) > value);
+        return builder;
+      },
+      order(column: string) {
+        orders.push(column);
+        return builder;
+      },
+      limit(count: number) {
+        calls.push(`${table}:limit`);
+        return result(visible().slice(0, count));
+      },
+      range(start: number, end: number) {
+        calls.push(`${table}:range`);
+        return result(visible().slice(start, end + 1));
+      },
+      select(selected: string) {
+        columns = selected;
+        return builder;
+      },
+    };
+    return builder;
+  };
+  return { calls, committed, client: { from } };
+}
+
+async function drain(offset: number) {
+  const page = await listDevboxRunLogs({
+    actorId: 'owner',
+    offset,
+    runId: 'run-1',
+  });
+  return page;
+}
+
 describe('devbox run log paging', () => {
-  const rangeMock = vi.fn();
-  const orderMock = vi.fn();
-  const eqMock = vi.fn();
-  const fromMock = vi.fn();
-  const ownedRunLimitMock = vi.fn();
+  let table: ReturnType<typeof createEventsTable>;
+  const event = (message: string, createdAt: string, seq?: number) => ({
+    created_at: createdAt,
+    id: `id-${message}`,
+    message,
+    run_id: 'run-1',
+    ...(seq === undefined ? {} : { seq }),
+  });
+  const useTable = (seqColumn: boolean) => {
+    table = createEventsTable({ seqColumn });
+    createAdminClientMock.mockResolvedValue({
+      schema: vi.fn().mockReturnValue(table.client),
+    });
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    const eventsQuery = { order: orderMock, range: rangeMock };
-    orderMock.mockReturnValue(eventsQuery);
-    eqMock.mockReturnValue(eventsQuery);
-    const ownedRunQuery = {
-      eq: vi.fn(() => ownedRunQuery),
-      limit: ownedRunLimitMock,
-    };
-    ownedRunLimitMock.mockResolvedValue({
-      data: [{ id: 'run-1' }],
-      error: null,
-    });
-    fromMock.mockImplementation((table: string) =>
-      table === 'devbox_runs'
-        ? { select: vi.fn(() => ownedRunQuery) }
-        : { select: vi.fn(() => ({ eq: eqMock })) }
-    );
-    createAdminClientMock.mockResolvedValue({
-      schema: vi.fn().mockReturnValue({ from: fromMock }),
-    });
+    useTable(true);
   });
 
-  it('reads a stable page from the offset and returns the next raw offset', async () => {
-    rangeMock.mockResolvedValue({
-      data: [{ message: 'one' }, { message: '' }, { message: 'two' }],
-      error: null,
-    });
-
-    await expect(
-      listDevboxRunLogs({ actorId: 'owner', offset: 2000, runId: 'run-1' })
-    ).resolves.toEqual({ logs: ['one', 'two'], next: 2003 });
-
-    expect(fromMock).toHaveBeenCalledWith('devbox_run_events');
-    expect(eqMock).toHaveBeenCalledWith('run_id', 'run-1');
-    expect(orderMock).toHaveBeenNthCalledWith(1, 'created_at', {
-      ascending: true,
-    });
-    expect(orderMock).toHaveBeenNthCalledWith(2, 'id', { ascending: true });
-    expect(rangeMock).toHaveBeenCalledWith(
-      2000,
-      2000 + DEVBOX_RUN_LOG_PAGE_SIZE - 1
+  it('pages by the per-run sequence cursor and returns the last sequence', async () => {
+    table.committed.push(
+      event('one', '2026-10-24T00:00:01Z', 2001),
+      event('', '2026-10-24T00:00:02Z', 2002),
+      event('two', '2026-10-24T00:00:03Z', 2003),
+      event('old', '2026-10-24T00:00:00Z', 2000)
     );
+    await expect(drain(2000)).resolves.toEqual({
+      logs: ['one', 'two'],
+      next: 2003,
+    });
+    await expect(drain(2003)).resolves.toEqual({ logs: [], next: 2003 });
+    expect(table.calls).not.toContain('devbox_run_events:range');
   });
 
-  it('defaults to the first page', async () => {
-    rangeMock.mockResolvedValue({ data: [], error: null });
-    await expect(
-      listDevboxRunLogs({ actorId: 'owner', runId: 'run-1' })
-    ).resolves.toEqual({
-      logs: [],
-      next: 0,
-    });
-    expect(rangeMock).toHaveBeenCalledWith(0, DEVBOX_RUN_LOG_PAGE_SIZE - 1);
+  // Concurrent uploads: A starts first (earlier created_at) but commits after
+  // B. The migration allocates sequences in commit order per run, so a seq
+  // cursor sees each line once; a created_at offset repeats B and loses A.
+  it('never skips or repeats a line that commits late with an earlier timestamp', async () => {
+    table.committed.push(event('B', '2026-10-24T00:00:02Z', 1));
+    const first = await drain(0);
+    table.committed.push(event('A', '2026-10-24T00:00:01Z', 2));
+    const second = await drain(first.next);
+    expect([...first.logs, ...second.logs]).toEqual(['B', 'A']);
+    expect(second.next).toBe(2);
+  });
+
+  it('falls back to the created_at offset before the cursor migration applies', async () => {
+    useTable(false);
+    table.committed.push(
+      event('b', '2026-10-24T00:00:02Z'),
+      event('a', '2026-10-24T00:00:01Z')
+    );
+    await expect(drain(0)).resolves.toEqual({ logs: ['a', 'b'], next: 2 });
+    expect(table.calls).toContain('devbox_run_events:range');
+  });
+
+  it('caps a page at the shared page size', async () => {
+    for (let seq = 1; seq <= DEVBOX_RUN_LOG_PAGE_SIZE + 5; seq += 1)
+      table.committed.push(event(`line-${seq}`, '2026-10-24T00:00:00Z', seq));
+    const page = await drain(0);
+    expect(page.logs).toHaveLength(DEVBOX_RUN_LOG_PAGE_SIZE);
+    expect(page.next).toBe(DEVBOX_RUN_LOG_PAGE_SIZE);
   });
 
   it('does not page events for a run the actor does not own', async () => {
-    ownedRunLimitMock.mockResolvedValue({ data: [], error: null });
-
     await expect(
       listDevboxRunLogs({ actorId: 'other', offset: 0, runId: 'run-1' })
     ).rejects.toBeInstanceOf(DevboxStoreError);
-    expect(rangeMock).not.toHaveBeenCalled();
+    expect(table.calls).not.toContain('devbox_run_events:limit');
   });
 });

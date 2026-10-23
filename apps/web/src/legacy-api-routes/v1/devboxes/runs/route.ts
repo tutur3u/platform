@@ -6,12 +6,14 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
 import { createDevboxRun, listDevboxRuns } from '@/lib/devboxes/store';
+import { DEVBOX_IDEMPOTENCY_KEY_PATTERN } from '@/lib/devboxes/store-run-idempotency';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 const CreateRunSchema = z.object({
   command: z.array(z.string().trim().min(1)).min(1),
   env: z.record(z.string(), z.string()).optional(),
   envFiles: z.array(z.string().trim().min(1)).optional(),
+  idempotencyKey: z.string().regex(DEVBOX_IDEMPOTENCY_KEY_PATTERN).optional(),
   keep: z.boolean().optional(),
   leaseId: z.string().trim().min(1).optional(),
   leaseMode: z.enum(['auto', 'existing']).optional(),
