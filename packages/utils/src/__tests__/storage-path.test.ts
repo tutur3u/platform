@@ -99,6 +99,16 @@ describe('Storage Path Sanitization', () => {
       expect(sanitizePathStrict(path)).toBe(path);
     });
 
+    it.each([
+      'folder/a\u0085b',
+      'folder/a\u009fb',
+      'folder/a%C2%85b',
+      'folder/a%7Fb',
+    ])('rejects raw and encoded control characters in %j', (path) => {
+      expect(sanitizePathStrict(path)).toBeNull();
+      expect(sanitizePath(path)).toBeNull();
+    });
+
     it('handles complex valid paths', () => {
       expect(sanitizePath('users/uploads/documents/2024')).toBe(
         'users/uploads/documents/2024'
