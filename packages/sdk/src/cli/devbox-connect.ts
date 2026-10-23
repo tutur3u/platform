@@ -33,6 +33,7 @@ export async function runDevboxConnect({
         : undefined,
       dockerHost: getFlag(flags, 'docker-host'),
       controlUrl: getFlag(flags, 'control-url'),
+      force: flags.force === true,
       agent: true,
       client,
       judgeImages,

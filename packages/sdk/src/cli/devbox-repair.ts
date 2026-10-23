@@ -16,6 +16,7 @@ import {
   preflightProtectedService,
 } from './devbox-host-protection';
 import { readPersistedRunnerSetting } from './devbox-persisted-setting';
+import { assertRunnerExecutionModeUnchanged } from './devbox-service-mode-guard';
 import {
   type DevboxCheckoutSelection,
   resolveExistingDevboxCheckout,
@@ -40,6 +41,8 @@ export interface DevboxRepairOptions {
   cwd?: string;
   dir?: string;
   dryRun?: boolean;
+  /** Replace service files that belong to a different execution mode. */
+  force?: boolean;
   json?: boolean;
   noRestart?: boolean;
   runCommand?: DevboxSetupCommandRunner;
@@ -150,6 +153,19 @@ export async function runDevboxRepair(
       'Repair cannot weaken an existing Judge-only execution policy.'
     );
   const dockerHost = options.dockerHost ?? readSetting('DOCKER_HOST');
+  // An explicit --execution-mode is a deliberate change of this identity;
+  // otherwise refuse before touching the token when the installed service
+  // belongs to a different mode.
+  const force = options.force === true || options.executionMode !== undefined;
+  await assertRunnerExecutionModeUnchanged({
+    executionMode,
+    force,
+    definitionPath: getServiceDefinitionPath(manager, options.serviceName),
+    scriptPaths: [
+      resolve(getDefaultRunnerWrapperFile(undefined, options.serviceName)),
+      resolve(getDefaultRunnerWrapperFile(tokenFile, options.serviceName)),
+    ],
+  });
 
   const serviceUser =
     options.serviceUser ?? readSetting('TUTURUUU_DEVBOX_SERVICE_USER');
@@ -224,6 +240,7 @@ export async function runDevboxRepair(
         checkoutDir: checkout.path,
         executionMode,
         dockerHost,
+        force,
         json: options.json,
         manager,
         runCommand,
@@ -279,6 +296,7 @@ export async function runDevboxRepairCommand({
   await runDevboxRepair({
     dir: getFlag(flags, 'dir'),
     dryRun: flags['dry-run'] === true,
+    force: flags.force === true,
     json,
     noRestart: flags['no-restart'] === true,
     serviceManager: assertSupportedServiceManager(

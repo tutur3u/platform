@@ -57,6 +57,7 @@ export interface DevboxSetupOptions {
   serviceName?: string;
   serviceUser?: string;
   stdout?: (value: string) => void;
+  force?: boolean;
   tokenFile?: string;
   yes?: boolean;
 }
@@ -348,6 +349,7 @@ export async function runDevboxSetupCommand({
       : undefined,
     dockerHost: getFlag(flags, 'docker-host'),
     controlUrl: getFlag(flags, 'control-url'),
+    force: flags.force === true,
     judgeImages: getFlag(flags, 'judge-images'),
     agent: flags.agent === true,
     client,

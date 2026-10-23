@@ -10,6 +10,7 @@ import {
   preflightProtectedService,
 } from './devbox-host-protection';
 import { getJudgeReadiness, parseJudgeImages } from './devbox-judge-sandbox';
+import { assertRunnerExecutionModeUnchanged } from './devbox-service-mode-guard';
 import {
   canPromptDevboxSetup,
   confirmDevboxSetupQuestion,
@@ -40,6 +41,8 @@ export interface InstallDevboxRunnerServiceOptions {
   checkoutDir: string;
   executionMode?: DevboxExecutionMode;
   dockerHost?: string;
+  /** Replace service files that belong to a different execution mode. */
+  force?: boolean;
   json?: boolean;
   manager?: DevboxServiceManager;
   runCommand: DevboxSetupCommandRunner;
@@ -58,6 +61,7 @@ export interface SetupDevboxRunnerOptions {
     client?: TuturuuuUserClient;
     confirm?: DevboxSetupConfirm;
     env?: Record<string, string | undefined>;
+    force?: boolean;
     json?: boolean;
     runnerName?: string;
     runCommand: DevboxSetupCommandRunner;
@@ -90,6 +94,15 @@ export function getDefaultRunnerWrapperFile(
   serviceName?: string
 ) {
   return join(dirname(configPath), devboxServiceNames(serviceName).wrapperFile);
+}
+
+// The wrapper sits beside the config for trusted runners and beside the token
+// for judge-only runners, so an existing identity may own either path.
+function runnerWrapperCandidates(tokenFile: string, serviceName?: string) {
+  return [
+    resolve(getDefaultRunnerWrapperFile(undefined, serviceName)),
+    resolve(getDefaultRunnerWrapperFile(tokenFile, serviceName)),
+  ];
 }
 
 function getDefaultServiceDefinitionFile(
@@ -260,6 +273,7 @@ export async function installDevboxRunnerService({
   checkoutDir,
   executionMode = 'trusted',
   dockerHost,
+  force,
   json,
   manager,
   runCommand,
@@ -279,6 +293,12 @@ export async function installDevboxRunnerService({
     cliCommand: getCurrentTtrCommand(),
     dockerHost,
     runCommand,
+  });
+  await assertRunnerExecutionModeUnchanged({
+    executionMode,
+    force,
+    definitionPath: getServiceDefinitionPath(resolvedManager, serviceName),
+    scriptPaths: runnerWrapperCandidates(tokenFile, serviceName),
   });
   const wrapperPath = await writeRunnerWrapper({
     checkoutDir,
@@ -484,6 +504,9 @@ export async function setupDevboxRunner({
   const runnerName = options.runnerName?.trim() || getDefaultRunnerName();
   const executionMode =
     options.executionMode ?? (options.judgeImages ? 'judge-only' : 'trusted');
+  const targetTokenFile =
+    options.tokenFile ??
+    getDefaultRunnerTokenFile(undefined, options.serviceName);
   // Validate protection prerequisites before issuing a new runner credential.
   if (shouldInstallService)
     await preflightProtectedService({
@@ -491,9 +514,7 @@ export async function setupDevboxRunner({
       manager: resolveDevboxServiceManager(options.serviceManager),
       serviceUser: options.serviceUser?.trim() || userInfo().username,
       checkoutDir,
-      tokenFile:
-        options.tokenFile ??
-        getDefaultRunnerTokenFile(undefined, options.serviceName),
+      tokenFile: targetTokenFile,
       cliCommand: getCurrentTtrCommand(),
       dockerHost: options.dockerHost,
       runCommand: options.runCommand,
@@ -513,6 +534,24 @@ export async function setupDevboxRunner({
           'A configured Judge image failed readiness checks on the selected Docker daemon.'
       );
   }
+  // Registration overwrites the token file; check it (and any installed
+  // service) belongs to the same execution mode before issuing a credential.
+  await assertRunnerExecutionModeUnchanged({
+    executionMode,
+    force: options.force,
+    definitionPath: shouldInstallService
+      ? getServiceDefinitionPath(
+          resolveDevboxServiceManager(options.serviceManager),
+          options.serviceName
+        )
+      : undefined,
+    scriptPaths: [
+      resolve(targetTokenFile),
+      ...(shouldInstallService
+        ? runnerWrapperCandidates(targetTokenFile, options.serviceName)
+        : []),
+    ],
+  });
   const registration = await options.client.devboxes.registerAgent({
     name: runnerName,
   });
@@ -523,9 +562,7 @@ export async function setupDevboxRunner({
     controlUrl: options.controlUrl,
     serviceUser: options.serviceUser,
     token: registration.token,
-    tokenFile:
-      options.tokenFile ??
-      getDefaultRunnerTokenFile(undefined, options.serviceName),
+    tokenFile: targetTokenFile,
   });
 
   if (!shouldInstallService) {
@@ -541,6 +578,7 @@ export async function setupDevboxRunner({
       checkoutDir,
       executionMode,
       dockerHost: options.dockerHost,
+      force: options.force,
       json: options.json,
       manager: options.serviceManager,
       runCommand: options.runCommand,

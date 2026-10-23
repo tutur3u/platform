@@ -38,16 +38,25 @@ describe('trusted-mode execution fence', () => {
   };
 
   it('never runs Judge or playground envelopes on a trusted runner', async () => {
-    for (const command of [
-      ['__ttr_judge_v1__', 'payload'],
-      ['__ttr_playground_v1__', 'payload'],
-    ]) {
-      const { result, message } = await run(command, {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const [kind, command] of [
+      ['judge', ['__ttr_judge_v1__', 'payload']],
+      ['playground', ['__ttr_playground_v1__', 'payload']],
+    ] as const) {
+      const { result, message } = await run([...command], {
         TUTURUUU_DEVBOX_EXECUTION_MODE: 'trusted',
       });
       expect(result).toEqual({ exitCode: 1, status: 'failed' });
-      expect(message).toBe('Host execution policy rejected this job.');
+      // Distinct, auditable message for routing untrusted work to a
+      // credentialed host.
+      expect(message).toBe(
+        `Host execution policy rejected this job: trusted_runner_fence refused a ${kind} envelope on a trusted runner.`
+      );
+      expect(warn).toHaveBeenCalledWith(
+        `[devbox] trusted_runner_fence: refused a ${kind} envelope for run run`
+      );
     }
+    warn.mockRestore();
   });
 
   it('confines a playground pool process to playground envelopes', async () => {
@@ -193,13 +202,16 @@ describe('isolation evidence', () => {
       tokenFile: token,
       otherUser: other,
     });
-    expect(findings.map((finding) => finding.ok)).toEqual([true, true]);
+    const status = (list: typeof findings, check: string) =>
+      list.find((finding) => finding.check === check)?.status;
+    expect(status(findings, 'credentialFile')).toBe('pass');
+    expect(status(findings, 'credentialDirectory')).toBe('pass');
     await chmod(token, 0o644);
     const loose = await checkCredentialIsolation({
       tokenFile: token,
       otherUser: other,
     });
-    expect(loose[0]?.ok).toBe(false);
+    expect(status(loose, 'credentialFile')).toBe('fail');
   });
 
   it('fails when the other account shares the credential group or owns it', async () => {
@@ -215,12 +227,14 @@ describe('isolation evidence', () => {
       otherUser: 'judge',
       probes: probes(1000, 0o100640),
     });
-    expect(shared[0]?.ok).toBe(false);
+    const credentialFile = (list: typeof shared) =>
+      list.find((finding) => finding.check === 'credentialFile');
+    expect(credentialFile(shared)?.ok).toBe(false);
     const owned = await checkCredentialIsolation({
       tokenFile: '/x/devbox-runner.env',
       otherUser: 'judge',
       probes: probes(990, 0o100600),
     });
-    expect(owned[0]?.ok).toBe(false);
+    expect(credentialFile(owned)?.ok).toBe(false);
   });
 });
