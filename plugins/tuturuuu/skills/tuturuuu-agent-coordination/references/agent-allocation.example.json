@@ -5,7 +5,7 @@
   "allocation": 8,
   "observedRuntimeLimit": {
     "limit": 8,
-    "unit": "session",
+    "unit": "per-thread-tree",
     "source": "illustrative only; record the limit observed for the launching session"
   },
   "validationLanes": 2,

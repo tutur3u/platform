@@ -5,13 +5,10 @@ updatedAt: '2026-10-23'
 ---
 
 Autonomous agent work on Tuturuuu runs as a small, bounded company hierarchy.
-This page explains the model for people. The canonical cross-project rule is
-the user-local shared `pstack-t3-workflow` skill (its team operating contract
-and its security review and cadence contract, maintained by Mastermind). The
-repository applies it in the root `AGENTS.md`, the
-[program orchestration reference](https://github.com/tutur3u/platform/blob/main/plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#operating-model-and-budget)
-and the
-[security default](https://github.com/tutur3u/platform/blob/main/plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/security-default.md).
+This page explains the model for people. The repository's canonical rules are
+the [program orchestration reference](https://github.com/tutur3u/platform/blob/main/plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#operating-model-and-budget)
+and the self-contained [security default](https://github.com/tutur3u/platform/blob/main/plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/security-default.md).
+The user-local shared `pstack-t3-workflow` skill is an optional convenience.
 
 ## Roles
 
@@ -31,10 +28,13 @@ target.
 
 - A project declares its allocation as the lowest of:
   - ten;
-  - the runtime limit observed for the launching session, with its unit (a
-    per-session limit is not assumed to equal a per-thread limit);
+  - the observed runtime limit when scoped `per-thread-tree`;
   - resource admission;
   - any explicit lower allocation.
+- `observedRuntimeLimit.unit` accepts only `per-thread-tree` or `per-parent`.
+  A tree limit caps the allocation; a per-parent limit caps each parent's live
+  direct children, independently of the tree allocation and descendant grants.
+  Do not relabel an ambiguous session limit without evidence.
 - Reserved, queued, active, waiting-for-children and blocked agents occupy a
   slot. Only drained `done` and `retired` agents release theirs.
 - The owner grants each lead an explicit remaining budget, and the lead's
@@ -60,8 +60,8 @@ node scripts/ci/check-agent-budget.js tmp/agent-coordination/<program>/allocatio
 The checker rejects:
 
 - more live agents than the allocation (11 fails);
-- a file allocation above `AGENTS.md` or above the recorded observed runtime
-  limit, or a file that omits that limit;
+- a file allocation above `AGENTS.md` or an observed tree limit, direct children
+  above a per-parent limit, or a missing/unknown runtime scope;
 - lead grants that oversubscribe their parent;
 - excess nesting;
 - live agents under finished leads;
@@ -125,9 +125,10 @@ Tuturuuu is open source and a high-value target.
 - **Findings:**
   - Each finding carries a stable ID, severity, owner, source, current status
     and remediation receipts.
-  - Confirmed critical and high findings hold the release, until either a
-    verified fix with fresh exact-head evidence or a recorded risk acceptance
-    naming the finding ID, scope and expiry. Risk acceptance never waives
+  - Open critical and high findings, including unconfirmed findings, hold the
+    release until a verified fix with fresh exact-head evidence, an evidenced
+    false-positive determination, or recorded risk acceptance by the release
+    authority naming the finding ID, scope and expiry. Risk acceptance never waives
     secret rotation, untrusted-code isolation, or legal and tenant-isolation
     gates.
   - Existing negative assertions are preserved.

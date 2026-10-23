@@ -24,12 +24,10 @@ they do not concurrently rewrite it. Keep credentials and private payloads out.
 
 ## Operating model and budget
 
-The canonical rule is the user-local shared
+This in-repository reference is canonical for Tuturuuu's operating model and
+checker. The user-local shared
 [team operating contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#team-operating-contract)
-(see also its
-[autonomous parallel execution](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
-section). Mastermind maintains that skill; repository sources link to it rather
-than copying it. This section records only Tuturuuu's application and checker.
+is an optional convenience link; the rules below stand on their own.
 
 Run work as a bounded company hierarchy:
 
@@ -48,10 +46,15 @@ target.
 - **Declared allocation:** each project declares its allocation as the lowest
   of:
   - ten;
-  - the runtime/provider limit observed for the launching session, recorded
-    with its unit (a "per session" limit is not assumed to equal "per thread");
+  - the observed runtime/provider limit when its scope is `per-thread-tree`;
   - resource admission;
   - any explicit lower allocation.
+
+  `observedRuntimeLimit.unit` must be `per-thread-tree` or `per-parent`.
+  A tree limit caps the allocation. A per-parent limit caps each parent's live
+  direct children, including reserved children, independently of the tree-wide
+  allocation and descendant grants. Record the actual observed scope; do not
+  relabel an ambiguous session limit without evidence.
 
   Changing a runtime limit is a separate, user-authorized configuration change.
 - **Live agents:** `reserved`, `queued`, `active`, `waiting` (for children) and
@@ -77,8 +80,8 @@ target.
 
   The checker rejects:
   - more live agents than the allocation, so 11 is rejected;
-  - an allocation above the AGENTS.md value or the recorded observed runtime
-    limit, or a missing observed limit;
+  - an allocation above AGENTS.md or an observed tree limit, direct children
+    above an observed per-parent limit, or a missing/unknown runtime scope;
   - grants that oversubscribe the owner or a lead;
   - unbounded nesting;
   - live orphans under finished leads;

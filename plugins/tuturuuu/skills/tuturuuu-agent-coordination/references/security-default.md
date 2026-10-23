@@ -4,10 +4,11 @@ Tuturuuu is open source and a high-value target. Security checks are part of
 ordinary delivery, not a separate opt-in program. These rules apply to every
 lane; they never replace a more specific owner's runbook.
 
-The canonical rule is the user-local shared
-[security review and cadence contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#security-review-and-cadence).
-This reference applies it to Tuturuuu, with repository paths and the current
-coverage gaps.
+This in-repository reference is canonical and self-contained for Tuturuuu.
+The user-local shared
+[security review and cadence contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#security-review-and-cadence)
+is a convenience link for installations that provide it; no local skill is
+required to apply the rules below.
 
 ## Change-triggered checks
 
@@ -63,10 +64,13 @@ Every finding carries:
 | `status` | `open`, `confirmed`, `fixed`, `accepted-risk` or `false-positive`, with the evidence for the transition |
 | `receipts` | PR, head SHA and the check that proves remediation |
 
-- **Release holds:** confirmed critical and high findings that affect a
-  proposed release remain explicit holds. A hold is removed in one of two ways:
+- **Release holds:** open critical and high findings (including unconfirmed
+  findings) that affect a proposed release remain explicit holds. A hold is
+  removed only through one of these evidenced dispositions:
   - a verified fix, with fresh exact-head evidence and the relevant negative
     control;
+  - a false-positive determination with evidence tied to the finding ID and
+    affected release scope;
   - an explicit recorded risk acceptance by the authorized release authority,
     naming the finding ID, scope and expiry.
 - **Nonwaivable rules:** risk acceptance never waives them.

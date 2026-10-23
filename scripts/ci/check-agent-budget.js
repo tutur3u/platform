@@ -23,6 +23,7 @@ const LIVE_STATES = new Set([
 ]);
 const STATES = new Set([...LIVE_STATES, 'done', 'retired']);
 const MAX_DEPTH = 3;
+const RUNTIME_UNITS = new Set(['per-thread-tree', 'per-parent']);
 
 // Every governance surface must declare the same project allocation.
 const MARKER_FILES = [
@@ -87,18 +88,18 @@ function validateAllocation(allocation, { cap }) {
   if (
     !observed ||
     !isPositiveInteger(observed.limit) ||
-    typeof observed.unit !== 'string' ||
-    observed.unit.trim() === ''
+    !RUNTIME_UNITS.has(observed.unit)
   ) {
     fail(
-      'observedRuntimeLimit must record the observed { limit, unit } for the launching session.'
+      'observedRuntimeLimit must record a positive limit and unit per-thread-tree or per-parent.'
     );
   } else if (
+    observed.unit === 'per-thread-tree' &&
     isPositiveInteger(allocation.allocation) &&
     allocation.allocation > observed.limit
   ) {
     fail(
-      `allocation ${allocation.allocation} exceeds the observed runtime limit ${observed.limit} per ${observed.unit}.`
+      `allocation ${allocation.allocation} exceeds the observed runtime limit ${observed.limit} (${observed.unit}).`
     );
   }
   if (
@@ -220,6 +221,15 @@ function validateAllocation(allocation, { cap }) {
     childrenOf.set(key, [...(childrenOf.get(key) ?? []), agent]);
   }
   for (const [parentId, children] of childrenOf) {
+    if (
+      observed?.unit === 'per-parent' &&
+      isPositiveInteger(observed.limit) &&
+      children.length > observed.limit
+    ) {
+      fail(
+        `${parentId}: ${children.length} live direct children exceed the observed runtime limit ${observed.limit} (per-parent).`
+      );
+    }
     const reserved = children.reduce(
       (sum, child) => sum + reservation(child),
       0

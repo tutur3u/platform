@@ -31,7 +31,7 @@ function allocation(agents, overrides = {}) {
     version: 1,
     owner: OWNER,
     allocation: CAP,
-    observedRuntimeLimit: { limit: CAP, unit: 'thread' },
+    observedRuntimeLimit: { limit: CAP, unit: 'per-thread-tree' },
     agents,
     ...overrides,
   };
@@ -98,22 +98,22 @@ test('the allocation records and respects the observed runtime limit', () => {
   );
   assertRejected(
     errorsFor(workers(2), {
-      observedRuntimeLimit: { limit: 6, unit: 'session' },
+      observedRuntimeLimit: { limit: 6, unit: 'per-thread-tree' },
     }),
-    /allocation 10 exceeds the observed runtime limit 6 per session/u
+    /allocation 10 exceeds the observed runtime limit 6 \(per-thread-tree\)/u
   );
   // A lower observed limit is honored by declaring the lower allocation.
   assert.deepEqual(
     errorsFor(workers(6), {
       allocation: 6,
-      observedRuntimeLimit: { limit: 6, unit: 'session' },
+      observedRuntimeLimit: { limit: 6, unit: 'per-thread-tree' },
     }),
     []
   );
   assertRejected(
     errorsFor(workers(7), {
       allocation: 6,
-      observedRuntimeLimit: { limit: 6, unit: 'session' },
+      observedRuntimeLimit: { limit: 6, unit: 'per-thread-tree' },
     }),
     /7 live agents exceed the allocation of 6/u
   );
@@ -342,4 +342,42 @@ test('checkRepository rejects disagreeing markers and invalid examples', () => {
   } finally {
     fs.rmSync(root, { force: true, recursive: true });
   }
+});
+
+test('runtime scope must be a known unit', () => {
+  for (const unit of ['', 'session', 'thread', 'per-project', null]) {
+    assertRejected(
+      errorsFor(workers(1), { observedRuntimeLimit: { limit: 6, unit } }),
+      /unit per-thread-tree or per-parent/u
+    );
+  }
+});
+
+test('per-parent limits constrain direct children, not the tree allocation or grants', () => {
+  const lead = {
+    id: 'lead',
+    parent: OWNER,
+    role: 'lead',
+    state: 'active',
+    budget: 3,
+  };
+  const options = { observedRuntimeLimit: { limit: 2, unit: 'per-parent' } };
+  // Four agents in the tree and a grant of three fit a two-child runtime limit.
+  assert.deepEqual(
+    errorsFor([lead, ...workers(1), ...workers(2, 'lead', 'nested')], options),
+    []
+  );
+  assertRejected(
+    errorsFor(workers(3), options),
+    /owner: 3 live direct children exceed/u
+  );
+  assertRejected(
+    errorsFor([lead, ...workers(3, 'lead')], options),
+    /lead: 3 live direct children exceed/u
+  );
+  const finished = workers(2).map((agent) => ({ ...agent, state: 'done' }));
+  assert.deepEqual(
+    errorsFor([...finished, ...workers(2, OWNER, 'live')], options),
+    []
+  );
 });
