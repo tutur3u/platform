@@ -68,6 +68,7 @@ describe('future quarantine follow-ups', () => {
   it('retains the 30-day pruning window when future-quarantine is imported first', () => {
     const ledger = emptyLedger();
     const old = new Date(now.getTime() - 31 * 86400_000).toISOString();
+    const recent = new Date(now.getTime() - 86400_000).toISOString();
     const lease = {
       threadId: 'thread',
       accountKey: 'account',
@@ -85,14 +86,35 @@ describe('future quarantine follow-ups', () => {
       observedAt: old,
       clearedAt: old,
     });
+    ledger.observations.push({
+      eventId: 'recent-cleared',
+      instanceId: 'claude_hehe',
+      accountKey: 'account',
+      outcome: 'usage-limit',
+      observedAt: recent,
+      clearedAt: recent,
+    });
     ledger.leaseHistory.push({ action: 'release', at: old, lease });
+    ledger.leaseHistory.push({
+      action: 'release',
+      at: recent,
+      lease: { ...lease, acquiredAt: recent, processStartedAt: recent },
+    });
     ledger.retiredRequests = [{ requestId: 'old-request', retiredAt: old }];
+    ledger.retiredRequests.push({
+      requestId: 'recent-request',
+      retiredAt: recent,
+    });
 
     pruneLedger(ledger, now);
 
-    expect(ledger.observations).toHaveLength(0);
-    expect(ledger.leaseHistory).toHaveLength(0);
-    expect(ledger.retiredRequests).toHaveLength(0);
+    expect(ledger.observations.map((event) => event.eventId)).toEqual([
+      'recent-cleared',
+    ]);
+    expect(ledger.leaseHistory.map((event) => event.at)).toEqual([recent]);
+    expect(ledger.retiredRequests?.map((event) => event.requestId)).toEqual([
+      'recent-request',
+    ]);
   });
 
   it('treats an invalid long receipt model as account-wide', () => {
