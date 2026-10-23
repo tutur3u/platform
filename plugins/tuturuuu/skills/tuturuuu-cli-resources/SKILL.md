@@ -115,6 +115,11 @@ runners; selection excludes them.
 `ttr resources run --hosts -- CMD` admits across `<home>/hosts.json`. It is off
 until an operator installs that file after a reviewed release; never write or
 activate it from an agent session.
+- The registry is trusted only in the canonical `~/.tuturuuu/resources`
+  (0700 directory, 0600 file, owned by you, no symlinks, no writable parents).
+  Any other `TTR_RESOURCES_HOME` ignores it and disables `--hosts`.
+- Runners are re-validated against a fresh server-timestamped snapshot just
+  before remote creation; if one is no longer eligible, the job requeues.
 - Hosts have separate light and heavy slots, per-class CPU/memory weights, and
   reserved CPU/memory/disk headroom.
 - Local heavy work keeps the lane FIFO. Runners use the devbox offload
