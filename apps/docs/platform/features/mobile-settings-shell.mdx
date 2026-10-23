@@ -3,6 +3,22 @@ title: Mobile settings shell
 description: Shared shell chrome, profile settings routes and accessible edit entry
 ---
 
+## Settings row grid
+
+Settings sections and detail rows share `SettingsRowLayout`: a 12px inset for
+headings, icons and dividers, a 24px icon slot, a 12px gap before text, and a
+44px trailing action column. Rows have a 56px minimum height and expand for
+translated or enlarged text. Multiple timezone actions stack in the trailing
+column, keeping the text width and action centers consistent with chevrons.
+Existing English and Vietnamese labels and tooltips remain unchanged.
+
+Settings scroll lists include the shell-provided bottom inset plus 32px of
+breathing room. They inherit the shell surface and keep Back in its floating
+dock. These presentation defaults do not change timezone reads, writes, retries
+or permissions. `settings_design_checks.dart` covers row geometry, action touch
+targets and the final control clearing the dock; the compact navigation suite
+also exercises enlarged text in both languages and themes.
+
 ## Settings detail shell and profile settings
 
 All mobile Settings children use the same shell background and one shell top

@@ -13,6 +13,9 @@ concurrency:
   cancel-in-progress: false
   queue: max
 
+permissions:
+  contents: read
+
 jobs:
   reject-non-production-ref:
     if: github.ref != 'refs/heads/production'
@@ -25,6 +28,9 @@ jobs:
           exit 1
 
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     if: github.ref == 'refs/heads/production'
     uses: ./.github/workflows/ci-check.yml
     with:
@@ -87,7 +93,7 @@ jobs:
       - name: Setup pinned Bun for generated lock metadata
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Normalize generated release formatting
         shell: bash

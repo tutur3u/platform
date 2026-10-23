@@ -27,8 +27,14 @@ on:
       - ".github/workflows/tanstack-route-manifest.yaml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: tanstack-route-manifest.yaml

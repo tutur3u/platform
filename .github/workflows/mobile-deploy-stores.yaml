@@ -12,8 +12,11 @@ on:
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-deploy-stores.yaml"
+      - ".github/actions/setup-flutter-with-cache/**"
       - ".github/workflows/ci-check.yml"
       - "scripts/mobile-deployment/**"
+      - "scripts/ci/normalize-release-notes.js"
+      - "scripts/ci/normalize-release-description.js"
       - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
   workflow_dispatch:
@@ -31,15 +34,22 @@ permissions:
   actions: read
   contents: read
   deployments: read
-  id-token: write
 
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: mobile-deploy-stores.yaml
 
   mobile-credentials-preflight:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
     name: Check mobile deployment credentials
     needs: [check-ci]
     if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true'
@@ -56,6 +66,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Require production branch
         run: test "$GITHUB_REF" = refs/heads/production
@@ -140,6 +151,11 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-metadata-oidc.json"
 
   publish-android-internal:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
     name: Publish Android to Google Play internal
     needs: [check-ci, mobile-credentials-preflight]
     if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
@@ -152,6 +168,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
 
       - name: Use prepared beta release history
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -162,7 +180,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Setup Java
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
@@ -175,12 +193,10 @@ jobs:
             apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       - name: Fetch Android deployment bundle from Tuturuuu
         shell: bash
@@ -241,6 +257,17 @@ jobs:
           retention-days: 14
           compression-level: 0
 
+      - name: Prepare Google Play release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          notes_dir="$RUNNER_TEMP/mobile-play-notes"
+          mkdir -p "$notes_dir"
+          node -e 'const h = require("./assets/release_history.json"); const r = h.releases.find(r => r.version === h.build.version); if (!r?.changes?.length) throw new Error("Missing exact build notes"); console.log(r.changes.join("\n"))' | node ../../scripts/ci/normalize-release-description.js --mobile > "$notes_dir/whatsnew-en-US"
+          test -s "$notes_dir/whatsnew-en-US"
+          test "$(wc -m < "$notes_dir/whatsnew-en-US")" -le 500
+          echo "MOBILE_PLAY_NOTES=$notes_dir" >> "$GITHUB_ENV"
+
       - name: Publish Android App Bundle to Google Play internal
         uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5
         with:
@@ -248,6 +275,7 @@ jobs:
           releaseFiles: apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
           serviceAccountJson: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH }}
           status: completed
+          whatsNewDirectory: ${{ env.MOBILE_PLAY_NOTES }}
           track: internal
 
       - name: Verify committed Google Play internal release
@@ -264,6 +292,11 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-android-oidc.json"
 
   publish-ios-testflight:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
     name: Upload iOS to TestFlight
     needs: [check-ci, mobile-credentials-preflight]
     if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
@@ -276,6 +309,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
 
       - name: Use prepared beta release history
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -284,12 +319,10 @@ jobs:
           path: apps/mobile/assets
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        uses: ./.github/actions/setup-flutter-with-cache
         with:
           flutter-version: "3.47.x"
           channel: stable
-          cache: true
-          pub-cache: true
 
       - name: Cache CocoaPods downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -526,6 +559,11 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
 
   retry-ios-testflight-review:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
     name: Retry latest eligible TestFlight review
     needs: [check-ci]
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'retry_ios_review' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
@@ -535,6 +573,8 @@ jobs:
     steps:
       - name: Checkout production code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
 
       - name: Fetch iOS deployment credentials
         shell: bash

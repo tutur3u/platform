@@ -108,6 +108,59 @@ export function isHeavyCommand(name: string, args: string[]) {
   return false;
 }
 
+const informational = new Set([
+  '--version',
+  '-v',
+  '-V',
+  'version',
+  '--help',
+  '-h',
+  'help',
+]);
+const readOnly = new Set([
+  'echo',
+  'pwd',
+  'true',
+  'false',
+  'which',
+  'whoami',
+  'uname',
+  'date',
+  'printenv',
+  'ls',
+  'cat',
+  'head',
+  'tail',
+  'wc',
+]);
+const readOnlyGit = new Set([
+  'status',
+  'rev-parse',
+  'log',
+  'diff',
+  'show',
+  'branch',
+  'remote',
+  'ls-files',
+]);
+// Explicit `ttr resources run` queues by default because arbitrary scripts can
+// be heavy. Version/help probes and a small read-only allowlist skip the queue.
+export function isTrivialCommand(name: string, args: string[]) {
+  const tool = basename(name);
+  const flags = args.includes('--') ? args.slice(0, args.indexOf('--')) : args;
+  if (flags.length === 1 && informational.has(flags[0]!)) return true;
+  if (readOnly.has(tool)) return true;
+  if (tool === 'git') {
+    const subcommand = args.find((arg) => !arg.startsWith('-'));
+    return (
+      subcommand !== undefined &&
+      readOnlyGit.has(subcommand) &&
+      !args.some((arg) => arg === '-C' || arg.startsWith('--exec'))
+    );
+  }
+  return false;
+}
+
 export function limitCommand(
   name: string,
   args: string[],

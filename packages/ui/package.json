@@ -520,5 +520,5 @@
     "./finance/shared/charts/use-finance-confidential-visibility": "./src/components/ui/finance/shared/charts/use-finance-confidential-visibility.ts",
     "./text-editor/collaboration-carets": "./src/components/ui/text-editor/collaboration-carets.ts"
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

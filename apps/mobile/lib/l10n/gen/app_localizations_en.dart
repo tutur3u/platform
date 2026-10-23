@@ -841,6 +841,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantMermaidZoomReset => 'Reset zoom';
 
   @override
+  String get assistantMessageDelivered => 'Delivered';
+
+  @override
+  String get assistantMessageRead => 'Read';
+
+  @override
   String get assistantMessageActionsTitle => 'Message actions';
 
   @override
@@ -949,7 +955,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSendAction => 'Send message';
 
   @override
-  String get assistantSettingsTitle => 'Assistant settings';
+  String get assistantSettingsTitle => 'Assistant Settings';
 
   @override
   String get assistantShowBottomNavLabel => 'Show bottom nav';
@@ -10777,4 +10783,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackDetailsRequired => 'Enter details of 1–8000 characters.';
+
+  @override
+  String get profileMediaNetworkError => 'Could not connect. Check your connection and try again.';
+
+  @override
+  String get profileMediaUploadExpired => 'The upload link expired or is invalid. Select the image again.';
 }
