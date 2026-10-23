@@ -63,9 +63,12 @@ test('Modal deployment retains trusted main completion and exact checkout', () =
   const checkout = modal.jobs.deploy.steps.find((step) =>
     step.uses?.startsWith('actions/checkout@')
   );
+  // The deploy job re-proves the trigger itself (a re-run of only this job
+  // must not reuse an earlier check) and checks out that verified SHA.
+  assert.equal(modal.jobs.deploy.steps[0].id, 'trigger');
   assert.match(
     checkout.with.ref,
-    /^\$\{\{ needs\.trigger\.outputs\.head_sha \}\}$/
+    /^\$\{\{ steps\.trigger\.outputs\.head_sha \}\}$/
   );
   assert.ok(
     modal.jobs.deploy.steps.some((step) => step.run === 'uv sync --locked')

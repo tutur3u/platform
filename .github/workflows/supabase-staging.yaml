@@ -119,9 +119,25 @@ jobs:
           # same-named tag (refs/tags/<branch>) first. identical: the head SHA is the
           # live branch tip; behind: it is reachable from the branch. Deploy
           # consumers set REQUIRE_BRANCH_TIP so a re-run cannot redeploy an old commit.
+          # With TIP_TREE_PATH, a head behind the tip is still current when that
+          # directory's tree is unchanged at the tip (unrelated commits landed).
           status="$(gh api "repos/$GITHUB_REPOSITORY/compare/refs/heads/$branch...$head_sha" --jq .status)"
           if [ "${REQUIRE_BRANCH_TIP:-false}" = true ]; then
-            [ "$status" = identical ] || reject "head SHA is not the live tip of $branch"
+            if [ "$status" = behind ] && [ -n "${TIP_TREE_PATH:-}" ]; then
+              [[ "$TIP_TREE_PATH" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)+$ ]] ||
+                reject "TIP_TREE_PATH is not a nested repository path"
+              tree_sha() {
+                gh api "repos/$GITHUB_REPOSITORY/contents/${TIP_TREE_PATH%/*}?ref=$1" \
+                  --jq ".[] | select(.type == \"dir\" and .name == \"${TIP_TREE_PATH##*/}\") | .sha"
+              }
+              tip_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" --jq .object.sha)"
+              [[ "$tip_sha" =~ ^[0-9a-f]{40}$ ]] || reject "cannot resolve the tip of $branch"
+              head_tree="$(tree_sha "$head_sha")"
+              [[ "$head_tree" =~ ^[0-9a-f]{40}$ ]] && [ "$head_tree" = "$(tree_sha "$tip_sha")" ] ||
+                reject "head SHA is behind $branch and $TIP_TREE_PATH changed since"
+            else
+              [ "$status" = identical ] || reject "head SHA is not the live tip of $branch"
+            fi
           else
             [ "$status" = identical ] || [ "$status" = behind ] ||
               reject "head SHA is not reachable from $branch"

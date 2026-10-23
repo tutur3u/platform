@@ -354,3 +354,73 @@ test('deploy consumers accept only the live branch tip', () => {
     );
   }
 });
+
+test('Discord deploys a behind head only while apps/discord is unchanged at the tip', () => {
+  // REV-6459-8: Discord CI runs only for apps/discord pushes, so unrelated
+  // commits routinely land on main while it runs. A head behind the tip stays
+  // deployable when the deployed tree is identical at the tip; an old re-run
+  // whose Discord code has since changed is still rejected.
+  const discord = cases.find(({ file }) => file === 'discord-modal-deploy.yml');
+  const github = trustedCompletion(discord.producer);
+  const tipSha = 'c'.repeat(40);
+  const same = { [headSha]: 'd'.repeat(40), [tipSha]: 'd'.repeat(40) };
+  const changed = { [headSha]: 'd'.repeat(40), [tipSha]: 'e'.repeat(40) };
+  const jobs = (compareDefault, trees) =>
+    runningJobs(discord.workflow, github, {
+      compareDefault,
+      gate: 'run',
+      tipSha,
+      trees,
+    });
+  assert.deepEqual(jobs('behind', same), ['trigger', 'deploy']);
+  assert.deepEqual(jobs('behind', changed), []);
+  assert.deepEqual(jobs('behind', {}), [], 'unreadable trees fail closed');
+  assert.deepEqual(jobs('diverged', same), []);
+  assert.deepEqual(jobs('ahead', same), []);
+  assert.deepEqual(jobs('identical', {}), ['trigger', 'deploy']);
+
+  // Only Discord opts into the tree rule; staging still needs the exact tip.
+  const withTree = consumerFiles.filter((file) =>
+    Object.values(workflowOf(file).jobs).some(
+      (job) => triggerStep(job)?.env?.TIP_TREE_PATH
+    )
+  );
+  assert.deepEqual(withTree, ['discord-modal-deploy.yml']);
+  const staging = cases.find(({ file }) => file === 'supabase-staging.yaml');
+  assert.deepEqual(
+    runningJobs(staging.workflow, trustedCompletion(staging.producer), {
+      compareDefault: 'behind',
+      gate: 'run',
+      tipSha,
+      trees: same,
+    }),
+    []
+  );
+});
+
+test('tip-gated consumers re-check the tip in every job that checks out code', () => {
+  // REV-6459-9: re-running only a failed deploy job reuses earlier needs
+  // outputs, so the tip check must run in the same job as the checkout.
+  for (const file of tipRequired) {
+    const workflow = workflowOf(file);
+    let checkouts = 0;
+    for (const [id, job] of Object.entries(workflow.jobs)) {
+      const steps = job.steps ?? [];
+      const checkout = steps.findIndex((step) =>
+        step.uses?.startsWith('actions/checkout@')
+      );
+      if (checkout < 0) continue;
+      checkouts += 1;
+      const gate = triggerStep(job);
+      assert.ok(gate, `${file}:${id} checks out without its own trust step`);
+      assert.equal(steps.indexOf(gate), 0, `${file}:${id} gate runs first`);
+      assert.equal(gate.env.REQUIRE_BRANCH_TIP, 'true', `${file}:${id}`);
+      assert.match(
+        String(steps[checkout].with.ref),
+        /^\$\{\{ steps\.trigger\.outputs\.head_sha \}\}$/u,
+        `${file}:${id} checks out the SHA verified in this job`
+      );
+    }
+    assert.ok(checkouts > 0, file);
+  }
+});

@@ -96,7 +96,8 @@ function gateSandbox() {
   process.on('exit', () =>
     fs.rmSync(sandbox, { force: true, recursive: true })
   );
-  // Only the compare API is reachable; anything else fails the gate. The
+  // Only the compare, branch-ref and contents APIs answer; anything else fails
+  // the gate. The
   // default status answers only fully qualified refs/heads/ bases, so a gate
   // that compares against a bare branch name (which GitHub resolves to a
   // same-named tag first) gets no answer unless a test maps it explicitly.
@@ -104,8 +105,24 @@ function gateSandbox() {
     path.join(sandbox, 'gh'),
     `#!${process.execPath}
 const [command, route] = process.argv.slice(2);
+if (command !== 'api' || process.argv[4] !== '--jq') process.exit(7);
+// Branch tip (git/ref/heads/<branch>) for the TIP_TREE_PATH rule.
+const tip = /^repos\\/[^/]+\\/[^/]+\\/git\\/ref\\/heads\\/([\\w.-]+)$/.exec(route ?? '');
+if (tip) {
+  if (process.argv[5] !== '.object.sha' || !process.env.FAKE_TIP_SHA) process.exit(9);
+  process.stdout.write(process.env.FAKE_TIP_SHA + '\\n');
+  process.exit(0);
+}
+// Directory listing at a commit: answers the tree SHA mapped for that commit.
+const listing = /^repos\\/[^/]+\\/[^/]+\\/contents\\/([\\w./-]+)\\?ref=([0-9a-f]{40})$/.exec(route ?? '');
+if (listing) {
+  const tree = JSON.parse(process.env.FAKE_TREES || '{}')[listing[2]];
+  if (!/select\\(\\.type == "dir" and \\.name == "[\\w.-]+"\\) \\| \\.sha$/.test(process.argv[5] ?? '')) process.exit(10);
+  if (tree) process.stdout.write(tree + '\\n');
+  process.exit(0);
+}
 const match = /^repos\\/[^/]+\\/[^/]+\\/compare\\/([^.]+)\\.\\.\\.([0-9a-f]{40})$/.exec(route ?? '');
-if (command !== 'api' || !match || process.argv[4] !== '--jq' || process.argv[5] !== '.status') process.exit(7);
+if (!match || process.argv[5] !== '.status') process.exit(7);
 const statuses = JSON.parse(process.env.FAKE_COMPARE || '{}');
 const key = match[1] + '...' + match[2];
 const status = statuses[key] ?? (match[1].startsWith('refs/heads/') ? process.env.FAKE_COMPARE_DEFAULT : undefined);
@@ -119,7 +136,11 @@ process.stdout.write(status + '\\n');
 
 let gateRuns = 0;
 // Runs the inline trust step exactly as written in the workflow.
-function runGate(step, github, { compare = {}, compareDefault } = {}) {
+function runGate(
+  step,
+  github,
+  { compare = {}, compareDefault, tipSha, trees = {} } = {}
+) {
   const dir = gateSandbox();
   gateRuns += 1;
   const eventPath = path.join(dir, `event-${gateRuns}.json`);
@@ -139,6 +160,8 @@ function runGate(step, github, { compare = {}, compareDefault } = {}) {
       ...stepEnv,
       FAKE_COMPARE: JSON.stringify(compare),
       FAKE_COMPARE_DEFAULT: compareDefault ?? '',
+      FAKE_TIP_SHA: tipSha ?? '',
+      FAKE_TREES: JSON.stringify(trees),
       GITHUB_EVENT_NAME: text(github.event_name),
       GITHUB_EVENT_PATH: eventPath,
       GITHUB_OUTPUT: outputPath,
