@@ -562,7 +562,7 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   );
   assert.match(
     setupAction,
-    /bun-runtime-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+    /bun-runtime-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}/
   );
   assert.match(
     setupAction,

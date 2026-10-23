@@ -610,7 +610,9 @@ builds. They register no unreachable main-push saves. The paused Docker E2E jobs
 reuse the exact shared `full` Supabase image profile instead of writing a second
 `supabase-docker-v2` archive of every locally present tag. The registry benchmark
 choice and all pause gates remain in place; this source change does not resume
-Docker or establish hosted runtime acceptance.
+Docker or establish hosted runtime acceptance. Only these E2E image-warming
+steps continue after a cache or bounded pull failure, allowing baseline/startup
+to pull any missing images. Contract workflows keep strict image-cache setup.
 
 Bun dependencies use `bun-deps-v2-<OS>-<architecture>-<pinned Bun version>`
 without a lockfile hash or prefix fallback. This chooses a coarser immutable
@@ -619,7 +621,9 @@ archives or race a cleanup job, and no write-scoped API token or cleanup loop is
 needed. Bun still resolves the current lockfile and fetches missing packages;
 newly added downloads do not enter the archive until the pinned Bun version
 changes. This limits reuse of new packages but preserves install correctness.
-The runtime binary retains its separate cache. Old v1 archives receive no
+The runtime binary uses `bun-runtime-v2-<OS>-<architecture>-<pinned Bun version>`
+with no lockfile hash or restore prefix: a lockfile change does not change the
+pinned executable. Old v1 archives receive no
 restores from v2 and age out under LRU; the first trusted v2 warmup and coexistence
 with old entries can still cause eviction. No immediate space reclamation is
 claimed. After confirming that no workflow or action pins Bun 1.4.3, the release owner can perform this

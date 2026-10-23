@@ -6,7 +6,35 @@ const {
   readWorkflowJobBlock,
   repoRoot,
 } = require('./workflow-config-test-helpers');
-const { readWorkflow } = require('./workflow-yaml-test-helper');
+const {
+  readWorkflow,
+  readAllWorkflows,
+} = require('./workflow-yaml-test-helper');
+
+test('only E2E image warming is optional; contract image-cache setup stays strict', () => {
+  let optional = 0;
+  let strict = 0;
+  for (const [name, workflow] of Object.entries(readAllWorkflows())) {
+    for (const job of Object.values(workflow.jobs)) {
+      for (const step of job.steps || []) {
+        if (step.uses !== './.github/actions/cache-supabase-images') continue;
+        if (name === 'e2e-tests.yaml') {
+          assert.equal(step['continue-on-error'], true);
+          assert.deepEqual(step.with, { profile: 'full' });
+          optional++;
+        } else {
+          assert.ok(
+            [undefined, false].includes(step['continue-on-error']),
+            name
+          );
+          strict++;
+        }
+      }
+    }
+  }
+  assert.equal(optional, 2);
+  assert.ok(strict >= 17, 'must inspect the strict contract callers');
+});
 
 function readRunnerSource() {
   return ['e2e-free-disk.sh', 'e2e-diagnostics.sh', 'e2e-diagnostics-redact.js']

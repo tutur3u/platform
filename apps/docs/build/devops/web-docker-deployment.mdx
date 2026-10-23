@@ -644,6 +644,8 @@ longer restore or save a separate `supabase-docker-v2` archive. The full profile
 covers the configured Supabase services, uses public ECR identities, verifies
 loaded images and saves only from trusted main pushes/dispatches. Existing
 archives are not deleted, and this cache consolidation does not resume Docker.
+The two E2E image-warming steps continue after a helper failure so baseline/startup
+can pull missing images. Contract image-cache steps remain strict.
 The retained workflow keeps the `cache` transport by default. To benchmark
 the cache archive against direct registry pulls without changing healthy main
 runs, dispatch **E2E Tests** manually with **Supabase image transport benchmark

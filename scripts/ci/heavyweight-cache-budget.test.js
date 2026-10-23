@@ -591,28 +591,30 @@ test('budget policies reject production saves and dispatch saves for Gradle/Pods
   }
 });
 
-test('Bun dependencies keep one version/platform key across lockfile changes', () => {
+test('Bun runtime and dependencies keep version/platform keys without lockfile hashes', () => {
   const action = actions['.github/actions/setup-bun-with-retry/action.yml'];
   const version = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8')
   ).packageManager.replace(/^bun@/, '');
   assert.equal(action.inputs['bun-version'].default, version);
-  const deps = action.runs.steps.filter((step) =>
-    step.with?.key?.startsWith('bun-deps-')
-  );
-  assert.equal(deps.length, 2);
-  const expected = `bun-deps-v2-${expression('runner.os')}-${expression('runner.arch')}-${expression('inputs.bun-version')}`;
-  for (const step of deps) {
-    assert.equal(step.with.key, expected);
-    assert.equal(
-      step.with['restore-keys'],
-      undefined,
-      'old lock generations must age out'
+  for (const family of ['runtime', 'deps']) {
+    const caches = action.runs.steps.filter((step) =>
+      step.with?.key?.startsWith(`bun-${family}-`)
     );
-    assert.doesNotMatch(
-      step.with.key,
-      /hashFiles|github\.sha|run_id|run_attempt/
-    );
+    assert.equal(caches.length, 2);
+    const expected = `bun-${family}-v2-${expression('runner.os')}-${expression('runner.arch')}-${expression('inputs.bun-version')}`;
+    for (const step of caches) {
+      assert.equal(step.with.key, expected);
+      assert.equal(
+        step.with['restore-keys'],
+        undefined,
+        'old lock generations must age out'
+      );
+      assert.doesNotMatch(
+        step.with.key,
+        /hashFiles|github\.sha|run_id|run_attempt/
+      );
+    }
   }
   for (const [name, workflow] of Object.entries(workflows))
     assert.doesNotMatch(
