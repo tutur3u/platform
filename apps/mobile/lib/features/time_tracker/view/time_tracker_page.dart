@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -328,17 +326,13 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
             return Stack(
               children: [
                 shellActionRegistration,
-                ResponsiveWrapper(
-                  maxWidth: ResponsivePadding.maxContentWidth(
-                    context.deviceClass,
+                // Each section pads itself with the page insets.
+                KeyedSubtree(
+                  key: ValueKey<String>(
+                    '${widget.initialSection.name}-'
+                    '${widget.initialStatsScope.name}',
                   ),
-                  child: KeyedSubtree(
-                    key: ValueKey<String>(
-                      '${widget.initialSection.name}-'
-                      '${widget.initialStatsScope.name}',
-                    ),
-                    child: _buildActiveSection(),
-                  ),
+                  child: _buildActiveSection(),
                 ),
               ],
             );
@@ -414,42 +408,44 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: shad.Theme.of(context).colorScheme.destructive,
-          ),
-          const shad.Gap(16),
-          Text(error ?? l10n.timerTitle, textAlign: TextAlign.center),
-          const shad.Gap(16),
-          shad.SecondaryButton(
-            onPressed: () async {
-              final wsId =
-                  context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
-                  '';
-              final userId = context.read<AuthCubit>().state.user?.id ?? '';
-              final calendarSettingsCubit = context
-                  .read<CalendarSettingsCubit>();
-              if (wsId.isNotEmpty) {
-                await calendarSettingsCubit.loadWorkspacePreference(wsId);
-                if (!context.mounted) return;
-              }
-              await context.read<TimeTrackerCubit>().loadData(
-                wsId,
-                userId,
-                firstDayOfWeek: _resolvedFirstDayOfWeek(
-                  context,
-                  calendarSettingsCubit,
-                ),
-              );
-            },
-            child: Text(l10n.commonRetry),
-          ),
-        ],
+    return AppPageBody(
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: shad.Theme.of(context).colorScheme.destructive,
+            ),
+            const shad.Gap(16),
+            Text(error ?? l10n.timerTitle, textAlign: TextAlign.center),
+            const shad.Gap(16),
+            shad.SecondaryButton(
+              onPressed: () async {
+                final wsId =
+                    context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
+                    '';
+                final userId = context.read<AuthCubit>().state.user?.id ?? '';
+                final calendarSettingsCubit = context
+                    .read<CalendarSettingsCubit>();
+                if (wsId.isNotEmpty) {
+                  await calendarSettingsCubit.loadWorkspacePreference(wsId);
+                  if (!context.mounted) return;
+                }
+                await context.read<TimeTrackerCubit>().loadData(
+                  wsId,
+                  userId,
+                  firstDayOfWeek: _resolvedFirstDayOfWeek(
+                    context,
+                    calendarSettingsCubit,
+                  ),
+                );
+              },
+              child: Text(l10n.commonRetry),
+            ),
+          ],
+        ),
       ),
     );
   }

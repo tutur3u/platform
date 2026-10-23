@@ -10,6 +10,7 @@ class PersistentShellDock extends StatefulWidget {
     this.navigationWidth = 264,
     this.composing = false,
     this.expandContent = true,
+    this.hideIdleNavigation = false,
     this.primary,
     this.secondary,
     super.key,
@@ -18,6 +19,10 @@ class PersistentShellDock extends StatefulWidget {
   final double navigationWidth;
   final bool composing;
   final bool expandContent;
+
+  /// The rail layout owns navigation; an idle dock then paints no surface and
+  /// shows only page actions. Composer slots keep the [navigationWidth].
+  final bool hideIdleNavigation;
   final Widget? primary;
   final Widget? secondary;
   @override
@@ -41,26 +46,29 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
             : const Duration(milliseconds: 320),
         curve: Curves.easeInOutCubic,
         builder: (context, width, _) => FloatingDockRail(
-          navigation: LayoutBuilder(
-            builder: (context, available) => ShellDockSurface(
-              key: const ValueKey('persistent-shell-dock-material'),
-              child: SizedBox(
-                width: width.clamp(0.0, available.maxWidth),
-                child: AnimatedSwitcher(
-                  duration: MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 180),
-                  // Fade the new slot in without retaining an outgoing dock,
-                  // input or interactive navigation subtree.
-                  layoutBuilder: (current, _) => current ?? const SizedBox(),
-                  child: KeyedSubtree(
-                    key: ValueKey(widget.composing),
-                    child: widget.content,
+          navigation: widget.hideIdleNavigation && !widget.composing
+              ? const SizedBox.shrink()
+              : LayoutBuilder(
+                  builder: (context, available) => ShellDockSurface(
+                    key: const ValueKey('persistent-shell-dock-material'),
+                    child: SizedBox(
+                      width: width.clamp(0.0, available.maxWidth),
+                      child: AnimatedSwitcher(
+                        duration: MediaQuery.disableAnimationsOf(context)
+                            ? Duration.zero
+                            : const Duration(milliseconds: 180),
+                        // Fade the new slot in without retaining an outgoing
+                        // dock, input or interactive navigation subtree.
+                        layoutBuilder: (current, _) =>
+                            current ?? const SizedBox(),
+                        child: KeyedSubtree(
+                          key: ValueKey(widget.composing),
+                          child: widget.content,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
           primary: widget.primary,
           secondary: widget.secondary,
         ),

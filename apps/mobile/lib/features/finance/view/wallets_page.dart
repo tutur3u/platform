@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/finance/exchange_rate.dart';
@@ -55,7 +56,6 @@ class _WalletsView extends StatefulWidget {
 }
 
 class _WalletsViewState extends State<_WalletsView> {
-  static const double _fabContentBottomPadding = 96;
   static const CachePolicy _cachePolicy = CachePolicies.moduleData;
   static const _cacheTag = 'finance:wallets';
   static final Map<String, _WalletsCacheEntry> _cache = {};
@@ -160,8 +160,6 @@ class _WalletsViewState extends State<_WalletsView> {
     final showAmounts = context.select<FinancePreferencesCubit, bool>(
       (cubit) => cubit.state.showAmounts,
     );
-    final listBottomPadding =
-        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -179,16 +177,22 @@ class _WalletsViewState extends State<_WalletsView> {
             ),
             NovaRefreshIndicator(
               onRefresh: () => _loadWallets(forceRefresh: true),
-              child: ValueListenableBuilder(
-                valueListenable: OfflineMutationQueue.instance.pending,
-                builder: (context, records, _) => _buildBody(
-                  listBottomPadding,
-                  showAmounts: showAmounts,
-                  wallets: overlayPendingWallets(
-                    context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
-                        '',
-                    _wallets,
-                    records,
+              child: LayoutBuilder(
+                builder: (context, constraints) => ValueListenableBuilder(
+                  valueListenable: OfflineMutationQueue.instance.pending,
+                  builder: (context, records, _) => _buildBody(
+                    AppPageInsets.of(context, width: constraints.maxWidth),
+                    showAmounts: showAmounts,
+                    wallets: overlayPendingWallets(
+                      context
+                              .read<WorkspaceCubit>()
+                              .state
+                              .currentWorkspace
+                              ?.id ??
+                          '',
+                      _wallets,
+                      records,
+                    ),
                   ),
                 ),
               ),
@@ -206,23 +210,23 @@ class _WalletsViewState extends State<_WalletsView> {
   }
 
   Widget _buildBody(
-    double listBottomPadding, {
+    EdgeInsets pagePadding, {
     required bool showAmounts,
     required List<Wallet> wallets,
   }) {
     final l10n = context.l10n;
 
     if (_isLoading && wallets.isEmpty) {
-      return const Center(child: NovaLoadingIndicator());
+      return const AppPageBody(child: Center(child: NovaLoadingIndicator()));
     }
 
     if (wallets.isNotEmpty &&
         (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty)) {
       return ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+        padding: pagePadding,
         itemCount: wallets.length.clamp(1, 4),
-        separatorBuilder: (context, index) => const shad.Gap(12),
+        separatorBuilder: (context, index) => const shad.Gap(AppLayout.itemGap),
         itemBuilder: (context, index) => const _WalletCardSkeleton(),
       );
     }
@@ -230,7 +234,7 @@ class _WalletsViewState extends State<_WalletsView> {
     if (_error != null && wallets.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+        padding: pagePadding,
         children: [
           FinanceEmptyState(
             icon: Icons.error_outline,
@@ -248,7 +252,7 @@ class _WalletsViewState extends State<_WalletsView> {
     if (wallets.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+        padding: pagePadding,
         children: [
           FinanceEmptyState(
             icon: Icons.account_balance_wallet_outlined,
@@ -265,9 +269,9 @@ class _WalletsViewState extends State<_WalletsView> {
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+      padding: pagePadding,
       itemCount: wallets.length,
-      separatorBuilder: (context, index) => const shad.Gap(12),
+      separatorBuilder: (context, index) => const shad.Gap(AppLayout.itemGap),
       itemBuilder: (context, index) {
         final wallet = wallets[index];
         return PendingSyncFrame(

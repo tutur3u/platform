@@ -20528,6 +20528,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      claim_email_invite_notifications_for: {
+        Args: {
+          p_email: string;
+          p_email_confirmed_at: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
       claim_next_devbox_run: {
         Args: { p_runner_id: string };
         Returns: {
@@ -47934,6 +47942,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: number;
       };
+      get_current_user_email: { Args: never; Returns: string };
       get_daily_activity_heatmap: {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
         Returns: Json;
@@ -49157,7 +49166,6 @@ export type Database = {
           user_count: number;
         }[];
       };
-      get_user_email: { Args: { p_user_id: string }; Returns: string };
       get_user_group_metrics_count: {
         Args: { ws_id: string };
         Returns: number;

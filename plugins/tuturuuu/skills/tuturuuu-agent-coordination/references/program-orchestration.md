@@ -168,6 +168,18 @@ concrete next assignment. A queued validation is not a pass; never duplicate it
 or edit its frozen source. One bounded remote snapshot per wake replaces polling.
 Native PR watches and the authorized schedule provide the next wake.
 
+Send scope, priority, collision and safety corrections to an active child with
+`t3_thread_send(mode="steer")`, and confirm `delivery: "steered"`; `auto` can queue
+behind the running turn. On each wake, list child queues: keep queued text in the
+ledger, cancel only proven-redundant items, and steer still-relevant corrections
+once. Hold one coalesced correction for a child that is not yet steerable. Follow
+the [steering contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#steering-active-children).
+
+Completion notifications can be lost. On every substantive wake, audit child
+results and persist processed receipts per the shared
+[child-result audit](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#audit-child-results-on-every-substantive-wake);
+relay it in briefs for children that delegate.
+
 ## Autonomy and asynchronous waits
 
 Use [the shared T3 autonomy contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution)
@@ -430,3 +442,20 @@ Near/exhausted pools drain; never infer recovery from an elapsed reset. Keep
 provider instance IDs distinct from display aliases and deduplicate only with
 exposed opaque account identity. These read-only recommendations are not atomic
 reservation locks; the dispatch owner still coordinates concurrent launches.
+
+The same router now offers opt-in single-shot `admit`, `observe`, thread-scoped
+`switch-lease`, read-only `switch-check`, and `handover-check` commands for every
+orchestrator on the host. Follow the runbook's JSON contract and the installed
+[shared-account handover guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#shared-accounts-and-replacement-thread-handover)
+and [planning preference guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#capacity-aware-provider-preference).
+Accounts are shared; only a thread's transition is leased. Preference is planning
+input, never quota. These hooks require owner integration and independent review;
+they do not install automatic failover, spend reset credits, or create successors.
+
+For unbound `thread_send` follow-up failures, use read-only `reconcile-children
+--parent <threadId>` and preserve original-task versus latest-turn evidence.
+Never duplicate an already queued resume. Pass the reported run/failure identity
+to `admit` recovery input for idempotent admission; provider-native delivery of
+all descendant terminal failures remains a separate T3 integration gap.
+
+Use the read-only `agent-quota reroute-plan --parent THREAD_ID` for reset-only child waits under the [shared rerouting contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#reset-wait-rerouting-and-equivalent-local-validation). Preserve queued text and dirty files, cancel old queued selections, require fresh admission and the thread lease, and verify a task-bound running continuation. Configuration alone is not successful resumption.

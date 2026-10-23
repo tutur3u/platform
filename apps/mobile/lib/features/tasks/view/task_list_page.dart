@@ -4,9 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -337,7 +335,6 @@ class _TaskListViewState extends State<_TaskListView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final bottomPadding = 32 + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       child: MultiBlocListener(
@@ -390,107 +387,102 @@ class _TaskListViewState extends State<_TaskListView> {
               return _ErrorView(error: state.error);
             }
 
-            return ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: NovaRefreshIndicator(
-                onRefresh: () => _reload(context),
-                child: ListView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
-                  children: [
-                    MyTasksHeader(
-                      totalActiveCount: state.totalActiveTasks,
-                      overdueCount: state.overdueTasks.length,
-                      todayCount: state.todayTasks.length,
-                      upcomingCount: state.upcomingTasks.length,
+            return NovaRefreshIndicator(
+              onRefresh: () => _reload(context),
+              child: AppPageListView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  MyTasksHeader(
+                    totalActiveCount: state.totalActiveTasks,
+                    overdueCount: state.overdueTasks.length,
+                    todayCount: state.todayTasks.length,
+                    upcomingCount: state.upcomingTasks.length,
+                  ),
+                  const SizedBox(height: 14),
+                  if (state.overdueTasks.isNotEmpty)
+                    TaskSectionAccordion(
+                      title: l10n.tasksOverdue,
+                      subtitle: l10n.tasksRequiresAttention,
+                      icon: Icon(
+                        Icons.schedule,
+                        size: 18,
+                        color: shad.Theme.of(context).colorScheme.destructive,
+                      ),
+                      accentColor: shad.Theme.of(
+                        context,
+                      ).colorScheme.destructive,
+                      tasks: state.overdueTasks,
+                      isCollapsed: state.isOverdueCollapsed,
+                      onToggle: () => context
+                          .read<TaskListCubit>()
+                          .toggleSection(TaskListSection.overdue),
                     ),
-                    const SizedBox(height: 14),
-                    if (state.overdueTasks.isNotEmpty)
-                      TaskSectionAccordion(
-                        title: l10n.tasksOverdue,
-                        subtitle: l10n.tasksRequiresAttention,
-                        icon: Icon(
-                          Icons.schedule,
-                          size: 18,
-                          color: shad.Theme.of(context).colorScheme.destructive,
-                        ),
-                        accentColor: shad.Theme.of(
-                          context,
-                        ).colorScheme.destructive,
-                        tasks: state.overdueTasks,
-                        isCollapsed: state.isOverdueCollapsed,
-                        onToggle: () => context
-                            .read<TaskListCubit>()
-                            .toggleSection(TaskListSection.overdue),
+                  if (state.overdueTasks.isNotEmpty) const SizedBox(height: 10),
+                  if (state.todayTasks.isNotEmpty)
+                    TaskSectionAccordion(
+                      title: l10n.tasksDueToday,
+                      subtitle: l10n.tasksCompleteByEndOfDay,
+                      icon: const Icon(
+                        Icons.today,
+                        size: 18,
+                        color: Colors.orange,
                       ),
-                    if (state.overdueTasks.isNotEmpty)
-                      const SizedBox(height: 10),
-                    if (state.todayTasks.isNotEmpty)
-                      TaskSectionAccordion(
-                        title: l10n.tasksDueToday,
-                        subtitle: l10n.tasksCompleteByEndOfDay,
-                        icon: const Icon(
-                          Icons.today,
-                          size: 18,
-                          color: Colors.orange,
-                        ),
-                        accentColor: Colors.orange,
-                        tasks: state.todayTasks,
-                        isCollapsed: state.isTodayCollapsed,
-                        onToggle: () => context
-                            .read<TaskListCubit>()
-                            .toggleSection(TaskListSection.today),
+                      accentColor: Colors.orange,
+                      tasks: state.todayTasks,
+                      isCollapsed: state.isTodayCollapsed,
+                      onToggle: () => context
+                          .read<TaskListCubit>()
+                          .toggleSection(TaskListSection.today),
+                    ),
+                  if (state.todayTasks.isNotEmpty) const SizedBox(height: 12),
+                  if (state.upcomingTasks.isNotEmpty)
+                    TaskSectionAccordion(
+                      title: l10n.tasksUpcoming,
+                      subtitle: l10n.tasksPlanAhead,
+                      icon: Icon(
+                        Icons.outlined_flag,
+                        size: 18,
+                        color: shad.Theme.of(context).colorScheme.primary,
                       ),
-                    if (state.todayTasks.isNotEmpty) const SizedBox(height: 12),
-                    if (state.upcomingTasks.isNotEmpty)
-                      TaskSectionAccordion(
-                        title: l10n.tasksUpcoming,
-                        subtitle: l10n.tasksPlanAhead,
-                        icon: Icon(
-                          Icons.outlined_flag,
-                          size: 18,
-                          color: shad.Theme.of(context).colorScheme.primary,
-                        ),
-                        accentColor: shad.Theme.of(context).colorScheme.primary,
-                        tasks: state.upcomingTasks,
-                        isCollapsed: state.isUpcomingCollapsed,
-                        onToggle: () => context
-                            .read<TaskListCubit>()
-                            .toggleSection(TaskListSection.upcoming),
+                      accentColor: shad.Theme.of(context).colorScheme.primary,
+                      tasks: state.upcomingTasks,
+                      isCollapsed: state.isUpcomingCollapsed,
+                      onToggle: () => context
+                          .read<TaskListCubit>()
+                          .toggleSection(TaskListSection.upcoming),
+                    ),
+                  if (state.upcomingTasks.isNotEmpty)
+                    const SizedBox(height: 12),
+                  if (state.totalActiveTasks == 0) const _AllCaughtUpView(),
+                  if (state.totalActiveTasks == 0) const SizedBox(height: 12),
+                  if (state.completedTasks.isNotEmpty)
+                    TaskSectionAccordion(
+                      title: l10n.tasksCompleted,
+                      subtitle: l10n.tasksCompletedCount(
+                        state.totalCompletedTasks,
                       ),
-                    if (state.upcomingTasks.isNotEmpty)
-                      const SizedBox(height: 12),
-                    if (state.totalActiveTasks == 0) const _AllCaughtUpView(),
-                    if (state.totalActiveTasks == 0) const SizedBox(height: 12),
-                    if (state.completedTasks.isNotEmpty)
-                      TaskSectionAccordion(
-                        title: l10n.tasksCompleted,
-                        subtitle: l10n.tasksCompletedCount(
-                          state.totalCompletedTasks,
-                        ),
-                        icon: Icon(
-                          Icons.check_circle_outline,
-                          size: 18,
-                          color: Colors.green.shade700,
-                        ),
-                        accentColor: Colors.green.shade700,
-                        tasks: state.completedTasks,
-                        trailingCount: state.totalCompletedTasks,
-                        isCollapsed: state.isCompletedCollapsed,
-                        onToggle: () => context
-                            .read<TaskListCubit>()
-                            .toggleSection(TaskListSection.completed),
+                      icon: Icon(
+                        Icons.check_circle_outline,
+                        size: 18,
+                        color: Colors.green.shade700,
                       ),
-                    if (state.completedTasks.isNotEmpty &&
-                        !state.isCompletedCollapsed &&
-                        state.isLoadingMoreCompleted)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Center(child: NovaLoadingIndicator()),
-                      ),
-                  ],
-                ),
+                      accentColor: Colors.green.shade700,
+                      tasks: state.completedTasks,
+                      trailingCount: state.totalCompletedTasks,
+                      isCollapsed: state.isCompletedCollapsed,
+                      onToggle: () => context
+                          .read<TaskListCubit>()
+                          .toggleSection(TaskListSection.completed),
+                    ),
+                  if (state.completedTasks.isNotEmpty &&
+                      !state.isCompletedCollapsed &&
+                      state.isLoadingMoreCompleted)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: NovaLoadingIndicator()),
+                    ),
+                ],
               ),
             );
           },
@@ -524,9 +516,8 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+    return AppPageBody(
+      child: Center(
         child: TaskSurfaceMessageCard(
           icon: Icons.error_outline,
           title: l10n.tasksLoadError,

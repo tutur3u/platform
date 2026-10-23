@@ -4,10 +4,8 @@ import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -354,87 +352,77 @@ class _InventoryManagePageState extends State<InventoryManagePage>
               }
 
               if (data == null) {
-                return Center(
-                  child: FinanceEmptyState(
-                    icon: Icons.error_outline,
-                    title: l10n.commonSomethingWentWrong,
-                    body:
-                        snapshot.error?.toString() ?? l10n.inventoryManageLabel,
-                    action: shad.SecondaryButton(
-                      onPressed: () => unawaited(_reload(forceRefresh: true)),
-                      child: Text(l10n.commonRetry),
+                return AppPageBody(
+                  child: Center(
+                    child: FinanceEmptyState(
+                      icon: Icons.error_outline,
+                      title: l10n.commonSomethingWentWrong,
+                      body:
+                          snapshot.error?.toString() ??
+                          l10n.inventoryManageLabel,
+                      action: shad.SecondaryButton(
+                        onPressed: () => unawaited(_reload(forceRefresh: true)),
+                        child: Text(l10n.commonRetry),
+                      ),
                     ),
                   ),
                 );
               }
 
-              return ResponsiveWrapper(
-                maxWidth: ResponsivePadding.maxContentWidth(
-                  context.deviceClass,
-                ),
-                child: Stack(
-                  children: [
-                    InventorySearchChrome(
-                      location: Routes.inventoryCatalogPath(
-                        widget.section!.name,
-                      ),
-                      controller: _searchController,
-                      onChanged: (_) => setState(() {}),
-                    ),
-                    NovaRefreshIndicator(
-                      onRefresh: () => _reload(forceRefresh: true),
-                      child: ListView(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          8,
-                          16,
-                          108 + MediaQuery.paddingOf(context).bottom,
-                        ),
-                        children: [
-                          if (snapshot.hasError || _limitedData)
-                            InventoryReadWarning(
-                              onRetry: () =>
-                                  unawaited(_reload(forceRefresh: true)),
-                            ),
-                          _ChipWrap(
-                            workspaceId: _wsId ?? '',
-                            feature:
-                                widget.section ==
-                                    InventoryCatalogSection.financeCategories
-                                ? 'finance'
-                                : 'inventory',
-                            items: _sectionItems(data)
-                                .where(
-                                  (item) => item.$2.toLowerCase().contains(
-                                    _searchController.text.trim().toLowerCase(),
-                                  ),
-                                )
-                                .toList(),
-                            onEdit: data.canManageSetup && _setupKind != null
-                                ? (id, name) =>
-                                      _editSetupItem(_setupKind!, id, name)
-                                : null,
-                            onDelete: data.canManageSetup && _setupKind != null
-                                ? (id, name) =>
-                                      _deleteSetupItem(_setupKind!, id, name)
-                                : null,
+              return Stack(
+                children: [
+                  InventorySearchChrome(
+                    location: Routes.inventoryCatalogPath(widget.section!.name),
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  NovaRefreshIndicator(
+                    onRefresh: () => _reload(forceRefresh: true),
+                    child: AppPageListView(
+                      children: [
+                        if (snapshot.hasError || _limitedData)
+                          InventoryReadWarning(
+                            onRetry: () =>
+                                unawaited(_reload(forceRefresh: true)),
                           ),
-                        ],
+                        _ChipWrap(
+                          workspaceId: _wsId ?? '',
+                          feature:
+                              widget.section ==
+                                  InventoryCatalogSection.financeCategories
+                              ? 'finance'
+                              : 'inventory',
+                          items: _sectionItems(data)
+                              .where(
+                                (item) => item.$2.toLowerCase().contains(
+                                  _searchController.text.trim().toLowerCase(),
+                                ),
+                              )
+                              .toList(),
+                          onEdit: data.canManageSetup && _setupKind != null
+                              ? (id, name) =>
+                                    _editSetupItem(_setupKind!, id, name)
+                              : null,
+                          onDelete: data.canManageSetup && _setupKind != null
+                              ? (id, name) =>
+                                    _deleteSetupItem(_setupKind!, id, name)
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (data.canManageSetup && _setupKind != null)
+                    ExtendedFab(
+                      icon: Icons.add,
+                      label: _createLabel,
+                      includeBottomSafeArea: false,
+                      onPressed: () => _showCreateDialog(
+                        title: _createLabel,
+                        confirmLabel: _createLabel,
+                        onConfirm: _createSection,
                       ),
                     ),
-                    if (data.canManageSetup && _setupKind != null)
-                      ExtendedFab(
-                        icon: Icons.add,
-                        label: _createLabel,
-                        includeBottomSafeArea: false,
-                        onPressed: () => _showCreateDialog(
-                          title: _createLabel,
-                          confirmLabel: _createLabel,
-                          onConfirm: _createSection,
-                        ),
-                      ),
-                  ],
-                ),
+                ],
               );
             },
           ),

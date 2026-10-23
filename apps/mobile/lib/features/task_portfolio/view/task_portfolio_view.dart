@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
@@ -42,7 +40,6 @@ class TaskPortfolioView extends StatefulWidget {
 
 class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   static const _tabProjects = 0;
-  static const double _fabContentBottomPadding = 96;
 
   int _activeTab = _tabProjects;
   late final TaskPortfolioPermissionsController _permissionsController;
@@ -208,21 +205,14 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
           return TaskPortfolioErrorView(error: state.error);
         }
 
-        final listBottomPadding =
-            _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
-
-        return ResponsiveWrapper(
-          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: NovaRefreshIndicator(
-            onRefresh: _reload,
-            child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
-              itemCount: _activeItemCount(state),
-              itemBuilder: (context, index) => _activeTab == _tabProjects
-                  ? _buildProjectItem(context, state, index)
-                  : _buildInitiativeItem(context, state, index),
-            ),
+        return NovaRefreshIndicator(
+          onRefresh: _reload,
+          child: AppPageListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: _activeItemCount(state),
+            itemBuilder: (context, index) => _activeTab == _tabProjects
+                ? _buildProjectItem(context, state, index)
+                : _buildInitiativeItem(context, state, index),
           ),
         );
       },
@@ -253,7 +243,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     final project = state.projects[index];
     return Padding(
       padding: EdgeInsets.only(
-        bottom: index == state.projects.length - 1 ? 0 : 12,
+        bottom: index == state.projects.length - 1 ? 0 : AppLayout.itemGap,
       ),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -283,7 +273,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     final initiative = state.initiatives[index];
     return Padding(
       padding: EdgeInsets.only(
-        bottom: index == state.initiatives.length - 1 ? 0 : 12,
+        bottom: index == state.initiatives.length - 1 ? 0 : AppLayout.itemGap,
       ),
       child: TaskInitiativeCard(
         initiative: initiative,

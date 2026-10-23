@@ -8,6 +8,7 @@
 import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database, Json } from '@tuturuuu/types';
+import { sanitizeLogError, sanitizeLogValue } from '../log-sanitizer';
 import { getUpstashRestRedisClient, hasUpstashRestEnv } from '../upstash-rest';
 import {
   ABUSE_THRESHOLDS,
@@ -48,22 +49,18 @@ let redisClient: RedisClient | null = null;
 let redisInitialized = false;
 
 function markRedisUnavailable(message: string, ...details: unknown[]): void {
-  if (details.length > 0) {
-    console.warn(message, ...details);
-  } else {
-    console.warn(message);
-  }
+  console.warn(message, ...details.map((detail) => sanitizeLogError(detail)));
 
   redisClient = null;
   redisInitialized = true;
 }
 
+function logAbuseError(message: string, error: unknown): void {
+  console.error(message, sanitizeLogError(error));
+}
+
 function markRedisCommandFailed(message: string, ...details: unknown[]): void {
-  if (details.length > 0) {
-    console.warn(message, ...details);
-  } else {
-    console.warn(message);
-  }
+  console.warn(message, ...details.map((detail) => sanitizeLogError(detail)));
 
   redisClient = null;
   redisInitialized = false;
@@ -196,8 +193,7 @@ function normalizeAbuseEventEmail(email?: string): string | null {
 }
 
 function sanitizeAbuseLogValue(value: string | null | undefined) {
-  const normalized = value?.trim();
-  return normalized ? normalized.slice(0, 256) : null;
+  return value?.trim() ? sanitizeLogValue(value.trim(), 256) : null;
 }
 
 function createAbuseLogContext(
@@ -310,7 +306,7 @@ async function getSupabaseAdmin(): Promise<SupabaseClient<Database> | null> {
     );
     return (await createAdminClient()) as SupabaseClient<Database>;
   } catch (error) {
-    console.error(
+    logAbuseError(
       '[Abuse Protection] Failed to create Supabase client:',
       error
     );
@@ -409,7 +405,7 @@ export async function isIPBlocked(
 
     return blockInfo;
   } catch (error) {
-    console.error('[Abuse Protection] DB error checking block:', error);
+    logAbuseError('[Abuse Protection] DB error checking block:', error);
     return null;
   }
 }
@@ -473,7 +469,7 @@ export async function blockIP(
       .single();
 
     if (error) {
-      console.error('[Abuse Protection] Error creating block:', error);
+      logAbuseError('[Abuse Protection] Error creating block:', error);
       return;
     }
 
@@ -503,10 +499,10 @@ export async function blockIP(
     }
 
     console.log(
-      `[Abuse Protection] Blocked IP ${ipAddress} at level ${newLevel} for ${blockDuration}s due to ${reason}`
+      `[Abuse Protection] Blocked IP ${sanitizeLogValue(ipAddress)} at level ${newLevel} for ${blockDuration}s due to ${sanitizeLogValue(reason)}`
     );
   } catch (error) {
-    console.error('[Abuse Protection] Error blocking IP:', error);
+    logAbuseError('[Abuse Protection] Error blocking IP:', error);
   }
 }
 
@@ -537,7 +533,7 @@ export async function unblockIP(
       .eq('status', 'active');
 
     if (error) {
-      console.error('[Abuse Protection] Error unblocking IP:', error);
+      logAbuseError('[Abuse Protection] Error unblocking IP:', error);
       return false;
     }
 
@@ -550,11 +546,11 @@ export async function unblockIP(
     }
 
     console.log(
-      `[Abuse Protection] Unblocked IP ${ipAddress} by user ${unblockingUserId}`
+      `[Abuse Protection] Unblocked IP ${sanitizeLogValue(ipAddress)} by user ${unblockingUserId}`
     );
     return true;
   } catch (error) {
-    console.error('[Abuse Protection] Error unblocking IP:', error);
+    logAbuseError('[Abuse Protection] Error unblocking IP:', error);
     return false;
   }
 }
@@ -585,7 +581,7 @@ export async function logAbuseEvent(
       },
     ]);
   } catch (error) {
-    console.error('[Abuse Protection] Error logging event:', error);
+    logAbuseError('[Abuse Protection] Error logging event:', error);
   }
 }
 

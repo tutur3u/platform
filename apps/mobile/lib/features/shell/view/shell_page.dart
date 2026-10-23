@@ -29,6 +29,7 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_search_field.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -47,9 +48,9 @@ part 'shell_page_scroll.dart';
 /// Shell layout with adaptive navigation.
 ///
 /// Wraps all tab-level routes via GoRouter's [ShellRoute].
-/// - **compact** → bottom [shad.NavigationBar]
-/// - **medium**  → side [shad.NavigationRail]
-/// - **expanded** → side [shad.NavigationSidebar]
+/// - **compact / medium** → floating bottom dock ([MorphingNavigationBar])
+/// - **expanded tablets/desktops** → leading [ShellNavigationRail]; the dock
+///   keeps only the composer and page actions. See [shellNavigationModeFor].
 class ShellPage extends StatefulWidget {
   const ShellPage({
     required this.child,

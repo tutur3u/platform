@@ -151,7 +151,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.only(top: 16, bottom: 8),
           child: Row(
             children: [
               Container(
@@ -201,7 +201,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         ),
         if (_viewMode == _HeatmapViewMode.original)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.only(bottom: 8),
             child: _LegendRow(maxDuration: maxDuration),
           ),
         _buildModeContent(context, activityByDate, maxDuration, localeTag),

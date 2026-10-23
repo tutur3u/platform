@@ -256,6 +256,17 @@ export function text(value: unknown, max: number, min = 1): string {
   );
   return value.trim();
 }
+/** Linear-time equivalent of /^[^@\s]+@[^@\s]+\.[^@\s]+$/. */
+export function isInviteEmail(value: string): boolean {
+  const at = value.indexOf('@');
+  const domain = value.slice(at + 1);
+  return (
+    at > 0 &&
+    !domain.includes('@') &&
+    !/\s/.test(value) &&
+    domain.slice(1, -1).includes('.')
+  );
+}
 export function number(value: unknown, min: number, max: number): number {
   requireRule(
     typeof value === 'number' &&
@@ -528,7 +539,7 @@ export function mutateRoom(
     room.endsAt = endsAt;
   } else if (action === 'invite') {
     const email = text(body.email, 254).toLowerCase();
-    requireRule(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email), 'invalid_input');
+    requireRule(isInviteEmail(email), 'invalid_input');
     requireRule(room.invites.length < 300, 'invite_limit');
     if (!room.invites.includes(email)) room.invites.push(email);
   } else if (action === 'revoke') {

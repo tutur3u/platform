@@ -51,10 +51,7 @@ interface ClaudeRateLimitSample {
   observedAt: string;
 }
 
-function readRateLimitEvent(
-  line: string,
-  fallbackObservedAt: string
-): ClaudeRateLimitSample | undefined {
+function readRateLimitEvent(line: string): ClaudeRateLimitSample | undefined {
   try {
     const row: unknown = JSON.parse(line);
     if (!row || typeof row !== 'object') return;
@@ -79,8 +76,7 @@ function readRateLimitEvent(
       const date = new Date(info.resetsAt * 1000);
       if (!Number.isNaN(date.getTime())) resetsAt = date.toISOString();
     }
-    const observedAt =
-      typeof root.timestamp === 'string' ? root.timestamp : fallbackObservedAt;
+    const observedAt = typeof root.timestamp === 'string' ? root.timestamp : '';
     const observedMs = Date.parse(observedAt);
     const resetMs = resetsAt ? Date.parse(resetsAt) : Number.NaN;
     const durationMs =
@@ -145,7 +141,7 @@ export async function collectClaude(
           tokens.output += usage.output;
           latestUsageAt = Math.max(latestUsageAt, timestamp);
         }
-        const limit = readRateLimitEvent(line, '');
+        const limit = readRateLimitEvent(line);
         if (limit) {
           const previous = limits.get(limit.id);
           if (
