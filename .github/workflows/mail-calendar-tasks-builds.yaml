@@ -11,6 +11,7 @@ on:
       - 'turbo.json'
       - 'package.json'
       - 'patches/**'
+      - 'scripts/ci/mail-calendar-tasks-affected*'
       - 'scripts/ci/calendar-native-*'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
@@ -30,6 +31,7 @@ on:
       - 'turbo.json'
       - 'package.json'
       - 'patches/**'
+      - 'scripts/ci/mail-calendar-tasks-affected*'
       - 'scripts/ci/calendar-native-*'
       - 'scripts/ci/native-source-identity-test-helper.js'
       - 'scripts/ci/calendar-emitted-defaults*'
@@ -51,15 +53,12 @@ jobs:
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: mail-calendar-tasks-builds.yaml
-  build:
+  build-mail:
+    name: build (mail)
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').mail) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [mail, tasks, web]
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://mail-calendar-tasks-ci.supabase.invalid
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
@@ -74,13 +73,12 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Record Mail route tree presence before frontend build
-        if: ${{ matrix.app == 'mail' }}
         id: mail-route-tree-before
         run: |
           route_tree=apps/mail/src/routeTree.gen.ts
@@ -93,12 +91,12 @@ jobs:
         id: mail-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/${{ matrix.app }}
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/mail
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Capture generated Mail route tree evidence
-        if: ${{ always() && matrix.app == 'mail' }}
+        if: always()
         env:
           MAIL_ROUTE_TREE_BEFORE: ${{ steps.mail-route-tree-before.outputs.state || 'unknown' }}
           MAIL_FRONTEND_BUILD_OUTCOME: ${{ steps.mail-frontend-build.outcome || 'unknown' }}
@@ -132,7 +130,7 @@ jobs:
             printf 'route_tree_sha256=%s\n' "$(sha256sum "$evidence/routeTree.gen.ts" | cut -d ' ' -f 1)"
           } > "$evidence/source-receipt.txt"
       - name: Retain generated Mail route tree evidence
-        if: ${{ always() && matrix.app == 'mail' }}
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: mail-route-tree-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -140,15 +138,81 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
       - name: Reject tracked Mail route tree drift
-        if: ${{ always() && matrix.app == 'mail' }}
+        if: always()
         run: |
           route_tree=apps/mail/src/routeTree.gen.ts
           if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
             git diff --exit-code HEAD -- "$route_tree"
           fi
+  build-tasks:
+    name: build (tasks)
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tasks) != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://mail-calendar-tasks-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
+      NEXT_PUBLIC_APP_URL: https://mail-calendar-tasks-ci.invalid
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      NODE_OPTIONS: --max-old-space-size=8192
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Build application and shared dependencies without deployment
+        id: mail-frontend-build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/tasks
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
+  build-web:
+    name: build (web)
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').web) != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://mail-calendar-tasks-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
+      NEXT_PUBLIC_APP_URL: https://mail-calendar-tasks-ci.invalid
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      NODE_OPTIONS: --max-old-space-size=8192
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Build application and shared dependencies without deployment
+        id: mail-frontend-build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/web
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
   calendar-native:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').calendar) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -167,14 +231,14 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0
       - name: Assert source and toolchain identity
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          test "$(bun --version)" = 1.4.3
+          test "$(bun --version)" = 1.4.4
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test artifact boundary regressions
@@ -368,14 +432,14 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.22.0
       - name: Assert restored-job source and toolchain identity
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          test "$(bun --version)" = 1.4.3
+          test "$(bun --version)" = 1.4.4
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8

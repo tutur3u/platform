@@ -5,6 +5,9 @@ import {
   createPublicKey,
   X509Certificate,
 } from 'node:crypto';
+// node-forge is limited to PKCS12/ASN.1 parsing. Do not call its certificate or
+// RSA signature verification (GHSA-86w9-cpqp-85rv has no patched release); use
+// node:crypto for any verification.
 import forge from 'node-forge';
 
 const CERT_BAG = '1.2.840.113549.1.12.10.1.3';

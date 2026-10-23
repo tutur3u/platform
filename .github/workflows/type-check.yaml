@@ -9,6 +9,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
+permissions:
+  contents: read
+
 jobs:
   type-check:
     name: Type Check
@@ -75,7 +78,7 @@ jobs:
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
 
       - name: Test inline Type Check preflight
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'

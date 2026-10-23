@@ -96,6 +96,11 @@ when idle, even with a wake connection, so a missed signal cannot strand work.
 The Worker checks the runner token, token revocation, runner status, and root
 workspace membership before each heartbeat or claim. Disabling heartbeats on
 a runner continues to reject heartbeat requests. Worker traffic requires TLS.
+Agents treat `401` as fatal, so `401` means only that the credentials were
+rejected. If token, runner or membership storage fails, the web agent routes
+return `503` with `Retry-After: 5`, and the Worker returns `503`. Agents then
+back off and retry instead of exiting and flapping during a database brownout
+(`agent-auth.test.ts`).
 
 The production workflow installs Worker secrets from the repository's
 `PRODUCTION_SUPABASE_URL`, `PRODUCTION_SUPABASE_SECRET_KEY`, and
@@ -544,6 +549,18 @@ ttr box logs <run-id>
 ttr box stop <run-id>
 ```
 
+`ttr box stop`, `ttr box logs`, and lease release act only on runs and leases
+created by the signed-in user; another member's ids return 404. Stopping a queued
+run cancels it immediately, a running run moves to `cancel_requested` for its
+agent, and finished runs are never changed. Repeating an owner stop on a
+`cancel_requested` or `cancelled` run returns its current cancellation without
+rewriting timestamps; retries cannot postpone stale-run reaping. Foreign ids
+still return 404, including cancelled or finished runs. Owner stops that race
+completion return the observed final status without a write. Infrastructure
+administrators use the same stable retry and final-status behavior and can
+stop any active run from the dashboard. Regression coverage lives in
+`apps/web/src/lib/devboxes/store-scoping.test.ts`.
+
 `ttr box build`, `ttr box serve`, and `ttr box tunnel` do not set a remote
 command timeout by default. Pass `--timeout <duration>` only when the run should
 be killed automatically.
@@ -623,7 +640,15 @@ stops new dispatch and drains already active work before the agent exits. Heartb
 continue during that drain, and local completions wake idle claim polling. The
 parent scheduling client omits Playground capabilities until both heartbeat
 contracts support them; `devbox-agent-capabilities.test.ts` exercises its emitted
-body against both current handlers. Judge readiness probes are cached for ten minutes and refreshed in the background; execution still fails
+body against both current handlers. Both heartbeat handlers (`apps/web` and the
+`devbox-control` Worker) also accept an optional `executionMode`
+(`trusted` or `judge-only`) and an optional `isolation` summary: `checkedAt` plus
+the boolean checks `dedicatedUser`, `privateTokenDirectory`, `protectedService`,
+`dedicatedDockerSocket`, `gvisorDefault` and `noGeneralDockerGroup`. Unknown keys
+and wrong types are still rejected. These fields are self-reported and advisory:
+they are stored for operators and later claim matching, never used to grant
+features or authorize a runner. Agents send them only after both handlers are
+deployed. Judge readiness probes are cached for ten minutes and refreshed in the background; execution still fails
 closed if required isolation or language images are unavailable.
 
 Agent HTTP calls are bounded. Heartbeat, claim, event, completion and shutdown
@@ -655,7 +680,18 @@ also stops active trusted jobs through their process groups. Generated systemd
 units use `KillMode=mixed` (only the agent receives the stop signal) and
 `TimeoutStopSec=600`; launchd plists use `ExitTimeOut` 600. Re-render existing
 units with `ttr box repair` to pick these up. Regression coverage lives in
-`devbox-job-process.test.ts` and `devbox-agent-stop.test.ts`.
+`devbox-job-process.test.ts` and `devbox-agent-stop.test.ts`. Signals only ever
+target the job's process group. Once the group is gone the agent does not signal
+the bare PID, because the operating system may have reused it for an unrelated
+process.
+
+Judge sandboxes carry a `dev.tuturuuu.devbox.judge=1` label and an owner label
+derived from a hash of the runner token. Docker keeps a container running after
+the agent dies (watchdog exit, `SIGKILL`, crash). So when an agent with
+`TUTURUUU_JUDGE_IMAGES` configured starts, it removes up to 100 of its own
+runner's labelled containers before claiming work. Dedicated playground pool
+processes skip this step, and other runners on the same host keep their
+containers. Regression coverage lives in `devbox-judge-containers.test.ts`.
 
 Platform-managed playground workers opt in through operator configuration. They
 require gVisor and pinned language image digests, run unprivileged without host

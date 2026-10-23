@@ -55,6 +55,14 @@ localization changes.
 - Full-surface loaders should use `NovaLoadingIndicator`; native/spinner
   variants are for compact inline affordances.
 
+- Settings rows use `SettingsRowLayout` and `SettingsTile` (re-exported from
+  `settings_widgets.dart`) for consistent heading/icon insets, text slots and
+  trailing controls. Stack multiple actions in the fixed 44px trailing column;
+  keep each action's localized tooltip and touch target. Consume inherited dock
+  padding inside scroll content. Verify geometry and scroll-end clearance with
+  `settings_compact_navigation_test.dart`; presentation changes must not alter
+  timezone cubits or repositories.
+
 ## Task Board
 
 - Preserve external/personal task semantics when changing board views.
@@ -98,11 +106,28 @@ localization changes.
   cases in the [Assistant chronology guide](../../../../../apps/docs/platform/features/assistant-live.mdx#conversation-chronology-and-native-presentation);
   terminal parser fixtures alone do not exercise server persistence.
 
+- Native Assistant terminal batches are authoritative lists, not successive
+  replacements for one temporary reply. Restore every row from canonical parts.
+  Cache revalidation must publish to the still-current conversation as well as
+  disk; fence navigation, settings writes and newer local turns. SSE errors require bounded
+  request-scoped save readback before failure, without regenerating a response.
+  See `native-ai-stream-persistence.test.ts`, `assistant_chat_saved_batch_test.dart`
+  and `assistant_chat_revalidation_test.dart` for the focused regressions.
+
 - For real Assistant host fixtures, use the canonical
   [mobile state and lifecycle guide](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#keep-asynchronous-assistant-fixtures-in-their-owning-zone).
   It covers scheduling ownership, creation admission, native attachment wire
   shapes, shell publication and subscription handshakes. Fixture success does
   not establish installed-device, provider or customer delivery.
+
+- Assistant receipt labels are presentation evidence: only a saved-user identity
+  transition permits Delivered; following response content permits Read. Never
+  infer delivery from a spinner ending, a local timestamp, or restored history
+  without acknowledgement provenance. Keep dock geometry tests on the actual
+  persistent shell dock, and exercise streaming follow with large output chunks
+  and a reader scrolled into history. Coalesced post-frame followers must request
+  a visual update when scheduled while idle; adding a post-frame callback alone
+  does not request a frame. Cover idle resume as well as content-driven rebuilds.
 
 ### Calendar description display
 
@@ -126,3 +151,14 @@ is not installed-device or provider delivery evidence.
 - Use `mail_notification_privacy_test.dart` and existing push/dismissal tests.
   Device arrival and timing require separately authorized device fixtures; see
   [Mail notification evidence](../../../../../apps/docs/platform/applications/mail-inbound-notifications.mdx).
+
+### Profile banner capability uploads
+
+Reuse the existing profile repository and signed banner receipt flow; retain the
+operation UUID through upload/finalize retries. Crop banners at 3:1 before the
+shared optimizer, keep placeholder/loading/error geometry stable, and reload the
+actor-owned profile after mutations. Classify optimizer size exceptions separately
+from invalid images and signed PUT ticket failures separately from API permission
+denials. See the mobile profile banner section in
+`apps/docs/platform/features/user-management.mdx` and the focused banner lifecycle,
+picker, image-state and repository failure-contract tests.

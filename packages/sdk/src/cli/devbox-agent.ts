@@ -18,6 +18,7 @@ import {
   upgradeDevboxCliIfNeeded,
 } from './devbox-auto-upgrade';
 import { sweepStaleCommitWorktrees } from './devbox-commit-run';
+import { prepareJudgeContainers } from './devbox-judge-containers';
 import { executeDevboxAgentJob } from './devbox-runner';
 
 function formatResponseStatus(response: Response) {
@@ -103,6 +104,7 @@ export async function runDevboxAgentLoop({
   }).catch(() => 0);
   if (swept)
     process.stdout.write(`Removed ${swept} stale commit run worktree(s).\n`);
+  await prepareJudgeContainers(token);
   const timing = { ...defaultDevboxAgentTiming, ...timingOverrides };
   const watchdogMs = timing.heartbeatIntervalMs * timing.watchdogIntervals;
   let lastHeartbeatOkAt = Date.now();

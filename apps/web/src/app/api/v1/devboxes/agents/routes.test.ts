@@ -210,6 +210,46 @@ describe('devbox agent routes', () => {
       capabilities
     );
   });
+  it('accepts an optional advisory execution mode and isolation summary', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    const capabilities = {
+      executionMode: 'judge-only',
+      isolation: {
+        checkedAt: '2026-10-23T00:00:00.000Z',
+        dedicatedUser: true,
+        privateTokenDirectory: true,
+        protectedService: true,
+        dedicatedDockerSocket: true,
+        gvisorDefault: true,
+        noGeneralDockerGroup: true,
+      },
+    };
+    heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      capabilities
+    );
+  });
+  it.each([
+    { executionMode: 'root' },
+    { executionMode: true },
+    { isolation: { dedicatedUser: 'yes' } },
+    { isolation: { tokenValue: true } },
+    { isolation: { checkedAt: 'x'.repeat(101) } },
+    { isolation: [] },
+  ])(
+    'rejects malformed execution mode or isolation reports: %j',
+    async (capabilities) => {
+      enableDevboxAgentApi();
+      mockAuthorizedRunner(true);
+      expect((await heartbeat(createRequest({ capabilities }))).status).toBe(
+        400
+      );
+      expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    }
+  );
   it.each([
     { ready: 'true', languages: ['python'], environments: 0 },
     { ready: true, languages: ['unknown'], environments: 0 },

@@ -18,6 +18,9 @@ on:
         default: false
         description: "Also detect release-only PR changes; other events always run"
     outputs:
+      affected_jobs:
+        description: "Affected validation jobs; absent keys retain validation"
+        value: ${{ jobs.check.outputs.affected_jobs }}
       run_checks:
         description: "Whether release relevance requires checks (true when not requested)"
         value: ${{ jobs.check.outputs.run_checks }}
@@ -34,6 +37,7 @@ jobs:
     name: Check CI Config
     runs-on: ubuntu-latest
     outputs:
+      affected_jobs: ${{ steps.check_config.outputs.affected_jobs }}
       run_checks: ${{ steps.pr_release_relevance.outputs.run_checks || steps.release_relevance.outputs.run_checks || 'true' }}
       should_run: ${{ steps.check_config.outputs.should_run }}
     steps:
@@ -50,6 +54,7 @@ jobs:
             packages/*/package.json
             scripts/ci/check-workflow-config.ts
             scripts/ci/github-deployment-markers.ts
+            scripts/ci/mail-calendar-tasks-affected.ts
             scripts/ci/overflow-notes-ci.js
             scripts/ci/production-test-only-paths.ts
             scripts/ci/release-only-changes.js

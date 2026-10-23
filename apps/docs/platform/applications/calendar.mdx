@@ -693,9 +693,10 @@ and the selected calendar-day fields, so a timezone change cannot reuse a range
 from another timezone.
 
 These changes preserve existing event storage, recurrence, and all-day identity
-contracts. All-day lookup retains its legacy browser-local day identity, so its
-month/year grouping may still differ from the configured-zone bar for legacy
-midnight payloads. All-day bar drag and location create/resize/split callbacks retain
+contracts. All-day lookup uses the same canonical civil dates as the all-day strip,
+so month/year and agenda grouping agree with the configured-zone bar for legacy
+midnight payloads and zoned DST spans. All-day bar drag and location
+create/resize/split callbacks retain
 their existing timestamp conversion: their inferred all-day classification cannot
 safely represent zoned 23-hour or 25-hour midnight spans without a persistent
 intent contract. They do not establish a persistent all-day intent flag or verify
@@ -1170,16 +1171,21 @@ Web and mobile preserve the stored UTC calendar dates of untagged legacy
 UTC-midnight all-day imports. Their original provider dates/timezone are absent
 from the current API. Other all-day boundaries project into the resolved display
 timezone; the end remains exclusive, including 23/25-hour DST days and long spans.
+Month, year, agenda and day/week lookup share those civil bounds with the all-day
+strip: the browser timezone never shifts a UTC-midnight import to the previous
+day, and an event is excluded from its exclusive end date.
 This rendering policy does not rewrite provider data or claim date-only provider
 write support.
 
 Past events fade consistently across native, Google and Microsoft providers on
-Web using an overlay over the opaque fill. All-day spans fade only after their
-displayed exclusive end, including merged spans, using the shared calendar clock. Explicit adapter preservation,
+Web using an overlay over the opaque fill when their end is at or before the
+current instant. All-day spans fade at their displayed exclusive end midnight in
+the selected calendar timezone, including merged spans, using the shared calendar clock. Explicit adapter preservation,
 interaction, previews and pending optimistic writes remain exceptions. Mobile
 keeps its existing past-event presentation. Regression coverage is
 `calendar_day_identity_test.dart`, `calendar_viewport_test.dart`,
-`all-day-event-layout.test.ts` and `past-event-treatment.test.ts`.
+`all-day-event-layout.test.ts`, `calendar-event-lookup.test.ts` (cross-browser zones
+and both DST transitions) and `past-event-treatment.test.ts`.
 
 ## Mobile selected-view reset
 

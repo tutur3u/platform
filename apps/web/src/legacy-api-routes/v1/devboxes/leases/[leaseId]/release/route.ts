@@ -14,7 +14,12 @@ export async function POST(
   const { leaseId } = await context.params;
 
   try {
-    return NextResponse.json(await releaseDevboxLease(leaseId));
+    return NextResponse.json(
+      await releaseDevboxLease({
+        actorId: authorization.user.id,
+        leaseId,
+      })
+    );
   } catch (error) {
     return createDevboxRouteErrorResponse(
       error,

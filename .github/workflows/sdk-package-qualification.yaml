@@ -25,6 +25,9 @@ concurrency:
 
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: sdk-package-qualification.yaml
@@ -47,7 +50,7 @@ jobs:
           package-manager-cache: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - name: Install build dependencies
         run: timeout --kill-after=10s 300s bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Test qualification controls

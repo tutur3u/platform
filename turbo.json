@@ -155,6 +155,7 @@
         "!.next/cache/**",
         "!.next/dev/**",
         ".output/**",
+        ".cloudflare/output/**",
         "dist/**",
         "*.tsbuildinfo",
         "dist/*.tsbuildinfo",

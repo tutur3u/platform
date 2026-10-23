@@ -206,7 +206,15 @@ bookkeeping bullets from existing English notes while preserving genuine text
 and other locales. A history containing only bookkeeping is unavailable test
 evidence, rather than a fabricated product summary. Existing installed binaries
 and Apple metadata change only after an authorized app update or metadata retry.
-Regression coverage: `release-note-policy.test.js`, `release-history.test.mjs`,
+New TestFlight and Play summaries exclude every multi-parent merge commit and
+typed chore, ci, test, docs, and refactor entries. Mobile feat/fix summaries come
+first, with sentence case, duplicate removal, and no PR numbers or task branch
+names. Product merge actions remain valid. Play English notes use the exact
+prepared build history and fail closed above 500 characters; TestFlight retains
+its 4,000-character limit and original-build provenance checks. Existing manual
+TestFlight prose and other locales retain the metadata-retry policy above.
+Regression coverage: `normalize-release-notes.test.js`,
+`mobile-store-workflow.test.js`, `release-note-policy.test.js`, `release-history.test.mjs`,
 `build-test-notes.test.mjs`, `release_notes_test.dart`, and `release-query.test.ts`.
 
 The workflow runs after relevant pushes to `production`. A manual dispatch on

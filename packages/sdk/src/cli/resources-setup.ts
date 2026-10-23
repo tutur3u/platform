@@ -14,10 +14,11 @@ import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { resourceShims } from './resources-command';
 import {
+  assertLaneBudget,
   atomicJson,
   canonical,
   defaultResourceConfig,
-  laneResourceConfig,
+  maxResourceLanes,
   type ResourceConfig,
   readResourceConfig,
   repositoryIdentity,
@@ -103,8 +104,15 @@ async function prepareResources(options: SetupOptions) {
   if (!['darwin', 'linux'].includes(process.platform))
     throw new Error('Resource setup currently supports macOS and Linux.');
   const previous = await readResourceConfig(options.home);
-  if (options.lanes !== undefined && options.lanes !== 1 && options.lanes !== 2)
-    throw new Error('--lanes must be 1 or 2.');
+  if (
+    options.lanes !== undefined &&
+    (!Number.isInteger(options.lanes) ||
+      options.lanes < 1 ||
+      options.lanes > maxResourceLanes)
+  )
+    throw new Error(
+      `--lanes must be an integer from 1 to ${maxResourceLanes}.`
+    );
   const config: ResourceConfig = previous
     ? {
         ...previous,
@@ -142,12 +150,12 @@ async function prepareResources(options: SetupOptions) {
   if (
     !Number.isInteger(config.maxValidationLanes) ||
     config.maxValidationLanes < resourceLanes(config) ||
-    config.maxValidationLanes > 8
+    config.maxValidationLanes > maxResourceLanes
   )
     throw new Error(
-      '--max-lanes must be an integer between the base lane count and 8.'
+      `--max-lanes must be an integer between the base lane count and ${maxResourceLanes}.`
     );
-  laneResourceConfig(config);
+  assertLaneBudget(config);
   const assertIdle = async () => {
     if (
       resourcePolicyKey(previous || defaultResourceConfig()) ===
