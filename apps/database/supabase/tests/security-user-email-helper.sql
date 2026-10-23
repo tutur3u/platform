@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(17);
+select plan(20);
 
 insert into auth.users (id, email, email_confirmed_at) values
   ('e1000000-0000-0000-0000-000000000001', 'email-helper-a@example.test', now()),
@@ -106,11 +106,6 @@ select is(
   'Notification read, update and delete policies apply only to authenticated'
 );
 
--- API roles hold no notification table privileges once notifications are
--- fully server-owned. Grant inside this rolled-back transaction so the
--- policies are still exercised as defence in depth.
-grant select, update on public.notifications to authenticated;
-
 -- Anonymous callers.
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
@@ -145,21 +140,27 @@ select is(
   'The helper returns only the caller''s own email'
 );
 
-select is(
-  (
-    select array_agg(id order by id)
-    from public.notifications
-    where id::text like 'e1000000-%'
-  ),
-  array['e1000000-0000-0000-0000-0000000000a1']::uuid[],
-  'A sees only A''s notification, not B''s user or email rows'
+-- The complete schema leaves notification table access to server routes.
+select throws_ok(
+  $$select id from public.notifications$$,
+  '42501',
+  'permission denied for table notifications',
+  'A cannot read notification rows directly'
 );
 
-select lives_ok(
+select throws_ok(
   $$update public.notifications
     set read_at = now()
     where id = 'e1000000-0000-0000-0000-0000000000b2'$$,
-  'A may attempt to update a notification addressed to B''s email'
+  '42501',
+  'permission denied for table notifications',
+  'A cannot update notification rows directly'
+);
+
+select is(
+  (select updated_count from public.sync_my_notifications()),
+  0,
+  'The supported sync RPC claims no notification for A'
 );
 
 reset role;
@@ -190,17 +191,17 @@ select is(
   'The helper follows the session, not a caller-supplied id'
 );
 
+select throws_ok(
+  $$select id from public.notifications$$,
+  '42501',
+  'permission denied for table notifications',
+  'B cannot read notification rows directly'
+);
+
 select is(
-  (
-    select array_agg(id order by id)
-    from public.notifications
-    where id::text like 'e1000000-%'
-  ),
-  array[
-    'e1000000-0000-0000-0000-0000000000b1',
-    'e1000000-0000-0000-0000-0000000000b2'
-  ]::uuid[],
-  'B sees B''s user row and the invite addressed to B''s email'
+  (select updated_count from public.sync_my_notifications()),
+  1,
+  'The supported sync RPC claims the invite addressed to B'
 );
 
 reset role;
@@ -223,6 +224,17 @@ set local role service_role;
 select lives_ok(
   $$select public.get_current_user_email()$$,
   'service_role keeps access to the helper'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.notifications
+    where user_id = 'e1000000-0000-0000-0000-000000000002'
+      and id::text like 'e1000000-%'
+  ),
+  2,
+  'The server role can read B''s owned and claimed notifications'
 );
 
 reset role;
