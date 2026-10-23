@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { privateTempDirSync, writeExclusiveFileSync } = require('./safe-fs');
 const path = require('node:path');
 
 const {
@@ -26,7 +26,7 @@ const {
 } = require('./check-discord-python.js');
 
 function createTempDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'check-queue-'));
+  return privateTempDirSync('check-queue-');
 }
 
 function sleep(ms) {
@@ -338,7 +338,7 @@ test('acquireCheckQueueLock prunes stale tickets and stale locks', async () => {
   const staleTicketPath = path.join(paths.ticketsDir, `${staleTicketId}.json`);
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     staleTicketPath,
     JSON.stringify(
       {
@@ -352,7 +352,7 @@ test('acquireCheckQueueLock prunes stale tickets and stale locks', async () => {
   );
 
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -393,7 +393,7 @@ test('acquireCheckQueueLock ignores active non-check queue records', async () =>
   );
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     forgedTicketPath,
     JSON.stringify(
       {
@@ -407,7 +407,7 @@ test('acquireCheckQueueLock ignores active non-check queue records', async () =>
   );
 
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -446,7 +446,7 @@ test('listTrackedCheckProcesses returns active owner and queued tickets once', (
   const sharedPid = process.pid;
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     path.join(paths.ticketsDir, '0000000000001-00000001-alpha.json'),
     JSON.stringify(
       {
@@ -459,7 +459,7 @@ test('listTrackedCheckProcesses returns active owner and queued tickets once', (
     )
   );
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -494,7 +494,7 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
   const queueMessages = [];
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     path.join(paths.ticketsDir, '0000000000002-00041002-bravo.json'),
     JSON.stringify(
       {
@@ -507,7 +507,7 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
     )
   );
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -555,7 +555,7 @@ test('forceClearCheckQueue discards unverified queue PIDs without signaling them
   const queueMessages = [];
 
   fs.mkdirSync(paths.ticketsDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     path.join(paths.ticketsDir, '0000000000002-00061002-bravo.json'),
     JSON.stringify(
       {
@@ -568,7 +568,7 @@ test('forceClearCheckQueue discards unverified queue PIDs without signaling them
     )
   );
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {
@@ -612,7 +612,7 @@ test('acquireCheckQueueLock forceNow clears earlier checks before taking the loc
   const killCalls = [];
 
   fs.mkdirSync(paths.lockDir, { recursive: true });
-  fs.writeFileSync(
+  writeExclusiveFileSync(
     paths.lockMetaPath,
     JSON.stringify(
       {

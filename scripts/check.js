@@ -17,6 +17,7 @@ if (require.main === module)
 const crypto = require('node:crypto');
 const { execFileSync, spawn } = require('node:child_process');
 const fs = require('node:fs');
+const { writeExclusiveFileSync } = require('./safe-fs');
 const os = require('node:os');
 const path = require('node:path');
 const { sourceSizeCheck } = require('./check-source-size.js');
@@ -687,9 +688,10 @@ function createQueueTicket(paths, options = {}) {
   const ticketPath = path.join(paths.ticketsDir, `${ticketId}.json`);
 
   fsImpl.mkdirSync(paths.ticketsDir, { recursive: true });
-  fsImpl.writeFileSync(
+  writeExclusiveFileSync(
     ticketPath,
-    JSON.stringify({ argv, createdAt, pid, ticketId }, null, 2)
+    JSON.stringify({ argv, createdAt, pid, ticketId }, null, 2),
+    { fsImpl }
   );
 
   return {
@@ -937,7 +939,7 @@ async function acquireCheckQueueLock(options = {}) {
       if (position === 0) {
         try {
           fsImpl.mkdirSync(paths.lockDir);
-          fsImpl.writeFileSync(
+          writeExclusiveFileSync(
             paths.lockMetaPath,
             JSON.stringify(
               {
@@ -948,7 +950,8 @@ async function acquireCheckQueueLock(options = {}) {
               },
               null,
               2
-            )
+            ),
+            { fsImpl }
           );
           removeFileIfExists(ticket.ticketPath, fsImpl);
 

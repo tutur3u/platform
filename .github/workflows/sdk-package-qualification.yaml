@@ -8,6 +8,8 @@ on:
       - "package.json"
       - "turbo.json"
       - "tuturuuu.ci.ts"
+      - "scripts/safe-fs.js"
+      - "scripts/ci/qualify-sdk-file*"
       - "scripts/ci/qualify-sdk-package*"
       - "scripts/ci/sdk-package-process.js"
       - "scripts/ci/sdk-qualification-*"
