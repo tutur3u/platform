@@ -4,6 +4,8 @@ const {
   attacker,
   completion,
   evaluateIf,
+  loadWorkflows,
+  recomputeOnlyConsumers,
   repository,
   runningJobs,
   spoofFailures,
@@ -293,4 +295,31 @@ test('Discord Modal credentials stay out of dependency installation', () => {
     .filter((step) => step.env?.MODAL_TOKEN_ID || step.env?.MODAL_TOKEN_SECRET)
     .map((step) => step.name);
   assert.deepEqual(withToken, ['Verify Modal credentials', 'Deploy app']);
+});
+
+test('recompute-only workflow_run consumers never trust the completion', () => {
+  for (const { file, workflow } of loadWorkflows()) {
+    if (!recomputeOnlyConsumers.has(file)) continue;
+    const serialized = JSON.stringify(workflow);
+    assert.doesNotMatch(serialized, /secrets\./u, `${file} holds no secrets`);
+    for (const [id, job] of Object.entries(workflow.jobs)) {
+      assert.equal(job.uses, undefined, `${file}:${id} calls no workflow`);
+      for (const step of job.steps ?? []) {
+        if (!step.uses?.startsWith('actions/checkout@')) {
+          assert.ok(
+            !step.uses || /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/u.test(step.uses.split(' ')[0]),
+            `${file}:${id} runs only pinned remote or inline steps`
+          );
+          continue;
+        }
+        // Only default-branch code may be checked out, never the event head.
+        assert.equal(
+          step.with?.ref,
+          '${{ github.event.repository.default_branch }}',
+          `${file}:${id} checks out the default branch only`
+        );
+        assert.equal(step.with?.['persist-credentials'], false);
+      }
+    }
+  }
 });

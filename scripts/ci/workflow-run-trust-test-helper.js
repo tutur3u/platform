@@ -244,10 +244,16 @@ const spoofedCompletions = {
   },
 };
 
+// Recompute-only consumers deliberately accept fork-reachable completions as
+// a wake-up signal. They hold no secrets, run only default-branch code and
+// re-read all state through the API, so they are excluded from the trust-gate
+// suites and held to those invariants by workflow-run-trust.test.js instead.
+const recomputeOnlyConsumers = new Set(['security-review-reclassify.yaml']);
+
 function workflowRunConsumers(all = loadWorkflows()) {
   return all.flatMap(({ file, workflow }) => {
     const trigger = triggersOf(workflow).workflow_run;
-    if (trigger === undefined) return [];
+    if (trigger === undefined || recomputeOnlyConsumers.has(file)) return [];
     return (trigger?.workflows ?? []).map((upstreamName) => ({
       branches: trigger?.branches ?? ['main', 'production'],
       file,
@@ -300,6 +306,7 @@ module.exports = {
   evaluateIf,
   headSha,
   loadWorkflows,
+  recomputeOnlyConsumers,
   repository,
   repositoryId,
   runGate,
