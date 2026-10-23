@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const test = require('node:test');
 const {
   cacheKey,
+  configurationDiagnostic,
   subsetImages,
   missingImages,
   imageList,
@@ -11,6 +12,7 @@ const {
   pullImage,
   MAX_ARCHIVE_BYTES,
 } = require('./supabase-image-cache.js');
+const { readAllWorkflows } = require('./workflow-yaml-test-helper.js');
 const services = [
   ['supabase/postgres', '17.6.1.167'],
   ['supabase/postgres-meta', 'v0.99.0'],
@@ -26,6 +28,56 @@ const identity = {
   registry: 'public.ecr.aws',
   profile: 'contract',
 };
+
+test('configuration diagnostics allow only fixed public messages and service identifiers', () => {
+  for (const message of [
+    'Uncached service enabled: edge_runtime',
+    'Missing explicit service configuration: storage',
+    'Review supplemental image pins for the installed Supabase CLI',
+  ])
+    assert.equal(configurationDiagnostic(new Error(message)), message);
+  for (const message of [
+    'Uncached service enabled: secret-token',
+    'Missing CLI image metadata: private-project',
+    'child failed: password=secret',
+  ])
+    assert.equal(configurationDiagnostic(new Error(message)), undefined);
+});
+
+test('the composite save input fences both archive creation and upload', () => {
+  const action = readAllWorkflows('.github/actions/cache-supabase-images')[
+    'action.yml'
+  ];
+  assert.equal(action.inputs.save.default, 'true');
+  const pull = action.runs.steps.find(
+    (step) => step.name === 'Pull missing images within a short budget'
+  );
+  const upload = action.runs.steps.find(
+    (step) => step.name === 'Save trusted image archive'
+  );
+  const evaluate = (expression, inputs, github) => {
+    const code = expression
+      .replace(/^\$\{\{\s*|\s*\}\}$/g, '')
+      .replace(/steps\.([\w-]+)\.outputs\.([\w-]+)/g, 'outputs["$1.$2"]');
+    return Function(
+      'inputs',
+      'github',
+      'outputs',
+      `return !!(${code})`
+    )(inputs, github, {
+      'identity.save': String(trustedSave(github.event_name, github.ref)),
+      'cache.cache-hit': 'false',
+    });
+  };
+  for (const save of ['true', 'false', '', 'invalid']) {
+    for (const ref of ['refs/heads/main', 'refs/pull/1/merge']) {
+      const github = { ref, event_name: 'push' };
+      const expected = save === 'true' && ref === 'refs/heads/main';
+      assert.equal(evaluate(pull.env.IMAGE_SAVE, { save }, github), expected);
+      assert.equal(evaluate(upload.if, { save }, github), expected);
+    }
+  }
+});
 test('contract images derive versions from CLI metadata including temporary overrides', () => {
   assert.deepEqual(imageList(identity), [
     'public.ecr.aws/supabase/gotrue:v2.196.0',
@@ -147,7 +199,7 @@ test('extended seed budget is main-only and normal misses retain two minutes', (
 });
 
 test('real cache helper pulls only on miss, saves only trusted archives, and loads without pulls', async (t) => {
-  const { execFileSync } = require('node:child_process');
+  const { execFileSync, spawnSync } = require('node:child_process');
   const os = require('node:os');
   const path = require('node:path');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'image-cache-helper-'));
@@ -185,6 +237,7 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
     IMAGE_PROFILE: 'contract',
     SUPABASE_INTERNAL_IMAGE_REGISTRY: 'public.ecr.aws',
     GITHUB_OUTPUT: path.join(root, 'output'),
+    GITHUB_STEP_SUMMARY: path.join(root, 'summary'),
     GITHUB_EVENT_NAME: 'pull_request',
     GITHUB_REF: 'refs/pull/6409/merge',
   };
@@ -213,6 +266,9 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
   env.GITHUB_REF = 'refs/heads/main';
   run('key');
   assert.match(fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'), /save=true/);
+  env.IMAGE_SAVE = 'false';
+  run('pull');
+  assert.equal(calls().filter((args) => args[0] === 'save').length, 0);
   env.IMAGE_SAVE = 'true';
   run('pull');
   assert.equal(calls().filter((args) => args[0] === 'save').length, 1);
@@ -240,6 +296,28 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
   assert.match(run('load'), /Loaded and verified 5 cached Supabase images/);
   assert.equal(calls().filter((args) => args[0] === 'pull').length, pulls);
   assert.equal(calls().filter((args) => args[0] === 'load').length, 2);
+  env.IMAGE_PROFILE = 'full';
+  const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
+  const unsupported = config.replace(
+    '[edge_runtime]\nenabled = false',
+    '[edge_runtime]\nenabled = true'
+  );
+  assert.notEqual(unsupported, config);
+  fs.writeFileSync(path.join(database, 'supabase/config.toml'), unsupported);
+  const failure = spawnSync(
+    process.execPath,
+    ['scripts/ci/supabase-image-cache.js', 'key'],
+    { env, encoding: 'utf8' }
+  );
+  assert.equal(failure.status, 1);
+  assert.match(
+    failure.stderr,
+    /::warning::Supabase image cache configuration: Uncached service enabled: edge_runtime/
+  );
+  assert.match(
+    fs.readFileSync(env.GITHUB_STEP_SUMMARY, 'utf8'),
+    /Uncached service enabled: edge_runtime/
+  );
 });
 
 test('deadline exhaustion retains the last registry classification and bootstrap instruction', async () => {

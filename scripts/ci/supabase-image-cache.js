@@ -326,8 +326,49 @@ async function main(mode) {
   });
   archiveSize(archive);
 }
+function configurationDiagnostic(error) {
+  if (!(error instanceof Error)) return undefined;
+  const message = error.message;
+  if (
+    [
+      'Unsupported Supabase image registry',
+      'Review supplemental image pins for the installed Supabase CLI',
+      'Unknown Supabase image profile',
+      'Invalid CLI image metadata',
+      'Duplicate CLI image metadata',
+      'Missing image cache identity',
+    ].includes(message) ||
+    /^(?:Uncached service enabled|Missing explicit service configuration): (?:api|auth|realtime|studio|inbucket|storage|edge_runtime|analytics|db\.pooler)$/.test(
+      message
+    ) ||
+    /^Missing CLI image metadata: (?:postgres|postgres-meta|kong|postgrest|gotrue|realtime|studio|mailpit|storage-api|imgproxy)$/.test(
+      message
+    )
+  )
+    return message;
+  return undefined;
+}
+
 if (require.main === module)
-  main(process.argv[2]).catch(() => {
+  main(process.argv[2]).catch((error) => {
+    const diagnostic = configurationDiagnostic(error);
+    if (diagnostic) {
+      console.error(
+        `::warning::Supabase image cache configuration: ${diagnostic}`
+      );
+      // biome-ignore lint/suspicious/noUndeclaredEnvVars: GitHub Actions output file, outside Turbo.
+      const summary = process.env.GITHUB_STEP_SUMMARY;
+      if (summary) {
+        try {
+          fs.appendFileSync(
+            summary,
+            `- Supabase image cache configuration: ${diagnostic}\n`
+          );
+        } catch {
+          console.error('Supabase image cache summary could not be written.');
+        }
+      }
+    }
     // Never dump a child error: CLI startup can include credentials.
     console.error(
       'Supabase image cache preparation failed; inspect the fixed pull classification above.'
@@ -335,6 +376,7 @@ if (require.main === module)
     process.exitCode = 1;
   });
 module.exports = {
+  configurationDiagnostic,
   imageList,
   cacheKey,
   subsetImages,

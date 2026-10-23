@@ -612,7 +612,13 @@ reuse the exact shared `full` Supabase image profile instead of writing a second
 choice and all pause gates remain in place; this source change does not resume
 Docker or establish hosted runtime acceptance. Only these E2E image-warming
 steps continue after a cache or bounded pull failure, allowing baseline/startup
-to pull any missing images. Contract workflows keep strict image-cache setup.
+to pull any missing images. Only general Playwright shard 1 may create and upload
+an archive on trusted main runs; other shards and the cross-app job restore
+without saving. The shared action's `save` input defaults to true, preserving
+strict contract producers. Allowlisted configuration errors, including enabled
+uncached services, emit a warning annotation and step-summary line before the
+helper fails; E2E fallback does not hide that diagnostic. Raw CLI errors remain
+suppressed. Contract workflows keep strict image-cache setup.
 
 Bun dependencies use `bun-deps-v2-<OS>-<architecture>-<pinned Bun version>`
 without a lockfile hash or prefix fallback. This chooses a coarser immutable
@@ -620,7 +626,12 @@ archive over automatic deletion: lockfile changes cannot create new multi-GiB
 archives or race a cleanup job, and no write-scoped API token or cleanup loop is
 needed. Bun still resolves the current lockfile and fetches missing packages;
 newly added downloads do not enter the archive until the pinned Bun version
-changes. This limits reuse of new packages but preserves install correctness.
+changes. This cache therefore drifts behind `bun.lock`: an exact key hit does
+not mean every current dependency is cached, and newly added packages can be
+downloaded on each run until the Bun version changes. Review a deliberate cache
+namespace refresh if a long-lived Bun pin makes this repeated work material;
+there is no scheduled writer or automatic refresh. Install correctness remains
+bound to the current lockfile.
 The runtime binary uses `bun-runtime-v2-<OS>-<architecture>-<pinned Bun version>`
 with no lockfile hash or restore prefix: a lockfile change does not change the
 pinned executable. Old v1 archives receive no

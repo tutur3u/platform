@@ -754,9 +754,9 @@ test('Inventory and Storefront retain their paused E2E contract', () => {
     stepNamed('Restore shared Supabase images')?.uses,
     './.github/actions/cache-supabase-images'
   );
-  assert.deepEqual(stepNamed('Restore shared Supabase images')?.with, {
-    profile: 'full',
-  });
+  const imageCache = stepNamed('Restore shared Supabase images')?.with;
+  assert.equal(imageCache.profile, 'full');
+  assert.equal(imageCache.save, 'false');
   assert.equal(
     stepNamed('Install Playwright browser')?.['working-directory'],
     'apps/inventory'

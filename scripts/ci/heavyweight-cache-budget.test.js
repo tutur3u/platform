@@ -346,6 +346,7 @@ function assertTrustedSave(step, label, policy = savePolicy(step)) {
     'success',
     'always',
     'format',
+    'inputs',
     `return !!(${expression})`
   );
   let admitted = false;
@@ -382,7 +383,8 @@ function assertTrustedSave(step, label, policy = savePolicy(step)) {
               outputs,
               () => true,
               () => true,
-              (pattern, value) => pattern.replace('{0}', value)
+              (pattern, value) => pattern.replace('{0}', value),
+              new Proxy({}, { get: () => value })
             );
           } catch (error) {
             throw new Error(`${label}: unsupported save guard ${step.if}`, {
