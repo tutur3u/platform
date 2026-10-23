@@ -177,6 +177,40 @@ describe('portable desktop certificate readiness', () => {
       })
     ).toEqual({ ok: false, code: 'certificate_identity_mismatch' });
   });
+  it('never reaches node-forge RSA signature verification (GHSA-86w9-cpqp-85rv)', () => {
+    const verify = vi.fn();
+    const setRsaPublicKey = forge.pki.setRsaPublicKey;
+    const spy = vi
+      .spyOn(forge.pki, 'setRsaPublicKey')
+      .mockImplementation((n, e) => {
+        const key = setRsaPublicKey(n, e);
+        const original = key.verify.bind(key);
+        key.verify = (...args) => {
+          verify();
+          return original(...args);
+        };
+        return key;
+      });
+    try {
+      expect(
+        inspect(pfx(certificate({ developerId: true })), {
+          platform: 'macos',
+          identity: 'Developer ID Application: Synthetic Fixture (ABCDEFGHIJ)',
+          teamId: 'ABCDEFGHIJ',
+        }).ok
+      ).toBe(true);
+      expect(spy).toHaveBeenCalled();
+      expect(verify).not.toHaveBeenCalled();
+      // Positive control: the instrumentation observes chain verification.
+      const parsed = forge.pki.certificateFromPem(
+        forge.pki.certificateToPem(certificate())
+      );
+      expect(parsed.verify(parsed)).toBe(true);
+      expect(verify).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
   it('rejects team mismatch', () => {
     expect(
       inspect(pfx(certificate({ developerId: true })), {
