@@ -119,6 +119,7 @@
     "dev": "bun turbo:local run dev --parallel --filter='!@tuturuuu/tanstack-web'",
     "check": "node scripts/check.js",
     "check:now": "node scripts/check.js --force-now",
+    "check:changed": "node scripts/check-changed.js",
     "check:source-size": "node scripts/check-source-size.js",
     "check:workspace-members": "node scripts/check-workspace-member-type-guard.js",
     "check:docker": "node scripts/paused-runtimes.js docker",

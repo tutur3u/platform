@@ -406,4 +406,46 @@ describe('workspace settings configs route', () => {
       error: 'Failed to verify workspace membership',
     });
   });
+
+  it('passes request config keys to the RPC as own properties only', async () => {
+    mocks.sessionSupabase.rpc.mockResolvedValueOnce({
+      data: { posts_auto_approved: 0, reports_auto_approved: 0 },
+      error: null,
+    });
+
+    const { PUT } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs',
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          // Raw JSON keeps `__proto__` as a literal key in the request body.
+          body: '{"__proto__":"x","REPORT_CONFIG_A":"enabled"}',
+        }
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.sessionSupabase.rpc).toHaveBeenCalledTimes(1);
+    const [, args] = mocks.sessionSupabase.rpc.mock.calls[0] as [
+      string,
+      { p_updates: Record<string, string> },
+    ];
+    expect(Object.getPrototypeOf(args.p_updates)).toBe(Object.prototype);
+    expect(Object.hasOwn(args.p_updates, '__proto__')).toBe(true);
+    expect(Object.keys(args.p_updates).sort()).toEqual([
+      'REPORT_CONFIG_A',
+      '__proto__',
+    ]);
+    expect(args.p_updates.REPORT_CONFIG_A).toBe('enabled');
+  });
 });

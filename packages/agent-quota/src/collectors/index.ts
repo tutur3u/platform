@@ -1,6 +1,12 @@
+import {
+  matchingBlocks,
+  type QuotaBlock,
+  readBlockLedger,
+} from '../block-ledger';
+import { type PoolSettings, parsePoolSettings } from '../pool-settings';
 import type { AccountUsage, ActiveAssignment, Provider } from '../types';
 import { DEFAULT_INSTANCE_LABELS } from '../types';
-import { collectAntigravity } from './antigravity';
+import { applyImportedUsage, applyManualUsage } from '../usage-import';
 import { collectCatalog, parseCatalog } from './catalog';
 import { collectClaude } from './claude';
 import { collectCodex } from './codex';
@@ -12,8 +18,8 @@ export interface Collectors {
   collectCatalog: typeof collectCatalog;
   collectClaude: typeof collectClaude;
   collectCodex: typeof collectCodex;
-  collectAntigravity: typeof collectAntigravity;
   collectSnapshot: typeof collectSnapshot;
+  readBlockLedger: typeof readBlockLedger;
 }
 
 const DEFAULT_COLLECTORS: Collectors = {
@@ -21,8 +27,8 @@ const DEFAULT_COLLECTORS: Collectors = {
   collectCatalog,
   collectClaude,
   collectCodex,
-  collectAntigravity,
   collectSnapshot,
+  readBlockLedger,
 };
 
 export interface CollectOptions {
@@ -35,7 +41,16 @@ export interface CollectionResult {
   active?: ActiveAssignment[];
   t3ObservedAt?: string;
   t3Error?: string;
+  blocks: QuotaBlock[];
+  poolSettings: Record<string, PoolSettings>;
+  invalidObservations: string[];
 }
+
+type ExtendedLedger = Awaited<ReturnType<typeof readBlockLedger>> & {
+  usageImport?: unknown;
+  observations?: unknown;
+  poolSettings?: unknown;
+};
 
 export async function collectAll(
   options: CollectOptions = {}
@@ -53,10 +68,13 @@ export async function collectAllWith(
       .then(() => collectors.collectT3State())
       .then((t3) => ({ t3 }))
       .catch(() => ({ t3Error: 'T3 activity state is unavailable.' }));
-  const catalog =
-    options.catalog === undefined
-      ? await collectors.collectCatalog()
-      : parseCatalog(options.catalog);
+  const [{ blocks, usageImport, observations, poolSettings }, catalog] =
+    await Promise.all([
+      collectors.readBlockLedger().then((ledger) => ledger as ExtendedLedger),
+      options.catalog === undefined
+        ? collectors.collectCatalog()
+        : Promise.resolve(parseCatalog(options.catalog)),
+    ]);
   const instances = catalog.length
     ? catalog
     : Object.entries(DEFAULT_INSTANCE_LABELS).map(([instanceId, label]) => ({
@@ -67,25 +85,44 @@ export async function collectAllWith(
         modelOptions: {},
         available: false,
       }));
-  const accounts = await Promise.all(
-    instances.map(async (instance) => {
-      const { instanceId, label, provider } = instance;
-      const empty: AccountUsage = {
-        instanceId,
-        label,
-        provider,
+  const snapshots = await Promise.all(
+    instances.map((instance) =>
+      collectors.collectSnapshot({
+        instanceId: instance.instanceId,
+        label: instance.label,
+        provider: instance.provider,
         windows: [],
         lastError: 'no-usage-signal',
-      };
+      })
+    )
+  );
+  const cached = applyImportedUsage(snapshots, usageImport);
+  const now = new Date();
+  const accounts = await Promise.all(
+    instances.map(async (instance, index) => {
+      const { instanceId, label, provider } = instance;
+      const cache = cached[index]!;
+      const aliases = cached
+        .filter(
+          (item) =>
+            item.instanceId === instanceId ||
+            Boolean(
+              cache.accountIdentityHash &&
+                item.provider === provider &&
+                item.accountIdentityHash === cache.accountIdentityHash
+            )
+        )
+        .map((item) => item.instanceId);
+      const blocked =
+        matchingBlocks(blocks, aliases, undefined, now).length > 0;
       const account =
-        provider === 'antigravity'
-          ? collectors.collectAntigravity(instanceId, label, instance.models)
-          : options.snapshotsOnly
-            ? empty
-            : provider === 'claude'
-              ? await collectors.collectClaude(instanceId, label)
-              : await collectors.collectCodex(instanceId, label);
-      const snapshot = await collectors.collectSnapshot(account);
+        blocked || options.snapshotsOnly !== false
+          ? cache
+          : provider === 'claude'
+            ? await collectors.collectClaude(instanceId, label)
+            : await collectors.collectCodex(instanceId, label);
+      const snapshot =
+        account === cache ? cache : await collectors.collectSnapshot(account);
       return {
         ...snapshot,
         models: instance.models,
@@ -94,12 +131,23 @@ export async function collectAllWith(
       };
     })
   );
+  const invalidObservations: string[] = [];
+  const withManual = applyManualUsage(
+    applyImportedUsage(accounts, usageImport),
+    Array.isArray(observations) ? observations : [],
+    invalidObservations,
+    now,
+    blocks
+  );
   const t3 = await t3Result;
   return {
-    accounts,
+    accounts: withManual,
     active: t3.t3?.activeAssignments,
     t3ObservedAt: t3.t3?.observedAt,
     t3Error: t3.t3Error,
+    blocks,
+    poolSettings: parsePoolSettings(poolSettings),
+    invalidObservations,
   };
 }
 

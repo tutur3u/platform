@@ -98,6 +98,83 @@ describe('routing policy', () => {
     ).toBe(true);
   });
 
+  it('keeps a stale hard-limit window binding through a bounded no-reset age', () => {
+    const staleNoReset = account('claudeAgent', 95, '2026-10-20T00:00:00.000Z');
+    staleNoReset.windows[0]!.kind = 'long';
+    delete staleNoReset.windows[0]!.resetsAt;
+    const result = recommend({
+      task: { model: 'claude-opus-4-6' },
+      active: [],
+      accounts: [staleNoReset],
+      now,
+    });
+    expect(result.ranked[0]?.state).toBe('UNKNOWN');
+    expect(result.ranked[0]?.eligible).toBe(false);
+    expect(
+      result.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'near-limit-stale'
+      )
+    ).toBe(true);
+  });
+
+  it('bounds resetless manual session exhaustion by its five-hour window', () => {
+    const withinWindow = account(
+      'claudeAgent',
+      100,
+      new Date(now.getTime() - 4 * 60 * 60_000).toISOString()
+    );
+    delete withinWindow.windows[0]!.resetsAt;
+    const beyondWindow = account(
+      'claudeAgent',
+      100,
+      new Date(now.getTime() - 6 * 60 * 60_000).toISOString()
+    );
+    delete beyondWindow.windows[0]!.resetsAt;
+    const inside = recommend({
+      task: { model: 'claude-opus-4-6' },
+      active: [],
+      accounts: [withinWindow],
+      now,
+    });
+    const outside = recommend({
+      task: { model: 'claude-opus-4-6' },
+      active: [],
+      accounts: [beyondWindow],
+      now,
+    });
+    expect(
+      inside.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'near-limit-stale'
+      )
+    ).toBe(true);
+    expect(
+      outside.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'near-limit-stale'
+      )
+    ).toBe(false);
+  });
+
+  it('keeps future-dated resetless exhaustion binding instead of treating it as free', () => {
+    const future = account(
+      'claudeAgent',
+      100,
+      new Date(now.getTime() + 60 * 60_000).toISOString()
+    );
+    delete future.windows[0]!.resetsAt;
+    const result = recommend({
+      task: { model: 'claude-opus-4-6' },
+      active: [],
+      accounts: [future],
+      now,
+    });
+    expect(result.ranked[0]?.eligible).toBe(false);
+    expect(
+      result.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'near-limit-stale'
+      )
+    ).toBe(true);
+  });
+
   it('treats a passed reset timestamp as stale instead of imminent', () => {
     const expired = account('codex', 10, now.toISOString());
     const window = expired.windows[0];
@@ -182,6 +259,22 @@ describe('routing policy', () => {
         (reason) => reason.code === 'reserve-unknown'
       )
     ).toBe(true);
+  });
+
+  it('does not invent a zero-percent reserve for pools with no configured reserve', () => {
+    const unknown = { ...account('codex_unreserved', 20), windows: [] };
+    const result = recommend({
+      task: { provider: 'codex' },
+      active: [],
+      accounts: [unknown],
+      now,
+    });
+    expect(result.ranked[0]?.state).toBe('UNKNOWN');
+    expect(
+      result.ranked[0]?.reasons.some(
+        (reason) => reason.code === 'reserve-unknown'
+      )
+    ).toBe(false);
   });
 
   it('uses stable instance ids to break equal-score ties', () => {

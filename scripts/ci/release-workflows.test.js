@@ -1892,7 +1892,6 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
       'prepare-publish-npm'
     );
     const publishJob = readWorkflowJobBlock(workflowName, 'publish-npm');
-
     assert.doesNotMatch(workflow, /github\.event\.pull_request/);
     assert.doesNotMatch(workflow, /pull_request\.title/);
 
@@ -1941,7 +1940,6 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
       /steps\.version-check\.outputs\.should_publish == 'true'/
     );
     assert.doesNotMatch(prepareJob, /id-token:\s*write/);
-
     assert.match(publishJob, new RegExp(`environment: ${environment}`));
     assert.match(publishJob, /id-token:\s*write/);
     assert.match(publishJob, /actions\/download-artifact@/);
@@ -1963,7 +1961,9 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
     );
     assert.match(
       publishJob,
-      /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
+      packagePath === 'packages/sdk'
+        ? /npm publish "\$\{PACKAGE_TARBALL\}" --ignore-scripts/
+        : /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
     );
     assert.match(publishJob, /trusted publisher is configured/);
     assert.match(publishJob, /Wait for npm publication/);
