@@ -27,3 +27,18 @@ test('qualification file rejections retain the boundary blocker code', (t) => {
     }
   );
 });
+
+test('SDK qualification selects each shared file dependency', () => {
+  const { readWorkflow } = require('./workflow-yaml-test-helper');
+  const filters = readWorkflow('sdk-package-qualification.yaml').on.pull_request
+    .paths;
+  for (const file of [
+    'scripts/safe-fs.js',
+    'scripts/ci/qualify-sdk-file.js',
+    'scripts/ci/qualify-sdk-file.test.js',
+  ])
+    assert.ok(
+      filters.some((pattern) => path.matchesGlob(file, pattern)),
+      file
+    );
+});
