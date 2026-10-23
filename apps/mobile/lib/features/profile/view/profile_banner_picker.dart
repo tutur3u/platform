@@ -67,7 +67,7 @@ Future<void> pickAndUploadProfileBanner(
     if (!context.mounted || !intent.current(context) || cropped == null) return;
     await intent.cubit.uploadBanner(cropped);
   } on PlatformException catch (error) {
-    if (intent.current(context)) {
+    if (context.mounted && intent.current(context)) {
       intent.cubit.reportBannerSelectionFailure(error);
     }
   } finally {

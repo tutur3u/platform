@@ -33,24 +33,25 @@ void main() {
     when(() => client.getUrl(any())).thenAnswer((_) => pending.future);
     final previous = debugNetworkImageHttpClientProvider;
     debugNetworkImageHttpClientProvider = () => client;
-    addTearDown(() {
+    try {
+      await tester.pumpApp(
+        const ProfileBanner(
+          profile: UserProfile(
+            id: 'actor',
+            bannerUrl: 'https://example.invalid/banner.png',
+          ),
+        ),
+      );
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      pending.completeError(const SocketException('Synthetic image failure'));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.panorama_outlined), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(tester.takeException(), isNull);
+    } finally {
       debugNetworkImageHttpClientProvider = previous;
       PaintingBinding.instance.imageCache.clear();
       PaintingBinding.instance.imageCache.clearLiveImages();
-    });
-    await tester.pumpApp(
-      const ProfileBanner(
-        profile: UserProfile(
-          id: 'actor',
-          bannerUrl: 'https://example.invalid/banner.png',
-        ),
-      ),
-    );
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    pending.completeError(const SocketException('Synthetic image failure'));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.panorama_outlined), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(tester.takeException(), isNull);
+    }
   });
 }
