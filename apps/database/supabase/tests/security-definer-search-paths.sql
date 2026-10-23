@@ -11,7 +11,7 @@ begin;
 set local role :"security_migration_role";
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(23);
+select plan(25);
 select set_config('security.exposed_schemas', :'security_exposed_schemas', true);
 create function pg_temp.security_definer_path_is_safe(path_setting text)
 returns boolean
@@ -167,8 +167,17 @@ delete from public.workspace_members where ws_id = '00000000-0000-4000-8000-0000
 insert into public.workspace_members(ws_id, user_id, type)
 values ('00000000-0000-4000-8000-00000000a311', '00000000-0000-4000-8000-00000000a302', 'MEMBER');
 select is((select creator_id from public.workspaces where id = '00000000-0000-4000-8000-00000000a311'),
-  '00000000-0000-4000-8000-00000000a302'::uuid,
-  'catalog-and-temp sole-member trigger claims the workspace');
+  '00000000-0000-4000-8000-00000000a301'::uuid,
+  'membership insertion preserves the authoritative workspace creator');
+select ok(to_regprocedure('public.claim_workspace_creator_when_missing()') is null,
+  'obsolete implicit ownership-transfer function remains removed');
+delete from public.workspace_members where ws_id='00000000-0000-4000-8000-00000000a311';
+update public.workspaces set creator_id='00000000-0000-4000-8000-00000000a302'
+where id='00000000-0000-4000-8000-00000000a311';
+select is((select count(*)::integer from public.workspace_members
+  where ws_id='00000000-0000-4000-8000-00000000a311'
+    and user_id='00000000-0000-4000-8000-00000000a302' and type='MEMBER'),1,
+  'catalog-and-temp ownership-transfer trigger creates the new creator membership');
 set local role authenticated;
 select ok(public.is_task_sharing_enabled('00000000-0000-4000-8000-00000000a3ff')
   and not public.is_member_invited('00000000-0000-4000-8000-00000000a3ff', '00000000-0000-4000-8000-00000000a3ff'),

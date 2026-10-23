@@ -170,8 +170,7 @@ begin
     -- Qualified bodies retain catalog lookup while making pg_temp explicit last.
     if (fn.path_setting is not null
       and btrim(fn.path_setting) in ('', '""', 'pg_catalog', '"pg_catalog"'))
-      or fn.oid in (to_regprocedure('public.add_ws_creator()'),
-        to_regprocedure('public.claim_workspace_creator_when_missing()')) then
+      or fn.oid = to_regprocedure('public.add_ws_creator()') then
       execute format('alter function %I.%I(%s) set search_path = pg_catalog, pg_temp',
         fn.nspname, fn.proname, fn.arguments);
       continue;
