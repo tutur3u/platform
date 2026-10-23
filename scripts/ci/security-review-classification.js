@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Runs from the default branch in security-review-classifier.yaml
 // (pull_request_target) and security-review-reclassify.yaml (workflow_run after
-// a review is submitted or dismissed) and security-review-sweep.yaml (a
-// scheduled sweep of labeled open pull requests). It never reads or executes
+// a review is submitted or dismissed); security-review-sweep.js reuses it for
+// the scheduled sweep of labeled open pull requests. It never reads or executes
 // pull request content: it lists the PR's file names and current reviews
 // through the API, classifies them with the default branch's security-paths.js,
 // labels the PR and records a check run.
@@ -13,9 +13,10 @@ const { env } = process;
 
 const label = 'security-review-required';
 const checkName = 'Security review';
-// Explicit bounds; a listing that does not end inside them is incomplete.
+// Explicit bound; a review listing that does not end inside it is incomplete.
 const maxReviews = 1000;
-const maxSweptPulls = 200;
+// REST calls made, so callers such as the sweep can enforce a call budget.
+const apiCalls = { counted: 0 };
 
 function parseReviewers(value) {
   return new Set(
@@ -137,6 +138,7 @@ async function github(path, { method = 'GET', body } = {}) {
     },
     method,
   });
+  apiCalls.counted += 1;
   if (!response.ok && response.status !== 404 && response.status !== 422) {
     throw new Error(`${method} ${path} failed with ${response.status}`);
   }
@@ -159,7 +161,9 @@ async function paginate(path, limit) {
     if (status !== 200 || !Array.isArray(data)) {
       throw new Error(`incomplete listing of ${path}`);
     }
-    if (items.length >= limit) return { complete: data.length === 0, items };
+    if (items.length >= limit) {
+      return { complete: data.length === 0, items };
+    }
     items.push(...data);
     if (data.length < 100) return { complete: true, items };
   }
@@ -221,7 +225,7 @@ async function latestCheckConclusion(repo, headSha) {
 }
 
 async function postCheck(repo, headSha, decision, summary) {
-  await github(`/repos/${repo}/check-runs`, {
+  const { status } = await github(`/repos/${repo}/check-runs`, {
     body: {
       conclusion: decision.conclusion,
       details_url: env.RUN_URL,
@@ -232,6 +236,26 @@ async function postCheck(repo, headSha, decision, summary) {
     },
     method: 'POST',
   });
+  if (status !== 201) throw new Error(`check-run post failed with ${status}`);
+}
+
+async function applyLabel(repo, number) {
+  const existing = await github(`/repos/${repo}/labels/${label}`);
+  if (existing.status === 404) {
+    await github(`/repos/${repo}/labels`, {
+      body: {
+        color: 'b60205',
+        description: 'Independent security review required before merge',
+        name: label,
+      },
+      method: 'POST',
+    });
+  }
+  const { status } = await github(`/repos/${repo}/issues/${number}/labels`, {
+    body: { labels: [label] },
+    method: 'POST',
+  });
+  if (status !== 200) throw new Error(`labeling failed with ${status}`);
 }
 
 async function evaluate(repo, { author, headSha, number }) {
@@ -247,7 +271,7 @@ async function evaluate(repo, { author, headSha, number }) {
     `/repos/${repo}/pulls/${number}/reviews`,
     maxReviews
   );
-  return decide({
+  const decision = decide({
     author,
     files,
     headSha,
@@ -257,105 +281,68 @@ async function evaluate(repo, { author, headSha, number }) {
     // GitHub stops listing files at 3000, so a full listing is also truncated.
     truncated: !listed.complete || listed.items.length >= maxListedFiles,
   });
+  return decision;
 }
 
-// Evaluates one pull request and records the check. Any failure after the
-// head is known records action_required, so an error can never leave an
-// earlier success standing.
-async function reclassify(repo, pr, { onlyIfChanged = false } = {}) {
+// Evaluates one pull request and records the check. The check is posted
+// first and must succeed: an evaluation error posts action_required, so it
+// can never leave an earlier success standing. Deduplication (sweep only) and
+// labeling are best-effort and can never suppress that post.
+async function reclassify(
+  repo,
+  pr,
+  { applyLabels = true, onlyIfChanged = false } = {}
+) {
+  assertShape(repo, pr.number, pr.headSha);
   let decision;
+  let evaluationError;
   try {
     decision = await evaluate(repo, pr);
   } catch (error) {
-    assertShape(repo, pr.number, pr.headSha);
-    const failed = {
+    evaluationError = error;
+    decision = {
       categories: [],
       conclusion: 'action_required',
       required: true,
       title: 'Security review could not be evaluated; re-run the classifier',
     };
-    await postCheck(repo, pr.headSha, failed, `### ${failed.title}`);
-    throw error;
   }
-  if (
-    onlyIfChanged &&
-    (await latestCheckConclusion(repo, pr.headSha)) === decision.conclusion
-  ) {
-    return decision;
-  }
-  const summary = summarize(decision);
-  if (decision.required) {
-    const existing = await github(`/repos/${repo}/labels/${label}`);
-    if (existing.status === 404) {
-      await github(`/repos/${repo}/labels`, {
-        body: {
-          color: 'b60205',
-          description: 'Independent security review required before merge',
-          name: label,
-        },
-        method: 'POST',
-      });
+  const summary = evaluationError
+    ? `### ${decision.title}`
+    : summarize(decision);
+  let unchanged = false;
+  if (onlyIfChanged && !evaluationError) {
+    try {
+      unchanged =
+        (await latestCheckConclusion(repo, pr.headSha)) === decision.conclusion;
+    } catch (error) {
+      console.log(
+        `::warning::#${pr.number}: check lookup failed (${error.message}); posting anyway.`
+      );
     }
-    await github(`/repos/${repo}/issues/${pr.number}/labels`, {
-      body: { labels: [label] },
-      method: 'POST',
-    });
   }
-  await postCheck(repo, pr.headSha, decision, summary);
+  if (!unchanged) await postCheck(repo, pr.headSha, decision, summary);
+  if (evaluationError) throw evaluationError;
+  if (applyLabels && decision.required) {
+    try {
+      await applyLabel(repo, pr.number);
+    } catch (error) {
+      console.log(
+        `::warning::#${pr.number}: labeling failed (${error.message}); the check was recorded.`
+      );
+    }
+  }
   if (env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(env.GITHUB_STEP_SUMMARY, `${summary}\n`);
   }
   console.log(summary);
-  return decision;
-}
-
-// Scheduled backstop that does not depend on any pull-request-owned workflow:
-// every open labeled pull request is recomputed from its live reviews, and a
-// check is posted only when the decision changed (for example a dismissal the
-// review relay never signalled).
-async function sweep(repo) {
-  const issues = await paginate(
-    `/repos/${repo}/issues?state=open&labels=${label}`,
-    maxSweptPulls
-  );
-  if (!issues.complete) {
-    console.log(
-      `::warning::More than ${maxSweptPulls} labeled pull requests; sweeping the first ${issues.items.length}.`
-    );
-  }
-  let failures = 0;
-  for (const issue of issues.items) {
-    if (!issue.pull_request) continue;
-    const { data, status } = await github(
-      `/repos/${repo}/pulls/${issue.number}`
-    );
-    if (status !== 200 || data?.state !== 'open') continue;
-    try {
-      await reclassify(
-        repo,
-        {
-          author: data.user?.login ?? '',
-          headSha: data.head?.sha,
-          number: String(data.number),
-        },
-        { onlyIfChanged: true }
-      );
-    } catch (error) {
-      failures += 1;
-      console.error(`#${issue.number}: ${error.message}`);
-    }
-  }
-  if (failures > 0) throw new Error(`${failures} pull request(s) failed`);
+  return { decision, posted: !unchanged };
 }
 
 async function main() {
   const repo = env.GITHUB_REPOSITORY;
   if (!/^[\w.-]+\/[\w.-]+$/u.test(repo ?? ''))
     throw new Error('bad repository');
-  if (env.SECURITY_REVIEW_SWEEP === 'true') {
-    await sweep(repo);
-    return;
-  }
   const pr = await target(repo);
   if (!pr) {
     console.log(
@@ -385,9 +372,13 @@ module.exports = {
   decide,
   independentApprovers,
   label,
+  apiCalls,
+  assertShape,
+  github,
   main,
   maxReviews,
   paginate,
+  reclassify,
   parseReviewers,
   summarize,
 };

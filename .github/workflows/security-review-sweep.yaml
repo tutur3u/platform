@@ -3,15 +3,18 @@ name: Security Review Sweep
 # Trusted backstop for review revocation. The review relay
 # (security-review-recheck.yaml) is defined by the pull request itself, so a
 # pull request can delete or rename it and a later dismissal would never be
-# signalled. This schedule runs only default-branch code, needs no
-# pull-request-owned workflow, recomputes every open pull request labeled
-# security-review-required from its live reviews, and posts a check only when
-# the decision changed. Native code-owner review remains the primary
-# revocation control (see security-cadence.mdx). Never check out, install or
-# execute pull request content here.
+# signalled. This schedule runs only default-branch code and needs no
+# pull-request-owned workflow. scripts/ci/security-review-sweep.js evaluates
+# labeled open pull requests updated since the last successful sweep, plus a
+# fixed hourly 1/24 rotation of the rest, under a REST call budget, and posts a
+# check only when the decision changed.
+# GitHub may delay or drop scheduled runs, so this bounds staleness only
+# loosely; native code-owner review remains the primary revocation control
+# (see security-cadence.mdx). Never check out, install or execute pull request
+# content here.
 on:
   schedule:
-    - cron: "11,41 * * * *"
+    - cron: "23 * * * *"
 
 concurrency:
   group: security-review-sweep
@@ -24,12 +27,15 @@ jobs:
   sweep:
     name: Recompute labeled security reviews
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    # Labels are never written here (swept pull requests are already labeled),
+    # so pull requests are read-only and issues need no access. actions: read
+    # finds the last successful sweep, which is the incremental cursor.
     permissions:
+      actions: read
       checks: write
       contents: read
-      issues: write
-      pull-requests: write
+      pull-requests: read
     steps:
       # Scheduled runs always use the latest default-branch commit (GITHUB_SHA).
       - name: Check out the default-branch classifier only
@@ -39,6 +45,7 @@ jobs:
           sparse-checkout: |
             scripts/ci/security-paths.js
             scripts/ci/security-review-classification.js
+            scripts/ci/security-review-sweep.js
           sparse-checkout-cone-mode: false
 
       - name: Use Node.js 24
@@ -51,6 +58,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          SECURITY_REVIEW_SWEEP: "true"
           SECURITY_REVIEWERS: ${{ vars.SECURITY_REVIEWERS }}
-        run: node scripts/ci/security-review-classification.js
+          SWEEP_CALL_BUDGET: "300"
+        run: node scripts/ci/security-review-sweep.js
+

@@ -8,6 +8,7 @@ const {
   main,
   parseReviewers,
 } = require('./security-review-classification.js');
+const { routedGitHub } = require('./security-review-test-helper');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const workflowsDir = path.resolve(__dirname, '../../.github/workflows');
@@ -164,10 +165,12 @@ function mockGitHub(t, { pulls, reviews }) {
     } else if (route.endsWith('/labels/security-review-required')) {
       data = { name: 'security-review-required' };
     }
+    const created = init.method === 'POST' && route.endsWith('/check-runs');
     return {
+      headers: new Headers(),
       json: async () => data,
       ok: true,
-      status: 200,
+      status: created ? 201 : 200,
     };
   };
   return requests;
@@ -258,32 +261,6 @@ test('a relay for a moved, foreign or spoofed head posts nothing', async (t) => 
   }
 });
 
-// Route-table GitHub double: `routes` maps a path (without query) to a
-// function of the page number, or to fixed data; POSTs are recorded.
-function routedGitHub(t, routes) {
-  const requests = [];
-  const original = global.fetch;
-  t.after(() => {
-    global.fetch = original;
-  });
-  global.fetch = async (url, init = {}) => {
-    const full = String(url).replace('https://api.github.com', '');
-    const [route, query = ''] = full.split('?');
-    const page = Number(new URLSearchParams(query).get('page') ?? 1);
-    const body = init.body ? JSON.parse(init.body) : undefined;
-    const method = init.method ?? 'GET';
-    requests.push({ body, method, route: full });
-    const handler = method === 'GET' ? routes[route] : {};
-    if (handler === undefined)
-      return { json: async () => null, ok: false, status: 404 };
-    if (handler === 500)
-      return { json: async () => null, ok: false, status: 500 };
-    const data = typeof handler === 'function' ? handler(page) : handler;
-    return { json: async () => data, ok: true, status: 200 };
-  };
-  return requests;
-}
-
 const prRoutes = (reviewsByPage) => ({
   [`/repos/${repo}/pulls/42/files`]: (page) =>
     page === 1 ? [{ filename: '.github/workflows/x.yaml' }] : [],
@@ -339,46 +316,6 @@ test('an unreadable listing records action_required instead of a stale success',
   assert.match(check.body.output.title, /could not be evaluated/u);
 });
 
-function sweepRoutes(latestConclusion) {
-  return {
-    ...prRoutes([review('alice', 'APPROVED'), review('alice', 'DISMISSED')]),
-    [`/repos/${repo}/issues`]: (page) =>
-      page === 1 ? [{ number: 42, pull_request: {} }, { number: 7 }] : [],
-    [`/repos/${repo}/pulls/42`]: { ...openPull, state: 'open' },
-    [`/repos/${repo}/commits/${head}/check-runs`]: {
-      check_runs: [
-        {
-          app: { slug: 'github-actions' },
-          conclusion: latestConclusion,
-          started_at: '2026-10-23T00:00:00Z',
-        },
-      ],
-    },
-  };
-}
-
-test('the scheduled sweep revokes a stale success without any relay', async (t) => {
-  t.mock.method(console, 'log', () => {});
-  relayEnv(t, { SECURITY_REVIEW_SWEEP: 'true' });
-  let requests = routedGitHub(t, sweepRoutes('success'));
-  await main();
-  assert.match(
-    requests[0].route,
-    /issues\?state=open&labels=security-review-required&per_page=100&page=1$/u
-  );
-  // Only the labeled pull request is evaluated; plain issues are skipped.
-  assert.ok(!requests.some(({ route }) => route.includes('/pulls/7')));
-  const [check] = posted(requests);
-  assert.equal(check.body.conclusion, 'action_required');
-  assert.equal(check.body.head_sha, head);
-
-  // An unchanged decision posts nothing.
-  relayEnv(t, { SECURITY_REVIEW_SWEEP: 'true' });
-  requests = routedGitHub(t, sweepRoutes('action_required'));
-  await main();
-  assert.deepEqual(posted(requests), []);
-});
-
 test('revocation does not depend on the pull-request-owned relay', () => {
   // A pull request can delete or rename security-review-recheck.yaml, so the
   // relay and its workflow_run consumer are a fast path only. Without them a
@@ -410,11 +347,15 @@ test('revocation does not depend on the pull-request-owned relay', () => {
     /Recheck|workflow_run/u
   );
   const job = sweep.jobs.sweep;
-  assert.deepEqual(
-    job.permissions,
-    readWorkflow('security-review-classifier.yaml').jobs.classify.permissions
-  );
-  const [checkout, setupNode, classify, ...rest] = job.steps;
+  // Least privilege: the sweep posts checks but never writes labels; it reads
+  // its own run history for the incremental cursor.
+  assert.deepEqual(job.permissions, {
+    actions: 'read',
+    checks: 'write',
+    contents: 'read',
+    'pull-requests': 'read',
+  });
+  const [checkout, setupNode, run, ...rest] = job.steps;
   assert.deepEqual(rest, []);
   assert.match(checkout.uses, /^actions\/checkout@[0-9a-f]{40}$/u);
   assert.equal(
@@ -424,7 +365,10 @@ test('revocation does not depend on the pull-request-owned relay', () => {
   );
   assert.equal(checkout.with['persist-credentials'], false);
   assert.match(setupNode.uses, /^actions\/setup-node@[0-9a-f]{40}$/u);
-  assert.equal(classify.env.SECURITY_REVIEW_SWEEP, 'true');
+  assert.equal(run.run, 'node scripts/ci/security-review-sweep.js');
+  assert.match(run.env.SWEEP_CALL_BUDGET, /^[1-9]\d*$/u);
+  // Hourly; GitHub may delay or drop scheduled runs.
+  assert.deepEqual(triggers(sweep).schedule, [{ cron: '23 * * * *' }]);
   assert.doesNotMatch(
     source('security-review-sweep.yaml'),
     /secrets\.|uses: \.\/|bun install|npm (?:ci|install)/u
