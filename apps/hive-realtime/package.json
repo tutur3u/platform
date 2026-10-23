@@ -14,15 +14,15 @@
   },
   "dependencies": {
     "@tuturuuu/realtime": "workspace:*",
-    "jose": "^6.2.12",
+    "jose": "^6.2.13",
     "postgres": "^3.4.9",
-    "zod": "^4.6.2"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "bun-types": "1.4.2",
+    "bun-types": "1.4.3",
     "typescript": "7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.5"
   },
   "packageManager": "bun@1.4.3",
   "portless": {

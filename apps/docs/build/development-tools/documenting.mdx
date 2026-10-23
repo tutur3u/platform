@@ -215,3 +215,11 @@ pinned CLI's connectivity probe, can schedule a retry after rejection on Node
 preserves validation and failure exits; it does not retry or ignore errors.
 The initial tool download needs network access. Reassess the pin when the CLI's
 Got dependency contains the upstream connection-error fix.
+
+The wrapper gives npm an empty temporary `--prefix` while Mintlify still runs
+from `apps/docs`. This prevents npm from traversing Bun's installed workspace
+graph: published packages can contain development-only `catalog:` ranges that
+npm cannot parse when applying the repository's security overrides. Keep those
+overrides and installed manifests intact. The prefix is removed after success
+or failure; `scripts/paused-runtimes.test.js` covers working directory, prefix
+isolation, cleanup and exit propagation. Strict validation remains CI-only.

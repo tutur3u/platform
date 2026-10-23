@@ -20,12 +20,12 @@
     "@tuturuuu/utils": "workspace:*",
     "@xmldom/xmldom": "0.9.12",
     "xml-crypto": "6.4.0",
-    "zod": "4.6.2"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@node-saml/node-saml": "5.1.0",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "26.5.1",
+    "@types/node": "26.6.5",
     "typescript": "7.0.2",
     "vitest": "5.0.0"
   }

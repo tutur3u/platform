@@ -806,7 +806,7 @@ and owner/lease checks; finite per-row retention is not an ingress/account cap.
 ## Mintlify connectivity cancellation
 
 The canonical local-docs launcher pins CLI and Node patch versions in
-apps/docs/mintlify-version.json. Its isolated Node 24.19.0 avoids the pinned
+apps/docs/mintlify-version.json. Keep its temporary npm prefix to isolate Bun `catalog:` metadata; see [docs compatibility](../../../../../apps/docs/build/development-tools/documenting.mdx#mintlify-runtime-compatibility). Its isolated Node 24.19.0 avoids the pinned
 is-online/Got 12.6.1 [retry-after-rejection defect](https://github.com/sindresorhus/got/issues/2469) on Node 24.20+; retain validation
 and nonzero exits rather than swallowing errors or adding validation retries.
 Use finite loopback refusal controls against the actual transitive package to

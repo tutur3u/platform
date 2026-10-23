@@ -96,23 +96,23 @@
     "test:packaging": "node --test scripts/portable-build.test.cjs"
   },
   "dependencies": {
-    "@tiptap/core": "3.31.3",
-    "@tiptap/react": "3.31.3",
+    "@tiptap/core": "3.32.0",
+    "@tiptap/react": "3.32.0",
     "@tuturuuu/devbox": "workspace:*",
     "@tuturuuu/types": "workspace:*",
-    "prosemirror-model": "^1.25.11",
+    "prosemirror-model": "^1.25.12",
     "yaml": "^2.9.1",
     "yjs": "^13.6.33",
-    "zod": "^4.6.2"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@babel/parser": "^7.29.9",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.5",
     "typescript": "7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": ">=18.0.0"

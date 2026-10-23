@@ -27,12 +27,12 @@
     "sb:linkpush": "node scripts/run-supabase.js link && node scripts/run-supabase.js db push"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.8",
-    "@electric-sql/pglite-pgtap": "0.0.9",
+    "@electric-sql/pglite": "0.5.11",
+    "@electric-sql/pglite-pgtap": "0.0.12",
     "@supabase/supabase-js": "2.117.1",
     "supabase": "2.117.0",
     "typescript": "7.0.2",
-    "zod": "4.6.2"
+    "zod": "4.6.7"
   },
   "packageManager": "bun@1.4.3"
 }

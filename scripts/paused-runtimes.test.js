@@ -149,11 +149,12 @@ test(
       path.join(tmpdir(), 'docs-launcher-exit-')
     );
     const marker = path.join(directory, 'attempts');
+    const invocation = path.join(directory, 'invocation.json');
     try {
       for (const outcome of ['success', 'failure', 'signal']) {
         fs.writeFileSync(
           path.join(directory, 'npx'),
-          `#!${process.execPath}\nrequire('node:fs').appendFileSync(${JSON.stringify(marker)}, 'attempt\\n');${outcome === 'signal' ? "process.kill(process.pid,'SIGTERM');" : `process.exit(${outcome === 'success' ? 0 : 7});`}`,
+          `#!${process.execPath}\nconst fs = require('node:fs'); const args = process.argv.slice(2); fs.writeFileSync(${JSON.stringify(invocation)}, JSON.stringify({args, cwd: process.cwd(), prefixExists: fs.existsSync(args[1])})); fs.appendFileSync(${JSON.stringify(marker)}, 'attempt\\n');${outcome === 'signal' ? "process.kill(process.pid,'SIGTERM');" : `process.exit(${outcome === 'success' ? 0 : 7});`}`,
           { mode: 0o755 }
         );
         fs.accessSync(path.join(directory, 'npx'), fs.constants.X_OK);
@@ -174,6 +175,20 @@ test(
           outcome === 'success' ? 0 : outcome === 'failure' ? 7 : 1
         );
         assert.equal(fs.readFileSync(marker, 'utf8'), 'attempt\n');
+        const observed = JSON.parse(fs.readFileSync(invocation, 'utf8'));
+        assert.equal(observed.args[0], '--prefix');
+        const prefix = observed.args[1];
+        assert.equal(
+          fs.realpathSync(path.dirname(prefix)),
+          fs.realpathSync(tmpdir())
+        );
+        assert.equal(observed.prefixExists, true);
+        assert.equal(fs.existsSync(prefix), false);
+        assert.equal(
+          observed.cwd,
+          fs.realpathSync(path.join(root, 'apps/docs'))
+        );
+        assert.deepEqual(observed.args.slice(2), command(['validate']).args);
         fs.unlinkSync(marker);
       }
     } finally {
