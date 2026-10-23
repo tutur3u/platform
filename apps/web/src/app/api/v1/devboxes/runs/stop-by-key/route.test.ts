@@ -2,13 +2,17 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { authorizeMock, stopByKeyMock } = vi.hoisted(() => ({
+const { authorizeMock, limitMock, stopByKeyMock } = vi.hoisted(() => ({
   authorizeMock: vi.fn(),
+  limitMock: vi.fn(),
   stopByKeyMock: vi.fn(),
 }));
 
 vi.mock('@/lib/devboxes/authorization', () => ({
   authorizeDevboxRootMember: authorizeMock,
+}));
+vi.mock('@/lib/devboxes/rate-limits', () => ({
+  limitDevboxStopByKey: limitMock,
 }));
 vi.mock('@/lib/devboxes/store', () => ({
   stopDevboxRunByKey: stopByKeyMock,
@@ -29,6 +33,16 @@ describe('POST /api/v1/devboxes/runs/stop-by-key', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authorizeMock.mockResolvedValue({ ok: true, user: { id: 'owner' } });
+    limitMock.mockResolvedValue({ allowed: true, headers: {} });
+  });
+
+  it('applies a per-actor limit even to trusted CLI identities', async () => {
+    limitMock.mockResolvedValue(
+      NextResponse.json({ message: 'Too Many Requests' }, { status: 429 })
+    );
+    expect((await POST(request({ idempotencyKey: key }))).status).toBe(429);
+    expect(limitMock).toHaveBeenCalledWith('owner');
+    expect(stopByKeyMock).not.toHaveBeenCalled();
   });
 
   it('stops the caller run for the key', async () => {

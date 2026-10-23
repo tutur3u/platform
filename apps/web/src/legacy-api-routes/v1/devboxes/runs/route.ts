@@ -5,6 +5,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
+import { limitDevboxKeyedCreate } from '@/lib/devboxes/rate-limits';
 import { createDevboxRun, listDevboxRuns } from '@/lib/devboxes/store';
 import { DEVBOX_IDEMPOTENCY_KEY_PATTERN } from '@/lib/devboxes/store-run-idempotency';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
@@ -53,6 +54,11 @@ export async function POST(request: NextRequest) {
       { errors: parsed.error.issues, message: 'Invalid request body' },
       { status: 400 }
     );
+  }
+
+  if (parsed.data.idempotencyKey) {
+    const limited = await limitDevboxKeyedCreate(authorization.user.id);
+    if (!('allowed' in limited)) return limited;
   }
 
   const maintenance = parsed.data.workload === 'maintenance';

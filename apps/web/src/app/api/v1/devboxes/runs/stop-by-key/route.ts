@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
+import { limitDevboxStopByKey } from '@/lib/devboxes/rate-limits';
 import { stopDevboxRunByKey } from '@/lib/devboxes/store';
 import { DEVBOX_IDEMPOTENCY_KEY_PATTERN } from '@/lib/devboxes/store-run-idempotency';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
@@ -15,6 +16,9 @@ const StopByKeySchema = z.object({
 export async function POST(request: NextRequest) {
   const authorization = await authorizeDevboxRootMember(request);
   if (!authorization.ok) return authorization.response;
+
+  const limited = await limitDevboxStopByKey(authorization.user.id);
+  if (!('allowed' in limited)) return limited;
 
   const parsed = StopByKeySchema.safeParse(
     await request.json().catch(() => null)
