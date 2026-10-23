@@ -200,6 +200,29 @@ it('projects descendant metadata and structured errors without reading message c
       );
     }
     otherRun.run(
+      'claude-usage-class',
+      'unrelated-root',
+      4,
+      'failed',
+      '2026-10-23T03:59:45Z',
+      'claude_dd',
+      JSON.stringify({ rootNodeId: 'claude-usage-class' })
+    );
+    otherItem.run(
+      'unrelated-root',
+      'claude-usage-class',
+      'claude-usage-node',
+      'error',
+      'failed',
+      '2026-10-23T03:59:45Z',
+      JSON.stringify({
+        failure: {
+          class: 'usage_limit',
+          message: 'Claude API rate limit reached. Try again later.',
+        },
+      })
+    );
+    otherRun.run(
       'noisy',
       'unrelated-root',
       2,
@@ -249,6 +272,37 @@ it('projects descendant metadata and structured errors without reading message c
         },
       })
     );
+    for (const [id, message] of [
+      ['quota-wording', 'The requested quota exceeded the provider allowance.'],
+      [
+        'provider-overload-wording',
+        'Provider overload while processing request.',
+      ],
+    ] as const) {
+      otherRun.run(
+        id,
+        'unrelated-root',
+        5,
+        'failed',
+        '2026-10-23T03:59:40Z',
+        'antigravity',
+        JSON.stringify({ rootNodeId: id })
+      );
+      otherItem.run(
+        'unrelated-root',
+        id,
+        `${id}-node`,
+        'error',
+        'failed',
+        '2026-10-23T03:59:40Z',
+        JSON.stringify({
+          failure: {
+            class: id === 'quota-wording' ? 'usage_limit' : 'capacity',
+            message,
+          },
+        })
+      );
+    }
     completed.close();
     const global = collectPoolReceipts(
       ['antigravity'],
@@ -259,6 +313,21 @@ it('projects descendant metadata and structured errors without reading message c
       expect.arrayContaining(['run6', 'other'])
     );
     expect(global.failures.map((f) => f.runId)).toContain('error-capacity');
+    expect(global.failures.map((f) => f.runId)).toEqual(
+      expect.arrayContaining(['quota-wording', 'provider-overload-wording'])
+    );
+    const allProviders = collectPoolReceipts(
+      ['antigravity', 'claude_dd'],
+      new Date('2026-10-23T04:00:00Z'),
+      path
+    );
+    expect(allProviders.failures).toContainEqual(
+      expect.objectContaining({
+        runId: 'claude-usage-class',
+        classification: 'usage_limit',
+        message: 'Claude API rate limit reached. Try again later.',
+      })
+    );
     expect(global.failures.map((f) => f.runId)).not.toContain('noisy');
     expect(global.failures.map((f) => f.runId)).not.toContain('old');
     expect(global.failures.map((f) => f.runId)).not.toContain('foreign');

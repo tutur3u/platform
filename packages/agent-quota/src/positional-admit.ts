@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, readBlockLedger } from './block-ledger';
 import { capacityCooldownActive } from './capacity';
 import { collectAll } from './collectors';
 import { collectPoolReceipts } from './collectors/children';
+import { usageLimitReceiptActive } from './failure-receipt';
 import { HookError, transactLedger } from './hook-ledger';
 import type { AdmissionContext } from './hooks-types';
 import { pruneLedger } from './ledger-retention';
@@ -85,8 +87,7 @@ export function gateDecision(
         ids.includes(event.instanceId) &&
         event.outcome === 'usage-limit' &&
         !event.clearedAt &&
-        (!event.resetsAt ||
-          Date.parse(event.resetsAt) > context.now.getTime()) &&
+        usageLimitReceiptActive(event, context.now) &&
         receiptCovers(event, account.provider, model)
     )
   )
@@ -140,12 +141,25 @@ export function gateDecision(
     activeReservations: rank.activeCount,
   };
 }
-export async function runPositionalAdmit(args: string[]) {
+export function parseCatalogStdin(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new HookError('catalog-stdin-invalid');
+  }
+}
+export async function runPositionalAdmit(
+  args: string[],
+  readCatalogInput: () => string = () => readFileSync(0, 'utf8')
+) {
   try {
     const [pool, model] = args;
     if (
-      args.slice(2).some((arg) => arg !== '--reserve-owner') ||
-      args.length > 3
+      args
+        .slice(2)
+        .some((arg) => !['--reserve-owner', '--catalog-stdin'].includes(arg)) ||
+      args.length > 4 ||
+      (args.length >= 2 && new Set(args.slice(2)).size !== args.length - 2)
     )
       throw new HookError('admit-options-invalid');
     if (
@@ -169,7 +183,11 @@ export async function runPositionalAdmit(args: string[]) {
       process.exitCode = 3;
       return;
     }
-    const collected = await collectAll({ snapshotsOnly: true });
+    let catalog: unknown;
+    if (args.includes('--catalog-stdin')) {
+      catalog = parseCatalogStdin(readCatalogInput());
+    }
+    const collected = await collectAll({ snapshotsOnly: true, catalog });
     if (!collected.t3ObservedAt)
       throw new HookError('reservation-state-unavailable');
     const owner = process.env.AGENT_QUOTA_OWNER_POOL;
@@ -226,6 +244,9 @@ export async function runPositionalAdmit(args: string[]) {
             ? error.message
             : 'admission-state-unavailable',
         ],
+        retryable:
+          error instanceof HookError &&
+          error.message === 'ledger-contention-retry',
       })
     );
     process.exitCode =

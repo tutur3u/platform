@@ -494,7 +494,7 @@ describe('independent review regressions', () => {
       accountKey: 'fixture',
       instanceId: 'antigravity',
       outcome: 'usage-limit',
-      observedAt: '2000-01-01T00:00:00Z',
+      observedAt: new Date(now.getTime() - 86400_000).toISOString(),
     });
     pruneLedger(ledger, now);
     expect(ledger.observations).toHaveLength(1);

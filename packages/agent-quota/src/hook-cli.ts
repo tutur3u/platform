@@ -226,6 +226,9 @@ export async function runHook(command: string, action?: string): Promise<void> {
             ? error.message
             : 'hook-input-or-state-unavailable',
         ],
+        retryable:
+          error instanceof HookError &&
+          error.message === 'ledger-contention-retry',
       })
     );
     process.exitCode =

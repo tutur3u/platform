@@ -1,4 +1,20 @@
 import { createHash } from 'node:crypto';
+export const NO_RESET_RECEIPT_MAX_AGE_MS = 7 * 86400_000;
+export function usageLimitReceiptActive(
+  receipt: { resetsAt?: string | null; observedAt: string },
+  now: Date
+) {
+  if (receipt.resetsAt) {
+    const reset = Date.parse(receipt.resetsAt);
+    return Number.isFinite(reset) && reset > now.getTime();
+  }
+  const observed = Date.parse(receipt.observedAt);
+  return (
+    Number.isFinite(observed) &&
+    observed <= now.getTime() &&
+    now.getTime() - observed <= NO_RESET_RECEIPT_MAX_AGE_MS
+  );
+}
 export type FailureClass = 'usage-limit' | 'capacity' | 'auth' | 'other';
 export function recoveryAdmissionKey(
   threadId: string,

@@ -221,7 +221,7 @@ describe('one-shot quota admission', () => {
       chosen: { providerInstanceId: 'worker' },
     });
   });
-  it('does not infer a reset for usage-limit without one', () => {
+  it('does not infer a reset and bounds no-reset usage-limit receipts by age', () => {
     const context = setup();
     const worker = context.accounts[1];
     if (!worker) throw Error('fixture');
@@ -232,12 +232,17 @@ describe('one-shot quota admission', () => {
       outcome: 'usage-limit',
       observedAt: now.toISOString(),
     });
+    const result = admit(request(context.accounts), {
+      ...context,
+      now: new Date('2026-10-24T00:00:00Z'),
+    }).pools.find((x) => x.pool === 'worker');
+    expect(result).toMatchObject({ state: 'EXHAUSTED', resetAt: null });
     expect(
       admit(request(context.accounts), {
         ...context,
         now: new Date('2027-01-01T00:00:00Z'),
       }).pools.find((x) => x.pool === 'worker')
-    ).toMatchObject({ state: 'EXHAUSTED', resetAt: null });
+    ).not.toMatchObject({ state: 'EXHAUSTED' });
   });
   it('honours orchestrator reserve at equality and for unknown usage', () => {
     for (const windows of [account('owner', 70).windows, []]) {

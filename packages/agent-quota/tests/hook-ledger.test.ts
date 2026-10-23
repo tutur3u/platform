@@ -1,6 +1,9 @@
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { readLedger, transactLedger } from '../src/hook-ledger';
 import { processStartedAt } from '../src/process-identity';
@@ -91,6 +94,53 @@ describe('atomic host-wide hook ledger', () => {
       }, dir);
       await expect(Promise.all([first, second])).resolves.toHaveLength(2);
       expect((await readLedger(dir)).lastAdmissions).toEqual({ second: 2 });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+  it('serializes three independent processes through lock create/open races', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'quota-hooks-processes-'));
+    let packageRoot = dirname(fileURLToPath(import.meta.url));
+    while (!existsSync(resolve(packageRoot, 'src/hook-ledger.ts'))) {
+      const parent = dirname(packageRoot);
+      if (parent === packageRoot) throw Error('quota package source not found');
+      packageRoot = parent;
+    }
+    const moduleUrl = pathToFileURL(
+      resolve(packageRoot, 'src/hook-ledger.ts')
+    ).href;
+    const script = `import { transactLedger } from ${JSON.stringify(moduleUrl)};
+const [directory, key] = process.argv.slice(-2);
+await transactLedger(async ledger => {
+  await new Promise(resolve => setTimeout(resolve, 80));
+  ledger.lastAdmissions ??= {}; ledger.lastAdmissions[key] = Date.now();
+}, directory);`;
+    try {
+      const results = await Promise.all(
+        ['one', 'two', 'three', 'four'].map(
+          (key) =>
+            new Promise<{ code: number | null; stderr: string }>((resolve) => {
+              const child = spawn('bun', ['-e', script, dir, key], {
+                env: { HOME: dir, PATH: process.env.PATH ?? '' },
+                stdio: ['ignore', 'ignore', 'pipe'],
+              });
+              let stderr = '';
+              child.stderr
+                .setEncoding('utf8')
+                .on('data', (part) => (stderr += part));
+              child.on('close', (code) => resolve({ code, stderr }));
+            })
+        )
+      );
+      expect(results).toEqual([
+        { code: 0, stderr: '' },
+        { code: 0, stderr: '' },
+        { code: 0, stderr: '' },
+        { code: 0, stderr: '' },
+      ]);
+      expect(
+        Object.keys((await readLedger(dir)).lastAdmissions ?? {}).sort()
+      ).toEqual(['four', 'one', 'three', 'two']);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

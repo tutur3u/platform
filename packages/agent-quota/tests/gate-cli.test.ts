@@ -50,7 +50,38 @@ fixture.transaction.mockImplementation(
 vi.mock('../src/collectors', () => ({ collectAll: fixture.collect }));
 
 import { HookError } from '../src/hook-ledger';
-import { runPositionalAdmit } from '../src/positional-admit';
+import { parseCatalogStdin, runPositionalAdmit } from '../src/positional-admit';
+
+it('accepts structured live catalogs through the positional admit stdin parser', () => {
+  expect(parseCatalogStdin('{"instances":[{"id":"claude_dd"}]}')).toEqual({
+    instances: [{ id: 'claude_dd' }],
+  });
+});
+it('accepts --catalog-stdin and passes the supplied catalog to collection', async () => {
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+  const previous = process.exitCode;
+  fixture.blocked = false;
+  fixture.collect.mockResolvedValue({
+    accounts: [],
+    blocks: [],
+    active: [],
+    t3ObservedAt: new Date().toISOString(),
+  });
+  try {
+    await runPositionalAdmit(
+      ['codex', 'gpt-model', '--catalog-stdin'],
+      () => '{"instances":[]}'
+    );
+    expect(fixture.collect).toHaveBeenCalledWith({
+      snapshotsOnly: true,
+      catalog: { instances: [] },
+    });
+    expect(process.exitCode).toBe(2);
+  } finally {
+    process.exitCode = previous;
+    log.mockRestore();
+  }
+});
 
 it('sets exit 3 and never collects or probes for a hard-blocked request', async () => {
   const log = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -151,6 +182,7 @@ it('returns exit 3 for retryable ledger contention', async () => {
     expect(String(log.mock.calls.at(-1)?.[0])).toContain(
       'ledger-contention-retry'
     );
+    expect(JSON.parse(String(log.mock.calls.at(-1)?.[0])).retryable).toBe(true);
   } finally {
     process.exitCode = previous;
     fixture.transaction.mockImplementation(

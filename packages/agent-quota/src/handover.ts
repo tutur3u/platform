@@ -1,4 +1,5 @@
 import { accountKey } from './admission';
+import { usageLimitReceiptActive } from './failure-receipt';
 import type { HookLedger, SwitchEvidence } from './hooks-types';
 import { recommend } from './policy';
 import { checkSwitch } from './switch-safety';
@@ -39,7 +40,7 @@ export function checkHandover(
       (event.instanceId === current.instanceId ||
         event.accountKey === accountKey(current)) &&
       event.outcome === 'usage-limit' &&
-      (!event.resetsAt || Date.parse(event.resetsAt) > now.getTime())
+      usageLimitReceiptActive(event, now)
   );
   if (ranking?.state === 'healthy' && !limited)
     return {

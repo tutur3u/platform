@@ -36,23 +36,39 @@ export async function acquireTransactionLock(
   if (depth >= 4) throw Error('transaction-reclamation-busy');
   const reclaim = await acquireTransactionLock(`${path}.reclaim`, depth + 1);
   try {
-    const old = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+    let old: FileHandle;
+    try {
+      old = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT')
+        throw Error('transaction-lock-disappeared');
+      throw error;
+    }
     try {
       const stat = await old.stat();
       if (!stat.isFile() || stat.size > 2048)
         throw Error('transaction-lock-invalid');
-      const owner = JSON.parse(await old.readFile('utf8'));
+      let owner: { pid?: unknown; processStartedAt?: unknown };
+      try {
+        const raw = await old.readFile('utf8');
+        if (!raw.trim()) throw Error('empty');
+        const parsed: unknown = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+          throw Error('invalid');
+        owner = parsed as { pid?: unknown; processStartedAt?: unknown };
+      } catch {
+        throw Error('transaction-lock-incomplete');
+      }
+      const pid = owner.pid;
+      const startedAt = owner.processStartedAt;
       if (
-        !Number.isInteger(owner.pid) ||
-        owner.pid < 1 ||
-        typeof owner.processStartedAt !== 'string'
+        typeof pid !== 'number' ||
+        !Number.isInteger(pid) ||
+        pid < 1 ||
+        typeof startedAt !== 'string'
       )
-        throw Error('transaction-lock-invalid');
-      if (
-        !['dead', 'replaced'].includes(
-          processState(owner.pid, owner.processStartedAt)
-        )
-      )
+        throw Error('transaction-lock-incomplete');
+      if (!['dead', 'replaced'].includes(processState(pid, startedAt)))
         throw Error('transaction-owner-live-or-unverified');
       const current = await lstat(path);
       if (current.ino !== stat.ino || current.dev !== stat.dev)

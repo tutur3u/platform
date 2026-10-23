@@ -25,7 +25,10 @@ const receiptPrefixes = [
   "LIKE 'you''ve hit your usage limit%'",
   "LIKE 'you have reached your usage limit%'",
   "LIKE 'rate limit reached%'",
+  "LIKE 'claude api rate limit reached%'",
   "LIKE 'quota exceeded%'",
+  "LIKE '%quota exceeded%'",
+  "LIKE '%provider overload%'",
   "LIKE 'you have exceeded your quota%'",
   "LIKE 'selected model is at capacity%'",
   "LIKE 'we''re at capacity%'",
@@ -53,31 +56,36 @@ export function collectChildren(
     const since = new Date(
       (poolScan?.now ?? new Date()).getTime() - 30 * 86400_000
     ).toISOString();
-    const queryScope = poolScan
-      ? `WITH recent_runs AS (
-      SELECT r.run_id,r.thread_id FROM orchestration_v2_projection_runs r
+    const recentRunRecords = poolScan
+      ? (db
+          .prepare(`SELECT DISTINCT r.run_id AS runId,r.thread_id AS threadId FROM orchestration_v2_projection_runs r
       WHERE provider_instance_id IN (SELECT value FROM json_each(?))
       AND julianday(completed_at) >= julianday(?) AND julianday(completed_at) <= julianday(?)
       AND r.status IN ('failed','completed')
       AND (EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items receipt WHERE receipt.run_id=r.run_id
         AND receipt.type='error' AND receipt.status='failed'
-        AND json_type(receipt.payload_json,'$.failure.message')='text'
-        AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(receipt.payload_json,'$.failure.message'),'’',char(39))))")})
+        AND (lower(json_extract(receipt.payload_json,'$.failure.class'))='usage_limit'
+          OR (json_type(receipt.payload_json,'$.failure.message')='text'
+          AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(receipt.payload_json,'$.failure.message'),'’',char(39))))")})))
         OR (r.status='completed' AND EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items receipt WHERE receipt.run_id=r.run_id
           AND receipt.type='assistant_message'
           AND NOT EXISTS(SELECT 1 FROM orchestration_v2_projection_turn_items newer WHERE newer.run_id=receipt.run_id AND newer.type='assistant_message' AND newer.updated_at>receipt.updated_at)
           AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(receipt.payload_json,'$.text'),'’',char(39))))")})))
-    ), descendants(thread_id) AS (
-      SELECT DISTINCT thread_id FROM recent_runs
-    ) `
+      LIMIT 5001`)
+          .all(
+            JSON.stringify(poolScan.instanceIds),
+            since,
+            poolScan.now.toISOString()
+          ) as { runId: string; threadId: string }[])
+      : undefined;
+    if (recentRunRecords && recentRunRecords.length > 5000)
+      throw new HookError('descendant-snapshot-too-large');
+    const queryScope = poolScan
+      ? `WITH recent_runs AS (
+      SELECT json_extract(value,'$.runId') AS run_id,json_extract(value,'$.threadId') AS thread_id FROM json_each(?)
+    ), descendants(thread_id) AS (SELECT DISTINCT thread_id FROM recent_runs) `
       : scope;
-    const bindings = poolScan
-      ? [
-          JSON.stringify(poolScan.instanceIds),
-          since,
-          poolScan.now.toISOString(),
-        ]
-      : [parentId];
+    const bindings = poolScan ? [JSON.stringify(recentRunRecords)] : [parentId];
     const rows = <T>(sql: string): T[] => {
       if (poolScan) {
         if (sql.includes('FROM orchestration_v2_projection_runs r'))
@@ -122,7 +130,7 @@ export function collectChildren(
    FROM orchestration_v2_projection_turn_items i JOIN descendants d ON d.thread_id=i.thread_id
    WHERE i.type='error' AND i.status='failed' AND json_type(i.payload_json,'$.failure.message')='text'
    AND EXISTS(SELECT 1 FROM orchestration_v2_projection_runs terminal WHERE terminal.run_id=i.run_id AND terminal.status='failed')
-   AND ${terminalPrefixPredicate("lower(trim(replace(json_extract(i.payload_json,'$.failure.message'),'’',char(39))))")}`);
+   AND (lower(json_extract(i.payload_json,'$.failure.class'))='usage_limit' OR ${terminalPrefixPredicate("lower(trim(replace(json_extract(i.payload_json,'$.failure.message'),'’',char(39))))")})`);
     const completedReceipts = rows<ChildFailure>(`SELECT i.run_id AS runId,
       json_extract(r.payload_json,'$.rootNodeId') AS nodeId,
       substr(json_extract(i.payload_json,'$.text'),1,4096) AS message,

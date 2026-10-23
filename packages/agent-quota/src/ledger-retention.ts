@@ -1,4 +1,5 @@
 import { CAPACITY_COOLDOWN_MS } from './capacity';
+import { usageLimitReceiptActive } from './failure-receipt';
 import type { HookLedger } from './hooks-types';
 import { processState } from './process-identity';
 
@@ -29,7 +30,7 @@ export function pruneLedger(
     if (event.clearedAt) return time - Date.parse(event.clearedAt) <= RETENTION;
     const expired =
       event.outcome === 'usage-limit'
-        ? false
+        ? !usageLimitReceiptActive(event, now)
         : event.outcome === 'capacity-error'
           ? event.nextEligibleAt
             ? time >= Date.parse(event.nextEligibleAt)

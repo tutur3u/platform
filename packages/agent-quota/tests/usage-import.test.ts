@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { collapseAccounts } from '../src/accounts';
 import { receiptReset } from '../src/failure-receipt';
 import { emptyLedger } from '../src/hook-ledger';
+import type { Observation } from '../src/hooks-types';
 import { validateUsageImport } from '../src/operator-cli';
 import { recommend } from '../src/policy';
 import { poolPolicyReasons, validatePoolSettings } from '../src/pool-settings';
 import { gateDecision } from '../src/positional-admit';
+import { clearRecoveredLimits } from '../src/receipt-expiry';
 import type { AccountUsage } from '../src/types';
 import {
   applyImportedUsage,
@@ -14,7 +16,11 @@ import {
   manualUsage,
   mergeUsageImport,
 } from '../src/usage-import';
-import { receiptCovers, receiptWindowScope } from '../src/window-scope';
+import {
+  receiptCovers,
+  receiptWindowScope,
+  windowScope,
+} from '../src/window-scope';
 
 const now = new Date('2026-10-23T05:34:00Z');
 const account = (id: string): AccountUsage => ({
@@ -261,6 +267,55 @@ describe('Usage UI and typed manual observations', () => {
       ),
     };
     expect(receiptCovers(fable, 'claude', 'claude-opus')).toBe(false);
+  });
+  it('keeps generic weekly Claude windows account-scoped without a model label', () => {
+    expect(windowScope('claude', 'seven_day', 'Weekly')).toEqual({
+      kind: 'account',
+    });
+    expect(windowScope('claude', 'seven_day_default', 'Weekly')).toEqual({
+      kind: 'account',
+    });
+    expect(
+      windowScope('claude', 'seven_day_all_models', 'Weekly (all models)')
+    ).toEqual({ kind: 'account' });
+    expect(
+      windowScope('claude', 'seven_day_fable', 'Weekly · Fable')
+    ).toMatchObject({
+      kind: 'models',
+      modelPrefixes: ['fable', 'claude-fable'],
+    });
+  });
+  it('clears a no-reset receipt on a newer fresh partial window and ages it out conservatively', () => {
+    const observedAt = '2026-10-23T05:00:00Z';
+    const event: Observation = {
+      eventId: 'no-reset',
+      instanceId: 'claude_mira',
+      accountKey: 'claude:test',
+      outcome: 'usage-limit' as const,
+      observedAt,
+    };
+    const pool = account('claude_mira');
+    pool.windows = [
+      {
+        kind: 'session',
+        usedPercent: 50,
+        source: 'cache',
+        authoritative: true,
+        observedAt: '2026-10-23T05:34:00Z',
+        resetsAt: null,
+      },
+    ];
+    const ledger = { ...emptyLedger(), observations: [event] };
+    clearRecoveredLimits({ accounts: [pool], active: [], ledger, now });
+    expect(event.clearedAt).toBe(now.toISOString());
+    const aged = {
+      ...event,
+      clearedAt: undefined,
+      observedAt: '2026-10-01T00:00:00Z',
+    };
+    const agedLedger = { ...emptyLedger(), observations: [aged] };
+    clearRecoveredLimits({ accounts: [], active: [], ledger: agedLedger, now });
+    expect(aged.clearedAt).toBe(now.toISOString());
   });
   it('validates units, non-credential import fields and bounded settings', () => {
     expect(() =>

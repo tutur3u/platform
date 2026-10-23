@@ -1,7 +1,10 @@
 import { accountKey, collapseAccounts } from './accounts';
 import { matchingBlocks } from './block-ledger';
 import { capacityCooldownActive } from './capacity';
-import { recoveryAdmissionKey } from './failure-receipt';
+import {
+  recoveryAdmissionKey,
+  usageLimitReceiptActive,
+} from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type {
   AdmissionContext,
@@ -230,7 +233,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
           event.outcome === 'usage-limit' &&
           receiptCovers(event, pool.provider, candidate?.model) &&
           !event.clearedAt &&
-          (!event.resetsAt || Date.parse(event.resetsAt) > now.getTime())
+          usageLimitReceiptActive(event, now)
       );
       if (failures.length) {
         state = 'EXHAUSTED';

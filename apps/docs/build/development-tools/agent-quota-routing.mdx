@@ -207,7 +207,8 @@ mismatch, and outcomes older than the admission are rejected. A usage-limit
 outcome fences the entire shared account until its reported reset, even without
 a usage API. Without a reset it remains exhausted until a later fresh covering-window check
 shows usage below 100%; with a reset it expires at that time unless a newer receipt exists.
-A success receipt alone does not clear it. A capacity error imposes a 60-second local pacing cooldown,
+A no-reset receipt is retained for at most seven days, then expires without inventing a reset.
+A success receipt alone does not clear it. A capacity error imposes a 30-minute local pacing cooldown,
 not a quota percentage. After a reported reset, normal fresh/unknown admission
 gates apply again; reset is not proof of fresh capacity.
 
@@ -556,6 +557,11 @@ are skipped individually and listed in `invalidObservations`; valid observations
 continue to contribute. It records pacing/hysteresis state in the existing hook ledger but does
 not reserve a task or switch an active writer. Full JSON admission remains the
 transactional reservation interface.
+
+The cross-thread terminal receipt scan targets a maximum of 2 seconds for up to
+5,000 candidate runs on a local projection; it performs one bounded candidate
+query and reuses those IDs for receipt reads. Exceeding this target is a
+performance regression, not a reason to skip receipt checks.
 
 For a supported manual observation, pipe a narrow JSON document into
 `bun packages/agent-quota/src/cli.ts import-usage`. Include the current catalog

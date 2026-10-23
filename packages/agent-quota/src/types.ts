@@ -8,7 +8,7 @@ export interface UsageWindow {
   scope?: { kind: 'account' | 'models' | 'unknown'; modelPrefixes?: string[] };
   usedPercent?: number;
   estimated?: number;
-  resetsAt?: string;
+  resetsAt?: string | null;
   source: string;
   confidence?: 'provider' | 'manual';
   observedAt: string;

@@ -22,7 +22,12 @@ export function windowScope(
   }
   if (
     provider === 'claude' &&
-    (id.startsWith('seven_day_') || label.includes('·'))
+    !/all\s+models|all[_-]models|generic|account-wide/i.test(label) &&
+    (label.includes('·') ||
+      (id.startsWith('seven_day_') &&
+        !/^(default|weekly|all|generic|account)$/i.test(
+          id.slice('seven_day_'.length)
+        )))
   ) {
     const model =
       label.split('·')[1]?.trim().toLowerCase() ??
