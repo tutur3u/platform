@@ -19,7 +19,7 @@ RSC, route handlers or a second rendering framework.
 
 ## Commands and qualification
 
-Use Bun 1.4.3. Restore with `bun install --frozen-lockfile --ignore-scripts` only
+Use Bun 1.4.4. Restore with `bun install --frozen-lockfile --ignore-scripts` only
 under current restore admission. `bun run dev:app` runs local development on
 port 7818; start a server only for authorized runtime verification. `bun run build` and
 `bun run build:cloudflare` both invoke `vp build`; release builds belong in CI.

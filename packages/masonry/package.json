@@ -46,5 +46,5 @@
       "require": "./dist/masonry.js"
     }
   },
-  "packageManager": "bun@1.4.3"
+  "packageManager": "bun@1.4.4"
 }

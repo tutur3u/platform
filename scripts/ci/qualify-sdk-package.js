@@ -276,8 +276,8 @@ async function qualify({
       fail('SOURCE_SHA_MISMATCH', 'Checkout SHA mismatch');
     const node = await command(process.execPath, ['--version']);
     const bun = await command('bun', ['--version']);
-    if (node.stdout.trim() !== 'v24.21.0' || bun.stdout.trim() !== '1.4.3')
-      fail('RUNTIME_VERSION_MISMATCH', 'Require Node24.21/Bun1.4.3');
+    if (node.stdout.trim() !== 'v24.21.0' || bun.stdout.trim() !== '1.4.4')
+      fail('RUNTIME_VERSION_MISMATCH', 'Require Node24.21/Bun1.4.4');
     receipt.runtimeVersions = {
       node: node.stdout.trim(),
       bun: bun.stdout.trim(),

@@ -27,7 +27,7 @@
     "./core/retry-budget": "./src/core/retry-budget.ts",
     "./collaboration/server": "./src/collaboration/server.ts"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "dependencies": {
     "lib0": "^0.2.119",
     "mdast-util-from-markdown": "^2.1.0",

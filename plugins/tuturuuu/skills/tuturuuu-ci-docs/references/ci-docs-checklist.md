@@ -116,7 +116,7 @@ artifact procedure; this wrapper does not qualify hosted behavior or deployment.
 
 - Keep Calendar validation in the registered `mail-calendar-tasks-builds.yaml`;
   root selector/registry changes require parent ownership. Use exact PR-head or
-  push-SHA checkout, Bun 1.4.3 and Node 24.22.0.
+  push-SHA checkout, Bun 1.4.4 and Node 24.22.0.
 - Discover the official emitted Void deploy pointer (`configPath`, required empty
   `auxiliaryWorkers`), then validate contained main/assets/config before Wrangler
   type generation or dry-run. Generate `CloudflareEnv` with runtime types excluded;

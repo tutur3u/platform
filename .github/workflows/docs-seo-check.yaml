@@ -33,7 +33,7 @@ jobs:
           package-manager-cache: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - name: Install locked dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Check repository inventories and public SEO assets

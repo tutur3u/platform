@@ -52,7 +52,7 @@ those emitted modules alongside the Worker and client assets.
 of Git. Void supports one local `.env` file and rejects `.env.example` and other
 dotenv variants; the non-dot template is not loaded as configuration.
 
-The package manager is Bun 1.4.3. CI uses Node 24.22.0, satisfying Void's
+The package manager is Bun 1.4.4. CI uses Node 24.22.0, satisfying Void's
 Node >=24.21 requirement. `bun run build:cloudflare` invokes `vp build`.
 The development command uses loopback port 7807; central web API development
 uses port 7803. Local release builds are prohibited by repository policy.

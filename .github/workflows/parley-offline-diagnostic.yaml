@@ -62,7 +62,7 @@ jobs:
         env:
           BUN_INSTALL: ${{ runner.temp }}/parley-bun
         run: |
-          bash scripts/ci/setup-bun-with-backoff.sh 1.4.3
+          bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
           "$BUN_INSTALL/bin/bun" install --frozen-lockfile --ignore-scripts --filter @tuturuuu/parley
       - name: Retrieve exact retained artifact
         if: steps.gate.outputs.should_run == 'true'

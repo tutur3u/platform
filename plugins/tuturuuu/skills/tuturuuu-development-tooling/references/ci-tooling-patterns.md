@@ -109,7 +109,7 @@ See `apps/docs/build/devops/active-runtime.mdx`.
 
 ## Bun runtime pins
 
-The maintained toolchain uses Bun `1.4.3`. Keep active workspace `packageManager`
+The maintained toolchain uses Bun `1.4.4`. Keep active workspace `packageManager`
 metadata, CI setup/action defaults, bootstrap fallback and SDK qualification
 expectations aligned when changing the stable runtime. Use `bun pm pkg set` for
 manifest metadata. Preserve historical observations, intentional version fixtures

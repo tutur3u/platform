@@ -10,7 +10,7 @@
     "lint": "vp lint --config .oxlintrc.json src vite.config.ts --deny-warnings",
     "format:check": "vp fmt --config .oxfmtrc.json src vite.config.ts --check"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.64.0",
     "typescript": "7.0.2",

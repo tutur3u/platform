@@ -409,7 +409,7 @@
     "typescript": "7.0.2",
     "vitest": "^5.0.5"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "dependencies": {
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
