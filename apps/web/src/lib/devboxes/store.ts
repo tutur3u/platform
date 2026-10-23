@@ -8,6 +8,7 @@ import {
   createPrivateDevboxClient,
   type DevboxPrivateSchemaClient,
   type DevboxStorageErrorLike,
+  DevboxStoreError,
   getDevboxStorageError,
 } from './store-utils';
 
@@ -477,6 +478,10 @@ export async function verifyDevboxRunnerToken(
     userId: actorId,
     wsId: ROOT_WORKSPACE_ID,
   });
+
+  if (!membership.ok && membership.error === 'membership_lookup_failed') {
+    throw new DevboxStoreError('Devbox runner membership lookup failed.', 503);
+  }
 
   return membership.ok ? { heartbeatEnabled, id: runnerId } : null;
 }
