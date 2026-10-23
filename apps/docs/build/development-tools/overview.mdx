@@ -231,20 +231,23 @@ runs for Discord changes. No component was replaced with a type-only command.
 `bun check:changed` remains the separate build-free pre-push gate; other
 `check:*` commands retain their roles.
 
-`bun check --no-script --threads 6` explicitly invokes Bun's native type-only
+`ttr resources run -- bun check --no-script --threads 6 -p <project>` explicitly invokes Bun's native type-only
 checker. A package script named `check` takes precedence over native checking;
 `scripts/validate-command.test.js` rejects that name in the root and every
 workspace, including retained inactive workspaces. The test is discovered by
 the existing script-test gate. Native checking is not a substitute for
 `bun validate`, app builds, guards, tests, or declaration generation. The ban on
 local aggregate/build execution applies to `bun validate`; native qualification
-still requires resource admission and a bounded thread count.
+still requires resource admission and a bounded thread count. The resource wrapper
+injects `--threads=<lane buildJobs>` when native checking has no explicit thread
+limit. The aggregate rejects unknown arguments, including `--help` and
+`--dry-run`, before starting work; neither flag provides an aggregate preview.
 
 ### Native checker qualification
 
 The required gate remains `tsc` 7.0.2, including `run-tsc-build.js` and its
-cache invalidation. PR #6468 supplies optional tsrs 7.1-dev shadow/pre-push
-acceleration; it is not the required CI baseline. Keep both until a replacement
+cache invalidation. PR #6468 supplies optional tsrs 7.1-dev shadow/advisory pre-push
+comparison; it is not the required CI baseline. Keep both until a replacement
 proves all existing semantics. Do not remove TypeScript: declaration producers
 and editor tooling still require it. Bun 1.4.4 reports TypeScript 7.0.2 through
 `bun -p process.versions.typescript`, matching the repository compiler version.

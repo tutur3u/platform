@@ -1037,9 +1037,14 @@ queue directory/environment identifiers for in-flight runner compatibility;
 process recognition must never identify native `bun check` as an aggregate to
 signal with `--force-now`.
 
-For native checking use `bun check --no-script --threads 6`, with `--all` when
+For native checking use `ttr resources run -- bun check --no-script --threads 6 -p <project>`, with `--all` when
 comparing full diagnostic sets. Use the admitted Linux exact-SHA runner and the
 opt-in `scripts/ci/bun-check-qualification.js`; do not add a duplicate gate.
+The wrapper supplies the lane `buildJobs` thread budget if `--threads` is absent.
+The aggregate rejects unknown flags before work starts, including `--help` and
+`--dry-run`; resource classification of these flags must not start the aggregate.
+Keep agent permissions scoped: broad Bun or aggregate auto-allows defeat this
+admission boundary.
 The current required compiler is TypeScript 7.0.2; tsrs is an optional shadow.
 A matching no-emit sample is not build/reference/emit equivalence. Preserve
 `run-tsc-build.js`, Meet's producer/cache contract, Wrangler generated ambient

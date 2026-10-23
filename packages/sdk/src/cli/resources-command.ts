@@ -60,6 +60,19 @@ export function commandTool(name: string, args: string[]) {
   return { tool: name, tail: args, offset: 0 };
 }
 
+function bunTaskIndex(args: string[]) {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (['--cwd', '--filter', '-F', '--env-file'].includes(arg)) {
+      i++;
+      continue;
+    }
+    if (arg.startsWith('-') || ['run', 'x', 'exec'].includes(arg)) continue;
+    return i;
+  }
+  return -1;
+}
+
 export function isHeavyCommand(name: string, args: string[]) {
   const { tool, tail } = commandTool(basename(name), args);
   const flags = tail.includes('--') ? tail.slice(0, tail.indexOf('--')) : tail;
@@ -92,19 +105,13 @@ export function isHeavyCommand(name: string, args: string[]) {
   if (tool === 'node')
     return tail.some((arg) => scripts.includes(basename(arg)));
   if (tool === 'bun') {
-    for (let i = 0; i < tail.length; i++) {
-      const arg = tail[i]!;
-      if (['--cwd', '--filter', '-F', '--env-file'].includes(arg)) {
-        i++;
-        continue;
-      }
-      if (arg.startsWith('-') || ['run', 'x', 'exec'].includes(arg)) continue;
-      return (
-        heavyTask.test(arg) ||
+    const arg = tail[bunTaskIndex(tail)];
+    return (
+      !!arg &&
+      (heavyTask.test(arg) ||
         ['sb:start', 'sb:reset', 'sb:up'].includes(arg) ||
-        scripts.includes(basename(arg))
-      );
-    }
+        scripts.includes(basename(arg)))
+    );
   }
   return false;
 }
@@ -197,6 +204,21 @@ export function limitCommand(
     const cap =
       tool === 'vitest' ? `--maxWorkers=${budget}` : `--jobs=${budget}`;
     limited.splice(divider < 0 ? limited.length : divider, 0, cap);
+    return [...args.slice(0, offset), ...limited];
+  }
+  if (tool === 'bun' && tail[bunTaskIndex(tail)] === 'check') {
+    const divider = tail.indexOf('--');
+    const before = divider < 0 ? tail : tail.slice(0, divider);
+    if (
+      before.some((arg) => arg === '--threads' || arg.startsWith('--threads='))
+    )
+      return args;
+    const limited = [...tail];
+    limited.splice(
+      divider < 0 ? limited.length : divider,
+      0,
+      `--threads=${config.buildJobs}`
+    );
     return [...args.slice(0, offset), ...limited];
   }
   if (tool !== 'turbo') return args;

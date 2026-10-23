@@ -1,10 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Unified Check Runner
- *
- * Runs repository quality checks, including path-sensitive validation.
- *
+ * Repository quality checks, including path-sensitive validation.
  * Usage:
  *   node scripts/check.js [--table] [--timing] [--details] [--run-all] [--force-now]
  *   bun validate [--table] [--timing] [--details] [--run-all] [--force-now]
@@ -13,6 +10,9 @@
  *   0 - All checks passed
  *   1 - One or more checks failed
  */
+
+if (require.main === module)
+  require('./check-cli-options.js').assertKnownCheckArgs(process.argv.slice(2));
 
 const crypto = require('node:crypto');
 const { execFileSync, spawn } = require('node:child_process');
@@ -51,9 +51,6 @@ let activeCheckProcess = null;
 let activeQueueHandle = null;
 let shutdownSignalHandled = false;
 
-/**
- * Strip ANSI escape codes from a string
- */
 const ESC = String.fromCharCode(27);
 const ANSI_REGEX = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 function stripAnsi(str) {

@@ -227,6 +227,7 @@ for roles, independent review, publication, receipts and retirement.
   non-build tests locally, then require the applicable test, type-check, lint,
   and build workflows to pass in CI for the exact commit. Do not run `bun validate`
   on this machine: its Turbo task graph can build workspace dependencies.
+  Native `bun check` runs only as `ttr resources run -- bun check --no-script --threads <n> -p <project>` and does not replace `bun validate` or CI.
   Report any unrelated pre-existing CI blocker.
 - Before every push, run the build-free `bun check:changed` gate; see
   [pre-push checks](apps/docs/build/development-tools/pre-push-checks.mdx).
