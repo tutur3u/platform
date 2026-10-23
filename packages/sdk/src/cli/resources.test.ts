@@ -6,7 +6,6 @@ import { commandCwd, isHeavyCommand, limitCommand } from './resources-command';
 import {
   atomicJson,
   defaultResourceConfig,
-  laneResourceConfig,
   readResourceConfig,
   repositoryIdentity,
   resourceScope,
@@ -317,7 +316,7 @@ describe('resource admission', { timeout: 45_000 }, () => {
     const source = await script(
       home,
       'nested',
-      `delete process.env.TTR_RESOURCE_OWNER;require('child_process').execFileSync(${JSON.stringify(bun)},[${JSON.stringify(join(home, 'fixture-shim.ts'))},'run','--','node','-e','console.log(42)'],{stdio:'inherit',timeout:${processTimeout}});`
+      `delete process.env.TTR_RESOURCE_OWNER;delete process.env.TTR_RESOURCES_ADMITTED;require('child_process').execFileSync(${JSON.stringify(bun)},[${JSON.stringify(join(home, 'fixture-shim.ts'))},'run','--','node','-e','console.log(42)'],{stdio:'inherit',timeout:${processTimeout}});`
     );
     const result = await launch(home, ['run', '--', 'node', source]).done;
     expect(result.code, result.err).toBe(0);
@@ -607,39 +606,6 @@ it('retains subprocess diagnostics until inherited pipes close', async () => {
   expect(result.code).toBe(7);
   expect(result.err).toContain('fixture child diagnostic');
 });
-it('denies two lanes on a low-budget host without launching children', async () => {
-  const home = await fixtures.home();
-  host.memory = 8 * 1024 ** 3;
-  host.cpus = 2;
-  expect(defaultResourceConfig().vitestWorkers).toBe(1);
-  const config = (await readResourceConfig(home))!;
-  expect(() => laneResourceConfig(config)).toThrow('host budget');
-  const marker = join(home, 'workload');
-  const denied = await fixtures.launch(
-    home,
-    [
-      'run',
-      '--ignore-pressure',
-      '--',
-      'node',
-      '-e',
-      `require('fs').writeFileSync(${JSON.stringify(marker)},'')`,
-    ],
-    home,
-    entry,
-    {},
-    { memory: host.memory, cpus: host.cpus }
-  ).done;
-  expect(denied.code).toBe(1);
-  expect(denied.err).toContain('configured and host budget');
-  expect(await exists(marker)).toBe(false);
-  expect(await exists(join(home, 'slots'))).toBe(false);
-  expect((await resourceQueueStatus(home, 2)).waiting).toHaveLength(0);
-  const identity = JSON.parse(
-    (await readFile(join(home, 'fixture-host.jsonl'), 'utf8')).trim()
-  );
-  expect([identity.memory, identity.cpus]).toEqual([8 * 1024 ** 3, 2]);
-});
 it('disabled out-of-scope and bypass commands retain arguments under oversized policy', async () => {
   const home = await fixtures.home();
   const original = (await readResourceConfig(home))!;
@@ -669,8 +635,10 @@ it('disabled out-of-scope and bypass commands retain arguments under oversized p
       ...(mode === 'bypass' ? { TTR_RESOURCES_BYPASS: '1' } : {}),
     }).done;
     if (mode === 'enabled') {
-      expect(result.code).toBe(1);
-      expect(result.err).toContain('configured and host budget');
+      // Oversized totals clamp to the host budget instead of bricking shims.
+      expect(result.code, result.err).toBe(0);
+      expect(JSON.parse(result.out)).toEqual([['--maxWorkers=16'], '1', '1']);
+      expect(result.err).toContain('multi-lane worker totals must be at most');
     } else {
       expect(result.code, result.err).toBe(0);
       expect(JSON.parse(result.out)).toEqual([

@@ -120,6 +120,9 @@ export async function burstEligibility(
   }
 }
 
+// Lane count is bounded by the effective lane ceiling, not by worker totals.
+// Once the aggregate budget is spent, each further (pressure-gated) lane gets
+// exactly one worker, so the overcommit is at most one worker per burst lane.
 export function admissionResourceConfig(
   config: ResourceConfig,
   owners: ResourceOwner[]
@@ -136,15 +139,13 @@ export function admissionResourceConfig(
     }),
     { vitestWorkers: 0, buildJobs: 0 }
   );
-  const vitestWorkers = Math.min(
-    caps.vitestWorkers,
-    config.vitestWorkers - allocated.vitestWorkers
+  const vitestWorkers = Math.max(
+    1,
+    Math.min(caps.vitestWorkers, config.vitestWorkers - allocated.vitestWorkers)
   );
-  const buildJobs = Math.min(
-    caps.buildJobs,
-    config.buildJobs - allocated.buildJobs
+  const buildJobs = Math.max(
+    1,
+    Math.min(caps.buildJobs, config.buildJobs - allocated.buildJobs)
   );
-  return vitestWorkers >= 1 && buildJobs >= 1
-    ? { ...caps, vitestWorkers, buildJobs }
-    : undefined;
+  return { ...caps, vitestWorkers, buildJobs };
 }

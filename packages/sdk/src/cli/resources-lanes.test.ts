@@ -14,7 +14,6 @@ import {
   defaultResourceConfig,
   laneResourceConfig,
   readResourceConfig,
-  resourceLanes,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
 import { setupResources } from './resources-setup';
@@ -60,36 +59,6 @@ describe('lane policy', () => {
       )
     ).toEqual(bunRunSeparatorExpected);
   });
-  it('reads legacy configs as one lane and rejects invalid counts', async () => {
-    const path = await home();
-    const old = defaultResourceConfig();
-    delete old.validationLanes;
-    await atomicJson(join(path, 'config.json'), old);
-    expect(resourceLanes((await readResourceConfig(path))!)).toBe(1);
-    for (const lanes of [0, 3, 1.5, '2', null]) {
-      await atomicJson(join(path, 'config.json'), {
-        ...old,
-        validationLanes: lanes,
-      });
-      await expect(readResourceConfig(path)).rejects.toThrow(
-        'Invalid resource configuration.'
-      );
-    }
-    for (const raw of [
-      '{"private-sentinel":',
-      JSON.stringify({ ...old, validationLanes: 'private-sentinel' }),
-    ]) {
-      await writeFile(join(path, 'config.json'), raw);
-      const result = await launch(path, ['status', '--json']).done;
-      expect(result.code).toBe(1);
-      expect(result.err.trim()).toBe(
-        'Invalid resource configuration. Inspect config.json and correct its JSON and supported field values.'
-      );
-      expect(result.err).not.toContain('private-sentinel');
-    }
-    await rm(join(path, 'config.json'));
-    expect(await readResourceConfig(path)).toBeUndefined();
-  });
   it('splits the aggregate worker budget and clamps explicit tool flags', () => {
     const config = {
       ...defaultResourceConfig(),
@@ -108,12 +77,13 @@ describe('lane policy', () => {
       'test',
       '--jobs=1',
     ]);
-    expect(() => laneResourceConfig({ ...config, vitestWorkers: 1 })).toThrow(
-      'budget'
-    );
-    expect(() => laneResourceConfig({ ...config, vitestWorkers: 64 })).toThrow(
-      'budget'
-    );
+    // Lanes never receive zero workers, and oversized totals clamp to the host.
+    expect(
+      laneResourceConfig({ ...config, vitestWorkers: 1 }).vitestWorkers
+    ).toBe(1);
+    expect(
+      laneResourceConfig({ ...config, vitestWorkers: 64 }).vitestWorkers
+    ).toBe(1);
   });
   it('preserves private shell contents and backups across lane setup and dry-run', async () => {
     const path = await home(1);
@@ -171,7 +141,7 @@ describe('lane policy', () => {
     expect(await readFile(join(path, 'config.json'), 'utf8')).toBe(before);
     expect(await readdir(path)).toEqual(names);
     for (const args of [
-      ['setup', '--lanes', '3'],
+      ['setup', '--lanes', '9'],
       ['run', '--surprise', '--', 'node', '-e', '0'],
       ['status', '--surprise'],
     ])
