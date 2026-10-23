@@ -24,6 +24,22 @@
 /apps/web/src/lib/auth/            @vhpx
 /apps/web/src/lib/sso/             @vhpx
 
+# Sensitive decision modules by name, wherever they live: OIDC, OAuth, session
+# auth, crypto helpers, webhook verifiers, unsubscribe signatures and external-app
+# credentials. Matching by name keeps new modules of the same kind covered.
+**/oidc*.ts                        @vhpx
+**/oauth.ts                        @vhpx
+**/auth.ts                         @vhpx
+**/*crypto*.ts                     @vhpx
+**/webhooks.ts                     @vhpx
+**/email-unsubscribe.ts            @vhpx
+**/external-apps*.ts               @vhpx
+/apps/coordination/src/worker.ts   @vhpx
+/packages/storage-core/src/lib/workspace-storage-export-links.ts @vhpx
+/packages/utils/src/workspace-helper.ts @vhpx
+/apps/calendar/src/app/api/v1/workspaces/*/calendar/sync/ @vhpx
+/apps/calendar/src/app/api/v1/workspaces/*/calendar/schedule/ @vhpx
+
 # Credential, API-key and token verifiers called by many routes
 /apps/web/src/lib/api-middleware.ts @vhpx
 /apps/tasks/src/lib/api-middleware.ts @vhpx
