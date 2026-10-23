@@ -69,6 +69,17 @@ const reviewCategories = [
     ],
   },
   {
+    // Payment flows and every inbound webhook (signature checks, replay and
+    // amount handling), including apps/pay/src/app/api/payment/webhooks.
+    category: 'payments',
+    owner: 'payments',
+    patterns: [
+      /^packages\/payment(?:-core)?\//u,
+      /^apps\/pay\/src\/app\/api\/(?:payment|billing|cron\/payment)\//u,
+      /(?:^|\/)webhooks?(?:\/|[._-][^/]*$|$)/iu,
+    ],
+  },
+  {
     category: 'storage',
     owner: 'storage',
     patterns: [

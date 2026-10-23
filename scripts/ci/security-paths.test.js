@@ -40,6 +40,24 @@ test('security-sensitive paths require review by category', () => {
     ['apps/web/.env.example', 'tokens-secrets'],
     ['packages/storage-core/src/index.ts', 'storage'],
     ['apps/web/src/app/api/v1/upload/route.ts', 'storage'],
+    ['apps/pay/src/app/api/payment/webhooks/route.ts', 'payments'],
+    [
+      'apps/pay/src/app/api/payment/credit-packs/checkouts/route.ts',
+      'payments',
+    ],
+    ['apps/pay/src/app/api/billing/[wsId]/invoice/route.ts', 'payments'],
+    ['packages/payment-core/src/index.ts', 'payments'],
+    [
+      'apps/inventory/src/app/api/v1/webhooks/sepay/[token]/route.ts',
+      'payments',
+    ],
+    [
+      'apps/infrastructure/src/lib/inventory/commerce/square/webhooks.ts',
+      'payments',
+    ],
+    // Paths #6491 adds to CODEOWNERS stay classified as well.
+    ['apps/web/src/app/api/auth/session/route.ts', 'auth'],
+    ['packages/satellite/src/auth.ts', 'auth'],
   ]) {
     assert.ok(
       categoriesOf([filePath]).includes(category),
