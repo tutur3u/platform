@@ -359,8 +359,10 @@ def test_guard_allows_reporting_through_the_helper() -> None:
         (
             "lowercase class alias",
             "except Exception as e:",
-            "cls = CommandHandler\n"
-            'await cls.reply_error(handler, 1, 2, str(e), RuntimeError("x"), "S")',
+            (
+                "cls = CommandHandler\n"
+                'await cls.reply_error(handler, 1, 2, str(e), RuntimeError("x"), "S")'
+            ),
             "reply_error",
         ),
         (
