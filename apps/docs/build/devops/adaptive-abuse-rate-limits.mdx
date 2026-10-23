@@ -163,6 +163,11 @@ in `private.mfa_verification_failures` and answers spent budgets with an HTTP
 429 error rather than the `reject` decision, which would sign the user out
 everywhere.
 
+The migration grants `supabase_auth_admin` `USAGE` on `public` and `EXECUTE`
+on this hook only. Function execution permission alone does not allow Auth to
+resolve the schema. The SQL fixture checks schema access without `CREATE`
+permission and calls the hook after switching to Auth's actual role.
+
 - Local: enabled in `apps/database/supabase/config.toml` as
   `[auth.hook.mfa_verification_attempt]`.
 - Hosted: an operator enables it under **Authentication > Hooks** as the MFA

@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(18);
+select plan(19);
 
 select ok(
   not has_function_privilege(
@@ -36,6 +36,12 @@ select ok(
     'execute'
   ),
   'Supabase Auth can call the MFA verification hook'
+);
+
+select ok(
+  has_schema_privilege('supabase_auth_admin', 'public', 'usage')
+  and not has_schema_privilege('supabase_auth_admin', 'public', 'create'),
+  'Supabase Auth can resolve the hook schema without creating objects'
 );
 
 select ok(

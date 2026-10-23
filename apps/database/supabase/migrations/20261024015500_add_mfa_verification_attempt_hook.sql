@@ -134,5 +134,8 @@ comment on function public.hook_mfa_verification_attempt(jsonb) is
 revoke all on function public.hook_mfa_verification_attempt(jsonb)
   from public, anon, authenticated, service_role;
 
+-- Auth needs schema lookup permission as well as function execution permission.
+grant usage on schema public to supabase_auth_admin;
+
 grant execute on function public.hook_mfa_verification_attempt(jsonb)
   to supabase_auth_admin;
