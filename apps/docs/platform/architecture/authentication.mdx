@@ -184,13 +184,14 @@ Regression coverage is in
 ### Notification access after account switches
 
 Only unclaimed `workspace_invite` notifications (`user_id IS NULL`) can be
-matched by recipient email. The caller must have a confirmed email; matching
-uses its trimmed lowercase form and also requires current membership in the
-invited workspace. This rule applies to notification lists, unread counts,
-mark-read updates, deletion, and metadata updates. When a request contains both
-a supported Supabase auth cookie and an app-session token, notification routes
-use the current Supabase cookie identity; a valid app session remains the
-fallback when the cookie is absent. Regression coverage is in
+matched by recipient email, regardless of the row's `scope` or `ws_id`. The
+caller must have a confirmed email; matching compares lowercase email addresses
+and does not require membership in the invited workspace. This rule applies to
+notification lists, unread counts, mark-read updates, deletion, and metadata
+updates. When a request contains both a supported Supabase auth cookie and an
+app-session token, notification routes use the current Supabase cookie identity;
+a valid app session remains the fallback when the cookie is absent. Regression
+coverage is in
 `apps/web/src/legacy-api-routes/v1/notifications/access.test.ts` and
 `apps/web/src/lib/api-auth.test.ts`.
 

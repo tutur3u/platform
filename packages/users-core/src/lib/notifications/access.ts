@@ -17,21 +17,22 @@ function quotePostgrestString(value: string) {
 }
 
 async function getConfirmedEmail(
-  supabase: TypedSupabaseClient,
+  identityClient: TypedSupabaseClient,
   user: NotificationAuthUser
 ) {
   let identity = user;
 
   if (identity.email_confirmed_at === undefined) {
-    const { data, error } = await supabase.auth.admin.getUserById(user.id);
-
-    if (error) {
-      throw new Error(
-        `Failed to load confirmed email for notification access: ${error.message}`
+    try {
+      const { data, error } = await identityClient.auth.admin.getUserById(
+        user.id
       );
-    }
 
-    identity = data.user ?? identity;
+      if (error || !data.user) return null;
+      identity = data.user;
+    } catch {
+      return null;
+    }
   }
 
   return identity.email_confirmed_at
@@ -44,9 +45,9 @@ export function buildNotificationAccessFilter(
 ) {
   const branches = [
     `and(scope.in.(user,system),user_id.eq.${context.userId})`,
-    ...(context.userEmail && context.workspaceIds.length > 0
+    ...(context.userEmail
       ? [
-          `and(scope.eq.workspace,user_id.is.null,type.eq.workspace_invite,email.eq.${quotePostgrestString(context.userEmail)},ws_id.in.(${context.workspaceIds.join(',')}))`,
+          `and(user_id.is.null,type.eq.workspace_invite,email.ilike.${quotePostgrestString(context.userEmail.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_'))})`,
         ]
       : []),
     context.workspaceIds.length > 0
@@ -59,7 +60,8 @@ export function buildNotificationAccessFilter(
 
 export async function getNotificationAccessContext(
   supabase: TypedSupabaseClient,
-  user: NotificationAuthUser
+  user: NotificationAuthUser,
+  identityClient: TypedSupabaseClient = supabase
 ): Promise<NotificationAccessContext> {
   const { data: memberships, error } = await supabase
     .from('workspace_members')
@@ -72,7 +74,7 @@ export async function getNotificationAccessContext(
     );
   }
 
-  const userEmail = await getConfirmedEmail(supabase, user);
+  const userEmail = await getConfirmedEmail(identityClient, user);
 
   return {
     userId: user.id,

@@ -21,7 +21,11 @@ export const PATCH = withSessionAuth<{ id: string }>(
     try {
       const sbAdmin = await createAdminClient();
 
-      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessContext = await getNotificationAccessContext(
+        supabase,
+        user,
+        sbAdmin
+      );
       const accessFilter = buildNotificationAccessFilter(accessContext);
 
       // Parse and validate body
@@ -105,7 +109,11 @@ export const DELETE = withSessionAuth<{ id: string }>(
     try {
       const sbAdmin = await createAdminClient();
 
-      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessContext = await getNotificationAccessContext(
+        supabase,
+        user,
+        sbAdmin
+      );
       const accessFilter = buildNotificationAccessFilter(accessContext);
 
       const { data: notification } = await sbAdmin

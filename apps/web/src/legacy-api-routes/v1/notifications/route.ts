@@ -93,7 +93,11 @@ export const GET = withSessionAuth(
     try {
       const sbAdmin = await createAdminClient();
 
-      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessContext = await getNotificationAccessContext(
+        supabase,
+        user,
+        sbAdmin
+      );
 
       // Parse and validate query parameters
       const { searchParams } = new URL(req.url);
@@ -274,7 +278,11 @@ export const PATCH = withSessionAuth(
     try {
       const sbAdmin = await createAdminClient();
 
-      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessContext = await getNotificationAccessContext(
+        supabase,
+        user,
+        sbAdmin
+      );
 
       // Parse and validate body
       const body = await req.json();
