@@ -97,8 +97,15 @@ No package version, dependency resolution or published changelog is rewritten.
     because GitHub resolves a bare name to a same-named tag first, and a tag
     push reports the tag name as `head_branch`. Tag pushes also ignore `paths`
     filters. Deploy consumers (Discord Modal deploy, Supabase Staging) set
-    `REQUIRE_BRANCH_TIP` and accept only `identical`, the live branch tip, so
-    re-running an old run cannot redeploy an old commit;
+    `REQUIRE_BRANCH_TIP` and accept only `identical`, the live branch tip.
+    Discord also sets `TIP_TREE_PATH: apps/discord`. Its CI runs only for
+    Discord changes, so unrelated commits often land on `main` while it runs.
+    A `behind` head is therefore accepted only when the `apps/discord` tree at
+    that head equals the tree at the tip of `refs/heads/main`, read with
+    `git/ref` and contents GETs. The gate runs again as the first step of every
+    job that checks out code. Re-running an old run, or only its failed deploy
+    job, is therefore rejected once the deployed code has changed on the
+    branch;
   - manual runs start from exactly `TRUSTED_DISPATCH_REF`.
 
   Checkouts use the step's verified `head_sha`, and secret-bearing steps and jobs
@@ -107,6 +114,9 @@ No package version, dependency resolution or published changelog is rewritten.
   repos/<repo>/actions/workflows/<file> --jq .id`); until then the gate fails
   closed. `scripts/ci/workflow-run-trigger-gate.test.js` runs the real step against
   case variants, tag sources, spoofed producers and head-repository mismatches.
+- A pinned production sync must use a SHA whose Supabase Staging Migration
+  succeeded. Staging now migrates only the live `main` tip, so an intermediate
+  SHA may have no staging marker, and the production migration waits for one.
 - Supabase Production accepts a staging migration marker only when the
   producer's `supabase-staging.yaml` blob is allowlisted. Keep the list to the
   current blob plus blobs from `main`'s history; drop blobs from rejected or
