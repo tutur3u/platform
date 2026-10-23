@@ -7,7 +7,45 @@ export interface CatalogInstance {
   provider: Provider;
   label: string;
   models: string[];
+  modelOptions: Record<string, { id: string; values: (string | boolean)[] }[]>;
   available: boolean;
+}
+
+type ModelOption = { id: string; values: (string | boolean)[] };
+
+function parseModelOptions(value: unknown): Record<string, ModelOption[]> {
+  if (!Array.isArray(value)) return {};
+  return Object.fromEntries(
+    value.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry))
+        return [];
+      const model = entry as Record<string, unknown>;
+      if (typeof model.id !== 'string') return [];
+      const options = Array.isArray(model.options)
+        ? model.options.flatMap((candidate) => {
+            if (
+              !candidate ||
+              typeof candidate !== 'object' ||
+              Array.isArray(candidate)
+            )
+              return [];
+            const option = candidate as Record<string, unknown>;
+            if (typeof option.id !== 'string' || !Array.isArray(option.values))
+              return [];
+            return [
+              {
+                id: option.id,
+                values: option.values.filter(
+                  (item): item is string | boolean =>
+                    typeof item === 'string' || typeof item === 'boolean'
+                ),
+              },
+            ];
+          })
+        : [];
+      return [[model.id, options]];
+    })
+  );
 }
 
 export function parseCatalog(value: unknown): CatalogInstance[] {
@@ -38,6 +76,7 @@ export function parseCatalog(value: unknown): CatalogInstance[] {
               typeof model?.id === 'string' ? [model.id] : []
             )
           : [],
+        modelOptions: parseModelOptions(item.models),
         available: item.canRunChildTask === true,
       },
     ];

@@ -159,13 +159,21 @@ describe('freshness, identity and reservations', () => {
           providerInstanceId: 'antigravity',
           displayName: 'AG',
           canRunChildTask: true,
-          models: [{ id: 'future-gemini' }],
+          models: [
+            {
+              id: 'future-gemini',
+              options: [null, { id: 'effort', values: ['high', false, 3] }],
+            },
+          ],
         },
       ],
     });
     expect(result[0]).toMatchObject({
       provider: 'antigravity',
       models: ['future-gemini'],
+      modelOptions: {
+        'future-gemini': [{ id: 'effort', values: ['high', false] }],
+      },
     });
   });
   it('reads only matching provider status snapshots and retains observation time', async () => {
