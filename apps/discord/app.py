@@ -2,7 +2,6 @@
 
 import logging
 import os
-import traceback
 
 import modal
 import requests
@@ -10,6 +9,7 @@ import requests
 import interaction_replay
 from commands import CommandHandler
 from config import DiscordInteractionType, DiscordResponseType
+from error_reporting import report_error
 from markitdown_service import handle_markitdown
 from utils import get_supabase_client
 
@@ -125,16 +125,13 @@ async def reply_shorten_link(
             )
         print("🤖: handle_shorten_command completed successfully")
     except Exception as e:
-        print(f"🤖: Error in handle_shorten_command: {e}")
-        traceback.print_exc()
-
         # Send error response to Discord
         try:
-            await handler.discord_client.send_response(
-                {"content": f"❌ **Error:** {e!s}"}, app_id, interaction_token
+            await handler.reply_error(
+                app_id, interaction_token, "shorten command", e, "Could not shorten the link."
             )
         except Exception as response_error:
-            print(f"🤖: Failed to send error response: {response_error}")
+            report_error("Failed to send error response", response_error)
 
 
 @app.function(secrets=[supabase_secret], image=image)
@@ -185,16 +182,13 @@ async def reply_daily_report(
         await handler.handle_daily_report_command(app_id, interaction_token, options, user_info)
         print("🤖: handle_daily_report_command completed successfully")
     except Exception as e:
-        print(f"🤖: Error in handle_daily_report_command: {e}")
-        traceback.print_exc()
-
         # Send error response to Discord
         try:
-            await handler.discord_client.send_response(
-                {"content": f"❌ **Error:** {e!s}"}, app_id, interaction_token
+            await handler.reply_error(
+                app_id, interaction_token, "daily report command", e, "Could not create the report."
             )
         except Exception as response_error:
-            print(f"🤖: Failed to send error response: {response_error}")
+            report_error("Failed to send error response", response_error)
 
 
 @app.function(secrets=[supabase_secret], image=image)
@@ -236,9 +230,8 @@ async def reply_tumeet_plan(
             app_id, interaction_token, options or [], user_info
         )
     except Exception as e:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "reply_tumeet_plan", e, "Could not create the plan."
         )
 
 
@@ -281,9 +274,8 @@ async def reply_wol_reminder(
             user_info,
         )
     except Exception as error:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {error}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "reply_wol_reminder", error, "Could not send the reminder."
         )
 
 
@@ -323,9 +315,8 @@ async def reply_ticket(
     try:
         await handler.handle_boards_command(app_id, interaction_token, user_info)
     except Exception as e:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "reply_ticket", e, "Could not load boards."
         )
 
 
@@ -365,9 +356,8 @@ async def reply_assign(
     try:
         await handler.handle_assign_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "reply_assign", e, "Could not assign users."
         )
 
 
@@ -407,9 +397,8 @@ async def reply_unassign(
     try:
         await handler.handle_unassign_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "reply_unassign", e, "Could not unassign users."
         )
 
 
@@ -449,9 +438,8 @@ async def reply_assignees(
     try:
         await handler.handle_assignees_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "reply_assignees", e, "Could not list assignees."
         )
 
 
@@ -502,9 +490,8 @@ async def handle_board_selection_interaction(
             app_id, interaction_token, selected_board_id, user_info
         )
     except Exception as e:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "board selection", e, "Could not load lists."
         )
 
 
@@ -557,9 +544,8 @@ async def handle_list_selection_interaction(
             app_id, interaction_token, "", selected_list_id, user_info
         )
     except Exception as e:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "list selection", e, "Could not open the ticket form."
         )
 
 
@@ -625,7 +611,7 @@ async def handle_ticket_modal_submission(
                     value = component.get("value", "")
                     form_data[custom_id] = value
     except Exception as e:
-        print(f"Error extracting form data: {e}")
+        report_error("extracting form data", e)
         form_data = {}
 
     # Extract board_id from the custom_id of the modal
@@ -644,7 +630,7 @@ async def handle_ticket_modal_submission(
             if list_result.data:
                 board_id = list_result.data[0].get("board_id", "")
     except Exception as e:
-        print(f"Error extracting board_id: {e}")
+        report_error("extracting board_id", e)
         board_id = ""
 
     try:
@@ -652,9 +638,8 @@ async def handle_ticket_modal_submission(
             app_id, interaction_token, board_id, list_id, form_data, user_info
         )
     except Exception as e:
-        traceback.print_exc()
-        await handler.discord_client.send_response(
-            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        await handler.reply_error(
+            app_id, interaction_token, "ticket submission", e, "Could not create the ticket."
         )
 
 
@@ -1055,8 +1040,7 @@ def web_app():
                     return handler.create_ticket_form_modal(list_id, None)
 
                 except Exception as e:
-                    print(f"🤖: Error creating modal: {e}")
-                    traceback.print_exc()
+                    report_error("creating modal", e)
                     return {
                         "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                         "data": {
@@ -1149,7 +1133,7 @@ def web_app():
         try:
             result = await trigger_wol_reminder()
         except DiscordMissingAccessError as error:
-            print(f"🤖: Cron WOL reminder missing access: {error}")
+            report_error("Cron WOL reminder missing access", error)
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -1158,7 +1142,7 @@ def web_app():
                 ),
             ) from error
         except DiscordAPIError as error:
-            print(f"🤖: Error executing WOL reminder: {error}")
+            report_error("executing WOL reminder", error)
             raise HTTPException(status_code=500, detail="Failed to send reminder") from error
 
         return {
@@ -1184,9 +1168,11 @@ def web_app():
         try:
             result = await trigger_daily_report()
         except DailyReportConfigurationError as error:
-            raise HTTPException(status_code=500, detail=str(error)) from error
+            error_id = report_error("Daily report configuration", error)
+            detail = f"Daily report is not configured (error ID {error_id})"
+            raise HTTPException(status_code=500, detail=detail) from error
         except DiscordMissingAccessError as error:
-            print(f"🤖: Cron daily report missing access: {error}")
+            report_error("Cron daily report missing access", error)
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -1195,7 +1181,7 @@ def web_app():
                 ),
             ) from error
         except DiscordMissingPermissionsError as error:
-            print(f"🤖: Cron daily report missing permissions: {error}")
+            report_error("Cron daily report missing permissions", error)
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -1204,10 +1190,10 @@ def web_app():
                 ),
             ) from error
         except DiscordAPIError as error:
-            print(f"🤖: Error executing daily report: {error}")
+            report_error("executing daily report", error)
             raise HTTPException(status_code=500, detail="Failed to send daily report") from error
         except Exception as error:
-            print(f"🤖: Unexpected error executing daily report: {error}")
+            report_error("Unexpected error executing daily report", error)
             raise HTTPException(
                 status_code=500, detail="Unexpected error during daily report"
             ) from error
