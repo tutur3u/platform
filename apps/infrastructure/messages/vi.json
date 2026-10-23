@@ -10667,6 +10667,7 @@
     "remove_user_confirm": "Bạn có chắc chắn muốn xóa người dùng này khỏi kế hoạch?",
     "save_credentials": "Lưu thông tin đăng nhập cho kế hoạch này",
     "save_credentials_desc": "Tự động đăng nhập khi bạn quay lại kế hoạch này",
+    "too_many_attempts": "Quá nhiều lần thử không thành công. Vui lòng thử lại sau {minutes} phút.",
     "select_users_to_filter": "Chọn người dùng để lọc kết quả",
     "send_email": "Gửi email",
     "show_qr_code": "Xem mã QR",

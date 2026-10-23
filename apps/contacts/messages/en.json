@@ -3055,6 +3055,7 @@
     "save_changes": "Save changes",
     "save_credentials": "Save credentials for this plan",
     "save_credentials_desc": "Automatically log in when you return to this plan",
+    "too_many_attempts": "Too many failed attempts. Try again in {minutes} minutes.",
     "saving": "Saving...",
     "select_users_to_filter": "Select users to filter",
     "send_email": "Send email",

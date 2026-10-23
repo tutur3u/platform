@@ -1,6 +1,14 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
+import {
+  checkPasswordAttemptLimit,
+  clearPasswordAttemptFailures,
+  normalizePasswordAttemptName,
+  type PasswordAttemptSubject,
+  recordPasswordAttemptFailure,
+} from '@tuturuuu/utils/abuse-protection/password-attempt-limits';
 import {
   hashPassword,
   MAX_PASSWORD_LENGTH,
@@ -10,6 +18,7 @@ import {
   createMeetGuestSession,
   normalizeMeetPlanId,
 } from '@tuturuuu/utils/meet-guest-session';
+import { headers } from 'next/headers';
 
 export interface GuestLoginInput {
   name: string;
@@ -28,6 +37,14 @@ export interface GuestUser {
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
+
+async function resolveClientIP() {
+  try {
+    return extractIPFromHeaders(await headers());
+  } catch {
+    return null;
+  }
+}
 
 function guestUser(id: string, name: string, planId: string): GuestUser {
   const session = createMeetGuestSession({ guestId: id, planId });
@@ -106,14 +123,30 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
     };
   }
 
+  const attempt: PasswordAttemptSubject = {
+    scope: 'meet-guest',
+    target: `${planId}:${normalizePasswordAttemptName(name)}`,
+    ip: await resolveClientIP(),
+  };
+  const limit = await checkPasswordAttemptLimit(attempt);
+  if (!limit.allowed) {
+    return {
+      error: 'Too many failed attempts',
+      retryAfter: limit.retryAfter ?? 60,
+    };
+  }
+
   const verification = await verifyPassword(password, {
     hash: guest.password_hash,
     salt: guest.password_salt,
   });
 
   if (!verification.valid) {
+    await recordPasswordAttemptFailure(attempt);
     return { error: 'Invalid credentials' };
   }
+
+  await clearPasswordAttemptFailures(attempt);
 
   if (verification.needsRehash) {
     // Upgrade legacy hashes in place. The filter on the old value keeps a

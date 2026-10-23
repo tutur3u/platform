@@ -107,11 +107,18 @@ export default function PlanLogin({
         setDisplayMode();
       } else {
         form.setValue('guestPassword', '');
-        form.setError('guestPassword', { message: result.error });
+        form.setError('guestPassword', {
+          message:
+            'retryAfter' in result && typeof result.retryAfter === 'number'
+              ? t('meet-together-plan-details.too_many_attempts', {
+                  minutes: Math.max(1, Math.ceil(result.retryAfter / 60)),
+                })
+              : result.error,
+        });
         setLoading(false);
       }
     },
-    [plan.id, form, setUser, setDisplayMode]
+    [plan.id, form, setUser, setDisplayMode, t]
   );
 
   // Try to load saved credentials from localStorage on component mount

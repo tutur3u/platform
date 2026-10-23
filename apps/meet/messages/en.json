@@ -4700,6 +4700,7 @@
     "tentative": "Tentative",
     "timeblocks": "Timeblocks",
     "times": "Times",
+    "too_many_attempts": "Too many failed attempts. Try again in {minutes} minutes.",
     "tuturuuu_account": "Tuturuuu account",
     "tuturuuu_meet": "Tuturuuu Meet",
     "unavailable": "Unavailable",

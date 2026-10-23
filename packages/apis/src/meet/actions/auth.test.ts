@@ -71,12 +71,36 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
 }));
 
+const limits = vi.hoisted(() => ({
+  check: vi.fn(),
+  clear: vi.fn(),
+  recordFailure: vi.fn(),
+}));
+
+vi.mock(
+  '@tuturuuu/utils/abuse-protection/password-attempt-limits',
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import('@tuturuuu/utils/abuse-protection/password-attempt-limits')
+    >()),
+    checkPasswordAttemptLimit: (...args: unknown[]) => limits.check(...args),
+    clearPasswordAttemptFailures: (...args: unknown[]) => limits.clear(...args),
+    recordPasswordAttemptFailure: (...args: unknown[]) =>
+      limits.recordFailure(...args),
+  })
+);
+
+vi.mock('next/headers', () => ({
+  headers: async () => new Headers({ 'cf-connecting-ip': '203.0.113.9' }),
+}));
+
 const mutations = () => mocks.calls.filter((c) => c.operation !== 'select');
 
 describe('Meet guest login', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.reset();
+    limits.check.mockResolvedValue({ allowed: true });
   });
 
   it('creates a guest with a scrypt hash and returns a session, not the hash', async () => {
@@ -172,6 +196,41 @@ describe('Meet guest login', () => {
 
     expect(result).toEqual({ error: 'Invalid credentials' });
     expect(mutations()).toEqual([]);
+    expect(limits.recordFailure).toHaveBeenCalledWith({
+      scope: 'meet-guest',
+      target: `${PLAN_ID}:ann`,
+      ip: '203.0.113.9',
+    });
+    expect(limits.clear).not.toHaveBeenCalled();
+  });
+
+  it('refuses to verify once the failure budget is spent', async () => {
+    limits.check.mockResolvedValue({ allowed: false, retryAfter: 420 });
+    mocks.queue('meet_together_guests:select', {
+      data: {
+        id: 'guest-1',
+        name: 'Ann',
+        password_hash: await hashPassword('secret'),
+        password_salt: '',
+      },
+      error: null,
+    });
+    const { guestLogin } = await import('./auth.js');
+
+    const result = await guestLogin(PLAN_ID, {
+      name: ' ANN ',
+      password: 'secret',
+    });
+
+    expect(result).toEqual({
+      error: 'Too many failed attempts',
+      retryAfter: 420,
+    });
+    expect(limits.check).toHaveBeenCalledWith(
+      expect.objectContaining({ target: `${PLAN_ID}:ann` })
+    );
+    expect(limits.recordFailure).not.toHaveBeenCalled();
+    expect(mutations()).toEqual([]);
   });
 
   it('logs in a scrypt guest without rehashing', async () => {
@@ -193,6 +252,7 @@ describe('Meet guest login', () => {
 
     expect(result.data?.user.id).toBe('guest-1');
     expect(mutations()).toEqual([]);
+    expect(limits.clear).toHaveBeenCalledTimes(1);
   });
 
   it('rejects the stored hash presented as the password', async () => {

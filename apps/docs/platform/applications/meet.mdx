@@ -106,6 +106,14 @@ are unaffected.
   to passwordless guests; the password and the session are not persisted.
 - **Expiry.** When a session expires the guest action is rejected and the guest
   signs in again from the plan page.
+- **Attempt limits.** Failed guest passwords are limited per plan and guest
+  name and per client IP (see
+  [shared-secret password budgets](/build/devops/adaptive-abuse-rate-limits#shared-secret-password-budgets)).
+  While a budget is spent the form shows a localized retry message, even for
+  the correct password. Creating a new guest name is not limited by this budget.
+- **Table access.** `meet_together_guests` keeps row level security with no
+  client-role policies, and client-role table grants are revoked; only server
+  code using the service role reads it.
 - **Signing secret.** Sessions are signed with the shared server token secret
   (`TUTURUUU_APP_COORDINATION_SECRET`, falling back to `SUPABASE_SECRET_KEY`)
   through a purpose-derived key, so they cannot be replayed as any other token
@@ -137,8 +145,9 @@ Regression coverage: `packages/utils/src/__tests__/crypto.test.ts`,
 `packages/utils/src/__tests__/meet-guest-session.test.ts`,
 `packages/apis/src/meet/actions/auth.test.ts`,
 `packages/apis/src/meet/actions/polls.test.ts`,
-`apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.test.ts` and
-`apps/meet/src/runtime/legacy-action-ports.test.ts`.
+`apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.test.ts`,
+`apps/meet/src/runtime/legacy-action-ports.test.ts` and
+`apps/database/supabase/tests/security-meet-guest-grants.sql`.
 
 ## Runtime boundaries
 

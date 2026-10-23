@@ -189,6 +189,28 @@ visible in the Rate Limits admin center. They are safer than globally unblocking
 or uplifting a noisy IP when many unrelated organizations may share that public
 address. Keep them time-bound and review live usage before renewing.
 
+## Shared-Secret Password Budgets
+
+Meet plan guest login and Nova challenge passwords use
+`@tuturuuu/utils/abuse-protection/password-attempt-limits`. Each check has two
+failure budgets in Upstash Redis:
+
+| Scope | Limit | Key |
+| --- | --- | --- |
+| Target | 10 failures / 15 minutes | Meet: plan id + normalized guest name. Nova: challenge id + user id. Hashed before use. |
+| Source IP | 30 failures / 15 minutes | Client IP from `extractIPFromHeaders`; skipped when the IP is unknown |
+
+The limit is checked before the password is verified. A correct password clears
+the target budget but not the IP budget. A spent budget returns
+`retryAfter` seconds: Nova answers HTTP 429 with `Retry-After`, and the Meet
+guest-login server action returns `{ error, retryAfter }` for the localized
+form message. Like other abuse protection, the counters fail open when
+`UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are absent or Redis errors;
+the scrypt cost then remains the only bound. The Meet Worker reaches Upstash
+through the same fetch-based REST client as its API proxy guard, so the limit
+applies there only when those two secrets are set on the `tuturuuu-meet`
+Worker. Coverage: `packages/utils/src/abuse-protection/__tests__/password-attempt-limits.test.ts`.
+
 ## Rate-Limit Appeals
 
 When the details dialog shows `X-Proxy-Block-Reason: ip-already-blocked`, the

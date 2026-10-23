@@ -20,6 +20,25 @@ const mocks = vi.hoisted(() => ({
   user: { id: 'user-1' } as { id: string } | null,
 }));
 
+const limits = vi.hoisted(() => ({
+  check: vi.fn(),
+  clear: vi.fn(),
+  recordFailure: vi.fn(),
+}));
+
+vi.mock(
+  '@tuturuuu/utils/abuse-protection/password-attempt-limits',
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import('@tuturuuu/utils/abuse-protection/password-attempt-limits')
+    >()),
+    checkPasswordAttemptLimit: (...args: unknown[]) => limits.check(...args),
+    clearPasswordAttemptFailures: (...args: unknown[]) => limits.clear(...args),
+    recordPasswordAttemptFailure: (...args: unknown[]) =>
+      limits.recordFailure(...args),
+  })
+);
+
 vi.mock('@/lib/app-session', () => ({
   getNovaAppSessionUserFromRequest: () => mocks.user,
 }));
@@ -62,6 +81,7 @@ function verify(password: unknown) {
   return POST(
     new Request('http://localhost/api/auth/challenges/verify-password', {
       body: JSON.stringify({ challengeId: CHALLENGE_ID, password }),
+      headers: { 'cf-connecting-ip': '198.51.100.4' },
       method: 'POST',
     })
   );
@@ -87,6 +107,30 @@ describe('Nova challenge password verification', () => {
   beforeEach(() => {
     mocks.updates.length = 0;
     mocks.user = { id: 'user-1' };
+    vi.clearAllMocks();
+    limits.check.mockResolvedValue({ allowed: true });
+  });
+
+  it('returns 429 with retryAfter once the failure budget is spent', async () => {
+    limits.check.mockResolvedValue({ allowed: false, retryAfter: 300 });
+    mocks.challenge = {
+      duration: 600,
+      id: CHALLENGE_ID,
+      password_hash: await hashPassword('open sesame'),
+      password_salt: null,
+    };
+
+    const response = await verify('open sesame');
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('300');
+    await expect(response.json()).resolves.toMatchObject({ retryAfter: 300 });
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(limits.check).toHaveBeenCalledWith({
+      scope: 'nova-challenge',
+      target: `${CHALLENGE_ID}:user-1`,
+      ip: '198.51.100.4',
+    });
   });
 
   it('upgrades a legacy hash and issues a grant without password material', async () => {
@@ -169,6 +213,8 @@ describe('Nova challenge password verification', () => {
       expect(response.headers.getSetCookie()).toEqual([]);
     }
     expect(mocks.updates).toEqual([]);
+    expect(limits.recordFailure).toHaveBeenCalledTimes(2);
+    expect(limits.clear).not.toHaveBeenCalled();
   });
 
   it('requires a signed-in Nova user', async () => {

@@ -2489,6 +2489,7 @@
         "whitelist-only-description": "Restrict access to only whitelisted users."
       }
     },
+    "challenge_password_too_many_attempts": "Too many failed attempts. Try again in {minutes} minutes.",
     "challenges": "Challenges",
     "challenges-page": {
       "clear-filters": "Clear filters",

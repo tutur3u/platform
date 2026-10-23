@@ -123,8 +123,22 @@ bound to that challenge and the signed-in user, valid for the challenge
 duration (at most seven days). Challenge pages accept only that grant; the
 stored hash is never sent to the browser, and the retired `token` cookie is
 cleared and no longer grants access. Users with an open challenge from before
-this change re-enter the password once. Coverage:
-`apps/nova/src/app/api/auth/challenges/verify-password/route.test.ts`.
+this change re-enter the password once. Failed passwords are limited per
+challenge and user and per client IP; a spent budget answers 429 with
+`Retry-After` (see
+[shared-secret password budgets](/build/devops/adaptive-abuse-rate-limits#shared-secret-password-budgets)).
+
+Starting a session (`POST /api/v1/sessions`) applies the same participant
+catalog rules as the problem APIs and, for a password-protected challenge,
+requires that grant for the caller; challenge managers are exempt. Because the
+problem APIs only serve participants with an in-progress session, this is what
+keeps protected problems behind the password. Sessions and submissions by id
+are scoped to their owner, and a session can only be ended, not moved to
+another challenge, restarted or reopened. Coverage:
+`apps/nova/src/app/api/auth/challenges/verify-password/route.test.ts`,
+`apps/nova/src/app/api/v1/sessions/route.test.ts`,
+`apps/nova/src/app/api/v1/sessions/[sessionId]/route.test.ts` and
+`apps/nova/src/app/api/v1/submissions/[submissionId]/route.test.ts`.
 
 #### `nova_problems`
 

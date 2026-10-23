@@ -1,4 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
+import {
+  checkPasswordAttemptLimit,
+  clearPasswordAttemptFailures,
+  type PasswordAttemptSubject,
+  recordPasswordAttemptFailure,
+} from '@tuturuuu/utils/abuse-protection/password-attempt-limits';
 import {
   hashPassword,
   MAX_PASSWORD_LENGTH,
@@ -69,17 +76,34 @@ export async function POST(request: Request) {
       );
     }
 
+    const attempt: PasswordAttemptSubject = {
+      scope: 'nova-challenge',
+      target: `${challenge.id}:${user.id}`,
+      ip: extractIPFromHeaders(request.headers),
+    };
+    const limit = await checkPasswordAttemptLimit(attempt);
+    if (!limit.allowed) {
+      const retryAfter = limit.retryAfter ?? 60;
+      return NextResponse.json(
+        { message: 'Too many failed attempts', retryAfter },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+      );
+    }
+
     const verification = await verifyPassword(password, {
       hash: challenge.password_hash,
       salt: challenge.password_salt,
     });
 
     if (!verification.valid) {
+      await recordPasswordAttemptFailure(attempt);
       return NextResponse.json(
         { message: 'Invalid password' },
         { status: 401 }
       );
     }
+
+    await clearPasswordAttemptFailures(attempt);
 
     if (verification.needsRehash) {
       // Upgrade legacy hashes in place, guarded by the old value so a
