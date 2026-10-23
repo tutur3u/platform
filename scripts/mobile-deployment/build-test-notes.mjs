@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import normalizer from '../ci/normalize-release-notes.js';
 import policy from '../ci/release-note-policy.js';
 
 export class BetaHistoryUnavailableError extends Error {}
@@ -40,9 +41,11 @@ export function renderBuildTestNotes(history, identity) {
       'Exact beta version has no test notes'
     );
   }
-  const changes = sourceChanges.filter(
-    (change) => !policy.isReleaseBookkeeping(change)
-  );
+  const changes = normalizer
+    .normalizeMobileReleaseNotes(sourceChanges.join('\n'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => line.slice(2));
   if (!changes.length)
     throw new BetaHistoryUnavailableError(
       'Exact beta version has no product test notes'

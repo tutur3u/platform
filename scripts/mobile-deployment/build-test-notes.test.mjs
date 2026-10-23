@@ -24,7 +24,7 @@ const history = {
 test('renders only exact version notes, excluding later unshipped changes', () => {
   assert.equal(
     renderBuildTestNotes(history, identity),
-    'Please test 0.20.4:\n- add scoped timezone settings and preserve calendar instants'
+    'Please test 0.20.4:\n- Add scoped timezone settings and preserve calendar instants'
   );
 });
 for (const field of ['version', 'number', 'sourceSha']) {
@@ -327,7 +327,7 @@ test('complete history fits or defers, never silently drops later changes', () =
       { ...history, releases: [{ version: identity.version, changes }] },
       identity
     );
-  assert.equal(notes(['one', 'two']), 'Please test 0.20.4:\n- one\n- two');
+  assert.equal(notes(['one', 'two']), 'Please test 0.20.4:\n- One\n- Two');
   assert.throws(() => notes(['x'.repeat(4001)]), BetaHistoryUnavailableError);
   assert.throws(
     () => notes(['one', 'x'.repeat(4001)]),
@@ -422,7 +422,7 @@ test('exact build notes omit merge bookkeeping from an older original artifact',
   };
   assert.equal(
     renderBuildTestNotes(original, identity),
-    `Please test ${identity.version}:\n- merge duplicate contacts`
+    `Please test ${identity.version}:\n- Merge duplicate contacts`
   );
   assert.throws(
     () =>
