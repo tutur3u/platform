@@ -1,4 +1,3 @@
-import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
@@ -11,6 +10,7 @@ import {
   recordDevboxAgentEvents,
 } from '../platform-devbox';
 import { agentRequest, withAgentRetries } from './devbox-agent-network';
+import { runProcessGroup } from './devbox-job-process';
 import {
   parseJudgeImages,
   parseJudgePayload,
@@ -27,6 +27,10 @@ export interface DevboxAgentExecutionOptions {
   env?: NodeJS.ProcessEnv;
   fetch?: typeof fetch;
   token: string;
+  // Aborted when the agent must stop active jobs (second stop signal).
+  cancelSignal?: AbortSignal;
+  cancelCheckMs?: number;
+  killGraceMs?: number;
 }
 
 const DEVBOX_CHILD_BASE_ENV_KEYS = [
@@ -133,6 +137,23 @@ async function postAgentCompletion({
       `Devbox agent completion upload failed: ${formatResponseStatus(response)}`
     );
   }
+}
+
+async function readRunCancelRequested(
+  { baseUrl, fetch, token }: DevboxAgentExecutionOptions,
+  runId: string
+) {
+  const response = await recordDevboxAgentEvents({
+    baseUrl,
+    fetch,
+    payload: { runId },
+    token,
+  });
+  if (!response.ok) return false;
+  const body = (await response.json().catch(() => ({}))) as {
+    cancelRequested?: unknown;
+  };
+  return body.cancelRequested === true;
 }
 
 function parseEnvFile(raw: string) {
@@ -379,26 +400,6 @@ export async function executeDevboxAgentJob(
     return { exitCode: 126, status: 'failed' as const };
   }
 
-  const child = spawn(command[0]!, command.slice(1), {
-    cwd,
-    env: {
-      ...createDevboxChildBaseEnv(options.env ?? process.env),
-      ...jobEnv,
-    },
-    shell: false,
-  });
-  let timedOut = false;
-  const timeoutMs = job.timeoutSeconds
-    ? Math.max(1, job.timeoutSeconds) * 1000
-    : undefined;
-  const timeout =
-    timeoutMs === undefined
-      ? undefined
-      : setTimeout(() => {
-          timedOut = true;
-          child.kill('SIGTERM');
-        }, timeoutMs);
-
   const logUploads: Promise<void>[] = [];
   const recordLog = async (message: string) => {
     await postAgentEvents({
@@ -407,32 +408,46 @@ export async function executeDevboxAgentJob(
     });
   };
 
-  child.stdout.on('data', (chunk) => {
-    logUploads.push(recordLog(String(chunk)));
+  const exit = await runProcessGroup({
+    command: command[0]!,
+    args: command.slice(1),
+    cwd,
+    env: {
+      ...createDevboxChildBaseEnv(options.env ?? process.env),
+      ...jobEnv,
+    },
+    timeoutMs: job.timeoutSeconds
+      ? Math.max(1, job.timeoutSeconds) * 1000
+      : undefined,
+    graceMs: options.killGraceMs,
+    cancelSignal: options.cancelSignal,
+    cancelCheckMs: options.cancelCheckMs,
+    // Remote `ttr box stop` marks the run cancel_requested; the claiming
+    // runner observes it through the events endpoint.
+    checkCancel: () => readRunCancelRequested(eventOptions, job.runId),
+    onOutput: (chunk) => {
+      logUploads.push(recordLog(chunk));
+    },
   });
-  child.stderr.on('data', (chunk) => {
-    logUploads.push(recordLog(String(chunk)));
-  });
+  const timedOut = exit.timedOut;
 
-  const exit = await new Promise<{
-    code: number | null;
-    signal: NodeJS.Signals | null;
-  }>((resolveExit, reject) => {
-    child.on('error', reject);
-    child.on('exit', (code, signal) => resolveExit({ code, signal }));
-  }).finally(() => {
-    if (timeout) clearTimeout(timeout);
-  });
-
-  const exitCode = timedOut ? 124 : getExitCode(exit.code, exit.signal);
-  const status: DevboxAgentCompletionStatus =
-    exitCode === 0 ? 'succeeded' : 'failed';
+  const exitCode = timedOut
+    ? 124
+    : exit.cancelled
+      ? 143
+      : getExitCode(exit.code, exit.signal);
+  const status: DevboxAgentCompletionStatus = exit.cancelled
+    ? 'cancelled'
+    : exitCode === 0
+      ? 'succeeded'
+      : 'failed';
 
   if (timedOut) {
     logUploads.push(
       recordLog(`Command timed out after ${job.timeoutSeconds}s.`)
     );
   }
+  if (exit.cancelled) logUploads.push(recordLog('Command stopped on request.'));
 
   await Promise.all(logUploads);
 

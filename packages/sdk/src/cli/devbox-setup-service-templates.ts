@@ -47,6 +47,10 @@ export function renderSystemdUnit({
     `ExecStart=${wrapperPath}`,
     'Restart=always',
     'RestartSec=5',
+    // Stop signals the agent only; it drains active jobs before exiting.
+    // Remaining processes are killed when TimeoutStopSec elapses.
+    'KillMode=mixed',
+    'TimeoutStopSec=600',
     'NoNewPrivileges=yes',
     'UMask=0077',
     ...(serviceHome ? [`Environment=HOME=${serviceHome}`] : []),
@@ -92,6 +96,8 @@ export function renderLaunchdPlist({
   <true/>
   <key>KeepAlive</key>
   <true/>
+  <key>ExitTimeOut</key>
+  <integer>600</integer>
   <key>StandardOutPath</key>
   <string>/var/log/tuturuuu-devbox-runner.log</string>
   <key>StandardErrorPath</key>

@@ -599,6 +599,21 @@ recovers the agent instead of leaving it hung with a stale heartbeat. Regression
 coverage, including a real socket that never answers, lives in
 `devbox-agent-network.test.ts`.
 
+Trusted jobs run as the leader of their own process group. A timeout
+(`--timeout`) or a remote stop (`ttr box stop <run-id>`) sends `SIGTERM` to the
+whole group: shells, Docker CLIs and test workers, not only the direct child.
+Anything still running after a 10-second grace period gets `SIGKILL`. The
+claiming agent observes a stop through the events endpoint, which returns
+`cancelRequested` to the runner that owns the run, about every 10 seconds per
+job. A stopped run completes as `cancelled` with exit `143`; a timeout completes
+as `failed` with exit `124`. On `SIGTERM` or `SIGINT` the agent claims nothing
+new, finishes its active jobs while heartbeating, and exits `0`. A second signal
+also stops active trusted jobs through their process groups. Generated systemd
+units use `KillMode=mixed` (only the agent receives the stop signal) and
+`TimeoutStopSec=600`; launchd plists use `ExitTimeOut` 600. Re-render existing
+units with `ttr box repair` to pick these up. Regression coverage lives in
+`devbox-job-process.test.ts` and `devbox-agent-stop.test.ts`.
+
 Platform-managed playground workers opt in through operator configuration. They
 require gVisor and pinned language image digests, run unprivileged without host
 credentials, and disable network access by default. Project environments retain
