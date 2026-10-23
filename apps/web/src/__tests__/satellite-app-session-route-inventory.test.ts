@@ -35,7 +35,6 @@ const satelliteRouteRoots = [
   'apps/web/src/legacy-api-routes/v1/users/me/profile',
   'apps/web/src/app/api/v1/users/me/avatar',
   'apps/web/src/legacy-api-routes/v1/users/me/email',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/avatar/route.ts',
 ];
 
 const satelliteAppApiRoots = [
@@ -200,6 +199,22 @@ describe('satellite app-session route inventory', () => {
       });
 
     expect(failures).toEqual([]);
+  });
+
+  it('keeps workspace avatar mutations in the owning app route', () => {
+    const route = 'apps/web/src/app/api/v1/workspaces/[wsId]/avatar/route.ts';
+    expect(existsSync(resolve(repoRoot, route))).toBe(true);
+    expect(
+      existsSync(
+        resolve(
+          repoRoot,
+          'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/avatar/route.ts'
+        )
+      )
+    ).toBe(false);
+    expect(readFileSync(resolve(repoRoot, route), 'utf8')).not.toContain(
+      'allowAppSessionAuth'
+    );
   });
 
   it('keeps legacy satellite-consumed route handlers on the app-session-aware auth helper', () => {

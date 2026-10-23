@@ -283,7 +283,7 @@ export function createSatelliteWorkspaceAvatarRouteHandlers(
       const existingPath = ownedWorkspaceAvatarPath(
         workspace.avatar_url,
         authorization.permissions.wsId,
-        process.env.NEXT_PUBLIC_SUPABASE_URL
+        [process.env.SUPABASE_SERVER_URL, process.env.NEXT_PUBLIC_SUPABASE_URL]
       );
       if (existingPath) {
         const { error: storageError } = await sbAdmin.storage

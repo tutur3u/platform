@@ -103,6 +103,7 @@ const client = { from: tableFrom, storage: { from: storageFrom } };
 beforeEach(() => {
   vi.resetAllMocks();
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', origin);
+  vi.stubEnv('SUPABASE_SERVER_URL', '');
   storedUrl = publicUrl(ownPath);
   objects = new Set([ownPath, personalB, foreignWorkspace]);
   single.mockImplementation(async () => ({
@@ -259,5 +260,40 @@ describe('workspace avatar ownership', () => {
     expect(storedUrl).toBeNull();
     expect(remove).toHaveBeenCalledExactlyOnceWith([ownPath]);
     expect(objects).toEqual(new Set([ownPath, personalB, foreignWorkspace]));
+  });
+  it.each(['https://server-storage.test', origin])(
+    'removes an owned URL from either exact configured origin: %s',
+    async (storedOrigin) => {
+      vi.stubEnv('SUPABASE_SERVER_URL', 'https://server-storage.test');
+      storedUrl = publicUrl(ownPath).replace(origin, storedOrigin);
+      expect((await DELETE(request('DELETE'), context)).status).toBe(200);
+      expect(remove).toHaveBeenCalledExactlyOnceWith([ownPath]);
+      expect(storedUrl).toBeNull();
+    }
+  );
+
+  it.each([
+    'https://SERVER-STORAGE.TEST',
+    'https://server-storage.test:443',
+    'https://server-storage.test@foreign.test',
+  ])(
+    'rejects a noncanonical spelling of the server origin: %s',
+    async (storedOrigin) => {
+      vi.stubEnv('SUPABASE_SERVER_URL', 'https://server-storage.test');
+      storedUrl = publicUrl(ownPath).replace(origin, storedOrigin);
+      expect((await DELETE(request('DELETE'), context)).status).toBe(200);
+      expect(remove).not.toHaveBeenCalled();
+    }
+  );
+
+  it('never deletes another workspace object through the configured server origin', async () => {
+    vi.stubEnv('SUPABASE_SERVER_URL', 'https://server-storage.test');
+    storedUrl = publicUrl(foreignWorkspace).replace(
+      origin,
+      'https://server-storage.test'
+    );
+    expect((await DELETE(request('DELETE'), context)).status).toBe(200);
+    expect(remove).not.toHaveBeenCalled();
+    expect(objects.has(foreignWorkspace)).toBe(true);
   });
 });

@@ -107,6 +107,8 @@ const update =
   vi.fn<(values: { avatar_url: string | null }) => { eq: typeof updateEq }>();
 const remove = vi.fn();
 const storageFrom = vi.fn();
+const sessionRemove = vi.fn();
+const adminStorageFrom = vi.fn();
 const tableFrom = vi.fn();
 const single = vi.fn();
 const client = { from: tableFrom, storage: { from: storageFrom } };
@@ -114,6 +116,7 @@ const client = { from: tableFrom, storage: { from: storageFrom } };
 beforeEach(() => {
   vi.resetAllMocks();
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', origin);
+  vi.stubEnv('SUPABASE_SERVER_URL', '');
   storedUrl = publicUrl(ownPath);
   objects = new Set([ownPath, personalB, foreignWorkspace]);
   single.mockImplementation(async () => ({
@@ -121,9 +124,12 @@ beforeEach(() => {
     error: null,
   }));
   update.mockImplementation((values: { avatar_url: string | null }) => {
-    updateEq.mockImplementation(async () => {
+    updateEq.mockImplementation(() => {
       storedUrl = values.avatar_url;
-      return { error: null };
+      const result = Promise.resolve({ data: { id: workspaceW }, error: null });
+      return Object.assign(result, {
+        select: () => ({ single: () => result }),
+      });
     });
     return { eq: updateEq };
   });
@@ -137,8 +143,13 @@ beforeEach(() => {
   });
   storageFrom.mockImplementation(() => ({
     getPublicUrl: (path: string) => ({ data: { publicUrl: publicUrl(path) } }),
-    remove,
+    remove: sessionRemove,
   }));
+  adminStorageFrom.mockReturnValue({ remove });
+  f.createAdminClient.mockImplementation(async () => {
+    expect(storedUrl).toBeNull();
+    return { storage: { from: adminStorageFrom } };
+  });
 
   f.client.mockReturnValue(client);
   f.getPermissions.mockImplementation(
@@ -170,6 +181,7 @@ describe('workspace avatar ownership', () => {
       expect(storedUrl).toBeNull();
       expect(updateEq).toHaveBeenCalledWith('id', workspaceW);
       expect(remove).not.toHaveBeenCalled();
+      expect(f.createAdminClient).not.toHaveBeenCalled();
       expect(objects).toEqual(new Set([ownPath, personalB, foreignWorkspace]));
     }
   );
@@ -190,7 +202,14 @@ describe('workspace avatar ownership', () => {
     expect(storageFrom).toHaveBeenCalledWith('avatars');
     expect(remove).toHaveBeenCalledExactlyOnceWith([ownPath]);
     expect(objects).toEqual(new Set([personalB, foreignWorkspace]));
-    expect(f.createAdminClient).not.toHaveBeenCalled();
+    expect(f.createAdminClient).toHaveBeenCalledExactlyOnceWith({
+      noCookie: true,
+    });
+    expect(adminStorageFrom).toHaveBeenCalledWith('avatars');
+    expect(sessionRemove).not.toHaveBeenCalled();
+    expect(updateEq.mock.invocationCallOrder[1]).toBeLessThan(
+      f.createAdminClient.mock.invocationCallOrder[0] ?? 0
+    );
   });
 
   it.each(['PATCH', 'DELETE'])(
@@ -208,6 +227,7 @@ describe('workspace avatar ownership', () => {
       expect(response.status).toBe(403);
       expect(tableFrom).not.toHaveBeenCalled();
       expect(remove).not.toHaveBeenCalled();
+      expect(f.createAdminClient).not.toHaveBeenCalled();
     }
   );
 
@@ -221,6 +241,7 @@ describe('workspace avatar ownership', () => {
       expect(response.status).toBe(403);
       expect(tableFrom).not.toHaveBeenCalled();
       expect(remove).not.toHaveBeenCalled();
+      expect(f.createAdminClient).not.toHaveBeenCalled();
     }
   );
 
@@ -232,7 +253,11 @@ describe('workspace avatar ownership', () => {
 
   it('does not remove storage when clearing the field fails', async () => {
     update.mockReturnValue({ eq: updateEq });
-    updateEq.mockResolvedValue({ error: new Error('fixture write failed') });
+    const result = Promise.resolve({
+      data: null,
+      error: new Error('fixture write failed'),
+    });
+    updateEq.mockReturnValue({ select: () => ({ single: () => result }) });
     expect((await DELETE(request('DELETE'), context)).status).toBe(500);
     expect(remove).not.toHaveBeenCalled();
   });
@@ -248,6 +273,7 @@ describe('workspace avatar ownership', () => {
       expect((await DELETE(request('DELETE'), context)).status).toBe(200);
       expect(storedUrl).toBeNull();
       expect(remove).not.toHaveBeenCalled();
+      expect(f.createAdminClient).not.toHaveBeenCalled();
     }
   );
 
@@ -259,6 +285,7 @@ describe('workspace avatar ownership', () => {
       );
       expect(update).not.toHaveBeenCalled();
       expect(remove).not.toHaveBeenCalled();
+      expect(f.createAdminClient).not.toHaveBeenCalled();
     }
   );
 
@@ -267,6 +294,52 @@ describe('workspace avatar ownership', () => {
     expect((await DELETE(request('DELETE'), context)).status).toBe(200);
     expect(storedUrl).toBeNull();
     expect(remove).toHaveBeenCalledExactlyOnceWith([ownPath]);
+    expect(objects).toEqual(new Set([ownPath, personalB, foreignWorkspace]));
+  });
+  it.each(['https://server-storage.test', origin])(
+    'removes an owned URL from either exact configured origin: %s',
+    async (storedOrigin) => {
+      vi.stubEnv('SUPABASE_SERVER_URL', 'https://server-storage.test');
+      storedUrl = publicUrl(ownPath).replace(origin, storedOrigin);
+      expect((await DELETE(request('DELETE'), context)).status).toBe(200);
+      expect(remove).toHaveBeenCalledExactlyOnceWith([ownPath]);
+      expect(storedUrl).toBeNull();
+    }
+  );
+
+  it.each([
+    'https://SERVER-STORAGE.TEST',
+    'https://server-storage.test:443',
+    'https://server-storage.test@foreign.test',
+  ])(
+    'rejects a noncanonical spelling of the server origin: %s',
+    async (storedOrigin) => {
+      vi.stubEnv('SUPABASE_SERVER_URL', 'https://server-storage.test');
+      storedUrl = publicUrl(ownPath).replace(origin, storedOrigin);
+      expect((await DELETE(request('DELETE'), context)).status).toBe(200);
+      expect(remove).not.toHaveBeenCalled();
+    }
+  );
+
+  it('never deletes another workspace object through the configured server origin', async () => {
+    vi.stubEnv('SUPABASE_SERVER_URL', 'https://server-storage.test');
+    storedUrl = publicUrl(foreignWorkspace).replace(
+      origin,
+      'https://server-storage.test'
+    );
+    expect((await DELETE(request('DELETE'), context)).status).toBe(200);
+    expect(remove).not.toHaveBeenCalled();
+    expect(objects.has(foreignWorkspace)).toBe(true);
+  });
+  it('does not create a privileged client when an RLS clear affects zero rows', async () => {
+    update.mockReturnValue({ eq: updateEq });
+    updateEq.mockReturnValue({
+      select: () => ({ single: async () => ({ data: null, error: null }) }),
+    });
+    expect((await DELETE(request('DELETE'), context)).status).toBe(500);
+    expect(storedUrl).toBe(publicUrl(ownPath));
+    expect(f.createAdminClient).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
     expect(objects).toEqual(new Set([ownPath, personalB, foreignWorkspace]));
   });
 });

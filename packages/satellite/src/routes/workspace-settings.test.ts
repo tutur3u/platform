@@ -278,6 +278,11 @@ describe('satellite workspace settings route handlers', () => {
   }
 
   it('updates a workspace avatar through the owning satellite session', async () => {
+    getPermissions.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'manage_workspace_settings',
+      wsId: '11111111-1111-4111-8111-111111111111',
+    });
     const updateEq = vi.fn().mockResolvedValue({ error: null });
     const update = vi.fn(() => ({ eq: updateEq }));
     createAdminClient.mockResolvedValue({
@@ -299,7 +304,7 @@ describe('satellite workspace settings route handlers', () => {
         {
           body: JSON.stringify({
             filePath:
-              'workspaces/resolved-workspace-id/avatar-12345678-1234-4234-8234-123456789abc.webp',
+              'workspaces/11111111-1111-4111-8111-111111111111/avatar-12345678-1234-4234-8234-123456789abc.webp',
           }),
           method: 'PATCH',
         }
@@ -311,7 +316,10 @@ describe('satellite workspace settings route handlers', () => {
     expect(update).toHaveBeenCalledWith({
       avatar_url: 'https://cdn.test/avatar.png',
     });
-    expect(updateEq).toHaveBeenCalledWith('id', 'resolved-workspace-id');
+    expect(updateEq).toHaveBeenCalledWith(
+      'id',
+      '11111111-1111-4111-8111-111111111111'
+    );
   });
 
   it('serves AI credit status locally with the satellite user identity', async () => {

@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   isWorkspaceAvatarPath,
   ownedWorkspaceAvatarPath,
@@ -5,7 +6,6 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const UpdateWorkspaceAvatarSchema = z.object({
@@ -72,8 +72,7 @@ export const PATCH = withSessionAuth<{ wsId: string }>(
         { status: 500 }
       );
     }
-  },
-  { allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH }
+  }
 );
 
 export const DELETE = withSessionAuth<{ wsId: string }>(
@@ -106,23 +105,26 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
         throw workspaceError;
       }
 
-      const { error: updateError } = await supabase
+      const { data: clearedWorkspace, error: updateError } = await supabase
         .from('workspaces')
         .update({ avatar_url: null })
-        .eq('id', normalizedWsId);
+        .eq('id', normalizedWsId)
+        .select('id')
+        .single();
 
-      if (updateError) {
-        throw updateError;
+      if (updateError || !clearedWorkspace) {
+        throw updateError ?? new Error('Workspace avatar was not cleared');
       }
 
       const existingPath = ownedWorkspaceAvatarPath(
         workspaceData?.avatar_url,
         normalizedWsId,
-        process.env.NEXT_PUBLIC_SUPABASE_URL
+        [process.env.SUPABASE_SERVER_URL, process.env.NEXT_PUBLIC_SUPABASE_URL]
       );
       if (existingPath) {
         try {
-          const { error: storageError } = await supabase.storage
+          const admin = await createAdminClient({ noCookie: true });
+          const { error: storageError } = await admin.storage
             .from('avatars')
             .remove([existingPath]);
           if (storageError)
@@ -143,6 +145,5 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
         { status: 500 }
       );
     }
-  },
-  { allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH }
+  }
 );

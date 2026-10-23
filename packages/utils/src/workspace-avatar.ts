@@ -1,7 +1,13 @@
+import { avatarStorageOrigins } from './avatar-storage-origins';
+
+const workspaceId =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 const ticketFilename =
   /^avatar-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/;
 
 export function isWorkspaceAvatarPath(value: string, wsId: string) {
+  if (wsId.length !== 36 || !workspaceId.test(wsId)) return false;
   const prefix = `workspaces/${wsId}/`;
   if (!value.startsWith(prefix)) return false;
   const filename = value.slice(prefix.length);
@@ -12,27 +18,14 @@ export function isWorkspaceAvatarPath(value: string, wsId: string) {
 export function ownedWorkspaceAvatarPath(
   value: string | null | undefined,
   wsId: string,
-  storageOrigin: string | undefined
+  storageOrigins: readonly (string | undefined)[]
 ) {
-  if (!value || !storageOrigin) return null;
-  let origin: string;
-  try {
-    const configured = new URL(storageOrigin);
-    if (
-      !['https:', 'http:'].includes(configured.protocol) ||
-      configured.username ||
-      configured.password ||
-      configured.pathname !== '/' ||
-      configured.search ||
-      configured.hash
-    )
-      return null;
-    origin = configured.origin;
-  } catch {
-    return null;
+  if (!value) return null;
+  for (const origin of avatarStorageOrigins(storageOrigins)) {
+    const prefix = `${origin}/storage/v1/object/public/avatars/`;
+    if (!value.startsWith(prefix)) continue;
+    const path = value.slice(prefix.length);
+    if (isWorkspaceAvatarPath(path, wsId)) return path;
   }
-  const prefix = `${origin}/storage/v1/object/public/avatars/`;
-  if (!value.startsWith(prefix)) return null;
-  const path = value.slice(prefix.length);
-  return isWorkspaceAvatarPath(path, wsId) ? path : null;
+  return null;
 }
