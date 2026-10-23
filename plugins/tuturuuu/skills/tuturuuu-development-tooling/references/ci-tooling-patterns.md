@@ -1030,3 +1030,14 @@ replay after deleting emitted files; replayed logs alone do not qualify an artif
 Keep `.cloudflare/state` outside cache outputs. cf prerelease pins remain held by
 Renovate until an owner qualifies a scoped upgrade. Production jobs require the
 Actions repository variable `CLOUDFLARE_ACCOUNT_ID` to match emitted account identity.
+
+## Canonical bun.lock
+
+`bun install --frozen-lockfile` accepts orphan entries that a plain `bun install`
+prunes. When main carries them, every fresh worktree's setup rewrites `bun.lock`,
+leaving orphan worktrees that differ only in the lockfile. Type Check therefore
+requires a tracked `bun.lock`, runs `bun install --lockfile-only` after the frozen
+install, and fails if `git status` reports any `bun.lock` change (an untracked
+regenerated file would slip past `git diff`). Fix a failure by running `bun install` locally and committing the result.
+Worktree setup scripts should install with `--frozen-lockfile` or `--no-save` so
+they never write the lockfile.
