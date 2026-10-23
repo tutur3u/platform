@@ -57,7 +57,7 @@ migration notes release or explicitly transfer these paths.
 | Handler tests | `cargo test --locked workspaces_ -- --nocapture` from `apps/backend` | valid, invalid, expired, permission, and tenant cases pass |
 | Backend gate | `bun check:backend` | exit 0, including native and Worker targets |
 | TypeScript parity | `bun --cwd packages/auth vitest run src/api-keys.test.ts` | exit 0 |
-| Repository gate | `bun check` | exit 0 |
+| Repository gate | `bun validate` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope
@@ -132,7 +132,7 @@ shape, permission resolution, tenant binding, and fail-closed behavior.
 - [ ] Invalid, malformed, expired, cross-workspace, and unpermitted keys fail.
 - [ ] One tested shared verifier replaces both stubs and equivalent v2 use.
 - [ ] No live ownership or migration-manifest status changes.
-- [ ] Backend gate, TypeScript parity, `bun check`, and whitespace pass.
+- [ ] Backend gate, TypeScript parity, `bun validate`, and whitespace pass.
 
 ## STOP conditions
 

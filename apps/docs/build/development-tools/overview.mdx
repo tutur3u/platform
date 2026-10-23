@@ -29,7 +29,7 @@ This section contains tools, guides, and best practices for developing on the Tu
 
 - Formatting and linting are handled by [Biome](https://biomejs.dev/) (`biome.json`),
   not ESLint or Prettier. Use `bun ff` to format, lint, and check in one pass.
-- Run `bun check` before opening a PR — it is the repo's verification gate for
+- Run `bun validate` before opening a PR — it is the repo's verification gate for
   TypeScript, JavaScript, root-script, and config changes (run focused tests first).
 - Default to Server Components in `apps/web`; add `'use client'` only for state,
   browser APIs, or interactivity.
@@ -54,7 +54,7 @@ This section contains tools, guides, and best practices for developing on the Tu
 - Tests run with Vitest. Use `bun test` for the full suite or filter to a single
   workspace (for example `bun --filter @tuturuuu/web test`).
 - Write unit tests for utilities and cover error scenarios.
-- Run focused tests before the full `bun check` gate.
+- Run focused tests before the full `bun validate` gate.
 
 ### Performance
 
@@ -92,7 +92,7 @@ For a broad refresh, also update Rust (`cargo update` in `apps/backend`), Python
 (`flutter pub upgrade --major-versions` in `apps/mobile`). Keep native CocoaPods
 locks aligned with Flutter plugins and retain stable versions when a registry's
 `latest` tag points at a prerelease. The configured npm release-age policy still
-applies. Run `bun check` and affected app builds through `ttr resources run`.
+applies. Run `bun validate` and affected app builds through `ttr resources run`.
 
 Keep React and React DOM aligned at 19.2.8 while React Three Fiber 9.7.0
 requires versions below 19.3. The root overrides also prevent transitive peer
@@ -139,7 +139,7 @@ bun dev:web
 bun test
 
 # Run the full verification gate before a PR
-bun check
+bun validate
 ```
 
 ### Database Commands
@@ -172,9 +172,9 @@ bun sb:reset
 
 ### Common Issues
 
-1. **Build / Check Failures**: Run `bun check` to surface TypeScript and Biome errors, and confirm dependencies are installed with `bun install`
+1. **Build / Check Failures**: Run `bun validate` to surface TypeScript and Biome errors, and confirm dependencies are installed with `bun install`
 2. **Database Issues**: Ensure the local Supabase stack is running (`bun sb:start`) and migrations are applied (`bun sb:up`)
-3. **Test Failures**: Check environment setup and re-run the focused Vitest workspace before the full `bun check` gate
+3. **Test Failures**: Check environment setup and re-run the focused Vitest workspace before the full `bun validate` gate
 4. **Performance Issues**: Use React DevTools and bundle analyzers
 
 ### Getting Help
@@ -199,15 +199,82 @@ When contributing to the platform:
 When an admitted runner has a constrained `/tmp` user quota, prepare a unique,
 existing current-user directory with mode `0700` on a filesystem with freshly
 verified quota and free-space capacity. Set `TUTURUUU_CHECK_CHILD_TMPDIR` to its
-absolute real path when invoking normal `bun check` through `ttr resources run`.
+absolute real path when invoking normal `bun validate` through `ttr resources run`.
 The option changes `TMPDIR`, `TMP`, and `TEMP` only for validation children.
 Keep the check runner's own `TMPDIR`, `HOME`, and `TTR_RESOURCES_HOME` unchanged;
 both shared queues remain in their original locations. Directory validation
 alone does not establish capacity or authorize cleanup.
 
 Invalid directories fail without falling back to `/tmp`. Child processes carry
-a sentinel preserved through Turbo strict mode that rejects a nested `bun check`
+a sentinel preserved through Turbo strict mode that rejects a nested `bun validate`
 CLI before it creates a queue;
 imports of the check module remain allowed. Run another broad check separately
 through the original queues. This option does not skip checks, change resource
 limits, or turn an incomplete or failing check into a pass.
+
+
+## Aggregate validation and native Bun type checking
+
+`bun validate` is the repository aggregate (formerly the custom `bun check`
+script). `bun validate:now` retains the explicit `--force-now` queue behavior.
+Both invoke the same `scripts/check.js`; flags, fail-fast handling, mandatory
+Biome follow-through, queues and child-temp isolation are unchanged. The legacy
+`tuturuuu-bun-check` queue directory and environment names stay stable so old
+and new runner processes coordinate during the rename.
+
+The aggregate still covers workspace tests, Turbo type-checking, blocking Biome
+format/lint, source size, public SEO, server console, internal-app-auth, satellite
+cookie auth, offline Worker wiring, multi-account vault ownership, legacy API
+wrappers, mobile iOS settings and API mappings, script tests, next-intl setup,
+translation validity/key parity/sorting/namespaces and migration timestamps.
+Platform release alignment runs for release files; Discord Python validation
+runs for Discord changes. No component was replaced with a type-only command.
+`bun check:changed` remains the separate build-free pre-push gate; other
+`check:*` commands retain their roles.
+
+`bun check --no-script --threads 6` explicitly invokes Bun's native type-only
+checker. A package script named `check` takes precedence over native checking;
+`scripts/validate-command.test.js` rejects that name in the root and every
+workspace, including retained inactive workspaces. The test is discovered by
+the existing script-test gate. Native checking is not a substitute for
+`bun validate`, app builds, guards, tests, or declaration generation. The ban on
+local aggregate/build execution applies to `bun validate`; native qualification
+still requires resource admission and a bounded thread count.
+
+### Native checker qualification
+
+The required gate remains `tsc` 7.0.2, including `run-tsc-build.js` and its
+cache invalidation. PR #6468 supplies optional tsrs 7.1-dev shadow/pre-push
+acceleration; it is not the required CI baseline. Keep both until a replacement
+proves all existing semantics. Do not remove TypeScript: declaration producers
+and editor tooling still require it. Bun 1.4.4 reports TypeScript 7.0.2 through
+`bun -p process.versions.typescript`, matching the repository compiler version.
+It embeds its own compiler and standard library; matching versions alone is not
+proof of diagnostic or build equivalence. See [Bun's native checker](https://bun.sh/docs/runtime/check).
+
+Run `node scripts/ci/bun-check-inventory.js` to inventory root/workspace scripts,
+resolved type-check projects, inactive workspaces and custom emit/generation
+producers. Turbo's `type-check` still depends on `^build` and `^type-check`.
+Meet has a custom declaration producer; Calendar/Mail split app, boundary and
+Worker configs; several services generate Wrangler ambient declarations before
+checking. Those steps must survive any future switch.
+
+The opt-in Linux harness is `scripts/ci/bun-check-qualification.js --out <private-dir>
+--threads 6 --runs 5 [--tsrs <pinned-binary>]`. Invoke it with `node` inside the
+existing fenced exact-SHA runner after frozen dependency installation. It does
+not create another CI gate. Each report records source SHA, lock hash, versions,
+host/load, exact commands, resolved configs/references, file closures and hashes,
+full diagnostics, exit status, wall time and peak RSS. `--all` disables native
+diagnostic grouping. The known-invalid control adds a fresh `TS2322` assignment
+under `packages/types/src`, requires every checker to report it, and removes the
+file in `finally`; the mutation and source hash are recorded separately.
+
+This harness compares the same **no-emit projection** used by the existing
+shadow: `noEmit=true`, `incremental=false`, `composite=false`. This alone does
+not prove the original build/reference/emit semantics. First runs are process
+cold; subsequent runs use fresh processes with warm OS caches. It does not evict
+shared host caches or claim cold filesystem results. Alternate checker order,
+report all five observations and errors, and compare diagnostic multisets before
+comparing performance. Real diagnostic differences or unverified generated
+closures prohibit gate promotion. Preserve declaration/emit tasks even after
+future diagnostic equivalence is established.

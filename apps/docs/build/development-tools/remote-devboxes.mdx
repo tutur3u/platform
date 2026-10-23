@@ -442,7 +442,7 @@ agent process.
 Run heavy commands remotely:
 
 ```bash
-ttr box run -- bun check
+ttr box run -- bun validate
 ttr box run -- bun sb:reset
 ttr box run -- bun test:e2e
 ttr box build --cwd apps/web
@@ -523,7 +523,7 @@ create their own containers only when the requested command does so.
 
 Allowed remote workflows include:
 
-- `bun check`, `bun test`, and package-local Bun commands
+- `bun validate`, `bun test`, and package-local Bun commands
 - `bun test:e2e` and Docker-backed Playwright workflows
 - `bun sb:start`, `bun sb:reset`, `bun sb:up`, and `bun sb:typegen`
 
@@ -539,8 +539,8 @@ checkout so local Supabase-backed apps and E2E workflows can use that runner's
 own Supabase stack.
 
 ```bash
-ttr box run --env DATABASE_URL=postgres://remote -- bun check
-ttr box run --database-url-env DEVBOX_DATABASE_URL -- bun check
+ttr box run --env DATABASE_URL=postgres://remote -- bun validate
+ttr box run --database-url-env DEVBOX_DATABASE_URL -- bun validate
 ttr box serve --database-url-env DEVBOX_DATABASE_URL
 ttr box run --env-file .env.remote -- bun test:e2e
 ttr box env set --lease <lease-id> API_TOKEN=value

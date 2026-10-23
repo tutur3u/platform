@@ -9,7 +9,8 @@ import {
 import { basename, delimiter, join, resolve } from 'node:path';
 import type { ResourceConfig } from './resources-config';
 
-const heavyTask = /^(test|build|check|check-types|type-check|lint|tc)(:.*)?$/;
+const heavyTask =
+  /^(test|build|validate|check|check-types|type-check|lint|tc)(:.*)?$/;
 const tools = [
   'turbo',
   'vitest',

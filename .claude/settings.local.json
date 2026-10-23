@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(bun check:*)",
+      "Bash(bun validate:*)",
       "Bash(bun format:fix:*)",
       "Bash(bun install:*)",
       "Bash(bun pm:*)",

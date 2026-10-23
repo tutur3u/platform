@@ -59,7 +59,7 @@ Use fake fetch/timers and inert environment values only.
 | Focused tests | `bun --cwd apps/ai vitest run src/lib/speech-execution.test.ts src/app/v1/audio/speech/route.test.ts` | complete route/provider/metering matrix passes without network |
 | AI typecheck | `bun run --cwd apps/ai type-check` | exit 0 |
 | AI build | `bun run --cwd apps/ai build` | exit 0 |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 

@@ -64,7 +64,7 @@ manifest change is permitted.
 | Focused tests | `bun --cwd packages/payment-core vitest run src/billing-helper.test.ts && bun --cwd apps/pay vitest run 'src/app/api/v1/workspaces/[wsId]/billing/summary/route.test.ts'` | DB/null/error fields and no-provider-call contract pass |
 | Types | `bun run --cwd packages/payment-core type-check && bun run --cwd apps/pay type-check && bun run --cwd packages/internal-api type-check` | exit 0 |
 | Pay build | `bun run --cwd apps/pay build` | production build exits 0 |
-| Repository | `bun check && git diff --check` | all gates pass; whitespace output is empty |
+| Repository | `bun validate && git diff --check` | all gates pass; whitespace output is empty |
 
 ## Scope
 

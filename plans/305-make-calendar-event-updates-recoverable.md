@@ -136,7 +136,7 @@ fake adapters; no live provider calls or credentials are permitted.
 | Database | `bun --cwd apps/database sb:validate:isolated --test supabase/tests/calendar-event-mutation-operations.test.sql --typegen packages/types/src/supabase.ts` | revision, E2EE, tenant, ACL, lease, stage, and rollback pgTAP passes |
 | Typegen determinism | `typegen_snapshot=$(mktemp) && cp packages/types/src/supabase.ts "$typegen_snapshot" && bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts && cmp "$typegen_snapshot" packages/types/src/supabase.ts && rm -f "$typegen_snapshot"` | second generated output is byte-identical |
 | Calendar | `bun run --cwd apps/calendar type-check && bun run --cwd apps/calendar build` | Calendar compiles and builds |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 | Size | `wc -l 'apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/route.ts' apps/calendar/src/lib/calendar/event-mutation.ts` | both substantially edited files remain below 700 lines |
 
 ## Scope

@@ -30,4 +30,4 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 
 - Run local migration checks or focused pgTAP tests where available.
 - Run focused API/helper tests for affected code.
-- Run `bun check` for TypeScript changes.
+- Run `bun validate` for TypeScript changes.

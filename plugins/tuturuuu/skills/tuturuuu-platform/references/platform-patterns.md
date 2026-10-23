@@ -141,7 +141,7 @@ shared-package changes.
   `src/app/serwist/[path]/route.ts` (`createOfflineRoute`). Copying a layout
   without that route logs a failed registration on every page load; seven apps had
   drifted that way. Either add the route or pass
-  `<OfflineProvider register={false}>`. `bun check` → `offline-worker-wiring`
+  `<OfflineProvider register={false}>`. `bun validate` → `offline-worker-wiring`
   enforces it.
 - Central-login app identity comes from `packages/utils/src/internal-domains.ts`,
   not the infrastructure project's reserved-host list or shared-cookie domains.
@@ -157,7 +157,7 @@ shared-package changes.
   nothing tested it and nothing broke when it drifted — it was hand-synced once
   during a cross-app change and then missed two production auth fixes while
   still reading as live code. If another app needs the behavior, extract it into
-  a shared package. `bun check` → `multi-account-vault-owner` enforces it.
+  a shared package. `bun validate` → `multi-account-vault-owner` enforces it.
 - If a file exceeds about 400 LOC or a component/widget exceeds about 200 LOC
   after significant edits, split it by concern and keep import paths stable
   with a thin barrel when needed.
@@ -336,7 +336,7 @@ Rules:
 - Unit tests invoke pages/handlers outside a request scope, where `connection()`
   throws. Stub it in the app's vitest setup, keeping the real module:
   `vi.mock('next/server', async (o) => ({ ...(await o()), connection: vi.fn() }))`.
-- `bun check` cannot see any of this. Require the app's real CI build on the
+- `bun validate` cannot see any of this. Require the app's real CI build on the
   exact PR head; do not run builds on this machine.
 
 ## Satellite Apps (contacts, pay, tasks, …)
@@ -366,7 +366,7 @@ Rules:
   a shared helper needs the actor, give it an injectable `userId` rather than
   letting it resolve one — `@tuturuuu/utils/workspace-user-link` is the pattern
   (`getCurrentWorkspaceUser` delegates to it, so web is unchanged). The
-  `internal-app-auth` guard in `bun check` enforces this.
+  `internal-app-auth` guard in `bun validate` enforces this.
 - **Never** add a catch-all page under `[locale]/[wsId]`. Next checks `fallback`
   rewrites only AFTER dynamic routes, so `[wsId]/[...slug]` matches
   `/api/v1/workspaces/...` as `locale="api"`, `wsId="v1"` and shadows the
@@ -432,7 +432,7 @@ Rules:
   Resolve the actor with the app-session-aware helper and authorize with the
   client it returns, or with an admin client filtered by the authenticated user id
   (then keep explicit `ws_id`/owner predicates on the data queries, since admin
-  bypasses RLS). `bun check` → `satellite-cookie-auth` enforces it.
+  bypasses RLS). `bun validate` → `satellite-cookie-auth` enforces it.
 - **A satellite must not use `@tuturuuu/ui/custom/workspace-wrapper`** — it calls
   bare `getWorkspace(wsId)` internally, so every page rendering it inherits the
   bug above (it broke all 20 contacts users pages). Use an app-local wrapper built

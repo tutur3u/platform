@@ -31,7 +31,7 @@ ttr box run --runner <runner-id> --timeout 180 --json --no-update-check -- bun -
 Broad validation:
 
 ```bash
-ttr box run --runner <runner-id> --timeout 600 --json --no-update-check -- bun check
+ttr box run --runner <runner-id> --timeout 600 --json --no-update-check -- bun validate
 ```
 
 Use longer timeouts for Docker, Supabase, or Playwright workflows. Keep each run

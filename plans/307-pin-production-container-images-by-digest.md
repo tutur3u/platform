@@ -52,7 +52,7 @@ bytes, and tag retargeting reaches a privileged production-adjacent boundary.
 - Add a root-discovered script test with valid, mutable-tag, malformed-digest,
   mismatched-repeat, and workflow-driver fixtures. It must not contact a
   registry. Registry resolution is an explicit operator update step, not part
-  of `bun check`.
+  of `bun validate`.
 - Document the review/update/rollback workflow: resolve a tag's manifest list,
   review release provenance, replace every occurrence atomically, run the
   offline validator, then let CI pull the pinned digest. Rollback restores the
@@ -80,7 +80,7 @@ tokens.
 | Docker validator | `bun scripts/check-docker-web.js` | production Docker configuration passes |
 | Workflow policy | `bun test scripts/ci/check-workflow-config.test.js` | workflow policy suite passes |
 | Script fleet | `bun test:scripts` | root-discovered script suite passes |
-| Repository | `bun check && git diff --check` | canonical and whitespace gates pass |
+| Repository | `bun validate && git diff --check` | canonical and whitespace gates pass |
 
 ## Scope
 
@@ -102,7 +102,7 @@ bot.
 3. Import the focused validator into the existing Docker check and update only
    assertions that intentionally froze the old mutable BuildKit value.
 4. Document reviewed digest refresh and rollback without exposing credentials.
-5. Run focused tests, Docker/workflow/script fleets, `bun check`, whitespace,
+5. Run focused tests, Docker/workflow/script fleets, `bun validate`, whitespace,
    and exact-scope gates.
 
 ## Done criteria

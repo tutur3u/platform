@@ -103,4 +103,4 @@ exact-commit SDK package qualification workflow's compile, isolated public insta
 and compiled CLI probes. See `packages/sdk/PUBLISHING.md`.
 
 Run focused non-build tests locally and require applicable exact-commit CI test,
-type-check, lint, and build results. Do not run local `bun check` or builds.
+type-check, lint, and build results. Do not run local `bun validate` or builds.

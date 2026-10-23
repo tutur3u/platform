@@ -281,7 +281,7 @@ test('actual release helper integration regenerates merged workspace versions be
           { cwd: root }
         );
       if (
-        (command === 'bun' && args[0] === 'check') ||
+        (command === 'bun' && args[0] === 'validate') ||
         (command === 'git' && args[0] === 'commit')
       ) {
         const docs = fs.readFileSync(path.join(root, DOCS_PATH), 'utf8');
