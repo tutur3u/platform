@@ -841,6 +841,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantMermaidZoomReset => 'Đặt lại thu phóng';
 
   @override
+  String get assistantMessageDelivered => 'Đã gửi';
+
+  @override
+  String get assistantMessageRead => 'Đã đọc';
+
+  @override
   String get assistantMessageActionsTitle => 'Thao tác tin nhắn';
 
   @override
@@ -949,7 +955,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSendAction => 'Gửi tin nhắn';
 
   @override
-  String get assistantSettingsTitle => 'Cài đặt Mira';
+  String get assistantSettingsTitle => 'Cài đặt Trợ lý';
 
   @override
   String get assistantShowBottomNavLabel => 'Hiện thanh điều hướng dưới';

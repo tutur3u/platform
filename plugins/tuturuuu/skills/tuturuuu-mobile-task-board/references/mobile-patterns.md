@@ -120,6 +120,15 @@ localization changes.
   shapes, shell publication and subscription handshakes. Fixture success does
   not establish installed-device, provider or customer delivery.
 
+- Assistant receipt labels are presentation evidence: only a saved-user identity
+  transition permits Delivered; following response content permits Read. Never
+  infer delivery from a spinner ending, a local timestamp, or restored history
+  without acknowledgement provenance. Keep dock geometry tests on the actual
+  persistent shell dock, and exercise streaming follow with large output chunks
+  and a reader scrolled into history. Coalesced post-frame followers must request
+  a visual update when scheduled while idle; adding a post-frame callback alone
+  does not request a frame. Cover idle resume as well as content-driven rebuilds.
+
 ### Calendar description display
 
 Calendar descriptions are arbitrary provider HTML, Markdown or plain text, not
