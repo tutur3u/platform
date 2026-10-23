@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const {
+  acceptanceWindowValid,
   applyAcceptances,
   buildRegister,
   fromBunAudit,
@@ -157,6 +158,7 @@ test('risk acceptances apply only when approved and unexpired', () => {
   const base = {
     advisory: 'GHSA-86w9-cpqp-85rv',
     expiresAt: '2027-01-21',
+    proposedAt: '2026-10-23',
   };
   const build = (acceptance) =>
     buildRegister({
@@ -191,6 +193,29 @@ test('risk acceptances apply only when approved and unexpired', () => {
   });
   assert.equal(expired.entries[0].acceptance.status, 'expired');
   assert.equal(expired.blockers.length, 1);
+
+  // The 90-day window is enforced: an approved acceptance with a missing or
+  // invalid proposedAt, an expiry past the cap or before the proposal never
+  // accepts the finding.
+  const approvedBy = {
+    approvedAt: '2026-10-30',
+    approvedBy: 'release-authority',
+    status: 'accepted',
+  };
+  for (const window of [
+    { proposedAt: undefined },
+    { proposedAt: 'not-a-date' },
+    { expiresAt: '2027-01-22' },
+    { expiresAt: '2026-10-22' },
+    { expiresAt: undefined },
+  ]) {
+    const invalid = build({ ...approvedBy, ...window });
+    assert.equal(invalid.entries[0].status, 'open', JSON.stringify(window));
+    assert.equal(invalid.entries[0].acceptance.status, 'invalid');
+    assert.equal(invalid.blockers.length, 1);
+  }
+  // Exactly 90 days is allowed.
+  assert.equal(build(approvedBy).entries[0].status, 'accepted');
 });
 
 test('the shipped node-forge acceptance is pending the release authority', () => {
@@ -213,5 +238,25 @@ test('the shipped node-forge acceptance is pending the release authority', () =>
       90 * 24 * 60 * 60 * 1000
   );
   assert.match(forge.scope, /PKCS#12\/ASN\.1/u);
+  // Its window is valid (exactly 90 days), so once approved it could apply;
+  // until then it is pending and the finding stays open.
+  assert.equal(acceptanceWindowValid(forge), true);
+  const [entry] = applyAcceptances(
+    fromBunAudit({
+      'node-forge': [
+        {
+          id: 1,
+          severity: 'high',
+          title: 'synthetic',
+          url: 'https://github.com/advisories/GHSA-86w9-cpqp-85rv',
+          vulnerable_versions: '<=1.4.0',
+        },
+      ],
+    }),
+    acceptances,
+    Date.parse('2026-11-01T00:00:00Z')
+  );
+  assert.equal(entry.acceptance.status, 'pending');
+  assert.equal(entry.status, 'open');
   assert.match(forge.guards.join(' '), /#6425/u);
 });

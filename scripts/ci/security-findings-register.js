@@ -126,6 +126,21 @@ function fromGitleaks(findings) {
 // authority recorded approvedBy/approvedAt and it has not expired; a pending
 // or expired acceptance is annotated but leaves the finding open (and a
 // confirmed critical/high finding still blocks).
+const maxAcceptanceMs = 90 * 24 * 60 * 60 * 1000;
+
+// An acceptance window must be proposed, expire after it was proposed, and
+// last at most 90 days. Anything else can never accept a finding.
+function acceptanceWindowValid(item) {
+  const proposed = Date.parse(item.proposedAt ?? '');
+  const expires = Date.parse(item.expiresAt ?? '');
+  return (
+    Number.isFinite(proposed) &&
+    Number.isFinite(expires) &&
+    expires > proposed &&
+    expires - proposed <= maxAcceptanceMs
+  );
+}
+
 function applyAcceptances(entries, acceptances, now = Date.now()) {
   return entries.map((entry) => {
     const match = acceptances.find(
@@ -143,12 +158,19 @@ function applyAcceptances(entries, acceptances, now = Date.now()) {
       match.approvedBy.length > 0 &&
       Number.isFinite(Date.parse(match.approvedAt ?? ''));
     const live = Number.isFinite(expires) && now < expires;
+    const valid = acceptanceWindowValid(match);
     const acceptance = {
       advisory: match.advisory,
       expiresAt: match.expiresAt ?? null,
-      status: approved ? (live ? 'accepted' : 'expired') : 'pending',
+      status: !valid
+        ? 'invalid'
+        : approved
+          ? live
+            ? 'accepted'
+            : 'expired'
+          : 'pending',
     };
-    if (!(approved && live)) return { ...entry, acceptance };
+    if (acceptance.status !== 'accepted') return { ...entry, acceptance };
     return {
       ...entry,
       acceptance,
@@ -359,6 +381,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  acceptanceWindowValid,
   applyAcceptances,
   buildRegister,
   fromBunAudit,

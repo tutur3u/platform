@@ -242,6 +242,37 @@ test('the register job publishes only the redacted register', () => {
   assert.match(scan.run, /mode=register/u);
 });
 
+test('the register reads reviewed risk acceptances from its trusted checkout', () => {
+  // CodeRabbit (register sparse checkout): without the file every acceptance
+  // was "unavailable", so an approved acceptance could never apply.
+  const register = checks.jobs.register;
+  const checkout = register.steps.find((step) =>
+    step.uses?.startsWith('actions/checkout@')
+  );
+  assert.equal(checkout.with.ref, undefined, 'the triggering (main) commit');
+  assert.ok(
+    checkout.with['sparse-checkout']
+      .split('\n')
+      .map((line) => line.trim())
+      .includes('.github/security/risk-acceptances.json')
+  );
+  const build = register.steps.find(
+    (step) => step.name === 'Build findings register'
+  );
+  assert.equal(
+    build.env.RISK_ACCEPTANCES_FILE,
+    '.github/security/risk-acceptances.json'
+  );
+  // Register runs are schedule/dispatch only: pull request content never
+  // supplies the acceptances.
+  const mode = checks.jobs.scope.steps.find((step) => step.id === 'mode');
+  assert.match(
+    mode.run,
+    /if \[ "\$EVENT_NAME" = schedule \] \|\| \[ "\$EVENT_NAME" = workflow_dispatch \]; then\n\s+register=true/u
+  );
+  assert.match(mode.run, /^register=false$/mu);
+});
+
 // REV-6456-9: a hostile checkout copy of any switchboard or scope selector
 // (for example overflow-notes-ci.js emitting should_run=false) must not be
 // able to skip or decide a gate. No security job may call the ci-check
@@ -309,17 +340,71 @@ test('no checkout-local selector or helper can skip or decide a security gate', 
 // check comes from the shared github-actions app. Until a dedicated GitHub App
 // writes the check (a repository-setting decision, see security-cadence.mdx),
 // only the three Security review writers may request checks: write.
+// Permission grants parsed as YAML (workflow and job level, block or inline
+// mappings, quoted values); run: scripts are never inspected.
+function permissionScopes(workflow) {
+  return [
+    ['workflow', workflow.permissions],
+    ...Object.entries(workflow.jobs ?? {}).map(([id, job]) => [
+      `job ${id}`,
+      job.permissions,
+    ]),
+  ].filter(([, permissions]) => permissions !== undefined);
+}
+
+function writesChecks(permissions) {
+  if (typeof permissions === 'string') return permissions === 'write-all';
+  return (
+    permissions !== null &&
+    typeof permissions === 'object' &&
+    String(permissions.checks ?? '').trim() === 'write'
+  );
+}
+
 test('only the Security review writers can write check runs', () => {
   const writers = [];
   for (const file of fs.readdirSync(workflowsDir).sort()) {
     if (!/\.ya?ml$/u.test(file)) continue;
-    const text = source(file);
-    assert.doesNotMatch(text, /permissions:\s*write-all/u, file);
-    if (/^\s*checks:\s*write\b/mu.test(text)) writers.push(file);
+    const scopes = permissionScopes(readWorkflow(file));
+    for (const [where, permissions] of scopes) {
+      assert.notEqual(permissions, 'write-all', `${file} ${where}`);
+    }
+    if (scopes.some(([, permissions]) => writesChecks(permissions))) {
+      writers.push(file);
+    }
   }
   assert.deepEqual(writers, [
     'security-review-classifier.yaml',
     'security-review-reclassify.yaml',
     'security-review-sweep.yaml',
   ]);
+});
+
+test('the checks: write detector parses YAML forms, not script text', (t) => {
+  const os = require('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'checks-detector-'));
+  t.after(() => fs.rmSync(dir, { force: true, recursive: true }));
+  let count = 0;
+  const parse = (yaml) => {
+    const file = path.join(dir, `w${(count += 1)}.yaml`);
+    fs.writeFileSync(file, yaml);
+    return readWorkflow(file);
+  };
+  const writerIn = (yaml) =>
+    permissionScopes(parse(yaml)).some(([, permissions]) =>
+      writesChecks(permissions)
+    );
+  assert.equal(writerIn('permissions: { checks: write }\njobs: {}\n'), true);
+  assert.equal(
+    writerIn("jobs:\n  a:\n    permissions:\n      checks: 'write'\n"),
+    true
+  );
+  assert.equal(writerIn('permissions: write-all\njobs: {}\n'), true);
+  assert.equal(
+    writerIn(
+      'jobs:\n  a:\n    permissions: { contents: read }\n    steps:\n      - run: |\n          echo "checks: write"\n'
+    ),
+    false
+  );
+  assert.equal(writerIn('permissions: { checks: read }\njobs: {}\n'), false);
 });

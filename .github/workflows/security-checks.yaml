@@ -415,11 +415,14 @@ jobs:
       contents: read
       security-events: read
     steps:
+      # Register runs are schedule/dispatch only (never pull_request), so the
+      # builder and the reviewed risk acceptances come from main's checkout.
       - name: Check out register builder
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           sparse-checkout: |
+            .github/security/risk-acceptances.json
             scripts/ci/security-findings-register.js
             scripts/ci/security-paths.js
             scripts/ci/security-scan-diff.js
@@ -445,6 +448,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITLEAKS_FILE: ${{ runner.temp }}/register-input/gitleaks.json
           REGISTER_FILE: ${{ runner.temp }}/security-register.json
+          RISK_ACCEPTANCES_FILE: .github/security/risk-acceptances.json
         run: node scripts/ci/security-findings-register.js
 
       - name: Keep redacted findings register
