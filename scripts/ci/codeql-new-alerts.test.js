@@ -151,3 +151,30 @@ test('baseline paging is bounded', async (t) => {
     10
   );
 });
+
+test('missing, malformed or empty CodeQL output never passes', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  t.mock.method(console, 'error', () => {});
+  for (const [label, files] of [
+    ['empty directory', {}],
+    ['non-sarif only', { 'python.json': '{"runs":[]}', 'notes.txt': 'x' }],
+    ['malformed sarif', { 'python.sarif': '{"runs": [' }],
+    ['sarif without runs', { 'python.sarif': '{}' }],
+    ['sarif with empty runs', { 'python.sarif': '{"runs":[]}' }],
+  ]) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-output-'));
+    t.after(() => fs.rmSync(dir, { force: true, recursive: true }));
+    for (const [name, content] of Object.entries(files)) {
+      fs.writeFileSync(path.join(dir, name), content);
+    }
+    await assert.rejects(
+      main([dir, '/language:python']),
+      /CodeQL output unavailable/u,
+      label
+    );
+  }
+  await assert.rejects(
+    main([path.join(os.tmpdir(), 'codeql-missing-dir-x'), '/language:python']),
+    /CodeQL output unavailable/u
+  );
+});

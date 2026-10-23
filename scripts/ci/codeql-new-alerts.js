@@ -116,15 +116,40 @@ async function baselineSarif({ category, ref, repo }) {
   );
 }
 
+// The analysis output must exist and be well formed: no SARIF file, an
+// unreadable or malformed one, or one without runs means CodeQL did not
+// produce results, which must never read as "no new findings".
+function readHeadSarif(sarifDir) {
+  let names;
+  try {
+    names = fs.readdirSync(sarifDir).filter((file) => file.endsWith('.sarif'));
+  } catch {
+    throw new Error(
+      'CodeQL output unavailable: the SARIF directory is unreadable'
+    );
+  }
+  if (names.length === 0) {
+    throw new Error('CodeQL output unavailable: no SARIF file to gate');
+  }
+  return names.map((name) => {
+    let sarif;
+    try {
+      sarif = JSON.parse(fs.readFileSync(path.join(sarifDir, name), 'utf8'));
+    } catch {
+      throw new Error(
+        'CodeQL output unavailable: a SARIF file is unreadable or malformed'
+      );
+    }
+    if (!Array.isArray(sarif?.runs) || sarif.runs.length === 0) {
+      throw new Error('CodeQL output unavailable: a SARIF file has no runs');
+    }
+    return sarif;
+  });
+}
+
 async function main(argv = process.argv.slice(2)) {
   const [sarifDir, category] = argv;
-  const files = fs
-    .readdirSync(sarifDir)
-    .filter((file) => file.endsWith('.sarif'))
-    .map((file) =>
-      JSON.parse(fs.readFileSync(path.join(sarifDir, file), 'utf8'))
-    );
-  const head = { runs: files.flatMap((sarif) => sarif.runs ?? []) };
+  const head = { runs: readHeadSarif(sarifDir).flatMap(({ runs }) => runs) };
   const headHigh = findings(head).filter(
     ({ severity }) => severity >= highSeverity
   );
