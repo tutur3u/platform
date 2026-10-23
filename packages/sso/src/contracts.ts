@@ -38,9 +38,11 @@ export const samlIdSchema = z
   .string()
   .regex(/^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/)
   .brand<'SamlId'>();
+// SAML entity IDs are URLs or URNs; never a script, data or local-file scheme.
+const ENTITY_ID_SCHEMES = new Set(['http:', 'https:', 'urn:']);
 export const entityIdSchema = xmlText.refine((s) => {
   try {
-    return new URL(s).protocol !== 'javascript:' && !/\s/.test(s);
+    return ENTITY_ID_SCHEMES.has(new URL(s).protocol) && !/\s/.test(s);
   } catch {
     return false;
   }
