@@ -165,4 +165,13 @@ describe.runIf(
       expect(realpathSync(`/usr/bin/${tool}`)).toBe(resolved);
     }
   );
+
+  it('queues true where it links to a differently named binary (gnutrue)', () => {
+    const real = realpathSync('/usr/bin/true');
+    const resolved = trustedSystemExecutable('true', '/usr/bin:/bin');
+    if (real === `${rustCoreutils}/true`) return expect(resolved).toBe(real);
+    // Ubuntu 26.04 ships GNU true as /usr/bin/gnutrue: another applet name.
+    expect(real.endsWith('/gnutrue')).toBe(true);
+    expect(resolved).toBeUndefined();
+  });
 });

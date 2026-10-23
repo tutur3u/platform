@@ -163,7 +163,7 @@ describe('canonical reservations', { timeout: 60_000 }, () => {
       import {hostsRun} from ${JSON.stringify(dispatchModule)};
       import {writeFileSync} from 'node:fs';
       process.exitCode=await hostsRun({home:${JSON.stringify(path)},command:'probe',args:[],jobClass:'light',registry:${JSON.stringify(registry)},deps:{
-        fleet:async()=>undefined,commitPlan:async()=>undefined,localDiskFreeGiB:async()=>100,pollMs:10,log:(t)=>{if(t.startsWith('queued'))writeFileSync(${JSON.stringify(join(path, `${name}.queued`))},'')},
+        fleet:async()=>undefined,commitPlan:async()=>undefined,localDiskFreeGiB:async()=>100,localDiskGate:async()=>({admit:true,freeGiB:100}),pollMs:10,log:(t)=>{if(t.startsWith('queued'))writeFileSync(${JSON.stringify(join(path, `${name}.queued`))},'')},
         runLocal:()=>new Promise((done)=>{writeFileSync(${JSON.stringify(join(path, `${name}.running`))},'');process.once('SIGTERM',()=>done(143));}),
         runRemote:async()=>1}});`;
     const until = async (file: string) => {
