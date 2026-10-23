@@ -215,6 +215,7 @@ describe('devbox agent routes', () => {
     mockAuthorizedRunner(true);
     const capabilities = {
       executionMode: 'judge-only',
+      protocols: { commitRun: [1] },
       isolation: {
         checkedAt: '2026-10-23T00:00:00.000Z',
         dedicatedUser: true,
@@ -239,6 +240,9 @@ describe('devbox agent routes', () => {
     { isolation: { tokenValue: true } },
     { isolation: { checkedAt: 'x'.repeat(101) } },
     { isolation: [] },
+    { protocols: { commitRun: ['1'] } },
+    { protocols: { commitRun: [0] } },
+    { protocols: { shell: [1] } },
   ])(
     'rejects malformed execution mode or isolation reports: %j',
     async (capabilities) => {

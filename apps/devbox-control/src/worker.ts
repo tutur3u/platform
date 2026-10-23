@@ -169,6 +169,7 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
           'isolation',
           'judge',
           'playground',
+          'protocols',
           'os',
           'reportedAt',
           'resources',
@@ -184,6 +185,22 @@ function isCapabilities(value: unknown): value is Record<string, unknown> {
     !EXECUTION_MODES.has(String(data.executionMode))
   )
     return false;
+  const protocols = data.protocols;
+  if (protocols !== undefined) {
+    if (!protocols || typeof protocols !== 'object' || Array.isArray(protocols))
+      return false;
+    for (const [key, versions] of Object.entries(protocols))
+      if (
+        key !== 'commitRun' ||
+        !Array.isArray(versions) ||
+        versions.length > 10 ||
+        versions.some(
+          (version) =>
+            !Number.isInteger(version) || version < 1 || version > 100
+        )
+      )
+        return false;
+  }
   const isolation = data.isolation;
   if (isolation !== undefined) {
     if (!isolation || typeof isolation !== 'object' || Array.isArray(isolation))
