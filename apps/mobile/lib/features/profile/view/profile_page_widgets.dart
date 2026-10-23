@@ -16,48 +16,56 @@ class _ProfileHeroCard extends StatelessWidget {
         ? profile.fullName!.trim()
         : profile.email ?? l10n.profileTitle;
 
-    return SettingsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ProfileBanner(profile: profile),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _LargeProfileAvatar(profile: profile),
-              const shad.Gap(14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
+    final hasBanner = profile.bannerUrl?.isNotEmpty ?? false;
+    // A borderless card on the grouped fill, like the Settings header.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: SettingsRowLayout.groupFill(context),
+        borderRadius: BorderRadius.circular(SettingsRowLayout.cardRadius),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(SettingsRowLayout.inset),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasBanner) ProfileBanner(profile: profile),
+            Row(
+              children: [
+                _LargeProfileAvatar(profile: profile),
+                const shad.Gap(16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.large.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const shad.Gap(2),
-                    Text(
-                      profile.email ?? l10n.profileMissingValue,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
+                      const shad.Gap(2),
+                      Text(
+                        profile.email ?? l10n.profileMissingValue,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.base.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              if (state.isRefreshing)
-                const SizedBox.square(
-                  dimension: 18,
-                  child: NovaLoadingIndicator(size: 20),
-                ),
-            ],
-          ),
-        ],
+                if (state.isRefreshing)
+                  const SizedBox.square(
+                    dimension: 18,
+                    child: NovaLoadingIndicator(size: 20),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -77,28 +85,27 @@ class _LargeProfileAvatar extends StatelessWidget {
         ? '?'
         : source.trim()[0].toUpperCase();
 
-    return Container(
-      width: 74,
-      height: 74,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      alignment: Alignment.center,
-      child: profile.avatarUrl?.trim().isNotEmpty ?? false
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Image(
+    // Circular, at the Settings header's size.
+    return ClipOval(
+      child: SizedBox.square(
+        dimension: 64,
+        child: profile.avatarUrl?.trim().isNotEmpty ?? false
+            ? Image(
                 image: profileMediaImage(profile.avatarUrl!, profile.id),
-                width: 74,
-                height: 74,
                 fit: BoxFit.cover,
+              )
+            : ColoredBox(
+                color: theme.colorScheme.muted,
+                child: Center(
+                  child: Text(
+                    initials,
+                    style: theme.typography.xLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
-            )
-          : Text(
-              initials,
-              style: theme.typography.h2.copyWith(fontWeight: FontWeight.w800),
-            ),
+      ),
     );
   }
 }

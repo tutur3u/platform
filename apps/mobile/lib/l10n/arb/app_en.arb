@@ -4719,5 +4719,8 @@
   "settingsTasksSummaryBoardList": "Board list",
   "settingsFinanceAmountsShown": "Amounts shown",
   "settingsFinanceAmountsHidden": "Amounts hidden",
-  "settingsSearchBrowserTerm": "browser"
+  "settingsSearchBrowserTerm": "browser",
+  "profilePhoto": "Photo",
+  "profileCoverBanner": "Cover banner",
+  "profileMediaSet": "Set"
 }

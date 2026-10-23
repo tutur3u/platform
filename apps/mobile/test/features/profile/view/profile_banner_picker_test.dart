@@ -162,7 +162,9 @@ void main() {
   ) async {
     await _pump(tester, _Picker('none'));
     expect(find.byType(ProfileBanner), findsNothing);
-    expect(find.text('Add banner'), findsOneWidget);
+    // One Edit profile row; adding a banner opens the picker from it.
+    expect(find.text('Cover banner'), findsOneWidget);
+    expect(find.text('Not set'), findsOneWidget);
   });
 
   testWidgets('native permission denial remains scoped to the banner', (

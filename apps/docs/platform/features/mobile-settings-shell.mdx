@@ -43,11 +43,13 @@ that opened them; direct links fall back to their Settings parent.
 
 Settings → Edit profile, opened from the Settings profile header, is the one
 place for account and profile settings at `/settings/profile`: Identity (display
-name, full name, email with any pending change), Avatar (change or remove, plus
-the cover banner), Account (Manage accounts at `/settings/accounts`, Sessions and
-devices) and Account status, as captioned grouped cards with the shell title
-"Edit profile". The root no longer has a separate You row that duplicated the
-header; a Manage accounts row takes its place in the general group. Legacy
+name, full name, email with any pending change), Avatar (Photo, Remove avatar
+and a Cover banner row that adds, changes or removes the banner), Account (Manage
+accounts at `/settings/accounts`, Sessions and devices) and Account status, as
+captioned grouped cards with the shell title "Edit profile". Its identity card is
+borderless with a circular avatar, matching the Settings header, and an unknown
+join date is omitted. Manage accounts appears only here; the root has neither a
+You row nor a Manage accounts row, and its group caption is General. Legacy
 `/profile/edit` and `/profile/accounts` links redirect to those destinations.
 `/profile` retains the Overview/Timeline activity surface. Its edit entry is a
 compact icon with an accessible Identity label and tooltip. Account-switching
@@ -185,8 +187,8 @@ grant permissions or invent settings.
 | First day of week | Settings root, Calendar product dialog | Apps → Calendar (`/settings/apps/calendar`) |
 | Calendar accounts and visibility | Calendar top-bar action only | Apps → Calendar; the action remains |
 | Finance amounts | Settings root, offline Finance page, product dialog | Apps → Finance (`/settings/apps/finance`); the eye quick toggle remains |
-| Pomodoro lengths and auto-start | Timer gear sheet | Apps → Timer (`/settings/apps/timer`) |
-| Missed-entry approval threshold and grace period | Timer Requests gear sheet | Apps → Timer, shown only for a shared workspace whose member has `manage_time_tracking_requests` and `manage_workspace_settings` |
+| Pomodoro lengths and auto-start | Timer gear sheet | Apps → Timer → Pomodoro (`/settings/apps/timer`) |
+| Missed-entry approval threshold and grace period | Timer Requests gear sheet | Apps → Timer → Approval threshold, shown only for a shared workspace whose member has `manage_time_tracking_requests` and `manage_workspace_settings`; the Requests gear opens it directly (`?focus=threshold`) |
 | Mailbox settings, device reading and swipe actions | Mail gear (swipe actions only there) | Apps → Mail hub, now including swipe actions |
 | Assistant personality, memory and on-device models | Mira menu | Apps → Assistant hub |
 | Profile and account | Settings → You row and Edit profile | Settings → Edit profile (`/settings/profile`) |
@@ -198,6 +200,21 @@ the shell with one top title, dock Back and dock-clearing scroll. Offline module
 pages link to the app sub-screen instead of repeating its editors. The app
 sub-screens link back to their offline data. Mail and Assistant keep their
 account-scoped hubs, which an account or workspace switch cancels.
+
+Summaries state the current value rather than repeating a title: Tasks reads
+"Board view" or "Board list", Finance "Amounts shown" or "Amounts hidden", and
+Calendar the effective first day. Each sub-screen group has a footer naming the
+scope it changes: this device (Tasks board, Finance amounts, Pomodoro, offline
+data), your account (first day of week) or the whole workspace (approval
+threshold, calendar accounts). Calendar also links to the shared Time zone group
+on the Settings root. The approval threshold editor uses grouped rows: a Require
+approval switch, inline day and minute fields and a footer explaining both.
+
+A threshold write is queued when offline and still reports success. The saved
+threshold and grace period are therefore published into the cached workspace
+settings that Timer and Requests read. A reload shows the saved value, not the
+previous one, and live revalidation later replaces it with the server copy.
+Overlapping saves apply in the order they were made.
 
 In-app entry points use the same editor. The Timer gear and the Requests gear
 deep-link to Apps → Timer. On return, Timer reloads Pomodoro lengths and Requests
@@ -219,7 +236,9 @@ Routes and redirects:
   `/settings/apps/mail`, redirect to `/settings`.
 - `/tasks/settings`, `/calendar/settings`, `/finance/settings` and
   `/timer/settings` redirect to the matching sub-screen. They are registered
-  before `/tasks/:taskId` and `/calendar/:eventId`.
+  ahead of the app registry's parameterised routes, so `/calendar/settings` is
+  not read as the `/calendar/:eventId` detail. The app does not register a
+  `/tasks/:taskId` route.
 - Web and app links of the form `<workspace>/settings/apps/<app>` and
   `<workspace>/<app>/settings`, plus the Tasks host's `<workspace>/settings`,
   resolve to the same locations.
@@ -227,7 +246,8 @@ Routes and redirects:
   routes are unchanged.
 
 Settings search sits under the profile header. It matches titles, sections and
-the settings on app sub-screens, ignoring case and Vietnamese diacritics. A
+the settings on app sub-screens, ignoring case and Vietnamese diacritics,
+including decomposed input with combining marks. A
 result for a routed destination opens it. A result for an inline root row clears
 the search and scrolls that row's group into view.
 
@@ -236,12 +256,16 @@ Coverage:
 - `settings_apps_checks.dart` covers the Apps rows, sub-screens, renders and
   search.
 - `timer_app_settings_test.dart` covers the threshold permission gate, workspace
-  switch and Pomodoro persistence.
+  switch, Pomodoro persistence, the cache write-through and `focus=threshold`.
+- `time_tracker_threshold_cache_test.dart` covers offline reads of a queued
+  threshold through the same cache keys the repository uses.
 - `time_tracker_settings_entrypoint_test.dart` covers the Requests gear deep
   link and reload.
-- `app_settings_routes_test.dart` covers redirects and deep links.
+- `app_settings_routes_test.dart` covers redirects, deep links and precedence in
+  the real app router.
 - `settings_search_test.dart` covers folding and matching.
-- `profile_page_test.dart` covers the Edit profile groups.
+- `profile_page_test.dart` and `profile_page_render_test.dart` cover the Edit
+  profile groups and renders.
 
 ### Assistant settings layout
 

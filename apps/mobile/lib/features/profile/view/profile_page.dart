@@ -32,6 +32,7 @@ import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'profile_page_widgets.dart';
+part 'profile_identity_group.dart';
 part 'profile_settings_groups.dart';
 
 class ProfilePage extends StatelessWidget {

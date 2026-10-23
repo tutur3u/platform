@@ -31,107 +31,28 @@ class _ProfileSettingsGroups extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final cubit = context.read<ProfileCubit>();
-    final pendingEmail = profile.newEmail?.trim() ?? '';
-    final identity = PendingSyncFrame(
-      workspaceId: 'personal',
-      feature: 'profile',
-      entityId: profile.id,
-      child: SettingsCompactSection(
-        title: l10n.profileIdentitySectionTitle,
-        children: [
-          SettingsTile(
-            key: const ValueKey('profile-display-name-row'),
-            grouped: true,
-            icon: shad.LucideIcons.userRound,
-            title: l10n.profileDisplayName,
-            value: profile.displayName ?? l10n.profileMissingValue,
-            onTap: () => editField(
-              context,
-              title: l10n.profileDisplayName,
-              description: l10n.profileDisplayNameDescription,
-              initialValue: profile.displayName ?? '',
-              placeholder: l10n.profileDisplayNameHint,
-              validator: (value) =>
-                  value.trim().isEmpty ? l10n.profileDisplayNameRequired : null,
-              onSave: cubit.updateDisplayName,
-            ),
-          ),
-          SettingsTile(
-            key: const ValueKey('profile-full-name-row'),
-            grouped: true,
-            icon: shad.LucideIcons.idCard,
-            title: l10n.profileFullName,
-            value: profile.fullName ?? l10n.profileMissingValue,
-            onTap: () => editField(
-              context,
-              title: l10n.profileFullName,
-              description: l10n.profileFullNameDescription,
-              initialValue: profile.fullName ?? '',
-              placeholder: l10n.profileFullNameHint,
-              validator: (value) =>
-                  value.trim().isEmpty ? l10n.profileFullNameRequired : null,
-              onSave: cubit.updateFullName,
-            ),
-          ),
-          SettingsTile(
-            key: const ValueKey('profile-email-row'),
-            grouped: true,
-            wrapSupportingText: true,
-            icon: shad.LucideIcons.atSign,
-            title: l10n.profileEmail,
-            value: profile.email ?? l10n.profileMissingValue,
-            subtitle: pendingEmail.isEmpty
-                ? null
-                : l10n.profileEmailPendingChange(pendingEmail),
-            onTap: () => editField(
-              context,
-              title: l10n.profileEmail,
-              description: l10n.profileEmailDescription,
-              initialValue: profile.email ?? '',
-              placeholder: l10n.profileEmailHint,
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) =>
-                  value.contains('@') ? null : l10n.profileInvalidEmail,
-              onSave: cubit.updateEmail,
-              successMessage: l10n.profileEmailUpdateNote,
-            ),
-          ),
-        ],
-      ),
-    );
     final hasAvatar = profile.avatarUrl?.trim().isNotEmpty ?? false;
-    final photos = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    final media = SettingsCompactSection(
+      title: l10n.profileAvatarSectionTitle,
       children: [
-        SettingsCompactSection(
-          title: l10n.profileAvatarSectionTitle,
-          children: [
-            SettingsTile(
-              key: const ValueKey('profile-avatar-row'),
-              grouped: true,
-              icon: shad.LucideIcons.imageUp,
-              title: profile.avatarUrl != null
-                  ? l10n.profileChangeAvatar
-                  : l10n.profileUploadAvatar,
-              value: hasAvatar
-                  ? l10n.profileAvatarSet
-                  : l10n.profileMissingValue,
-              onTap: () =>
-                  pickAndUploadProfileAvatar(context, picker: avatarPicker),
-            ),
-            if (profile.avatarUrl != null)
-              SettingsTile(
-                key: const ValueKey('profile-avatar-remove-row'),
-                grouped: true,
-                isDestructive: true,
-                icon: shad.LucideIcons.trash2,
-                title: l10n.profileRemoveAvatar,
-                onTap: () => confirmRemoveProfileAvatar(context),
-              ),
-          ],
+        SettingsTile(
+          key: const ValueKey('profile-avatar-row'),
+          grouped: true,
+          icon: shad.LucideIcons.imageUp,
+          title: l10n.profilePhoto,
+          value: hasAvatar ? l10n.profileMediaSet : l10n.profileMissingValue,
+          onTap: () =>
+              pickAndUploadProfileAvatar(context, picker: avatarPicker),
         ),
-        const shad.Gap(SettingsRowLayout.groupGap),
+        if (profile.avatarUrl != null)
+          SettingsTile(
+            key: const ValueKey('profile-avatar-remove-row'),
+            grouped: true,
+            isDestructive: true,
+            icon: shad.LucideIcons.trash2,
+            title: l10n.profileRemoveAvatar,
+            onTap: () => confirmRemoveProfileAvatar(context),
+          ),
         PendingSyncFrame(
           workspaceId: 'personal',
           feature: 'profile',
@@ -148,6 +69,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
           grouped: true,
           icon: shad.LucideIcons.userCog,
           title: l10n.authManageAccounts,
+          value: profile.email,
           onTap: () => context.push(Routes.settingsAccounts),
         ),
         SettingsTile(
@@ -159,11 +81,7 @@ class _ProfileSettingsGroups extends StatelessWidget {
         ),
       ],
     );
-    final joined = profile.createdAt == null
-        ? l10n.profileStatusUnknown
-        : DateFormat.yMMMd(
-            Localizations.localeOf(context).toString(),
-          ).format(profile.createdAt!);
+    final joined = profile.createdAt;
     final status = SettingsCompactSection(
       title: l10n.profileAccountStatus,
       children: [
@@ -178,7 +96,15 @@ class _ProfileSettingsGroups extends StatelessWidget {
             l10n.profileVerification,
             l10n.profileVerified,
           ),
-          (shad.LucideIcons.calendarDays, l10n.profileMemberSince, joined),
+          // An unknown join date is omitted rather than shown as "Unknown".
+          if (joined != null)
+            (
+              shad.LucideIcons.calendarDays,
+              l10n.profileMemberSince,
+              DateFormat.yMMMd(
+                Localizations.localeOf(context).toString(),
+              ).format(joined),
+            ),
         ])
           SettingsTile(
             grouped: true,
@@ -193,9 +119,9 @@ class _ProfileSettingsGroups extends StatelessWidget {
       StaggeredEntry(
         index: 1,
         playOnceKey: 'profile-identity',
-        child: identity,
+        child: _ProfileIdentityGroup(profile: profile, editField: editField),
       ),
-      StaggeredEntry(index: 2, playOnceKey: 'profile-avatar', child: photos),
+      StaggeredEntry(index: 2, playOnceKey: 'profile-avatar', child: media),
       StaggeredEntry(index: 3, playOnceKey: 'profile-account', child: account),
       StaggeredEntry(index: 4, playOnceKey: 'profile-status', child: status),
     ];
