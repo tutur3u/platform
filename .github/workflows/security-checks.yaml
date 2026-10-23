@@ -32,18 +32,11 @@ env:
   BUN_SHA256: 3e730528d89775f03f87f05c06787c4df4099d0a37f3f252e7b829cb23816e18
 
 jobs:
-  check-ci:
-    permissions:
-      contents: read
-      deployments: read
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: security-checks.yaml
-
+  # No ci-check switchboard: its selectors run from the pull request checkout,
+  # so a hostile copy could skip every scan. The scope job below selects scans
+  # with base-commit scripts only and runs everything when they are missing.
   scope:
     name: Resolve security scope
-    needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

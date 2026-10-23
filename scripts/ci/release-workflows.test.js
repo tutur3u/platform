@@ -611,13 +611,23 @@ test('checked-in CodeQL is the only CodeQL configuration and scans every change'
   assert.doesNotMatch(workflow, /\n {2}schedule:/);
   assert.doesNotMatch(workflow, /pull_request_target:/);
   assert.match(workflow, /queries: security-extended/);
-  assert.match(workflow, /^ {2}check-ci:/m);
-  assert.match(workflow, /node "\$gate" "\$RUNNER_TEMP\/codeql-sarif" "\$CATEGORY"/);
+  // No ci-check switchboard: its selectors run from the PR checkout and could
+  // skip the scan (REV-6456-9); the scope job uses base-commit selectors.
+  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+  assert.doesNotMatch(workflow, /ci-check\.yml/);
+  assert.match(
+    workflow,
+    /node "\$gate" "\$RUNNER_TEMP\/codeql-sarif" "\$CATEGORY"/
+  );
 
   const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
   assert.doesNotMatch(config, /['"]codeql\.yml['"]\s*:/);
-  const switchboard = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ci.ts'), 'utf8');
-  assert.match(switchboard, /'codeql\.yml': true/);
+  const switchboard = fs.readFileSync(
+    path.join(repoRoot, 'tuturuuu.ci.ts'),
+    'utf8'
+  );
+  assert.doesNotMatch(switchboard, /'codeql\.yml'/);
+  assert.doesNotMatch(switchboard, /'security-checks\.yaml'/);
 });
 
 test('Codecov workflow runs workspace package tests with coverage', () => {

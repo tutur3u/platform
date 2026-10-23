@@ -16,6 +16,7 @@ const roots = [
   '.github/workflows/security-review-classifier.yaml',
   '.github/workflows/security-review-reclassify.yaml',
   '.github/workflows/security-review-recheck.yaml',
+  '.github/workflows/security-review-sweep.yaml',
 ];
 
 function loadFile(file) {
@@ -73,10 +74,9 @@ function walkUses(
 
 test('security workflows pin every transitively executed remote action', () => {
   const { violations, visited } = walkUses(roots);
-  for (const reached of [
-    '.github/workflows/ci-check.yml',
-    '.github/actions/setup-bun-with-retry/action.yml',
-  ]) {
+  // Reached only through a local composite action (workflow-trust job); the
+  // security workflows no longer call the ci-check switchboard (REV-6456-9).
+  for (const reached of ['.github/actions/setup-bun-with-retry/action.yml']) {
     assert.ok(visited.has(reached), `${reached} must stay covered`);
   }
   assert.deepEqual(violations, []);

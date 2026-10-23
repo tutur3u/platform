@@ -241,3 +241,65 @@ test('the register job publishes only the redacted register', () => {
   );
   assert.match(scan.run, /mode=register/u);
 });
+
+// REV-6456-9: a hostile checkout copy of any switchboard or scope selector
+// (for example overflow-notes-ci.js emitting should_run=false) must not be
+// able to skip or decide a gate. No security job may call the ci-check
+// switchboard or execute a checkout-local script or local action, apart from
+// steps that run after their job's verdict is final.
+test('no checkout-local selector or helper can skip or decide a security gate', () => {
+  const postVerdict = new Set([
+    'secrets/Prove pull requests cannot suppress findings',
+  ]);
+  // Workflow trust boundaries is itself a test run of the change (like unit
+  // tests); it gates nothing else and is not a scanner verdict.
+  const testJobs = new Set(['security-checks.yaml/workflow-trust']);
+  const executes =
+    /(?:^|[\s;&|(])(?:node|bun|bunx|npx|python3?|bash|sh)\s+(?:--[\w-]+(?:=\S+)?\s+)*["']?(?:\.\/)?(?:scripts|\.github)\//mu;
+  for (const [file, workflow] of [
+    ['security-checks.yaml', checks],
+    ['codeql.yml', codeql],
+  ]) {
+    assert.doesNotMatch(source(file), /ci-check\.yml/u, `${file} switchboard`);
+    for (const [id, job] of Object.entries(workflow.jobs)) {
+      if (job.uses) {
+        assert.equal(
+          job.uses,
+          './.github/workflows/codeql.yml',
+          `${file}:${id}`
+        );
+        continue;
+      }
+      if (testJobs.has(`${file}/${id}`)) continue;
+      // Register-only jobs run on main's schedule (or a dispatch), never for a
+      // pull request, so main's own code builds the register.
+      if (
+        /^always\(\) && needs\.scope\.outputs\.register == 'true'$/u.test(
+          job.if ?? ''
+        )
+      ) {
+        continue;
+      }
+      for (const need of [job.needs ?? []].flat()) {
+        assert.ok(workflow.jobs[need], `${file}:${id} needs ${need}`);
+      }
+      for (const step of job.steps ?? []) {
+        if (postVerdict.has(`${id}/${step.name}`)) continue;
+        assert.ok(
+          !step.uses?.startsWith('./'),
+          `${file}:${id}:${step.name} runs a local action`
+        );
+        assert.doesNotMatch(
+          String(step.run ?? ''),
+          executes,
+          `${file}:${id}:${step.name} executes checkout code`
+        );
+      }
+    }
+  }
+  for (const id of postVerdict) {
+    const [job, name] = id.split('/');
+    const steps = checks.jobs[job].steps;
+    assert.equal(steps.at(-1).name, name, `${id} must stay the last step`);
+  }
+});
