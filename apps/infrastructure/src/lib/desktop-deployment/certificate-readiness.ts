@@ -30,8 +30,6 @@ type PkiApi = {
   };
 };
 
-const pki = require('@blamejs/pki') as PkiApi;
-
 export type DesktopCertificateFailure =
   | 'certificate_invalid'
   | 'certificate_expired'
@@ -70,6 +68,10 @@ export async function inspectDesktopCertificate(input: {
     if (input.bytes.byteLength === 0 || input.bytes.byteLength > 2097152) {
       return { ok: false, code: 'certificate_invalid' };
     }
+    // The parser captures Node URL intrinsics at module load. Defer loading it
+    // until certificate parsing so route imports in DOM-based tests don't load
+    // Node-only intrinsics into the jsdom runtime.
+    const pki = require('@blamejs/pki') as PkiApi;
     const p12 = await pki.pkcs12.open(Buffer.from(input.bytes), input.password);
     const certificates = p12.certs.map(({ cert }) => ({ cert }));
     const keys = p12.keys;
