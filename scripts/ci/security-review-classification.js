@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Runs from the default branch in security-review-classifier.yaml
 // (pull_request_target) and security-review-reclassify.yaml (workflow_run after
-// a review is submitted or dismissed). It never reads or executes pull request
-// content: it lists the PR's file names and current reviews through the API,
-// classifies them with the default branch's security-paths.js, labels the PR
-// and records a check run.
+// a review is submitted or dismissed) and security-review-sweep.yaml (a
+// scheduled sweep of labeled open pull requests). It never reads or executes
+// pull request content: it lists the PR's file names and current reviews
+// through the API, classifies them with the default branch's security-paths.js,
+// labels the PR and records a check run.
 const fs = require('node:fs');
 const { classifyReview, maxListedFiles } = require('./security-paths.js');
 
@@ -12,6 +13,9 @@ const { env } = process;
 
 const label = 'security-review-required';
 const checkName = 'Security review';
+// Explicit bounds; a listing that does not end inside them is incomplete.
+const maxReviews = 1000;
+const maxSweptPulls = 200;
 
 function parseReviewers(value) {
   return new Set(
@@ -47,7 +51,15 @@ function independentApprovers({ author, headSha, reviews, reviewers }) {
     .sort();
 }
 
-function decide({ author, files, headSha, reviewers, reviews, truncated }) {
+function decide({
+  author,
+  files,
+  headSha,
+  reviewers,
+  reviews,
+  reviewsComplete = false,
+  truncated,
+}) {
   const classification = classifyReview(files, { truncated });
   if (!classification.required) {
     return {
@@ -55,6 +67,16 @@ function decide({ author, files, headSha, reviewers, reviews, truncated }) {
       approvers: [],
       conclusion: 'success',
       title: 'No security-sensitive paths changed',
+    };
+  }
+  // Reviews are listed oldest first, so a later change request or dismissal
+  // may sit beyond an incomplete listing; never let an earlier approval win.
+  if (!reviewsComplete) {
+    return {
+      ...classification,
+      approvers: [],
+      conclusion: 'action_required',
+      title: `Security review required; the review history exceeds ${maxReviews} reviews or could not be read completely`,
     };
   }
   const approvers = independentApprovers({
@@ -124,15 +146,23 @@ async function github(path, { method = 'GET', body } = {}) {
   };
 }
 
+// Reads up to `limit` items. `complete` is true only when the listing ended
+// inside the bound (a short page, or an empty probe page past the bound); any
+// non-200 or non-array page throws instead of silently truncating.
 async function paginate(path, limit) {
   const items = [];
-  for (let page = 1; items.length < limit; page += 1) {
-    const { data } = await github(`${path}?per_page=100&page=${page}`);
-    if (!Array.isArray(data) || data.length === 0) break;
+  const separator = path.includes('?') ? '&' : '?';
+  for (let page = 1; ; page += 1) {
+    const { data, status } = await github(
+      `${path}${separator}per_page=100&page=${page}`
+    );
+    if (status !== 200 || !Array.isArray(data)) {
+      throw new Error(`incomplete listing of ${path}`);
+    }
+    if (items.length >= limit) return { complete: data.length === 0, items };
     items.push(...data);
-    if (data.length < 100) break;
+    if (data.length < 100) return { complete: true, items };
   }
-  return items;
 }
 
 // A review relay carries only the head owner, branch and SHA of the reviewed
@@ -178,38 +208,81 @@ async function target(repo) {
   return resolveRelayedPullRequest(repo);
 }
 
-async function main() {
-  const repo = env.GITHUB_REPOSITORY;
-  if (!/^[\w.-]+\/[\w.-]+$/u.test(repo ?? ''))
-    throw new Error('bad repository');
-  const pr = await target(repo);
-  if (!pr) {
-    console.log(
-      'No open pull request still has the reviewed head; nothing to reclassify.'
-    );
-    return;
-  }
-  const { author, headSha, number } = pr;
+async function latestCheckConclusion(repo, headSha) {
+  const { data, status } = await github(
+    `/repos/${repo}/commits/${headSha}/check-runs?check_name=${encodeURIComponent(checkName)}&filter=latest&per_page=100`
+  );
+  if (status !== 200) throw new Error('check-run lookup failed');
+  const runs = (data?.check_runs ?? []).filter(
+    (run) => run.app?.slug === 'github-actions'
+  );
+  runs.sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at));
+  return runs[0]?.conclusion ?? null;
+}
+
+async function postCheck(repo, headSha, decision, summary) {
+  await github(`/repos/${repo}/check-runs`, {
+    body: {
+      conclusion: decision.conclusion,
+      details_url: env.RUN_URL,
+      head_sha: headSha,
+      name: checkName,
+      output: { summary, title: decision.title },
+      status: 'completed',
+    },
+    method: 'POST',
+  });
+}
+
+async function evaluate(repo, { author, headSha, number }) {
   assertShape(repo, number, headSha);
   const listed = await paginate(
     `/repos/${repo}/pulls/${number}/files`,
     maxListedFiles
   );
-  const files = listed.flatMap((file) =>
+  const files = listed.items.flatMap((file) =>
     [file.filename, file.previous_filename].filter(Boolean)
   );
   const reviews = await paginate(
     `/repos/${repo}/pulls/${number}/reviews`,
-    1000
+    maxReviews
   );
-  const decision = decide({
+  return decide({
     author,
     files,
     headSha,
     reviewers: parseReviewers(env.SECURITY_REVIEWERS),
-    reviews,
-    truncated: listed.length >= maxListedFiles,
+    reviews: reviews.items,
+    reviewsComplete: reviews.complete,
+    // GitHub stops listing files at 3000, so a full listing is also truncated.
+    truncated: !listed.complete || listed.items.length >= maxListedFiles,
   });
+}
+
+// Evaluates one pull request and records the check. Any failure after the
+// head is known records action_required, so an error can never leave an
+// earlier success standing.
+async function reclassify(repo, pr, { onlyIfChanged = false } = {}) {
+  let decision;
+  try {
+    decision = await evaluate(repo, pr);
+  } catch (error) {
+    assertShape(repo, pr.number, pr.headSha);
+    const failed = {
+      categories: [],
+      conclusion: 'action_required',
+      required: true,
+      title: 'Security review could not be evaluated; re-run the classifier',
+    };
+    await postCheck(repo, pr.headSha, failed, `### ${failed.title}`);
+    throw error;
+  }
+  if (
+    onlyIfChanged &&
+    (await latestCheckConclusion(repo, pr.headSha)) === decision.conclusion
+  ) {
+    return decision;
+  }
   const summary = summarize(decision);
   if (decision.required) {
     const existing = await github(`/repos/${repo}/labels/${label}`);
@@ -223,26 +296,74 @@ async function main() {
         method: 'POST',
       });
     }
-    await github(`/repos/${repo}/issues/${number}/labels`, {
+    await github(`/repos/${repo}/issues/${pr.number}/labels`, {
       body: { labels: [label] },
       method: 'POST',
     });
   }
-  await github(`/repos/${repo}/check-runs`, {
-    body: {
-      conclusion: decision.conclusion,
-      details_url: env.RUN_URL,
-      head_sha: headSha,
-      name: checkName,
-      output: { summary, title: decision.title },
-      status: 'completed',
-    },
-    method: 'POST',
-  });
+  await postCheck(repo, pr.headSha, decision, summary);
   if (env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(env.GITHUB_STEP_SUMMARY, `${summary}\n`);
   }
   console.log(summary);
+  return decision;
+}
+
+// Scheduled backstop that does not depend on any pull-request-owned workflow:
+// every open labeled pull request is recomputed from its live reviews, and a
+// check is posted only when the decision changed (for example a dismissal the
+// review relay never signalled).
+async function sweep(repo) {
+  const issues = await paginate(
+    `/repos/${repo}/issues?state=open&labels=${label}`,
+    maxSweptPulls
+  );
+  if (!issues.complete) {
+    console.log(
+      `::warning::More than ${maxSweptPulls} labeled pull requests; sweeping the first ${issues.items.length}.`
+    );
+  }
+  let failures = 0;
+  for (const issue of issues.items) {
+    if (!issue.pull_request) continue;
+    const { data, status } = await github(
+      `/repos/${repo}/pulls/${issue.number}`
+    );
+    if (status !== 200 || data?.state !== 'open') continue;
+    try {
+      await reclassify(
+        repo,
+        {
+          author: data.user?.login ?? '',
+          headSha: data.head?.sha,
+          number: String(data.number),
+        },
+        { onlyIfChanged: true }
+      );
+    } catch (error) {
+      failures += 1;
+      console.error(`#${issue.number}: ${error.message}`);
+    }
+  }
+  if (failures > 0) throw new Error(`${failures} pull request(s) failed`);
+}
+
+async function main() {
+  const repo = env.GITHUB_REPOSITORY;
+  if (!/^[\w.-]+\/[\w.-]+$/u.test(repo ?? ''))
+    throw new Error('bad repository');
+  if (env.SECURITY_REVIEW_SWEEP === 'true') {
+    await sweep(repo);
+    return;
+  }
+  const pr = await target(repo);
+  if (!pr) {
+    console.log(
+      'No open pull request still has the reviewed head; nothing to reclassify.'
+    );
+    return;
+  }
+  await reclassify(repo, pr);
 }
 
 function assertShape(repo, number, headSha) {
@@ -265,6 +386,8 @@ module.exports = {
   independentApprovers,
   label,
   main,
+  maxReviews,
+  paginate,
   parseReviewers,
   summarize,
 };

@@ -1,0 +1,56 @@
+name: Security Review Sweep
+
+# Trusted backstop for review revocation. The review relay
+# (security-review-recheck.yaml) is defined by the pull request itself, so a
+# pull request can delete or rename it and a later dismissal would never be
+# signalled. This schedule runs only default-branch code, needs no
+# pull-request-owned workflow, recomputes every open pull request labeled
+# security-review-required from its live reviews, and posts a check only when
+# the decision changed. Native code-owner review remains the primary
+# revocation control (see security-cadence.mdx). Never check out, install or
+# execute pull request content here.
+on:
+  schedule:
+    - cron: "11,41 * * * *"
+
+concurrency:
+  group: security-review-sweep
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    name: Recompute labeled security reviews
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      checks: write
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      # Scheduled runs always use the latest default-branch commit (GITHUB_SHA).
+      - name: Check out the default-branch classifier only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/security-paths.js
+            scripts/ci/security-review-classification.js
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Recompute changed security review decisions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SECURITY_REVIEW_SWEEP: "true"
+          SECURITY_REVIEWERS: ${{ vars.SECURITY_REVIEWERS }}
+        run: node scripts/ci/security-review-classification.js

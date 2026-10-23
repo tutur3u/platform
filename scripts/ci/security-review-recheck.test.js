@@ -257,3 +257,182 @@ test('a relay for a moved, foreign or spoofed head posts nothing', async (t) => 
     assert.deepEqual(requests, []);
   }
 });
+
+// Route-table GitHub double: `routes` maps a path (without query) to a
+// function of the page number, or to fixed data; POSTs are recorded.
+function routedGitHub(t, routes) {
+  const requests = [];
+  const original = global.fetch;
+  t.after(() => {
+    global.fetch = original;
+  });
+  global.fetch = async (url, init = {}) => {
+    const full = String(url).replace('https://api.github.com', '');
+    const [route, query = ''] = full.split('?');
+    const page = Number(new URLSearchParams(query).get('page') ?? 1);
+    const body = init.body ? JSON.parse(init.body) : undefined;
+    const method = init.method ?? 'GET';
+    requests.push({ body, method, route: full });
+    const handler = method === 'GET' ? routes[route] : {};
+    if (handler === undefined)
+      return { json: async () => null, ok: false, status: 404 };
+    if (handler === 500)
+      return { json: async () => null, ok: false, status: 500 };
+    const data = typeof handler === 'function' ? handler(page) : handler;
+    return { json: async () => data, ok: true, status: 200 };
+  };
+  return requests;
+}
+
+const prRoutes = (reviewsByPage) => ({
+  [`/repos/${repo}/pulls/42/files`]: (page) =>
+    page === 1 ? [{ filename: '.github/workflows/x.yaml' }] : [],
+  [`/repos/${repo}/pulls/42/reviews`]: reviewsByPage,
+  [`/repos/${repo}/labels/security-review-required`]: {
+    name: 'security-review-required',
+  },
+});
+const posted = (requests) =>
+  requests.filter((request) => request.route.endsWith('/check-runs'));
+
+test('reviews beyond the explicit bound never leave an earlier approval authoritative', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const filler = (page) =>
+    Array.from({ length: 100 }, (_, index) =>
+      review(`bot${page}-${index}`, 'COMMENTED')
+    );
+  const history = (lastPage) => (page) => {
+    if (page === 1) return [review('alice', 'APPROVED'), ...filler(1).slice(1)];
+    if (page <= 10) return filler(page);
+    return page === 11 ? lastPage : [];
+  };
+  // A change request on page 11 is past the 1000-review bound.
+  relayEnv(t, { HEAD_SHA: head, PR_AUTHOR: 'mallory', PR_NUMBER: '42' });
+  let requests = routedGitHub(
+    t,
+    prRoutes(history([review('alice', 'CHANGES_REQUESTED')]))
+  );
+  await main();
+  let [check] = posted(requests);
+  assert.equal(check.body.conclusion, 'action_required');
+  assert.match(check.body.output.title, /could not be read completely/u);
+
+  // Exactly 1000 reviews (empty probe page) is a complete history.
+  relayEnv(t, { HEAD_SHA: head, PR_AUTHOR: 'mallory', PR_NUMBER: '42' });
+  requests = routedGitHub(t, prRoutes(history([])));
+  await main();
+  [check] = posted(requests);
+  assert.equal(check.body.conclusion, 'success');
+});
+
+test('an unreadable listing records action_required instead of a stale success', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  relayEnv(t, { HEAD_SHA: head, PR_AUTHOR: 'mallory', PR_NUMBER: '42' });
+  const requests = routedGitHub(t, {
+    ...prRoutes(500),
+    [`/repos/${repo}/pulls/42/files`]: 500,
+  });
+  await assert.rejects(main(), /failed with 500/u);
+  const [check] = posted(requests);
+  assert.equal(check.body.conclusion, 'action_required');
+  assert.equal(check.body.head_sha, head);
+  assert.match(check.body.output.title, /could not be evaluated/u);
+});
+
+function sweepRoutes(latestConclusion) {
+  return {
+    ...prRoutes([review('alice', 'APPROVED'), review('alice', 'DISMISSED')]),
+    [`/repos/${repo}/issues`]: (page) =>
+      page === 1 ? [{ number: 42, pull_request: {} }, { number: 7 }] : [],
+    [`/repos/${repo}/pulls/42`]: { ...openPull, state: 'open' },
+    [`/repos/${repo}/commits/${head}/check-runs`]: {
+      check_runs: [
+        {
+          app: { slug: 'github-actions' },
+          conclusion: latestConclusion,
+          started_at: '2026-10-23T00:00:00Z',
+        },
+      ],
+    },
+  };
+}
+
+test('the scheduled sweep revokes a stale success without any relay', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  relayEnv(t, { SECURITY_REVIEW_SWEEP: 'true' });
+  let requests = routedGitHub(t, sweepRoutes('success'));
+  await main();
+  assert.match(
+    requests[0].route,
+    /issues\?state=open&labels=security-review-required&per_page=100&page=1$/u
+  );
+  // Only the labeled pull request is evaluated; plain issues are skipped.
+  assert.ok(!requests.some(({ route }) => route.includes('/pulls/7')));
+  const [check] = posted(requests);
+  assert.equal(check.body.conclusion, 'action_required');
+  assert.equal(check.body.head_sha, head);
+
+  // An unchanged decision posts nothing.
+  relayEnv(t, { SECURITY_REVIEW_SWEEP: 'true' });
+  requests = routedGitHub(t, sweepRoutes('action_required'));
+  await main();
+  assert.deepEqual(posted(requests), []);
+});
+
+test('revocation does not depend on the pull-request-owned relay', () => {
+  // A pull request can delete or rename security-review-recheck.yaml, so the
+  // relay and its workflow_run consumer are a fast path only. Without them a
+  // trusted trigger must still recompute the check.
+  const names = fs
+    .readdirSync(workflowsDir)
+    .filter((file) => /\.ya?ml$/u.test(file));
+  for (const removed of ['security-review-recheck.yaml', null]) {
+    const remaining = names.filter((file) => file !== removed);
+    const trusted = remaining.filter((file) => {
+      const text = source(file);
+      if (!text.includes('scripts/ci/security-review-classification.js'))
+        return false;
+      const on = Object.keys(triggers(readWorkflow(file)));
+      // Triggers whose workflow definition the pull request cannot change.
+      return on.every((event) =>
+        ['pull_request_target', 'schedule'].includes(event)
+      );
+    });
+    assert.deepEqual(trusted.sort(), [
+      'security-review-classifier.yaml',
+      'security-review-sweep.yaml',
+    ]);
+  }
+  const sweep = readWorkflow('security-review-sweep.yaml');
+  assert.deepEqual(Object.keys(triggers(sweep)), ['schedule']);
+  assert.doesNotMatch(
+    source('security-review-sweep.yaml'),
+    /Recheck|workflow_run/u
+  );
+  const job = sweep.jobs.sweep;
+  assert.deepEqual(
+    job.permissions,
+    readWorkflow('security-review-classifier.yaml').jobs.classify.permissions
+  );
+  const [checkout, setupNode, classify, ...rest] = job.steps;
+  assert.deepEqual(rest, []);
+  assert.match(checkout.uses, /^actions\/checkout@[0-9a-f]{40}$/u);
+  assert.equal(
+    checkout.with.ref,
+    undefined,
+    'schedule runs the default branch'
+  );
+  assert.equal(checkout.with['persist-credentials'], false);
+  assert.match(setupNode.uses, /^actions\/setup-node@[0-9a-f]{40}$/u);
+  assert.equal(classify.env.SECURITY_REVIEW_SWEEP, 'true');
+  assert.doesNotMatch(
+    source('security-review-sweep.yaml'),
+    /secrets\.|uses: \.\/|bun install|npm (?:ci|install)/u
+  );
+  // Trusted recomputes also run right before automated merges.
+  const types = triggers(readWorkflow('security-review-classifier.yaml'))
+    .pull_request_target.types;
+  for (const type of ['auto_merge_enabled', 'enqueued', 'synchronize']) {
+    assert.ok(types.includes(type), type);
+  }
+});

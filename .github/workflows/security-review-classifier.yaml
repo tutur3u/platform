@@ -8,7 +8,9 @@ name: Security Review Classification
 # the classification and re-adds it. There is deliberately no path filter: the
 # Security review check is reported for every pull request (success when no
 # sensitive path changed) so it can be a required status check. Review
-# submissions and dismissals are recomputed by security-review-reclassify.yaml.
+# submissions and dismissals are recomputed by security-review-reclassify.yaml
+# (fast path, signalled by a pull-request-owned relay) and by the scheduled
+# security-review-sweep.yaml (trusted backstop).
 on:
   pull_request_target:
     types:
@@ -19,6 +21,11 @@ on:
       - edited
       - labeled
       - unlabeled
+      # Trusted recomputes right before automated merges; a dismissal never
+      # fires a pull_request_target event, so it also relies on the code-owner
+      # rule and security-review-sweep.yaml (see security-cadence.mdx).
+      - auto_merge_enabled
+      - enqueued
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}

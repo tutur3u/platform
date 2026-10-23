@@ -153,6 +153,7 @@ test('classification decisions and summaries', () => {
     headSha: head,
     reviewers: parseReviewers('alice'),
     reviews: [],
+    reviewsComplete: true,
     truncated: false,
   };
   const clean = decide({ ...input, files: ['README.md'] });
@@ -174,6 +175,17 @@ test('classification decisions and summaries', () => {
   });
   assert.equal(approved.conclusion, 'success');
   assert.equal(approved.required, true);
+  // An approval in an incomplete review history is never authoritative.
+  for (const reviewsComplete of [false, undefined]) {
+    const partial = decide({
+      ...input,
+      files: ['.github/workflows/x.yaml'],
+      reviews: [review('alice', 'APPROVED')],
+      reviewsComplete,
+    });
+    assert.equal(partial.conclusion, 'action_required');
+    assert.match(partial.title, /could not be read completely/u);
+  }
 });
 
 test('trust-boundary runner requires its core suites', () => {
