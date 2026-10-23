@@ -11,6 +11,7 @@ import {
 } from './hook-input';
 import { HookError, readLedger } from './hook-ledger';
 import { reconcileChildren } from './reconcile-children';
+import { applyDescendantReceipts } from './recovery';
 import { type RerouteEvidence, reroutePlan } from './reroute-plan';
 export async function runReroute(args: string[]) {
   try {
@@ -97,6 +98,14 @@ export async function runReroute(args: string[]) {
         : undefined,
       drain
     );
+    const context = { ...collected, ledger: await readLedger(), now };
+    applyDescendantReceipts(
+      snapshot,
+      context,
+      typeof input.recoveryTimezone === 'string'
+        ? input.recoveryTimezone
+        : undefined
+    );
     console.log(
       JSON.stringify({
         readOnly: true,
@@ -104,8 +113,9 @@ export async function runReroute(args: string[]) {
         plans: reroutePlan(
           reconciliation.entries,
           request,
-          { ...collected, ledger: await readLedger(), now },
-          evidence
+          context,
+          evidence,
+          snapshot
         ),
       })
     );

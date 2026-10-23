@@ -206,7 +206,8 @@ describe('freshness, identity and reservations', () => {
         observedAt: now.toISOString(),
         kind: 'long',
       });
-      expect(rank([result]).ranked[0]?.state).toBe('healthy');
+      // An Antigravity window without scope cannot establish model headroom.
+      expect(rank([result]).ranked[0]?.state).toBe('UNKNOWN');
       await writeFile(
         join(directory, 'antigravity.json'),
         JSON.stringify({

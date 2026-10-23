@@ -27,6 +27,14 @@ export function validLedger(value: unknown): value is HookLedger {
   )
     return false;
   return (
+    optional(
+      value.retiredRequests,
+      (items) =>
+        Array.isArray(items) &&
+        items.every(
+          (item) => record(item) && text(item.requestId) && date(item.retiredAt)
+        )
+    ) &&
     (value.observations as unknown[]).every(
       (item) =>
         record(item) &&
@@ -37,6 +45,8 @@ export function validLedger(value: unknown): value is HookLedger {
           String(item.outcome)
         ) &&
         date(item.observedAt) &&
+        optional(item.model, text) &&
+        optional(item.clearedAt, date) &&
         optional(item.resetsAt, date) &&
         optional(item.requestId, text) &&
         optional(item.nativeReservationId, text) &&
@@ -55,7 +65,7 @@ export function validLedger(value: unknown): value is HookLedger {
     (value.leaseHistory as unknown[]).every(
       (item) =>
         record(item) &&
-        ['acquire', 'release', 'expired-takeover'].includes(
+        ['acquire', 'release', 'expired-takeover', 'expired'].includes(
           String(item.action)
         ) &&
         date(item.at) &&

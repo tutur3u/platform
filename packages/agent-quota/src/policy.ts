@@ -11,6 +11,7 @@ import type {
   RecommendationReason,
   TaskRequest,
 } from './types';
+import { coversModel } from './window-scope';
 
 export interface RecommendOptions {
   task: TaskRequest;
@@ -48,6 +49,12 @@ function rankOne(
   staleAfterMs: number,
   hardLimitPercent: number
 ): RankedInstance {
+  account = {
+    ...account,
+    windows: account.windows.filter((window) =>
+      coversModel(window, task.model)
+    ),
+  };
   const reasons: RecommendationReason[] = [];
   const windows = account.windows.filter(
     (window): window is typeof window & { usedPercent: number } =>

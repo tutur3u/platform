@@ -1,6 +1,8 @@
 import { admit } from './admission';
 import { recoveryAdmissionKey } from './failure-receipt';
 import type { AdmissionContext, AdmissionRequest } from './hooks-types';
+import { pruneLedger } from './ledger-retention';
+import type { ChildSnapshot } from './reconcile-children';
 import { applyRecoveryReceipt } from './recovery';
 
 export interface RerouteEvidence {
@@ -31,9 +33,15 @@ export function reroutePlan(
   entries: Record<string, unknown>[],
   request: AdmissionRequest,
   context: AdmissionContext,
-  evidence: Record<string, RerouteEvidence>
+  evidence: Record<string, RerouteEvidence>,
+  snapshot?: ChildSnapshot
 ) {
   const simulation = { ...context, ledger: structuredClone(context.ledger) };
+  pruneLedger(
+    simulation.ledger,
+    context.now,
+    context.active.flatMap((item) => item.reservationIds ?? [])
+  );
   const seen = new Set<string>();
   return entries
     .filter((entry) => entry.failureClass === 'usage-limit')
@@ -82,22 +90,74 @@ export function reroutePlan(
       if (oldQueuedRuns.length !== queuedRuns.length)
         blockers.push('queued-other-account-work-needs-owner-review');
       applyRecoveryReceipt(entry, simulation);
+      const existing = simulation.ledger.reservations.find(
+        (item) => item.requestId === key
+      );
+      let revalidation = simulation;
+      let requirements = request.requirements;
+      if (existing) {
+        if (existing.threadId !== request.threadId)
+          blockers.push('reservation-owner-mismatch');
+        revalidation = {
+          ...simulation,
+          ledger: structuredClone(simulation.ledger),
+          active: simulation.active.map((item) =>
+            item.reservationIds?.includes(existing.nativeReservationId ?? '')
+              ? {
+                  ...item,
+                  count: Math.max(0, item.count - 1),
+                  reservationIds: item.reservationIds.filter(
+                    (id) => id !== existing.nativeReservationId
+                  ),
+                }
+              : item
+          ),
+        };
+        revalidation.ledger.reservations =
+          revalidation.ledger.reservations.filter(
+            (item) => item.requestId !== key
+          );
+        requirements = {
+          ...requirements,
+          candidates: requirements.candidates.filter(
+            (item) =>
+              item.instanceId === existing.instanceId &&
+              item.model === existing.model
+          ),
+        };
+      }
       const admission = admit(
-        { ...request, requestId: key, recovery: undefined },
-        simulation
+        { ...request, requirements, requestId: key, recovery: undefined },
+        revalidation
       );
       const chosen = admission.chosen;
-      if (blockers.length)
+      if (blockers.length && !existing)
         simulation.ledger.reservations = simulation.ledger.reservations.filter(
           (item) => item.requestId !== key
         );
       if (!chosen) blockers.push('no-eligible-pool');
-      const resumed =
+      const resumed = Boolean(
         chosen &&
-        proof?.resumed?.taskId &&
-        proof.resumed.status === 'running' &&
-        proof.resumed.providerInstanceId === chosen.providerInstanceId &&
-        proof.resumed.model === chosen.model;
+          proof?.resumed &&
+          snapshot?.runs.some(
+            (run) =>
+              run.id === proof.resumed?.runId &&
+              run.threadId === threadId &&
+              run.taskId === proof.resumed.taskId &&
+              run.status === 'running' &&
+              run.instanceId === chosen.providerInstanceId &&
+              run.model === chosen.model
+          )
+      );
+      // Post-resume verification is not another switch. Only the exact reserved
+      // running task can explain this active-run/superseded boundary.
+      if (resumed && existing && entry.latestRunId === proof?.resumed?.runId) {
+        for (const reason of ['run-not-idle', 'failure-superseded']) {
+          const index = blockers.indexOf(reason);
+          if (index >= 0) blockers.splice(index, 1);
+        }
+      }
+      if (proof?.resumed && !resumed) blockers.push('resumed-run-unverified');
       const configured =
         chosen &&
         proof?.configured?.providerInstanceId === chosen.providerInstanceId &&
@@ -107,14 +167,17 @@ export function reroutePlan(
         threadId,
         failedRunId: runId,
         idempotencyKey: key,
-        status: resumed
-          ? 'resumed-on-provider'
-          : configured
-            ? 'configured'
-            : blockers.length
-              ? 'block'
-              : 'plan-ready',
-        success: Boolean(resumed),
+        status: blockers.length
+          ? 'block'
+          : resumed
+            ? 'resumed-on-provider'
+            : configured
+              ? 'configured'
+              : blockers.length
+                ? 'block'
+                : 'plan-ready',
+        success: Boolean(resumed && blockers.length === 0),
+        verifiedRunningOnTarget: resumed,
         blockers,
         admission,
         drainChecks: {

@@ -30,8 +30,12 @@ export function collapseAccounts(
         ordered.length > 1
           ? `Shared account identity: ${ordered.map((account) => account.instanceId).join(', ')}; reservations combined.`
           : first.accountIdentityHash
-            ? 'Account identity verified by an opaque provider hash; display labels remain aliases.'
+            ? 'Account identity established from provider metadata or the configured account-home mapping; display labels remain aliases.'
             : 'Account identity unavailable; display labels are aliases, not account identity. Instances remain separate.',
     };
   });
+}
+
+export function accountKey(account: AccountUsage): string {
+  return `${account.provider}:${account.accountIdentityHash ? `account:${account.accountIdentityHash}` : `instance:${account.instanceId}`}`;
 }

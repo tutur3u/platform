@@ -134,13 +134,14 @@ export function reconcileChildren(
       runs.some(
         (run) =>
           run.id === failure.runId &&
-          run.status === 'failed' &&
+          ['failed', 'completed'].includes(run.status) &&
           run.rootNodeId === failure.nodeId
       )
     );
     const relevant = runs.filter(
       (run) =>
-        run.status === 'failed' &&
+        (run.status === 'failed' ||
+          failures.some((failure) => failure.runId === run.id)) &&
         !run.monitor &&
         (run.startedAt || run.id === original?.id)
     );
@@ -154,7 +155,7 @@ export function reconcileChildren(
         .filter((item) => item.runId === run.id)
         .sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt))[0];
       const classification =
-        run.status === 'failed'
+        run.status === 'failed' || receipt
           ? failureClass(receipt?.message ?? '', receipt?.classification)
           : null;
       const key = classification
@@ -293,7 +294,7 @@ export function reconcileChildren(
       .filter((item) => item.nodeId === task.id)
       .sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt))[0];
     const classification =
-      task.status === 'failed'
+      task.status === 'failed' || receipt
         ? failureClass(receipt?.message ?? '', receipt?.classification)
         : null;
     const safe = classification

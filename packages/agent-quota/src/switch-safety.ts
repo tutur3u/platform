@@ -1,5 +1,6 @@
 import { HookError } from './hook-ledger';
 import type { HookLedger, SwitchEvidence, SwitchLease } from './hooks-types';
+import { processState } from './process-identity';
 
 export function acquireSwitchLease(
   ledger: HookLedger,
@@ -15,6 +16,12 @@ export function acquireSwitchLease(
   const conflicting = ledger.leases.filter(
     (lease) => lease.threadId === input.threadId
   );
+  if (!conflicting.length) {
+    const previous = ledger.leaseHistory
+      .filter((event) => event.lease.threadId === input.threadId)
+      .at(-1);
+    if (previous?.action === 'expired') conflicting.push(previous.lease);
+  }
   const live = conflicting.filter(
     (lease) => Date.parse(lease.expiresAt) > now.getTime()
   );
@@ -38,6 +45,17 @@ export function acquireSwitchLease(
     )
   )
     return { status: 'block' as const, reasons: ['switch-attempt-retired'] };
+  if (
+    conflicting.some((lease) =>
+      ['same', 'unknown'].includes(
+        processState(lease.pid, lease.processStartedAt)
+      )
+    )
+  )
+    return {
+      status: 'block' as const,
+      reasons: ['expired-switch-owner-still-live-or-unverified'],
+    };
   for (const lease of conflicting)
     ledger.leaseHistory.push({
       action: 'expired-takeover',
@@ -58,16 +76,38 @@ export function acquireSwitchLease(
 
 export function releaseSwitchLease(
   ledger: HookLedger,
-  identity: Pick<SwitchLease, 'threadId' | 'accountKey' | 'attemptId'>,
+  identity: Pick<
+    SwitchLease,
+    'threadId' | 'accountKey' | 'attemptId' | 'pid' | 'processStartedAt'
+  >,
   now: Date
 ) {
-  const lease = ledger.leases.find(
+  let lease = ledger.leases.find(
     (item) =>
       item.threadId === identity.threadId &&
       item.accountKey === identity.accountKey &&
       item.attemptId === identity.attemptId
   );
+  if (!lease) {
+    const previous = ledger.leaseHistory
+      .filter((event) => event.lease.threadId === identity.threadId)
+      .at(-1);
+    if (
+      previous?.action === 'expired' &&
+      previous.lease.attemptId === identity.attemptId &&
+      previous.lease.accountKey === identity.accountKey
+    )
+      lease = previous.lease;
+  }
   if (!lease) return { status: 'released' as const, replay: true };
+  if (
+    lease.pid !== identity.pid ||
+    lease.processStartedAt !== identity.processStartedAt
+  )
+    return {
+      status: 'block' as const,
+      reasons: ['switch-lease-process-mismatch'],
+    };
   ledger.leases = ledger.leases.filter((item) => item !== lease);
   ledger.leaseHistory.push({ action: 'release', at: now.toISOString(), lease });
   return { status: 'released' as const, replay: false };

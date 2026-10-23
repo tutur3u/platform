@@ -14,7 +14,7 @@ import {
 } from './hook-input';
 import { HookError, readLedger, transactLedger } from './hook-ledger';
 import { reconcileChildren, recoveryBlockers } from './reconcile-children';
-import { applyRecoveryReceipt } from './recovery';
+import { applyDescendantReceipts, applyRecoveryReceipt } from './recovery';
 import {
   acquireSwitchLease,
   checkSwitch,
@@ -28,7 +28,7 @@ export async function runHook(command: string, action?: string): Promise<void> {
       throw new HookError('input-too-large');
     const input = object(JSON.parse(source));
     const now = new Date();
-    // This path never calls a provider probe or reads transcripts.
+    // This path never calls a provider probe; receipt collection selects only terminal provider-limit text.
     const collected = await collectAll({
       snapshotsOnly: true,
       catalog: input.catalog,
@@ -36,6 +36,7 @@ export async function runHook(command: string, action?: string): Promise<void> {
     let result: unknown;
     if (command === 'admit') {
       const request = admissionInput(input);
+      const descendants = collectChildren(request.threadId);
       let recoveryEntry: Record<string, unknown> | undefined;
       if (request.recovery) {
         const evidence =
@@ -51,7 +52,7 @@ export async function runHook(command: string, action?: string): Promise<void> {
             }
           : {};
         const entries = reconcileChildren(
-          collectChildren(request.threadId),
+          descendants,
           request.threadId,
           now,
           typeof input.recoveryTimezone === 'string'
@@ -75,6 +76,13 @@ export async function runHook(command: string, action?: string): Promise<void> {
 
       result = await transactLedger((ledger) => {
         const context = { ...collected, ledger, now };
+        applyDescendantReceipts(
+          descendants,
+          context,
+          typeof input.recoveryTimezone === 'string'
+            ? input.recoveryTimezone
+            : undefined
+        );
         if (recoveryEntry) applyRecoveryReceipt(recoveryEntry, context);
         return admit(request, context);
       });
@@ -123,6 +131,8 @@ export async function runHook(command: string, action?: string): Promise<void> {
           threadId: id(input.threadId),
           attemptId: id(input.attemptId),
           accountKey: key,
+          pid: number(input.pid, 1, 2_147_483_647),
+          processStartedAt: timestamp(input.processStartedAt),
         };
         if (action === 'acquire') {
           const pid = number(input.pid, 1, 2_147_483_647);
@@ -179,7 +189,13 @@ export async function runHook(command: string, action?: string): Promise<void> {
       } else
         result = checkSwitch(await readLedger(), switchInput(input, key), now);
     }
-    console.log(JSON.stringify(result));
+    console.log(
+      JSON.stringify(result, (key, value) =>
+        key === 'accountKey' || key === 'accountIdentityHash'
+          ? undefined
+          : value
+      )
+    );
   } catch (error) {
     console.log(
       JSON.stringify({

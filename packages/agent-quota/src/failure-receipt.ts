@@ -54,6 +54,27 @@ export function receiptReset(
   observedAt: string,
   timezone?: string
 ): string | null {
+  const relative = message.match(
+    /reset(?:s)?\s+in\s+((?:\d+(?:\.\d+)?\s*(?:days?|hours?|minutes?|seconds?)(?:\s*,?\s*(?:and\s+)?|$))+)/i
+  )?.[1];
+  if (relative && Number.isFinite(Date.parse(observedAt))) {
+    let seconds = 0;
+    for (const part of relative.matchAll(
+      /(\d+(?:\.\d+)?)\s*(day|hour|minute|second)s?/gi
+    ))
+      seconds +=
+        Number(part[1]) *
+        ((
+          { day: 86400, hour: 3600, minute: 60, second: 1 } as Record<
+            string,
+            number
+          >
+        )[part[2]?.toLowerCase() ?? ''] ?? 0);
+    if (seconds > 0 && seconds <= 366 * 86400)
+      return new Date(
+        Date.parse(observedAt) + Math.ceil(seconds) * 1000
+      ).toISOString();
+  }
   const iso = message.match(
     /\bresets?(?:\s+at)?\s*[:=]?\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2}))\b/
   )?.[1];
@@ -106,4 +127,22 @@ export function receiptReset(
   } catch {
     return null;
   }
+}
+
+// Completed assistant prose is not an error unless it starts with a provider receipt.
+export function completedFailureClass(message: string): FailureClass | null {
+  const text = message.trimStart().replace(/^[#*_>\s]+/, '');
+  if (
+    /^(?:usage limit reached\b|you['’]ve hit your (?:session|usage) limit\b|you have reached (?:your |the )?usage limit\b)/i.test(
+      text
+    )
+  )
+    return 'usage-limit';
+  if (
+    /^(?:(?:we(?:'re| are)|the (?:service|model|provider) is) (?:currently )?(?:at capacity|overloaded|temporarily unavailable)|(?:model|service|provider) (?:capacity (?:exceeded|exhausted)|temporarily unavailable)|temporarily unavailable\b|capacity (?:error|exceeded|exhausted)\b)/i.test(
+      text
+    )
+  )
+    return 'capacity';
+  return null;
 }

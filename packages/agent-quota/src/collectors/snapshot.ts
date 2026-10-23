@@ -1,7 +1,11 @@
-import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { constants } from 'node:fs';
+import { open } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { AccountUsage, UsageWindow } from '../types';
+import { windowScope } from '../window-scope';
+import { claudeProjectsRoot } from './paths';
 
 // Provider status caches are distinct from provider profiles and authentication files.
 export async function collectSnapshot(
@@ -10,9 +14,27 @@ export async function collectSnapshot(
 ): Promise<AccountUsage> {
   if (!/^[a-zA-Z0-9_-]+$/.test(account.instanceId)) return account;
   try {
-    const value = JSON.parse(
-      await readFile(join(cacheDir, `${account.instanceId}.json`), 'utf8')
+    const file = await open(
+      join(cacheDir, `${account.instanceId}.json`),
+      constants.O_RDONLY | constants.O_NOFOLLOW
     );
+    const value = await (async () => {
+      try {
+        const stat = await file.stat();
+        if (!stat.isFile() || stat.size > 2_000_000)
+          throw new Error('snapshot-invalid-or-full');
+        return JSON.parse(await file.readFile('utf8'));
+      } finally {
+        await file.close();
+      }
+    })();
+    const home =
+      account.provider === 'claude'
+        ? claudeProjectsRoot(account.instanceId)
+        : undefined;
+    const homeIdentity = home
+      ? createHash('sha256').update(`claude-home:${home}`).digest('hex')
+      : undefined;
     const driver =
       account.provider === 'claude' ? 'claudeAgent' : account.provider;
     if (value.instanceId !== account.instanceId || value.driver !== driver)
@@ -24,7 +46,7 @@ export async function collectSnapshot(
         typeof limits?.credentialFingerprint === 'string' &&
         /^[a-f0-9]{64}$/i.test(limits.credentialFingerprint)
           ? limits.credentialFingerprint
-          : undefined,
+          : homeIdentity,
     };
     if (
       !limits ||
@@ -55,6 +77,13 @@ export async function collectSnapshot(
           return [];
         return [
           {
+            id: typeof window.id === 'string' ? window.id : undefined,
+            label: typeof window.label === 'string' ? window.label : undefined,
+            scope: windowScope(
+              account.provider,
+              typeof window.id === 'string' ? window.id : '',
+              typeof window.label === 'string' ? window.label : ''
+            ),
             kind:
               window.kind === 'weekly' ||
               (typeof window.windowDurationMins === 'number' &&
@@ -78,10 +107,10 @@ export async function collectSnapshot(
         typeof limits.credentialFingerprint === 'string' &&
         /^[a-f0-9]{64}$/i.test(limits.credentialFingerprint)
           ? limits.credentialFingerprint
-          : undefined,
+          : homeIdentity,
       lastError: windows.length ? undefined : 'no-usage-signal',
     };
   } catch {
-    return account;
+    return { ...account, windows: [], lastError: 'snapshot-unreadable' };
   }
 }

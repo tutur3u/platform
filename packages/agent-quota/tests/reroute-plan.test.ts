@@ -145,7 +145,7 @@ describe('read-only reset reroute planning', () => {
           },
         },
       })[0]
-    ).toMatchObject({ status: 'resumed-on-provider', success: true });
+    ).toMatchObject({ status: 'block', success: false });
   });
   it('blocks when all pools are exhausted', () => {
     const { request, context } = fixture();

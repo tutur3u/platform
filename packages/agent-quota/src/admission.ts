@@ -1,4 +1,4 @@
-import { collapseAccounts } from './accounts';
+import { accountKey, collapseAccounts } from './accounts';
 import { recoveryAdmissionKey } from './failure-receipt';
 import { HookError } from './hook-ledger';
 import type {
@@ -7,19 +7,20 @@ import type {
   HookLedger,
   Observation,
 } from './hooks-types';
+import { pruneLedger } from './ledger-retention';
 import { recommend } from './policy';
-import type { AccountUsage } from './types';
+import { clearRecoveredLimits } from './receipt-expiry';
+import { coversModel } from './window-scope';
 
-export function accountKey(account: AccountUsage): string {
-  return `${account.provider}:${account.accountIdentityHash ? `account:${account.accountIdentityHash}` : `instance:${account.instanceId}`}`;
-}
+export { accountKey } from './accounts';
 
 export function recordObservation(ledger: HookLedger, input: Observation) {
   const previous = ledger.observations.find(
     (event) => event.eventId === input.eventId
   );
   if (previous) {
-    if (JSON.stringify(previous) !== JSON.stringify(input))
+    const { clearedAt: _cleared, ...original } = previous;
+    if (JSON.stringify(original) !== JSON.stringify(input))
       throw new HookError('observation-id-conflict');
     return { status: 'recorded', replay: true };
   }
@@ -74,6 +75,12 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
       ),
     };
   const { accounts, active, ledger, now } = context;
+  clearRecoveredLimits(context);
+  pruneLedger(
+    ledger,
+    now,
+    active.flatMap((item) => item.reservationIds ?? [])
+  );
   const existing = ledger.reservations.find(
     (item) => item.requestId === request.requestId
   );
@@ -83,11 +90,20 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
     return {
       status: 'block',
       reasons: ['admission-already-reserved'],
-      reservation: existing,
+      reservation: {
+        requestId: existing.requestId,
+        threadId: existing.threadId,
+        instanceId: existing.instanceId,
+        model: existing.model,
+        createdAt: existing.createdAt,
+      },
       pools: [],
     };
   }
-  if (ledger.observations.some((item) => item.requestId === request.requestId))
+  if (
+    ledger.observations.some((item) => item.requestId === request.requestId) ||
+    ledger.retiredRequests?.some((item) => item.requestId === request.requestId)
+  )
     return {
       status: 'block',
       reasons: ['admission-already-completed'],
@@ -100,9 +116,35 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
     (account) => account.instanceId === request.requirements.authorInstanceId
   );
   const pools = collapseAccounts(accounts)
-    .map((pool) => {
+    .map((originalPool) => {
+      let pool = originalPool;
       const key = accountKey(pool);
       const ids = pool.instanceIds ?? [pool.instanceId];
+      const candidates = request.requirements.candidates.filter((candidate) =>
+        ids.includes(candidate.instanceId)
+      );
+      const candidate = candidates.find((candidate) => {
+        const member = accounts.find(
+          (account) => account.instanceId === candidate.instanceId
+        );
+        return (
+          request.requirements.authorizedInstanceIds.includes(
+            candidate.instanceId
+          ) &&
+          request.requirements.privacyApprovedInstanceIds.includes(
+            candidate.instanceId
+          ) &&
+          candidate.capabilities.includes(request.requirements.capability) &&
+          member?.available === true &&
+          member.models?.includes(candidate.model)
+        );
+      });
+      pool = {
+        ...pool,
+        windows: pool.windows.filter((window) =>
+          coversModel(window, candidate?.model)
+        ),
+      };
       const nativeIds = new Set(
         active
           .filter((item) => ids.includes(item.instanceId))
@@ -115,7 +157,14 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
             !nativeIds.has(item.nativeReservationId))
       ).length;
       const ranking = recommend({
-        accounts: accounts.filter((member) => ids.includes(member.instanceId)),
+        accounts: accounts
+          .filter((member) => ids.includes(member.instanceId))
+          .map((member) => ({
+            ...member,
+            windows: member.windows.filter((window) =>
+              coversModel(window, candidate?.model)
+            ),
+          })),
         active: [
           ...active,
           {
@@ -126,7 +175,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
                 ?.count ?? 0),
           },
         ],
-        task: {},
+        task: { model: candidate?.model },
         now,
         hardLimitPercent: request.policy.nearUsedPercent,
       }).ranked[0];
@@ -158,6 +207,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         (event) =>
           (event.accountKey === key || ids.includes(event.instanceId)) &&
           event.outcome === 'usage-limit' &&
+          !event.clearedAt &&
           (!event.resetsAt || Date.parse(event.resetsAt) > now.getTime())
       );
       if (failures.length) {
@@ -231,25 +281,6 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         )
           reasons.push('reviewer-account-identity-unverified');
       }
-      const candidates = request.requirements.candidates.filter((candidate) =>
-        ids.includes(candidate.instanceId)
-      );
-      const candidate = candidates.find((candidate) => {
-        const member = accounts.find(
-          (account) => account.instanceId === candidate.instanceId
-        );
-        return (
-          request.requirements.authorizedInstanceIds.includes(
-            candidate.instanceId
-          ) &&
-          request.requirements.privacyApprovedInstanceIds.includes(
-            candidate.instanceId
-          ) &&
-          candidate.capabilities.includes(request.requirements.capability) &&
-          member?.available === true &&
-          member.models?.includes(candidate.model)
-        );
-      });
       if (!candidate)
         reasons.push('capability-privacy-or-authorization-unverified');
       const preferenceWeight = Math.max(
@@ -265,6 +296,10 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
         pool: pool.instanceId,
         instanceIds: ids,
         state,
+        telemetryReasons: pool.windows.length
+          ? []
+          : ['no-covering-usage-window'],
+        candidateModel: candidate?.model ?? null,
         quotaState: state === 'STALE' ? 'UNKNOWN' : state,
         ageMs: ranking.ageMs,
         resetAt,

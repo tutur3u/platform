@@ -27,3 +27,5 @@ becomes measured headroom. Only `admit` supports explicitly bounded UNKNOWN
 admission. Preference weights reflect user planning, not telemetry.
 
 `reroute-plan --parent THREAD_ID` reads admission JSON plus per-thread `rerouteEvidence` from stdin. It simulates admission without writing, lists queue cancellation and safe continuation operations, and distinguishes configured from resumed-on-provider. See the routing docs for the evidence schema and native reset-continuation gap.
+
+Admission scans completed-turn provider limit receipts before selection. Only model-covering windows count as headroom; Antigravity third-party buckets do not cover Gemini. Reservations without active native bindings expire after 30 minutes, with 30-day replay tombstones. See the runbook for receipt clearance and process-verified lease recovery.

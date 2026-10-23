@@ -3,6 +3,9 @@ export type WindowKind = 'short' | 'long' | 'session' | 'weekly';
 
 export interface UsageWindow {
   kind: WindowKind;
+  id?: string;
+  label?: string;
+  scope?: { kind: 'account' | 'models' | 'unknown'; modelPrefixes?: string[] };
   usedPercent?: number;
   estimated?: number;
   resetsAt?: string;

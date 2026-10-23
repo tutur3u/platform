@@ -1,4 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
+import { completedFailureClass, safeReceipt } from '../failure-receipt';
 import { HookError } from '../hook-ledger';
 import type {
   ChildFailure,
@@ -59,6 +60,27 @@ export function collectChildren(
    json_extract(i.payload_json,'$.failure.resetAt') AS resetAt,i.updated_at AS observedAt
    FROM orchestration_v2_projection_turn_items i JOIN descendants d ON d.thread_id=i.thread_id
    WHERE i.type='error' AND i.status='failed' AND json_type(i.payload_json,'$.failure.message')='text'`);
+    const completedReceipts = rows<ChildFailure>(`SELECT i.run_id AS runId,
+      json_extract(r.payload_json,'$.rootNodeId') AS nodeId,
+      substr(json_extract(i.payload_json,'$.text'),1,4096) AS message,
+      NULL AS classification,NULL AS resetAt,i.updated_at AS observedAt
+      FROM orchestration_v2_projection_turn_items i
+      JOIN descendants d ON d.thread_id=i.thread_id
+      JOIN orchestration_v2_projection_runs r ON r.run_id=i.run_id
+      JOIN (SELECT j.run_id,MAX(j.updated_at) AS finalAt FROM orchestration_v2_projection_turn_items j JOIN descendants dj ON dj.thread_id=j.thread_id WHERE j.type='assistant_message' GROUP BY j.run_id) final ON final.run_id=i.run_id AND final.finalAt=i.updated_at
+      WHERE r.status='completed' AND i.type='assistant_message'
+      AND (lower(json_extract(i.payload_json,'$.text')) LIKE '%usage limit reached%'
+        OR lower(json_extract(i.payload_json,'$.text')) LIKE '%hit your session limit%'
+        OR lower(json_extract(i.payload_json,'$.text')) LIKE '%capacity%'
+        OR lower(json_extract(i.payload_json,'$.text')) LIKE '%temporarily unavailable%')`);
+    for (const receipt of completedReceipts) {
+      const kind = completedFailureClass(receipt.message);
+      if (kind === 'usage-limit' || kind === 'capacity')
+        failures.push({
+          ...receipt,
+          message: safeReceipt(receipt.message, kind).text,
+        });
+    }
     const transfers =
       rows<ChildTransfer>(`SELECT c.source_thread_id AS sourceId,c.target_thread_id AS parentId,json_extract(c.payload_json,'$.sourcePoint.runId') AS runId,
    json_extract(c.payload_json,'$.consumedAt') AS consumedAt

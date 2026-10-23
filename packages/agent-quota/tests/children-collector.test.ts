@@ -127,6 +127,50 @@ it('projects descendant metadata and structured errors without reading message c
       resetAt: '2026-10-23T04:20:00.000Z',
       disposition: 'auto-resume-already-queued-do-not-duplicate',
     });
+    const completed = new DatabaseSync(path);
+    completed
+      .prepare(
+        'INSERT INTO orchestration_v2_projection_runs VALUES (?,?,?,?,?,?,?)'
+      )
+      .run(
+        'run6',
+        'child',
+        6,
+        'completed',
+        '2026-10-23T03:57:12Z',
+        'antigravity',
+        JSON.stringify({
+          startedAt: '2026-10-23T03:57:00Z',
+          rootNodeId: 'node6',
+          modelSelection: { model: 'gemini-4-argon-high' },
+        })
+      );
+    completed
+      .prepare(
+        'INSERT INTO orchestration_v2_projection_turn_items VALUES (?,?,?,?,?,?,?)'
+      )
+      .run(
+        'child',
+        'run6',
+        'assistant6',
+        'assistant_message',
+        'completed',
+        '2026-10-23T03:57:12Z',
+        JSON.stringify({
+          text: 'Usage Limit Reached. reset in 6 days, 23 hours',
+        })
+      );
+    completed.close();
+    const limit = reconcileChildren(
+      collectChildren('root', path),
+      'root',
+      new Date('2026-10-23T04:00:00Z')
+    ).entries.find((entry) => entry.runId === 'run6');
+    expect(limit).toMatchObject({
+      runStatus: 'completed',
+      failureClass: 'usage-limit',
+      resetAt: '2026-10-30T02:57:12.000Z',
+    });
     expect(() => collectChildren('absent', path)).toThrow(
       'parent-thread-not-found'
     );

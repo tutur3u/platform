@@ -133,7 +133,7 @@ Each reads one JSON object from stdin and writes one JSON result. Invalid input,
 unreadable state, or contention returns `status: "block"` with a fixed reason;
 callers must inspect `status`, not just the process exit code. Errors never echo
 raw input. These commands always use non-credential provider status caches;
-they never invoke provider probes or read transcripts.
+they never invoke provider probes; receipt scans select matching final provider-limit messages only.
 
 Use the installed shared guidance:
 
@@ -190,8 +190,9 @@ Accounts are shared: multiple threads consume one pool's usage and reservations.
 Verified aliases collapse once; neither thread count nor alias count multiplies
 capacity. A file transaction serializes each admission decision and its pending
 reservation. Reusing a reserved/completed request ID blocks duplicate dispatch;
-reconcile its original result instead. Pending reservations persist until a
-terminal observation; they do not silently expire while dispatch may be unknown.
+reconcile its original result instead. Pending reservations release on terminal observation or after a 30-minute TTL
+when no active native binding confirms that work continues. Expired request IDs
+remain tombstoned for 30 days; reconcile uncertain dispatch rather than replaying it.
 A heartbeat can reconcile a reservation with its native child-thread/provider-thread
 ID so native and local records count once. Until that mapping is supplied,
 counting is conservatively additive.
@@ -204,8 +205,8 @@ An existing heartbeat must send `terminal: false`; it can also provide
 is created by this tool. Event IDs are idempotent; conflicting reuse, account
 mismatch, and outcomes older than the admission are rejected. A usage-limit
 outcome fences the entire shared account until its reported reset, even without
-a usage API. Without a reset it remains exhausted; success does not clear it or
-invent recovery. A capacity error imposes a 60-second local pacing cooldown,
+a usage API. Without a reset it remains exhausted until a later fresh covering-window check
+shows usage below 100%; a success receipt alone does not clear it. A capacity error imposes a 60-second local pacing cooldown,
 not a quota percentage. After a reported reset, normal fresh/unknown admission
 gates apply again; reset is not proof of fresh capacity.
 
@@ -238,7 +239,7 @@ win. Different threads may hold transitions to the same account simultaneously;
 shared-pool admission governs their capacity. The target is metadata, not an
 exclusive account lock. Acquisition is atomic, records expired takeovers, and
 rejects retired attempt IDs to prevent a delayed old release from removing a
-replacement. Release takes the target instance, thread, and attempt; it is
+replacement. Release takes the target instance, thread, attempt, pid, and process start time; it is
 idempotent and cannot release a different attempt.
 
 `switch-check` never acquires or renews a lease. It requires the matching live
@@ -272,10 +273,10 @@ The host-wide tool ledger is `~/.t3/caches/agent-quota/hooks.json`, separate fro
 T3-owned provider snapshots and its database. A short exclusive transaction file
 protects atomic write/fsync/rename operations; it is not an account lock. There
 is no daemon. Symlink ledger files and malformed data fail closed; the ledger
-has a 2 MB bound and does not discard outcomes or live reservations. A crashed
-transaction can leave `transaction.lock`: inspect ownership and process drainage
-before an operator removes that tool-owned lock. No automatic lock stealing or
-history pruning is installed. Lease expiry is handled inside a valid transaction.
+has a 2 MB bound. Expired outcomes and inactive reservations are compacted under
+the retention rules below. A crashed transaction lock can be reclaimed only after
+its recorded PID/start identity is confirmed dead or replaced and its inode is
+unchanged. Live or uncertain owners block takeover.
 
 Current telemetry coverage, verified from non-credential caches on 2026-10-23:
 
@@ -288,11 +289,12 @@ Current telemetry coverage, verified from non-credential caches on 2026-10-23:
 | `claude_kv` | Yes: two reported windows with resets | No |
 | `claude_hehe` | Yes: two reported windows with resets | No |
 | `claude_dd` | Yes: two reported windows with resets | No |
-| `antigravity` | Yes: two reported windows with resets | Yes |
+| `antigravity` | Third-party Claude/GPT only: two windows; no Gemini coverage | Yes |
 
-None of these eight pools lacked a supported usage/reset surface in that
-observation. This is coverage evidence, not a claim that each cache is fresh or
-healthy now. Cursor, Grok, OpenCode, Muse and Pi were disabled in the catalog;
+These surfaces do not establish coverage for every model. In particular,
+Antigravity Gemini remains uncovered by the observed windows. Claude has a
+session window plus a Fable-scoped weekly window. Coverage is not a claim that
+a pool is currently fresh or healthy. Cursor, Grok, OpenCode, Muse and Pi were disabled in the catalog;
 this adapter has no verified quota collector for them. Missing individual
 snapshots still yield UNKNOWN, and provider identity gaps remain explicit.
 
@@ -316,8 +318,7 @@ bun packages/agent-quota/src/cli.ts reconcile-children --parent THREAD_ID --time
 This read-only command traverses the existing T3 lineage and task projections,
 including nested descendants and provider-native subagents. It projects only
 run/task status, model/account selection, pending request metadata, delivery
-receipts and structured terminal error fields. It never reads transcript bodies,
-authentication files or credentials, and never mutates T3 state.
+receipts, structured terminal errors, and final assistant messages matching provider limit/capacity patterns, including completed runs. It never reads authentication files or credentials, and never mutates T3 state.
 
 Each entry distinguishes an app-owned original task, provider-native subagent,
 or unbound thread-send follow-up. It shows original task status separately from
@@ -406,3 +407,40 @@ that a continuation has queued. No controller, timer, automatic failover, or nat
 pre-delegation hook is installed by this package.
 
 See the maintained [reset-wait rerouting contract](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#reset-wait-rerouting-and-equivalent-local-validation).
+
+
+### Receipt and model-scope admission gates
+
+Every admission scans the requesting thread and its descendants for provider-limit
+receipts, including completed runs whose final assistant message reports a limit.
+This catches Antigravity's `Usage Limit Reached` result even when T3 labels the run
+completed. Relative resets (for example, `6 days, 23 hours`) use the observation
+time and round duration up to whole seconds. A limit without a reset remains
+exhausted until a later fresh covering-window check shows usage below 100%.
+
+Cache window IDs, labels and model scopes are preserved. Antigravity `3p-*`
+windows cover Claude/GPT, not Gemini; `gemini-*` windows cover Gemini. Claude's
+`Weekly · Fable` window applies only to that model family. Models with no covering
+window are UNKNOWN and subject to bounded admission. Availability and a zero in
+an unrelated window never establish headroom.
+
+When provider identity hashes are missing, the maintained `CLAUDE_HOME_BY_INSTANCE`
+mapping establishes the five distinct Claude accounts without opening auth files.
+A provider identity hash, when present, still takes precedence for alias deduplication.
+Account keys and fingerprints are removed from hook JSON output. Cache reads reject
+symlinks, non-regular files and files over 2 MB.
+
+Reservations without a currently active native binding expire after 30 minutes;
+completion or expiry retains a 30-day request tombstone. Expired reset/capacity
+observations and dead-owner leases are compacted; live or uncertain expired lease
+owners remain protected until release or confirmed death; unresolved limits are retained. Lease
+history and request tombstones have 30-day retention, so callers must reconcile
+older recovery operations rather than relying on indefinite idempotency. The
+transaction mutex records its PID and process start time; takeover requires a
+confirmed dead or replaced process and an unchanged lock inode. Unknown liveness
+fails closed. Switch lease release also requires the original PID/start identity;
+an expired lease held by a live or unverified process cannot be taken over.
+
+Reroute planning reuses and revalidates its existing reservation rather than
+reserving twice. Blockers take precedence over configured/resumed status, and
+resumption must match a running task, provider and model in the T3 snapshot.

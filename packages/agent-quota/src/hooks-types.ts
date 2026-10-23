@@ -25,6 +25,8 @@ export interface AdmissionRequest {
   };
 }
 export interface Observation {
+  model?: string;
+  clearedAt?: string;
   eventId: string;
   instanceId: string;
   accountKey: string;
@@ -56,10 +58,11 @@ export interface SwitchLease {
 export interface HookLedger {
   version: 1;
   observations: Observation[];
+  retiredRequests?: { requestId: string; retiredAt: string }[];
   reservations: Reservation[];
   leases: SwitchLease[];
   leaseHistory: {
-    action: 'acquire' | 'release' | 'expired-takeover';
+    action: 'acquire' | 'release' | 'expired-takeover' | 'expired';
     at: string;
     lease: SwitchLease;
   }[];

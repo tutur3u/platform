@@ -11,7 +11,12 @@ import {
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { HookLedger } from './hooks-types';
+import { pruneLedger } from './ledger-retention';
 import { validLedger } from './ledger-validation';
+import {
+  acquireTransactionLock,
+  releaseTransactionLock,
+} from './transaction-lock';
 
 export const hookDirectory = () =>
   join(homedir(), '.t3', 'caches', 'agent-quota');
@@ -48,7 +53,7 @@ export async function readLedger(
   }
 }
 
-// One short file transaction, never a background controller. A crashed mutex fails closed.
+// One short file transaction, never a background controller. A dead mutex owner can be reclaimed after verifying its process identity.
 export async function transactLedger<T>(
   operation: (ledger: HookLedger) => T | Promise<T>,
   directory = hookDirectory()
@@ -59,20 +64,22 @@ export async function transactLedger<T>(
   const lockPath = join(directory, 'transaction.lock');
   let lock: FileHandle;
   try {
-    lock = await open(
-      lockPath,
-      constants.O_CREAT |
-        constants.O_EXCL |
-        constants.O_WRONLY |
-        constants.O_NOFOLLOW,
-      0o600
-    );
+    lock = await acquireTransactionLock(lockPath);
   } catch {
     throw new HookError('ledger-busy');
   }
   const temporary = join(directory, `hooks-${randomUUID()}.tmp`);
   try {
     const ledger = await readLedger(directory);
+    // Admission prunes reservations using the native active set; storage maintenance
+    // preserves those reservations and only compacts expired event history.
+    pruneLedger(
+      ledger,
+      new Date(),
+      ledger.reservations.flatMap((item) =>
+        item.nativeReservationId ? [item.nativeReservationId] : []
+      )
+    );
     const result = await operation(ledger);
     const content = JSON.stringify(ledger);
     if (Buffer.byteLength(content) > 2_000_000)
@@ -101,7 +108,6 @@ export async function transactLedger<T>(
     return result;
   } finally {
     await unlink(temporary).catch(() => {});
-    await lock.close();
-    await unlink(lockPath);
+    await releaseTransactionLock(lockPath, lock);
   }
 }

@@ -5,14 +5,14 @@ import { describe, expect, it } from 'vitest';
 import { readLedger, transactLedger } from '../src/hook-ledger';
 import { acquireSwitchLease } from '../src/switch-safety';
 
-const now = new Date('2026-10-23T01:00:00Z');
+const now = new Date();
 const lease = {
   threadId: 'owner',
   accountKey: 'codex:one',
   attemptId: 'first',
   pid: 123,
   processStartedAt: '2026-10-23T00:00:00Z',
-  ttlMs: 1000,
+  ttlMs: 30_000,
 };
 describe('atomic host-wide hook ledger', () => {
   it('admits exactly one concurrent transition on the same thread with different targets', async () => {
@@ -63,7 +63,7 @@ describe('atomic host-wide hook ledger', () => {
           acquireSwitchLease(
             value,
             { ...lease, attemptId: 'replacement' },
-            new Date(now.getTime() + 1001)
+            new Date(now.getTime() + 30_001)
           ),
         dir
       );
