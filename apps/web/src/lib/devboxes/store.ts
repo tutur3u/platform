@@ -401,6 +401,12 @@ export async function stopDevboxRun(input: { actorId: string; runId: string }) {
         status: 'cancelled' as const,
       };
     }
+    if (existing?.status === 'succeeded' || existing?.status === 'failed') {
+      return {
+        message: `Devbox run ${input.runId} ${existing.status}.`,
+        status: existing.status,
+      };
+    }
     if (existing?.status !== 'cancel_requested') {
       throw new DevboxStoreError('Active devbox run not found.', 404);
     }

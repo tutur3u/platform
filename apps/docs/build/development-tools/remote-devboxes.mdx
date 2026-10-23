@@ -482,7 +482,9 @@ run cancels it immediately, a running run moves to `cancel_requested` for its
 agent, and finished runs are never changed. Repeating an owner stop on a
 `cancel_requested` or `cancelled` run returns its current cancellation without
 rewriting timestamps; retries cannot postpone stale-run reaping. Foreign ids
-still return 404, including cancelled runs. Infrastructure administrators can
+still return 404, including cancelled or finished runs. Owner stops that race
+completion return the observed final status without a write. Infrastructure
+administrators use the same stable retry and final-status behavior and can
 stop any active run from the dashboard. Regression coverage lives in
 `apps/web/src/lib/devboxes/store-scoping.test.ts`.
 

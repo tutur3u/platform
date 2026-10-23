@@ -286,13 +286,16 @@ export async function stopDevboxRun(runId: string) {
   }
 
   if (queued.data?.length) {
-    return { message: `Devbox run ${runId} cancelled.` };
+    return {
+      message: `Devbox run ${runId} cancelled.`,
+      status: 'cancelled' as const,
+    };
   }
 
   const running = await runs()
     .update({ status: 'cancel_requested', updated_at: now })
     .eq('id', runId)
-    .in('status', ['running', 'cancel_requested'])
+    .eq('status', 'running')
     .select('id');
 
   if (running.error) {
@@ -301,10 +304,37 @@ export async function stopDevboxRun(runId: string) {
 
   // A stale dashboard row must not throw from the server action.
   if (!running.data?.length) {
+    const { data, error } = await getPrivateTable(privateClient, 'devbox_runs')
+      .select('status')
+      .eq('id', runId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (error) throw getDevboxStorageError(error);
+    const existing = data?.[0];
+    if (existing && typeof existing === 'object' && 'status' in existing) {
+      const status = existing.status;
+      if (
+        status === 'cancel_requested' ||
+        status === 'cancelled' ||
+        status === 'succeeded' ||
+        status === 'failed'
+      ) {
+        return {
+          message:
+            status === 'cancel_requested'
+              ? `Devbox run ${runId} cancellation requested.`
+              : `Devbox run ${runId} ${status}.`,
+          status,
+        };
+      }
+    }
     return { message: `Devbox run ${runId} is no longer active.` };
   }
 
-  return { message: `Devbox run ${runId} cancellation requested.` };
+  return {
+    message: `Devbox run ${runId} cancellation requested.`,
+    status: 'cancel_requested' as const,
+  };
 }
 
 export async function listDevboxRunLogs(runId: string) {

@@ -140,7 +140,7 @@ describe('devbox store actor scoping', () => {
     expect(tables.devbox_runs).toEqual(cancelled);
   });
 
-  it.each(['cancel_requested', 'cancelled'])(
+  it.each(['cancel_requested', 'cancelled', 'succeeded', 'failed'])(
     'does not disclose a foreign %s run on retry',
     async (status) => {
       const foreign = tables.devbox_runs?.find((row) => row.id === 'run-other');
@@ -162,17 +162,16 @@ describe('devbox store actor scoping', () => {
     expect(runStatus('run-other')).toBe('running');
   });
 
-  it('does not flip terminal runs', async () => {
-    await expectNotFound(
-      stopDevboxRun({ actorId: 'owner', runId: 'run-succeeded' })
-    );
-    await expectNotFound(
-      stopDevboxRun({ actorId: 'owner', runId: 'run-failed' })
-    );
-
-    expect(runStatus('run-succeeded')).toBe('succeeded');
-    expect(runStatus('run-failed')).toBe('failed');
-  });
+  it.each(['succeeded', 'failed'])(
+    'returns the final %s status without changing it',
+    async (status) => {
+      const unchanged = structuredClone(tables.devbox_runs);
+      await expect(
+        stopDevboxRun({ actorId: 'owner', runId: `run-${status}` })
+      ).resolves.toMatchObject({ status });
+      expect(tables.devbox_runs).toEqual(unchanged);
+    }
+  );
 
   it('returns 404 for unknown run ids', async () => {
     await expectNotFound(stopDevboxRun({ actorId: 'owner', runId: 'missing' }));
