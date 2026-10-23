@@ -318,11 +318,12 @@ pending, unapproved or expired acceptance leaves the finding `open`, so a
 confirmed high or critical finding still blocks the release. An unreadable
 file accepts nothing and is reported as a coverage gap.
 
-Current proposal: node-forge GHSA-86w9-cpqp-85rv (RSA PKCS#1 v1.5 signature
-verification, no patched release). node-forge is used only to parse PKCS#12
-and ASN.1 data. #6425 guards against its verify paths in code and proves with
-a test that they are never reached. The proposal is pending the release
-authority's approval.
+Prefer resolving a risk over accepting it. For example, node-forge
+GHSA-86w9-cpqp-85rv is removed in #6519 (an in-process PKCS#12 parser)
+rather than accepted. The shipped list is empty. Until #6519 merges, the
+findings register reports that advisory as a confirmed release blocker. Pull
+request audits do not fail on it, because it is already present at the base
+commit.
 
 Actions logs and artifacts of a public repository are public, so the register is
 redacted. It omits secret values and locations, and the rule IDs and paths of

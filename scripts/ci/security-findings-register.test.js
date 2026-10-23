@@ -251,45 +251,27 @@ test('risk acceptances apply only when approved and unexpired', () => {
   assert.equal(onlyLapsed.blockers.length, 1);
 });
 
-test('the shipped node-forge acceptance is pending the release authority', () => {
+test('every shipped risk acceptance is well formed and windowed', () => {
+  // Risks are resolved rather than accepted where possible (node-forge was
+  // removed instead of accepted), so the shipped list may be empty. Any entry
+  // that is added must still carry a scope, guards, an owner and a valid
+  // window of at most 90 days.
   const file = require('node:path').resolve(
     __dirname,
     '../../.github/security/risk-acceptances.json'
   );
-  const { acceptances } = JSON.parse(
-    require('node:fs').readFileSync(file, 'utf8')
-  );
-  const forge = acceptances.find(
-    ({ advisory }) => advisory === 'GHSA-86w9-cpqp-85rv'
-  );
-  assert.equal(forge.status, 'pending');
-  assert.equal(forge.approvedBy, null);
-  assert.equal(forge.approvedAt, null);
-  // At most 90 days from the proposal.
-  assert.ok(
-    Date.parse(forge.expiresAt) - Date.parse(forge.proposedAt) <=
-      90 * 24 * 60 * 60 * 1000
-  );
-  assert.match(forge.scope, /PKCS#12\/ASN\.1/u);
-  // Its window is valid (exactly 90 days), so once approved it could apply;
-  // until then it is pending and the finding stays open.
-  assert.equal(acceptanceWindowValid(forge), true);
-  const [entry] = applyAcceptances(
-    fromBunAudit({
-      'node-forge': [
-        {
-          id: 1,
-          severity: 'high',
-          title: 'synthetic',
-          url: 'https://github.com/advisories/GHSA-86w9-cpqp-85rv',
-          vulnerable_versions: '<=1.4.0',
-        },
-      ],
-    }),
-    acceptances,
-    Date.parse('2026-11-01T00:00:00Z')
-  );
-  assert.equal(entry.acceptance.status, 'pending');
-  assert.equal(entry.status, 'open');
-  assert.match(forge.guards.join(' '), /#6425/u);
+  const parsed = JSON.parse(require('node:fs').readFileSync(file, 'utf8'));
+  assert.equal(parsed.format, 'tuturuuu-risk-acceptances/v1');
+  assert.ok(Array.isArray(parsed.acceptances));
+  for (const item of parsed.acceptances) {
+    assert.match(item.advisory, /^GHSA-[\w-]+$/u);
+    assert.ok(item.scope && item.owner && Array.isArray(item.guards));
+    assert.equal(acceptanceWindowValid(item), true, item.advisory);
+    // An approval is recorded only together with its approver.
+    assert.equal(
+      item.status === 'accepted',
+      typeof item.approvedBy === 'string' && item.approvedBy.length > 0,
+      item.advisory
+    );
+  }
 });
