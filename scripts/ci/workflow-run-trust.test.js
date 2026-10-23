@@ -180,7 +180,18 @@ test('Supabase Staging migrates only trusted main push completions', () => {
 
   // Secrets reach only the migration step, after the target checkout and the
   // target's tuturuuu.ci.ts have been admitted by the job gate.
-  assert.equal(migrate.env.SUPABASE_ACCESS_TOKEN, undefined);
+  assert.equal(migrate.env?.SUPABASE_ACCESS_TOKEN, undefined);
+  // The migration target and its marker come from the trust step's verified
+  // SHA, never from the raw event (no job-level TARGET_SHA).
+  assert.equal(migrate.env?.TARGET_SHA, undefined);
+  const marker = migrate.steps.find(
+    (step) => step.name === 'Record successful staging migration marker'
+  );
+  assert.match(
+    marker.env.DEPLOYMENT_MARKER_SHA,
+    /^\$\{\{ steps\.trigger\.outputs\.head_sha \}\}$/u
+  );
+  assert.match(marker.if, /^steps\.trigger\.outputs\.trusted == 'true' && /u);
   const withSecrets = migrate.steps
     .filter((step) => /secrets\./u.test(JSON.stringify(step.env ?? {})))
     .map((step) => step.name);

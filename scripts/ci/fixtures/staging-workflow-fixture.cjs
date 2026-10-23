@@ -179,7 +179,7 @@ function assertStagingWorkflowControls(deployJob) {
   );
   assert.match(
     deployJob,
-    /Record successful staging migration marker\n {8}if: steps\.evaluate\.outputs\.should_deploy == 'true'/
+    /Record successful staging migration marker\n {8}if: steps\.trigger\.outputs\.trusted == 'true' && steps\.evaluate\.outputs\.should_deploy == 'true'[\s\S]*DEPLOYMENT_MARKER_SHA: \$\{\{ steps\.trigger\.outputs\.head_sha \}\}/
   );
 }
 

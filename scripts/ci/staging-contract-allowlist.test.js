@@ -42,6 +42,7 @@ test('the staging contract allowlist is exactly current plus main history', () =
     '8123f16d927bcac4075f4e01b520b7d8f5eec0b2',
     '9a3488316e0d13eccf7c5978791c04e5c0e07235',
     '7510bb52a80d475f768698aa47acdb34114956d7',
+    '4ef3b2d74131a57cdab234244981886cf3bd3ad8',
   ]) {
     assert.ok(!allowed.includes(rejected), rejected);
   }

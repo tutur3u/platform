@@ -149,11 +149,12 @@ test('trusted producers name every workflow_run upstream by path and ID', () => 
   }
 });
 
-// Deploy consumers accept only the live branch tip (REV-6459-5).
-const tipRequired = new Set([
-  'discord-modal-deploy.yml',
-  'supabase-staging.yaml',
-]);
+// The Discord deploy accepts only the live branch tip (REV-6459-5), or a head
+// whose apps/discord tree is unchanged at the tip (REV-6459-8). Supabase
+// Staging deliberately accepts any SHA reachable from main: production sync may
+// promote a non-tip main SHA whose production migration needs its staging
+// marker.
+const tipRequired = new Set(['discord-modal-deploy.yml']);
 const accepted = (file) =>
   tipRequired.has(file) ? ['identical'] : ['identical', 'behind'];
 
@@ -379,7 +380,8 @@ test('Discord deploys a behind head only while apps/discord is unchanged at the 
   assert.deepEqual(jobs('ahead', same), []);
   assert.deepEqual(jobs('identical', {}), ['trigger', 'deploy']);
 
-  // Only Discord opts into the tree rule; staging still needs the exact tip.
+  // Only Discord opts into the tree rule. Staging accepts any head reachable
+  // from refs/heads/main, whatever the trees, and still rejects the rest.
   const withTree = consumerFiles.filter((file) =>
     Object.values(workflowOf(file).jobs).some(
       (job) => triggerStep(job)?.env?.TIP_TREE_PATH
@@ -387,15 +389,18 @@ test('Discord deploys a behind head only while apps/discord is unchanged at the 
   );
   assert.deepEqual(withTree, ['discord-modal-deploy.yml']);
   const staging = cases.find(({ file }) => file === 'supabase-staging.yaml');
-  assert.deepEqual(
+  const stagingJobs = (compareDefault) =>
     runningJobs(staging.workflow, trustedCompletion(staging.producer), {
-      compareDefault: 'behind',
+      compareDefault,
       gate: 'run',
       tipSha,
-      trees: same,
-    }),
-    []
-  );
+      trees: changed,
+    });
+  assert.deepEqual(stagingJobs('behind'), ['migrate']);
+  assert.deepEqual(stagingJobs('identical'), ['migrate']);
+  for (const status of ['diverged', 'ahead']) {
+    assert.deepEqual(stagingJobs(status), [], `staging ${status}`);
+  }
 });
 
 test('tip-gated consumers re-check the tip in every job that checks out code', () => {

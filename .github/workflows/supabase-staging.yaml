@@ -42,14 +42,16 @@ jobs:
       )
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    env:
-      TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - name: Verify trusted trigger
         id: trigger
         env:
           GH_TOKEN: ${{ github.token }}
-          REQUIRE_BRANCH_TIP: "true"
+          # Deliberately no REQUIRE_BRANCH_TIP: production sync may promote a
+          # main SHA that is no longer the tip, and its production migration
+          # needs that SHA's staging marker. Any SHA reachable from
+          # refs/heads/main is accepted; re-applying an older main checkout is
+          # idempotent for `db push --include-all`.
           TRUSTED_DISPATCH_REF: refs/heads/main
           # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
           TRUSTED_PRODUCERS: |
@@ -212,11 +214,12 @@ jobs:
           supabase link --project-ref "$STAGING_PROJECT_ID"
           supabase db push --include-all
 
+      # The marker binds the SHA the trust step verified, never the raw event.
       - name: Record successful staging migration marker
-        if: steps.evaluate.outputs.should_deploy == 'true'
+        if: steps.trigger.outputs.trusted == 'true' && steps.evaluate.outputs.should_deploy == 'true'
         env:
           DEPLOYMENT_MARKER_REF_NAME: main
-          DEPLOYMENT_MARKER_SHA: ${{ env.TARGET_SHA }}
+          DEPLOYMENT_MARKER_SHA: ${{ steps.trigger.outputs.head_sha }}
           DEPLOYMENT_MARKER_WORKFLOW_NAME: supabase-staging.yaml
           GITHUB_TOKEN: ${{ github.token }}
         run: >-

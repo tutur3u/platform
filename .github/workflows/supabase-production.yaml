@@ -489,7 +489,7 @@ jobs:
           }
 
           const contracts = [
-            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', '4ef3b2d74131a57cdab234244981886cf3bd3ad8']],
+            [workflowPath, ['c80066e1cd038fcda3bd6c1a79c0b12993b94b49', '70937258932e55cf611c2896b788da0392c09717', '68449e684d33ca9608e6c873563ca3092543ca6c', 'ec2f81d196eff45ba05d2b87ad5bd1bb98b194da']],
             ['scripts/ci/record-deployment-marker.ts', ['35eaf73931589cfe9dd62f7456a3dbe3c48c988c']],
           ];
           async function checkContracts(producerHead) {
